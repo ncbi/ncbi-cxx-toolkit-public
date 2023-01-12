@@ -49,13 +49,17 @@ using TAccVerHistErrorCB = function<
                                      EDiagSev  severity,
                                      const string &  message)>;
 
+class IPSGS_Processor;
+
 
 class CAccVerHistCallback
 {
     public:
         CAccVerHistCallback(
+                IPSGS_Processor *  processor,
                 TAccVerHistCB  acc_ver_hist_cb,
                 CCassAccVerHistoryFetch *  fetch_details) :
+            m_Processor(processor),
             m_AccVerHistCB(acc_ver_hist_cb),
             m_FetchDetails(fetch_details),
             m_Count(0),
@@ -67,12 +71,12 @@ class CAccVerHistCallback
             if (last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
                 if (m_Count == 0) {
-                    app->GetTiming().Register(eAccVerHistRetrieve, eOpStatusNotFound,
-                                              m_RetrieveTiming);
+                    app->GetTiming().Register(m_Processor, eAccVerHistRetrieve,
+                                              eOpStatusNotFound, m_RetrieveTiming);
                     app->GetCounters().Increment(CPSGSCounters::ePSGS_AccVerHistoryNotFound);
                 } else {
-                    app->GetTiming().Register(eAccVerHistRetrieve, eOpStatusFound,
-                                              m_RetrieveTiming);
+                    app->GetTiming().Register(m_Processor, eAccVerHistRetrieve,
+                                              eOpStatusFound, m_RetrieveTiming);
                 }
             }
 
@@ -81,6 +85,7 @@ class CAccVerHistCallback
         }
 
     private:
+        IPSGS_Processor *               m_Processor;
         TAccVerHistCB                   m_AccVerHistCB;
         CCassAccVerHistoryFetch *       m_FetchDetails;
 

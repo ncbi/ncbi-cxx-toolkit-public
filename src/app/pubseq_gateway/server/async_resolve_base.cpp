@@ -659,11 +659,11 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     if (record_count != 1) {
         // Did not find anything. Need more tries
         if (record_count > 1) {
-            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+            app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundMany);
         } else {
-            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
+            app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusNotFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
         }
@@ -755,7 +755,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     }
 
     // Everything is fine
-    app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+    app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                               m_BioseqInfoStart);
     app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
 
@@ -788,7 +788,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_BioseqDB;
 
-            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+            app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
             m_BioseqResolution.SetBioseqInfo(records[decision.index]);
@@ -797,7 +797,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
             break;
         case CRequestStatus::e404_NotFound:
-            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusNotFound,
+            app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusNotFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
             if (m_ResolveStage == ePostSi2Csi) {
@@ -825,7 +825,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             }
             break;
         case CRequestStatus::e500_InternalServerError:
-            app->GetTiming().Register(eLookupCassBioseqInfo, eOpStatusFound,
+            app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundMany);
             if (m_ResolveStage == ePostSi2Csi) {
@@ -931,11 +931,11 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
     if (record_count != 1) {
         // Multiple records or did not find anything. Need more tries
         if (record_count > 1) {
-            app->GetTiming().Register(eLookupCassSi2csi, eOpStatusFound,
+            app->GetTiming().Register(this, eLookupCassSi2csi, eOpStatusFound,
                                       m_Si2csiStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiFoundMany);
         } else {
-            app->GetTiming().Register(eLookupCassSi2csi, eOpStatusNotFound,
+            app->GetTiming().Register(this, eLookupCassSi2csi, eOpStatusNotFound,
                                       m_Si2csiStart);
             app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiNotFound);
         }
@@ -947,7 +947,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
     // Looking good data have appeared
     x_SignalStartProcessing();
 
-    app->GetTiming().Register(eLookupCassSi2csi, eOpStatusFound,
+    app->GetTiming().Register(this, eLookupCassSi2csi, eOpStatusFound,
                               m_Si2csiStart);
     app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiFoundOne);
 

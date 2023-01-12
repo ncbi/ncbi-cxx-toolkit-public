@@ -340,10 +340,10 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
 
     load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
-        CGetBlobErrorCallback(m_BlobErrorCB, cass_blob_fetch.get()));
+        CGetBlobErrorCallback(this, m_BlobErrorCB, cass_blob_fetch.get()));
     load_task->SetPropsCallback(nullptr);
     load_task->SetChunkCallback(
-        CBlobChunkCallback(m_BlobChunkCB, cass_blob_fetch.get()));
+        CBlobChunkCallback(this, m_BlobChunkCB, cass_blob_fetch.get()));
 
     if (m_Request->NeedTrace()) {
         m_Reply->SendTrace(
@@ -410,6 +410,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
         CPSGCache                   psg_cache(m_Request, m_Reply);
         auto                        blob_prop_cache_lookup_result =
                                         psg_cache.LookupBlobProp(
+                                            this,
                                             info_blob_id.m_Sat,
                                             info_blob_id.m_SatKey,
                                             info_blob_request.m_LastModified,
@@ -463,13 +464,13 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
-            CGetBlobErrorCallback(m_BlobErrorCB, cass_blob_fetch.get()));
+            CGetBlobErrorCallback(this, m_BlobErrorCB, cass_blob_fetch.get()));
         load_task->SetPropsCallback(
-            CBlobPropCallback(m_BlobPropsCB,
+            CBlobPropCallback(this, m_BlobPropsCB,
                               m_Request, m_Reply, cass_blob_fetch.get(),
                               blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
-            CBlobChunkCallback(m_BlobChunkCB, cass_blob_fetch.get()));
+            CBlobChunkCallback(this, m_BlobChunkCB, cass_blob_fetch.get()));
 
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Cassandra request: " +
@@ -543,6 +544,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
         CPSGCache                   psg_cache(m_Request, m_Reply);
         auto                        blob_prop_cache_lookup_result =
                                         psg_cache.LookupBlobProp(
+                                            this,
                                             chunks_blob_id.m_Sat,
                                             chunks_blob_id.m_SatKey,
                                             chunk_request.m_LastModified,
@@ -595,13 +597,13 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
-            CGetBlobErrorCallback(m_BlobErrorCB, details.get()));
+            CGetBlobErrorCallback(this, m_BlobErrorCB, details.get()));
         load_task->SetPropsCallback(
-            CBlobPropCallback(m_BlobPropsCB,
+            CBlobPropCallback(this, m_BlobPropsCB,
                               m_Request, m_Reply, details.get(),
                               blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
-            CBlobChunkCallback(m_BlobChunkCB, details.get()));
+            CBlobChunkCallback(this, m_BlobChunkCB, details.get()));
 
         m_FetchDetails.push_back(move(details));
     }
@@ -784,6 +786,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         CPSGCache                   psg_cache(m_Request, m_Reply);
         auto                        blob_prop_cache_lookup_result =
                                         psg_cache.LookupBlobProp(
+                                            this,
                                             chunks_blob_id.m_Sat,
                                             chunks_blob_id.m_SatKey,
                                             chunk_request.m_LastModified,
@@ -834,13 +837,13 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
-            CGetBlobErrorCallback(m_BlobErrorCB, details.get()));
+            CGetBlobErrorCallback(this, m_BlobErrorCB, details.get()));
         load_task->SetPropsCallback(
-            CBlobPropCallback(m_BlobPropsCB,
+            CBlobPropCallback(this, m_BlobPropsCB,
                               m_Request, m_Reply, details.get(),
                               blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
-            CBlobChunkCallback(m_BlobChunkCB, details.get()));
+            CBlobChunkCallback(this, m_BlobChunkCB, details.get()));
 
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Requesting extra chunk from INFO for the 'smart' tse option: " +
@@ -1217,11 +1220,13 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
             CPublicCommentErrorCallback(
+                this,
                 bind(&CPSGS_CassBlobBase::OnPublicCommentError,
                      this, _1, _2, _3, _4, _5),
                 comment_fetch_details.get()));
         load_task->SetCommentCallback(
             CPublicCommentConsumeCallback(
+                this,
                 bind(&CPSGS_CassBlobBase::OnPublicComment,
                      this, _1, _2, _3),
                 comment_fetch_details.get()));

@@ -49,13 +49,18 @@ using TPublicCommentErrorCB =
                               EDiagSev  severity,
                               const string &  message)>;
 
+class IPSGS_Processor;
+
+
 
 class CPublicCommentConsumeCallback
 {
     public:
         CPublicCommentConsumeCallback(
+                IPSGS_Processor *  processor,
                 TPublicCommentConsumeCB  consume_cb,
                 CCassPublicCommentFetch *  fetch_details) :
+            m_Processor(processor),
             m_ConsumeCB(consume_cb),
             m_FetchDetails(fetch_details),
             m_PublicCommentRetrieveTiming(psg_clock_t::now())
@@ -68,13 +73,14 @@ class CPublicCommentConsumeCallback
                 op_status = eOpStatusNotFound;
 
             CPubseqGatewayApp::GetInstance()->GetTiming().
-                Register(ePublicCommentRetrieve, op_status,
+                Register(m_Processor, ePublicCommentRetrieve, op_status,
                          m_PublicCommentRetrieveTiming);
 
             m_ConsumeCB(m_FetchDetails, comment, is_found);
         }
 
     private:
+        IPSGS_Processor *               m_Processor;
         TPublicCommentConsumeCB         m_ConsumeCB;
         CCassPublicCommentFetch *       m_FetchDetails;
         psg_time_point_t                m_PublicCommentRetrieveTiming;
@@ -85,8 +91,10 @@ class CPublicCommentErrorCallback
 {
     public:
         CPublicCommentErrorCallback(
+                IPSGS_Processor *  processor,
                 TPublicCommentErrorCB  error_cb,
                 CCassPublicCommentFetch *  fetch_details) :
+            m_Processor(processor),
             m_ErrorCB(error_cb),
             m_FetchDetails(fetch_details),
             m_PublicCommentRetrieveTiming(psg_clock_t::now())
@@ -99,12 +107,14 @@ class CPublicCommentErrorCallback
         {
             if (status == CRequestStatus::e404_NotFound)
                 CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(ePublicCommentRetrieve, eOpStatusNotFound,
+                    Register(m_Processor, ePublicCommentRetrieve,
+                             eOpStatusNotFound,
                              m_PublicCommentRetrieveTiming);
             m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 
     private:
+        IPSGS_Processor *               m_Processor;
         TPublicCommentErrorCB           m_ErrorCB;
         CCassPublicCommentFetch *       m_FetchDetails;
         psg_time_point_t                m_PublicCommentRetrieveTiming;

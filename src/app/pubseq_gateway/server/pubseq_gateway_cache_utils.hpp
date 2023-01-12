@@ -44,6 +44,7 @@ using namespace std;
 USING_IDBLOB_SCOPE;
 
 class CPSGS_Reply;
+class IPSGS_Processor;
 
 class CPSGCache
 {
@@ -100,40 +101,48 @@ public:
         return m_Allowed;
     }
 
-    EPSGS_CacheLookupResult  LookupBioseqInfo(SBioseqResolution &  bioseq_resolution)
+    EPSGS_CacheLookupResult  LookupBioseqInfo(IPSGS_Processor *  processor,
+                                              SBioseqResolution &  bioseq_resolution)
     {
         if (m_Allowed)
-            return x_LookupBioseqInfo(bioseq_resolution);
+            return x_LookupBioseqInfo(processor, bioseq_resolution);
         return ePSGS_CacheNotHit;
     }
 
-    EPSGS_CacheLookupResult  LookupSi2csi(SBioseqResolution &  bioseq_resolution)
+    EPSGS_CacheLookupResult  LookupSi2csi(IPSGS_Processor *  processor,
+                                          SBioseqResolution &  bioseq_resolution)
     {
         if (m_Allowed)
-            return x_LookupSi2csi(bioseq_resolution);
+            return x_LookupSi2csi(processor, bioseq_resolution);
         return ePSGS_CacheNotHit;
     }
 
-    EPSGS_CacheLookupResult  LookupBlobProp(int  sat,
+    EPSGS_CacheLookupResult  LookupBlobProp(IPSGS_Processor *  processor,
+                                            int  sat,
                                             int  sat_key,
                                             int64_t &  last_modified,
                                             CBlobRecord &  blob_record)
     {
         if (m_Allowed)
-            return x_LookupBlobProp(sat, sat_key, last_modified, blob_record);
+            return x_LookupBlobProp(processor, sat, sat_key,
+                                    last_modified, blob_record);
         return ePSGS_CacheNotHit;
     }
 
 private:
     EPSGS_CacheLookupResult  x_LookupBioseqInfo(
+                                IPSGS_Processor *  processor,
                                 SBioseqResolution &  bioseq_resolution);
     EPSGS_CacheLookupResult  x_LookupINSDCBioseqInfo(
+                                IPSGS_Processor *  processor,
                                 SBioseqResolution &  bioseq_resolution);
 
     EPSGS_CacheLookupResult  x_LookupSi2csi(
+                                IPSGS_Processor *  processor,
                                 SBioseqResolution &  bioseq_resolution);
 
-    EPSGS_CacheLookupResult  x_LookupBlobProp(int  sat,
+    EPSGS_CacheLookupResult  x_LookupBlobProp(IPSGS_Processor *  processor,
+                                              int  sat,
                                               int  sat_key,
                                               int64_t &  last_modified,
                                               CBlobRecord &  blob_record);

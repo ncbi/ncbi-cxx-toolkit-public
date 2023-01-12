@@ -52,12 +52,16 @@ using TBlobErrorCB = function<void(CCassBlobFetch *  fetch_details,
                                    EDiagSev  severity,
                                    const string &  message)>;
 
+class IPSGS_Processor;
+
 
 class CBlobChunkCallback
 {
     public:
-        CBlobChunkCallback(TBlobChunkCB  blob_chunk_cb,
+        CBlobChunkCallback(IPSGS_Processor *  processor,
+                           TBlobChunkCB  blob_chunk_cb,
                            CCassBlobFetch *  fetch_details) :
+            m_Processor(processor),
             m_BlobChunkCB(blob_chunk_cb),
             m_FetchDetails(fetch_details),
             m_BlobSize(0),
@@ -71,13 +75,14 @@ class CBlobChunkCallback
                 m_BlobSize += size;
             else
                 CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(eBlobRetrieve, eOpStatusFound,
+                    Register(m_Processor, eBlobRetrieve, eOpStatusFound,
                              m_BlobRetrieveTiming, m_BlobSize);
 
             m_BlobChunkCB(m_FetchDetails, blob, data, size, chunk_no);
         }
 
     private:
+        IPSGS_Processor *       m_Processor;
         TBlobChunkCB            m_BlobChunkCB;
         CCassBlobFetch *        m_FetchDetails;
 
@@ -90,11 +95,13 @@ class CBlobPropCallback
 {
     public:
         CBlobPropCallback(
+                IPSGS_Processor *  processor,
                 TBlobPropsCB  blob_prop_cb,
                 shared_ptr<CPSGS_Request>  request,
                 shared_ptr<CPSGS_Reply>  reply,
                 CCassBlobFetch *  fetch_details,
                 bool  need_timing) :
+            m_Processor(processor),
             m_BlobPropCB(blob_prop_cb),
             m_Request(request),
             m_Reply(reply),
@@ -123,11 +130,13 @@ class CBlobPropCallback
                 if (m_NeedTiming) {
                     CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
                     if (is_found)
-                        app->GetTiming().Register(eLookupCassBlobProp,
+                        app->GetTiming().Register(m_Processor,
+                                                  eLookupCassBlobProp,
                                                   eOpStatusFound,
                                                   m_BlobPropTiming);
                     else
-                        app->GetTiming().Register(eLookupCassBlobProp,
+                        app->GetTiming().Register(m_Processor,
+                                                  eLookupCassBlobProp,
                                                   eOpStatusNotFound,
                                                   m_BlobPropTiming);
                 }
@@ -139,6 +148,7 @@ class CBlobPropCallback
         }
 
     private:
+        IPSGS_Processor *               m_Processor;
         TBlobPropsCB                    m_BlobPropCB;
         shared_ptr<CPSGS_Request>       m_Request;
         shared_ptr<CPSGS_Reply>         m_Reply;
@@ -156,8 +166,10 @@ class CBlobPropCallback
 class CGetBlobErrorCallback
 {
     public:
-        CGetBlobErrorCallback(TBlobErrorCB  blob_error_cb,
+        CGetBlobErrorCallback(IPSGS_Processor *  processor,
+                              TBlobErrorCB  blob_error_cb,
                               CCassBlobFetch *  fetch_details) :
+            m_Processor(processor),
             m_BlobErrorCB(blob_error_cb),
             m_FetchDetails(fetch_details),
             m_BlobRetrieveTiming(psg_clock_t::now())
@@ -170,12 +182,13 @@ class CGetBlobErrorCallback
         {
             if (status == CRequestStatus::e404_NotFound)
                 CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(eBlobRetrieve, eOpStatusNotFound,
+                    Register(m_Processor, eBlobRetrieve, eOpStatusNotFound,
                              m_BlobRetrieveTiming);
             m_BlobErrorCB(m_FetchDetails, status, code, severity, message);
         }
 
     private:
+        IPSGS_Processor *   m_Processor;
         TBlobErrorCB        m_BlobErrorCB;
         CCassBlobFetch *    m_FetchDetails;
 

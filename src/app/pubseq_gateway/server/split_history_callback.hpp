@@ -48,13 +48,17 @@ using TSplitHistoryErrorCB =
                               EDiagSev  severity,
                               const string &  message)>;
 
+class IPSGS_Processor;
+
 
 class CSplitHistoryConsumeCallback
 {
     public:
         CSplitHistoryConsumeCallback(
+                IPSGS_Processor *  processor,
                 TSplitHistoryConsumeCB  consume_cb,
                 CCassSplitHistoryFetch *  fetch_details) :
+            m_Processor(processor),
             m_ConsumeCB(consume_cb),
             m_FetchDetails(fetch_details),
             m_SplitHistoryRetrieveTiming(psg_clock_t::now())
@@ -67,13 +71,14 @@ class CSplitHistoryConsumeCallback
                 op_status = eOpStatusNotFound;
 
             CPubseqGatewayApp::GetInstance()->GetTiming().
-                Register(eSplitHistoryRetrieve, op_status,
+                Register(m_Processor, eSplitHistoryRetrieve, op_status,
                          m_SplitHistoryRetrieveTiming);
 
             m_ConsumeCB(m_FetchDetails, std::move(result));
         }
 
     private:
+        IPSGS_Processor *               m_Processor;
         TSplitHistoryConsumeCB          m_ConsumeCB;
         CCassSplitHistoryFetch *        m_FetchDetails;
         psg_time_point_t                m_SplitHistoryRetrieveTiming;
@@ -84,8 +89,10 @@ class CSplitHistoryErrorCallback
 {
     public:
         CSplitHistoryErrorCallback(
+                IPSGS_Processor *  processor,
                 TSplitHistoryErrorCB  error_cb,
                 CCassSplitHistoryFetch *  fetch_details) :
+            m_Processor(processor),
             m_ErrorCB(error_cb),
             m_FetchDetails(fetch_details),
             m_SplitHistoryRetrieveTiming(psg_clock_t::now())
@@ -98,12 +105,14 @@ class CSplitHistoryErrorCallback
         {
             if (status == CRequestStatus::e404_NotFound)
                 CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(eSplitHistoryRetrieve, eOpStatusNotFound,
+                    Register(m_Processor, eSplitHistoryRetrieve,
+                             eOpStatusNotFound,
                              m_SplitHistoryRetrieveTiming);
             m_ErrorCB(m_FetchDetails, status, code, severity, message);
         }
 
     private:
+        IPSGS_Processor *               m_Processor;
         TSplitHistoryErrorCB            m_ErrorCB;
         CCassSplitHistoryFetch *        m_FetchDetails;
         psg_time_point_t                m_SplitHistoryRetrieveTiming;

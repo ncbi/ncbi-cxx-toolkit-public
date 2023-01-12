@@ -50,14 +50,18 @@ using TNamedAnnotationErrorCB = function<
                                      EDiagSev  severity,
                                      const string &  message)>;
 
+class IPSGS_Processor;
+
 
 class CNamedAnnotationCallback
 {
     public:
         CNamedAnnotationCallback(
+                IPSGS_Processor *  processor,
                 TNamedAnnotationCB  named_annotation_cb,
                 CCassNamedAnnotFetch *  fetch_details,
                 int32_t  sat) :
+            m_Processor(processor),
             m_NamedAnnotationCB(named_annotation_cb),
             m_FetchDetails(fetch_details),
             m_Sat(sat),
@@ -70,10 +74,12 @@ class CNamedAnnotationCallback
             if (last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
                 if (m_AnnotCount == 0)
-                    app->GetTiming().Register(eNARetrieve, eOpStatusNotFound,
+                    app->GetTiming().Register(m_Processor, eNARetrieve,
+                                              eOpStatusNotFound,
                                               m_RetrieveTiming);
                 else
-                    app->GetTiming().Register(eNARetrieve, eOpStatusFound,
+                    app->GetTiming().Register(m_Processor, eNARetrieve,
+                                              eOpStatusFound,
                                               m_RetrieveTiming);
             }
 
@@ -83,6 +89,7 @@ class CNamedAnnotationCallback
         }
 
     private:
+        IPSGS_Processor *           m_Processor;
         TNamedAnnotationCB          m_NamedAnnotationCB;
         CCassNamedAnnotFetch *      m_FetchDetails;
         int32_t                     m_Sat;

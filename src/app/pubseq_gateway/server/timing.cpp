@@ -34,6 +34,7 @@
 #include "timing.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "pubseq_gateway.hpp"
+#include "ipsgs_processor.hpp"
 
 static string           kTimeRangeStart("TimeRangeStart");
 static string           kTimeRangeEnd("TimeRangeEnd");
@@ -548,7 +549,9 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  max_stat_value,
                                    unsigned long  n_bins,
                                    const string &  stat_type,
-                                   unsigned long  small_blob_size) :
+                                   unsigned long  small_blob_size,
+                                   const string &  only_for_processor) :
+    m_OnlyForProcessor(only_for_processor),
     m_HugeBlobByteCounter(0)
 {
     auto        scale_type = TOnePSGTiming::eLog2;
@@ -1019,11 +1022,21 @@ ssize_t COperationTiming::x_GetBlobRetrievalBinIndex(unsigned long  blob_size)
 }
 
 
-void COperationTiming::Register(EPSGOperation  operation,
+void COperationTiming::Register(IPSGS_Processor *  processor,
+                                EPSGOperation  operation,
                                 EPSGOperationStatus  status,
                                 const psg_time_point_t &  op_begin_ts,
                                 unsigned long  blob_size)
 {
+    if (!m_OnlyForProcessor.empty()) {
+        // May need to skip timing collection
+        if (m_OnlyForProcessor != processor->GetGroupName()) {
+            // Skipping because it is not the configured group
+            return;
+        }
+    }
+
+
     auto            now = psg_clock_t::now();
     uint64_t        mks = chrono::duration_cast<chrono::microseconds>(now - op_begin_ts).count();
 
