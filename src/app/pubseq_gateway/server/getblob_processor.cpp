@@ -155,6 +155,7 @@ void CPSGS_GetBlobProcessor::Process(void)
                                       IPSGS_Processor::m_Reply);
     auto                    blob_prop_cache_lookup_result =
                                     psg_cache.LookupBlobProp(
+                                        this,
                                         m_BlobId.m_Sat,
                                         m_BlobId.m_SatKey,
                                         m_BlobRequest->m_LastModified,
@@ -214,11 +215,13 @@ void CPSGS_GetBlobProcessor::Process(void)
 
     load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
-        CGetBlobErrorCallback(bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
+        CGetBlobErrorCallback(this,
+                              bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get()));
     load_task->SetPropsCallback(
-        CBlobPropCallback(bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
+        CBlobPropCallback(this,
+                          bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,
                                this, _1, _2, _3),
                           IPSGS_Processor::m_Request,
                           IPSGS_Processor::m_Reply,

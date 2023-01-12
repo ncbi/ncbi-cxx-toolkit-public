@@ -287,7 +287,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
     // CXX-11478: last modified is to be ignored for now
     int64_t     last_modified = INT64_MIN;  // last modified is unknown
     auto        blob_prop_cache_lookup_result =
-        psg_cache.LookupBlobProp(m_IdModVerId2Info->GetTSEId().m_Sat,
+        psg_cache.LookupBlobProp(this, m_IdModVerId2Info->GetTSEId().m_Sat,
                                  m_IdModVerId2Info->GetTSEId().m_SatKey,
                                  last_modified, *blob_record.get());
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
@@ -347,6 +347,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             // Step 6: search in cache the TSE chunk properties
             last_modified = INT64_MIN;
             auto  tse_blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
+                    this,
                     chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
                     last_modified, *blob_record.get());
             if (tse_blob_prop_cache_lookup_result != ePSGS_CacheHit) {
@@ -382,17 +383,20 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             fetch_details->SetLoader(load_task);
             load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
             load_task->SetErrorCB(
-                CGetBlobErrorCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
+                CGetBlobErrorCallback(this,
+                                      bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                                            this, _1, _2, _3, _4, _5),
                                       fetch_details.get()));
             load_task->SetPropsCallback(
-                CBlobPropCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
+                CBlobPropCallback(this,
+                                  bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
                                        this, _1, _2, _3),
                                   IPSGS_Processor::m_Request,
                                   IPSGS_Processor::m_Reply,
                                   fetch_details.get(), false));
             load_task->SetChunkCallback(
-                CBlobChunkCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
+                CBlobChunkCallback(this,
+                                   bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
                                         this, _1, _2, _3, _4, _5),
                                    fetch_details.get()));
 
@@ -449,11 +453,13 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
     load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CSplitHistoryErrorCallback(
+            this,
             bind(&CPSGS_TSEChunkProcessor::OnGetSplitHistoryError,
                  this, _1, _2, _3, _4, _5),
             fetch_details.get()));
     load_task->SetConsumeCallback(
         CSplitHistoryConsumeCallback(
+            this,
             bind(&CPSGS_TSEChunkProcessor::OnGetSplitHistory,
                  this, _1, _2),
             fetch_details.get()));
@@ -509,7 +515,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     int64_t                     last_modified = INT64_MIN;
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
     auto                        tse_blob_prop_cache_lookup_result =
-        psg_cache.LookupBlobProp(chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
+        psg_cache.LookupBlobProp(this, chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
                                  last_modified, *blob_record.get());
 
 
@@ -548,17 +554,20 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     fetch_details->SetLoader(load_task);
     load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
-        CGetBlobErrorCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
+        CGetBlobErrorCallback(this,
+                              bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get()));
     load_task->SetPropsCallback(
-        CBlobPropCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
+        CBlobPropCallback(this,
+                          bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
                                 this, _1, _2, _3),
                           IPSGS_Processor::m_Request,
                           IPSGS_Processor::m_Reply,
                           fetch_details.get(), false));
     load_task->SetChunkCallback(
-        CBlobChunkCallback(bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
+        CBlobChunkCallback(this,
+                           bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
                                 this, _1, _2, _3, _4, _5),
                            fetch_details.get()));
 
@@ -890,7 +899,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             IPSGS_Processor::m_Reply);
     int64_t                     last_modified = INT64_MIN;  // last modified is unknown
     auto                        blob_prop_cache_lookup_result =
-        psg_cache.LookupBlobProp(chunk_blob_id.m_Sat,
+        psg_cache.LookupBlobProp(this, chunk_blob_id.m_Sat,
                                  chunk_blob_id.m_SatKey,
                                  last_modified, *blob_record.get());
     if (blob_prop_cache_lookup_result != ePSGS_CacheHit &&
@@ -942,11 +951,13 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(
+            this,
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                  this, _1, _2, _3, _4, _5),
             cass_blob_fetch.get()));
     load_task->SetPropsCallback(
         CBlobPropCallback(
+            this,
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
                  this, _1, _2, _3),
             IPSGS_Processor::m_Request,
@@ -955,6 +966,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             blob_prop_cache_lookup_result != ePSGS_CacheHit));
     load_task->SetChunkCallback(
         CBlobChunkCallback(
+            this,
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
                  this, _1, _2, _3, _4, _5),
             cass_blob_fetch.get()));

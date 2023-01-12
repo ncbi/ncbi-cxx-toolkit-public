@@ -115,6 +115,7 @@ const float             kSplitInfoBlobCacheSizeMultiplier = 0.8;    // Used to c
 const string            kDefaultIPGKeyspace = "ipg_storage";
 const size_t            kDefaultIPGPageSize = 1024;
 const bool              kDefaultEnableHugeIPG = true;
+const string            kDefaultOnlyForProcessor = "";
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -158,6 +159,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_NStatBins(kNStatBins),
     m_StatScaleType(kStatScaleType),
     m_TickSpan(kTickSpan),
+    m_OnlyForProcessor(kDefaultOnlyForProcessor),
     m_StartTime(GetFastLocalTime()),
     m_AllowIOTest(kDefaultAllowIOTest),
     m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
@@ -303,6 +305,8 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_NStatBins = registry.GetInt("STATISTICS", "n_bins", kNStatBins);
     m_StatScaleType = registry.GetString("STATISTICS", "type", kStatScaleType);
     m_TickSpan = registry.GetInt("STATISTICS", "tick_span", kTickSpan);
+    m_OnlyForProcessor = registry.GetString("STATISTICS", "only_for_processor",
+                                            kDefaultOnlyForProcessor);
 
     x_ReadIdToNameAndDescriptionConfiguration(registry, "COUNTERS");
 
@@ -525,7 +529,8 @@ int CPubseqGatewayApp::Run(void)
                                         m_MaxStatValue,
                                         m_NStatBins,
                                         m_StatScaleType,
-                                        m_SmallBlobSize));
+                                        m_SmallBlobSize,
+                                        m_OnlyForProcessor));
 
     // Setup IPG huge report
     ipg::CPubseqGatewayHugeIpgReportHelper::SetHugeIpgDisabled(!m_EnableHugeIPG);

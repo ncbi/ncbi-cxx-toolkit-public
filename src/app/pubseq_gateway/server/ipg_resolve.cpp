@@ -138,6 +138,7 @@ void CPSGS_IPGResolveProcessor::Process(void)
 
     fetch_task->SetConsumeCallback(
         CIPGResolveCallback(
+            this,
             bind(&CPSGS_IPGResolveProcessor::x_OnIPGResolveData,
                  this, _1, _2, _3),
             details.get()));

@@ -263,6 +263,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 
         fetch_task->SetConsumeCallback(
             CNamedAnnotationCallback(
+                this,
                 bind(&CPSGS_AnnotProcessor::x_OnNamedAnnotData,
                      this, _1, _2, _3, _4),
                 details.get(), bioseq_na_keyspace.second));
@@ -650,6 +651,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                                       IPSGS_Processor::m_Reply);
     auto                    blob_prop_cache_lookup_result =
                                     psg_cache.LookupBlobProp(
+                                        this,
                                         blob_id.m_Sat,
                                         blob_id.m_SatKey,
                                         last_modified,
@@ -692,11 +694,13 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
 
     load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
-        CGetBlobErrorCallback(bind(&CPSGS_AnnotProcessor::OnGetBlobError,
+        CGetBlobErrorCallback(this,
+                              bind(&CPSGS_AnnotProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get()));
     load_task->SetPropsCallback(
-        CBlobPropCallback(bind(&CPSGS_AnnotProcessor::OnAnnotBlobProp,
+        CBlobPropCallback(this,
+                          bind(&CPSGS_AnnotProcessor::OnAnnotBlobProp,
                                this, _1, _2, _3),
                           IPSGS_Processor::m_Request,
                           IPSGS_Processor::m_Reply,

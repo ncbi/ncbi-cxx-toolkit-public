@@ -194,6 +194,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
 
     fetch_task->SetConsumeCallback(
         CAccVerHistCallback(
+            this,
             bind(&CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData,
                  this, _1, _2, _3),
             details.get()));

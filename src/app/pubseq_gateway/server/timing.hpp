@@ -53,6 +53,9 @@ const string            kStatScaleType = "log";
 const unsigned long     kTickSpan = 10;
 
 
+class IPSGS_Processor;
+
+
 enum EPSGOperationStatus {
     eOpStatusFound,
     eOpStatusNotFound
@@ -349,13 +352,15 @@ class COperationTiming
                          unsigned long  max_stat_value,
                          unsigned long  n_bins,
                          const string &  stat_type,
-                         unsigned long  small_blob_size);
+                         unsigned long  small_blob_size,
+                         const string &  only_for_processor);
         ~COperationTiming() {}
 
     public:
         // Blob size is taken into consideration only if
         // operation == eBlobRetrieve
-        void Register(EPSGOperation  operation,
+        void Register(IPSGS_Processor *  processor,
+                      EPSGOperation  operation,
                       EPSGOperationStatus  status,
                       const psg_time_point_t &  op_begin_ts,
                       size_t  blob_size=0);
@@ -381,6 +386,8 @@ class COperationTiming
         ssize_t x_GetBlobRetrievalBinIndex(unsigned long  blob_size);
 
     private:
+        string                                              m_OnlyForProcessor;
+
         // Note: 2 items, found and not found
         vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbSi2csiTiming;
         vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbBioseqInfoTiming;

@@ -49,13 +49,17 @@ using TIPGResolveErrorCB = function<
                                      EDiagSev  severity,
                                      const string &  message)>;
 
+class IPSGS_Processor;
+
 
 class CIPGResolveCallback
 {
     public:
         CIPGResolveCallback(
+                IPSGS_Processor *  processor,
                 TIPGResolveCB  ipg_resolve_cb,
                 CCassIPGFetch *  fetch_details) :
+            m_Processor(processor),
             m_IPGResolveCB(ipg_resolve_cb),
             m_FetchDetails(fetch_details),
             m_Count(0),
@@ -67,11 +71,13 @@ class CIPGResolveCallback
             if (is_last) {
                 auto    app = CPubseqGatewayApp::GetInstance();
                 if (m_Count == 0) {
-                    app->GetTiming().Register(eIPGResolveRetrieve, eOpStatusNotFound,
+                    app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
+                                              eOpStatusNotFound,
                                               m_RetrieveTiming);
                     app->GetCounters().Increment(CPSGSCounters::ePSGS_IPGResolveNotFound);
                 } else {
-                    app->GetTiming().Register(eIPGResolveRetrieve, eOpStatusFound,
+                    app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
+                                              eOpStatusFound,
                                               m_RetrieveTiming);
                 }
             }
@@ -81,6 +87,7 @@ class CIPGResolveCallback
         }
 
     private:
+        IPSGS_Processor *       m_Processor;
         TIPGResolveCB           m_IPGResolveCB;
         CCassIPGFetch *         m_FetchDetails;
 

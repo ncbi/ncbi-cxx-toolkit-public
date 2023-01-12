@@ -552,6 +552,7 @@ private:
     unsigned long                       m_NStatBins;
     string                              m_StatScaleType;
     unsigned long                       m_TickSpan;
+    string                              m_OnlyForProcessor;
 
     CTime                               m_StartTime;
     string                              m_RootKeyspace;

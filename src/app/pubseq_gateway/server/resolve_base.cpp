@@ -176,7 +176,7 @@ CPSGS_ResolveBase::x_ResolvePrimaryOSLTInCache(
         bioseq_resolution.SetBioseqInfo(bioseq_info);
 
         bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
-                                        bioseq_resolution);
+                                        this, bioseq_resolution);
         if (bioseq_cache_lookup_result == ePSGS_CacheHit) {
             bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
             return ePSGS_CacheHit;
@@ -202,7 +202,7 @@ CPSGS_ResolveBase::x_ResolveSecondaryOSLTInCache(
 
     CPSGCache   psg_cache(true, m_Request, m_Reply);
     auto        si2csi_cache_lookup_result =
-                        psg_cache.LookupSi2csi(bioseq_resolution);
+                        psg_cache.LookupSi2csi(this, bioseq_resolution);
     if (si2csi_cache_lookup_result == ePSGS_CacheHit) {
         bioseq_resolution.m_ResolutionResult = ePSGS_Si2csiCache;
         return ePSGS_CacheHit;
@@ -360,7 +360,7 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                     // BIOSEQ_INFO only if needed.
                     CPSGCache   psg_cache(true, m_Request, m_Reply);
                     auto        bioseq_cache_lookup_result =
-                                    psg_cache.LookupBioseqInfo(bioseq_resolution);
+                                    psg_cache.LookupBioseqInfo(this, bioseq_resolution);
 
                     if (bioseq_cache_lookup_result != ePSGS_CacheHit) {
                         // Not found or error
@@ -502,17 +502,17 @@ CPSGS_ResolveBase::x_OnSeqIdResolveError(
 {
     auto    app = CPubseqGatewayApp::GetInstance();
     if (status == CRequestStatus::e404_NotFound) {
-        app->GetTiming().Register(eResolutionNotFound, eOpStatusNotFound,
+        app->GetTiming().Register(this, eResolutionNotFound, eOpStatusNotFound,
                                   m_Request->GetStartTimestamp());
         if (m_AsyncStarted)
-            app->GetTiming().Register(eResolutionCass, eOpStatusNotFound,
+            app->GetTiming().Register(this, eResolutionCass, eOpStatusNotFound,
                                       GetAsyncResolutionStartTimestamp());
         else
-            app->GetTiming().Register(eResolutionLmdb, eOpStatusNotFound,
+            app->GetTiming().Register(this, eResolutionLmdb, eOpStatusNotFound,
                                       m_Request->GetStartTimestamp());
     }
     else {
-        app->GetTiming().Register(eResolutionError, eOpStatusNotFound,
+        app->GetTiming().Register(this, eResolutionError, eOpStatusNotFound,
                                   m_Request->GetStartTimestamp());
     }
 
@@ -561,7 +561,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
             // Need to pull the full bioseq info
             CPSGCache   psg_cache(m_Request, m_Reply);
             auto        cache_lookup_result =
-                                psg_cache.LookupBioseqInfo(bioseq_resolution);
+                                psg_cache.LookupBioseqInfo(this, bioseq_resolution);
             if (cache_lookup_result != ePSGS_CacheHit) {
                 // No cache hit (or not allowed); need to get to DB if allowed
                 if (x_GetRequestUseCache() != SPSGS_RequestBase::ePSGS_CacheOnly) {
@@ -620,21 +620,21 @@ CPSGS_ResolveBase::x_RegisterSuccessTiming(
     auto    app = CPubseqGatewayApp::GetInstance();
 
     // Overall timing, regardless how it was done
-    app->GetTiming().Register(eResolutionFound, eOpStatusFound,
+    app->GetTiming().Register(this, eResolutionFound, eOpStatusFound,
                               m_Request->GetStartTimestamp());
 
     if (bioseq_resolution.m_CassQueryCount > 0) {
         // Regardless how many requests
-        app->GetTiming().Register(eResolutionCass, eOpStatusFound,
+        app->GetTiming().Register(this, eResolutionCass, eOpStatusFound,
                                   GetAsyncResolutionStartTimestamp());
 
         // Separated by the number of requests
-        app->GetTiming().Register(eResolutionFoundInCassandra,
+        app->GetTiming().Register(this, eResolutionFoundInCassandra,
                                   eOpStatusFound,
                                   GetAsyncResolutionStartTimestamp(),
                                   bioseq_resolution.m_CassQueryCount);
     } else {
-        app->GetTiming().Register(eResolutionLmdb, eOpStatusFound,
+        app->GetTiming().Register(this, eResolutionLmdb, eOpStatusFound,
                                   m_Request->GetStartTimestamp());
     }
 }
