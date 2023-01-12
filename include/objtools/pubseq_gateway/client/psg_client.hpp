@@ -651,6 +651,7 @@ public:
         ePublicComment,
         eProcessor,
         eIpgInfo,
+        eNamedAnnotStatus,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
     };
 
@@ -926,6 +927,27 @@ private:
     CPSG_NamedAnnotInfo(string name);
 
     string     m_Name;
+    CJsonNode  m_Data;
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// Named Annotations (NAs) status -- reply to CPSG_Request_NamedAnnotInfo.
+///
+
+class CPSG_NamedAnnotStatus : public CPSG_ReplyItem
+{
+public:
+    /// Individual NA statuses
+    using TId2AnnotStatus = pair<string, EPSG_Status>;
+    using TId2AnnotStatusList = list<TId2AnnotStatus>;
+    TId2AnnotStatusList GetId2AnnotStatusList() const;
+
+private:
+    CPSG_NamedAnnotStatus();
+
     CJsonNode  m_Data;
 
     friend class CPSG_Reply;
