@@ -365,7 +365,7 @@ struct SPSG_Reply
         SState() : m_State(eInProgress), m_Empty(true) {}
 
         const volatile atomic<EState>& GetState() const volatile { return m_State; }
-        EPSG_Status GetStatus() const volatile;
+        EPSG_Status GetStatus() const volatile { return FromState(m_State); }
         string GetError();
 
         bool InProgress() const volatile { return m_State == eInProgress; }
@@ -385,6 +385,7 @@ struct SPSG_Reply
         void SetNotEmpty() volatile { m_Empty.store(false); }
 
         static EState FromRequestStatus(int status);
+        static EPSG_Status FromState(EState status);
 
     private:
         atomic<EState> m_State;
