@@ -333,8 +333,8 @@ fi
 
 # Valgrind/Helgrind configurations
 VALGRIND_SUP="\${script_dir}/common/check/valgrind.supp"
-VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
-HELGRIND_CMD="--tool=helgrind --suppressions=\$VALGRIND_SUP"
+VALGRIND_CMD="--tool=memcheck --gen-suppressions=all --suppressions=\$VALGRIND_SUP"
+HELGRIND_CMD="--tool=helgrind --gen-suppressions=all --suppressions=\$VALGRIND_SUP"
 if (valgrind --ncbi --help) >/dev/null 2>&1; then
     VALGRIND_CMD="--ncbi \$VALGRIND_CMD" # --ncbi must be the first option!
     HELGRIND_CMD="--ncbi \$HELGRIND_CMD" # --ncbi must be the first option!
