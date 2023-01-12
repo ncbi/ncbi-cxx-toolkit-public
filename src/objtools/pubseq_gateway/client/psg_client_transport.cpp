@@ -576,9 +576,9 @@ void SPSG_Stats::Report()
     }
 }
 
-EPSG_Status SPSG_Reply::SState::GetStatus() const volatile
+EPSG_Status SPSG_Reply::SState::FromState(EState state)
 {
-    switch (m_State) {
+    switch (state) {
         case eNotFound:     return EPSG_Status::eNotFound;
         case eForbidden:    return EPSG_Status::eForbidden;
         case eError:        return EPSG_Status::eError;
