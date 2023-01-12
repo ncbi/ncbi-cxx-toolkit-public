@@ -228,6 +228,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
         case CPSG_ReplyItem::eSkippedBlob:    return "SkippedBlob";
         case CPSG_ReplyItem::eBioseqInfo:     return "BioseqInfo";
         case CPSG_ReplyItem::eNamedAnnotInfo: return "NamedAnnotInfo";
+        case CPSG_ReplyItem::eNamedAnnotStatus: return "NamedAnnotStatus";
         case CPSG_ReplyItem::ePublicComment:  return "PublicComment";
         case CPSG_ReplyItem::eProcessor:      return "Processor";
         case CPSG_ReplyItem::eIpgInfo:        return "IpgInfo";
@@ -268,6 +269,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
         case CPSG_ReplyItem::eNamedAnnotInfo:
             return Fill(static_pointer_cast<CPSG_NamedAnnotInfo>(reply_item));
+
+        case CPSG_ReplyItem::eNamedAnnotStatus:
+            return Fill(static_pointer_cast<CPSG_NamedAnnotStatus>(reply_item));
 
         case CPSG_ReplyItem::ePublicComment:
             return Fill(static_pointer_cast<CPSG_PublicComment>(reply_item));
@@ -365,6 +369,18 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     Set("name", named_annot_info->GetName());
     Set("blob_id", named_annot_info->GetBlobId());
     Set("id2_annot_info", named_annot_info->GetId2AnnotInfo());
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotStatus> named_annot_status)
+{
+    auto ar = m_JsonObj["statuses"].ResetArray();
+
+    for (const auto& status : named_annot_status->GetId2AnnotStatusList()) {
+        ar.push_back();
+        auto obj = ar.back().ResetObject();
+        Set(obj["name"], status.first);
+        Set(obj["status"], s_StrStatus(status.second));
+    }
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_PublicComment> public_comment)

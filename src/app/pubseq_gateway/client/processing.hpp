@@ -102,6 +102,7 @@ private:
     void Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob);
     void Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info);
     void Fill(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info);
+    void Fill(shared_ptr<CPSG_NamedAnnotStatus> named_annot_status);
     void Fill(shared_ptr<CPSG_PublicComment> public_comment);
     void Fill(shared_ptr<CPSG_Processor> processor);
     void Fill(shared_ptr<CPSG_IpgInfo> ipg_info);
