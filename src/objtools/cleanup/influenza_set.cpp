@@ -185,9 +185,7 @@ bool CInfluenzaSet::OkToMakeSet() const
         }
     }
 
-    const auto numSegs = segsFound.size();
-    return ((numSegs >= m_Required) &&
-            (numSegs == (*(segsFound.rbegin()))));
+    return (segsFound.size() == m_Required);
 }
 
 
