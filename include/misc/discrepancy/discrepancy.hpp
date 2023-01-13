@@ -34,6 +34,8 @@
 #include <corelib/ncbistd.hpp>
 #include <util/compile_time.hpp>
 
+#define NEW_DISCREPANCY_API
+
 BEGIN_NCBI_SCOPE
 
 class CSerialObject;
