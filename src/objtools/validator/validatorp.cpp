@@ -1591,9 +1591,12 @@ bool CValidError_imp::Validate
             " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
     }
     if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
-        PostErr (eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID,
-                 "INDEXER_ONLY - Protein bioseqs have general seq-id.",
-                 *(seh.GetCompleteSeq_entry()));
+        call_once(SetContext().ProteinHaveGeneralIDOnceFlag,
+            [] (CValidError_imp* imp, CSeq_entry_Handle seh) {
+                imp->PostErr (eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID,
+                    "INDEXER_ONLY - Protein bioseqs have general seq-id.",
+                    *(seh.GetCompleteSeq_entry()));
+            }, this, seh);
     }
 
     ReportMissingPubs(*m_TSE, cs);
@@ -3117,7 +3120,6 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     }
                     break;
                 case CSeq_id::e_General:
-                    if (!IsHugeFileMode())
                     if ((*bi).IsAa() && !sid.GetGeneral().IsSkippable()) {
                         x_SetEntryInfo().SetProteinHasGeneralID();
                     }

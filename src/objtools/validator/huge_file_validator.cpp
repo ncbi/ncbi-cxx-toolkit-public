@@ -337,36 +337,8 @@ void CHugeFileValidator::x_ReportConflictingBiomols(CRef<CValidError>& pErrors) 
             x_GetHugeSetLabel(), pErrors);
 }
 
-static bool x_CheckIsGeneralIdProtein(const edit::CHugeAsnReader& reader)
-{
-    for (auto it: reader.GetBioseqs())
-    {
-        if (CSeq_inst::IsAa(it.m_mol)) {
-            for (auto id: it.m_ids) {
-                if (id->IsGeneral() && !id->GetGeneral().IsSkippable()) {
-                    return true;
-                }
-            }
-        }
-
-    }
-    return false;
-}
-
 void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
-    //if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
-    if ((m_Options & CValidator::eVal_indexer_version) &&
-        !globalInfo.IsRefSeq)
-        //globalInfo.biomols.find(CSeq_inst::eMol_na) != globalInfo.biomols.end())
-    {
-        bool IsGeneralIdProtein = x_CheckIsGeneralIdProtein(m_Reader);
-        if (IsGeneralIdProtein)
-            s_PostErr(eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID,
-                    "INDEXER_ONLY - Protein bioseqs have general seq-id.",
-                    x_GetHugeSetLabel(), pErrors);
-    }
-
     if (globalInfo.NoPubsFound) {
         x_ReportMissingPubs(pErrors);
     }
