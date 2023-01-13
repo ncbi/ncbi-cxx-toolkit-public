@@ -914,13 +914,58 @@
    fun:uw_install_context_1
    fun:_Unwind_*
 }
+{
+   std::atomic - ignore all cases - CXX-11270
+   Helgrind:Race
+   fun:load
+   fun:_ZNKSt13__atomic_baseIiEcviEv
+}
+{
+   std::atomic - ignore all cases - CXX-11270
+   Helgrind:Race
+   fun:store
+   fun:_ZNSt13__atomic_baseIbEaSEb
+}
+{
+   std::atomic - ignore all cases - CXX-11270
+   Helgrind:Race
+   fun:load
+   fun:_ZNKSt6atomicIbEcvbEv
+}
+{
+   jaeger tracing - ignore
+   Helgrind:Misc
+   fun:pthread_cond_signal_WRK
+   ...
+   fun:_ZN13jaegertracing9reporters14RemoteReporter6reportERKNS_4SpanE
+}
+{
+   jaeger tracing - ignore
+   Helgrind:Misc
+   fun:pthread_cond_signal_WRK
+   ...
+   fun:_ZN13jaegertracing9reporters14RemoteReporter5closeEv
+}
+{
+   mutex_destroy - ignore
+   Helgrind:Race
+   fun:my_memcmp
+   fun:mutex_destroy_WRK
+   fun:pthread_mutex_destroy
+}
 
 
 #===============================================================================
 # corelib
 
 {
-   corelib/SSystemFastMutex::Lock() -- CXX-10523 - check before lock - false positive
+   corelib/SSystemMutex::Lock() - m_Count check - false positive
+   Helgrind:Race
+   fun:_ZN4ncbi23ncbi_namespace_mutex_mt12SSystemMutex4LockENS0_16SSystemFastMutex14ELockSemanticsE
+   fun:_ZN4ncbi9CDiagLockC1ENS0_9ELockTypeE
+}
+{
+   corelib/SSystemFastMutex::Lock() - CXX-10523 - check before lock - false positive
    Helgrind:Race
    fun:_ZN4ncbi23ncbi_namespace_mutex_mt12SSystemMutex4LockENS0_16SSystemFastMutex14ELockSemanticsE
    fun:_ZNK4ncbi11SSimpleLockINS_23ncbi_namespace_mutex_mt12SSystemMutexEEclERS2_
@@ -944,6 +989,12 @@
    fun:_ZN4ncbi17DoThrowTraceAbortEv
    fun:_ZNK4ncbi10CException18x_ReportToDebuggerEv
 }
+{
+   corelib/CAtomicCounter - atomic
+   Helgrind:Race
+   fun:_ZN4ncbi14CAtomicCounter3SetEm
+}
+
 
 
 {
@@ -1013,4 +1064,113 @@
 
 
 
+{
+   corelib/test/test_tls_object - tls variable - CXX-11270 - false positive
+   Helgrind:Race
+   fun:_ZL24sx_GetLastNewPtrMultiplev
+   fun:_ZL25sx_PushLastNewPtrMultiplePvm
+   fun:sx_PushLastNewPtr
+   fun:_ZN17CTestTlsObjectApp7RunTestEv
+}
+{
+   corelib/test/test_ncbithr - atomic variable - CXX-11270 - false positive
+   Helgrind:Race
+   fun:_ZN*St6atomicI16TTestThreadState*
+   fun:_ZN*St6atomicI16TTestThreadStateE*
+}
+{
+   corelib/test/test_ncbimtx - not important - ignore
+   Helgrind:Race
+   ...
+   fun:_ZZN9Semaphore17SemaphorePostRace11test_methodEvENKUliRSt6futureIiEE0_clEiS3_
+}
+{
+   corelib/test/test_ncbimtx - not important - ignore
+   Helgrind:Race
+   ...
+   fun:_ZNSt13__future_base11_Task_stateIZN9Semaphore17SemaphorePostRace11test_methodEvEUlvE_SaIiEFivEED1Ev
+}
 
+
+#===============================================================================
+# connect
+
+
+
+#===============================================================================
+# util
+
+# satskyse CXX-11282
+# It has already been checked by the original developer long ago,
+# see the SVN revision 347572 (false positive) CSyncQueue<...>
+
+{
+   util/CSyncQueue<...> - CXX-11282 - false positive
+   Helgrind:Race
+   fun:_ZNK4ncbi10CSyncQueueIiSt5dequeIiSaIiEE18CMySyncQueueTraitsE15x_GuardedUnlockEv
+}
+{
+   util/CSyncQueue<...> - CXX-11282 - false positive
+   Helgrind:Race
+   fun:_ZNK4ncbi10CSyncQueueI*x_IsGuardedEv
+}
+{
+   util/CSyncQueue<...> - CXX-11282 - false positive
+   Helgrind:Race
+   fun:_ZN4ncbi10CSyncQueueI*x_Pop_NonBlockingEv
+}
+{
+   util/CSyncQueue<...> - CXX-11282 - false positive
+   Helgrind:Race
+   fun:_ZNK4ncbi10CSyncQueueI*GetSizeEv
+}
+{
+   util/CThreadPool_ServiceThread - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi25CThreadPool_ServiceThread*
+}
+{
+   util/CThreadPool_ServiceThread - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi4CRefINS_25CThreadPool_ServiceThreadENS_20CObjectCounterLockerEE5ResetEv
+}
+{
+   util/CThreadPool_ThreadImpl - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi22CThreadPool_ThreadImpl15RequestToFinishEv
+}
+{
+   util/CThreadPool_ThreadImpl - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi22CThreadPool_ThreadImpl4MainEv
+   fun:_ZN4ncbi18CThreadPool_Thread4MainEv
+}
+{
+   util/CThreadPool_ThreadImpl - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi16CThreadPool_Impl18ThreadStateChangedEv
+   fun:_ZN4ncbi25CThreadPool_ServiceThread4MainEv
+}
+{
+   util/CThreadPool_ThreadImpl - this is rather timing - satskyse CXX-11282   
+   Helgrind:Race
+   fun:_ZN4ncbi16CThreadPool_Impl10ResumeWorkEv
+}
+{
+   util/CThreadPool_ThreadImpl - this is rather timing - satskyse CXX-11282   
+   Helgrind:Race
+   fun:_ZN4ncbi16CThreadPool_Impl14RequestSuspendEj
+}
+
+{
+   util/CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZNK4ncbi10CSyncQueueINS_4CRefINS_16CThreadPool_TaskENS_20CObjectCounterLockerEEENS_19CSyncQueue_multisetIS4_NS_23SThreadPool_TaskCompareESaIS4_EEENS_24CSyncQueue_DefaultTraitsEE7GetSizeEv
+}
+
+
+{
+   util/CObjectCounterLocker>::Reset() - false positive - ucko CXX-11303
+   Helgrind:Race
+   fun:_ZN4ncbi4CRefINS_7CThreadENS_20CObjectCounterLockerEE5ResetEv
+}
