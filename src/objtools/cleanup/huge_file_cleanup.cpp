@@ -389,20 +389,13 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
 }
 
 
-static bool s_HasRequiredSegs(const set<size_t>& segsFound, size_t numRequired) 
-{
-    const auto numSegs = segsFound.size();
-    return ((numSegs  >= numRequired) &&
-            (numSegs == (*(segsFound.rbegin()))));
-}
-
 
 void CCleanupHugeAsnReader::x_PruneIfSegsMissing(const string& fluLabel, const set<size_t>& segsFound)
 {
     if (auto it = m_FluLabelToSetInfo.find(fluLabel); it != m_FluLabelToSetInfo.end()) {
         auto fluType = CInfluenzaSet::GetInfluenzaType(fluLabel);
         auto numRequired = CInfluenzaSet::GetNumRequired(fluType);
-        if (!s_HasRequiredSegs(segsFound, numRequired)) {
+        if (segsFound.size() != numRequired) {
             m_FluLabelToSetInfo.erase(it);
             s_RemoveEntriesWithVal(fluLabel, m_SetPosToFluLabel);
             s_RemoveEntriesWithVal(fluLabel, m_IdToFluLabel);
