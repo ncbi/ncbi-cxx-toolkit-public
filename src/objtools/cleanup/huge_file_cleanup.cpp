@@ -380,21 +380,29 @@ void CCleanupHugeAsnReader::x_CreateSmallGenomeSets()
     }
 
     // Prune if there are missing segments
-    for (auto entry : fluLabelToSegs) {
+    for (const auto& entry : fluLabelToSegs) {
         const auto& fluLabel = entry.first;
-        const auto& numSegs = entry.second.size();
-        x_PruneIfSegsMissing(fluLabel, numSegs);
+        const auto& segsFound = entry.second;
+        x_PruneIfSegsMissing(fluLabel, segsFound);
     };
     x_PruneIfFeatsIncomplete();
 }
 
 
-void CCleanupHugeAsnReader::x_PruneIfSegsMissing(const string& fluLabel, size_t numSegs)
+static bool s_HasRequiredSegs(const set<size_t>& segsFound, size_t numRequired) 
+{
+    const auto numSegs = segsFound.size();
+    return ((numSegs  >= numRequired) &&
+            (numSegs == (*(segsFound.rbegin()))));
+}
+
+
+void CCleanupHugeAsnReader::x_PruneIfSegsMissing(const string& fluLabel, const set<size_t>& segsFound)
 {
     if (auto it = m_FluLabelToSetInfo.find(fluLabel); it != m_FluLabelToSetInfo.end()) {
         auto fluType = CInfluenzaSet::GetInfluenzaType(fluLabel);
         auto numRequired = CInfluenzaSet::GetNumRequired(fluType);
-        if (numSegs != numRequired) {
+        if (!s_HasRequiredSegs(segsFound, numRequired)) {
             m_FluLabelToSetInfo.erase(it);
             s_RemoveEntriesWithVal(fluLabel, m_SetPosToFluLabel);
             s_RemoveEntriesWithVal(fluLabel, m_IdToFluLabel);
