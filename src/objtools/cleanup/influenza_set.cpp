@@ -61,7 +61,6 @@ BEGIN_SCOPE(objects)
 // the taxname must only start with the Influenza designation, not match it.
 // Can only make a set if at least one instance of each segment value is represented.
 
-
 CInfluenzaSet::CInfluenzaSet(const string& key) : m_Key(key)
 {
     m_FluType = GetInfluenzaType(key);
@@ -165,11 +164,11 @@ bool CInfluenzaSet::OkToMakeSet() const
         return false;
     }
 
-    set<size_t> segs_found;
+    set<size_t> segsFound;
     for(auto bsh : m_Members) {
         // check to make sure one of each segment is represented
         CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
-        if (!g_FindSegs(src->GetSource(), m_Required, segs_found)) {
+        if (!g_FindSegs(src->GetSource(), m_Required, segsFound)) {
             return false;
         }
         // make sure all coding regions and genes are complete
@@ -186,7 +185,9 @@ bool CInfluenzaSet::OkToMakeSet() const
         }
     }
 
-    return (segs_found.size() == m_Required);
+    const auto numSegs = segsFound.size();
+    return ((numSegs >= m_Required) &&
+            (numSegs == (*(segsFound.rbegin()))));
 }
 
 
