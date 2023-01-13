@@ -211,7 +211,7 @@ const SValidatorContext& CValidError_imp::GetContext() const
 bool CValidError_imp::IsHugeFileMode() const
 {
     const auto& context = GetContext();
-    return context.PreprocessHugeFile || 
+    return context.PreprocessHugeFile ||
            context.PostprocessHugeFile;
 }
 
@@ -254,7 +254,7 @@ CBioseq_Handle CValidError_imp::GetBioseqHandleFromTSE(const CSeq_id& id)
 }
 
 
-CBioseq_Handle CValidError_imp::GetLocalBioseqHandle(const CSeq_id& id) 
+CBioseq_Handle CValidError_imp::GetLocalBioseqHandle(const CSeq_id& id)
 {
     if (!IsHugeFileMode()) {
         return GetBioseqHandleFromTSE(id);
@@ -761,7 +761,7 @@ void CValidError_imp::PostErr
 
     if (isSetClass && IsHugeFileMode()) {
         if (auto setClass = st.GetClass(); IsHugeSet(setClass)) {
-            string desc = 
+            string desc =
             CValidErrorFormat::GetBioseqSetLabel(GetContext().HugeSetId, setClass, m_SuppressContext);
             x_AddValidErrItem(sv, et, msg, desc, st, GetContext().HugeSetId, 0);
             return;
@@ -796,9 +796,9 @@ void CValidError_imp::PostErr
     }
 
 
-    if (IsHugeFileMode() && 
+    if (IsHugeFileMode() &&
         ctx.IsSet() && ctx.GetSet().IsSetClass()) {
-        if (auto setClass = ctx.GetSet().GetClass(); IsHugeSet(setClass)) { 
+        if (auto setClass = ctx.GetSet().GetClass(); IsHugeSet(setClass)) {
             string desc{"DESCRIPTOR: "};
             desc += CValidErrorFormat::GetDescriptorContent(ds) + " ";
             desc += "BIOSEQ-SET: ";
@@ -1106,17 +1106,17 @@ void CValidError_imp::PostErr
         m_ErrRepository->AddValidErrItem(sv, et, msg);
         return;
     }
-    
+
     string desc = "Seq-submit: ";
     x_AddValidErrItem(sv, et, msg, desc, ss, "", 0);
 }
 
 
 void CValidError_imp::x_AddValidErrItem(
-        EDiagSev sev, 
-        EErrType type, 
-        const string& msg, 
-        const string& desc, 
+        EDiagSev sev,
+        EErrType type,
+        const string& msg,
+        const string& desc,
         const CSerialObject& obj,
         const string& accession,
         const int version)
@@ -1675,7 +1675,7 @@ void CValidError_imp::ValidateSubmitBlock(const CSubmit_block& block, const CSeq
         PostErr(eDiag_Warning, eErr_GENERIC_PastReleaseDate,
             "Record release date has already passed", ss);
     }
-    
+
     if (block.IsSetContact() && block.GetContact().IsSetContact()
          && block.GetContact().GetContact().IsSetAffil()
          && block.GetContact().GetContact().GetAffil().IsStd()) {
@@ -2582,7 +2582,7 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
    else if (m_pEntryInfo->IsNoBioSource()  &&  !m_pEntryInfo->IsPatent()  &&  !m_pEntryInfo->IsPDB()) {
        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
                "No source information included on this record.", se);
-       
+
        if (!GetContext().PostprocessHugeFile) {
            return;
        }
@@ -3117,6 +3117,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                     }
                     break;
                 case CSeq_id::e_General:
+                    if (!IsHugeFileMode())
                     if ((*bi).IsAa() && !sid.GetGeneral().IsSkippable()) {
                         x_SetEntryInfo().SetProteinHasGeneralID();
                     }
