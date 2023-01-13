@@ -329,7 +329,7 @@ void CHugeFileValidator::x_ReportMissingBioSources(CRef<CValidError>& pErrors) c
 
 
 void CHugeFileValidator::x_ReportConflictingBiomols(CRef<CValidError>& pErrors) const
-{   
+{
     auto severity = (m_Options & CValidator::eVal_genome_submission) ?
         eDiag_Error : eDiag_Warning;
     s_PostErr(severity, eErr_SEQ_PKG_InconsistentMoltypeSet,
@@ -337,9 +337,36 @@ void CHugeFileValidator::x_ReportConflictingBiomols(CRef<CValidError>& pErrors) 
             x_GetHugeSetLabel(), pErrors);
 }
 
+static bool x_CheckIsGeneralIdProtein(const edit::CHugeAsnReader& reader)
+{
+    for (auto it: reader.GetBioseqs())
+    {
+        if (CSeq_inst::IsAa(it.m_mol)) {
+            for (auto id: it.m_ids) {
+                if (id->IsGeneral() && !id->GetGeneral().IsSkippable()) {
+                    return true;
+                }
+            }
+        }
+
+    }
+    return false;
+}
 
 void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
+    //if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
+    if ((m_Options & CValidator::eVal_indexer_version) &&
+        !globalInfo.IsRefSeq)
+        //globalInfo.biomols.find(CSeq_inst::eMol_na) != globalInfo.biomols.end())
+    {
+        bool IsGeneralIdProtein = x_CheckIsGeneralIdProtein(m_Reader);
+        if (IsGeneralIdProtein)
+            s_PostErr(eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID,
+                    "INDEXER_ONLY - Protein bioseqs have general seq-id.",
+                    x_GetHugeSetLabel(), pErrors);
+    }
+
     if (globalInfo.NoPubsFound) {
         x_ReportMissingPubs(pErrors);
     }
@@ -375,7 +402,7 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
         return;
     }
 
-    if (auto it = next(m_Reader.GetBiosets().begin()); 
+    if (auto it = next(m_Reader.GetBiosets().begin());
             !CHugeAsnReader::IsHugeSet(it->m_class)) {
         return;
     }
@@ -438,7 +465,7 @@ static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInf
 
 static void s_UpdateGlobalInfo(const CMolInfo& molInfo, CHugeFileValidator::TGlobalInfo& globalInfo)
 {
-    if (!molInfo.IsSetBiomol() || 
+    if (!molInfo.IsSetBiomol() ||
         molInfo.GetBiomol() == CMolInfo::eBiomol_peptide) {
         return;
     }
@@ -522,7 +549,7 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
         if (NStr::StartsWith(msg, "No publications anywhere on this entire record.")) {
             return !globalInfo.NoPubsFound || (item.GetAccession() != hugeSetId);
         }
-        return globalInfo.NoPubsFound && 
+        return globalInfo.NoPubsFound &&
             NStr::StartsWith(msg, "No publications refer to this Bioseq.");
     }
 
@@ -530,9 +557,9 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
         NStr::StartsWith(item.GetMsg(), "No submission citation anywhere on this entire record.")) {
         return !globalInfo.NoCitSubsFound || (item.GetAccession() != hugeSetId);
     }
-    
+
     if (globalInfo.NoBioSource) {
-        return ((errCode == eErr_SEQ_DESCR_NoSourceDescriptor && 
+        return ((errCode == eErr_SEQ_DESCR_NoSourceDescriptor &&
                     (item.GetAccession() != hugeSetId)) ||
             errCode == eErr_SEQ_DESCR_TransgenicProblem ||
             errCode == eErr_SEQ_DESCR_InconsistentBioSources_ConLocation ||
@@ -575,7 +602,7 @@ string g_GetHugeSetIdString(const CHugeAsnReader& reader)
 
 void g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
         const string& hugeSetId,
-        CRef<CValidError>& pErrors) 
+        CRef<CValidError>& pErrors)
 {
     auto pPrunedErrors = Ref(new CValidError());
     for (auto pErrorItem : pErrors->GetErrs()) {
