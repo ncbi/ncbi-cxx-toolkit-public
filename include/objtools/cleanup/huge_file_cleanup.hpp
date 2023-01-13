@@ -65,7 +65,7 @@ private:
     void x_CreateSmallGenomeSets();
     void x_PruneIfFeatsIncomplete();
     void x_PruneAndReorderTopIds();
-    void x_PruneIfSegsMissing(const string& fluLabel, size_t numSegs);
+    void x_PruneIfSegsMissing(const string& fluLabel, const set<size_t>& segsFound);
 
     void x_CleanupTopLevelDescriptors();
     bool x_LooksLikeNucProtSet() const;
