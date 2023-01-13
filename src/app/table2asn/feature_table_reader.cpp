@@ -734,6 +734,9 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
        }
     }
 
+    if (!pNucSeq->IsSetAnnot()) {
+        return false;
+    }
     CRef<CScope> pScope;
     // Loop over cdregion features on the nucleotide sequence
     for (auto pAnnot : pNucSeq->GetAnnot()) {
@@ -972,7 +975,7 @@ void CFeatureTableReader::xParseCdregions(CSeq_entry& entry, TAsyncToken& token)
         main_ftable->SetData().SetFtable() = move(seq_ftable);
     }
 
-    if (bioseq->GetAnnot().empty())
+    if (/*bioseq->IsSetAnnot()  &&*/  bioseq->GetAnnot().empty())
     {
         bioseq->ResetAnnot();
     }
@@ -1069,6 +1072,9 @@ bool CFeatureTableReader::xCheckIfNeedConversion(const CSeq_entry& entry) const
         }
     }
 
+    if (!entry.IsSetAnnot()) {
+        return false;
+    }
     ITERATE(CSeq_entry::TAnnot, annot_it, entry.GetAnnot())
     {
         if ((**annot_it).IsFtable())
@@ -1849,7 +1855,7 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
             pNucSeq->SetAnnot().erase(its.annot_it);
         }
     }
-    if (pNucSeq->GetAnnot().empty()) {
+    if (pNucSeq->IsSetAnnot()  &&  pNucSeq->GetAnnot().empty()) {
         pNucSeq->ResetAnnot();
     }
 
