@@ -91,22 +91,24 @@ void TAsyncToken::Clear()
 
 CRef<CSeq_feat> TAsyncToken::ParentGene(const CSeq_feat& cds)
 {
-    for (auto pXref : cds.GetXref()) {
-        if (pXref->IsSetId()) {
-            auto pLinkedFeat = FindFeature(pXref->GetId());
-            if (pLinkedFeat &&
-                pLinkedFeat->IsSetData() &&
-                pLinkedFeat->GetData().IsGene()) {
-                return pLinkedFeat;
+    if (cds.IsSetXref()) {
+        for (auto pXref : cds.GetXref()) {
+            if (pXref->IsSetId()) {
+                auto pLinkedFeat = FindFeature(pXref->GetId());
+                if (pLinkedFeat &&
+                    pLinkedFeat->IsSetData() &&
+                    pLinkedFeat->GetData().IsGene()) {
+                    return pLinkedFeat;
+                }
             }
-        }
 
-        if (pXref->IsSetData() &&
-            pXref->GetData().IsGene() &&
-            pXref->GetData().GetGene().IsSetLocus_tag()) {
-            auto pGene = FeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), map_locus_to_gene);
-            if (pGene) {
-                return pGene;
+            if (pXref->IsSetData() &&
+                pXref->GetData().IsGene() &&
+                pXref->GetData().GetGene().IsSetLocus_tag()) {
+                auto pGene = FeatFromMap(pXref->GetData().GetGene().GetLocus_tag(), map_locus_to_gene);
+                if (pGene) {
+                    return pGene;
+                }
             }
         }
     }
@@ -125,24 +127,26 @@ CRef<CSeq_feat> TAsyncToken::ParentGene(const CSeq_feat& cds)
 
 CRef<CSeq_feat> TAsyncToken::FindFeature(const CFeat_id& id)
 {
-    for (auto annot : bioseq->GetAnnot())
-    {
-        if (!annot->IsFtable()) continue;
-
-        ITERATE(CSeq_annot::TData::TFtable, feat_it, annot->GetData().GetFtable())
+    if (bioseq->IsSetAnnot()) {
+        for (auto annot : bioseq->GetAnnot())
         {
-            if ((**feat_it).IsSetIds())
+            if (!annot->IsFtable()) continue;
+
+            ITERATE(CSeq_annot::TData::TFtable, feat_it, annot->GetData().GetFtable())
             {
-                ITERATE(CSeq_feat::TIds, id_it, (**feat_it).GetIds())
+                if ((**feat_it).IsSetIds())
                 {
-                    if ((**id_it).Equals(id))
+                    ITERATE(CSeq_feat::TIds, id_it, (**feat_it).GetIds())
                     {
-                        return *feat_it;
+                        if ((**id_it).Equals(id))
+                        {
+                            return *feat_it;
+                        }
                     }
                 }
+                if ((**feat_it).IsSetId() && (**feat_it).GetId().Equals(id))
+                    return *feat_it;
             }
-            if ((**feat_it).IsSetId() && (**feat_it).GetId().Equals(id))
-                return *feat_it;
         }
     }
     return CRef<CSeq_feat>();
@@ -173,18 +177,19 @@ CRef<CSeq_feat> TAsyncToken::FindGeneByLocusTag(const CSeq_feat& cds) const
 
 CRef<CSeq_feat> TAsyncToken::ParentMrna(const CSeq_feat& cds)
 {
-    for (auto pXref : cds.GetXref()) {
-        if (pXref->IsSetId()) {
-            auto pLinkedFeat = FindFeature(pXref->GetId());
-            if (pLinkedFeat &&
-                pLinkedFeat->IsSetData() &&
-                pLinkedFeat->GetData().IsRna() &&
-                pLinkedFeat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
-                return pLinkedFeat;
+    if (cds.IsSetXref()) {
+        for (auto pXref : cds.GetXref()) {
+            if (pXref->IsSetId()) {
+                auto pLinkedFeat = FindFeature(pXref->GetId());
+                if (pLinkedFeat &&
+                    pLinkedFeat->IsSetData() &&
+                    pLinkedFeat->GetData().IsRna() &&
+                    pLinkedFeat->GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
+                    return pLinkedFeat;
+                }
             }
         }
     }
-
     auto pMrna = FindMrnaByQual(cds);
     if (!pMrna) {
         CMappedFeat mappedCds(scope->GetSeq_featHandle(cds));
@@ -215,6 +220,9 @@ CRef<CSeq_feat> TAsyncToken::FindMrnaByQual(const CSeq_feat& cds) const
 
 void TAsyncToken::InitFeatures()
 {
+    if (!bioseq->IsSetAnnot()) {
+        return;
+    }
     for (auto annot: bioseq->GetAnnot()) {
         if (!annot->IsFtable()) {
             continue;
