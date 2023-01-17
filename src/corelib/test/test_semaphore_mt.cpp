@@ -67,8 +67,24 @@ private:
     void Consume(int Num);
 
     static CSemaphore s_semContent, s_semStorage;
-    static int s_Counter, s_Id;
+    static CAtomicCounter_WithAutoInit s_Counter;
+    static int s_Id;
 };
+
+
+class CAtomicOut : public stringstream
+{
+public:
+    ~CAtomicOut() {
+        CFastMutexGuard guard(sm_Mutex);
+        cout << str();
+    }
+private:
+    static CFastMutex sm_Mutex;
+};
+
+
+CFastMutex CAtomicOut::sm_Mutex;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -76,7 +92,7 @@ private:
 CSemaphore CTestSemaphoreApp::s_semContent(0,10);
 CSemaphore CTestSemaphoreApp::s_semStorage(1,1);
 
-int CTestSemaphoreApp::s_Counter=0;
+CAtomicCounter_WithAutoInit CTestSemaphoreApp::s_Counter(0);
 int CTestSemaphoreApp::s_Id=0;
 
 
@@ -88,8 +104,11 @@ void CTestSemaphoreApp::Produce(int Num)
     // Storage semaphore acts as a kind of mutex - its only purpose
     // is to protect Counter
     s_semStorage.Wait();
-    s_Counter += Num;
-    NcbiCout << "+" << Num << "=" << s_Counter << NcbiEndl;
+    {
+        auto count = s_Counter.Add(Num);
+        CAtomicOut out;
+        out << "+" << Num << "=" << count << endl;
+    }
     s_semStorage.Post();
 
     // Content semaphore notifies consumer threads of how many items can be
@@ -102,7 +121,10 @@ void CTestSemaphoreApp::Produce(int Num)
             Posted = true;
         }
         catch (exception& e) {
-            NcbiCout << e.what() << NcbiEndl;
+            {
+                CAtomicOut out;
+                out << e.what() << endl;
+            }
             SleepMilliSec(500);
         }
     }
@@ -115,8 +137,11 @@ void CTestSemaphoreApp::Consume(int Num)
         // we can only consume one by one
         s_semContent.Wait();
         s_semStorage.Wait();
-        --s_Counter;
-        NcbiCout << "-1=" << s_Counter << NcbiEndl;
+        {
+            auto count = s_Counter.Add(-1);
+            CAtomicOut out;
+            out << "-1=" << count << endl;
+        }
         s_semStorage.Post();
         SleepMilliSec(500);
     }
@@ -149,12 +174,13 @@ bool CTestSemaphoreApp::Thread_Run(int idx)
 
 bool CTestSemaphoreApp::TestApp_Init(void)
 {
-    NcbiCout
-        << NcbiEndl
+    CAtomicOut out;
+    out
+        << endl
         << "Testing semaphores with "
         << NStr::UIntToString(s_NumThreads)
         << " threads"
-        << NcbiEndl;
+        << endl;
     if ( s_NumThreads%2 != 0 ) {
 #ifdef NCBI_THREADS
         throw runtime_error("The number of threads MUST be even");
@@ -168,16 +194,17 @@ bool CTestSemaphoreApp::TestApp_Init(void)
 
 bool CTestSemaphoreApp::TestApp_Exit(void)
 {
-    NcbiCout
+    CAtomicOut out;
+    out
         << "Test completed"
-        << NcbiEndl
-        << " counter = " << s_Counter
-        << NcbiEndl;
+        << endl
+        << " counter = " << s_Counter.Get()
+        << endl;
     // storage must be available
     assert( s_semStorage.TryWait() );
     // content must be empty
     assert( !s_semContent.TryWait() );
-    assert( s_Counter == 0 );
+    assert( s_Counter.Get() == 0 );
     return true;
 }
 
