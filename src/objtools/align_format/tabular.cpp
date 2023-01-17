@@ -1615,7 +1615,6 @@ static string s_InsertGap(const string& nuc_without_gap, const string& nuc, cons
     int num_bases = 0;
     int total_inserted_gap = 0;
     int gap_hold = 0;
-    int last_aa_pos = 0;
     for (int i = 0; i < (int)nuc.size(); i++) {
         if (nuc[i] == gap_char) {
             num_gaps ++;
@@ -1626,7 +1625,7 @@ static string s_InsertGap(const string& nuc_without_gap, const string& nuc, cons
         int index_original_prot = index_new_prot - total_inserted_gap;
 
         if (num_gaps == 3) {
-            if (index_new_prot < new_prot.size()) {
+            if (index_new_prot < (int)new_prot.size()) {
                 total_inserted_gap ++;
                 num_gaps = 0;
                 if (num_bases == 0) {
@@ -1642,12 +1641,11 @@ static string s_InsertGap(const string& nuc_without_gap, const string& nuc, cons
             index_new_prot -= gap_hold;
             if (index_new_prot < (int)new_prot.size() && index_original_prot < (int)prot.size()) {
                 new_prot[index_new_prot] = prot[index_original_prot];
-                last_aa_pos = index_new_prot;
                 num_bases = 0;
                 if (gap_hold > 0) {
                     for (int j = 0; j < gap_hold; j++) {
                         int position = index_new_prot + 1 + j;
-                        if (position < new_prot.size()) {
+                        if (position < (int) new_prot.size()) {
                             new_prot[position] = gap_char;
                         }
                     }
@@ -1658,7 +1656,7 @@ static string s_InsertGap(const string& nuc_without_gap, const string& nuc, cons
         }
     }  
     if ((int)nuc_without_gap.size()%3 > 0) {
-        if ((int)prot.size() > nuc_without_gap.size()/3) {
+        if (prot.size() > nuc_without_gap.size()/3) {
             //last two partial bases as toolkit Translate may translate partial codon 
             new_prot[new_prot.size() - 1] = prot[prot.size() - 1];
         } else if (new_prot[new_prot.size() - 1] == ' ') {
