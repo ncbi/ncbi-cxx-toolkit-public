@@ -1063,7 +1063,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         return 0;
     }
 
-    if (m_TestSeqId.empty()) {
+    if (m_Settings.m_TestSeqId.empty()) {
         // seq_id for a health test is not configured so skip the test
         reply->SetContentType(ePSGS_PlainTextMime);
         reply->SetContentLength(0);
@@ -1075,7 +1075,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         return 0;
     }
 
-    if (m_Si2csiDbFile.empty() || m_BioseqInfoDbFile.empty()) {
+    if (m_Settings.m_Si2csiDbFile.empty() ||
+        m_Settings.m_BioseqInfoDbFile.empty()) {
         // Cache is not configured so skip the test
         reply->SetContentType(ePSGS_PlainTextMime);
         reply->SetContentLength(0);
@@ -1094,7 +1095,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         vector<string>      disabled_processors;
 
         unique_ptr<SPSGS_RequestBase>
-            req(new SPSGS_ResolveRequest(m_TestSeqId, -1,
+            req(new SPSGS_ResolveRequest(m_Settings.m_TestSeqId, -1,
                                          SPSGS_ResolveRequest::fPSGS_CanonicalId,
                                          SPSGS_ResolveRequest::ePSGS_JsonFormat,
                                          SPSGS_RequestBase::ePSGS_CacheOnly,
@@ -1112,57 +1113,57 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
         auto    resolution = resolve_processor.ResolveTestInputSeqId();
 
         if (!resolution.IsValid()) {
-            if (!m_TestSeqIdIgnoreError) {
+            if (!m_Settings.m_TestSeqIdIgnoreError) {
                 string  msg = separator + "\n" +
                               prefix + "RESOLUTION" "\n";
                 if (resolution.m_Error.HasError()) {
                     msg += resolution.m_Error.m_ErrorMessage;
                 } else {
-                    msg += "Cannot resolve '" + m_TestSeqId + "' seq_id";
+                    msg += "Cannot resolve '" + m_Settings.m_TestSeqId + "' seq_id";
                 }
                 reply->SetContentType(ePSGS_PlainTextMime);
                 reply->Send500(msg.c_str());
-                PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
+                PSG_WARNING("Cannot resolve test seq_id '" + m_Settings.m_TestSeqId + "'");
                 x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                    CRequestStatus::e500_InternalServerError,
                                    reply->GetBytesSent());
                 m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
                 return 0;
             }
-            PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId +
+            PSG_WARNING("Cannot resolve test seq_id '" + m_Settings.m_TestSeqId +
                         "', however the configuration is to ignore test errors");
         }
     } catch (const exception &  exc) {
-        if (!m_TestSeqIdIgnoreError) {
+        if (!m_Settings.m_TestSeqIdIgnoreError) {
             string  msg = separator + "\n" +
                           prefix + "RESOLUTION" "\n" +
                           exc.what();
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->Send500(msg.c_str());
-            PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
+            PSG_WARNING("Cannot resolve test seq_id '" + m_Settings.m_TestSeqId + "'");
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
             return 0;
         }
-        PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId +
+        PSG_WARNING("Cannot resolve test seq_id '" + m_Settings.m_TestSeqId +
                     "', however the configuration is to ignore test errors");
     } catch (...) {
-        if (!m_TestSeqIdIgnoreError) {
+        if (!m_Settings.m_TestSeqIdIgnoreError) {
             string  msg = separator + "\n" +
                           prefix + "RESOLUTION" "\n"
-                          "Unknown '" + m_TestSeqId + "' resolution error";
+                          "Unknown '" + m_Settings.m_TestSeqId + "' resolution error";
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->Send500(msg.c_str());
-            PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId + "'");
+            PSG_WARNING("Cannot resolve test seq_id '" + m_Settings.m_TestSeqId + "'");
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e500_InternalServerError,
                                reply->GetBytesSent());
             m_Counters.Increment(CPSGSCounters::ePSGS_HealthRequest);
             return 0;
         }
-        PSG_WARNING("Cannot resolve test seq_id '" + m_TestSeqId +
+        PSG_WARNING("Cannot resolve test seq_id '" + m_Settings.m_TestSeqId +
                     "', however the configuration is to ignore test errors");
     }
 
@@ -1529,13 +1530,13 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                               username_param.m_Value.size());
         }
 
-        if (!m_AuthToken.empty()) {
+        if (!m_Settings.m_AuthToken.empty()) {
             SRequestParameter   auth_token_param = x_GetParam(req, kAuthTokenParam);
 
             bool    auth_good = false;
             if (auth_token_param.m_Found) {
-                auth_good = m_AuthToken == string(auth_token_param.m_Value.data(),
-                                                  auth_token_param.m_Value.size());
+                auth_good = m_Settings.m_AuthToken == string(auth_token_param.m_Value.data(),
+                                                             auth_token_param.m_Value.size());
             }
 
             if (!auth_good) {
@@ -1925,7 +1926,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
                                                most_recent_time,
                                                histogram_names,
                                                time_series,
-                                               m_TickSpan));
+                                               m_Settings.m_TickSpan));
         string      content = timing.Repr(CJsonNode::fStandardJson);
 
         reply->SetContentType(ePSGS_JsonMime);

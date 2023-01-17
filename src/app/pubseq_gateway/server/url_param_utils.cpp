@@ -213,7 +213,7 @@ CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
 {
     static string  kResendTimeoutParam = "resend_timeout";
 
-    resend_timeout = m_ResendTimeoutSec;
+    resend_timeout = m_Settings.m_ResendTimeoutSec;
     SRequestParameter   resend_timeout_param = x_GetParam(req, kResendTimeoutParam);
 
     if (resend_timeout_param.m_Found) {
@@ -286,10 +286,10 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
             return false;
         }
 
-        if (hops > m_MaxHops) {
+        if (hops > m_Settings.m_MaxHops) {
             err_msg = "The '" + kHopsParam + "' value " + to_string(hops) +
                       " exceeds the server configured value " +
-                      to_string(m_MaxHops) + ".";
+                      to_string(m_Settings.m_MaxHops) + ".";
             m_Counters.Increment(CPSGSCounters::ePSGS_MaxHopsExceededError);
             x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                              CRequestStatus::e400_BadRequest,

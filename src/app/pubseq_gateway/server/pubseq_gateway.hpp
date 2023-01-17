@@ -54,6 +54,7 @@
 #include "psgs_dispatcher.hpp"
 #include "osg_connection.hpp"
 #include "psgs_uv_loop_binder.hpp"
+#include "settings.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -124,39 +125,25 @@ public:
     }
 
     string GetBioseqKeyspace(void) const
-    {
-        return m_CassMapping[m_MappingIndex].m_BioseqKeyspace;
-    }
+    { return m_CassMapping[m_MappingIndex].m_BioseqKeyspace; }
 
     vector<pair<string, int32_t>> GetBioseqNAKeyspaces(void) const
-    {
-        return m_CassMapping[m_MappingIndex].m_BioseqNAKeyspaces;
-    }
+    { return m_CassMapping[m_MappingIndex].m_BioseqNAKeyspaces; }
 
     CPubseqGatewayCache *  GetLookupCache(void)
-    {
-        return m_LookupCache.get();
-    }
+    { return m_LookupCache.get(); }
 
     CExcludeBlobCache *  GetExcludeBlobCache(void)
-    {
-        return m_ExcludeBlobCache.get();
-    }
+    { return m_ExcludeBlobCache.get(); }
 
     CSplitInfoCache *  GetSplitInfoCache(void)
-    {
-        return m_SplitInfoCache.get();
-    }
+    { return m_SplitInfoCache.get(); }
 
     CPSGMessages *  GetPublicCommentsMapping(void)
-    {
-        return m_PublicComments.get();
-    }
+    { return m_PublicComments.get(); }
 
     unsigned long GetSendBlobIfSmall(void) const
-    {
-        return m_SendBlobIfSmall;
-    }
+    { return m_Settings.m_SendBlobIfSmall; }
 
     int OnBadURL(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGet(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -179,133 +166,87 @@ public:
 
     virtual int Run(void);
 
-    void NotifyRequestFinished(size_t  request_id);
-
     static CPubseqGatewayApp *  GetInstance(void);
 
+    void NotifyRequestFinished(size_t  request_id)
+    { m_RequestDispatcher->NotifyRequestFinished(request_id); }
+
     COperationTiming & GetTiming(void)
-    {
-        return *m_Timing.get();
-    }
+    { return *m_Timing.get(); }
 
     EPSGS_StartupDataState GetStartupDataState(void) const
-    {
-        return m_StartupDataState;
-    }
+    { return m_StartupDataState; }
 
     map<string, tuple<string, string>>  GetIdToNameAndDescriptionMap(void) const
-    {
-        return m_IdToNameAndDescription;
-    }
+    { return m_Settings.m_IdToNameAndDescription; }
 
     shared_ptr<CCassConnection> GetCassandraConnection(void)
-    {
-        return m_CassConnection;
-    }
+    { return m_CassConnection; }
 
     unsigned int GetCassandraTimeout(void) const
-    {
-        return m_TimeoutMs;
-    }
+    { return m_Settings.m_TimeoutMs; }
 
     unsigned int GetCassandraMaxRetries(void) const
-    {
-        return m_MaxRetries;
-    }
+    { return m_Settings.m_MaxRetries; }
 
     bool GetOSGProcessorsEnabled() const
-    {
-        return m_OSGProcessorsEnabled;
-    }
+    { return m_Settings.m_OSGProcessorsEnabled; }
 
     bool GetCDDProcessorsEnabled() const
-    {
-        return m_CDDProcessorsEnabled;
-    }
+    { return m_Settings.m_CDDProcessorsEnabled; }
 
     bool GetWGSProcessorsEnabled() const
-    {
-        return m_WGSProcessorsEnabled;
-    }
+    { return m_Settings.m_WGSProcessorsEnabled; }
 
     bool GetSNPProcessorsEnabled() const
-    {
-        return m_SNPProcessorsEnabled;
-    }
+    { return m_Settings.m_SNPProcessorsEnabled; }
 
     const CRef<psg::osg::COSGConnectionPool>& GetOSGConnectionPool() const
-    {
-        return m_OSGConnectionPool;
-    }
+    { return m_OSGConnectionPool; }
 
     bool GetCassandraProcessorsEnabled(void) const
-    {
-        return m_CassandraProcessorsEnabled;
-    }
+    { return m_Settings.m_CassandraProcessorsEnabled; }
 
     IPSGS_Processor::EPSGS_StartProcessing
     SignalStartProcessing(IPSGS_Processor *  processor)
-    {
-        return m_RequestDispatcher->SignalStartProcessing(processor);
-    }
+    { return m_RequestDispatcher->SignalStartProcessing(processor); }
 
-    size_t GetProcessorMaxConcurrency(const string &  processor_id);
+    size_t GetProcessorMaxConcurrency(const string &  processor_id)
+    { return m_Settings.GetProcessorMaxConcurrency(GetConfig(), processor_id); }
 
     void SignalFinishProcessing(IPSGS_Processor *  processor,
                                 CPSGS_Dispatcher::EPSGS_SignalSource  signal_source)
-    {
-        m_RequestDispatcher->SignalFinishProcessing(processor, signal_source);
-    }
+    { m_RequestDispatcher->SignalFinishProcessing(processor, signal_source); }
 
     void SignalConnectionCanceled(size_t  request_id)
-    {
-        m_RequestDispatcher->SignalConnectionCanceled(request_id);
-    }
+    { m_RequestDispatcher->SignalConnectionCanceled(request_id); }
 
     bool GetSSLEnable(void) const
-    {
-        return m_SSLEnable;
-    }
+    { return m_Settings.m_SSLEnable; }
 
     string GetSSLCertFile(void) const
-    {
-        return m_SSLCertFile;
-    }
+    { return m_Settings.m_SSLCertFile; }
 
     string GetSSLKeyFile(void) const
-    {
-        return m_SSLKeyFile;
-    }
+    { return m_Settings.m_SSLKeyFile; }
 
     string GetSSLCiphers(void) const
-    {
-        return m_SSLCiphers;
-    }
+    { return m_Settings.m_SSLCiphers; }
 
     size_t GetShutdownIfTooManyOpenFD(void) const
-    {
-        return m_ShutdownIfTooManyOpenFD;
-    }
+    { return m_Settings.m_ShutdownIfTooManyOpenFD; }
 
     int GetPageSize(void) const
-    {
-        return m_IPGPageSize;
-    }
+    { return m_Settings.m_IPGPageSize; }
 
     string GetIPGKeyspace(void) const
-    {
-        return m_IPGKeyspace;
-    }
+    { return m_Settings.m_IPGKeyspace; }
 
     CPSGAlerts &  GetAlerts(void)
-    {
-        return m_Alerts;
-    }
+    { return m_Alerts; }
 
     CPSGSCounters &  GetCounters(void)
-    {
-        return m_Counters;
-    }
+    { return m_Counters; }
 
     void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
     {
@@ -339,14 +280,10 @@ public:
     }
 
     void CancelAllProcessors(void)
-    {
-        m_RequestDispatcher->CancelAll();
-    }
+    { m_RequestDispatcher->CancelAll(); }
 
     CPSGS_Dispatcher *  GetProcessorDispatcher(void)
-    {
-        return m_RequestDispatcher.get();
-    }
+    { return m_RequestDispatcher.get(); }
 
     CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id);
 
@@ -386,7 +323,6 @@ private:
             bool &  processor_events);
 
 private:
-    void x_ValidateArgs(void);
     string  x_GetCmdLineArguments(void) const;
     CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req) const;
     void x_PrintRequestStop(CRef<CRequestContext>  context,
@@ -444,10 +380,6 @@ private:
                        const psg_time_point_t &  now,
                        int64_t &  id2_chunk);
     vector<string> x_GetExcludeBlobs(CHttpRequest &  req) const;
-    unsigned long x_GetDataSize(const IRegistry &  reg,
-                                const string &  section,
-                                const string &  entry,
-                                unsigned long  default_val);
     bool x_GetAccessionSubstitutionOption(CHttpRequest &  req,
                                           shared_ptr<CPSGS_Reply>  reply,
                                           const psg_time_point_t &  now,
@@ -511,8 +443,6 @@ private:
                      const string &  err_msg);
     bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                           const psg_time_point_t &  now);
-    void x_ReadIdToNameAndDescriptionConfiguration(const IRegistry &  reg,
-                                                   const string &  section);
     void x_RegisterProcessors(void);
     bool x_DispatchRequest(CRef<CRequestContext>   context,
                            shared_ptr<CPSGS_Request>  request,
@@ -520,9 +450,7 @@ private:
     void x_InitSSL(void);
 
 private:
-    string                              m_Si2csiDbFile;
-    string                              m_BioseqInfoDbFile;
-    string                              m_BlobPropDbFile;
+    SPubseqGatewaySettings              m_Settings;
 
     // Bioseq and named annotations keyspaces can be updated dynamically.
     // The index controls the active set.
@@ -533,49 +461,18 @@ private:
     vector<int32_t>                     m_BioseqNAKeyspaces;
     unique_ptr<CPSGMessages>            m_PublicComments;
 
-    unsigned short                      m_HttpPort;
-    unsigned short                      m_HttpWorkers;
-    unsigned int                        m_ListenerBacklog;
-    unsigned short                      m_TcpMaxConn;
-
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
-    unsigned int                        m_TimeoutMs;
-    unsigned int                        m_MaxRetries;
-
-    unsigned int                        m_ExcludeCacheMaxSize;
-    unsigned int                        m_ExcludeCachePurgePercentage;
-    unsigned int                        m_ExcludeCacheInactivityPurge;
-    unsigned long                       m_SmallBlobSize;
-    unsigned long                       m_MinStatValue;
-    unsigned long                       m_MaxStatValue;
-    unsigned long                       m_NStatBins;
-    string                              m_StatScaleType;
-    unsigned long                       m_TickSpan;
-    string                              m_OnlyForProcessor;
 
     CTime                               m_StartTime;
-    string                              m_RootKeyspace;
-    string                              m_AuthToken;
 
-    bool                                m_AllowIOTest;
     unique_ptr<char []>                 m_IOTestBuffer;
-
-    unsigned long                       m_SendBlobIfSmall;
-    int                                 m_MaxHops;
-    double                              m_ResendTimeoutSec;
-    double                              m_RequestTimeoutSec;
-
-    bool                                m_CassandraProcessorsEnabled;
-    string                              m_TestSeqId;
-    bool                                m_TestSeqIdIgnoreError;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
     unique_ptr<CHttpDaemon>             m_TcpDaemon;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
     unique_ptr<CSplitInfoCache>         m_SplitInfoCache;
-    size_t                              m_SplitInfoBlobCacheSize;
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;
@@ -587,34 +484,10 @@ private:
     // Serialized JSON introspection message
     string                              m_HelpMessage;
 
-    // Configured counter/statistics ID to name/description
-    map<string, tuple<string, string>>  m_IdToNameAndDescription;
-
-    bool                                m_OSGProcessorsEnabled;
     CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
-
-    bool                                m_CDDProcessorsEnabled;
-
-    bool                                m_WGSProcessorsEnabled;
-
-    bool                                m_SNPProcessorsEnabled;
 
     // Requests dispatcher
     unique_ptr<CPSGS_Dispatcher>        m_RequestDispatcher;
-    size_t                              m_ProcessorMaxConcurrency;
-
-    // https support
-    bool                                m_SSLEnable;
-    string                              m_SSLCertFile;
-    string                              m_SSLKeyFile;
-    string                              m_SSLCiphers;
-
-    size_t                              m_ShutdownIfTooManyOpenFD;
-
-    // IPG settings
-    string                              m_IPGKeyspace;
-    int                                 m_IPGPageSize;
-    bool                                m_EnableHugeIPG;
 
     // Mapping between the libuv thread id and the binder associated with the
     // libuv worker thread loop

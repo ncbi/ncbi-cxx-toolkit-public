@@ -37,8 +37,6 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbifile.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/plugin_manager.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 #include <util/random_gen.hpp>
 
@@ -65,57 +63,9 @@
 
 USING_NCBI_SCOPE;
 
-const unsigned short    kWorkersMin = 1;
-const unsigned short    kWorkersMax = 100;
-const unsigned short    kWorkersDefault = 64;
-const unsigned short    kHttpPortMin = 1;
-const unsigned short    kHttpPortMax = 65534;
-const unsigned int      kListenerBacklogMin = 5;
-const unsigned int      kListenerBacklogMax = 2048;
-const unsigned int      kListenerBacklogDefault = 256;
-const unsigned short    kTcpMaxConnMax = 65000;
-const unsigned short    kTcpMaxConnMin = 5;
-const unsigned short    kTcpMaxConnDefault = 4096;
-const unsigned int      kTimeoutMsMin = 0;
-const unsigned int      kTimeoutMsMax = UINT_MAX;
-const unsigned int      kTimeoutDefault = 30000;
-const unsigned int      kMaxRetriesDefault = 1;
-const unsigned int      kMaxRetriesMin = 0;
-const unsigned int      kMaxRetriesMax = UINT_MAX;
 const EDiagSev          kDefaultSeverity = eDiag_Critical;
-const bool              kDefaultLog = true;
 const bool              kDefaultTrace = false;
-const string            kDefaultRootKeyspace = "sat_info2";
-const unsigned int      kDefaultExcludeCacheMaxSize = 1000;
-const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
-const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
-const string            kDefaultAuthToken = "";
-const bool              kDefaultAllowIOTest = false;
-const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
-const unsigned int      kDefaultMaxHops = 2;
-const double            kDefaultResendTimeoutSec = 0.2;
-const double            kDefaultRequestTimeoutSec = 30.0;
-const unsigned long     kDefaultSmallBlobSize = 16;
-const bool              kDefaultCassandraProcessorsEnabled = true;
-const bool              kDefaultOSGProcessorsEnabled = false;
-const bool              kDefaultCDDProcessorsEnabled = true;
-const bool              kDefaultWGSProcessorsEnabled = false;
-const bool              kDefaultSNPProcessorsEnabled = false;
-const string            kDefaultTestSeqId = "gi|2";
-const bool              kDefaultTestSeqIdIgnoreError = true;
-const bool              kDefaultSSLEnable = false;
-const string            kDefaultSSLCertFile = "";
-const string            kDefaultSSLKeyFile = "";
-const string            kDefaultSSLCiphers = "EECDH+aRSA+AESGCM EDH+aRSA+AESGCM EECDH+aRSA EDH+aRSA !SHA !SHA256 !SHA384";
-const size_t            kDefaultShutdownIfTooManyOpenFDforHTTP = 0;
-const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
-const size_t            kDefaultProcessorMaxConcurrency = 800;
-const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
 const float             kSplitInfoBlobCacheSizeMultiplier = 0.8;    // Used to calculate low mark
-const string            kDefaultIPGKeyspace = "ipg_storage";
-const size_t            kDefaultIPGPageSize = 1024;
-const bool              kDefaultEnableHugeIPG = true;
-const string            kDefaultOnlyForProcessor = "";
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -130,7 +80,7 @@ bool                    g_Trace = kDefaultTrace;
 
 // Memorize the configured log on/off flag.
 // It is used in the context resetter to avoid unnecessary context resets
-bool                    g_Log = kDefaultLog;
+bool                    g_Log = true;
 
 // Create the shutdown related data. It is used in a few places:
 // a URL handler, signal handlers, watchdog handlers
@@ -142,46 +92,13 @@ CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 CPubseqGatewayApp::CPubseqGatewayApp() :
     m_MappingIndex(0),
-    m_HttpPort(0),
-    m_HttpWorkers(kWorkersDefault),
-    m_ListenerBacklog(kListenerBacklogDefault),
-    m_TcpMaxConn(kTcpMaxConnDefault),
     m_CassConnection(nullptr),
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
-    m_TimeoutMs(kTimeoutDefault),
-    m_MaxRetries(kMaxRetriesDefault),
-    m_ExcludeCacheMaxSize(kDefaultExcludeCacheMaxSize),
-    m_ExcludeCachePurgePercentage(kDefaultExcludeCachePurgePercentage),
-    m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
-    m_SmallBlobSize(kDefaultSmallBlobSize),
-    m_MinStatValue(kMinStatValue),
-    m_MaxStatValue(kMaxStatValue),
-    m_NStatBins(kNStatBins),
-    m_StatScaleType(kStatScaleType),
-    m_TickSpan(kTickSpan),
-    m_OnlyForProcessor(kDefaultOnlyForProcessor),
     m_StartTime(GetFastLocalTime()),
-    m_AllowIOTest(kDefaultAllowIOTest),
-    m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
-    m_MaxHops(kDefaultMaxHops),
-    m_ResendTimeoutSec(kDefaultResendTimeoutSec),
-    m_RequestTimeoutSec(kDefaultRequestTimeoutSec),
-    m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
-    m_TestSeqId(kDefaultTestSeqId),
-    m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_ExcludeBlobCache(nullptr),
     m_SplitInfoCache(nullptr),
-    m_SplitInfoBlobCacheSize(kDefaultSplitInfoBlobCacheSize),
     m_StartupDataState(ePSGS_NoCassConnection),
-    m_LogFields("http"),
-    m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
-    m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
-    m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
-    m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
-    m_ProcessorMaxConcurrency(kDefaultProcessorMaxConcurrency),
-    m_SSLEnable(kDefaultSSLEnable),
-    m_SSLCiphers(kDefaultSSLCiphers),
-    m_ShutdownIfTooManyOpenFD(0)
+    m_LogFields("http")
 {
     sm_PubseqApp = this;
     m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -191,11 +108,6 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
 CPubseqGatewayApp::~CPubseqGatewayApp()
 {}
 
-
-void CPubseqGatewayApp::NotifyRequestFinished(size_t  request_id)
-{
-    m_RequestDispatcher->NotifyRequestFinished(request_id);
-}
 
 void CPubseqGatewayApp::Init(void)
 {
@@ -222,138 +134,21 @@ void CPubseqGatewayApp::ParseArgs(void)
     const CArgs &           args = GetArgs();
     const CNcbiRegistry &   registry = GetConfig();
 
-    if (!registry.HasEntry("SERVER", "port"))
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[SERVER]/port value is not found in the configuration "
-                   "file. The port must be provided to run the server. "
-                   "Exiting.");
-
-    m_Si2csiDbFile = registry.GetString("LMDB_CACHE", "dbfile_si2csi", "");
-    m_BioseqInfoDbFile = registry.GetString("LMDB_CACHE", "dbfile_bioseq_info", "");
-    m_BlobPropDbFile = registry.GetString("LMDB_CACHE", "dbfile_blob_prop", "");
-    m_HttpPort = registry.GetInt("SERVER", "port", 0);
-    m_HttpWorkers = registry.GetInt("SERVER", "workers",
-                                    kWorkersDefault);
-    m_ListenerBacklog = registry.GetInt("SERVER", "backlog",
-                                        kListenerBacklogDefault);
-    m_TcpMaxConn = registry.GetInt("SERVER", "maxconn",
-                                   kTcpMaxConnDefault);
-    m_TimeoutMs = registry.GetInt("SERVER", "optimeout",
-                                  kTimeoutDefault);
-    m_MaxRetries = registry.GetInt("SERVER", "maxretries",
-                                   kMaxRetriesDefault);
-    g_Log = registry.GetBool("SERVER", "log",
-                             kDefaultLog);
-    m_RootKeyspace = registry.GetString("SERVER", "root_keyspace",
-                                        kDefaultRootKeyspace);
-
-    m_ExcludeCacheMaxSize = registry.GetInt("AUTO_EXCLUDE", "max_cache_size",
-                                            kDefaultExcludeCacheMaxSize);
-    m_ExcludeCachePurgePercentage = registry.GetInt("AUTO_EXCLUDE",
-                                                    "purge_percentage",
-                                                    kDefaultExcludeCachePurgePercentage);
-    m_ExcludeCacheInactivityPurge = registry.GetInt("AUTO_EXCLUDE",
-                                                    "inactivity_purge_timeout",
-                                                    kDefaultExcludeCacheInactivityPurge);
-    m_AllowIOTest = registry.GetBool("DEBUG", "psg_allow_io_test",
-                                     kDefaultAllowIOTest);
-
-    m_SendBlobIfSmall = x_GetDataSize(registry, "SERVER", "send_blob_if_small",
-                                      kDefaultSendBlobIfSmall);
-    m_MaxHops = registry.GetInt("SERVER", "max_hops", kDefaultMaxHops);
-
-    m_ResendTimeoutSec = registry.GetDouble("SERVER", "resend_timeout",
-                                            kDefaultResendTimeoutSec);
-    m_RequestTimeoutSec = registry.GetDouble("SERVER", "request_timeout",
-                                             kDefaultRequestTimeoutSec);
-    m_ProcessorMaxConcurrency = registry.GetInt("SERVER", "ProcessorMaxConcurrency",
-                                                kDefaultProcessorMaxConcurrency);
-    m_SplitInfoBlobCacheSize = registry.GetInt("SERVER", "split_info_blob_cache_size",
-                                               kDefaultSplitInfoBlobCacheSize);
-
-    try {
-        m_AuthToken = registry.GetEncryptedString("ADMIN", "auth_token",
-                                                  IRegistry::fPlaintextAllowed);
-    } catch (const CRegistryException &  ex) {
-        string  msg = "Decrypting error detected while reading "
-                      "[ADMIN]/auth_token value: " + string(ex.what());
-        ERR_POST(msg);
-        m_Alerts.Register(ePSGS_ConfigAuthDecrypt, msg);
-
-        // Treat the value as a clear text
-        m_AuthToken = registry.GetString("ADMIN", "auth_token",
-                                         kDefaultAuthToken);
-    } catch (...) {
-        string  msg = "Unknown decrypting error detected while reading "
-                      "[ADMIN]/auth_token value";
-        ERR_POST(msg);
-        m_Alerts.Register(ePSGS_ConfigAuthDecrypt, msg);
-
-        // Treat the value as a clear text
-        m_AuthToken = registry.GetString("ADMIN", "auth_token",
-                                         kDefaultAuthToken);
-    }
+    m_Settings.Read(GetConfig(), m_Alerts);
+    g_Log = m_Settings.m_Log;
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
-
-    m_SmallBlobSize = x_GetDataSize(registry, "STATISTICS", "small_blob_size",
-                                    kDefaultSmallBlobSize);
-    m_MinStatValue = registry.GetInt("STATISTICS", "min", kMinStatValue);
-    m_MaxStatValue = registry.GetInt("STATISTICS", "max", kMaxStatValue);
-    m_NStatBins = registry.GetInt("STATISTICS", "n_bins", kNStatBins);
-    m_StatScaleType = registry.GetString("STATISTICS", "type", kStatScaleType);
-    m_TickSpan = registry.GetInt("STATISTICS", "tick_span", kTickSpan);
-    m_OnlyForProcessor = registry.GetString("STATISTICS", "only_for_processor",
-                                            kDefaultOnlyForProcessor);
-
-    x_ReadIdToNameAndDescriptionConfiguration(registry, "COUNTERS");
 
     m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
     m_OSGConnectionPool->AppParseArgs(args);
     m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
     m_OSGConnectionPool->LoadConfig(registry);
 
-    m_OSGProcessorsEnabled = registry.GetBool(
-            "OSG_PROCESSOR", "enabled",
-            kDefaultOSGProcessorsEnabled);
-    m_CDDProcessorsEnabled = registry.GetBool(
-            "CDD_PROCESSOR", "enabled",
-            kDefaultCDDProcessorsEnabled);
-    m_WGSProcessorsEnabled = registry.GetBool(
-            "WGS_PROCESSOR", "enabled",
-            kDefaultWGSProcessorsEnabled);
-    m_SNPProcessorsEnabled = registry.GetBool(
-        "SNP_PROCESSOR", "enabled",
-        kDefaultSNPProcessorsEnabled);
-    m_CassandraProcessorsEnabled = registry.GetBool(
-            "CASSANDRA_PROCESSOR", "enabled",
-            kDefaultCassandraProcessorsEnabled);
-
-    m_TestSeqId = registry.GetString("HEALTH", "test_seq_id", kDefaultTestSeqId);
-    m_TestSeqIdIgnoreError = registry.GetBool("HEALTH", "test_seq_id_ignore_error",
-                                              kDefaultTestSeqIdIgnoreError);
-
-    m_SSLEnable = registry.GetBool("SSL", "ssl_enable", kDefaultSSLEnable);
-    m_SSLCertFile = registry.GetString("SSL", "ssl_cert_file", kDefaultSSLCertFile);
-    m_SSLKeyFile = registry.GetString("SSL", "ssl_key_file", kDefaultSSLKeyFile);
-    m_SSLCiphers = registry.GetString("SSL", "ssl_ciphers", kDefaultSSLCiphers);
-
-    if (m_SSLEnable) {
-        m_ShutdownIfTooManyOpenFD = registry.GetInt("SERVER", "ShutdownIfTooManyOpenFD",
-                                                    kDefaultShutdownIfTooManyOpenFDforHTTPS);
-    } else {
-        m_ShutdownIfTooManyOpenFD = registry.GetInt("SERVER", "ShutdownIfTooManyOpenFD",
-                                                    kDefaultShutdownIfTooManyOpenFDforHTTP);
-    }
-
-    m_IPGKeyspace = registry.GetString("IPG", "keyspace", kDefaultIPGKeyspace);
-    m_IPGPageSize = registry.GetInt("IPG", "page_size", kDefaultIPGPageSize);
-    m_EnableHugeIPG = registry.GetBool("IPG", "enable_huge_ipg", kDefaultEnableHugeIPG);
 
     // It throws an exception in case of inability to start
-    x_ValidateArgs();
+    m_Settings.Validate(m_Alerts);
 }
 
 
@@ -368,9 +163,10 @@ void CPubseqGatewayApp::OpenCache(void)
         // NB. It was decided that the configuration may ommit the cache file
         // paths. In this case the server should not use the corresponding
         // cache at all. This is covered in the CPubseqGatewayCache class.
-        m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile,
-                                                    m_Si2csiDbFile,
-                                                    m_BlobPropDbFile));
+        m_LookupCache.reset(
+                new CPubseqGatewayCache(m_Settings.m_BioseqInfoDbFile,
+                                        m_Settings.m_Si2csiDbFile,
+                                        m_Settings.m_BlobPropDbFile));
 
         // The format of the sat ids is different
         set<int>        sat_ids;
@@ -507,33 +303,34 @@ int CPubseqGatewayApp::Run(void)
     if (populated)
         OpenCache();
 
-    m_RequestDispatcher.reset(new CPSGS_Dispatcher(m_RequestTimeoutSec));
+    m_RequestDispatcher.reset(new CPSGS_Dispatcher(m_Settings.m_RequestTimeoutSec));
     x_RegisterProcessors();
 
 
     // m_IdToNameAndDescription was populated at the time of
     // dealing with arguments
-    m_Counters.UpdateConfiguredNameDescription(m_IdToNameAndDescription);
+    m_Counters.UpdateConfiguredNameDescription(m_Settings.m_IdToNameAndDescription);
 
-    auto purge_size = round(float(m_ExcludeCacheMaxSize) *
-                            float(m_ExcludeCachePurgePercentage) / 100.0);
+    auto purge_size = round(float(m_Settings.m_ExcludeCacheMaxSize) *
+                            float(m_Settings.m_ExcludeCachePurgePercentage) / 100.0);
     m_ExcludeBlobCache.reset(
-        new CExcludeBlobCache(m_ExcludeCacheInactivityPurge,
-                              m_ExcludeCacheMaxSize,
-                              m_ExcludeCacheMaxSize - static_cast<size_t>(purge_size)));
+        new CExcludeBlobCache(m_Settings.m_ExcludeCacheInactivityPurge,
+                              m_Settings.m_ExcludeCacheMaxSize,
+                              m_Settings.m_ExcludeCacheMaxSize - static_cast<size_t>(purge_size)));
 
-    m_SplitInfoCache.reset(new CSplitInfoCache(m_SplitInfoBlobCacheSize,
-                                               m_SplitInfoBlobCacheSize * kSplitInfoBlobCacheSizeMultiplier));
+    m_SplitInfoCache.reset(new CSplitInfoCache(m_Settings.m_SplitInfoBlobCacheSize,
+                                               m_Settings.m_SplitInfoBlobCacheSize * kSplitInfoBlobCacheSizeMultiplier));
 
-    m_Timing.reset(new COperationTiming(m_MinStatValue,
-                                        m_MaxStatValue,
-                                        m_NStatBins,
-                                        m_StatScaleType,
-                                        m_SmallBlobSize,
-                                        m_OnlyForProcessor));
+    m_Timing.reset(new COperationTiming(m_Settings.m_MinStatValue,
+                                        m_Settings.m_MaxStatValue,
+                                        m_Settings.m_NStatBins,
+                                        m_Settings.m_StatScaleType,
+                                        m_Settings.m_SmallBlobSize,
+                                        m_Settings.m_OnlyForProcessor));
 
     // Setup IPG huge report
-    ipg::CPubseqGatewayHugeIpgReportHelper::SetHugeIpgDisabled(!m_EnableHugeIPG);
+    ipg::CPubseqGatewayHugeIpgReportHelper::SetHugeIpgDisabled(
+                                            !m_Settings.m_EnableHugeIPG);
 
     vector<CHttpHandler>        http_handler;
     CHttpGetParser              get_parser;
@@ -652,7 +449,7 @@ int CPubseqGatewayApp::Run(void)
                 return 0;
             }, &get_parser, nullptr);
 
-    if (m_AllowIOTest) {
+    if (m_Settings.m_AllowIOTest) {
         m_IOTestBuffer.reset(new char[kMaxTestIOSize]);
         CRandom     random;
         char *      current = m_IOTestBuffer.get();
@@ -681,10 +478,10 @@ int CPubseqGatewayApp::Run(void)
     x_InitSSL();
     m_TcpDaemon.reset(
             new CHttpDaemon(http_handler, "0.0.0.0",
-                            m_HttpPort,
-                            m_HttpWorkers,
-                            m_ListenerBacklog,
-                            m_TcpMaxConn));
+                            m_Settings.m_HttpPort,
+                            m_Settings.m_HttpWorkers,
+                            m_Settings.m_ListenerBacklog,
+                            m_Settings.m_TcpMaxConn));
 
     // Run the monitoring thread
     int             ret_code = 0;
@@ -697,7 +494,7 @@ int CPubseqGatewayApp::Run(void)
                     // Earlier implementations printed counters on stdout.
 
                     static unsigned long   tick_no = 0;
-                    if (++tick_no % m_TickSpan == 0) {
+                    if (++tick_no % m_Settings.m_TickSpan == 0) {
                         tick_no = 0;
                         this->m_Timing->Rotate();
                     }
@@ -734,272 +531,6 @@ int CPubseqGatewayApp::Run(void)
 CPubseqGatewayApp *  CPubseqGatewayApp::GetInstance(void)
 {
     return sm_PubseqApp;
-}
-
-
-void CPubseqGatewayApp::x_ValidateArgs(void)
-{
-    if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[SERVER]/port value is out of range. Allowed range: " +
-                   to_string(kHttpPortMin) + "..." +
-                   to_string(kHttpPortMax) + ". Received: " +
-                   to_string(m_HttpPort));
-    }
-
-    if (m_Si2csiDbFile.empty()) {
-        PSG_WARNING("[LMDB_CACHE]/dbfile_si2csi is not found "
-                    "in the ini file. No si2csi cache will be used.");
-    }
-
-    if (m_BioseqInfoDbFile.empty()) {
-        PSG_WARNING("[LMDB_CACHE]/dbfile_bioseq_info is not found "
-                    "in the ini file. No bioseq_info cache will be used.");
-    }
-
-    if (m_BlobPropDbFile.empty()) {
-        PSG_WARNING("[LMDB_CACHE]/dbfile_blob_prop is not found "
-                    "in the ini file. No blob_prop cache will be used.");
-    }
-
-    if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
-        string  err_msg =
-            "The number of HTTP workers is out of range. Allowed "
-            "range: " + to_string(kWorkersMin) + "..." +
-            to_string(kWorkersMax) + ". Received: " +
-            to_string(m_HttpWorkers) + ". Reset to "
-            "default: " + to_string(kWorkersDefault);
-        m_Alerts.Register(ePSGS_ConfigHttpWorkers, err_msg);
-        PSG_ERROR(err_msg);
-        m_HttpWorkers = kWorkersDefault;
-    }
-
-    if (m_ListenerBacklog < kListenerBacklogMin ||
-        m_ListenerBacklog > kListenerBacklogMax) {
-        string  err_msg =
-            "The listener backlog is out of range. Allowed "
-            "range: " + to_string(kListenerBacklogMin) + "..." +
-            to_string(kListenerBacklogMax) + ". Received: " +
-            to_string(m_ListenerBacklog) + ". Reset to "
-            "default: " + to_string(kListenerBacklogDefault);
-        m_Alerts.Register(ePSGS_ConfigListenerBacklog, err_msg);
-        PSG_ERROR(err_msg);
-        m_ListenerBacklog = kListenerBacklogDefault;
-    }
-
-    if (m_TcpMaxConn < kTcpMaxConnMin || m_TcpMaxConn > kTcpMaxConnMax) {
-        string  err_msg =
-            "The max number of connections is out of range. Allowed "
-            "range: " + to_string(kTcpMaxConnMin) + "..." +
-            to_string(kTcpMaxConnMax) + ". Received: " +
-            to_string(m_TcpMaxConn) + ". Reset to "
-            "default: " + to_string(kTcpMaxConnDefault);
-        m_Alerts.Register(ePSGS_ConfigMaxConnections, err_msg);
-        PSG_ERROR(err_msg);
-        m_TcpMaxConn = kTcpMaxConnDefault;
-    }
-
-    if (m_TimeoutMs < kTimeoutMsMin || m_TimeoutMs > kTimeoutMsMax) {
-        string  err_msg =
-            "The operation timeout is out of range. Allowed "
-            "range: " + to_string(kTimeoutMsMin) + "..." +
-            to_string(kTimeoutMsMax) + ". Received: " +
-            to_string(m_TimeoutMs) + ". Reset to "
-            "default: " + to_string(kTimeoutDefault);
-        m_Alerts.Register(ePSGS_ConfigTimeout, err_msg);
-        PSG_ERROR(err_msg);
-        m_TimeoutMs = kTimeoutDefault;
-    }
-
-    if (m_MaxRetries < kMaxRetriesMin || m_MaxRetries > kMaxRetriesMax) {
-        string  err_msg =
-            "The max retries is out of range. Allowed "
-            "range: " + to_string(kMaxRetriesMin) + "..." +
-            to_string(kMaxRetriesMax) + ". Received: " +
-            to_string(m_MaxRetries) + ". Reset to "
-            "default: " + to_string(kMaxRetriesDefault);
-        m_Alerts.Register(ePSGS_ConfigRetries, err_msg);
-        PSG_ERROR(err_msg);
-        m_MaxRetries = kMaxRetriesDefault;
-    }
-
-    if (m_ExcludeCacheMaxSize < 0) {
-        string  err_msg =
-            "The max exclude cache size must be a positive integer. "
-            "Received: " + to_string(m_ExcludeCacheMaxSize) + ". "
-            "Reset to 0 (exclude blobs cache is disabled)";
-        m_Alerts.Register(ePSGS_ConfigExcludeCacheSize, err_msg);
-        PSG_ERROR(err_msg);
-        m_ExcludeCacheMaxSize = 0;
-    }
-
-    if (m_ExcludeCachePurgePercentage < 0 || m_ExcludeCachePurgePercentage > 100) {
-        string  err_msg = "The exclude cache purge percentage is out of range. "
-            "Allowed: 0...100. Received: " +
-            to_string(m_ExcludeCachePurgePercentage) + ". ";
-        if (m_ExcludeCacheMaxSize > 0) {
-            err_msg += "Reset to " +
-                to_string(kDefaultExcludeCachePurgePercentage);
-            PSG_ERROR(err_msg);
-        } else {
-            err_msg += "The provided value has no effect "
-                "because the exclude cache is disabled.";
-            PSG_WARNING(err_msg);
-        }
-        m_ExcludeCachePurgePercentage = kDefaultExcludeCachePurgePercentage;
-        m_Alerts.Register(ePSGS_ConfigExcludeCachePurgeSize, err_msg);
-    }
-
-    if (m_ExcludeCacheInactivityPurge <= 0) {
-        string  err_msg = "The exclude cache inactivity purge timeout must be "
-            "a positive integer greater than zero. Received: " +
-            to_string(m_ExcludeCacheInactivityPurge) + ". ";
-        if (m_ExcludeCacheMaxSize > 0) {
-            err_msg += "Reset to " +
-                to_string(kDefaultExcludeCacheInactivityPurge);
-            PSG_ERROR(err_msg);
-        } else {
-            err_msg += "The provided value has no effect "
-                "because the exclude cache is disabled.";
-            PSG_WARNING(err_msg);
-        }
-        m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
-        m_Alerts.Register(ePSGS_ConfigExcludeCacheInactivity, err_msg);
-    }
-
-    bool        stat_settings_good = true;
-    if (NStr::CompareNocase(m_StatScaleType, "log") != 0 &&
-        NStr::CompareNocase(m_StatScaleType, "linear") != 0) {
-        string  err_msg = "Invalid [STATISTICS]/type value '" +
-            m_StatScaleType + "'. Allowed values are: log, linear. "
-            "The statistics parameters are reset to default.";
-        m_Alerts.Register(ePSGS_ConfigStatScaleType, err_msg);
-        PSG_ERROR(err_msg);
-        stat_settings_good = false;
-
-        m_MinStatValue = kMinStatValue;
-        m_MaxStatValue = kMaxStatValue;
-        m_NStatBins = kNStatBins;
-        m_StatScaleType = kStatScaleType;
-    }
-
-    if (stat_settings_good) {
-        if (m_MinStatValue > m_MaxStatValue) {
-            string  err_msg = "Invalid [STATISTICS]/min and max values. The "
-                "max cannot be less than min. "
-                "The statistics parameters are reset to default.";
-            m_Alerts.Register(ePSGS_ConfigStatMinMaxVal, err_msg);
-            PSG_ERROR(err_msg);
-            stat_settings_good = false;
-
-            m_MinStatValue = kMinStatValue;
-            m_MaxStatValue = kMaxStatValue;
-            m_NStatBins = kNStatBins;
-            m_StatScaleType = kStatScaleType;
-        }
-    }
-
-    if (stat_settings_good) {
-        if (m_NStatBins <= 0) {
-            string  err_msg = "Invalid [STATISTICS]/n_bins value. The "
-                "number of bins must be greater than 0. "
-                "The statistics parameters are reset to default.";
-            m_Alerts.Register(ePSGS_ConfigStatNBins, err_msg);
-            PSG_ERROR(err_msg);
-
-            // Uncomment if there will be more [STATISTICS] section parameters
-            // stat_settings_good = false;
-
-            m_MinStatValue = kMinStatValue;
-            m_MaxStatValue = kMaxStatValue;
-            m_NStatBins = kNStatBins;
-            m_StatScaleType = kStatScaleType;
-        }
-    }
-
-    if (m_TickSpan <= 0) {
-        PSG_WARNING("Invalid [STATISTICS]/tick_span value (" +
-                    to_string(m_TickSpan) + "). "
-                    "The tick span must be greater than 0. The tick span is "
-                    "reset to the default value (" +
-                    to_string(kTickSpan) + ").");
-        m_TickSpan = kTickSpan;
-    }
-
-    if (m_MaxHops <= 0) {
-        PSG_WARNING("Invalid [SERVER]/max_hops value (" +
-                    to_string(m_MaxHops) + "). "
-                    "The max hops must be greater than 0. The max hops is "
-                    "reset to the default value (" +
-                    to_string(kDefaultMaxHops) + ").");
-        m_MaxHops = kDefaultMaxHops;
-    }
-
-    if (m_ResendTimeoutSec < 0.0) {
-        PSG_WARNING("Invalid [SERVER]/resend_timeout value (" +
-                    to_string(m_ResendTimeoutSec) + "). "
-                    "The resend timeout must be greater or equal to 0. The resend "
-                    "timeout is reset to the default value (" +
-                    to_string(kDefaultResendTimeoutSec) + ").");
-        m_ResendTimeoutSec = kDefaultResendTimeoutSec;
-    }
-
-    if (m_RequestTimeoutSec <= 0.0) {
-        PSG_WARNING("Invalid [SERVER]/request_timeout value (" +
-                    to_string(m_RequestTimeoutSec) + "). "
-                    "The request timeout must be greater than 0. The request "
-                    "timeout is reset to the default value (" +
-                    to_string(kDefaultRequestTimeoutSec) + ").");
-        m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
-    }
-
-    if (m_ProcessorMaxConcurrency == 0) {
-        PSG_WARNING("Invalid [SERVER]/ProcessorMaxConcurrency value (" +
-                    to_string(m_ProcessorMaxConcurrency) + "). "
-                    "The processor max concurrency must be greater than 0. "
-                    "The processor max concurrency is reset to the default value (" +
-                    to_string(kDefaultProcessorMaxConcurrency) + ").");
-        m_RequestTimeoutSec = kDefaultProcessorMaxConcurrency;
-    }
-
-    if (m_SSLEnable) {
-        if (m_SSLCertFile.empty()) {
-            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                       "[SSL]/ssl_cert_file value must be provided "
-                       "if [SSL]/ssl_enable is set to true");
-        }
-        if (m_SSLKeyFile.empty()) {
-            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                       "[SSL]/ssl_key_file value must be provided "
-                       "if [SSL]/ssl_enable is set to true");
-        }
-
-        if (!CFile(m_SSLCertFile).Exists()) {
-            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                       "[SSL]/ssl_cert_file is not found");
-        }
-        if (!CFile(m_SSLKeyFile).Exists()) {
-            NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                       "[SSL]/ssl_key_file is not found");
-        }
-
-        if (m_SSLCiphers.empty()) {
-            m_SSLCiphers = kDefaultSSLCiphers;
-        }
-    }
-
-    if (m_IPGKeyspace.empty()) {
-        string  msg = "The [IPG]/keyspace is empty which effectively "
-                      "switches off the IPG resolve processor";
-        m_Alerts.Register(ePSGS_NoIPGKeyspace, msg);
-        PSG_WARNING(msg);
-    }
-    if (m_IPGPageSize <= 0) {
-        PSG_WARNING("The [IPG]/page_size value must be > 0. "
-                    "The [IPG]/page_size is switched to the default value: " +
-                    to_string(kDefaultIPGPageSize));
-        m_IPGPageSize = kDefaultIPGPageSize;
-    }
 }
 
 
@@ -1120,27 +651,6 @@ void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
 }
 
 
-
-unsigned long
-CPubseqGatewayApp::x_GetDataSize(const IRegistry &  reg,
-                                 const string &  section,
-                                 const string &  entry,
-                                 unsigned long  default_val)
-{
-    CConfig                         conf(reg);
-    const CConfig::TParamTree *     param_tree = conf.GetTree();
-    const TPluginManagerParamTree * section_tree =
-                                        param_tree->FindSubNode(section);
-
-    if (!section_tree)
-        return default_val;
-
-    CConfig     c((CConfig::TParamTree*)section_tree, eNoOwnership);
-    return c.GetDataSize("psg", entry, CConfig::eErr_NoThrow,
-                         default_val);
-}
-
-
 bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
 {
     static bool need_logging = true;
@@ -1153,7 +663,7 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
     try {
         string      err_msg;
         if (!FetchSatToKeyspaceMapping(
-                    m_RootKeyspace, m_CassConnection,
+                    m_Settings.m_RootKeyspace, m_CassConnection,
                     m_SatNames, eBlobVer2Schema,
                     m_CassMapping[vacant_index].m_BioseqKeyspace, eResolverSchema,
                     m_CassMapping[vacant_index].m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
@@ -1184,10 +694,10 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
         return false;
     }
 
-    auto    errors = m_CassMapping[vacant_index].validate(m_RootKeyspace);
+    auto    errors = m_CassMapping[vacant_index].validate(m_Settings.m_RootKeyspace);
     if (m_SatNames.empty())
         errors.push_back("No sat to keyspace resolutions found in the '" +
-                         m_RootKeyspace + "' keyspace.");
+                         m_Settings.m_RootKeyspace + "' keyspace.");
 
     if (errors.empty()) {
 
@@ -1237,7 +747,7 @@ void CPubseqGatewayApp::PopulatePublicCommentsMapping(void)
 
         m_PublicComments.reset(new CPSGMessages);
 
-        if (!FetchMessages(m_RootKeyspace, m_CassConnection,
+        if (!FetchMessages(m_Settings.m_RootKeyspace, m_CassConnection,
                            *m_PublicComments.get(), err_msg)) {
             // Allow another try later
             m_PublicComments.reset(nullptr);
@@ -1278,10 +788,12 @@ void CPubseqGatewayApp::CheckCassMapping(void)
     try {
         string      err_msg;
         if (!FetchSatToKeyspaceMapping(
-                    m_RootKeyspace, m_CassConnection,
+                    m_Settings.m_RootKeyspace, m_CassConnection,
                     sat_names, eBlobVer2Schema,
-                    m_CassMapping[vacant_index].m_BioseqKeyspace, eResolverSchema,
-                    m_CassMapping[vacant_index].m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
+                    m_CassMapping[vacant_index].m_BioseqKeyspace,
+                    eResolverSchema,
+                    m_CassMapping[vacant_index].m_BioseqNAKeyspaces,
+                    eNamedAnnotationsSchema,
                     err_msg)) {
             m_Alerts.Register(ePSGS_InvalidCassandraMapping,
                               "Error checking cassandra mapping: " + err_msg);
@@ -1300,17 +812,17 @@ void CPubseqGatewayApp::CheckCassMapping(void)
         return;
     }
 
-    auto    errors = m_CassMapping[vacant_index].validate(m_RootKeyspace);
+    auto    errors = m_CassMapping[vacant_index].validate(m_Settings.m_RootKeyspace);
     if (sat_names.empty())
         errors.push_back("No sat to keyspace resolutions found in the " +
-                         m_RootKeyspace + " keyspace.");
+                         m_Settings.m_RootKeyspace + " keyspace.");
 
     if (errors.empty()) {
         // No errors detected in the DB; let's compare with what we use now
         if (sat_names != m_SatNames)
             m_Alerts.Register(ePSGS_NewCassandraSatNamesMapping,
                               "Cassandra has new sat names mapping in  the " +
-                              m_RootKeyspace + " keyspace. The server needs "
+                              m_Settings.m_RootKeyspace + " keyspace. The server needs "
                               "to restart to use it.");
 
         if (m_CassMapping[0] != m_CassMapping[1]) {
@@ -1354,30 +866,9 @@ void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
 }
 
 
-void CPubseqGatewayApp::x_ReadIdToNameAndDescriptionConfiguration(
-                                                    const IRegistry &  reg,
-                                                    const string &  section)
-{
-    list<string>            entries;
-    reg.EnumerateEntries(section, &entries);
-
-    for(const auto &  value_id : entries) {
-        string      name_and_description = reg.Get(section, value_id);
-        string      name;
-        string      description;
-        if (NStr::SplitInTwo(name_and_description, ":::", name, description,
-                             NStr::fSplit_ByPattern)) {
-            m_IdToNameAndDescription[value_id] = {name, description};
-        } else {
-            PSG_WARNING("Malformed counter [" << section << "]/" << name <<
-                        " information. Expected <name>:::<description");
-        }
-    }
-}
-
 void CPubseqGatewayApp::x_InitSSL(void)
 {
-    if (m_SSLEnable) {
+    if (m_Settings.m_SSLEnable) {
         SSL_load_error_strings();
         SSL_library_init();
         OpenSSL_add_all_algorithms();
@@ -1406,34 +897,6 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new CPSGS_DummyProcessor()));
     #endif
-}
-
-
-size_t
-CPubseqGatewayApp::GetProcessorMaxConcurrency(const string &  processor_id)
-{
-    const CNcbiRegistry &   registry = GetConfig();
-    string                  section = processor_id + "_PROCESSOR";
-
-    if (registry.HasEntry(section, "ProcessorMaxConcurrency")) {
-        size_t      limit = registry.GetInt(section,
-                                            "ProcessorMaxConcurrency",
-                                            m_ProcessorMaxConcurrency);
-        if (limit == 0) {
-           PSG_WARNING("Invalid [" + section + "]/ProcessorMaxConcurrency value (" +
-                       to_string(limit) + "). "
-                       "The processor max concurrency must be greater than 0. "
-                       "The processor max concurrency is reset to the "
-                       "non-processor specific default value (" +
-                       to_string(m_ProcessorMaxConcurrency) + ").");
-            limit = m_ProcessorMaxConcurrency;
-        }
-
-        return limit;
-    }
-
-    // No processor specific value => server wide (or default)
-    return m_ProcessorMaxConcurrency;
 }
 
 
