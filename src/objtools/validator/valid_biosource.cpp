@@ -557,7 +557,7 @@ const CSeq_entry *ctx)
         isViroid = false;
     if (bsrc.IsSetLineage()) {
         string lineage = bsrc.GetLineage();
-        if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase)) {
+        if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase) || NStr::EqualNocase(lineage, "Viruses")) {
             isViral = true;
         } else if (NStr::StartsWith(lineage, "Eukaryota; Metazoa; ", NStr::eNocase)) {
             isAnimal = true;
