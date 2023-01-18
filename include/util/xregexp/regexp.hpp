@@ -281,6 +281,8 @@ private:
     CRegexp(const CRegexp &);
     void operator= (const CRegexp &);
 
+    void x_Match(CTempString str, size_t offset, TMatch flags);
+
     void*  m_PReg;   /// Pointer to compiled PCRE pattern.
     void*  m_Extra;  /// Pointer to extra structure used for pattern study.
 
