@@ -343,26 +343,31 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
     EPubmedError err = eError_val_citation_not_found;
 
     // clang-format off
-    constexpr array<eCitMatchFlags, 5> ruleset_single = {
+    constexpr array<eCitMatchFlags, 6> ruleset_single = {
         e_J | e_V | e_P       | e_A | e_I,
         e_J | e_V | e_P       | e_A,
         e_J | e_V | e_P,
         e_J       | e_P | e_Y | e_A,
         e_J                   | e_A       | e_T,
+                                e_A       | e_T,
     };
 
-    constexpr array<eCitMatchFlags, 5> ruleset_in_press = {
+    constexpr array<eCitMatchFlags, 6> ruleset_in_press = {
         e_J | e_V | e_P | e_Y | e_A,
         e_J | e_V | e_P | e_Y,
         e_J | e_V       | e_Y | e_A       | e_T,
         e_J | e_V       | e_Y             | e_T,
         e_J             | e_Y | e_A       | e_T,
+                          e_Y | e_A       | e_T,
     };
     // clang-format on
 
     const auto& ruleset = cm.InPress ? ruleset_in_press : ruleset_single;
+    const unsigned n       = cm.Option1 ? 6 : 5;
 
-    for (eCitMatchFlags r : ruleset) {
+    for (unsigned i = 0; i < n; ++i) {
+        eCitMatchFlags r = ruleset[i];
+
         string term;
         if (CECitMatch_Request::BuildSearchTerm(cm, r, term)) {
             req->SetArgument("term", term);

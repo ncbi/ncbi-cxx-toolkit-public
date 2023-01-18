@@ -56,6 +56,7 @@ struct NCBI_XOBJEDIT_EXPORT SCitMatch {
     string Issue;
     string Title;
     bool   InPress = false;
+    bool   Option1 = false;
 };
 
 using TPubInterceptor = std::function<void(CRef<CPub>&)>;
