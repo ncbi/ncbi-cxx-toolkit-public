@@ -195,3 +195,11 @@ Corrected reading JSON data files.
 May 10, 2022
 version 2.22.0, CXX-12461
 Fixed handling recursive type definitions.
+
+December 07, 2022
+version 2.22.1
+Fixed RPC client destructor code generation
+
+January 18, 2023, CXX-12812
+In serial library, fixed exception handling in object copier
+Added generation of gitignore.
