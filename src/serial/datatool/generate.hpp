@@ -131,6 +131,7 @@ public:
         list<string>& allSkippedHpp, list<string>& allSkippedCpp);
     void GenerateCombiningFile(const list<string>& module_inc, const list<string>& module_src,
         list<string>& allHpp, list<string>& allCpp);
+    bool IsGitRepository(const string& dir) const;
     void GenerateCvsignore(const string& outdir_cpp, const string& outdir_hpp,
         const list<string>& generated, map<string, pair<string,string> >& module_names);
     void GenerateModuleHPP(const string& path, list<string>& generated) const;
