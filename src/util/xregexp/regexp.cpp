@@ -35,6 +35,7 @@
 #include <corelib/ncbistl.hpp>
 #include <util/xregexp/regexp.hpp>
 #include <pcre.h>
+#define PCRE_FLAG(x) PCRE_##x
 
 #include <memory>
 #include <stdlib.h>
@@ -65,19 +66,19 @@ static int s_GetRealCompileFlags(CRegexp::TCompile compile_flags)
                    "Bad regular expression compilation flags");
     }
     if ( F_ISSET(compile_flags, CRegexp::fCompile_ignore_case) ) {
-        flags |= PCRE_CASELESS;
+        flags |= PCRE_FLAG(CASELESS);
     }
     if ( F_ISSET(compile_flags, CRegexp::fCompile_dotall) ) {
-        flags |= PCRE_DOTALL;
+        flags |= PCRE_FLAG(DOTALL);
     }
     if ( F_ISSET(compile_flags, CRegexp::fCompile_newline) ) {
-        flags |= PCRE_MULTILINE;
+        flags |= PCRE_FLAG(MULTILINE);
     }
     if ( F_ISSET(compile_flags, CRegexp::fCompile_ungreedy) ) {
-        flags |= PCRE_UNGREEDY;
+        flags |= PCRE_FLAG(UNGREEDY);
     }
     if ( F_ISSET(compile_flags, CRegexp::fCompile_extended) ) {
-        flags |= PCRE_EXTENDED;
+        flags |= PCRE_FLAG(EXTENDED);
     }
     return flags;
 }
@@ -92,10 +93,10 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
                    "Bad regular expression match flags");
     }
     if ( F_ISSET(match_flags, CRegexp::fMatch_not_begin) ) {
-        flags |= PCRE_NOTBOL;
+        flags |= PCRE_FLAG(NOTBOL);
     }
     if ( F_ISSET(match_flags, CRegexp::fMatch_not_end) ) {
-        flags |= PCRE_NOTEOL;
+        flags |= PCRE_FLAG(NOTEOL);
     }
     return flags;
 }
@@ -143,16 +144,11 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 // @deprecated
 void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
 {
-    if ( (int)idx >= m_NumFound ) {
-        dst.erase();
-        return;
-    }
-    int start = m_Results[2 * idx];
-    int end   = m_Results[2 * idx + 1];
-    if (start == -1  ||  end == -1) {
+    auto sub = GetSub(str, idx);
+    if (sub.empty()) {
         dst.erase();
     } else {
-        dst.assign(str.data() + start, end - start);
+        dst.assign(sub.data(), sub.size());
     }
 }
 
@@ -162,23 +158,31 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
     if ( (int)idx >= m_NumFound ) {
         return CTempString();
     }
-    int start = m_Results[2 * idx];
-    int end   = m_Results[2 * idx + 1];
-    if (start == -1  ||  end == -1) {
+    static const int kNotFound = -1;
+    const int * offsets = m_Results;
+    auto start = offsets[2 * idx];
+    auto end   = offsets[2 * idx + 1];
+    if (start == kNotFound  ||  end == kNotFound) {
         return CTempString();
     }
     return CTempString(str.data() + start, end - start);
 }
 
 
-CTempString CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
-                              TMatch flags, bool noreturn)
+void CRegexp::x_Match(CTempString str, size_t offset, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
     m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
                            (int)str.length(), (int)offset,
                            x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
+}
+
+
+CTempString CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
+                              TMatch flags, bool noreturn)
+{
+    x_Match(str, offset, flags);
     if ( noreturn ) {
         return CTempString();
     }
@@ -188,10 +192,7 @@ CTempString CRegexp::GetMatch(CTempString str, size_t offset, size_t idx,
 
 bool CRegexp::IsMatch(CTempString str, TMatch flags)
 {
-    int x_flags = s_GetRealMatchFlags(flags);
-    m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
-                           (int)str.length(), 0, x_flags, m_Results,
-                           (int)(kRegexpMaxSubPatterns +1) * 3);
+    x_Match(str, 0, flags);
     return m_NumFound > 0;
 }
 
