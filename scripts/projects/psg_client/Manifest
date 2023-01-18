@@ -10,6 +10,7 @@
 #
 
 APP: psg_client
+APP: pubseq_gateway.cgi$exe
 
 # Each line describes a single configuration
 # The format is as follows:
