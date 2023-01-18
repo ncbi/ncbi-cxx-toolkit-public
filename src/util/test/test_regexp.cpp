@@ -134,7 +134,7 @@ int CRegexApplication::Run(void)
     for (;;) {
         pattern.GetMatch(text, start, 0, CRegexp::fMatch_default, true);
         if (pattern.NumFound() > 0) {
-            const int* rslt = pattern.GetResults(0);
+            const auto* rslt = pattern.GetResults(0);
             LOG_POST(text.substr(rslt[0], rslt[1] - rslt[0]));
             start = rslt[1];
         } else {
