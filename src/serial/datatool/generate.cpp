@@ -664,6 +664,25 @@ void CCodeGenerator::GenerateCombiningFile(
         ERR_POST_X(8, Fatal << "Error writing file " << fileName);
 }
 
+bool CCodeGenerator::IsGitRepository(const string& dir) const
+{
+    string rootdir = MakeAbsolutePath(GetRootDir());
+    string f, parent = MakeAbsolutePath(dir);
+    do {
+        f = parent;
+        string igit =  Path(f, ".git");
+        string isvn =  Path(f, ".svn");
+        if (CDirEntry(Path(f, ".git")).Exists()) {
+            return true;
+        }
+        if (CDirEntry(Path(f, ".svn")).Exists()) {
+            return false;
+        }
+        parent = CDirEntry(f).GetDir(CDirEntry::eIfEmptyPath_Empty);
+    } while (parent != f && !f.empty() && f != rootdir);
+    return false;
+}
+
 void CCodeGenerator::GenerateCvsignore(
     const string& outdir_cpp, const string& outdir_hpp,
     const list<string>& generated, map<string, pair<string,string> >& module_names)
@@ -673,6 +692,9 @@ void CCodeGenerator::GenerateCvsignore(
     }
     string ignoreName(".cvsignore");
     string extraName(".cvsignore.extra");
+    if (IsGitRepository(outdir_cpp)) {
+        ignoreName = ".gitignore";
+    }   
 
     for (int i=0; i<2; ++i) {
         bool is_cpp = (i==0);
@@ -680,6 +702,9 @@ void CCodeGenerator::GenerateCvsignore(
         string out_dir(is_cpp ? outdir_cpp : outdir_hpp);
 
         string ignorePath(MakeAbsolutePath(Path(out_dir,ignoreName)));
+        if (CFile(ignorePath).Exists()) {
+            continue;
+        }
         // ios::out should be redundant, but some compilers
         // (GCC 2.9x, for one) seem to need it. :-/
         CNcbiOfstream ignoreFile(ignorePath.c_str(),
