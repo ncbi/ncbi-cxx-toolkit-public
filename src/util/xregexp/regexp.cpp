@@ -122,7 +122,7 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
         (*pcre_free)(m_PReg);
     }
     const char *err;
-    int err_offset;
+    TOffset err_offset;
     int x_flags = s_GetRealCompileFlags(flags);
 
     if ( pattern.HasZeroAtEnd() ) {
@@ -315,7 +315,7 @@ size_t CRegexpUtil::Replace(
         }
 
         // Substitute all subpatterns "$<digit>" to values in the "replace" string
-        const int* result;
+        const CRegexp::TOffset* result;
         string     x_replace(replace.data(), replace.length());
         size_t     pos = 0;
 
