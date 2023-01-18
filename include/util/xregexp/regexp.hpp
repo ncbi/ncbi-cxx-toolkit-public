@@ -69,6 +69,9 @@ const size_t kRegexpMaxSubPatterns = 100;
 class NCBI_XREGEXP_EXPORT CRegexp
 {
 public:
+    /// Element type for GetResults().
+    typedef int TOffset;
+
     /// Type definitions used for code clarity.
     typedef unsigned int TCompile;     ///< Compilation options.
     typedef unsigned int TMatch;       ///< Match options.
@@ -258,7 +261,7 @@ public:
     ///   Throws if called with idx >= NumFound().
     /// @sa
     ///   GetMatch(), NumFound()
-    const int* GetResults(size_t idx) const;
+    const TOffset* GetResults(size_t idx) const;
 
     /// Escape all regular expression meta characters in the string.
     static string Escape(CTempString str);
@@ -563,7 +566,7 @@ int CRegexp::NumFound() const
 
 
 inline
-const int* CRegexp::GetResults(size_t idx) const
+const CRegexp::TOffset* CRegexp::GetResults(size_t idx) const
 {
     if ((int)idx >= m_NumFound) {
         throw runtime_error("idx >= NumFound()");
