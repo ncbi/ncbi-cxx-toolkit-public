@@ -236,6 +236,7 @@ private:
         std::string msg((Stream).In().TopFrame().GetFrameInfo()); \
         (Stream).Out().PopFrame(); \
         (Stream).Out().SetFailFlagsNoError(CObjectOStream::fInvalidData); \
+        (Stream).In().SetFailFlags(CObjectIStream::fFail); \
         (Stream).In().PopErrorFrame(); \
         NCBI_RETHROW_SAME(expt,msg); \
     } \
