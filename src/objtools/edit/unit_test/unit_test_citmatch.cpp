@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(Test3)
 {
     SCitMatch cm;
     cm.Journal = "Genome Announc";
-    cm.Title   = "Yeast (Hansenula fabianii)";
+    cm.Title   = "Genome Sequence of the Yeast Cyberlindnera fabianii (Hansenula fabianii)";
     cm.Author  = "Freel KC";
 
     for (auto upd : updaters) {
