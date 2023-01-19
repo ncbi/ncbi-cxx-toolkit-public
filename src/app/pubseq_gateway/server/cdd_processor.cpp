@@ -186,44 +186,57 @@ bool CPSGS_CDDProcessor::x_IsEnabled(CPSGS_Request& request) const
 vector<string> CPSGS_CDDProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> request,
                                                   shared_ptr<CPSGS_Reply> reply) const
 {
-    vector<string> can_process;
-    if ( x_IsEnabled(*request) ) {
-        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-        if ( x_CanProcessAnnotRequestIds(annot_request) ) {
-            for ( auto& name : annot_request.m_Names ) {
-                if ( NStr::EqualNocase(name, kCDDAnnotName) ) {
-                    can_process.push_back(name);
+    try {
+        vector<string> can_process;
+        if ( x_IsEnabled(*request) ) {
+            SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+            if ( x_CanProcessAnnotRequestIds(annot_request) ) {
+                for ( auto& name : annot_request.m_Names ) {
+                    if ( name == kCDDAnnotName ) {
+                        can_process.push_back(name);
+                        break;
+                    }
                 }
             }
         }
+        return can_process;
     }
-    return can_process;
+    catch ( exception& exc ) {
+        x_SendError(reply, "Exception in WhatCanProcess: ", exc);
+        throw;
+    }
 }
 
 
 bool CPSGS_CDDProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply) const
 {
-    auto req_type = request->GetRequestType();
-    if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
-        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
-        return false;
-    }
+    try {
+        auto req_type = request->GetRequestType();
+        if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
+            req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
+            return false;
+        }
 
-    if ( !x_IsEnabled(*request) ) {
-        return false;
-    }
+        if ( !x_IsEnabled(*request) ) {
+            return false;
+        }
 
-    if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
-        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), 0)) {
-        return false;
-    }
-    if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
-        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>())) {
-        return false;
-    }
+        if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
+            !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), 0)) {
+            return false;
+        }
+        if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
+            !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>())) {
+            return false;
+        }
     
-    return true;
+        return true;
+    }
+    catch ( exception& exc ) {
+        x_SendError(reply, "Exception in CanProcess: ", exc);
+        throw;
+    }
 }
 
 
@@ -232,26 +245,32 @@ CPSGS_CDDProcessor::CreateProcessor(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply,
                                     TProcessorPriority priority) const
 {
-    auto req_type = request->GetRequestType();
-    if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
-        req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
-        return nullptr;
-    }
+    try {
+        auto req_type = request->GetRequestType();
+        if (req_type != CPSGS_Request::ePSGS_AnnotationRequest &&
+            req_type != CPSGS_Request::ePSGS_BlobBySatSatKeyRequest) {
+            return nullptr;
+        }
 
-    if ( !x_IsEnabled(*request) ) {
-        return nullptr;
-    }
+        if ( !x_IsEnabled(*request) ) {
+            return nullptr;
+        }
 
-    if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
-        !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), priority)) {
-        return nullptr;
-    }
-    if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
-        !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>())) {
-        return nullptr;
-    }
+        if (req_type == CPSGS_Request::ePSGS_AnnotationRequest &&
+            !x_CanProcessAnnotRequest(request->GetRequest<SPSGS_AnnotRequest>(), priority)) {
+            return nullptr;
+        }
+        if (req_type == CPSGS_Request::ePSGS_BlobBySatSatKeyRequest &&
+            !x_CanProcessBlobRequest(request->GetRequest<SPSGS_BlobBySatSatKeyRequest>())) {
+            return nullptr;
+        }
 
-    return new CPSGS_CDDProcessor(m_ClientPool, m_ThreadPool, request, reply, priority);
+        return new CPSGS_CDDProcessor(m_ClientPool, m_ThreadPool, request, reply, priority);
+    }
+    catch ( exception& exc ) {
+        x_SendError(reply, "Exception in CreateProcessor: ", exc);
+        throw;
+    }
 }
 
 
@@ -264,6 +283,42 @@ string CPSGS_CDDProcessor::GetName() const
 string CPSGS_CDDProcessor::GetGroupName() const
 {
     return kCDDProcessorGroupName;
+}
+
+
+void CPSGS_CDDProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
+                                     const string& msg)
+{
+    reply->PrepareProcessorMessage(reply->GetItemId(), kCDDProcessorName, msg,
+                                   CRequestStatus::e500_InternalServerError,
+                                   ePSGS_UnknownError,
+                                   eDiag_Error);
+}
+
+
+void CPSGS_CDDProcessor::x_SendError(const string& msg)
+{
+    x_SendError(m_Reply, msg);
+}
+
+
+void CPSGS_CDDProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
+                                     const string& msg, const exception& exc)
+{
+    x_SendError(reply, msg+string(exc.what()));
+}
+
+
+void CPSGS_CDDProcessor::x_SendError(const string& msg, const exception& exc)
+{
+    x_SendError(m_Reply, msg+string(exc.what()));
+}
+
+
+void CPSGS_CDDProcessor::x_ReportResultStatus(SPSGS_AnnotRequest::EPSGS_ResultStatus status)
+{
+    SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    annot_request.ReportResultStatus(kCDDAnnotName, status);
 }
 
 
@@ -291,7 +346,8 @@ void CPSGS_CDDProcessor::Process()
             break;
         }
     }
-    catch (...) {
+    catch (exception& exc) {
+        x_SendError("Exception when handling a request: ", exc);
         x_Finish(ePSGS_Error);
     }
 }
@@ -313,6 +369,7 @@ void CPSGS_CDDProcessor::x_ProcessResolveRequest(void)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     if ( !x_NameIncluded(annot_request.GetNotProcessedName(m_Priority)) ) {
+        x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -366,7 +423,8 @@ void CPSGS_CDDProcessor::GetBlobId(void)
             m_CDDBlob.info = m_ClientPool->GetBlobIdBySeq_id(id);
             if (m_CDDBlob.info) break;
         }
-        catch (...) {
+        catch (exception& exc) {
+            m_Error = "Exception when handling get_na request: " + string(exc.what());
             m_CDDBlob.info.Reset();
             m_CDDBlob.data.Reset();
         }
@@ -384,7 +442,8 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
             m_CDDBlob = m_ClientPool->GetBlobBySeq_id(id);
             if (m_CDDBlob.info && m_CDDBlob.data) break;
         }
-        catch (...) {
+        catch (exception& exc) {
+            m_Error = "Exception when handling get_na request: " + string(exc.what());
             m_CDDBlob.info.Reset();
             m_CDDBlob.data.Reset();
         }
@@ -400,7 +459,8 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
     try {
         m_CDDBlob.data = m_ClientPool->GetBlobByBlobId(*m_BlobId);
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_Error = "Exception when handling getblob request: " + string(exc.what());
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
     }
@@ -416,7 +476,15 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
         return;
     }
     if ( !m_CDDBlob.info ) {
-        x_Finish(ePSGS_NotFound);
+        if ( !m_Error.empty() ) {
+            x_SendError(m_Error);
+            x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_Error);
+            x_Finish(ePSGS_Error);
+        }
+        else {
+            x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+            x_Finish(ePSGS_NotFound);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -425,7 +493,10 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
     try {
         x_SendAnnotInfo(*m_CDDBlob.info);
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_Error = "Exception when sending get_na reply: " + string(exc.what());
+        x_SendError(m_Error);
+        x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_Error);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -441,7 +512,15 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
         return;
     }
     if ( !m_CDDBlob.info  ||  !m_CDDBlob.data ) {
-        x_Finish(ePSGS_NotFound);
+        if ( !m_Error.empty() ) {
+            x_SendError(m_Error);
+            x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_Error);
+            x_Finish(ePSGS_Error);
+        }
+        else {
+            x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+            x_Finish(ePSGS_NotFound);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -451,7 +530,10 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
         x_SendAnnotInfo(*m_CDDBlob.info);
         x_SendAnnot(m_CDDBlob.info->GetBlob_id(), m_CDDBlob.data);
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_Error = "Exception when sending get_na reply: " + string(exc.what());
+        x_SendError(m_Error);
+        x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_Error);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -467,7 +549,13 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
         return;
     }
     if ( !m_CDDBlob.data ) {
-        x_Finish(ePSGS_NotFound);
+        if ( !m_Error.empty() ) {
+            x_SendError(m_Error);
+            x_Finish(ePSGS_Error);
+        }
+        else {
+            x_Finish(ePSGS_NotFound);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -476,7 +564,9 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
     try {
         x_SendAnnot(*m_BlobId, m_CDDBlob.data);
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_Error = "Exception when sending getblob reply: " + string(exc.what());
+        x_SendError(m_Error);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -669,7 +759,7 @@ bool CPSGS_CDDProcessor::x_CanProcessBlobRequest(SPSGS_BlobBySatSatKeyRequest& b
 bool CPSGS_CDDProcessor::x_NameIncluded(const vector<string>& names) const
 {
     for ( auto& name : names ) {
-        if ( NStr::EqualNocase(name, kCDDAnnotName) ) return true;
+        if ( name == kCDDAnnotName ) return true;
     }
     return false;
 }
