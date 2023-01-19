@@ -118,6 +118,7 @@ private:
     bool x_Peek(unique_ptr<CCassFetch>& fetch_details, bool  need_wait);
 
     void x_WriteData(objects::CID2_Reply_Data& data, const CSerialObject& obj) const;
+    void x_SendAnnotInfo(const SSNPData& data);
     void x_SendAnnotInfo(void);
     void x_SendBlob(void);
     void x_SendChunk(void);
@@ -127,7 +128,14 @@ private:
     void x_SendBlobData(const string& psg_blob_id, const objects::CID2_Reply_Data& data);
     void x_SendChunkBlobProps(const string& id2_info, int chunk_id, CBlobRecord& blob_props);
     void x_SendChunkBlobData(const string& id2_info, int chunk_id, const objects::CID2_Reply_Data& data);
-
+    static void x_SendError(shared_ptr<CPSGS_Reply> reply,
+                            const string& msg);
+    static void x_SendError(shared_ptr<CPSGS_Reply> reply,
+                            const string& msg, const exception& exc);
+    void x_SendError(const string& msg);
+    void x_SendError(const string& msg, const exception& exc);
+    void x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::EPSGS_ResultStatus status);
+    
     void x_UnlockRequest(void);
     void x_Finish(EPSGS_Status status);
     bool x_IsCanceled();
@@ -141,10 +149,12 @@ private:
     EPSGS_Status m_Status = ePSGS_NotFound;
     bool m_Canceled = false;
     vector<CSeq_id_Handle> m_SeqIds;
+    vector<string> m_ProcessNAs;
     string m_PSGBlobId; // requested blob-id
     string m_Id2Info;   // requested id2-info
     int m_ChunkId;  // requested chunk-id
     vector<SSNPData> m_SNPData;
+    string m_SNPDataError;
     bool m_Unlocked;
     bool m_PreResolving;
 };

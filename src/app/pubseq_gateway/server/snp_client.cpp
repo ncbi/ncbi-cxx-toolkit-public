@@ -896,20 +896,45 @@ const unsigned int kRefSeqAccFlags = CSeq_id::e_Other | CSeq_id::fAcc_nuc;
 bool CSNPClient::IsValidSeqId(const CSeq_id_Handle& idh) const
 {
     if (!idh) return false;
-    if (m_Config.m_AllowNonRefSeq) return true;
-    return (idh.IdentifyAccession() & kRefSeqAccFlags) == kRefSeqAccFlags;
-}
-
-
-bool CSNPClient::IsValidSeqId(const string& id, int id_type) const
-{
-    if (id_type != CSeq_id::e_Other) return false;
     try {
-        CSeq_id seq_id(id);
-        return (seq_id.IdentifyAccession() & kRefSeqAccFlags) == kRefSeqAccFlags;
+        // check type
+        if ( (idh.IdentifyAccession() & kRefSeqAccFlags) == kRefSeqAccFlags ) {
+            // check version
+            if ( idh.IsAccVer() ) {
+                // fully qualified refseq seq-id (Seq-id.other)
+                return true;
+            }
+        }
     }
     catch (...) {
     }
+    if (m_Config.m_AllowNonRefSeq) return true;
+    return false;
+}
+
+
+bool CSNPClient::IsValidSeqId(const string& id, int id_type, int version) const
+{
+    if ( id.empty() ) return false;
+    // preliminary check type
+    if ( id_type == CSeq_id::e_Other) {
+        try {
+            CSeq_id seq_id(id);
+            // check type
+            if ( (seq_id.IdentifyAccession() & kRefSeqAccFlags) == kRefSeqAccFlags ) {
+                // check version
+                if ( auto text_id = seq_id.GetTextseq_Id() ) {
+                    if ( text_id->IsSetVersion() || version > 0 ) {
+                        // fully qualified refseq seq-id (Seq-id.other)
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (...) {
+        }
+    }
+    if (m_Config.m_AllowNonRefSeq) return true;
     return false;
 }
 
@@ -1006,11 +1031,14 @@ CRef<CSNPSeqInfo> CSNPClient::GetSeqInfo(const CSNPBlobId& blob_id)
 }
 
 
-vector<string> CSNPClient::WhatNACanProcess(SPSGS_AnnotRequest& annot_request) const
+vector<string> CSNPClient::WhatNACanProcess(SPSGS_AnnotRequest& annot_request,
+                                            TProcessorPriority priority) const
 {
     vector<string> can_process;
     if (HaveValidSeq_id(annot_request)) {
-        for (const auto& name : annot_request.m_Names) {
+        for (const auto& name : (priority==-1?
+                                 annot_request.m_Names:
+                                 annot_request.GetNotProcessedName(priority)) ) {
             if (m_Config.m_AddPTIS && name == "SNP") {
                 can_process.push_back(name);
                 continue;
@@ -1034,20 +1062,7 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
 {
     switch (request.GetRequestType()) {
     case CPSGS_Request::ePSGS_AnnotationRequest: {
-        SPSGS_AnnotRequest& annot_request = request.GetRequest<SPSGS_AnnotRequest>();
-        if (!HaveValidSeq_id(annot_request)) return false;
-        vector<string> names = annot_request.GetNotProcessedName(priority);
-        for (const auto& name : names) {
-            if (m_Config.m_AddPTIS && name == "SNP") return true;
-            string acc = name;
-            size_t filter_index = s_ExtractFilterIndex(acc);
-            if (filter_index == 0 && acc.size() == name.size()) {
-                // filter specification is required
-                continue;
-            }
-            if (CSNPBlobId::IsValidNA(acc)) return true;
-        }
-        return false;
+        return !WhatNACanProcess(request.GetRequest<SPSGS_AnnotRequest>(), priority).empty();
     }
     case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest: {
         SPSGS_BlobBySatSatKeyRequest& blob_request = request.GetRequest<SPSGS_BlobBySatSatKeyRequest>();
@@ -1073,91 +1088,120 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
 }
 
 
-vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const vector<string>& names)
+void CSNPClient::EnsureCacheSize(size_t size)
 {
-    vector<SSNPData> ret;
-    // RefSeq ids only
-    if (!m_Config.m_AllowNonRefSeq && !IsValidSeqId(id)) return ret;
-    {
-        CMutexGuard guard(m_Mutex);
-        if (m_FixedFiles.empty()) {
-            if (m_FoundFiles.get_size_limit() < names.size()) {
-                // increase VDB cache size
-                m_FoundFiles.set_size_limit(names.size() + m_Config.m_GCSize);
-            }
-            if (m_MissingFiles.get_size_limit() < names.size()) {
-                // increase VDB cache size
-                m_MissingFiles.set_size_limit(names.size() + m_Config.m_MissingGCSize);
-            }
+    CMutexGuard guard(m_Mutex);
+    if (m_FixedFiles.empty()) {
+        if (m_FoundFiles.get_size_limit() < size) {
+            // increase VDB cache size
+            m_FoundFiles.set_size_limit(size + m_Config.m_GCSize);
+        }
+        if (m_MissingFiles.get_size_limit() < size) {
+            // increase VDB cache size
+            m_MissingFiles.set_size_limit(size + m_Config.m_MissingGCSize);
         }
     }
-    for (const auto& name : names) {
+ }
+
+
+vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const string& name)
+{
+    vector<SSNPData> ret;
+    try {
         if (m_Config.m_AddPTIS && name == "SNP") {
             // default SNP track
             string acc_ver = s_GetAccVer(id);
-            if (!acc_ver.empty()) {
-                string na_acc;
-                try {
-                    // add default SNP track
-                    na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
-                }
-                catch (CException& exc) {
-                    PSG_ERROR("CSNPClient: failed to add PTIS track for " << acc_ver << ": " << exc);
-                }
-                if (!na_acc.empty()) {
-                    size_t filter_index = s_ExtractFilterIndex(na_acc);
-                    if (CRef<CSNPFileInfo> info = GetFileInfo(na_acc)) {
-                        if (CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id)) {
-                            seq->SetFilterIndex(filter_index);
-                            {
-                                CSNPBlobId blob_id = seq->GetBlobId();
-                                blob_id.SetPrimaryTrackFeat();
-                                SSNPData data;
-                                data.m_BlobId = blob_id.ToString();
-                                data.m_Name = name;
-                                data.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
-                                ret.push_back(data);
-                            }
-                            {
-                                CSNPBlobId blob_id = seq->GetBlobId();
-                                blob_id.SetPrimaryTrackGraph();
-                                SSNPData data;
-                                data.m_BlobId = blob_id.ToString();
-                                data.m_Name = name;
-                                // add SNP overview graph type info
-                                data.m_AnnotInfo.push_back(x_GetGraphInfo(name, id));
-                                // add SNP graph type info
-                                data.m_AnnotInfo.push_back(x_GetGraphInfo(
-                                    CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetCoverageZoom()), id));
-                                ret.push_back(data);
-                            }
-                        }
-                    }
-                }
+            if (acc_ver.empty()) {
+                return ret;
             }
-            continue;
-        }
-        string acc = name;
-        size_t filter_index = s_ExtractFilterIndex(acc);
-        if (filter_index == 0 && acc.size() == name.size()) {
-            // filter specification is required
-            continue;
-        }
-        if (CRef<CSNPFileInfo> info = GetFileInfo(acc)) {
-            if (CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id)) {
-                seq->SetFilterIndex(filter_index);
-                auto blob_id = seq->GetBlobId();
+            // find default SNP track
+            string na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
+            if (na_acc.empty()) {
+                // no default SNP track
+                return ret;
+            }
+            size_t filter_index = s_ExtractFilterIndex(na_acc);
+            CRef<CSNPFileInfo> info = GetFileInfo(na_acc);
+            if ( !info ) {
+                return ret; // should it be an error since PTIS says SNPs should exist
+            }
+            CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id);
+            if ( !seq ) {
+                return ret; // should it be an error since PTIS says SNPs should exist
+            }
+            seq->SetFilterIndex(filter_index);
+            {
+                CSNPBlobId blob_id = seq->GetBlobId();
+                blob_id.SetPrimaryTrackFeat();
                 SSNPData data;
                 data.m_BlobId = blob_id.ToString();
                 data.m_Name = name;
                 data.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
-                data.m_AnnotInfo.push_back(x_GetGraphInfo(
-                    CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetOverviewZoom()), id));
-                data.m_AnnotInfo.push_back(x_GetGraphInfo(
-                    CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetCoverageZoom()), id));
+                ret.push_back(data);
+            }
+            {
+                CSNPBlobId blob_id = seq->GetBlobId();
+                blob_id.SetPrimaryTrackGraph();
+                SSNPData data;
+                data.m_BlobId = blob_id.ToString();
+                data.m_Name = name;
+                // add SNP overview graph type info
+                data.m_AnnotInfo.push_back(x_GetGraphInfo(name, id));
+                // add SNP graph type info
+                string graph_name = CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetCoverageZoom());
+                data.m_AnnotInfo.push_back(x_GetGraphInfo(graph_name, id));
                 ret.push_back(data);
             }
         }
+        else {
+            string acc = name;
+            size_t filter_index = s_ExtractFilterIndex(acc);
+            if (filter_index == 0 && acc.size() == name.size()) {
+                // filter specification is required
+                return ret;
+            }
+            CRef<CSNPFileInfo> info = GetFileInfo(acc);
+            if ( !info ) {
+                return ret;
+            }
+            CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id);
+            if ( !seq ) {
+                return ret;
+            }
+            seq->SetFilterIndex(filter_index);
+            auto blob_id = seq->GetBlobId();
+            SSNPData data;
+            data.m_BlobId = blob_id.ToString();
+            data.m_Name = name;
+            data.m_AnnotInfo.push_back(x_GetFeatInfo(name, id));
+            string overview_name =
+                CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetOverviewZoom());
+            data.m_AnnotInfo.push_back(x_GetGraphInfo(overview_name, id));
+            string coverage_name =
+                CSeq_annot::CombineWithZoomLevel(name, info->GetDb().GetCoverageZoom());
+            data.m_AnnotInfo.push_back(x_GetGraphInfo(coverage_name, id));
+            ret.push_back(data);
+        }
+    }
+    catch ( exception& exc ) {
+        SSNPData data;
+        data.m_Name = name;
+        data.m_Error = "Exception when handling get_na request: " + string(exc.what());
+        ret.push_back(data);
+    }
+    return ret;
+}
+
+
+vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const vector<string>& names)
+{
+    vector<SSNPData> ret;
+    // RefSeq ids only
+    if (!IsValidSeqId(id)) return ret;
+    EnsureCacheSize(names.size());
+    for (const auto& name : names) {
+        auto data = GetAnnotInfo(id, name);
+        ret.insert(ret.end(), data.begin(),data.end());
     }
     return ret;
 }
