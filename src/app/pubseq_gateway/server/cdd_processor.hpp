@@ -103,6 +103,13 @@ private:
     void x_ProcessGetBlobRequest(void);
     void x_SendAnnotInfo(const objects::CCDD_Reply_Get_Blob_Id& blob_info);
     void x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
+    static void x_SendError(shared_ptr<CPSGS_Reply> reply,
+                            const string& msg);
+    static void x_SendError(shared_ptr<CPSGS_Reply> reply,
+                            const string& msg, const exception& exc);
+    void x_SendError(const string& msg);
+    void x_SendError(const string& msg, const exception& exc);
+    void x_ReportResultStatus(SPSGS_AnnotRequest::EPSGS_ResultStatus status);
     void x_UnlockRequest(void);
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
@@ -114,6 +121,7 @@ private:
     vector<objects::CSeq_id_Handle> m_SeqIds;
     CRef<objects::CCDDClientPool::TBlobId> m_BlobId;
     objects::CCDDClientPool::SCDDBlob m_CDDBlob;
+    string m_Error;
     bool m_Unlocked;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 };
