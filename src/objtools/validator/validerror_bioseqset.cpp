@@ -69,7 +69,8 @@ CValidError_bioseqset::~CValidError_bioseqset()
 
 
 void CValidError_bioseqset::ValidateBioseqSet(
-    const CBioseq_set& seqset)
+    const CBioseq_set& seqset,
+    bool suppressMissingSetTitle)
 {
     int protcnt = 0;
     int nuccnt  = 0;
@@ -184,12 +185,12 @@ void CValidError_bioseqset::ValidateBioseqSet(
 
     if ((m_Imp.IsHugeFileMode()) && m_Imp.IsHugeSet(seqset)) {
         call_once(m_Imp.SetContext().DescriptorsOnceFlag,
-                [this, &seqset](){ x_ValidateSetDescriptors(seqset); });
+                [this, &seqset](){ x_ValidateSetDescriptors(seqset /*, suppressMissingSetTitle */ ); });
         return;
     }
 
 
-    x_ValidateSetDescriptors(seqset);
+    x_ValidateSetDescriptors(seqset, suppressMissingSetTitle);
 }
 
 
@@ -197,7 +198,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
 //                                     Private
 // =============================================================================
 
-void CValidError_bioseqset::x_ValidateSetDescriptors(const CBioseq_set& seqset)
+void CValidError_bioseqset::x_ValidateSetDescriptors(const CBioseq_set& seqset, bool suppressMissingSetTitle)
 {
     if (seqset.IsSetClass()
         && (seqset.GetClass() == CBioseq_set::eClass_genbank
@@ -222,7 +223,7 @@ void CValidError_bioseqset::x_ValidateSetDescriptors(const CBioseq_set& seqset)
     }
 
     SetShouldNotHaveMolInfo(seqset);
-    ValidateSetTitle(seqset);
+    ValidateSetTitle(seqset, suppressMissingSetTitle);
 }
 
 
@@ -587,7 +588,7 @@ void CValidError_bioseqset::ValidateGenbankSet(const CBioseq_set& seqset)
 }
 
 
-void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset)
+void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset, bool suppressMissingSetTitle)
 {
     bool has_title = false;
     bool needs_title = seqset.NeedsDocsumTitle();
@@ -613,9 +614,11 @@ void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset)
 
 
     if (needs_title && !has_title && (m_Imp.IsRefSeq() || m_Imp.IsEmbl() || m_Imp.IsDdbj() || m_Imp.IsGenbank())) {
-        PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
-            "Pop/Phy/Mut/Eco set does not have title",
-            seqset);
+        if (! suppressMissingSetTitle) {
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
+                "Pop/Phy/Mut/Eco set does not have title",
+                seqset);
+        }
     }
 }
 

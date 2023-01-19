@@ -78,7 +78,7 @@ public:
     CValidError_bioseqset(CValidError_imp& imp);
     ~CValidError_bioseqset() override;
 
-    void ValidateBioseqSet(const CBioseq_set& seqset);
+    void ValidateBioseqSet(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
 
 private:
 
@@ -86,9 +86,9 @@ private:
     void ValidateSegSet(const CBioseq_set& seqset, int segcnt);
     void ValidatePartsSet(const CBioseq_set& seqset);
     void ValidateGenbankSet(const CBioseq_set& seqset);
-    void ValidateSetTitle(const CBioseq_set& seqset);
+    void ValidateSetTitle(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
     void ValidateSetElements(const CBioseq_set& seqset);
-    void x_ValidateSetDescriptors(const CBioseq_set& seqset);
+    void x_ValidateSetDescriptors(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
