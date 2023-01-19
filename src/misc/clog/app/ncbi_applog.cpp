@@ -1022,7 +1022,7 @@ int CNcbiApplogApp::ReadCgiResponse(CConn_HttpStream& cgi)
 
 void CNcbiApplogApp::GetRawAppName(CRegexp& re, string* appname, size_t* from, size_t* len)
 {
-    const int* apos = re.GetResults(1);
+    const auto* apos = re.GetResults(1);
     if (!apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
         throw std::runtime_error("Error processing input raw log, line has wrong format");
     }
@@ -2014,7 +2014,7 @@ int CNcbiApplogApp::Run()
                             // Find start of the performance parameters, if any
                             CRegexp re_perf(kPerfRegexp);
                             if (re_perf.IsMatch(CTempString(m_Raw_line.data() + parampos))) {
-                                const int* ppos = re_perf.GetResults(1);
+                                const auto* ppos = re_perf.GetResults(1);
                                 if (ppos  &&  ppos[0]  &&  ppos[1]) {
                                     param_ofs = ppos[1] + 1;
                                 }
