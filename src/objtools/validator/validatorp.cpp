@@ -1488,21 +1488,23 @@ bool CValidError_imp::Validate
     } else if (seh.IsSet()) {
         const CBioseq_set& set = seh.GetCompleteSeq_entry()->GetSet();
         CValidError_bioseqset bioseqset_validator(*this);
+
         try {
-            bioseqset_validator.ValidateBioseqSet(set);
+            const CBioseq_set& ppme = set;
 
             // for pop/phy/mut/eco sets, check for consistent Autodef user objects
-            switch ( set.GetClass() ) {
+            bool not_all_autodef = false;
+            bool not_same_autodef = false;
+            bool has_any_autodef = false;
+
+            switch ( ppme.GetClass() ) {
             case CBioseq_set::eClass_pop_set:
             case CBioseq_set::eClass_mut_set:
             case CBioseq_set::eClass_phy_set:
             case CBioseq_set::eClass_eco_set:
                 {
-                    bool not_all_autodef = false;
-                    bool not_same_autodef = false;
-                    bool has_any_autodef = false;
                     CConstRef<CUser_object> first_autodef;
-                    for (auto se : set.GetSeq_set()) {
+                    for (auto se : ppme.GetSeq_set()) {
                         bool has_autodef = false;
                         CConstRef<CUser_object> aduo;
                         if ( se->IsSet() ) {
@@ -1550,18 +1552,27 @@ bool CValidError_imp::Validate
                     if (not_all_autodef && has_any_autodef) {
                         PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingAutodef,
                             "Not all pop/phy/mut/eco set components have an autodef user object",
-                            set);
+                            ppme);
                     }
                     if (not_same_autodef && has_any_autodef) {
                         PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentAutodef,
                             "Inconsistent autodef user objects in pop/phy/mut/eco set",
-                            set);
+                            ppme);
                     }
                 }
                 break;
             default:
                 break;
             }
+
+            bool suppressMissingSetTitle = false;
+
+            if (has_any_autodef && (! not_all_autodef) && (! not_same_autodef)) {
+                suppressMissingSetTitle = true;
+            }
+
+            bioseqset_validator.ValidateBioseqSet(set, suppressMissingSetTitle);
+
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq set. EXCEPTION: ") +
