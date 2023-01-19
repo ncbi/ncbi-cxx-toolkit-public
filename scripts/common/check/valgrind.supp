@@ -953,6 +953,18 @@
    fun:mutex_destroy_WRK
    fun:pthread_mutex_destroy
 }
+{
+   Sybase - ignore
+   Helgrind:Race
+   fun:comn_take_mutex
+   fun:rman__thread
+}
+{
+   Sybase - ignore
+   Helgrind:Race
+   fun:comn_take_mutex
+   fun:rmi_exit
+}
 
 
 #===============================================================================
@@ -1117,6 +1129,32 @@
 # connect
 
 
+#===============================================================================
+# dbapi
+# 
+
+{
+   ftds - ucko CXX-11303 - the race is real, but AFAICT harmless in this context
+   Helgrind:Race
+   fun:tds_socket_write
+}
+{
+   ftds - ucko CXX-11303 - the race is real, but AFAICT harmless in this context
+   Helgrind:Race
+   fun:tds_socket_read
+}
+
+#===============================================================================
+# serial
+
+{
+   serial - test_serial_io - grichenk CXX-11270 - harmless
+   Helgrind:Race
+   fun:_ZN4ncbi11CSafeStaticINS_6CParamINS_37SNcbiParamDesc_SERIAL_FastWriteDoubleEEENS_21CSafeStatic_CallbacksIS3_EEE3GetEv
+   fun:_ZN4ncbi11CSafeStaticINS_6CParamINS_37SNcbiParamDesc_SERIAL_FastWriteDoubleEEENS_21CSafeStatic_CallbacksIS3_EEEptEv
+   fun:_ZN4ncbi14CObjectOStreamC1ENS_17ESerialDataFormatERSo14ENcbiOwnership
+}
+
 
 #===============================================================================
 # util
@@ -1213,3 +1251,4 @@
    ...
    fun:_ZN4ncbi4CRefINS_11CStdRequestENS_20CObjectCounterLockerEE5ResetEv
 }
+
