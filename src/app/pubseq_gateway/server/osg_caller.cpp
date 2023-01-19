@@ -210,6 +210,14 @@ void COSGCaller::WaitForReplies(CPSGS_OSGProcessorBase& processor)
         }
         if ( reply->IsSetError() ) {
             for ( auto& error : reply->GetError() ) {
+                if ( error->GetSeverity() == CID2_Error::eSeverity_failed_server ) {
+                    NCBI_THROW_FMT(CPubseqGatewayException, eOutputNotInReadyState,
+                                   "OSG error reply: "<<MSerial_AsnText<<*error);
+                }
+                if ( error->GetSeverity() == CID2_Error::eSeverity_failed_connection ) {
+                    NCBI_THROW_FMT(CPubseqGatewayException, eOutputNotInReadyState,
+                                   "OSG error reply: "<<MSerial_AsnText<<*error);
+                }
                 if ( error->GetSeverity() == CID2_Error::eSeverity_failed_command ) {
                     failed = error;
                     break;
