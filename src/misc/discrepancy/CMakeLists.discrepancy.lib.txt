@@ -33,7 +33,7 @@ NCBI_begin_lib(xdiscrepancy)
     if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
         NCBI_custom_target_dependencies(discrepancy_fsm_files)
     endif()
-    if(ON) # disable until RW-1852
+    if(OFF) # disable until python path is discoverable
         NCBI_custom_target_dependencies(discrepancy_testnames)
     endif()
 
@@ -49,7 +49,7 @@ NCBI_end_custom_target()
 
 endif()
 
-if(ON) # disable until RW-1852
+if(OFF) # disable until python path is discoverable
 
 NCBI_begin_custom_target(discrepancy_testnames)
     NCBI_custom_target_definition(define_discrepancy_testnames_target)
