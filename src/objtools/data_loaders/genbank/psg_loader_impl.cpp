@@ -2908,6 +2908,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
             }
             else {
                 _TRACE("Failed to load annotations for " << ids.begin()->AsString());
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "CPSGDataLoader::GetAnnotRecordsNA() failed");
             }
         }
     }
