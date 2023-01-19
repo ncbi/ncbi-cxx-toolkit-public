@@ -77,6 +77,7 @@ struct SSNPData
     string     m_BlobId;
     string     m_Name;
     TAnnotInfo m_AnnotInfo;
+    string     m_Error;
 
     CRef<objects::CSeq_entry> m_TSE;
     CRef<objects::CID2S_Split_Info> m_SplitInfo;
@@ -298,13 +299,16 @@ public:
     CSNPClient(const SSNPProcessor_Config& config);
     ~CSNPClient(void);
 
-    vector<string> WhatNACanProcess(SPSGS_AnnotRequest& annot_request) const;
+    vector<string> WhatNACanProcess(SPSGS_AnnotRequest& annot_request,
+                                    TProcessorPriority priority = 0) const;
     bool CanProcessRequest(CPSGS_Request& request, TProcessorPriority priority) const;
 
     vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id, const vector<string>& names);
+    vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id, const string& name);
     SSNPData GetBlobByBlobId(const string& blob_id);
     SSNPData GetChunk(const string& id2info, int chunk_id);
 
+    void EnsureCacheSize(size_t size);
     void AddFixedFile(const string& file);
     CRef<CSNPFileInfo> GetFixedFile(const string& acc);
     CRef<CSNPFileInfo> FindFile(const string& acc);
@@ -314,7 +318,7 @@ public:
     bool HaveValidSeq_id(const SPSGS_AnnotRequest& request) const;
 
     bool IsValidSeqId(const objects::CSeq_id_Handle& idh) const;
-    bool IsValidSeqId(const string& id, int id_type) const;
+    bool IsValidSeqId(const string& id, int id_type, int version = 0) const;
 
 private:
     friend class CSNPFileInfo;

@@ -216,6 +216,9 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
       m_Unlocked(true),
       m_PreResolving(false)
 {
+    if ( request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest ) {
+        m_ProcessNAs = m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>(), priority);
+    }
 }
 
 
@@ -283,22 +286,33 @@ void CPSGS_SNPProcessor::x_InitClient(void) const
 vector<string> CPSGS_SNPProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> request,
                                                   shared_ptr<CPSGS_Reply> reply) const
 {
-    if (!x_IsEnabled(*request)) return vector<string>();
-    x_InitClient();
-    _ASSERT(m_Client);
-    return m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>());
+    try {
+        if (!x_IsEnabled(*request)) return vector<string>();
+        x_InitClient();
+        _ASSERT(m_Client);
+        return m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>());
+    }
+    catch ( exception& exc ) {
+        x_SendError(reply, "Exception in WhatCanProcess: ", exc);
+        throw;
+    }
 }
 
 
 bool CPSGS_SNPProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply) const
 {
-    if (!x_IsEnabled(*request)) return false;
-    x_InitClient();
-    _ASSERT(m_Client);
-    if (!m_Client->CanProcessRequest(*request, 0)) return false;
-
-    return true;
+    try {
+        if (!x_IsEnabled(*request)) return false;
+        x_InitClient();
+        _ASSERT(m_Client);
+        if (!m_Client->CanProcessRequest(*request, 0)) return false;
+        return true;
+    }
+    catch ( exception& exc ) {
+        x_SendError(reply, "Exception in CanProcess: ", exc);
+        throw;
+    }
 }
 
 
@@ -307,12 +321,17 @@ IPSGS_Processor* CPSGS_SNPProcessor::CreateProcessor(
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority) const
 {
-    if (!x_IsEnabled(*request)) return nullptr;
-    x_InitClient();
-    _ASSERT(m_Client);
-    if (!m_Client->CanProcessRequest(*request, m_Priority)) return nullptr;
-
-    return new CPSGS_SNPProcessor(*this, request, reply, priority);
+    try {
+        if (!x_IsEnabled(*request)) return nullptr;
+        x_InitClient();
+        _ASSERT(m_Client);
+        if (!m_Client->CanProcessRequest(*request, m_Priority)) return nullptr;
+        return new CPSGS_SNPProcessor(*this, request, reply, priority);
+    }
+    catch ( exception& exc ) {
+        x_SendError(reply, "Exception in CreateProcessor: ", exc);
+        throw;
+    }
 }
 
 
@@ -325,6 +344,35 @@ string CPSGS_SNPProcessor::GetName() const
 string CPSGS_SNPProcessor::GetGroupName() const
 {
     return kSNPProcessorGroupName;
+}
+
+
+void CPSGS_SNPProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
+                                     const string& msg)
+{
+    reply->PrepareProcessorMessage(reply->GetItemId(), "SNP", msg,
+                                   CRequestStatus::e500_InternalServerError,
+                                   ePSGS_UnknownError,
+                                   eDiag_Error);
+}
+
+
+void CPSGS_SNPProcessor::x_SendError(const string& msg)
+{
+    x_SendError(m_Reply, msg);
+}
+
+
+void CPSGS_SNPProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
+                                     const string& msg, const exception& exc)
+{
+    x_SendError(reply, msg+string(exc.what()));
+}
+
+
+void CPSGS_SNPProcessor::x_SendError(const string& msg, const exception& exc)
+{
+    x_SendError(m_Reply, msg+string(exc.what()));
 }
 
 
@@ -355,7 +403,8 @@ void CPSGS_SNPProcessor::Process()
             break;
         }
     }
-    catch (...) {
+    catch (exception& exc) {
+        x_SendError("Exception when handling a request: ", exc);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -368,6 +417,15 @@ static void s_OnGotAnnotation(void* data)
 }
 
 
+void CPSGS_SNPProcessor::x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::EPSGS_ResultStatus status)
+{
+    SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    for ( auto& name : m_ProcessNAs ) {
+        annot_request.ReportResultStatus(name, status);
+    }
+}
+
+
 void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
@@ -375,16 +433,21 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
         try {
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(annot_request.m_SeqId));
         }
-        catch (exception& e) {}
+        catch (exception& /*e*/) {
+        }
     }
     for (auto& id : annot_request.m_SeqIds) {
         try {
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
-        catch (exception& e) {}
+        catch (exception& /*e*/) {
+        }
     }
     if (m_SeqIds.empty()) {
+        // no suitable Seq-ids in the request
+        x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
         x_Finish(ePSGS_NotFound);
+        return;
     }
     bool need_resolve = true;
     for (size_t i = 0; i < m_SeqIds.size(); ++i) {
@@ -406,12 +469,7 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
     }
-    try {
-        m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
-    }
-    catch (...) {
-        x_Finish(ePSGS_Error);
-    }
+    m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
 }
 
 
@@ -419,18 +477,22 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
 {
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
-    if (!m_Canceled) {
+    for ( auto& name : m_ProcessNAs ) {
+        if (m_Canceled) {
+            break;
+        }
         try {
-            SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
-            vector<string> names = annot_request.GetNotProcessedName(m_Priority);
             for (auto& id : m_SeqIds) {
-                if (!m_Config->m_AllowNonRefSeq && !m_Client->IsValidSeqId(id)) continue;
-                m_SNPData = m_Client->GetAnnotInfo(id, names);
-                if (!m_SNPData.empty()) break;
+                if (!m_Client->IsValidSeqId(id)) continue;
+                auto data = m_Client->GetAnnotInfo(id, name);
+                m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
             }
         }
-        catch (...) {
-            m_SNPData.clear();
+        catch (exception& exc) {
+            SSNPData data;
+            data.m_Name = name;
+            data.m_Error = "Exception when handling get_na request: " + string(exc.what());
+            m_SNPData.push_back(data);
         }
     }
     // Even if canceled, execute OnGotAnnotation to properly finish processing.
@@ -446,20 +508,53 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
         return;
     }
     if (m_SNPData.empty()) {
-        x_Finish(ePSGS_NotFound);
+        if ( m_SNPDataError.empty() ) {
+            x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+            x_Finish(ePSGS_NotFound);
+        }
+        else {
+            x_SendError(m_SNPDataError);
+            x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_Error);
+            x_Finish(ePSGS_Error);
+        }
         return;
     }
     if (!x_SignalStartProcessing()) {
         return;
     }
-    try {
-        x_SendAnnotInfo();
+    set<string> has_error;
+    set<string> has_data;
+    map<string, SPSGS_AnnotRequest::EPSGS_ResultStatus> na_status;
+    for (auto& data : m_SNPData) {
+        if ( !data.m_Error.empty() ) {
+            has_error.insert(data.m_Name);
+            x_SendError(data.m_Error);
+        }
+        else {
+            try {
+                has_data.insert(data.m_Name);
+                x_SendAnnotInfo(data);
+            }
+            catch (exception& exc) {
+                has_error.insert(data.m_Name);
+                m_SNPDataError = "Exception when handling a get_na request: " + string(exc.what());
+                x_SendError(m_SNPDataError);
+                x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_Error);
+                x_Finish(ePSGS_Error);
+                return;
+            }
+        }
     }
-    catch (...) {
-        x_Finish(ePSGS_Error);
-        return;
+    SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    for ( auto& name : m_ProcessNAs ) {
+        if ( has_error.count(name) ) {
+            annot_request.ReportResultStatus(name, SPSGS_AnnotRequest::ePSGS_RS_Error);
+        }
+        else if ( !has_data.count(name) ) {
+            annot_request.ReportResultStatus(name, SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+        }
     }
-    x_Finish(ePSGS_Done);
+    x_Finish(!has_error.empty()? ePSGS_Error: (!has_data.empty()? ePSGS_Done: ePSGS_NotFound));
 }
 
 
@@ -582,22 +677,28 @@ void CPSGS_SNPProcessor::x_WriteData(objects::CID2_Reply_Data& data, const CSeri
 }
 
 
-void CPSGS_SNPProcessor::x_SendAnnotInfo(void)
+void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
 {
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    if ( annot_request.RegisterProcessedName(GetPriority(), data.m_Name) > GetPriority() ) {
+        // higher priority processor already processed this request
+        return;
+    }
+    CJsonNode json(CJsonNode::NewObjectNode());
+    json.SetString("blob_id", data.m_BlobId);
+    ostringstream annot_str;
+    for (auto& it : data.m_AnnotInfo) {
+        annot_str << MSerial_AsnBinary << *it;
+    }
+    json.SetString("seq_annot_info", NStr::Base64Encode(annot_str.str(), 0));
+    GetReply()->PrepareNamedAnnotationData(data.m_Name, kSNPProcessorName, json.Repr(CJsonNode::fStandardJson));
+}
+
+
+void CPSGS_SNPProcessor::x_SendAnnotInfo(void)
+{
     for (auto& data : m_SNPData) {
-        if ( annot_request.RegisterProcessedName(GetPriority(), data.m_Name) > GetPriority() ) {
-            // higher priority processor already processed this request
-            continue;
-        }
-        CJsonNode json(CJsonNode::NewObjectNode());
-        json.SetString("blob_id", data.m_BlobId);
-        ostringstream annot_str;
-        for (auto& it : data.m_AnnotInfo) {
-            annot_str << MSerial_AsnBinary << *it;
-        }
-        json.SetString("seq_annot_info", NStr::Base64Encode(annot_str.str(), 0));
-        GetReply()->PrepareNamedAnnotationData(data.m_Name, kSNPProcessorName, json.Repr(CJsonNode::fStandardJson));
+        x_SendAnnotInfo(data);
     }
 }
 
@@ -777,14 +878,14 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
 
     try {
         auto& info = bioseq_resolution.GetBioseqInfo();
-        if (m_Config->m_AllowNonRefSeq || m_Client->IsValidSeqId(info.GetAccession(), info.GetSeqIdType())) {
+        if (m_Client->IsValidSeqId(info.GetAccession(), info.GetSeqIdType(), info.GetVersion())) {
             CSeq_id id(CSeq_id::E_Choice(info.GetSeqIdType()), info.GetAccession(), info.GetName(), info.GetVersion());
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
         CSeq_id id;
         for (auto& it : info.GetSeqIds()) {
             string err;
-            if (!m_Config->m_AllowNonRefSeq && !m_Client->IsValidSeqId(get<1>(it), get<0>(it))) continue;
+            if (!m_Client->IsValidSeqId(get<1>(it), get<0>(it))) continue;
             if (ParseInputSeqId(id, get<1>(it), get<0>(it), &err) != ePSGS_ParsedOK) {
                 PSG_ERROR("Error parsing seq-id: " << err);
                 continue;
@@ -812,7 +913,14 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveError(
     if (x_IsCanceled()) {
         return;
     }
-    x_Finish(status == CRequestStatus::e404_NotFound ? ePSGS_NotFound : ePSGS_Error);
+    if ( status == CRequestStatus::e404_NotFound ) {
+        x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+        x_Finish(ePSGS_NotFound);
+    }
+    else {
+        x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_Error);
+        x_Finish(ePSGS_Error);
+    }
 }
 
 
