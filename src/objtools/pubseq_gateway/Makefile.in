@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = diag cassandra client protobuf cache ipg
+SUB_PROJ = cassandra client protobuf cache ipg
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
