@@ -791,17 +791,7 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(
     if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
         // The request status is based on per-NA results
         SPSGS_AnnotRequest *    annot_request = & request->GetRequest<SPSGS_AnnotRequest>();
-
         auto                    processed_names = annot_request->GetProcessedNames();
-        if (processed_names.size() == annot_request->m_Names.size()) {
-            // All the annotations have been sent by at least one processor
-            map<string, int>        result_per_na;
-            for (const auto &  name : annot_request->m_Names) {
-                result_per_na[name] = 200;
-            }
-            reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
-            return CRequestStatus::e200_Ok;
-        }
 
         // Filter out good names from all the other sets. It may be because a
         // sent happened by one porocessor but an error condition was met by
