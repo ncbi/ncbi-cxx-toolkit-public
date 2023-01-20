@@ -1114,6 +1114,9 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
                 index = 4;
             m_ResolutionFoundCassandraTiming[index]->Add(mks);
             break;
+        case eTseChunkRetrieve:
+            // TODO
+            break;
     }
 }
 
