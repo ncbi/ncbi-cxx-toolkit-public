@@ -64,9 +64,14 @@ class atomic_cout : public stringstream
 {
 public:
     ~atomic_cout(void) {
+        CFastMutexGuard guard(sm_Mutex);
         cout << str();
     }
+private:
+    static CFastMutex sm_Mutex;
 };
+
+CFastMutex atomic_cout::sm_Mutex;
 
 
 class CTestChoice : public CSerialObject
