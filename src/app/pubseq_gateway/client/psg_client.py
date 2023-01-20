@@ -95,7 +95,7 @@ def powerset(iterable):
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
 def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
-    blob_ids_only = list(blob_id[0] for blob_id in blob_ids['blob_id'])
+    blob_ids_only = list(blob_id[0] for v in blob_ids for blob_id in v.values())
     param_values = {
             'include_info': [None] + list(powerset((
                 'all-info-except',
@@ -144,8 +144,6 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
         for other in param_names:
             yield (other, value if other == param else random.choice(param_values[other]))
 
-    bio_ids = {'bio_id': list(bio_ids)}
-
     # Used user_args to increase number of some requests
     requests = {
             'resolve':      [bio_ids,       ['include_info', 'acc_substitution']],
@@ -162,7 +160,7 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
         n = 0
         for combination in (this_plus_random(param, value) for param in param_names for value in param_values[param]):
             try:
-                random_ids={k: random.choice(v) for k, v in ids.items()}
+                random_ids=random.choice(ids)
             except IndexError:
                 print(f"Error: 'No IDs for the \"{method}\" requests, skipping'", file=sys.stderr)
                 rv = False
@@ -202,7 +200,7 @@ def get_ids(psg_client, bio_ids, /, max_blob_ids=1000, max_chunk_ids=1000):
     chunk_ids = set()
 
     for bio_id in bio_ids:
-        psg_client.send('biodata', bio_id=bio_id, include_data='no-tse')
+        psg_client.send('biodata', **bio_id, include_data='no-tse')
         for reply in psg_client.receive():
             item = reply.get('reply', None)
 
@@ -222,7 +220,7 @@ def get_ids(psg_client, bio_ids, /, max_blob_ids=1000, max_chunk_ids=1000):
         if len(blob_ids) >= max_blob_ids and len(chunk_ids) >= max_chunk_ids:
             break
 
-    return {'blob_id': list(blob_ids)}, {'chunk_id': list(chunk_ids)}
+    return [{'blob_id': blob_id} for blob_id in blob_ids], [{'chunk_id': chunk_id} for chunk_id in chunk_ids]
 
 
 def check_binary(args):
@@ -239,12 +237,20 @@ def read_bio_ids(input_file):
 def read_named_annots(input_file):
     return ([bio_id, na_ids] for (bio_id, *na_ids) in csv.reader(input_file))
 
-def prepare_named_annots(named_annots):
-    # Powerset of named annotations (excluding empty set)
-    named_annots = [([bio_id], subset) for (bio_id, na_ids) in named_annots for subset in powerset(na_ids) if subset]
+def prepare_bio_ids(bio_ids):
+    """Get bio IDs in specific format."""
+    return [{'bio_id': bio_id} for bio_id in bio_ids]
 
-    # Change into request params for PsgClient
-    return {k: [row[i] for row in named_annots] for i, k in enumerate(('bio_id', 'named_annots'))}
+def prepare_named_annots(named_annots):
+    """Get powerset of named annotations (excluding empty set) in specific format."""
+    ids = list()
+
+    for (bio_id, na_ids) in named_annots:
+        for na_subset in powerset(na_ids):
+            if na_subset:
+                ids.append({'bio_id': [bio_id], 'named_annots': na_subset})
+
+    return ids
 
 def test_cmd(args):
     check_binary(args)
@@ -265,16 +271,16 @@ def test_cmd(args):
         named_annots = list(read_named_annots(args.na_file))
     else:
         named_annots = [
-                ['NC_000024', ['NA000000067.16', 'NA000134068.1']],
+                ['NC_000024', ['NA000000067.16', 'NA000134068.1', 'NA000000271.4']],
                 ['NW_017890465', ['NA000122202.1', 'NA000122203.1']],
                 ['NW_024096525', ['NA000288180.1']],
                 ['NW_019824422', ['NA000150051.1']],
             ]
 
-    named_annots = prepare_named_annots(named_annots)
-
     with PsgClient(args.binary, verbose=args.verbose) as psg_client:
+        bio_ids = prepare_bio_ids(bio_ids)
         blob_ids, chunk_ids = get_ids(psg_client, bio_ids)
+        named_annots = prepare_named_annots(named_annots)
         result = test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids)
         sys.exit(0 if result else -1)
 
@@ -282,12 +288,13 @@ def generate_cmd(args):
     request_generator = RequestGenerator()
 
     if args.TYPE == 'named_annot':
-        ids = prepare_named_annots(read_named_annots(args.INPUT_FILE))
+        named_annots = read_named_annots(args.INPUT_FILE)
+        ids = prepare_named_annots(named_annots)
     else:
-        bio_ids = read_bio_ids(args.INPUT_FILE)
+        bio_ids = prepare_bio_ids(read_bio_ids(args.INPUT_FILE))
 
         if args.TYPE in ('biodata', 'resolve'):
-            ids = {'bio_id': bio_ids}
+            ids = bio_ids
         elif args.TYPE in ('blob', 'chunk'):
             check_binary(args)
 
@@ -299,12 +306,12 @@ def generate_cmd(args):
 
             ids = blob_ids if args.TYPE == 'blob' else chunk_ids
 
-    ids = {k: itertools.cycle(v) for k, v in ids.items()}
+    ids = itertools.cycle(ids)
     params = {} if args.params is None else ast.literal_eval(args.params)
 
     try:
         for i in range(args.NUMBER):
-            print(request_generator(args.TYPE, **{k: next(v) for k, v in ids.items()}, **params))
+            print(request_generator(args.TYPE, **next(ids), **params))
     except StopIteration:
         sys.exit(f'"{args.INPUT_FILE.name}" has no [appropriate] IDs to generate {args.TYPE} requests')
 
