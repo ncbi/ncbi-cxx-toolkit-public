@@ -222,6 +222,31 @@ def get_ids(psg_client, bio_ids, /, max_blob_ids=1000, max_chunk_ids=1000):
 
     return [{'blob_id': blob_id} for blob_id in blob_ids], [{'chunk_id': chunk_id} for chunk_id in chunk_ids]
 
+def get_all_named_annots(psg_client, named_annots, /, max_ids=1000):
+    """Get all bio IDs for named annotations."""
+    ids = list()
+
+    for (bio_id, na_ids) in named_annots:
+        psg_client.send('named_annot', bio_id=[bio_id], named_annots=na_ids)
+        for reply in psg_client.receive():
+            item = reply.get('reply', None)
+
+            if item == 'BioseqInfo':
+                bio_ids = list()
+                canonical_id = reply.get('canonical_id', {})
+                if canonical_id:
+                    bio_ids.append(list(canonical_id.values()))
+
+                other_ids = reply.get('other_ids', [])
+                for other_id in other_ids:
+                    bio_ids.append(list(other_id.values()))
+
+                ids.append([bio_ids, na_ids])
+
+        if len(ids) >= max_ids:
+            break
+
+    return ids
 
 def check_binary(args):
     if shutil.which(args.binary) is None:
@@ -245,10 +270,14 @@ def prepare_named_annots(named_annots):
     """Get powerset of named annotations (excluding empty set) in specific format."""
     ids = list()
 
-    for (bio_id, na_ids) in named_annots:
+    for (bio_ids, na_ids) in named_annots:
         for na_subset in powerset(na_ids):
             if na_subset:
-                ids.append({'bio_id': [bio_id], 'named_annots': na_subset})
+                for bio_subset in powerset(bio_ids):
+                    if len(bio_subset) == 1:
+                        ids.append({'bio_id': bio_subset[0], 'named_annots': na_subset})
+                    elif len(bio_subset) > 1:
+                        ids.append({'bio_ids': bio_subset, 'named_annots': na_subset})
 
     return ids
 
@@ -280,6 +309,7 @@ def test_cmd(args):
     with PsgClient(args.binary, verbose=args.verbose) as psg_client:
         bio_ids = prepare_bio_ids(bio_ids)
         blob_ids, chunk_ids = get_ids(psg_client, bio_ids)
+        named_annots = get_all_named_annots(psg_client, named_annots)
         named_annots = prepare_named_annots(named_annots)
         result = test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids)
         sys.exit(0 if result else -1)
@@ -289,6 +319,10 @@ def generate_cmd(args):
 
     if args.TYPE == 'named_annot':
         named_annots = read_named_annots(args.INPUT_FILE)
+
+        with PsgClient(args.binary) as psg_client:
+            named_annots = get_all_named_annots(psg_client, named_annots, max_ids=args.NUMBER)
+
         ids = prepare_named_annots(named_annots)
     else:
         bio_ids = prepare_bio_ids(read_bio_ids(args.INPUT_FILE))
