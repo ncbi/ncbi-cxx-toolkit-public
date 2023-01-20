@@ -127,6 +127,11 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
                 'limited',
                 'never'
             ],
+            'bio_id_resolution': [
+                None,
+                False,
+                True
+            ],
             'resend_timeout': [
                 None,
                 0,
@@ -146,10 +151,10 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
 
     # Used user_args to increase number of some requests
     requests = {
-            'resolve':      [bio_ids,       ['include_info', 'acc_substitution']],
-            'biodata':      [bio_ids,       ['include_data', 'exclude_blobs', 'acc_substitution', 'resend_timeout']],
+            'resolve':      [bio_ids,       ['include_info', 'acc_substitution', 'bio_id_resolution']],
+            'biodata':      [bio_ids,       ['include_data', 'exclude_blobs', 'acc_substitution', 'bio_id_resolution', 'resend_timeout']],
             'blob':         [blob_ids,      ['include_data', 'user_args']],
-            'named_annot':  [named_annots,  ['include_data', 'acc_substitution']],
+            'named_annot':  [named_annots,  ['include_data', 'acc_substitution', 'bio_id_resolution']],
             'chunk':        [chunk_ids,     ['user_args',    'user_args']]
         }
 
