@@ -209,6 +209,7 @@ CPSGS_WGSProcessor::CPSGS_WGSProcessor(
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
     : m_Client(client),
+      m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
       m_ChunkId(0),
@@ -652,6 +653,19 @@ void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
 }
 
 
+void CPSGS_WGSProcessor::x_RegisterTiming(EPSGOperation operation,
+                                          EPSGOperationStatus status,
+                                          const CID2_Reply_Data& data)
+{
+    size_t blob_size = 0;
+    for ( auto& chunk : data.GetData() ) {
+        blob_size += chunk->size();
+    }
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(this, operation, status, m_Start, blob_size);
+}
+
+
 void CPSGS_WGSProcessor::x_SendResult(const string& data_to_send, EOutputFormat output_format)
 {
     size_t item_id = GetReply()->GetItemId();
@@ -761,6 +775,7 @@ void CPSGS_WGSProcessor::x_SendSplitInfo(void)
     s_SetBlobDataProps(split_info_blob_props, data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
     x_SendChunkBlobData(id2_info, kSplitInfoChunk, data);
+    x_RegisterTiming(eBlobRetrieve, eOpStatusFound, data);
 }
 
 
@@ -779,6 +794,7 @@ void CPSGS_WGSProcessor::x_SendMainEntry(void)
     s_SetBlobDataProps(main_blob_props, data);
     x_SendBlobProps(main_blob_id, main_blob_props);
     x_SendBlobData(main_blob_id, data);
+    x_RegisterTiming(eBlobRetrieve, eOpStatusFound, data);
 }
 
 
@@ -834,6 +850,7 @@ void CPSGS_WGSProcessor::x_SendChunk(void)
     s_SetBlobDataProps(chunk_blob_props, data);
     x_SendChunkBlobProps(id2_info, m_ChunkId, chunk_blob_props);
     x_SendChunkBlobData(id2_info, m_ChunkId, data);
+    x_RegisterTiming(eTseChunkRetrieve, eOpStatusFound, data);
 }
 
 

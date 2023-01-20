@@ -35,6 +35,7 @@
 #include "ipsgs_processor.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "timing.hpp"
 #include <objects/seq/seq_id_handle.hpp>
 
 
@@ -111,6 +112,9 @@ private:
     typedef int TID2ChunkId;
     typedef vector<string> TBlobIds;
 
+    void x_RegisterTiming(EPSGOperation operation,
+                          EPSGOperationStatus status,
+                          const objects::CID2_Reply_Data& data);
     EOutputFormat x_GetOutputFormat(void);
     void x_SendResult(const string& data_to_send, EOutputFormat output_format);
     void x_SendBioseqInfo(void);
@@ -146,6 +150,7 @@ private:
     CFastMutex m_Mutex;
     shared_ptr<SWGSProcessor_Config> m_Config;
     mutable shared_ptr<CWGSClient> m_Client;
+    psg_time_point_t m_Start;
     EPSGS_Status m_Status;
     bool m_Canceled;
     CRef<objects::CSeq_id> m_SeqId; // requested seq-id
