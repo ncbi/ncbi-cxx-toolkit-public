@@ -907,7 +907,7 @@ void CapitalizeAfterApostrophe(string& input)
     for (;;) {
         pattern.GetMatch(input, start, 0, CRegexp::fMatch_default, true);
         if (pattern.NumFound() > 0) {
-            const int* rslt = pattern.GetResults(0);
+            const auto* rslt = pattern.GetResults(0);
             if (rslt[0] != start)
                 result += input.substr(start,rslt[0]-start);
             string tmp = input.substr(rslt[0], rslt[1] - rslt[0]);
@@ -946,7 +946,7 @@ void FixAffiliationShortWordsInElement(string& result)
         for (;;) {
             pattern.GetMatch(result, start, 0, CRegexp::fMatch_default, true);
             if (pattern.NumFound() > 0) {
-                const int* rslt = pattern.GetResults(0);
+                const auto* rslt = pattern.GetResults(0);
                 if (rslt[0] != start)
                     temp += result.substr(start,rslt[0]-start);
                 string tmp = result.substr(rslt[0], rslt[1] - rslt[0]);
@@ -973,7 +973,7 @@ void FixOrdinalNumbers(string& result)
         for (;;) {
             pattern.GetMatch(result, start, 0, CRegexp::fMatch_default, true);
             if (pattern.NumFound() > 0) {
-                const int* rslt = pattern.GetResults(0);
+                const auto* rslt = pattern.GetResults(0);
                 if (rslt[0] != start)
                     temp += result.substr(start,rslt[0]-start);
                 string tmp = result.substr(rslt[0], rslt[1] - rslt[0]);
