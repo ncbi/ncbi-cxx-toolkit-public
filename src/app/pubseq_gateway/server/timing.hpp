@@ -84,7 +84,9 @@ enum EPSGOperation {
     eSplitHistoryRetrieve,
     ePublicCommentRetrieve,
     eAccVerHistRetrieve,
-    eIPGResolveRetrieve
+    eIPGResolveRetrieve,
+
+    eTseChunkRetrieve
 };
 
 
