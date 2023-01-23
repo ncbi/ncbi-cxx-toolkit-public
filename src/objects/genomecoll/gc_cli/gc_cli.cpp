@@ -78,7 +78,7 @@ public:
             CNcbiApplication::Instance()->SetEnvironment().Set((NStr::ToUpper(service_name) + "_CONN_ARGS").c_str(), "nocache=true");
         }
     }
-    
+
     CGencollService(const CArgs& args) : CGenomicCollectionsService(args)
     {
     }
@@ -179,8 +179,8 @@ private:
 
 void CClientGenomicCollectionsSvcApplication::Init(void)
 {
-    auto AddCommonArgs = [](CArgDescriptions* arg_desc) 
-    { 
+    auto AddCommonArgs = [](CArgDescriptions* arg_desc)
+    {
         arg_desc->AddOptionalKey("url", "url_to_service", "URL to genemic collections service.cgi", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("cgi", "path_to_cgi", "Directly calls the CGI instead of using the gencoll client", CArgDescriptions::eString);
         arg_desc->SetDependency("cgi", arg_desc->eExcludes, "url");
@@ -194,8 +194,8 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
 
     auto AddSeqAcc = [](CArgDescriptions* arg_desc)
     {
-        arg_desc->AddKey("acc", "ACC_VER", "Comma-separated list of sequences", CArgDescriptions::eString);
-        arg_desc->AddKey("acc_file", "acc_file", "File with list of sequences - one per line", CArgDescriptions::eInputFile);
+        arg_desc->AddKey("acc", "ACC_VER", "Comma or semi-colon separated list of sequences", CArgDescriptions::eString);
+        arg_desc->AddKey("acc_file", "acc_file", "File with list of sequences - comma or semi-colon separated ids on each line. empty line or line started with # are ignored", CArgDescriptions::eInputFile);
         arg_desc->SetDependency("acc_file", arg_desc->eExcludes, "acc");
         arg_desc->AddFlag("roles", "Add sequence role data to output");
     };
@@ -217,7 +217,9 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
 
     auto AddFilterSort = [](CArgDescriptions* arg_desc)
     {
-        arg_desc->AddOptionalKey("-filter", "filter", "Get assembly by sequence - filter", CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("-filter", "filter",
+                                 "Get assembly by sequence - filters could be: latest, refseq, genbank, major; can be combined using comma separated list of filters",
+                                 CArgDescriptions::eString);
         arg_desc->AddOptionalKey("-sort", "sort", "Get assembly by sequence - sort", CArgDescriptions::eString);
     };
 
@@ -261,7 +263,7 @@ int CClientGenomicCollectionsSvcApplication::Run(void)
 {
     const CArgs& args = GetArgs();
     CNcbiOstream& ostr = args["o"].AsOutputFile();
-    
+
     if(args["f"] && NStr::FindNoCase(args["f"].AsString(),"XML") != NPOS)
         ostr << MSerial_Xml;
     else
@@ -271,11 +273,11 @@ int CClientGenomicCollectionsSvcApplication::Run(void)
 
     if(args["cgi"])         service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
     else if(args["url"])    service.Reset(new CGencollService(args["url"].AsString(), args["nocache"]));
-    else if(args.Exist("gc-cache") && args["gc-cache"])  
+    else if(args.Exist("gc-cache") && args["gc-cache"])
                             service.Reset(new CGencollService(args));
     else                    service.Reset(new CGencollService(args["nocache"]));
 
-    if (args["retries"]) service->SetRetryLimit(args["retries"].AsInteger());
+    if (args["retries"]) service->SetTryLimit(args["retries"].AsInteger());
 
     return RunWithService(*service, args, ostr);
 }
@@ -316,7 +318,9 @@ CRef<CGC_Assembly> RemoveVersions(CRef<CGC_Assembly> assembly)
 static list<string> GetIDs(const string& ids)
 {
     list<string> id_list;
-    NStr::Split(ids, ";,", id_list, NStr::fSplit_Tokenize);
+    NStr::Split(ids, ";, ", id_list, NStr::fSplit_Tokenize);
+    id_list.sort();
+    id_list.unique();// return no duplicates
     return id_list;
 }
 
@@ -326,11 +330,18 @@ static list<string> GetIDsFromFile(CNcbiIstream& istr)
     string line;
     while (NcbiGetlineEOL(istr, line)) {
         NStr::TruncateSpacesInPlace(line);
+        // empty line or started with # will be skipped.
         if (line.empty()  ||  line[0] == '#') {
             continue;
         }
-        accessions.push_back(line);
+        // each line could be comma or semi-colon seperated ids.
+        list<string> tlst=GetIDs(line);
+        // append the list ids to the end
+        accessions.splice(accessions.end(),tlst);
     }
+    // remove duplicates
+    accessions.sort();
+    accessions.unique();
     return accessions;
 }
 
@@ -374,11 +385,13 @@ int CClientGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsS
                                });
             const int sort = args["sort"] ? CGCClient_GetAssemblyBySequenceRequest::ENUM_METHOD_NAME(ESort)()->FindValue(args["sort"].AsString()) : CGCClient_GetAssemblyBySequenceRequest::eSort_default;
             const bool with_roles = args["roles"];
-
-            if (args["top_asm"].HasValue())
-                ostr << *service.FindOneAssemblyBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort), with_roles);
-            else
-                ostr << *service.FindAssembliesBySequences(GetAccessions(args), filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort), with_roles);
+            list seqlist=GetAccessions(args);
+            if(!seqlist.empty()){
+                if (args["top_asm"].HasValue())
+                    ostr << *service.FindOneAssemblyBySequences(seqlist, filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort), with_roles);
+                else
+                    ostr << *service.FindAssembliesBySequences( seqlist, filter, CGCClient_GetAssemblyBySequenceRequest::ESort(sort), with_roles);
+            }
         }
         else if(args.GetCommand() == "get-equivalent-assemblies")
         {
