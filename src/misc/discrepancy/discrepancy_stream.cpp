@@ -46,10 +46,10 @@ USING_SCOPE(objects);
 
 
 static size_t offset = 0;
-string Offset() // LCOV_EXCL_START
+string Offset() 
 {
     return string(offset<<1, ' ');
-} // LCOV_EXCL_STOP
+} 
 
 class CReadHook_Bioseq_set : public CReadObjectHook
 {
@@ -227,7 +227,7 @@ void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fnam
             stream.Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
         }
         else {
-            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); // LCOV_EXCL_LINE
+            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); 
         }
         CNcbiStreampos position = stream.GetStreamPos();
         Extend(*m_CurrentNode, stream);
@@ -818,7 +818,7 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
             copier.Copy(CBioseq::GetTypeInfo());
         }
         else {
-            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); // LCOV_EXCL_LINE
+            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); 
         }
         PopNode();
         if (in->EndOfData()) {
