@@ -431,10 +431,10 @@ void CDiscrepancyCore::Call(CDiscrepancyContext& context)
     try {
         Visit(context);
     }
-    catch (const CException& e) { // LCOV_EXCL_START
+    catch (const CException& e) { 
         string ss = "EXCEPTION caught: "; ss += e.what();
         m_Objs[ss];
-    } // LCOV_EXCL_STOP
+    } 
 }
 
 
