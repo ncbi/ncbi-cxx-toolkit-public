@@ -38,6 +38,7 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include "snp_client.hpp"
+#include "timing.hpp"
 #include <objects/seq/seq_id_handle.hpp>
 
 
@@ -117,6 +118,12 @@ private:
     void x_Peek(bool  need_wait);
     bool x_Peek(unique_ptr<CCassFetch>& fetch_details, bool  need_wait);
 
+    void x_RegisterTiming(EPSGOperation operation,
+                          EPSGOperationStatus status,
+                          size_t size);
+    void x_RegisterTimingFound(EPSGOperation operation,
+                               const objects::CID2_Reply_Data& data);
+    void x_RegisterTimingNotFound(EPSGOperation operation);
     void x_WriteData(objects::CID2_Reply_Data& data, const CSerialObject& obj) const;
     void x_SendAnnotInfo(const SSNPData& data);
     void x_SendAnnotInfo(void);
@@ -146,6 +153,7 @@ private:
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
 
     CFastMutex m_Mutex;
+    psg_time_point_t m_Start;
     EPSGS_Status m_Status = ePSGS_NotFound;
     bool m_Canceled = false;
     vector<CSeq_id_Handle> m_SeqIds;
