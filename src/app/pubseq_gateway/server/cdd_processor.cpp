@@ -140,6 +140,7 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(
     shared_ptr<CPSGS_Reply> reply,
     TProcessorPriority priority)
     : m_ClientPool(client_pool),
+      m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
       m_Canceled(false),
       m_Unlocked(true),
@@ -518,6 +519,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
             x_Finish(ePSGS_Error);
         }
         else {
+            x_RegisterTimingNotFound(eNARetrieve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
         }
@@ -554,6 +556,7 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
             x_Finish(ePSGS_Error);
         }
         else {
+            x_RegisterTimingNotFound(eNARetrieve);
             x_Finish(ePSGS_NotFound);
         }
         return;
@@ -571,6 +574,21 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
         return;
     }
     x_Finish(ePSGS_Done);
+}
+
+
+void CPSGS_CDDProcessor::x_RegisterTiming(EPSGOperation operation,
+                                          EPSGOperationStatus status,
+                                          size_t blob_size)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(this, operation, status, m_Start, blob_size);
+}
+
+
+void CPSGS_CDDProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
+{
+    x_RegisterTiming(operation, eOpStatusNotFound, 0);
 }
 
 
@@ -628,6 +646,8 @@ void CPSGS_CDDProcessor::x_SendAnnot(const CID2_Blob_Id& id2_blob_id, CRef<CSeq_
     blob_str << MSerial_AsnBinary << *entry;
     string blob_data = blob_str.str();
 
+    x_RegisterTiming(eNARetrieve, eOpStatusFound, blob_data.size());
+    
     CBlobRecord blob_props;
     if (id2_blob_id.IsSetVersion()) {
         blob_props.SetModified(int64_t(id2_blob_id.GetVersion()*60000));
