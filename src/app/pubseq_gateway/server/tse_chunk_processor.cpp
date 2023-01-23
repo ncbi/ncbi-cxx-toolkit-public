@@ -386,7 +386,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                 CGetBlobErrorCallback(this,
                                       bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                                            this, _1, _2, _3, _4, _5),
-                                      fetch_details.get()));
+                                      fetch_details.get(),
+                                      eTseChunkRetrieve));
             load_task->SetPropsCallback(
                 CBlobPropCallback(this,
                                   bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
@@ -398,7 +399,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                 CBlobChunkCallback(this,
                                    bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
                                         this, _1, _2, _3, _4, _5),
-                                   fetch_details.get()));
+                                   fetch_details.get(),
+                                   eTseChunkRetrieve));
 
             if (IPSGS_Processor::m_Request->NeedTrace()) {
                 IPSGS_Processor::m_Reply->SendTrace(
@@ -557,7 +559,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
         CGetBlobErrorCallback(this,
                               bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
-                              fetch_details.get()));
+                              fetch_details.get(),
+                              eTseChunkRetrieve));
     load_task->SetPropsCallback(
         CBlobPropCallback(this,
                           bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
@@ -569,7 +572,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
         CBlobChunkCallback(this,
                            bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
                                 this, _1, _2, _3, _4, _5),
-                           fetch_details.get()));
+                           fetch_details.get(),
+                           eTseChunkRetrieve));
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
@@ -954,7 +958,8 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             this,
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobError,
                  this, _1, _2, _3, _4, _5),
-            cass_blob_fetch.get()));
+            cass_blob_fetch.get(),
+            eTseChunkRetrieve));
     load_task->SetPropsCallback(
         CBlobPropCallback(
             this,
@@ -969,7 +974,8 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             this,
             bind(&CPSGS_TSEChunkProcessor::OnGetBlobChunk,
                  this, _1, _2, _3, _4, _5),
-            cass_blob_fetch.get()));
+            cass_blob_fetch.get(),
+            eTseChunkRetrieve));
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(

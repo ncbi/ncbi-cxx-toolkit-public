@@ -521,6 +521,31 @@ CIPGResolveRetrieveTiming::CIPGResolveRetrieveTiming(unsigned long  min_stat_val
 }
 
 
+
+CTSEChunkRetrieveTiming::CTSEChunkRetrieveTiming(unsigned long  min_stat_value,
+                                                 unsigned long  max_stat_value,
+                                                 unsigned long  n_bins,
+                                                 TOnePSGTiming::EScaleType  stat_type,
+                                                 bool &  reset_to_default)
+{
+    reset_to_default = false;
+
+    try {
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    } catch (...) {
+        reset_to_default = true;
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    }
+}
+
+
+
 CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
                                      unsigned long  max_stat_value,
                                      unsigned long  n_bins,
@@ -618,6 +643,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CIPGResolveRetrieveTiming>(
                 new CIPGResolveRetrieveTiming(min_stat_value, max_stat_value,
                                               n_bins, scale_type, reset_to_default)));
+
+        m_TSEChunkRetrieveTiming.push_back(
+            unique_ptr<CTSEChunkRetrieveTiming>(
+                new CTSEChunkRetrieveTiming(min_stat_value, max_stat_value,
+                                            n_bins, scale_type, reset_to_default)));
     }
 
     m_HugeBlobRetrievalTiming.reset(
@@ -833,6 +863,19 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
           SInfo(m_IPGResolveRetrieveTiming[1].get(),
                 "IPG resolve not found",
                 "The timing of an ipg resolve retrieval "
+                "when nothing was found"
+               )
+        },
+        { "TSEChunkRetrieveFound",
+          SInfo(m_TSEChunkRetrieveTiming[0].get(),
+                "TSE chunk found",
+                "The timing of a TSE chunk retrieval"
+               )
+        },
+        { "TSEChunkRetrieveNotFound",
+          SInfo(m_TSEChunkRetrieveTiming[1].get(),
+                "TSE chunk not found",
+                "The timing of a TSE chunk retrieval "
                 "when nothing was found"
                )
         },
@@ -1115,7 +1158,7 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
             m_ResolutionFoundCassandraTiming[index]->Add(mks);
             break;
         case eTseChunkRetrieve:
-            // TODO
+            m_TSEChunkRetrieveTiming[index]->Add(mks);
             break;
     }
 }
@@ -1176,6 +1219,7 @@ void COperationTiming::Rotate(void)
         m_PublicCommentRetrieveTiming[k]->Rotate();
         m_AccVerHistoryRetrieveTiming[k]->Rotate();
         m_IPGResolveRetrieveTiming[k]->Rotate();
+        m_TSEChunkRetrieveTiming[k]->Rotate();
     }
 
     m_HugeBlobRetrievalTiming->Rotate();
@@ -1224,6 +1268,7 @@ void COperationTiming::Reset(void)
             m_PublicCommentRetrieveTiming[k]->Reset();
             m_AccVerHistoryRetrieveTiming[k]->Reset();
             m_IPGResolveRetrieveTiming[k]->Reset();
+            m_TSEChunkRetrieveTiming[k]->Rotate();
         }
 
         m_HugeBlobRetrievalTiming->Reset();

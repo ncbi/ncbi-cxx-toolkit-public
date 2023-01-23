@@ -335,6 +335,18 @@ class CIPGResolveRetrieveTiming : public CPSGTimingBase
 };
 
 
+// TSE chunk retrieve
+class CTSEChunkRetrieveTiming : public CPSGTimingBase
+{
+    public:
+        CTSEChunkRetrieveTiming(unsigned long  min_stat_value,
+                                unsigned long  max_stat_value,
+                                unsigned long  n_bins,
+                                TOnePSGTiming::EScaleType  stat_type,
+                                bool &  reset_to_default);
+};
+
+
 // Resolution
 class CResolutionTiming : public CPSGTimingBase
 {
@@ -406,6 +418,7 @@ class COperationTiming
         vector<unique_ptr<CPublicCommentRetrieveTiming>>    m_PublicCommentRetrieveTiming;
         vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;
         vector<unique_ptr<CIPGResolveRetrieveTiming>>       m_IPGResolveRetrieveTiming;
+        vector<unique_ptr<CTSEChunkRetrieveTiming>>         m_TSEChunkRetrieveTiming;
 
         // The index is calculated basing on the blob size
         vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;
