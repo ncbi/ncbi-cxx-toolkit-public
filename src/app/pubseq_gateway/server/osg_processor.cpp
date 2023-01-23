@@ -80,6 +80,27 @@ static pair<bool, CPSGS_OSGProcessorBase::TEnabledFlags> s_ParseEnabledFlags(con
 }
 
 
+vector<string> CPSGS_OSGProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                                  shared_ptr<CPSGS_Reply> reply) const
+{
+    auto& req_base = request->GetRequest<SPSGS_RequestBase>();
+    auto enabled_explicitly = s_ParseEnabledFlags(req_base.m_EnabledProcessors);
+    auto disabled_explicitly = s_ParseEnabledFlags(req_base.m_DisabledProcessors);
+    auto app = CPubseqGatewayApp::GetInstance();
+    auto conn_pool = app->GetOSGConnectionPool();
+    bool enabled_main = app->GetOSGProcessorsEnabled();
+    enabled_main |= enabled_explicitly.first;
+    enabled_main &= !disabled_explicitly.first;
+    CPSGS_OSGProcessorBase::TEnabledFlags enabled_flags = enabled_main? conn_pool->GetDefaultEnabledFlags(): 0;
+    enabled_flags |= enabled_explicitly.second;
+    enabled_flags &= ~disabled_explicitly.second;
+    if ( enabled_flags ) {
+        return CPSGS_OSGAnnot::WhatCanProcess(enabled_flags, request);
+    }
+    return vector<string>();
+}
+
+
 bool CPSGS_OSGProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
                                     shared_ptr<CPSGS_Reply> reply) const
 {

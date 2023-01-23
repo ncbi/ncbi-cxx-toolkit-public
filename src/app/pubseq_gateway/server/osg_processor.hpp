@@ -52,6 +52,8 @@ public:
     CPSGS_OSGProcessor();
     virtual ~CPSGS_OSGProcessor();
     
+    virtual vector<string> WhatCanProcess(shared_ptr<CPSGS_Request> request,
+                                          shared_ptr<CPSGS_Reply> reply) const override;
     virtual bool CanProcess(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply) const override;
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,

@@ -76,6 +76,31 @@ string CPSGS_OSGAnnot::GetGroupName() const
 }
 
 
+vector<string> CPSGS_OSGAnnot::WhatCanProcess(TEnabledFlags enabled_flags,
+                                              shared_ptr<CPSGS_Request>& request)
+{
+    if ( !(enabled_flags&fEnabledAllAnnot) ) {
+        return vector<string>();
+    }
+    auto& psg_req = request->GetRequest<SPSGS_AnnotRequest>();
+    // check if id is good enough
+    CSeq_id id;
+    try {
+        SetSeqId(id, psg_req.m_SeqIdType, psg_req.m_SeqId);
+    }
+    catch ( exception& /*ignore*/ ) {
+        return vector<string>();
+    }
+    if ( !id.IsGi() && !id.GetTextseq_Id() ) {
+        return vector<string>();
+    }
+    //if ( !CanResolve(request.m_SeqIdType, request.m_SeqId) ) {
+    //    return false;
+    //}
+    return GetNamesToProcess(enabled_flags, psg_req, 0);
+}
+
+
 bool CPSGS_OSGAnnot::CanProcess(TEnabledFlags enabled_flags,
                                 shared_ptr<CPSGS_Request>& request,
                                 TProcessorPriority priority)
@@ -102,14 +127,14 @@ bool CPSGS_OSGAnnot::CanProcess(TEnabledFlags enabled_flags,
 }
 
 
-set<string> CPSGS_OSGAnnot::GetNamesToProcess(TEnabledFlags enabled_flags,
-                                              SPSGS_AnnotRequest& request,
-                                              TProcessorPriority priority)
+vector<string> CPSGS_OSGAnnot::GetNamesToProcess(TEnabledFlags enabled_flags,
+                                                 SPSGS_AnnotRequest& request,
+                                                 TProcessorPriority priority)
 {
-    set<string> ret;
+    vector<string> ret;
     for ( auto& name : request.GetNotProcessedName(priority) ) {
         if ( CanProcessAnnotName(enabled_flags, name) ) {
-            ret.insert(name);
+            ret.push_back(name);
         }
     }
     return ret;

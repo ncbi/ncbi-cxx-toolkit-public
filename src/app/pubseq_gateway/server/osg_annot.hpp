@@ -63,12 +63,14 @@ public:
     virtual string GetName() const override;
     virtual string GetGroupName() const override;
 
+    static vector<string> WhatCanProcess(TEnabledFlags enabled_flags,
+                                         shared_ptr<CPSGS_Request>& request);
     static bool CanProcess(TEnabledFlags enabled_flags,
                            shared_ptr<CPSGS_Request>& request,
                            TProcessorPriority priority);
-    static set<string> GetNamesToProcess(TEnabledFlags enabled_flags,
-                                         SPSGS_AnnotRequest& request,
-                                         TProcessorPriority priority);
+    static vector<string> GetNamesToProcess(TEnabledFlags enabled_flags,
+                                            SPSGS_AnnotRequest& request,
+                                            TProcessorPriority priority);
     static bool CanProcessAnnotName(TEnabledFlags enabled_flags,
                                     const string& name);
 
