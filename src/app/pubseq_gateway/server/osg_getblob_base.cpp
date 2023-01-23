@@ -36,6 +36,7 @@
 #include <objects/id2/id2__.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+#include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "id2info.hpp"
@@ -46,6 +47,7 @@ BEGIN_NAMESPACE(osg);
 
 
 CPSGS_OSGGetBlobBase::CPSGS_OSGGetBlobBase()
+    : m_Start(psg_clock_t::now())
 {
 }
 
@@ -112,6 +114,32 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
                   "Invalid blob reply: "<<MSerial_AsnText<<reply);
         break;
     }
+}
+
+
+void CPSGS_OSGGetBlobBase::x_RegisterTiming(EPSGOperation operation,
+                                            EPSGOperationStatus status,
+                                            size_t blob_size)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(this, operation, status, m_Start, blob_size);
+}
+
+
+void CPSGS_OSGGetBlobBase::x_RegisterTimingFound(EPSGOperation operation,
+                                                 const CID2_Reply_Data& data)
+{
+    size_t blob_size = 0;
+    for ( auto& chunk : data.GetData() ) {
+        blob_size += chunk->size();
+    }
+    x_RegisterTiming(operation, eOpStatusFound, blob_size);
+}
+
+
+void CPSGS_OSGGetBlobBase::x_RegisterTimingNotFound(EPSGOperation operation)
+{
+    x_RegisterTiming(operation, eOpStatusNotFound, 0);
 }
 
 
@@ -275,6 +303,8 @@ void CPSGS_OSGGetBlobBase::x_SendMainEntry(const CID2_Blob_Id& osg_blob_id,
 {
     string main_blob_id = GetPSGBlobId(osg_blob_id);
 
+    x_RegisterTimingFound(eBlobRetrieve, data);
+    
     CBlobRecord main_blob_props;
     x_SetBlobVersion(main_blob_props, osg_blob_id);
     x_SetBlobState(main_blob_props, blob_state);
@@ -292,6 +322,8 @@ void CPSGS_OSGGetBlobBase::x_SendSplitInfo(const CID2_Blob_Id& osg_blob_id,
     // first send main blob props
     string main_blob_id = GetPSGBlobId(osg_blob_id);
     string id2_info = GetPSGId2Info(osg_blob_id, split_version);
+    
+    x_RegisterTimingFound(eBlobRetrieve, data);
     
     CBlobRecord main_blob_props;
     x_SetBlobVersion(main_blob_props, osg_blob_id);
@@ -311,6 +343,8 @@ void CPSGS_OSGGetBlobBase::x_SendChunk(const CID2_Blob_Id& osg_blob_id,
                                        const CID2_Reply_Data& data)
 {
     string id2_info = GetPSGId2Info(osg_blob_id, x_GetSplitVersion(osg_blob_id));
+    
+    x_RegisterTimingFound(eTseChunkRetrieve, data);
     
     CBlobRecord chunk_blob_props;
     x_SetBlobDataProps(chunk_blob_props, data);
@@ -415,6 +449,9 @@ void CPSGS_OSGGetBlobBase::SendBlob()
     else {
         // nothing TODO
         status = ePSGS_NotFound;
+    }
+    if ( status == ePSGS_NotFound ) {
+        x_RegisterTimingNotFound(GetName() == "OSG-gettsechunk"? eTseChunkRetrieve: eBlobRetrieve);
     }
     SetFinalStatus(status);
 }

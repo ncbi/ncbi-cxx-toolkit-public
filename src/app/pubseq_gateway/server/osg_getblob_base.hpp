@@ -33,6 +33,7 @@
  */
 
 #include "osg_processor_base.hpp"
+#include "timing.hpp"
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -111,6 +112,13 @@ protected:
     static string x_GetChunkPSGBlobId(const string& main_blob_id,
                                       TID2ChunkId chunk_id);
     
+    void x_RegisterTiming(EPSGOperation operation,
+                          EPSGOperationStatus status,
+                          size_t blob_size);
+    void x_RegisterTimingFound(EPSGOperation operation,
+                               const objects::CID2_Reply_Data& data);
+    void x_RegisterTimingNotFound(EPSGOperation operation);
+
     template<class C>
     static TID2BlobState x_GetBlobState(const C& obj)
         {
@@ -155,6 +163,8 @@ protected:
                            TID2SplitVersion split_version);
     TID2SplitVersion x_GetSplitVersion(const CID2_Blob_Id& osg_blob_id);
 
+    psg_time_point_t m_Start;
+    
     map<string, TID2SplitVersion> m_PSGBlobId2SplitVersion;
     CConstRef<CID2_Reply_Get_Blob> m_Blob;
     CConstRef<CID2S_Reply_Get_Split_Info> m_SplitInfo;
