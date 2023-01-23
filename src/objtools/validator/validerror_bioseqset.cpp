@@ -68,9 +68,24 @@ CValidError_bioseqset::~CValidError_bioseqset()
 }
 
 
+CConstRef<CUser_object> s_AutoDefUserObjectFromBioseq (const CBioseq& seq)
+{
+    if (seq.IsNa() && seq.IsSetDescr()) {
+        for (auto desc : seq.GetDescr().Get()) {
+            if (desc->IsUser()) {
+                const CUser_object& uo = desc->GetUser();
+                if (uo.GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
+                    return CConstRef<CUser_object>( &uo );
+                }
+            }
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+
+
 void CValidError_bioseqset::ValidateBioseqSet(
-    const CBioseq_set& seqset,
-    bool suppressMissingSetTitle)
+    const CBioseq_set& seqset)
 {
     int protcnt = 0;
     int nuccnt  = 0;
@@ -182,6 +197,88 @@ void CValidError_bioseqset::ValidateBioseqSet(
         m_AnnotValidator.ValidateSeqAnnot (**annot_it);
         m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
     }
+
+    // for pop/phy/mut/eco sets, check for consistent Autodef user objects
+    bool not_all_autodef = false;
+    bool not_same_autodef = false;
+    bool has_any_autodef = false;
+
+    if (seqset.IsSetClass()) {
+        switch ( seqset.GetClass() ) {
+        case CBioseq_set::eClass_pop_set:
+        case CBioseq_set::eClass_mut_set:
+        case CBioseq_set::eClass_phy_set:
+        case CBioseq_set::eClass_eco_set:
+            {
+                CConstRef<CUser_object> first_autodef;
+                for (auto se : seqset.GetSeq_set()) {
+                    bool has_autodef = false;
+                    CConstRef<CUser_object> aduo;
+                    if ( se->IsSet() ) {
+                        const CBioseq_set& bss = se->GetSet();
+                        for (auto sub : bss.GetSeq_set()) {
+                            if (sub->IsSeq()) {
+                                const CBioseq& seq = sub->GetSeq();
+                                if (seq.IsNa() && seq.IsSetDescr()) {
+                                    aduo = s_AutoDefUserObjectFromBioseq (seq);
+                                    if (aduo) {
+                                        has_autodef = true;
+                                        has_any_autodef = true;
+                                        if (! first_autodef) {
+                                            first_autodef = aduo;
+                                        } else if (! first_autodef->Equals(*aduo)) {
+                                            not_same_autodef = true;
+                                        }
+                                    } else {
+                                        has_autodef = false;
+                                    }
+                                }
+                            }
+                        }
+                    } else if (se->IsSeq()) {
+                        const CBioseq& seq = se->GetSeq();
+                        if (seq.IsNa() && seq.IsSetDescr()) {
+                            aduo = s_AutoDefUserObjectFromBioseq (seq);
+                            if (aduo) {
+                                has_autodef = true;
+                                has_any_autodef = true;
+                                if (! first_autodef) {
+                                    first_autodef = aduo;
+                                } else if (! first_autodef->Equals(*aduo)) {
+                                    not_same_autodef = true;
+                                }
+                            } else {
+                                has_autodef = false;
+                            }
+                        }
+                    }
+                    if (! has_autodef) {
+                        not_all_autodef = true;
+                    }
+                }
+                if (not_all_autodef && has_any_autodef) {
+                    PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingAutodef,
+                        "Not all pop/phy/mut/eco set components have an autodef user object",
+                        seqset);
+                }
+                if (not_same_autodef && has_any_autodef) {
+                    PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentAutodef,
+                        "Inconsistent autodef user objects in pop/phy/mut/eco set",
+                        seqset);
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    bool suppressMissingSetTitle = false;
+
+    if (has_any_autodef && (! not_all_autodef) && (! not_same_autodef)) {
+        suppressMissingSetTitle = true;
+    }
+
 
     if ((m_Imp.IsHugeFileMode()) && m_Imp.IsHugeSet(seqset)) {
         call_once(m_Imp.SetContext().DescriptorsOnceFlag,
