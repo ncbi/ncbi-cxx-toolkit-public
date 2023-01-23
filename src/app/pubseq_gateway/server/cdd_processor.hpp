@@ -35,6 +35,7 @@
 #include "ipsgs_processor.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
+#include "timing.hpp"
 #include <objects/seq/seq_id_handle.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/cdd_client.hpp>
 
@@ -102,6 +103,10 @@ private:
     void x_ProcessResolveRequest(void);
     void x_ProcessGetBlobRequest(void);
     void x_SendAnnotInfo(const objects::CCDD_Reply_Get_Blob_Id& blob_info);
+    void x_RegisterTiming(EPSGOperation operation,
+                          EPSGOperationStatus status,
+                          size_t size);
+    void x_RegisterTimingNotFound(EPSGOperation operation);
     void x_SendAnnot(const objects::CID2_Blob_Id& id2_blob_id, CRef<objects::CSeq_annot>& annot);
     static void x_SendError(shared_ptr<CPSGS_Reply> reply,
                             const string& msg);
@@ -116,6 +121,7 @@ private:
 
     CFastMutex m_Mutex;
     shared_ptr<objects::CCDDClientPool> m_ClientPool;
+    psg_time_point_t m_Start;
     EPSGS_Status m_Status;
     bool m_Canceled;
     vector<objects::CSeq_id_Handle> m_SeqIds;
