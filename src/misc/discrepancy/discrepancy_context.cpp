@@ -702,7 +702,7 @@ sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq
             return sequence::eNoOverlap;
         }
     }
-    catch (...) {} // LCOV_EXCL_LINE
+    catch (...) {} 
     return sequence::Compare(loc1, loc2, &GetScope(), sequence::fCompareOverlapping);
 }
 
