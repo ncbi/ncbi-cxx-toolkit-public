@@ -463,6 +463,7 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     }
     // NOTE: m_Data may be null if the blob was excluded.
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
+        x_RegisterTimingNotFound(eBlobRetrieve);
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -526,6 +527,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         return;
     }
     if ( !m_WGSData ) {
+        x_RegisterTimingNotFound(eBlobRetrieve);
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -589,6 +591,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
         return;
     }
     if ( !m_WGSData ) {
+        x_RegisterTimingNotFound(eTseChunkRetrieve);
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -655,14 +658,27 @@ void s_SetBlobDataProps(CBlobRecord& blob_props, const CID2_Reply_Data& data)
 
 void CPSGS_WGSProcessor::x_RegisterTiming(EPSGOperation operation,
                                           EPSGOperationStatus status,
-                                          const CID2_Reply_Data& data)
+                                          size_t blob_size)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(this, operation, status, m_Start, blob_size);
+}
+
+
+void CPSGS_WGSProcessor::x_RegisterTimingFound(EPSGOperation operation,
+                                               const CID2_Reply_Data& data)
 {
     size_t blob_size = 0;
     for ( auto& chunk : data.GetData() ) {
         blob_size += chunk->size();
     }
-    CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(this, operation, status, m_Start, blob_size);
+    x_RegisterTiming(operation, eOpStatusFound, blob_size);
+}
+
+
+void CPSGS_WGSProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
+{
+    x_RegisterTiming(operation, eOpStatusNotFound, 0);
 }
 
 
@@ -772,10 +788,10 @@ void CPSGS_WGSProcessor::x_SendSplitInfo(void)
     CBlobRecord split_info_blob_props;
     CID2_Reply_Data data;
     x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
+    x_RegisterTimingFound(eBlobRetrieve, data);
     s_SetBlobDataProps(split_info_blob_props, data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
     x_SendChunkBlobData(id2_info, kSplitInfoChunk, data);
-    x_RegisterTiming(eBlobRetrieve, eOpStatusFound, data);
 }
 
 
@@ -787,6 +803,7 @@ void CPSGS_WGSProcessor::x_SendMainEntry(void)
 
     CID2_Reply_Data data;
     x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
+    x_RegisterTimingFound(eBlobRetrieve, data);
 
     CBlobRecord main_blob_props;
     s_SetBlobVersion(main_blob_props, id2_blob_id);
@@ -794,7 +811,6 @@ void CPSGS_WGSProcessor::x_SendMainEntry(void)
     s_SetBlobDataProps(main_blob_props, data);
     x_SendBlobProps(main_blob_id, main_blob_props);
     x_SendBlobData(main_blob_id, data);
-    x_RegisterTiming(eBlobRetrieve, eOpStatusFound, data);
 }
 
 
@@ -845,12 +861,12 @@ void CPSGS_WGSProcessor::x_SendChunk(void)
     
     CID2_Reply_Data data;
     x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
+    x_RegisterTimingFound(eTseChunkRetrieve, data);
 
     CBlobRecord chunk_blob_props;
     s_SetBlobDataProps(chunk_blob_props, data);
     x_SendChunkBlobProps(id2_info, m_ChunkId, chunk_blob_props);
     x_SendChunkBlobData(id2_info, m_ChunkId, data);
-    x_RegisterTiming(eTseChunkRetrieve, eOpStatusFound, data);
 }
 
 

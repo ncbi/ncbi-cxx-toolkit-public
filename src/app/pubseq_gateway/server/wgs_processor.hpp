@@ -114,7 +114,10 @@ private:
 
     void x_RegisterTiming(EPSGOperation operation,
                           EPSGOperationStatus status,
-                          const objects::CID2_Reply_Data& data);
+                          size_t blob_size);
+    void x_RegisterTimingFound(EPSGOperation operation,
+                               const objects::CID2_Reply_Data& data);
+    void x_RegisterTimingNotFound(EPSGOperation operation);
     EOutputFormat x_GetOutputFormat(void);
     void x_SendResult(const string& data_to_send, EOutputFormat output_format);
     void x_SendBioseqInfo(void);
