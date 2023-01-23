@@ -212,6 +212,7 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
       m_Config(parent.m_Config),
       m_Client(parent.m_Client),
       m_ThreadPool(parent.m_ThreadPool),
+      m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
       m_Unlocked(true),
       m_PreResolving(false)
@@ -594,6 +595,7 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
         return;
     }
     if (m_SNPData.empty()) {
+        x_RegisterTimingNotFound(eNARetrieve);
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -649,6 +651,7 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
         return;
     }
     if (m_SNPData.empty()) {
+        x_RegisterTimingNotFound(eTseChunkRetrieve);
         x_Finish(ePSGS_NotFound);
         return;
     }
@@ -663,6 +666,32 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
         return;
     }
     x_Finish(ePSGS_Done);
+}
+
+
+void CPSGS_SNPProcessor::x_RegisterTiming(EPSGOperation operation,
+                                          EPSGOperationStatus status,
+                                          size_t blob_size)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(this, operation, status, m_Start, blob_size);
+}
+
+
+void CPSGS_SNPProcessor::x_RegisterTimingFound(EPSGOperation operation,
+                                               const CID2_Reply_Data& data)
+{
+    size_t blob_size = 0;
+    for ( auto& chunk : data.GetData() ) {
+        blob_size += chunk->size();
+    }
+    x_RegisterTiming(operation, eOpStatusFound, blob_size);
+}
+
+
+void CPSGS_SNPProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
+{
+    x_RegisterTiming(operation, eOpStatusNotFound, 0);
 }
 
 
@@ -717,12 +746,12 @@ void CPSGS_SNPProcessor::x_SendChunk(void)
     for (auto& data : m_SNPData) {
         CID2_Reply_Data id2_data;
         x_WriteData(id2_data, *data.m_Chunk);
+        x_RegisterTimingFound(eTseChunkRetrieve, id2_data);
         CBlobRecord chunk_blob_props;
         s_SetBlobDataProps(chunk_blob_props, id2_data);
         x_SendChunkBlobProps(m_Id2Info, m_ChunkId, chunk_blob_props);
         x_SendChunkBlobData(m_Id2Info, m_ChunkId, id2_data);
     }
-
 }
 
 
@@ -738,6 +767,7 @@ void CPSGS_SNPProcessor::x_SendSplitInfo(const SSNPData& data)
     CBlobRecord split_info_blob_props;
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, info);
+    x_RegisterTimingFound(eNARetrieve, id2_data);
     s_SetBlobDataProps(split_info_blob_props, id2_data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
     x_SendChunkBlobData(id2_info, kSplitInfoChunk, id2_data);
@@ -750,6 +780,7 @@ void CPSGS_SNPProcessor::x_SendMainEntry(const SSNPData& data)
     string main_blob_id = m_PSGBlobId + ".0.0";
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, entry);
+    x_RegisterTimingFound(eNARetrieve, id2_data);
 
     CBlobRecord main_blob_props;
     s_SetBlobDataProps(main_blob_props, id2_data);
