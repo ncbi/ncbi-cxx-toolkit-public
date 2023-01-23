@@ -657,134 +657,134 @@ BOOST_AUTO_TEST_CASE(Test_TenAuthorsProcess)
 BOOST_AUTO_TEST_CASE(Test_FixPub)
 {
     static const string TEST_PUB =
-      "Pub ::= \
-       equiv { \
-         pmid 17659802, \
-         article { \
-           title { \
-             name \"Genetic diversity and reassortments among Akabane virus field isolates.\" \
-           }, \
-           authors { \
-             names std { \
-               { \
-                 name name { \
-                   last \"Kobayashi\", \
-                   initials \"T.\" \
-                 } \
-               }, \
-               { \
-                 name name { \
-                   last \"Yanase\", \
-                   initials \"T.\" \
-                 } \
-               }, \
-               { \
-                 name name { \
-                 last \"Yamakawa\", \
-                 initials \"M.\" \
-                 } \
-               }, \
-               { \
-                 name name { \
-                   last \"Kato\", \
-                   initials \"T.\" \
-                 } \
-               }, \
-               { \
-                 name name { \
-                   last \"Yoshida\", \
-                   initials \"K.\" \
-                 } \
-               }, \
-               { \
-                 name name { \
-                   last \"Tsuda\", \
-                   initials \"T.\" \
-                 } \
-               } \
-             }, \
-             affil str \"Division 1, Second Production Department, the Chemo - Sero - Therapeutic Research Institute, 1 - 6 - 1 Okubo, Kumamoto 860 - 8568, Japan.\" \
-           }, \
-           from journal { \
-             title { \
-               iso-jta \"Virus Res.\", \
-               ml-jta \"Virus Res\", \
-               issn \"0168-1702\", \
-               name \"Virus research\" \
-             }, \
-             imp { \
-               date std { \
-                 year 2007, \
-                 month 12 \
-               }, \
-               volume \"130\", \
-               issue \"1-2\", \
-               pages \"162-171\", \
-               language \"ENG\", \
-               pubstatus ppublish, \
-               history { \
-                 { \
-                   pubstatus received, \
-                   date std { \
-                     year 2007, \
-                     month 1, \
-                     day 15 \
-                   } \
-                 }, \
-                 { \
-                   pubstatus revised, \
-                   date std { \
-                     year 2007, \
-                     month 6, \
-                     day 5 \
-                   } \
-                 }, \
-                 { \
-                   pubstatus accepted, \
-                   date std { \
-                     year 2007, \
-                     month 6, \
-                     day 11 \
-                   } \
-                 }, \
-                 { \
-                   pubstatus aheadofprint, \
-                   date std { \
-                     year 2007, \
-                     month 7, \
-                     day 30 \
-                   } \
-                 }, \
-                 { \
-                   pubstatus pubmed, \
-                   date std { \
-                     year 2007, \
-                     month 7, \
-                     day 31, \
-                     hour 9, \
-                     minute 0 \
-                   } \
-                 }, \
-                 { \
-                   pubstatus medline, \
-                   date std { \
-                     year 2007, \
-                     month 7, \
-                     day 31, \
-                     hour 9, \
-                     minute 0 \
-                   } \
-                 } \
-               } \
-             } \
-           }, \
-           ids { \
-             pii \"S0168-1702(07)00221-3\", \
-             doi \"10.1016/j.virusres.2007.06.007\", \
-             pubmed 17659802 \
-           } \
-         } \
-       }";
+R"(Pub ::=
+equiv {
+  pmid 17659802,
+  article {
+    title {
+      name "Genetic diversity and reassortments among Akabane virus field isolates."
+    },
+    authors {
+      names std {
+        {
+          name name {
+            last "Kobayashi",
+            initials "T."
+          }
+        },
+        {
+          name name {
+            last "Yanase",
+            initials "T."
+          }
+        },
+        {
+          name name {
+            last "Yamakawa",
+            initials "M."
+          }
+        },
+        {
+          name name {
+            last "Kato",
+            initials "T."
+          }
+        },
+        {
+          name name {
+            last "Yoshida",
+            initials "K."
+          }
+        },
+        {
+          name name {
+            last "Tsuda",
+            initials "T."
+          }
+        }
+      },
+      affil str "Division 1, Second Production Department, the Chemo - Sero - Therapeutic Research Institute, 1 - 6 - 1 Okubo, Kumamoto 860 - 8568, Japan."
+    },
+    from journal {
+      title {
+        iso-jta "Virus Res.",
+        ml-jta "Virus Res",
+        issn "0168-1702",
+        name "Virus research"
+      },
+      imp {
+        date std {
+          year 2007,
+          month 12
+        },
+        volume "130",
+        issue "1-2",
+        pages "162-171",
+        language "ENG",
+        pubstatus ppublish,
+        history {
+          {
+            pubstatus received,
+            date std {
+              year 2007,
+              month 1,
+              day 15
+            }
+          },
+          {
+            pubstatus revised,
+            date std {
+              year 2007,
+              month 6,
+              day 5
+            }
+          },
+          {
+            pubstatus accepted,
+            date std {
+              year 2007,
+              month 6,
+              day 11
+            }
+          },
+          {
+            pubstatus aheadofprint,
+            date std {
+              year 2007,
+              month 7,
+              day 30
+            }
+          },
+          {
+            pubstatus pubmed,
+            date std {
+              year 2007,
+              month 7,
+              day 31,
+              hour 9,
+              minute 0
+            }
+          },
+          {
+            pubstatus medline,
+            date std {
+              year 2007,
+              month 7,
+              day 31,
+              hour 9,
+              minute 0
+            }
+          }
+        }
+      }
+    },
+    ids {
+      pii "S0168-1702(07)00221-3",
+      doi "10.1016/j.virusres.2007.06.007",
+      pubmed 17659802
+    }
+  }
+})";
 
     static const string TEST_PUB_GOOD =
 R"(Pub ::= equiv {
