@@ -78,7 +78,7 @@ public:
     CValidError_bioseqset(CValidError_imp& imp);
     ~CValidError_bioseqset() override;
 
-    void ValidateBioseqSet(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
+    void ValidateBioseqSet(const CBioseq_set& seqset);
 
 private:
 
