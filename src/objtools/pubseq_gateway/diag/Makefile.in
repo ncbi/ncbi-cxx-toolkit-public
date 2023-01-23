@@ -1,8 +1,0 @@
-# $Id$
-
-LIB_PROJ = psg_diag
-
-REQUIRES = MT
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
