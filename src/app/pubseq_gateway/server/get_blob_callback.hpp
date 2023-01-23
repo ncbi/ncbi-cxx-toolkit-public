@@ -60,10 +60,12 @@ class CBlobChunkCallback
     public:
         CBlobChunkCallback(IPSGS_Processor *  processor,
                            TBlobChunkCB  blob_chunk_cb,
-                           CCassBlobFetch *  fetch_details) :
+                           CCassBlobFetch *  fetch_details,
+                           EPSGOperation  retrieve_statistic=eBlobRetrieve) :
             m_Processor(processor),
             m_BlobChunkCB(blob_chunk_cb),
             m_FetchDetails(fetch_details),
+            m_RetrieveStatistic(retrieve_statistic),
             m_BlobSize(0),
             m_BlobRetrieveTiming(psg_clock_t::now())
         {}
@@ -75,7 +77,7 @@ class CBlobChunkCallback
                 m_BlobSize += size;
             else
                 CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(m_Processor, eBlobRetrieve, eOpStatusFound,
+                    Register(m_Processor, m_RetrieveStatistic, eOpStatusFound,
                              m_BlobRetrieveTiming, m_BlobSize);
 
             m_BlobChunkCB(m_FetchDetails, blob, data, size, chunk_no);
@@ -85,6 +87,7 @@ class CBlobChunkCallback
         IPSGS_Processor *       m_Processor;
         TBlobChunkCB            m_BlobChunkCB;
         CCassBlobFetch *        m_FetchDetails;
+        EPSGOperation           m_RetrieveStatistic;
 
         unsigned long           m_BlobSize;
         psg_time_point_t        m_BlobRetrieveTiming;
@@ -168,10 +171,12 @@ class CGetBlobErrorCallback
     public:
         CGetBlobErrorCallback(IPSGS_Processor *  processor,
                               TBlobErrorCB  blob_error_cb,
-                              CCassBlobFetch *  fetch_details) :
+                              CCassBlobFetch *  fetch_details,
+                              EPSGOperation  retrieve_statistic=eBlobRetrieve) :
             m_Processor(processor),
             m_BlobErrorCB(blob_error_cb),
             m_FetchDetails(fetch_details),
+            m_RetrieveStatistic(retrieve_statistic),
             m_BlobRetrieveTiming(psg_clock_t::now())
         {}
 
@@ -182,7 +187,7 @@ class CGetBlobErrorCallback
         {
             if (status == CRequestStatus::e404_NotFound)
                 CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(m_Processor, eBlobRetrieve, eOpStatusNotFound,
+                    Register(m_Processor, m_RetrieveStatistic, eOpStatusNotFound,
                              m_BlobRetrieveTiming);
             m_BlobErrorCB(m_FetchDetails, status, code, severity, message);
         }
@@ -191,6 +196,7 @@ class CGetBlobErrorCallback
         IPSGS_Processor *   m_Processor;
         TBlobErrorCB        m_BlobErrorCB;
         CCassBlobFetch *    m_FetchDetails;
+        EPSGOperation       m_RetrieveStatistic;
 
         psg_time_point_t    m_BlobRetrieveTiming;
 };
