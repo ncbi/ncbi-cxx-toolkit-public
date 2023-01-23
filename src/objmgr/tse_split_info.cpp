@@ -221,10 +221,17 @@ bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 
 void CTSE_Split_Info::x_LoadDelayedMainChunk(void) const
 {
-    CMutexGuard guard(m_ChunksMutex);
-    TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
-    while ( iter != begin && (--iter)->first >= kMax_Int-1 ) {
-        iter->second->Load();
+    CRef<CTSE_Chunk_Info> delayed_chunk;
+    {{
+        CMutexGuard guard(m_ChunksMutex);
+        TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
+        while ( iter != begin && (--iter)->first >= kMax_Int-1 ) {
+            delayed_chunk = iter->second;
+            break;
+        }
+    }}
+    if ( delayed_chunk ) {
+        delayed_chunk->Load();
     }
 }
 
