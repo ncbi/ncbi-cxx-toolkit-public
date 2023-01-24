@@ -266,6 +266,26 @@ else()
 endif()
 
 #############################################################################
+# NCBI_PYTHON_EXECUTABLE
+if(NCBI_COMPONENT_PYTHON_FOUND)
+    if(DEFINED PYTHON_EXECUTABLE)
+        set(NCBI_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+    elseif(DEFINED Python3_EXECUTABLE)
+        set(NCBI_PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+    elseif(EXISTS ${NCBI_ThirdParty_PYTHON}/bin/python${CMAKE_EXECUTABLE_SUFFIX})
+        set(NCBI_PYTHON_EXECUTABLE ${NCBI_ThirdParty_PYTHON}/bin/python${CMAKE_EXECUTABLE_SUFFIX})
+    elseif(EXISTS ${NCBI_ThirdParty_PYTHON}/python${CMAKE_EXECUTABLE_SUFFIX})
+        set(NCBI_PYTHON_EXECUTABLE ${NCBI_ThirdParty_PYTHON}/python${CMAKE_EXECUTABLE_SUFFIX})
+    endif()
+endif()
+if(NOT NCBI_PYTHON_EXECUTABLE)
+    find_package(PythonInterp 3)
+    if (PYTHONINTERP_FOUND)
+        set(NCBI_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+    endif()
+endif()
+
+#############################################################################
 # FreeTDS
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
 
