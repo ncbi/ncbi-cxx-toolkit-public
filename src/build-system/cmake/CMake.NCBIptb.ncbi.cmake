@@ -231,6 +231,45 @@ function(NCBI_internal_rank_add_project _prj)
 endfunction()
 
 #############################################################################
+# run_with_cd_reporter
+
+function(NCBI_internal_configure_cd_reporter)
+    if (NOT NCBI_PYTHON_EXECUTABLE)
+        message(STATUS "Could not find Python3. Disabling cd_reporter.")
+        return()
+    endif()
+    set(CD_REPORTER "/am/ncbiapdata/bin/cd_reporter")
+    if (NOT EXISTS ${CD_REPORTER})
+        message(STATUS "Could not find cd_reporter. Disabling cd_reporter.")
+        return()
+    endif()
+    if ("$ENV{TEAMCITY_VERSION}" STREQUAL "")
+        message(STATUS "Detected development build. Disabling cd_reporter.")
+        return()
+    endif()
+    message(STATUS "Generating ${build_root}/run_with_cd_reporter.py...")
+    message(STATUS "Python3 path: ${NCBI_PYTHON_EXECUTABLE}")
+
+    set(PYTHON3 ${NCBI_PYTHON_EXECUTABLE})
+    if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+        set(abs_top_srcdir ${NCBI_EXTERNAL_TREE_ROOT})
+    else()
+        set(abs_top_srcdir ${NCBITK_TREE_ROOT})
+    endif()
+    set(top_src_dir ${abs_top_srcdir})
+    set(status_dir ${NCBI_BUILD_ROOT}/status)
+    configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
+    # copy to build_root and set executable permissions (configure_file doesn't set permissions)
+    file(COPY ${build_root}/build-system/run_with_cd_reporter.py DESTINATION ${build_root}
+        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.py)
+endfunction()
+
+if(UNIX AND NOT APPLE)
+    NCBI_internal_configure_cd_reporter()
+endif()
+
+#############################################################################
 NCBI_register_hook(TARGET_ADDED NCBI_internal_add_NCBI_definitions)
 if(NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_COMPONENT_StaticComponents)
     if(APPLE)
