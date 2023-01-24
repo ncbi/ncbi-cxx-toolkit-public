@@ -570,6 +570,30 @@ CNAResolveTiming::CNAResolveTiming(unsigned long  min_stat_value,
 
 
 
+CVDBOpenTiming::CVDBOpenTiming(unsigned long  min_stat_value,
+                               unsigned long  max_stat_value,
+                               unsigned long  n_bins,
+                               TOnePSGTiming::EScaleType  stat_type,
+                               bool &  reset_to_default)
+{
+    reset_to_default = false;
+
+    try {
+        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
+                                            n_bins, stat_type);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    } catch (...) {
+        reset_to_default = true;
+        TOnePSGTiming       model_histogram(kMinStatValue,
+                                            kMaxStatValue,
+                                            kNStatBins,
+                                            TOnePSGTiming::eLog2);
+        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+    }
+}
+
+
+
 CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
                                      unsigned long  max_stat_value,
                                      unsigned long  n_bins,
@@ -677,6 +701,12 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CNAResolveTiming>(
                 new CNAResolveTiming(min_stat_value, max_stat_value,
                                      n_bins, scale_type, reset_to_default)));
+
+        m_VDBOpenTiming.push_back(
+            unique_ptr<CVDBOpenTiming>(
+                new CVDBOpenTiming(min_stat_value, max_stat_value,
+                                   n_bins, scale_type, reset_to_default)));
+
     }
 
     m_HugeBlobRetrievalTiming.reset(
@@ -919,6 +949,18 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "NA resolution not found (non-cassandra)",
                 "The timing of the NA resolution for non-cassandra processors "
                 "when nothing was found"
+               )
+        },
+        { "VDBOpenSuccess",
+          SInfo(m_VDBOpenTiming[0].get(),
+                "VDB opening success",
+                "The timing of the successful VDB opening"
+               )
+        },
+        { "VDBOpenFailed",
+          SInfo(m_VDBOpenTiming[1].get(),
+                "VDB opening failure",
+                "The timing of the failed VDB opening"
                )
         },
         { "HugeBlobRetrieval",
@@ -1205,6 +1247,9 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
         case eNAResolve:
             m_NAResolveTiming[index]->Add(mks);
             break;
+        case eVDBOpen:
+            m_VDBOpenTiming[index]->Add(mks);
+            break;
     }
 }
 
@@ -1266,6 +1311,7 @@ void COperationTiming::Rotate(void)
         m_IPGResolveRetrieveTiming[k]->Rotate();
         m_TSEChunkRetrieveTiming[k]->Rotate();
         m_NAResolveTiming[k]->Rotate();
+        m_VDBOpenTiming[k]->Rotate();
     }
 
     m_HugeBlobRetrievalTiming->Rotate();
@@ -1316,6 +1362,7 @@ void COperationTiming::Reset(void)
             m_IPGResolveRetrieveTiming[k]->Reset();
             m_TSEChunkRetrieveTiming[k]->Reset();
             m_NAResolveTiming[k]->Reset();
+            m_VDBOpenTiming[k]->Reset();
         }
 
         m_HugeBlobRetrievalTiming->Reset();
