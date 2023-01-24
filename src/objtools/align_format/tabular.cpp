@@ -103,7 +103,7 @@ void CBlastTabularInfo::x_ResetFields()
     m_QueryLength = m_SubjectLength = 0U;
     m_Score = m_AlignLength = m_NumGaps = m_NumGapOpens = m_NumIdent =
     m_NumPositives = m_QueryStart = m_QueryEnd = m_SubjectStart =
-    m_SubjectEnd = 0;
+    m_SubjectEnd = m_QueryFrame = m_SubjectFrame = 0;
     m_BitScore = NcbiEmptyString;
     m_Evalue = NcbiEmptyString;
     m_QuerySeq = NcbiEmptyString;
