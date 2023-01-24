@@ -47,7 +47,6 @@ BEGIN_NAMESPACE(osg);
 
 
 CPSGS_OSGGetBlobBase::CPSGS_OSGGetBlobBase()
-    : m_Start(psg_clock_t::now())
 {
 }
 
@@ -117,15 +116,6 @@ void CPSGS_OSGGetBlobBase::ProcessBlobReply(const CID2_Reply& reply)
 }
 
 
-void CPSGS_OSGGetBlobBase::x_RegisterTiming(EPSGOperation operation,
-                                            EPSGOperationStatus status,
-                                            size_t blob_size)
-{
-    CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(this, operation, status, m_Start, blob_size);
-}
-
-
 void CPSGS_OSGGetBlobBase::x_RegisterTimingFound(EPSGOperation operation,
                                                  const CID2_Reply_Data& data)
 {
@@ -134,12 +124,6 @@ void CPSGS_OSGGetBlobBase::x_RegisterTimingFound(EPSGOperation operation,
         blob_size += chunk->size();
     }
     x_RegisterTiming(operation, eOpStatusFound, blob_size);
-}
-
-
-void CPSGS_OSGGetBlobBase::x_RegisterTimingNotFound(EPSGOperation operation)
-{
-    x_RegisterTiming(operation, eOpStatusNotFound, 0);
 }
 
 

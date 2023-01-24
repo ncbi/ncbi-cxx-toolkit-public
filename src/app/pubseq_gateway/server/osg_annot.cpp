@@ -360,6 +360,7 @@ void CPSGS_OSGAnnot::SendReplies()
         }
         for ( auto& r : r_name.second ) {
             string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
+            x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
             CJsonNode       json(CJsonNode::NewObjectNode());
             json.SetString("blob_id", psg_blob_id);
             if ( r->GetBlob_id().IsSetVersion() ) {

@@ -85,6 +85,7 @@ CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
     : m_Context(request->GetRequestContext()),
       m_ConnectionPool(pool),
       m_EnabledFlags(enabled_flags),
+      m_Start(psg_clock_t::now()),
       m_Status(IPSGS_Processor::ePSGS_InProgress),
       m_BackgroundProcesing(0),
       m_NeedTrace(request->NeedTrace())
@@ -647,6 +648,21 @@ void CPSGS_OSGProcessorBase::SignalEndOfUVLoop()
     tLOG_POST("CPSGS_OSGProcessorBase("<<this<<")::SignalEndOfUVLoop(): "<<State());
     _ASSERT(m_UVLoop);
     m_UVLoop = false;
+}
+
+
+void CPSGS_OSGProcessorBase::x_RegisterTiming(EPSGOperation operation,
+                                              EPSGOperationStatus status,
+                                              size_t blob_size)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(this, operation, status, m_Start, blob_size);
+}
+
+
+void CPSGS_OSGProcessorBase::x_RegisterTimingNotFound(EPSGOperation operation)
+{
+    x_RegisterTiming(operation, eOpStatusNotFound, 0);
 }
 
 

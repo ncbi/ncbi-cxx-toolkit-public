@@ -37,6 +37,7 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include "ipsgs_processor.hpp"
+#include "timing.hpp"
 #include <thread>
 
 BEGIN_NCBI_NAMESPACE;
@@ -270,6 +271,11 @@ protected:
     // reset processing state in case of ID2 communication failure before next attempt
     virtual void ResetReplies();
 
+    void x_RegisterTiming(EPSGOperation operation,
+                          EPSGOperationStatus status,
+                          size_t blob_size);
+    void x_RegisterTimingNotFound(EPSGOperation operation);
+    
 private:
     CRef<CRequestContext> m_Context;
     CRef<COSGConnectionPool> m_ConnectionPool;
@@ -277,6 +283,7 @@ private:
     CRef<COSGConnection> m_Connection;
     TFetches m_Fetches;
     CMutex m_StatusMutex;
+    psg_time_point_t m_Start;
     EPSGS_Status m_Status;
     int m_BackgroundProcesing;
     bool m_NeedTrace;
