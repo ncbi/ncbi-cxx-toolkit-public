@@ -914,8 +914,8 @@ R"(Pub ::= equiv {
     },
     ids {
       pubmed 17659802,
-      pii "S0168-1702(07)00221-3",
-      doi "10.1016/j.virusres.2007.06.007"
+      doi "10.1016/j.virusres.2007.06.007",
+      pii "S0168-1702(07)00221-3"
     }
   }
 })";
@@ -933,9 +933,9 @@ auto check_pubfix = [&](IPubmedUpdater* upd) {
     BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
 };
 
-    CMLAUpdater upd_mla;
+    CMLAUpdater upd_mla(true);
     check_pubfix(&upd_mla);
-    CEUtilsUpdater upd_eutils;
+    CEUtilsUpdater upd_eutils(true);
     check_pubfix(&upd_eutils);
 }
 
@@ -1248,8 +1248,8 @@ auto check_pubfix = [&](IPubmedUpdater* upd) {
     BOOST_CHECK_EQUAL(pub_good.Equals(pub), true);
 };
 
-    CMLAUpdater upd_mla;
+    CMLAUpdater upd_mla(true);
     check_pubfix(&upd_mla);
-    CEUtilsUpdater upd_eutils;
+    CEUtilsUpdater upd_eutils(true);
     check_pubfix(&upd_eutils);
 }
