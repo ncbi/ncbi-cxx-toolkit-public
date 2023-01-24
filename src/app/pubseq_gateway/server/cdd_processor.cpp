@@ -483,6 +483,7 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
             x_Finish(ePSGS_Error);
         }
         else {
+            x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
         }
@@ -519,7 +520,7 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
             x_Finish(ePSGS_Error);
         }
         else {
-            x_RegisterTimingNotFound(eNARetrieve);
+            x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
         }
@@ -601,6 +602,8 @@ void CPSGS_CDDProcessor::x_SendAnnotInfo(const CCDD_Reply_Get_Blob_Id& blob_info
         return;
     }
 
+    x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
+    
     const CID2_Blob_Id& blob_id = blob_info.GetBlob_id();
     CJsonNode       json(CJsonNode::NewObjectNode());
     json.SetString("blob_id", CCDDClientPool::BlobIdToString(blob_id));
