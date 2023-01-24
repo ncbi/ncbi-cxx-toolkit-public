@@ -30,30 +30,30 @@ NCBI_begin_lib(xdiscrepancy)
     NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
     NCBI_project_watchers(gotvyans)
 
-    if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
-        NCBI_custom_target_dependencies(discrepancy_fsm_files)
-    endif()
-    if(OFF) # disable until python path is discoverable
+    if(NCBI_PYTHON_EXECUTABLE)
+        if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+            NCBI_custom_target_dependencies(discrepancy_fsm_files)
+        endif()
         NCBI_custom_target_dependencies(discrepancy_testnames)
     endif()
 
 
 NCBI_end_lib()
 
-if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+if(NCBI_PYTHON_EXECUTABLE)
 
-NCBI_begin_custom_target(discrepancy_fsm_files)
-    NCBI_custom_target_definition(define_discrepancy_fsm_files_target)
-    NCBI_custom_target_dependencies(prt2fsm)
-NCBI_end_custom_target()
+    if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
 
-endif()
+        NCBI_begin_custom_target(discrepancy_fsm_files)
+            NCBI_custom_target_definition(define_discrepancy_fsm_files_target)
+            NCBI_custom_target_dependencies(prt2fsm)
+        NCBI_end_custom_target()
 
-if(OFF) # disable until python path is discoverable
+    endif()
 
-NCBI_begin_custom_target(discrepancy_testnames)
-    NCBI_custom_target_definition(define_discrepancy_testnames_target)
-NCBI_end_custom_target()
+    NCBI_begin_custom_target(discrepancy_testnames)
+        NCBI_custom_target_definition(define_discrepancy_testnames_target)
+    NCBI_end_custom_target()
 
 endif()
 
@@ -82,7 +82,7 @@ function(define_discrepancy_testnames_target variable access value current_list_
 
     add_custom_command(
         OUTPUT ${_target_dir}/testnames.inc
-        COMMAND python3 make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
+        COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
         COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
         WORKING_DIRECTORY ${_source_dir}
         DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/make_test_names.py
