@@ -393,9 +393,9 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
             opts->SetWordSize(2);
             opts->ClearFilterOptions();
          } else if (task == "blastp-fast") {
-            opts->SetWordSize(6);
+            opts->SetWordSize(5);
             opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
-            opts->SetWordThreshold(21.0);
+            opts->SetWordThreshold(19.3);
          }
          retval = opts;
     }
@@ -426,9 +426,9 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
             dynamic_cast<CBlastxOptionsHandle*>
             (CBlastOptionsFactory::Create(eBlastx, locality));
         if (task == "blastx-fast") {
-            opts->SetWordSize(6);
+            opts->SetWordSize(5);
             opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
-            opts->SetWordThreshold(21.0);
+            opts->SetWordThreshold(19.3);
         }
         retval = opts;
     }

@@ -895,12 +895,18 @@ static void s_CompressedLookupAddEncoded(
                                  3796875, 4556250, 5315625, 6075000, 6834375,
                                  7593750, 8353125, 9112500, 9871875, 10631250};
 
-    if(lookup->word_length == 7)
+    if(lookup->word_length == 7) {
         index =  w[0] + W7p1[w[1]] + W7p2[w[2]] + W7p3[w[3]] +
                         W7p4[w[4]] + W7p5[w[5]] + W7p6[w[6]];
-    else
+    }
+    else if (lookup->word_length == 6) {
         index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] +
                        W6p4[w[4]] + W6p5[w[5]];
+    }
+    else {
+        index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] +
+                       W6p4[w[4]];
+    }
 
     s_CompressedLookupAddWordHit(lookup, index, query_offset);
 }
@@ -1283,7 +1289,7 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
                                   sizeof(BlastCompressedAaLookupTable));
     
     ASSERT(lookup != NULL);
-    ASSERT(word_size == 6 || word_size == 7);
+    ASSERT(word_size == 5 || word_size == 6 || word_size == 7);
 
     /* set word size and threshold information. The reciprocals
        below are 2^32 / (compressed alphabet size) */
@@ -1291,7 +1297,9 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
     lookup->word_length = word_size;
     lookup->threshold = (Int4)(kMatrixScale * opt->threshold);
     lookup->alphabet_size = BLASTAA_SIZE;
-    if (word_size == 6) {
+
+
+    if (word_size == 6 || word_size == 5) {
         lookup->compressed_alphabet_size = 15;
         lookup->reciprocal_alphabet_size = 286331154;
     }

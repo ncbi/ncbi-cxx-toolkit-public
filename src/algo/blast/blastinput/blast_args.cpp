@@ -266,9 +266,15 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if ( args.Exist(kArgWordSize) && args[kArgWordSize]) {
-        if (m_QueryIsProtein && args[kArgWordSize].AsInteger() > 5){
+        if (m_QueryIsProtein && args[kArgWordSize].AsInteger() > 4){
            opt.SetLookupTableType(eCompressedAaLookupTable);
-           opt.SetWordThreshold(21.0);
+           opt.SetWordThreshold(19.3);
+           if (args[kArgWordSize].AsInteger() > 5) {
+               opt.SetWordThreshold(21.0);
+           }
+           if (args[kArgWordSize].AsInteger() > 6) {
+               opt.SetWordThreshold(20.25);
+           }
         }
         opt.SetWordSize(args[kArgWordSize].AsInteger());
 
