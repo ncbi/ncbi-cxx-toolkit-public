@@ -86,7 +86,8 @@ enum EPSGOperation {
     eAccVerHistRetrieve,
     eIPGResolveRetrieve,
 
-    eTseChunkRetrieve
+    eTseChunkRetrieve,
+    eNAResolve
 };
 
 
@@ -347,6 +348,18 @@ class CTSEChunkRetrieveTiming : public CPSGTimingBase
 };
 
 
+// NA resolve for non-cassandra processors
+class CNAResolveTiming : public CPSGTimingBase
+{
+    public:
+        CNAResolveTiming(unsigned long  min_stat_value,
+                         unsigned long  max_stat_value,
+                         unsigned long  n_bins,
+                         TOnePSGTiming::EScaleType  stat_type,
+                         bool &  reset_to_default);
+};
+
+
 // Resolution
 class CResolutionTiming : public CPSGTimingBase
 {
@@ -419,6 +432,7 @@ class COperationTiming
         vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;
         vector<unique_ptr<CIPGResolveRetrieveTiming>>       m_IPGResolveRetrieveTiming;
         vector<unique_ptr<CTSEChunkRetrieveTiming>>         m_TSEChunkRetrieveTiming;
+        vector<unique_ptr<CNAResolveTiming>>                m_NAResolveTiming;
 
         // The index is calculated basing on the blob size
         vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;
