@@ -87,7 +87,8 @@ enum EPSGOperation {
     eIPGResolveRetrieve,
 
     eTseChunkRetrieve,
-    eNAResolve
+    eNAResolve,
+    eVDBOpen
 };
 
 
@@ -360,6 +361,18 @@ class CNAResolveTiming : public CPSGTimingBase
 };
 
 
+// VDB opening timing
+class CVDBOpenTiming : public CPSGTimingBase
+{
+    public:
+        CVDBOpenTiming(unsigned long  min_stat_value,
+                       unsigned long  max_stat_value,
+                       unsigned long  n_bins,
+                       TOnePSGTiming::EScaleType  stat_type,
+                       bool &  reset_to_default);
+};
+
+
 // Resolution
 class CResolutionTiming : public CPSGTimingBase
 {
@@ -433,6 +446,7 @@ class COperationTiming
         vector<unique_ptr<CIPGResolveRetrieveTiming>>       m_IPGResolveRetrieveTiming;
         vector<unique_ptr<CTSEChunkRetrieveTiming>>         m_TSEChunkRetrieveTiming;
         vector<unique_ptr<CNAResolveTiming>>                m_NAResolveTiming;
+        vector<unique_ptr<CVDBOpenTiming>>                  m_VDBOpenTiming;
 
         // The index is calculated basing on the blob size
         vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;
