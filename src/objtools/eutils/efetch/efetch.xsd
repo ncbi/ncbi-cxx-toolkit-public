@@ -11,35 +11,25 @@
 <!--
   $Id$
   
-  2018-09-01
-  
-  This Schema supports both the E-utilities and ftp service data dissemination methods. 
-  It is based on http://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_190101.dtd
-  
-  Additions/Changes since 180601 DTD: 
-  
-  	1.  Added elements to capture reference citations:
-  			<ReferenceList>
-  			<Reference>
-  			<Citation>
-  	2.  Removed <CitationString> from book records.
-	3. Added four values to CommentsCorrections/@RefType
-	       CorrectedandRepublishedIn
-	       CorrectedandRepublishedFrom
-	       RetractedandRepublishedIn
-	       RetractedandRepublishedFrom
-	4. Added "plain-language-summary" to allowed values for @Type on 
-	    <OtherAbstract>
-  
-  	NOTE:  The use of "Medline" in a DTD or element name does not mean the record
-  	represents a citation from a MEDLINE-selected journal.  When the NLM DTDs and
-  	XML elements were first created, MEDLINE records were the only data exported.
-  	Now NLM exports citations other than MEDLINE records using these tools. To
-  	minimize unnecessary disruption to users of the data and tools, NLM has
-  	retained the original DTD and element names (e.g., MedlineTA, MedlineJournalInfo). 
-  
-  	NOTE:  StartPage and EndPage in Pagination element are not currently used; are 
-  	reserved for future use. 
+2022-12-06
+
+This DTD supports both the E-utilities and ftp service data dissemination methods. 
+It is based on http://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_230101.dtd
+
+Additions/Changes since pubmed_190101 DTD: 
+
+	1.  added values "Population" and "Anatomy" to a list of allowed values 
+	     of "Type" attribute of "SupplMeshName".
+
+	NOTE:  The use of "Medline" in a DTD or element name does not mean the record
+	represents a citation from a MEDLINE-selected journal.  When the NLM DTDs and
+	XML elements were first created, MEDLINE records were the only data exported.
+	Now NLM exports citations other than MEDLINE records using these tools. To
+	minimize unnecessary disruption to users of the data and tools, NLM has
+	retained the original DTD and element names (e.g., MedlineTA, MedlineJournalInfo). 
+ 
+	NOTE: The updated PubMed API now allows for the use of the StartPage and 
+	EndPage elements in Pagination.
 
  ============================================================= 
                      MATHML 3.0 SETUP                        
@@ -1337,7 +1327,9 @@
         <xs:attribute name="Type" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:token">
+              <xs:enumeration value="Anatomy"/>
               <xs:enumeration value="Disease"/>
+              <xs:enumeration value="Population"/>
               <xs:enumeration value="Protocol"/>
               <xs:enumeration value="Organism"/>
             </xs:restriction>
