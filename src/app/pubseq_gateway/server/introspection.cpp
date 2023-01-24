@@ -206,6 +206,33 @@ void AppendSplitVersionParameter(CJsonNode &  node)
     node.SetByKey("split_version", split_version);
 }
 
+void AppendProteinParameter(CJsonNode &  node)
+{
+    CJsonNode   protein(CJsonNode::NewObjectNode());
+    protein.SetBoolean("mandatory", true);
+    protein.SetString("description",
+        "The protein. It may be ommitted if ipg is provided.");
+    node.SetByKey("protein", protein);
+}
+
+void AppendNucleotideParameter(CJsonNode &  node)
+{
+    CJsonNode   nucleotide(CJsonNode::NewObjectNode());
+    nucleotide.SetBoolean("mandatory", false);
+    nucleotide.SetString("description",
+        "The nucleotide.");
+    node.SetByKey("nucleotide", nucleotide);
+}
+
+void AppendIpgParameter(CJsonNode &  node)
+{
+    CJsonNode   ipg(CJsonNode::NewObjectNode());
+    ipg.SetBoolean("mandatory", false);
+    ipg.SetString("description",
+        "The ipg. It must be an integer >= 0 if provided.");
+    node.SetByKey("ipg", ipg);
+}
+
 void AppendFmtParameter(CJsonNode &  node)
 {
     CJsonNode   fmt(CJsonNode::NewObjectNode());
@@ -237,6 +264,46 @@ void AppendNamesParameter(CJsonNode &  node)
     names.SetString("description",
         "A comma separated list of named annotations to be retrieved.");
     node.SetByKey("names", names);
+}
+
+void AppendHopsParameter(CJsonNode &  node)
+{
+    CJsonNode   hops(CJsonNode::NewObjectNode());
+    hops.SetBoolean("mandatory", false);
+    hops.SetString("description",
+        "An integer numbers of hops before the request reached the server. "
+        "Must be >= 0. Default: 0");
+    node.SetByKey("hops", hops);
+}
+
+void AppendEnableProcessorParameter(CJsonNode &  node)
+{
+    CJsonNode   enable_processor(CJsonNode::NewObjectNode());
+    enable_processor.SetBoolean("mandatory", false);
+    enable_processor.SetString("description",
+        "A name of a processor which is allowed to process a request. "
+        "The parameter can be repeated as many times as needed.");
+    node.SetByKey("enable_processor", enable_processor);
+}
+
+void AppendDisableProcessorParameter(CJsonNode &  node)
+{
+    CJsonNode   disable_processor(CJsonNode::NewObjectNode());
+    disable_processor.SetBoolean("mandatory", false);
+    disable_processor.SetString("description",
+        "A name of a processor which is disallowed to process a request. "
+        "The parameter can be repeated as many times as needed.");
+    node.SetByKey("disable_processor", disable_processor);
+}
+
+void AppendProcessorEventsParameter(CJsonNode &  node)
+{
+    CJsonNode   processor_events(CJsonNode::NewObjectNode());
+    processor_events.SetBoolean("mandatory", false);
+    processor_events.SetString("description",
+        "Switch on/off additional reply chunks which tell about the processor "
+        "events. Allowed values are 'yes' and 'no'. Default: 'no'.");
+    node.SetByKey("processor_events", processor_events);
 }
 
 void AppendSendBlobIfSmallParameter(CJsonNode &  node)
@@ -399,6 +466,10 @@ CJsonNode  GetIdGetblobRequestNode(void)
     AppendUseCacheParameter(id_getblob_params);
     AppendTraceParameter(id_getblob_params);
     AppendSendBlobIfSmallParameter(id_getblob_params);
+    AppendHopsParameter(id_getblob_params);
+    AppendEnableProcessorParameter(id_getblob_params);
+    AppendDisableProcessorParameter(id_getblob_params);
+    AppendProcessorEventsParameter(id_getblob_params);
     id_getblob.SetByKey("parameters", id_getblob_params);
 
     CJsonNode   id_getblob_reply(CJsonNode::NewObjectNode());
@@ -428,6 +499,10 @@ CJsonNode  GetIdGetRequestNode(void)
     AppendTraceParameter(id_get_params);
     AppendSendBlobIfSmallParameter(id_get_params);
     AppendSeqIdResolveParameter(id_get_params);
+    AppendHopsParameter(id_get_params);
+    AppendEnableProcessorParameter(id_get_params);
+    AppendDisableProcessorParameter(id_get_params);
+    AppendProcessorEventsParameter(id_get_params);
     id_get.SetByKey("parameters", id_get_params);
 
     CJsonNode   id_get_reply(CJsonNode::NewObjectNode());
@@ -451,6 +526,10 @@ CJsonNode  GetIdGetTseChunkRequestNode(void)
     AppendSplitVersionParameter(id_get_tse_chunk_params);
     AppendUseCacheParameter(id_get_tse_chunk_params);
     AppendTraceParameter(id_get_tse_chunk_params);
+    AppendHopsParameter(id_get_tse_chunk_params);
+    AppendEnableProcessorParameter(id_get_tse_chunk_params);
+    AppendDisableProcessorParameter(id_get_tse_chunk_params);
+    AppendProcessorEventsParameter(id_get_tse_chunk_params);
     id_get_tse_chunk.SetByKey("parameters", id_get_tse_chunk_params);
 
     CJsonNode   id_get_tse_chunk_reply(CJsonNode::NewObjectNode());
@@ -490,6 +569,10 @@ CJsonNode  GetIdResolveRequestNode(void)
     AppendAccSubstitutionParameter(id_resolve_params);
     AppendTraceParameter(id_resolve_params);
     AppendSeqIdResolveParameter(id_resolve_params);
+    AppendHopsParameter(id_resolve_params);
+    AppendEnableProcessorParameter(id_resolve_params);
+    AppendDisableProcessorParameter(id_resolve_params);
+    AppendProcessorEventsParameter(id_resolve_params);
     id_resolve.SetByKey("parameters", id_resolve_params);
 
     CJsonNode   id_resolve_reply(CJsonNode::NewObjectNode());
@@ -499,6 +582,33 @@ CJsonNode  GetIdResolveRequestNode(void)
     id_resolve.SetByKey("reply", id_resolve_reply);
 
     return id_resolve;
+}
+
+
+CJsonNode  GetIpgResolveRequestNode(void)
+{
+    CJsonNode   ipg_resolve(CJsonNode::NewObjectNode());
+    ipg_resolve.SetString("description",
+        "Resolve nucleotide/protein/ipg and provide ipg info");
+    CJsonNode   ipg_resolve_params(CJsonNode::NewObjectNode());
+
+    AppendProteinParameter(ipg_resolve_params);
+    AppendNucleotideParameter(ipg_resolve_params);
+    AppendIpgParameter(ipg_resolve_params);
+    AppendTraceParameter(ipg_resolve_params);
+    AppendEnableProcessorParameter(ipg_resolve_params);
+    AppendDisableProcessorParameter(ipg_resolve_params);
+    AppendProcessorEventsParameter(ipg_resolve_params);
+
+    ipg_resolve.SetByKey("parameters", ipg_resolve_params);
+
+    CJsonNode   ipg_resolve_reply(CJsonNode::NewObjectNode());
+    ipg_resolve_reply.SetString("description",
+        "The ipg record(s) is sent baback in the HTML content as PSG protocol "
+        "chunks");
+    ipg_resolve.SetByKey("reply", ipg_resolve_reply);
+
+    return ipg_resolve;
 }
 
 
@@ -520,6 +630,10 @@ CJsonNode  GetIdGetNaRequestNode(void)
     AppendClientIdParameter(id_get_na_params);
     AppendSendBlobIfSmallParameter(id_get_na_params);
     AppendSeqIdResolveParameter(id_get_na_params);
+    AppendHopsParameter(id_get_na_params);
+    AppendEnableProcessorParameter(id_get_na_params);
+    AppendDisableProcessorParameter(id_get_na_params);
+    AppendProcessorEventsParameter(id_get_na_params);
     id_get_na.SetByKey("parameters", id_get_na_params);
 
     CJsonNode   id_get_na_reply(CJsonNode::NewObjectNode());
@@ -543,6 +657,10 @@ CJsonNode  GetIdAccessionVersionHistoryRequestNode(void)
     AppendSeqIdTypeParameter(id_acc_ver_hist_params);
     AppendUseCacheParameter(id_acc_ver_hist_params);
     AppendTraceParameter(id_acc_ver_hist_params);
+    AppendHopsParameter(id_acc_ver_hist_params);
+    AppendEnableProcessorParameter(id_acc_ver_hist_params);
+    AppendDisableProcessorParameter(id_acc_ver_hist_params);
+    AppendProcessorEventsParameter(id_acc_ver_hist_params);
     id_acc_ver_hist.SetByKey("parameters", id_acc_ver_hist_params);
 
     CJsonNode   id_acc_ver_hist_reply(CJsonNode::NewObjectNode());
@@ -772,6 +890,7 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ID/resolve", GetIdResolveRequestNode());
     requests_node.SetByKey("ID/get_na", GetIdGetNaRequestNode());
     requests_node.SetByKey("ID/get_acc_ver_history", GetIdAccessionVersionHistoryRequestNode());
+    requests_node.SetByKey("IPG/resolve", GetIpgResolveRequestNode());
     requests_node.SetByKey("ADMIN/config", GetAdminConfigRequestNode());
     requests_node.SetByKey("ADMIN/info", GetAdminInfoRequestNode());
     requests_node.SetByKey("ADMIN/status", GetAdminStatusRequestNode());
