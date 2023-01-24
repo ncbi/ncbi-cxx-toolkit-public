@@ -5,18 +5,18 @@ NCBI_begin_lib(macro)
     NCBI_uses_toolkit_libraries(seq)
     NCBI_project_watchers(stakhovv kans)
 
-    if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+    if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED AND NCBI_PYTHON_EXECUTABLE)
         NCBI_custom_target_dependencies(macro_fsm_files)
     endif()
 
 NCBI_end_lib()
 
-if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED AND NCBI_PYTHON_EXECUTABLE)
 
-NCBI_begin_custom_target(macro_fsm_files)
-    NCBI_custom_target_definition(define_macro_fsm_files_target)
-    NCBI_custom_target_dependencies(multipattern)
-NCBI_end_custom_target()
+    NCBI_begin_custom_target(macro_fsm_files)
+        NCBI_custom_target_definition(define_macro_fsm_files_target)
+        NCBI_custom_target_dependencies(multipattern)
+    NCBI_end_custom_target()
 
 endif()
 
@@ -56,7 +56,7 @@ function(define_multipatern_inc_target up_target current_list_file compiler modu
 
         add_custom_command(
             OUTPUT ${_target_dir}/${_inc_file}
-            COMMAND python3 ${_make_fsm_file} ${_inc_file} ${_compiler} -i ${_prt_file} ${more_args}
+            COMMAND ${NCBI_PYTHON_EXECUTABLE} ${_make_fsm_file} ${_inc_file} ${_compiler} -i ${_prt_file} ${more_args}
             WORKING_DIRECTORY ${_source_dir}
             COMMENT "Running make_fsm_file.py for ${_prt_file}"
             DEPENDS ${current_list_file} ${_source_dir}/${_prt_file} ${_make_fsm_file} ${_compiler}
