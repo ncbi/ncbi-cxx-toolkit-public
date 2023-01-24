@@ -510,6 +510,7 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
     }
     if (m_SNPData.empty()) {
         if ( m_SNPDataError.empty() ) {
+            x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
         }
@@ -713,6 +714,7 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
         // higher priority processor already processed this request
         return;
     }
+    x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
     CJsonNode json(CJsonNode::NewObjectNode());
     json.SetString("blob_id", data.m_BlobId);
     ostringstream annot_str;
