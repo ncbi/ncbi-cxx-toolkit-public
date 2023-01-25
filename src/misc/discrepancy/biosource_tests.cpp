@@ -142,11 +142,11 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/C
                 if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_collection_date) {
                     try {
                         CRef<CDate> date = CSubSource::DateFromCollectionDate(it->GetName());
-                        if (date->IsStd() && date->GetStd().IsSetYear()) {
+                        if (date && date->IsStd() && date->GetStd().IsSetYear()) {
                             collection_year = date->GetStd().GetYear();
                         }
                     }
-                    catch (...) {} 
+                    catch (...) {} // CSubSource can throw all sorts of exceptions, but we're not interested in the specifics here.
                     break;
                 }
             }
