@@ -1739,6 +1739,7 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         if (pos_end == string::npos)
             pos_end = stmt.size();
         CTempString first_word(&stmt[pos], pos_end - pos);
+        bool output_clause_possible = false;
 
         // "CREATE" should be before DML ...
         if (NStr::EqualNocase(first_word, "CREATE"))
@@ -1749,12 +1750,15 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
             stmtType = estSelect;
         } else if (NStr::EqualNocase(first_word, "UPDATE"))
         {
+            output_clause_possible = true;
             stmtType = estUpdate;
         } else if (NStr::EqualNocase(first_word, "DELETE"))
         {
+            output_clause_possible = true;
             stmtType = estDelete;
         } else if (NStr::EqualNocase(first_word, "INSERT"))
         {
+            output_clause_possible = true;
             stmtType = estInsert;
         } else if (NStr::EqualNocase(first_word, "DROP"))
         {
@@ -1764,6 +1768,7 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
             stmtType = estAlter;
         } else if (NStr::EqualNocase(first_word, "MERGE"))
         {
+            output_clause_possible = true;
             stmtType = estMerge;
         } else if (NStr::EqualNocase(first_word, "BEGIN"))
         {
@@ -1774,6 +1779,18 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         } else if (NStr::EqualNocase(first_word, "ROLLBACK"))
         {
             stmtType = estTransaction;
+        }
+        if (output_clause_possible) {
+            while ((pos = NStr::FindNoCase(stmt, "OUTPUT")) != NPOS) {
+                static CTempString ok_before = " \t\n)";
+                static CTempString ok_after  = " \t\n(";
+                if (pos + 7 < stmt.size()
+                    &&  ok_before.find(stmt[pos - 1]) != CTempString::npos
+                    &&  ok_after .find(stmt[pos + 6]) != CTempString::npos) {
+                    stmtType = estSelect;
+                    break;
+                }
+            }
         }
     }
 
