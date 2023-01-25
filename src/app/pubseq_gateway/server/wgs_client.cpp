@@ -436,18 +436,19 @@ CWGSDb CWGSClient::GetWGSDb(const string& prefix)
                     else {
                         // problem in VDB or WGS reader
                         PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc);
+                        throw;
                     }
                     return CWGSDb();
                 }
                 catch ( CException& exc ) {
                     // problem in VDB or WGS reader
                     PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc);
-                    return CWGSDb();
+                    throw;
                 }
                 catch ( exception& exc ) {
                     // problem in VDB or WGS reader
                     PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc.what());
-                    return CWGSDb();
+                    throw;
                 }
             }
         }}

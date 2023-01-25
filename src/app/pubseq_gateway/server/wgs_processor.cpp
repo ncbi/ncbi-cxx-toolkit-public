@@ -317,7 +317,8 @@ void CPSGS_WGSProcessor::Process()
             break;
         }
     }
-    catch (...) {
+    catch (exception& exc) {
+        x_SendError("Exception when handling a request: ", exc);
         x_Finish(ePSGS_Error);
     }
 }
@@ -381,7 +382,8 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
         m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
         x_WaitForOtherProcessors();
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
         m_WGSData.reset();
     }
     PostponeInvoke(s_OnResolvedSeqId, this);
@@ -396,7 +398,13 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
         return;
     }
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
-        x_Finish(ePSGS_NotFound);
+        if ( m_WGSDataError.empty() ) {
+            x_Finish(ePSGS_NotFound);
+        }
+        else {
+            x_SendError(m_WGSDataError);
+            x_Finish(ePSGS_Error);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -405,7 +413,9 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
     try {
         x_SendBioseqInfo();
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
+        x_SendError(m_WGSDataError);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -447,7 +457,8 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
         m_WGSData = m_Client->GetBlobBySeqId(*m_SeqId, m_ExcludedBlobs);
         x_WaitForOtherProcessors();
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
         m_WGSData.reset();
     }
     PostponeInvoke(s_OnGotBlobBySeqId, this);
@@ -463,8 +474,14 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     }
     // NOTE: m_Data may be null if the blob was excluded.
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
-        x_RegisterTimingNotFound(eBlobRetrieve);
-        x_Finish(ePSGS_NotFound);
+        if ( m_WGSDataError.empty() ) {
+            x_RegisterTimingNotFound(eBlobRetrieve);
+            x_Finish(ePSGS_NotFound);
+        }
+        else {
+            x_SendError(m_WGSDataError);
+            x_Finish(ePSGS_Error);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -483,7 +500,8 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
             return;
         }
     }
-    catch (...) {
+    catch (exception& exc) {
+        x_SendError("Exception when handling a request: ", exc);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -512,7 +530,8 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
     try {
         m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
         m_WGSData.reset();
     }
     PostponeInvoke(s_OnGotBlobByBlobId, this);
@@ -527,8 +546,14 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         return;
     }
     if ( !m_WGSData ) {
-        x_RegisterTimingNotFound(eBlobRetrieve);
-        x_Finish(ePSGS_NotFound);
+        if ( m_WGSDataError.empty() ) {
+            x_RegisterTimingNotFound(eBlobRetrieve);
+            x_Finish(ePSGS_NotFound);
+        }
+        else {
+            x_SendError(m_WGSDataError);
+            x_Finish(ePSGS_Error);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -546,7 +571,8 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
             return;
         }
     }
-    catch (...) {
+    catch (exception& exc) {
+        x_SendError("Exception when handling a request: ", exc);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -576,7 +602,8 @@ void CPSGS_WGSProcessor::GetChunk(void)
     try {
         m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
     }
-    catch (...) {
+    catch (exception& exc) {
+        m_WGSDataError = "Exception when handling a request: "+string(exc.what());
         m_WGSData.reset();
     }
     PostponeInvoke(s_OnGotChunk, this);
@@ -591,8 +618,14 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
         return;
     }
     if ( !m_WGSData ) {
-        x_RegisterTimingNotFound(eTseChunkRetrieve);
-        x_Finish(ePSGS_NotFound);
+        if ( m_WGSDataError.empty() ) {
+            x_RegisterTimingNotFound(eTseChunkRetrieve);
+            x_Finish(ePSGS_NotFound);
+        }
+        else {
+            x_SendError(m_WGSDataError);
+            x_Finish(ePSGS_Error);
+        }
         return;
     }
     if ( !x_SignalStartProcessing() ) {
@@ -606,7 +639,8 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
             x_SendChunk();
         }
     }
-    catch (...) {
+    catch (exception& exc) {
+        x_SendError("Exception when handling a request: ", exc);
         x_Finish(ePSGS_Error);
         return;
     }
@@ -907,12 +941,7 @@ void CPSGS_WGSProcessor::x_UnlockRequest(void)
 void CPSGS_WGSProcessor::x_WaitForOtherProcessors(void)
 {
     if (m_Canceled) return;
-    try {
-        GetRequest()->WaitFor(kCassandraProcessorEvent);
-    }
-    catch (...) {
-        return;
-    }
+    GetRequest()->WaitFor(kCassandraProcessorEvent);
 }
 
 
@@ -961,6 +990,35 @@ void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
     m_Status = status;
     x_UnlockRequest();
     SignalFinishProcessing();
+}
+
+
+void CPSGS_WGSProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
+                                     const string& msg)
+{
+    reply->PrepareProcessorMessage(reply->GetItemId(), "WGS", msg,
+                                   CRequestStatus::e500_InternalServerError,
+                                   ePSGS_UnknownError,
+                                   eDiag_Error);
+}
+
+
+void CPSGS_WGSProcessor::x_SendError(const string& msg)
+{
+    x_SendError(m_Reply, msg);
+}
+
+
+void CPSGS_WGSProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
+                                     const string& msg, const exception& exc)
+{
+    x_SendError(reply, msg+string(exc.what()));
+}
+
+
+void CPSGS_WGSProcessor::x_SendError(const string& msg, const exception& exc)
+{
+    x_SendError(m_Reply, msg+string(exc.what()));
 }
 
 

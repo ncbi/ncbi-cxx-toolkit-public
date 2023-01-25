@@ -140,6 +140,13 @@ private:
                      const objects::CAsnBinData& obj,
                      bool compress) const;
 
+    static void x_SendError(shared_ptr<CPSGS_Reply> reply,
+                            const string& msg);
+    static void x_SendError(shared_ptr<CPSGS_Reply> reply,
+                            const string& msg, const exception& exc);
+    void x_SendError(const string& msg);
+    void x_SendError(const string& msg, const exception& exc);
+
     template<class C> static int x_GetBlobState(const C& obj) {
         return obj.IsSetBlob_state() ? obj.GetBlob_state() : 0;
     }
@@ -162,6 +169,7 @@ private:
     int64_t m_ChunkId; // requested chunk-id
     TBlobIds m_ExcludedBlobs;
     shared_ptr<SWGSData> m_WGSData;
+    string m_WGSDataError;
     EOutputFormat m_OutputFormat;
     bool m_Unlocked;
     shared_ptr<ncbi::CThreadPool> m_ThreadPool;
