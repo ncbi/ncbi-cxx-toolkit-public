@@ -67,19 +67,20 @@ BOOST_AUTO_TEST_CASE(Test_Autofix)
 BOOST_AUTO_TEST_CASE(Test_Autofix1)
 {
     auto tests = NDiscrepancy::GetDiscrepancyTests(NDiscrepancy::eAutofix);
-    BOOST_CHECK_EQUAL(tests.size(), 40);
+    BOOST_CHECK_EQUAL(tests.size(), 39);
     BOOST_CHECK(!tests.empty());
 }
 
 BOOST_AUTO_TEST_CASE(Test_Autofix2)
 {
     vector<string> tests = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eAutofix);
-    BOOST_CHECK_EQUAL(tests.size(), 40);
+    BOOST_CHECK_EQUAL(tests.size(), 39);
     BOOST_CHECK(!tests.empty());
+    //for (auto name: tests) std::cerr << name << "\n";
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_DiscrepancySet_Format) 
+BOOST_AUTO_TEST_CASE(Test_DiscrepancySet_Format)
 {
     string inputString = "[n] [is] [(][does][)] [has] [* this gets deleted *]";
     string outputString = "2 are do have ";
