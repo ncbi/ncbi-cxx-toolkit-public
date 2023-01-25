@@ -1402,13 +1402,7 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
     bool rval = false;
     const CBioSource* source = nullptr;
     {
-        CBioseq_Handle bsh;
-        try {
-            bsh = scope.GetBioseqHandle(sf.GetLocation());
-        }
-        catch (CException&) { 
-            return false;
-        } 
+        auto bsh = scope.GetBioseqHandle(sf.GetLocation());
         CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
         if (src) {
             source = &src->GetSource();
@@ -1695,8 +1689,7 @@ bool IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_
 
 bool StopAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
 {
-    try {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    if (CBioseq_Handle bsh = scope.GetBioseqHandle(loc); bsh) {
         TSeqPos stop = loc.GetStop(eExtreme_Biological);
         if (stop < 1 || stop > bsh.GetBioseqLength() - 2) {
             return false;
@@ -1716,17 +1709,13 @@ bool StopAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
             return true;
         }
     }
-    catch (CException& ) { 
-        // unable to calculate
-    } 
     return false;
 }
 
 
 bool StartAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
 {
-    try {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    if (auto bsh = scope.GetBioseqHandle(loc); bsh) {
         TSeqPos start = loc.GetStart(eExtreme_Biological);
         if (start < 1 || start > bsh.GetBioseqLength() - 2) {
             return false;
@@ -1746,9 +1735,6 @@ bool StartAbutsGap(const CSeq_loc& loc, ENa_strand strand, CScope& scope)
             return true;
         }
     }
-    catch (CException& ) { 
-        // unable to calculate
-    } 
     return false;
 }
 
