@@ -695,7 +695,7 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 
 sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
-    try {
+    try { // CSeq_loc::GetTotalRange() throws an exception for multi-sequence locations.
         CSeq_loc::TRange r1 = loc1.GetTotalRange();
         CSeq_loc::TRange r2 = loc2.GetTotalRange();
         if (r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen()) {
