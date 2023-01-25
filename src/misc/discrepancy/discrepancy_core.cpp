@@ -65,11 +65,37 @@ protected:
         return {xGetProps<I>()...};
     }
 
+    using bool_function = bool (*)();
+
+    template<std::size_t... I>
+    static constexpr auto xAssembleCanAutofix(std::index_sequence<I...>) ->
+        std::array<bool_function, sizeof...(I)>
+    {
+        return { &CDiscrepancyVisitorImpl<static_cast<eTestNames>(I)>::CanAutofix ...};
+    }
+
+    static TTestNamesSet xPopulateAutofixTests()
+    {
+        static constexpr auto _arr = xAssembleCanAutofix(std::make_index_sequence<num_test_cases>{});
+        TTestNamesSet names;
+        for (size_t i=0; i<_arr.size(); ++i) {
+            if (_arr[i]()) {
+                names.set(static_cast<eTestNames>(i));
+            }
+        }
+        return names;
+    }
+
 public:
 
     static constexpr TArray PopulateTests()
     {
         return xAssembleArray(std::make_index_sequence<num_test_cases>{});
+    }
+    static const TTestNamesSet& GetAutofixTests()
+    {
+        static TTestNamesSet autofix_name = xPopulateAutofixTests();
+        return autofix_name;
     }
 
     static const TAliasMap& GetAliasMap();
@@ -189,11 +215,15 @@ vector<string> GetDiscrepancyNames(TGroup group)
 TTestNamesSet GetDiscrepancyTests(TGroup group)
 {
     TTestNamesSet names;
-    for (auto rec: g_test_registry)
-    {
-        auto props = *rec;
-        if (props->sName[0] != '_' && (props->Group & group) == group) {
-            names.set(props->Name);
+    if (group == eAutofix) {
+        names = CCaseRegistry::GetAutofixTests();
+    } else {
+        for (auto rec: g_test_registry)
+        {
+            auto props = *rec;
+            if (props->sName[0] != '_' && (props->Group & group) == group) {
+                names.set(props->Name);
+            }
         }
     }
     return names;
@@ -431,10 +461,10 @@ void CDiscrepancyCore::Call(CDiscrepancyContext& context)
     try {
         Visit(context);
     }
-    catch (const CException& e) { 
+    catch (const CException& e) {
         string ss = "EXCEPTION caught: "; ss += e.what();
         m_Objs[ss];
-    } 
+    }
 }
 
 
