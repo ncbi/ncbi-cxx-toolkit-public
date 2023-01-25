@@ -539,8 +539,10 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                                             subject, !pool_name.empty()));
                     guard.Release();
                     bool timed_out = true;
+                    bool relocked = false;
                     while (m_PoolSem.TryWait(deadline.GetRemainingTime())) {
                         guard.Guard(m_PoolLock);
+                        relocked = true;
                         if (target->selected) {
                             timed_out = false;
                             for (const auto &it : m_PoolSemConsumers) {
@@ -553,6 +555,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                         } else {
                             m_PoolSem.TryWait();
                             m_PoolSem.Post();
+                            relocked = false;
                             guard.Release();
                             continue;
                         }
@@ -570,6 +573,9 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                         }
                         break;
                     }
+                    if ( !relocked ) {
+                        guard.Guard(m_PoolLock);
+                    }                        
                     m_PoolSemConsumers.erase(target);
                     if (timed_out)
 #endif
