@@ -456,9 +456,15 @@ CJsonNode SPSGS_IPGResolveRequest::Serialize(void) const
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     json.SetString("name", GetName());
-    json.SetString("protein", m_Protein);
+    if (m_Protein.has_value())
+        json.SetString("protein", m_Protein.value());
+    else
+        json.SetString("protein", "<null>");
     json.SetInteger("ipg", m_IPG);
-    json.SetString("nucleotide", m_Nucleotide);
+    if (m_Nucleotide.has_value())
+        json.SetString("nucleotide", m_Nucleotide.value());
+    else
+        json.SetString("nucleotide", "<null>");
 
     SPSGS_RequestBase::AppendCommonParameters(json);
     return json;

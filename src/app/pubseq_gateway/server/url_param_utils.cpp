@@ -841,15 +841,16 @@ bool
 CPubseqGatewayApp::x_GetProtein(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply,
                                 const psg_time_point_t &  now,
-                                CTempString &  protein)
+                                optional<string> &  protein)
 {
     static string       kProteinParam = "protein";
 
     SRequestParameter   protein_param = x_GetParam(req, kProteinParam);
     if (protein_param.m_Found) {
-        if (!protein_param.m_Value.empty()) {
-            protein = protein_param.m_Value;
-        }
+        // Note: it is necessary to distinguish if the url value is "" or not
+        //       provided. So here there is an assignment even if the parameter
+        //       has zero length
+        protein = protein_param.m_Value;
     }
     return true;
 }
@@ -892,15 +893,16 @@ bool
 CPubseqGatewayApp::x_GetNucleotide(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply,
                                    const psg_time_point_t &  now,
-                                   CTempString &  nucleotide)
+                                   optional<string> &  nucleotide)
 {
     static string       kNucleotideParam = "nucleotide";
 
     SRequestParameter   nucleotide_param = x_GetParam(req, kNucleotideParam);
     if (nucleotide_param.m_Found) {
-        if (!nucleotide_param.m_Value.empty()) {
-            nucleotide = nucleotide_param.m_Value;
-        }
+        // Note: it is necessary to distinguish if the url value is "" or not
+        //       provided. So here there is an assignment even if the parameter
+        //       has zero length
+        nucleotide = nucleotide_param.m_Value;
     }
     return true;
 }

@@ -927,7 +927,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
             return 0;
         }
 
-        CTempString                     protein;
+        optional<string>        protein;
         if (!x_GetProtein(req, reply, now, protein)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
@@ -936,7 +936,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
             return 0;
         }
 
-        CTempString                     nucleotide;
+        optional<string>        nucleotide;
         if (!x_GetNucleotide(req, reply, now, nucleotide)) {
             m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
@@ -954,8 +954,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         // Prohibit protein less requests
-        if (!nucleotide.empty()) {
-            if (protein.empty()) {
+        if (nucleotide.has_value()) {
+            if (!protein.has_value()) {
                 x_InsufficientArguments(reply, now,
                                         "If a 'nucleotide' parameter is provided "
                                         "then a 'protein' parameter"
@@ -969,7 +969,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         // Check that at least one of the mandatory parameters are provided
-        if (ipg == -1 && protein.empty()) {
+        if (ipg == -1 && !protein.has_value()) {
             x_InsufficientArguments(reply, now,
                                     "At least one of the 'protein' and 'ipg' "
                                     "parameters must be provided");
@@ -992,9 +992,9 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         // Parameters processing has finished
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_IPGResolveRequest(
-                        string(protein.data(), protein.size()),
+                        protein,
                         ipg,
-                        string(nucleotide.data(), nucleotide.size()),
+                        nucleotide,
                         trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));

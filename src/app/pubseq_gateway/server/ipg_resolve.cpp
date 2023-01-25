@@ -121,10 +121,10 @@ void CPSGS_IPGResolveProcessor::Process(void)
     CPubseqGatewayFetchIpgReportRequest     request;
     if (m_IPGResolveRequest->m_IPG >= 0)
         request.SetIpg(m_IPGResolveRequest->m_IPG);
-    if (!m_IPGResolveRequest->m_Protein.empty())
-        request.SetProtein(m_IPGResolveRequest->m_Protein);
-    if (!m_IPGResolveRequest->m_Nucleotide.empty())
-        request.SetNucleotide(m_IPGResolveRequest->m_Nucleotide);
+    if (m_IPGResolveRequest->m_Protein.has_value())
+        request.SetProtein(m_IPGResolveRequest->m_Protein.value());
+    if (m_IPGResolveRequest->m_Nucleotide.has_value())
+        request.SetNucleotide(m_IPGResolveRequest->m_Nucleotide.value());
 
     unique_ptr<CCassIPGFetch>       details;
     details.reset(new CCassIPGFetch(*m_IPGResolveRequest));
