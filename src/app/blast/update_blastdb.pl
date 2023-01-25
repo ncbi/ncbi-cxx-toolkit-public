@@ -443,7 +443,7 @@ sub get_last_modified_date_from_ncbi_ftp
             my $hour = int($4);
             my $min = int($5);
             my $sec = int($6);
-            $retval = Time::Local::timegm_posix($sec, $min, $hour, $mday, $mon, $year);
+            $retval = Time::Local::timegm($sec, $min, $hour, $mday, $mon, $year);
             print "$file $retval\n" if DEBUG;
         }
     }
