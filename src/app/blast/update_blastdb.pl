@@ -589,11 +589,9 @@ download_file:
         if ($opt_force_download or $update_available) {
             print "Downloading $file..." if $opt_verbose;
             if (defined($ftp)) {
+                # Download errors will be checked later when reading checksum files
                 $ftp->get($file);
-                unless ($ftp->get($checksum_file)) {
-                    print STDERR "Failed to download $checksum_file!\n";
-                    return EXIT_FAILURE;
-                }
+                $ftp->get($checksum_file);
             } else {
                 my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sSR ";
                 $cmd .= "--remote-name-all $file $file.md5";
@@ -605,7 +603,7 @@ download_file:
             print "\nRMT $file Digest $rmt_digest" if (DEBUG);
             print "\nLCL $file Digest $lcl_digest\n" if (DEBUG);
             if ($lcl_digest ne $rmt_digest) {
-                unlink $file, $checksum_file;
+                unlink &trim_ftp_prefix($file), &trim_ftp_prefix($checksum_file);
                 if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
                     print STDERR "too many failures, aborting download!\n";
                     return EXIT_FAILURE;
@@ -698,6 +696,7 @@ sub read_md5_file($)
 {
     my $md5file = shift;
     $md5file = &trim_ftp_prefix($md5file);
+    return '' unless (-f $md5file);
     open(IN, $md5file);
     $_ = <IN>;
     close(IN);
