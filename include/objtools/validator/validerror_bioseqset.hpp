@@ -87,7 +87,7 @@ private:
     void ValidatePartsSet(const CBioseq_set& seqset);
     void ValidateGenbankSet(const CBioseq_set& seqset);
     void ValidateSetTitle(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
-    void ValidateSetElements(const CBioseq_set& seqset);
+    void ValidateSetElements(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
     void x_ValidateSetDescriptors(const CBioseq_set& seqset, bool suppressMissingSetTitle = false);
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset);

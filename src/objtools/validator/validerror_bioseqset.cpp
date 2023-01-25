@@ -179,25 +179,6 @@ void CValidError_bioseqset::ValidateBioseqSet(
     }
 
 
-    ValidateSetElements(seqset);
-
-    if (seqset.IsSetClass()
-        && (seqset.GetClass() == CBioseq_set::eClass_pop_set
-            || seqset.GetClass() == CBioseq_set::eClass_mut_set
-            || seqset.GetClass() == CBioseq_set::eClass_phy_set
-            || seqset.GetClass() == CBioseq_set::eClass_eco_set
-            || seqset.GetClass() == CBioseq_set::eClass_wgs_set
-            || seqset.GetClass() == CBioseq_set::eClass_small_genome_set)) {
-        CheckForImproperlyNestedSets(seqset);
-    }
-
-
-    // validate annots
-    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
-        m_AnnotValidator.ValidateSeqAnnot (**annot_it);
-        m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
-    }
-
     // for pop/phy/mut/eco sets, check for consistent Autodef user objects
     bool not_all_autodef = false;
     bool not_same_autodef = false;
@@ -279,6 +260,25 @@ void CValidError_bioseqset::ValidateBioseqSet(
         suppressMissingSetTitle = true;
     }
 
+
+    ValidateSetElements(seqset, suppressMissingSetTitle);
+
+    if (seqset.IsSetClass()
+        && (seqset.GetClass() == CBioseq_set::eClass_pop_set
+            || seqset.GetClass() == CBioseq_set::eClass_mut_set
+            || seqset.GetClass() == CBioseq_set::eClass_phy_set
+            || seqset.GetClass() == CBioseq_set::eClass_eco_set
+            || seqset.GetClass() == CBioseq_set::eClass_wgs_set
+            || seqset.GetClass() == CBioseq_set::eClass_small_genome_set)) {
+        CheckForImproperlyNestedSets(seqset);
+    }
+
+
+    // validate annots
+    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
+        m_AnnotValidator.ValidateSeqAnnot (**annot_it);
+        m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
+    }
 
     if ((m_Imp.IsHugeFileMode()) && m_Imp.IsHugeSet(seqset)) {
         call_once(m_Imp.SetContext().DescriptorsOnceFlag,
@@ -720,7 +720,7 @@ void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset, bool sup
 }
 
 
-void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset)
+void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset, bool suppressMissingSetTitle)
 {
     if (!seqset.IsSetClass()) {
         return;
@@ -750,7 +750,7 @@ void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset)
             }
         }
     }
-    if (m_Imp.IsIndexerVersion()) {
+    if (m_Imp.IsIndexerVersion() && ! suppressMissingSetTitle) {
         if (seqset.GetClass() == CBioseq_set::eClass_eco_set ||
             seqset.GetClass() == CBioseq_set::eClass_phy_set ||
             seqset.GetClass() == CBioseq_set::eClass_pop_set ||
