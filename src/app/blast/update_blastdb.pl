@@ -227,7 +227,7 @@ sub showall_from_metadata_file
 }
 
 # Display metadata from version 1.1 of BLASTDB metadata files
-sub showall_from_metadata_file_1_1
+sub showall_from_metadata_file_1_1($$)
 {
     my $json = shift;
     my $url = shift;
@@ -254,6 +254,20 @@ sub showall_from_metadata_file_1_1
             print "$$db{dbname}\n";
         }
     }
+}
+
+sub get_files_from_json_metadata_1_1($$)
+{
+    my $json = shift;
+    my $url = shift;
+    my @retval = ();
+    &validate_metadata_file($json, $url);
+    my $metadata = decode_json($json);
+    foreach my $db (sort @$metadata) {
+        next if ($$db{version} ne BLASTDB_METADATA_VERSION);
+        push @retval, @{$$db{files}};
+    }
+    return @retval;
 }
 
 if ($location ne "NCBI") {
@@ -328,7 +342,10 @@ if ($location ne "NCBI") {
                 }
             }
             print "$cmd\n" if $opt_verbose > 3;
-            system($cmd);
+            unless (system($cmd) == 0) {
+                print STDERR "Failed to run '$cmd': $!!\n";
+                return EXIT_FAILURE;
+            }
         }
     }
 
@@ -346,7 +363,7 @@ if ($location ne "NCBI") {
         &showall_from_metadata_file_1_1($json, $url)
     } else {
         &ensure_available_disk_space($json, $url);
-        my @files = sort(&get_files_to_download());
+        my @files = sort(&get_files_to_download($ftp, $json, $url));
         my @files2decompress;
         $exit_code = &download(\@files, \@files2decompress);
         if ($exit_code == 1) {
@@ -359,7 +376,7 @@ if ($location ne "NCBI") {
             $exit_code = ($exit_code == 1 ? 0 : $exit_code);
         }
     }
-    $ftp->quit();
+    $ftp->quit() unless not defined($ftp);
 }
 
 exit($exit_code);
@@ -367,6 +384,7 @@ exit($exit_code);
 # Connects to NCBI ftp server
 sub connect_to_ftp
 {
+    return undef if ($^O =~ /darwin/);  # Net::FTP appears unreliable on Mac
     my %ftp_opts;
     $ftp_opts{'Passive'} = 1 if $opt_passive;
     $ftp_opts{'Timeout'} = $opt_timeout if ($opt_timeout >= 0);
@@ -401,6 +419,35 @@ sub get_available_databases
     }
     my %seen = ();
     return grep { ! $seen{$_} ++ } @retval;
+}
+
+# Returns the last modified date for a file on the NCBI FTP or the number of
+# seconds since epoch at the time of invocation of this function
+sub get_last_modified_date_from_ncbi_ftp
+{
+    my $file = shift;
+    my $retval = time();
+    if (defined($ftp)) {
+        $retval = $ftp->mdtm($file);
+    } else {
+        use Time::Local;
+        my %month2int = (Jan=>0, Feb=>1, Mar=>2, Apr=>3, May=>4, Jun=>5,
+            Jul=>6, Aug=>8, Sep=>8, Oct=>9, Nov=>10, Dec=>11);
+        my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sI $file | grep ^Last-Modified";
+        chomp(my $date_str = `$cmd`);
+        if ($date_str =~ /Last-Modified:\s+\w+, (\d+) (\w+) (\d+) (\d+):(\d+):(\d+) GMT/) {
+            # Sample output: Wed, 07 Dec 2022 10:37:08 GMT
+            my $mday = int($1);
+            my $mon = $month2int{$2};
+            my $year = int($3) - 1900;
+            my $hour = int($4);
+            my $min = int($5);
+            my $sec = int($6);
+            $retval = Time::Local::timegm_posix($sec, $min, $hour, $mday, $mon, $year);
+            print "$file $retval\n" if DEBUG;
+        }
+    }
+    return $retval;
 }
 
 # This function exits the program if not enough disk space is available for the
@@ -467,9 +514,14 @@ sub get_database_size_from_metadata_1_1
 }
 
 # Obtains the list of files to download
-sub get_files_to_download
+sub get_files_to_download($$$)
 {
-    my @blast_db_files = $ftp->ls();
+    my $ftp = shift;
+    my $json = shift;
+    my $url = shift;
+    my @blast_db_files = (defined($ftp) 
+        ? $ftp->ls() 
+        : &get_files_from_json_metadata_1_1($json, $url));
     my @retval = ();
 
     if ($opt_verbose > 2) {
@@ -480,7 +532,10 @@ sub get_files_to_download
     for my $requested_db (@ARGV) {
         for my $file (@blast_db_files) {
             next unless ($file =~ /\.tar\.gz$/);    
-            if ($file =~ /^$requested_db\..*/) {
+            if (defined($ftp) and $file =~ /^$requested_db\..*/) {
+                push @retval, $file;
+            } elsif ($file =~ /\/$requested_db\..*/) {
+                # for Mac, which no longer relies on Net::FTP
                 push @retval, $file;
             }
         }
@@ -519,20 +574,31 @@ sub download($$)
 
         # We preserve the checksum files as evidence of the downloaded archive
         my $checksum_file = "$file.md5";
-        my $new_download = (-e $checksum_file ? 0 : 1);
-        my $update_available = ($new_download or 
-                    ((stat($checksum_file))->mtime < $ftp->mdtm($checksum_file)));
-        if (-e $file and (stat($file)->mtime < $ftp->mdtm($file))) {
+        my $rmt_checksum_file_mtime = &get_last_modified_date_from_ncbi_ftp($checksum_file);
+        my $rmt_file_mtime = &get_last_modified_date_from_ncbi_ftp($file);
+        my $lcl_checksum_file_mtime = (-e &trim_ftp_prefix($checksum_file)
+            ? stat(&trim_ftp_prefix($checksum_file))->mtime : 0);
+        print "RMT checksum file mtime $rmt_checksum_file_mtime\n" if DEBUG;
+        print "LCL checksum file mtime $lcl_checksum_file_mtime\n" if DEBUG;
+        my $update_available = ($lcl_checksum_file_mtime < $rmt_checksum_file_mtime);
+        if (-e $file and (stat(&trim_ftp_prefix($file))->mtime < $rmt_file_mtime)) {
             $update_available = 1;
         }
 
 download_file:
-        if ($opt_force_download or $new_download or $update_available) {
+        if ($opt_force_download or $update_available) {
             print "Downloading $file..." if $opt_verbose;
-            $ftp->get($file);
-            unless ($ftp->get($checksum_file)) {
-                print STDERR "Failed to download $checksum_file!\n";
-                return EXIT_FAILURE;
+            if (defined($ftp)) {
+                $ftp->get($file);
+                unless ($ftp->get($checksum_file)) {
+                    print STDERR "Failed to download $checksum_file!\n";
+                    return EXIT_FAILURE;
+                }
+            } else {
+                my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sSR ";
+                $cmd .= "--remote-name-all $file $file.md5";
+                print "$cmd\n" if $opt_verbose > 3;
+                system($cmd);
             }
             my $rmt_digest = &read_md5_file($checksum_file);
             my $lcl_digest = &compute_md5_checksum($file);
@@ -590,6 +656,7 @@ sub _decompress_impl($)
 sub decompress($)
 {
     my $file = shift;
+    $file = &trim_ftp_prefix($file);
     print "Decompressing $file ..." unless ($opt_quiet);
     my $succeeded = &_decompress_impl($file);
     unless ($succeeded) {
@@ -608,6 +675,7 @@ sub compute_md5_checksum($)
 {
     my $file = shift;
     my $digest = "N/A";
+    $file = &trim_ftp_prefix($file);
     if (open(DOWNLOADED_FILE, $file)) {
         binmode(DOWNLOADED_FILE);
         $digest = Digest::MD5->new->addfile(*DOWNLOADED_FILE)->hexdigest;
@@ -616,9 +684,20 @@ sub compute_md5_checksum($)
     return $digest;
 }
 
+sub trim_ftp_prefix($)
+{
+    my $retval = shift;
+    if ($retval =~ /^ftp:/) {
+        my $prefix = "ftp://" . NCBI_FTP . BLAST_DB_DIR . "/";
+        $retval =~ s/$prefix//;
+    }
+    return $retval;
+}
+
 sub read_md5_file($)
 {
     my $md5file = shift;
+    $md5file = &trim_ftp_prefix($md5file);
     open(IN, $md5file);
     $_ = <IN>;
     close(IN);
