@@ -850,7 +850,7 @@ int CTbl2AsnApp::Run()
                             m_context.m_current_file +
                             "\" is too long. The maximum permissible file size for a FASTA sequence is " +
                             NStr::NumericToString(TBL2ASN_MAX_ALLOWED_FASTA_SIZE, NStr::fWithCommas) +
-                            " bytes. Consider allowing huge mode (remove \"-disable-huge\" from the command line.",
+                            " bytes. Consider allowing huge mode (remove \"-disable-huge\" from the command line).",
                         *m_logger);
                 }
             }
