@@ -57,3 +57,23 @@ BOOST_AUTO_TEST_CASE(FLATFILE_FIND)
 {
     UnitTest_FLATFILE_FIND();
 }
+
+BOOST_AUTO_TEST_CASE(Test_Autofix)
+{
+    auto tests = NDiscrepancy::GetDiscrepancyTests(NDiscrepancy::eAll);
+    BOOST_CHECK(!tests.empty());
+}
+
+BOOST_AUTO_TEST_CASE(Test_Autofix1)
+{
+    auto tests = NDiscrepancy::GetDiscrepancyTests(NDiscrepancy::eAutofix);
+    BOOST_CHECK_EQUAL(tests.size(), 40);
+    BOOST_CHECK(!tests.empty());
+}
+
+BOOST_AUTO_TEST_CASE(Test_Autofix2)
+{
+    vector<string> tests = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eAutofix);
+    BOOST_CHECK_EQUAL(tests.size(), 40);
+    BOOST_CHECK(!tests.empty());
+}

@@ -231,6 +231,7 @@ public:
     {
         return CRef<CAutofixReport>();
     }
+    [[nodiscard]] static bool CanAutofix() { return false; }
     void Visit(CDiscrepancyContext& context) override;
     void Summarize() override { xSummarize(); } // default implementation
 protected:
@@ -335,7 +336,7 @@ public:
     //void TestString(const string& str) override;
     unsigned Summarize() override;
     map<string, size_t> Autofix() override;
-    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr);
+    void Autofix(TReportObjectList& tofix, map<string, size_t>& rep, const string& default_header = kEmptyStr) override;
     void AutofixFile(vector<CDiscrepancyObject*>&fixes, const string& default_header);
     TDiscrepancyCaseMap GetTests() const override;
     //void OutputText(CNcbiOstream& out, unsigned short flags, char group) override;
@@ -906,6 +907,8 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
 
 
 #define DISCREPANCY_AUTOFIX(name) \
+    template<>                                                                                                      \
+    [[nodiscard]] bool CDiscrepancyVisitorImpl<eTestNames::name>::CanAutofix() { return true; }                     \
     template<>                                                                                                      \
     CRef<CAutofixReport>                                                                                            \
     CDiscrepancyVisitorImpl<eTestNames::name>::Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const
