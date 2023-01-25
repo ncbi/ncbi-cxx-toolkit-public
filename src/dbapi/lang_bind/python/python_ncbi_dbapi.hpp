@@ -110,6 +110,7 @@ enum EStatementType {
     estCreate,
     estDrop,
     estAlter,
+    estMerge,
     estFunction,
     estTransaction
     };
