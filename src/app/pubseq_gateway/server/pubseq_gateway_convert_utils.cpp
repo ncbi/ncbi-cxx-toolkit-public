@@ -915,15 +915,26 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
 
         .append(kSep)
         .append(kProteinItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(request.GetProtein()))
-        .append(1, '"')
+        .append(1, '"');
+
+    if (request.HasProtein())
+        json.append(NStr::JsonEncode(request.GetProtein()));
+    else
+        json.append("<null>");
+
+    json.append(1, '"')
 
         .append(kSep)
+
         .append(kNucleotideItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(request.GetNucleotide()))
         .append(1, '"');
+
+    if (request.HasNucleotide())
+        json.append(NStr::JsonEncode(request.GetNucleotide()));
+    else
+        json.append("<null>");
+
+    json.append(1, '"');
 
     len = PSGToString(request.GetIpg(), buf);
     json.append(kSep)

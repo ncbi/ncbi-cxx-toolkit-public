@@ -416,7 +416,7 @@ private:
     bool x_GetProtein(CHttpRequest &  req,
                       shared_ptr<CPSGS_Reply>  reply,
                       const psg_time_point_t &  now,
-                      CTempString &  protein);
+                      optional<string> &  protein);
     bool x_GetIPG(CHttpRequest &  req,
                   shared_ptr<CPSGS_Reply>  reply,
                   const psg_time_point_t &  now,
@@ -424,7 +424,7 @@ private:
     bool x_GetNucleotide(CHttpRequest &  req,
                          shared_ptr<CPSGS_Reply>  reply,
                          const psg_time_point_t &  now,
-                         CTempString &  nucleotide);
+                         optional<string> &  nucleotide);
     bool x_GetTimeSeries(CHttpRequest &  req,
                          shared_ptr<CPSGS_Reply>  reply,
                          const psg_time_point_t &  now,

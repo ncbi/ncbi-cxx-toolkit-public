@@ -900,13 +900,13 @@ struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
 
 struct SPSGS_IPGResolveRequest : public SPSGS_RequestBase
 {
-    string      m_Protein;
-    int64_t     m_IPG;
-    string      m_Nucleotide;
+    optional<string>    m_Protein;
+    int64_t             m_IPG;
+    optional<string>    m_Nucleotide;
 
-    SPSGS_IPGResolveRequest(const string &  protein,
+    SPSGS_IPGResolveRequest(const optional<string> &  protein,
                             int64_t  ipg,
-                            const string &  nucleotide,
+                            const optional<string> &  nucleotide,
                             EPSGS_Trace  trace,
                             bool  processor_events,
                             const vector<string> &  enabled_processors,
