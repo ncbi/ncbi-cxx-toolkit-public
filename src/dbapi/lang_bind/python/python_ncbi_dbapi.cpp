@@ -1763,6 +1763,9 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         } else if (NStr::EqualNocase(first_word, "ALTER"))
         {
             stmtType = estAlter;
+        } else if (NStr::EqualNocase(first_word, "MERGE"))
+        {
+            stmtType = estMerge;
         } else if (NStr::EqualNocase(first_word, "BEGIN"))
         {
             stmtType = estTransaction;
