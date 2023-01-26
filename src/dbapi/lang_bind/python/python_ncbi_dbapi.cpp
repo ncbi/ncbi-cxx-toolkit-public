@@ -558,10 +558,10 @@ CParamFmt::GetName(TFormat fmt)
 void
 CStmtStr::SetStr(const string& str,
                  EStatementType default_type,
-                 const CParamFmt& fmt
-                 )
+                 const CParamFmt& fmt,
+                 ETriState output_expected)
 {
-    m_StmType = RetrieveStatementType(str, default_type);
+    m_StmType = RetrieveStatementType(str, default_type, output_expected);
 
     /* Do not delete this code ...
     static char const* space_characters = " \t\n";
@@ -1728,7 +1728,8 @@ CTransaction::DestroySelectConnection(IConnection* db_conn)
 
 //////////////////////////////////////////////////////////////////////////////
 EStatementType
-RetrieveStatementType(const string& stmt, EStatementType default_type)
+RetrieveStatementType(const string& stmt, EStatementType default_type,
+                      ETriState output_expected)
 {
     EStatementType stmtType = default_type;
 
@@ -1780,7 +1781,10 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         {
             stmtType = estTransaction;
         }
-        if (output_clause_possible) {
+        if (output_expected == eTriState_True) {
+            stmtType = estSelect;
+        } else if (output_expected != eTriState_False
+                   &&  output_clause_possible) {
             while ((pos = NStr::FindNoCase(stmt, "OUTPUT")) != NPOS) {
                 static CTempString ok_before = " \t\n)";
                 static CTempString ok_after  = " \t\n(";
@@ -2765,8 +2769,22 @@ CCursor::close(const pythonpp::CTuple& args)
     return pythonpp::CNone();
 }
 
+static
+ETriState s_IsOutputExpected(const pythonpp::CDict& kwargs)
+{
+    // Bypass CDict::GetItem, which doesn't cope with possible null returns
+    PyObject * it = PyDict_GetItemString(kwargs.Get(), "output_expected");
+    if (it == nullptr) {
+        return eTriState_Unknown;
+    } else if (PyObject_IsTrue(it)) {
+        return eTriState_True;
+    } else {
+        return eTriState_False;
+    }
+}
+
 pythonpp::CObject
-CCursor::execute(const pythonpp::CTuple& args)
+CCursor::execute(const pythonpp::CTuple& args, const pythonpp::CDict& kwargs)
 {
     if (m_Closed) {
         throw CProgrammingError("Cursor is closed");
@@ -2785,7 +2803,8 @@ CCursor::execute(const pythonpp::CTuple& args)
             pythonpp::CObject obj(args[0]);
 
             if ( pythonpp::CString::HasSameType(obj) ) {
-                m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
+                m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect,
+                                 CParamFmt(), s_IsOutputExpected(kwargs));
             } else {
                 throw CProgrammingError("An SQL statement string is expected as a parameter");
             }
@@ -2992,7 +3011,8 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
 }
 
 pythonpp::CObject
-CCursor::executemany(const pythonpp::CTuple& args)
+CCursor::executemany(const pythonpp::CTuple& args,
+                     const pythonpp::CDict& kwargs)
 {
     if (m_Closed) {
         throw CProgrammingError("Cursor is closed");
@@ -3011,7 +3031,8 @@ CCursor::executemany(const pythonpp::CTuple& args)
             pythonpp::CObject obj(args[0]);
 
             if ( pythonpp::CString::HasSameType(obj) ) {
-                m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect);
+                m_StmtStr.SetStr(pythonpp::CString(args[0]), estSelect,
+                                 CParamFmt(), s_IsOutputExpected(kwargs));
             } else {
                 throw CProgrammingError("A SQL statement string is expected as a parameter");
             }

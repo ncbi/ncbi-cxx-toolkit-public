@@ -116,7 +116,9 @@ enum EStatementType {
     };
 
 EStatementType
-RetrieveStatementType(const string& stmt, EStatementType default_type = estNone);
+RetrieveStatementType(const string& stmt,
+                      EStatementType default_type = estNone,
+                      ETriState output_expected = eTriState_Unknown);
 
 pythonpp::CTuple MakeTupleFromResult(IResultSet& rs);
 
@@ -165,7 +167,8 @@ public:
     // hard to get an actual type.
     void SetStr(const string& str,
                 EStatementType default_type = estSelect,
-                const CParamFmt& fmt = CParamFmt()
+                const CParamFmt& fmt = CParamFmt(),
+                ETriState output_expected = eTriState_Unknown
                 );
 
 public:
@@ -360,13 +363,15 @@ public:
     /// Variables are specified in a database-specific notation
     /// (see the module's paramstyle attribute for details). [5]
     /// execute(operation[,parameters]);
-    pythonpp::CObject execute(const pythonpp::CTuple& args);
+    pythonpp::CObject execute(const pythonpp::CTuple& args,
+                              const pythonpp::CDict& kwargs);
     PyObject* CreateIter(void);
     /// Prepare a database operation (query or command) and then
     /// execute it against all parameter sequences or mappings
     /// found in the sequence seq_of_parameters.
     /// executemany(operation,seq_of_parameters);
-    pythonpp::CObject executemany(const pythonpp::CTuple& args);
+    pythonpp::CObject executemany(const pythonpp::CTuple& args,
+                                  const pythonpp::CDict& kwargs);
     /// Fetch the next row of a query result set, returning a
     /// single sequence, or None when no more data is
     /// available. [6]
