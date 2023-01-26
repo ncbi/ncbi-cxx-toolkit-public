@@ -996,15 +996,15 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
         featId = xGenericTranscriptId(mf);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
-        mUsedFeatIds.push_back(featId);
+        mUsedFeatIds.emplace(featId);
         mFeatMap[mf] = featId;
         record.SetTranscriptId(featId);
         return true;
     }
     //uniquify the ID we came up with
-    auto cit = find(mUsedFeatIds.begin(), mUsedFeatIds.end(), featId);
+    auto cit = mUsedFeatIds.find(featId);
     if (mUsedFeatIds.end() == cit) {
-        mUsedFeatIds.push_back(featId);
+        mUsedFeatIds.emplace(featId);
         mFeatMap[mf] = featId;
         record.SetTranscriptId(featId);
         return true;
@@ -1013,9 +1013,9 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     featId += "_";
     while (true) {
         auto qualifiedId = featId + NStr::UIntToString(suffix);
-        cit = find(mUsedFeatIds.begin(), mUsedFeatIds.end(), qualifiedId);
+		cit = mUsedFeatIds.find(qualifiedId);
         if (mUsedFeatIds.end() == cit) {
-            mUsedFeatIds.push_back(qualifiedId);
+            mUsedFeatIds.emplace(qualifiedId);
             mFeatMap[mf] = qualifiedId;
             record.SetTranscriptId(qualifiedId);
             return true;
@@ -1073,25 +1073,27 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         geneId = xGenericGeneId(mf, fc);
         //we know the ID is going to be unique if we get it this way
         // not point in further checking
-        mUsedGeneIds.push_back(geneId);
+        mUsedGeneIds.emplace(geneId);
         mGeneMap[mf] = geneId;
         record.SetGeneId(geneId);
         return true;
-    }
-    auto cit = find(mUsedGeneIds.begin(), mUsedGeneIds.end(), geneId);
+    } 
+
+    auto cit = mUsedGeneIds.find(geneId);
     if (mUsedGeneIds.end() == cit) {
-        mUsedGeneIds.push_back(geneId);
+        mUsedGeneIds.emplace(geneId);
         mGeneMap[mf] = geneId;
         record.SetGeneId(geneId);
         return true;
     }
+
     unsigned int suffix = 1;
     geneId += "_";
     while (true) {
         GENE_ID qualifiedGeneId = geneId + NStr::UIntToString(suffix);
         cit = find(mUsedGeneIds.begin(), mUsedGeneIds.end(), qualifiedGeneId);
         if (mUsedGeneIds.end() == cit) {
-            mUsedGeneIds.push_back(qualifiedGeneId);
+            mUsedGeneIds.emplace(qualifiedGeneId);
             mGeneMap[mf] = qualifiedGeneId;
             record.SetGeneId(qualifiedGeneId);
             return true;
