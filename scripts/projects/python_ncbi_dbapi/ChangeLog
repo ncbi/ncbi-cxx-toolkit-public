@@ -1,3 +1,11 @@
+Version 1.25.1 (2023-01-26):
+* Anticipate possible output from statements with OUTPUT clauses
+  (checked only for INSERT, DELETE, UPDATE, and MERGE).
+* Give cursor.execute and cursor.executemany an optional keyword-only
+  output_expected argument in case the above change is insufficient.
+  (NB: The module always anticipates output from SELECT statements and
+  statements whose verbs it doesn't specifically recognize.)
+
 Version 1.25.0 (2022-12-06):
 * Advance to version 27.0 of the stable C++ Toolkit components.
 * Support (and build for) Python 3.11 in addition to 3.8 and 3.9.
