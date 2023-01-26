@@ -3012,7 +3012,14 @@ void CDeflineGenerator::x_SetSuffix (
                     m_MainTitle.erase (pos);
                 }
                 NStr::ToLower( preferredSuffix );
-                comp = ", " + preferredSuffix;
+                pos = m_MainTitle.find (preferredSuffix);
+                if (pos == NPOS) {
+                    if (preferredSuffix.find(" ") != NPOS) {
+                        comp = ", " + preferredSuffix;
+                    } else {
+                        comp = " " + preferredSuffix;
+                    }
+                }
             } else if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
                 if (m_IsPlasmid) {
                     comp = ", complete sequence";
