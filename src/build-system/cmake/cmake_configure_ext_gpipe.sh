@@ -24,14 +24,27 @@ configure_ext_Usage()
 {
     cat <<EOF
 
-GPIPE OPTIONS:
-  GPipe compilations should use one of these 4 predefined settings.
+GPIPE OPTIONS
+
+  GPipe compilations should use one of these 4 predefined settings:
 
   --gpipe-prod            for production use (--with-dll --without-debug)
   --gpipe-dev             for development and debugging (--with-dll)
-  --gpipe-max-debug       for debug & sanitizers (excludes apps using WGMLST)
   --gpipe-cgi             for deployment of web CGIs (--without-debug)
   --gpipe-distrib         for external distribution to the public
+
+  For focused debugging, trading performance for maximum safety:
+
+  --gpipe-mem-debug       for debug, sanitizers 
+  --gpipe-max-debug       for debug, STL, sanitizers (excludes apps using WGMLST)
+
+  For debugging/patching in production via drop-in app replacement (mostly static):
+
+  --gpipe-prod-patch      for patching with Release (not dll); same as --gpipe-cgi
+  --gpipe-prod-debug      for general debugging but as drop-in (not dll)
+  --gpipe-prod-mem-check  for memory leaks/bugs (not dll; with sanitizers)
+  --gpipe-prod-mem-debug  for memory leaks/bugs (not dll; debug with sanitizers)
+  --gpipe-prod-max-debug  for limited cases given slow performance (not dll; max debug)
 
   NOTE: GPipe settings override several Toolkit defaults, such as
         compilation warnings, --with-components, --with-features.
@@ -66,18 +79,6 @@ configure_ext_ParseArgs()
       configure_common_gpipe
       _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault"
       ;;
-    "--gpipe-max-debug")
-      GPIPE_MODE=max-debug
-      BUILD_TYPE="Debug"
-      BUILD_SHARED_LIBS="ON"
-      PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI;MaxDebug"
-      PROJECT_COMPONENTS="${PROJECT_COMPONENTS}" # WGMLST doesn't support MaxDebug yet.
-      : "${BUILD_ROOT:=../MaxDebug}"
-      configure_common_gpipe
-      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
-      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
-      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
-      ;;
     "--gpipe-cgi")
       GPIPE_MODE=cgi
       BUILD_TYPE="Release"
@@ -95,7 +96,89 @@ configure_ext_ParseArgs()
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST;-PCRE"
       : "${BUILD_ROOT:=../Distrib}"
       configure_common_gpipe
+      ;;
+
+    "--gpipe-mem-debug")
+      GPIPE_MODE=mem-debug
+      BUILD_TYPE="Debug"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
+      : "${BUILD_ROOT:=../MemDebug}"
+      configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
+      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      ;;
+    "--gpipe-max-debug")
+      GPIPE_MODE=max-debug
+      BUILD_TYPE="Debug"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI;MaxDebug"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS}" # WGMLST doesn't support MaxDebug yet.
+      : "${BUILD_ROOT:=../MaxDebug}"
+      configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
+      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      ;;
+
+    "--gpipe-prod-patch")
+      GPIPE_MODE=prod-patch
+      BUILD_TYPE="Release"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
+      : "${BUILD_ROOT:=../Static}"
+      configure_common_gpipe
       ;; 
+    "--gpipe-prod-debug")
+      GPIPE_MODE=prod-debug
+      BUILD_TYPE="Debug"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
+      : "${BUILD_ROOT:=../DebugStatic}"
+      configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault"
+      ;;
+    "--gpipe-prod-mem-check")
+      GPIPE_MODE=prod-mem-check
+      BUILD_TYPE="Release"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
+      : "${BUILD_ROOT:=../MemCheckStatic}"
+      configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
+      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      ;;
+    "--gpipe-prod-mem-debug")
+      GPIPE_MODE=prod-mem-debug
+      BUILD_TYPE="Debug"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
+      : "${BUILD_ROOT:=../MemDebugStatic}"
+      configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
+      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      ;;
+     "--gpipe-prod-max-debug")
+      GPIPE_MODE=prod-max-debug
+      BUILD_TYPE="Debug"
+      BUILD_SHARED_LIBS="OFF"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI;MaxDebug"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS}" # WGMLST doesn't support MaxDebug yet.
+      : "${BUILD_ROOT:=../MaxDebugStatic}"
+      configure_common_gpipe
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault -fsanitize=address"
+      _ext_CFLAGS="$_ext_CFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
+      ;;
+
     *) 
       _ext_unknown="${_ext_unknown} $1"
       ;; 
