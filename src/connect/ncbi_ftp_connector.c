@@ -204,6 +204,26 @@ static EIO_Status x_FTPCloseData(SFTPConnector* xxx,
 }
 
 
+static void x_FTPCloseControl(SFTPConnector* xxx, const char* abort)
+{
+    SOCK cntl = xxx->cntl;
+    xxx->cntl = 0;
+    if (abort) {
+        CORE_LOGF_X(10, eLOG_Error,
+                    ("[FTP%s%s]  Lost connection to %s:%hu (%s)",
+                     xxx->what ? "; " : "", xxx->what ? xxx->what : "",
+                     xxx->info->host, xxx->info->port, abort));
+    }
+    if (xxx->data)
+        x_FTPCloseData(xxx, eIO_Close/*silent close*/, 0);
+    if (abort)
+        SOCK_Abort(cntl);
+    else
+        SOCK_SetTimeout(cntl, eIO_Close, &kZeroTimeout);
+    SOCK_Close(cntl);
+}
+
+
 static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
                                   char* line, size_t maxlinelen,
                                   FFTPReplyCB replycb)
@@ -223,7 +243,8 @@ static EIO_Status x_FTPParseReply(SFTPConnector* xxx, int* code,
         /* all FTP replies are at least '\n'-terminated, not ending with EOF */
         rdstat = SOCK_ReadLine(xxx->cntl, buf, sizeof(buf), &len);
         if (rdstat != eIO_Success) {
-            status  = rdstat;
+            status = SOCK_Status(xxx->cntl, eIO_Read) == eIO_Closed
+                ? eIO_Closed : rdstat;
             break;
         }
         if (len == sizeof(buf)) {
@@ -289,23 +310,8 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
             sprintf(reason, "code %d", c);
         } else
             strncpy0(reason, IO_StatusStr(status), sizeof(reason) - 1);
-        if (status == eIO_Closed   ||  c == 221) {
-            SOCK cntl = xxx->cntl;
-            xxx->cntl = 0;
-            if (status == eIO_Closed) {
-                CORE_LOGF_X(10, eLOG_Error,
-                            ("[FTP%s%s]  Lost connection to %s:%hu (%s)",
-                             xxx->what ? "; " : "", xxx->what ? xxx->what : "",
-                             xxx->info->host, xxx->info->port, reason));
-            }
-            if (xxx->data)
-                x_FTPCloseData(xxx, eIO_Close/*silent close*/, 0);
-            if (status == eIO_Closed)
-                SOCK_Abort(cntl);
-            else
-                SOCK_SetTimeout(cntl, eIO_Close, &kZeroTimeout);
-            SOCK_Close(cntl);
-        }
+        if (status == eIO_Closed   ||  c == 221)
+            x_FTPCloseControl(xxx, status == eIO_Closed ? reason : 0);
         if (status == eIO_Success  &&  c == 530/*not logged in*/)
             status  = eIO_Closed;
     } else
@@ -318,7 +324,7 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
 
 /* Read replies while successful until the received response is: ether == *code
  * or its hundred's place == cXX;  return the response code via the pointer. */
-static EIO_Status s_FTPDrainReply(SFTPConnector* xxx, int* code, int cXX)
+static EIO_Status x_FTPDrainReply(SFTPConnector* xxx, int* code, int cXX)
 {
     int        c;
     EIO_Status status;
@@ -738,7 +744,7 @@ static EIO_Status x_FTPDir(SFTPConnector* xxx,
     } else if (toupper((unsigned char)(*cmd)) == 'C') { /* [X]CWD, CDUP/XCUP */
         if (code != 200  &&  code != 250)
             return eIO_Unknown;
-        /* fixup codes w/accordance to RFC959 */
+        /* fix up codes in accordance with RFC959 */
         if (toupper((unsigned char) cmd[1]) != 'W') {
             /* CDUP, XCUP */
             if (code != 200)
@@ -885,7 +891,7 @@ static EIO_Status x_FTPAbort(SFTPConnector*  xxx,
     if (status == eIO_Success) {
         int         code = 426;
         int/*bool*/ sync = xxx->sync;
-        status = s_FTPDrainReply(xxx, &code, 2/*2xx*/);
+        status = x_FTPDrainReply(xxx, &code, 2/*2xx*/);
         if (status == eIO_Success) {
             /* Microsoft FTP is known to return 225 instead of 226 */
             if (code != 225  &&  code != 226  &&  code != 426)
@@ -1711,9 +1717,17 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
     EIO_Status status = eIO_Success;
     int/*bool*/ abor = xxx->abor;
     xxx->abor = 0/*false*/;
-    while (SOCK_Wait(xxx->cntl, eIO_Read, &kZeroTimeout) == eIO_Success) {
-        char buf[80];
-        int  code;
+    for (;;) {
+        char       buf[80];
+        int        code;
+        EIO_Status wait = SOCK_Wait(xxx->cntl, eIO_Read, &kZeroTimeout);
+        if (wait != eIO_Success) {
+            if (wait  == eIO_Closed) {
+                status = eIO_Closed;
+                x_FTPCloseControl(xxx, IO_StatusStr(status));
+            }
+            break;
+        }
         if (timeout != &kZeroTimeout) {
             SOCK_SetTimeout(xxx->cntl, eIO_Read,
                             timeout ? timeout : &kFailsafeTimeout);
@@ -2122,8 +2136,12 @@ static EIO_Status s_VT_Write
             } else if (!run) {
                 /* keep appending */
                 status = eIO_Success;
-            } else
-                return s_FTPExecute(xxx, timeout);
+            } else {
+                status = s_FTPExecute(xxx, timeout);
+                if (status == eIO_Closed  &&  !xxx->cntl)
+                    *n_written = 0;
+                return status;
+            }
         }
         if (xxx->what  &&  status != eIO_Success) {
             free((void*) xxx->what);
@@ -2272,7 +2290,7 @@ static EIO_Status s_VT_Close
             /* all implementations MUST support QUIT */
             status = s_FTPCommand(xxx, "QUIT", 0);
             if (status == eIO_Success) {
-                status  = s_FTPDrainReply(xxx, &code, code);
+                status  = x_FTPDrainReply(xxx, &code, code);
                 if (status == eIO_Success)
                     status  = eIO_Unknown;
                 if (status == eIO_Closed  &&  code == 221)
