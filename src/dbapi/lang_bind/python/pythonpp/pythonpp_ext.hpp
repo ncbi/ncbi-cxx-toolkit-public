@@ -103,6 +103,15 @@ public:
         ml_flags = flags;
         ml_doc = const_cast<char*>( doc );
     }
+    SMethodDef(const char* name, PyCFunctionWithKeywords func,
+               int flags = METH_VARARGS | METH_KEYWORDS,
+               const char* doc = nullptr)
+    {
+        ml_name  = const_cast<char*>(name);
+        ml_meth  = reinterpret_cast<PyCFunction>(func);
+        ml_flags = flags;
+        ml_doc   = const_cast<char*>(doc);
+    }
     SMethodDef(const SMethodDef& other)
     {
         ml_name = other.ml_name;
@@ -507,6 +516,8 @@ public:
 
 public:
     typedef CObject (T::*TMethodVarArgsFunc)( const CTuple& args );
+    typedef CObject (T::*TMethodKWArgsFunc)(const CTuple& args,
+                                            const CDict& kwargs);
     /// Workaround for GCC 2.95
     struct SFunct
     {
@@ -515,9 +526,19 @@ public:
         {
         }
 
+        SFunct(const TMethodKWArgsFunc& funct)
+            : m_Funct(reinterpret_cast<TMethodVarArgsFunc>(funct))
+        {
+        }
+
         operator TMethodVarArgsFunc(void) const
         {
             return m_Funct;
+        }
+
+        operator TMethodKWArgsFunc(void) const
+        {
+            return reinterpret_cast<TMethodKWArgsFunc>(m_Funct);
         }
 
         TMethodVarArgsFunc m_Funct;
@@ -549,6 +570,20 @@ public:
             return CClass<N + 1>();
         }
 
+        CClass<N + 1> Def(const char* name, TMethodKWArgsFunc func,
+                          const char* doc = nullptr)
+        {
+            TMethodHndlList& hndl_list = GetMethodHndlList();
+
+            resize<N>(hndl_list);
+            hndl_list[ePosition]
+                = SMethodDef(name, (PyCFunctionWithKeywords)HandleMethodKWArgs,
+                             METH_VARARGS | METH_KEYWORDS, doc);
+            GetMethodList().push_back(func);
+
+            return CClass<N + 1>();
+        }
+
         static PyObject* HandleMethodVarArgs( PyObject* self, PyObject* args )
         {
             const TMethodVarArgsFunc func = GetMethodList()[ePosition];
@@ -574,6 +609,31 @@ public:
 			}
 
             // NULL means "error".
+            return NULL;
+        }
+
+        static PyObject* HandleMethodKWArgs(PyObject* self, PyObject* args,
+                                            PyObject* kwargs)
+        {
+            const TMethodKWArgsFunc func = GetMethodList()[ePosition];
+            T* obj = static_cast<T*>(self);
+
+            try {
+                const CTuple args_tuple(args);
+                CDict kwargs_dict;
+                if (kwargs != nullptr) {
+                    kwargs_dict = kwargs;
+                }
+
+                return IncRefCount((obj->*func)(args_tuple, kwargs_dict));
+            } catch (const CError&) {
+                return NULL;
+            }
+            catch (...) {
+                CError::SetString
+                    ("Unknown error during execution of a method");
+            }
+
             return NULL;
         }
 
@@ -620,6 +680,11 @@ public:
     }
 
     static CClass<1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)
+    {
+        return CClass<0>().Def(name, func, doc);
+    }
+    static CClass<1> Def(const char* name, TMethodKWArgsFunc func,
+                         const char* doc = nullptr)
     {
         return CClass<0>().Def(name, func, doc);
     }
