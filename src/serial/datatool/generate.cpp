@@ -390,6 +390,7 @@ void CCodeGenerator::GenerateCode(void)
     list<string> module_inc, module_src;
     GenerateModuleHPP(Path(m_HPPDir,m_FileNamePrefix), module_inc);
     GenerateModuleCPP(Path(m_CPPDir,m_FileNamePrefix), module_src);
+    GenerateClientCode(listGenerated);
 
     GenerateDoxygenGroupDescription(module_names);
     GenerateCombiningFile(module_inc, module_src, allGeneratedHpp, allGeneratedCpp);
@@ -400,7 +401,6 @@ void CCodeGenerator::GenerateCode(void)
     GenerateFileList(listGenerated, listUntouched,
         allGeneratedHpp, allGeneratedCpp, allSkippedHpp, allSkippedCpp);
     GenerateCvsignore(outdir_cpp, outdir_hpp, listGenerated, module_names);
-    GenerateClientCode();
 }
 
 
@@ -698,84 +698,87 @@ void CCodeGenerator::GenerateCvsignore(
 
     for (int i=0; i<2; ++i) {
         bool is_cpp = (i==0);
-        bool different_dirs = (outdir_cpp != outdir_hpp);
         string out_dir(is_cpp ? outdir_cpp : outdir_hpp);
-
         string ignorePath(MakeAbsolutePath(Path(out_dir,ignoreName)));
+        string extraPath(MakeAbsolutePath(Path(out_dir,extraName)));
+        string strline;
+        set<string> files;
+
         if (CFile(ignorePath).Exists()) {
-            continue;
-        }
-        // ios::out should be redundant, but some compilers
-        // (GCC 2.9x, for one) seem to need it. :-/
-        CNcbiOfstream ignoreFile(ignorePath.c_str(),
-            ios::out | ((different_dirs || is_cpp) ? ios::trunc : ios::app));
-
-        if (ignoreFile.is_open()) {
-
-            if (different_dirs || is_cpp) {
-                ignoreFile << ignoreName << endl;
+            CNcbiIfstream ifs(ignorePath.c_str(), IOS_BASE::in);
+            if ( ifs ) {
+                while ( NcbiGetlineEOL(ifs, strline) ) {
+                    files.insert(NStr::TruncateSpaces(strline));
+                }
             }
+        } else {
+            files.insert(ignoreName);
+        }
 
 // .cvsignore.extra
-            if (different_dirs || is_cpp) {
-                string extraPath(Path(out_dir,extraName));
-                CNcbiIfstream extraFile(extraPath.c_str());
-                if (extraFile.is_open()) {
-                    char buf[256];
-                    while (extraFile.good()) {
-                        extraFile.getline(buf, sizeof(buf));
-                        CTempString sbuf(NStr::TruncateSpaces_Unsafe(buf));
-                        if (!sbuf.empty()) {
-                            ignoreFile << sbuf << endl;
-                        }
-                    }
+        if (CFile(extraPath).Exists()) {
+            CNcbiIfstream ifs(extraPath.c_str(), IOS_BASE::in);
+            if ( ifs ) {
+                while ( NcbiGetlineEOL(ifs, strline) ) {
+                    files.insert(NStr::TruncateSpaces(strline));
                 }
             }
+        }
 
 // base classes (always generated)
-            ITERATE ( TOutputFiles, filei, m_Files ) {
-                ignoreFile
-                    << BaseName(filei->second->GetFileBaseName())
-                    << "_." << (is_cpp ? "cpp" : "hpp") << endl;
-            }
+        ITERATE ( TOutputFiles, filei, m_Files ) {
+            strline = BaseName(filei->second->GetFileBaseName()) + "_." + (is_cpp ? "cpp" : "hpp");
+            files.insert(strline);
+        }
 
 // user classes
-            for (list<string>::const_iterator it = generated.begin();
-                it != generated.end(); ++it) {
-                CDirEntry entry(*it);
-                if (is_cpp == (NStr::CompareNocase(entry.GetExt(),".cpp")==0)) {
-                    ignoreFile << entry.GetName() << endl;
-                }
+        for (list<string>::const_iterator it = generated.begin();
+            it != generated.end(); ++it) {
+            CDirEntry entry(*it);
+            if (is_cpp == (NStr::CompareNocase(entry.GetExt(),".cpp")==0)) {
+                files.insert(entry.GetName());
             }
+        }
 
 // combining files
-            if ( !m_CombiningFileName.empty() ) {
-                if (is_cpp) {
-                    ignoreFile << m_CombiningFileName << "__" << "_.cpp" << endl;
-                    ignoreFile << m_CombiningFileName << "__" << ".cpp" << endl;
-                } else {
-                    ignoreFile << m_CombiningFileName << "__" << ".hpp" << endl;
-                }
+        if ( !m_CombiningFileName.empty() ) {
+            if (is_cpp) {
+                strline = m_CombiningFileName + "__" + "_.cpp";
+                files.insert(strline);
+                strline = m_CombiningFileName + "__" + ".cpp";
+                files.insert(strline);
+            } else {
+                strline = m_CombiningFileName + "__" + ".hpp";
+                files.insert(strline);
             }
+        }
 
 // doxygen header
-            if ( !is_cpp  &&  CClassCode::GetDoxygenComments()
-                    &&  !module_names.empty() ) {
-                CDirEntry entry(GetMainModules().GetModuleSets().front()
-                                ->GetSourceFileName());
-                ignoreFile << entry.GetBase() << "_doxygen.h" << endl;
-            }
+        if ( !is_cpp  &&  CClassCode::GetDoxygenComments()
+                &&  !module_names.empty() ) {
+            CDirEntry entry(GetMainModules().GetModuleSets().front()
+                            ->GetSourceFileName());
+            files.insert(entry.GetBase() + "_doxygen.h");
+        }
 
 // file list
-            if ( is_cpp && !m_FileListFileName.empty() ) {
-                CDirEntry entry(Path(m_FileNamePrefix,m_FileListFileName));
-                ignoreFile << entry.GetName() << endl;
-            }
+        if ( is_cpp && !m_FileListFileName.empty() ) {
+            CDirEntry entry(Path(m_FileNamePrefix,m_FileListFileName));
+            files.insert(entry.GetName());
+        }
 
 // specification dump (somewhat hackishly)
-            if ( const CArgValue& f
-                 = CNcbiApplication::Instance()->GetArgs()["fd"] ) {
-                ignoreFile << f.AsString() << endl;
+        if ( const CArgValue& f
+                = CNcbiApplication::Instance()->GetArgs()["fd"] ) {
+            files.insert(f.AsString());
+        }
+
+        CNcbiOfstream ignoreFile(ignorePath.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+        if (ignoreFile.is_open()) {
+            for( const string& f : files) {
+                if (!f.empty()) {
+                    ignoreFile << f << endl;
+                }
             }
         }
     }
@@ -967,7 +970,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
     } while (isfound);
 }
 
-void CCodeGenerator::GenerateClientCode(void)
+void CCodeGenerator::GenerateClientCode(list<string>& generated)
 {
     string clients = m_Config.Get("-", "clients");
     if (clients.empty()) {
@@ -980,13 +983,13 @@ void CCodeGenerator::GenerateClientCode(void)
         NStr::Split(clients, ", \t", l, NStr::fSplit_MergeDelimiters);
         ITERATE (list<string>, it, l) {
             if ( !it->empty() ) {
-                GenerateClientCode(*it, true);
+                GenerateClientCode(*it, true, generated);
             }
         }
     }
 }
 
-void CCodeGenerator::GenerateClientCode(const string& name, bool mandatory)
+void CCodeGenerator::GenerateClientCode(const string& name, bool mandatory, list<string>& generated)
 {
     string class_name = m_Config.Get(name, "class");
     if (class_name.empty()) {
@@ -1002,9 +1005,15 @@ void CCodeGenerator::GenerateClientCode(const string& name, bool mandatory)
     code.GenerateCode();
     string filename;
     code.GenerateHPP(m_HPPDir, filename);
+    generated.push_back(filename);
     code.GenerateCPP(m_CPPDir, filename);
-    code.GenerateUserHPP(m_HPPDir, filename);
-    code.GenerateUserCPP(m_CPPDir, filename);
+    generated.push_back(filename);
+    if (code.GenerateUserHPP(m_HPPDir, filename)) {
+        generated.push_back(filename);
+    }
+    if (code.GenerateUserCPP(m_CPPDir, filename)) {
+        generated.push_back(filename);
+    }
 }
 
 bool CCodeGenerator::AddType(const CDataType* type)

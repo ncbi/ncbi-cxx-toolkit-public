@@ -137,8 +137,8 @@ public:
     void GenerateModuleHPP(const string& path, list<string>& generated) const;
     void GenerateModuleCPP(const string& path, list<string>& generated) const;
 
-    void GenerateClientCode(void);
-    void GenerateClientCode(const string& name, bool mandatory);
+    void GenerateClientCode(list<string>& generated);
+    void GenerateClientCode(const string& name, bool mandatory, list<string>& generated);
 
     bool Imported(const CDataType* type) const;
 
