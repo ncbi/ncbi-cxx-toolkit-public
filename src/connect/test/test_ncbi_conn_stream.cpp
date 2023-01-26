@@ -597,9 +597,11 @@ int CNCBITestConnStreamApp::Run(void)
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
-            ftp.clear();
-            ftp << "RETR \377 special file downloadable" << NcbiEndl;
-            status = ftp.Status(eIO_Write);
+            if (status != eIO_Closed) {
+                ftp.clear();
+                ftp << "RETR \377 special file downloadable" << NcbiEndl;
+                status = ftp.Status(eIO_Write);
+            }
             if (!ftp  ||  status != eIO_Success) {
                 string reason = status ? IO_StatusStr(status) : "I/O error";
                 ERR_POST(Fatal << "Test 4 failed in RETR IAC: " + reason);
@@ -611,7 +613,7 @@ int CNCBITestConnStreamApp::Run(void)
         ftp << "RETR "
             << "\320\237\321\200\320\270"
             << "\320\262\320\265\321\202" << NcbiEndl;
-        status = ftp.Status (eIO_Write);
+        status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
             ERR_POST(Fatal << "Test 5 failed in RETR UTF-8: " + reason);
