@@ -27,7 +27,6 @@
 /** @file blast_aalookup.c
  * Functions interacting with the protein BLAST lookup table.
  */
-
 #include <algo/blast/core/blast_aalookup.h>
 #include <algo/blast/core/lookup_util.h>
 #include <algo/blast/core/blast_encoding.h>
@@ -786,70 +785,65 @@ static void s_CompressedLookupAddWordHit(
                                   Int4 query_offset)
 {
     CompressedLookupBackboneCell *backbone_cell = lookup->backbone + index;
-    CompressedOverflowCell * new_cell;
     Int4 num_entries = backbone_cell->num_used;
 
-    if (num_entries < COMPRESSED_HITS_PER_BACKBONE_CELL) {
-        backbone_cell->payload.query_offsets[num_entries] = query_offset;
-    } 
-    else if (num_entries == COMPRESSED_HITS_PER_BACKBONE_CELL) {
+    switch (num_entries) {
+    case 0:
+    	backbone_cell->query_offset = query_offset;
+    	break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+        backbone_cell->payload.query_offsets[num_entries-1] = query_offset;
+        break;
+    case 5:
+    {
+        Int4 tmp_offset_0 = backbone_cell->payload.query_offsets[0];
+        Int4 tmp_offset_1 = backbone_cell->payload.query_offsets[1];
 
-        /* need to create new overflow list */
-  
-        Int4 i;
-        Int4 tmp_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL-1];
-  
         /* fetch next vacant cell */
-        new_cell = s_CompressedListGetNewCell(lookup);
+        CompressedOverflowCell * new_cell = s_CompressedListGetNewCell(lookup);
 
         /* this cell is always the end of the list */
-        new_cell->next = NULL; 
-  
+        new_cell->next = NULL;
+
         /* store the last element of the original backbone cell */
-        new_cell->query_offsets[0] = backbone_cell->payload.query_offsets[
-                                        COMPRESSED_HITS_PER_BACKBONE_CELL-1]; 
-  
+        new_cell->query_offsets[0] = backbone_cell->payload.query_offsets[2];
+
+        new_cell->query_offsets[1] = backbone_cell->payload.query_offsets[3];
         /* store this new offset too */
-        new_cell->query_offsets[1] = query_offset; 
-  
-        /* save offsets from being overwritten (the list of query
-           offsets must be copied to a struct that aliases the current
-           list in memory) */
-        for (i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
-            tmp_offsets[i] = backbone_cell->payload.query_offsets[i];
-        }
-        
-        /* repopulate */
-        for (i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
-            backbone_cell->payload.overflow_list.query_offsets[i] = 
-                                                        tmp_offsets[i];
-        }
-        
+        new_cell->query_offsets[2] = query_offset;
+
+        backbone_cell->payload.overflow_list.query_offsets[0] = tmp_offset_0;
+        backbone_cell->payload.overflow_list.query_offsets[1] = tmp_offset_1;
+
         /* make backbone point to this new, one-cell long list */
         backbone_cell->payload.overflow_list.head = new_cell;
-    } 
-    else { /* continue with existing overflow list */
-      
+    }
+    break;
+    default:
+    {
+    	/* continue with existing overflow list */
         /* find the index into the current overflow cell; we
            do not store the current index in every cell, to
            save space */
-        Int4 cell_index = (num_entries - 
-                           COMPRESSED_HITS_PER_BACKBONE_CELL + 1) %
-                           COMPRESSED_HITS_PER_OVERFLOW_CELL;
+        Int4 cell_index = (num_entries -3) & COMPRESSED_HITS_CELL_MASK ;
 
         if (cell_index == 0 ) { /* can't be empty => it's full  */
 
             /* fetch next vacant cell */
-            new_cell = s_CompressedListGetNewCell(lookup);
+        	CompressedOverflowCell * new_cell = s_CompressedListGetNewCell(lookup);
 
             /* shuffle the pointers */
             new_cell->next = backbone_cell->payload.overflow_list.head;
             backbone_cell->payload.overflow_list.head = new_cell;
         }
-        
+
         /* head always points to a cell with free space */
-        backbone_cell->payload.overflow_list.head->query_offsets[
-                                              cell_index] = query_offset;
+        backbone_cell->payload.overflow_list.head->query_offsets[cell_index] = query_offset;
+    }
+    break;
     }
 
     backbone_cell->num_used++;
@@ -880,7 +874,7 @@ static void s_CompressedLookupAddEncoded(
                                  600000, 700000, 800000, 900000};
     static const Int4 W7p6[] = { 0, 1000000, 2000000, 3000000, 4000000,
                                  5000000, 6000000, 7000000, 8000000, 9000000};
-    
+
     static const Int4 W6p1[] = { 0, 15, 30, 45, 60, 75, 90, 105, 120, 135,
                                  150, 165, 180, 195, 210};
     static const Int4 W6p2[] = { 0, 225, 450, 675, 900, 1125, 1350, 1575,
@@ -895,17 +889,21 @@ static void s_CompressedLookupAddEncoded(
                                  3796875, 4556250, 5315625, 6075000, 6834375,
                                  7593750, 8353125, 9112500, 9871875, 10631250};
 
-    if(lookup->word_length == 7) {
-        index =  w[0] + W7p1[w[1]] + W7p2[w[2]] + W7p3[w[3]] +
-                        W7p4[w[4]] + W7p5[w[5]] + W7p6[w[6]];
-    }
-    else if (lookup->word_length == 6) {
-        index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] +
-                       W6p4[w[4]] + W6p5[w[5]];
-    }
-    else {
-        index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] +
-                       W6p4[w[4]];
+
+
+    switch (lookup->word_length) {
+    case 5:
+    	index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] + W6p4[w[4]];
+    	break;
+    case 6:
+    	index = w[0] + W6p1[w[1]] + W6p2[w[2]] + W6p3[w[3]] + W6p4[w[4]] + W6p5[w[5]];
+    	break;
+    case 7:
+    	index =  w[0] + W7p1[w[1]] + W7p2[w[2]] + W7p3[w[3]] + W7p4[w[4]] + W7p5[w[5]] + W7p6[w[6]];
+    	break;
+    default:
+    	index = 0;
+    	break;
     }
 
     s_CompressedLookupAddWordHit(lookup, index, query_offset);
@@ -1005,9 +1003,6 @@ static void s_loadSortedMatrix(CompressedNeighborInfo* info) {
 static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info, 
                                         Int4 score, Int4 current_pos)
 {
-    Int4 compressed_alphabet_size = info->compressed_alphabet_size;
-    Int4 threshold = info->threshold;
-    Int4 wordsize = info->wordsize;
     Uint1 *query_word = info->query_word;
     Uint1 *subject_word = info->subject_word;
     Int4 i;
@@ -1025,7 +1020,7 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
     rowSorted = info->matrixSorted[currQueryChar];
     charSorted = info->matrixSortedChar[currQueryChar];
 
-    if (current_pos == wordsize - 1) {
+    if (current_pos == info->wordsize - 1) {
         
         /* The recursion has bottomed out, and we can produce complete
            subject words. Pass (a portion of) the alphabet through the 
@@ -1035,8 +1030,8 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
         BlastCompressedAaLookupTable *lookup = info->lookup;
         Int4 query_offset = info->query_offset;
         
-        for (i = 0; i < compressed_alphabet_size && 
-               (score + rowSorted[i] >= threshold); i++) {
+        for (i = 0; i < info->compressed_alphabet_size &&
+               (score + rowSorted[i] >= info->threshold); i++) {
             subject_word[current_pos] = charSorted[i];
             s_CompressedLookupAddEncoded(lookup, subject_word, 
                                          query_offset);
@@ -1051,8 +1046,8 @@ static void s_CompressedAddWordHitsCore(CompressedNeighborInfo * info,
        current_pos of the subject word, and recurse on all words that 
        could possibly exceed the threshold later */
 
-    for (i = 0; i < compressed_alphabet_size && 
-           (score + rowSorted[i] >= threshold); i++) {
+    for (i = 0; i < info->compressed_alphabet_size &&
+           (score + rowSorted[i] >= info->threshold); i++) {
         subject_word[current_pos] = charSorted[i];
         s_CompressedAddWordHitsCore(info, score + rowSorted[i], 
                                     current_pos + 1);
@@ -1226,7 +1221,6 @@ static Int4 s_CompressedLookupFinalize(BlastCompressedAaLookupTable * lookup)
     ASSERT(pv != NULL);
     
     /* compute the longest chain size and initialize the PV array */
-
     for (i = 0; i < lookup->backbone_size; i++) {
         count = lookup->backbone[i].num_used;
 
@@ -1297,8 +1291,6 @@ Int4 BlastCompressedAaLookupTableNew(BLAST_SequenceBlk* query,
     lookup->word_length = word_size;
     lookup->threshold = (Int4)(kMatrixScale * opt->threshold);
     lookup->alphabet_size = BLASTAA_SIZE;
-
-
     if (word_size == 6 || word_size == 5) {
         lookup->compressed_alphabet_size = 15;
         lookup->reciprocal_alphabet_size = 286331154;

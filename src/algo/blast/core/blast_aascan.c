@@ -342,15 +342,16 @@ static Int4 s_BlastCompressedAaScanSubject(
              /* copy the hits to the destination */
            
              Int4 i;
-             Int4 *query_offsets;
              BlastOffsetPair *dest = offset_pairs + totalhits;
-           
-             if (numhits <= COMPRESSED_HITS_PER_BACKBONE_CELL) {
+
+             dest[0].qs_offsets.q_off = backbone_cell->query_offset;
+             dest[0].qs_offsets.s_off = s_off;
+
+             if (numhits <= COMPRESSED_HITS_PER_BACKBONE_CELL+1) {
+            	 dest ++;
                 /* hits all live in the backbone */
-             
-                query_offsets = backbone_cell->payload.query_offsets;
-                for (i = 0; i < numhits; i++) {
-                   dest[i].qs_offsets.q_off = query_offsets[i];
+                for (i = 0; i < numhits-1; i++) {
+                   dest[i].qs_offsets.q_off = backbone_cell->payload.query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
                 }
              } 
@@ -358,50 +359,39 @@ static Int4 s_BlastCompressedAaScanSubject(
                 /* hits are in the backbone cell and in the overflow list */
                 CompressedOverflowCell* curr_cell = 
                                     backbone_cell->payload.overflow_list.head;
-                /* we know the overflow list has at least one cell,
-                   so it's safe to speculatively fetch the pointer
-                   to further cells */
-                CompressedOverflowCell* next_cell = curr_cell->next;
 
                 /* the number of hits in the linked list of cells has
                    1 added to it; the extra hit was spilled from the
                    backbone when the list was first created */
-                Int4 first_cell_entries = (numhits -
-                                     COMPRESSED_HITS_PER_BACKBONE_CELL) %
-                                     COMPRESSED_HITS_PER_OVERFLOW_CELL + 1;
+                Int4 first_cell_entries = (numhits - 3) & COMPRESSED_HITS_CELL_MASK;
 
                 /* copy hits from backbone */
-                query_offsets = 
-                         backbone_cell->payload.overflow_list.query_offsets;
-                for(i = 0; i < COMPRESSED_HITS_PER_BACKBONE_CELL - 1; i++) {
-                   dest[i].qs_offsets.q_off = query_offsets[i];
-                   dest[i].qs_offsets.s_off = s_off;
-                }
+                dest[1].qs_offsets.q_off = backbone_cell->payload.overflow_list.query_offsets[0];
+                dest[1].qs_offsets.s_off = s_off;
+                dest[2].qs_offsets.q_off = backbone_cell->payload.overflow_list.query_offsets[1];
+                dest[2].qs_offsets.s_off = s_off;
               
                 /* handle the overflow list */
               
                 /* first cell can be partially filled */
-                query_offsets = curr_cell->query_offsets;
-                dest += i;
+                dest += 3;
                 for (i = 0; i < first_cell_entries; i++) {
-                   dest[i].qs_offsets.q_off = query_offsets[i];
+                   dest[i].qs_offsets.q_off =  curr_cell->query_offsets[i];
                    dest[i].qs_offsets.s_off = s_off;
                 }
 
                 /* handle the rest of the list */
-
-                if (next_cell != NULL) {
-                   curr_cell = next_cell;
+                if (first_cell_entries) {
+                   curr_cell = curr_cell->next;
+                }
                    while (curr_cell != NULL) {
-                      query_offsets = curr_cell->query_offsets;
-                      curr_cell = curr_cell->next;    /* prefetch */
                       dest += i;
                       for (i = 0; i < COMPRESSED_HITS_PER_OVERFLOW_CELL; i++) {
-                         dest[i].qs_offsets.q_off = query_offsets[i];
+                         dest[i].qs_offsets.q_off =  curr_cell->query_offsets[i];
                          dest[i].qs_offsets.s_off = s_off;
                       }
+                      curr_cell = curr_cell->next;    /* prefetch */
                    }
-                }
              }
 
              totalhits += numhits;

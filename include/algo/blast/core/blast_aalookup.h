@@ -186,7 +186,8 @@ void BlastAaLookupIndexQuery(BlastAaLookupTable* lookup,
 /* ------------ compressed alphabet protein blast defines ---------------*/
 
 /** number of query offsets to store in a backbone cell */
-#define COMPRESSED_HITS_PER_BACKBONE_CELL 3
+#define COMPRESSED_HITS_PER_BACKBONE_CELL 4
+#define COMPRESSED_HITS_CELL_MASK 0x03
 
 /** number of query offsets to store in an overflow cell */
 #define COMPRESSED_HITS_PER_OVERFLOW_CELL 4
@@ -209,7 +210,7 @@ typedef struct CompressedOverflowCell {
 /** "alternative" structure of CompressedLookupBackboneCell storage */
 typedef struct CompressedMixedOffsets{
     /** the query offsets stored locally */
-    Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL-1];
+    Int4 query_offsets[COMPRESSED_HITS_PER_BACKBONE_CELL-2];
   
     /** head of linked list of cells of query offsets
         stored off the backbone */
@@ -218,8 +219,8 @@ typedef struct CompressedMixedOffsets{
 
 /** structure for hashtable of indexed query offsets */
 typedef struct CompressedLookupBackboneCell {
-    Int4 num_used;       /**< number of hits stored for this cell */
-
+	Int4 num_used;
+	Int4 query_offset;
     /** structure for holding the list of query offsets */
     union {
         /** storage for query offsets local to the backbone cell */
