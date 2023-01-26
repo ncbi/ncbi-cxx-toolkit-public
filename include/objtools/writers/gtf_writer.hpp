@@ -161,14 +161,14 @@ protected:
 private:
     using FEAT_ID = string;
     using FEAT_MAP = map<CMappedFeat, FEAT_ID>;
-    using FEAT_IDS = list<FEAT_ID>;
+    using FEAT_IDS = set<FEAT_ID>;
 
     FEAT_MAP mFeatMap;
     FEAT_IDS mUsedFeatIds;
 
     using GENE_ID = string;
     using GENE_MAP = map<CMappedFeat, GENE_ID>;
-    using GENE_IDS = list<GENE_ID>;
+    using GENE_IDS = set<GENE_ID>;
 
     GENE_IDS mUsedGeneIds;
     GENE_MAP mGeneMap;
