@@ -86,3 +86,11 @@ BOOST_AUTO_TEST_CASE(Test_DiscrepancySet_Format)
     string outputString = "2 are do have ";
     BOOST_CHECK_EQUAL(CDiscrepancySet::Format(inputString, 2), outputString);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_NamesAndDescriptions)
+{
+    BOOST_CHECK_EQUAL(GetDiscrepancyCaseName(eTestNames::ALL_SEQS_CIRCULAR), "ALL_SEQS_CIRCULAR");
+    BOOST_CHECK_EQUAL(GetDiscrepancyCaseName("DISC_ALL_SEQS_CIRCULAR"), eTestNames::ALL_SEQS_CIRCULAR);
+    BOOST_CHECK_EQUAL(GetDiscrepancyDescr(eTestNames::ALL_SEQS_CIRCULAR), "All sequences circular");
+}
