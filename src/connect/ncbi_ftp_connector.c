@@ -204,7 +204,7 @@ static EIO_Status x_FTPCloseData(SFTPConnector* xxx,
 }
 
 
-static void x_FTPCloseControl(SFTPConnector* xxx, const char* abort)
+static void x_FTPCloseCntl(SFTPConnector* xxx, const char* abort)
 {
     SOCK cntl = xxx->cntl;
     xxx->cntl = 0;
@@ -311,7 +311,7 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
         } else
             strncpy0(reason, IO_StatusStr(status), sizeof(reason) - 1);
         if (status == eIO_Closed   ||  c == 221)
-            x_FTPCloseControl(xxx, status == eIO_Closed ? reason : 0);
+            x_FTPCloseCntl(xxx, status == eIO_Closed ? reason : 0);
         if (status == eIO_Success  &&  c == 530/*not logged in*/)
             status  = eIO_Closed;
     } else
@@ -1712,7 +1712,7 @@ static EIO_Status s_FTPNegotiate(SFTPConnector* xxx,
 
 
 /* NB: data connection (upload only) may end up closed */
-static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
+static EIO_Status x_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
 {
     EIO_Status status = eIO_Success;
     int/*bool*/ abor = xxx->abor;
@@ -1724,7 +1724,7 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
         if (wait != eIO_Success) {
             if (wait  == eIO_Closed) {
                 status = eIO_Closed;
-                x_FTPCloseControl(xxx, IO_StatusStr(status));
+                x_FTPCloseCntl(xxx, IO_StatusStr(status));
             }
             break;
         }
@@ -1760,7 +1760,7 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
 }
 
 
-static EIO_Status s_FTPSyncCntl(SFTPConnector* xxx, const STimeout* timeout)
+static EIO_Status x_FTPSyncCntl(SFTPConnector* xxx, const STimeout* timeout)
 {
     if (!xxx->sync) {
         EIO_Status status;
@@ -1771,7 +1771,7 @@ static EIO_Status s_FTPSyncCntl(SFTPConnector* xxx, const STimeout* timeout)
         timeout = &kZeroTimeout;
         assert(xxx->sync);
     }
-    return s_FTPPollCntl(xxx, timeout);
+    return x_FTPPollCntl(xxx, timeout);
 }
 
 
@@ -1789,7 +1789,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         xxx->what = 0;
     }
     if (status == eIO_Success)
-        status  = s_FTPSyncCntl(xxx, timeout);
+        status  = x_FTPSyncCntl(xxx, timeout);
     if (status != eIO_Success)
         goto out;
     if (xxx->rest) {
@@ -1876,7 +1876,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
 }
 
 
-static EIO_Status s_FTPCompleteUpload(SFTPConnector*  xxx,
+static EIO_Status x_FTPCompleteUpload(SFTPConnector*  xxx,
                                       const STimeout* timeout)
 {
     EIO_Status status;
@@ -2036,7 +2036,7 @@ static EIO_Status s_VT_Wait
         if (xxx->data) {
             assert(xxx->open);
             if (event == eIO_Read)
-                return s_FTPCompleteUpload(xxx, timeout);
+                return x_FTPCompleteUpload(xxx, timeout);
             return SOCK_Wait(xxx->data, eIO_Write, timeout);
         }
         if (event == eIO_Write  ||  !xxx->open)
@@ -2079,7 +2079,7 @@ static EIO_Status s_VT_Write
     if (xxx->send) {
         if (!xxx->data)
             return eIO_Closed;
-        status = s_FTPPollCntl(xxx, timeout);
+        status = x_FTPPollCntl(xxx, timeout);
         if (status == eIO_Success) {
             SOCK_SetTimeout(xxx->data, eIO_Write, timeout);
             status = SOCK_Write(xxx->data, buf, size,n_written,eIO_WritePlain);
@@ -2195,7 +2195,7 @@ static EIO_Status s_VT_Read
             assert(!BUF_Size(xxx->rbuf));
             return eIO_Closed;
         }
-        status = s_FTPCompleteUpload(xxx, timeout);
+        status = x_FTPCompleteUpload(xxx, timeout);
         if (status != eIO_Success)
             return status;
         assert(!xxx->data  &&  !xxx->send);
@@ -2207,7 +2207,7 @@ static EIO_Status s_VT_Read
         status = eIO_Success;
     if (xxx->data) {
         assert(!xxx->send  &&  !BUF_Size(xxx->rbuf));
-        /* NB: Cannot use s_FTPPollCntl() here because a response about data
+        /* NB: Cannot use x_FTPPollCntl() here because a response about data
          * connection closure may be seen before the actual EOF in the
          * (heavily loaded) data connection. */
         SOCK_SetTimeout(xxx->data, eIO_Read, timeout);
