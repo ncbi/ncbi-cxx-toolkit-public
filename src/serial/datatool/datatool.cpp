@@ -649,7 +649,7 @@ bool CDataTool::GenerateCode(bool undo)
         string ex;
         ex = generator.GetConfig().Get("-","_export");
         if (ex.empty()) {
-            ex = opt;
+            ex = NStr::TruncateSpaces(opt);
         }
         CClassCode::SetExportSpecifier(ex);
     }
