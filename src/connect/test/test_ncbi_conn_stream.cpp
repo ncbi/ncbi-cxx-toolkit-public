@@ -402,6 +402,7 @@ int CNCBITestConnStreamApp::Run(void)
     ConnNetInfo_Destroy(net_info);
     LOG_POST(Info << "Test 2 passed\n");
 
+
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create("_FTP")))
@@ -410,7 +411,7 @@ int CNCBITestConnStreamApp::Run(void)
         flag |= fFTP_LogControl;
     else if (net_info->debug_printout == eDebugPrintout_Data) {
         char val[32];
-        ConnNetInfo_GetValue(0, REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
+        ConnNetInfo_GetValue("_FTP", REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
                              DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
@@ -586,14 +587,23 @@ int CNCBITestConnStreamApp::Run(void)
         LOG_POST(Info << "PWD command returned: '" << temp << '\'');
         if (temp != "/test_download/\"dir\"ect\"ory\"")
             ERR_POST(Fatal << "Test 5 failed in PWD response");
-        ftp.clear();
+        ftp.clear();  // NB: maybe unnecessary, depends on the server response
+        ftp << "MLST message of the day" << NcbiEndl;
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 5 failed in MLST: " + reason);
+        }
+        getline(ftp, temp);
+        LOG_POST(Info << "MLST command returned: '" << temp << '\'');
+        if (!ftp  ||  temp.empty())
+            ERR_POST(Fatal << "Test 5 failed in MLST response");
         ftp << "XCUP" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
             ERR_POST(Fatal << "Test 5 failed in XCUP: " + reason);
         }
-        //ftp.clear();
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
@@ -604,7 +614,7 @@ int CNCBITestConnStreamApp::Run(void)
             }
             if (!ftp  ||  status != eIO_Success) {
                 string reason = status ? IO_StatusStr(status) : "I/O error";
-                ERR_POST(Fatal << "Test 4 failed in RETR IAC: " + reason);
+                ERR_POST(Fatal << "Test 5 failed in RETR IAC: " + reason);
             }
             ERR_POST(Critical << "\n\n***"
                      " BUGGY FTP (UNCLEAN IAC) SERVER DETECTED!!! "
@@ -618,12 +628,26 @@ int CNCBITestConnStreamApp::Run(void)
             string reason = status ? IO_StatusStr(status) : "I/O error";
             ERR_POST(Fatal << "Test 5 failed in RETR UTF-8: " + reason);
         }
+        temp.resize(1024);
+        ftp.read(&temp[0], 1024);
+        status = ftp.Status(eIO_Read);
+        if (!ftp  ||  status != eIO_Success  ||  ftp.gcount() != 1024) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 5 failed in partial RETR: " + reason);
+        }
         ftp << "STOR " << "../test_upload/" << ftpfile << ".0" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
             string reason = status ? IO_StatusStr(status) : "I/O error";
             ERR_POST(Fatal << "Test 5 failed in STOR: " + reason);
         }
+        ftp.write(&temp[0], 123);
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 5 failed in partial STOR: " + reason);
+        }
+        // Expecting a close error here because of unfinalized STOR
         if (ftp.Close() == eIO_Success)
             ERR_POST(Fatal << "Test 5 failed");
         LOG_POST(Info << "Test 5 done\n");
