@@ -302,4 +302,11 @@ else()
     endif()
 endif()
 
+if(NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND "${NCBI_TREE_ROOT}" STREQUAL "${NCBITK_TREE_ROOT}")
+    get_filename_component(_dir ${NCBI_BUILD_ROOT} DIRECTORY)
+    if("${_dir}" STREQUAL "${NCBI_TREE_ROOT}")
+        NCBI_util_gitignore(${NCBI_BUILD_ROOT})
+    endif()
+endif()
+
 endif(NOT NCBI_PTBCFG_COLLECT_REQUIRES)
