@@ -659,8 +659,12 @@ struct SThrowOnNull
 /// is requested from a null object. By default CCoreException is thrown.
 /// To perform other actions (e.g. provide a default value) the functor
 /// must define 'TValue operator()(void) const' method.
+/// @deprecated: Use std::optional<> instead.
 template <class TValue, class TNullToValue = SThrowOnNull<TValue> >
 class CNullable
+//
+// DEPRECATED! - Use std::optional<> instead.
+//
 {
 public:
     /// Create an empty nullable.
