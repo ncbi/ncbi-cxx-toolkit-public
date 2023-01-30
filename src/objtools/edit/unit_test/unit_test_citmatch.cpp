@@ -246,3 +246,18 @@ BOOST_AUTO_TEST_CASE(AJ251216)
         BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'087'671));
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test_Hydra)
+{
+    SCitMatch cm;
+    cm.Author = "Wang JX";
+    cm.Title = "Beta-Arrestins negatively regulate the Toll pathway in "
+        "shrimp by preventing Dorsal translocation and inhibiting Dorsal "
+        "transcriptional activity";
+    cm.Option1 = true;
+
+    
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(26846853));
+}
+
