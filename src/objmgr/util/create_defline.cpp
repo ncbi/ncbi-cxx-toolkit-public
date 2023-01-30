@@ -3939,6 +3939,7 @@ string CDeflineGenerator::GenerateDefline (
     bool capitalize = true;
     bool appendComplete = false;
     string preferredSuffix = "";
+    string customFeatureClause = "";
 
     string prefix; // from a small set of compile-time constants
     string suffix;
@@ -4006,6 +4007,11 @@ string CDeflineGenerator::GenerateDefline (
                         }
                     } else if ( fld == "SuppressedFeatures" ) {
                         suppressedFeats = true;
+                    } else if ( fld == "CustomFeatureClause" ) {
+                        if ( ! field.IsSetData() || ! field.GetData().IsStr() ) {
+                            continue;
+                        }
+                        customFeatureClause = field.GetData().GetStr();
                     }
                 }
             }
@@ -4154,6 +4160,9 @@ string CDeflineGenerator::GenerateDefline (
     x_SetPrefix(prefix, bsh);
 
     // calculate suffix
+    if (! customFeatureClause.empty()) {
+        preferredSuffix = customFeatureClause;
+    }
     x_SetSuffix (suffix, bsh, appendComplete, preferredSuffix);
 
     string mag;
