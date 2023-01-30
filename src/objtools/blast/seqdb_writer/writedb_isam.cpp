@@ -664,7 +664,6 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
 
     // mol is always 4 characters long. If chain exists, add a sting in which the
     // '|' delimiter is changed to a space.
-    int len = short_id.size();
     if (short_id[4] == '|')
         short_id[4] = ' ';
     x_AddStdString(oid, short_id);
