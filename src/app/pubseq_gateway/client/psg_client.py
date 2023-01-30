@@ -325,7 +325,7 @@ def generate_cmd(args):
     if args.TYPE == 'named_annot':
         named_annots = read_named_annots(args.INPUT_FILE)
 
-        with PsgClient(args.binary) as psg_client:
+        with PsgClient(args.binary, verbose=args.verbose) as psg_client:
             named_annots = get_all_named_annots(psg_client, named_annots, max_ids=args.NUMBER)
 
         ids = prepare_named_annots(named_annots)
@@ -340,7 +340,7 @@ def generate_cmd(args):
             max_blob_ids = args.NUMBER if args.TYPE == 'blob' else 0
             max_chunk_ids = args.NUMBER if args.TYPE != 'blob' else 0
 
-            with PsgClient(args.binary) as psg_client:
+            with PsgClient(args.binary, verbose=args.verbose) as psg_client:
                 blob_ids, chunk_ids = get_ids(psg_client, bio_ids, max_blob_ids=max_blob_ids, max_chunk_ids=max_chunk_ids)
 
             ids = blob_ids if args.TYPE == 'blob' else chunk_ids
@@ -530,6 +530,7 @@ if __name__ == '__main__':
     parser_generate.set_defaults(func=generate_cmd)
     parser_generate.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
     parser_generate.add_argument('-params', help='Params to add to requests (e.g. \'{"include_info": ["canonical-id", "gi"]}\')')
+    parser_generate.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_generate.add_argument('INPUT_FILE', help='CSV file with bio IDs "BioID[,Type]" or named annotations "BioID,NamedAnnotID[,NamedAnnotID]..."', type=argparse.FileType())
     parser_generate.add_argument('TYPE', help='Type of requests (resolve, biodata, blob, named_annot or chunk)', metavar='TYPE', choices=['resolve', 'biodata', 'blob', 'named_annot', 'chunk'])
     parser_generate.add_argument('NUMBER', help='Max number of requests', type=int)
