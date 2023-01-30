@@ -444,7 +444,6 @@ bool minhash_query(const string& query,
 	
 		kmersFound = true;
 	
-#pragma ivdep
 		for(int h=0;h<num_hashes;h++)
 		{
 			hash_tmp[h]=0xffffffff;

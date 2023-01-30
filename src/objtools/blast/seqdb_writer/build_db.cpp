@@ -706,8 +706,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     m_LineReader.Reset(new CBufferedLineReader(fasta_file));
     typedef CFastaReader::EFlags TFlags;
 
-    int iflags = CFastaReader::fAllSeqIds |
-                 CFastaReader::fForceType;
+    int iflags = CFastaReader::fForceType;
 
     if (is_protein) {
         iflags |= CFastaReader::fAssumeProt;
@@ -717,7 +716,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     }
 
     if (parse_ids) {
-        iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
+        iflags |= CFastaReader::fRequireID;
         // parse bare accessions
         if (!long_ids) {
             iflags |= CFastaReader::fParseRawID;

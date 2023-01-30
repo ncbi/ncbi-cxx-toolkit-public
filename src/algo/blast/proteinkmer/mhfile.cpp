@@ -81,21 +81,18 @@ CMinHashFile::GetMinHits(int oid, int& subject_oid, vector<uint32_t>& hits) cons
 	if (width == 4)
 	{
 		uint32_t* array = x_GetMinHits32(oid, subject_oid);
-#pragma ivdep
 		for (int index=0; index<numHashes; index++)
 			a[index] = array[index];
 	}
 	else if (width == 2)
 	{
 		uint16_t* array = x_GetMinHits16(oid, subject_oid);
-#pragma ivdep
 		for (int index=0; index<numHashes; index++)
 			a[index] = array[index];
 	} 
 	else if (width == 1)
 	{
 		uint8_t* array = x_GetMinHits8(oid, subject_oid);
-#pragma ivdep
 		for (int index=0; index<numHashes; index++)
 			a[index] = array[index];
 	}

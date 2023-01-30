@@ -91,7 +91,6 @@ private:
     static const objects::CFastaReader::TFlags CONST_FLAGS =
         objects::CFastaReader::fForceType | 
         objects::CFastaReader::fOneSeq    | 
-        objects::CFastaReader::fAllSeqIds |
         objects::CFastaReader::fParseRawID;
 
     bool is_nucleotide_; /**< This object is reading nucleotide sequences */
