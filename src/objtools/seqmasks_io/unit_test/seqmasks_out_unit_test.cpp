@@ -98,7 +98,7 @@ private:
 
         CFastaReader::TFlags flags = CFastaReader::fAssumeNuc;
         if (parse_seqids) {
-            flags |= CFastaReader::fAllSeqIds | CFastaReader::fUniqueIDs;
+            flags |= CFastaReader::fUniqueIDs;
         } else {
             flags |= CFastaReader::fNoParseID;
         }
