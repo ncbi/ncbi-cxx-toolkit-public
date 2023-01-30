@@ -94,3 +94,31 @@ BOOST_AUTO_TEST_CASE(Test_NamesAndDescriptions)
     BOOST_CHECK_EQUAL(GetDiscrepancyCaseName("DISC_ALL_SEQS_CIRCULAR"), eTestNames::ALL_SEQS_CIRCULAR);
     BOOST_CHECK_EQUAL(GetDiscrepancyDescr(eTestNames::ALL_SEQS_CIRCULAR), "All sequences circular");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore) 
+{
+    class CDiscrepancyMock : public CDiscrepancyCore
+    {
+    public:
+        using CDiscrepancyCore::CDiscrepancyCore;
+        [[nodiscard]] 
+        CRef<CAutofixReport> Autofix(CDiscrepancyObject*, CDiscrepancyContext&) const override
+        {
+            return CRef<CAutofixReport>();
+        }
+        void Visit(CDiscrepancyContext& context) override {
+           NCBI_THROW(CException, eUnknown, "CDiscrepancyMock::Visit() dummy exception");
+        }
+
+        void Summarize() override { xSummarize(); }
+    };
+
+    CDiscrepancyCaseProps props{nullptr, eTestTypes::STRING, eTestNames::notset, "TestProps", "Dummy props for testing purposes"};
+    CDiscrepancyMock mock(&props);
+
+    auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+    CDiscrepancyContext context(*pScope);
+    mock.Call(context);
+    BOOST_CHECK(!mock.Empty());
+}
