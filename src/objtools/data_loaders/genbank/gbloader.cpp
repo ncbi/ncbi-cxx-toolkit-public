@@ -85,9 +85,6 @@ typedef NCBI_PARAM_TYPE(GENBANK, LOADER_PSG) TGenbankLoaderPsg;
 #define GBLOADER_NAME "GBLOADER"
 #define GBLOADER_HUP_NAME "GBLOADER-HUP"
 
-#define DEFAULT_ID_GC_SIZE 10000
-#define DEFAULT_ID_EXPIRATION_TIMEOUT 2*3600 // 2 hours
-
 CGBLoaderParams::CGBLoaderParams(void)
     : m_ReaderName(),
       m_ReaderPtr(0),
