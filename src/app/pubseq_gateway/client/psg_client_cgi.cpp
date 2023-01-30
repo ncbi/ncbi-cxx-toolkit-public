@@ -172,7 +172,7 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
     void ForEachTSE(TExclude exclude) const;
     auto GetProtein() const { return input.GetString("protein"); }
     auto GetIpg() const { return input.Get("ipg", [](const auto& v) { return NStr::StringToInt8(v); }, 0); }
-    auto GetNucleotide() const { return input.GetString("nucleotide"); }
+    auto GetNucleotide() const { return input.Get("nucleotide", [](const auto& v) { return CPSG_Request_IpgResolve::TNucleotide(v); }, null); }
     SPSG_UserArgs GetUserArgs() const { return NStr::URLDecode(input.GetString("user-args")); }
 };
 

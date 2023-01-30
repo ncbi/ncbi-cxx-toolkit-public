@@ -383,7 +383,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     void ForEachTSE(TExclude exclude) const;
     auto GetProtein() const { return input.has("protein") ? input["protein"].GetValue().GetString() : string(); }
     auto GetIpg() const { return input.has("ipg") ? input["ipg"].GetValue().GetInt8() : 0; }
-    auto GetNucleotide() const { return input.has("nucleotide") ? input["nucleotide"].GetValue().GetString() : string(); }
+    auto GetNucleotide() const { return input.has("nucleotide") ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].GetValue().GetString()) : null; }
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
 
 private:

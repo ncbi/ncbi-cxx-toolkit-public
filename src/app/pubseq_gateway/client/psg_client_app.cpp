@@ -473,7 +473,7 @@ struct SRequestBuilder::SReader<CArgs>
     void ForEachTSE(TExclude exclude) const;
     auto GetProtein() const { return input["protein"].HasValue() ? input["protein"].AsString() : string(); }
     auto GetIpg() const { return input["ipg"].HasValue() ? input["ipg"].AsInt8() : 0; }
-    auto GetNucleotide() const { return input["nucleotide"].HasValue() ? input["nucleotide"].AsString() : string(); }
+    auto GetNucleotide() const { return input["nucleotide"].HasValue() ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].AsString()) : null; }
     SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
 };
 
