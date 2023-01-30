@@ -886,7 +886,7 @@ void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
 }
 
 
-CPSG_Request_IpgResolve::CPSG_Request_IpgResolve(string protein, Int8 ipg, string nucleotide, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
+CPSG_Request_IpgResolve::CPSG_Request_IpgResolve(string protein, Int8 ipg, TNucleotide nucleotide, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
     : CPSG_Request(move(user_context), move(request_context)),
         m_Protein(move(protein)),
         m_Ipg(ipg),
@@ -897,7 +897,7 @@ CPSG_Request_IpgResolve::CPSG_Request_IpgResolve(string protein, Int8 ipg, strin
             NCBI_THROW(CPSG_Exception, eParameterMissing, "protein and ipg cannot be both empty");
         }
 
-        if (!m_Nucleotide.empty()) {
+        if (!m_Nucleotide.IsNull()) {
             NCBI_THROW(CPSG_Exception, eParameterMissing, "protein cannot be empty if nucleotide is specified");
         }
     }
@@ -905,16 +905,20 @@ CPSG_Request_IpgResolve::CPSG_Request_IpgResolve(string protein, Int8 ipg, strin
 
 string CPSG_Request_IpgResolve::x_GetId() const
 {
-    return to_string(m_Ipg) + '~' + m_Protein + (m_Nucleotide.empty() ? m_Nucleotide : '~' + m_Nucleotide);
+    return to_string(m_Ipg) + '~' + m_Protein + (m_Nucleotide.IsNull() ? string() : '~' + m_Nucleotide.GetValue());
 }
 
 void CPSG_Request_IpgResolve::x_GetAbsPathRef(ostream& os) const
 {
-    os << "/IPG/resolve?protein=" << m_Protein;
+    const auto has_protein = !m_Protein.empty();
 
-    if (m_Ipg) os << "&ipg=" << m_Ipg;
+    os << "/IPG/resolve";
 
-    os << "&nucleotide=" << m_Nucleotide;
+    if (has_protein) os << "?protein=" << m_Protein;
+
+    if (m_Ipg) os << (has_protein ? "&ipg=" : "?ipg=") << m_Ipg;
+
+    if (!m_Nucleotide.IsNull()) os << "&nucleotide=" << m_Nucleotide.GetValue();
 }
 
 
