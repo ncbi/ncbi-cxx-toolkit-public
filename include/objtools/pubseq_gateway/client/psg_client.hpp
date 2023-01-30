@@ -588,15 +588,17 @@ private:
 class CPSG_Request_IpgResolve : public CPSG_Request
 {
 public:
+    using TNucleotide = CNullable<string>;
+
     CPSG_Request_IpgResolve(string                protein,
                             Int8                  ipg = {},
-                            string                nucleotide = {},
+                            TNucleotide           nucleotide = {},
                             shared_ptr<void>      user_context = {},
                             CRef<CRequestContext> request_context = {});
 
     const string& GetProtein() const { return m_Protein; }
     Int8 GetIpg() const { return m_Ipg; }
-    const string& GetNucleotide() const { return m_Nucleotide; }
+    const TNucleotide& GetNucleotide() const { return m_Nucleotide; }
 
 private:
     EType x_GetType() const override { return eIpgResolve; }
@@ -605,7 +607,7 @@ private:
 
     string m_Protein;
     Int8 m_Ipg;
-    string m_Nucleotide;
+    TNucleotide m_Nucleotide;
 };
 
 
