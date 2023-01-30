@@ -94,7 +94,7 @@ def powerset(iterable):
     s = list(iterable)
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
-def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
+def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
     blob_ids_only = list(blob_id[0] for v in blob_ids for blob_id in v.values())
     param_values = {
             'include_info': [None] + list(powerset((
@@ -155,7 +155,8 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
             'biodata':      [bio_ids,       ['include_data', 'exclude_blobs', 'acc_substitution', 'bio_id_resolution', 'resend_timeout']],
             'blob':         [blob_ids,      ['include_data', 'user_args']],
             'named_annot':  [named_annots,  ['include_data', 'acc_substitution', 'bio_id_resolution']],
-            'chunk':        [chunk_ids,     ['user_args',    'user_args']]
+            'chunk':        [chunk_ids,     ['user_args',    'user_args']],
+            'ipg_resolve':  [ipgs,          ['user_args',    'user_args']]
         }
 
     rv = True
@@ -253,6 +254,27 @@ def get_all_named_annots(psg_client, named_annots, /, max_ids=1000):
 
     return ids
 
+def get_all_ipgs(psg_client, ipgs, /, max_ids=1000):
+    """Get all IPGs."""
+    ids = list()
+
+    for id in ipgs:
+        psg_client.send('ipg_resolve', **{k: v for k, v in zip(('protein', 'ipg', 'nucleotide'), id) if v is not None})
+        for reply in psg_client.receive():
+            item = reply.get('reply', None)
+
+            if item == 'IpgInfo':
+                protein = reply.get('protein', {})
+                ipg_id = reply.get('ipg', {})
+                nucleotide = reply.get('nucleotide', {})
+
+                ids.append([protein, ipg_id, nucleotide])
+
+        if len(ids) >= max_ids:
+            break
+
+    return ids
+
 def check_binary(args):
     if shutil.which(args.binary) is None:
         found_binary = shutil.which("psg_client")
@@ -266,6 +288,9 @@ def read_bio_ids(input_file):
 
 def read_named_annots(input_file):
     return ([bio_id, na_ids] for (bio_id, *na_ids) in csv.reader(input_file))
+
+def read_ipgs(input_file):
+    return ([protein or None, int(ipg_id) if ipg_id else None] + nucleotide for (protein, ipg_id, *nucleotide) in csv.reader(input_file))
 
 def prepare_bio_ids(bio_ids):
     """Get bio IDs in specific format."""
@@ -285,6 +310,11 @@ def prepare_named_annots(named_annots):
                         ids.append({'bio_ids': bio_subset, 'named_annots': na_subset})
 
     return ids
+
+def prepare_ipgs(ipgs):
+    """Get possible combinations of IPGs in specific format."""
+    ids = {v for id in ipgs for v in itertools.compress(itertools.product(*zip(id, (None, None, None))), [1, 1, 1, 1, 0, 1])}
+    return [{k: v for k, v in zip(('protein', 'ipg', 'nucleotide'), id) if v is not None} for id in ids]
 
 def test_cmd(args):
     check_binary(args)
@@ -311,12 +341,19 @@ def test_cmd(args):
                 ['NW_019824422', ['NA000150051.1']],
             ]
 
+    if args.ipg_file:
+        ipgs = list(read_ipgs(args.ipg_file))
+    else:
+        ipgs = [[None, 7093]]
+
     with PsgClient(args.binary, verbose=args.verbose) as psg_client:
         bio_ids = prepare_bio_ids(bio_ids)
         blob_ids, chunk_ids = get_ids(psg_client, bio_ids)
         named_annots = get_all_named_annots(psg_client, named_annots)
         named_annots = prepare_named_annots(named_annots)
-        result = test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids)
+        ipgs = get_all_ipgs(psg_client, ipgs)
+        ipgs = prepare_ipgs(ipgs)
+        result = test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs)
         sys.exit(0 if result else -1)
 
 def generate_cmd(args):
@@ -329,6 +366,13 @@ def generate_cmd(args):
             named_annots = get_all_named_annots(psg_client, named_annots, max_ids=args.NUMBER)
 
         ids = prepare_named_annots(named_annots)
+    elif args.TYPE == 'ipg_resolve':
+        ipgs = read_ipgs(args.INPUT_FILE)
+
+        with PsgClient(args.binary, verbose=args.verbose) as psg_client:
+            ipgs = get_all_ipgs(psg_client, ipgs, max_ids=args.NUMBER)
+
+        ids = prepare_ipgs(ipgs)
     else:
         bio_ids = prepare_bio_ids(read_bio_ids(args.INPUT_FILE))
 
@@ -524,6 +568,7 @@ if __name__ == '__main__':
     parser_test.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
     parser_test.add_argument('-bio-file', help='CSV file with bio IDs "BioID[,Type]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_test.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
+    parser_test.add_argument('-ipg-file', help='CSV file with IPG IDs "Protein,[IPG][,Nucleotide]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_test.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
@@ -531,8 +576,8 @@ if __name__ == '__main__':
     parser_generate.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
     parser_generate.add_argument('-params', help='Params to add to requests (e.g. \'{"include_info": ["canonical-id", "gi"]}\')')
     parser_generate.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
-    parser_generate.add_argument('INPUT_FILE', help='CSV file with bio IDs "BioID[,Type]" or named annotations "BioID,NamedAnnotID[,NamedAnnotID]..."', type=argparse.FileType())
-    parser_generate.add_argument('TYPE', help='Type of requests (resolve, biodata, blob, named_annot or chunk)', metavar='TYPE', choices=['resolve', 'biodata', 'blob', 'named_annot', 'chunk'])
+    parser_generate.add_argument('INPUT_FILE', help='CSV file with bio IDs "BioID[,Type]", named annotations "BioID,NamedAnnotID[,NamedAnnotID]... or IPG IDs "Protein,[IPG][,Nucleotide]"', type=argparse.FileType())
+    parser_generate.add_argument('TYPE', help='Type of requests (resolve, biodata, blob, named_annot, chunk or ipg_resolve)', metavar='TYPE', choices=['resolve', 'biodata', 'blob', 'named_annot', 'chunk', 'ipg_resolve'])
     parser_generate.add_argument('NUMBER', help='Max number of requests', type=int)
 
     parser_cgi_help = subparsers.add_parser('cgi_help', help='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)', description='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)')
