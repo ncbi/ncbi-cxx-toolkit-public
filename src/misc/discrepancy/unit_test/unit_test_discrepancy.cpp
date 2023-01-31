@@ -108,10 +108,14 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore)
             return CRef<CAutofixReport>();
         }
         void Visit(CDiscrepancyContext& context) override {
-           NCBI_THROW(CException, eUnknown, "CDiscrepancyMock::Visit() dummy exception");
+           NCBI_THROW(CException, eUnknown, m_ExceptionMsg);
         }
 
+        const string& GetExceptionMsg() const { return m_ExceptionMsg; }
+
         void Summarize() override { xSummarize(); }
+    private:
+        string m_ExceptionMsg { "CDiscrepancyMock::Visit() dummy exception" };
     };
 
     CDiscrepancyCaseProps props{nullptr, eTestTypes::STRING, eTestNames::notset, "TestProps", "Dummy props for testing purposes"};
@@ -121,4 +125,14 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore)
     CDiscrepancyContext context(*pScope);
     mock.Call(context);
     BOOST_CHECK(!mock.Empty());
+    mock.Summarize();
+    auto reportItems = mock.GetReport();
+    BOOST_CHECK(reportItems.size() == 1 && reportItems[0].NotEmpty());
+    const auto& item = *(reportItems[0]);
+    BOOST_CHECK_EQUAL(item.GetTitle(), "TestProps"); 
+    BOOST_CHECK(NStr::EndsWith(item.GetMsg(), mock.GetExceptionMsg()));
+
+    // Should I be surprised that this exception only results in a non-fatal warning?
+    BOOST_CHECK(!item.IsFatal());  
+    BOOST_CHECK_EQUAL(item.GetSeverity(), CReportItem::eSeverity_warning);
 }
