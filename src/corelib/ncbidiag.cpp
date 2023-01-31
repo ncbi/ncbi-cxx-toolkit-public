@@ -4275,13 +4275,11 @@ struct SThreadsInSTBuild
 private:
     static atomic<thread::id> sm_ThreadID;
     static atomic<bool> sm_Reported;
-    static string sm_ErrorMessage;
 };
 
 
 atomic<thread::id> SThreadsInSTBuild::sm_ThreadID;
 atomic<bool> SThreadsInSTBuild::sm_Reported;
-string SThreadsInSTBuild::sm_ErrorMessage = "Detected different threads using C++ Toolkit built in single thread mode.";
 
 
 bool SThreadsInSTBuild::Check()
@@ -4314,11 +4312,12 @@ SDiagMessage SThreadsInSTBuild::Report(EDiagSev& sev)
     sev = eDiag_Critical;
 #endif
 
+    const auto msg = "Detected different threads using C++ Toolkit built in single thread mode."sv;
     const CNcbiDiag diag(DIAG_COMPILE_INFO);
     return SDiagMessage(
             sev,
-            sm_ErrorMessage.c_str(),
-            sm_ErrorMessage.length(),
+            msg.data(),
+            msg.length(),
             diag.GetFile(),
             diag.GetLine(),
             diag.GetPostFlags(),
