@@ -1199,7 +1199,6 @@ w_aln_score needs w_wx
 w_aln_table needs w_aln_multi
 w_data needs w_feedback
 w_edit needs align_format
-w_edit needs hydra_client
 w_edit needs pmcidconv_client
 w_edit needs prosplign
 w_edit needs w_loaders
