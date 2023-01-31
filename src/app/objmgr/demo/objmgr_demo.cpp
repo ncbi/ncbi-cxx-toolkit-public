@@ -601,15 +601,15 @@ TFeatureKey s_GetFeatureKey(const CMappedFeat& child)
 
 ostream& operator<<(ostream& out, const CSeq_loc& loc)
 {
-    CConstRef<CSeq_id> id;
     try {
-        out << loc.GetId()->AsFastaString();
-    }
-    catch ( CException& ) {
-        out << "*bad loc*";
-    }
-    out << ':';
-    try {
+        CConstRef<CSeq_id> id(loc.GetId());
+        if (id) {
+            out << id->AsFastaString();
+        }
+        else {
+            out << "*bad id*";
+        }
+        out << ':';
         out << loc.GetTotalRange();
     }
     catch ( CException& ) {
