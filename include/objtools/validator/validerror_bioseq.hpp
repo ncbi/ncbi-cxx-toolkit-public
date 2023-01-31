@@ -118,7 +118,7 @@ public:
 
     void ValidateBioseq(const CBioseq& seq);
     void ValidateSeqIds(const CBioseq& seq);
-    void ValidateSeqId(const CSeq_id& id, const CBioseq& ctx);
+    void ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bool longer_general = false);
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);

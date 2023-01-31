@@ -343,7 +343,7 @@ static char CheckForBadFileIDSeqIdChars(const string& id)
 
 
 // validation for individual Seq-id
-void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
+void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bool longer_general)
 {
     // see if ID can be used to find ctx
     CBioseq_Handle ctx_handle = m_Scope->GetBioseqHandle(ctx);
@@ -535,8 +535,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                         size_t idlen = dbt.GetTag().GetStr().length();
                         static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
-                        if (idlen > maxlen && ! m_Imp.IsGI()) {
-                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
+                        if (longer_general) {
+                            if (idlen > 100 && ! m_Imp.IsGI()) {
+                               PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(100) + " characters", ctx);
+                            }
+                        } else {
+                            if (idlen > maxlen && ! m_Imp.IsGI()) {
+                               PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
+                            }
                         }
                         if (idlen == 0) {
                             PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not be an empty string", ctx);
@@ -694,10 +700,17 @@ void CValidError_bioseq::ValidateSeqIds
     bool is_segset_accession = false;
     bool has_wgs_general = false;
     bool is_eb_db = false;
+    bool longer_general = false;
+
+    FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
+        if ((*i)->IsOther() || (*i)->IsEmbl() || (*i)->IsTpe()) {
+            longer_general = true;
+        }
+    }
 
     FOR_EACH_SEQID_ON_BIOSEQ (i, seq) {
         // first, do standalone validation
-        ValidateSeqId (**i, seq);
+        ValidateSeqId (**i, seq, longer_general);
 
         if ((*i)->IsGeneral() && (*i)->GetGeneral().IsSetDb()) {
             if (NStr::EqualNocase((*i)->GetGeneral().GetDb(), "LRG")) {
