@@ -61,7 +61,7 @@ void GetProductToCDSMap(CScope& scope, map<CBioseq_Handle, set<CSeq_feat_Handle>
 
 set<CSeq_feat_Handle> GetDuplicateFeaturesForRemoval(CSeq_entry_Handle seh)
 {
-    map<objects::CBioseq_Handle, set<objects::CSeq_feat_Handle>> product_to_cds;
+    map<CBioseq_Handle, set<CSeq_feat_Handle>> product_to_cds;
     GetProductToCDSMap(seh.GetScope(), product_to_cds);
     set<CSeq_feat_Handle> deleted_feats;
     for (CFeat_CI feat1(seh); feat1; ++feat1) {
@@ -69,8 +69,8 @@ set<CSeq_feat_Handle> GetDuplicateFeaturesForRemoval(CSeq_entry_Handle seh)
             if (feat1->GetSeq_feat_Handle() < feat2->GetSeq_feat_Handle() &&
                 deleted_feats.find(feat1->GetSeq_feat_Handle()) == deleted_feats.end() &&
                 deleted_feats.find(feat2->GetSeq_feat_Handle()) == deleted_feats.end()) {
-                validator::EDuplicateFeatureType dup_type = validator::IsDuplicate(feat1->GetSeq_feat_Handle(), feat2->GetSeq_feat_Handle());
-                if (dup_type == validator::eDuplicate_Duplicate || dup_type == validator::eDuplicate_DuplicateDifferentTable) {
+                EDuplicateFeatureType dup_type = IsDuplicate(feat1->GetSeq_feat_Handle(), feat2->GetSeq_feat_Handle());
+                if (dup_type == eDuplicate_Duplicate || dup_type == eDuplicate_DuplicateDifferentTable) {
                     deleted_feats.insert(feat2->GetSeq_feat_Handle());
                 }
             }
@@ -90,44 +90,47 @@ bool AllowOrphanedProtein(const CBioseq& seq, bool force_refseq)
     bool is_gibbmt  = false;
     bool is_gibbsq  = false;
     bool is_patent  = false;
-    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq)
-    {
-        const CSeq_id& sid = **id_it;
-        switch (sid.Which()) {
-        case CSeq_id::e_Genbank:
-            is_genbank = true;
-            break;
-        case CSeq_id::e_Embl:
-            is_embl = true;
-            break;
-        case CSeq_id::e_Ddbj:
-            is_ddbj = true;
-            break;
-        case CSeq_id::e_Other: {
-            is_refseq = true;
-            const CTextseq_id* tsid = sid.GetTextseq_Id();
-            if (tsid && tsid->IsSetAccession()) {
-                const string& acc = tsid->GetAccession();
-                if (NStr::StartsWith(acc, "WP_")) {
-                    is_wp = true;
-                } else if (NStr::StartsWith(acc, "YP_")) {
-                    is_yp = true;
+
+    if (seq.IsSetId()) {
+        for (const auto& id_it : seq.GetId()) {
+            const CSeq_id& sid = *id_it;
+            switch (sid.Which()) {
+            case CSeq_id::e_Genbank:
+                is_genbank = true;
+                break;
+            case CSeq_id::e_Embl:
+                is_embl = true;
+                break;
+            case CSeq_id::e_Ddbj:
+                is_ddbj = true;
+                break;
+            case CSeq_id::e_Other: {
+                is_refseq = true;
+                const CTextseq_id* tsid = sid.GetTextseq_Id();
+                if (tsid && tsid->IsSetAccession()) {
+                    const string& acc = tsid->GetAccession();
+                    if (NStr::StartsWith(acc, "WP_")) {
+                        is_wp = true;
+                    } else if (NStr::StartsWith(acc, "YP_")) {
+                        is_yp = true;
+                    }
                 }
+            } break;
+            case CSeq_id::e_Gibbmt:
+                is_gibbmt = true;
+                break;
+            case CSeq_id::e_Gibbsq:
+                is_gibbsq = true;
+                break;
+            case CSeq_id::e_Patent:
+                is_patent = true;
+                break;
+            default:
+                break;
             }
-        } break;
-        case CSeq_id::e_Gibbmt:
-            is_gibbmt = true;
-            break;
-        case CSeq_id::e_Gibbsq:
-            is_gibbsq = true;
-            break;
-        case CSeq_id::e_Patent:
-            is_patent = true;
-            break;
-        default:
-            break;
         }
     }
+
     if ((is_genbank || is_embl || is_ddbj || is_refseq)
         && ! is_gibbmt && ! is_gibbsq && ! is_patent && ! is_wp && ! is_yp) {
         return false;
@@ -148,7 +151,7 @@ set<CBioseq_Handle> ListOrphanProteins(CSeq_entry_Handle seh, bool force_refseq)
         }
     }
     set<CBioseq_Handle> orphan_proteins;
-    objects::CBioseq_CI b_iter(seh, objects::CSeq_inst::eMol_aa);
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_aa);
     for (; b_iter; ++b_iter) {
         CBioseq_Handle bsh = *b_iter;
         if (! AllowOrphanedProtein(*(bsh.GetBioseqCore()), force_refseq) &&
