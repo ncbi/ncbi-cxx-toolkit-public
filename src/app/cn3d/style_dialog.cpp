@@ -1181,9 +1181,11 @@ wxSizer *LayoutLabelsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     item4->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item3->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+    //item3->Add(item4, 0, wxGROW, 5);
 
     wxStaticLine *item22 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
-    item3->Add( item22, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item3->Add(item22, 0, wxGROW | wxALIGN_CENTER_VERTICAL | wxALL, 5);
+    //item3->Add( item22, 0, wxGROW|wxALL, 5 );
 
     wxBoxSizer *item23 = new wxBoxSizer( wxHORIZONTAL );
 
@@ -1225,7 +1227,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
     wxBoxSizer *item0 = new wxBoxSizer(wxVERTICAL);
     wxStaticBox *item2 = new wxStaticBox(parent, -1, "Rendering Details");
     wxStaticBoxSizer *item1 = new wxStaticBoxSizer(item2, wxVERTICAL);
-    wxFlexGridSizer *grid = new wxFlexGridSizer(3, 0, 0);
+    wxFlexGridSizer *grid = new wxFlexGridSizer(2, 0, 0);
 
     // space fill proportion
     wxStaticText *item4 = new wxStaticText(parent, ID_TEXT, "Space fill size:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1235,7 +1237,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpSpaceFill->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpSpaceFill->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpSpaceFill->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // tube radius
     wxStaticText *item7 = new wxStaticText(parent, ID_TEXT, "Tube radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1245,7 +1247,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpTubeRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpTubeRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpTubeRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // worm tube
     wxStaticText *item10 = new wxStaticText(parent, ID_TEXT, "Worm tube radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1255,7 +1257,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpTubeWormRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpTubeWormRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpTubeWormRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // ball radius
     wxStaticText *item13 = new wxStaticText(parent, ID_TEXT, "Ball radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1265,7 +1267,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpBallRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpBallRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpBallRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // stick radius
     wxStaticText *item16 = new wxStaticText(parent, ID_TEXT, "Stick radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1275,12 +1277,12 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpStickRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpStickRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+ //   grid->Add(gfpStickRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // spacer
     grid->Add(1, 1, 0, wxALIGN_CENTRE|wxALL, 5);
     grid->Add(1, 1, 0, wxALIGN_CENTRE|wxALL, 5);
-    grid->Add(1, 1, 0, wxALIGN_CENTRE|wxALL, 5);
+    //grid->Add(1, 1, 0, wxALIGN_CENTRE|wxALL, 5);
 
     // helix radius
     wxStaticText *item19 = new wxStaticText(parent, ID_TEXT, "Helix radius:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1290,7 +1292,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpHelixRadius->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpHelixRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpHelixRadius->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // strand width
     wxStaticText *item22 = new wxStaticText(parent, ID_TEXT, "Strand width:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1300,7 +1302,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpStrandWidth->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpStrandWidth->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpStrandWidth->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // strand thickness
     wxStaticText *item25 = new wxStaticText(parent, ID_TEXT, "Strand thickness:", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
@@ -1310,7 +1312,7 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(gfpStrandThickness->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(gfpStrandThickness->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(gfpStrandThickness->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item1->Add(grid, 0, wxALIGN_CENTRE|wxALL, 5);
     item0->Add(item1, 0, wxALIGN_CENTRE|wxALL, 5);

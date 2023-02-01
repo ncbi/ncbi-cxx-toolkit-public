@@ -444,7 +444,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
     wxStaticBox *item2 = new wxStaticBox( panel, -1, wxT("Block Aligner Options") );
     wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
-    wxFlexGridSizer *item3 = new wxFlexGridSizer( 3, 0, 0 );
+    wxFlexGridSizer *item3 = new wxFlexGridSizer( 2, 0, 0 );  // 3->2
     item3->AddGrowableCol( 1 );
 
     wxStaticText *item4 = new wxStaticText( panel, ID_TEXT, wxT("Loop percentile:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -454,8 +454,8 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(fpPercent->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(fpPercent->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
+//    item3->Add(fpPercent->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    
     wxStaticText *item7 = new wxStaticText( panel, ID_TEXT, wxT("Loop extension:"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item7, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     iExtension = new IntegerSpinCtrl(panel,
@@ -463,7 +463,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(iExtension->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iExtension->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(iExtension->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item10 = new wxStaticText( panel, ID_TEXT, wxT("Loop cutoff (0=none):"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item10, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -472,25 +472,25 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(iCutoff->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(iCutoff->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(iCutoff->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
+//    item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item13 = new wxStaticText( panel, ID_TEXT, wxT("Global alignment:"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item13, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     cGlobal = new wxCheckBox( panel, ID_C_GLOBAL, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     cGlobal->SetValue(init.globalAlignment);
     item3->Add( cGlobal, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+    //item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
     wxStaticText *item15 = new wxStaticText( panel, ID_TEXT, wxT("Keep existing blocks (global only):"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item15, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     cKeep = new wxCheckBox( panel, ID_C_KEEP, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     cKeep->SetValue(init.keepExistingBlocks);
     item3->Add( cKeep, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+    //item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
     wxStaticText *item17 = new wxStaticText( panel, ID_TEXT, wxT("When to merge new alignments:"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -498,7 +498,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     cMerge = new wxChoice( panel, ID_C_MERGE, wxDefaultPosition, wxDefaultSize, 3, choices );
     cMerge->SetSelection(init.mergeType);
     item3->Add( cMerge, 0, wxALIGN_CENTRE|wxALL, 5 );
-    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+    //item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
     item1->Add( item3, 0, wxALIGN_CENTRE, 5 );
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );

@@ -213,7 +213,7 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(50,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(gfSpinIncrement->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(gfSpinIncrement->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(gfSpinIncrement->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item7 = new wxStaticText( parent, ID_TEXT, wxT("Delay (ms):"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item7, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -223,11 +223,13 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(50,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giSpinDelay->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giSpinDelay->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giSpinDelay->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+    //item1->Add( item3, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+    item1->Add(item3, 0, wxGROW, 5);
 
-    item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    //item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item0->Add(item1, 0, wxGROW | wxALL, 5);
 
     wxStaticBox *item11 = new wxStaticBox( parent, -1, wxT("Frames") );
     wxStaticBoxSizer *item10 = new wxStaticBoxSizer( item11, wxVERTICAL );
@@ -243,11 +245,13 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(50,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item12->Add(giFrameDelay->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item12->Add(giFrameDelay->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item12->Add(giFrameDelay->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    item10->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+    //item10->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+    item10->Add(item12, 0, wxGROW, 5);
 
-    item0->Add( item10, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    //item0->Add( item10, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item0->Add(item10, 0, wxGROW | wxALL, 5);
 
     wxButton *item16 = new wxButton( parent, ID_B_DONE, wxT("Done"), wxDefaultPosition, wxDefaultSize, 0 );
     item0->Add( item16, 0, wxALIGN_CENTRE|wxALL, 5 );
