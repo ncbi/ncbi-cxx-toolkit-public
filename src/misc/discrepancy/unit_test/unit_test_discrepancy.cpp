@@ -38,9 +38,11 @@
 #include <ncbi_pch.hpp>
 #include "../discrepancy_core.hpp"
 #include <corelib/test_boost.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(NDiscrepancy);
+USING_SCOPE(unit_test_util);
 
 // Needed under windows for some reason.
 #ifdef BOOST_NO_EXCEPTIONS
@@ -135,4 +137,22 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore)
     // Should I be surprised that this exception only results in a non-fatal warning?
     BOOST_CHECK(!item.IsFatal());  
     BOOST_CHECK_EQUAL(item.GetSeverity(), CReportItem::eSeverity_warning);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_TextDescriptions)
+{
+    auto pEntry = BuildGoodNucProtSet();
+    auto pId = Ref(new CSeq_id());
+    pId->SetLocal().SetStr("nuc");
+
+    auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+    pScope->AddTopLevelSeqEntry(*pEntry);
+    auto bsh = pScope->GetBioseqHandle(*pId);
+    auto description = CDiscrepancyObject::GetTextObjectDescription(*(bsh.GetCompleteBioseq()), *pScope);
+    BOOST_CHECK_EQUAL(description, "nuc");
+        
+    auto bssh = bsh.GetParentBioseq_set();
+    description = CDiscrepancyObject::GetTextObjectDescription(bssh);
+    BOOST_CHECK_EQUAL(description, "np|nuc");
 }
