@@ -242,6 +242,48 @@ version  1 # of file format
 4+8   HBYB    embl_tpa_tsa_nuc # 4+8
 4+8   HBYC    embl_tpa_wgs_nuc # Fallback for old clients
 4+8   HBYC    embl_tpa_tsa_nuc # 4+8
+4+8   HBYF    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYF    embl_tpa_tsa_nuc # 4+8
+4+8   HBYG    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYG    embl_tpa_tsa_nuc # 4+8
+4+8   HBYH    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYH    embl_tpa_tsa_nuc # 4+8
+4+8   HBYI    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYI    embl_tpa_tsa_nuc # 4+8
+4+8   HBYJ    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYJ    embl_tpa_tsa_nuc # 4+8
+4+8   HBYK    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYK    embl_tpa_tsa_nuc # 4+8
+4+8   HBYL    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYL    embl_tpa_tsa_nuc # 4+8
+4+8   HBYM    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYM    embl_tpa_tsa_nuc # 4+8
+4+8   HBYN    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYN    embl_tpa_tsa_nuc # 4+8
+4+8   HBYO    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYO    embl_tpa_tsa_nuc # 4+8
+4+8   HBYQ    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYQ    embl_tpa_tsa_nuc # 4+8
+4+8   HBYS    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYS    embl_tpa_tsa_nuc # 4+8
+4+8   HBYU    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYU    embl_tpa_tsa_nuc # 4+8
+4+8   HBYX    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYX    embl_tpa_tsa_nuc # 4+8
+4+8   HBYY    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBYY    embl_tpa_tsa_nuc # 4+8
+4+8   HBZI    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBZI    embl_tpa_tsa_nuc # 4+8
+4+8   HBZK    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBZK    embl_tpa_tsa_nuc # 4+8
+4+8   HBZM    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBZM    embl_tpa_tsa_nuc # 4+8
+4+8   HBZN    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBZN    embl_tpa_tsa_nuc # 4+8
+4+8   HBZQ    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBZQ    embl_tpa_tsa_nuc # 4+8
+4+8   HBZS    embl_tpa_wgs_nuc # Fallback for old clients
+4+8   HBZS    embl_tpa_tsa_nuc # 4+8
 4+8   H???    embl_tsa_nuc *
 4+9   H???    embl_tsa_nuc
 4+10  H???    embl_tsa_nuc
@@ -4626,6 +4668,11 @@ special  CANSZE000000000-CANTAK999999999  embl_tpa_wgs_nuc # 6+9
 special  CANTAM000000000-CANTDV999999999  embl_tpa_wgs_nuc # 6+9
 special  CANTDX000000000-CANTFF999999999  embl_tpa_wgs_nuc # 6+9
 special  CANTFN000000000-CANTKU999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJBL000000000-CAOJBM999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJBO000000000-CAOJBP999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJBT000000000-CAOJBT999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJBX000000000-CAOJBZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJCC000000000-CAOJCK999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
