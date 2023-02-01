@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Jan 19 13:34:27 EST 2023; formally
+/* time_t value corresponding to Wed Feb  1 11:09:20 EST 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1674153267UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1675267760UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -2936,6 +2936,11 @@ static const char* const kBuiltInGuide[] = {
     "special  CANTAM000000000-CANTDV999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CANTDX000000000-CANTFF999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CANTFN000000000-CANTKU999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAOJBL000000000-CAOJBM999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAOJBO000000000-CAOJBP999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAOJBT000000000-CAOJBT999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAOJBX000000000-CAOJBZ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CAOJCC000000000-CAOJCK999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8",
@@ -2952,6 +2957,16 @@ static const char* const kBuiltInGuide[] = {
     "special  HBXM00000000-HBXN99999999  embl_tpa_tsa_nuc # 4+8",
     "special  HBXP00000000-HBXU99999999  embl_tpa_tsa_nuc # 4+8",
     "special  HBXW00000000-HBYC99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBYF00000000-HBYO99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBYQ00000000-HBYQ99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBYS00000000-HBYS99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBYU00000000-HBYU99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBYX00000000-HBYY99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBZI00000000-HBZI99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBZK00000000-HBZK99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBZM00000000-HBZN99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBZQ00000000-HBZQ99999999  embl_tpa_tsa_nuc # 4+8",
+    "special  HBZS00000000-HBZS99999999  embl_tpa_tsa_nuc # 4+8",
     "",
     "# Some \"EMBL\" 8- and 10-character protein accessions are really third-party",
     "# annotations.",
