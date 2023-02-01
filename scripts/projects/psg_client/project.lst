@@ -39,6 +39,8 @@ objtools$
 objtools/pubseq_gateway$
 objtools/pubseq_gateway/client$
 objtools/pubseq_gateway/client/impl$
+cgi$
+html$
 app$
 app/pubseq_gateway$
 app/pubseq_gateway/client$
