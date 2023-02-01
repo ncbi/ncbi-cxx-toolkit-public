@@ -411,7 +411,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxBoxSizer *item1 = new wxBoxSizer(wxVERTICAL);
     wxStaticBox *item3 = new wxStaticBox(panel, -1, "Threader Options");
     wxStaticBoxSizer *item2 = new wxStaticBoxSizer(item3, wxHORIZONTAL);
-    wxFlexGridSizer *grid = new wxFlexGridSizer(3, 5, 0);
+    wxFlexGridSizer *grid = new wxFlexGridSizer(2, 5, 0);
 
     // PSSM weight
     wxStaticText *item5 = new wxStaticText(panel, -1, "Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only", wxDefaultPosition, wxDefaultSize, 0);
@@ -421,7 +421,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(fpWeight->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(fpWeight->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(fpWeight->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // loop lengths
     wxStaticText *item8 = new wxStaticText(panel, -1, "Loop length multiplier? [0.1 .. 10]", wxDefaultPosition, wxDefaultSize, 0);
@@ -431,7 +431,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(fpLoops->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    grid->Add(fpLoops->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    grid->Add(fpLoops->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // random starts
     wxStaticText *item11 = new wxStaticText(panel, -1, "Number of random starts? [1 .. 1000]", wxDefaultPosition, wxDefaultSize, 0);

@@ -77,7 +77,7 @@ class wxFrame;
 BEGIN_SCOPE(Cn3D)
 
 // program version number string
-#define CN3D_VERSION_STRING "4.6.1"
+#define CN3D_VERSION_STRING "4.5.8"
 
 // diagnostic streams
 #define TRACEMSG(stream) ERR_POST(ncbi::Trace << stream)
