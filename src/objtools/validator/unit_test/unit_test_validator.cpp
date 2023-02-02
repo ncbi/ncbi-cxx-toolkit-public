@@ -3075,6 +3075,84 @@ BOOST_AUTO_TEST_CASE(Test_VR_748)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId1)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetGeneral().SetDb("lgsi");
+    id->SetGeneral().SetTag().SetStr("thisidentifierismorethanfiftycharactersinlengthsoitshouldberejected");
+    entry->SetSeq().SetId().push_back(id);
+
+
+    STANDARD_SETUP
+
+    string acc_str = "lcl|good";
+    expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
+                              "General identifier longer than 50 characters"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId2)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetGeneral().SetDb("lgsi");
+    id->SetGeneral().SetTag().SetStr("thisidentifierismorethanfiftycharactersinlengthsoitshouldberejected");
+    entry->SetSeq().SetId().push_back(id);
+
+    CRef<CSeq_id> emb(new CSeq_id());
+    emb->SetEmbl().SetAccession("AY123457");
+    emb->SetEmbl().SetVersion(1);
+    entry->SetSeq().SetId().push_back(emb);
+
+    STANDARD_SETUP
+
+    /*
+    string acc_str = "lcl|good";
+    expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
+                              "General identifier longer than 50 characters"));
+    */
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+#if 0
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId3)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGeneral().SetDb("lgsi");
+    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("thisidentifierismorethanfiftycharactersinlengthsoitshouldberejected");
+
+    STANDARD_SETUP
+
+    string acc_str = "lcl|good";
+    expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
+                              "General identifier longer than 50 characters"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CRef<CSeq_id> emb(new CSeq_id());
+    emb->SetEmbl().SetAccession("AY123457");
+    emb->SetEmbl().SetVersion(1);
+    entry->SetSeq().SetId().push_back(emb);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+#endif
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
