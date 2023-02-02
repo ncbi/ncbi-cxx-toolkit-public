@@ -186,16 +186,6 @@ const char* s_GetRequestTypeName(CPSG_Request::EType type)
     return "unknown";
 }
 
-CPSG_Request::SType::operator string() const
-{
-    return s_GetRequestTypeName(m_Type);
-}
-
-ostream& operator<<(ostream& os, const CPSG_Request::SType& type)
-{
-    return os << s_GetRequestTypeName(type.m_Type);
-}
-
 
 static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move constructor must be noexcept");
 
