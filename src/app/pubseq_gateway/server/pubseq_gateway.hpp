@@ -359,6 +359,9 @@ private:
                            shared_ptr<CPSGS_Reply>  reply,
                            const psg_time_point_t &  now,
                            SPSGS_ResolveRequest::EPSGS_OutputFormat &  output_format);
+    bool x_GetIntrospectionFormat(CHttpRequest &  req,
+                                  string &  fmt,
+                                  string &  err_msg);
     bool x_GetTSEOption(CHttpRequest &  req,
                         shared_ptr<CPSGS_Reply>  reply,
                         const psg_time_point_t &  now,
@@ -482,7 +485,8 @@ private:
     CNcbiLogFields                      m_LogFields;
 
     // Serialized JSON introspection message
-    string                              m_HelpMessage;
+    string                              m_HelpMessageJson;
+    string                              m_HelpMessageHtml;
 
     CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
 

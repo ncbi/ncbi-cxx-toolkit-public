@@ -101,7 +101,11 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_LogFields("http")
 {
     sm_PubseqApp = this;
-    m_HelpMessage = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
+    m_HelpMessageJson = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
+    m_HelpMessageHtml =
+        "\n\n\n<!DOCTYPE html>\n"
+        #include "introspection_html.hpp"
+        ;
 }
 
 

@@ -603,6 +603,38 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
 
 
 bool
+CPubseqGatewayApp::x_GetIntrospectionFormat(CHttpRequest &  req,
+                                            string &  fmt,
+                                            string &  err_msg)
+{
+    static string   kFmtParam = "fmt";
+    static string   html = "html";
+    static string   json = "json";
+
+
+    SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
+    if (fmt_param.m_Found) {
+        if (fmt_param.m_Value == html) {
+            fmt = html;
+            return true;
+        }
+        if (fmt_param.m_Value == json) {
+            fmt = json;
+            return true;
+        }
+
+        err_msg = "Malformed '" + kFmtParam + "' parameter. "
+                  "Acceptable values are '" + html + "' and '" + json + "'";
+        return false;
+    }
+
+    fmt = html;     // default
+    return true;
+}
+
+
+
+bool
 CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
                                      shared_ptr<CPSGS_Reply>  reply,
                                      const psg_time_point_t &  now,
