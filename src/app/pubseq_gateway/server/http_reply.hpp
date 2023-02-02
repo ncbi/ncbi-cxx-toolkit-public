@@ -508,6 +508,12 @@ private:
                                H2O_TOKEN_CONTENT_TYPE, NULL,
                                H2O_STRLIT("application/json"));
                 break;
+            case ePSGS_HtmlMime:
+                h2o_add_header(&m_Req->pool,
+                               &m_Req->res.headers,
+                               H2O_TOKEN_CONTENT_TYPE, NULL,
+                               H2O_STRLIT("text/html"));
+                break;
             case ePSGS_BinaryMime:
                 h2o_add_header(&m_Req->pool,
                                &m_Req->res.headers,

@@ -60,7 +60,6 @@ static string  kLogParam = "log";
 static string  kUsernameParam = "username";
 static string  kAlertParam = "alert";
 static string  kResetParam = "reset";
-static string  kTSEIdParam = "tse_id";
 static string  kId2InfoParam = "id2_info";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
@@ -89,15 +88,44 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
     if (req.GetPath() == "/") {
         // Special case: no path at all so provide a help message
         try {
-            reply->SetContentType(ePSGS_JsonMime);
-            reply->SetContentLength(m_HelpMessage.size());
-            // true => persistent
-            reply->SendOk(m_HelpMessage.data(), m_HelpMessage.size(), true);
-            x_PrintRequestStop(context,
-                               CPSGS_Request::ePSGS_UnknownRequest,
-                               CRequestStatus::e200_Ok,
-                               reply->GetBytesSent());
-            m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
+            string      fmt;
+            string      err_msg;
+            if (!x_GetIntrospectionFormat(req, fmt, err_msg)) {
+                // Basically an incorrect format parameter
+                reply->Send400(err_msg.c_str());
+                PSG_ERROR(err_msg);
+                x_PrintRequestStop(context,
+                                   CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e400_BadRequest,
+                                   reply->GetBytesSent());
+                return 0;
+            }
+
+            if (fmt == "json") {
+                // format is json
+                reply->SetContentType(ePSGS_JsonMime);
+                reply->SetContentLength(m_HelpMessageJson.size());
+                // true => persistent
+                reply->SendOk(m_HelpMessageJson.data(),
+                              m_HelpMessageJson.size(), true);
+                x_PrintRequestStop(context,
+                                   CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e200_Ok,
+                                   reply->GetBytesSent());
+                m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
+            } else {
+                // format is html
+                reply->SetContentType(ePSGS_HtmlMime);
+                reply->SetContentLength(m_HelpMessageHtml.size());
+                // true => persistent
+                reply->SendOk(m_HelpMessageHtml.data(),
+                              m_HelpMessageHtml.size(), true);
+                x_PrintRequestStop(context,
+                                   CPSGS_Request::ePSGS_UnknownRequest,
+                                   CRequestStatus::e200_Ok,
+                                   reply->GetBytesSent());
+                m_Counters.Increment(CPSGSCounters::ePSGS_AdminRequest);
+            }
         } catch (const exception &  exc) {
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Exception when handling no path URL event: " +

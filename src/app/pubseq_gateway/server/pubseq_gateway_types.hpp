@@ -155,6 +155,7 @@ enum EPSGS_AccessionAdjustmentResult {
 
 enum EPSGS_ReplyMimeType {
     ePSGS_JsonMime,
+    ePSGS_HtmlMime,
     ePSGS_BinaryMime,
     ePSGS_PlainTextMime,
     ePSGS_ImageMime,
