@@ -353,6 +353,9 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
     } else {
         string cds_seq;
         for (const TSeqRange &range : cds_ranges) {
+            if (range.GetFrom() >= mRNA.size()) {
+                break;
+            }
             cds_seq += mRNA.substr(range.GetFrom(), range.GetLength());
         }
         return cds_seq;
