@@ -396,6 +396,16 @@ extern void SOCK_SetErrHookAPI(FSOCK_ErrHook hook, void* data)
  */
 
 
+static unsigned int x_ID_Counter(void)
+{
+    unsigned int id;
+    CORE_LOCK_WRITE;
+    id = ++s_ID_Counter;
+    CORE_UNLOCK;
+    return id;
+}
+
+
 static const char* s_CP(unsigned int host, unsigned short port,
                         const char* path, char* buf, size_t bufsize)
 {
@@ -4664,7 +4674,7 @@ static EIO_Status s_Create(const char*       hostpath,
                            TSOCK_Flags       flags)
 {
     size_t       size = port ? 0 : strlen(hostpath);
-    unsigned int x_id = ++s_ID_Counter * 1000;
+    unsigned int x_id = x_ID_Counter() * 1000;
     char         _id[MAXIDLEN];
     EIO_Status   status;
     SOCK         x_sock;
@@ -4768,7 +4778,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
     SOCK            x_sock, x_orig = 0;
     SNcbiSSLctx*    sslctx = 0, *oldctx = 0;
     TSOCK_Handle    fd, oldfd = SOCK_INVALID;
-    unsigned int    x_id = ++s_ID_Counter * 1000;
+    unsigned int    x_id = x_ID_Counter() * 1000;
 
     assert(!*sock);
 
@@ -5196,7 +5206,7 @@ static EIO_Status s_CreateListening(const char*    path,
     TSOCK_socklen_t addrlen;
     LSOCK           x_lsock;
     char            _id[MAXIDLEN];
-    unsigned int    x_id = ++s_ID_Counter;
+    unsigned int    x_id = x_ID_Counter();
 
     assert(!*lsock);
     assert(!path  ||  *path);
@@ -5574,7 +5584,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         assert(poll.revent == eIO_Read);
     }}
 
-    x_id = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
+    x_id = (lsock->id * 1000 + x_ID_Counter()) * 1000;
 
     /* accept next connection */
 #ifdef NCBI_OS_UNIX
@@ -6173,7 +6183,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
 
 extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
 {
-    unsigned int x_id = ++s_ID_Counter;
+    unsigned int x_id = x_ID_Counter();
 
     if (!trigger)
         return eIO_InvalidArg;
@@ -7863,7 +7873,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 #endif /*NCBI_OS_MSWIN*/
     int          error;
     SOCK         x_sock;
-    unsigned int x_id = ++s_ID_Counter * 1000;
+    unsigned int x_id = x_ID_Counter() * 1000;
 
     *sock = 0;
 
