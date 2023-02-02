@@ -593,7 +593,7 @@ int CHugeFileDemoApp::x_ProcessFileTraditionally() const
             }
         }
     }
-
+    return 0;
 }
 
 int main(int argc, const char* argv[])

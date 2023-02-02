@@ -2,6 +2,6 @@
 
 NCBI_begin_app(huge_file_demo)
   NCBI_sources(huge_file_demo)
-  NCBI_uses_toolkit_libraries(xobjread xobjedit xobjwrite)
+  NCBI_uses_toolkit_libraries(xobjedit xobjwrite)
   NCBI_project_watchers(gotvyans foleyjp)
 NCBI_end_app()
