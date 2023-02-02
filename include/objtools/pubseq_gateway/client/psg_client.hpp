@@ -119,20 +119,7 @@ public:
     void SetRequestContext(CRef<CRequestContext> request_context);
 
     /// Get request type
-    /// @{
-    /// A temporary struct to migrate from a string type to an enum one (EType)
-    struct SType
-    {
-        operator EType() const { return m_Type; }
-        NCBI_DEPRECATED operator string() const; ///< @deprecated use EType instead
-        NCBI_DEPRECATED friend ostream& operator<<(ostream& os, const SType& type); ///< @warning Output will be changed after migration
-    private:
-        SType(EType type) : m_Type(type) {}
-        EType m_Type;
-        friend class CPSG_Request;
-    };
-    SType GetType() const { return x_GetType(); }
-    /// @}
+    EType GetType() const { return x_GetType(); }
 
     // Get request ID
     string GetId() const { return x_GetId(); }
