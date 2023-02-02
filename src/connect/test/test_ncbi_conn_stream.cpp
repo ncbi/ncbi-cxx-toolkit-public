@@ -566,6 +566,17 @@ int CNCBITestConnStreamApp::Run(void)
             ERR_POST(Fatal << "Test 5 failed in SYST");
         LOG_POST(Info << "SYST command returned: '" << temp << '\'');
         _ASSERT(ftp.Drain() == eIO_Success);
+        ftp << "LIST" << NcbiEndl;
+        NcbiStreamToString(&temp, ftp);
+        if (temp.empty())
+            ERR_POST(Fatal << "Test 5 failed in LIST");
+        LOG_POST(Info << "Directory listing");
+        NcbiCout << NcbiEndl
+                 << NStr::PrintableString(temp,
+                                          NStr::fNonAscii_Quote |
+                                          NStr::fNewLine_Passthru)
+                 << NcbiEndl;
+        ftp.clear();
         ftp << "CWD \"dir\"ect\"ory\"" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
@@ -604,6 +615,7 @@ int CNCBITestConnStreamApp::Run(void)
             string reason = status ? IO_StatusStr(status) : "I/O error";
             ERR_POST(Fatal << "Test 5 failed in XCUP: " + reason);
         }
+#if 0
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
         status = ftp.Status(eIO_Write);
         if (!ftp  ||  status != eIO_Success) {
@@ -620,6 +632,7 @@ int CNCBITestConnStreamApp::Run(void)
                      " BUGGY FTP (UNCLEAN IAC) SERVER DETECTED!!! "
                      "***\n");
         }
+#endif // NCBI FTP server is no longer IAC clean (due to a bad firewall setup)
         ftp << "RETR "
             << "\320\237\321\200\320\270"
             << "\320\262\320\265\321\202" << NcbiEndl;
