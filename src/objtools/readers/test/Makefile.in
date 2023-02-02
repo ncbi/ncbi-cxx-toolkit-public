@@ -4,7 +4,7 @@
 #################################
 
 APP_PROJ = agp_count pacc test_source_mod_parser agp_val_test \
-           test_fasta_round_trip
+           test_fasta_round_trip huge_file_demo
 PROJ_TAG = test
 
 srcdir = @srcdir@

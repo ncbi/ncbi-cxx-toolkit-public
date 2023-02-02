@@ -76,6 +76,10 @@ protected:
     void x_ReadTwoScopes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const;
     void x_TestRW1848(CBioseq_Handle bh) const;
 
+    int x_ProcessFileTraditionally() const;
+
+    void ProcessHugeSeqEntry(CSeq_entry_Handle seh) const;
+
     CConstRef<CSerialObject> x_PopulateTopObject() const;
 
     CConstRef<CSeq_entry> m_top_entry;
@@ -91,6 +95,8 @@ void CHugeFileDemoApp::Init()
     arg_desc->AddOptionalKey("o", "OutputFile", "Output modified ASN.1", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("rw1848", "Testing RW-1848");
 
+    arg_desc->AddFlag("traditional", "Open file in traditional mode");
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -98,6 +104,10 @@ int CHugeFileDemoApp::Run()
 {
     string filename = GetArgs()["i"].AsString();
     std::cerr << "Opening " << filename << std::endl;
+
+    if (GetArgs()["traditional"]) {
+        return x_ProcessFileTraditionally();
+    }
 
     edit::CHugeFileProcess huge;
     huge.Open(filename);
@@ -152,13 +162,13 @@ void CHugeFileDemoApp::x_TestRW1848(CBioseq_Handle bh) const
     auto top_seh = edit::CHugeFileProcess::GetTopLevelEntry(bh);
     auto entry = top_seh.GetCompleteSeq_entry();
 
-    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, *entry) {
+    FOR_EACH_SEQANNOT_ON_SEQSET(annot_it, *entry) {
         FOR_EACH_FEATURE_ON_ANNOT(feat, **annot_it) {
             //std::cerr << MSerial_AsnText << *feat;
             auto location_id = (**feat).GetLocation().GetId();
             if (location_id) {
                 bool good_id = false;
-                for (auto seqid: bh.GetId()) {
+                for (auto seqid : bh.GetId()) {
                     if (location_id->Compare(*seqid.GetSeqId()) == CSeq_id::e_YES) {
                         good_id = true;
                         break;
@@ -166,11 +176,11 @@ void CHugeFileDemoApp::x_TestRW1848(CBioseq_Handle bh) const
                 }
                 if (!good_id)
                     std::cerr << "  misplaced feature:" << location_id->AsFastaString() << "\n";
-            } else
+            }
+            else
                 std::cerr << "  mixed location\n";
         }
     }
-
 }
 
 void CHugeFileDemoApp::x_ReadTwoScopes(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist) const
@@ -342,6 +352,25 @@ CConstRef<CSerialObject> CHugeFileDemoApp::x_PopulateTopObject() const
     return m_top_entry;
 }
 
+static CSeq_entry_Handle s_GetParentEntry(CSeq_entry_Handle seh)
+{
+    if (!seh)
+        return seh;
+
+    CSeq_entry_Handle parent = seh.GetParentEntry();
+    while (parent) {
+        CSeq_entry_Handle tmp = parent.GetParentEntry();
+        if (!tmp) {
+            return parent;
+        }
+        else {
+            parent = tmp;
+
+        }
+    }
+    return seh;
+}
+
 void CHugeFileDemoApp::x_ReadAndWritePush(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const
 {
     auto scope = x_PopulateScope(context);
@@ -351,27 +380,88 @@ void CHugeFileDemoApp::x_ReadAndWritePush(TAppContext& context, const std::list<
     CGenBankAsyncWriter writer(output);
 
     writer.StartWriter(top_object);
-    size_t index = 0;
+    //size_t index = 0;
     for (auto id: idlist)
     {
-        CBioseq_Handle bh = scope->GetBioseqHandle(*id);
-        if (bh)
+        CBioseq_Handle bsh = scope->GetBioseqHandle(*id);
+        if (bsh)
         {
-            if (50 <= index && index < 100) {
+           /*if (50 <= index && index < 100) {
                 // modify second fifty records
                 CBioseq_EditHandle beh = bh.GetEditHandle();
                 x_ModifyBioSeq(beh);
             }
-            CSeq_entry_Handle seh = bh.GetParentEntry();
-            writer.PushNextEntry(seh.GetCompleteSeq_entry());
+            */
 
-            ++index;
+            CSeq_entry_Handle seh;
+            auto bssh = bsh.GetParentBioseq_set();
+            if (!bssh) { // processing a single bioseq
+                seh = bsh.GetParentEntry();
+            }
+            else {
+                seh = s_GetParentEntry(bssh.GetParentEntry());
+            }
+            
+            ProcessHugeSeqEntry(seh);
+
+            if (seh) {
+                writer.PushNextEntry(seh.GetCompleteSeq_entry());
+            }
+
         }
         // cleanup leftovers
         scope->ResetHistory();
     }
 
     writer.FinishWriter();
+}
+
+void CHugeFileDemoApp::ProcessHugeSeqEntry(CSeq_entry_Handle seh) const
+{
+    CScope& scope = seh.GetScope();
+    CConstRef<CSeq_feat> orig_feat;
+    for (CFeat_CI cds_it(seh, SAnnotSelector(CSeqFeatData::eSubtype_cdregion)); cds_it; ++cds_it) {
+        orig_feat.Reset(&(*cds_it->GetSeq_feat()));
+
+        CSeq_feat_Handle fh = scope.GetSeq_featHandle(*(orig_feat.GetPointerOrNull()));
+        if (fh) {
+            cout << "Orig seqfeat handle was found" << endl;
+        }
+
+        CConstRef<CSeq_feat> old_gene = sequence::GetOverlappingGene(orig_feat->GetLocation(), scope);
+        if (old_gene) {
+            CRef<CSeq_feat> new_gene(new CSeq_feat);
+            new_gene->Assign(*old_gene);
+            new_gene->SetComment("NEW GENE COMMENT");
+
+            CSeq_feat_Handle old_geneh = scope.GetSeq_featHandle(*old_gene);
+            const CSeq_annot_Handle& annot_handle = old_geneh.GetAnnot();  
+            // if this line is missing, it throws an exception at the next one:
+            // \src\objmgr\seq_annot_handle.cpp(273) : CObjMgrException::eInvalidHandle : "object is not in editing mode"
+            CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+
+            // Now actually edit the feature
+            CSeq_feat_EditHandle feh(old_geneh);
+            CSeq_entry_Handle parent_entry = feh.GetAnnot().GetParentEntry();
+
+            feh.Replace(*new_gene);
+            cout << "Replaced the old gene with the new one " << endl;
+        }
+
+        {
+            auto ffh = cds_it->GetSeq_feat_Handle();
+            if (ffh) {
+                cout << "Works if handle is obtained from the iterator!" << endl;
+            }
+        }
+        {
+            // this will only work if annot_handle from line 438 is not in editing mode
+            CSeq_feat_Handle new_fh = scope.GetSeq_featHandle(*(orig_feat.GetPointerOrNull()));
+            if (new_fh) {
+                cout << "New fh was found!" << endl;
+            }
+        }
+    }
 }
 
 void CHugeFileDemoApp::x_ReadAndWritePull(TAppContext& context, const std::list<CConstRef<CSeq_id>>& idlist, CObjectOStream* output) const
@@ -442,6 +532,69 @@ void CHugeFileDemoApp::x_ReadAndWritePull(TAppContext& context, const std::list<
     //writer.WriteAsyncMT(top_object, pull_next, process_func);
 }
 
+
+int CHugeFileDemoApp::x_ProcessFileTraditionally() const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+
+    try {
+        CNcbiIfstream istr(GetArgs()["i"].AsString().c_str());
+        unique_ptr<CObjectIStream> os(CObjectIStream::Open(eSerial_AsnText, istr));
+        *os >> *entry;
+    }
+    catch (const CException& e) {
+        LOG_POST(Error << e.ReportAll());
+        return 1;
+    }
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDefaults();
+
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CConstRef<CSeq_feat> orig_feat;
+    for (CFeat_CI cds_it(seh, SAnnotSelector(CSeqFeatData::eSubtype_cdregion)); cds_it; ++cds_it) {
+        orig_feat.Reset(&(*cds_it->GetSeq_feat()));
+
+        CSeq_feat_Handle fh = scope->GetSeq_featHandle(*(orig_feat.GetPointerOrNull()));
+        if (fh) {
+            cout << "Orig seqfeat handle was found" << endl;
+        }
+
+        CConstRef<CSeq_feat> old_gene = sequence::GetOverlappingGene(orig_feat->GetLocation(), *scope);
+        if (old_gene) {
+            CRef<CSeq_feat> new_gene(new CSeq_feat);
+            new_gene->Assign(*old_gene);
+            new_gene->SetComment("NEW GENE COMMENT");
+
+            CSeq_feat_Handle old_geneh = scope->GetSeq_featHandle(*old_gene);
+            const CSeq_annot_Handle& annot_handle = old_geneh.GetAnnot();
+            CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+
+            // Now actually edit the feature
+            CSeq_feat_EditHandle feh(old_geneh);
+            CSeq_entry_Handle parent_entry = feh.GetAnnot().GetParentEntry();
+
+            feh.Replace(*new_gene);
+            cout << "Replaced the old gene with the new one! " << endl;
+
+        }
+
+        {
+            auto ffh = cds_it->GetSeq_feat_Handle();
+            if (ffh) {
+                cout << "It works if handle is obtained from the iterator!" << endl;
+            }
+        }
+        {
+            CSeq_feat_Handle new_fh = scope->GetSeq_featHandle(*(orig_feat.GetPointerOrNull()));
+            if (new_fh) {
+                cout << "New fh was found!" << endl;
+            }
+        }
+    }
+
+}
 
 int main(int argc, const char* argv[])
 {
