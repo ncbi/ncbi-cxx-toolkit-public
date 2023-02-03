@@ -78,8 +78,7 @@ const string kSomeIdenticalDeflines = "Defline Problem Report";
 DISCREPANCY_CASE(DUP_DEFLINE, SEQUENCE, eOncaller, "Definition lines should be unique")
 {
     const CBioseq& bioseq = context.CurrentBioseq();
-/*
-    if (!bioseq.IsNa()) {
+    if (bioseq.IsAa()) {
         return;
     }
 
@@ -89,32 +88,14 @@ DISCREPANCY_CASE(DUP_DEFLINE, SEQUENCE, eOncaller, "Definition lines should be u
         auto defline = deflineGenerator.GenerateDefline(bsh, 0);
         if (!NStr::IsBlank(defline)) {
             if (bioseq.IsSetDescr() && bioseq.GetDescr().IsSet()) {
-                const CSeqdesc* pAutodef = nullptr;
                 for (const auto& desc : context.GetSeqdesc()) {
                     if (desc.IsTitle()) {
                         m_Objs[defline].Add(*context.SeqdescObjRef(desc));
                         return;
                     }
-                    if (desc.IsUser() && 
-                        desc.GetUser().GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
-                        pAutodef = &desc;
-                    }
-                }
-                if (pAutodef) {
-                    m_Objs[defline].Add(*context.SeqdescObjRef(*pAutodef));
-                    return;
                 }
             }
             m_Objs[defline].Add(*context.BioseqObjRef());
-        }
-    }
-    
-*/
-    if (bioseq.CanGetInst() && !bioseq.GetInst().IsAa() && bioseq.IsSetDescr()) {
-        for (const auto& desc : context.GetSeqdesc()) { // not searching on the parend nodes!
-            if (desc.IsTitle()) {
-                m_Objs[desc.GetTitle()].Add(*context.SeqdescObjRef(desc), false);
-            }
         }
     }
 }
