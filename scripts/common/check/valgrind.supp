@@ -965,6 +965,13 @@
    fun:comn_take_mutex
    fun:rmi_exit
 }
+{
+   gethostbyaddr_r - ignore
+   Helgrind:Race
+   ...
+   fun:gethostbyaddr_r*
+}
+
 
 
 #===============================================================================
@@ -974,13 +981,6 @@
    corelib/SSystemMutex::Lock() - m_Count check - false positive
    Helgrind:Race
    fun:_ZN4ncbi23ncbi_namespace_mutex_mt12SSystemMutex4LockENS0_16SSystemFastMutex14ELockSemanticsE
-   fun:_ZN4ncbi9CDiagLockC1ENS0_9ELockTypeE
-}
-{
-   corelib/SSystemFastMutex::Lock() - CXX-10523 - check before lock - false positive
-   Helgrind:Race
-   fun:_ZN4ncbi23ncbi_namespace_mutex_mt12SSystemMutex4LockENS0_16SSystemFastMutex14ELockSemanticsE
-   fun:_ZNK4ncbi11SSimpleLockINS_23ncbi_namespace_mutex_mt12SSystemMutexEEclERS2_
 }
 {
    corelib/SSystemMutex::Unlock - m_Count check - false positive
@@ -1006,9 +1006,27 @@
    Helgrind:Race
    fun:_ZN4ncbi14CAtomicCounter3SetEm
 }
-
-
-
+{
+   corelib/CAtomicCounter - false positive, atomic counter increment for a safe static - ucko CXX-11303
+   Helgrind:Race
+   fun:_ZN4ncbi14CAtomicCounter5x_AddEPVmi
+   fun:_ZN4ncbi14CAtomicCounter3AddEi
+}
+{
+   corelib/CParam::Get() - false positive
+   Helgrind:Race
+   fun:_ZNK4ncbi6CParam*GetEv
+}
+{
+   corelib/CSafeStatic<>::GetEv() - grichenk CXX-11270 - harmless
+   Helgrind:Race
+   fun:_ZN4ncbi11CSafeStaticINS_*CSafeStatic_Callbacks*_EEE3GetEv
+}
+{
+   corelib/CSafeStatic<ncbi::CTls -- CXX-10544
+   Helgrind:Race
+   fun:_ZN4ncbi11CSafeStaticINS_4CTlsINS_*CStaticTls_Callbacks*GetEv
+}
 {
    corelib/CSafeStatic<ncbi::CTls -- CXX-10544
    Helgrind:Race
@@ -1020,16 +1038,18 @@
    fun:_ZN4ncbi11CSafeStaticINS_4CTlsIiEENS_20CStaticTls_CallbacksIiEEE3GetEv
    fun:_ZN4ncbi10CStaticTlsIiE8SetValueEPiPFvS2_PvES3_NS_8CTlsBase20ENativeThreadCleanupE
 }
-
+{
+   corelib/CSafeStatic<ncbi::CTls -- CXX-10544
+   Helgrind:Race
+   fun:_ZN4ncbi11CSafeStaticINS_4CTlsINS_13CUsedTlsBasesEEENS_20CStaticTls_Callbacks*
+   fun:_ZN4ncbi19CSafeStaticPtr_Base9x_CleanupEv
+}
 {
    corelib/CTls -- ThreadCleanup - CXX-10544
    Helgrind:Race
    fun:*
    fun:_ZN4ncbi10CStaticTlsI6SValueILi2EEE8SetValueEPS2_PFvS4_PvES5_NS_8CTlsBase20ENativeThreadCleanupE
 }
-
-
-
 {
    corelib/CTlsBase::x_SetValue - m_Initialized check - false positive
    Helgrind:Race
@@ -1041,8 +1061,18 @@
    fun:*
    fun:_ZN4ncbi8CTlsBase10x_SetValueEPvPFvS1_S1_ES1_NS0_20ENativeThreadCleanupE
 }
-
-
+{
+   corelib/CTlsBase::x_GetValue - m_Initialized check - false positive
+   Helgrind:Race
+   ...
+   fun:_ZNK4ncbi8CTlsBase10x_GetValueEv
+}
+{
+   corelib/CTlsBase::x_Destroy
+   Helgrind:Race
+   fun:_ZN4ncbi8CTlsBase9x_DestroyEv
+   fun:_ZN4ncbi8CTlsBaseD1Ev
+}
 {
    corelib/CDiagContextThreadData - thread_local usage - false positive
    Helgrind:Race
@@ -1061,7 +1091,6 @@
    fun:_ZN4ncbi8CTlsBase14CleanupTlsDataEPvNS0_12ECleanupModeE
    fun:_ZN4ncbi8CTlsBase23CleanupAndDeleteTlsDataEPvNS0_12ECleanupModeE
 }
-
 {
    corelib/CThread - sx_ThreadId - false positive
    Helgrind:Race
@@ -1073,8 +1102,11 @@
    Helgrind:Race
    fun:_ZN4ncbi11CSystemInfo24GetVirtualMemoryPageSizeEv
 }
-
-
+{
+   vorelib/CFastLocalTime::GetLocalTime() - access to global _timezone - from CFastLocalTime and other code - harmless - ivanov
+   Helgrind:Race
+   fun:_ZN4ncbi14CFastLocalTime12GetLocalTimeEv
+}
 {
    corelib/test/test_tls_object - tls variable - grichenk CXX-11270 - false positive
    Helgrind:Race
@@ -1102,9 +1134,6 @@
    fun:_ZN17CTestTlsObjectApp7RunTestEv
    fun:_ZN17CTestTlsObjectApp10Thread_RunEi
 }
-
-
-
 {
    corelib/test/test_ncbithr - atomic variable - CXX-11270 - false positive
    Helgrind:Race
@@ -1128,21 +1157,104 @@
 #===============================================================================
 # connect
 
+{
+   connect/ncbi::CPipeHandle::Open() - child process termination on error - false positive
+   Helgrind:Misc
+   fun:_Exit
+   fun:_ZN4ncbiL6s_ExitEii
+   fun:_ZN4ncbi11CPipeHandle4OpenERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt6vectorIS6_SaIS6_EEjS8_PKPKcm
+}
+{
+   connect/s_Create = this is for statistics purposes only. /connect/ncbi_socket.c - lavr CXX-11285
+   Helgrind:Race
+   ...
+   fun:s_Create
+   fun:SOCK_CreateInternal
+}
+{
+   connect/s_Create = this is for statistics purposes only. /connect/ncbi_socket.c - lavr CXX-11285
+   Helgrind:Race
+   ...
+   fun:s_Connect
+   fun:s_Create
+}
+#{
+#   connect/s_Accept = this is for statistics purposes only. /connect/ncbi_socket.c - lavr CXX-11285
+#   Helgrind:Race
+#   fun:s_Accept
+#   fun:LSOCK_AcceptEx
+#}
+
+{
+   connect/TRIGGER_Reset - confirmed false-positive - lavr CXX-11285
+   Helgrind:Race
+   fun:TRIGGER_Reset
+   fun:_ZN4ncbi8CTrigger5ResetEv
+}
+{
+   connect/TRIGGER_Set - confirmed false-positive - lavr CXX-11285
+   Helgrind:Race
+   fun:NCBI_SwapPointers
+   fun:TRIGGER_Set
+   fun:_ZN4ncbi8CTrigger3SetEv
+}
+{
+   connect/CTestServer::RequestShutdown() - setting the shutdown flag doesn't need to be protected (by vakatov) - lavr CXX-11285
+   Helgrind:Race
+   fun:_ZN4ncbi11CTestServer17ShutdownRequestedEv
+}
+{
+   connect/CConnIniter::CConnIniter() - pre-check followed by lock-and-check-and-modify. /connect/ncbi_socket.c - lavr CXX-11285
+   Helgrind:Race
+   ...
+   fun:_ZN4ncbi11CConnIniterC1Ev
+}
+{
+   connect/g_NCBI_CoreCheckUnlock() - Debugging aid. For lock check consistency /connect/ncbi_socket.c - lavr CXX-11285
+   Helgrind:Race
+   fun:g_NCBI_CoreCheckUnlock
+}
+{
+   connect/g_NCBI_CoreCheckUnlock() - Debugging aid. For lock check consistency /connect/ncbi_socket.c - lavr CXX-11285
+   Helgrind:Race
+   fun:g_NCBI_CoreCheckLock
+}
+{
+   connect/CPoolOfThreads_ForServer::AcceptRequest - false positive -- last CRef release - vasilche CXX-10546
+   Helgrind:Race
+   ...
+   fun:_ZN4ncbi24CPoolOfThreads_ForServer13AcceptRequest*
+}
+{
+   connect/MT_LOCK_DoInternal - confirmet false positive (lavr) - lavr CXX-11285
+   Helgrind:Race
+   ...
+   fun:MT_LOCK_DoInternal
+}
+
 
 #===============================================================================
 # dbapi
 # 
 
 {
-   ftds - ucko CXX-11303 - the race is real, but AFAICT harmless in this context
+   ftds - ucko CXX-11303 - real, but harmless in this context
    Helgrind:Race
    fun:tds_socket_write
 }
 {
-   ftds - ucko CXX-11303 - the race is real, but AFAICT harmless in this context
+   ftds - ucko CXX-11303 - real, but harmless in this context
    Helgrind:Race
    fun:tds_socket_read
 }
+{
+   ftds - ucko CXX-11303 - real, but unimportant
+   Helgrind:LockOrder
+   fun:mutex_trylock_WRK
+   fun:pthread_mutex_trylock
+   fun:tds_raw_mutex_trylock
+}
+
 
 #===============================================================================
 # serial
@@ -1154,6 +1266,8 @@
    fun:_ZN4ncbi11CSafeStaticINS_6CParamINS_37SNcbiParamDesc_SERIAL_FastWriteDoubleEEENS_21CSafeStatic_CallbacksIS3_EEEptEv
    fun:_ZN4ncbi14CObjectOStreamC1ENS_17ESerialDataFormatERSo14ENcbiOwnership
 }
+
+
 
 
 #===============================================================================
@@ -1220,7 +1334,6 @@
    Helgrind:Race
    fun:_ZN4ncbi16CThreadPool_Impl14RequestSuspendEj
 }
-
 {
    util/CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
    Helgrind:Race
@@ -1232,9 +1345,35 @@
    fun:_ZN4ncbi4CRefINS_7CThreadENS_20CObjectCounterLockerEE5ResetEv
 }
 
-# False positives -- the writes in question cannot occur until the
-# worker thread responsible for previous reads has finished with them
-# and released its CRef.
+{
+   util/connect CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi10CSyncQueueINS_4CRefINS_16CThreadPool_TaskENS_20CObjectCounterLockerEEENS_19CSyncQueue_multisetIS4_NS_23SThreadPool_TaskCompareESaIS4_EEENS_24CSyncQueue_DefaultTraitsEE18x_Push_NonBlockingERKS4_
+}
+{
+   util/connect CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi16CThreadPool_Task17x_RequestToCancelEv
+}
+{
+   util/connect CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZNK4ncbi16CThreadPool_Task9GetStatusEv
+}
+{
+   util/connect CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   fun:_ZN4ncbi16CThreadPool_Task11x_SetStatusENS0_7EStatusE
+}
+{
+   util/connect CThreadPool - CSyncQueue<...> - this is rather timing - satskyse CXX-11282
+   Helgrind:Race
+   ...
+   fun:_ZN4ncbi22CThreadPool_ThreadImpl14x_TaskFinishedENS_16CThreadPool_Task7EStatusE
+}
+
+# False positives -- the writes in question cannot occur until the worker thread responsible
+# for previous reads has finished with them and released its CRef.
 {
    util/thread_pool_old - CQueueItem::~CQueueItem() - ucko CXX-11303 - false positive
    Helgrind:Race
@@ -1251,4 +1390,13 @@
    ...
    fun:_ZN4ncbi4CRefINS_11CStdRequestENS_20CObjectCounterLockerEE5ResetEv
 }
-
+{
+   util/connect CRef<CBlockingQueue<>> - False positive (protected by CRef<>) - ucko CXX-11303
+   Helgrind:Race
+   ...
+   fun:_ZN4ncbi7CObject10DeleteThisEv
+   fun:_ZNK4ncbi7CObject19RemoveLastReferenceEm
+   fun:_ZNK4ncbi7CObject15RemoveReferenceEv
+   fun:_ZNK4ncbi20CObjectCounterLocker6UnlockEPKNS_7CObjectE
+   fun:_ZN4ncbi4CRefINS_14CBlockingQueueINS0_INS_11CStdRequestENS_20CObjectCounterLockerEEEE10CQueueItemES3_E5ResetEv
+}
