@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 #############################################################################
 # $Id$
 #   Configure NCBI C++ toolkit for XCode using CMake build system.
@@ -14,7 +14,6 @@ extension="cmake_configure_ext.sh"
 ############################################################################# 
 
 CMAKE_PREDEFINED_LOC="/Applications/CMake.app/Contents/bin/cmake /sw/bin/cmake /usr/local/bin/cmake"
-ls -la  /usr/local/bin/cmake
 
 if [ -z "${CMAKE_CMD}" ]; then
    for i in $CMAKE_PREDEFINED_LOC
