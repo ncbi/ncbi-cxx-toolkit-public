@@ -732,7 +732,8 @@ CConnIniter::CConnIniter(void)
     try {
         if (s_ConnectInit == eConnectInit_Intact) {
             CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-            s_Init(app ? &app->GetConfig() : 0, NcbiSetupTls);
+            s_Init(app ? &app->GetConfig() : 0, NcbiSetupTls,
+                   0, eConnectInit_OwnRegistry);
         }
     }
     NCBI_CATCH_ALL_X(7, "CConn_Initer::CConn_Initer() failed");
