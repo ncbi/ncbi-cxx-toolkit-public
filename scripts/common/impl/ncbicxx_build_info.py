@@ -206,7 +206,7 @@ class Collector(object):
                 info['target_name'] = x[5:]
             elif x.startswith('srcdir='):
                 info['srcdir'] = x[7:]
-            elif x[0] != '-' and not '=' in x:
+            elif x[0] != '-' and not '=' in x and not x.isnumeric():
                 relevant_targets.append(x)
         if len(info) < 3 \
            or (len(irrelevant_targets) > 0 and len(relevant_targets) == 0):
