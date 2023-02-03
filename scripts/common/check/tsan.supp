@@ -9,6 +9,7 @@ race:^ncbi::CSafeStatic<ncbi::CParam
 # false positive CXX-10544
 race:^ncbi::CSafeStatic<ncbi::CTls
 race:^ncbi::CTlsBase::x_SetValue
+race:^ncbi::CTlsBase::x_GetValue
 
 # error, just not important - ignore (whole test) CXX-10544
 race:corelib/test/test_ncbidiag_mt.cpp
@@ -168,6 +169,7 @@ race:^s_CreateListening$
 
 # Debugging aid. For lock check consistency /connect/ncbi_socket.c
 race:^g_NCBI_CoreCheckLock$
+race:^g_NCBI_CoreCheckUnlock$
 
 # Pre-check followed by lock-and-check-and-modify. /connect/ncbi_socket.c
 race:^ncbi::CConnIniter::CConnIniter()
