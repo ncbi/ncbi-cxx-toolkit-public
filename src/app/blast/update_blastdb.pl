@@ -265,7 +265,7 @@ sub get_files_from_json_metadata_1_1($$)
     my $metadata = decode_json($json);
     foreach my $db (sort @$metadata) {
         next if ($$db{version} ne BLASTDB_METADATA_VERSION);
-        push @retval, @{$$db{files}};
+        push @retval, map { s,ftp://,https://, } @{$$db{files}};
     }
     return @retval;
 }
@@ -576,12 +576,12 @@ sub download($$)
         my $checksum_file = "$file.md5";
         my $rmt_checksum_file_mtime = &get_last_modified_date_from_ncbi_ftp($checksum_file);
         my $rmt_file_mtime = &get_last_modified_date_from_ncbi_ftp($file);
-        my $lcl_checksum_file_mtime = (-e &trim_ftp_prefix($checksum_file)
-            ? stat(&trim_ftp_prefix($checksum_file))->mtime : 0);
+        my $lcl_checksum_file_mtime = (-e &rm_protocol($checksum_file)
+            ? stat(&rm_protocol($checksum_file))->mtime : 0);
         print "RMT checksum file mtime $rmt_checksum_file_mtime\n" if DEBUG;
         print "LCL checksum file mtime $lcl_checksum_file_mtime\n" if DEBUG;
         my $update_available = ($lcl_checksum_file_mtime < $rmt_checksum_file_mtime);
-        if (-e $file and (stat(&trim_ftp_prefix($file))->mtime < $rmt_file_mtime)) {
+        if (-e $file and (stat(&rm_protocol($file))->mtime < $rmt_file_mtime)) {
             $update_available = 1;
         }
 
@@ -603,7 +603,7 @@ download_file:
             print "\nRMT $file Digest $rmt_digest" if (DEBUG);
             print "\nLCL $file Digest $lcl_digest\n" if (DEBUG);
             if ($lcl_digest ne $rmt_digest) {
-                unlink &trim_ftp_prefix($file), &trim_ftp_prefix($checksum_file);
+                unlink &rm_protocol($file), &trim_ftp_prefix($checksum_file);
                 if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
                     print STDERR "too many failures, aborting download!\n";
                     return EXIT_FAILURE;
@@ -654,7 +654,7 @@ sub _decompress_impl($)
 sub decompress($)
 {
     my $file = shift;
-    $file = &trim_ftp_prefix($file);
+    $file = &rm_protocol($file);
     print "Decompressing $file ..." unless ($opt_quiet);
     my $succeeded = &_decompress_impl($file);
     unless ($succeeded) {
@@ -673,7 +673,7 @@ sub compute_md5_checksum($)
 {
     my $file = shift;
     my $digest = "N/A";
-    $file = &trim_ftp_prefix($file);
+    $file = &rm_protocol($file);
     if (open(DOWNLOADED_FILE, $file)) {
         binmode(DOWNLOADED_FILE);
         $digest = Digest::MD5->new->addfile(*DOWNLOADED_FILE)->hexdigest;
@@ -682,11 +682,12 @@ sub compute_md5_checksum($)
     return $digest;
 }
 
-sub trim_ftp_prefix($)
+# Removes the protocol prefix from the file name passed in
+sub rm_protocol($)
 {
     my $retval = shift;
-    if ($retval =~ /^ftp:/) {
-        my $prefix = "ftp://" . NCBI_FTP . BLAST_DB_DIR . "/";
+    if ($retval =~ /^https:/) {
+        my $prefix = "https://" . NCBI_FTP . BLAST_DB_DIR . "/";
         $retval =~ s/$prefix//;
     }
     return $retval;
@@ -695,7 +696,7 @@ sub trim_ftp_prefix($)
 sub read_md5_file($)
 {
     my $md5file = shift;
-    $md5file = &trim_ftp_prefix($md5file);
+    $md5file = &rm_protocol($md5file);
     return '' unless (-f $md5file);
     open(IN, $md5file);
     $_ = <IN>;
@@ -791,7 +792,7 @@ sub get_blastdb_metadata
             $cmd = "curl -sf $url";
         }
     } else {
-        $url = 'ftp://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA;
+        $url = 'https://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
     }
     if (defined $ftp) {
