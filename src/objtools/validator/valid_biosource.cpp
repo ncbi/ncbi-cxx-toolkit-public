@@ -2083,8 +2083,16 @@ const CBioseq_Handle& bsh)
         title = defline_generator.GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
     }
 
+    bool isViral = false;
+    if (source.IsSetLineage()) {
+        string lineage = source.GetLineage();
+        if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase) || NStr::EqualNocase(lineage, "Viruses")) {
+            isViral = true;
+        }
+    }
+
     // look for viral completeness
-    if (mi && mi->IsMolinfo() && !NStr::IsBlank(title)) {
+    if (!isViral && mi && mi->IsMolinfo() && !NStr::IsBlank(title)) {
         const CMolInfo& molinfo = mi->GetMolinfo();
         if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_genomic
             && molinfo.IsSetCompleteness() && molinfo.GetCompleteness() == CMolInfo::eCompleteness_complete
