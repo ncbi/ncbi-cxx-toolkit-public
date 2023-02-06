@@ -123,7 +123,9 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
         }
     } else if (m_BacklogRequests.size() < kHttpMaxBacklog) {
         m_BacklogRequests.push_back(
-                SRequestReplyAttributes{request, reply, move(processor_names)});
+                SBacklogAttributes{request, reply,
+                                   move(processor_names),
+                                   psg_clock_t::now()});
         IncrementBackloggedCounter();
     } else {
         IncrementTooManyRequestsCounter();
@@ -277,6 +279,51 @@ void CHttpConnection::x_CancelBacklog(void)
 
         reply->GetHttpReply()->CancelPending();
         x_UnregisterBacklog(it);
+    }
+}
+
+
+void CHttpConnection::x_MaintainFinished(void)
+{
+    running_list_iterator_t     it = m_RunningRequests.begin();
+    while (it != m_RunningRequests.end()) {
+        if ((*it)->IsCompleted()) {
+            auto    next = it;
+            ++next;
+            x_UnregisterRunning(it);
+            it = next;
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+void CHttpConnection::x_MaintainBacklog(void)
+{
+    while (m_RunningRequests.size() < kHttpMaxRunning &&
+           !m_BacklogRequests.empty()) {
+        auto &  backlog_front = m_BacklogRequests.front();
+
+        shared_ptr<CPSGS_Request>  request = backlog_front.m_Request;
+        shared_ptr<CPSGS_Reply>    reply = backlog_front.m_Reply;
+        list<string>               processor_names = backlog_front.m_PreliminaryDispatchedProcessors;
+        psg_time_point_t           backlog_start = backlog_front.m_BacklogStart;
+
+        m_BacklogRequests.pop_front();
+
+        auto *  app = CPubseqGatewayApp::GetInstance();
+        app->GetTiming().Register(nullptr, eBacklog, eOpStatusFound,
+                                  backlog_start);
+
+        running_list_iterator_t     run_it = x_Start(request, reply,
+                                                     move(processor_names));
+        if (run_it != m_RunningRequests.end()) {
+            if (reply->IsCompleted()) {
+                PSG_TRACE("Self-drained while maintaining backlog");
+                x_UnregisterRunning(run_it);
+            }
+        }
     }
 }
 

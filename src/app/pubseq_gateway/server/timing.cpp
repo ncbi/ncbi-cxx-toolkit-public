@@ -200,96 +200,44 @@ CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
 }
 
 
-CLmdbCacheTiming::CLmdbCacheTiming(unsigned long  min_stat_value,
-                                   unsigned long  max_stat_value,
-                                   unsigned long  n_bins,
-                                   TOnePSGTiming::EScaleType  stat_type,
-                                   bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
+#define TIMING_CLASS_DEF(class_name)                                                \
+    class_name::class_name(unsigned long  min_stat_value,                           \
+                           unsigned long  max_stat_value,                           \
+                           unsigned long  n_bins,                                   \
+                           TOnePSGTiming::EScaleType  stat_type,                    \
+                           bool &  reset_to_default)                                \
+    {                                                                               \
+        reset_to_default = false;                                                   \
+        try {                                                                       \
+            TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,     \
+                                                n_bins, stat_type);                 \
+            m_PSGTiming.reset(new TPSGTiming(model_histogram));                     \
+        } catch (...) {                                                             \
+            reset_to_default = true;                                                \
+            TOnePSGTiming       model_histogram(kMinStatValue,                      \
+                                                kMaxStatValue,                      \
+                                                kNStatBins,                         \
+                                                TOnePSGTiming::eLog2);              \
+            m_PSGTiming.reset(new TPSGTiming(model_histogram));                     \
+        }                                                                           \
     }
-}
 
-
-CLmdbResolutionTiming::CLmdbResolutionTiming(unsigned long  min_stat_value,
-                                             unsigned long  max_stat_value,
-                                             unsigned long  n_bins,
-                                             TOnePSGTiming::EScaleType  stat_type,
-                                             bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CCassTiming::CCassTiming(unsigned long  min_stat_value,
-                         unsigned long  max_stat_value,
-                         unsigned long  n_bins,
-                         TOnePSGTiming::EScaleType  stat_type,
-                         bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CCassResolutionTiming::CCassResolutionTiming(unsigned long  min_stat_value,
-                                             unsigned long  max_stat_value,
-                                             unsigned long  n_bins,
-                                             TOnePSGTiming::EScaleType  stat_type,
-                                             bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
+TIMING_CLASS_DEF(CLmdbCacheTiming);
+TIMING_CLASS_DEF(CLmdbResolutionTiming);
+TIMING_CLASS_DEF(CCassTiming);
+TIMING_CLASS_DEF(CCassResolutionTiming);
+TIMING_CLASS_DEF(CHugeBlobRetrieveTiming);
+TIMING_CLASS_DEF(CNotFoundBlobRetrieveTiming);
+TIMING_CLASS_DEF(CNARetrieveTiming);
+TIMING_CLASS_DEF(CSplitHistoryRetrieveTiming);
+TIMING_CLASS_DEF(CPublicCommentRetrieveTiming);
+TIMING_CLASS_DEF(CAccVerHistoryRetrieveTiming);
+TIMING_CLASS_DEF(CIPGResolveRetrieveTiming);
+TIMING_CLASS_DEF(CTSEChunkRetrieveTiming);
+TIMING_CLASS_DEF(CNAResolveTiming);
+TIMING_CLASS_DEF(CVDBOpenTiming);
+TIMING_CLASS_DEF(CResolutionTiming);
+TIMING_CLASS_DEF(CBacklogTiming);
 
 
 CBlobRetrieveTiming::CBlobRetrieveTiming(size_t  min_blob_size,
@@ -356,266 +304,6 @@ CJsonNode CBlobRetrieveTiming::SerializeSeries(int  most_ancient_time,
     ret.SetInteger(kEndBlobSize, m_MaxBlobSize);
     return ret;
 }
-
-
-CHugeBlobRetrieveTiming::CHugeBlobRetrieveTiming(
-        unsigned long  min_stat_value,
-        unsigned long  max_stat_value,
-        unsigned long  n_bins,
-        TOnePSGTiming::EScaleType  stat_type,
-        bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CNotFoundBlobRetrieveTiming::CNotFoundBlobRetrieveTiming(
-        unsigned long  min_stat_value,
-        unsigned long  max_stat_value,
-        unsigned long  n_bins,
-        TOnePSGTiming::EScaleType  stat_type,
-        bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CNARetrieveTiming::CNARetrieveTiming(unsigned long  min_stat_value,
-                                     unsigned long  max_stat_value,
-                                     unsigned long  n_bins,
-                                     TOnePSGTiming::EScaleType  stat_type,
-                                     bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CSplitHistoryRetrieveTiming::CSplitHistoryRetrieveTiming(unsigned long  min_stat_value,
-                                                         unsigned long  max_stat_value,
-                                                         unsigned long  n_bins,
-                                                         TOnePSGTiming::EScaleType  stat_type,
-                                                         bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CPublicCommentRetrieveTiming::CPublicCommentRetrieveTiming(unsigned long  min_stat_value,
-                                                           unsigned long  max_stat_value,
-                                                           unsigned long  n_bins,
-                                                           TOnePSGTiming::EScaleType  stat_type,
-                                                           bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CAccVerHistoryRetrieveTiming::CAccVerHistoryRetrieveTiming(unsigned long  min_stat_value,
-                                                           unsigned long  max_stat_value,
-                                                           unsigned long  n_bins,
-                                                           TOnePSGTiming::EScaleType  stat_type,
-                                                           bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-CIPGResolveRetrieveTiming::CIPGResolveRetrieveTiming(unsigned long  min_stat_value,
-                                                     unsigned long  max_stat_value,
-                                                     unsigned long  n_bins,
-                                                     TOnePSGTiming::EScaleType  stat_type,
-                                                     bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-
-CTSEChunkRetrieveTiming::CTSEChunkRetrieveTiming(unsigned long  min_stat_value,
-                                                 unsigned long  max_stat_value,
-                                                 unsigned long  n_bins,
-                                                 TOnePSGTiming::EScaleType  stat_type,
-                                                 bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-
-CNAResolveTiming::CNAResolveTiming(unsigned long  min_stat_value,
-                                   unsigned long  max_stat_value,
-                                   unsigned long  n_bins,
-                                   TOnePSGTiming::EScaleType  stat_type,
-                                   bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-
-CVDBOpenTiming::CVDBOpenTiming(unsigned long  min_stat_value,
-                               unsigned long  max_stat_value,
-                               unsigned long  n_bins,
-                               TOnePSGTiming::EScaleType  stat_type,
-                               bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
-
-
-CResolutionTiming::CResolutionTiming(unsigned long  min_stat_value,
-                                     unsigned long  max_stat_value,
-                                     unsigned long  n_bins,
-                                     TOnePSGTiming::EScaleType  stat_type,
-                                     bool &  reset_to_default)
-{
-    reset_to_default = false;
-
-    try {
-        TOnePSGTiming       model_histogram(min_stat_value, max_stat_value,
-                                            n_bins, stat_type);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    } catch (...) {
-        reset_to_default = true;
-        TOnePSGTiming       model_histogram(kMinStatValue,
-                                            kMaxStatValue,
-                                            kNStatBins,
-                                            TOnePSGTiming::eLog2);
-        m_PSGTiming.reset(new TPSGTiming(model_histogram));
-    }
-}
-
 
 
 COperationTiming::COperationTiming(unsigned long  min_stat_value,
@@ -726,6 +414,12 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_ResolutionFoundTiming.reset(
         new CResolutionTiming(min_stat_value, max_stat_value,
                               n_bins, scale_type, reset_to_default));
+
+    m_BacklogTiming.reset(
+        new CBacklogTiming(min_stat_value, max_stat_value,
+                           n_bins, scale_type, reset_to_default));
+
+
     // 1, 2, 3, 4, 5+ trips to cassandra
     for (size_t  index = 0; index < 5; ++index) {
         m_ResolutionFoundCassandraTiming.push_back(
@@ -1003,6 +697,12 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "(start: request is received)"
                )
         },
+        { "Backlog",
+          SInfo(m_BacklogTiming.get(),
+                "Backlog time",
+                "The time a request spent in a backlog before processing"
+               )
+        },
         { "ResolutionFoundCassandraIn1Try",
           SInfo(m_ResolutionFoundCassandraTiming[0].get(),
                 "Resolution succeeded via Cassandra (1 try)",
@@ -1157,9 +857,11 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
 {
     if (!m_OnlyForProcessor.empty()) {
         // May need to skip timing collection
-        if (m_OnlyForProcessor != processor->GetGroupName()) {
-            // Skipping because it is not the configured group
-            return;
+        if (processor != nullptr) {
+            if (m_OnlyForProcessor != processor->GetGroupName()) {
+                // Skipping because it is not the configured group
+                return;
+            }
         }
     }
 
@@ -1233,6 +935,9 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
             break;
         case eResolutionFound:
             m_ResolutionFoundTiming->Add(mks);
+            break;
+        case eBacklog:
+            m_BacklogTiming->Add(mks);
             break;
         case eResolutionFoundInCassandra:
             // The blob_size here is the number of queries of Cassandra
@@ -1320,6 +1025,7 @@ void COperationTiming::Rotate(void)
     m_ResolutionErrorTiming->Rotate();
     m_ResolutionNotFoundTiming->Rotate();
     m_ResolutionFoundTiming->Rotate();
+    m_BacklogTiming->Rotate();
     for (auto &  item : m_ResolutionFoundCassandraTiming)
         item->Rotate();
 
@@ -1371,6 +1077,7 @@ void COperationTiming::Reset(void)
         m_ResolutionErrorTiming->Reset();
         m_ResolutionNotFoundTiming->Reset();
         m_ResolutionFoundTiming->Reset();
+        m_BacklogTiming->Reset();
         for (auto &  item : m_ResolutionFoundCassandraTiming)
             item->Reset();
 

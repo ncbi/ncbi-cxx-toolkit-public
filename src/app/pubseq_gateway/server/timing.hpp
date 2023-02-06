@@ -88,7 +88,8 @@ enum EPSGOperation {
 
     eTseChunkRetrieve,
     eNAResolve,
-    eVDBOpen
+    eVDBOpen,
+    eBacklog
 };
 
 
@@ -164,57 +165,69 @@ class CPSGTimingBase
         unique_ptr<TPSGTiming>      m_PSGTiming;
 };
 
+// At the moment almost all the timing classes are the same
+// So a macro is used to define them
+#define TIMING_CLASS(class_name)                                \
+    class class_name : public CPSGTimingBase                    \
+    {                                                           \
+        public:                                                 \
+            class_name(unsigned long  min_stat_value,           \
+                       unsigned long  max_stat_value,           \
+                       unsigned long  n_bins,                   \
+                       TOnePSGTiming::EScaleType  stat_type,    \
+                       bool &  reset_to_default);               \
+    }
+
 
 // LMDB cache operations are supposed to be fast.
 // There are three tables covered by LMDB cache.
-class CLmdbCacheTiming : public CPSGTimingBase
-{
-    public:
-        CLmdbCacheTiming(unsigned long  min_stat_value,
-                         unsigned long  max_stat_value,
-                         unsigned long  n_bins,
-                         TOnePSGTiming::EScaleType  stat_type,
-                         bool &  reset_to_default);
-};
-
+TIMING_CLASS(CLmdbCacheTiming);
 
 // LMDB resolution may involve many tries with the cached tables.
-class CLmdbResolutionTiming : public CPSGTimingBase
-{
-    public:
-        CLmdbResolutionTiming(unsigned long  min_stat_value,
-                              unsigned long  max_stat_value,
-                              unsigned long  n_bins,
-                              TOnePSGTiming::EScaleType  stat_type,
-                              bool &  reset_to_default);
-};
-
-
+TIMING_CLASS(CLmdbResolutionTiming);
 
 // Cassandra operations are supposed to be slower than LMDB.
 // There are three cassandra tables
-class CCassTiming : public CPSGTimingBase
-{
-    public:
-        CCassTiming(unsigned long  min_stat_value,
-                    unsigned long  max_stat_value,
-                    unsigned long  n_bins,
-                    TOnePSGTiming::EScaleType  stat_type,
-                    bool &  reset_to_default);
-};
-
+TIMING_CLASS(CCassTiming);
 
 // Cassandra resolution may need a few tries with a two tables
-class CCassResolutionTiming : public CPSGTimingBase
-{
-    public:
-        CCassResolutionTiming(unsigned long  min_stat_value,
-                              unsigned long  max_stat_value,
-                              unsigned long  n_bins,
-                              TOnePSGTiming::EScaleType  stat_type,
-                              bool &  reset_to_default);
-};
+TIMING_CLASS(CCassResolutionTiming);
 
+// Out of range blob size; should not really happened
+TIMING_CLASS(CHugeBlobRetrieveTiming);
+
+// Not found blob
+TIMING_CLASS(CNotFoundBlobRetrieveTiming);
+
+// Named annotation retrieval
+TIMING_CLASS(CNARetrieveTiming);
+
+// Split history retrieval
+TIMING_CLASS(CSplitHistoryRetrieveTiming);
+
+// Public comment retrieval
+TIMING_CLASS(CPublicCommentRetrieveTiming);
+
+// Accession version history retrieval
+TIMING_CLASS(CAccVerHistoryRetrieveTiming);
+
+// IPG resolve resolution
+TIMING_CLASS(CIPGResolveRetrieveTiming);
+
+// TSE chunk retrieve
+TIMING_CLASS(CTSEChunkRetrieveTiming);
+
+// NA resolve for non-cassandra processors
+TIMING_CLASS(CNAResolveTiming);
+
+// VDB opening timing
+TIMING_CLASS(CVDBOpenTiming);
+
+// Resolution
+TIMING_CLASS(CResolutionTiming);
+
+// Time staying in the backlog
+TIMING_CLASS(CBacklogTiming);
 
 // Blob retrieval depends on a blob size
 class CBlobRetrieveTiming : public CPSGTimingBase
@@ -252,137 +265,6 @@ class CBlobRetrieveTiming : public CPSGTimingBase
         unsigned long      m_MaxBlobSize;
 };
 
-
-// Out of range blob size; should not really happened
-class CHugeBlobRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CHugeBlobRetrieveTiming(unsigned long  min_stat_value,
-                                unsigned long  max_stat_value,
-                                unsigned long  n_bins,
-                                TOnePSGTiming::EScaleType  stat_type,
-                                bool &  reset_to_default);
-};
-
-
-// Not found blob
-class CNotFoundBlobRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CNotFoundBlobRetrieveTiming(unsigned long  min_stat_value,
-                                    unsigned long  max_stat_value,
-                                    unsigned long  n_bins,
-                                    TOnePSGTiming::EScaleType  stat_type,
-                                    bool &  reset_to_default);
-};
-
-
-// Named annotation retrieval
-class CNARetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CNARetrieveTiming(unsigned long  min_stat_value,
-                          unsigned long  max_stat_value,
-                          unsigned long  n_bins,
-                          TOnePSGTiming::EScaleType  stat_type,
-                          bool &  reset_to_default);
-};
-
-
-// Split history retrieval
-class CSplitHistoryRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CSplitHistoryRetrieveTiming(unsigned long  min_stat_value,
-                                    unsigned long  max_stat_value,
-                                    unsigned long  n_bins,
-                                    TOnePSGTiming::EScaleType  stat_type,
-                                    bool &  reset_to_default);
-};
-
-
-// Public comment retrieval
-class CPublicCommentRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CPublicCommentRetrieveTiming(unsigned long  min_stat_value,
-                                     unsigned long  max_stat_value,
-                                     unsigned long  n_bins,
-                                     TOnePSGTiming::EScaleType  stat_type,
-                                     bool &  reset_to_default);
-};
-
-
-// Accession version history retrieval
-class CAccVerHistoryRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CAccVerHistoryRetrieveTiming(unsigned long  min_stat_value,
-                                     unsigned long  max_stat_value,
-                                     unsigned long  n_bins,
-                                     TOnePSGTiming::EScaleType  stat_type,
-                                     bool &  reset_to_default);
-};
-
-
-// IPG resolve resolution
-class CIPGResolveRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CIPGResolveRetrieveTiming(unsigned long  min_stat_value,
-                                  unsigned long  max_stat_value,
-                                  unsigned long  n_bins,
-                                  TOnePSGTiming::EScaleType  stat_type,
-                                  bool &  reset_to_default);
-};
-
-
-// TSE chunk retrieve
-class CTSEChunkRetrieveTiming : public CPSGTimingBase
-{
-    public:
-        CTSEChunkRetrieveTiming(unsigned long  min_stat_value,
-                                unsigned long  max_stat_value,
-                                unsigned long  n_bins,
-                                TOnePSGTiming::EScaleType  stat_type,
-                                bool &  reset_to_default);
-};
-
-
-// NA resolve for non-cassandra processors
-class CNAResolveTiming : public CPSGTimingBase
-{
-    public:
-        CNAResolveTiming(unsigned long  min_stat_value,
-                         unsigned long  max_stat_value,
-                         unsigned long  n_bins,
-                         TOnePSGTiming::EScaleType  stat_type,
-                         bool &  reset_to_default);
-};
-
-
-// VDB opening timing
-class CVDBOpenTiming : public CPSGTimingBase
-{
-    public:
-        CVDBOpenTiming(unsigned long  min_stat_value,
-                       unsigned long  max_stat_value,
-                       unsigned long  n_bins,
-                       TOnePSGTiming::EScaleType  stat_type,
-                       bool &  reset_to_default);
-};
-
-
-// Resolution
-class CResolutionTiming : public CPSGTimingBase
-{
-    public:
-        CResolutionTiming(unsigned long  min_stat_value,
-                          unsigned long  max_stat_value,
-                          unsigned long  n_bins,
-                          TOnePSGTiming::EScaleType  stat_type,
-                          bool &  reset_to_default);
-};
 
 
 class COperationTiming
@@ -460,6 +342,7 @@ class COperationTiming
         unique_ptr<CResolutionTiming>                       m_ResolutionErrorTiming;
         unique_ptr<CResolutionTiming>                       m_ResolutionNotFoundTiming;
         unique_ptr<CResolutionTiming>                       m_ResolutionFoundTiming;
+        unique_ptr<CBacklogTiming>                          m_BacklogTiming;
 
         // 1, 2, 3, 4, 5+ trips to cassandra
         vector<unique_ptr<CResolutionTiming>>               m_ResolutionFoundCassandraTiming;
