@@ -146,7 +146,9 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, BIOSRC, eOncaller, "Influenza Strain/C
                             collection_year = date->GetStd().GetYear();
                         }
                     }
-                    catch (...) {} // CSubSource can throw all sorts of exceptions, but we're not interested in the specifics here.
+                    catch (const CException& /* ignore */) {
+                        // CSubSource can throw all sorts of exceptions, but we're not interested in the specifics here.
+                    }
                     break;
                 }
             }
