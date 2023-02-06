@@ -142,17 +142,30 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore)
 
 BOOST_AUTO_TEST_CASE(Test_TextDescriptions)
 {
-    auto pEntry = BuildGoodNucProtSet();
-    auto pId = Ref(new CSeq_id());
-    pId->SetLocal().SetStr("nuc");
-
     auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
-    pScope->AddTopLevelSeqEntry(*pEntry);
-    auto bsh = pScope->GetBioseqHandle(*pId);
-    auto description = CDiscrepancyObject::GetTextObjectDescription(*(bsh.GetCompleteBioseq()), *pScope);
-    BOOST_CHECK_EQUAL(description, "nuc");
+    {
+        auto pEntry = BuildGoodNucProtSet();
+        pScope->AddTopLevelSeqEntry(*pEntry);
+        auto pId = Ref(new CSeq_id());
+        pId->SetLocal().SetStr("nuc");
+        auto bsh = pScope->GetBioseqHandle(*pId);
+        auto description = CDiscrepancyObject::GetTextObjectDescription(*(bsh.GetCompleteBioseq()), *pScope);
+        BOOST_CHECK_EQUAL(description, "nuc");
         
-    auto bssh = bsh.GetParentBioseq_set();
-    description = CDiscrepancyObject::GetTextObjectDescription(bssh);
-    BOOST_CHECK_EQUAL(description, "np|nuc");
+        auto bssh = bsh.GetParentBioseq_set();
+        description = CDiscrepancyObject::GetTextObjectDescription(bssh);
+        BOOST_CHECK_EQUAL(description, "np|nuc");
+    }
+
+    {
+        auto pEntry = BuildGoodEcoSet();
+        pScope->AddTopLevelSeqEntry(*pEntry);
+        auto pId = Ref(new CSeq_id());
+        pId->SetLocal().SetStr("good2");
+        auto bsh = pScope->GetBioseqHandle(*pId);
+        auto bssh = bsh.GetParentBioseq_set();
+        auto description = CDiscrepancyObject::GetTextObjectDescription(bssh);
+        BOOST_CHECK_EQUAL(description, "Set containing good1");
+    }
+
 }
