@@ -138,7 +138,7 @@ ESerialDataFormat CELink_Request::GetSerialDataFormat(void) const
 
 CRef<elink::CELinkResult> CELink_Request::GetELinkResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<elink::CELinkResult> res(new elink::CELinkResult);
     *is >> *res;

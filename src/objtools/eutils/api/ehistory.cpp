@@ -58,7 +58,7 @@ ESerialDataFormat CEHistory_Request::GetSerialDataFormat(void) const
 
 CRef<ehistory::CEHistoryResult> CEHistory_Request::GetEHistoryResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<ehistory::CEHistoryResult> res(new ehistory::CEHistoryResult);
     *is >> *res;

@@ -155,7 +155,7 @@ ESerialDataFormat CESearch_Request::GetSerialDataFormat(void) const
 
 CRef<esearch::CESearchResult> CESearch_Request::GetESearchResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<esearch::CESearchResult> res(new esearch::CESearchResult);
     *is >> *res;

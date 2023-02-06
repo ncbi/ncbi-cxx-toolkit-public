@@ -119,7 +119,8 @@ CRef<uilist::CIdList> CEFetch_Request::FetchIdList(int chunk_size)
             if (chunk_size > retlast - i) {
                 SetRetMax(retlast - i);
             }
-            *GetObjectIStream() >> tmp;
+            CObjectIStream* is = GetObjIStream();
+            *is >> tmp;
             if ( tmp.SetId().empty() ) {
                 break;
             }

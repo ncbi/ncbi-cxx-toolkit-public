@@ -77,7 +77,7 @@ ESerialDataFormat CESummary_Request::GetSerialDataFormat(void) const
 
 CRef<esummary::CESummaryResult> CESummary_Request::GetESummaryResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<esummary::CESummaryResult> res(new esummary::CESummaryResult);
     *is >> *res;

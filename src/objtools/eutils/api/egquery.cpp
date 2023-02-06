@@ -68,7 +68,7 @@ ESerialDataFormat CEGQuery_Request::GetSerialDataFormat(void) const
 
 CRef<egquery::CResult> CEGQuery_Request::GetResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<egquery::CResult> res(new egquery::CResult);
     *is >> *res;
