@@ -185,7 +185,7 @@ protected:
 };
 
 
-class CDiscrepancyCore : public CDiscrepancyCase
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
     CDiscrepancyCore(const CDiscrepancyCaseProps* props) : m_props(props) {}
@@ -304,7 +304,7 @@ public:
 protected:
 };
 
-class CDiscrepancyContext : public CDiscrepancySet
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyContext : public CDiscrepancySet
 {
 protected:
     struct CParseNode;
@@ -814,7 +814,7 @@ friend class CDiscrepancyObject;
 };
 
 
-class CDiscrepancyObject : public CReportObj
+class NCBI_DISCREPANCY_EXPORT CDiscrepancyObject : public CReportObj
 {
 protected:
     CDiscrepancyObject(CDiscrepancyContext::CRefNode* ref, CDiscrepancyContext::CRefNode* fix = nullptr, const CObject* more = nullptr) : m_Ref(ref), m_Fix(fix), m_More(more), m_Fixed(false) {}
