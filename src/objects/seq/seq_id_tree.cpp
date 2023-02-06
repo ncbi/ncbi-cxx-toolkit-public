@@ -3243,6 +3243,18 @@ CConstRef<CSeq_id> CSeq_id_PDB_Info::GetPackedSeqId(TPacked /*packed*/, TVariant
     }
     variant &= ~((TVariant(1)<<kNoChainOffset) |
                  (TVariant(1)<<kNoChain_idOffset));
+    const TVariant kMolLowerCaseMask =
+        (TVariant(1) << (kMolLowerCaseOffset+kMolLowerCaseBits)) -
+        (TVariant(1) << (kMolLowerCaseOffset));
+    if ( variant & kMolLowerCaseMask ) {
+        string& mol = pdb_id.SetMol().Set();
+        for ( int i = 0; i < kMolLowerCaseBits; ++i ) {
+            if ( variant & (TVariant(1) << (kMolLowerCaseOffset+i)) ) {
+                mol[i+1] = tolower(mol[i+1]);
+            }
+        }
+        variant &= ~kMolLowerCaseMask;
+    }
     if ( variant ) {
         // add date
         CDate_std& date = pdb_id.SetRel().SetStd();
@@ -3348,13 +3360,25 @@ pair<CConstRef<CSeq_id>, CSeq_id_Info::TVariant> CSeq_id_PDB_Info::Normalize(con
         pdb_id.IsSetChain() || (pdb_id.IsSetChain_id() && pdb_id.GetChain_id().size() == 1);
     bool normal_has_chain_id =
         pdb_id.IsSetChain_id() || pdb_id.IsSetChain();
+    bool need_upcase = !NStr::IsUpper(pdb_id.GetMol().Get());
     if ( ret.second ||
+         need_upcase ||
          pdb_id.IsSetChain() != normal_has_chain ||
          pdb_id.IsSetChain_id() != normal_has_chain_id ) {
         // create normalized PDB id
         CRef<CSeq_id> new_seq_id(new CSeq_id());
         CPDB_seq_id& new_pdb_id = new_seq_id->SetPdb();
         new_pdb_id.SetMol(pdb_id.GetMol());
+        if ( need_upcase ) {
+            string& mol = new_pdb_id.SetMol().Set();
+            for ( int i = 0; i < kMolLowerCaseBits && size_t(i+1) < mol.size(); ++i ) {
+                char c = mol[i+1];
+                if ( islower(c) ) {
+                    mol[i+1] = toupper(c);
+                    ret.second |= TVariant(1) << (kMolLowerCaseOffset + i);
+                }
+            }
+        }
         if ( normal_has_chain_id ) {
             if ( pdb_id.IsSetChain_id() ) {
                 new_pdb_id.SetChain_id(pdb_id.GetChain_id());

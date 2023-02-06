@@ -1031,6 +1031,7 @@ private:
     static const int kDayBits = 5; // 1-31, 0 means not set
     static const int kMonthBits = 4; // 1-12, 0 means not set
     static const int kYearBits = 12; // 1-4095
+    static const int kMolLowerCaseBits = 3; // up to 3 'mol' letters
 
     // derived constants
     static const int kNoChainOffset = 0;
@@ -1041,6 +1042,7 @@ private:
     static const int kDayOffset = kHourOffset + kHourBits;
     static const int kMonthOffset = kDayOffset + kDayBits;
     static const int kYearOffset = kMonthOffset + kMonthBits;
+    static const int kMolLowerCaseOffset = kYearOffset + kYearBits;
 };
 
 
