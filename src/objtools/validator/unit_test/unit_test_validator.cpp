@@ -3075,7 +3075,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_748)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId1)
+void TestOneLongGeneral(bool emb, bool err)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_id> id(new CSeq_id());
@@ -3083,12 +3083,20 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId1)
     id->SetGeneral().SetTag().SetStr("thisidentifierismorethanfiftycharactersinlengthsoitshouldberejected");
     entry->SetSeq().SetId().push_back(id);
 
+    if (emb) {
+        CRef<CSeq_id> emb(new CSeq_id());
+        emb->SetEmbl().SetAccession("AY123457");
+        emb->SetEmbl().SetVersion(1);
+        entry->SetSeq().SetId().push_back(emb);
+    }
 
     STANDARD_SETUP
 
-    string acc_str = "lcl|good";
-    expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
-                              "General identifier longer than 50 characters"));
+    if (err) {
+        string acc_str = "lcl|good";
+        expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
+                                  "General identifier longer than 50 characters"));
+    }
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -3096,61 +3104,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId1)
     CLEAR_ERRORS
 }
 
-
-BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId2)
+BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId)
 {
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<CSeq_id> id(new CSeq_id());
-    id->SetGeneral().SetDb("lgsi");
-    id->SetGeneral().SetTag().SetStr("thisidentifierismorethanfiftycharactersinlengthsoitshouldberejected");
-    entry->SetSeq().SetId().push_back(id);
-
-    CRef<CSeq_id> emb(new CSeq_id());
-    emb->SetEmbl().SetAccession("AY123457");
-    emb->SetEmbl().SetVersion(1);
-    entry->SetSeq().SetId().push_back(emb);
-
-    STANDARD_SETUP
-
-    /*
-    string acc_str = "lcl|good";
-    expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
-                              "General identifier longer than 50 characters"));
-    */
-
-    eval = validator.Validate(seh, options);
-    CheckErrors(*eval, expected_errors);
-
-    CLEAR_ERRORS
+    TestOneLongGeneral(false, true);
+    TestOneLongGeneral(true, false);
 }
-
-#if 0
-BOOST_AUTO_TEST_CASE(Test_SEQ_INST_LongGeneralSeqId3)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetId().front()->SetGeneral().SetDb("lgsi");
-    entry->SetSeq().SetId().front()->SetGeneral().SetTag().SetStr("thisidentifierismorethanfiftycharactersinlengthsoitshouldberejected");
-
-    STANDARD_SETUP
-
-    string acc_str = "lcl|good";
-    expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
-                              "General identifier longer than 50 characters"));
-
-    eval = validator.Validate(seh, options);
-    CheckErrors(*eval, expected_errors);
-
-    CRef<CSeq_id> emb(new CSeq_id());
-    emb->SetEmbl().SetAccession("AY123457");
-    emb->SetEmbl().SetVersion(1);
-    entry->SetSeq().SetId().push_back(emb);
-
-    eval = validator.Validate(seh, options);
-    CheckErrors(*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-#endif
 
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
@@ -24624,30 +24582,30 @@ BOOST_AUTO_TEST_CASE(Test_Geneious)
 
 
 // From VR-793
-// A.	For segment, endogenous_virus_name:
-// 1. Must begin with a letter or number
-// 2. Spaces and other printable characters are permitted
-// 3. Must not be empty, must not be longer than 240 characters
-// B.	For chromosome, linkage_group and plasmid_name values:
-// 4.	Must begin with a letter or number
-// 5.	Must not be empty (not currently true), must not be longer than 32 characters
-// 6.	Must not contain <tab>
-// 7.	Spaces and other printable characters are permitted
-// 8.	Must not contain the word "plasmid" (ignoring case)
-// 9.	Must not contain the word "chromosome" (ignoring case)
-// 10.	Must not contain the phrase "linkage group" (ignoring case)
-// 11.	Must not contain the series of letters "chr" (ignoring case)
-// 12.	Must not contain the taxname (ignoring case)
+// A. For segment, endogenous_virus_name:
+// 1.   Must begin with a letter or number
+// 2.   Spaces and other printable characters are permitted
+// 3.   Must not be empty, must not be longer than 240 characters
+// B. For chromosome, linkage_group and plasmid_name values:
+// 4.   Must begin with a letter or number
+// 5.   Must not be empty (not currently true), must not be longer than 32 characters
+// 6.   Must not contain <tab>
+// 7.   Spaces and other printable characters are permitted
+// 8.   Must not contain the word "plasmid" (ignoring case)
+// 9.   Must not contain the word "chromosome" (ignoring case)
+// 10.  Must not contain the phrase "linkage group" (ignoring case)
+// 11.  Must not contain the series of letters "chr" (ignoring case)
+// 12.  Must not contain the taxname (ignoring case)
 // 14.  Must not contain the genus (ignoring case)
-// 15. Must not contain the species (ignoring case)
-// 16. Must not contain the series of letters "chrm" (ignoring case)
-// 17. Must not contain the series of letters "chrom" (ignoring case)
-// 18. Must not contain the phrase "linkage-group" (ignoring case)
-// C.	For plasmid_name values:
-// 19. Exception- megaplasmid is legal
-// D.	plastid_name is obsolete so no value is legal.
-// 20. digits or numerals: Plastid name subsource contains unrecognized value
-// 21. organelle: Plastid name subsource chloroplast but not chloroplast location
+// 15.  Must not contain the species (ignoring case)
+// 16.  Must not contain the series of letters "chrm" (ignoring case)
+// 17.  Must not contain the series of letters "chrom" (ignoring case)
+// 18.  Must not contain the phrase "linkage-group" (ignoring case)
+// C. For plasmid_name values:
+// 19.  Exception- megaplasmid is legal
+// D. plastid_name is obsolete so no value is legal.
+// 20.  digits or numerals: Plastid name subsource contains unrecognized value
+// 21.  organelle: Plastid name subsource chloroplast but not chloroplast location
 
 void TestOneReplicon(CSubSource::ESubtype subtype, const string& val, const string& err_code, EDiagSev sev, const string& msg)
 {
