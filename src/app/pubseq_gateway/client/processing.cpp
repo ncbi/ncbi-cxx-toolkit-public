@@ -233,7 +233,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
         case CPSG_ReplyItem::eEndOfReply:     if (!trouble) return "Reply"; _TROUBLE;
     }
 
-    return nullptr;
+    return "UnknownItem";
 }
 
 void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
@@ -278,6 +278,8 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
             _TROUBLE;
             return;
     }
+
+    throw logic_error("Received unknown item: " + to_string(reply_item_type));
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
