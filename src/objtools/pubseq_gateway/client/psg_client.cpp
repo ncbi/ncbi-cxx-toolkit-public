@@ -424,7 +424,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
         _TROUBLE;
 
     } else if (type != CPSG_ReplyItem::eEndOfReply) {
-        if (stats) stats->IncCounter(SPSG_Stats::eReplyItemStatus, static_cast<size_t>(status));
+        if (stats) stats->IncCounter(SPSG_Stats::eReplyItemStatus, static_cast<unsigned>(status));
         return new CPSG_ReplyItem(type);
     }
 
