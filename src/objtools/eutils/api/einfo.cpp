@@ -58,7 +58,7 @@ ESerialDataFormat CEInfo_Request::GetSerialDataFormat(void) const
 
 CRef<einfo::CEInfoResult> CEInfo_Request::GetEInfoResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<einfo::CEInfoResult> res(new einfo::CEInfoResult);
     *is >> *res;
