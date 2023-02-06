@@ -35,6 +35,7 @@
 #include "psgs_reply.hpp"
 #include "pending_operation.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "pubseq_gateway_types.hpp"
 
 
 // Settings for the CHttpConnection
@@ -89,21 +90,22 @@ public:
 private:
     volatile bool                       m_IsClosed;
 
-    struct SRequestReplyAttributes
+    struct SBacklogAttributes
     {
         shared_ptr<CPSGS_Request>   m_Request;
         shared_ptr<CPSGS_Reply>     m_Reply;
         list<string>                m_PreliminaryDispatchedProcessors;
+        psg_time_point_t            m_BacklogStart;
     };
 
-    list<SRequestReplyAttributes>   m_BacklogRequests;
+    list<SBacklogAttributes>        m_BacklogRequests;
     list<shared_ptr<CPSGS_Reply>>   m_RunningRequests;
 
     void x_CancelAll(void);
     void x_CancelBacklog(void);
 
     using running_list_iterator_t = typename list<shared_ptr<CPSGS_Reply>>::iterator;
-    using backlog_list_iterator_t = typename list<SRequestReplyAttributes>::iterator;
+    using backlog_list_iterator_t = typename list<SBacklogAttributes>::iterator;
 
     void x_UnregisterRunning(running_list_iterator_t &  it);
     void x_UnregisterBacklog(backlog_list_iterator_t &  it);
@@ -115,40 +117,8 @@ private:
                                     shared_ptr<CPSGS_Reply>  reply,
                                     list<string>  processor_names);
 
-    void x_MaintainFinished(void)
-    {
-        running_list_iterator_t     it = m_RunningRequests.begin();
-        while (it != m_RunningRequests.end()) {
-            if ((*it)->IsCompleted()) {
-                auto    next = it;
-                ++next;
-                x_UnregisterRunning(it);
-                it = next;
-            } else {
-                ++it;
-            }
-        }
-    }
-
-    void x_MaintainBacklog(void)
-    {
-        while (m_RunningRequests.size() < kHttpMaxRunning &&
-               !m_BacklogRequests.empty()) {
-            shared_ptr<CPSGS_Request>  request = m_BacklogRequests.front().m_Request;
-            shared_ptr<CPSGS_Reply>    reply = m_BacklogRequests.front().m_Reply;
-            list<string>               processor_names = m_BacklogRequests.front().m_PreliminaryDispatchedProcessors;
-
-            m_BacklogRequests.pop_front();
-            running_list_iterator_t     run_it = x_Start(request, reply,
-                                                         move(processor_names));
-            if (run_it != m_RunningRequests.end()) {
-                if (reply->IsCompleted()) {
-                    PSG_TRACE("Self-drained while maintaining backlog");
-                    x_UnregisterRunning(run_it);
-                }
-            }
-        }
-    }
+    void x_MaintainFinished(void);
+    void x_MaintainBacklog(void);
 };
 
 #endif
