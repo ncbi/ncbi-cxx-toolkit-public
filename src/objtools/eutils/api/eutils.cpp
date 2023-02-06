@@ -264,6 +264,15 @@ CObjectIStream* CEUtils_Request::GetObjectIStream(void)
 }
 
 
+CObjectIStream* CEUtils_Request::GetObjIStream(void)
+{
+    if (!m_ObjStream) {
+        m_ObjStream.reset(GetObjectIStream());
+    }
+    return m_ObjStream.get();
+}
+
+
 void CEUtils_Request::Read(string* content)
 {
     NcbiStreamToString(content, GetStream());

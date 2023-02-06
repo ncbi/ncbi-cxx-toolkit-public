@@ -70,7 +70,7 @@ ESerialDataFormat CESpell_Request::GetSerialDataFormat(void) const
 
 CRef<espell::CESpellResult> CESpell_Request::GetESpellResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<espell::CESpellResult> res(new espell::CESpellResult);
     *is >> *res;

@@ -137,13 +137,15 @@ public:
     void Connect(void);
 
     /// Close connection, destroy the stream.
-    void Disconnect(void) { m_Stream.reset(); }
+    void Disconnect(void) { m_ObjStream.reset(); m_Stream.reset(); }
 
     /// Get input stream for reading plain data. Auto connect if the stream
     /// does not yet exist.
     CNcbiIostream& GetStream(void);
 
     /// Get serial stream for reading xml or asn data.
+    /// NOTE: The returned pointer is owned by the caller and must be destroyed
+    /// properly before Disconnect() is called.
     CObjectIStream* GetObjectIStream(void);
 
     /// Read the whole stream into the string. Discard data if
@@ -188,6 +190,12 @@ public:
     /// Reset cached base url so that it's refreshed on next request.
     static void ResetBaseURL(void);
 
+protected:
+    /// Get serial stream for reading xml or asn data.
+    /// Unlike GetObjectIStream() the returned pointer is owned by the request object
+    /// and is automatically destroyed by Disconnect().
+    CObjectIStream* GetObjIStream(void);
+
 private:
     CEUtils_Request(const CEUtils_Request&);
     CEUtils_Request& operator=(const CEUtils_Request&);
@@ -195,7 +203,8 @@ private:
     typedef map<string, string> TRequestArgs;
 
     mutable CRef<CEUtils_ConnContext> m_Context;
-    unique_ptr<CConn_HttpStream>        m_Stream;
+    unique_ptr<CConn_HttpStream>      m_Stream;
+    unique_ptr<CObjectIStream>        m_ObjStream;
 
     string           m_ScriptName;
     string           m_QueryKey; // empty = use value from ConnContext

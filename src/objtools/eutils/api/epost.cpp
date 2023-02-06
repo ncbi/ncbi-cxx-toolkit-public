@@ -70,7 +70,7 @@ ESerialDataFormat CEPost_Request::GetSerialDataFormat(void) const
 
 CRef<epost::CEPostResult> CEPost_Request::GetEPostResult(void)
 {
-    CObjectIStream* is = GetObjectIStream();
+    CObjectIStream* is = GetObjIStream();
     _ASSERT(is);
     CRef<epost::CEPostResult> res(new epost::CEPostResult);
     *is >> *res;
