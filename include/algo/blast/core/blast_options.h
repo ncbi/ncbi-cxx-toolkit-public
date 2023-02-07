@@ -104,6 +104,10 @@ extern "C" {
 #define BLAST_WORD_THRESHOLD_BLASTP 11 /**< default neighboring threshold
                                          (blastp and for rpsblast at RPS-BLAST
                                          database creation time) */
+#define BLAST_WORD_THRESHOLD_BLASTP_FAST 19.3 //neighboring threshold for word size 5 (blastp/x-fast)
+#define BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_6 21 //neighboring threshold for word size 6
+#define BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_7 20.25 //neighboring threshold for word size 7
+
 #define BLAST_WORD_THRESHOLD_BLASTN 0 /**< default threshold (blastn) */
 #define BLAST_WORD_THRESHOLD_BLASTX 12 /**< default threshold (blastx) */
 #define BLAST_WORD_THRESHOLD_TBLASTN 13 /**< default neighboring threshold 
