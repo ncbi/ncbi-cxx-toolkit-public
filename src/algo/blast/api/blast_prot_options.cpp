@@ -53,6 +53,28 @@ CBlastProteinOptionsHandle::CBlastProteinOptionsHandle(EAPILocality locality)
     m_Opts->SetProgram(eBlastp);
 }
 
+void CBlastProteinOptionsHandle::SetWordSize(int ws) {
+
+   	m_Opts->SetWordSize(ws);
+   	if (ws == 6) {
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_6);
+   	}
+   	else if (ws == 5) {
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
+   	} else if (ws == 3) {
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
+   	} else if (ws == 7) {
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_7);
+   	}
+
+   	if (ws > 4) {
+   		m_Opts->SetLookupTableType(eCompressedAaLookupTable);
+   	}
+   	else {
+   		m_Opts->SetLookupTableType(eAaLookupTable);
+   	}
+}
+
 void 
 CBlastProteinOptionsHandle::SetLookupTableDefaults()
 {

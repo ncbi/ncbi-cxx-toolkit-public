@@ -72,8 +72,7 @@ public:
     int GetWordSize() const { return m_Opts->GetWordSize(); }
     /// Sets WordSize
     /// @param ws WordSize [in]
-    void SetWordSize(int ws) { m_Opts->SetWordSize(ws); }
-
+    void SetWordSize(int ws);
     /******************* Initial word options ***********************/
 
     /// Returns XDropoff
