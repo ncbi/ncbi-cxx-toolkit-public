@@ -343,8 +343,6 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     CSeq_id::E_Choice cho;
     CSeq_id::E_Choice ncho;
 
-    Char str[100];
-
     if (pp->mode == Parser::EMode::Relaxed) {
         protacc = CpTheQualValue(cds.SetQual(), "protein_id");
         if (! protacc || *protacc == '\0') {
@@ -386,13 +384,12 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     if (pp->accver == false || (pp->source != Parser::ESource::EMBL &&
                                 pp->source != Parser::ESource::NCBI && pp->source != Parser::ESource::DDBJ)) {
         ++(*num);
-        sprintf(str, "%d", (int)*num);
+        string obj_id_str = text_id->GetAccession();
+        obj_id_str += '_';
+        obj_id_str += to_string(*num);
 
         CRef<CSeq_id> seq_id(new CSeq_id);
-        string&       obj_id_str = seq_id->SetLocal().SetStr();
-        obj_id_str               = text_id->GetAccession();
-        obj_id_str += "_";
-        obj_id_str += str;
+        seq_id->SetLocal().SetStr(obj_id_str);
         ids.push_back(seq_id);
         return;
     }
@@ -409,13 +406,12 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     if (pp->mode == Parser::EMode::HTGSCON) {
         MemFree(protacc);
         ++(*num);
-        sprintf(str, "%d", (int)*num);
+        string obj_id_str = text_id->GetAccession();
+        obj_id_str += '_';
+        obj_id_str += to_string(*num);
 
         CRef<CSeq_id> seq_id(new CSeq_id);
-        string&       obj_id_str = seq_id->SetLocal().SetStr();
-        obj_id_str               = text_id->GetAccession();
-        obj_id_str += "_";
-        obj_id_str += str;
+        seq_id->SetLocal().SetStr(obj_id_str);
         ids.push_back(seq_id);
         return;
     }
@@ -1261,9 +1257,8 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
  **********************************************************/
 static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, char* qval, bool intercodon, const char* gcode, unsigned char* method)
 {
-    char*  ptr;
-    Char   msg2[1100];
-    Char   aastr[100];
+    const char* ptr;
+    string msg2;
     Int2   residue;
     Int4   num = 0;
     size_t aa;
@@ -1273,7 +1268,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
 
     CCdregion& cdregion = feat.SetData().SetCdregion();
     size_t     len      = StringLen(qval);
-    msg2[0]             = '\0';
+    msg2.reserve(1100);
 
     string loc = location_to_string(feat.GetLocation());
 
@@ -1312,22 +1307,26 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
             msgout = true;
             num++;
             if (num == 1)
-                StringCpy(msg2, "at AA # ");
+                msg2 = "at AA # ";
 
-            if (num < 11 && StringLen(msg2) < 1000) {
-                sprintf(aastr, "%d(%c,%c), ", (int)aa, (char)residue, (char)*ptr);
-                StringCat(msg2, aastr);
-            } else if (num == 11 && StringLen(msg2) < 1000)
-                StringCat(msg2, ", additional details suppressed, ");
+            if (num < 11 && msg2.length() < 1000) {
+                stringstream aastr;
+                aastr << aa << '(' << (char)residue << ',' << (char)*ptr << "), ";
+                msg2 += aastr.str();
+            } else if (num == 11 && msg2.length() < 1000)
+                msg2 += ", additional details suppressed, ";
             ptr++;
         }
 
         if (num > 0) {
             cdregion.SetConflict(true);
-            sprintf(aastr, "using genetic code %s, total %d difference%s", gcode, (int)num, (num > 1) ? "s" : "");
-            StringCat(msg2, aastr);
+            stringstream aastr;
+            aastr << "using genetic code " << gcode << ", total " << num << " difference";
+            if (num > 1)
+                aastr << 's'; // plural
+            msg2 += aastr.str();
             if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                ErrPostEx(SEV_WARNING, ERR_CDREGION_TranslationDiff, "%s:%s", msg2, loc.c_str());
+                ErrPostEx(SEV_WARNING, ERR_CDREGION_TranslationDiff, "%s:%s", msg2.c_str(), loc.c_str());
             }
         }
 
@@ -1684,9 +1683,8 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
     ErrSev sev;
 
     Uint1  m = 0;
-    Char   gcode_str[10];
-    Char   stopmsg[550];
-    Char   aastr[100];
+    string gcode_str;
+    string stopmsg;
     size_t protlen;
     Int4   aa;
     Int4   num = 0;
@@ -1758,9 +1756,9 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         pp->entrylist[pp->curindx]->drop = true;
 
     if (cur_code)
-        sprintf(gcode_str, "%d", (int)cur_code->GetId());
+        gcode_str = to_string(cur_code->GetId());
     else
-        StringCpy(gcode_str, "unknown");
+        gcode_str = "unknown";
 
     qval       = CpTheQualValue(feat.GetQual(), "translation");
     intercodon = false;
@@ -1797,7 +1795,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
         /* check internal stop codon */
         size_t residue_idx = 0;
         protlen            = prot.size();
-        for (stopmsg[0] = '\0', aa = 1; residue_idx < protlen; ++residue_idx) {
+        for (stopmsg.reserve(550), aa = 1; residue_idx < protlen; ++residue_idx) {
             residue = prot[residue_idx];
             if (aa == 1 && residue == '-') {
                 /* if unrecognized start of translation,
@@ -1817,11 +1815,10 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
                 intercodon = true;
                 ++num;
 
-                if (num < 11 && StringLen(stopmsg) < 500) {
-                    sprintf(aastr, "%d ", (int)aa);
-                    StringCat(stopmsg, aastr);
-                } else if (num == 11 && StringLen(stopmsg) < 500)
-                    StringCat(stopmsg, ", only report 10 positions");
+                if (num < 11 && stopmsg.length() < 500) {
+                    stopmsg += to_string(aa);
+                } else if (num == 11 && stopmsg.length() < 500)
+                    stopmsg += ", only report 10 positions";
             }
 
             aa++;
@@ -1829,7 +1826,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
         if (intercodon) {
             if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                ErrPostEx(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, "Found %d internal stop codon, at AA # %s, on feature key, CDS, frame # %d, genetic code %s:%s", (int)num, stopmsg, cdregion.GetFrame(), gcode_str, loc.c_str());
+                ErrPostEx(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, "Found %d internal stop codon, at AA # %s, on feature key, CDS, frame # %d, genetic code %s:%s", (int)num, stopmsg.c_str(), cdregion.GetFrame(), gcode_str.c_str(), loc.c_str());
             }
 
             if (pp->debug) {
@@ -1842,7 +1839,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
     if (qval) /* compare protein sequence */
     {
-        CkProteinTransl(pp, ibp, prot, feat, qval, intercodon, gcode_str, &m);
+        CkProteinTransl(pp, ibp, prot, feat, qval, intercodon, gcode_str.c_str(), &m);
         *method = m;
         MemFree(qval);
         seq_data.swap(prot);

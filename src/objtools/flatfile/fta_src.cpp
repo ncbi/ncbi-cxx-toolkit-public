@@ -1199,7 +1199,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
     SourceFeatBlkPtr tsfbp;
     const char**     b;
     char*            name;
-    Char             pat[100];
+    string           pat;
     Int4             count;
     bool             same;
 
@@ -1235,14 +1235,14 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
         return (0);
 
     name = nullptr;
-    sprintf(pat, "1..%ld", long(len));
+    pat  = "1.." + to_string(len);
     for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->name || ! tsfbp->location || tsfbp->skip)
             continue;
 
         for (b = special_orgs; *b; b++) {
             if (NStr::CompareNocase(*b, tsfbp->name) == 0 &&
-                StringEqu(tsfbp->location, pat))
+                StringEqu(tsfbp->location, pat.c_str()))
                 break;
         }
         if (*b)
@@ -1300,9 +1300,11 @@ static char* CheckSourceOverlap(MinMaxPtr mmp, size_t len)
     if (! mmp)
         return nullptr;
 
-    res = MemNew(1024);
-    sprintf(res, "\"%s\" at %d..%d vs \"%s\" at %d..%d", mmp->orgname, mmp->min, mmp->max, tmmp->orgname, tmmp->min, tmmp->max);
-    return (res);
+    stringstream ss;
+    ss << "\"" << mmp->orgname << "\" at " << mmp->min << ".." << mmp->max
+       << " vs \"" << tmmp->orgname << "\" at " << tmmp->min << ".." << tmmp->max;
+    res = StringSave(ss.str().c_str());
+    return res;
 }
 
 /**********************************************************/
