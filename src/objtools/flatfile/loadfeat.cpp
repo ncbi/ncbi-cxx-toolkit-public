@@ -1210,8 +1210,10 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 for (p = subdbp->mOffset; *p != '\0' && isdigit(*p) == 0;)
                     p++;
                 if (StringChr(p, ',')) {
-                    location = MemNew(StringLen(p) + 7);
-                    sprintf(location, "join(%s)", p);
+                    string s = "join(";
+                    s += p;
+                    s += ")";
+                    location = StringSave(s.c_str());
                 } else
                     location = StringSave(p);
                 break;
@@ -3899,7 +3901,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
     char* ptr2;
     char* p;
     char* q;
-    Char  loc[100];
+    string loc;
     Char  ch;
 
     FeatBlkPtr fbp;
@@ -3909,7 +3911,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
     int        ret;
 
     if (ibp->is_mga)
-        sprintf(loc, "1..%ld", (long)ibp->bases);
+        loc = "1.." + to_string(ibp->bases);
     for (num = 0; dbp; dbp = dbp->mpNext, num++) {
         fbp          = new FeatBlk;
         fbp->spindex = -1;
@@ -3972,7 +3974,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         if (fbp->location[0] == '\0' && ibp->is_mga) {
             MemFree(fbp->location);
-            fbp->location = StringSave(loc);
+            fbp->location = StringSave(loc.c_str());
         }
 
         FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location);

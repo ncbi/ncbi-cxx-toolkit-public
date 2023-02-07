@@ -658,7 +658,7 @@ static bool XMLTagCheck(XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 }
 
 /**********************************************************/
-static bool XMLSameTagsCheck(XmlIndexPtr xip, char* name)
+static bool XMLSameTagsCheck(XmlIndexPtr xip, const char* name)
 {
     bool ret = true;
 
@@ -680,7 +680,7 @@ static XmlIndexPtr XMLIndexSameSubTags(const char* entry, XmlIndexPtr xip, Int4 
 {
     XmlIndexPtr xipsub;
     XmlIndexPtr txipsub;
-    char*       name;
+    const char* name;
     const char* c;
     char*       p;
     size_t      count;
@@ -691,7 +691,7 @@ static XmlIndexPtr XMLIndexSameSubTags(const char* entry, XmlIndexPtr xip, Int4 
     if (! entry || ! xip)
         return nullptr;
 
-    name = (char*)XMLStringByTag(xmsubkwl, tag);
+    name = XMLStringByTag(xmsubkwl, tag);
     if (! name)
         return nullptr;
 
@@ -1275,14 +1275,11 @@ static bool XMLCheckRequiredRefTags(XmlIndexPtr xip)
 /**********************************************************/
 static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
 {
-    Char str[100];
-
     if (! reftag || *reftag == '\0')
         return (ParFlat_REF_NO_TARGET);
 
-    sprintf(str, "1..%d", (int)bases);
-
-    if (StringEqu(reftag, str))
+    const string str = "1.." + to_string(bases);
+    if (StringEqu(reftag, str.c_str()))
         return (ParFlat_REF_END);
     if (StringEqu(reftag, "sites"))
         return (ParFlat_REF_SITES);
@@ -1293,8 +1290,6 @@ static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
 static Int2 XMLGetRefType(char* reftag, size_t bases)
 {
     char* p;
-    Char  str[100];
-    Char  str1[100];
 
     if (! reftag)
         return (ParFlat_REF_NO_TARGET);
@@ -1304,10 +1299,10 @@ static Int2 XMLGetRefType(char* reftag, size_t bases)
     if (*p == '\0')
         return (ParFlat_REF_NO_TARGET);
 
-    sprintf(str, "(bases 1 to %d)", (int)bases);
-    sprintf(str1, "(bases 1 to %d;", (int)bases);
+    const string str = "(bases 1 to " + to_string(bases) + ")";
+    const string str1 = "(bases 1 to " + to_string(bases) + ";";
 
-    if (StringStr(p, str) || StringStr(p, str1))
+    if (StringStr(p, str.c_str()) || StringStr(p, str1.c_str()))
         return (ParFlat_REF_END);
     if (StringStr(p, "(sites)"))
         return (ParFlat_REF_SITES);

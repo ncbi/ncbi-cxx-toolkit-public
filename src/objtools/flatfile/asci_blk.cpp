@@ -282,17 +282,16 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
  **********************************************************/
 static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
 {
-    Char  str[100];
-    Char  str1[100];
-    Char  str2[100];
     char* bptr;
     char* eptr;
 
     bptr = dbp->mOffset;
     eptr = bptr + dbp->len;
-    sprintf(str, "(bases 1 to %d)", (int)bases);
-    sprintf(str1, "(bases 1 to %d;", (int)bases);
-    sprintf(str2, "(residues 1 to %daa)", (int)bases);
+
+    const string s    = to_string(bases);
+    const string str  = "(bases 1 to " + s + ")";
+    const string str1 = "(bases 1 to " + s + ";";
+    const string str2 = "(residues 1 to " + s + "aa)";
 
     string ref(bptr, bptr + dbp->len);
 
@@ -630,7 +629,6 @@ static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
  **********************************************************/
 static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
 {
-    Char  str[100];
     char* ptr;
     char* bptr;
     char* eptr;
@@ -647,9 +645,8 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
         return;
     }
 
-    sprintf(str, " 1-%d", (int)bases);
-
-    ptr = SrchTheStr(bptr, eptr, str);
+    const string str = " 1-" + to_string(bases);
+    ptr = SrchTheStr(bptr, eptr, str.c_str());
     if (ptr) {
         dbp->mType = ParFlat_REF_END;
         return;

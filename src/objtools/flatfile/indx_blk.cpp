@@ -1935,7 +1935,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
 {
     Char            acc[200];
-    Char            temp[400];
+    string          temp;
     char*           line;
     char*           p;
     TokenStatBlkPtr stoken;
@@ -2005,18 +2005,19 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
     StringCpy(entry->acnum, acc);
 
     if (pp->format != Parser::EFormat::XML) {
-        if (pp->accver && entry->vernum > 0)
-            sprintf(temp, "%s.%d", acc, entry->vernum);
-        else
-            StringCpy(temp, acc);
-
-        if (*temp == '\0') {
-            if (entry->locusname[0] != '\0')
-                StringCpy(temp, entry->locusname);
-            else
-                StringCpy(temp, "???");
+        temp = acc;
+        if (pp->accver && entry->vernum > 0) {
+            temp += '.';
+            temp += to_string(entry->vernum);
         }
-        FtaInstallPrefix(PREFIX_ACCESSION, temp);
+
+        if (temp.empty()) {
+            if (entry->locusname[0] != '\0')
+                temp = entry->locusname;
+            else
+                temp = "???";
+        }
+        FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str());
     }
 
     if (pp->source == Parser::ESource::Flybase) {
