@@ -42,6 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 /////////////////////////////////////////////////////////////////////////////
 // CExceptionSubsystem
 
@@ -56,7 +57,7 @@ public:
         eType1,
         eType2
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eType1: return "eType1";
@@ -66,6 +67,7 @@ public:
     }
     NCBI_EXCEPTION_DEFAULT(CSubsystemException,CException);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CSupersystemException
@@ -77,7 +79,7 @@ public:
         eSuper1,
         eSuper2
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eSuper1: return "eSuper1";
@@ -87,6 +89,7 @@ public:
     }
     NCBI_EXCEPTION_DEFAULT(CSupersystemException, CSubsystemException);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CIncompletelyImplementedException
@@ -107,7 +110,7 @@ public:
         eMore1,
         eMore2
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eMore1: return "eMore1";
@@ -117,6 +120,7 @@ public:
     }
     NCBI_EXCEPTION_DEFAULT(CErrnoMoreException,CErrnoTemplException<CCoreException>);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CExceptApplication::
