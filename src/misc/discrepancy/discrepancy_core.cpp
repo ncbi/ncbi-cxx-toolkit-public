@@ -65,27 +65,6 @@ protected:
         return {xGetProps<I>()...};
     }
 
-    using bool_function = bool (*)();
-
-    template<std::size_t... I>
-    static constexpr auto xAssembleCanAutofix(std::index_sequence<I...>) ->
-        std::array<bool_function, sizeof...(I)>
-    {
-        return { &CDiscrepancyVisitorImpl<static_cast<eTestNames>(I)>::CanAutofix ...};
-    }
-
-    static TTestNamesSet xPopulateAutofixTests()
-    {
-        static constexpr auto _arr = xAssembleCanAutofix(std::make_index_sequence<num_test_cases>{});
-        TTestNamesSet names;
-        for (size_t i=0; i<_arr.size(); ++i) {
-            if (_arr[i]()) {
-                names.set(static_cast<eTestNames>(i));
-            }
-        }
-        return names;
-    }
-
 public:
 
     static constexpr TArray PopulateTests()
@@ -94,8 +73,8 @@ public:
     }
     static const TTestNamesSet& GetAutofixTests()
     {
-        static TTestNamesSet autofix_name = xPopulateAutofixTests();
-        return autofix_name;
+        static constexpr TTestNamesSet autofix_names{DISC_AUTOFIX_TESTNAMES};
+        return autofix_names;
     }
 
     static const TAliasMap& GetAliasMap();

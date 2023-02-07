@@ -51,12 +51,7 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(NDiscrepancy)
 
-enum class eTestNames
-{
-    #include "testnames.inc"
-    max_test_names,
-    notset,
-};
+#include "testnames.inc"
 
 enum class eTestTypes
 {
