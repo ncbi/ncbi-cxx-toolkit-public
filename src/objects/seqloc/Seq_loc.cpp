@@ -1725,7 +1725,7 @@ SSeq_loc_CI_RangeInfo& CSeq_loc_CI_Impl::InsertRange(size_t idx,
             }
             break;
         case CSeq_loc::e_Packed_int:
-            if ( type != CSeq_loc::e_Pnt || type != CSeq_loc::e_Int ) {
+            if ( type != CSeq_loc::e_Pnt && type != CSeq_loc::e_Int ) {
                 loc = null;
             }
             break;
