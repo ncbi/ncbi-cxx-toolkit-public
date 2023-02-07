@@ -2325,11 +2325,11 @@ const int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 void NStr::DoubleToString(string& out_str, double value,
                           int precision, TNumToStringFlags flags)
 {
-    char buffer[kMaxDoubleStringSize];
+    char buffer[kMaxDoubleStringSize]; // inludes ending '\0'
+    int n = 0;
     if (precision >= 0 ||
         ((flags & fDoublePosix) && (!finite(value) || value == 0.))) {
-        SIZE_TYPE n = DoubleToString(value, precision, buffer,
-                                     kMaxDoubleStringSize, flags);
+        SIZE_TYPE n = DoubleToString(value, precision, buffer, kMaxDoubleStringSize, flags);
         buffer[n] = '\0';
     } else {
         const char* format;
@@ -2345,7 +2345,10 @@ void NStr::DoubleToString(string& out_str, double value,
                 format = "%g";
                 break;
         }
-        ::sprintf(buffer, format, value);
+        n = ::snprintf(buffer, kMaxDoubleStringSize, format, value);
+        if (n < 0) {
+            buffer[0] = '\0';
+        }
         if (flags & fDoublePosix) {
             struct lconv* conv = localeconv();
             if ('.' != *(conv->decimal_point)) {
@@ -2365,7 +2368,7 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
                                char* buf, SIZE_TYPE buf_size,
                                TNumToStringFlags flags)
 {
-    char buffer[kMaxDoubleStringSize];
+    char buffer[kMaxDoubleStringSize]; // inludes ending '\0'
     int n = 0;
     if ((flags & fDoublePosix) && (!finite(value) || value == 0.)) {
         if (value == 0.) {
@@ -2404,7 +2407,7 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
                 format = "%.*f";
                 break;
         }
-        n = ::sprintf(buffer, format, (int)precision, value);
+        n = ::snprintf(buffer, kMaxDoubleStringSize, format, (int)precision, value);
         if (n < 0) {
             n = 0;
         }
@@ -2763,8 +2766,9 @@ string NStr::SizetToString(size_t value, TNumToStringFlags flags, int base)
 string NStr::PtrToString(const void* value)
 {
     errno = 0;
-    char buffer[64];
-    ::sprintf(buffer, "%p", value);
+    const int kBufSize = 64;
+    char buffer[kBufSize];
+    ::snprintf(buffer, kBufSize, "%p", value);
     return buffer;
 }
 
@@ -2772,8 +2776,9 @@ string NStr::PtrToString(const void* value)
 void NStr::PtrToString(string& out_str, const void* value)
 {
     errno = 0;
-    char buffer[64];
-    ::sprintf(buffer, "%p", value);
+    const int kBufSize = 64;
+    char buffer[kBufSize];
+    ::snprintf(buffer, kBufSize, "%p", value);
     out_str = buffer;
 }
 
