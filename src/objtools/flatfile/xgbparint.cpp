@@ -689,9 +689,8 @@ static void xgbparse_better_be_done(int& numErrors, TTokenIt current_token, cons
             ++current_token;
             if (current_token == end(tokens)) {
                 if (paren_count) {
-                    char par_msg[40];
-                    sprintf(par_msg, "mismatched parentheses (%d)", paren_count);
-                    xgbparse_error(par_msg,
+                    const string par_msg = "mismatched parentheses (" + to_string(paren_count) + ")";
+                    xgbparse_error(par_msg.c_str(),
                                    tokens,
                                    current_token);
                     keep_rawPt = true;

@@ -1097,7 +1097,7 @@ bool QscoreToSeqAnnot(const string& qscore, CBioseq& bioseq, char* acc, Int2 ver
     if (qscore.empty() || ver < 1)
         return true;
 
-    sprintf(charver, "%d", (int)ver);
+    snprintf(charver, 100, "%d", (int)ver);
 
     CSeq_annot::C_Data::TGraph graphs;
     QSbuf_To_Single_Qscore_SeqGraph(qscore.c_str(), bioseq, acc, charver, check_minmax, allow_na, graphs);
