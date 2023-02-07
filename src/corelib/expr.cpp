@@ -416,7 +416,6 @@ void CExprParserException::x_Assign(const CException& src)
 CExprParser::CExprParser(CExprParser::TParserFlags ParserFlags)
 : m_Buf(NULL)
 , m_Pos(0)
-, m_TmpVarCount(0)
 , m_ParserFlags(ParserFlags)
 {
     memset(hash_table, 0, sizeof(hash_table));
@@ -796,17 +795,6 @@ void CExprParser::Parse(const char* str)
                 }
 
                 if (m_v_sp == 1) {
-                    /*
-                    sprintf(var_name, "$%d", ++m_TmpVarCount);
-                    printf("%s = ", var_name);
-                    CExprSymbol::add(CExprSymbol::eVARIABLE, var_name)->m_Val = m_VStack[0];
-                    if (m_VStack[0].GetType() == CExprValue::eINT) { 
-                        printf("%" INT_FORMAT "d [%#" INT_FORMAT "x %#" INT_FORMAT "o]\n", 
-                               m_VStack[0].ival,  m_VStack[0].ival, m_VStack[0].ival);
-                    } else { 
-                        printf("%.10g\n", m_VStack[0].fval);
-                    }
-                    */
                     return;
                 } else if (m_v_sp != 0) { 
                     ReportError("Unexpected end of expression");
