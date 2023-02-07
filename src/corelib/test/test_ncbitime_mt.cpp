@@ -45,6 +45,11 @@
 #  define sys_tzset   tzset
 #endif /*NCBI_COMPILER_MSVC && _MSC_VER>=1400*/
 
+// Global timezone/daylight information is not available on selected platforms
+#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+#  define NCBI_TIMEZONE_IS_UNDEFINED  1
+#endif
+
 
 USING_NCBI_SCOPE;
 

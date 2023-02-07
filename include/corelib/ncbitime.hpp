@@ -117,12 +117,6 @@ typedef struct {
 } TDBTimeI, *TDBTimeIPtr;
 
 
-// Global timezone/daylight information is not available on selected platforms
-#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
-#  define NCBI_TIMEZONE_IS_UNDEFINED  1
-#endif
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -1929,9 +1923,7 @@ private:
     time_t  m_LastTuneupTime; ///< Last Tuneup() time
     time_t  m_LastSysTime;    ///< Last system time
     int     m_Timezone;       ///< Cached timezone adjustment for local time
-#if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
     int     m_Daylight;       ///< Cached system daylight information
-#endif
     void* volatile m_IsTuneup;///< (bool) Tuneup() in progress (MT)
 };
 
