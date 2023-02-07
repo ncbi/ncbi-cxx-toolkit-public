@@ -30,7 +30,7 @@ NCBI_begin_lib(xdiscrepancy)
     NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
     NCBI_project_watchers(gotvyans)
 
-    if(NCBI_PYTHON_EXECUTABLE)
+    if(NCBI_PYTHON_EXECUTABLE AND NOT BUILD_SHARED_LIBS)
         if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
             NCBI_custom_target_dependencies(discrepancy_fsm_files)
         endif()
@@ -40,7 +40,7 @@ NCBI_begin_lib(xdiscrepancy)
 
 NCBI_end_lib()
 
-if(NCBI_PYTHON_EXECUTABLE)
+if(NCBI_PYTHON_EXECUTABLE AND NOT BUILD_SHARED_LIBS)
 
     if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
 
@@ -92,6 +92,7 @@ function(define_discrepancy_testnames_target variable access value current_list_
         discrepancy_testnames
         DEPENDS ${_target_dir}/testnames.inc
     )
+
     unset(_cpp_files)
     unset(_target_dir)
     unset(_source_dir)
