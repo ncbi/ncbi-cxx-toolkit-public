@@ -4673,6 +4673,23 @@ special  CAOJBO000000000-CAOJBP999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJBT000000000-CAOJBT999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJBX000000000-CAOJBZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJCC000000000-CAOJCK999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJCT000000000-CAOJOB999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJOD000000000-CAOJWF999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJWM000000000-CAOJZE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOJZG000000000-CAOKAE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKAG000000000-CAOKEF999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKEH000000000-CAOKFE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKFG000000000-CAOKGU999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKGW000000000-CAOKNL999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKNN000000000-CAOKRJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKRM000000000-CAOKRM999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKRP000000000-CAOKSS999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKSU000000000-CAOKTE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKTU000000000-CAOKTV999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKTX000000000-CAOKXA999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOKXC000000000-CAOKXH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAOLCF000000000-CAOLCF999999999  embl_tpa_wgs_nuc # 6+9
+special  CASBEU000000000-CASBIE999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
