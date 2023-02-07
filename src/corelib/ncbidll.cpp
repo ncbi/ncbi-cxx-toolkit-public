@@ -42,14 +42,14 @@
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
 #elif defined(NCBI_OS_UNIX)
-#  ifdef NCBI_OS_DARWIN
-#    include <mach-o/dyld.h>
-#  endif
 #  ifdef HAVE_DLFCN_H
 #    include <dlfcn.h>
 #    ifndef RTLD_LOCAL /* missing on Cygwin? */
 #      define RTLD_LOCAL 0
 #    endif
+#  endif
+#  ifdef NCBI_OS_DARWIN
+#    include <mach-o/dyld.h>
 #  endif
 #else
 #  error "Class CDll defined only for MS Windows and UNIX platforms"
@@ -221,6 +221,9 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
     // Return address of entry (function or data)
 #if defined(NCBI_OS_MSWIN)
     FARPROC ptr = GetProcAddress(m_Handle->handle, name.c_str());
+#elif defined(NCBI_OS_UNIX)  &&  defined(HAVE_DLFCN_H)
+    void* ptr = 0;
+    ptr = dlsym(m_Handle->handle, name.c_str());
 #elif defined(NCBI_OS_DARWIN)
     NSModule module = (NSModule)m_Handle->handle;
     NSSymbol nssymbol = NSLookupSymbolInModule(module, name.c_str());
@@ -229,9 +232,6 @@ CDll::TEntryPoint CDll::GetEntryPoint(const string& name)
     if (ptr == NULL) {
         ptr = dlsym (m_Handle->handle, name.c_str());
     }
-#elif defined(NCBI_OS_UNIX)  &&  defined(HAVE_DLFCN_H)
-    void* ptr = 0;
-    ptr = dlsym(m_Handle->handle, name.c_str());
 #else
     void* ptr = 0;
 #endif
