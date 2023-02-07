@@ -366,7 +366,6 @@ private:
     int         m_o_sp;
     const char* m_Buf;
     int         m_Pos;
-    int         m_TmpVarCount;
     TParserFlags    m_ParserFlags;
 };
 
