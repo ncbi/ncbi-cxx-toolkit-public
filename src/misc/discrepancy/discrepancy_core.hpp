@@ -231,7 +231,6 @@ public:
     {
         return CRef<CAutofixReport>();
     }
-    [[nodiscard]] static bool CanAutofix() { return false; }
     void Visit(CDiscrepancyContext& context) override;
     void Summarize() override { xSummarize(); } // default implementation
 protected:
@@ -907,8 +906,6 @@ inline const CObject* CDiscrepancyContext::GetMore(CReportObj& obj) { return sta
 
 
 #define DISCREPANCY_AUTOFIX(name) \
-    template<>                                                                                                      \
-    [[nodiscard]] bool CDiscrepancyVisitorImpl<eTestNames::name>::CanAutofix() { return true; }                     \
     template<>                                                                                                      \
     CRef<CAutofixReport>                                                                                            \
     CDiscrepancyVisitorImpl<eTestNames::name>::Autofix(CDiscrepancyObject* obj, CDiscrepancyContext& context) const
