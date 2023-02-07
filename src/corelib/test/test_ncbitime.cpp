@@ -53,6 +53,11 @@ USING_NCBI_SCOPE;
 // String printout
 #define STR(t) string("[" + (t).AsString() + "]")
 
+// Global timezone/daylight information is not available on selected platforms
+#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+#  define NCBI_TIMEZONE_IS_UNDEFINED  1
+#endif
+
 
 //============================================================================
 //

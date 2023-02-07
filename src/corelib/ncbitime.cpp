@@ -56,6 +56,11 @@
 #  define TZName()    tzname
 #endif
 
+// Global timezone/daylight information is not available on selected platforms
+#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+#  define NCBI_TIMEZONE_IS_UNDEFINED  1
+#endif
+
 // The offset in seconds of daylight saving time.
 // 1 hour for most time zones.
 #if defined(NCBI_COMPILER_MSVC)
@@ -63,7 +68,6 @@
 #else
 #  define DSTBias()   -3600
 #endif
-
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Util
@@ -3920,7 +3924,7 @@ bool CDeadline::operator< (const CDeadline& right_hand_operand) const
 CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
     : m_SecAfterHour(sec_after_hour),
       m_LastTuneupTime(0), m_LastSysTime(0),
-      m_Timezone(0), m_Daylight(-1), m_IsTuneup(NULL)
+      m_Timezone(0), m_IsTuneup(NULL)
 {
 #if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect: use CTime locking mutex
@@ -3928,6 +3932,8 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
     LOCK.Release();
+#else
+    m_Daylight = -1;
 #endif
     m_LocalTime.SetTimeZonePrecision(CTime::eHour);
     m_TunedTime.SetTimeZonePrecision(CTime::eHour);
