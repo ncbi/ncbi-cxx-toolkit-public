@@ -395,7 +395,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
          } else if (task == "blastp-fast") {
             opts->SetWordSize(5);
             opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
-            opts->SetWordThreshold(19.3);
+            opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
          }
          retval = opts;
     }
@@ -439,9 +439,9 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     	            dynamic_cast<CTBlastnOptionsHandle*>
          (CBlastOptionsFactory::Create(eTblastn, locality));
     	if(task == "tblastn-fast") {
-    		opts->SetWordSize(6);
+    		opts->SetWordSize(5);
             opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
-            opts->SetWordThreshold(21.0);
+            opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
     	}
     	retval = opts;
     }
