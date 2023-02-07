@@ -64,9 +64,6 @@
 #  define DSTBias()   -3600
 #endif
 
-#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
-#  define TIMEZONE_IS_UNDEFINED  1
-#endif
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Util
@@ -1539,7 +1536,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     const CTime* t = this;
     CTime* t_out = 0;
 
-#if defined(TIMEZONE_IS_UNDEFINED)
+#if defined(NCBI_TIMEZONE_IS_UNDEFINED)
     if (out_tz != eCurrentTimeZone) {
         ERR_POST_X(4, "Output timezone is unsupported on this platform");
     }
@@ -1615,7 +1612,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'o': tz_fmt_make.activate(); /* FALL THROUGH */
         case 'z': {
-#if defined(TIMEZONE_IS_UNDEFINED)
+#if defined(NCBI_TIMEZONE_IS_UNDEFINED)
                   ERR_POST_X(5, "Format symbol 'z' is unsupported "
                                 "on this platform");
 #else
@@ -3925,7 +3922,7 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
       m_LastTuneupTime(0), m_LastSysTime(0),
       m_Timezone(0), m_Daylight(-1), m_IsTuneup(NULL)
 {
-#if !defined(TIMEZONE_IS_UNDEFINED)
+#if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect: use CTime locking mutex
     CMutexGuard LOCK(s_TimeMutex);
     m_Timezone = (int)TimeZone();
@@ -3961,7 +3958,7 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
     m_TunedTime.x_SetTime(&timer);
     m_TunedTime.SetNanoSecond(nanosec);
 
-#if !defined(TIMEZONE_IS_UNDEFINED)
+#if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
 #endif
@@ -3994,7 +3991,7 @@ retry:
     // Avoid to make time tune up in first m_SecAfterHour for each hour
     // Otherwise do this at each hours/timezone change.
     if ( !m_IsTuneup ) {
-#if !defined(TIMEZONE_IS_UNDEFINED)
+#if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
         // Get current timezone
         TSeconds x_timezone;
         int x_daylight;
@@ -4008,7 +4005,7 @@ retry:
         if ( !m_LastTuneupTime  ||
             ((timer / 3600 != m_LastTuneupTime / 3600)  &&
              (timer % 3600 >  (time_t)m_SecAfterHour))
-#if !defined(TIMEZONE_IS_UNDEFINED)
+#if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
             ||  (x_timezone != m_Timezone  ||  x_daylight != m_Daylight)
 #endif
         ) {
@@ -4038,7 +4035,7 @@ retry:
 
 int CFastLocalTime::GetLocalTimezone(void)
 {
-#if !defined(TIMEZONE_IS_UNDEFINED)
+#if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
     // Get system timer
     time_t timer;
     long ns;
