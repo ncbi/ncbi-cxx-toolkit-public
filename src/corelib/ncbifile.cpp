@@ -234,6 +234,13 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
 // Get an error string for last error on Windows
 #define WIN_LAST_ERROR_STR CLastErrorAdapt::GetErrCodeString(::GetLastError())
 
+// tv_usec part for struct timeval have an 'int' type on Darwin, so we need a conversion from 'long' to avoid warnings
+#if defined(NCBI_OS_DARWIN)
+#   define TV_USEC(x) (int)(x)
+#else
+#   define TV_USEC(x) x
+#endif
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1962,9 +1969,9 @@ bool CDirEntry::SetTime(const CTime* modification,
     // Change times
     struct timeval tvp[2];
     tvp[0].tv_sec  = last_access->GetTimeT();
-    tvp[0].tv_usec = last_access->NanoSecond() / (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    tvp[0].tv_usec = TV_USEC(last_access->NanoSecond() / (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     tvp[1].tv_sec  = modification->GetTimeT();
-    tvp[1].tv_usec = modification->NanoSecond() / (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    tvp[1].tv_usec = TV_USEC(modification->NanoSecond() / (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
 
 #    ifdef HAVE_LUTIMES
     bool ut_res = lutimes(GetPath().c_str(), tvp) == 0;
@@ -3063,9 +3070,9 @@ static bool s_CopyAttrs(const char* from, const char* to,
 #  if defined(HAVE_UTIMES)
         struct timeval tvp[2];
         tvp[0].tv_sec  = st.orig.st_atime;
-        tvp[0].tv_usec = st.atime_nsec / 1000;
+        tvp[0].tv_usec = TV_USEC(st.atime_nsec / 1000);
         tvp[1].tv_sec  = st.orig.st_mtime;
-        tvp[1].tv_usec = st.mtime_nsec / 1000;
+        tvp[1].tv_usec = TV_USEC(st.mtime_nsec / 1000);
 #    if defined(HAVE_LUTIMES)
         if (lutimes(to, tvp)) {
             LOG_ERROR_ERRNO(31, "CDirEntry::s_CopyAttrs(): lutimes() failed for: " + string(to));
@@ -5255,10 +5262,11 @@ void s_GetFileSystemInfo(const string&               path,
 
     GET_STATFS_INFO;
     // Seems statfs structure on Darwin doesn't have any information 
-    // about name length, so rely on pathconf() only.
-    //if (need_name_max) {
+    // about name length, so rely on pathconf() only (see above).
+    // empty if - to avoid compilation warning on defined but unused variable
+    if (need_name_max) {
     //    info->filename_max = (unsigned long)st.f_namelen;
-    //}
+    }
     fs_name_ptr = st.f_fstypename;
 
 #  elif defined(NCBI_OS_BSD)  &&  defined(HAVE_STATFS)
