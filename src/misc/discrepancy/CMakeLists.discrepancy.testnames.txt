@@ -1,0 +1,40 @@
+# $Id$
+
+if (NCBI_PYTHON_EXECUTABLE)
+
+NCBI_begin_custom_target(discrepancy.testnames)
+    NCBI_custom_target_definition(define_discrepancy_testnames_target)
+NCBI_end_custom_target()
+
+function(define_discrepancy_testnames_target variable access value current_list_file stack)
+
+    get_filename_component(_source_dir ${current_list_file} DIRECTORY)
+    file(RELATIVE_PATH _rel_path ${NCBI_SRC_ROOT} ${_source_dir})
+    set(_target_dir ${NCBI_INC_ROOT}/${_rel_path})
+    unset(_rel_path)
+
+    set(_cpp_files)
+
+    foreach(_module ${_discrepancy_modules})
+       list(APPEND _cpp_files ${_module}.cpp)
+    endforeach()
+
+    add_custom_command(
+        OUTPUT ${_target_dir}/testnames.inc
+        COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
+        COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
+        WORKING_DIRECTORY ${_source_dir}
+        DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/make_test_names.py
+        )
+
+    add_custom_target(
+        discrepancy.testnames
+        DEPENDS ${_target_dir}/testnames.inc
+    )
+
+    unset(_cpp_files)
+    unset(_target_dir)
+    unset(_source_dir)
+endfunction()
+
+endif()
