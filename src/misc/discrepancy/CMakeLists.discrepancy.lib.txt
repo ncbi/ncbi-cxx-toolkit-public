@@ -1,24 +1,5 @@
 # $Id$
 
-set(_discrepancy_modules
-    biosource_tests
-    discrepancy_case
-    division_code_conflicts
-    feature_per_bioseq
-    feature_tests
-    gene_names
-    overlapping_features
-    pub_tests
-    rna_names
-    seqdesc_per_bioseq
-    sequence_tests
-    sesame_street
-    #spell_check #disabled till better times...
-    suspect_product_names
-    transl_note
-    transl_too_long
-)
-
 NCBI_begin_lib(xdiscrepancy)
     NCBI_sources(
         # core modules
@@ -30,70 +11,12 @@ NCBI_begin_lib(xdiscrepancy)
     NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
     NCBI_project_watchers(gotvyans)
 
-    if(NCBI_PYTHON_EXECUTABLE AND NOT BUILD_SHARED_LIBS)
+    if(NCBI_PYTHON_EXECUTABLE)
         if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
-            NCBI_custom_target_dependencies(discrepancy_fsm_files)
+            NCBI_custom_target_dependencies(discrepancy.fsm)
         endif()
-        NCBI_custom_target_dependencies(discrepancy_testnames)
+        NCBI_custom_target_dependencies(discrepancy.testnames)
     endif()
 
 
 NCBI_end_lib()
-
-if(NCBI_PYTHON_EXECUTABLE AND NOT BUILD_SHARED_LIBS)
-
-    if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
-
-        NCBI_begin_custom_target(discrepancy_fsm_files)
-            NCBI_custom_target_definition(define_discrepancy_fsm_files_target)
-            NCBI_custom_target_dependencies(prt2fsm)
-        NCBI_end_custom_target()
-
-    endif()
-
-    NCBI_begin_custom_target(discrepancy_testnames)
-        NCBI_custom_target_definition(define_discrepancy_testnames_target)
-    NCBI_end_custom_target()
-
-endif()
-
-function(define_discrepancy_fsm_files_target variable access value current_list_file stack)
-    set(_prt_modules
-        product_rules.prt
-        organelle_products.prt
-        FLATFILE_FIND.txt
-    )
-
-    define_multipatern_inc_target(discrepancy_fsm_files ${current_list_file} prt2fsm "${_prt_modules}" "")
-endfunction()
-
-function(define_discrepancy_testnames_target variable access value current_list_file stack)
-
-    get_filename_component(_source_dir ${current_list_file} DIRECTORY)
-    file(RELATIVE_PATH _rel_path ${NCBI_SRC_ROOT} ${_source_dir})
-    set(_target_dir ${NCBI_INC_ROOT}/${_rel_path})
-    unset(_rel_path)
-
-    set(_cpp_files)
-
-    foreach(_module ${_discrepancy_modules})
-       list(APPEND _cpp_files ${_module}.cpp)
-    endforeach()
-
-    add_custom_command(
-        OUTPUT ${_target_dir}/testnames.inc
-        COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
-        COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
-        WORKING_DIRECTORY ${_source_dir}
-        DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/make_test_names.py
-        )
-
-    add_custom_target(
-        discrepancy_testnames
-        DEPENDS ${_target_dir}/testnames.inc
-    )
-
-    unset(_cpp_files)
-    unset(_target_dir)
-    unset(_source_dir)
-endfunction()
