@@ -428,7 +428,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         if (task == "blastx-fast") {
             opts->SetWordSize(5);
             opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
-            opts->SetWordThreshold(19.3);
+            opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
         }
         retval = opts;
     }
