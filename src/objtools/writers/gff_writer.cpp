@@ -1333,6 +1333,7 @@ CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     if (HasAccaptableTranscriptParent(context, mf)) {
         return CMappedFeat();
     }
+
     CRef<CSeq_feat> pMissingTranscript(new CSeq_feat);
     pMissingTranscript.Reset(new CSeq_feat);
     pMissingTranscript->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
@@ -1341,6 +1342,13 @@ CMappedFeat CGff2Writer::xGenerateMissingTranscript(
     pMissingTranscript->SetLocation().SetPartialStop(false, eExtreme_Positional);
     pMissingTranscript->ResetPartial();
 
+    // rw-1921
+    if (mf.IsSetExcept()  &&  mf.GetExcept()) {
+        pMissingTranscript->SetExcept(true);
+        if (mf.IsSetExcept_text()) {
+            pMissingTranscript->SetExcept_text(mf.GetExcept_text());
+        }
+    }
     CScope& scope = mf.GetScope();
     CSeq_annot_Handle sah = mf.GetAnnot();
     CSeq_annot_EditHandle saeh = sah.GetEditHandle();
