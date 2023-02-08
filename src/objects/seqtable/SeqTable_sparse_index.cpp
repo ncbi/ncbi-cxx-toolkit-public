@@ -520,7 +520,8 @@ size_t CSeqTable_sparse_index::x_GetNextRowWithValue(size_t row,
     }
     case e_Bit_set_bvector:
     {
-        row = GetBit_set_bvector().GetBitVector().get_next(row);
+        row = GetBit_set_bvector().GetBitVector().get_next(
+            static_cast<bm::bvector<>::size_type>(row));
         return row == 0? kInvalidRow: row;
     }
     default:
@@ -567,10 +568,11 @@ size_t CSeqTable_sparse_index::GetIndexAt(size_t row) const
     case e_Bit_set_bvector:
     {
         const bm::bvector<>& bv = GetBit_set_bvector().GetBitVector();
-        if ( row >= bv.size() || !bv.get_bit(row) ) {
+        auto bv_row = static_cast<bm::bvector<>::size_type>(row);
+        if ( row >= bv.size()  ||  !bv.get_bit(bv_row) ) {
             return kSkipped;
         }
-        return row == 0? 0: bv.count_range(0, row-1);
+        return row == 0 ? 0 : bv.count_range(0, bv_row - 1);
     }
     default:
         return kSkipped;
@@ -599,7 +601,8 @@ bool CSeqTable_sparse_index::HasValueAt(size_t row) const
     case e_Bit_set_bvector:
     {
         const bm::bvector<>& bv = GetBit_set_bvector().GetBitVector();
-        return row < bv.size() && bv.get_bit(row);
+        return row < bv.size()
+            &&  bv.get_bit(static_cast<bm::bvector<>::size_type>(row));
     }
     default:
         return false;
@@ -642,7 +645,7 @@ void CSeqTable_sparse_index::ChangeToIndexes(void)
     if ( IsIndexes_delta() ) {
         // convert delta to running sum
         indexes.swap(SetIndexes_delta());
-        size_t row = 0;
+        TIndexes::value_type row = 0;
         NON_CONST_ITERATE ( TIndexes, it, indexes ) {
             row += *it;
             *it = row;
@@ -650,7 +653,7 @@ void CSeqTable_sparse_index::ChangeToIndexes(void)
     }
     else {
         for ( const_iterator it = begin(); it; ++it ) {
-            indexes.push_back(it.GetRow());
+            indexes.push_back(static_cast<TIndexes::value_type>(it.GetRow()));
         }
     }
     SetIndexes().swap(indexes);
@@ -666,17 +669,17 @@ void CSeqTable_sparse_index::ChangeToIndexes_delta(void)
     if ( IsIndexes() ) {
         // convert to delta
         indexes.swap(SetIndexes());
-        size_t prev_row = 0;
+        TIndexes_delta::value_type prev_row = 0;
         NON_CONST_ITERATE ( TIndexes_delta, it, indexes ) {
-            size_t row = *it;
+            TIndexes_delta::value_type row = *it;
             *it = row - prev_row;
             prev_row = row;
         }
     }
     else {
-        size_t prev_row = 0;
+        TIndexes_delta::value_type prev_row = 0;
         for ( const_iterator it = begin(); it; ++it ) {
-            size_t row = it.GetRow();
+            auto row = static_cast<TIndexes_delta::value_type>(it.GetRow());
             indexes.push_back(row-prev_row);
             prev_row = row;
         }
@@ -728,10 +731,12 @@ void CSeqTable_sparse_index::ChangeToBit_set_bvector(void)
     if ( IsBit_set_bvector() ) {
         return;
     }
-    AutoPtr<bm::bvector<> > bv(new bm::bvector<>(GetSize()));
+    typedef bm::bvector<>::size_type TBVSize;
+    AutoPtr<bm::bvector<> > bv(
+        new bm::bvector<>(static_cast<TBVSize>(GetSize())));
     for ( const_iterator it = begin(); it; ++it ) {
         size_t row = it.GetRow();
-        bv->set_bit(row);
+        bv->set_bit(static_cast<TBVSize>(row));
     }
     bv->optimize();
     SetBit_set_bvector().SetBitVector(bv.release());

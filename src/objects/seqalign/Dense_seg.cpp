@@ -72,10 +72,23 @@ void CDense_seg::Assign(const CSerialObject& obj, ESerialRecursionMode how)
     }
 }
 
+// Implemented as a macro so any assertion messages will be more meaningful
+#ifdef _DEBUG
+#  define ASSERT_CONSISTENCY() \
+    do { \
+        size_t numseg = GetNumseg(), dim = GetDim(); \
+        _ASSERT(numseg == GetLens().size()); \
+        _ASSERT(numseg * dim == GetStarts().size()); \
+        _ASSERT( !IsSetStrands()  ||  numseg * dim == GetStrands().size()); \
+        _ASSERT(dim == GetIds().size()); \
+    } while (false)
+#else
+#  define ASSERT_CONSISTENCY() NCBI_EAT_SEMICOLON()
+#endif
 
 CDense_seg::TDim CDense_seg::CheckNumRows() const
 {
-    const size_t& dim = GetDim();
+    const TDim dim = GetDim();
     if (dim != GetIds().size()) {
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "CDense_seg::CheckNumRows()"
@@ -92,9 +105,9 @@ CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
     const CDense_seg::TLens&    lens    = GetLens();
     const CDense_seg::TWidths&  widths  = GetWidths();
 
-    const size_t& numrows = GetDim();
-    const size_t& numsegs = GetNumseg();
-    const size_t  num     = numrows * numsegs;
+    const TDim    numrows = GetDim();
+    const TDim    numsegs = GetNumseg();
+    const size_t  num     = static_cast<size_t>(numrows) * numsegs;
 
     if (starts.size() != num) {
         string errstr = string("CDense_seg::CheckNumSegs():")
@@ -309,11 +322,7 @@ void CDense_seg::Validate(bool full_test) const
 
 void CDense_seg::TrimEndGaps()
 {
-    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
-    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
-    _ASSERT(!IsSetStrands()
-            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
-    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
+    ASSERT_CONSISTENCY();
 
     list<TSignedSeqRange> delete_ranges;
     int i;
@@ -393,23 +402,15 @@ void CDense_seg::TrimEndGaps()
     }
 
     /// fix our number of segments
-    SetNumseg(SetLens().size());
+    SetNumseg(static_cast<TNumseg>(GetLens().size()));
 
-    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
-    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
-    _ASSERT(!IsSetStrands()
-            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
-    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
+    ASSERT_CONSISTENCY();
 }
 
 
 void CDense_seg::Compact()
 {
-    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
-    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
-    _ASSERT(!IsSetStrands()
-            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
-    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
+    ASSERT_CONSISTENCY();
 
     int i;
     int j;
@@ -503,13 +504,9 @@ void CDense_seg::Compact()
         SetStrands().swap(new_strands);
     }
 
-    SetNumseg(SetLens().size());
+    SetNumseg(static_cast<TNumseg>(GetLens().size()));
 
-    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
-    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
-    _ASSERT(!IsSetStrands()
-            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
-    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
+    ASSERT_CONSISTENCY();
 }
 
 
@@ -555,12 +552,7 @@ void CDense_seg::OrderAdjacentGaps()
 
 void CDense_seg::RemovePureGapSegs()
 {
-    _ASSERT(GetNumseg() == static_cast<TNumseg>(GetLens().size()));
-    _ASSERT(GetNumseg() * GetDim() == static_cast<int>(GetStarts().size()));
-    _ASSERT(!IsSetStrands()
-            ||  GetNumseg() * GetDim() == static_cast<int>(GetStrands().size()));
-    _ASSERT(GetDim() == static_cast<TDim>(GetIds().size()));
-
+    ASSERT_CONSISTENCY();
 
     // consistency checks
     TDim dim = CheckNumRows();
@@ -616,7 +608,7 @@ void CDense_seg::RemovePureGapSegs()
         SetStrands().swap(new_strands);
     }
 
-    SetNumseg(SetLens().size());
+    SetNumseg(static_cast<TNumseg>(GetLens().size()));
 
 #ifdef _DEBUG
     Validate(true);
@@ -828,7 +820,7 @@ CRef<CDense_seg> CDense_seg::ExtractRows(const vector<TDim>& rows) const
     TNumseg numseg = CheckNumSegs();
 
     CRef<CDense_seg> new_ds(new CDense_seg);
-    new_ds->SetDim(rows.size());
+    new_ds->SetDim(static_cast<TDim>(rows.size()));
     new_ds->SetNumseg(GetNumseg());
 
     // reserve for efficiency
@@ -915,7 +907,7 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
 
     TSeqPos row_stop  = GetSeqStop(row);
 
-    size_t  ttl_loc_len = 0;
+    TSeqPos ttl_loc_len = 0;
     {{
         CSeq_loc_CI seq_loc_i(loc);
         do {
@@ -942,8 +934,8 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
     const CDense_seg::TStrands& strands = GetStrands();
     const CDense_seg::TLens&    lens    = GetLens();
 
-    const size_t& numrows = CheckNumRows();
-    const size_t& numsegs = CheckNumSegs();
+    TDim    numrows = CheckNumRows();
+    TNumseg numsegs = CheckNumSegs();
 
     CSeq_loc_CI seq_loc_i(loc);
 
@@ -1100,20 +1092,21 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
     const CDense_seg::TLens&    lens    = GetLens();
     const CDense_seg::TIds&     ids     = GetIds();
 
-    const size_t& numrows = CheckNumRows();
-    const size_t& numsegs = CheckNumSegs();
+    TDim    numrows = CheckNumRows();
+    TNumseg numsegs = CheckNumSegs();
 
     bool strands_exist = !strands.empty();
 
-    size_t seg = 0, row = 0;
+    TNumseg seg = 0;
+    TDim    row = 0;
     
 
     // extra segments
     CDense_seg::TStarts extra_starts;
     CDense_seg::TLens   extra_lens;
-    size_t extra_numsegs = 0;
-    size_t extra_seg = 0;
-    vector<size_t> extra_segs;
+    TNumseg extra_numsegs = 0;
+    TNumseg extra_seg = 0;
+    vector<TNumseg> extra_segs;
 
 
     // new dense-seg
@@ -1153,7 +1146,7 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
     }
     
     TSignedSeqPos extra_len = 0;
-    size_t idx = 0, new_idx = 0, extra_idx = 0;
+    TNumseg idx = 0, new_idx = 0, extra_idx = 0;
 
     // main loop through segments
     for (seg = 0; seg < numsegs; seg++) {
@@ -1280,11 +1273,11 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
     SetDim(2);
 
     // iterate through the transcript
-    size_t seg_count = 0;
+    TNumseg seg_count = 0;
 
-    size_t start1 = 0, pos1 = 0; // relative to exon start in mrna
-    size_t start2 = 0, pos2 = 0; // and genomic
-    size_t seg_len = 0;
+    TSeqPos start1 = 0, pos1 = 0; // relative to exon start in mrna
+    TSeqPos start2 = 0, pos2 = 0; // and genomic
+    TSeqPos seg_len = 0;
 	
     string::const_iterator ib = transcript.begin();
     string::const_iterator ie = transcript.end();
@@ -1384,7 +1377,7 @@ void CDense_seg::FromTranscript(TSeqPos query_start, ENa_strand query_strand,
                            "Alignment transcript corrupt");
             }
 
-            size_t len = 0;
+            TSeqPos len = 0;
             while(ii < ie && isdigit((unsigned char)(*ii))) {
                 len = 10*len + *ii - '0';
                 ++ii;

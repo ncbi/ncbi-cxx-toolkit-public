@@ -776,7 +776,7 @@ private:
     void x_InitSpliced(const CSpliced_seg& spliced,
                        const TSynonyms&    to_ids);
     void x_InitSpliced(const CSpliced_seg& spliced, ESplicedRow to_row);
-    void x_InitSparse(const CSparse_seg& sparse, int to_row);
+    void x_InitSparse(const CSparse_seg& sparse, size_t to_row);
 
     void x_IterateExonParts(const CSpliced_exon::TParts& parts,
                             ESplicedRow                  to_row,
