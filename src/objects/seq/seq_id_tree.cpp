@@ -981,8 +981,12 @@ int CSeq_id_Textseq_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_i
             // NOTE: Comparison should ignore case, so use 0 variant.
             RestoreAccession(this_acc, h_this.GetPacked(), 0);
             pother->RestoreAccession(other_acc, h_other.GetPacked(), 0);
-            if (int adiff = this_acc.compare(other_acc)) return adiff;
-            if (int vdiff = IsSetVersion() - pother->IsSetVersion()) return vdiff;
+            if (int adiff = PNocase().Compare(this_acc, other_acc)) {
+                return adiff;
+            }
+            if (int vdiff = IsSetVersion() - pother->IsSetVersion()) {
+                return vdiff;
+            }
             if ( IsSetVersion() ) {
                 _ASSERT(pother->IsSetVersion());
                 return GetVersion() - pother->GetVersion();
@@ -2124,6 +2128,10 @@ CSeq_id_General_Id_Info::Pack(const TKey& /*key*/, const CDbtag& dbtag)
 {
     TPacked id = dbtag.GetTag().GetId();
     if ( id <= 0 ) {
+        if ( id == numeric_limits<TPacked>::min() ) {
+            // to avoid overflow into positive values
+            return 0;
+        }
         --id;
     }
     return id;
@@ -2179,10 +2187,12 @@ int CSeq_id_General_Id_Info::CompareOrdered(const CSeq_id_Info& other, const CSe
     if ((h_this.IsPacked() || h_this.IsSetVariant()) && (h_other.IsPacked() || h_other.IsSetVariant())) {
         auto pother = dynamic_cast<const CSeq_id_General_Id_Info*>(&other);
         if (pother) {
-            string dbtag_this = GetDbtag();
-            string dbtag_other = pother->GetDbtag();
-            int cmp = NStr::CompareNocase(dbtag_this, dbtag_other);
-            return cmp ? cmp : h_this.GetPacked() - h_other.GetPacked();
+            if ( int cmp = NStr::CompareNocase(GetDbtag(), pother->GetDbtag()) ) {
+                return cmp;
+            }
+            auto id_this = h_this.GetPacked();
+            auto id_other = h_other.GetPacked();
+            return id_this < id_other? -1: id_this > id_other;
         }
     }
     return CSeq_id_Info::CompareOrdered(other, h_this, h_other);
@@ -2363,15 +2373,32 @@ string CSeq_id_General_Str_Info::x_GetStr(TPacked param) const
 
 int CSeq_id_General_Str_Info::CompareOrdered(const CSeq_id_Info& other, const CSeq_id_Handle& h_this, const CSeq_id_Handle& h_other) const
 {
+    /*
+    we cannot simply compare strings - large integers in string form must be compared numerically
     if ((h_this.IsPacked() || h_this.IsSetVariant()) && (h_other.IsPacked() || h_other.IsSetVariant())) {
         auto pother = dynamic_cast<const CSeq_id_General_Str_Info*>(&other);
         if (pother) {
-            string dbtag_this = GetDbtag();
-            string dbtag_other = pother->GetDbtag();
-            int cmp = NStr::CompareNocase(dbtag_this, dbtag_other);
-            return cmp ? cmp : NStr::CompareNocase(x_GetStr(h_this.GetPacked()), pother->x_GetStr(h_other.GetPacked()));
+            if ( int cmp = NStr::CompareNocase(GetDbtag(), pother->GetDbtag()) ) {
+                return cmp;
+            }
+            auto str_this = x_GetStr(h_this.GetPacked());
+            auto str_other = pother->x_GetStr(h_other.GetPacked());
+            E_Choice type_this = x_GetIdType(str_this);
+            E_Choice type_other = x_GetIdType(str_other);
+            if ( int diff = type_this - type_other ) {
+                return diff;
+            }
+            switch ( type_this ) {
+            case e_Id:
+                return value < value2? -1: (value > value2);
+            case e_Str:
+                return PNocase().Compare(str_this, str_other);
+            default:
+                return 0;
+            }
         }
     }
+    */
     return CSeq_id_Info::CompareOrdered(other, h_this, h_other);
 }
 
@@ -2496,6 +2523,9 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
         {
             const string& key = dbid.GetDb();
             TPacked packed = CSeq_id_General_Id_Info::Pack(key, dbid);
+            if ( packed == 0 ) {
+                break;
+            }
             TReadLockGuard guard(m_TreeLock);
             TPackedIdMap::const_iterator it = m_PackedIdMap.find(key);
             if ( it != m_PackedIdMap.end() ) {
