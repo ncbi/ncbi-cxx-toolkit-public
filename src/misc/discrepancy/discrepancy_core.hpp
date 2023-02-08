@@ -819,6 +819,7 @@ protected:
     CDiscrepancyObject(CDiscrepancyContext::CRefNode* ref, CDiscrepancyContext::CRefNode* fix = nullptr, const CObject* more = nullptr) : m_Ref(ref), m_Fix(fix), m_More(more), m_Fixed(false) {}
 
 public:
+    string GetBioseqLabel() const override { return m_Ref->GetBioseqLabel(); }
     string GetText() const override { return m_Ref->GetText(); }
     string GetPath() const override { for (auto ref = m_Ref; ref; ref = ref->m_Parent) if (ref->m_Type == CDiscrepancyContext::eFile) return ref->m_Text; return kEmptyStr; }
     string GetFeatureType() const override;
