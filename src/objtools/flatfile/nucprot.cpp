@@ -1817,8 +1817,10 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
                 if (num < 11 && stopmsg.length() < 500) {
                     stopmsg += to_string(aa);
-                } else if (num == 11 && stopmsg.length() < 500)
+                    stopmsg += ' ';
+                } else if (num == 11 && stopmsg.length() < 500) {
                     stopmsg += ", only report 10 positions";
+                }
             }
 
             aa++;
