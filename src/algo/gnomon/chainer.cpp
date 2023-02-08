@@ -7835,7 +7835,9 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
                     }
                 }
             }
-            _ASSERT(gap != m_editing_indels.end());
+            if(gap == m_editing_indels.end()) // gap is beyond align cluster
+                return CAlignModel();
+            //            _ASSERT(gap != m_editing_indels.end());
 
             int left_end = m_edited_contig_map.MapOrigToEdited(gap->Loc());
             if(left_end >= 0) {
