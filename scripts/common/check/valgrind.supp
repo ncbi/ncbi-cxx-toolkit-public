@@ -1013,9 +1013,14 @@
    fun:_ZN4ncbi14CAtomicCounter3AddEi
 }
 {
+   corelib/:CPushback_Streambuf - check sm_Indexbefore initialization - harmless
+   Helgrind:Race
+   fun:_ZN4ncbi19CPushback_StreambufC1ERSiPcmPv
+}
+{
    corelib/CParam::Get() - false positive
    Helgrind:Race
-   fun:_ZNK4ncbi6CParam*GetEv
+   fun:*CParam*GetEv
 }
 {
    corelib/CSafeStatic<>::GetEv() - grichenk CXX-11270 - harmless
@@ -1260,14 +1265,36 @@
 # serial
 
 {
-   serial - test_serial_io - grichenk CXX-11270 - harmless
+   serial/*::GetTypeInfo() - gouriano CXX-12845 - false positive   
    Helgrind:Race
-   fun:_ZN4ncbi11CSafeStaticINS_6CParamINS_37SNcbiParamDesc_SERIAL_FastWriteDoubleEEENS_21CSafeStatic_CallbacksIS3_EEE3GetEv
-   fun:_ZN4ncbi11CSafeStaticINS_6CParamINS_37SNcbiParamDesc_SERIAL_FastWriteDoubleEEENS_21CSafeStatic_CallbacksIS3_EEEptEv
-   fun:_ZN4ncbi14CObjectOStreamC1ENS_17ESerialDataFormatERSo14ENcbiOwnership
+   ...
+   fun:*GetTypeInfo*
+   fun:*GetThisTypeInfo*
 }
-
-
+{
+   serial/CTypeInfo - gouriano CXX-12845 - false positive   
+   Helgrind:Race
+   ...
+   fun:*CTypeInfo*
+}
+{
+   serial/CObjectTypeInfo - gouriano CXX-12845 - false positive   
+   Helgrind:Race
+   ...
+   fun:_ZNK4ncbi17CObjectTypeInfo*
+}
+{
+   serial/CItemsInfo::GetItemsByName() - gouriano CXX-12845 - false positive   
+   Helgrind:Race
+   ...
+   fun:*CItemsInfo*GetItemsByName*
+}
+{
+   serial/CItemsInfo::GetItemsByName() - Finds - gouriano CXX-12845 - false positive   
+   Helgrind:Race
+   ...
+   fun:*CItemsInfo*Find*
+}
 
 
 #===============================================================================
