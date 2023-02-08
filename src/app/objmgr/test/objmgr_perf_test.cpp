@@ -346,31 +346,67 @@ int CPerfTestApp::Run(void)
         CScope::TIds bulk_ids;
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
         CScope::TGIs gis = m_Scope->GetGis(bulk_ids);
-        if (m_PrintData) {
-            ITERATE(CScope::TGIs, gi, gis) {
+        size_t bad_count = 0;
+        ITERATE(CScope::TGIs, gi, gis) {
+            if (*gi == ZERO_GI) ++bad_count;
+            if (m_PrintData) {
                 cout << *gi << endl;
             }
+        }
+        if ((m_PrintInfo || m_PrintData) && bad_count) {
+            ERR_POST(Warning << "Failed to load " << bad_count << " records");
         }
     }
     else if (m_Bulk == "acc") {
         CScope::TIds bulk_ids;
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
         CScope::TIds ids = m_Scope->GetAccVers(bulk_ids);
-        if (m_PrintData) {
-            ITERATE(CScope::TIds, id, ids) {
+        size_t bad_count = 0;
+        ITERATE(CScope::TIds, id, ids) {
+            if (!(*id)) ++bad_count;
+            if (m_PrintData) {
                 cout << id->AsString() << endl;
             }
+        }
+        if ((m_PrintInfo || m_PrintData) && bad_count) {
+            ERR_POST(Warning << "Failed to load " << bad_count << " records");
         }
     }
     else if (m_Bulk == "bioseq") {
         CScope::TIds bulk_ids;
         bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
-        m_Scope->GetBioseqHandles(bulk_ids);
+        CScope::TBioseqHandles handles = m_Scope->GetBioseqHandles(bulk_ids);
+        size_t bad_count = 0;
+        ITERATE(CScope::TBioseqHandles, h, handles) {
+            if (!(*h)) {
+                ++bad_count;
+                continue;
+            }
+            if (m_PrintData) {
+                cout << MSerial_AsnText << *h->GetCompleteBioseq() << endl;
+            }
+        }
+        if ((m_PrintInfo || m_PrintData) && bad_count) {
+            ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        }
     }
     else if (m_Bulk == "cdd") {
         CScope::TIds cdd_ids;
         cdd_ids.insert(cdd_ids.end(), m_Ids.begin(), m_Ids.end());
-        m_Scope->GetCDDAnnots(cdd_ids);
+        CScope::TCDD_Entries cdds = m_Scope->GetCDDAnnots(cdd_ids);
+        size_t bad_count = 0;
+        ITERATE(CScope::TCDD_Entries, cdd, cdds) {
+            if (!(*cdd)) {
+                ++bad_count;
+                continue;
+            }
+            if (m_PrintData) {
+                cout << MSerial_AsnText << cdd->GetCompleteTSE() << endl;
+            }
+        }
+        if ((m_PrintInfo || m_PrintData) && bad_count) {
+            ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        }
     }
     else {
         if (thread_count == 0) {
