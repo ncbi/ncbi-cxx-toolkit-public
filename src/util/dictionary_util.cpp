@@ -727,6 +727,7 @@ static string::size_type s_FindFirstVowel(const string& str)
     return string::npos;
 }
 
+NCBI_UNUSED
 static inline bool s_ReplaceEnding(string& word,
                                    const string& match,
                                    const string& substitute,
