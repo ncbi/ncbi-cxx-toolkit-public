@@ -1277,7 +1277,11 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "NC_000001.9",
         "Nc_000001.9",
         "ref|NC_000001.9|chr1_build36",
+        "gnl|ti|-9223372036854775808", // smallest 64-bit int
         "gnl|ti|-623121231214", // 64-bit id
+        "gnl|Ti|-2147483649",
+        "gnl|Ti|-2147483648",
+        "gnl|Ti|-2147483647",
         "gnl|ti|-12312",
         "gnl|ti|-1231",
         "gnl|ti|0",
@@ -1287,14 +1291,19 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "gnl|ti|3231212",
         "gnl|ti|42312324",
         "gnl|ti|42312324",
+        "gnl|Ti|2147483647",
+        "gnl|Ti|2147483648",
         "gnl|TI|52312123124",
         "gnl|ti|623121231214", // 64-bit id
+        "gnl|ti|9223372036854775807", // largest 64-bit int
         "gnl|ti|+ 0", // non-integer ids
         "gnl|ti|+0",
         "gnl|ti|- 0",
         "gnl|ti|-0",
         "gnl|ti|-012",
+        "gnl|ti|-9223372036854775809", // doesn't fit into 64-bit int
         "gnl|ti|22312-234",
+        "gnl|ti|9223372036854775808", // doesn't fit into 64-bit int
         "gnl|TI|str",
         "gnl|trace|-623121231214", // 64-bit id
         "gnl|trace|-623121231214", // 64-bit id
@@ -1308,6 +1317,8 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "gnl|trace|3231212",
         "gnl|TRACE|42312324",
         "gnl|TRACE|42312324",
+        "gnl|TRACE|2123123241",
+        "gnl|TRACE|2423123241",
         "gnl|TRACE|52312123124",
         "gnl|trace|623121231214", // 64-bit id
         "gnl|TRACE|+ 0", // non-integer ids
@@ -1317,6 +1328,11 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "gnl|trace|-012",
         "gnl|TRACE|22312-234",
         "gnl|trace|str",
+        "pdb|6hXx|Aa",
+        "pdb|6hxx|Aa",
+        "pdb|6HXX|Ab",
+        "pdb|6xxx|AA",
+        "pdb|6XXX|Aa",
     };
 
     typedef CRef<CSeq_id> TRef;
@@ -1362,7 +1378,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         swap(ids[i], ids[rnd.GetRand(i, ids.size()-1)]);
     }
     vector<TRef> sorted_ids = ids;
-    sort(sorted_ids.begin(), sorted_ids.end(), PPtrLess<TRef>());
+    stable_sort(sorted_ids.begin(), sorted_ids.end(), PPtrLess<TRef>());
     if ( false ) {
         // dump sorted ids
         ITERATE ( vector<TRef>, it, sorted_ids ) {
@@ -1395,6 +1411,57 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
             BOOST_CHECK((*it2)->CompareOrdered(**it) < 0);
             BOOST_CHECK((*it)->CompareOrdered(**it2) > 0);
         }
+    }
+
+    if ( 1 ) {
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle("gnl|ti|-12312");
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle("gnl|ti|-1231");
+        BOOST_CHECK_LT(id1.CompareOrdered(id2), 0);
+        BOOST_CHECK_GT(id2.CompareOrdered(id1), 0);
+    }
+    vector<CSeq_id_Handle> sorted_idhs;
+    for ( auto& i : sorted_ids ) {
+        sorted_idhs.push_back(CSeq_id_Handle::GetHandle(*i));
+    }
+    for ( size_t i = 0; i < sorted_idhs.size(); ++i ) {
+        BOOST_CHECK_EQUAL(sorted_idhs[i].CompareOrdered(sorted_idhs[i]), 0);
+        for ( size_t j = 0; j < i; ++j ) {
+            //NcbiCout << "sorted_idhs["<<i<<"] = "<<sorted_idhs[i] << " vs sorted_idhs["<<j<<"] = "<<sorted_idhs[j] << NcbiEndl;
+            BOOST_CHECK_LE(sorted_idhs[j].CompareOrdered(sorted_idhs[i]), 0);
+            BOOST_CHECK_GE(sorted_idhs[i].CompareOrdered(sorted_idhs[j]), 0);
+        }
+    }
+    sorted_idhs.clear();
+    for ( auto& i : ids ) {
+        sorted_idhs.push_back(CSeq_id_Handle::GetHandle(*i));
+    }
+    stable_sort(sorted_idhs.begin(), sorted_idhs.end(), CSeq_id_Handle::PLessOrdered());
+    if ( false ) {
+        // dump sorted ids
+        for ( auto& id : sorted_idhs ) {
+            NcbiCout << id << NcbiEndl;
+        }
+    }
+    BOOST_REQUIRE_EQUAL(sorted_ids.size(), sorted_idhs.size());
+    for ( size_t i = 0; i < sorted_idhs.size(); ++i ) {
+        //NcbiCout << "sorted_idhs["<<i<<"] = "<<sorted_idhs[i]<<NcbiEndl;
+        BOOST_CHECK_EQUAL(CSeq_id_Handle::GetHandle(*sorted_ids[i]).CompareOrdered(sorted_idhs[i]), 0);
+        BOOST_CHECK_EQUAL(sorted_idhs[i].CompareOrdered(CSeq_id_Handle::GetHandle(*sorted_ids[i])), 0);
+        for ( size_t j = 0; j < i; ++j ) {
+            BOOST_CHECK(CSeq_id_Handle::GetHandle(*sorted_ids[j]).CompareOrdered(sorted_idhs[i]) <= 0);
+            BOOST_CHECK(CSeq_id_Handle::GetHandle(*sorted_ids[i]).CompareOrdered(sorted_idhs[j]) >= 0);
+            BOOST_CHECK(sorted_idhs[j].CompareOrdered(CSeq_id_Handle::GetHandle(*sorted_ids[i])) <= 0);
+            BOOST_CHECK(sorted_idhs[i].CompareOrdered(CSeq_id_Handle::GetHandle(*sorted_ids[j])) >= 0);
+        }
+    }
+    for ( size_t i = 0; i < sorted_idhs.size(); ++i ) {
+        BOOST_CHECK_EQUAL(sorted_idhs[i].CompareOrdered(sorted_idhs[i]), 0);
+        for ( size_t j = 0; j < i; ++j ) {
+            BOOST_CHECK(sorted_idhs[j].CompareOrdered(sorted_idhs[i]) <= 0);
+            BOOST_CHECK(sorted_idhs[i].CompareOrdered(sorted_idhs[j]) >= 0);
+        }
+        CSeq_id_Handle expected_id = CSeq_id_Handle::GetHandle(sc_Ids[i]);
+        BOOST_CHECK_EQUAL(expected_id.CompareOrdered(sorted_idhs[i]), 0);
     }
 }
 
