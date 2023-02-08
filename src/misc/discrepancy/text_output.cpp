@@ -160,7 +160,7 @@ static bool ShowFatal(const CReportItem& item)
 }
 
 
-static inline string_view deunderscore(string_view s)
+static inline string_view s_RemoveInitialUnderscore(string_view s)
 {
     return s[0] == '_' ? s.substr(1) : s;
 }
@@ -177,7 +177,9 @@ static void RecursiveText(ostream& out, const TReportItemList& list, unsigned sh
         if (fatal && ShowFatal(*it)) {
             out << "FATAL: ";
         }
-        out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
+        auto title = s_RemoveInitialUnderscore(it->GetTitle());
+        auto IsDupDefline = (title == "DUP_DEFLINE");
+        out << title << ": " << it->GetMsg() << '\n';
         TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
             RecursiveText(out, subs, flags);
@@ -191,7 +193,11 @@ static void RecursiveText(ostream& out, const TReportItemList& list, unsigned sh
                 if (obj->IsFixed()) {
                     out << "[FIXED] ";
                 }
-                out << obj->GetText() << '\n';
+
+                auto text = (IsDupDefline && obj->GetType() == CReportObj::eType_sequence) ?
+                    obj->GetBioseqLabel() :
+                    obj->GetText();
+                out << text << '\n';
             }
         }
     }
@@ -209,7 +215,7 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
             }
-            out << deunderscore(title) << ": " << msg << '\n';
+            out << s_RemoveInitialUnderscore(title) << ": " << msg << '\n';
         }
         else if (it->IsSummary()) {
             out << string(level, '\t');
@@ -234,7 +240,7 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
             found = true;
             if (level == 0) {
                 out << "FATAL: ";
-                out << deunderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
+                out << s_RemoveInitialUnderscore(it->GetTitle()) << ": " << it->GetMsg() << '\n';
             }
             else if (it->IsSummary()) {
                 out << string(level, '\t');
@@ -480,7 +486,7 @@ void CDiscrepancyProductImpl::OutputXML(ostream& out, unsigned short flags)
             }
         }
         Indent(out, 1);
-        out << "<test name=\"" << deunderscore(tst.second->GetSName())
+        out << "<test name=\"" << s_RemoveInitialUnderscore(tst.second->GetSName())
             << "\" description=\"" << NStr::XmlEncode(tst.second->GetDescription())
             << "\" severity=\"" << SevLevel[max_sev]
             << "\" cardinality=\"" << rep.size() << "\">\n";
