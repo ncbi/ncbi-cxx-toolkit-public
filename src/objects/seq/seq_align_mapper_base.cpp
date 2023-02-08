@@ -872,7 +872,7 @@ void CSeq_align_Mapper_Base::x_Init(const CSparse_seg& sparse)
         NCBI_THROW(CAnnotMapperException, eBadAlignment,
             "Sparse-segs with mixed sequence types are not supported");
     }
-    int scores_group = -1;
+    ssize_t scores_group = -1;
     if ( row.IsSetSeg_scores() ) {
         // If per-row scores are set, store them along with the group number.
         // Only pointers are copied.
@@ -1281,7 +1281,7 @@ void CSeq_align_Mapper_Base::x_GetDstDendiag(CRef<CSeq_align>& dst) const
     ITERATE(TSegments, seg_it, m_Segs) {
         const SAlignment_Segment& seg = *seg_it;
         CRef<CDense_diag> diag(new CDense_diag);
-        diag->SetDim(seg.m_Rows.size());
+        diag->SetDim(static_cast<CDense_diag::TDim>(seg.m_Rows.size()));
         int len_width = 1;
         size_t str_idx = 0; // row index in the strands container
         // Add each row to the dense-seg.
@@ -1335,8 +1335,8 @@ void CSeq_align_Mapper_Base::x_GetDstDenseg(CRef<CSeq_align>& dst) const
     _ASSERT((m_AlignFlags & eAlign_MultiDim) == 0);
 
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
-    dseg.SetDim(m_Segs.front().m_Rows.size());
-    dseg.SetNumseg(m_Segs.size());
+    dseg.SetDim(static_cast<CDense_seg::TDim>(m_Segs.front().m_Rows.size()));
+    dseg.SetNumseg(static_cast<CDense_seg::TNumseg>(m_Segs.size()));
     if ( !m_SegsScores.empty() ) {
         // This will copy every element rather just pointers.
         CloneContainer<CScore, TScores, CDense_seg::TScores>(
@@ -1463,7 +1463,7 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
     ITERATE(TSegments, seg_it, m_Segs) {
         // Create new std-seg for each segment.
         CRef<CStd_seg> std_seg(new CStd_seg);
-        std_seg->SetDim(seg_it->m_Rows.size());
+        std_seg->SetDim(static_cast<CStd_seg::TDim>(seg_it->m_Rows.size()));
         if ( !seg_it->m_Scores.empty() ) {
             // Copy scores (not just pointers).
             CloneContainer<CScore, TScores, CStd_seg::TScores>(
@@ -1588,8 +1588,8 @@ void CSeq_align_Mapper_Base::x_GetDstPacked(CRef<CSeq_align>& dst) const
     _ASSERT((m_AlignFlags & eAlign_MultiDim) == 0);
 
     CPacked_seg& pseg = dst->SetSegs().SetPacked();
-    pseg.SetDim(m_Segs.front().m_Rows.size());
-    pseg.SetNumseg(m_Segs.size());
+    pseg.SetDim(static_cast<CPacked_seg::TDim>(m_Segs.front().m_Rows.size()));
+    pseg.SetNumseg(static_cast<CPacked_seg::TNumseg>(m_Segs.size()));
     if ( !m_SegsScores.empty() ) {
         // Copy elements, not just pointers.
         CloneContainer<CScore, TScores, CPacked_seg::TScores>(
@@ -2505,7 +2505,7 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
     }
     CRef<CSparse_align> aln(new CSparse_align);
     sparse.SetRows().push_back(aln);
-    aln->SetNumseg(m_Segs.size());
+    aln->SetNumseg(static_cast<CSparse_align::TNumseg>(m_Segs.size()));
 
     CSeq_id_Handle first_idh;
     CSeq_id_Handle second_idh;
@@ -2514,7 +2514,7 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
     // Need two special values: -2 indicates that the scores group is
     // not yet set; -1 is used if there are segments with different
     // groups and scores should not be copied from the original align.
-    int scores_group = -2; // -2 -- not yet set; -1 -- already reset.
+    ssize_t scores_group = -2; // -2 -- not yet set; -1 -- already reset.
     ITERATE(TSegments, seg, m_Segs) {
         if (seg->m_Rows.size() > 2) {
             NCBI_THROW(CAnnotMapperException, eBadAlignment,
@@ -2603,12 +2603,12 @@ void CSeq_align_Mapper_Base::x_GetDstSparse(CRef<CSeq_align>& dst) const
 // the whole mapped alignment is converted to a disc-align containing
 // several dense-segs. The following method attempts to put as many
 // mapped segments as possible to the dense-seg sub-alignment.
-int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
-                                               int start_seg) const
+ssize_t CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
+                                                   size_t start_seg) const
 {
     CDense_seg& dseg = dst->SetSegs().SetDenseg();
     dst->SetType(CSeq_align::eType_partial);
-    dseg.SetDim(m_Segs.front().m_Rows.size());
+    dseg.SetDim(static_cast<CDense_seg::TDim>(m_Segs.front().m_Rows.size()));
 
     int len_width = 1;
 
@@ -2625,7 +2625,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     // Remember number of rows in the first segment. Break the dense-seg
     // when the next segment has a different number of rows.
     size_t num_rows = start_segment.m_Rows.size();
-    int last_seg = m_Segs.size() - 1;
+    auto last_seg = m_Segs.size() - 1;
 
     // Find first non-gap in each row, get its seq-id, detect the first
     // one which is different. Also stop if number or rows per segment
@@ -2636,7 +2636,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     for (size_t r = 0; r < num_rows; r++) {
         CSeq_id_Handle last_id;
         TSegments::const_iterator seg_it = start_seg_it;
-        int seg_idx = start_seg;
+        auto seg_idx = start_seg;
         int left = -1;
         int right = -1;
         for ( ; seg_idx <= last_seg  &&  seg_it != m_Segs.end();
@@ -2722,7 +2722,7 @@ int CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     // Count total number of segments added to the alignment
     // where at least one row is non-gap.
     int non_empty_segs = 0;
-    int cur_seg = start_seg;
+    auto cur_seg = start_seg;
     for (TSegments::const_iterator it = start_seg_it; it != m_Segs.end();
         ++it, ++cur_seg) {
         if (cur_seg > last_seg) {
@@ -2795,10 +2795,10 @@ void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
     // Ignore m_SegsScores -- if we are here, they are probably not valid.
     // Anyway, there's no place to put them in. The same about m_AlignScores.
     CSeq_align_set::Tdata& data = dst->SetSegs().SetDisc().Set();
-    int seg = 0;
+    ssize_t seg = 0;
     // The iteration stops when the last segment is converted or
     // when an error occurs and x_GetPartialDenseg returns -1.
-    while (seg >= 0  &&  size_t(seg) < m_Segs.size()) {
+    while (seg >= 0  &&  seg < m_Segs.size()) {
         // Convert as many segments as possible to a single dense-seg.
         CRef<CSeq_align> dseg(new CSeq_align);
         seg = x_GetPartialDenseg(dseg, seg);

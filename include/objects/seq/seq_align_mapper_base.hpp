@@ -114,7 +114,7 @@ struct NCBI_SEQ_EXPORT SAlignment_Segment
     int       m_GroupIdx;       ///< Group of segments (e.g. an exon)
     /// Group of scores. Set when several segments share the same set of
     /// scores. Currently used only for sparse-segs. -1 = unassigned.
-    int       m_ScoresGroupIdx;
+    ssize_t   m_ScoresGroupIdx;
 
     // Used only for spliced exon parts to indicate their type.
     TPartType m_PartType;
@@ -272,8 +272,8 @@ private:
     // is converted to to disc.
     void x_ConvToDstDisc(CRef<CSeq_align>& dst) const;
     // Get the next part of the disc align - see x_ConvToDstDisc.
-    int x_GetPartialDenseg(CRef<CSeq_align>& dst,
-                           int               start_seg) const;
+    ssize_t x_GetPartialDenseg(CRef<CSeq_align>& dst,
+                               size_t            start_seg) const;
 
     // Collect exons from a single sub-alignment.
     void x_GetDstSplicedSubAlign(CSpliced_seg&                 spliced,

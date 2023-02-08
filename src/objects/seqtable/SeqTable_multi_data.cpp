@@ -454,9 +454,11 @@ bool sx_Round(DstInt& v, double value, const char* cast_error)
     // Function round() is not everywhere available,
     // so we are using either floor() or ceil() depending on value sign.
     bool range_error;
+    static constexpr double kMaxPlusOne
+        = ((numeric_limits<DstInt>::max() - 1) / 2 + 1) * 2.0;
     if ( value > 0 ) {
         value = floor(value + .5);
-        range_error = value > numeric_limits<DstInt>::max();
+        range_error = value >= kMaxPlusOne;
     }
     else {
         value = ceil(value-.5);
@@ -471,9 +473,9 @@ bool sx_Round(DstInt& v, double value, const char* cast_error)
 }
 
 
-template<class Arr, class Int>
+template<class Arr, class Row, class Int>
 static inline
-bool sx_TryGet(const Arr& arr, size_t row, Int& v)
+bool sx_TryGet(const Arr& arr, Row row, Int& v)
 {
     if ( row >= arr.size() ) {
         return false;
@@ -532,7 +534,8 @@ bool CSeqTable_multi_data::x_TryGetInt8(size_t row, Int8& v,
         return true;
     }
     case e_Bit_bvector:
-        return sx_TryGet(GetBit_bvector().GetBitVector(), row, v);
+        return sx_TryGet(GetBit_bvector().GetBitVector(),
+                         static_cast<bm::bvector<>::size_type>(row), v);
     case e_Int1:
         return sx_TryGet(GetInt1(), row, v);
     case e_Int2:
@@ -866,7 +869,8 @@ void CSeqTable_multi_data::ChangeToCommon_string(const string* omit_value)
         CCommonString_table::TStrings& arr = common->SetStrings();
         const TString& src = GetString();
         indexes.reserve(src.size());
-        typedef map<string, size_t> TIndexMap;
+        typedef map<string, CCommonString_table::TIndexes::value_type>
+            TIndexMap;
         TIndexMap index_map;
         if ( omit_value ) {
             index_map[*omit_value] = -1;
@@ -937,7 +941,9 @@ void CSeqTable_multi_data::ChangeToCommon_bytes(const TBytesValue* omit_value)
         CCommonBytes_table::TBytes& arr = common->SetBytes();
         const TBytes& src = GetBytes();
         indexes.reserve(src.size());
-        typedef map<const TBytesValue*, size_t, PPtrLess<const TBytesValue*> > TIndexMap;
+        typedef map<const TBytesValue*,
+                    CCommonBytes_table::TIndexes::value_type,
+                    PPtrLess<const TBytesValue*> > TIndexMap;
         TIndexMap index_map;
         if ( omit_value ) {
             index_map[omit_value] = -1;
@@ -1306,11 +1312,12 @@ void CSeqTable_multi_data::ChangeToBit_bvector(void)
     if ( IsBit_bvector() ) {
         return;
     }
-    size_t size = GetSize();
+    typedef bm::bvector<>::size_type TBVSize;
+    TBVSize size = static_cast<TBVSize>(GetSize());
     AutoPtr<bm::bvector<> > bv(new bm::bvector<>(size));
     if ( IsBit() ) {
         const TBit& src = GetBit();
-        for ( size_t i = 0; i < size; i += 8 ) {
+        for ( TBVSize i = 0; i < size; i += 8 ) {
             for ( Uint1 b = src[i/8], j = 0; b & 0xff; ++j, b <<= 1 ) {
                 if ( b&0x80 ) {
                     bv->set_bit(i+j);
@@ -1319,7 +1326,7 @@ void CSeqTable_multi_data::ChangeToBit_bvector(void)
         }
     }
     else if ( CanGetInt() ) {
-        for ( size_t i = 0; i < size; ++i ) {
+        for ( TBVSize i = 0; i < size; ++i ) {
             int v;
             if ( !TryGetInt(i, v) ) {
                 NCBI_THROW(CSeqTableException, eIncompatibleValueType,

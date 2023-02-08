@@ -119,7 +119,7 @@ public:
      vector<Uint4>*        blast_ambig = 0)
         const;
 
-    TSeqPos Pack
+    size_t Pack
     (CSeq_data*   in_seq,
      TSeqPos      uLength)
         const;
@@ -251,7 +251,7 @@ public:
     class CWrapper_table : public CObject
     {
     public:
-        CWrapper_table(int size, int start)
+        CWrapper_table(size_t size, size_t start)
         {
             m_Table   = new T[256];
             m_StartAt = start;
@@ -266,9 +266,9 @@ public:
             m_Table = 0;
         }
 
-        T*  m_Table;
-        int m_StartAt;
-        int m_Size;
+        T*     m_Table;
+        size_t m_StartAt;
+        size_t m_Size;
     };
 
     // Template wrapper class used for two-dimensional arrays.
@@ -276,14 +276,14 @@ public:
     class CWrapper_2D : public CObject
     {
     public:
-        CWrapper_2D(int size1, int start1, int size2, int start2)
+        CWrapper_2D(size_t size1, int start1, size_t size2, int start2)
         {
             m_Size_D1 = size1;
             m_Size_D2 = size2;
             m_StartAt_D1 = start1;
             m_StartAt_D2 = start2;
             m_Table = new T*[size1];
-            for(int i=0; i<size1; i++)
+            for (size_t i=0; i<size1; i++)
                 {
                     m_Table[i] = new T[size2] - start2;
                 }
@@ -292,18 +292,18 @@ public:
         ~CWrapper_2D()
         {
             m_Table += m_StartAt_D1;
-            for(int i=0; i<m_Size_D1; i++)
+            for (size_t i=0; i<m_Size_D1; i++)
                 {
                     delete[](m_Table[i] + m_StartAt_D2);
                 }
             delete[] m_Table;
         }
 
-        T** m_Table;
-        int m_Size_D1;
-        int m_Size_D2;
-        int m_StartAt_D1;
-        int m_StartAt_D2;
+        T**     m_Table;
+        size_t  m_Size_D1;
+        size_t  m_Size_D2;
+        ssize_t m_StartAt_D1;
+        ssize_t m_StartAt_D2;
     };
 
     // Typedefs making use of wrapper classes above.
@@ -946,8 +946,8 @@ TSeqPos CSeqportUtil::Pack
 (CSeq_data*   in_seq,
  TSeqPos uLength)
 {
-    return x_GetImplementation().Pack
-        (in_seq, uLength);
+    return static_cast<TSeqPos>(
+        x_GetImplementation().Pack(in_seq, uLength));
 }
 
 
@@ -1674,8 +1674,8 @@ CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::Ini
 CRef<CSeqportUtil_implementation::CFast_4_1> CSeqportUtil_implementation::InitFastIupacnaNcbi2na()
 {
 
-    int start_at = m_IupacnaNcbi2na->m_StartAt;
-    int size = m_IupacnaNcbi2na->m_Size;
+    auto start_at = m_IupacnaNcbi2na->m_StartAt;
+    auto size = m_IupacnaNcbi2na->m_Size;
     CRef<CFast_4_1> fastTable(new CFast_4_1(4,0,256,0));
     for(int ch = 0; ch < 256; ch++) {
         if((ch >= start_at) && (ch < (start_at + size)))
@@ -1697,8 +1697,8 @@ CRef<CSeqportUtil_implementation::CFast_4_1> CSeqportUtil_implementation::InitFa
 CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFastIupacnaNcbi4na()
 {
 
-    int start_at = m_IupacnaNcbi4na->m_StartAt;
-    int size = m_IupacnaNcbi4na->m_Size;
+    auto start_at = m_IupacnaNcbi4na->m_StartAt;
+    auto size = m_IupacnaNcbi4na->m_Size;
     CRef<CFast_2_1> fastTable(new CFast_2_1(2,0,256,0));
     for(int ch = 0; ch < 256; ch++) {
         if((ch >= start_at) && (ch < (start_at + size)))
@@ -1721,8 +1721,8 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
 CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFastNcbi4naNcbi2na()
 {
 
-    int start_at = m_Ncbi4naNcbi2na->m_StartAt;
-    int size = m_Ncbi4naNcbi2na->m_Size;
+    auto start_at = m_Ncbi4naNcbi2na->m_StartAt;
+    auto size = m_Ncbi4naNcbi2na->m_Size;
     CRef<CFast_2_1> fastTable(new CFast_2_1(2,0,256,0));
     for(int n1 = 0; n1 < 16; n1++)
         for(int n2 = 0; n2 < 16; n2++) {
@@ -2046,7 +2046,7 @@ TSeqPos CSeqportUtil_implementation::Convert
 
     x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
     
-    TSeqPos retval = 0;
+    size_t retval = 0;
     if ( in_str != 0 ) {
         string result;
         retval = CSeqConvert::Convert(*in_str, s_SeqDataToSeqUtil[from_code],
@@ -2062,12 +2062,12 @@ TSeqPos CSeqportUtil_implementation::Convert
         CSeq_data temp(result, to_code);
         out_seq->Assign(temp);
     }
-    return retval;
+    return static_cast<TSeqPos>(retval);
 }
 
 
 // Provide maximum packing without loss of information
-TSeqPos CSeqportUtil_implementation::Pack
+size_t CSeqportUtil_implementation::Pack
 (CSeq_data*   in_seq,
  TSeqPos      uLength)
     const
@@ -2111,7 +2111,7 @@ TSeqPos CSeqportUtil_implementation::Pack
     vector<char> out_vec;
     CSeqUtil::TCoding coding = CSeqUtil::e_not_set;
 
-    TSeqPos retval = 0;
+    size_t retval = 0;
     if ( in_str != 0 ) {
         retval =
             CSeqConvert::Pack(*in_str, s_SeqDataToSeqUtil[from_code],
@@ -2385,7 +2385,7 @@ TSeqPos CSeqportUtil_implementation::Complement
     const vector<char>* in_vec = 0;
     x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
 
-    TSeqPos retval = 0;
+    size_t retval = 0;
     if ( in_str ) {
         string out_str;
         retval = CSeqManip::Complement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
@@ -2397,7 +2397,7 @@ TSeqPos CSeqportUtil_implementation::Complement
         CSeq_data temp(out_vec, in_code);
         out_seq->Assign(temp);
     }
-    return retval;
+    return static_cast<TSeqPos>(retval);
 }
 
 
@@ -2440,7 +2440,7 @@ TSeqPos CSeqportUtil_implementation::Reverse
     const vector<char>* in_vec = 0;
     x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
 
-    TSeqPos retval = 0;
+    size_t retval = 0;
     if ( in_str ) {
         string out_str;
         retval = CSeqManip::Reverse(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
@@ -2452,7 +2452,7 @@ TSeqPos CSeqportUtil_implementation::Reverse
         CSeq_data temp(out_vec, in_code);
         out_seq->Assign(temp);
     }
-    return retval;
+    return static_cast<TSeqPos>(retval);
 }
 
 
@@ -2476,13 +2476,13 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
     vector<char>* in_vec = 0;
     x_GetSeqFromSeqData(*in_seq, &in_str, &in_vec);
 
+    size_t retval = 0;
     if ( in_str ) {
-        return CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
+        retval = CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
     } else if (in_vec != NULL) {
-        return CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
-    } else {
-        return 0;
+        retval = CSeqManip::ReverseComplement(*in_vec, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength);
     }
+    return static_cast<TSeqPos>(retval);
 }
 
 
@@ -2507,7 +2507,7 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
     const vector<char>* in_vec = 0;
     x_GetSeqFromSeqData(in_seq, &in_str, &in_vec);
 
-    TSeqPos retval = 0;
+    size_t retval = 0;
     if ( in_str ) {
         string out_str;
         retval = CSeqManip::ReverseComplement(*in_str, s_SeqDataToSeqUtil[in_code], uBeginIdx, uLength, out_str);
@@ -2520,7 +2520,7 @@ TSeqPos CSeqportUtil_implementation::ReverseComplement
         out_seq->Assign(temp);
     }
 
-    return retval;
+    return static_cast<TSeqPos>(retval);
 }
 
 
@@ -2881,6 +2881,7 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
 {
     // Get string holding the in_seq
     const string& in_seq_data = in_seq.GetIupacna().Get();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // Out sequence may contain unfinished byte from the previous segment
     if (out_seq_length != nullptr  &&  *out_seq_length == 0)
@@ -2895,12 +2896,12 @@ TSeqPos CSeqportUtil_implementation::MapIupacnaToNcbi2na
     // Determine return value
     TSeqPos uLenSav = uLength;
     if((uLenSav == 0) || ((uLenSav + uBeginIdx)) > in_seq_data.size())
-        uLenSav = in_seq_data.size() - uBeginIdx;
+        uLenSav = in_seq_length - uBeginIdx;
 
 
     // Adjust uBeginIdx and uLength, if necessary and get uOverhang
     TSeqPos uOverhang =
-        Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 4);
+        Adjust(&uBeginIdx, &uLength, in_seq_length, 1, 4);
 
     // Check if the output sequence data has already been filled 
     // with some previous data, e.g. previous segment of a delta 
@@ -3183,6 +3184,7 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na(
 {
     // Get vector holding the in_seq
     const vector<char>& in_seq_data = in_seq.GetNcbi4na().Get();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // Out sequence may contain unfinished byte from a previous segment.
     if (out_seq_length != nullptr  &&  *out_seq_length == 0)
@@ -3201,11 +3203,11 @@ TSeqPos CSeqportUtil_implementation::MapNcbi4naToNcbi2na(
 
     // Adjust uLenSav if needed
     if((uLenSav == 0) || ((uBeginSav + uLenSav) > 2*in_seq_data.size()))
-        uLenSav = 2*in_seq_data.size() - uBeginSav;
+        uLenSav = 2*in_seq_length - uBeginSav;
 
     // Adjust uBeginIdx and uLength and get uOverhang
     TSeqPos uOverhang =
-        Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 2, 4);
+        Adjust(&uBeginIdx, &uLength, in_seq_length, 2, 4);
 
     // Check if the output sequence data has already been filled 
     // with some previous data, e.g. previous segment of a delta 
@@ -3632,7 +3634,8 @@ bool CSeqportUtil_implementation::FastValidateIupacna
         return true;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     string::const_iterator itor;
@@ -3663,7 +3666,8 @@ bool CSeqportUtil_implementation::FastValidateNcbieaa
         return true;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     string::const_iterator itor;
@@ -3695,7 +3699,8 @@ bool CSeqportUtil_implementation::FastValidateNcbistdaa
         return true;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     vector<char>::const_iterator itor;
@@ -3727,7 +3732,8 @@ bool CSeqportUtil_implementation::FastValidateIupacaa
         return true;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     string::const_iterator itor;
@@ -3762,7 +3768,8 @@ void CSeqportUtil_implementation::ValidateIupacna
         return;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     string::const_iterator itor;
@@ -3800,7 +3807,8 @@ void CSeqportUtil_implementation::ValidateNcbieaa
         return;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     string::const_iterator itor;
@@ -3838,7 +3846,8 @@ void CSeqportUtil_implementation::ValidateNcbistdaa
         return;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     vector<char>::const_iterator itor;
@@ -3876,7 +3885,8 @@ void CSeqportUtil_implementation::ValidateIupacaa
         return;
 
     // Adjust uBeginIdx, uLength
-    Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
+    Adjust(&uBeginIdx, &uLength, static_cast<TSeqPos>(in_seq_data.size()),
+           1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
     string::const_iterator itor;
@@ -3917,7 +3927,7 @@ TSeqPos CSeqportUtil_implementation::GetNcbi2naCopy
 
     // Set uLength to actual valid length in out_seq
     if( (uLength ==0) || ((uBeginIdx + uLength) > (4*in_seq_data.size() )) )
-        uLength = 4*in_seq_data.size() - uBeginIdx;
+        uLength = 4 * static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq data
     if((uLength % 4) == 0)
@@ -3990,7 +4000,7 @@ TSeqPos CSeqportUtil_implementation::GetNcbi4naCopy
 
     // Set uLength to actual valid length in out_seq
     if( (uLength ==0) || ((uBeginIdx + uLength) > (2*in_seq_data.size() )) )
-        uLength = 2*in_seq_data.size() - uBeginIdx;
+        uLength = 2 * static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq data
     if((uLength % 2) == 0)
@@ -4064,7 +4074,7 @@ TSeqPos CSeqportUtil_implementation::GetIupacnaCopy
 
     // Set uLength to actual valid length in out_seq
     if( (uLength ==0) || ((uBeginIdx + uLength) > (in_seq_data.size() )) )
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq data
     out_seq_data.resize(uLength);
@@ -4106,7 +4116,7 @@ TSeqPos CSeqportUtil_implementation::GetNcbieaaCopy
 
     // Set uLength to actual valid length in out_seq
     if( (uLength ==0) || ((uBeginIdx + uLength) > (in_seq_data.size() )) )
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq data
     out_seq_data.resize(uLength);
@@ -4148,7 +4158,7 @@ TSeqPos CSeqportUtil_implementation::GetNcbistdaaCopy
 
     // Set uLength to actual valid length in out_seq
     if( (uLength ==0) || ((uBeginIdx + uLength) > (in_seq_data.size() )) )
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq data
     out_seq_data.resize(uLength);
@@ -4190,7 +4200,7 @@ TSeqPos CSeqportUtil_implementation::GetIupacaaCopy
 
     // Set uLength to actual valid length in out_seq
     if( (uLength ==0) || ((uBeginIdx + uLength) > (in_seq_data.size() )) )
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq data
     out_seq_data.resize(uLength);
@@ -4274,7 +4284,7 @@ TSeqPos CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
         return 0;
 
     if((uLength == 0) || (((uBeginIdx + uLength) > 2*in_seq_data.size())))
-        uLength = 2*in_seq_data.size() - uBeginIdx;
+        uLength = 2 * static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Save uBeginIdx and adjust uBeginIdx = 0 mod 2
     TSeqPos uBeginSav = uBeginIdx;
@@ -4406,7 +4416,7 @@ TSeqPos CSeqportUtil_implementation::GetAmbigs_ncbi4na_ncbi2na
     if((*out_indices)[out_indices->size()-1] >= uBeginSav + uLenSav)
         {
             out_indices->pop_back();
-            uKeepLen = out_indices->size();
+            uKeepLen = static_cast<TSeqPos>(out_indices->size());
         }
 
     if((uKeepBeg != 0) || (uKeepLen != 0))
@@ -4441,7 +4451,7 @@ TSeqPos CSeqportUtil_implementation::GetAmbigs_iupacna_ncbi2na
         return 0;
 
     if((uLength == 0) || ((uBeginIdx + uLength) > in_seq_data.size()))
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = static_cast<TSeqPos>(in_seq_data.size()) - uBeginIdx;
 
     // Allocate memory for out_seq_data and out_indices
     // Note, these will be shrunk at the end to correspond
@@ -4497,6 +4507,7 @@ TSeqPos CSeqportUtil_implementation::KeepNcbi2na
 {
     // Get a reference to in_seq
     vector<char>& in_seq_data = in_seq->SetNcbi2na().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // If uBeginIdx past the end of in_seq, return empty in_seq
     if(uBeginIdx >= in_seq_data.size()*4)
@@ -4507,13 +4518,13 @@ TSeqPos CSeqportUtil_implementation::KeepNcbi2na
 
     // If uLength == 0, Keep from uBeginIdx to end of in_seq
     if(uLength == 0)
-        uLength = 4*in_seq_data.size() - uBeginIdx;
+        uLength = 4 * in_seq_length - uBeginIdx;
 
 
     // If uLength goes beyond the end of the sequence, trim
     // it back to the end of the sequence
     if(uLength > (4*in_seq_data.size() - uBeginIdx))
-        uLength = 4*in_seq_data.size() - uBeginIdx;
+        uLength = 4 * in_seq_length - uBeginIdx;
 
     // If entire sequence is being requested, just return
     if((uBeginIdx == 0) && (uLength >= 4*in_seq_data.size()))
@@ -4571,6 +4582,7 @@ TSeqPos CSeqportUtil_implementation::KeepNcbi4na
 {
     // Get a reference to in_seq
     vector<char>& in_seq_data = in_seq->SetNcbi4na().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // If uBeginIdx past the end of in_seq, return empty in_seq
     if(uBeginIdx >= in_seq_data.size()*2)
@@ -4581,13 +4593,13 @@ TSeqPos CSeqportUtil_implementation::KeepNcbi4na
 
     // If uLength == 0, Keep from uBeginIdx to end of in_seq
     if(uLength == 0)
-        uLength = 2*in_seq_data.size() - uBeginIdx;
+        uLength = 2 * in_seq_length - uBeginIdx;
 
 
     // If uLength goes beyond the end of the sequence, trim
     // it back to the end of the sequence
     if(uLength > (2*in_seq_data.size() - uBeginIdx))
-        uLength = 2*in_seq_data.size() - uBeginIdx;
+        uLength = 2 * in_seq_length - uBeginIdx;
 
     // If entire sequence is being requested, just return
     if((uBeginIdx == 0) && (uLength >= 2*in_seq_data.size()))
@@ -4645,6 +4657,7 @@ TSeqPos CSeqportUtil_implementation::KeepIupacna
 {
     // Get a reference to in_seq
     string& in_seq_data = in_seq->SetIupacna().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
 
     // If uBeginIdx past end of in_seq, return empty in_seq
@@ -4656,11 +4669,11 @@ TSeqPos CSeqportUtil_implementation::KeepIupacna
 
     // If uLength is 0, Keep from uBeginIdx to end of in_seq
     if(uLength == 0)
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // Check that uLength does not go beyond end of in_seq
     if((uBeginIdx + uLength) > in_seq_data.size())
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // If uBeginIdx == 0 and uLength == in_seq_data.size()
     // just return as the entire sequence is being requested
@@ -4699,6 +4712,7 @@ TSeqPos CSeqportUtil_implementation::KeepNcbieaa
 {
     // Get a reference to in_seq
     string& in_seq_data = in_seq->SetNcbieaa().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
 
     // If uBeginIdx past end of in_seq, return empty in_seq
@@ -4710,11 +4724,11 @@ TSeqPos CSeqportUtil_implementation::KeepNcbieaa
 
     // If uLength is 0, Keep from uBeginIdx to end of in_seq
     if(uLength == 0)
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // Check that uLength does not go beyond end of in_seq
     if((uBeginIdx + uLength) > in_seq_data.size())
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // If uBeginIdx == 0 and uLength == in_seq_data.size()
     // just return as the entire sequence is being requested
@@ -4752,6 +4766,7 @@ TSeqPos CSeqportUtil_implementation::KeepNcbistdaa
 {
     // Get a reference to in_seq
     vector<char>& in_seq_data = in_seq->SetNcbistdaa().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // If uBeginIdx past end of in_seq, return empty in_seq
     if(uBeginIdx >= in_seq_data.size())
@@ -4762,11 +4777,11 @@ TSeqPos CSeqportUtil_implementation::KeepNcbistdaa
 
     // If uLength is 0, Keep from uBeginIdx to end of in_seq
     if(uLength == 0)
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // Check that uLength does not go beyond end of in_seq
     if((uBeginIdx + uLength) > in_seq_data.size())
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // If uBeginIdx == 0 and uLength == in_seq_data.size()
     // just return as the entire sequence is being requested
@@ -4804,6 +4819,7 @@ TSeqPos CSeqportUtil_implementation::KeepIupacaa
 {
     // Get a reference to in_seq
     string& in_seq_data = in_seq->SetIupacaa().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
 
     // If uBeginIdx past end of in_seq, return empty in_seq
@@ -4814,11 +4830,11 @@ TSeqPos CSeqportUtil_implementation::KeepIupacaa
 
     // If uLength is 0, Keep from uBeginIdx to end of in_seq
     if(uLength == 0)
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // Check that uLength does not go beyond end of in_seq
     if((uBeginIdx + uLength) > in_seq_data.size())
-        uLength = in_seq_data.size() - uBeginIdx;
+        uLength = in_seq_length - uBeginIdx;
 
     // If uBeginIdx == 0 and uLength == in_seq_data.size()
     // just return as the entire sequence is being requested
@@ -5005,6 +5021,7 @@ TSeqPos CSeqportUtil_implementation::ReverseNcbi2na
 {
     // Get a reference to in_seq data
     vector<char>& in_seq_data = in_seq->SetNcbi2na().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // Validate and adjust uBeginIdx and uLength
     if(uBeginIdx >= 4*in_seq_data.size())
@@ -5015,11 +5032,11 @@ TSeqPos CSeqportUtil_implementation::ReverseNcbi2na
 
     // If uLength is zero, set to end of sequence
     if(uLength == 0)
-        uLength = 4*in_seq_data.size() - uBeginIdx;
+        uLength = 4 * in_seq_length - uBeginIdx;
 
     // Ensure that uLength not beyond end of sequence
     if((uBeginIdx + uLength) > (4 * in_seq_data.size()))
-        uLength = 4*in_seq_data.size() - uBeginIdx;
+        uLength = 4 * in_seq_length - uBeginIdx;
 
     // Determine start and end bytes
     TSeqPos uStart = uBeginIdx/4;
@@ -5051,6 +5068,7 @@ TSeqPos CSeqportUtil_implementation::ReverseNcbi4na
 {
     // Get a reference to in_seq data
     vector<char>& in_seq_data = in_seq->SetNcbi4na().Set();
+    TSeqPos in_seq_length = static_cast<TSeqPos>(in_seq_data.size());
 
     // Validate and adjust uBeginIdx and uLength
     if(uBeginIdx >= 2*in_seq_data.size())
@@ -5061,11 +5079,11 @@ TSeqPos CSeqportUtil_implementation::ReverseNcbi4na
 
     // If uLength is zero, set to end of sequence
     if(uLength == 0)
-        uLength = 2*in_seq_data.size() - uBeginIdx;
+        uLength = 2 * in_seq_length - uBeginIdx;
 
     // Ensure that uLength not beyond end of sequence
     if((uBeginIdx + uLength) > (2 * in_seq_data.size()))
-        uLength = 2*in_seq_data.size() - uBeginIdx;
+        uLength = 2 * in_seq_length - uBeginIdx;
 
     // Determine start and end bytes
     TSeqPos uStart = uBeginIdx/2;
@@ -5242,10 +5260,10 @@ TSeqPos CSeqportUtil_implementation::AppendIupacna
         return 0;
 
     if(((uBeginIdx1 + uLength1) > in_seq1_data.size()) || uLength1 == 0)
-        uLength1 = in_seq1_data.size() - uBeginIdx1;
+        uLength1 = static_cast<TSeqPos>(in_seq1_data.size()) - uBeginIdx1;
 
     if(((uBeginIdx2 + uLength2) > in_seq2_data.size()) || uLength2 == 0)
-        uLength2 = in_seq2_data.size() - uBeginIdx2;
+        uLength2 = static_cast<TSeqPos>(in_seq2_data.size()) - uBeginIdx2;
 
     // Append the strings
     out_seq_data.append(in_seq1_data.substr(uBeginIdx1,uLength1));
@@ -5288,10 +5306,10 @@ TSeqPos CSeqportUtil_implementation::AppendNcbi2na
 
     // Validate and Adjust uBeginIdx_ and uLength_
     if(((uBeginIdx1 + uLength1) > 4*in_seq1_data.size()) || uLength1 == 0)
-        uLength1 = 4*in_seq1_data.size() - uBeginIdx1;
+        uLength1 = 4 * static_cast<TSeqPos>(in_seq1_data.size()) - uBeginIdx1;
 
     if(((uBeginIdx2 + uLength2) > 4*in_seq2_data.size()) || uLength2 == 0)
-        uLength2 = 4*in_seq2_data.size() - uBeginIdx2;
+        uLength2 = 4 * static_cast<TSeqPos>(in_seq2_data.size()) - uBeginIdx2;
 
 
     // Resize out_seq_data to hold appended sequence
@@ -5492,10 +5510,10 @@ TSeqPos CSeqportUtil_implementation::AppendNcbi4na
 
     // Validate and Adjust uBeginIdx_ and uLength_
     if(((uBeginIdx1 + uLength1) > 2*in_seq1_data.size()) || uLength1 == 0)
-        uLength1 = 2*in_seq1_data.size() - uBeginIdx1;
+        uLength1 = 2 * static_cast<TSeqPos>(in_seq1_data.size()) - uBeginIdx1;
 
     if(((uBeginIdx2 + uLength2) > 2*in_seq2_data.size()) || uLength2 == 0)
-        uLength2 = 2*in_seq2_data.size() - uBeginIdx2;
+        uLength2 = 2 * static_cast<TSeqPos>(in_seq2_data.size()) - uBeginIdx2;
 
     // Resize out_seq_data to hold appended sequence
     TSeqPos uTotalLength = uLength1 + uLength2;
@@ -5668,10 +5686,10 @@ TSeqPos CSeqportUtil_implementation::AppendNcbieaa
         }
 
     if(((uBeginIdx1 + uLength1) > in_seq1_data.size()) || uLength1 == 0)
-        uLength1 = in_seq1_data.size() - uBeginIdx1;
+        uLength1 = static_cast<TSeqPos>(in_seq1_data.size()) - uBeginIdx1;
 
     if(((uBeginIdx2 + uLength2) > in_seq2_data.size()) || uLength2 == 0)
-        uLength2 = in_seq2_data.size() - uBeginIdx2;
+        uLength2 = static_cast<TSeqPos>(in_seq2_data.size()) - uBeginIdx2;
 
     // Append the strings
     out_seq_data.append(in_seq1_data.substr(uBeginIdx1,uLength1));
@@ -5705,10 +5723,10 @@ TSeqPos CSeqportUtil_implementation::AppendNcbistdaa
         return 0;
 
     if(((uBeginIdx1 + uLength1) > in_seq1_data.size()) || uLength1 == 0)
-        uLength1 = in_seq1_data.size() - uBeginIdx1;
+        uLength1 = static_cast<TSeqPos>(in_seq1_data.size()) - uBeginIdx1;
 
     if(((uBeginIdx2 + uLength2) > in_seq2_data.size()) || uLength2 == 0)
-        uLength2 = in_seq2_data.size() - uBeginIdx2;
+        uLength2 = static_cast<TSeqPos>(in_seq2_data.size()) - uBeginIdx2;
 
     // Get begin and end positions on in_seqs
     vector<char>::const_iterator i_in1_begin =
@@ -5752,10 +5770,10 @@ TSeqPos CSeqportUtil_implementation::AppendIupacaa
         }
 
     if(((uBeginIdx1 + uLength1) > in_seq1_data.size()) || uLength1 == 0)
-        uLength1 = in_seq1_data.size() - uBeginIdx1;
+        uLength1 = static_cast<TSeqPos>(in_seq1_data.size()) - uBeginIdx1;
 
     if(((uBeginIdx2 + uLength2) > in_seq2_data.size()) || uLength2 == 0)
-        uLength2 = in_seq2_data.size() - uBeginIdx2;
+        uLength2 = static_cast<TSeqPos>(in_seq2_data.size()) - uBeginIdx2;
 
     // Append the strings
     out_seq_data.append(in_seq1_data.substr(uBeginIdx1,uLength1));
@@ -5973,7 +5991,8 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetMapToIndex
     
     // Check that from_idx is within range of from_type
     if (from_idx - (*Map).m_StartAt >= (TIndex)(*Map).m_Size) {
-        throw CSeqportUtil::CBadIndex(from_idx - (*Map).m_StartAt,
+        throw CSeqportUtil::CBadIndex(
+            from_idx - static_cast<TIndex>((*Map).m_StartAt),
             "GetMapToIndex");
     }
     

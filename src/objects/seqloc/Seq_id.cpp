@@ -870,7 +870,7 @@ static const char kDigits[] = "0123456789";
 // this code sticks to a traditional representation that has no such
 // limits but doesn't scale as well to large numbers of special cases.)
 static const unsigned int kMaxSmallSpecialDigits = 9;
-static const size_t kBVSizes[kMaxSmallSpecialDigits + 1] = {
+static const bm::bvector<>::size_type kBVSizes[kMaxSmallSpecialDigits + 1] = {
     1,
     10,
     100,
