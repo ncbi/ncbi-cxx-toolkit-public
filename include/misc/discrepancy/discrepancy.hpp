@@ -83,6 +83,7 @@ public:
         eType_string
     };
     virtual ~CReportObj(){}
+    virtual string GetBioseqLabel() const = 0;
     virtual string GetText() const = 0;
     virtual string GetPath() const = 0;
     virtual string GetFeatureType() const = 0;
