@@ -351,6 +351,15 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     //  its exons. Hence it's either a single interval, or two intervals if the
     //  covering interval wraps around the origin.
 
+    CRef<CGtfRecord> pRecord(
+        new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+    if (!transcriptId.empty()) {
+        pRecord->SetTranscriptId(transcriptId);
+    }
+    if (!xAssignFeature(*pRecord, context, mf)) {
+        return false;
+    }
+
     const auto& mfLoc = mf.GetLocation();
     auto mfStrand = mfLoc.IsSetStrand() ?
         mfLoc.GetStrand() :
@@ -360,72 +369,83 @@ bool CGtfWriter::xAssignFeaturesTranscript(
     mfLocAsPackedInt.Assign(mfLoc);
     mfLocAsPackedInt.ChangeToPackedInt();
 
+    bool isTransSpliced = mf.IsSetExcept()  &&  mf.GetExcept()  &&  mf.IsSetExcept_text()  &&
+        (NStr::Find(mf.GetExcept_text(), "trans-splicing") != NPOS);
     const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
-    CRef<CGtfRecord> pRecord(
-        new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-    if (!transcriptId.empty()) {
-        pRecord->SetTranscriptId(transcriptId);
-    }
-    if (!xAssignFeature(*pRecord, context, mf)) {
-        return false;
-    }
-    TSeqPos lastFrom = sublocs.front()->GetFrom();
-    TSeqPos lastTo = sublocs.front()->GetTo();
-    auto it = sublocs.begin();
-    bool iterationDone(false);
-    for ( it++; it != sublocs.end()  &&  !iterationDone; it++ ) {
-        const CSeq_interval& intv = **it;
-
-        switch (mfStrand) {
-            case eNa_strand_minus: {
-                if (intv.GetTo() <= lastFrom) {
-                    lastFrom = intv.GetFrom();
-                }
-                else {
-                    pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
-                    recordList.push_back(pRecord);
-                    pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                    if (!transcriptId.empty()) {
-                        pRecord->SetTranscriptId(transcriptId);
-                    }
-                    if (!xAssignFeature(*pRecord, context, mf)) {
-                        return false;
-                    }
-                    lastFrom = intv.GetFrom();
-                    lastTo = intv.GetTo();
-                }
+    if (isTransSpliced) {
+        auto rnaStart = sublocs.front()->GetFrom();
+        auto rnaStop = sublocs.front()->GetTo();
+        for (const auto& loc : sublocs) {
+            auto start = loc->GetFrom();
+            if (start < rnaStart) {
+                rnaStart = start;
             }
-            break;
-
-            case eNa_strand_other: {
-                //feature contains parts from both strands
-                // for now, don't even attempt to origin wrap these things (rw-1299).
-                iterationDone = true;
+            auto stop = loc->GetTo();
+            if (stop > rnaStop) {
+                rnaStop = stop;
             }
-            break;
-
-            default: {
-                if (intv.GetFrom() >= lastTo) {
-                    lastTo = intv.GetTo();
-                }
-                else { //wrapping back to 0
-                    pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
-                    recordList.push_back(pRecord);
-                    pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-                    if (!transcriptId.empty()) {
-                        pRecord->SetTranscriptId(transcriptId);
-                    }
-                    if (!xAssignFeature(*pRecord, context, mf)) {
-                        return false;
-                    }
-                    lastFrom = 0;
-                    lastTo = intv.GetTo();
-                }
-            }
-            break;
         }
+        pRecord->SetEndpoints(rnaStart, rnaStop, mfStrand);
     }
-    pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+    else {
+        TSeqPos lastFrom = sublocs.front()->GetFrom();
+        TSeqPos lastTo = sublocs.front()->GetTo();
+        auto it = sublocs.begin();
+        bool iterationDone(false);
+        for ( it++; it != sublocs.end()  &&  !iterationDone; it++ ) {
+            const CSeq_interval& intv = **it;
+
+            switch (mfStrand) {
+                case eNa_strand_minus: {
+                    if (intv.GetTo() <= lastFrom) {
+                        lastFrom = intv.GetFrom();
+                    }
+                    else {
+                        pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+                        recordList.push_back(pRecord);
+                        pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                        if (!transcriptId.empty()) {
+                            pRecord->SetTranscriptId(transcriptId);
+                        }
+                        if (!xAssignFeature(*pRecord, context, mf)) {
+                            return false;
+                        }
+                        lastFrom = intv.GetFrom();
+                        lastTo = intv.GetTo();
+                    }
+                }
+                break;
+
+                case eNa_strand_other: {
+                    //feature contains parts from both strands
+                    // for now, don't even attempt to origin wrap these things (rw-1299).
+                    iterationDone = true;
+                }
+                break;
+
+                default: {
+                    if (intv.GetFrom() >= lastTo) {
+                        lastTo = intv.GetTo();
+                    }
+                    else { //wrapping back to 0
+                        pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+                        recordList.push_back(pRecord);
+                        pRecord.Reset(new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
+                        if (!transcriptId.empty()) {
+                            pRecord->SetTranscriptId(transcriptId);
+                        }
+                        if (!xAssignFeature(*pRecord, context, mf)) {
+                            return false;
+                        }
+                        lastFrom = 0;
+                        lastTo = intv.GetTo();
+                    }
+                }
+                break;
+            }
+        }
+        pRecord->SetEndpoints(lastFrom, lastTo, mfLoc.GetStrand());
+    }
     recordList.push_back(pRecord);
 
     bool needPartNumbers = (recordList.size() > 1);
