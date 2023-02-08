@@ -80,7 +80,7 @@ static string s_GetEffectiveChain_id(const CPDB_seq_id& id)
 
 int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
 {
-    if ( int diff = PCase().Compare(GetMol(), psip2.GetMol()) ) {
+    if ( int diff = PNocase().Compare(GetMol(), psip2.GetMol()) ) {
         return diff;
     }
     // optimization to avoid creation of temporary strings if both chain-id are set
