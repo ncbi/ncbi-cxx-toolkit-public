@@ -150,7 +150,7 @@ bool CSeq_inst::ConvertDeltaToRaw()
     }
 
     if (orig_len != iupacna.length()) {
-        SetLength(iupacna.length());
+        SetLength(static_cast<TLength>(iupacna.length()));
     }
     SetRepr(objects::CSeq_inst::eRepr_raw);
     if (IsAa()) {

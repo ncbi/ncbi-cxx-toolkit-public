@@ -1388,7 +1388,8 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
             precision.push_back(0);
             if (NStr::Find(token, ".") != NPOS && !NStr::EndsWith(token, "."))
             {
-                precision.back() = token.length() - NStr::Find(token, ".") - 1;
+                precision.back()
+                    = static_cast<int>(token.length() - token.find('.') - 1);
             }
             continue;
         }

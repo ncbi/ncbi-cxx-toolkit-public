@@ -1705,8 +1705,10 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
         if (m_MapOptions.GetAlign_Dense_seg_TotalRange()) {
             // Get total range for source and destination rows.
             // Both ranges must be not empty.
-            TSeqRange r_src = denseg.GetSeqRange(row);
-            TSeqRange r_dst = denseg.GetSeqRange(to_row);
+            TSeqRange r_src
+                = denseg.GetSeqRange(static_cast<CDense_seg::TDim>(row));
+            TSeqRange r_dst
+                = denseg.GetSeqRange(static_cast<CDense_seg::TDim>(to_row));
 
             _ASSERT(r_src.GetLength() != 0  &&  r_dst.GetLength() != 0);
             ENa_strand dst_strand = have_strands ?
@@ -2135,14 +2137,14 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
 
 
 void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
-                                        int to_row)
+                                        size_t to_row)
 {
     // Sparse-seg needs special row indexing.
     bool to_second = m_MapOptions.GetAlign_Sparse_ToSecond();
 
     // Check the alignment for consistency. Adjust invalid values, show
     // warnings if this happens.
-    _ASSERT(size_t(to_row) < sparse.GetRows().size());
+    _ASSERT(to_row < sparse.GetRows().size());
     const CSparse_align& row = *sparse.GetRows()[to_row];
 
     size_t numseg = row.GetNumseg();

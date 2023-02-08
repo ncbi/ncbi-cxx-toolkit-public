@@ -46,10 +46,6 @@ public:
     // currently no public functions but that may change in the future.
     // For example, if you need a more complex GetStrand(), then 
     // that might be added for the user to override.
-private:
-    // This is unused and it's just here so the class isn't empty 
-    // in case the compiler doesn't like empty classes.
-    int m_dummy;
 };
 
 /// Get reverse complement of the seq-loc (?).

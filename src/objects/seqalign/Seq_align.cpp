@@ -1715,23 +1715,27 @@ s_GetIndels(const CSeq_align& align, CSeq_align::TDim row,
 
 TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
 {
-    return s_GetIndels(*this, row,
-                         CRangeCollection<TSeqPos>(TSeqRange::GetWhole()), true, false)
-           .size();
+    return static_cast<TSeqPos>(
+        s_GetIndels(*this, row,
+                    CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
+                    true, false)
+        .size());
 }
 
 TSeqPos CSeq_align::GetNumFrameshiftsWithinRange(
     const TSeqRange &range, TDim row) const
 {
-    return s_GetIndels(*this, row, CRangeCollection<TSeqPos>(range), true, false)
-           .size();
+    return static_cast<TSeqPos>(
+        s_GetIndels(*this, row, CRangeCollection<TSeqPos>(range), true, false)
+        .size());
 }
 
 TSeqPos CSeq_align::GetNumFrameshiftsWithinRanges(
     const CRangeCollection<TSeqPos> &ranges, TDim row) const
 {
-    return s_GetIndels(*this, row, ranges, true, false)
-           .size();
+    return static_cast<TSeqPos>(
+        s_GetIndels(*this, row, ranges, true, false)
+        .size());
 }
 
 vector<CSeq_align::SIndel> CSeq_align::GetFrameshifts(TDim row) const
@@ -1858,7 +1862,7 @@ static inline TSeqPos s_DenseSegLength(const CDense_seg& ds,
 ///
 /// calculate the length of our alignment within given range
 ///
-static size_t s_GetAlignmentLength(const CSeq_align& align,
+static TSeqPos s_GetAlignmentLength(const CSeq_align& align,
                                    const CRangeCollection<TSeqPos> &ranges,
                                    bool ungapped)
 {
@@ -1866,7 +1870,7 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
         return 0;
     }
 
-    size_t len = 0;
+    TSeqPos len = 0;
     switch (align.GetSegs().Which()) {
     case CSeq_align::TSegs::e_Denseg:
         {{
@@ -1886,7 +1890,8 @@ static size_t s_GetAlignmentLength(const CSeq_align& align,
                     }
                 }
             } else {
-                for (size_t i = 0;  i < ds.GetLens().size();  ++i) {
+                for (CDense_seg::TNumseg i = 0;  i < ds.GetLens().size();
+                     ++i) {
                     len += s_DenseSegLength(ds, i, ranges);
                }
             }

@@ -246,7 +246,7 @@ bool CPCRPrimerSeq::Fixi(string& seq)
     
     SIZE_TYPE pos = 0;
     while (pos != NPOS && pos < seq.length()) {
-        pos = NStr::Find(seq, "i", pos, NPOS, NStr::eFirst, NStr::eCase);
+        pos = seq.find('i', pos);
         if (pos != NPOS) {
             string repl;
             
