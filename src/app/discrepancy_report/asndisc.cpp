@@ -164,7 +164,7 @@ void CDiscRepApp::Init()
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
 
-string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_START
+string CDiscRepApp::x_ConstructOutputName(const string& input) 
 {
     const CArgs& args = GetArgs();
     CDirEntry fname(input);
@@ -174,7 +174,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input) // LCOV_EXCL_STAR
         ext += ".xml";
     }
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
-} // LCOV_EXCL_STOP
+} 
 
 
 static unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
@@ -256,7 +256,7 @@ void CDiscRepApp::x_ParseDirectory(const string& dirname, bool recursive)
 }
 
 
-unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
+unsigned CDiscRepApp::x_ProcessOne(const string& fname) 
 {
     unsigned severity;
     CRef<CDiscrepancyProduct> product;
@@ -281,7 +281,7 @@ unsigned CDiscRepApp::x_ProcessOne(const string& fname) // LCOV_EXCL_START
     auto outfilename = x_ConstructOutputName(fname);
     x_Output(outfilename, *Tests->GetProduct(), 0);
     return severity;
-} // LCOV_EXCL_STOP
+}
 
 
 void CDiscRepApp::x_Output(const string& fname, CDiscrepancyProduct& tests, unsigned short iflags)
@@ -512,12 +512,12 @@ int CDiscRepApp::Run()
     unsigned severity = 0;
     if (args["o"]) {
         if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
-            ERR_POST("Input and output files should be different"); // LCOV_EXCL_START
+            ERR_POST("Input and output files should be different"); 
             return 1;
-        } // LCOV_EXCL_STOP
+        } 
         severity = x_ProcessAll(args["o"].AsString());
     }
-    else { // LCOV_EXCL_START
+    else { 
         int count = 0;
         for (const string& f : m_Files) {
             ++count;
@@ -527,7 +527,7 @@ int CDiscRepApp::Run()
             unsigned sev = x_ProcessOne(f);
             severity = sev > severity ? sev : severity;
         }
-    } // LCOV_EXCL_STOP
+    } 
     if (args["R"]) {
         int r = args["R"].AsInteger();
         if (r < 1 || (r < 2 && severity > 0) || severity > 1) {
