@@ -78,7 +78,7 @@ class PsgClient:
             # A JSON-RPC error?
             if result is None:
                 yield data if 'error' not in data else { k: v for k, v in data.items() if k == 'error' }
-                return
+                continue
 
             # An item
             if 'reply' in result:
