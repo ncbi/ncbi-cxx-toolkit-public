@@ -1312,11 +1312,17 @@ bool CWGSFileInfo::SAccFileInfo::IsMigrated(const CWGSProteinIterator& iter) con
     if ( GetKeepMigratedParam() ) {
         return false;
     }
-    if ( file->GetDb()->GetProjectGBState() == NCBI_gb_state_eWGSGenBankMigrated ||
-         iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated ) {
-        return true;
+    if ( !iter.HasGi() ) {
+        return false;
     }
-    return false;
+    auto project_state = file->GetDb()->GetProjectGBState();
+    switch (project_state) {
+    case NCBI_gb_state_eWGSGenBankReplaced:
+    case NCBI_gb_state_eWGSGenBankSuppressed:
+        return iter.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated;
+    default:
+        return false;
+    }
 }
 
 
