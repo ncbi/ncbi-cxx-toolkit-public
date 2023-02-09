@@ -1463,11 +1463,11 @@ size_t CTL_CursorResultExpl::ReadItem(void* buffer, size_t buffer_size,
         daterec.datehour    = t.Hour();
         daterec.dateminute  = t.Minute();
         daterec.datesecond  = t.Second();
-        daterec.datemsecond = t.MilliSecond();
+        daterec.datemsecond = static_cast<CS_INT>(t.MilliSecond());
         // datetzone?
         // Could perhaps use nanoseconds, but microseconds are
         // standard practice.
-        daterec.datesecfrac = t.MicroSecond();
+        daterec.datesecfrac = static_cast<CS_INT>(t.MicroSecond());
         daterec.datesecprec = kMicroSecondsPerSecond;
         CHECK_DRIVER_ERROR(cs_dt_crack(ctx, CS_BIGDATETIME_TYPE, buffer,
                                        &daterec) != CS_SUCCEED,

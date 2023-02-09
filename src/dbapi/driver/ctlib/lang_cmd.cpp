@@ -602,7 +602,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             size_t n = par.Size();
             AutoArray<char> buf(n);
             par.MoveTo(0);
-            size_t n2 = par.Read(buf.get(), n);
+            CS_INT n2 = static_cast<CS_INT>(par.Read(buf.get(), n));
             _ASSERT(n2 == n);
             ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                                       buf.get(), n2, indicator));
@@ -1006,15 +1006,15 @@ bool CTL_LangCmd::Send()
         CTL_Connection::CCancelModeGuard guard(GetConnection());
         CheckSFB(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
                             const_cast<char*>(GetQuery().data()),
-                            GetQuery().size(), CS_END),
+                            static_cast<CS_INT>(GetQuery().size()), CS_END),
                  "ct_command failed", 120001);
     } else if (dyn_id == "!") {
         return false;
     } else {
         CTL_Connection::CCancelModeGuard guard(GetConnection());
         CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_EXECUTE,
-                            const_cast<char*>(dyn_id.data()), dyn_id.size(),
-                            NULL, 0),
+                            const_cast<char*>(dyn_id.data()),
+                            static_cast<CS_INT>(dyn_id.size()), NULL, 0),
                  "ct_dynamic(CS_EXECUTE) failed", 120004);
     }
 
@@ -1048,7 +1048,8 @@ CTL_LangCmd::~CTL_LangCmd()
         try {
             CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_DEALLOC,
                                 const_cast<char*>(m_DynamicID.data()),
-                                m_DynamicID.size(), NULL, 0),
+                                static_cast<CS_INT>(m_DynamicID.size()),
+                                NULL, 0),
                      "ct_dynamic(CS_DEALLOC) failed", 120005);
             if (SendInternal()) {
                 while (HasMoreResults()) {
@@ -1179,8 +1180,9 @@ CTempString CTL_LangCmd::x_GetDynamicID(void)
                                         0, 16);
     CheckSFB(ct_dynamic(x_GetSybaseCmd(), CS_PREPARE,
                         const_cast<char*>(m_DynamicID.data()),
-                        m_DynamicID.size(),
-                        const_cast<char*>(query.data()), query.size()),
+                        static_cast<CS_INT>(m_DynamicID.size()),
+                        const_cast<char*>(query.data()),
+                        static_cast<CS_INT>(query.size())),
              "ct_dynamic(CS_PREPARE) failed", 120002);
     if ( !SendInternal() ) {
         return "!";

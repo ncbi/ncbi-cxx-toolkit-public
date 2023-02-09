@@ -181,9 +181,9 @@ CTL_CursorCmd::OpenCursor()
 
         CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DECLARE,
                            const_cast<char*>(GetCmdName().data()),
-                           GetCmdName().size(),
+                           static_cast<CS_INT>(GetCmdName().size()),
                            const_cast<char*>(GetQuery().data()),
-                           GetQuery().size(),
+                           static_cast<CS_INT>(GetQuery().size()),
                            CS_UNUSED),
                  "ct_cursor(DECLARE) failed", 122001);
 
@@ -294,8 +294,10 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
     CheckIsDead();
 
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_UPDATE,
-                       const_cast<char*>(table_name.data()), table_name.size(),
-                       const_cast<char*>(upd_query.data()),  upd_query.size(),
+                       const_cast<char*>(table_name.data()),
+                       static_cast<CS_INT>(table_name.size()),
+                       const_cast<char*>(upd_query.data()),
+                       static_cast<CS_INT>(upd_query.size()),
                        CS_UNUSED),
              "ct_cursor(update) failed", 122030);
 
@@ -366,7 +368,8 @@ bool CTL_CursorCmd::Delete(const string& table_name)
     CheckIsDead();
 
     CheckSFB(ct_cursor(x_GetSybaseCmd(), CS_CURSOR_DELETE,
-                       const_cast<char*>(table_name.data()), table_name.size(),
+                       const_cast<char*>(table_name.data()),
+                       static_cast<CS_INT>(table_name.size()),
                        0, CS_UNUSED, CS_UNUSED),
              "ct_cursor(delete) failed", 122040);
 
