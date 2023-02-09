@@ -305,7 +305,7 @@ bool Connection::Open(const CDBConnParams& params)
 
         rc = CheckWhileOpening(ct_connect(GetNativeHandle(),
                                 const_cast<char*>(server_name.data()),
-                                server_name.size()));
+                                static_cast<CS_INT>(server_name.size())));
 #else
 #if defined(CS_SERVERADDR)
         if (params.GetHost()) {
@@ -317,8 +317,8 @@ bool Connection::Open(const CDBConnParams& params)
             CheckWhileOpening(ct_con_props(GetNativeHandle(),
                                 CS_SET,
                                 CS_SERVERADDR,
-                                (CS_VOID*)server_name.data(),
-                                server_name.size(),
+                                const_cast<char*>(server_name.data()),
+                                static_cast<CS_INT>(server_name.size()),
                                 NULL));
 
             // It's strange but at least after one type of error inside
@@ -334,7 +334,7 @@ bool Connection::Open(const CDBConnParams& params)
             // See comment above
             rc = CheckWhileOpening(ct_connect(GetNativeHandle(),
                                     const_cast<char*>(server_name.data()),
-                                    server_name.size()));
+                                    static_cast<CS_INT>(server_name.size())));
         }
 #else
         server_name = params.GetServerName();
@@ -470,8 +470,10 @@ Command::Open(CS_INT type, CS_INT option, const string& arg)
     if (!m_IsOpen) {
         m_IsOpen = (GetCTLConn().Check(ct_command(m_Handle,
                                                   type,
-                                                  (CS_CHAR*)arg.data(),
-                                                  arg.size(),
+                                                  const_cast<CS_CHAR*>(
+                                                      arg.data()),
+                                                  static_cast<CS_INT>(
+                                                      arg.size()),
                                                   option)) == CS_SUCCEED);
     }
 
@@ -1627,8 +1629,8 @@ void CTLibContext::SetClientCharset(const string& charset)
                   CS_SET,
                   m_Locale,
                   CS_SYB_CHARSET,
-                  (CS_CHAR*) GetClientCharset().data(),
-                  GetClientCharset().size(),
+                  const_cast<CS_CHAR*>(GetClientCharset().data()),
+                  static_cast<CS_INT>(GetClientCharset().size()),
                   NULL);
     }
 }

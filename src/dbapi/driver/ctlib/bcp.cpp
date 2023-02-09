@@ -522,17 +522,18 @@ bool CTL_BCPInCmd::x_AssignParams()
 #endif
                         ) {
                         param_fmt.maxlength
-                            = sizeof(TCharUCS2) * (s.size() + 1);
+                            = static_cast<CS_INT>(sizeof(TCharUCS2)
+                                                  * (s.size() + 1));
                         _ASSERT((size_t) param_fmt.maxlength
                                 <= sizeof(SBcpBind::buffer));
                         TStringUCS2 ws = CUtf8::AsBasicString<TCharUCS2>(s);
                         memcpy(bind.buffer, ws.c_str(), param_fmt.maxlength);
-                        bind.datalen = sizeof(TCharUCS2) * s.size();
+                        bind.datalen = param_fmt.maxlength - sizeof(TCharUCS2);
                     } else {
                         _ASSERT(s.size() < sizeof(SBcpBind::buffer));
                         memcpy(bind.buffer, s.c_str(), s.size() + 1);
-                        bind.datalen = s.size();
-                        param_fmt.maxlength = s.size() + 1;
+                        bind.datalen = static_cast<CS_INT>(s.size());
+                        param_fmt.maxlength = bind.datalen + 1;
                     }
                 } else {
                     memcpy(bind.buffer, &dt, sizeof(CS_DATETIME));
@@ -653,7 +654,8 @@ bool CTL_BCPInCmd::Send(void)
     if ( !WasSent() ) {
         // we need to init the bcp
         CheckSFB(blk_init(x_GetSybaseCmd(), CS_BLK_IN,
-                          (CS_CHAR*) GetQuery().data(), GetQuery().size()),
+                          const_cast<CS_CHAR*>(GetQuery().data()),
+                          static_cast<CS_INT>(GetQuery().size())),
                  "blk_init failed", 123001);
 
         SetWasSent();

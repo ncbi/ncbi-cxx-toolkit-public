@@ -90,7 +90,7 @@ bool CTL_RPCCmd::Send()
     CTL_Connection::CCancelModeGuard guard(GetConnection());
     CheckSFB(ct_command(x_GetSybaseCmd(), CS_RPC_CMD,
                         const_cast<char*>(GetQuery().data()),
-                        GetQuery().size(),
+                        static_cast<CS_INT>(GetQuery().size()),
                               NeedToRecompile() ? CS_RECOMPILE : CS_UNUSED),
              "ct_command failed", 121001);
 

@@ -269,20 +269,27 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_USERNAME,
-                                (void*) params.GetUserName().data(),
-                                params.GetUserName().size(),
+                                const_cast<char*>(params.GetUserName().data()),
+                                static_cast<CS_INT>(params.GetUserName()
+                                                    .size()),
                                 NULL)) != CS_SUCCEED
         || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_PASSWORD,
-                                   (void*) params.GetPassword().data(),
-                                   params.GetPassword().size(),
+                                   const_cast<char*>(params.GetPassword()
+                                                     .data()),
+                                   static_cast<CS_INT>(params.GetPassword()
+                                                       .size()),
                                    NULL)) != CS_SUCCEED
         || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_APPNAME,
-                                   (void*) GetCDriverContext().GetApplicationName().data(),
-                                   GetCDriverContext().GetApplicationName().size(),
+                                   const_cast<char*>(GetCDriverContext()
+                                                     .GetApplicationName()
+                                                     .data()),
+                                   static_cast<CS_INT>(GetCDriverContext()
+                                                       .GetApplicationName()
+                                                       .size()),
                                    NULL)) != CS_SUCCEED
         || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
@@ -569,7 +576,7 @@ CTL_Connection::SetTimeout(size_t nof_secs)
 void
 CTL_Connection::SetCancelTimeout(size_t nof_secs)
 {
-    GetCTLibContext().SetCancelTimeout(nof_secs);
+    GetCTLibContext().SetCancelTimeout(static_cast<unsigned int>(nof_secs));
 }
 
 
@@ -1568,7 +1575,7 @@ int CTL_Connection::x_IntHandler(void* param)
         }
 
         ++ctl_conn->m_TotalTimeout;
-        unsigned int max_timeout = 0;
+        size_t max_timeout = 0;
         if (ctl_conn->IsOpen()) {
             max_timeout = ctl_conn->m_OrigTimeout;
             if (max_timeout == 0) {
@@ -1822,7 +1829,9 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if (m_UseUpdateWrite) {
 #ifdef FTDS_IN_USE
         CHECK_DRIVER_ERROR(Check(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
-                                            &m_SQL[0], m_SQL.size(), CS_END))
+                                            &m_SQL[0],
+                                            static_cast<CS_INT>(m_SQL.size()),
+                                            CS_END))
                            != CS_SUCCEED,
                            "ct_command failed.", 110097);
 
