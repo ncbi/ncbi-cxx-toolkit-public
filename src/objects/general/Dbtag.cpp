@@ -677,7 +677,7 @@ string CDbtag::GetUrl(const string & genus,
                 SIZE_TYPE pos = NStr::Find(tag, "G00-");
                 if (pos != NPOS) {
                     tag = tag.substr(pos + 4);
-                    remove(tag.begin(), tag.end(), '-');
+                    tag.erase(remove(tag.begin(), tag.end(), '-'), tag.end());
                 } else if (!isdigit((unsigned char) tag[0])) {
                     return kEmptyStr;
                 }
