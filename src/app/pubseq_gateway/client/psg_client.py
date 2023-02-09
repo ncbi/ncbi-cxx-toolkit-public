@@ -176,20 +176,20 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids):
                 status = reply.get('status', None)
                 reply_type = reply.get('reply', None)
 
-                if status is not None:
+                if status in ('NotFound', 'Forbidden'):
+                    continue
+                elif status is not None:
                     prefix = [reply_type or 'Reply', status]
                     messages = reply['errors']
-                    if status not in ('NotFound', 'Forbidden'):
-                        rv = False
                 elif reply_type is None:
                     error = reply.get('error', {})
                     code = error.get('code', None)
                     prefix = ['Error', code] if code else ['Unknown reply']
                     messages = [error.get('message', reply)]
-                    rv = False
                 else:
                     continue
 
+                rv = False
                 print(*prefix, end=": '", file=sys.stderr)
                 print(*messages, sep="', '", end=f"' for request '{request}'\n", file=sys.stderr)
         summary[method] = n
