@@ -4,6 +4,7 @@ import argparse
 import ast
 import csv
 import enum
+import functools
 import itertools
 import json
 import queue
@@ -13,6 +14,8 @@ import subprocess
 import sys
 import threading
 import xml.etree.ElementTree as ET
+
+print = functools.partial(print, flush=True)
 
 class RequestGenerator:
     def __init__(self):
