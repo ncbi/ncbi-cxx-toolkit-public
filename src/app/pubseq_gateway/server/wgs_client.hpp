@@ -184,8 +184,7 @@ private:
     bool IsCorrectVersion(SWGSSeqInfo& seq, int version);
 
     bool HasSpecialState(SWGSSeqInfo& seq, NCBI_gb_state special_state);
-    bool HasMigrated(SWGSSeqInfo& seq)
-        { return HasSpecialState(seq, NCBI_gb_state_eWGSGenBankMigrated); }
+    bool HasMigrated(SWGSSeqInfo& seq);
 
     SWGSSeqInfo Resolve(const objects::CSeq_id& id, bool skip_lookup = false);
     SWGSSeqInfo ResolveGeneral(const objects::CDbtag& dbtag, bool skip_lookup = false);

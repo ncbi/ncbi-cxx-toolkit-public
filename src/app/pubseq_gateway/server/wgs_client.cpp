@@ -629,6 +629,26 @@ bool CWGSClient::HasSpecialState(SWGSSeqInfo& seq, NCBI_gb_state special_state)
 }
 
 
+bool CWGSClient::HasMigrated(SWGSSeqInfo& seq)
+{
+    if ( !seq.IsProtein() ) {
+        return false;
+    }
+    CWGSProteinIterator it = GetProteinIterator(seq);
+    if ( !it.HasGi() ) {
+        return false;
+    }
+    const auto project_state = seq.m_WGSDb->GetProjectGBState();
+    switch (project_state) {
+    case NCBI_gb_state_eWGSGenBankReplaced:
+    case NCBI_gb_state_eWGSGenBankSuppressed:
+        return it.GetGBState() == NCBI_gb_state_eWGSGenBankMigrated;
+    default:
+        return false;
+    }
+}
+
+
 CWGSClient::SWGSSeqInfo
 CWGSClient::Resolve(const CSeq_id& id, bool skip_lookup)
 {
