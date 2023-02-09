@@ -3940,6 +3940,7 @@ string CDeflineGenerator::GenerateDefline (
     bool appendComplete = false;
     string preferredSuffix = "";
     string customFeatureClause = "";
+    string singleMiscComment = "";
 
     string prefix; // from a small set of compile-time constants
     string suffix;
@@ -4042,6 +4043,9 @@ string CDeflineGenerator::GenerateDefline (
         if (limitAutoDef) {
             int numGenes = 0;
             int numCDSs = 0;
+            int numMiscs = 0;
+            string lastMiscComment;
+            lastMiscComment.clear();
             CSeq_annot_CI annot_ci(bsh);
             for (; annot_ci; ++annot_ci) {
                 const CSeq_annot_Handle& annt = *annot_ci;
@@ -4055,11 +4059,19 @@ string CDeflineGenerator::GenerateDefline (
                         numGenes++;
                     } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
                         numCDSs++;
+                    } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
+                        numMiscs++;
+                        if (sft.IsSetComment()) {
+                            lastMiscComment = sft.GetComment();
+                        }
                     }
                 }
             }
+            if (numMiscs == 1) {
+                singleMiscComment = lastMiscComment;
+            }
             if (numGenes + numCDSs > 50 && !suppressedFeats) {
-                ok = false;
+                // ok = false;
             }
         }
         if (desc) {
@@ -4162,6 +4174,9 @@ string CDeflineGenerator::GenerateDefline (
     // calculate suffix
     if (! customFeatureClause.empty()) {
         preferredSuffix = customFeatureClause;
+    }
+    if (preferredSuffix.empty() && ! singleMiscComment.empty()) {
+        preferredSuffix = singleMiscComment;
     }
     x_SetSuffix (suffix, bsh, appendComplete, preferredSuffix);
 
