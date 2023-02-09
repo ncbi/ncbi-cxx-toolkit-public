@@ -870,17 +870,19 @@ bool CTL_CursorCmdExpl::x_AssignParams()
                 break;
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
-                sprintf(val_buffer, "%d", val.Value());
+                snprintf(val_buffer, sizeof(val_buffer), "%d", val.Value());
                 break;
             }
             case eDB_SmallInt: {
                 CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
-                sprintf(val_buffer, "%d", (int) val.Value());
+                snprintf(val_buffer, sizeof(val_buffer), "%d",
+                         (int) val.Value());
                 break;
             }
             case eDB_TinyInt: {
                 CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
-                sprintf(val_buffer, "%d", (int) val.Value());
+                snprintf(val_buffer, sizeof(val_buffer), "%d",
+                         (int) val.Value());
                 break;
             }
             case eDB_BigInt: {
@@ -932,27 +934,28 @@ bool CTL_CursorCmdExpl::x_AssignParams()
             }
             case eDB_Float: {
                 CDB_Float& val = dynamic_cast<CDB_Float&> (param);
-                sprintf(val_buffer, "%E", (double) val.Value());
+                snprintf(val_buffer, sizeof(val_buffer), "%E",
+                         (double) val.Value());
                 break;
             }
             case eDB_Double: {
                 CDB_Double& val = dynamic_cast<CDB_Double&> (param);
-                sprintf(val_buffer, "%E", val.Value());
+                snprintf(val_buffer, sizeof(val_buffer), "%E", val.Value());
                 break;
             }
             case eDB_SmallDateTime: {
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
                 string t = val.Value().AsString("M/D/Y h:m");
-                sprintf(val_buffer, "'%s'", t.c_str());
+                snprintf(val_buffer, sizeof(val_buffer), "'%s'", t.c_str());
                 break;
             }
             case eDB_DateTime: {
                 CDB_DateTime& val =
                     dynamic_cast<CDB_DateTime&> (param);
                 string t = val.Value().AsString("M/D/Y h:m:s");
-                sprintf(val_buffer, "'%s:%.3d'", t.c_str(),
-            (int)(val.Value().NanoSecond()/1000000));
+                snprintf(val_buffer, sizeof(val_buffer), "'%s:%.3d'",
+                         t.c_str(), (int)(val.Value().NanoSecond()/1000000));
                 break;
             }
             case eDB_BigDateTime: {
@@ -963,7 +966,7 @@ bool CTL_CursorCmdExpl::x_AssignParams()
                 string t = lt.AsString(CDB_BigDateTime::GetTimeFormat
                                        (GetConnection().GetDateTimeSyntax(),
                                         val.GetSQLType(), val.GetOffset()));
-                sprintf(val_buffer, "'%s'", t.c_str());
+                snprintf(val_buffer, sizeof(val_buffer), "'%s'", t.c_str());
                 break;
             }
             default:
