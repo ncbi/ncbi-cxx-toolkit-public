@@ -39,6 +39,7 @@
 #include "../discrepancy_core.hpp"
 #include <corelib/test_boost.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
+#include <serial/objistrasn.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(NDiscrepancy);
@@ -167,5 +168,20 @@ BOOST_AUTO_TEST_CASE(Test_TextDescriptions)
         auto description = CDiscrepancyObject::GetTextObjectDescription(bssh);
         BOOST_CHECK_EQUAL(description, "Set containing good1");
     }
+}
 
+
+BOOST_AUTO_TEST_CASE(Test_CDiscrepancyContext_ParseStream)
+{
+    string unexpectedText {"Seq-id ::= local str \"dummyId\""};
+    unique_ptr<CObjectIStream> pObjIstr(new CObjectIStreamAsn(unexpectedText.c_str(), unexpectedText.size()));
+    auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+    CDiscrepancyContext context(*pScope);
+    string errMsg;
+    try {
+        context.ParseStream(*pObjIstr, "dummy_file", false, "");
+    } catch (const CException& e) {
+        errMsg = e.GetMsg();
+    }
+    BOOST_CHECK_EQUAL(errMsg, "Unsupported type Seq-id");
 }
