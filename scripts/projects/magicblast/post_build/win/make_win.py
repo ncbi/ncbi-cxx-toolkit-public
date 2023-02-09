@@ -43,6 +43,7 @@ def main():
     
     apps = [ "magicblast.exe",
              "ncbi-vdb-md.dll",
+             "nghttp2.dll",
              "makeblastdb.exe"
              ]
     
