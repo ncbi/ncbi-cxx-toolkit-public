@@ -172,11 +172,14 @@ bool CDiscrepancyContext::Skip()
 
 void CDiscrepancyContext::ParseStrings(const string& fname)
 {
+    CNcbiIfstream istr(fname);
+    if (!istr) {
+        NCBI_THROW(CException, eUnknown, "Unable to read " + fname);
+    }
+
     m_RootNode.Reset(new CParseNode(eFile, 0));
     m_RootNode->m_Ref->m_Text = fname;
     m_CurrentNode.Reset(m_RootNode);
-
-    CNcbiIfstream istr(fname);
     CStreamLineReader line_reader(istr);
     do {
         PushNode(eString);
