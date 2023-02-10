@@ -482,6 +482,7 @@ if(NCBI_COMPILER_GCC)
     endif()
     if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
         set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+        set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
     endif()
 
 elseif(NCBI_COMPILER_ICC)
