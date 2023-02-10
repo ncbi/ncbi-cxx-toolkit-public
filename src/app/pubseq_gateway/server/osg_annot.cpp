@@ -282,9 +282,7 @@ void CPSGS_OSGAnnot::ProcessReplies()
                 // do nothing
                 break;
             case CID2_Reply::TReply::e_Get_blob_id:
-                if ( auto annot_name_ptr = AddBlobId(r->GetReply().GetGet_blob_id()) ) {
-                    RegisterProcessedName(*annot_name_ptr);
-                }
+                AddBlobId(r->GetReply().GetGet_blob_id());
                 break;
             default:
                 PSG_ERROR(GetName()<<": "
@@ -297,7 +295,6 @@ void CPSGS_OSGAnnot::ProcessReplies()
         return;
     }
     SendReplies();
-    FinalizeResult(ePSGS_Done);
 }
 
 
@@ -353,11 +350,15 @@ void CPSGS_OSGAnnot::SendReplies()
             }
         }
     }
+    set<string> has_data;
+    set<string> processed_by_other;
     for ( auto& r_name : m_BlobIds ) {
         auto& annot_name = r_name.first;
         if ( !RegisterProcessedName(annot_name) ) {
+            processed_by_other.insert(annot_name);
             continue;
         }
+        has_data.insert(annot_name);
         for ( auto& r : r_name.second ) {
             string psg_blob_id = CPSGS_OSGGetBlobBase::GetPSGBlobId(r->GetBlob_id());
             x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
@@ -378,6 +379,16 @@ void CPSGS_OSGAnnot::SendReplies()
                                                    json.Repr(CJsonNode::fStandardJson));
         }
     }
+    SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+    for ( auto& name : m_NamesToProcess ) {
+        if ( processed_by_other.count(name) ) {
+            continue;
+        }
+        if ( !has_data.count(name) ) {
+            annot_request.ReportResultStatus(name, SPSGS_AnnotRequest::ePSGS_RS_NotFound);
+        }
+    }
+    FinalizeResult(!has_data.empty()? ePSGS_Done: ePSGS_NotFound);
 }
 
 
