@@ -271,7 +271,9 @@ endif()
 
 #############################################################################
 NCBI_register_hook(TARGET_ADDED NCBI_internal_add_NCBI_definitions)
-if(NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_COMPONENT_StaticComponents)
+if(NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
+    AND NOT NCBI_PTBCFG_COMPONENT_StaticComponents
+    AND NOT NCBI_PTBCFG_CUSTOMRPATH)
     if(APPLE)
         NCBI_register_hook(TARGET_ADDED NCBI_internal_handle_VDB_rpath)
     endif()
