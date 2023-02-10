@@ -2864,9 +2864,13 @@ void CDeflineGenerator::x_SetSuffix (
     string study;
     string comp;
 
+    if (! preferredSuffix.empty()) {
+        NStr::ToLower( preferredSuffix );
+    }
+
     switch (m_MITech) {
         case NCBI_TECH(htgs_0):
-            if (m_MainTitle.find ("LOW-PASS") == NPOS) {
+            if (m_MainTitle.find ("LOW-PASS") == NPOS && preferredSuffix.find ("low-pass") == NPOS) {
                 type = ", LOW-PASS SEQUENCE SAMPLING";
             }
             break;
@@ -2874,11 +2878,11 @@ void CDeflineGenerator::x_SetSuffix (
         case NCBI_TECH(htgs_2):
         {
             if (m_HTGSDraft) {
-                if (m_MainTitle.find ("WORKING DRAFT") == NPOS) {
+                if (m_MainTitle.find ("WORKING DRAFT") == NPOS && preferredSuffix.find ("working draft") == NPOS) {
                     type = ", WORKING DRAFT SEQUENCE";
                 }
             } else if (!m_HTGSCancelled) {
-                if (m_MainTitle.find ("SEQUENCING IN") == NPOS) {
+                if (m_MainTitle.find ("SEQUENCING IN") == NPOS && preferredSuffix.find ("sequencing in") == NPOS) {
                     type = ", *** SEQUENCING IN PROGRESS ***";
                 }
             }
@@ -2904,33 +2908,31 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         }
         case NCBI_TECH(htgs_3):
-            if (m_MainTitle.find ("complete sequence") == NPOS) {
+            if (m_MainTitle.find ("complete sequence") == NPOS && preferredSuffix.find ("complete sequence") == NPOS) {
                 type = ", complete sequence";
             }
             break;
         case NCBI_TECH(est):
-            if (m_MainTitle.find ("mRNA sequence") == NPOS) {
+            if (m_MainTitle.find ("mRNA sequence") == NPOS && preferredSuffix.find ("mrna sequence") == NPOS) {
                 type = ", mRNA sequence";
             }
             break;
         case NCBI_TECH(sts):
-            if (m_MainTitle.find ("sequence tagged site") == NPOS) {
+            if (m_MainTitle.find ("sequence tagged site") == NPOS && preferredSuffix.find ("sequence tagged site") == NPOS) {
                 type = ", sequence tagged site";
             }
             break;
         case NCBI_TECH(survey):
-            if (m_MainTitle.find ("genomic survey sequence") == NPOS) {
+            if (m_MainTitle.find ("genomic survey sequence") == NPOS && preferredSuffix.find ("genomic survey sequence") == NPOS) {
                 type = ", genomic survey sequence";
             }
             break;
         case NCBI_TECH(wgs):
             if (m_WGSMaster) {
-                if (m_MainTitle.find ("whole genome shotgun sequencing project")
-                    == NPOS){
+                if (m_MainTitle.find ("whole genome shotgun sequencing project") == NPOS && preferredSuffix.find ("whole genome shotgun sequencing project") == NPOS){
                     type = ", whole genome shotgun sequencing project";
                 }
-            } else if (m_MainTitle.find ("whole genome shotgun sequence")
-                       == NPOS) {
+            } else if (m_MainTitle.find ("whole genome shotgun sequence") == NPOS && preferredSuffix.find ("whole genome shotgun sequence") == NPOS) {
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
                     if ((NStr::EqualNocase (m_Organelle, "mitochondrial") || NStr::EqualNocase (m_Organelle, "mitochondrion")) &&
                         (m_MainTitle.find("mitochondrial") != NPOS || m_MainTitle.find("mitochondrion") != NPOS)) {
@@ -2946,13 +2948,11 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         case NCBI_TECH(tsa):
             if (m_TSAMaster) {
-                if (m_MainTitle.find
-                    ("transcriptome shotgun assembly")
-                    == NPOS) {
+                if (m_MainTitle.find("transcriptome shotgun assembly") == NPOS && preferredSuffix.find("transcriptome shotgun assembly") == NPOS) {
                     type = ", transcriptome shotgun assembly";
                 }
             } else {
-                if (m_MainTitle.find ("RNA sequence") == NPOS) {
+                if (m_MainTitle.find ("RNA sequence") == NPOS && preferredSuffix.find ("rna sequence") == NPOS) {
                     switch (m_MIBiomol) {
                         case NCBI_BIOMOL(mRNA):
                             type = ", mRNA sequence";
@@ -2979,15 +2979,15 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         case NCBI_TECH(targeted):
             if (m_TLSMaster) {
-                if (m_MainTitle.find ("targeted locus study") == NPOS) {
+                if (m_MainTitle.find ("targeted locus study") == NPOS && preferredSuffix.find ("targeted locus study") == NPOS) {
                     type = ", targeted locus study";
                 }
             } else {
-                if (m_MainTitle.find ("sequence") == NPOS) {
+                if (m_MainTitle.find ("sequence") == NPOS && preferredSuffix.find ("sequence") == NPOS) {
                    type += ", sequence";
                 }
             }
-            if (! m_TargetedLocus.empty() && m_MainTitle.find (m_TargetedLocus) == NPOS) {
+            if (! m_TargetedLocus.empty() && m_MainTitle.find (m_TargetedLocus) == NPOS && preferredSuffix.find (m_TargetedLocus) == NPOS) {
                 study = m_TargetedLocus;
             }
             break;
@@ -4071,7 +4071,7 @@ string CDeflineGenerator::GenerateDefline (
                 singleMiscComment = lastMiscComment;
             }
             if (numGenes + numCDSs > 50 && !suppressedFeats) {
-                // ok = false;
+                ok = false;
             }
         }
         if (desc) {
@@ -4082,7 +4082,7 @@ string CDeflineGenerator::GenerateDefline (
                 CAutoDefOptions options;
                 options.InitFromUserObject(desc->GetUser());
                 mod_combo.SetOptions(options);
-                m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
+                m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh, m_Feat_Tree);
                 s_TrimMainTitle (m_MainTitle);
             }
         }

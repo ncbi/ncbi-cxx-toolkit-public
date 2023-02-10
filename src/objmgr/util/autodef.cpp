@@ -1025,8 +1025,10 @@ string CAutoDef::GetKeywordPrefix(CBioseq_Handle bh)
 }
 
 
-string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_Handle& bh)
+string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_Handle& bh, CRef<feature::CFeatTree> featTree)
 {
+    m_Feat_Tree = featTree;
+
     // for protein sequences, use sequence::GetTitle
     if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
         return sequence::CDeflineGenerator()
