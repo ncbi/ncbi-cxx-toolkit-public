@@ -128,10 +128,14 @@ void CTable2AsnStructuredCommentsReader::ProcessComments(CSeq_entry& entry) cons
             }
         }
     }
-    if (m_logger  &&  m_verbose) {
+    if (m_logger  &&  m_verbose  &&  !m_vertical) {
         for (auto& comment: m_comments) {
-            if (matchedCommentIds.find(comment.m_id) == matchedCommentIds.end()) {
-                auto commentId = comment.m_id->GetLocal().GetStr();
+            auto id = comment.m_id;
+            if (!id  ||  matchedCommentIds.find(id) == matchedCommentIds.end()) {
+                string commentId("[Unrecognized SeqID]");
+                if (id  &&  id->IsLocal()  &&  id->GetLocal().IsStr()) {
+                    commentId = comment.m_id->GetLocal().GetStr();
+                }
                 sReportUnappliedStructuredComment(m_logger, commentId);
             }
         }
