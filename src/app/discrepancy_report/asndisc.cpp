@@ -226,8 +226,10 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
 {
     bool compressed = false;
     unique_ptr<CObjectIStream> in = OpenUncompressedStream(fname, compressed);
-    if (in)
-        tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
+    if (!in) {
+        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+    }    
+    tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
 }
 
 
@@ -510,24 +512,32 @@ int CDiscRepApp::Run()
 
     // run tests
     unsigned severity = 0;
-    if (args["o"]) {
-        if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
-            ERR_POST("Input and output files should be different"); 
-            return 1;
-        } 
-        severity = x_ProcessAll(args["o"].AsString());
-    }
-    else { 
-        int count = 0;
-        for (const string& f : m_Files) {
-            ++count;
-            if (m_Files.size() > 1) {
-                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
-            }
-            unsigned sev = x_ProcessOne(f);
-            severity = sev > severity ? sev : severity;
+
+    try {
+        if (args["o"]) {
+            if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
+                ERR_POST("Input and output files should be different"); 
+                return 1;
+            } 
+            severity = x_ProcessAll(args["o"].AsString());
         }
-    } 
+        else { 
+            int count = 0;
+            for (const string& f : m_Files) {
+                ++count;
+                if (m_Files.size() > 1) {
+                    LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+                }
+                unsigned sev = x_ProcessOne(f);
+                severity = sev > severity ? sev : severity;
+            }
+        }
+    }
+    catch (const CException& e) {
+        ERR_POST(e);
+        return 1;
+    }   
+
     if (args["R"]) {
         int r = args["R"].AsInteger();
         if (r < 1 || (r < 2 && severity > 0) || severity > 1) {
