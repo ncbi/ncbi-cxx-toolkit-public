@@ -719,8 +719,8 @@ public:
             if (it == m_Tasks.end()) return;
             m_Done.insert(ref);
             m_Tasks.erase(it);
-            m_Semaphore.Post();
         }
+        m_Semaphore.Post();
     }
 
     bool HasTasks(void) const
