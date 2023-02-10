@@ -845,7 +845,7 @@ dbsetllong(LOGINREC * login, long value, int which)
 	switch (which) {
 	case DBSETPACKET:
 		if (0 <= value && value <= 999999) { 
-			tds_set_packet(login->tds_login, value);
+                        tds_set_packet(login->tds_login, (int) value);
 			return SUCCEED;
 		}
 		dbperror(0, SYBEBADPK, 0, (int) value, (int) login->tds_login->block_size);
@@ -3315,7 +3315,7 @@ dbspr1rowlen(DBPROCESS * dbproc)
 	for (col = 0; col < tds->res_info->num_cols; col++) {
 		TDSCOLUMN *colinfo = tds->res_info->columns[col];
 		int collen = _get_printable_size(colinfo);
-		int namlen = tds_dstr_len(&colinfo->column_name);
+                int namlen = (int) tds_dstr_len(&colinfo->column_name);
 		
 		len += collen > namlen ? collen : namlen;
 		
@@ -8046,7 +8046,8 @@ dbperror (DBPROCESS *dbproc, DBINT msgno, long errnum, ...)
 	const DBLIB_ERROR_MESSAGE *msg = &default_message;
 	
 	int i, rc = INT_CANCEL;
-	const char *os_msgtext = strerror(errnum), *rc_name = "logic error";
+        const char *os_msgtext = strerror((int)errnum),
+                   *rc_name = "logic error";
 	char rc_buf[16];
 
 	tdsdump_log(TDS_DBG_FUNC, "dbperror(%p, %d, %ld)\n", dbproc, msgno, errnum);	/* dbproc can be NULL */
@@ -8121,7 +8122,8 @@ dbperror (DBPROCESS *dbproc, DBINT msgno, long errnum, ...)
 		msgno, msg->msgtext);
 
 	/* call the error handler */
-	rc = (*_dblib_err_handler)(dbproc, msg->severity, msgno, errnum, (char*) msg->msgtext, (char*) os_msgtext);
+        rc = (*_dblib_err_handler)(dbproc, msg->severity, msgno, (int) errnum,
+                                   (char*) msg->msgtext, (char*) os_msgtext);
 	switch (rc) {
 	case INT_EXIT:
 		rc_name = "INT_EXIT";	

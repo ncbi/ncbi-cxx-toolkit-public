@@ -211,7 +211,7 @@ odbc_convert_datetime_to_binary(TDS_STMT * stmt, TDSCOLUMN *curcol, int srctype,
 	if (destlen == 0)
 		return len;
 
-	cplen = (destlen > len) ? len : destlen;
+        cplen = (destlen > len) ? len : (TDS_INT) destlen;
 	memcpy(dest, buf, cplen);
 	if (curcol)
 		curcol->column_text_sqlgetdatapos += cplen;

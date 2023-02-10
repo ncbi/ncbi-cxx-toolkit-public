@@ -979,7 +979,7 @@ dbpivot(DBPROCESS *dbproc, int nkeys, int *keys, int ncols, int *cols, DBPIVOT_F
 		if (!col_init(input.row_key.keys+i, type, len))
 			return FAIL;
                 if (FAIL == dbbind(dbproc, keys[i], bind_type(type),
-                                   input.row_key.keys[i].len,
+                                   (DBINT) input.row_key.keys[i].len,
                                    (BYTE *) col_buffer(input.row_key.keys+i)))
 			return FAIL;
 		if (FAIL == dbnullbind(dbproc, keys[i], &input.row_key.keys[i].null_indicator))
@@ -997,7 +997,7 @@ dbpivot(DBPROCESS *dbproc, int nkeys, int *keys, int ncols, int *cols, DBPIVOT_F
 		if (!col_init(input.col_key.keys+i, type, len))
 			return FAIL;
                 if (FAIL == dbbind(dbproc, cols[i], bind_type(type),
-                                   input.col_key.keys[i].len,
+                                   (DBINT) input.col_key.keys[i].len,
                                    (BYTE *) col_buffer(input.col_key.keys+i)))
 			return FAIL;
 		if (FAIL == dbnullbind(dbproc, cols[i], &input.col_key.keys[i].null_indicator))

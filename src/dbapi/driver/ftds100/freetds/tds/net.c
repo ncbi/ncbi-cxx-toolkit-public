@@ -940,7 +940,7 @@ tds7_get_instance_ports(FILE *output, struct addrinfo *addr)
 	int retval;
 	TDS_SYS_SOCKET s;
 	char msg[16*1024];
-	int msg_len = 0;
+        ssize_t msg_len = 0;
 	int port = 0;
 	char ipaddr[128];
 
@@ -1076,7 +1076,7 @@ tds7_get_instance_port(struct addrinfo *addr, const char *instance)
 	int retval;
 	TDS_SYS_SOCKET s;
 	char msg[1024];
-	int msg_len;
+        ssize_t msg_len;
 	int port = 0;
 	char ipaddr[128];
 
@@ -1193,7 +1193,7 @@ tds7_get_instance_port(struct addrinfo *addr, const char *instance)
 				}
 			}
 			if (port_ok && instance_ok) {
-				port = l;
+                                port = (int) l;
 				break;
 			}
 		}

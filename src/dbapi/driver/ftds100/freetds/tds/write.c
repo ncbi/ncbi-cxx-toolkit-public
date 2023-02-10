@@ -134,7 +134,7 @@ tds_put_string(TDSSOCKET * tds, const char *s, int len)
 
         /* res = */ tds_convert_stream(tds, tds->conn->char_convs[client2ucs2],
                                        to_server, &r.stream, &w.stream);
-	return w.written;
+        return (int) w.written;
 }
 
 int

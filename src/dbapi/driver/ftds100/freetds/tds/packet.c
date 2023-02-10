@@ -635,7 +635,7 @@ tds_read_packet(TDSSOCKET * tds)
 	tds->in_flag = pkt[0];
 
 	/* Set the length and pos (not sure what pos is used for now */
-	tds->in_len = p - pkt;
+        tds->in_len = (unsigned int) (p - pkt);
 	tds->in_pos = 8;
 	tdsdump_dump_buf(TDS_DBG_NETWORK, "Received packet", tds->in_buf, tds->in_len);
 

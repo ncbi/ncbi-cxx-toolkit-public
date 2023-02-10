@@ -355,7 +355,7 @@ blk_init(CS_BLKDESC * blkdesc, CS_INT direction, CS_CHAR * tablename, CS_INT tna
 		return CS_FAIL;
 	}
 	if (tnamelen == CS_NULLTERM)
-		tnamelen = strlen(tablename);
+                tnamelen = (CS_INT)strlen(tablename);
 
 	/* free allocated storage in blkdesc & initialise flags, etc. */
 	tds_deinit_bcpinfo(&blkdesc->bcpinfo);
@@ -826,7 +826,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
                         if (buf != NULL  &&  buf != coldata->data) {
                                 free(coldata->data);
                                 coldata->data = buf;
-                                destlen = out_len;
+                                destlen = (CS_INT)out_len;
                         }
                 }
 	}

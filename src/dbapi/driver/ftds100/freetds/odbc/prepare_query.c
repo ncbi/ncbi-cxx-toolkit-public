@@ -144,7 +144,7 @@ prepared_rpc(struct _hstmt *stmt, int compute_row)
 						curcol->column_cur_size = len;
 					break;
 				case SYBINT4:
-					*((TDS_INT *) dest) = strtol(start, NULL, 10);
+                                        *((TDS_INT *) dest) = atoi(start);
 					break;
 				case SYBFLT8:
 					*((TDS_FLOAT *) dest) = strtod(start, NULL);

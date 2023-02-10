@@ -527,7 +527,7 @@ ct_con_props(CS_CONNECTION * con, CS_INT action, CS_INT property, CS_VOID * buff
 			s = &tds_login->server_name;
 		str_copy:
 			if (out_len)
-				*out_len = tds_dstr_len(s);
+                                *out_len = (CS_INT) tds_dstr_len(s);
 			strlcpy((char *) buffer, tds_dstr_cstr(s), buflen);
 			break;
 		case CS_LOC_PROP:
@@ -2913,7 +2913,7 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
                         memcpy(cmd->iodesc->name,
                                tds_dstr_cstr(&curcol->table_name),
                                table_namelen);
-                        cmd->iodesc->namelen = table_namelen;
+                        cmd->iodesc->namelen = (CS_INT) table_namelen;
                 } else {
                         cmd->iodesc->namelen = 0;
                 }

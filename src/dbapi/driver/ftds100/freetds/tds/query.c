@@ -314,7 +314,8 @@ tds_start_query_head(TDSSOCKET *tds, unsigned char packet_type, TDSHEADERS * hea
 				return TDS_FAIL;
 			}
 
-			qn_len = 6 + 2 + converted_msgtext_len + 2 + converted_options_len;
+                        qn_len = (int) (6 + 2 + converted_msgtext_len + 2
+                                        + converted_options_len);
 			if (head->qn_timeout != 0)
 				qn_len += 4;
 		}
@@ -1623,7 +1624,7 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
 	CHECK_COLUMN_EXTRA(curcol);
 
 	if (flags & TDS_PUT_DATA_USE_NAME) {
-		len = tds_dstr_len(&curcol->column_name);
+                len = (int) tds_dstr_len(&curcol->column_name);
 		tdsdump_log(TDS_DBG_ERROR, "tds_put_data_info putting param_name \n");
 
 		if (IS_TDS7_PLUS(tds->conn)) {
@@ -2023,7 +2024,8 @@ tds_send_emulated_rpc(TDSSOCKET * tds, const char *rpc_name, TDSPARAMINFO * para
 		param = params->columns[i];
 		tds_put_string(tds, sep, -1);
 		if (!tds_dstr_isempty(&param->column_name)) {
-			tds_put_string(tds, tds_dstr_cstr(&param->column_name), tds_dstr_len(&param->column_name));
+                        tds_put_string(tds, tds_dstr_cstr(&param->column_name),
+                                       (int)tds_dstr_len(&param->column_name));
 			tds_put_string(tds, "=", 1);
 		}
 		if (param->column_output) {

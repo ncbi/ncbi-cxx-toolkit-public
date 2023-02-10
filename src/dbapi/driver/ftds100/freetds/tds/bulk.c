@@ -866,12 +866,14 @@ tds7_bcp_send_colmetadata(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 			/* FIXME support multibyte string */
 			len = tds_dstr_len(&bcpinfo->tablename);
 			TDS_PUT_SMALLINT(tds, len);
-			tds_put_string(tds, tds_dstr_cstr(&bcpinfo->tablename), len);
+                        tds_put_string(tds, tds_dstr_cstr(&bcpinfo->tablename),
+                                       (int) len);
 		}
 		/* FIXME support multibyte string */
 		len = tds_dstr_len(&bcpcol->column_name);
                 tds_put_byte(tds, (unsigned char) len);
-		tds_put_string(tds, tds_dstr_cstr(&bcpcol->column_name), len);
+                tds_put_string(tds, tds_dstr_cstr(&bcpcol->column_name),
+                               (int) len);
 
 	}
 
