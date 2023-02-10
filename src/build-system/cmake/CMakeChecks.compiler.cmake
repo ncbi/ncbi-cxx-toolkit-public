@@ -39,6 +39,7 @@ set(NCBI_PTBCFG_KNOWN_FEATURES
     UNICODE
     MaxDebug
     Coverage
+    CustomRPath
 )
 if(NOT "${NCBI_PTBCFG_PROJECT_FEATURES}" STREQUAL "")
     string(REPLACE "," ";" NCBI_PTBCFG_PROJECT_FEATURES "${NCBI_PTBCFG_PROJECT_FEATURES}")
@@ -107,6 +108,10 @@ if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
        NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
         list(APPEND NCBI_PTBCFG_PROJECT_FEATURES -OpenMP)
     endif()
+endif()
+
+if(CustomRPath IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    set(NCBI_PTBCFG_CUSTOMRPATH ON)
 endif()
 
 # see also
@@ -655,27 +660,29 @@ endif ()
 
 
 if (NOT WIN32 AND NOT APPLE AND NOT CYGWIN)
+#this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
+endif()
+
+if (NOT NCBI_PTBCFG_CUSTOMRPATH)
 # Establishing sane RPATH definitions
 # use, i.e. don't skip the full RPATH for the build tree
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+    SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
 # when building, use the install RPATH already
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+    SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-#this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
-SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
-endif()
-
-if (APPLE)
-    set(CMAKE_INSTALL_RPATH "@executable_path/../${NCBI_DIRNAME_SHARED}")
-else()
-    set(CMAKE_INSTALL_RPATH "$ORIGIN/../${NCBI_DIRNAME_SHARED}")
-endif()
+    if (APPLE)
+        set(CMAKE_INSTALL_RPATH "@executable_path/../${NCBI_DIRNAME_SHARED}")
+    else()
+        set(CMAKE_INSTALL_RPATH "$ORIGIN/../${NCBI_DIRNAME_SHARED}")
+    endif()
 
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
-    set(CMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH TRUE)
+    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+        set(CMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH TRUE)
+    endif()
 endif()
