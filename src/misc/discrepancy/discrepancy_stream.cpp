@@ -230,7 +230,7 @@ void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fnam
             stream.Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
         }
         else {
-            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); 
+            NCBI_THROW(CException, eUnknown, "Unsupported type " + header + " in " + fname); 
         }
         CNcbiStreampos position = stream.GetStreamPos();
         Extend(*m_CurrentNode, stream);
