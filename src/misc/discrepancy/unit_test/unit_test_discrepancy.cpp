@@ -183,5 +183,5 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyContext_ParseStream)
     } catch (const CException& e) {
         errMsg = e.GetMsg();
     }
-    BOOST_CHECK_EQUAL(errMsg, "Unsupported type Seq-id");
+    BOOST_CHECK_EQUAL(errMsg, "Unsupported type Seq-id in dummy_file");
 }
