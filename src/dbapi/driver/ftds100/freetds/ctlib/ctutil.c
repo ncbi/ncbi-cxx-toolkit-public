@@ -114,7 +114,7 @@ _ct_handle_client_message(const TDSCONTEXT * ctx_tds, TDSSOCKET * tds, TDSMESSAG
 	errmsg.msgnumber = msg->msgno;
         errmsg.severity = _ct_translate_severity(msg->severity);
 	strlcpy(errmsg.msgstring, msg->message, sizeof(errmsg.msgstring));
-	errmsg.msgstringlen = strlen(errmsg.msgstring);
+        errmsg.msgstringlen = (CS_INT)strlen(errmsg.msgstring);
         if (msg->osstr) {
                 errmsg.osstringlen = (CS_INT)strlen(msg->osstr);
                 strlcpy(errmsg.osstring, msg->osstr, CS_MAX_MSG);

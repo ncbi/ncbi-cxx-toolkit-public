@@ -1105,7 +1105,7 @@ tds_convert_money4(const TDS_MONEY4 * src, int desttype, CONV_RESULT * cr)
 		dollars = mny.mny4 / 10000;
 		if (!IS_UINT(dollars))
 			return TDS_CONVERT_OVERFLOW;
-		cr->ui = dollars;
+                cr->ui = (TDS_UINT) dollars;
 		return sizeof(TDS_UINT);
 		break;
 	case SYBINT8:

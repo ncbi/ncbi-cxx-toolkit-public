@@ -6667,7 +6667,7 @@ _SQLSetStmtAttr(SQLHSTMT hstmt, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLIN
 			odbc_errs_add(&stmt->errs, "HY024", NULL);
 			break;
 		}
-		stmt->attr.qn_timeout = ui;
+                stmt->attr.qn_timeout = (SQLUINTEGER) ui;
 		break;
 	case SQL_SOPT_SS_QUERYNOTIFICATION_MSGTEXT:
 		if (!IS_VALID_LEN(StringLength)) {
