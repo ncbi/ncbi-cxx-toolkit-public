@@ -53,6 +53,8 @@
 #include <objmgr/util/autodef_feature_clause.hpp>
 #include <objmgr/util/autodef_options.hpp>
 
+#include <objmgr/util/feature.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)    
 
@@ -73,7 +75,7 @@ public:
     unsigned int GetNumAvailableModifiers();
     string GetOneSourceDescription(const CBioseq_Handle& bh);
     string GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val);
-    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, const CBioseq_Handle& bh);
+    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, const CBioseq_Handle& bh, CRef<feature::CFeatTree> featTree = null);
     string GetOneDefLine(const CBioseq_Handle& bh);
     
     void SetOptionsObject(const CUser_object& user);
@@ -166,6 +168,7 @@ private:
 
     string x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome_val);
 
+    CRef<feature::CFeatTree> m_Feat_Tree;
 };  //  end of CAutoDef
 
 
