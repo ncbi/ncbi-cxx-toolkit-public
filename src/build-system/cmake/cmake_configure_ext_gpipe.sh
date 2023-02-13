@@ -101,7 +101,7 @@ configure_ext_ParseArgs()
     "--gpipe-mem-debug")
       GPIPE_MODE=mem-debug
       BUILD_TYPE="Debug"
-      BUILD_SHARED_LIBS="OFF"
+      BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../MemDebug}"
@@ -113,7 +113,7 @@ configure_ext_ParseArgs()
     "--gpipe-max-debug")
       GPIPE_MODE=max-debug
       BUILD_TYPE="Debug"
-      BUILD_SHARED_LIBS="OFF"
+      BUILD_SHARED_LIBS="ON"
       PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI;MaxDebug"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS}" # WGMLST doesn't support MaxDebug yet.
       : "${BUILD_ROOT:=../MaxDebug}"
