@@ -1855,6 +1855,7 @@ const CSeq_entry *ctx)
                 if ((!orgname.IsSetDiv() || !NStr::EqualNocase(orgname.GetDiv(), "PLN"))
                     && (!orgname.IsSetLineage() ||
                     (NStr::Find(orgname.GetLineage(), "Cyanobacteria") == string::npos
+                    && NStr::Find(orgname.GetLineage(), "Cyanobacterota") == string::npos
                     && NStr::Find(orgname.GetLineage(), "Myxogastria") == string::npos
                     && NStr::Find(orgname.GetLineage(), "Oomycetes") == string::npos))) {
                     if (!has_taxon) {
