@@ -534,7 +534,7 @@ int CDiscRepApp::Run()
         }
     }
     catch (const CException& e) {
-        ERR_POST(e);
+        ERR_POST(e.GetMsg());
         return 1;
     }   
 
