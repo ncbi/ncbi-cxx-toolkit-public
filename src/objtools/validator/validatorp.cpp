@@ -759,7 +759,7 @@ void CValidError_imp::PostErr
 
     const auto isSetClass = st.IsSetClass();
 
-    if (isSetClass && IsHugeFileMode()) {
+    if (isSetClass && GetContext().PreprocessHugeFile) {
         if (auto setClass = st.GetClass(); IsHugeSet(setClass)) {
             string desc =
             CValidErrorFormat::GetBioseqSetLabel(GetContext().HugeSetId, setClass, m_SuppressContext);
@@ -796,7 +796,7 @@ void CValidError_imp::PostErr
     }
 
 
-    if (IsHugeFileMode() &&
+    if (GetContext().PreprocessHugeFile &&
         ctx.IsSet() && ctx.GetSet().IsSetClass()) {
         if (auto setClass = ctx.GetSet().GetClass(); IsHugeSet(setClass)) {
             string desc{"DESCRIPTOR: "};
