@@ -1327,11 +1327,11 @@ Additions/Changes since pubmed_190101 DTD:
         <xs:attribute name="Type" use="required">
           <xs:simpleType>
             <xs:restriction base="xs:token">
-              <xs:enumeration value="Anatomy"/>
               <xs:enumeration value="Disease"/>
-              <xs:enumeration value="Population"/>
               <xs:enumeration value="Protocol"/>
               <xs:enumeration value="Organism"/>
+              <xs:enumeration value="Anatomy"/>
+              <xs:enumeration value="Population"/>
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
