@@ -114,6 +114,7 @@ private: // static
     
 private: // data model
     bool m_db_supports_synonym;
+    bool m_fallback;
     unique_ptr<CSQLITE_Connection> m_SqliteConn;
     unique_ptr<objects::CTaxon1> m_TaxonConn;
     TNodes m_Nodes;

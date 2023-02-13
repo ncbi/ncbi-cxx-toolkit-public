@@ -55,6 +55,12 @@ void CLocalTaxon::AddArguments(CArgDescriptions& arg_desc)
                             "SQLite file containing taxon database, to use "
                             "instead of CTaxon1 service",
                             CArgDescriptions::eInputFile);
+
+    arg_desc.AddFlag("fallback-to-taxon-service",
+                     "If organism not found in SQLIlte database, fall back to "
+                     "CTaxon1 service");
+    arg_desc.SetDependency("fallback-to-taxon-service",
+                           CArgDescriptions::eRequires, "taxon-db");
 }
 
 CLocalTaxon::CLocalTaxon() : m_db_supports_synonym(false)
@@ -74,6 +80,7 @@ CLocalTaxon::CLocalTaxon(const CArgs &args) : m_db_supports_synonym(false)
                                   CSQLITE_Connection::fVacuumOff |
                                   CSQLITE_Connection::fSyncOff));
         m_db_supports_synonym = x_SupportsSynonym();
+        m_fallback = args["fallback-to-taxon-service"];
     } else {
         m_TaxonConn.reset(new CTaxon1);
         m_TaxonConn->Init();
@@ -264,7 +271,12 @@ CLocalTaxon::TTaxid CLocalTaxon::GetTaxIdByOrgRef(const COrg_ref &inp_orgRef)
 {
     if (inp_orgRef.IsSetDb()) {
         return inp_orgRef.GetTaxId();
-    } else if (m_TaxonConn.get()) {
+    }
+    if (m_fallback && !m_TaxonConn.get()) {
+        m_TaxonConn.reset(new CTaxon1);
+        m_TaxonConn->Init();
+    }
+    if (m_TaxonConn.get()) {
         return m_TaxonConn->GetTaxIdByOrgRef(inp_orgRef);
     } else {
         NCBI_THROW(CException, eUnknown,
@@ -357,12 +369,20 @@ CLocalTaxon::TScientificNameRef CLocalTaxon::x_Cache(const string& orgname)
         CSQLITE_Statement stmt(m_SqliteConn.get(),sql);
         stmt.Bind(1, orgname);
         stmt.Execute();
+        TTaxId taxid = ZERO_TAX_ID;
         if  (stmt.Step()) {
-            TTaxId taxid = TAX_ID_FROM(int, stmt.GetInt(0));
-            auto it2 = x_Cache(taxid);
-            it = m_ScientificNameIndex.insert(TScientificNameIndex::value_type(orgname,  it2->second  )).first;
+            taxid = TAX_ID_FROM(int, stmt.GetInt(0));
+        } else if (m_fallback) {
+            if (!m_TaxonConn.get()) {
+                m_TaxonConn.reset(new CTaxon1);
+                m_TaxonConn->Init();
+            }
+            taxid = m_TaxonConn->GetTaxIdByName(orgname);
         }
-        else {
+        if (taxid > ZERO_TAX_ID) {
+            CLocalTaxon::TNodeRef it2 = x_Cache(taxid);
+            it = m_ScientificNameIndex.insert(TScientificNameIndex::value_type(orgname,  it2->second  )).first;
+        } else {
             //
             //  return invalid node.
             //
@@ -390,6 +410,7 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
         //  thereby caching all successful and unsuccessful queries
         //
         it = m_Nodes.insert(TNodes::value_type(taxid, STaxidNode())).first;
+        it->second.taxid  = taxid;
         {{ 
              CSQLITE_Statement stmt
                  (m_SqliteConn.get(),
@@ -399,7 +420,6 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
              stmt.Bind(1, TAX_ID_TO(TIntId, taxid));
              stmt.Execute();
              if  (stmt.Step()) {
-                 it->second.taxid  = taxid;
                  it->second.is_valid = true;
                  it->second.scientific_name = stmt.GetString(0);
                  it->second.rank = stmt.GetString(1);
@@ -408,20 +428,36 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
                  }
                  parent = TAX_ID_FROM(int, stmt.GetInt(2));
                  it->second.genetic_code = stmt.GetInt(3);
+                 CSQLITE_Statement syn_stmt
+                     (m_SqliteConn.get(),
+                      "SELECT scientific_name "
+                      "FROM Synonym "
+                      "WHERE taxid = ? ");
+                 syn_stmt.Bind(1, TAX_ID_TO(TIntId, taxid));
+                 syn_stmt.Execute();
+                 while (syn_stmt.Step()) {
+                     it->second.synonyms.push_back( syn_stmt.GetString(0));
+                 }
+             } else if (m_fallback) {
+                 if (!m_TaxonConn.get()) {
+                     m_TaxonConn.reset(new CTaxon1);
+                     m_TaxonConn->Init();
+                 }
+                 if (m_TaxonConn->GetScientificName(taxid,
+                                          it->second.scientific_name))
+                 {
+                     it->second.is_valid = true;
+                     TTaxRank rank_id = m_TaxonConn->GetTreeIterator(taxid)
+                                                   ->GetNode()->GetRank();
+                     m_TaxonConn->GetRankName(rank_id, it->second.rank);
+                     it->second.genetic_code =
+                       m_TaxonConn->GetTreeIterator(taxid)->GetNode()->GetGC();
+                     m_TaxonConn->GetAllNames(taxid, it->second.synonyms, true);
+                     parent = m_TaxonConn->GetParent(taxid);
+                 }
              }
        }}
-        {{ // synonyms
-             CSQLITE_Statement stmt
-                 (m_SqliteConn.get(),
-                  "SELECT scientific_name "
-                  "FROM Synonym "
-                  "WHERE taxid = ? ");
-             stmt.Bind(1, TAX_ID_TO(TIntId, taxid));
-             stmt.Execute();
-             while (stmt.Step()) {
-                 it->second.synonyms.push_back( stmt.GetString(0));
-             }
-       }}
+
        if (parent > TAX_ID_CONST(1)) {
            // Recursively get information for parent; no need for Org_ref, even
            // / if it was requested for child node
@@ -444,6 +480,15 @@ CLocalTaxon::TNodeRef CLocalTaxon::x_Cache(TTaxid taxid, bool including_org_ref)
             CRef<COrg_ref> org_ref(new COrg_ref);
             istr >> MSerial_AsnText >> *org_ref;
             it->second.org_ref = org_ref;
+        } else if (m_fallback) {
+            if (!m_TaxonConn.get()) {
+                m_TaxonConn.reset(new CTaxon1);
+                m_TaxonConn->Init();
+            }
+            bool is_species, is_uncultured;
+            string blast_name;
+            it->second.org_ref = m_TaxonConn->GetOrgRef(taxid, is_species,
+                                               is_uncultured, blast_name);
         }
     }
 
