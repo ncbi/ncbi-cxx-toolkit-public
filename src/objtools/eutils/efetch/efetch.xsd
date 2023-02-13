@@ -1340,6 +1340,8 @@
               <xs:enumeration value="Disease"/>
               <xs:enumeration value="Protocol"/>
               <xs:enumeration value="Organism"/>
+              <xs:enumeration value="Anatomy"/>
+              <xs:enumeration value="Population"/>
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
