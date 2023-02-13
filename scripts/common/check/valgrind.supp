@@ -1020,6 +1020,7 @@
 {
    corelib/CParam::Get() - false positive
    Helgrind:Race
+   ...
    fun:*CParam*GetEv
 }
 {
@@ -1269,7 +1270,6 @@
    Helgrind:Race
    ...
    fun:*GetTypeInfo*
-   fun:*GetThisTypeInfo*
 }
 {
    serial/CTypeInfo - gouriano CXX-12845 - false positive   
@@ -1294,6 +1294,35 @@
    Helgrind:Race
    ...
    fun:*CItemsInfo*Find*
+}
+
+
+#===============================================================================
+# objects
+
+
+{
+   ncbi::objects::CSeq_id_Which_Tree::DropInfo() - This is actually a race, but harmless - grichenk CXX-10546
+   Helgrind:Race
+   fun:_ZN4ncbi7objects18CSeq_id_Which_Tree8DropInfoEPKNS0_12CSeq_id_InfoE
+}
+{
+   ncbi::objects::s_ResetInstance() - This is actually a race, but harmless - grichenk CXX-10546
+   Helgrind:Race
+   fun:_ZN4ncbi7objectsL15s_ResetInstanceE*
+}
+{
+   ncbi::objects::CSeq_id_Mapper::GetInstance() - false positive, double-check initialization - vasilche CXX-10546
+   Helgrind:Race
+   fun:_ZN4ncbi7objects14CSeq_id_Mapper11GetInstanceEv
+}
+
+# There's no actual race, the variable is read while executing ~CSeq_id_Mapper when no other threads are using it. CXX-10543
+{
+   ncbi::objects::CSeq_id_Textseq_Tree::Empty() - false positive - grichenk CXX-10543
+   Helgrind:Race
+   ...
+   fun:_ZN4ncbi7objects14CSeq_id_MapperD1Ev
 }
 
 
