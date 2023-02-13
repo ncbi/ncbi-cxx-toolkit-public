@@ -61,6 +61,7 @@ Section "DefaultSection" SecDflt
   SetOutPath "$INSTDIR\bin"
   
   File "magicblast.exe"
+  File "nghttp2.dll"
   File "ncbi-vdb-md.dll"
   File "makeblastdb.exe"
   
