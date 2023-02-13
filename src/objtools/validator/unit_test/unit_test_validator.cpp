@@ -24840,7 +24840,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_812)
 BOOST_AUTO_TEST_CASE(Test_BIOS_1527)
 {
     BOOST_CHECK_EQUAL("Acropora valida", FixSpecificHost("Acropora tumida"));
-    BOOST_CHECK_EQUAL("Rhaponticum repens", FixSpecificHost("Acroptilon repens"));
+    BOOST_CHECK_EQUAL("Leuzea repens", FixSpecificHost("Acroptilon repens"));
 }
 
 
