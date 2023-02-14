@@ -7505,7 +7505,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         }
     }
 
-    if (numcds > 0) {
+    // if (numcds > 0) {
         if (num_unmatched_mrna > 10) {
             string msg = "No matches for " + NStr::NumericToString(num_unmatched_mrna) + " mRNAs";
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNANotMatched,
@@ -7518,7 +7518,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                 }
             }
         }
-    }
+    // }
 }
 
 void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
