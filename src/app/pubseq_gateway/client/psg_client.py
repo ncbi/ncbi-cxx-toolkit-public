@@ -23,7 +23,8 @@ class RequestGenerator:
 
     def __call__(self, method, **params):
         self._request_no += 1
-        return json.dumps({ 'jsonrpc': '2.0', 'method': method, 'params': params, 'id': f'{method}_{self._request_no}' })
+        request_id = f'{method}_{self._request_no}'
+        return request_id, json.dumps({ 'jsonrpc': '2.0', 'method': method, 'params': params, 'id': request_id })
 
 class PsgClient:
     VerboseLevel = enum.IntEnum('VerboseLevel', 'REQUEST RESPONSE DEBUG')
@@ -33,6 +34,7 @@ class PsgClient:
         self._timeout = timeout
         self._verbose = verbose
         self._request_generator = RequestGenerator()
+        self._sent = {}
 
         if self._verbose >= PsgClient.VerboseLevel.DEBUG:
             self._cmd += ['-debug-printout', 'some']
@@ -60,15 +62,16 @@ class PsgClient:
         self._thread.join()
 
     def send(self, method, **params):
-        request = self._request_generator(method, **params)
+        (id, request) = self._request_generator(method, **params)
         print(request, file=self._pipe.stdin)
 
         if self._verbose >= PsgClient.VerboseLevel.REQUEST:
             print(request)
 
+        self._sent[id] = request
         return request
 
-    def receive(self):
+    def receive(self, /, errors_only=False):
         while True:
             line = self._queue.get(timeout=self._timeout).rstrip()
 
@@ -76,22 +79,41 @@ class PsgClient:
                 print(line)
 
             data = json.loads(line)
-            result = data.get('result', None)
+
+            if result := data.get('result'):
+                status = result.get('status')
+
+                # An item
+                if reply_type := result.get('reply'):
+                    # A normal result, yield
+                    if status in (None, 'NotFound', 'Forbidden'):
+                        if not errors_only:
+                            yield result
+                        continue
+
+                # A successful reply, finish receiving
+                elif status == 'Success':
+                    return
+
+                prefix = [reply_type or 'Reply', status]
+                messages = result['errors']
+                self._report_error(data, prefix, messages)
+                yield result
+                continue
 
             # A JSON-RPC error?
-            if result is None:
-                yield data if 'error' not in data else { k: v for k, v in data.items() if k == 'error' }
-                continue
-
-            # An item
-            if 'reply' in result:
-                yield result
-                continue
-
-            # A reply, yield only non-successful ones
-            if result['status'] != 'Success':
-                yield result
+            result = data.get('error', {})
+            code = result.get('code')
+            prefix = ['Error', code] if code else ['Unknown reply']
+            messages = [result.get('message', data)]
+            self._report_error(data, prefix, messages)
+            yield result
             return
+
+    def _report_error(self, data, prefix, messages):
+        request = self._sent[data.get('id')]
+        print(*prefix, end=": '", file=sys.stderr)
+        print(*messages, sep="', '", end=f"' for request '{request}'\n", file=sys.stderr)
 
 def powerset(iterable):
     s = list(iterable)
@@ -176,29 +198,11 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
                 break
             n += 1
             request = psg_client.send(method, **random_ids, **{p: v for p, v in combination if v is not None})
-            for reply in psg_client.receive():
-                status = reply.get('status', None)
-                reply_type = reply.get('reply', None)
-
-                if status in ('NotFound', 'Forbidden'):
-                    continue
-                elif status is not None:
-                    prefix = [reply_type or 'Reply', status]
-                    messages = reply['errors']
-                elif reply_type is None:
-                    error = reply.get('error', {})
-                    code = error.get('code', None)
-                    prefix = ['Error', code] if code else ['Unknown reply']
-                    messages = [error.get('message', reply)]
-                else:
-                    continue
-
-                rv = False
-                print(*prefix, end=": '", file=sys.stderr)
-                print(*messages, sep="', '", end=f"' for request '{request}'\n", file=sys.stderr)
         summary[method] = n
 
     for method, n in summary.items():
+        # The order is important, as we still need to receive everything
+        rv = sum(len(list(psg_client.receive(errors_only=True))) for i in range(n)) == 0 and rv
         print(method, n, sep=': ')
 
     return rv
