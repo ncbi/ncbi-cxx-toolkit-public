@@ -7475,10 +7475,10 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     if (num_unmatched_cds > 0 &&
         num_mrna > 0) {
         if (num_unmatched_cds >= 10) {
-            const auto numcds = num_matched_cds + num_unmatched_cds;
+            const auto nmcds = num_matched_cds + num_unmatched_cds;
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSwithNoMRNA,
                     NStr::NumericToString (num_unmatched_cds)
-                    + " out of " + NStr::IntToString (numcds)
+                    + " out of " + NStr::IntToString (nmcds)
                     + " CDSs unmatched",
                     *(seq.GetCompleteBioseq()));
         } else {
@@ -7505,15 +7505,17 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         }
     }
 
-    if (num_unmatched_mrna > 10) {
-        string msg = "No matches for " + NStr::NumericToString(num_unmatched_mrna) + " mRNAs";
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNANotMatched,
-                 msg, *(seq.GetCompleteBioseq()));
-    } else {
-        ITERATE(TmRNAList, it, mrna_map) {
-            if (!it->second->OkWithoutCds()) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchLocation,
-                    "No CDS location match for 1 mRNA", it->second->GetSeqfeat());
+    if (numcds > 0) {
+        if (num_unmatched_mrna > 10) {
+            string msg = "No matches for " + NStr::NumericToString(num_unmatched_mrna) + " mRNAs";
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNANotMatched,
+                     msg, *(seq.GetCompleteBioseq()));
+        } else {
+            ITERATE(TmRNAList, it, mrna_map) {
+                if (!it->second->OkWithoutCds()) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchLocation,
+                        "No CDS location match for 1 mRNA", it->second->GetSeqfeat());
+                }
             }
         }
     }
