@@ -1606,8 +1606,8 @@ static TUnicodePlan s_Plan_20h = {
     { 0, eString },  //                             U+200E
     { 0, eString },  //                             U+200F
     { "-", eString },  // old dictionary               U+2010
-    { 0, eString },  //                             U+2011
-    { 0, eString },  //                             U+2012
+    { "-", eString },  //                             U+2011
+    { "-", eString },  //                             U+2012
     { "-", eString },  // old dictionary               U+2013
     { "-", eString },  // old dictionary               U+2014
     { "-", eString },  // old dictionary               U+2015
