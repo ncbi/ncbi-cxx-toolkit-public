@@ -3012,7 +3012,9 @@ void CDeflineGenerator::x_SetSuffix (
                     m_MainTitle.erase (pos);
                 }
                 NStr::ToLower( preferredSuffix );
-                pos = m_MainTitle.find (preferredSuffix);
+                string tempTitle = m_MainTitle;
+                NStr::ToLower( tempTitle );
+                pos = tempTitle.find (preferredSuffix);
                 if (pos == NPOS) {
                     if (preferredSuffix.find(" ") != NPOS) {
                         comp = ", " + preferredSuffix;
