@@ -1019,7 +1019,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
                         m_IsNM = true;
                     } else if (type == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
-                    } else if (type == NCBI_ACCN(refseq_contig)) {
+                    } else if (type == NCBI_ACCN(refseq_wgs_nuc)) {
                          m_IsNZ = true;
                     } else if (type == NCBI_ACCN(refseq_unique_prot)) {
                         m_IsWP = true;
