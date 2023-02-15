@@ -83,10 +83,10 @@ private:
 
 struct SInteractiveNewRequestStart : SNewRequestContext
 {
-    SInteractiveNewRequestStart(CJson_ConstObject params_obj);
+    SInteractiveNewRequestStart(const string& request, CJson_ConstObject params_obj);
 
 private:
-    struct SExtra : private CDiagContext_Extra
+    struct SExtra : CDiagContext_Extra
     {
         SExtra() : CDiagContext_Extra(GetDiagContext().PrintRequestStart()) {}
 
@@ -95,7 +95,6 @@ private:
         void Print(const string& prefix, CJson_ConstObject json);
         void Print(const string& prefix, CJson_ConstNode   json);
 
-    private:
         using CDiagContext_Extra::Print;
     };
 };
@@ -810,7 +809,7 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
             auto params_obj = json_obj["params"].GetObject();
             auto user_context = make_shared<string>(id);
 
-            SInteractiveNewRequestStart new_request_start(params_obj);
+            SInteractiveNewRequestStart new_request_start(method, params_obj);
             auto request_context = new_request_start.Get();
 
             if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context), move(request_context))) {
@@ -1080,7 +1079,7 @@ bool CProcessing::ReadLine(string& line, istream& is)
     }
 }
 
-SInteractiveNewRequestStart::SInteractiveNewRequestStart(CJson_ConstObject params_obj)
+SInteractiveNewRequestStart::SInteractiveNewRequestStart(const string& request, CJson_ConstObject params_obj)
 {
     // All JSON types have already been validated with the scheme
 
@@ -1113,6 +1112,7 @@ SInteractiveNewRequestStart::SInteractiveNewRequestStart(CJson_ConstObject param
     if (!ctx.IsSetHitID())     ctx.SetHitID();
 
     SExtra extra;
+    extra.Print("request", request);
     extra.Print("params", params_obj);
 }
 
