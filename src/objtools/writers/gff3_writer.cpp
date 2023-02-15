@@ -92,6 +92,55 @@ USING_SCOPE(objects);
     ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
 //  ----------------------------------------------------------------------------
+void
+sGetWrapInfo(
+    const list<CRef<CSeq_interval> >& subInts,
+    CGffFeatureContext& fc,
+    unsigned int& wrapSize,
+    unsigned int& wrapPoint)
+    //  ----------------------------------------------------------------------------
+{
+    wrapSize = wrapPoint = 0;
+    if (subInts.empty()) {
+        return;
+    }
+
+    // no wrapping for linear sequences:
+    auto bioH = fc.BioseqHandle();
+    if (bioH.CanGetInst_Topology()) {
+        auto topology = bioH.GetInst_Topology();
+        if (topology == CSeq_inst::eTopology_linear) {
+            return;
+        }
+    }
+
+    // if we can't get a strand or they aren't all the same strand then don't 
+    // touch it (second best is better than wrong):
+    const auto& front = *subInts.front();
+    if (!front.CanGetStrand()) {
+        return;
+    }
+    auto frontStrand = front.GetStrand();
+    auto pCompare = subInts.begin()++;
+    while (pCompare != subInts.end()) {
+        const auto& interval = **pCompare;
+        if (!interval.CanGetStrand() || interval.GetStrand() != frontStrand) {
+            return;
+        }
+        ++pCompare;
+    }
+
+
+    if (!bioH.CanGetInst_Length()) {
+        return;
+    }
+    wrapSize = bioH.GetInst_Length();
+    wrapPoint = (frontStrand == eNa_strand_minus) ?
+        subInts.back()->GetFrom() :
+        subInts.front()->GetFrom();
+}
+
+//  ----------------------------------------------------------------------------
 bool
 sInheritScores(
     const CSeq_align& alignFrom,
@@ -1475,52 +1524,60 @@ bool CGff3Writer::xWriteNucleotideFeature(
 }
 
 //  ----------------------------------------------------------------------------
-void
-sGetWrapInfo(
-    const list<CRef<CSeq_interval> >& subInts,
+bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
     CGffFeatureContext& fc,
-    unsigned int& wrapSize,
-    unsigned int& wrapPoint)
-//  ----------------------------------------------------------------------------
+    const CMappedFeat& mf)
+    //  ----------------------------------------------------------------------------
 {
-    wrapSize = wrapPoint = 0;
-    if (subInts.empty()) {
-        return;
+    CRef<CGff3FeatureRecord> pRna(new CGff3FeatureRecord());
+    if (!xAssignFeature(*pRna, fc, mf)) {
+        return false;
+    }
+    bool isTransSpliced = (mf.IsSetExcept_text()  &&  
+        NStr::Find(mf.GetExcept_text(), "trans-splicing") != NPOS);
+    if (isTransSpliced) {
+        unsigned int inPoint, outPoint;
+        CWriteUtil::GetTranssplicedEndpoints(mf.GetLocation(), inPoint, outPoint);
+        pRna->SetEndpoints(inPoint, outPoint, mf.GetLocation().GetStrand());
     }
 
-    // no wrapping for linear sequences:
-    auto bioH = fc.BioseqHandle();
-    if (bioH.CanGetInst_Topology()) {
-        auto topology = bioH.GetInst_Topology();
-        if (topology == CSeq_inst::eTopology_linear) {
-            return;
+    if (!xWriteRecord(*pRna)) {
+        return false;
+    }
+    m_MrnaMapNew[mf] = pRna;
+
+    const CSeq_loc& PackedInt = pRna->Location();
+    if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet()) {
+        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        auto parentId = pRna->Id();
+        list< CRef< CSeq_interval > >::const_iterator it;
+        int partNum = 1;
+        bool useParts = xIntervalsNeedPartNumbers(sublocs);
+
+        unsigned int wrapSize(0), wrapPoint(0);
+        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+
+        for (it = sublocs.begin(); it != sublocs.end(); ++it) {
+            const CSeq_interval& subint = **it;
+            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
+            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
+            pChild->DropAttributes("Name"); //explicitely not inherited
+            pChild->DropAttributes("start_range");
+            pChild->DropAttributes("end_range");
+            pChild->DropAttributes("model_evidence");
+            pChild->SetParent(parentId);
+            pChild->SetType("exon");
+            pChild->SetLocation(subint, wrapSize, wrapPoint);
+            if (useParts) {
+                pChild->SetAttribute("part", NStr::NumericToString(partNum++));
+            }
+            if (!xWriteRecord(*pChild)) {
+                return false;
+            }
         }
+        return true;
     }
-
-    // if we can't get a strand or they aren't all the same strand then don't 
-    // touch it (second best is better than wrong):
-    const auto& front = *subInts.front();
-    if (!front.CanGetStrand()) {
-        return;
-    }
-    auto frontStrand = front.GetStrand();
-    auto pCompare = subInts.begin()++;
-    while (pCompare != subInts.end()) {
-        const auto& interval = **pCompare;
-        if (!interval.CanGetStrand()  ||  interval.GetStrand() != frontStrand) {
-            return;
-        }
-        ++pCompare;
-    }
-
-    
-    if (!bioH.CanGetInst_Length()) {
-        return;
-    }
-    wrapSize = bioH.GetInst_Length();
-    wrapPoint = (frontStrand == eNa_strand_minus) ?
-        subInts.back()->GetFrom() :
-        subInts.front()->GetFrom();
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -2578,7 +2635,7 @@ bool CGff3Writer::xWriteFeatureCds(
 //  ----------------------------------------------------------------------------
 {
     CMappedFeat tf = xGenerateMissingTranscript(fc, mf);
-    if (tf  && !xWriteNucleotideFeature(fc, tf)) {
+    if (tf  && !xWriteNucleotideFeatureTransSpliced(fc, tf)) {
         return false;
     }
     CRef<CGff3FeatureRecord> pCds(new CGff3FeatureRecord());
