@@ -989,14 +989,7 @@ void s_ConvertParamValue<bool>(bool& value, const string& str)
 static const TPluginManagerParamTree* s_FindSubNode(const TPluginManagerParamTree* params,
                                                     const string& name)
 {
-    if ( params ) {
-        for ( auto it = params->SubNodeBegin(); it != params->SubNodeEnd(); ++it ) {
-            if ( NStr::EqualNocase((*it)->GetKey(), name) ) {
-                return static_cast<const TPluginManagerParamTree*>(*it);
-            }
-        }
-    }
-    return 0;
+    return params? params->FindSubNode(name): 0;
 }
 
 
