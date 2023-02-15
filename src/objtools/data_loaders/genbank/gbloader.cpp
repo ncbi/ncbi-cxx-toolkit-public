@@ -422,29 +422,13 @@ namespace {
     TParams* FindSubNode(TParams* params,
                          const string& name)
     {
-        if ( params ) {
-            for ( TParams::TNodeList_I it = params->SubNodeBegin();
-                  it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
-                    return static_cast<TParams*>(*it);
-                }
-            }
-        }
-        return 0;
+        return params? params->FindSubNode(name): 0;
     }
 
     const TParams* FindSubNode(const TParams* params,
                                const string& name)
     {
-        if ( params ) {
-            for ( TParams::TNodeList_CI it = params->SubNodeBegin();
-                  it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
-                    return static_cast<const TParams*>(*it);
-                }
-            }
-        }
-        return 0;
+        return params? params->FindSubNode(name): 0;
     }
 }
 
@@ -455,7 +439,7 @@ CGBDataLoader::GetParamsSubnode(const TParamTree* params,
 {
     const TParamTree* subnode = 0;
     if ( params ) {
-        if ( NStr::CompareNocase(params->GetKey(), subnode_name) == 0 ) {
+        if ( params->KeyEqual(subnode_name) ) {
             subnode = params;
         }
         else {
@@ -472,7 +456,7 @@ CGBDataLoader::GetParamsSubnode(TParamTree* params,
 {
     _ASSERT(params);
     TParamTree* subnode = 0;
-    if ( NStr::CompareNocase(params->GetKey(), subnode_name) == 0 ) {
+    if ( params->KeyEqual(subnode_name) ) {
         subnode = params;
     }
     else {
