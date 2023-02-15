@@ -1375,7 +1375,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     }
     CRandom rnd(1);
     for ( size_t i = 0; i < ids.size(); ++i ) {
-        swap(ids[i], ids[rnd.GetRand(i, ids.size()-1)]);
+        swap(ids[i], ids[rnd.GetRandSize_t(i, ids.size()-1)]);
     }
     vector<TRef> sorted_ids = ids;
     stable_sort(sorted_ids.begin(), sorted_ids.end(), PPtrLess<TRef>());
