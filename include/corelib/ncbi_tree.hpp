@@ -130,7 +130,7 @@ public:
     ///
     /// @return parent to the current node, NULL if it is a top
     /// of the tree
-    const TKeyGetter GetKeyGetter(void) const { return m_GetterAndParent.first(); }
+    const TKeyGetter& GetKeyGetter(void) const { return m_GetterAndParent.first(); }
 
     /// Get node's parent
     ///
