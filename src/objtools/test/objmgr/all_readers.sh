@@ -3,6 +3,9 @@
 
 status_dir="$CFG_LIB/../status"
 if test ! -d "$status_dir"; then
+    status_dir="$CFG_LIB/../../status"
+fi
+if test ! -d "$status_dir"; then
     status_dir="../../../../status"
 fi
 
