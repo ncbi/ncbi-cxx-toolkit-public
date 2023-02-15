@@ -1,8 +1,10 @@
 # $Id$
 #
-# Valgrind suppression file (version 3.5.0 -> 3.15.0).
+# Valgrind suppression file (version 3.5.0 -> 3.20.0).
 #
 ################################################################################
+#
+# This file have suppression rules for 'memcheck' and 'helgrind' modes.
 #
 # Format of this file is:
 # {
@@ -33,6 +35,9 @@
 ################################################################################
 
 
+#===============================================================================
+# System and 3rd party issued
+
 {
    BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
    Memcheck:Param
@@ -44,7 +49,6 @@
    fun:__log_putr.isra.1
    fun:__log_put
 }
-
 
 {
    BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
@@ -65,7 +69,6 @@
 #   fun:__open_nocancel
 #   fun:KSysDirOpenFileRead_v1 (sysdir.c:1838)
 #}
-
 
 {
    GnuTLS/Nettle -- apparent optimization shortcut
@@ -88,18 +91,6 @@
    Memcheck:Cond
    ...
    fun:add_aws_nodes
-}
-
-
-{
-    corelib/CFileUtil::GetTotalDiskSpace, PANFS, CXX-5713 because DLL is not supposed to be closed
-    Memcheck:Leak
-    fun:malloc
-    ...
-    fun:_dl_open
-    ...
-    fun:*s_GetDiskSpace_PANFS*
-    fun:*s_GetFileSystemInfo*
 }
 
 {
@@ -352,16 +343,6 @@
 }
 
 {
-   MemCpy to itself in swap() in CObject  (ICC 10.1)
-   Memcheck:Overlap
-   fun:memcpy
-   fun:_ZSt4swapISt4pairIPvjEEvRT_S4_
-   fun:_ZN4ncbi24sx_PopLastNewPtrMultipleEPv
-   fun:_ZN4ncbi16sx_PopLastNewPtrEPv
-   fun:_ZN4ncbi7CObject11InitCounterEv
-}
-
-{
    Sybase CTLIB 15.7-SP122-64bit (Case 1)
    Memcheck:Addr1
    fun:com_secure_memset
@@ -399,30 +380,221 @@
 }
 
 {
-    http://permalink.gmane.org/gmane.comp.encryption.nettle.bugs/886
-    Memcheck:Addr8
-    fun:memxor3
-    fun:gcm_crypt
-    fun:nettle_gcm_encrypt
+   http://permalink.gmane.org/gmane.comp.encryption.nettle.bugs/886
+   Memcheck:Addr8
+   fun:memxor3
+   fun:gcm_crypt
+   fun:nettle_gcm_encrypt
 }
 
 {
-    I think this is glibc's ultra optimised getenv doing 2 byte reads
-    Memcheck:Addr2
-    fun:getenv
+   I think this is glibc's ultra optimised getenv doing 2 byte reads
+   Memcheck:Addr2
+   fun:getenv
+}
+{
+   I think this is glibc's ultra optimised getenv doing 2 byte reads
+   Memcheck:Cond
+   fun:getenv
 }
 
 {
-    I think this is glibc's ultra optimised getenv doing 2 byte reads
-    Memcheck:Cond
-    fun:getenv
+   CToolkit/COldAsnTypeInfo
+   Memcheck:Leak
+   fun:?alloc
+   fun:s_MemAllocator
+   ...
+   fun:_ZN4ncbi15COldAsnTypeInfo*
 }
 
+{
+   boost/sigaltstack
+   Memcheck:Param
+   sigaltstack(ss)
+   fun:sigaltstack
+   fun:_ZN5boost6detail14signal_handlerD1Ev
+}
+{
+   boost/test_framework_impl::clear
+   Memcheck:Addr4
+   fun:_ZN5boost9unit_test14framework_impl5clearEv
+   fun:_ZN5boost9unit_test14framework_implD1Ev
+   fun:__tcf_3
+}
+{
+   LZO/do_compress
+   Memcheck:Cond
+   fun:do_compress
+   fun:lzo1x_1_compress
+}
+{
+   LZO/do_compress V8
+   Memcheck:Value8
+   fun:do_compress
+   fun:lzo1x_1_compress
+}
+{
+   mbedtls/self-memcpy
+   Memcheck:Overlap
+   fun:memcpy@@GLIBC_2.14
+   fun:mbedtls_mpi_sub_abs_ncbicxx_2_28_0
+}
+
+{
+   STL/locale
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znwj
+   fun:_ZNSt6locale7classicEv
+}
+{
+   STL/uncaught_exception
+   Memcheck:Leak
+   fun:malloc
+   fun:__cxa_get_globals
+   fun:_ZSt18uncaught_exceptionv
+}
+{
+   libc/dlrelocate
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:*
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:add_to_global
+   fun:dl_open_worker
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:decompose_rpath
+   fun:_dl_map_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_map_object_deps
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_new_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_new_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:open_rpath
+   fun:_dl_map_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_check_map_versions
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/sync_with_stdio
+   Memcheck:Leak
+   fun:_Znam
+   fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv*
+   fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
+   fun:_ZNSt8ios_base15sync_with_stdioEb
+}
+{
+   _dl_open
+   Memcheck:Addr4
+   ...
+   fun:_dl_catch_error
+   fun:_dl_open
+}
+{
+   _dl_map_object
+   Memcheck:Addr4
+   ...
+   fun:_dl_map_object
+}
+{
+   OpenMP/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_init_num_threads
+   fun:initialize_env
+   fun:_dl_init
+}
+
+
+#===============================================================================
+# corelib
+
+{
+    corelib/CStackTrace - 
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:malloc
+    ...
+    fun:_ZN*CStackTrace*
+}
 {
     corelib/CObject/InitCounter
     Memcheck:Cond
     fun:_ZN4ncbi7CObject11InitCounterEv
     fun:*
+}
+{
+    MemCpy to itself in swap() in CObject  (ICC 10.1)
+    Memcheck:Overlap
+    fun:memcpy
+    fun:_ZSt4swapISt4pairIPvjEEvRT_S4_
+    fun:_ZN4ncbi24sx_PopLastNewPtrMultipleEPv
+    fun:_ZN4ncbi16sx_PopLastNewPtrEPv
+    fun:_ZN4ncbi7CObject11InitCounterEv
 }
 
 {
@@ -478,6 +650,16 @@
     fun:*
 }
 {
+    corelib/CFileUtil::GetTotalDiskSpace, PANFS, CXX-5713 because DLL is not supposed to be closed
+    Memcheck:Leak
+    fun:malloc
+    ...
+    fun:_dl_open
+    ...
+    fun:*s_GetDiskSpace_PANFS*
+    fun:*s_GetFileSystemInfo*
+}
+{
     corelib/NCBI_THROW
     Memcheck:Leak
     fun:malloc
@@ -488,23 +670,47 @@
     corelib/SetDiagStream
     Memcheck:Leak
     fun:_Znwm
-    fun:_ZN4ncbi13SetDiagStreamEPSobPFvPvES1_RKSs
+    fun:_ZN4ncbi13SetDiagStreamEPSobPFvPvES1_RK*
 }
 {
-   corelib/CNcbiEnvironment::Set
-   Memcheck:Leak
-   fun:malloc
-   fun:strdup
-   fun:_ZN4ncbi16CNcbiEnvironment3SetERKSsS2_
-}
-{
-    CToolkit/COldAsnTypeInfo
+    corelib/CNcbiEnvironment::Set
     Memcheck:Leak
-    fun:?alloc
-    fun:s_MemAllocator
-    ...
-    fun:_ZN4ncbi15COldAsnTypeInfo*
+    fun:malloc
+    fun:strdup
+    fun:_ZN4ncbi16CNcbiEnvironment3SetERK*
 }
+{
+    corelib/ncbi::GetDiagBuffer() 
+    Memcheck:Leak
+    match-leak-kinds: definite
+    fun:_Znwm
+    fun:_ZN4ncbi7CObjectnwEm
+    ...
+    fun:_ZN4ncbi13GetDiagBufferEv
+}
+
+
+#===============================================================================
+# objects
+
+{
+    CSeqVector/tables
+    Memcheck:Leak
+    fun:__builtin_vec_new
+    fun:_Znaj
+    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
+}
+{
+    CSeqVector/tables
+    Memcheck:Leak
+    fun:_Znaj
+    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
+}
+
+
+#===============================================================================
+# serial
+
 {
     serial/TypeInfo
     Memcheck:Leak
@@ -701,181 +907,6 @@
     Memcheck:Cond
     fun:profil_counter
     fun:*
-}
-{
-    CSeqVector/tables
-    Memcheck:Leak
-    fun:__builtin_vec_new
-    fun:_Znaj
-    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
-}
-{
-    CSeqVector/tables
-    Memcheck:Leak
-    fun:_Znaj
-    fun:_ZGVZN4ncbi7objects10CSeqVector18sx_GetConvertTableENS0_14CSeq_data_Base8E_ChoiceES3_bE6tables
-}
-{
-    boost/sigaltstack
-    Memcheck:Param
-    sigaltstack(ss)
-    fun:sigaltstack
-    fun:_ZN5boost6detail14signal_handlerD1Ev
-}
-{
-   boost/test_framework_impl::clear
-   Memcheck:Addr4
-   fun:_ZN5boost9unit_test14framework_impl5clearEv
-   fun:_ZN5boost9unit_test14framework_implD1Ev
-   fun:__tcf_3
-}
-{
-    LZO/do_compress
-    Memcheck:Cond
-    fun:do_compress
-    fun:lzo1x_1_compress
-}
-{
-    LZO/do_compress V8
-    Memcheck:Value8
-    fun:do_compress
-    fun:lzo1x_1_compress
-}
-{
-   mbedtls/self-memcpy
-   Memcheck:Overlap
-   fun:memcpy@@GLIBC_2.14
-   fun:mbedtls_mpi_sub_abs_ncbicxx_2_28_0
-}
-{
-    STL/locale
-    Memcheck:Leak
-    fun:__builtin_vec_new
-    fun:_Znwj
-    fun:_ZNSt6locale7classicEv
-}
-{
-    STL/uncaught_exception
-    Memcheck:Leak
-    fun:malloc
-    fun:__cxa_get_globals
-    fun:_ZSt18uncaught_exceptionv
-}
-{
-    libc/dlrelocate
-    Memcheck:Cond
-    fun:_dl_relocate_object
-    fun:*
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:malloc
-    fun:add_to_global
-    fun:dl_open_worker
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:calloc
-    fun:_dlerror_run
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:malloc
-    fun:decompose_rpath
-    fun:_dl_map_object
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:malloc
-    fun:_dl_map_object_deps
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:malloc
-    fun:_dl_new_object
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:calloc
-    fun:_dl_new_object
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:malloc
-    fun:open_rpath
-    fun:_dl_map_object
-}
-{
-    libc/dlopen
-    Memcheck:Leak
-    fun:calloc
-    fun:_dl_check_map_versions
-}
-{
-    iostream/buffer
-    Memcheck:Leak
-    fun:__builtin_vec_new
-    fun:_Znaj
-    fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
-}
-{
-    iostream/buffer
-    Memcheck:Leak
-    fun:_Znaj
-    fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
-}
-{
-    iostream/buffer
-    Memcheck:Leak
-    fun:__builtin_vec_new
-    fun:_Znaj
-    fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
-}
-{
-    iostream/buffer
-    Memcheck:Leak
-    fun:_Znaj
-    fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
-}
-{
-    iostream/sync_with_stdio
-    Memcheck:Leak
-    fun:_Znam
-    fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv*
-    fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
-    fun:_ZNSt8ios_base15sync_with_stdioEb
-}
-{
-    _dl_open
-    Memcheck:Addr4
-    fun:*
-    fun:*
-    fun:_dl_catch_error
-    fun:_dl_open
-}
-{
-    _dl_map_object
-    Memcheck:Addr4
-    fun:*
-    fun:*
-    fun:_dl_map_object
-}
-{
-   OpenMP/malloc
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:gomp_malloc
-   fun:gomp_init_num_threads
-   fun:initialize_env
-   fun:_dl_init
 }
 
 
