@@ -1456,15 +1456,7 @@ struct SPluginParams
     static
     TParams* FindSubNode(TParams* params, const string& name)
     {
-        if ( params ) {
-            for ( TParams::TNodeList_I it = params->SubNodeBegin();
-                  it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
-                    return static_cast<TParams*>(*it);
-                }
-            }
-        }
-        return 0;
+        return params? params->FindSubNode(name): 0;
     }
 
 
@@ -1472,15 +1464,7 @@ struct SPluginParams
     const TParams* FindSubNode(const TParams* params,
                                const string& name)
     {
-        if ( params ) {
-            for ( TParams::TNodeList_CI it = params->SubNodeBegin();
-                  it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
-                    return static_cast<const TParams*>(*it);
-                }
-            }
-        }
-        return 0;
+        return params? params->FindSubNode(name): 0;
     }
 
 

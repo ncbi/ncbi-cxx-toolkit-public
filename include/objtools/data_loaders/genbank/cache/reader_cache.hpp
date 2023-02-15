@@ -32,6 +32,7 @@
 
 #include <objtools/data_loaders/genbank/reader.hpp>
 #include <corelib/ncbi_tree.hpp>
+#include <corelib/ncbi_config.hpp>
 
 #include <vector>
 
@@ -101,8 +102,7 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
 
     static int GetDebugLevel(void);
 
-    typedef CTreePair<string, string> TParamPair;
-    typedef TParamPair::TPairTreeNode TParams;
+    typedef CConfig::TParamTree TParams;
 
     enum EReaderOrWriter {
         eCacheReader,
