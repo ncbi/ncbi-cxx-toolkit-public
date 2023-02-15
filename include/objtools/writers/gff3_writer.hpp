@@ -221,6 +221,9 @@ protected:
     virtual bool xWriteNucleotideFeature(
         CGffFeatureContext&,
         const CMappedFeat&);
+    virtual bool xWriteNucleotideFeatureTransSpliced(
+        CGffFeatureContext&,
+        const CMappedFeat&);
     virtual bool xWriteProteinFeature(
         CGffFeatureContext&,
         const CMappedFeat&);
