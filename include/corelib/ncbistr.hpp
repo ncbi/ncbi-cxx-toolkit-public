@@ -4938,13 +4938,47 @@ typedef PNocase_Conditional_Generic<string>       PNocase_Conditional;
 typedef PNocase_Conditional_Generic<const char *> PNocase_Conditional_CStr;
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Define Case-insensitive string equality (not less-than) comparison method
+///
+/// Used as arguments to template functions for specifying the type of 
+/// equality comparison
+///
+/// @sa PEqualNocase_Conditional_Generic
+
+template <typename T>
+class PEqualNocase_Generic
+    : public PNocase_Generic<T>
+{
+public:
+    /// Return TRUE if s1 < s2 ignoring case.
+    bool operator()(const T& s1, const T& s2) const
+        {
+            return this->Equals(s1, s2);
+        }
+};
+
+typedef PEqualNocase_Generic<string>       PEqualNocase;
+typedef PEqualNocase_Generic<const char *> PEqualNocase_CStr;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Define Case-insensitive string equality (not less-than) comparison method
+/// Case sensitivity can be turned on and off at runtime.
+///
+/// Used as arguments to template functions for specifying the type of 
+/// comparison.
+///
+/// @sa PEqualNocase_Generic
+
 template <typename T>
 class PEqualNocase_Conditional_Generic
     : public PNocase_Conditional_Generic<T>
 {
 public:
     /// Construction
-    explicit
     PEqualNocase_Conditional_Generic(NStr::ECase case_sens = NStr::eCase)
         : PNocase_Conditional_Generic<T>(case_sens)
         {
