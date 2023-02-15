@@ -84,13 +84,11 @@ typedef map<TParamTree*, set<string> > TSectionMap;
 static
 void s_AddOrReplaceSubNode(TParamTree*   node_ptr,
                            const string& element_name,
-                           const string& element_value,
-                           NStr::ECase   use_case)
+                           const string& element_value)
 {
     TParamTree* existing_node = const_cast<TParamTree*>
         (node_ptr->FindNode(element_name,
-                            TParamTree::eImmediateSubNodes,
-                            PEqualNocase_Conditional(use_case)));
+                            TParamTree::eImmediateSubNodes));
     if ( existing_node ) {
         existing_node->GetValue().value = element_value;
     }
@@ -102,15 +100,14 @@ void s_AddOrReplaceSubNode(TParamTree*   node_ptr,
 
 static
 TParamTree* s_FindSubNode(const string& path,
-                          TParamTree*   tree_root,
-                          NStr::ECase   use_case)
+                          TParamTree*   tree_root)
 {
     list<string> name_list;
     list<TParamTree*> node_list;
 
     NStr::Split(path, "/", name_list,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-    tree_root->FindNodes(name_list, &node_list, PEqualNocase_Conditional(use_case));
+    tree_root->FindNodes(name_list, &node_list);
     return node_list.empty() ? 0 : *node_list.rbegin();
 }
 
@@ -119,17 +116,16 @@ static
 void s_ParseSubNodes(const string& sub_nodes,
                      TParamTree*   parent_node,
                      TSectionMap&  inc_sections,
-                     set<string>&  rm_sections,
-                     NStr::ECase   use_case)
+                     set<string>&  rm_sections)
 {
     list<string> sub_list;
     NStr::Split(sub_nodes, ",; \t\n\r", sub_list,
         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     typedef set<string, PNocase_Conditional> TSubSet;
-    TSubSet sub_set;
+    TSubSet sub_set(parent_node->GetKeyEqual());
     s_List2Set(sub_list, &sub_set);
     ITERATE(TSubSet, sub_it, sub_set) {
-        unique_ptr<TParamTree> sub_node(new TParamTree);
+        unique_ptr<TParamTree> sub_node(new TParamTree(parent_node->GetKeyEqual()));
         size_t pos = sub_it->rfind('/');
         if (pos == string::npos) {
             sub_node->GetKey() = *sub_it;
@@ -160,17 +156,16 @@ bool s_IsParentNode(TParamTree* parent, TParamTree* child)
 
 static
 void s_IncludeNode(TParamTree*       parent_node,
-                   const TParamTree* inc_node,
-                   NStr::ECase       use_case)
+                   const TParamTree* inc_node)
 {
     TParamTree::TNodeList_CI sub_it = inc_node->SubNodeBegin();
     TParamTree::TNodeList_CI sub_end = inc_node->SubNodeEnd();
     for ( ; sub_it != sub_end; ++sub_it) {
         TParamTree* sub_node =
-            parent_node->FindSubNode((*sub_it)->GetKey(), PEqualNocase_Conditional(use_case));
+            parent_node->FindSubNode((*sub_it)->GetKey());
         if ( sub_node ) {
             // Update the existing subtree to include all missing nodes
-            s_IncludeNode(sub_node, *sub_it, use_case);
+            s_IncludeNode(sub_node, *sub_it);
         }
         else {
             // Copy the whole subtree
@@ -183,8 +178,7 @@ void s_IncludeNode(TParamTree*       parent_node,
 static
 void s_ExpandSubNodes(TSectionMap& inc_sections,
                       TParamTree*  tree_root,
-                      TParamTree*  node,
-                      NStr::ECase  use_case)
+                      TParamTree*  node)
 {
     TSectionMap::iterator current;
     if ( node ) {
@@ -197,7 +191,7 @@ void s_ExpandSubNodes(TSectionMap& inc_sections,
     if (current != inc_sections.end()) {
         // Node has included sections, expand them first.
         ITERATE(set<string>, inc_it, current->second) {
-            TParamTree* inc_node = s_FindSubNode(*inc_it, tree_root, use_case);
+            TParamTree* inc_node = s_FindSubNode(*inc_it, tree_root);
             if ( !inc_node ) {
                 continue;
             }
@@ -206,8 +200,8 @@ void s_ExpandSubNodes(TSectionMap& inc_sections,
                             << node->GetKey() << "->" << *inc_it);
                 continue; // skip the offending subnode
             }
-            s_ExpandSubNodes(inc_sections, tree_root, inc_node, use_case);
-            s_IncludeNode(node, inc_node, use_case);
+            s_ExpandSubNodes(inc_sections, tree_root, inc_node);
+            s_IncludeNode(node, inc_node);
         }
         inc_sections.erase(current);
     }
@@ -215,7 +209,7 @@ void s_ExpandSubNodes(TSectionMap& inc_sections,
     TParamTree::TNodeList_I sub_it = node->SubNodeBegin();
     TParamTree::TNodeList_I sub_end = node->SubNodeEnd();
     for ( ; sub_it != sub_end; ++sub_it) {
-        s_ExpandSubNodes(inc_sections, tree_root, *sub_it, use_case);
+        s_ExpandSubNodes(inc_sections, tree_root, *sub_it);
     }
 }
 
@@ -271,7 +265,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg,
                                                NStr::ECase use_case)
 {
     const bool debug = 0;
-    unique_ptr<TParamTree> tree_root(new TParamTree);
+    unique_ptr<TParamTree> tree_root(new TParamTree(TParamTree::TKeyGetter(use_case)));
 
     list<string> sections;
     reg.EnumerateSections(&sections);
@@ -296,14 +290,14 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg,
         const string& section_name = *name_it;
         TParamTree* node_ptr;
         if (section_name.find('/') == string::npos) {
-            unique_ptr<TParamTree> node(new TParamTree);
+            unique_ptr<TParamTree> node(new TParamTree(TParamTree::TKeyGetter(use_case)));
             node->GetKey() = section_name;
             tree_root->AddNode(node_ptr = node.release());
         } else {
             list<string> sub_node_list;
             NStr::Split(section_name, "/", sub_node_list,
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-            node_ptr = tree_root->FindOrCreateNode(sub_node_list, PEqualNocase_Conditional(use_case));
+            node_ptr = tree_root->FindOrCreateNode(sub_node_list);
         }
 
         bool have_explicit_name = false;
@@ -336,26 +330,25 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg,
                 s_ParseSubNodes(element_value,
                                 node_ptr,
                                 inc_sections,
-                                rm_sections,
-                                use_case);
+                                rm_sections);
                 continue;
             }
 
             if ( debug ) {
                 cout << "[" << section_name << "]: "<<element_name<<"="<<element_value<<"\n";
             }
-            s_AddOrReplaceSubNode(node_ptr, element_name, element_value, use_case);
+            s_AddOrReplaceSubNode(node_ptr, element_name, element_value);
         }
         // Force node name to prevent overriding it by includes
         if ( !have_explicit_name ) {
             node_ptr->AddNode(TParamValue(kNodeName, node_ptr->GetKey()));
         }
     }
-    s_ExpandSubNodes(inc_sections, tree_root.get(), tree_root.get(), use_case);
+    s_ExpandSubNodes(inc_sections, tree_root.get(), tree_root.get());
 
     // Remove nodes used in .SubNode
     ITERATE(set<string>, rm_it, rm_sections) {
-        TParamTree* rm_node = s_FindSubNode(*rm_it, tree_root.get(), use_case);
+        TParamTree* rm_node = s_FindSubNode(*rm_it, tree_root.get());
         if ( rm_node ) {
             rm_node->GetParent()->RemoveNode(rm_node);
         }
@@ -397,7 +390,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg,
 
         TParamTree* node_ptr;
         if (section_name.find('/') == string::npos) {
-            unique_ptr<TParamTree> node(new TParamTree);
+            unique_ptr<TParamTree> node(new TParamTree(TParamTree::TKeyGetter(use_case)));
             node->GetKey() = section_name;
             tree_root->AddNode(node_ptr = node.release());
         } else {
@@ -445,17 +438,15 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg,
 
 
 CConfig::CConfig(TParamTree* param_tree, EOwnership own, NStr::ECase use_case)
-    : m_ParamTree(param_tree, own),
-      m_UseCase(use_case)
+    : m_ParamTree(param_tree, own)
 {
     if ( !param_tree ) {
-        m_ParamTree.reset(new TParamTree, eTakeOwnership);
+        m_ParamTree.reset(new TParamTree(TParamTree::TKeyGetter(use_case)), eTakeOwnership);
     }
 }
 
 
 CConfig::CConfig(const IRegistry& reg, NStr::ECase use_case)
-    : m_UseCase(use_case)
 {
     m_ParamTree.reset(ConvertRegToTree(reg, use_case), eTakeOwnership);
     _ASSERT(m_ParamTree.get());
@@ -463,10 +454,9 @@ CConfig::CConfig(const IRegistry& reg, NStr::ECase use_case)
 
 
 CConfig::CConfig(const TParamTree* param_tree, NStr::ECase use_case)
-    : m_UseCase(use_case)
 {
     if ( !param_tree ) {
-        m_ParamTree.reset(new TParamTree, eTakeOwnership);
+        m_ParamTree.reset(new TParamTree(TParamTree::TKeyGetter(use_case)), eTakeOwnership);
     }
     else {
         m_ParamTree.reset(const_cast<TParamTree*>(param_tree), eNoOwnership);
@@ -507,13 +497,13 @@ const string& CConfig::x_GetString(const string&  driver_name,
                                    const list<string>* synonyms)
 {
     list<const TParamTree*> tns;
-    const TParamTree* tn = m_ParamTree->FindSubNode(param_name, PEqualNocase_Conditional(m_UseCase));
+    const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
 
     if (tn && !tn->GetValue().value.empty()) 
         tns.push_back(tn);
     if (synonyms) {
         ITERATE(list<string>, it, *synonyms) {
-            tn = m_ParamTree->FindSubNode(*it, PEqualNocase_Conditional(m_UseCase));
+            tn = m_ParamTree->FindSubNode(*it);
             if (tn && !tn->GetValue().value.empty()) 
                 tns.push_back(tn);
         }

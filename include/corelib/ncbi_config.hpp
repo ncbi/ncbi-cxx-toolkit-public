@@ -78,7 +78,7 @@ public:
     /// Recursive class factory calls are modeled as tree, where specific
     /// subtree is responsible for CF parameters
     ///
-    typedef CTreePair<string, string>  TParamValue;
+    typedef CTreePair<string, string, PEqualNocase_Conditional> TParamValue;
     typedef TParamValue::TPairTreeNode TParamTree;
 
 public:
@@ -258,7 +258,6 @@ protected:
 
 protected:
     AutoPtr<TParamTree> m_ParamTree;
-    NStr::ECase         m_UseCase;
 };
 
 /* @} */
