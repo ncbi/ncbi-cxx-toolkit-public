@@ -44,6 +44,9 @@
 BEGIN_NCBI_SCOPE
 
 
+//#define UPPER_CASE_ONLY
+
+
 CEnvironmentRegistry::CEnvironmentRegistry(TFlags flags)
     : m_Env(new CNcbiEnvironment, eTakeOwnership),
       m_Modified(false), m_Flags(flags)
@@ -180,10 +183,11 @@ void CEnvironmentRegistry::x_Enumerate(const string& section,
         return;
     }
 
-    typedef set<string, PNocase> TEntrySet;
+    NStr::ECase use_case = (flags & fSectionCase) == 0 ? NStr::eNocase : NStr::eCase;
+    typedef set<string, PNocase_Conditional> TEntrySet;
 
     list<string> l;
-    TEntrySet    entry_set;
+    TEntrySet    entry_set(use_case);
     string       parsed_section, parsed_name;
 
     ITERATE (TPriorityMap, mapper, m_PriorityMap) {
@@ -192,7 +196,7 @@ void CEnvironmentRegistry::x_Enumerate(const string& section,
             if (mapper->second->EnvToReg(*it, parsed_section, parsed_name)) {
                 if (section.empty()) {
                     entry_set.insert(parsed_section);
-                } else if (section == parsed_section) {
+                } else if (NStr::Equal(section, parsed_section, use_case)) {
                     entry_set.insert(parsed_name);
                 }
             }
@@ -331,6 +335,9 @@ string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
     } else {
         result += "_" + section + "__" + name;
     }
+#ifdef UPPER_CASE_ONLY
+    NStr::ToUpper(result);
+#endif
     if (result.find_first_of(".-/ ") != NPOS) {
         NStr::ReplaceInPlace(result, ".", "_DOT_");
         NStr::ReplaceInPlace(result, "-", "_HYPHEN_");
@@ -377,6 +384,13 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
     if (env_in.size() <= kPfxLen  ||  !NStr::StartsWith(env_in, sm_Prefix) ) {
         return false;
     }
+#ifdef UPPER_CASE_ONLY
+    for ( auto c : env_in ) {
+        if ( islower(c) ) {
+            return false;
+        }
+    }
+#endif
     vector<CTempString> v;
     NStr::Split(env_in, "_", v);
     string env;
