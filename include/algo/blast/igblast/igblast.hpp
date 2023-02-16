@@ -72,6 +72,7 @@ public:
     int m_D_penalty;                 //the mismatch penalty for D gene search
     int m_J_penalty;                 //the mismatch penalty for J gene search
     string m_AuxFilename;            // auxulary file name
+    string m_DFrameFileName;         // D gene frame definition file  
     string m_CustomInternalData;     // custom internal data
     string m_IgDataPath;             // internal data path
     CRef<CLocalDbAdapter> m_Db[5];   // user specified germline database
@@ -100,7 +101,7 @@ public:
                                      // in case o TCRA/D chains which can use both JA and JD
     int m_GeneInfo[8];               // The (start) and (end offset + 1) for VDJC
     int m_FrameInfo[3];              // Coding frame start offset for V start, V end,
-                                     // and V start.
+                                     // J start
     int m_DomainInfo[12];            // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains
                                      // note: the first and last domains are be extended
@@ -110,6 +111,7 @@ public:
     int m_JDomain[5];                // CDr3 start, stop, FWR4 start, stop, extra number of bases past last J codon (i.e., m_Fwr4EndOffset in CIgAnnotationInfo
     
     int m_CDomain[2];                //start and end
+    int m_DframeStart;
 
     /// Constructor
     CIgAnnotation() 
@@ -122,6 +124,7 @@ public:
         for (int i=0; i<10; i++) m_DomainInfo_S[i] = -1;
         for (int i=0; i<5; i++) m_JDomain[i] = -1;
         for (int i=0; i<2; i++) m_CDomain[i] = -1;
+        m_DframeStart = -1;
     }
 
 };
@@ -155,6 +158,8 @@ public:
         }
         return -1;
     }
+
+
     int GetJDomain(const string& sid) {
         if (m_JDomainInfo.find(sid) != m_JDomainInfo.end()) {
             return m_JDomainInfo[sid];
@@ -186,6 +191,7 @@ private:
     map<string, string> m_DJChainType;    
     map<string, int>  m_JDomainInfo;   
     map<string, int>  m_Fwr4EndOffset;  //extra number of bases past J end
+ 
 };
 
 class CIgBlastResults : public CSearchResults 
