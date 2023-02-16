@@ -242,6 +242,12 @@ public:
     string GetIPGKeyspace(void) const
     { return m_Settings.m_IPGKeyspace; }
 
+    size_t GetHttpMaxBacklog(void) const
+    { return m_Settings.m_HttpMaxBacklog; }
+
+    size_t GetHttpMaxRunning(void) const
+    { return m_Settings.m_HttpMaxRunning; }
+
     CPSGAlerts &  GetAlerts(void)
     { return m_Alerts; }
 

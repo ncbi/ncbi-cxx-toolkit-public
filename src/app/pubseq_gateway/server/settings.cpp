@@ -63,6 +63,8 @@ const unsigned short    kTcpMaxConnDefault = 4096;
 const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 1;
 const string            kDefaultRootKeyspace = "sat_info2";
+const size_t            kDefaultHttpMaxBacklog = 1024;
+const size_t            kDefaultHttpMaxRunning = 32;
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultLog = true;
@@ -112,6 +114,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_SplitInfoBlobCacheSize(kDefaultSplitInfoBlobCacheSize),
     m_ShutdownIfTooManyOpenFD(0),
     m_RootKeyspace(kDefaultRootKeyspace),
+    m_HttpMaxBacklog(kDefaultHttpMaxBacklog),
+    m_HttpMaxRunning(kDefaultHttpMaxRunning),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -186,6 +190,10 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                    kMaxRetriesDefault);
     m_RootKeyspace = registry.GetString(kServerSection, "root_keyspace",
                                         kDefaultRootKeyspace);
+    m_HttpMaxBacklog = registry.GetInt(kServerSection, "http_max_backlog",
+                                       kDefaultHttpMaxBacklog);
+    m_HttpMaxRunning = registry.GetInt(kServerSection, "http_max_running",
+                                       kDefaultHttpMaxRunning);
     m_SendBlobIfSmall = x_GetDataSize(registry, kServerSection,
                                       "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
@@ -533,6 +541,24 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
         }
         m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
         alerts.Register(ePSGS_ConfigExcludeCacheInactivity, err_msg);
+    }
+
+    if (m_HttpMaxBacklog <= 0) {
+        PSG_WARNING("Invalid " + kServerSection + "]/http_max_backlog value (" +
+                    to_string(m_HttpMaxBacklog) + "). "
+                    "The http max backlog must be greater than 0. The http max backlog is "
+                    "reset to the default value (" +
+                    to_string(kDefaultHttpMaxBacklog) + ").");
+        m_HttpMaxBacklog = kDefaultHttpMaxBacklog;
+    }
+
+    if (m_HttpMaxRunning <= 0) {
+        PSG_WARNING("Invalid " + kServerSection + "]/http_max_running value (" +
+                    to_string(m_HttpMaxRunning) + "). "
+                    "The http max running must be greater than 0. The http max running is "
+                    "reset to the default value (" +
+                    to_string(kDefaultHttpMaxRunning) + ").");
+        m_HttpMaxRunning = kDefaultHttpMaxRunning;
     }
 
     if (m_MaxHops <= 0) {

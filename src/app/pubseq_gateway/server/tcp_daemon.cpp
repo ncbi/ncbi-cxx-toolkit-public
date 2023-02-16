@@ -217,6 +217,16 @@ void CTcpWorkersList::JoinWorkers(void)
 void CTcpWorker::Stop(void)
 {
     if (m_started && !m_shutdown && !m_shuttingdown) {
+        for (auto  it = m_connected_list.begin();
+             it != m_connected_list.end(); ++it) {
+            CHttpConnection *  http_connection  = & std::get<1>(*it);
+            http_connection->CleanupToStop();
+        }
+        for (auto  it = m_free_list.begin();
+             it != m_free_list.end(); ++it) {
+            CHttpConnection *  http_connection  = & std::get<1>(*it);
+            http_connection->CleanupToStop();
+        }
         uv_async_send(&m_internal->m_async_stop);
     }
 }
@@ -348,6 +358,8 @@ void CTcpWorker::Execute(void)
                 PSG_INFO("worker " << m_id <<
                          ", uv_loop_close returned " << err_code <<
                          ", st: " << m_started.load());
+                // Note: this is mostly a debug facility. The callback will
+                // basically print the information about the active handles
                 uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
             }
             m_internal.reset(nullptr);
@@ -390,7 +402,7 @@ void CTcpWorker::OnClientClosed(uv_handle_t *  handle)
          it != m_connected_list.end(); ++it) {
         if (tcp == &std::get<0>(*it)) {
             m_protocol.OnClientClosedConnection(reinterpret_cast<uv_stream_t*>(handle),
-                                                &std::get<1>(*it));
+                                                & std::get<1>(*it));
             // NOTE: it is important to reset for reuse before moving
             // between the lists. The CHttpConnection instance holds a list
             // of the pending requests. Sometimes there are a few items in
@@ -498,9 +510,17 @@ void CTcpWorker::s_LoopWalk(uv_handle_t *  handle, void *  arg)
 
 void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 {
-    if (m_free_list.empty())
-        m_free_list.push_back(make_tuple(uv_tcp_t{0},
-                                         CHttpConnection()));
+    if (m_free_list.empty()) {
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+
+        m_free_list.emplace_back(
+                uv_tcp_t{0},
+                CHttpConnection(app->GetHttpMaxBacklog(),
+                                app->GetHttpMaxRunning()));
+        auto                new_item = m_free_list.rbegin();
+        CHttpConnection *   http_connection = & get<1>(*new_item);
+        http_connection->SetupMaintainTimer(m_internal->m_loop.Handle());
+    }
 
     auto        it = m_free_list.begin();
     uv_tcp_t *  tcp = & get<0>(*it);
@@ -565,6 +585,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
     }
+
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
                                & get<1>(*it), s_OnClientClosed);
 }

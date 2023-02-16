@@ -78,6 +78,20 @@ CHttpConnection::~CHttpConnection()
 }
 
 
+void CHttpConnection::SetupMaintainTimer(uv_loop_t *  tcp_worker_loop)
+{
+    uv_timer_init(tcp_worker_loop, &m_ScheduledMaintainTimer);
+    m_ScheduledMaintainTimer.data = (void *)(this);
+}
+
+
+void CHttpConnection::CleanupToStop(void)
+{
+    uv_timer_stop(&m_ScheduledMaintainTimer);
+    uv_close(reinterpret_cast<uv_handle_t*>(&m_ScheduledMaintainTimer), nullptr);
+}
+
+
 void CHttpConnection::ResetForReuse(void)
 {
     while (!m_BacklogRequests.empty()) {
@@ -103,8 +117,34 @@ void CHttpConnection::PeekAsync(bool  chk_data_ready)
             it->GetHttpReply()->PeekPending();
         }
     }
+
     x_MaintainFinished();
     x_MaintainBacklog();
+}
+
+
+void CHttpConnection::DoScheduledMaintain(void)
+{
+    x_MaintainFinished();
+    x_MaintainBacklog();
+}
+
+
+void MaintanTimerCB(uv_timer_t *  handle)
+{
+    CHttpConnection *       http_connection = (CHttpConnection *)(handle->data);
+    http_connection->DoScheduledMaintain();
+}
+
+void CHttpConnection::ScheduleMaintain(void)
+{
+    // Send one time async event to initiate maintain
+    if (uv_is_active((uv_handle_t*)(&m_ScheduledMaintainTimer))) {
+        return; // has already been activated
+    }
+
+    m_ScheduledMaintainTimer.data = (void *)(this);
+    uv_timer_start(&m_ScheduledMaintainTimer, MaintanTimerCB, 0, 0);
 }
 
 
@@ -112,16 +152,9 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
                                         shared_ptr<CPSGS_Reply>  reply,
                                         list<string>  processor_names)
 {
-    if (m_RunningRequests.size() < kHttpMaxRunning) {
-        running_list_iterator_t     run_it = x_Start(request, reply,
-                                                     move(processor_names));
-        if (run_it != m_RunningRequests.end()) {
-            if (reply->IsCompleted()) {
-                PSG_TRACE("Self-drained while registering pending");
-                x_UnregisterRunning(run_it);
-            }
-        }
-    } else if (m_BacklogRequests.size() < kHttpMaxBacklog) {
+    if (m_RunningRequests.size() < m_HttpMaxRunning) {
+        x_Start(request, reply, move(processor_names));
+    } else if (m_BacklogRequests.size() < m_HttpMaxBacklog) {
         m_BacklogRequests.push_back(
                 SBacklogAttributes{request, reply,
                                    move(processor_names),
@@ -142,7 +175,7 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
 }
 
 
-CHttpConnection::running_list_iterator_t
+void
 CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
                          shared_ptr<CPSGS_Reply>  reply,
                          list<string>  processor_names)
@@ -164,7 +197,7 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
     if (processors.empty()) {
         // No processors were actually instantiated
         // The reply is completed by the dispatcher with all necessary messages.
-        return m_RunningRequests.end();
+        return;
     }
 
     request->SetConcurrentProcessorCount(processors.size());
@@ -191,10 +224,6 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
     // Now start the processors
     for (auto req: http_reply->GetPendingReqs())
         req->Start();
-
-    running_list_iterator_t     it = m_RunningRequests.end();
-    --it;
-    return it;
 }
 
 
@@ -301,7 +330,7 @@ void CHttpConnection::x_MaintainFinished(void)
 
 void CHttpConnection::x_MaintainBacklog(void)
 {
-    while (m_RunningRequests.size() < kHttpMaxRunning &&
+    while (m_RunningRequests.size() < m_HttpMaxRunning &&
            !m_BacklogRequests.empty()) {
         auto &  backlog_front = m_BacklogRequests.front();
 
@@ -316,14 +345,7 @@ void CHttpConnection::x_MaintainBacklog(void)
         app->GetTiming().Register(nullptr, eBacklog, eOpStatusFound,
                                   backlog_start);
 
-        running_list_iterator_t     run_it = x_Start(request, reply,
-                                                     move(processor_names));
-        if (run_it != m_RunningRequests.end()) {
-            if (reply->IsCompleted()) {
-                PSG_TRACE("Self-drained while maintaining backlog");
-                x_UnregisterRunning(run_it);
-            }
-        }
+        x_Start(request, reply, move(processor_names));
     }
 }
 
