@@ -1611,6 +1611,11 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgCustomInternalData, "filename",
                             "custom internal data file for V region annotation",
                             CArgDescriptions::eString);
+
+        arg_desc.AddOptionalKey(kArgDFrameDefinitionFile, "filename",
+                                "D gene frame definition file",
+                                CArgDescriptions::eString);
+
         arg_desc.AddOptionalKey(kArgGLChainType, "filename",
                             "File containing the coding frame start positions for sequences in germline J database",
                             CArgDescriptions::eString);
@@ -1756,7 +1761,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
     m_IgOptions->m_CustomInternalData = NcbiEmptyString;
-        
+    m_IgOptions->m_DFrameFileName = NcbiEmptyString;
+ 
     if (!m_IsProtein) {
         string aux_file = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
                              ? args[kArgGLChainType].AsString()
@@ -1775,6 +1781,9 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
             m_IgOptions->m_CustomInternalData = args[kArgCustomInternalData].AsString();
         } 
         
+        if (args.Exist(kArgDFrameDefinitionFile) && args[kArgDFrameDefinitionFile]) {
+            m_IgOptions->m_DFrameFileName = args[kArgDFrameDefinitionFile].AsString();
+        } 
     }
 
     _ASSERT(m_IsProtein == m_IgOptions->m_IsProtein);
