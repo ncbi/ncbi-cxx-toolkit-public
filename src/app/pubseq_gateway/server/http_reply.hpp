@@ -265,8 +265,7 @@ public:
     bool IsCompleted(void) const
     { return m_Completed; }
 
-    void SetCompleted(void)
-    { m_Completed = true; }
+    void SetCompleted(void);
 
     void SetPostponed(void)
     { m_Postponed = true; }

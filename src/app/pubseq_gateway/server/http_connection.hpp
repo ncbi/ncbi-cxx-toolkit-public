@@ -38,19 +38,19 @@
 #include "pubseq_gateway_types.hpp"
 
 
-// Settings for the CHttpConnection
-const size_t    kHttpMaxBacklog = 1024;
-const size_t    kHttpMaxRunning = 32;
-
-
 class CHttpConnection
 {
 public:
-    CHttpConnection() :
-        m_IsClosed(false)
+    CHttpConnection(size_t  http_max_backlog,
+                    size_t  http_max_running) :
+        m_HttpMaxBacklog(http_max_backlog), m_HttpMaxRunning(http_max_running),
+        m_IsClosed(false), m_ScheduledMaintainTimer{0}
     {}
 
     ~CHttpConnection();
+
+    void SetupMaintainTimer(uv_loop_t *  tcp_worker_loop);
+    void CleanupToStop(void);
 
     bool IsClosed(void) const
     {
@@ -80,6 +80,8 @@ public:
     void Postpone(shared_ptr<CPSGS_Request>  request,
                   shared_ptr<CPSGS_Reply>  reply,
                   list<string>  processor_names);
+    void ScheduleMaintain(void);
+    void DoScheduledMaintain(void);
 
     void OnTimer(void)
     {
@@ -88,7 +90,11 @@ public:
     }
 
 private:
-    volatile bool                       m_IsClosed;
+    size_t                          m_HttpMaxBacklog;
+    size_t                          m_HttpMaxRunning;
+
+    volatile bool                   m_IsClosed;
+    uv_timer_t                      m_ScheduledMaintainTimer;
 
     struct SBacklogAttributes
     {
@@ -113,9 +119,9 @@ private:
     void x_RegisterPending(shared_ptr<CPSGS_Request>  request,
                            shared_ptr<CPSGS_Reply>  reply,
                            list<string>  processor_names);
-    running_list_iterator_t x_Start(shared_ptr<CPSGS_Request>  request,
-                                    shared_ptr<CPSGS_Reply>  reply,
-                                    list<string>  processor_names);
+    void x_Start(shared_ptr<CPSGS_Request>  request,
+                 shared_ptr<CPSGS_Reply>  reply,
+                 list<string>  processor_names);
 
     void x_MaintainFinished(void);
     void x_MaintainBacklog(void);

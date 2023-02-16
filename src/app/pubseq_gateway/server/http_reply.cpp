@@ -76,6 +76,16 @@ bool CHttpReply::IsClosed(void) const
 }
 
 
+void CHttpReply::SetCompleted(void)
+{
+    m_Completed = true;
+    if (m_HttpConn) {
+        // Triggers cleaning the running list and a backlog
+        m_HttpConn->ScheduleMaintain();
+    }
+}
+
+
 void CHttpReply::x_DoCancel(void)
 {
     m_Canceled = true;

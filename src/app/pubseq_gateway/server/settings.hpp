@@ -66,6 +66,8 @@ struct SPubseqGatewaySettings
     size_t                              m_SplitInfoBlobCacheSize;
     size_t                              m_ShutdownIfTooManyOpenFD;
     string                              m_RootKeyspace;
+    size_t                              m_HttpMaxBacklog;
+    size_t                              m_HttpMaxRunning;
 
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;
