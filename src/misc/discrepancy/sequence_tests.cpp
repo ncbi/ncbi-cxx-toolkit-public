@@ -266,17 +266,6 @@ DISCREPANCY_CASE(BIOPROJECT_ID, SEQUENCE, eOncaller, "Sequences with BioProject 
 }
 
 
-// MISSING_DEFLINES
-
-DISCREPANCY_CASE(MISSING_DEFLINES, SEQUENCE, eOncaller, "Missing definition lines")
-{
-    const CBioseq& bioseq = context.CurrentBioseq();
-    if (bioseq.CanGetInst() && !bioseq.GetInst().IsAa() && !context.GetTitle()) {
-        m_Objs["[n] bioseq[s] [has] no definition line"].Add(*context.BioseqObjRef());
-    }
-}
-
-
 
 // N_RUNS_14
 
