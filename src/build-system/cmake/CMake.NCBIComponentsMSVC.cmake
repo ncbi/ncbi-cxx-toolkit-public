@@ -306,6 +306,7 @@ NCBIcomponent_report(FASTCGI)
 #############################################################################
 # BerkeleyDB
 NCBI_define_Wcomponent(BerkeleyDB libdb.lib)
+NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
