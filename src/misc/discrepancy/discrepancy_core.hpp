@@ -764,7 +764,7 @@ friend class CCopyHook_Submit_block;
         unsigned char m_Flags;
         CNcbiStreampos m_Pos;
         CRef<CRefNode> m_Ref;
-        CConstRef<CObject> m_Obj;
+        CConstRef<CSerialObject> m_Obj;
         CParseNode* m_Parent;
         mutable const CParseNode* m_Gene;
         mutable string m_Product;

@@ -75,7 +75,7 @@ public:
             DefaultRead(stream, passed_info);
             offset--;
             //cout << Offset() << "Done    " << m_Context->m_CurrentNode->Path() << "\n";
-            m_Context->m_CurrentNode->m_Obj.Reset((CObject*)passed_info.GetObjectPtr());
+            m_Context->m_CurrentNode->m_Obj.Reset(static_cast<CSerialObject*>(passed_info.GetObjectPtr()));
             if (!repeat) {
                 m_Context->PopNode();
             }
@@ -107,7 +107,8 @@ public:
             }
             //cout << Offset() << "Reading " << m_Context->m_CurrentNode->Path() << "\n";
             DefaultRead(stream, passed_info);
-            m_Context->m_CurrentNode->m_Obj.Reset((CObject*)passed_info.GetObjectPtr());
+            //m_Context->m_CurrentNode->m_Obj.Reset((CObject*)passed_info.GetObjectPtr());
+            m_Context->m_CurrentNode->m_Obj.Reset(static_cast<CSerialObject*>(passed_info.GetObjectPtr()));
             if (!repeat) {
                 m_Context->PopNode();
             }
@@ -528,7 +529,8 @@ const CSerialObject* CDiscrepancyContext::FindObject(CReportObj& obj, bool alt)
 {
     CDiscrepancyObject& p = static_cast<CDiscrepancyObject&>(obj);
     CParseNode* node = FindNode(alt ? *p.m_Fix : *p.m_Ref);
-    return node ? dynamic_cast<const CSerialObject*>(&*node->m_Obj) : nullptr;
+    //return node ? dynamic_cast<const CSerialObject*>(&*node->m_Obj) : nullptr;
+    return node ? node->m_Obj.GetPointerOrNull() : nullptr;
 }
 
 
@@ -1031,7 +1033,8 @@ void CDiscrepancyContext::AutofixSeq_descr()
 void CDiscrepancyContext::AutofixSubmit_block()
 {
     CRef<CParseNode> sblock(new CParseNode(eSubmitBlock, 0));
-    sblock->m_Obj.Reset(static_cast<CObject*>(&*m_AF_Submit_block));
+    //sblock->m_Obj.Reset(static_cast<CSerialObject*>(&*m_AF_Submit_block));
+    sblock->m_Obj.Reset(m_AF_Submit_block.GetPointer());
 
     for (auto* fix : *m_Fixes) {
         if (CanFixSubmit_block(*fix->m_Fix)) {
