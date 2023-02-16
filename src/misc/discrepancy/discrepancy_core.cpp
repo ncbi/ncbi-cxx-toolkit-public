@@ -730,10 +730,17 @@ void CDiscrepancyContext::RunTests()
     else if (m_CurrentNode->m_Type == eFile) {
         return;
     }
-    else {
+    else if (m_CurrentNode->m_Obj) {
         ERR_POST(Info << "Tests for "
-                 << TypeName(m_CurrentNode->m_Type)
+                 << m_CurrentNode->m_Obj->GetThisTypeInfo()->GetName()
                  << " are not yet implemented...");
+    }
+    else if (m_CurrentNode->m_Parent &&
+             (m_CurrentNode->m_Parent->m_Type != eFile)) { 
+        _ASSERT(m_CurrentNode->m_Type == eNone);
+        // Only the root node or a child node of a file
+        // are permitted to have type None
+        NCBI_THROW(CException, eUnknown, "Node has unspecified type");
     }
 }
 
