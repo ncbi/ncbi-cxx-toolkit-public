@@ -49,7 +49,6 @@
    fun:__log_putr.isra.1
    fun:__log_put
 }
-
 {
    BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
    Memcheck:Cond
@@ -108,7 +107,6 @@
    fun:__txn_commit
    fun:__txn_commit_pp
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_ovput() in bt_put.c:886
    Memcheck:Param
@@ -129,7 +127,6 @@
    fun:__db_put
    fun:__db_put_pp
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 3)
    Memcheck:Param
@@ -146,7 +143,6 @@
    fun:__db_close_pp
    fun:_ZN4ncbi12CBDB_RawFile7x_CloseENS0_12EIgnoreErrorE
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 2b)
    Memcheck:Param
@@ -160,7 +156,6 @@
    fun:__memp_trickle_pp
    fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 2a)
    Memcheck:Param
@@ -176,7 +171,6 @@
    fun:__memp_trickle_pp
    fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1e)
    Memcheck:Param
@@ -194,7 +188,6 @@
    fun:__bamc_put
    fun:__dbc_put
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1d)
    Memcheck:Param
@@ -214,7 +207,6 @@
    fun:__dbc_put_pp
    fun:_ZN4ncbi12CBDB_RawFile9x_DB_CPutEP5__dbcP8__db_dbtS4_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1c)
    Memcheck:Param
@@ -229,7 +221,6 @@
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b5)
    Memcheck:Param
@@ -249,7 +240,6 @@
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b4)
    Memcheck:Cond
@@ -265,7 +255,6 @@
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b3)
    Memcheck:Cond
@@ -280,7 +269,6 @@
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b2)
    Memcheck:Cond
@@ -295,7 +283,6 @@
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b1)
    Memcheck:Cond
@@ -312,7 +299,6 @@
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
 }
-
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1a)
    Memcheck:Cond
@@ -329,6 +315,23 @@
    fun:__db_put
    fun:__db_put_pp
    fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+{
+   BerkeleyDB 4.6.21.1 glitch -- both alloc and use happen inside the same call
+   Memcheck:Param
+   pwrite64(buf)
+   fun:__pwrite_nocancel
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   ...
+   fun:__db_sync
+   fun:__db_refresh
+   fun:__db_close
+   fun:__fop_subdb_setup
+   fun:__db_open
+   fun:__db_open_pp
 }
 
 {
@@ -350,23 +353,36 @@
    fun:ct_async_exec_stack
    fun:ct_connect
 }
+{
+   Sybase CTLIB 16.0-SP03 init
+   Memcheck:Leak
+   fun:*alloc
+   ...
+   fun:sybnet_init
+   fun:np_init
+   fun:ct_gp_init
+   fun:ct_init
+}
 
 {
-   BerkeleyDB 4.6.21.1 glitch -- both alloc and use happen inside the same call
-   Memcheck:Param
-   pwrite64(buf)
-   fun:__pwrite_nocancel
-   fun:__os_io
-   fun:__memp_pgwrite
-   fun:__memp_bhwrite
-   fun:__memp_sync_int
+   Sybase CTLIB 16.0-SP03 async_poll
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:realloc
+   fun:sybnet__async_poll
+   fun:start_thread
+   fun:clone
+}
+{
+   Sybase CTLIB 16.0-SP03 / CTLibContext
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
    ...
-   fun:__db_sync
-   fun:__db_refresh
-   fun:__db_close
-   fun:__fop_subdb_setup
-   fun:__db_open
-   fun:__db_open_pp
+   fun:cs_ctx_alloc
+   fun:cs_ctx_global
+   fun:_ZN4ncbi12CTLibContextC1Ebi
 }
 
 {
@@ -568,6 +584,11 @@
    fun:initialize_env
    fun:_dl_init
 }
+{
+    GProf/profil_counter
+    Memcheck:Cond
+    fun:profil_counter
+}
 
 
 #===============================================================================
@@ -577,7 +598,7 @@
     corelib/CStackTrace - 
     Memcheck:Leak
     match-leak-kinds: definite
-    fun:malloc
+    fun:*alloc
     ...
     fun:_ZN*CStackTrace*
 }
@@ -585,7 +606,6 @@
     corelib/CObject/InitCounter
     Memcheck:Cond
     fun:_ZN4ncbi7CObject11InitCounterEv
-    fun:*
 }
 {
     MemCpy to itself in swap() in CObject  (ICC 10.1)
@@ -596,7 +616,6 @@
     fun:_ZN4ncbi16sx_PopLastNewPtrEPv
     fun:_ZN4ncbi7CObject11InitCounterEv
 }
-
 {
     corelib/Diag/s_CreateDefaultDiagHandler 1
     Memcheck:Leak
@@ -635,19 +654,16 @@
     corelib/SSystemMutex/InitializeDynamic
     Memcheck:Cond
     fun:_ZN4ncbi12SSystemMutex17InitializeDynamicEv
-    fun:*
 }
 {
     corelib/SSystemFastMutex/InitializeDynamic
     Memcheck:Cond
     fun:_ZN4ncbi16SSystemFastMutex17InitializeDynamicEv
-    fun:*
 }
 {
     corelib/CTimeout/operator ==, <
     Memcheck:Cond
     fun:_ZNK4ncbi8CTimeout??ERKS0_
-    fun:*
 }
 {
     corelib/CFileUtil::GetTotalDiskSpace, PANFS, CXX-5713 because DLL is not supposed to be closed
@@ -902,13 +918,6 @@
     fun:_Znwj
     fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
 }
-{
-    GProf/profil_counter
-    Memcheck:Cond
-    fun:profil_counter
-    fun:*
-}
-
 
 
 
