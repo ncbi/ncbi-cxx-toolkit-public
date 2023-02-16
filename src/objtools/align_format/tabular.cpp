@@ -2138,6 +2138,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             m_TopAlign_D->GetNamedScore(CSeq_align::eScore_EValue, d_evalue);
             NStr::DoubleToString(d_score_str, d_score, 3);
             NStr::DoubleToString(d_evalue_str, d_evalue, 3, NStr::fDoubleScientific);
+           
         }
         if (m_TopAlign_J) {
             m_TopAlign_J->GetNamedScore(CSeq_align::eScore_BitScore, j_score);
@@ -2191,6 +2192,24 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             if (m_TopAlign_D->GetSeqStrand(1) == eNa_strand_plus) {
                 m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
                 m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
+                
+                
+                // Compute d Frame info, only for plus strand case as in the condition in this block
+                //at this point V alignment is already flipped to have a positive query strand
+                string d_id = m_TopAlign_D->GetSeq_id(1).AsFastaString();
+                string v_id = m_TopAlign_V->GetSeq_id(1).AsFastaString();
+
+                if (annot->m_DframeStart > 0 && annot->m_FrameInfo[2] > 0) {
+                    
+                    //frame is 0-based
+                    int query_d_start =  m_TopAlign_D->GetSeqStart(0);
+                    int query_d_frame_start = (m_TopAlign_D->GetSeqStart(1) + 3 - annot->m_DframeStart)%3; //query and slave frame is the same
+                    
+                    if (annot->m_FrameInfo[2] >= query_d_start) {
+                        int d_frame_used = ((annot->m_FrameInfo[2] - query_d_start)%3 + query_d_frame_start)%3; 
+                        m_AirrData["d_frame"] = NStr::IntToString(d_frame_used + 1);
+                    }
+                }
             } else {
                 m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
                 m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
@@ -2426,7 +2445,9 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     SetJGene(annot->m_TopGeneIds[2], annot->m_GeneInfo[4], annot->m_GeneInfo[5]);
     SetCGene(annot->m_TopGeneIds[3], annot->m_GeneInfo[6], annot->m_GeneInfo[7]);
 
-    // Compute Frame info
+
+
+    // Compute v j Frame info
     if (annot->m_FrameInfo[1] >= 0 && annot->m_FrameInfo[2] >= 0) {
         int off = annot->m_FrameInfo[1];
         int len = annot->m_FrameInfo[2] - off;

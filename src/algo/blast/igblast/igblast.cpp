@@ -117,7 +117,7 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
    
 
-    // read frame info from aux files
+    // read J frame info from aux files
     if (ig_opt->m_IsProtein) return;
     fn = ig_opt->m_AuxFilename;
     s_ReadLinesFromFile(fn, lines);
@@ -144,6 +144,29 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             } 
             
         }
+    }
+
+    //read D frame definition
+    lines.clear();
+    fn = NcbiEmptyString;
+    if (ig_opt->m_DFrameFileName != NcbiEmptyString) {
+        fn = ig_opt->m_DFrameFileName;
+        s_ReadLinesFromFile(fn, lines);
+        if (lines.size() == 0) {
+            ERR_POST(Warning << "D gene frame definition file could not be found");
+        }
+        ITERATE(vector<string>, l, lines) {
+            vector<string> tokens;
+            NStr::Split(*l, " \t\n\r", tokens, NStr::fSplit_Tokenize);
+            if (!tokens.empty()) {
+                int frame = NStr::StringToInt(tokens[1]);
+                if (frame != -1) {
+                    m_FrameOffset[tokens[0]] = frame;
+                }
+                
+            }
+        }
+        
     }
 };
 
@@ -1438,7 +1461,7 @@ void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results_D,
  
     int iq = 0;
     NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
-      
+
         string q_ct = (*annot)->m_ChainType[0];
         CSearchResults& res_d = (*results_D)[iq];
         CConstRef<CSeq_align_set> align_D = res_d.GetSeqAlign();
@@ -1448,6 +1471,9 @@ void CIgBlast::x_AnnotateD(CRef<CSearchResultSet>        &results_D,
             (*annot)->m_GeneInfo[2] = align->GetSeqStart(0);
             (*annot)->m_GeneInfo[3] = align->GetSeqStop(0)+1;
             (*annot)->m_TopGeneIds[1] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[1]);
+            string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());
+            (*annot)->m_DframeStart = m_AnnotationInfo.GetFrameOffset(sid);
+           
         }
 
      
@@ -1554,7 +1580,7 @@ void CIgBlast::x_AnnotateJ(CRef<CSearchResultSet>        &results_J,
 void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                             CRef<CSearchResultSet>        &results_J,
                             vector<CRef <CIgAnnotation> > &annots)
-{
+{ 
     int iq = 0;
     NON_CONST_ITERATE(vector<CRef <CIgAnnotation> >, annot, annots) {
       
@@ -1565,7 +1591,6 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
         const CSearchResults& res_d = (*results_D)[iq];
         CConstRef<CSeq_align_set> align_D = res_d.GetSeqAlign();
         CConstRef<CSeq_align_set> align_J = res_j.GetSeqAlign();
-       
         /* annotate D */    
         if (align_D.NotEmpty() && !align_D->IsEmpty()) {
             const CSeq_align_set::Tdata & align_list = align_D->Get();
@@ -1573,7 +1598,9 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
             (*annot)->m_GeneInfo[2] = align->GetSeqStart(0);
             (*annot)->m_GeneInfo[3] = align->GetSeqStop(0)+1;
             (*annot)->m_TopGeneIds[1] = s_MakeTopHitsId(align_list, m_IgOptions->m_NumAlign[1]);
-
+            string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());            
+            (*annot)->m_DframeStart = m_AnnotationInfo.GetFrameOffset(sid);
+           
         }
             
         /* annotate J */    
