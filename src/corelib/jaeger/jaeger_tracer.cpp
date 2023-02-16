@@ -172,7 +172,7 @@ void CJaegerTracer::OnRequestStart(CRequestContext& context)
     span->SetTag("client_ip", context.GetClientIP());
     CDiagContext& diag_context = GetDiagContext();
     char buf[17];
-    diag_context.GetStringUID(diag_context.GetUID(), buf);
+    diag_context.GetStringUID(diag_context.GetUID(), buf, 17);
     span->SetTag("guid", buf);
     span->SetTag("pid", diag_context.GetPID());
     span->SetTag("tid", (Uint8)GetCurrentThreadSystemID());

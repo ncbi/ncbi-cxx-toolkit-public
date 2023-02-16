@@ -1963,6 +1963,9 @@ public:
     TUID UpdateUID(TUID uid = 0) const;
     /// Fill buffer with string representation of UID. The buffer size
     /// must be at least 17 bytes.
+    void GetStringUID(TUID uid, char* buf, size_t buf_len) const;
+    /// @deprecated Use GetStringUID(TUID, char*, size_t) instead.
+    NCBI_DEPRECATED
     void GetStringUID(TUID uid, char* buf) const;
 
     /// Create global unique request id.

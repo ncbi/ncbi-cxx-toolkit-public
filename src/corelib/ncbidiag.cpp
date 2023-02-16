@@ -1636,11 +1636,18 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 }
 
 
-void CDiagContext::GetStringUID(TUID uid, char* buf) const
+void CDiagContext::GetStringUID(TUID uid, char* buf, size_t buflen) const
 {
+    _ASSERT(buflen > 16);
     int hi = int((uid >> 32) & 0xFFFFFFFF);
     int lo = int(uid & 0xFFFFFFFF);
-    sprintf(buf, "%08X%08X", hi, lo);
+    snprintf(buf, buflen, "%08X%08X", hi, lo);
+}
+
+
+void CDiagContext::GetStringUID(TUID uid, char* buf) const
+{
+    GetStringUID(uid, buf, 17);
 }
 
 
@@ -1650,7 +1657,7 @@ string CDiagContext::GetStringUID(TUID uid) const
     if (uid == 0) {
         uid = GetUID();
     }
-    GetStringUID(uid, buf);
+    GetStringUID(uid, buf, 17);
     return string(buf);
 }
 
@@ -1695,8 +1702,8 @@ string CDiagContext::x_GetNextHitID(bool is_default) const
     Uint8 lo = tid | rid | us;
     Uint4 b1 = Uint4((lo >> 32) & 0xFFFFFFFF);
     Uint4 b0 = Uint4(lo & 0xFFFFFFFF);
-    char buf[40];
-    sprintf(buf, "%08X%08X%08X%08X", b3, b2, b1, b0);
+    char buf[33];
+    snprintf(buf, 33, "%08X%08X%08X%08X", b3, b2, b1, b0);
     return string(buf);
 }
 
@@ -3167,7 +3174,7 @@ void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
                                   const SDiagMessage& msg) const
 {
     char uid[17];
-    GetStringUID(msg.GetUID(), uid);
+    GetStringUID(msg.GetUID(), uid, 17);
     const string& host = msg.GetHost();
     string client = msg.GetClient();
     string session = msg.GetSession();
