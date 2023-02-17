@@ -270,6 +270,7 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing JSON-RPC requests (one per line)", CArgDescriptions::eInputFile, "-");
     arg_desc.AddFlag("server-mode", "Output one JSON-RPC response per line and always output reply statuses");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
+    arg_desc.AddFlag("testing", "Testing mode adjustments", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 }
@@ -430,7 +431,8 @@ struct SInteractive : SParallelProcessing<SInteractiveParams>
         SParallelProcessing<SInteractiveParams>{
             args,
             "input-file",
-            args["echo"].HasValue()
+            args["echo"].HasValue(),
+            args["testing"].HasValue()
         }
     {
     }
@@ -547,7 +549,13 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
 template<>
 int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
 {
-    return CProcessing::ParallelProcessing(NParamsBuilder::SInteractive(args));
+    NParamsBuilder::SInteractive params_builder(args);
+
+    if (params_builder.testing) {
+        GetRWConfig().SetValue("log", "issued_subhit_limit", 0);
+    }
+
+    return CProcessing::ParallelProcessing(params_builder);
 }
 
 template <>

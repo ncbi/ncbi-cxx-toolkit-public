@@ -216,10 +216,12 @@ struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
 struct SInteractiveParams : SParallelProcessingParams
 {
     const bool echo;
+    const bool testing;
 
-    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, bool e) :
+    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, bool e, bool t) :
         SParallelProcessingParams(move(s), move(ua), r, wt, p, srv),
-        echo(e)
+        echo(e),
+        testing(t)
     {}
 };
 

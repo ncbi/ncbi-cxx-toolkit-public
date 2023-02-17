@@ -31,14 +31,17 @@ class PsgClient:
 
     @classmethod
     def from_args(cls, args):
-        return cls(args.binary, verbose=args.verbose)
+        return cls(args.binary, verbose=args.verbose, testing=args.testing)
 
-    def __init__(self, binary, /, timeout=10, verbose=0):
+    def __init__(self, binary, /, timeout=10, verbose=0, testing=True):
         self._cmd = [binary, 'interactive', '-server-mode']
         self._timeout = timeout
         self._verbose = verbose
         self._request_generator = RequestGenerator()
         self._sent = {}
+
+        if testing:
+            self._cmd += ['-testing']
 
         if self._verbose >= PsgClient.VerboseLevel.DEBUG:
             self._cmd += ['-debug-printout', 'some']
@@ -581,6 +584,7 @@ if __name__ == '__main__':
     parser_test.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
     parser_test.add_argument('-ipg-file', help='CSV file with IPG IDs "Protein,[IPG][,Nucleotide]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_test.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
+    parser_test.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
     parser_generate.set_defaults(func=generate_cmd)

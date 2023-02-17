@@ -785,9 +785,7 @@ void CParallelProcessing<SInteractiveParams>::SImpl::Submitter(CPSG_Queue& outpu
             auto id = json_obj["id"].GetValue().GetString();
             auto params_obj = json_obj["params"].GetObject();
             auto user_context = make_shared<string>(id);
-
-            SInteractiveNewRequestStart new_request_start(method, params_obj);
-            auto request_context = new_request_start.Get();
+            auto request_context = m_Params.testing ? null : SInteractiveNewRequestStart(method, params_obj).Get();
 
             if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context), move(request_context))) {
                 _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
@@ -803,7 +801,12 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete(EPSG_Status s
 {
     const auto request = reply->GetRequest();
     CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
-    guard.SetStatus(s_PsgStatusToRequestStatus(status));
+
+    if (m_Params.testing) {
+        guard.Release();
+    } else {
+        guard.SetStatus(s_PsgStatusToRequestStatus(status));
+    }
 
     if (!m_Params.server && (status == EPSG_Status::eSuccess)) {
         return;
