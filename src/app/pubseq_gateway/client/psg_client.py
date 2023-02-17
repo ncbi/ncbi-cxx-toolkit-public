@@ -29,6 +29,10 @@ class RequestGenerator:
 class PsgClient:
     VerboseLevel = enum.IntEnum('VerboseLevel', 'REQUEST RESPONSE DEBUG')
 
+    @classmethod
+    def from_args(cls, args):
+        return cls(args.binary, verbose=args.verbose)
+
     def __init__(self, binary, /, timeout=10, verbose=0):
         self._cmd = [binary, 'interactive', '-server-mode']
         self._timeout = timeout
@@ -353,7 +357,7 @@ def test_cmd(args):
     else:
         ipgs = [[None, 7093]]
 
-    with PsgClient(args.binary, verbose=args.verbose) as psg_client:
+    with PsgClient.from_args(args) as psg_client:
         bio_ids = prepare_bio_ids(bio_ids)
         blob_ids, chunk_ids = get_ids(psg_client, bio_ids)
         named_annots = get_all_named_annots(psg_client, named_annots)
@@ -369,14 +373,14 @@ def generate_cmd(args):
     if args.TYPE == 'named_annot':
         named_annots = read_named_annots(args.INPUT_FILE)
 
-        with PsgClient(args.binary, verbose=args.verbose) as psg_client:
+        with PsgClient.from_args(args) as psg_client:
             named_annots = get_all_named_annots(psg_client, named_annots, max_ids=args.NUMBER)
 
         ids = prepare_named_annots(named_annots)
     elif args.TYPE == 'ipg_resolve':
         ipgs = read_ipgs(args.INPUT_FILE)
 
-        with PsgClient(args.binary, verbose=args.verbose) as psg_client:
+        with PsgClient.from_args(args) as psg_client:
             ipgs = get_all_ipgs(psg_client, ipgs, max_ids=args.NUMBER)
 
         ids = prepare_ipgs(ipgs)
@@ -391,7 +395,7 @@ def generate_cmd(args):
             max_blob_ids = args.NUMBER if args.TYPE == 'blob' else 0
             max_chunk_ids = args.NUMBER if args.TYPE != 'blob' else 0
 
-            with PsgClient(args.binary, verbose=args.verbose) as psg_client:
+            with PsgClient.from_args(args) as psg_client:
                 blob_ids, chunk_ids = get_ids(psg_client, bio_ids, max_blob_ids=max_blob_ids, max_chunk_ids=max_chunk_ids)
 
             ids = blob_ids if args.TYPE == 'blob' else chunk_ids
