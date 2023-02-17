@@ -717,23 +717,6 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
     return data_only_copy;
 }
 
-template <class TItemComplete, class TReplyComplete, class TSubmitter>
-CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params, TItemComplete ic, TReplyComplete rc, TSubmitter submitter) :
-    m_JsonOut(params.pipe, params.server)
-{
-    using namespace placeholders;
-    auto item_complete = bind(ic, ref(m_JsonOut), _1, _2);
-    auto reply_complete = bind(rc, ref(m_JsonOut), _1, _2);
-
-    for (int n = params.worker_threads; n > 0; --n) {
-        m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
-        auto& queue = m_PsgQueues.back();
-        queue.SetUserArgs(params.user_args);
-        m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
-        m_Threads.emplace_back(submitter, ref(m_InputQueue), ref(queue));
-    }
-}
-
 CParallelProcessing::CParallelProcessing(const SBatchResolveParams& params) :
     CParallelProcessing{
         params,
@@ -761,23 +744,18 @@ CParallelProcessing::CParallelProcessing(const SInteractiveParams& params) :
 {
 }
 
-CParallelProcessing::~CParallelProcessing()
-{
-    m_InputQueue.Stop(m_InputQueue.eDrain);
-}
-
-void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue& output, const SBatchResolveParams& params)
+void CParallelProcessing::BatchResolve::Submitter(TInputQueue& m_InputQueue, CPSG_Queue& output, const SBatchResolveParams& m_Params)
 {
     string id;
 
-    while (input.Pop(id)) {
+    while (m_InputQueue.Pop(id)) {
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
-        auto bio_id = CPSG_BioId(id, params.type);
+        auto bio_id = CPSG_BioId(id, m_Params.type);
         auto user_context = make_shared<string>(move(id));
-        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), params.bio_id_resolution, move(user_context));
+        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), m_Params.bio_id_resolution, move(user_context));
 
-        request->IncludeInfo(params.include_info);
-        request->SetAccSubstitution(params.acc_substitution);
+        request->IncludeInfo(m_Params.include_info);
+        request->SetAccSubstitution(m_Params.acc_substitution);
 
         _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
     }
@@ -785,23 +763,23 @@ void CParallelProcessing::BatchResolve::Submitter(TInputQueue& input, CPSG_Queue
     output.Stop();
 }
 
-void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, const SInteractiveParams& params)
+void CParallelProcessing::Interactive::Submitter(TInputQueue& m_InputQueue, CPSG_Queue& output, SJsonOut& m_JsonOut, const SInteractiveParams& m_Params)
 {
     CJson_Document json_schema_doc(CProcessing::RequestSchema());
     CJson_Schema json_schema(json_schema_doc);
     string line;
 
-    while (input.Pop(line)) {
+    while (m_InputQueue.Pop(line)) {
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
 
         CJson_Document json_doc;
 
         if (!json_doc.ParseString(line)) {
-            json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_ParseError, json_doc.GetReadError());
+            m_JsonOut << CJsonResponse(s_GetId(json_doc), eJsonRpc_ParseError, json_doc.GetReadError());
         } else if (!json_schema.Validate(json_doc)) {
-            json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_InvalidRequest, json_schema.GetValidationError());
+            m_JsonOut << CJsonResponse(s_GetId(json_doc), eJsonRpc_InvalidRequest, json_schema.GetValidationError());
         } else {
-            if (params.echo) json_out << json_doc;
+            if (m_Params.echo) m_JsonOut << json_doc;
 
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
@@ -821,7 +799,7 @@ void CParallelProcessing::Interactive::Submitter(TInputQueue& input, CPSG_Queue&
     output.Stop();
 }
 
-void CParallelProcessing::Interactive::ReplyComplete::All(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void CParallelProcessing::Interactive::ReplyComplete::All(SJsonOut& m_JsonOut, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
     CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
@@ -830,16 +808,33 @@ void CParallelProcessing::Interactive::ReplyComplete::All(SJsonOut& output, EPSG
     const auto& request_id = *request->GetUserContext<string>();
 
     CJsonResponse result_doc(status, reply, CJsonResponse::eDoNotAddRequestID);
-    output << CJsonResponse(request_id, result_doc);
+    m_JsonOut << CJsonResponse(request_id, result_doc);
 }
 
-void CParallelProcessing::Interactive::ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+void CParallelProcessing::Interactive::ItemComplete(SJsonOut& m_JsonOut, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     const auto request = item->GetReply()->GetRequest();
     const auto& request_id = *request->GetUserContext<string>();
 
     CJsonResponse result_doc(status, item, CJsonResponse::eDoNotAddRequestID);
-    output << CJsonResponse(request_id, result_doc);
+    m_JsonOut << CJsonResponse(request_id, result_doc);
+}
+
+template <class TItemComplete, class TReplyComplete, class TSubmitter>
+CParallelProcessing::CParallelProcessing(const SParallelProcessingParams& params, TItemComplete ic, TReplyComplete rc, TSubmitter submitter) :
+    m_JsonOut(params.pipe, params.server)
+{
+    using namespace placeholders;
+    auto item_complete = bind(ic, ref(m_JsonOut), _1, _2);
+    auto reply_complete = bind(rc, ref(m_JsonOut), _1, _2);
+
+    for (int n = params.worker_threads; n > 0; --n) {
+        m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
+        auto& queue = m_PsgQueues.back();
+        queue.SetUserArgs(params.user_args);
+        m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
+        m_Threads.emplace_back(submitter, ref(m_InputQueue), ref(queue));
+    }
 }
 
 shared_ptr<CPSG_Reply> s_GetReply(shared_ptr<CPSG_ReplyItem>& item)
