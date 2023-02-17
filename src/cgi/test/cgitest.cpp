@@ -457,7 +457,7 @@ static void TestCgi(const CNcbiArguments& args)
         string inp_str = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[64];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
+        assert(::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
         assert( !NcbiSysChar_putenv(len) );
 
         assert( !X_PUTENV("SERVER_PORT=") );
@@ -472,7 +472,7 @@ static void TestCgi(const CNcbiArguments& args)
         string inp_str = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[64];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
+        assert(::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
         assert( !NcbiSysChar_putenv(len) );
 
         assert( !X_PUTENV("SERVER_PORT=") );
@@ -487,7 +487,7 @@ static void TestCgi(const CNcbiArguments& args)
         string inp_str = "post22void=&post23void=";
         CNcbiIstrstream istr(inp_str);
         char len[64];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
+        assert(::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
         assert( !NcbiSysChar_putenv(len) );
 
         assert( !X_PUTENV("SERVER_PORT=9999") );
@@ -500,7 +500,7 @@ static void TestCgi(const CNcbiArguments& args)
     // this is for all following tests...
     string inp_str = "postXXX=valXXX";
     char len[64];
-    assert( ::sprintf(len, "CONTENT_LENGTH=%ld", (long)inp_str.size()) );
+    assert( ::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()) );
     assert( !NcbiSysChar_putenv(len) );
 
     try { // POST + ISINDEX(action)
@@ -553,7 +553,7 @@ static void TestCgi(const CNcbiArguments& args)
             throw runtime_error("Invalid length of CGI posted data");
         }
         char cs[64];
-        assert( ::sprintf(cs, "CONTENT_LENGTH=%ld", (long) l) );
+        assert( ::snprintf(cs, 64, "CONTENT_LENGTH=%ld", (long) l) );
         assert( !X_PUTENV(cs) );
         NcbiCout << "Enter the CGI posted data now(no spaces): " << NcbiFlush;
         NcbiCin >> NcbiWs;
