@@ -239,36 +239,33 @@ struct SPerformanceParams : SParams
     {}
 };
 
+template <class TParams>
 class CParallelProcessing
 {
 public:
-    CParallelProcessing(const SBatchResolveParams& params);
-    CParallelProcessing(const SInteractiveParams& params);
-    ~CParallelProcessing() { m_InputQueue.Stop(m_InputQueue.eDrain); }
+    CParallelProcessing(const TParams& params);
+    ~CParallelProcessing() { m_Impl.Stop(); }
 
-    void operator()(string id) { m_InputQueue.Push(move(id)); }
+    void operator()(string line) { m_Impl.Process(move(line)); }
 
 private:
-    using TInputQueue = CPSG_WaitingQueue<string>;
-
-    struct BatchResolve
+    struct SImpl
     {
-        static void Submitter(TInputQueue& input, CPSG_Queue& output, const SBatchResolveParams& params);
-    };
+        SImpl(const TParams& params);
 
-    struct Interactive
-    {
-        static void Submitter(TInputQueue& input, CPSG_Queue& output, SJsonOut& json_out, const SInteractiveParams& params);
-        static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+        void Process(string line) { m_InputQueue.Push(move(line)); }
+        void Stop() { m_InputQueue.Stop(m_InputQueue.eDrain); }
 
-        struct ReplyComplete
-        {
-            static void All(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
-            static void ErrorsOnly(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
-            {
-                if (status != EPSG_Status::eSuccess) All(output, status, reply);
-            }
-        };
+        void Submitter(CPSG_Queue& output);
+        void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+        void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
+
+    private:
+        void Init() {}
+
+        const TParams& m_Params;
+        CPSG_WaitingQueue<string> m_InputQueue;
+        SJsonOut m_JsonOut;
     };
 
     struct SThread
@@ -281,12 +278,8 @@ private:
         thread m_Thread;
     };
 
-    template <class TItemComplete, class TReplyComplete, class TSubmitter>
-    CParallelProcessing(const SParallelProcessingParams& params, TItemComplete ic, TReplyComplete rc, TSubmitter submitter);
-
-    TInputQueue m_InputQueue;
+    SImpl m_Impl;
     list<CPSG_EventLoop> m_PsgQueues;
-    SJsonOut m_JsonOut;
     list<SThread> m_Threads;
 };
 
@@ -310,6 +303,8 @@ private:
     static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context, size_t report_progress_after = 0);
 
     static bool ReadLine(string& line, istream& is = cin);
+    static CParallelProcessing<SBatchResolveParams> CreateParallelProcessing(const SBatchResolveParams& params);
+    static CParallelProcessing<SInteractiveParams> CreateParallelProcessing(const SInteractiveParams& params);
 };
 
 template <class TParams>
@@ -317,7 +312,7 @@ inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
 {
     using namespace chrono;
 
-    CParallelProcessing parallel_processing(params);
+    auto parallel_processing = CreateParallelProcessing(params);
     auto start = params.rate > 0 ? system_clock::now() : system_clock::time_point{};
     auto n = 0;
     string line;
