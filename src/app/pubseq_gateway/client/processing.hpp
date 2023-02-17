@@ -244,7 +244,7 @@ class CParallelProcessing
 public:
     CParallelProcessing(const SBatchResolveParams& params);
     CParallelProcessing(const SInteractiveParams& params);
-    ~CParallelProcessing();
+    ~CParallelProcessing() { m_InputQueue.Stop(m_InputQueue.eDrain); }
 
     void operator()(string id) { m_InputQueue.Push(move(id)); }
 
