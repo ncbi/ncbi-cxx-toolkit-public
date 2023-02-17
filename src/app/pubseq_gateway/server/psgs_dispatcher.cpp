@@ -808,9 +808,11 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(
         int     overall_status = 200;
         // Now for each requested NA form a code
         map<string, int>        result_per_na;
+        size_t                  count_200 = 0;
         for (const auto &  name : annot_request->m_Names) {
             if (annot_request->WasSent(name)) {
                 result_per_na[name] = 200;
+                ++count_200;
                 continue;
             }
 
@@ -837,6 +839,12 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(
 
         // Send the per NA information to the client
         reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
+
+        if (overall_status == 200) {
+            if (count_200 == 0) {
+                overall_status = 404;
+            }
+        }
 
         return static_cast<CRequestStatus::ECode>(overall_status);
     }
