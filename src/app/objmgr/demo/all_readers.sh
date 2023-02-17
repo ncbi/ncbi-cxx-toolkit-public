@@ -3,6 +3,9 @@
 
 status_dir="$CFG_LIB/../status"
 if test ! -d "$status_dir"; then
+    status_dir="$CFG_LIB/../../status"
+fi
+if test ! -d "$status_dir"; then
     status_dir="../../../../status"
 fi
 
@@ -65,6 +68,16 @@ case "$NCBI_CONFIG_OVERRIDES" in
     nc="";;
 esac
 
+test_name=`basename "$1"`
+base_cache_dir="./$test_name.$$.genbank_cache"
+unset cache_dir
+
+remove_cache() {
+    if test -d "$cache_dir"; then
+	rm -rf "$cache_dir"
+    fi
+}
+
 init_cache() {
     if test -n "$nc"; then
         echo "Init netcache $nc/$ncs"
@@ -93,8 +106,14 @@ init_cache() {
         echo No DLL plugins
         return 1
     fi
-    echo "Init BDB cache"
-    rm -rf .genbank_cache
+    cache_dir="$base_cache_dir"
+    NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_BLOB_CACHE_SLASH_BDB__PATH="$cache_dir"
+    NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_ID_CACHE_SLASH_BDB__PATH="$cache_dir"
+    export NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_BLOB_CACHE_SLASH_BDB__PATH
+    export NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_ID_CACHE_SLASH_BDB__PATH
+    echo "Init BDB cache in $cache_dir"
+    remove_cache
+    trap "rm -rf \"$cache_dir\"" 0 1 2 15
     return 0
 }
 
@@ -134,8 +153,12 @@ for method in $methods; do
                 129|130|137|143) echo "Apparently killed"; break ;;
             esac
         fi
+        if test "$cache" = 3; then
+	    remove_cache
+	fi
     done
 done
+remove_cache
 
 if test $exitcode -ne 0; then
     echo "Failed tests:$failed"
