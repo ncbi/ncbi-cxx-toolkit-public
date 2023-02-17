@@ -56,15 +56,22 @@ CBlastProteinOptionsHandle::CBlastProteinOptionsHandle(EAPILocality locality)
 void CBlastProteinOptionsHandle::SetWordSize(int ws) {
 
    	m_Opts->SetWordSize(ws);
-   	if (ws == 6) {
-   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_6);
-   	}
-   	else if (ws == 5) {
-   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
-   	} else if (ws == 3) {
+   	switch (ws) {
+   		case 3:
    		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
-   	} else if (ws == 7) {
+   		break;
+   		case 5:
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
+   		break;
+   		case 6:
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_6);
+   		break;
+   		case 7:
    		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_7);
+   		break;
+   		default:
+   		m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
+   		break;
    	}
 
    	if (ws > 4) {
