@@ -50,10 +50,32 @@ USING_NCBI_SCOPE;
 
 static void s_TEST_SimpleDll(void)
 {
-    CDll dll("./","test_dll", CDll::eLoadLater);
-
+    // Due differences in the build systems (regular or CMake),
+    // try to load a test_dll from a current directory first, 
+    // and from $LD_LIBRARY_PATH / $PATH later.
+    
+    CDll* dll = NULL;
+    bool is_loaded = false;
+    CDll dll_cwd("./","test_dll", CDll::eLoadLater);
+    CDll dll_runpath("test_dll", CDll::eLoadLater);
+ 
     // Load DLL
-    dll.Load();
+    try {
+        dll = &dll_cwd;
+        dll->Load();
+        is_loaded = true;
+    } catch (CCoreException&) {}
+    if (!is_loaded) {
+        try {
+            dll = &dll_runpath;
+            dll->Load();
+            is_loaded = true;
+        } catch (CCoreException&) {}
+    }
+
+    if (!is_loaded) {
+        ERR_FATAL("Failed to load test_dll");
+    }
 
     // DLL variable definition
     int*    DllVar_Counter;
@@ -63,19 +85,19 @@ static void s_TEST_SimpleDll(void)
     string* (* Dll_StrRepeat) (const string&, unsigned int) = NULL;
 
     // Get addresses from DLL
-    DllVar_Counter = dll.GetEntryPoint_Data("DllVar_Counter", &DllVar_Counter);
+    DllVar_Counter = dll->GetEntryPoint_Data("DllVar_Counter", &DllVar_Counter);
     if ( !DllVar_Counter ) {
         ERR_FATAL("Error get address of variable DllVar_Counter.");
     }
-    Dll_Inc = dll.GetEntryPoint_Func("Dll_Inc", &Dll_Inc );
+    Dll_Inc = dll->GetEntryPoint_Func("Dll_Inc", &Dll_Inc );
     if ( !Dll_Inc ) {
         ERR_FATAL("Error get address of function Dll_Inc().");
     }
-    Dll_Add = dll.GetEntryPoint_Func("Dll_Add", &Dll_Add );
+    Dll_Add = dll->GetEntryPoint_Func("Dll_Add", &Dll_Add );
     if ( !Dll_Add ) {
         ERR_FATAL("Error get address of function Dll_Add().");
     }
-    Dll_StrRepeat = dll.GetEntryPoint_Func("Dll_StrRepeat", &Dll_StrRepeat );
+    Dll_StrRepeat = dll->GetEntryPoint_Func("Dll_StrRepeat", &Dll_StrRepeat );
     if ( !Dll_StrRepeat ) {
         ERR_FATAL("Error get address of function Dll_StrRepeat().");
     }
@@ -101,8 +123,8 @@ static void s_TEST_SimpleDll(void)
     assert( *str == "aaaa");
     delete str;
 
-    // Unload used dll
-    dll.Unload();
+    // Unload test dll
+    dll->Unload();
 }
 
 
