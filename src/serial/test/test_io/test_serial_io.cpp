@@ -360,7 +360,7 @@ public:
 
     Int8 GetRandMT(Int8 min, Int8 max) {
         CFastMutexGuard guard(m_Mutex);
-        return GetRand(min, max);
+        return GetRand(CRandom::TValue(min), CRandom::TValue(max));
     }
 
     size_t GetRandIndexMT(size_t size) {
@@ -849,7 +849,7 @@ void CTestWriter::x_WriteSocketError(void)
 class CTestWriteMemberHook : public CWriteClassMemberHook
 {
 public:
-    CTestWriteMemberHook(int wrong_index) : m_WrongIndex(wrong_index) {}
+    CTestWriteMemberHook(size_t wrong_index) : m_WrongIndex(wrong_index) {}
     virtual ~CTestWriteMemberHook() {}
 
     void WriteClassMember(CObjectOStream& out,
@@ -862,14 +862,14 @@ public:
     }
 
 private:
-    int m_WrongIndex;
+    size_t m_WrongIndex;
 };
 
 
 void CTestWriter::x_WriteUnexpectedMember(void)
 {
     string member_name; // member to hook
-    int wrong_index = 1; // index of member to be used instead
+    size_t wrong_index = 1; // index of member to be used instead
     CObjectTypeInfo type_info = CType<CTestObject>();
     switch (m_Case.m_ErrPos) {
     case eErrPos_Start:
@@ -1464,7 +1464,7 @@ int CSerialIOTestApp::Run(void)
     for (auto thr : threads) {
         thr->Join();
     }
-    size_t failed = 0;
+    int failed = 0;
     for (auto res : TestResults) {
         failed += res.second;
     }
