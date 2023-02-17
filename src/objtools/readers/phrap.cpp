@@ -258,8 +258,8 @@ void CPhrap_Seq::ReadData(CNcbiIstream& in)
             "ReadPhrap: invalid data length for " + m_Name + ".",
                     in.tellg() - CT_POS_TYPE(0));
     }
-    size_t new_pos = 0;
-    for (size_t pos = 0; pos < m_PaddedLength; pos++) {
+    TSeqPos new_pos = 0;
+    for (TSeqPos pos = 0; pos < m_PaddedLength; pos++) {
         if (m_Data[pos] == kPadChar) {
             m_PadMap[pos] = pos - new_pos;
             continue;
@@ -913,8 +913,8 @@ void CPhrap_Contig::Read(CNcbiIstream& in)
 
 void CPhrap_Contig::ReadBaseQualities(CNcbiIstream& in)
 {
-    int bq;
-    for (size_t i = 0; i < GetUnpaddedLength(); i++) {
+    TSeqPos bq;
+    for (TSeqPos i = 0; i < GetUnpaddedLength(); i++) {
         in >> bq;
         m_BaseQuals.push_back(bq);
         bq = i;
@@ -1168,7 +1168,7 @@ CRef<CSeq_align> CPhrap_Contig::x_CreateSeq_align(TAlignMap&     aln_map,
                                                   TAlignStarts&  aln_starts,
                                                   TAlignRows&    rows) const
 {
-    size_t dim = rows.size();
+    CSeq_align::TDim dim = CSeq_align::TDim(rows.size());
     if ( dim < 2 ) {
         return CRef<CSeq_align>(0);
     }
@@ -1180,7 +1180,7 @@ CRef<CSeq_align> CPhrap_Contig::x_CreateSeq_align(TAlignMap&     aln_map,
     ITERATE(TAlignRows, row, rows) {
         dseg.SetIds().push_back((*row)->GetId());
     }
-    size_t numseg = 0;
+    CDense_seg::TNumseg numseg = 0;
     size_t data_size = 0;
     CDense_seg::TStarts& starts = dseg.SetStarts();
     CDense_seg::TStrands& strands = dseg.SetStrands();
@@ -1221,7 +1221,7 @@ CRef<CSeq_align> CPhrap_Contig::x_CreateSeq_align(TAlignMap&     aln_map,
             // Need at least 2 sequences to align
             continue;
         }
-        for (size_t row = 0; row < dim; row++) {
+        for (size_t row = 0; row < size_t(dim); row++) {
             strands[data_size + row] = (rows[row]->IsComplemented()) ?
                 eNa_strand_minus : eNa_strand_plus;
         }
