@@ -62,7 +62,6 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/medline/Medline_entry.hpp>
-#include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -342,20 +341,26 @@ void CheckStrings(const vector<string>& seen, const vector<string>& expected)
 // Not currently used, but I'll leave it here in case
 // it's useful in the future.
 
-//static void SetCountryOnSrc (CBioSource& src, string country)
-//{
-//    if (NStr::IsBlank(country)) {
-//        EDIT_EACH_SUBSOURCE_ON_BIOSOURCE (it, src) {
-//            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_country) {
-//                ERASE_SUBSOURCE_ON_BIOSOURCE (it, src);
-//            }
-//        }
-//    } else {
-//        CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_country, country));
-//        src.SetSubtype().push_back(sub);
-//    }
-//}
-
+#if 0
+static void SetCountryOnSrc(CBioSource& src, string country)
+{
+    if (NStr::IsBlank(country)) {
+        if (src.IsSetSubtype()) {
+            auto& cont = src.SetSubtype();
+            for (auto it = cont.begin(); it != cont.end();) {
+                if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_country) {
+                    it = cont.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+    } else {
+        CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_country, country));
+        src.SetSubtype().push_back(sub);
+    }
+}
+#endif
 
 
 END_SCOPE(objects)
@@ -459,11 +464,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     STANDARD_SETUP
 
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadKeywordForStrucComm",
-            "Structured Comment is non-compliant, keyword should be removed"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadKeywordForStrucComm",
+        "Structured Comment is non-compliant, keyword should be removed"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommMissingField",
         "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue",
+        "Structured Comment invalid; the field value and/or name are incorrect"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -477,15 +483,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     CLEAR_ERRORS
 
-        // make the comment valid, should complain about missing keyword
-        sdesc->SetUser().AddField("finishing_strategy", "foo", CUser_object::eParse_String);
+    // make the comment valid, should complain about missing keyword
+    sdesc->SetUser().AddField("finishing_strategy", "foo", CUser_object::eParse_String);
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
-        // put keyword back, should have no errors
-        entry->SetSeq().SetDescr().Set().push_back(gdesc);
+    // put keyword back, should have no errors
+    entry->SetSeq().SetDescr().Set().push_back(gdesc);
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -575,11 +581,11 @@ void TestOneLatLonCountry(const string& country, const string& lat_lon, const st
 
         vector<string> seen;
         vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-        ITERATE(vector<string>, it, cat_list) {
+        for (const string& it : cat_list) {
             vector<string> sublist;
-            NStr::Split(*it, "\n", sublist, 0);
-            ITERATE(vector<string>, sit, sublist) {
-                seen.push_back(*sit);
+            NStr::Split(it, "\n", sublist);
+            for (const string& sit : sublist) {
+                seen.push_back(sit);
             }
         }
 
@@ -705,8 +711,8 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     seen.clear();
     expected.clear();
     vector<unsigned int> codes = format.GetListOfErrorCodes(*eval);
-    ITERATE(vector<unsigned int>, it, codes) {
-        string val = CValidErrItem::ConvertErrCode(*it);
+    for (unsigned int it : codes) {
+        string val = CValidErrItem::ConvertErrCode(it);
         seen.push_back(val);
     }
     expected.push_back("LatLonCountry");
@@ -723,7 +729,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
     expected.clear();
     seen.clear();
-    NStr::Split(rval, "\n", seen, 0);
+    NStr::Split(rval, "\n", seen);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
     expected.push_back("CDS\tlcl|nuc\tGT at 16");
@@ -733,7 +739,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     rval = format.FormatCategoryForSubmitterReport(*eval, scope, eSubmitterFormatErrorGroup_ConsensusSplice);
     expected.clear();
     seen.clear();
-    NStr::Split(rval, "\n", seen, 0);
+    NStr::Split(rval, "\n", seen);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
     expected.push_back("intron\tlcl|nuc\tGT at 1");
@@ -745,11 +751,11 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.clear();
     seen.clear();
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
+    for (const string& it : cat_list) {
         vector<string> sublist;
-        NStr::Split(*it, "\n", sublist, 0);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
+        NStr::Split(it, "\n", sublist);
+        for (const string& sit : sublist) {
+            seen.push_back(sit);
         }
     }
     expected.push_back("Not Splice Consensus");
@@ -795,11 +801,11 @@ BOOST_AUTO_TEST_CASE(Test_GB_6395)
     vector<string> seen;
 
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
+    for (const string& it : cat_list) {
         vector<string> sublist;
-        NStr::Split(*it, "\n", sublist, 0);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
+        NStr::Split(it, "\n", sublist);
+        for (const string& sit : sublist) {
+            seen.push_back(sit);
         }
     }
     expected.push_back("NoTaxonID");
@@ -1467,9 +1473,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
 
     // now repeat test, but with protein
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsMolinfo()) {
-            (*it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsMolinfo()) {
+            it->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
         }
     }
     entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ");
@@ -1861,9 +1867,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
     // for all other completeness, report
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "ShortSeq", "Sequence only 3 residues"));
     // AddChromosomeNoLocation(expected_errors, "lcl|good");
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsMolinfo()) {
-            (*it)->SetMolinfo().ResetCompleteness();
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsMolinfo()) {
+            it->SetMolinfo().ResetCompleteness();
         }
     }
     eval = validator.Validate(seh, options);
@@ -1902,7 +1908,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
 }
 
 
-static bool IsProteinTech (CMolInfo::TTech tech)
+static bool IsProteinTech(CMolInfo::TTech tech)
 {
     bool rval = false;
 
@@ -1938,15 +1944,15 @@ static void AddRefGeneTrackingUserObject(CRef<CSeq_entry> entry)
 static void SetRefGeneTrackingStatus(CRef<CSeq_entry> entry, string status)
 {
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-            if ((*it)->IsUser() && (*it)->GetUser().IsRefGeneTracking()) {
-                (*it)->SetUser().SetData().front()->SetData().SetStr(status);
+        for (auto& it : entry->SetSeq().SetDescr().Set()) {
+            if (it->IsUser() && it->GetUser().IsRefGeneTracking()) {
+                it->SetUser().SetData().front()->SetData().SetStr(status);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
-            if ((*it)->IsUser() && (*it)->GetUser().IsRefGeneTracking()) {
-                (*it)->SetUser().SetData().front()->SetData().SetStr(status);
+        for (auto& it : entry->SetSet().SetDescr().Set()) {
+            if (it->IsUser() && it->GetUser().IsRefGeneTracking()) {
+                it->SetUser().SetData().front()->SetData().SetStr(status);
             }
         }
     }
@@ -1957,16 +1963,22 @@ static void SetTitle(CRef<CSeq_entry> entry, string title)
 {
     bool found = false;
 
-    EDIT_EACH_DESCRIPTOR_ON_SEQENTRY (it, *entry) {
-        if ((*it)->IsTitle()) {
-            if (NStr::IsBlank((*it)->GetTitle())) {
-                ERASE_DESCRIPTOR_ON_SEQENTRY (it, *entry);
-            } else {
-                (*it)->SetTitle(title);
+    if (entry->IsSetDescr()) {
+        auto& cont = entry->SetDescr().Set();
+        for (auto it = cont.begin(); it != cont.end();) {
+            if ((*it)->IsTitle()) {
+                found = true;
+                if (NStr::IsBlank((*it)->GetTitle())) {
+                    it = cont.erase(it);
+                    continue;
+                } else {
+                    (*it)->SetTitle(title);
+                }
             }
-            found = true;
+            ++it;
         }
     }
+
     if (!found && !NStr::IsBlank(title)) {
         CRef<CSeqdesc> desc(new CSeqdesc());
         desc->SetTitle(title);
@@ -1979,9 +1991,9 @@ static void AddGenbankKeyword (CRef<CSeq_entry> entry, string keyword)
 {
     bool found = false;
 
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsGenbank()) {
-            (*it)->SetGenbank().SetKeywords().push_back(keyword);
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsGenbank()) {
+            it->SetGenbank().SetKeywords().push_back(keyword);
             found = true;
         }
     }
@@ -2090,9 +2102,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
 
     STANDARD_SETUP
 
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsMolinfo()) {
-            (*it)->SetMolinfo().SetTech(CMolInfo::eTech_derived);
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsMolinfo()) {
+            it->SetMolinfo().SetTech(CMolInfo::eTech_derived);
         }
     }
 
@@ -2133,25 +2145,21 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     allowed_list.push_back(CMolInfo::eTech_barcode);
     allowed_list.push_back(CMolInfo::eTech_tsa);
 
-    for (CMolInfo::TTech i = CMolInfo::eTech_unknown;
-         i <= CMolInfo::eTech_tsa;
-         i++) {
-         bool allowed = false;
-         for (vector<CMolInfo::TTech>::iterator it = allowed_list.begin();
-              it != allowed_list.end() && !allowed;
-              ++it) {
-              if (*it == i) {
-                  allowed = true;
-              }
-         }
-         if (allowed) {
-             // don't report for htgs_0
-             TestDeltaTechAllowed(i);
-         } else {
-             TestDeltaTechNotAllowed(i);
-         }
+    for (CMolInfo::TTech i = CMolInfo::eTech_unknown; i <= CMolInfo::eTech_tsa; ++i) {
+        bool allowed = false;
+        for (CMolInfo::TTech it : allowed_list) {
+            if (it == i) {
+                allowed = true;
+                break;
+            }
+        }
+        if (allowed) {
+            // don't report for htgs_0
+            TestDeltaTechAllowed(i);
+        } else {
+            TestDeltaTechNotAllowed(i);
+        }
     }
-
 
     CLEAR_ERRORS
 
@@ -2288,7 +2296,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqGapBadLinkage)
     CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
-    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
     gap_seg->SetLiteral().SetLength(10);
     AdjustGap(gap_seg->SetLiteral().SetSeq_data().SetGap(),
                 CSeq_gap::eType_unknown, true, evidence);
@@ -2297,7 +2305,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqGapBadLinkage)
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("CCCATGATGATGTACCGTACGTTTTCCCATGATGATGTACCGTACGTTTT");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetLength(50);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATGTACCGTACGTTTTCCCATGATGATGTACCGTACGTTTT", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATGTACCGTACGTTTTCCCATGATGATGTACCGTACGTTTT", CSeq_inst::eMol_dna);
     entry->SetSeq().SetInst().SetLength(132);
 
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -2524,15 +2532,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
     genomic_list.push_back(CMolInfo::eTech_htgs_3);
     genomic_list.push_back(CMolInfo::eTech_composite_wgs_htgs);
 
-    for (CMolInfo::TTech i = CMolInfo::eTech_unknown;
-         i <= CMolInfo::eTech_tsa;
-        i++) {
+    for (CMolInfo::TTech i = CMolInfo::eTech_unknown; i <= CMolInfo::eTech_tsa; i++) {
         bool genomic = false;
-        for (vector<CMolInfo::TTech>::iterator it = genomic_list.begin();
-              it != genomic_list.end() && !genomic;
-              ++it) {
-            if (*it == i) {
+        for (CMolInfo::TTech it : genomic_list) {
+            if (it == i) {
                 genomic = true;
+                break;
             }
         }
         entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
@@ -2829,15 +2834,12 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
     CRef<CSeq_id> bad_id(new CSeq_id());
 
     // bad for both
-    for (vector<string>::iterator id_it = bad_ids.begin();
-        id_it != bad_ids.end();
-        ++id_it) {
-        string id_str = *id_it;
-        string acc_str = "gb|" + id_str + "|";
+    for (const string& id_str : bad_ids) {
+        const string acc_str = "gb|" + id_str + "|";
         ChangeErrorAcc(expected_errors, acc_str);
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
-        //GenBank
+        // GenBank
         scope.RemoveTopLevelSeqEntry(seh);
         scope.ResetDataAndHistory();
         bad_id->SetGenbank().SetAccession(id_str);
@@ -2853,14 +2855,10 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-
     }
 
-    for (vector<string>::iterator id_it = bad_ids.begin();
-        id_it != bad_ids.end();
-        ++id_it) {
-        string id_str = *id_it;
-        id_str = "B" + id_str.substr(1);
+    for (const string& id_it : bad_ids) {
+        const string id_str = "B" + id_it.substr(1);
         expected_errors[0]->SetAccession("embl|" + id_str + "|");
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
@@ -2881,14 +2879,10 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-
     }
 
-    for (vector<string>::iterator id_it = bad_ids.begin();
-        id_it != bad_ids.end();
-        ++id_it) {
-        string id_str = *id_it;
-        id_str = "C" + id_str.substr(1);
+    for (const string& id_it : bad_ids) {
+        const string id_str = "C" + id_it.substr(1);
         expected_errors[0]->SetAccession("dbj|" + id_str + "|");
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
@@ -2909,19 +2903,15 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-
     }
 
     // bad for just nucs
-    for (vector<string>::iterator id_it = bad_nuc_ids.begin();
-         id_it != bad_nuc_ids.end();
-         ++id_it) {
-        string id_str = *id_it;
+    for (const string& id_str : bad_nuc_ids) {
         bad_id->SetGenbank().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeNucId(entry, bad_id);
         unit_test_util::ChangeProtId(entry, good_prot_id);
-        expected_errors[0]->SetAccession("gb|"+id_str+"|");
+        expected_errors[0]->SetAccession("gb|" + id_str + "|");
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
@@ -2936,10 +2926,7 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
     CLEAR_ERRORS
 
     // good for both
-    for (vector<string>::iterator id_it = good_ids.begin();
-         id_it != good_ids.end();
-         ++id_it) {
-        string id_str = *id_it;
+    for (const string& id_str : good_ids) {
         bad_id->SetGenbank().SetAccession(id_str);
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeNucId(entry, bad_id);
@@ -2958,12 +2945,12 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
     }
 
     // good for nucs
-    for (auto id_it : good_nuc_ids) {
+    for (const string& id_it : good_nuc_ids) {
         TestGoodNucId(id_it);
     }
 
     // good for just prots
-    for (auto id_it : good_prot_ids) {
+    for (const string& id_it : good_prot_ids) {
         TestGoodProtId(id_it);
     }
 
@@ -4345,11 +4332,11 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodDeltaSeq();
-    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
     gap_seg->SetLiteral().SetSeq_data().SetGap();
     gap_seg->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGA", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGA", CSeq_inst::eMol_dna);
     entry->SetSeq().SetInst().SetLength(entry->GetSeq().GetInst().GetLength() + 20);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -4655,9 +4642,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsSource()) {
-            (*it)->SetSource().SetOrigin(CBioSource::eOrigin_synthetic);
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsSource()) {
+            it->SetSource().SetOrigin(CBioSource::eOrigin_synthetic);
         }
     }
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -4670,9 +4657,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InvalidForType)
 
     CLEAR_ERRORS
 
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsSource()) {
-            (*it)->SetSource().ResetOrigin();
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsSource()) {
+            it->SetSource().ResetOrigin();
         }
     }
 
@@ -5437,7 +5424,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSubSource)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource (entry, 0, "foo");
+    unit_test_util::SetSubSource(entry, 0, "foo");
 
     STANDARD_SETUP
 
@@ -5464,23 +5451,23 @@ void ShowOrgRef(const CSeq_entry& entry)
 {
     if (entry.IsSeq()) {
         if (entry.GetSeq().IsSetDescr()) {
-            ITERATE(objects::CSeq_descr::Tdata, it, entry.GetSeq().GetDescr().Get()) {
-                if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
-                    ShowOrgRef((*it)->GetSource().GetOrg());
+            for (const auto& it : entry.GetSeq().GetDescr().Get()) {
+                if (it->IsSource() && it->GetSource().IsSetOrg()) {
+                    ShowOrgRef(it->GetSource().GetOrg());
                 }
             }
         }
     } else if (entry.IsSet()) {
         if (entry.GetSet().IsSetDescr()) {
-            ITERATE(objects::CSeq_descr::Tdata, it, entry.GetSet().GetDescr().Get()) {
-                if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
-                    ShowOrgRef((*it)->GetSource().GetOrg());
+            for (const auto& it : entry.GetSet().GetDescr().Get()) {
+                if (it->IsSource() && it->GetSource().IsSetOrg()) {
+                    ShowOrgRef(it->GetSource().GetOrg());
                 }
             }
         }
         if (entry.GetSet().IsSetSeq_set()) {
-            ITERATE(objects::CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set()) {
-                ShowOrgRef(**it);
+            for (const auto& it : entry.GetSet().GetSeq_set()) {
+                ShowOrgRef(*it);
             }
         }
     }
@@ -5851,11 +5838,9 @@ BOOST_FIXTURE_TEST_CASE(Test_Descr_Inconsistent, CGenBankFixture)
     segset_accession_prefixes.push_back("GG");
     segset_accession_prefixes.push_back("GL");
 
-    for (vector<string>::iterator it = segset_accession_prefixes.begin();
-         it != segset_accession_prefixes.end();
-         ++it) {
+    for (const string& it : segset_accession_prefixes) {
         scope.RemoveTopLevelSeqEntry(seh);
-        entry->SetSeq().SetId().front()->SetOther().SetAccession(*it + "_123456");
+        entry->SetSeq().SetId().front()->SetOther().SetAccession(it + "_123456");
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         AddChromosomeNoLocation(expected_errors, entry);
@@ -6060,18 +6045,16 @@ BOOST_AUTO_TEST_CASE(Test_Descr_StructuredSourceNote)
     tag_prefixes.push_back("type:");
     tag_prefixes.push_back("variety:");
 
-    for (vector<string>::iterator it = tag_prefixes.begin();
-         it != tag_prefixes.end();
-         ++it) {
-        expected_errors[0]->SetErrMsg("Source note has structured tag '" + *it + "'");
-        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_other, *it + "a");
+    for (const string& it : tag_prefixes) {
+        expected_errors[0]->SetErrMsg("Source note has structured tag '" + it + "'");
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_other, it + "a");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_other, "");
-        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, *it + "a");
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, it + "a");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::SetOrgMod(entry, CSubSource::eSubtype_other, "");
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, "");
     }
 
 
@@ -6589,11 +6572,9 @@ BOOST_AUTO_TEST_CASE(Test_InvalidSexQualifier)
     ok_sex_vals.push_back("dioecious");
     ok_sex_vals.push_back("diecious");
 
-    for (vector<string>::iterator it = ok_sex_vals.begin();
-        it != ok_sex_vals.end();
-        ++it) {
+    for (const string& it : ok_sex_vals) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, "");
-        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, *it);
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_sex, it);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
     }
@@ -6626,11 +6607,9 @@ BOOST_AUTO_TEST_CASE(Test_InvalidSexQualifier)
     // for other lineages, error if sex value
     unit_test_util::SetLineage(entry, "Eukaryota; Fungi; foo");
 
-    for (vector<string>::iterator it = ok_sex_vals.begin();
-        it != ok_sex_vals.end();
-        ++it) {
+    for (const string& it : ok_sex_vals) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, "");
-        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, *it);
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_mating_type, it);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
     }
@@ -6739,12 +6718,10 @@ BOOST_AUTO_TEST_CASE(Test_BadPlastidName)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadPlastidName",
         "Plastid name subsource chloroplast but not chloroplast location"));
     // AddChromosomeNoLocation(expected_errors, entry);
-    for (vector<string>::iterator it = plastid_vals.begin();
-        it != plastid_vals.end();
-        ++it) {
+    for (const string& it : plastid_vals) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, "");
-        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, *it);
-        expected_errors[0]->SetErrMsg("Plastid name subsource " + *it + " but not " + *it + " location");
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plastid_name, it);
+        expected_errors[0]->SetErrMsg("Plastid name subsource " + it + " but not " + it + " location");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
     }
@@ -7001,13 +6978,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, "");
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_genomic);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
-    unit_test_util::SetLineage (entry, "Viruses; no DNA stage");
+    unit_test_util::SetLineage(entry, "Viruses; no DNA stage");
     expected_errors[0]->SetErrMsg("Genomic DNA viral lineage indicates no DNA stage");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetLineage (entry, "Bacteria; foo");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_other, "cRNA");
+    unit_test_util::SetLineage(entry, "Bacteria; foo");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_other, "cRNA");
     expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -7413,7 +7390,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "May 1, 2010");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "May 1, 2010");
 
     STANDARD_SETUP
 
@@ -7426,49 +7403,49 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
     CheckErrors(*eval, expected_errors);
 
     // still bad format
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "1-05-2010");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "1-05-2010");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     // range has bad format
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "21-Oct-2013-20-Oct-2015");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "21-Oct-2013-20-Oct-2015");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "31-Dec-2099");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "31-Dec-2099");
     expected_errors[0]->SetErrMsg("Collection_date is in the future");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     // range in future
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "21-Oct-2013/20-Oct-2030");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "21-Oct-2013/20-Oct-2030");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
 
     // ISO date should be ok
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "2003-09-29");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "2003-09-29");
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
     // range of dates should be ok
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "Aug-2012/Jan-2013");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "Aug-2012/Jan-2013");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "2012/2013");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "2012/2013");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "06-Aug-2004/07-Jan-2007");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "06-Aug-2004/07-Jan-2007");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -7493,7 +7470,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
 
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "May 1, 2010");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "May 1, 2010");
 
     STANDARD_SETUP
 
@@ -7506,22 +7483,22 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "01-May-2010");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "01-May-2010");
     expected_errors[0]->SetErrMsg("PCR reverse primer sequence format is incorrect, first bad character is '0'");
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "AAATQAA");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "AAATQAA");
     expected_errors[0]->SetErrMsg("PCR reverse primer sequence format is incorrect, first bad character is 'q'");
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "AAATGAA;AA");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "AAATGAA;AA");
     expected_errors[0]->SetErrMsg("PCR reverse primer sequence format is incorrect, first bad character is '?'");
 
     eval = validator.Validate(seh, options);
@@ -7529,18 +7506,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
 
     CLEAR_ERRORS
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "(AAATGAA,WW)");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "(AAATGAA,W:W)");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "(AAATGAA,WW)");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "(AAATGAA,W:W)");
 
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
-    NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsSource()) {
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "");
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsSource()) {
             CRef<CPCRPrimer> fwd(new CPCRPrimer());
             fwd->SetName().Set("AATTGGCCAATTGGC");
             fwd->SetSeq().Set("AATTGGCCAATTGG4C");
@@ -7550,7 +7527,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
             rev->SetName().Set("AATTGGCCAATTGGC");
             rev->SetSeq().Set("AATTGGCCAATTGG5C");
             reaction->SetReverse().Set().push_back(rev);
-            (*it)->SetSource().SetPcr_primers().Set().push_back(reaction);
+            it->SetSource().SetPcr_primers().Set().push_back(reaction);
         }
     }
 
@@ -7645,7 +7622,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerName)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_name, "(AAATGAA,WW)");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_name, "(AAATGAA,WW)");
 
     STANDARD_SETUP
 
@@ -7656,8 +7633,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerName)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_name, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_name, "(AAATGAA,W:W)");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_name, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_name, "(AAATGAA,W:W)");
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -7665,8 +7642,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerName)
     CLEAR_ERRORS
 
     // no error if invalid sequence
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_name, "");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_name, "AAATQAA");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_name, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_name, "AAATQAA");
 
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
@@ -7742,8 +7719,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_DuplicatePCRPrimerSequence)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "(AAATTTGGGCCC,AAATTTGGGCCC)");
-    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "(CCCTTTGGGCCC,CCCTTTGGGCCC)");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_fwd_primer_seq, "(AAATTTGGGCCC,AAATTTGGGCCC)");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_rev_primer_seq, "(CCCTTTGGGCCC,CCCTTTGGGCCC)");
 
     STANDARD_SETUP
 
@@ -8232,9 +8209,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
                               ""));
     // AddChromosomeNoLocation(expected_errors, entry);
 
-    ITERATE (vector<string>, it, old_countries) {
-        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, *it);
-        expected_errors[0]->SetErrMsg("Replaced country name [" + *it + "]");
+    for (const string& it : old_countries) {
+        unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, it);
+        expected_errors[0]->SetErrMsg("Replaced country name [" + it + "]");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
@@ -8489,9 +8466,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PCU");
     ambig.push_back("HM");
 
-    ITERATE (vector<string>, it, ambig) {
-        expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
-        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, *it + ":foo");
+    for (const string& it : ambig) {
+        expected_errors[0]->SetErrMsg("Institution code " + it + " needs to be qualified with a <COUNTRY> designation");
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, it + ":foo");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
         unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "");
@@ -8502,9 +8479,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("NASC");
     ambig.push_back("TCDU");
 
-    ITERATE (vector<string>, it, ambig) {
-        expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
-        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, *it + ":foo");
+    for (const string& it : ambig) {
+        expected_errors[0]->SetErrMsg("Institution code " + it + " needs to be qualified with a <COUNTRY> designation");
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, it + ":foo");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
         unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, "");
@@ -8573,9 +8550,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CVCC");
     ambig.push_back("BR");
     ambig.push_back("MSU");
-    ITERATE (vector<string>, it, ambig) {
-        expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
-        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, *it + ":foo");
+    for (const string& it : ambig) {
+        expected_errors[0]->SetErrMsg("Institution code " + it + " needs to be qualified with a <COUNTRY> designation");
+        unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, it + ":foo");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
         unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
@@ -9260,9 +9237,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     EDiagSev levels[] = { eDiag_Warning, eDiag_Warning, eDiag_Warning, eDiag_Warning, eDiag_Warning };
 
     int i = 0;
-    ITERATE(vector<string>, it, required_fields) {
+    for (const string& it : required_fields) {
         expected_errors.push_back(new CExpectedError("lcl|good", levels[i], "BadStrucCommMissingField",
-                                  "Required field " + *it + " is missing"));
+                                  "Required field " + it + " is missing"));
         i++;
     }
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
@@ -9276,8 +9253,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     CLEAR_ERRORS
 
     // add fields in wrong order, with bad values where appropriate
-    const vector<string>& const_required_fields = required_fields;
-    REVERSE_ITERATE(vector<string>, it, const_required_fields) {
+    for (auto it = required_fields.crbegin(); it != required_fields.crend(); ++it) {
         CRef<CUser_field> field(new CUser_field());
         field->SetLabel().SetStr(*it);
         field->SetData().SetStr("bad value");
@@ -9285,14 +9261,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     }
 
     size_t pos = 0;
-    ITERATE(vector<string>, it, required_fields) {
+    for (const string& it : required_fields) {
         if (pos < required_fields.size() - 1) {
             expected_errors.push_back(new CExpectedError("lcl|good", levels[pos], "BadStrucCommFieldOutOfOrder",
-                                      *it + " field is out of order"));
+                                      it + " field is out of order"));
         }
-        if (!NStr::Equal(*it, "Genome Coverage") && !NStr::Equal(*it, "Sequencing Technology")) {
+        if (!NStr::Equal(it, "Genome Coverage") && !NStr::Equal(it, "Sequencing Technology")) {
             expected_errors.push_back(new CExpectedError("lcl|good", levels[pos], "BadStrucCommInvalidFieldValue",
-                                      "bad value is not a valid value for " + *it));
+                                      "bad value is not a valid value for " + it));
         }
         ++pos;
     }
@@ -9320,9 +9296,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("project_name");
     required_fields.push_back("sequencing_meth");
 
-    ITERATE(vector<string>, it, required_fields) {
+    for (const string& it : required_fields) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommMissingField",
-                                  "Required field " + *it + " is missing"));
+                                  "Required field " + it + " is missing"));
     }
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -9349,9 +9325,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("project_name");
     required_fields.push_back("seq_meth");
 
-    ITERATE(vector<string>, it, required_fields) {
+    for (const string& it : required_fields) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommMissingField",
-                                  "Required field " + *it + " is missing"));
+                                  "Required field " + it + " is missing"));
     }
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "BadStrucCommInvalidFieldValue", "Structured Comment invalid; the field value and/or name are incorrect"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -9913,13 +9889,13 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
     ids.push_back("good");
     ids.push_back("NC_123456");
 
-    ITERATE(vector<string>, id_it, ids) {
+    for (const string& id_it : ids) {
         EDiagSev sev = eDiag_Warning;
         scope.RemoveTopLevelSeqEntry(seh);
-        if (NStr::StartsWith(*id_it, "NC_")) {
-            entry->SetSeq().SetId().front()->SetOther().SetAccession(*id_it);
+        if (NStr::StartsWith(id_it, "NC_")) {
+            entry->SetSeq().SetId().front()->SetOther().SetAccession(id_it);
         } else {
-            entry->SetSeq().SetId().front()->SetLocal().SetStr(*id_it);
+            entry->SetSeq().SetId().front()->SetLocal().SetStr(id_it);
             sev = eDiag_Critical;
         }
         seh = scope.AddTopLevelSeqEntry(*entry);
@@ -9927,7 +9903,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
         submit->SetSub().SetCit().SetAuthors().ResetAffil();
         submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
         submit->SetSub().ResetContact();
-        string msg_acc = NStr::StartsWith(*id_it, "NC") ? "ref|" + *id_it + "|" : "lcl|" + *id_it;
+        string msg_acc = NStr::StartsWith(id_it, "NC") ? "ref|" + id_it + "|" : "lcl|" + id_it;
         expected_errors.push_back(new CExpectedError(msg_acc,
                                   sev, "MissingPubRequirement",
                                   "Submission citation affiliation has no country"));
@@ -9999,7 +9975,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetSub();
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetAffil();
         expected_errors.push_back(new CExpectedError(msg_acc,
-                NStr::StartsWith(*id_it, "NC_") ? eDiag_Warning : eDiag_Critical,
+                NStr::StartsWith(id_it, "NC_") ? eDiag_Warning : eDiag_Critical,
                                   "MissingPubRequirement",
                                   "Submission citation has no affiliation"));
         // AddChromosomeNoLocation(expected_errors, entry);
@@ -10053,7 +10029,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
 
         pub->SetGen().ResetDate();
         pub->SetGen().SetAuthors().SetNames().SetStd().pop_back();
-        if (!NStr::StartsWith(*id_it, "NC_")) {
+        if (!NStr::StartsWith(id_it, "NC_")) {
             expected_errors[0]->SetSeverity(eDiag_Error);
         }
         expected_errors[0]->SetErrMsg("Publication has no author names");
@@ -10071,7 +10047,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubRequirement)
         pub->SetArticle().SetTitle().Set().push_back(art_title);
         pub->SetArticle().SetAuthors().SetNames().SetStd().pop_back();
         expected_errors[0]->SetErrMsg("Publication has no author names");
-        if (NStr::StartsWith(*id_it, "NC_")) {
+        if (NStr::StartsWith(id_it, "NC_")) {
             expected_errors[0]->SetSeverity(eDiag_Warning);
         }
         eval = validator.Validate(seh, options);
@@ -10278,12 +10254,12 @@ BOOST_AUTO_TEST_CASE(Test_Generic_BadDate)
     // find sub pub and other pub
     CRef<CPub> subpub;
     CRef<CPub> otherpub;
-    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsPub()) {
-            if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {
-                subpub = (*it)->SetPub().SetPub().Set().front();
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsPub()) {
+            if (it->GetPub().GetPub().Get().front()->IsSub()) {
+                subpub = it->SetPub().SetPub().Set().front();
             } else {
-                otherpub = (*it)->SetPub().SetPub().Set().front();
+                otherpub = it->SetPub().SetPub().Set().front();
             }
         }
     }
@@ -10611,8 +10587,8 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
                               "Organism not found in taxonomy database"));
     // AddChromosomeNoLocation(expected_errors, entry);
-    ITERATE(vector<string>, it, sgml_tags) {
-        string taxname = "a" + *it + "b";
+    for (const string& it : sgml_tags) {
+        string taxname = "a" + it + "b";
         unit_test_util::SetTaxname(entry, taxname);
         expected_errors[0]->SetErrMsg("taxname " + taxname + " has SGML");
         eval = validator.Validate(seh, options);
@@ -10649,7 +10625,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     unit_test_util::SetDbxref (entry, sgml_tags[tag_num], 1234);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (entry, sgml_tags[tag_num], 1234);
+    unit_test_util::RemoveDbxref(entry, sgml_tags[tag_num], 1234);
 
     CLEAR_ERRORS
 
@@ -10659,7 +10635,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     unit_test_util::SetDbxref (entry, "AFTOL", sgml_tags[tag_num]);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (entry, "AFTOL", 0);
+    unit_test_util::RemoveDbxref(entry, "AFTOL", 0);
 
     CLEAR_ERRORS
     ++tag_num;
@@ -10673,7 +10649,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     unit_test_util::SetDbxref(feat, sgml_tags[tag_num], 1234);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (feat, sgml_tags[tag_num], 1234);
+    unit_test_util::RemoveDbxref(feat, sgml_tags[tag_num], 1234);
 
     CLEAR_ERRORS
 
@@ -10684,7 +10660,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (feat, "AFTOL", 0);
+    unit_test_util::RemoveDbxref(feat, "AFTOL", 0);
 
     CLEAR_ERRORS
 
@@ -10850,9 +10826,14 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NoCdRegionPtr)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
 
     CRef<CSeq_entry> pentry = unit_test_util::BuildGoodProtSeq();
-    EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (it, pentry->SetSeq()) {
-        if ((*it)->IsSource() || (*it)->IsPub()) {
-            ERASE_DESCRIPTOR_ON_BIOSEQ(it, pentry->SetSeq());
+    if (pentry->SetSeq().IsSetDescr()) {
+        auto& cont = pentry->SetSeq().SetDescr().Set();
+        for (auto it = cont.begin(); it != cont.end();) {
+            if ((*it)->IsSource() || (*it)->IsPub()) {
+                it = cont.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
 
@@ -10906,9 +10887,14 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     CRef<CSeq_entry> nentry2 = unit_test_util::BuildGoodSeq();
-    EDIT_EACH_DESCRIPTOR_ON_BIOSEQ (it, nentry2->SetSeq()) {
-        if ((*it)->IsSource() || (*it)->IsPub()) {
-            ERASE_DESCRIPTOR_ON_BIOSEQ(it, nentry2->SetSeq());
+    if (nentry2->SetSeq().IsSetDescr()) {
+        auto& cont = nentry2->SetSeq().SetDescr().Set();
+        for (auto it = cont.begin(); it != cont.end();) {
+            if ((*it)->IsSource() || (*it)->IsPub()) {
+                it = cont.erase(it);
+            } else {
+                ++it;
+            }
         }
     }
     entry->SetSet().SetSeq_set().push_back(nentry2);
@@ -11651,10 +11637,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     // AddChromosomeNoLocation(expected_errors, entry);
     CRef<CSeq_id> local_id(new CSeq_id());
     local_id->SetLocal().SetStr("good");
-    ITERATE(vector<string>, key, peptide_feat) {
+    for (const string& key : peptide_feat) {
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeProtId(entry, local_id);
-        imp->SetData().SetImp().SetKey(*key);
+        imp->SetData().SetImp().SetKey(key);
         seh = scope.AddTopLevelSeqEntry(*entry);
         expected_errors[0]->SetAccession("lcl|good");
         expected_errors[0]->SetSeverity(eDiag_Warning);
@@ -11663,7 +11649,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
 
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeProtId(entry, rsid);
-        imp->SetData().SetImp().SetKey(*key);
+        imp->SetData().SetImp().SetKey(key);
         seh = scope.AddTopLevelSeqEntry(*entry);
         expected_errors[0]->SetAccession("ref|NY_123456|");
         expected_errors[0]->SetSeverity(eDiag_Error);
@@ -11689,11 +11675,11 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     expected_errors[0]->SetErrMsg("RNA feature should be converted to the appropriate RNA feature subtype, location should be converted manually");
     expected_errors[0]->SetSeverity(eDiag_Error);
     ChangeErrorAcc(expected_errors, "lcl|good");
-    ITERATE(vector<string>, key, rna_feat) {
+    for (const string& key : rna_feat) {
         scope.RemoveTopLevelSeqEntry(seh);
         entry->SetSeq().ResetAnnot();
         CRef<CSeq_feat> rna = unit_test_util::AddMiscFeature(entry);
-        rna->SetData().SetImp().SetKey(*key);
+        rna->SetData().SetImp().SetKey(key);
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
@@ -11719,10 +11705,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidForType",
         "Peptide processing feature should be remapped to the appropriate protein bioseq"));
     // AddChromosomeNoLocation(expected_errors, entry);
-    ITERATE(vector<CProt_ref::TProcessed>, key, prot_types) {
+    for (CProt_ref::EProcessed key : prot_types) {
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeId(entry, local_id);
-        prot->SetData().SetProt().SetProcessed(*key);
+        prot->SetData().SetProt().SetProcessed(key);
         seh = scope.AddTopLevelSeqEntry(*entry);
         ChangeErrorAcc(expected_errors, "lcl|good");
         expected_errors[1]->SetSeverity(eDiag_Warning);
@@ -11731,7 +11717,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
 
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeId(entry, rsid);
-        prot->SetData().SetProt().SetProcessed(*key);
+        prot->SetData().SetProt().SetProcessed(key);
         seh = scope.AddTopLevelSeqEntry(*entry);
         ChangeErrorAcc(expected_errors, "ref|NY_123456|");
         expected_errors[1]->SetSeverity(eDiag_Error);
@@ -12396,18 +12382,18 @@ BOOST_AUTO_TEST_CASE(Test_VR_763)
 
     // gap
     entry->SetSeq().SetInst().ResetSeq_data();
-    entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCCAAATTTGGGAAAA", objects::CSeq_inst::eMol_dna);
-    CRef<objects::CDelta_seq> gap1(new objects::CDelta_seq());
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCCAAATTTGGGAAAA", CSeq_inst::eMol_dna);
+    CRef<CDelta_seq> gap1(new CDelta_seq());
     gap1->SetLiteral().SetSeq_data().SetGap();
     gap1->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap1);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATGAAATTTGGGCCCC", objects::CSeq_inst::eMol_dna);
-    CRef<objects::CDelta_seq> gap2(new objects::CDelta_seq());
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATGAAATTTGGGCCCC", CSeq_inst::eMol_dna);
+    CRef<CDelta_seq> gap2(new CDelta_seq());
     gap2->SetLiteral().SetSeq_data().SetGap();
     gap2->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap2);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("AAACCCATGATGATGCCAATTCCCG", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("AAACCCATGATGATGCCAATTCCCG", CSeq_inst::eMol_dna);
     entry->SetSeq().SetInst().SetLength(95);
     TestOneMiscPartial(entry, 36, 37, 58, 57, false);
     TestOneMiscPartial(entry, 36, 37, 58, 57, true);
@@ -13304,11 +13290,11 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_UnknownImpFeatKey)
     illegal_keys.push_back ("Import");
 
     expected_errors[0]->SetSeverity(eDiag_Error);
-    ITERATE (vector<string>, it, illegal_keys) {
+    for (const string& it : illegal_keys) {
         scope.RemoveTopLevelSeqEntry(seh);
-        misc->SetData().SetImp().SetKey(*it);
+        misc->SetData().SetImp().SetKey(it);
         seh = scope.AddTopLevelSeqEntry(*entry);
-        expected_errors[0]->SetErrMsg("Feature key " + *it + " is no longer legal");
+        expected_errors[0]->SetErrMsg("Feature key " + it + " is no longer legal");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
     }
@@ -13463,20 +13449,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProduct)
 }
 
 
-static string MakeWrongCap (const string& str)
+static string MakeWrongCap(const string& str)
 {
-    string bad = "";
-    char add[2];
-    add[1] = 0;
-
-    ITERATE(string, it, str) {
-        add[0] = *it;
-        if (isupper (*it)) {
-            add[0] = tolower(*it);
-        } else if (islower(*it)) {
-            add[0] = toupper(*it);
+    string bad;
+    for (char c : str) {
+        if (isupper(c)) {
+            c = tolower(c);
+        } else if (islower(c)) {
+            c = toupper(c);
         }
-        bad.append(add);
+        bad += c;
     }
     return bad;
 }
@@ -13633,25 +13615,25 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     // AddChromosomeNoLocation(expected_errors, entry);
 
     string bad;
-    ITERATE (vector<string>, sit, src_strings) {
-        if (NStr::Equal(*sit, "taxon")) {
-            unit_test_util::RemoveDbxref (entry, *sit, 0);
+    for (const string& sit : src_strings) {
+        if (NStr::Equal(sit, "taxon")) {
+            unit_test_util::RemoveDbxref(entry, sit, 0);
         }
-        bad = MakeWrongCap(*sit);
+        bad = MakeWrongCap(sit);
         unit_test_util::SetDbxref (entry, bad, 1234);
-        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + *sit);
+        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + sit);
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (entry, bad, 0);
-        if (NStr::Equal(*sit, "taxon")) {
+        unit_test_util::RemoveDbxref(entry, bad, 0);
+        if (NStr::Equal(sit, "taxon")) {
             unit_test_util::SetTaxon(entry, 592768);
         }
     }
 
-    ITERATE (vector<string>, sit, legal_strings) {
+    for (const string& sit : legal_strings) {
         bool found = false;
-        ITERATE (vector<string>, ss, src_strings) {
-            if (NStr::Equal(*ss, *sit)) {
+        for (const string& ss : src_strings) {
+            if (NStr::Equal(ss, sit)) {
                 found = true;
                 break;
             }
@@ -13659,45 +13641,45 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         if (found) {
             continue;
         }
-        bad = MakeWrongCap(*sit);
-        unit_test_util::SetDbxref (entry, bad, 1234);
-        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + *sit
+        bad = MakeWrongCap(sit);
+        unit_test_util::SetDbxref(entry, bad, 1234);
+        expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + sit
                                       + ", but should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (entry, bad, 0);
+        unit_test_util::RemoveDbxref(entry, bad, 0);
 
-        unit_test_util::SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " (1234) should not be used on an OrgRef");
+        unit_test_util::SetDbxref(entry, sit, 1234);
+        expected_errors[0]->SetErrMsg("db_xref type " + sit + " (1234) should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (entry, *sit, 0);
+        unit_test_util::RemoveDbxref(entry, sit, 0);
     }
 
-    ITERATE (vector<string>, sit, refseq_strings) {
-        unit_test_util::SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " (1234) should not be used on a non-RefSeq OrgRef");
+    for (const string& sit : refseq_strings) {
+        unit_test_util::SetDbxref(entry, sit, 1234);
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + sit + " (1234) should not be used on a non-RefSeq OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (entry, *sit, 0);
+        unit_test_util::RemoveDbxref(entry, sit, 0);
     }
 
-    unit_test_util::SetDbxref (entry, "unrecognized", 1234);
+    unit_test_util::SetDbxref(entry, "unrecognized", 1234);
     expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized (1234)");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (entry, "unrecognized", 0);
+    unit_test_util::RemoveDbxref(entry, "unrecognized", 0);
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "ref|NC_123456|");
-    ITERATE (vector<string>, sit, refseq_strings) {
-        unit_test_util::SetDbxref (entry, *sit, 1234);
-        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + *sit + " (1234) should not be used on an OrgRef");
+    for (const string& sit : refseq_strings) {
+        unit_test_util::SetDbxref(entry, sit, 1234);
+        expected_errors[0]->SetErrMsg("RefSeq-specific db_xref type " + sit + " (1234) should not be used on an OrgRef");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (entry, *sit, 0);
+        unit_test_util::RemoveDbxref(entry, sit, 0);
     }
 
     scope.RemoveTopLevelSeqEntry(seh);
@@ -13706,38 +13688,38 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     seh = scope.AddTopLevelSeqEntry(*entry);
     ChangeErrorAcc(expected_errors, "lcl|good");
 
-    ITERATE (vector<string>, sit, legal_strings) {
-        bad = MakeWrongCap(*sit);
-        unit_test_util::SetDbxref (feat, bad, 1234);
-        if (NStr::Equal(*sit, "taxon")) {
+    for (const string& sit : legal_strings) {
+        bad = MakeWrongCap(sit);
+        unit_test_util::SetDbxref(feat, bad, 1234);
+        if (NStr::Equal(sit, "taxon")) {
             expected_errors[0]->SetErrMsg("Illegal db_xref type TAXON (1234), legal capitalization is taxon, but should only be used on an OrgRef");
         } else {
-            expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + *sit);
+            expected_errors[0]->SetErrMsg("Illegal db_xref type " + bad + " (1234), legal capitalization is " + sit);
         }
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (feat, bad, 0);
+        unit_test_util::RemoveDbxref(feat, bad, 0);
     }
 
-    ITERATE (vector<string>, sit, refseq_strings) {
-        unit_test_util::SetDbxref (feat, *sit, 1234);
-        expected_errors[0]->SetErrMsg("db_xref type " + *sit + " (1234) is only legal for RefSeq");
+    for (const string& sit : refseq_strings) {
+        unit_test_util::SetDbxref(feat, sit, 1234);
+        expected_errors[0]->SetErrMsg("db_xref type " + sit + " (1234) is only legal for RefSeq");
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
-        unit_test_util::RemoveDbxref (feat, *sit, 0);
+        unit_test_util::RemoveDbxref(feat, sit, 0);
     }
 
     unit_test_util::SetDbxref(feat, "taxon", 1234);
     expected_errors[0]->SetErrMsg("db_xref type taxon (1234) should only be used on an OrgRef");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (feat, "taxon", 0);
+    unit_test_util::RemoveDbxref(feat, "taxon", 0);
 
-    unit_test_util::SetDbxref (feat, "unrecognized", 1234);
+    unit_test_util::SetDbxref(feat, "unrecognized", 1234);
     expected_errors[0]->SetErrMsg("Illegal db_xref type unrecognized (1234)");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    unit_test_util::RemoveDbxref (feat, "unrecognized", 0);
+    unit_test_util::RemoveDbxref(feat, "unrecognized", 0);
 
     CLEAR_ERRORS
 }
@@ -13948,11 +13930,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
     expected.push_back("");
     vector<string> seen;
     vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
+    for (const string& it : cat_list) {
         vector<string> sublist;
-        NStr::Split(*it, "\n", sublist, 0);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
+        NStr::Split(it, "\n", sublist);
+        for (const string& sit : sublist) {
+            seen.push_back(sit);
         }
     }
 
@@ -13966,7 +13948,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     eval = validator.Validate(seh, options | CValidator::eVal_collect_locus_tags);
     CheckErrors(*eval, expected_errors);
-    for (auto it : eval->GetErrs()) {
+    for (const auto& it : eval->GetErrs()) {
         if (!NStr::Equal(it->GetErrCode(), "ChromosomeWithoutLocation")) {
             BOOST_CHECK_EQUAL(it->IsSetLocus_tag(), true);
             BOOST_CHECK_EQUAL(it->GetLocus_tag(), "xyz");
@@ -13983,11 +13965,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
     seen.clear();
-    ITERATE(vector<string>, it, cat_list) {
+    for (const string& it : cat_list) {
         vector<string> sublist;
-        NStr::Split(*it, "\n", sublist, 0);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
+        NStr::Split(it, "\n", sublist);
+        for (const string& sit : sublist) {
+            seen.push_back(sit);
         }
     }
 
@@ -16484,11 +16466,11 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_CDSwithNoMRNA)
 
     CSeq_annot::TData::TFtable::iterator cds_it = entry->SetSet().SetAnnot().front()->SetData().SetFtable().begin();
 
-    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS (*cds_it);
+    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(*cds_it);
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
-    unit_test_util::AddFeat (mrna, nuc);
-    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (*cds_it);
-    unit_test_util::AddFeat (gene, nuc);
+    unit_test_util::AddFeat(mrna, nuc);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(*cds_it);
+    unit_test_util::AddFeat(gene, nuc);
 
     STANDARD_SETUP
 
@@ -18108,9 +18090,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureInsideGap)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureCrossesGap)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
-    NON_CONST_ITERATE (CDelta_ext::Tdata, it, entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
-        if ((*it)->IsLiteral() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
-            (*it)->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    for (auto& it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().GetSeq_data().IsGap()) {
+            it->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
         }
     }
 
@@ -18278,7 +18260,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredGeneSynonym)
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
     gene->SetData().SetGene().SetLocus("something");
-    string msg = "";
+    string msg;
 
     STANDARD_SETUP
 
@@ -18384,9 +18366,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredProteinName)
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureBeginsOrEndsInGap)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
-    NON_CONST_ITERATE (CDelta_ext::Tdata, it, entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
-        if ((*it)->IsLiteral() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
-            (*it)->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    for (auto& it : entry->SetSeq().SetInst().SetExt().SetDelta().Set()) {
+        if (it->IsLiteral() && it->GetLiteral().GetSeq_data().IsGap()) {
+            it->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
         }
     }
 
@@ -20630,7 +20612,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
     cds->SetLocation().SetMix().Set().push_back(loc3);
 
     string loc_str = first_exon + second_exon + third_exon;
-    string prot_str = "";
+    string prot_str;
     CSeqTranslator::Translate(loc_str, prot_str);
     if (NStr::EndsWith(prot_str, "*")) {
         prot_str = prot_str.substr(0, prot_str.length() - 1);
@@ -21871,7 +21853,7 @@ BOOST_AUTO_TEST_CASE(Test_IsLocationInFrame)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
 
-    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
     CSeq_feat_Handle fh = scope->GetSeq_featHandle(*cds);
@@ -22071,8 +22053,8 @@ BOOST_AUTO_TEST_CASE(Test_BadLocation)
     entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set);
     // remove title, not appropriate for small genome set
     unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
-    NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, entry->SetSet().SetSeq_set()) {
-        unit_test_util::SetGenome(*s, CBioSource::eGenome_chloroplast);
+    for (auto& s : entry->SetSet().SetSeq_set()) {
+        unit_test_util::SetGenome(s, CBioSource::eGenome_chloroplast);
     }
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
@@ -22367,22 +22349,22 @@ void AddOrgmodFeat(CRef<CSeq_entry> entry, const string& val, COrgMod::ESubtype 
     AddOrgmod(src_feat->SetData().SetBiosrc().SetOrg(), val, subtype);
 }
 
-typedef vector< pair<string, string> > THostStringsVector;
+typedef vector<pair<string, string>> THostStringsVector;
 
 
 void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
-    vector<CRef<COrg_ref> > original;
-    vector<CRef<COrg_ref> > to_adjust;
+    vector<CRef<COrg_ref>> original;
+    vector<CRef<COrg_ref>> to_adjust;
 
-    ITERATE(THostStringsVector, it, test_values) {
-        AddOrgmodDescriptor(entry, it->first, COrgMod::eSubtype_nat_host);
-        AddOrgmodFeat(entry, it->first, COrgMod::eSubtype_nat_host);
+    for (const auto& it : test_values) {
+        AddOrgmodDescriptor(entry, it.first, COrgMod::eSubtype_nat_host);
+        AddOrgmodFeat(entry, it.first, COrgMod::eSubtype_nat_host);
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname("foo");
-        CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, it->first));
+        CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, it.first));
         org->SetOrgname().SetMod().push_back(om);
         to_adjust.push_back(org);
         CRef<COrg_ref> cpy(new COrg_ref());
@@ -22393,16 +22375,16 @@ void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
 
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
-    vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
+    vector<CRef<COrg_ref>> org_rq_list = tval.GetSpecificHostLookupRequest(true);
 
-    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
     BOOST_CHECK_EQUAL(reply->GetReply().size(), org_rq_list.size());
 
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
 
-    vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
-    vector<CRef<COrg_ref> >::iterator cpy = original.begin();
+    vector<CRef<COrg_ref>>::const_iterator org = to_adjust.begin();
+    vector<CRef<COrg_ref>>::const_iterator cpy = original.begin();
     while (org != to_adjust.cend()) {
         const string& before = (*cpy)->GetOrgname().GetMod().front()->GetSubname();
         const string& after = (*org)->GetOrgname().GetMod().front()->GetSubname();
@@ -22421,11 +22403,11 @@ void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
 BOOST_AUTO_TEST_CASE(Test_SQD_4354)
 {
     THostStringsVector test_values;
-    test_values.push_back(pair<string, string>("Zymomonas anaerobia", "Zymomonas mobilis"));
+    test_values.push_back(make_pair("Zymomonas anaerobia", "Zymomonas mobilis"));
     TestBulkSpecificHostFixList(test_values);
 
     test_values.clear();
-    test_values.push_back(pair<string, string>("Zymononas mobilis", "Zymomonas mobilis"));
+    test_values.push_back(make_pair("Zymononas mobilis", "Zymomonas mobilis"));
     TestBulkSpecificHostFixList(test_values);
 }
 
@@ -22435,43 +22417,43 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     THostStringsVector test_values;
-    test_values.push_back(pair<string, string>("Homo supiens", "Homo supiens")); // non-fixable spelling problem
-    test_values.push_back(pair<string, string>("HUMAN", "Homo sapiens"));
+    test_values.push_back(make_pair("Homo supiens", "Homo supiens")); // non-fixable spelling problem
+    test_values.push_back(make_pair("HUMAN", "Homo sapiens"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Homo sapiens", "Homo sapiens"));
+    test_values.push_back(make_pair("Homo sapiens", "Homo sapiens"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Gallus Gallus", "Gallus gallus"));
+    test_values.push_back(make_pair("Gallus Gallus", "Gallus gallus"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Conservemos nuestros", "Conservemos nuestros")); // non-fixable spelling problem
+    test_values.push_back(make_pair("Conservemos nuestros", "Conservemos nuestros")); // non-fixable spelling problem
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Pinus sp.", "Pinus sp.")); // ambiguous
+    test_values.push_back(make_pair("Pinus sp.", "Pinus sp.")); // ambiguous
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Eschericia coli", "Escherichia coli")); // fixable spelling problem
+    test_values.push_back(make_pair("Eschericia coli", "Escherichia coli")); // fixable spelling problem
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Avian", "Avian"));
+    test_values.push_back(make_pair("Avian", "Avian"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Bovine", "Bovine"));
+    test_values.push_back(make_pair("Bovine", "Bovine"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Pig", "Pig"));
+    test_values.push_back(make_pair("Pig", "Pig"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>(" Chicken", "Chicken")); // truncate space
+    test_values.push_back(make_pair(" Chicken", "Chicken")); // truncate space
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
+    test_values.push_back(make_pair("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
+    test_values.push_back(make_pair("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
     TestBulkSpecificHostFixList(test_values);
-    test_values.push_back(pair<string, string>("Zymomonas anaerobia", "Zymomonas mobilis"));
+    test_values.push_back(make_pair("Zymomonas anaerobia", "Zymomonas mobilis"));
     TestBulkSpecificHostFixList(test_values);
 
-    vector<CRef<COrg_ref> > to_adjust;
-    vector<CRef<COrg_ref> > original;
+    vector<CRef<COrg_ref>> to_adjust;
+    vector<CRef<COrg_ref>> original;
 
-    ITERATE(THostStringsVector, it, test_values) {
-        AddOrgmodDescriptor(entry, it->first, COrgMod::eSubtype_nat_host);
-        AddOrgmodFeat(entry, it->first, COrgMod::eSubtype_nat_host);
+    for (const auto& it : test_values) {
+        AddOrgmodDescriptor(entry, it.first, COrgMod::eSubtype_nat_host);
+        AddOrgmodFeat(entry, it.first, COrgMod::eSubtype_nat_host);
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname("foo");
-        CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, it->first));
+        CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, it.first));
         org->SetOrgname().SetMod().push_back(om);
         to_adjust.push_back(org);
         CRef<COrg_ref> cpy(new COrg_ref());
@@ -22482,18 +22464,18 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
 
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
-    vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
+    vector<CRef<COrg_ref>> org_rq_list = tval.GetSpecificHostLookupRequest(true);
     // don't create update requests for single-word values
     // Homo sapiens is ignored because "HUMAN" already corrects to it
     BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 6);
 
-    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
 
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
 
-    vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
-    vector<CRef<COrg_ref> >::iterator cpy = original.begin();
+    vector<CRef<COrg_ref>>::const_iterator org = to_adjust.begin();
+    vector<CRef<COrg_ref>>::const_iterator cpy = original.begin();
     while (org != to_adjust.cend()) {
         const string& before = (*cpy)->GetOrgname().GetMod().front()->GetSubname();
         const string& after = (*org)->GetOrgname().GetMod().front()->GetSubname();
@@ -22531,14 +22513,14 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     ++m;
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Escherichia coli");
 
-    vector< CRef<COrg_ref> > original_orgs = tval.GetTaxonomyLookupRequest();
-    vector< CRef<COrg_ref> > edited_orgs = tval.GetTaxonomyLookupRequest();
+    vector<CRef<COrg_ref>> original_orgs = tval.GetTaxonomyLookupRequest();
+    vector<CRef<COrg_ref>> edited_orgs = tval.GetTaxonomyLookupRequest();
     CRef<CTaxon3_reply> lookup_reply = taxon3.SendOrgRefList(original_orgs);
     BOOST_CHECK_EQUAL(lookup_reply->GetReply().size(), original_orgs.size());
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*lookup_reply, edited_orgs, error_message), true);
     // second time should produce no additional changes
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*lookup_reply, edited_orgs, error_message), false);
-    vector< CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
+    vector<CRef<COrg_ref>> spec_host_rq = tval.GetSpecificHostLookupRequest(true);
     CRef<CTaxon3_reply> spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs, error_message), true);
     // second time should produce no additional changes
@@ -22593,17 +22575,17 @@ BOOST_AUTO_TEST_CASE(Test_VR_787)
     org->SetOrgname().SetGcode(11);
     org->SetOrgname().SetDiv("BCT");
 
-    vector<CRef<COrg_ref> > org_rq;
+    vector<CRef<COrg_ref>> org_rq;
     org_rq.push_back(org);
 
-    vector<CRef<COrg_ref> > edited_orgs;
+    vector<CRef<COrg_ref>> edited_orgs;
     CRef<COrg_ref> cpy(new COrg_ref());
     cpy->Assign(*org);
     edited_orgs.push_back(cpy);
 
     CTaxValidationAndCleanup tval;
 
-    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     CRef<CTaxon3_reply> org_reply = taxon3.SendOrgRefList(org_rq);
     string error_message;
@@ -22640,45 +22622,45 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     THostStringsVector test_values;
-    test_values.push_back(pair<string, string>("Homo supiens", "Homo supiens")); // non-fixable spelling problem
-    test_values.push_back(pair<string, string>("HUMAN", "Homo sapiens"));
-    test_values.push_back(pair<string, string>("Homo sapiens", "Homo sapiens"));
-    test_values.push_back(pair<string, string>("Pinus sp.", "Pinus sp.")); // ambiguous
-    test_values.push_back(pair<string, string>("Gallus Gallus", "Gallus gallus"));
-    test_values.push_back(pair<string, string>("Eschericia coli", "Escherichia coli")); // fixable spelling problem
-    test_values.push_back(pair<string, string>("Avian", "Avian"));
-    test_values.push_back(pair<string, string>("Bovine", "Bovine"));
-    test_values.push_back(pair<string, string>("Pig", "Pig"));
-    test_values.push_back(pair<string, string>(" Chicken", "Chicken")); // truncate space
-    test_values.push_back(pair<string, string>("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
-    test_values.push_back(pair<string, string>("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
+    test_values.push_back(make_pair("Homo supiens", "Homo supiens")); // non-fixable spelling problem
+    test_values.push_back(make_pair("HUMAN", "Homo sapiens"));
+    test_values.push_back(make_pair("Homo sapiens", "Homo sapiens"));
+    test_values.push_back(make_pair("Pinus sp.", "Pinus sp.")); // ambiguous
+    test_values.push_back(make_pair("Gallus Gallus", "Gallus gallus"));
+    test_values.push_back(make_pair("Eschericia coli", "Escherichia coli")); // fixable spelling problem
+    test_values.push_back(make_pair("Avian", "Avian"));
+    test_values.push_back(make_pair("Bovine", "Bovine"));
+    test_values.push_back(make_pair("Pig", "Pig"));
+    test_values.push_back(make_pair(" Chicken", "Chicken")); // truncate space
+    test_values.push_back(make_pair("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
+    test_values.push_back(make_pair("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
 
-    vector<CRef<COrg_ref> > to_adjust;
+    vector<CRef<COrg_ref>> to_adjust;
 
-    ITERATE(THostStringsVector, it, test_values) {
-        AddOrgmodDescriptor(entry, it->first, COrgMod::eSubtype_nat_host);
-        AddOrgmodFeat(entry, it->first, COrgMod::eSubtype_nat_host);
+    for (const auto& it : test_values) {
+        AddOrgmodDescriptor(entry, it.first, COrgMod::eSubtype_nat_host);
+        AddOrgmodFeat(entry, it.first, COrgMod::eSubtype_nat_host);
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname("foo");
-        AddOrgmod(*org, it->first, COrgMod::eSubtype_nat_host);
+        AddOrgmod(*org, it.first, COrgMod::eSubtype_nat_host);
         to_adjust.push_back(org);
     }
     string error_message;
 
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
-    vector<CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
+    vector<CRef<COrg_ref>> spec_host_rq = tval.GetSpecificHostLookupRequest(true);
     // don't create update requests for single-word values
     // Homo sapiens is ignored because "HUMAN" already corrects to it
     BOOST_CHECK_EQUAL(spec_host_rq.size(), test_values.size() - 6);
 
-    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     size_t chunk_size = 3;
     size_t i = 0;
     while (i < spec_host_rq.size()) {
         size_t len = min(chunk_size, spec_host_rq.size() - i);
-        vector< CRef<COrg_ref> >  tmp_rq(spec_host_rq.begin() + i, spec_host_rq.begin() + i + len);
+        vector<CRef<COrg_ref>>  tmp_rq(spec_host_rq.begin() + i, spec_host_rq.begin() + i + len);
         CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(tmp_rq);
         BOOST_CHECK_EQUAL(tval.IncrementalSpecificHostMapUpdate(tmp_rq, *tmp_spec_host_reply), kEmptyStr);
         i += chunk_size;
@@ -22688,7 +22670,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
 
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsForSpecificHosts(to_adjust), true);
 
-    vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
+    vector<CRef<COrg_ref>>::iterator org = to_adjust.begin();
     THostStringsVector::iterator tvit = test_values.begin();
     while (org != to_adjust.end()) {
         BOOST_CHECK_EQUAL((*org)->GetOrgname().GetMod().front()->GetSubname(), tvit->second);
@@ -22754,16 +22736,16 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
 
-    vector<CRef<COrg_ref> > strain_rq = tval.GetStrainLookupRequest();
+    vector<CRef<COrg_ref>> strain_rq = tval.GetStrainLookupRequest();
     BOOST_CHECK_EQUAL(strain_rq.size(), (size_t)9);
 
-    objects::CTaxon3 taxon3(CTaxon3::initialize::yes);
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
 
     size_t chunk_size = 3;
     size_t i = 0;
     while (i < strain_rq.size()) {
         size_t len = min(chunk_size, strain_rq.size() - i);
-        vector< CRef<COrg_ref> >  tmp_rq(strain_rq.begin() + i, strain_rq.begin() + i + len);
+        vector<CRef<COrg_ref>>  tmp_rq(strain_rq.begin() + i, strain_rq.begin() + i + len);
         CRef<CTaxon3_reply> tmp_strain_reply = taxon3.SendOrgRefList(tmp_rq);
         BOOST_CHECK_EQUAL(tval.IncrementalStrainMapUpdate(tmp_rq, *tmp_strain_reply), kEmptyStr);
         i += chunk_size;
@@ -23005,9 +22987,9 @@ BOOST_AUTO_TEST_CASE(Test_VR_723)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CBioSource> src;
-    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsSource()) {
-            src.Reset(&((*it)->SetSource()));
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsSource()) {
+            src.Reset(&(it->SetSource()));
         }
     }
     COrgName::C_Name& orgname = src->SetOrg().SetOrgname().SetName();
@@ -23245,7 +23227,7 @@ BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
 
     STANDARD_SETUP
 
-    vector<CRef<CSeq_loc> > nonsense = CCDSTranslationProblems::GetNonsenseIntrons(*cds, scope);
+    vector<CRef<CSeq_loc>> nonsense = CCDSTranslationProblems::GetNonsenseIntrons(*cds, scope);
     BOOST_CHECK_EQUAL(nonsense.size(), (size_t)2);
     BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetFrom(), (size_t)9);
     BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetTo(), (size_t)11);
@@ -23274,33 +23256,33 @@ BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
 BOOST_AUTO_TEST_CASE(VR_758)
 {
     // make protein
-    CRef<objects::CBioseq> pseq(new objects::CBioseq());
-    pseq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
-    pseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
-    pseq->SetInst().SetExt().SetDelta().AddLiteral("MPRK", objects::CSeq_inst::eMol_aa);
-    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    CRef<CBioseq> pseq(new CBioseq());
+    pseq->SetInst().SetMol(CSeq_inst::eMol_aa);
+    pseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    pseq->SetInst().SetExt().SetDelta().AddLiteral("MPRK", CSeq_inst::eMol_aa);
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
     gap_seg->SetLiteral().SetSeq_data().SetGap();
     gap_seg->SetLiteral().SetLength(10);
     pseq->SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
-    pseq->SetInst().SetExt().SetDelta().AddLiteral("TEIN", objects::CSeq_inst::eMol_aa);
+    pseq->SetInst().SetExt().SetDelta().AddLiteral("TEIN", CSeq_inst::eMol_aa);
     pseq->SetInst().SetLength(18);
 
-    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    CRef<CSeq_id> pid(new CSeq_id());
     pid->SetLocal().SetStr("prot");
     pseq->SetId().push_back(pid);
 
-    CRef<objects::CSeqdesc> mpdesc(new objects::CSeqdesc());
-    mpdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide);
-    mpdesc->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_complete);
+    CRef<CSeqdesc> mpdesc(new CSeqdesc());
+    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    mpdesc->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_complete);
     pseq->SetDescr().Set().push_back(mpdesc);
 
-    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
+    CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSeq(*pseq);
 
     AddGoodSource(entry);
     AddGoodPub(entry);
 
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
+    CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetData().SetProt().SetName().push_back("fake protein name");
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("prot");
     feat->SetLocation().SetInt().SetFrom(0);
@@ -23412,10 +23394,10 @@ BOOST_AUTO_TEST_CASE(VR_778)
 
     // find sub pub and other pub
     CRef<CPub> subpub;
-    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsPub()) {
-            if ((*it)->GetPub().GetPub().Get().front()->IsSub()) {
-                subpub = (*it)->SetPub().SetPub().Set().front();
+    for (auto& it : entry->SetSeq().SetDescr().Set()) {
+        if (it->IsPub()) {
+            if (it->GetPub().GetPub().Get().front()->IsSub()) {
+                subpub = it->SetPub().SetPub().Set().front();
             }
         }
     }
@@ -25020,7 +25002,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4560)
 
 BOOST_AUTO_TEST_CASE(Test_VR_852)
 {
-    BOOST_CHECK_EQUAL("unclassified sequences", objects::validator::FixSpecificHost("unclassified sequences"));
+    BOOST_CHECK_EQUAL("unclassified sequences", validator::FixSpecificHost("unclassified sequences"));
 }
 
 
