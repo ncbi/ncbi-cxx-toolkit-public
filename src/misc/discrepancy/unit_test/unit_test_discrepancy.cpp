@@ -202,6 +202,15 @@ BOOST_AUTO_TEST_CASE(Test_RW1941)
             errMsg = e.GetMsg();
         }
         BOOST_CHECK_EQUAL(errMsg, "Unsupported type - Seq-annot");
+        pScope->ResetDataAndHistory();
     }
 
+    {
+        auto pEntry = BuildGoodNucProtSet();
+        pScope->AddTopLevelSeqEntry(*pEntry);
+        auto pDiscrSet = NDiscrepancy::CDiscrepancySet::New(*pScope);
+        auto pDiscrProd = pDiscrSet->RunTests({testName}, *pEntry, "");
+
+        pDiscrSet->RunTests({testName}, pEntry->GetSet(), "");
+    }
 }
