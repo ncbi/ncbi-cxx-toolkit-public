@@ -74,6 +74,11 @@ void CBlastUsageReport::x_CheckRunEnv()
 		int bn = NStr::StringToInt(CTempString(elb_batch_num), NStr::fConvErr_NoThrow);
 		AddParam(eELBBatchNum, bn);
 	}
+	char* elb_version = getenv("BLAST_ELB_VERSION");
+	if(elb_version != NULL){
+        string ev(elb_version);
+		AddParam(eELBVersion, ev);
+	}
 }
 
 CBlastUsageReport::CBlastUsageReport()
@@ -149,6 +154,7 @@ string CBlastUsageReport::x_EUsageParmsToString(EUsageParams p)
 		case eELBJobId:			retval.assign("elb_job_id"); break;
 		case eELBBatchNum:		retval.assign("elb_batch_num"); break;
         case eSRA:              retval.assign("sra"); break;
+        case eELBVersion:       retval.assign("elb_version"); break;
     	default:
         	LOG_POST(Warning <<"Invalid usage params: " << (int)p);
         	abort();

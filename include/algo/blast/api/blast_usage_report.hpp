@@ -97,7 +97,8 @@ public:
 		eAWS,
 		eELBJobId,
 		eELBBatchNum,
-        eSRA
+        eSRA,
+        eELBVersion
 	};
 
 	CBlastUsageReport();
