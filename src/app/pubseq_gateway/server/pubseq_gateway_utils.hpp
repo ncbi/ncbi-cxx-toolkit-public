@@ -341,6 +341,12 @@ string GetAccVerHistCompletionHeader(size_t  item_id,
 string GetIPGResolveHeader(size_t  item_id,
                            const string &  processor_id,
                            size_t  msg_size);
+string GetIPGMessageHeader(size_t  item_id,
+                           const string &  processor_id,
+                           CRequestStatus::ECode  status,
+                           int  code,
+                           EDiagSev  severity,
+                           size_t  msg_size);
 
 // Reset the request context if necessary
 class CRequestContextResetter

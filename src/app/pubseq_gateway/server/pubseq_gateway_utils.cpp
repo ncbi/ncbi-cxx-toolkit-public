@@ -153,6 +153,7 @@ static string   s_BioseqInfo = "bioseq_info";
 static string   s_BlobProp = "blob_prop";
 static string   s_Data = "data";
 static string   s_DataAndMeta = "data_and_meta";
+static string   s_MessageAndMeta = "message_and_meta";
 static string   s_Reply = "reply";
 static string   s_Blob = "blob";
 static string   s_Meta = "meta";
@@ -212,6 +213,8 @@ static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_DataAndMetaChunk = s_ChunkType + s_DataAndMeta;
 static string   s_AndDataChunk = "&" + s_DataChunk;
 static string   s_AndDataAndMetaChunk = "&" + s_DataAndMetaChunk;
+static string   s_MessageAndMetaChunk = s_ChunkType + s_MessageAndMeta;
+static string   s_AndMessageAndMetaChunk = "&" + s_MessageAndMetaChunk;
 static string   s_MetaChunk = s_ChunkType + s_Meta;
 static string   s_AndMetaChunk = "&" + s_MetaChunk;
 static string   s_MessageChunk = s_ChunkType + s_Message;
@@ -1222,6 +1225,43 @@ string GetIPGResolveHeader(size_t  item_id,
 
     len = PSGToString(msg_size, buf);
     reply.append(buf, len)
+         .append(s_AndNChunks)
+         .append(1, '1')
+         .append(1, '\n');
+    return reply;
+}
+
+string GetIPGMessageHeader(size_t  item_id,
+                           const string &  processor_id,
+                           CRequestStatus::ECode  status,
+                           int  code,
+                           EDiagSev  severity,
+                           size_t  msg_size)
+{
+    char        buf[64];
+    long        len;
+    string      reply(s_ReplyBegin);
+
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndIPGInfoItem)
+         .append(s_AndMessageAndMetaChunk)
+         .append(s_AndSize);
+
+    len = PSGToString(msg_size, buf);
+    reply.append(buf, len)
+         .append(s_AndStatus);
+
+    len = PSGToString(static_cast<int>(status), buf);
+    reply.append(buf, len)
+         .append(s_AndCode);
+
+    len = PSGToString(code, buf);
+    reply.append(buf, len)
+         .append(s_AndSeverity)
+         .append(SeverityToLowerString(severity))
          .append(s_AndNChunks)
          .append(1, '1')
          .append(1, '\n');
