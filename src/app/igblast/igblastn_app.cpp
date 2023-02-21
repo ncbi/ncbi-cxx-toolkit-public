@@ -312,6 +312,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 
         l_ig_opts->m_AirrField.push_back("sequence_id");
         l_ig_opts->m_AirrField.push_back("sequence");
+        l_ig_opts->m_AirrField.push_back("sequence_aa");
         l_ig_opts->m_AirrField.push_back("locus");
         l_ig_opts->m_AirrField.push_back("stop_codon");
         l_ig_opts->m_AirrField.push_back("vj_in_frame");
@@ -319,9 +320,8 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
         l_ig_opts->m_AirrField.push_back("productive");
         l_ig_opts->m_AirrField.push_back("rev_comp");
         l_ig_opts->m_AirrField.push_back("complete_vdj");
-        if (l_ig_opts->m_DFrameFileName != NcbiEmptyString) {
-            l_ig_opts->m_AirrField.push_back("d_frame");
-        }
+        l_ig_opts->m_AirrField.push_back("d_frame");
+       
         l_ig_opts->m_AirrField.push_back("v_call");
         l_ig_opts->m_AirrField.push_back("d_call");
         l_ig_opts->m_AirrField.push_back("j_call");
