@@ -185,3 +185,23 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyContext_ParseStream)
     }
     BOOST_CHECK_EQUAL(errMsg, "Unsupported type Seq-id in dummy_file");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_RW1941)
+{
+    auto testName = NDiscrepancy::GetDiscrepancyCaseName("DUP_DEFLINE");
+    auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+    {
+        auto pAnnot = BuildGoodGraphAnnot("dummyId");
+        pScope->AddSeq_annot(*pAnnot);
+        auto pDiscrSet = NDiscrepancy::CDiscrepancySet::New(*pScope);
+        string errMsg;
+        try {
+            pDiscrSet->RunTests({testName}, *pAnnot, "");
+        } catch (const CException& e) {
+            errMsg = e.GetMsg();
+        }
+        BOOST_CHECK_EQUAL(errMsg, "Unsupported type - Seq-annot");
+    }
+
+}
