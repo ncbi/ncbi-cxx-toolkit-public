@@ -265,7 +265,7 @@ sub get_files_from_json_metadata_1_1($$)
     my $metadata = decode_json($json);
     foreach my $db (sort @$metadata) {
         next if ($$db{version} ne BLASTDB_METADATA_VERSION);
-        push @retval, map { s,ftp://,https://, } @{$$db{files}};
+        push @retval, map { s,ftp://,https://,; $_; } @{$$db{files}};
     }
     return @retval;
 }
@@ -337,8 +337,8 @@ if ($location ne "NCBI") {
                     $cmd .= " $curl -sSOR";
                     $cmd .= " <$fh " ;
                 } else {
-                    $cmd = "$curl -sSR";
-                    $cmd .= " -O $_" foreach (@files2download);
+                    $cmd = "$curl -sSR --remote-name-all ";
+                    $cmd .= join(" " , @files2download);
                 }
             }
             print "$cmd\n" if $opt_verbose > 3;
