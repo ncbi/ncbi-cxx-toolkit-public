@@ -322,6 +322,11 @@ public:
                                   const string &  content);
     void PrepareIPGResolveData(const string &  processor_id,
                                const string &  content);
+    void PrepareIPGInfoMessageAndMeta(const string &  processor_id,
+                                      const string &  msg,
+                                      CRequestStatus::ECode  status,
+                                      int  err_code,
+                                      EDiagSev  severity);
     void PrepareRequestTimeoutMessage(const string &  msg);
     void PrepareProcessorProgressMessage(const string &  processor_id,
                                          const string &  progress_status);

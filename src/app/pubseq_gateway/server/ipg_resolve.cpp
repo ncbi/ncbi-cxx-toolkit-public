@@ -237,8 +237,41 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
         fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
 
-        if (m_RecordCount == 0)
+        if (m_RecordCount == 0) {
+            string      message = "No IPG info found for criteria: ";
+
+            if (m_IPGResolveRequest->m_IPG >= 0) {
+                message += "ipg: " + to_string(m_IPGResolveRequest->m_IPG) + "; ";
+            } else {
+                message += "ipg: <not set>; ";
+            }
+
+            if (m_IPGResolveRequest->m_Protein.has_value()) {
+                if (m_IPGResolveRequest->m_Protein.value().empty()) {
+                    message += "protein: <empty>; ";
+                } else {
+                    message += "protein: " + m_IPGResolveRequest->m_Protein.value() + "; ";
+                }
+            } else {
+                message += "protein: <not set>; ";
+            }
+
+            if (m_IPGResolveRequest->m_Nucleotide.has_value()) {
+                if (m_IPGResolveRequest->m_Nucleotide.value().empty()) {
+                    message += "nucleotide: <empty>";
+                } else {
+                    message += "nucleotide: " + m_IPGResolveRequest->m_Nucleotide.value();
+                }
+            } else {
+                message += "nucleotide: <not set>";
+            }
+
+            IPSGS_Processor::m_Reply->PrepareIPGInfoMessageAndMeta(
+                kIPGResolveProcessorName, message,
+                CRequestStatus::e404_NotFound, ePSGS_IPGNotFound, eDiag_Error);
+
             UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        }
 
         CPSGS_CassProcessorBase::SignalFinishProcessing();
         return false;
