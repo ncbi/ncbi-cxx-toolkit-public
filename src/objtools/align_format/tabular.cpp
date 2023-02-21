@@ -2041,6 +2041,11 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         wid->GetLabel(&query_id, CSeq_id::eContent);        
         m_AirrData["sequence_id"] = query_id;
         m_AirrData["sequence"] = m_Query;
+        if (annot->m_FrameInfo[0] >= 0) {
+            string seq_data(m_Query, annot->m_FrameInfo[0], m_Query.length() - annot->m_FrameInfo[0]);
+            CSeqTranslator::Translate(seq_data, m_AirrData["sequence_aa"], 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
         if (m_OtherInfo[4] == "Yes") {
             m_AirrData["productive"] = "T"; 
         } else if (m_OtherInfo[4] == "No") {
@@ -2318,6 +2323,9 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         query_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac)
             .GetSeqData(0, query_handle.GetBioseqLength(), query_seq);
         m_AirrData["sequence"] = query_seq;
+        CSeqTranslator::Translate(query_seq, m_AirrData["sequence_aa"], 
+                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        
         m_AirrData["rev_comp"] = "F";
     }
 }
