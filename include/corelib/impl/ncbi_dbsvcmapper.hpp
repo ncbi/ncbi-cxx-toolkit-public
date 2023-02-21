@@ -147,12 +147,12 @@ public:
     CDBServer(const string& name,
               Uint4         host = 0,
               Uint2         port = 0,
-              unsigned int  expire_time = 0);
+              time_t        expire_time = 0);
 
     const string& GetName      (void) const { return m_Name; }
     Uint4         GetHost      (void) const { return m_Host; }
     Uint2         GetPort      (void) const { return m_Port; }
-    time_t        GetExpireTime(void) const { return time_t(m_ExpireTime); }
+    time_t        GetExpireTime(void) const { return m_ExpireTime; }
 
     bool IsValid(void) const
     {
@@ -160,10 +160,10 @@ public:
     }
 
 private:
-    const string       m_Name;
-    const Uint4        m_Host;
-    const Uint2        m_Port;
-    const unsigned int m_ExpireTime;
+    const string m_Name;
+    const Uint4  m_Host;
+    const Uint2  m_Port;
+    const time_t m_ExpireTime;
 };
 typedef CRef<CDBServer> TSvrRef;
 
@@ -190,7 +190,7 @@ public:
                     Uint2         port,
                     double        ranking,
                     TState        state = fState_Normal,
-                    unsigned int  expire_time = 0)
+                    time_t        expire_time = 0)
         : CDBServer(name, host, port, expire_time),
           m_Ranking(ranking), m_State(state)
         { }
@@ -368,7 +368,7 @@ inline
 CDBServer::CDBServer(const string& name,
                      Uint4         host,
                      Uint2         port,
-                     unsigned int  expire_time) :
+                     time_t        expire_time) :
 m_Name(name),
 m_Host(host),
 m_Port(port),
