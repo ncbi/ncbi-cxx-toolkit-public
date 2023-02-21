@@ -2410,8 +2410,9 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IsProtein = (mol_type == CSearchDatabase::eBlastDbIsProtein);
 
     if (args.Exist(kArgDb) && args[kArgDb]) {
+	std::string local_dblist = NStr::TruncateSpaces( args[kArgDb].AsString() ); 
 
-        m_SearchDb.Reset(new CSearchDatabase(args[kArgDb].AsString(),
+        m_SearchDb.Reset(new CSearchDatabase( local_dblist, 
                                              mol_type));
         
         if (args.Exist(kArgGiList) && args[kArgGiList]) {
