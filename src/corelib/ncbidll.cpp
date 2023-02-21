@@ -290,8 +290,8 @@ CDllResolver::~CDllResolver()
 bool CDllResolver::TryCandidate(const string& file_name,
                                 const string& driver_name)
 {
+    CDll* dll = nullptr;
     try {
-        CDll* dll = nullptr;
         {{
             // Deliberate leak to avoid automatic unloading DLL from a memory
             NCBI_LSAN_DISABLE_GUARD;
@@ -334,6 +334,10 @@ bool CDllResolver::TryCandidate(const string& file_name,
     }
     catch (CCoreException& ex)
     {
+        if (dll != nullptr) {
+            dll->Unload();
+            delete dll;
+        }
         if (ex.GetErrCode() != CCoreException::eDll) {
             throw;
         }
