@@ -3409,6 +3409,7 @@ BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
     tasks = CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt);
     arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
     arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-fast"));
 }
 
 BOOST_AUTO_TEST_CASE(CheckQueryCoveragePercent) {
