@@ -3028,6 +3028,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 
     BlastCompo_QueryInfo** query_info_tld = NULL;
     int* numContexts_tld = NULL;
+    int* numQueries_tld = NULL;
     int* compositionTestIndex_tld = NULL;
     Blast_RedoAlignParams** redo_align_params_tld = NULL;
     BLAST_SequenceBlk** subjectBlk_tld = NULL;
@@ -3115,13 +3116,6 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
         return (Int2) status_code;
     }
 
-    if(smithWaterman) {
-        status_code =
-            Blast_ForbiddenRangesInitialize(&forbidden, queryInfo->max_length);
-        if (status_code != 0) {
-            goto function_cleanup;
-        }
-    }
     redoneMatches = calloc(numQueries, sizeof(BlastCompo_Heap));
     if (redoneMatches == NULL) {
         status_code = -1;
@@ -3234,6 +3228,16 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     actual_num_threads,
                     sizeof(int)
             );
+    numQueries_tld =
+            (int*) calloc(
+                    actual_num_threads,
+                    sizeof(int)
+            );
+    Blast_ForbiddenRanges** forbidden_tld =
+            (Blast_ForbiddenRanges**) calloc(
+                    actual_num_threads,
+                    sizeof(Blast_ForbiddenRanges*)
+            );
 
     int i;
     for (i = 0; i < actual_num_threads; ++i) {
@@ -3254,7 +3258,17 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                 sbp->number_of_contexts
         );
 
+        if(smithWaterman) {
+	   forbidden_tld[i] = calloc(1,sizeof(Blast_ForbiddenRanges));
+           status_code =
+               Blast_ForbiddenRangesInitialize(forbidden_tld[i], queryInfo->max_length);
+           if (status_code != 0) {
+              goto function_cleanup;
+           }
+    	}
+
         numContexts_tld[i]          = numContexts;
+        numQueries_tld[i]           = numQueries;
         compositionTestIndex_tld[i] = compositionTestIndex;
         seqsrc_tld[i]               = BlastSeqSrcCopy(seqSrc);
         gap_align_tld[i]            =
@@ -3419,10 +3433,10 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
     gap_align_tld, results_tld, \
     redoneMatches_tld, \
     STDERR_COMMA \
-    numQueries, numMatches, theseMatches, \
+    numMatches, theseMatches, \
     numFrames, program_number, subjectBlk_tld, positionBased, \
     default_db_genetic_code, localScalingFactor, queryInfo, \
-    sbp, smithWaterman, compositionTestIndex_tld, forbidden, \
+    sbp, smithWaterman, numQueries_tld, compositionTestIndex_tld, forbidden_tld, \
     NRrecord_tld, actual_num_threads, sbp_tld, \
     matrix_tld, query_info_tld, numContexts_tld, \
     genetic_code_string, queryBlk, compo_adjust_mode, \
@@ -3459,10 +3473,12 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                 BlastScoreBlk* sbp;
                 BLAST_SequenceBlk* subjectBlk;
                 int numContexts;
+                int numQueries;
                 int compositionTestIndex;
                 /* existing alignments for a match */
                 Int4** matrix;                   /* score matrix */
                 int* pStatusCode;
+                Blast_ForbiddenRanges* forbidden = NULL;
 
                 double pvalueForThisPair = (-1); /* p-value for this match
                                                     for composition; -1 == no adjustment*/
@@ -3487,8 +3503,10 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                 pStatusCode          = &status_code_tld[tid];
                 query_info           = query_info_tld[tid];
                 numContexts          = numContexts_tld[tid];
+                numQueries           = numQueries_tld[tid];
                 compositionTestIndex = compositionTestIndex_tld[tid];
                 subjectBlk           = subjectBlk_tld[tid];
+		forbidden            = forbidden_tld[tid];
 
                 BlastHSPList* localMatch = theseMatches[b];
 
@@ -3596,7 +3614,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                                         matrix,
                                         BLASTAA_SIZE,
                                         NRrecord,
-                                        &forbidden,
+                                        forbidden,
                                         redoneMatches,
                                         &pvalueForThisPair,
                                         compositionTestIndex,
@@ -3854,9 +3872,6 @@ function_cleanup:
         sfree(redoneMatches);
         redoneMatches = NULL;
     }
-    if (smithWaterman) {
-        Blast_ForbiddenRangesRelease(&forbidden);
-    }
     if (gapAlign != NULL) {
         gapAlign = BLAST_GapAlignStructFree(gapAlign);
     }
@@ -3876,6 +3891,8 @@ function_cleanup:
         BlastSeqSrcFree(seqsrc_tld[i]);
         results_tld[i] = Blast_HSPResultsFree(results_tld[i]);
         s_FreeBlastCompo_QueryInfoArray(&query_info_tld[i], numContexts);
+        if (smithWaterman)
+        	Blast_ForbiddenRangesRelease(forbidden_tld[i]);
     }
     sfree(alignments_tld);
     sfree(compositionTestIndex_tld);
@@ -3886,6 +3903,7 @@ function_cleanup:
     sfree(matrix_tld);
     sfree(NRrecord_tld);
     sfree(numContexts_tld);
+    sfree(numQueries_tld);
     sfree(query_info_tld);
     sfree(redo_align_params_tld);
     sfree(redoneMatches_tld);
@@ -3896,6 +3914,7 @@ function_cleanup:
     sfree(seqsrc_tld);
     sfree(status_code_tld);
     sfree(subjectBlk_tld);
+    sfree(forbidden_tld);
     sfree(theseMatches);
 
     return (Int2) status_code;
