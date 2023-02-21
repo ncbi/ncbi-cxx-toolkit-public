@@ -353,7 +353,13 @@ static void s_MacArgMunging(CNcbiApplicationAPI&   app,
     }
 
     // stash them away in the standard argc and argv places.
-    *argcPtr = v.size();
+    if (v.size() > kMax_Int) {
+        ERR_POST_X(24,
+                   Critical << "Overly high argument count " << v.size()
+                   << "; truncating to " << kMax_Int);
+        v.resize(kMax_Int);
+    }
+    *argcPtr = static_cast<int>(v.size());
 
     char** argv =  new char*[v.size()];
     int c = 0;
