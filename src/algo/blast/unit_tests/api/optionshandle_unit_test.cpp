@@ -258,6 +258,19 @@ BOOST_AUTO_TEST_CASE(BlastpTest) {
        delete handle;
 }
 
+BOOST_AUTO_TEST_CASE(BlastpFastTest) {
+       CBlastOptionsHandle* handle = CBlastOptionsFactory::CreateTask("blastp-fast");
+       CBlastAdvancedProteinOptionsHandle* opts =
+             dynamic_cast<CBlastAdvancedProteinOptionsHandle*> (handle);
+       BOOST_REQUIRE(opts != NULL);
+       const CBlastOptions& kOpts = opts->GetOptions();
+       BOOST_REQUIRE(!strcmp("BLOSUM62", kOpts.GetMatrixName()));
+       BOOST_REQUIRE_EQUAL(5, kOpts.GetWordSize());
+       BOOST_REQUIRE_EQUAL(eCompressedAaLookupTable, kOpts.GetLookupTableType());
+       BOOST_REQUIRE_EQUAL(BLAST_WORD_THRESHOLD_BLASTP_FAST, kOpts.GetWordThreshold());
+       delete handle;
+}
+
 BOOST_AUTO_TEST_CASE(BlastpLookupTableType) {
        CBlastOptionsHandle* handle = CBlastOptionsFactory::CreateTask("blastp"); 
        CBlastAdvancedProteinOptionsHandle* opts =
@@ -266,8 +279,19 @@ BOOST_AUTO_TEST_CASE(BlastpLookupTableType) {
        BOOST_REQUIRE_EQUAL(eAaLookupTable, kOpts.GetLookupTableType());
        opts->SetWordSize(6);
        BOOST_REQUIRE_EQUAL(eCompressedAaLookupTable, kOpts.GetLookupTableType());
+       BOOST_REQUIRE_EQUAL(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_6, kOpts.GetWordThreshold());
        opts->SetWordSize(2);
        BOOST_REQUIRE_EQUAL(eAaLookupTable, kOpts.GetLookupTableType());
+       BOOST_REQUIRE_EQUAL(BLAST_WORD_THRESHOLD_BLASTP, kOpts.GetWordThreshold());
+       opts->SetWordSize(5);
+       BOOST_REQUIRE_EQUAL(eCompressedAaLookupTable, kOpts.GetLookupTableType());
+       BOOST_REQUIRE_EQUAL(BLAST_WORD_THRESHOLD_BLASTP_FAST, kOpts.GetWordThreshold());
+       opts->SetWordSize(3);
+       BOOST_REQUIRE_EQUAL(eAaLookupTable, kOpts.GetLookupTableType());
+       BOOST_REQUIRE_EQUAL(BLAST_WORD_THRESHOLD_BLASTP, kOpts.GetWordThreshold());
+       opts->SetWordSize(7);
+       BOOST_REQUIRE_EQUAL(eCompressedAaLookupTable, kOpts.GetLookupTableType());
+       BOOST_REQUIRE_EQUAL(BLAST_WORD_THRESHOLD_BLASTP_WD_SZ_7, kOpts.GetWordThreshold());
 }
 
 BOOST_AUTO_TEST_CASE(BlastpShortTest) {
