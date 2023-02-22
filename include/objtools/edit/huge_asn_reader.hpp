@@ -153,7 +153,11 @@ protected:
     };
 
     virtual void x_SetHooks(CObjectIStream& objStream, TContext& context);
+    virtual void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context);
     void x_ResetTopEntry();
+    using TStreamPos = streampos;
+    TStreamPos GetCurrentPos() const;
+
 
 private:
     void x_ResetIndex();
@@ -166,8 +170,8 @@ private:
 
 
     ILineErrorListener * mp_MessageListener = nullptr;
-    std::streampos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
-    std::streampos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
+    TStreamPos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
+    TStreamPos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
     CHugeFile*           m_file             = nullptr;
 
 // global lists, readonly after indexing
