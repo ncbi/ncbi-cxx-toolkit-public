@@ -292,16 +292,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     });
 
 
-    SetLocalSkipHook(CType<CFeat_id>(), objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
-    {
-        auto id = Ref(new CFeat_id);
-        type.GetTypeInfo()->DefaultReadData(in, id);
-        if (id->IsLocal() && id->GetLocal().IsId())
-        {
-            m_max_local_id = std::max(m_max_local_id, id->GetLocal().GetId());
-        }
-    });
+    x_SetFeatIdHooks(objStream, context);
 
     SetLocalReadHook(bioseqset_seqset_mi, objStream,
             [](CObjectIStream& in, const CObjectInfoMI& member)
@@ -374,6 +365,20 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 
 }
 
+void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
+{
+    SetLocalSkipHook(CType<CFeat_id>(), objStream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
+    {
+        auto id = Ref(new CFeat_id);
+        type.GetTypeInfo()->DefaultReadData(in, id);
+        if (id->IsLocal() && id->GetLocal().IsId())
+        {
+            m_max_local_id = std::max(m_max_local_id, id->GetLocal().GetId());
+        }
+    });
+}
+
 void CHugeAsnReader::x_ResetTopEntry()
 {
     m_top_entry.Reset();
@@ -419,6 +424,12 @@ CRef<CSerialObject> CHugeAsnReader::ReadAny()
     //_ASSERT(m_current_pos == m_next_pos);
 
     return serial;
+}
+
+
+CHugeAsnReader::TStreamPos CHugeAsnReader::GetCurrentPos() const
+{
+    return m_current_pos;
 }
 
 
