@@ -740,15 +740,18 @@ void FixOrgNames(CSeq_entry_Handle seh, string& result)
 void FindOrgNames(CSeq_entry_Handle seh, vector<string>& taxnames)
 {
     if (!seh) return;
+    set<string> names;
     CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
     for ( ; b_iter ; ++b_iter ) {
         CSeqdesc_CI it (*b_iter, CSeqdesc::e_Source);
-        if (it) {
-            if (it->GetSource().IsSetTaxname()) {
-                taxnames.push_back(it->GetSource().GetTaxname());
+        if (it && it->GetSource().IsSetTaxname()) {
+            auto& tax_name = it->GetSource().GetTaxname();
+            if (!NStr::IsBlank(tax_name)) {
+                names.insert(tax_name);
             }
         }
     }
+    taxnames.assign(names.begin(), names.end());
 }
 
 void RemoveFieldNameFromString( const string& field_name, string& str)
