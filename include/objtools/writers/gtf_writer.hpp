@@ -48,6 +48,33 @@ BEGIN_objects_SCOPE
 class CGtfRecord;
 
 //  ============================================================================
+class CGtfIdGenerator
+//  ============================================================================
+{
+public:
+    CGtfIdGenerator() {};
+
+    void Reset()
+    {
+        mLastSuffixes.clear();
+    }
+    string NextId(
+        const string prefix)
+    {
+        auto mapIt = mLastSuffixes.find(prefix);
+        if (mapIt != mLastSuffixes.end()) {
+            ++mapIt->second;
+            return prefix + "_" + NStr::NumericToString(mapIt->second);
+        }
+        mLastSuffixes[prefix] = 1;
+        return prefix + "_1";
+    }
+
+private:
+    map<string, int> mLastSuffixes;
+};
+
+//  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGtfWriter:
     public CGff2Writer
 //  ============================================================================
@@ -115,10 +142,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
-    static std::string xGenericGeneId(
+    std::string xGenericGeneId(
         const CMappedFeat&,
         CGffFeatureContext& );
-    static std::string xGenericTranscriptId(
+    std::string xGenericTranscriptId(
         const CMappedFeat&);
 
     bool xWriteRecord(
@@ -172,6 +199,9 @@ private:
 
     GENE_IDS mUsedGeneIds;
     GENE_MAP mGeneMap;
+
+    map<CMappedFeat, string> mMapFeatToGeneId;
+    CGtfIdGenerator mIdGenerator;
 };
 
 END_objects_SCOPE

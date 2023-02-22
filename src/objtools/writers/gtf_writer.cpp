@@ -67,32 +67,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-//  ============================================================================
-class CGtfIdGenerator
-//  ============================================================================
-{
-public:
-    static void Reset()
-    {
-        mLastSuffixes.clear();
-    }
-    static string NextId(
-        const string prefix)
-    {
-        auto mapIt = mLastSuffixes.find(prefix);
-        if (mapIt != mLastSuffixes.end()) {
-            ++mapIt->second;
-            return prefix + "_" + NStr::NumericToString(mapIt->second);
-        }
-        mLastSuffixes[prefix] = 1;
-        return prefix + "_1";
-    }
-
-private:
-    static map<string, int> mLastSuffixes;
-};
-map<string, int> CGtfIdGenerator::mLastSuffixes;
-
 //  ----------------------------------------------------------------------------
 CGtfWriter::CGtfWriter(
     CScope&scope,
@@ -101,7 +75,7 @@ CGtfWriter::CGtfWriter(
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags )
 {
-    CGtfIdGenerator::Reset(); //may be flag dependent some day
+    mIdGenerator.Reset(); //may be flag dependent some day
 };
 
 //  ----------------------------------------------------------------------------
@@ -111,7 +85,7 @@ CGtfWriter::CGtfWriter(
 //  ----------------------------------------------------------------------------
     CGff2Writer( ostr, uFlags )
 {
-    CGtfIdGenerator::Reset(); //may be flag dependent some day
+    mIdGenerator.Reset(); //may be flag dependent some day
 };
 
 //  ----------------------------------------------------------------------------
@@ -877,30 +851,27 @@ string CGtfWriter::xGenericGeneId(
     CGffFeatureContext& context)
 //  ----------------------------------------------------------------------------
 {
-    static map<CMappedFeat, string> mapFeatToGeneId;
-    static unsigned int uId = 1;
-
-    auto featIt = mapFeatToGeneId.find(mf);
-    if (featIt != mapFeatToGeneId.end()) {
+    auto featIt = mMapFeatToGeneId.find(mf);
+    if (featIt != mMapFeatToGeneId.end()) {
         return featIt->second;
     }
 
     auto parent = context.FeatTree().GetParent(mf);
-    featIt = mapFeatToGeneId.find(parent);
-    if (featIt != mapFeatToGeneId.end()) {
+    featIt = mMapFeatToGeneId.find(parent);
+    if (featIt != mMapFeatToGeneId.end()) {
         return featIt->second;
     }
 
     auto children = context.FeatTree().GetChildren(mf);
-    for (auto child: children) {
-        featIt = mapFeatToGeneId.find(child);
-        if (featIt != mapFeatToGeneId.end()) {
+    for (auto child : children) {
+        featIt = mMapFeatToGeneId.find(child);
+        if (featIt != mMapFeatToGeneId.end()) {
             return featIt->second;
         }
     }
 
-    string geneId = string( "unassigned_gene_" ) + NStr::UIntToString(uId++);
-    mapFeatToGeneId[mf] = geneId;
+    string geneId = mIdGenerator.NextId("unassigned_gene");
+    mMapFeatToGeneId[mf] = geneId;
     return geneId;
 }
 
@@ -909,7 +880,7 @@ string CGtfWriter::xGenericTranscriptId(
     const CMappedFeat& mf)
     //  ----------------------------------------------------------------------------
 {
-    return CGtfIdGenerator::NextId("unassigned_transcript");
+    return mIdGenerator.NextId("unassigned_transcript");
 }
 
 //  ----------------------------------------------------------------------------
