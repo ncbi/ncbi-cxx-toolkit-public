@@ -445,14 +445,20 @@ CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId)
 }
 
 
-
-void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
+void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context)
 {
-    TParent::x_SetHooks(objStream, context);
 
-    if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
-        return;
-    }
+    SetLocalSkipHook(CType<CFeat_id>(), objStream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
+        {
+            auto pFeatId = Ref(new CFeat_id);
+            type.GetTypeInfo()->DefaultReadData(in, pFeatId);
+            if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
+            {
+                m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
+            }
+        });
+
 
     SetLocalReadHook(CType<CFeat_id>(), objStream,
             [this](CObjectIStream& in, const CObjectInfo& object)
@@ -465,6 +471,16 @@ void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& cont
                     m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
                 }
             });
+}
+
+
+void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
+{
+    TParent::x_SetHooks(objStream, context);
+
+    if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
+        return;
+    }
 
 
     SetLocalSkipHook(CType<CSeq_feat>(), objStream,

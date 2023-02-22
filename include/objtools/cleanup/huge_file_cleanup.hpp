@@ -62,6 +62,8 @@ public:
     const CCleanupChangeCore& GetChanges() const;
 private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
+    void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context) override;
+
     void x_CreateSmallGenomeSets();
     void x_PruneIfFeatsIncomplete();
     void x_PruneAndReorderTopIds();

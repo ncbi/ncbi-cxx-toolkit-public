@@ -106,7 +106,7 @@ bool CFixFeatureId::UpdateFeatureIds(CSeq_feat& feat,
     if (feat.IsSetXref()) {
         for (auto pXref : feat.SetXref()) {
             if (pXref->IsSetId() &&
-                pXref->GetId().IsLocal() &
+                pXref->GetId().IsLocal() &&
                 pXref->GetId().GetLocal().IsId()) {
                 TId feat_id = pXref->GetId().GetLocal().GetId();
                 auto it = id_map.find(feat_id);
