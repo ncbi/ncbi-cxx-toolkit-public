@@ -36,7 +36,181 @@
 
 
 #===============================================================================
-# System and 3rd party issued
+# System/glibc issues
+
+{
+   Known LIBC bug (https://bugs.kde.org/show_bug.cgi?id=167483)
+   Memcheck:Free
+   fun:free
+   fun:free_mem
+   fun:__libc_freeres
+   fun:_vgnU_freeres
+   fun:exit
+   fun:(below main)
+}
+{
+   libc/ I think this is glibc's ultra optimised getenv doing 2 byte reads
+   Memcheck:Addr2
+   fun:getenv
+}
+{
+   libc/ I think this is glibc's ultra optimised getenv doing 2 byte reads
+   Memcheck:Cond
+   fun:getenv
+}
+{
+   STL/locale
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znwj
+   fun:_ZNSt6locale7classicEv
+}
+{
+   STL/uncaught_exception
+   Memcheck:Leak
+   fun:malloc
+   fun:__cxa_get_globals
+   fun:_ZSt18uncaught_exceptionv
+}
+{
+   libc/dlrelocate
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:*
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:add_to_global
+   fun:dl_open_worker
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:calloc
+   fun:_dlerror_run
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:decompose_rpath
+   fun:_dl_map_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   fun:_dl_map_object_deps
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_new_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:_dl_map_object
+}
+{
+   libc/dlopen
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_check_map_versions
+}
+{
+   libc/dlsym
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:dlsym*
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:__builtin_vec_new
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/buffer
+   Memcheck:Leak
+   fun:_Znaj
+   fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
+}
+{
+   iostream/sync_with_stdio
+   Memcheck:Leak
+   fun:_Znam
+   fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv*
+   fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
+   fun:_ZNSt8ios_base15sync_with_stdioEb
+}
+{
+   _dl_open
+   Memcheck:Addr4
+   ...
+   fun:_dl_catch_error
+   fun:_dl_open
+}
+{
+   _dl_map_object
+   Memcheck:Addr4
+   ...
+   fun:_dl_map_object
+}
+{
+   OpenMP/malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:gomp_malloc
+   fun:gomp_init_num_threads
+   fun:initialize_env
+   fun:_dl_init
+}
+{
+    GProf/profil_counter
+    Memcheck:Cond
+    fun:profil_counter
+}
+{
+   libc/localtime_r
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:tzset_internal
+   fun:__tz_convert
+}
+{
+   libc/getpwuid_r
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:getpwuid_r*
+}
+
+
+#===============================================================================
+# 3rd party issues
 
 {
    BerkeleyDB-4.6.21.1 -- looks like an internal glitch (GCC730-ReleaseMT)
@@ -60,7 +234,6 @@
    fun:__db_put
    fun:__db_put_pp
 }
-
 
 #{
 #   NCBI VDB ver 2.5.0 -- uninit value created on stack, passed around
@@ -335,17 +508,6 @@
 }
 
 {
-   Known LIBC bug (https://bugs.kde.org/show_bug.cgi?id=167483)
-   Memcheck:Free
-   fun:free
-   fun:free_mem
-   fun:__libc_freeres
-   fun:_vgnU_freeres
-   fun:exit
-   fun:(below main)
-}
-
-{
    Sybase CTLIB 15.7-SP122-64bit (Case 1)
    Memcheck:Addr1
    fun:com_secure_memset
@@ -404,17 +566,6 @@
 }
 
 {
-   I think this is glibc's ultra optimised getenv doing 2 byte reads
-   Memcheck:Addr2
-   fun:getenv
-}
-{
-   I think this is glibc's ultra optimised getenv doing 2 byte reads
-   Memcheck:Cond
-   fun:getenv
-}
-
-{
    CToolkit/COldAsnTypeInfo
    Memcheck:Leak
    fun:?alloc
@@ -455,139 +606,29 @@
    fun:memcpy@@GLIBC_2.14
    fun:mbedtls_mpi_sub_abs_ncbicxx_2_28_0
 }
-
 {
-   STL/locale
+   Python
    Memcheck:Leak
-   fun:__builtin_vec_new
-   fun:_Znwj
-   fun:_ZNSt6locale7classicEv
+   ...
+   obj:*/python-*/*
 }
 {
-   STL/uncaught_exception
-   Memcheck:Leak
-   fun:malloc
-   fun:__cxa_get_globals
-   fun:_ZSt18uncaught_exceptionv
+   Python
+   Memcheck:Value8
+   ...
+   obj:*/python-*/*
 }
 {
-   libc/dlrelocate
+   Python
+   Memcheck:Addr4
+   ...
+   obj:*/python-*/*
+}
+{
+   Python
    Memcheck:Cond
-   fun:_dl_relocate_object
-   fun:*
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:malloc
-   fun:add_to_global
-   fun:dl_open_worker
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:calloc
-   fun:_dlerror_run
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:malloc
-   fun:decompose_rpath
-   fun:_dl_map_object
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:malloc
-   fun:_dl_map_object_deps
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:malloc
-   fun:_dl_new_object
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_new_object
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:malloc
-   fun:open_rpath
-   fun:_dl_map_object
-}
-{
-   libc/dlopen
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_check_map_versions
-}
-{
-   iostream/buffer
-   Memcheck:Leak
-   fun:__builtin_vec_new
-   fun:_Znaj
-   fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
-}
-{
-   iostream/buffer
-   Memcheck:Leak
-   fun:_Znaj
-   fun:_ZNSt13basic_filebufIwSt11char_traitsIwEE27_M_allocate_internal_bufferEv
-}
-{
-   iostream/buffer
-   Memcheck:Leak
-   fun:__builtin_vec_new
-   fun:_Znaj
-   fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
-}
-{
-   iostream/buffer
-   Memcheck:Leak
-   fun:_Znaj
-   fun:_ZNSt13basic_filebufIcSt11char_traitsIcEE27_M_allocate_internal_bufferEv
-}
-{
-   iostream/sync_with_stdio
-   Memcheck:Leak
-   fun:_Znam
-   fun:_ZNSt13basic_filebufI?St11char_traitsI?EE27_M_allocate_internal_bufferEv*
-   fun:_ZN9__gnu_cxx13stdio_filebuf*char_traitsI?EEC1EP8_IO_FILESt13_Ios_Openmodem
-   fun:_ZNSt8ios_base15sync_with_stdioEb
-}
-{
-   _dl_open
-   Memcheck:Addr4
    ...
-   fun:_dl_catch_error
-   fun:_dl_open
-}
-{
-   _dl_map_object
-   Memcheck:Addr4
-   ...
-   fun:_dl_map_object
-}
-{
-   OpenMP/malloc
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:gomp_malloc
-   fun:gomp_init_num_threads
-   fun:initialize_env
-   fun:_dl_init
-}
-{
-    GProf/profil_counter
-    Memcheck:Cond
-    fun:profil_counter
+   obj:*/python-*/*
 }
 
 
@@ -595,7 +636,7 @@
 # corelib
 
 {
-    corelib/CStackTrace - 
+    corelib/CStackTrace 
     Memcheck:Leak
     match-leak-kinds: definite
     fun:*alloc
@@ -649,7 +690,6 @@
     fun:_GLOBAL__sub_I_ncbidiag.cpp
     fun:__libc_csu_init
 }
-
 {
     corelib/SSystemMutex/InitializeDynamic
     Memcheck:Cond
@@ -700,9 +740,39 @@
     Memcheck:Leak
     match-leak-kinds: definite
     fun:_Znwm
-    fun:_ZN4ncbi7CObjectnwEm
     ...
     fun:_ZN4ncbi13GetDiagBufferEv
+}
+{
+   CDllResolver::TryCandidate() -- deliberate leak to avoid automatic unloading DLL from a memory
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN4ncbi*CDll4LoadEv
+   ...
+   fun:_ZN4ncbi12CDllResolver*TryCandidate*
+}
+{
+   CDllResolver::TryCandidate() -- deliberate leak to avoid automatic unloading DLL from a memory
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN4ncbi12CDllResolver*TryCandidate*
+}
+
+
+#===============================================================================
+# dbapi
+
+{
+   dbapi/CTLibContext
+   Memcheck:Leak
+   fun:*alloc
+   fun:comn_create_mutex
+   fun:cs__uni_mtx_alloc
+   fun:unisem_RegisterCallbacks
+   fun:cs__ctx_init
+   fun:cs_ctx_alloc
+   fun:_ZN4ncbi12CTLibContextC1Ebi
 }
 
 
@@ -1158,7 +1228,7 @@
    Helgrind:Race
    fun:_ZL24sx_GetLastNewPtrMultiplev
    fun:_ZL25sx_PushLastNewPtrMultiplePvm
-   fun:sx_PushLastNewPtr
+   fun:sx_PushLastNewPtr*
    fun:_ZN17CTestTlsObjectApp7RunTestEv
 }
 {
