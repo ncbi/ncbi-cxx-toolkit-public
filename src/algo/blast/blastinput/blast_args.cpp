@@ -1208,6 +1208,9 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             arg_desc.AddOptionalKey(kArgPSIInputChkPntFile, "psi_chkpt_file",
                                     "PSI-BLAST checkpoint file",
                                     CArgDescriptions::eInputFile);
+            arg_desc.SetDependency(kArgPSIInputChkPntFile,
+                                   CArgDescriptions::eExcludes,
+                                   kArgRemote);
         }
     }
 
