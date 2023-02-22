@@ -528,30 +528,29 @@ void CDiscrepancyContext::Push(const CSerialObject& root, const string& fname)
         NCBI_THROW(CException, eUnknown, "Object has unknown type");
     }
 
-    const auto& name = pTypeInfo->GetName();
 
-    if (name == "Bioseq") {
-        ParseObject(static_cast<const CBioseq&>(root));
+    if (pTypeInfo == CBioseq::GetTypeInfo()) {
+        ParseObject(*CTypeConverter<CBioseq>::SafeCast(&root));
         return;
     }
     
-    if (name == "Bioseq-set") {
-        ParseObject(static_cast<const CBioseq_set&>(root));
+    if (pTypeInfo == CBioseq_set::GetTypeInfo()) {
+        ParseObject(*CTypeConverter<CBioseq_set>::SafeCast(&root));
         return;
     }
     
-    if (name == "Seq-entry") {
-        ParseObject(static_cast<const CSeq_entry&>(root));
+    if (pTypeInfo == CSeq_entry::GetTypeInfo()) {
+        ParseObject(*CTypeConverter<CSeq_entry>::SafeCast(&root));
         return;
     }
     
-    if (name == "Seq-submit") {
-        ParseObject(static_cast<const CSeq_submit&>(root));
+    if (pTypeInfo == CSeq_submit::GetTypeInfo()) {
+        ParseObject(*CTypeConverter<CSeq_submit>::SafeCast(&root));
         return;
     }
 
     NCBI_THROW(CException, eUnknown, 
-            "Unsupported type - " + name);
+            "Unsupported type - " + pTypeInfo->GetName());
 }
 
 
