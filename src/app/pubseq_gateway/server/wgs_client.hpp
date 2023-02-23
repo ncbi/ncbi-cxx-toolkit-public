@@ -91,6 +91,7 @@ struct SWGSData
     TBioseqInfoFlags                m_BioseqInfoFlags = 0;
     shared_ptr<CBioseqInfoRecord>   m_BioseqInfo;
     CRef<objects::CAsnBinData>      m_Data;
+    bool                            m_Excluded = false;
     bool                            m_Compress = false;
 };
 
