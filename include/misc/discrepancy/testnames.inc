@@ -192,6 +192,7 @@ enum class eTestNames
     UNWANTED_SPACER,
     USA_STATE,
     ZERO_BASECOUNT,
+    _CDS_TRNA_OVERLAP,
     _SUSPECT_PRODUCT_NAMES,
     max_test_names,
     notset,
@@ -236,5 +237,6 @@ enum class eTestNames
     eTestNames::SOURCE_QUALS,  \
     eTestNames::SUSPECT_PRODUCT_NAMES,  \
     eTestNames::SWITCH_STRUCTURED_COMMENT_PREFIX,  \
-    eTestNames::USA_STATE
+    eTestNames::USA_STATE,  \
+    eTestNames::_CDS_TRNA_OVERLAP
 
