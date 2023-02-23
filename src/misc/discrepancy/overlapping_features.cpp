@@ -82,11 +82,10 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart, "CDS t
 
 static const string kCdsTrnaOverlapComment = "TAA stop codon is completed by the addition of 3' A residues to the mRNA";
 
-#if 0
-_DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, SEQUENCE, 0, "CDS tRNA Overlap - autofix") {}
-_DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP) {}
+DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, SEQUENCE, 0, "CDS tRNA Overlap - autofix") {}
+DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP) {}
 
-_DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
+DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 {
     const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*context.FindObject(*obj));
     const CSeq_loc& loc = cds.GetLocation();
@@ -178,7 +177,6 @@ _DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
     }
     return CRef<CAutofixReport>();
 }
-#endif
 
 
 // RNA_CDS_OVERLAP
