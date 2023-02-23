@@ -489,16 +489,7 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     }
     try {
         x_SendBioseqInfo();
-        if ( m_WGSData->IsForbidden() ) {
-            x_SendForbidden();
-        }
-        else if ( m_WGSData->m_Data ) {
-            x_SendBlob();
-        }
-        else {
-            x_Finish(ePSGS_NotFound);
-            return;
-        }
+        x_SendBlob();
     }
     catch (exception& exc) {
         x_SendError("Exception when handling a request: ", exc);
@@ -560,16 +551,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         return;
     }
     try {
-        if ( m_WGSData->IsForbidden() ) {
-            x_SendForbidden();
-        }
-        else if ( m_WGSData->m_Data ) {
-            x_SendBlob();
-        }
-        else {
-            x_Finish(ePSGS_NotFound);
-            return;
-        }
+        x_SendBlob();
     }
     catch (exception& exc) {
         x_SendError("Exception when handling a request: ", exc);
@@ -870,13 +852,14 @@ void CPSGS_WGSProcessor::x_SendForbidden(void)
 
 void CPSGS_WGSProcessor::x_SendBlob(void)
 {
-    _ASSERT(m_WGSData);
-   if ( find (m_ExcludedBlobs.begin(), m_ExcludedBlobs.end(), m_WGSData->m_BlobId) != m_ExcludedBlobs.end()) {
+    if ( m_WGSData->IsForbidden() ) {
+        x_SendForbidden();
+        return;
+    }
+    if ( m_WGSData->m_Excluded ) {
         x_SendExcluded();
         return;
     }
-    
-    _ASSERT(m_WGSData->m_Data);
     if ( m_WGSData->m_Data->GetMainObject().GetThisTypeInfo() == CID2S_Split_Info::GetTypeInfo() ) {
         // split info
         x_SendSplitInfo();

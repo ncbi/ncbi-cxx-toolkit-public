@@ -347,7 +347,10 @@ shared_ptr<SWGSData> CWGSClient::GetBlobBySeqId(const CSeq_id& seq_id, const TBl
 
     GetBioseqInfo(ret, seq);
 
-    if ( find(excluded.begin(), excluded.end(), ret->m_BlobId) != excluded.end() ) return ret;
+    if ( find(excluded.begin(), excluded.end(), ret->m_BlobId) != excluded.end() ) {
+        ret->m_Excluded = true;
+        return ret;
+    }
 
     GetWGSData(ret, seq);
     return ret;
