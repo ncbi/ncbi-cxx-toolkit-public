@@ -24,18 +24,10 @@
  * ===========================================================================
  */
 
-#include <common/ncbi_sc_version.h>
-
-#ifdef HAVE_NCBI_REVISION
-#  ifdef NCBI_REVISION
-#    undef NCBI_REVISION
+/* #define NCBI_SC_VERSION_ ... */
+#if NCBI_SC_VERSION_ != 0
+#  ifdef NCBI_SC_VERSION
+#    undef NCBI_SC_VERSION
 #  endif
-#  define NCBI_REVISION "@NCBI_REVISION@"
-#endif
-
-#if @NCBI_SUBVERSION_REVISION@ != 0
-#  ifdef NCBI_SUBVERSION_REVISION
-#    undef NCBI_SUBVERSION_REVISION
-#  endif
-#  define NCBI_SUBVERSION_REVISION @NCBI_SUBVERSION_REVISION@
+#  define NCBI_SC_VERSION NCBI_SC_VERSION_
 #endif
