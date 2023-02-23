@@ -84,6 +84,52 @@ CConstRef<CUser_object> s_AutoDefUserObjectFromBioseq (const CBioseq& seq)
 }
 
 
+static bool x_AlmostEquals(CConstRef<CUser_object> aop1, CConstRef<CUser_object> aop2)
+{
+    bool acceptableDiff = false;
+    if (aop1 && aop2) {
+        if (aop1->IsSetData() && aop2->IsSetData()) {
+            CUser_object::TData::const_iterator iter1 = aop1->GetData().begin();
+            CUser_object::TData::const_iterator iter2 = aop2->GetData().begin();
+            for (; iter1 != aop1->GetData().end() && iter2 != aop2->GetData().end(); ++iter1,  ++iter2) {
+                const CUser_field &field1 = **iter1;
+                const CUser_field &field2 = **iter2;
+                if( ! field1.IsSetLabel() || ! field1.GetLabel().IsStr() ) {
+                    continue;
+                }
+                if( ! field2.IsSetLabel() || ! field2.GetLabel().IsStr() ) {
+                    continue;
+                }
+                string fld1 = field1.GetLabel().GetStr();
+                string fld2 = field2.GetLabel().GetStr();
+                if ( fld1 == "FeatureListType" && fld2 == "FeatureListType" ) {
+                    if ( ! field1.IsSetData() || ! field1.GetData().IsStr() ) {
+                        continue;
+                    }
+                    if ( ! field2.IsSetData() || ! field2.GetData().IsStr() ) {
+                        continue;
+                    }
+                    string featlisttype1 = field1.GetData().GetStr();
+                    string featlisttype2 = field2.GetData().GetStr();
+                    if ( featlisttype1 == "Complete Genome" && featlisttype2 == "Partial Genome" ) {
+                        acceptableDiff = true;
+                        continue;
+                    }
+                    if ( featlisttype1 == "Partial Genome" && featlisttype2 == "Complete Genome" ) {
+                        acceptableDiff = true;
+                        continue;
+                    }
+                    return false;
+                } else if ( fld1 != fld2 ) {
+                    return false;
+                }
+            }
+        }
+    }
+    return acceptableDiff;
+}
+
+
 void CValidError_bioseqset::ValidateBioseqSet(
     const CBioseq_set& seqset)
 {
@@ -192,6 +238,7 @@ void CValidError_bioseqset::ValidateBioseqSet(
         case CBioseq_set::eClass_eco_set:
             {
                 CConstRef<CUser_object> first_autodef;
+                CConstRef<CUser_object> second_autodef;
                 for (auto se : seqset.GetSeq_set()) {
                     bool has_autodef = false;
                     CConstRef<CUser_object> aduo;
@@ -208,7 +255,15 @@ void CValidError_bioseqset::ValidateBioseqSet(
                                         if (! first_autodef) {
                                             first_autodef = aduo;
                                         } else if (! first_autodef->Equals(*aduo)) {
-                                            not_same_autodef = true;
+                                            if (! second_autodef) {
+                                                second_autodef = aduo;
+                                                // then make sure they only differ by FeatureTypeList complete or partial genome
+                                                 if (! x_AlmostEquals(first_autodef, second_autodef)) {
+                                                    not_same_autodef = true;
+                                                }
+                                            } else if (! second_autodef->Equals(*aduo)) {
+                                                not_same_autodef = true;
+                                            }
                                         }
                                     } else {
                                         has_autodef = false;
@@ -226,7 +281,15 @@ void CValidError_bioseqset::ValidateBioseqSet(
                                 if (! first_autodef) {
                                     first_autodef = aduo;
                                 } else if (! first_autodef->Equals(*aduo)) {
-                                    not_same_autodef = true;
+                                    if (! second_autodef) {
+                                        second_autodef = aduo;
+                                        // then make sure they only differ by FeatureTypeList complete or partial genome
+                                        if (! x_AlmostEquals(first_autodef, second_autodef)) {
+                                            not_same_autodef = true;
+                                        }
+                                    } else if (! second_autodef->Equals(*aduo)) {
+                                        not_same_autodef = true;
+                                    }
                                 }
                             } else {
                                 has_autodef = false;
