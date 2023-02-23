@@ -92,7 +92,7 @@ public:
     typedef TAnnots::iterator TAnnotIt;
     typedef TAnnots::const_iterator TAnnotCit;
 
-    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, unsigned int, bool);
+    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, long, bool);
 
 protected:
     /// Protected constructor. Use GetReader() to get an actual reader object.
