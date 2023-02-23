@@ -44,7 +44,7 @@ class CGffBaseColumns
 {
 public:
     using TFrame = CCdregion::EFrame;
-    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, unsigned int, bool);
+    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, long, bool);
 
     CGffBaseColumns();
 

@@ -44,11 +44,9 @@ class CGff2Record:
     public CGffBaseColumns
 {
 public:
-    //typedef CCdregion::EFrame TFrame;
     typedef map<string, string> TAttributes;
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
-    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, unsigned int, bool);
 
 
 public:

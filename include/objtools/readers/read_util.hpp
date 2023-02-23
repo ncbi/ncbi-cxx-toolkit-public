@@ -61,7 +61,7 @@ public:
     ///
     static CRef<CSeq_id> AsSeqId(
         const string& rawId,
-        unsigned int flags =0,
+        long flags =0,
         bool localInts = true);
 
     static const TGi kMinNumericGi;

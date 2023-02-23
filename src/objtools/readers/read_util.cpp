@@ -88,7 +88,7 @@ void CReadUtil::Tokenize(
 //  -----------------------------------------------------------------
 CRef<CSeq_id> CReadUtil::AsSeqId(
     const string& givenId,
-    unsigned int flags,
+    long flags,
     bool localInts)
 //  -----------------------------------------------------------------
 {
