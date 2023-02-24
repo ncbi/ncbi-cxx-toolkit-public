@@ -176,6 +176,9 @@ if test ! -x "$PTB_EXE"; then
   if test "${NCBICONF_MSVC}" != ""; then
     echo // > "${NCBICONF_MSVC}"
   fi
+  if test ! -f $TREE_ROOT/include/common/ncbi_build_ver.h; then
+      touch $TREE_ROOT/include/common/ncbi_build_ver.h
+  fi
   $cmd
   if test "${NCBICONF_MSVC}" != ""; then
     rm "${NCBICONF_MSVC}"
