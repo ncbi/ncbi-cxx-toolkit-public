@@ -61,6 +61,9 @@ ifneq "" "$(CC_WRAPPER)$(CXX_WRAPPER)"
 endif
 
 ifdef import_root
+  ifneq "" "$(wildcard $(import_root)/../include/common/ncbi_build_ver.h)"
+    CPPFLAGS += -DHAVE_LOCAL_NCBI_BUILD_VER_H
+  endif
   %.pb@obj_ext@ %.pb.d: \
     CPPFLAGS += -I$(import_root)/../include/$(project_path)
 else

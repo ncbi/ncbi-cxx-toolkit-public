@@ -26,8 +26,11 @@
  * ===========================================================================
  */
 
-#ifdef HAVE_COMMON_NCBI_BUILD_VER_H
+#if defined(HAVE_COMMON_NCBI_BUILD_VER_H) \
+    &&  defined(HAVE_LOCAL_NCBI_BUILD_VER_H)
 #  include <common/ncbi_build_ver.h>
+#else
+#  include <corelib/ncbi_base_build_ver.h>
 #endif
 
 

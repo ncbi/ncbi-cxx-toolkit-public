@@ -32,6 +32,9 @@
  */
 
 #include <ncbi_pch.hpp>
+#ifndef HAVE_LOCAL_NCBI_BUILD_VER_H
+#  define HAVE_LOCAL_NCBI_BUILD_VER_H 1
+#endif
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
 #undef CNcbiApplication

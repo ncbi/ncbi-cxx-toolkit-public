@@ -38,6 +38,27 @@
 #  include <unistd.h>
 #endif
 
+#include <corelib/ncbi_base_build_ver.h>
+#undef NCBI_REVISION
+#undef NCBI_SUBVERSION_REVISION
+#undef NCBI_TEAMCITY_BUILD_NUMBER
+#undef NCBI_TEAMCITY_PROJECT_NAME
+#undef NCBI_TEAMCITY_BUILDCONF_NAME
+#undef NCBI_TEAMCITY_BUILD_ID
+#include <common/ncbi_build_ver.h>
+#ifndef NCBI_REVISION
+#  define NCBI_REVISION ""
+#endif
+#ifndef NCBI_SUBVERSION_REVISION
+#  define NCBI_SUBVERSION_REVISION 0
+#endif
+#ifndef NCBI_TEAMCITY_BUILD_NUMBER
+#  define NCBI_TEAMCITY_BUILD_NUMBER   0
+#  define NCBI_TEAMCITY_PROJECT_NAME   ""
+#  define NCBI_TEAMCITY_BUILDCONF_NAME ""
+#  define NCBI_TEAMCITY_BUILD_ID       ""
+#endif
+
 /*
 
  On UNIX the value of s_DefaultRunpath[] will be replaced at configure step
@@ -133,3 +154,23 @@ double NCBI_GetCheckTimeoutMult(void)
 
     return check_mult;
 }
+
+/* Cover ncbi_base_build_ver.h */
+#if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
+#  define EXPOSE_METADATA(type, macro, symbol) \
+    NCBI_XNCBI_EXPORT \
+    type g_NCBI_##symbol(void) \
+    { \
+        return NCBI_##macro; \
+    }
+#else
+#  define EXPOSE_METADATA(type, macro, symbol) \
+    const type kNCBI_##symbol = NCBI_##macro;
+#endif
+
+EXPOSE_METADATA(TStringLiteral, REVISION,                Revision)
+EXPOSE_METADATA(int,            SUBVERSION_REVISION,     SubversionRevision)
+EXPOSE_METADATA(TStringLiteral, TEAMCITY_BUILDCONF_NAME, TeamCityBuildConfName)
+EXPOSE_METADATA(TStringLiteral, TEAMCITY_BUILD_ID,       TeamCityBuildID)
+EXPOSE_METADATA(int,            TEAMCITY_BUILD_NUMBER,   TeamCityBuildNumber)
+EXPOSE_METADATA(TStringLiteral, TEAMCITY_PROJECT_NAME,   TeamCityProjectName)
