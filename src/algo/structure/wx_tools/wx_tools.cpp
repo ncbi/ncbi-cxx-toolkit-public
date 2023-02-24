@@ -130,9 +130,9 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
     iTextCtrl = new IntegerTextCtrl(parent, -1, wxT(""), textCtrlPos, textCtrlSize, textCtrlStyle);
     iTextCtrl->SetAllowedRange(min, max, increment);
 
-    spinButton = new NotifyingSpinButton(this,
-        parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
-    spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
+    //spinButton = new NotifyingSpinButton(this,
+    //    parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
+    //spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
 
     // clamp and set initial value
     if (initial < min) initial = min;
@@ -148,7 +148,7 @@ bool IntegerSpinCtrl::SetInteger(int value)
     wxString strVal;
     strVal.Printf(wxT("%i"), value);
     iTextCtrl->SetValue(strVal);
-    spinButton->SetValue(0);
+    //spinButton->SetValue(0);
     return true;
 }
 
@@ -322,7 +322,7 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(fpSpinCtrl->GetTextCtrl(), 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5);
-    grid->Add(fpSpinCtrl->GetSpinButton(), 0, wxALIGN_CENTRE, 5);
+    //grid->Add(fpSpinCtrl->GetSpinButton(), 0, wxALIGN_CENTRE, 5);
 
     item0->Add(grid, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     panel->SetAutoLayout(true);
