@@ -138,7 +138,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(nCyclesSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(nCyclesSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+ //   hSizer->Add(nCyclesSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item61->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Order of phases (LOO->BE or BE->LOO)
@@ -148,7 +148,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     phaseOrderCombo = new wxComboBox( panel, ID_PHASE_ORDER_COMBOBOX, phaseOrderStrings[initialPOIndex], wxDefaultPosition, wxDefaultSize, sizeof(phaseOrderStrings)/sizeof(phaseOrderStrings[0]), phaseOrderStrings, wxCB_READONLY );
     item61->Add( phaseOrderCombo, 0, wxALIGN_RIGHT|wxALL, 5 );
 
-    item64->Add( item61, 0, wxALIGN_CENTER_VERTICAL, 0 );
+//    item64->Add( item61, 0, wxALIGN_CENTER_VERTICAL, 0 );
 
 
     //  **************************************************  //
@@ -176,7 +176,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(lnoSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(lnoSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(lnoSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Blank space
@@ -230,9 +230,9 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(nTrialsSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(nTrialsSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(nTrialsSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     nTrialsSpin->GetTextCtrl()->Show(false);
-    nTrialsSpin->GetSpinButton()->Show(false);
+    //nTrialsSpin->GetSpinButton()->Show(false);
 //    item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  use entire sequence length, or restricted to aligned footprint
@@ -253,7 +253,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(nExtSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(nExtSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(nExtSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Allow extension/contraction of footprint (C-terminus)
@@ -265,7 +265,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(cExtSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(cExtSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(cExtSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Blank space
@@ -285,7 +285,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(loopPercentSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(loopPercentSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(loopPercentSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block aligner's loop extension parameter
@@ -297,7 +297,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(loopExtensionSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(loopExtensionSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(loopExtensionSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block aligner's loop cutoff parameter
@@ -309,7 +309,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(loopCutoffSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(loopCutoffSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(loopCutoffSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Seed for RNG to define order of leaving out rows (useful for debugging!!)
@@ -321,9 +321,9 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(rngSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(rngSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(rngSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     rngSpin->GetTextCtrl()->Show(false);
-    rngSpin->GetSpinButton()->Show(false);
+ //   rngSpin->GetSpinButton()->Show(false);
 //    item5->Add(hSizer, 0, wxALIGN_RIGHT);
 
     item3->Add( item5, 0, wxALIGN_CENTER_VERTICAL, 0 );
@@ -362,7 +362,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(minBlockSizeSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(minBlockSizeSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+ //   hSizer->Add(minBlockSizeSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block extension/shrinkage threshold 1:  column of PSSM median score >= this value
@@ -374,7 +374,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(medianSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(medianSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(medianSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block extension/shrinkage threshold 2:  % rows w/ PSSM score >= 0 must exceed this value
@@ -386,7 +386,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(rawVoteSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(rawVoteSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(rawVoteSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block extension/shrinkage threshold 3:  % of weight in column of PSSM median score >= 0 must exceed this value
@@ -398,7 +398,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     hSizer->Add(weightedVoteSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
-    hSizer->Add(weightedVoteSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    hSizer->Add(weightedVoteSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
     item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     item36->Add( item38, 0, wxALIGN_CENTER|wxALL, 5 );
@@ -666,19 +666,19 @@ void BMARefinerOptionsDialog::OnCheck(wxCommandEvent& event)
         allUnstSeqCheck->Enable(doLoo && enableAllUnstSeqCheck);
 
         nExtSpin->GetTextCtrl()->Enable(doLoo);
-        nExtSpin->GetSpinButton()->Enable(doLoo);
+//        nExtSpin->GetSpinButton()->Enable(doLoo);
         cExtSpin->GetTextCtrl()->Enable(doLoo);
-        cExtSpin->GetSpinButton()->Enable(doLoo);
+//        cExtSpin->GetSpinButton()->Enable(doLoo);
         lnoSpin->GetTextCtrl()->Enable(doLoo);
-        lnoSpin->GetSpinButton()->Enable(doLoo);
+//        lnoSpin->GetSpinButton()->Enable(doLoo);
         loopPercentSpin->GetTextCtrl()->Enable(doLoo);
-        loopPercentSpin->GetSpinButton()->Enable(doLoo);
+//        loopPercentSpin->GetSpinButton()->Enable(doLoo);
         loopExtensionSpin->GetTextCtrl()->Enable(doLoo);
-        loopExtensionSpin->GetSpinButton()->Enable(doLoo);
+//        loopExtensionSpin->GetSpinButton()->Enable(doLoo);
         loopCutoffSpin->GetTextCtrl()->Enable(doLoo);
-        loopCutoffSpin->GetSpinButton()->Enable(doLoo);
+//        loopCutoffSpin->GetSpinButton()->Enable(doLoo);
         rngSpin->GetTextCtrl()->Enable(doLoo);
-        rngSpin->GetSpinButton()->Enable(doLoo);
+//        rngSpin->GetSpinButton()->Enable(doLoo);
 
         wxString comboValue = esCombo->GetValue();
         bool editBlocks = (comboValue != blockEditAlgStrings[0]);
@@ -701,13 +701,13 @@ void BMARefinerOptionsDialog::OnCombo(wxCommandEvent& event)
     extendFirstCheck->Enable(doShrink);
 
     minBlockSizeSpin->GetTextCtrl()->Enable(doBlockEdit);
-    minBlockSizeSpin->GetSpinButton()->Enable(doBlockEdit);
+//    minBlockSizeSpin->GetSpinButton()->Enable(doBlockEdit);
     medianSpin->GetTextCtrl()->Enable(doBlockEdit);
-    medianSpin->GetSpinButton()->Enable(doBlockEdit);
+//    medianSpin->GetSpinButton()->Enable(doBlockEdit);
     rawVoteSpin->GetTextCtrl()->Enable(doBlockEdit);
-    rawVoteSpin->GetSpinButton()->Enable(doBlockEdit);
+//    rawVoteSpin->GetSpinButton()->Enable(doBlockEdit);
     weightedVoteSpin->GetTextCtrl()->Enable(doBlockEdit);
-    weightedVoteSpin->GetSpinButton()->Enable(doBlockEdit);
+//    weightedVoteSpin->GetSpinButton()->Enable(doBlockEdit);
     Refresh();
 }
 
@@ -717,11 +717,11 @@ void BMARefinerOptionsDialog::OnLooSelOrder(wxCommandEvent& event)
     bool isRandom = (selOrderStr == looSelectionOrderStrings[0]);
 
     rngSpin->GetTextCtrl()->Enable(isRandom);
-    rngSpin->GetSpinButton()->Enable(isRandom);
+//    rngSpin->GetSpinButton()->Enable(isRandom);
 
     //  Don't do multiple trials if the selection order is deterministic.
     nTrialsSpin->GetTextCtrl()->Enable(isRandom);
-    nTrialsSpin->GetSpinButton()->Enable(isRandom);
+//    nTrialsSpin->GetSpinButton()->Enable(isRandom);
     if (!isRandom) {
         nTrialsSpin->SetInteger(1);
     }
