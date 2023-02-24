@@ -201,5 +201,10 @@ version 2.22.1
 Fixed RPC client destructor code generation
 
 January 18, 2023, CXX-12812
+version 2.23.0
 In serial library, fixed exception handling in object copier
 Added generation of gitignore.
+
+February 24, 2023, CXX-12875
+version 2.23.1
+Corrected list of generated files, added RPC client ones.
