@@ -70,14 +70,14 @@ BOOST_AUTO_TEST_CASE(Test_Autofix)
 BOOST_AUTO_TEST_CASE(Test_Autofix1)
 {
     auto tests = NDiscrepancy::GetDiscrepancyTests(NDiscrepancy::eAutofix);
-    BOOST_CHECK_EQUAL(tests.size(), 39);
+    BOOST_CHECK_EQUAL(tests.size(), 40);
     BOOST_CHECK(!tests.empty());
 }
 
 BOOST_AUTO_TEST_CASE(Test_Autofix2)
 {
     vector<string> tests = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eAutofix);
-    BOOST_CHECK_EQUAL(tests.size(), 39);
+    BOOST_CHECK_EQUAL(tests.size(), 40);
     BOOST_CHECK(!tests.empty());
     //for (auto name: tests) std::cerr << name << "\n";
 }
@@ -99,13 +99,13 @@ BOOST_AUTO_TEST_CASE(Test_NamesAndDescriptions)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore) 
+BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore)
 {
     class CDiscrepancyMock : public CDiscrepancyCore
     {
     public:
         using CDiscrepancyCore::CDiscrepancyCore;
-        [[nodiscard]] 
+        [[nodiscard]]
         CRef<CAutofixReport> Autofix(CDiscrepancyObject*, CDiscrepancyContext&) const override
         {
             return CRef<CAutofixReport>();
@@ -132,11 +132,11 @@ BOOST_AUTO_TEST_CASE(Test_CDiscrepancyCore)
     auto reportItems = mock.GetReport();
     BOOST_CHECK(reportItems.size() == 1 && reportItems[0].NotEmpty());
     const auto& item = *(reportItems[0]);
-    BOOST_CHECK_EQUAL(item.GetTitle(), "TestProps"); 
+    BOOST_CHECK_EQUAL(item.GetTitle(), "TestProps");
     BOOST_CHECK(NStr::EndsWith(item.GetMsg(), mock.GetExceptionMsg()));
 
     // Should I be surprised that this exception only results in a non-fatal warning?
-    BOOST_CHECK(!item.IsFatal());  
+    BOOST_CHECK(!item.IsFatal());
     BOOST_CHECK_EQUAL(item.GetSeverity(), CReportItem::eSeverity_warning);
 }
 
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(Test_TextDescriptions)
         auto bsh = pScope->GetBioseqHandle(*pId);
         auto description = CDiscrepancyObject::GetTextObjectDescription(*(bsh.GetCompleteBioseq()), *pScope);
         BOOST_CHECK_EQUAL(description, "nuc");
-        
+
         auto bssh = bsh.GetParentBioseq_set();
         description = CDiscrepancyObject::GetTextObjectDescription(bssh);
         BOOST_CHECK_EQUAL(description, "np|nuc");
