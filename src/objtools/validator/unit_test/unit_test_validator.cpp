@@ -11380,17 +11380,26 @@ BOOST_AUTO_TEST_CASE(Test_PKG_BioseqSetClassNotSet)
 BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodProtSeq();
+
+    STANDARD_SETUP
+    set<CBioseq_Handle> orphans;
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    orphans = validator::ListOrphanProteins(seh);
+    BOOST_CHECK_EQUAL(orphans.size(), 0);
+
+    scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AYZ12345");
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetGenbank().SetAccession("AYZ12345");
 
-    STANDARD_SETUP
-
     expected_errors.push_back(new CExpectedError("gb|AYZ12345|", eDiag_Error, "OrphanedProtein",
                                                  "Orphaned stand-alone protein"));
+    seh = scope.AddTopLevelSeqEntry(*entry);
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    set< CBioseq_Handle > orphans = validator::ListOrphanProteins(seh);
+    orphans = validator::ListOrphanProteins(seh);
     BOOST_CHECK_EQUAL(orphans.size(), 1);
 
     scope.RemoveTopLevelSeqEntry(seh);
