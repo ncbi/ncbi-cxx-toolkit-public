@@ -209,7 +209,7 @@ static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int
     }
 
     const auto len = (*Range_func)(xgbparse_range_data, id);
-    if (len != -1 && num >= len) {
+    if (len != -1 && num >= (Uint4)len) {
         xgbparse_error("range error", tokens, current);
         keep_rawPt = true;
         ++numErrors;
@@ -363,7 +363,7 @@ static size_t sParseAccessionPrefix(const CTempString& accession)
 }
 
 
-static int sGetAccession(string& accession, int& current_col, const string& line, bool accver)
+static int sGetAccession(string& accession, unsigned int& current_col, const string& line, bool accver)
 {
     const auto  length = line.size();
     CTempString tempString(line.c_str() + current_col, length - current_col);
@@ -411,7 +411,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
         string line{ linein };
         NStr::TruncateSpacesInPlace(line);
         auto length      = line.size();
-        int  current_col = 0;
+        unsigned current_col = 0;
 
         while (current_col < length) {
 
@@ -423,9 +423,9 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
             STokenInfo current_token;
             if (isdigit(line[current_col])) {
                 current_token.choice = ETokenType::eNumber;
-                CTempString tempString(line.c_str() + current_col, length - current_col);
+                CTempString tempString(line.c_str() + current_col, size_t(length - current_col));
                 auto        not_digit_pos = tempString.find_first_not_of("0123456789");
-                int         num_digits    = (not_digit_pos == NPOS) ? length - current_col : not_digit_pos;
+                auto        num_digits    = (not_digit_pos == NPOS) ? size_t(length - current_col) : not_digit_pos;
                 current_token.data        = string(line.c_str() + current_col, num_digits);
                 tokens.push_back(current_token);
                 current_col += num_digits;
