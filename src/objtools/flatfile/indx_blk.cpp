@@ -727,10 +727,10 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
         return;
     }
 
-    offsets.bases = it - begin(locusLine);
+    offsets.bases = Int4(it - begin(locusLine));
 
     it         = sFindNextNonSpace(locusLine, space_it);
-    offsets.bp = it - begin(locusLine);
+    offsets.bp = Int4(it - begin(locusLine));
 
     it = sFindNextSpace(locusLine, it);
     it = sFindNextNonSpace(locusLine, it);
@@ -743,33 +743,33 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
         if (currentSubstr == "ss-" ||
             currentSubstr == "ds-" ||
             currentSubstr == "ms-") {
-            offsets.strand = it - begin(locusLine);
+            offsets.strand = Int4(it - begin(locusLine));
             it             = sFindNextNonSpace(locusLine, space_it);
         }
-        offsets.molecule = it - begin(locusLine);
+        offsets.molecule = Int4(it - begin(locusLine));
     } else {
-        offsets.molecule = it - begin(locusLine);
+        offsets.molecule = Int4(it - begin(locusLine));
     }
 
     // topology
     it = sFindNextSpace(locusLine, it);
     it = sFindNextNonSpace(locusLine, it);
     if (it != locusLine.end()) {
-        offsets.topology = it - begin(locusLine);
+        offsets.topology = Int4(it - begin(locusLine));
     }
 
     // find division
     it = sFindNextSpace(locusLine, it);
     it = sFindNextNonSpace(locusLine, it);
     if (it != locusLine.end()) {
-        offsets.div = it - begin(locusLine);
+        offsets.div = Int4(it - begin(locusLine));
     }
 
     // find date - date is optional
     it = sFindNextSpace(locusLine, it);
     it = sFindNextNonSpace(locusLine, it);
     if (it != locusLine.end()) {
-        offsets.date = it - begin(locusLine);
+        offsets.date = Int4(it - begin(locusLine));
     }
 }
 
