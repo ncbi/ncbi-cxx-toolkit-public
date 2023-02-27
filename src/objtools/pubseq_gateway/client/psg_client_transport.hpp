@@ -369,7 +369,7 @@ struct SPSG_Reply
 
         void AddError(string message, EPSG_Status status = EPSG_Status::eError)
         {
-            m_Messages.push_back(move(message));
+            m_Messages.emplace_front(move(message));
             SetStatus(status, false);
         }
 
@@ -380,7 +380,7 @@ struct SPSG_Reply
     private:
         atomic_bool m_InProgress;
         atomic<EPSG_Status> m_Status;
-        vector<string> m_Messages;
+        deque<string> m_Messages;
     };
 
     struct SItem
