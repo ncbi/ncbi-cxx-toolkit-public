@@ -363,14 +363,13 @@ struct SPSG_Reply
 
         SPSG_CV<> change;
 
-        SState() : m_State(eInProgress), m_Empty(true) {}
+        SState() : m_State(eInProgress) {}
 
         const volatile atomic<EState>& GetState() const volatile { return m_State; }
         EPSG_Status GetStatus() const volatile { return FromState(m_State); }
         string GetError();
 
         bool InProgress() const volatile { return m_State == eInProgress; }
-        bool Empty() const volatile { return m_Empty; }
 
         void SetState(EState state) volatile
         {
@@ -383,14 +382,12 @@ struct SPSG_Reply
 
         void AddError(string message) { m_Messages.push_back(move(message)); }
         void SetComplete() { SetState(m_Messages.empty() ? eSuccess : eError); }
-        void SetNotEmpty() volatile { m_Empty.store(false); }
 
         static EState FromRequestStatus(int status);
         static EPSG_Status FromState(EState status);
 
     private:
         atomic<EState> m_State;
-        atomic_bool m_Empty;
         vector<string> m_Messages;
     };
 
@@ -503,7 +500,7 @@ private:
     void SetStateData(size_t dtr) { m_State = &SPSG_Request::StateData;   m_Buffer.data_to_read = dtr; }
 
     void Add();
-    void UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
+    bool UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
 
     using TState = bool (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;
