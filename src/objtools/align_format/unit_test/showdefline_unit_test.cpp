@@ -114,7 +114,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
                   int index)
     {
         string defline[] = {"adenosine deaminase [Rattus norvegicus]", 
-                            "adenosine deaminase [Mus musculus]"};
+                            "adenosine deaminase isoform 1 [Mus musculus]"};
         string evalue_string[] = {"0.0", "0.0"};
         string bit_string[] = {"734", "677"};
         int sum_n[] = {1, 1};
