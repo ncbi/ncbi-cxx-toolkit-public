@@ -308,6 +308,44 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
                 (*member).GetTypeInfo()->DefaultSkipData(in);
             });
 
+    x_SetBioseqSetHooks(objStream, context);
+
+    x_SetBioseqHooks(objStream, context);
+
+    SetLocalSkipHook(CType<CSubmit_block>(), objStream,
+        [this](CObjectIStream& in, const CObjectTypeInfo& /*type*/)
+    {
+        auto submit_block = Ref(new CSubmit_block);
+        in.Read(submit_block, CSubmit_block::GetTypeInfo(), CObjectIStream::eNoFileHeader);
+        m_submit_block = submit_block;
+    });
+
+}
+
+void CHugeAsnReader::x_SetBioseqHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
+{
+    CObjectTypeInfo bioseq_info = CType<CBioseq>();
+
+    SetLocalSkipHook(bioseq_info, objStream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
+    {
+        auto pos = in.GetStreamPos() + m_next_pos;
+
+        context.bioseq_stack.push_back({});
+        auto parent = context.bioseq_set_stack.back();
+
+        type.GetTypeInfo()->DefaultSkipData(in);
+
+        auto& bioseqinfo = context.bioseq_stack.back();
+        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol, bioseqinfo.m_repr});
+        context.bioseq_stack.pop_back();
+    });
+}
+
+
+void CHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
+{
+    CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
 
     SetLocalSkipHook(bioseq_set_info, objStream,
             [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
@@ -338,32 +376,8 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 
                 context.bioseq_set_stack.pop_back();
             });
-
-
-    SetLocalSkipHook(bioseq_info, objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
-    {
-        auto pos = in.GetStreamPos() + m_next_pos;
-
-        context.bioseq_stack.push_back({});
-        auto parent = context.bioseq_set_stack.back();
-
-        type.GetTypeInfo()->DefaultSkipData(in);
-
-        auto& bioseqinfo = context.bioseq_stack.back();
-        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol, bioseqinfo.m_repr});
-        context.bioseq_stack.pop_back();
-    });
-
-    SetLocalSkipHook(CType<CSubmit_block>(), objStream,
-        [this](CObjectIStream& in, const CObjectTypeInfo& /*type*/)
-    {
-        auto submit_block = Ref(new CSubmit_block);
-        in.Read(submit_block, CSubmit_block::GetTypeInfo(), CObjectIStream::eNoFileHeader);
-        m_submit_block = submit_block;
-    });
-
 }
+
 
 void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
 {
@@ -455,6 +469,7 @@ void CHugeAsnReader::x_ThrowDuplicateId(
     }
     NCBI_THROW(CHugeFileException, eDuplicateSeqIds, msg);
 }
+
 
 const CBioseq_set::TClass* CHugeAsnReader::GetTopLevelClass() const
 {

@@ -67,7 +67,6 @@ static void FindNextOffset(const CFixFeatureId::TIdSet &existing_ids,
 
 
 
-
 bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
         TIdSet& existing_ids,
         TId& offset)

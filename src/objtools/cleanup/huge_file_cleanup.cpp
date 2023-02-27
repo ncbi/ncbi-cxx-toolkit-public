@@ -33,6 +33,7 @@
 #include <objtools/cleanup/huge_file_cleanup.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/cleanup/fix_feature_id.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
@@ -445,6 +446,23 @@ CCleanupHugeAsnReader::x_GetFluLabel(const CConstRef<CSeq_id>& pId)
 }
 
 
+using TFeatIdSet = set<CCleanupHugeAsnReader::TFeatId>;
+
+
+static void s_FindNextOffset(const TFeatIdSet &existing_ids,
+        const TFeatIdSet &new_existing_ids,
+        const TFeatIdSet &current_ids,
+        CCleanupHugeAsnReader::TFeatId &offset)
+{
+    do
+    {
+        ++offset;
+    } while(existing_ids.find(offset) != existing_ids.end() ||
+            new_existing_ids.find(offset) != new_existing_ids.end() ||
+            current_ids.find(offset) != current_ids.end());
+}
+
+
 void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context)
 {
 
@@ -455,7 +473,25 @@ void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext
             type.GetTypeInfo()->DefaultReadData(in, pFeatId);
             if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
             {
-                m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
+                const auto id = pFeatId->GetLocal().GetId();
+
+                if (m_ExistingIds.find(id) != m_ExistingIds.end() ||
+                    m_NewIds.find(id) != m_NewIds.end()) {
+                    auto it = m_RemappedIds.find(id);
+                    if (it != m_RemappedIds.end()) {
+                        m_IdOffset = it->second;    
+                    }
+                    else {
+                        s_FindNextOffset(m_ExistingIds, m_NewExistingIds, m_NewIds, m_IdOffset);
+                        m_RemappedIds.emplace(id, m_IdOffset);
+                    }
+                    m_NewIds.insert(m_IdOffset);
+                }
+                else {
+                    m_NewExistingIds.insert(id);
+                }
+
+                m_max_local_id = std::max(m_max_local_id, id);
             }
         });
 
@@ -468,8 +504,64 @@ void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext
                 auto* pFeatId = CTypeConverter<CFeat_id>::SafeCast(pObject);
                 if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
                 {
-                    m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
+                    const auto id = pFeatId->GetLocal().GetId();
+
+                    if (m_ExistingIds.find(id) != m_ExistingIds.end() ||
+                        m_NewIds.find(id) != m_NewIds.end()) {
+                        auto it = m_RemappedIds.find(id);
+                        if (it != m_RemappedIds.end()) {
+                            m_IdOffset = it->second;    
+                        }
+                        else {
+                            s_FindNextOffset(m_ExistingIds, m_NewExistingIds, m_NewIds, m_IdOffset);
+                            m_RemappedIds.emplace(id, m_IdOffset);
+                        }
+                        m_NewIds.insert(m_IdOffset);
+                    }
+                    else {
+                        m_NewExistingIds.insert(id);
+                    }
+
+                    m_max_local_id = std::max(m_max_local_id, id);
                 }
+            });
+}
+
+
+void CCleanupHugeAsnReader::x_SetSeqEntryHooks(CObjectIStream& objStream, TContext& context)
+{
+
+    SetLocalSkipHook(CType<CSeq_entry>(), objStream,
+            [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
+            {
+                auto parentSet = context.bioseq_set_stack.back();
+                if (parentSet->m_class == CBioseq_set::eClass_genbank) {
+                    m_NewIds.clear();
+                    m_NewExistingIds.clear();
+                    m_RemappedIds.clear();    
+                }
+
+                type.GetTypeInfo()->DefaultSkipData(in);
+
+                m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
+                m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
+            });
+
+
+    SetLocalReadHook(CType<CSeq_entry>(), objStream,
+            [this, &context](CObjectIStream& in, const CObjectInfo& object)
+            {
+                auto parentSet = context.bioseq_set_stack.back();
+                if (parentSet->m_class == CBioseq_set::eClass_genbank) {
+                    m_NewIds.clear();
+                    m_NewExistingIds.clear();
+                    m_RemappedIds.clear();    
+                }
+
+                object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+
+                m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
+                m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
             });
 }
 
@@ -477,6 +569,8 @@ void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext
 void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
 {
     TParent::x_SetHooks(objStream, context);
+
+    x_SetSeqEntryHooks(objStream, context);
 
     if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
         return;
