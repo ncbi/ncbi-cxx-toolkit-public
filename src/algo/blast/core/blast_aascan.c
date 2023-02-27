@@ -337,6 +337,7 @@ static Int4 s_BlastCompressedAaScanSubject(
           numhits = backbone_cell->num_used;
          
           /* and there is enough space in the destination array */
+          if (numhits) {
           if (numhits <= (array_size - totalhits)) {
            
              /* copy the hits to the destination */
@@ -401,6 +402,7 @@ static Int4 s_BlastCompressedAaScanSubject(
           {
               s_range[1] = s - subject->sequence;
               return totalhits;
+          }
           }
        }
     } /* end for */
