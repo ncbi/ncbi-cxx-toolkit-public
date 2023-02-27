@@ -880,7 +880,7 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
             ERR_POST(Trace << chunk);
         } else {
             item.state.AddError(move(chunk));
-            const auto status = NStr::StringToInt(args.GetValue("status"));
+            const auto status = NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow);
             const auto state = SPSG_Reply::SState::FromRequestStatus(status);
 
             switch (state) {
@@ -896,15 +896,15 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
 
     } else if (chunk_type.first & SPSG_Args::eData) {
-        if (auto stats = reply->stats.lock()) {
-            if (item_type == SPSG_Args::eBlob) {
+        auto blob_chunk = args.GetValue("blob_chunk");
+        auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
+
+        if (item_type == SPSG_Args::eBlob) {
+            if (auto stats = reply->stats.lock()) {
                 auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().get().empty();
                 stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
             }
         }
-
-        auto blob_chunk = args.GetValue("blob_chunk");
-        auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
 
         if (item.chunks.size() <= index) item.chunks.resize(index + 1);
 
@@ -1057,12 +1057,12 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 
         if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
             if (auto [processor_id, req] = it->second.Get(); req) {
-                const auto status = static_cast<CRequestStatus::ECode>(atoi(status_str));
-                const auto state = SPSG_Reply::SState::FromRequestStatus(status);
+                const auto request_status = static_cast<CRequestStatus::ECode>(atoi(status_str));
+                const auto status = SPSG_Reply::SState::FromRequestStatus(request_status);
 
-                if (state != SPSG_Reply::SState::eSuccess) {
-                    const auto error = to_string(status) + ' ' + CRequestStatus::GetStdStatusMessage(status);
-                    req->OnReplyDone(processor_id)->SetFailed(error, state);
+                if (status != SPSG_Reply::SState::eSuccess) {
+                    const auto error = to_string(request_status) + ' ' + CRequestStatus::GetStdStatusMessage(request_status);
+                    req->OnReplyDone(processor_id)->SetFailed(error, status);
                 }
             }
         }
