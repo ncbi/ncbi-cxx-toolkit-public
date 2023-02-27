@@ -422,7 +422,7 @@ void PreferencesDialog::OnCheckbox(wxCommandEvent& event)
         st2->Enable(c->GetValue());
         b2->Enable(c->GetValue());
         iCacheSize->GetTextCtrl()->Enable(c->GetValue());
-        iCacheSize->GetSpinButton()->Enable(c->GetValue());
+//        iCacheSize->GetSpinButton()->Enable(c->GetValue());
     }
 }
 
@@ -520,7 +520,7 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item7->Add(giMaxStructs->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item7->Add(giMaxStructs->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item7->Add(giMaxStructs->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item11 = new wxStaticText( parent, ID_TEXT, "Footprint excess residues:", wxDefaultPosition, wxDefaultSize, 0 );
     item7->Add( item11, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -529,7 +529,7 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item7->Add(giFootRes->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item7->Add(giFootRes->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item7->Add(giFootRes->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item1->Add( item7, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -548,7 +548,7 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item16->Add(gfSeparation->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item16->Add(gfSeparation->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item16->Add(gfSeparation->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item20 = new wxStaticText( parent, ID_TEXT, wxT("Proximal (cross-eyed):"), wxDefaultPosition, wxDefaultSize, 0 );
     item16->Add( item20, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -582,7 +582,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
 
     wxStaticBox *item2 = new wxStaticBox( parent, -1, "Rendering Settings" );
     wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
-    wxFlexGridSizer *item3 = new wxFlexGridSizer( 3, 0, 0 );
+    wxFlexGridSizer *item3 = new wxFlexGridSizer( 2, 0, 0 ); // 3, 0 ,0
     item3->AddGrowableCol( 0 );
 
     wxStaticText *item5 = new wxStaticText(parent, ID_TEXT, "Worm segments:", wxDefaultPosition, wxDefaultSize, 0);
@@ -592,7 +592,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giWormSegments->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giWormSegments->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giWormSegments->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item8 = new wxStaticText(parent, ID_TEXT, "Worm sides:", wxDefaultPosition, wxDefaultSize, 0);
     item3->Add(item8, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -601,7 +601,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giWormSides->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giWormSides->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giWormSides->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item11 = new wxStaticText(parent, ID_TEXT, "Bond sides:", wxDefaultPosition, wxDefaultSize, 0);
     item3->Add(item11, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -610,7 +610,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giBondSides->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giBondSides->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giBondSides->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item14 = new wxStaticText(parent, ID_TEXT, "Helix sides:", wxDefaultPosition, wxDefaultSize, 0);
     item3->Add(item14, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -619,7 +619,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giHelixSides->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giHelixSides->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giHelixSides->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item17 = new wxStaticText(parent, ID_TEXT, "Atom slices:", wxDefaultPosition, wxDefaultSize, 0);
     item3->Add(item17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -628,7 +628,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giAtomSlices->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giAtomSlices->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giAtomSlices->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     wxStaticText *item20 = new wxStaticText(parent, ID_TEXT, "Atom stacks:", wxDefaultPosition, wxDefaultSize, 0);
     item3->Add(item20, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -637,7 +637,7 @@ wxSizer *SetupQualityPage(wxWindow *parent, bool call_fit, bool set_sizer)
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(giAtomStacks->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item3->Add(giAtomStacks->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item3->Add(giAtomStacks->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item1->Add(item3, 0, wxALIGN_CENTRE|wxALL, 5);
 
@@ -745,7 +745,7 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit, bool set_sizer )
         wxDefaultPosition, wxSize(50,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item10->Add(giCacheSize->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item10->Add(giCacheSize->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+//    item10->Add(giCacheSize->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item10->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
