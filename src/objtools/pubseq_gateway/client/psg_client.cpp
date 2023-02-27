@@ -153,8 +153,6 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
 void SPSG_BlobReader::CheckForNewChunks()
 {
-    if (m_Src->state.Empty()) return;
-
     auto src_locked = m_Src.GetLock();
     auto& src = *src_locked;
     auto& chunks = src.chunks;
@@ -1388,22 +1386,9 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
         if (auto new_items_locked = m_Impl->reply->new_items.GetLock()) {
             auto& new_items = *new_items_locked;
 
-            for (auto it = new_items.begin(); it != new_items.end(); ) {
-                auto& item_ts = **it;
-                const auto& item_state = item_ts->state;
-
-                if (item_state.Empty()) {
-                    auto item_locked = item_ts.GetLock();
-                    auto& item = *item_locked;
-
-                    // Wait for more chunks on this item
-                    if (!item.expected.Cmp<less_equal>(item.received)) {
-                        ++it;
-                        continue;
-                    }
-                }
-
-                it = new_items.erase(it);
+            while (!new_items.empty()) {
+                auto& item_ts = *new_items.front();
+                new_items.pop_front();
 
                 // Do not hold lock on item_ts around this call!
                 if (auto rv = m_Impl->Create(item_ts)) {

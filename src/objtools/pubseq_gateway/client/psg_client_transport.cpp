@@ -809,21 +809,24 @@ void SPSG_Request::Add()
 
         auto item_id = args.GetValue("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
+        bool to_create = !item_by_id;
 
-        if (item_by_id) {
-            auto item_locked = item_by_id->GetLock();
-            UpdateItem(item_type, *item_locked, args);
-
-        } else {
+        if (to_create) {
             if (auto items_locked = reply->items.GetLock()) {
                 items_locked->emplace_back();
-                reply->new_items.GetLock()->emplace_back(&items_locked->back());
                 item_by_id = &items_locked->back();
             }
+        }
 
-            if (auto item_locked = item_by_id->GetLock()) {
+        if (auto item_locked = item_by_id->GetLock()) {
+            auto to_return = UpdateItem(item_type, *item_locked, args);
+
+            if (to_create) {
                 item_locked->args = move(args);
-                UpdateItem(item_type, *item_locked, item_locked->args);
+            }
+
+            if (to_return) {
+                reply->new_items.GetLock()->emplace_back(item_by_id);
             }
 
             reply_item_ts.NotifyOne();
@@ -837,12 +840,13 @@ void SPSG_Request::Add()
     m_Buffer = SBuffer();
 }
 
-void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
+bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
 {
     ++item.received;
 
     auto chunk_type = args.GetValue<SPSG_Args::eChunkType>();
     auto& chunk = m_Buffer.chunk;
+    auto rv = false;
 
     if (chunk_type.first & SPSG_Args::eMeta) {
         auto n_chunks = args.GetValue("n_chunks");
@@ -856,6 +860,8 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
                 item.expected = expected;
             }
         }
+
+        rv = (item_type != SPSG_Args::eBlob) || !args.GetValue("reason").empty();
 
     } else if (chunk_type.first == SPSG_Args::eUnknownChunk) {
         static atomic_bool reported(false);
@@ -900,6 +906,8 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
         auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
 
         if (item_type == SPSG_Args::eBlob) {
+            rv = !index;
+
             if (auto stats = reply->stats.lock()) {
                 auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().get().empty();
                 stats->AddData(has_blob_id, SPSG_Stats::eReceived, chunk.size());
@@ -909,7 +917,6 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
         if (item.chunks.size() <= index) item.chunks.resize(index + 1);
 
         item.chunks[index] = move(chunk);
-        item.state.SetNotEmpty();
     }
 
     const bool is_not_reply = item_type != SPSG_Args::eReply;
@@ -926,6 +933,8 @@ void SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
     } else if (is_not_reply && item.expected.Cmp<equal_to>(item.received)) {
         item.state.SetComplete();
     }
+
+    return rv;
 }
 
 
