@@ -428,11 +428,11 @@ struct SPSG_Retries
 
     SPSG_Retries(const SPSG_Params& params) : SPSG_Retries(make_pair(params.request_retries, params.refused_stream_retries)) {}
 
-    unsigned Get(EType type, bool refused_stream, bool in_progress)
+    unsigned Get(EType type, bool refused_stream)
     {
         auto& values_pair = type == eRetry ? m_Values.first : m_Values.second;
         auto& values = refused_stream ? values_pair.second : values_pair.first;
-        return in_progress && values ? values-- : 0;
+        return values ? values-- : 0;
     }
 
     void Zero() { m_Values = TValues(); }
@@ -481,7 +481,7 @@ struct SPSG_Request
 
     unsigned GetRetries(SPSG_Retries::EType type, bool refused_stream)
     {
-        return m_Retries.Get(type, refused_stream, reply->reply_item->state.InProgress());
+        return m_Retries.Get(type, refused_stream);
     }
 
     bool CanBeSubmittedBy(TPSG_SubmitterId submitter_id) const { return !m_SubmittedBy || (m_SubmittedBy != submitter_id); }
