@@ -438,7 +438,11 @@ void CJsonResponse::Fill(TItem item, EPSG_Status status)
 
         if (message.empty()) return;
 
-        m_JsonObj.insert_array("errors").push_back(message);
+        if (auto errors = m_JsonObj["errors"]; errors.IsNull()) {
+            errors.ResetArray().push_back(message);
+        } else {
+            errors.SetArray().push_back(message);
+        }
     }
 }
 
