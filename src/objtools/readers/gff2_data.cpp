@@ -71,7 +71,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CRef<CCode_break> s_StringToCodeBreak(
     const string& str,
     CSeq_id& id,
-    int flags)
+    CGff2Record::TReaderFlags flags)
 //  ----------------------------------------------------------------------------
 {
     const string cdstr_start = "(pos:";
@@ -124,7 +124,7 @@ CRef<CCode_break> s_StringToCodeBreak(
 //  ----------------------------------------------------------------------------
 CBioSource::EGenome s_StringToGenome(
     const string& genome,
-    int flags)
+    CGff2Record::TReaderFlags flags)
 //  ----------------------------------------------------------------------------
 {
     typedef map<string, CBioSource::EGenome> GENOME_MAP;
@@ -506,7 +506,7 @@ bool CGff2Record::xSplitGffAttributes(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::InitializeFeature(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
     //  ----------------------------------------------------------------------------
@@ -519,7 +519,7 @@ bool CGff2Record::InitializeFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::UpdateFeature(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
     //  ----------------------------------------------------------------------------
@@ -544,7 +544,7 @@ bool CGff2Record::UpdateFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xUpdateFeatureData(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve) const
     //  ----------------------------------------------------------------------------
@@ -587,7 +587,7 @@ bool CGff2Record::xUpdateFeatureData(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xMigrateAttributes(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
@@ -916,7 +916,7 @@ bool CGff2Record::xMigrateAttributeSingle(
     const string& attrKey,
     CRef<CSeq_feat> pFeature,
     const string& qualKey,
-    int flags)
+    TReaderFlags flags)
     //  -----------------------------------------------------------------------------
 {
     //retrieve GFF3 attribute as a single value,
@@ -938,7 +938,7 @@ bool CGff2Record::xMigrateAttributeDefault(
     const string& attrKey,
     CRef<CSeq_feat> pFeature,
     const string& qualKey,
-    int flags)
+    TReaderFlags flags)
     //  -----------------------------------------------------------------------------
 {
     //split GFF3 multi-value into individual values, create a gbqual of the
@@ -964,7 +964,7 @@ bool CGff2Record::xMigrateAttributeDefault(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xMigrateAttributesOrgName(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     TAttributes& attrs_left) const
 //  ----------------------------------------------------------------------------
@@ -1031,7 +1031,7 @@ bool CGff2Record::xMigrateAttributesOrgName(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xMigrateAttributesGo(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     TAttributes& attrs) const
 //  ----------------------------------------------------------------------------
@@ -1054,7 +1054,7 @@ bool CGff2Record::xMigrateAttributesGo(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xMigrateAttributesSubSource(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     TAttributes& attrs_left) const
 //  ----------------------------------------------------------------------------
@@ -1128,7 +1128,7 @@ bool CGff2Record::xMigrateAttributesSubSource(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xInitFeatureData(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {

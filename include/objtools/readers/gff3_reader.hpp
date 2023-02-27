@@ -87,10 +87,10 @@ public:
         //range 12..23
         fGeneXrefs = (0x1 << 12),
     };
-    typedef unsigned int TReaderFlags;
+    //typedef unsigned int TReaderFlags;
 
     CGff3Reader(
-        unsigned int uFlags,
+        TReaderFlags uFlags,
         const string& name = "",
         const string& title = "",
         SeqIdResolver resolver = CReadUtil::AsSeqId,

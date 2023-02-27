@@ -90,12 +90,12 @@ public:
         list<string>& ) const;
 
     virtual bool InitializeFeature(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
     virtual bool UpdateFeature(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
@@ -115,30 +115,30 @@ protected:
         vector< string >& ) const;
 
     virtual bool xMigrateAttributes(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat> ) const;
 
     virtual bool xInitFeatureData(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>) const;
 
     virtual bool xUpdateFeatureData(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
     virtual bool xMigrateAttributesSubSource(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         TAttributes& ) const;
 
     virtual bool xMigrateAttributesOrgName(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         TAttributes& ) const;
 
     virtual bool xMigrateAttributesGo(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         TAttributes& ) const;
 
@@ -155,14 +155,14 @@ protected:
         const string&,
         CRef<CSeq_feat>,
         const string&,
-        int);
+        TReaderFlags);
 
     static bool xMigrateAttributeSingle(
         TAttributes&,
         const string&,
         CRef<CSeq_feat>,
         const string&,
-        int);
+        TReaderFlags);
 
     //
     // Data:

@@ -149,7 +149,7 @@ bool CGvfReadRecord::SanityCheck() const
 
 //  ----------------------------------------------------------------------------
 CGvfReader::CGvfReader(
-    unsigned int uFlags,
+    TReaderFlags uFlags,
     const string& name,
     const string& title,
     CReaderListener* pRL):
