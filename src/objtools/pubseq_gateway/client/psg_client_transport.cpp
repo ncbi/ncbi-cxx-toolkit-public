@@ -579,21 +579,6 @@ void SPSG_Stats::Report()
     }
 }
 
-EPSG_Status SPSG_Reply::SState::FromState(EState state)
-{
-    switch (state) {
-        case eNotFound:     return EPSG_Status::eNotFound;
-        case eForbidden:    return EPSG_Status::eForbidden;
-        case eError:        return EPSG_Status::eError;
-        case eSuccess:      return EPSG_Status::eSuccess;
-        case eInProgress:   return EPSG_Status::eInProgress;
-    }
-
-    // Should not happen
-    _TROUBLE;
-    return EPSG_Status::eError;
-}
-
 string SPSG_Reply::SState::GetError()
 {
     if (m_Messages.empty()) return {};
@@ -603,14 +588,14 @@ string SPSG_Reply::SState::GetError()
     return rv;
 }
 
-SPSG_Reply::SState::EState SPSG_Reply::SState::FromRequestStatus(int status)
+EPSG_Status SPSG_Reply::SState::FromRequestStatus(int status)
 {
     switch (status) {
-        case CRequestStatus::e200_Ok:               return eSuccess;
-        case CRequestStatus::e202_Accepted:         return eSuccess;
-        case CRequestStatus::e403_Forbidden:        return eForbidden;
-        case CRequestStatus::e404_NotFound:         return eNotFound;
-        default:                                    return eError;
+        case CRequestStatus::e200_Ok:               return EPSG_Status::eSuccess;
+        case CRequestStatus::e202_Accepted:         return EPSG_Status::eSuccess;
+        case CRequestStatus::e403_Forbidden:        return EPSG_Status::eForbidden;
+        case CRequestStatus::e404_NotFound:         return EPSG_Status::eNotFound;
+        default:                                    return EPSG_Status::eError;
     }
 }
 
@@ -624,7 +609,7 @@ void SPSG_Reply::SetComplete()
         for (auto& item : *items_locked) {
             if (item->state.InProgress()) {
                 item.GetLock()->state.AddError(message);
-                item->state.SetState(SState::eError);
+                item->state.SetComplete();
                 missing = true;
             }
         }
@@ -642,20 +627,20 @@ void SPSG_Reply::SetComplete()
     queue->NotifyOne();
 }
 
-void SPSG_Reply::SetFailed(string message, SState::EState state)
+void SPSG_Reply::SetFailed(string message, EPSG_Status status)
 {
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
             if (item->state.InProgress()) {
                 item.GetLock()->state.AddError(message);
-                item->state.SetState(SState::eError);
+                item->state.SetComplete();
             }
         }
     }
 
     if (auto reply_item_locked = reply_item.GetLock()) {
-        reply_item_locked->state.AddError(message);
-        reply_item_locked->state.SetState(state);
+        reply_item_locked->state.AddError(message, status);
+        reply_item_locked->state.SetComplete();
     }
 
     reply_item.NotifyOne();
@@ -885,18 +870,8 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
         } else if (severity == eDiag_Trace) {
             ERR_POST(Trace << chunk);
         } else {
-            item.state.AddError(move(chunk));
             const auto status = NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow);
-            const auto state = SPSG_Reply::SState::FromRequestStatus(status);
-
-            switch (state) {
-                case SPSG_Reply::SState::eSuccess:
-                case SPSG_Reply::SState::eError:
-                    break;
-                default:
-                    // Any message leads to eError when item completes, so need to set other states early
-                    item.state.SetState(state);
-            }
+            item.state.AddError(move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
         }
 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
@@ -1069,7 +1044,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
                 const auto request_status = static_cast<CRequestStatus::ECode>(atoi(status_str));
                 const auto status = SPSG_Reply::SState::FromRequestStatus(request_status);
 
-                if (status != SPSG_Reply::SState::eSuccess) {
+                if (status != EPSG_Status::eSuccess) {
                     const auto error = to_string(request_status) + ' ' + CRequestStatus::GetStdStatusMessage(request_status);
                     req->OnReplyDone(processor_id)->SetFailed(error, status);
                 }
