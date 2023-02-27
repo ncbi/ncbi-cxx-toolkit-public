@@ -353,41 +353,33 @@ struct SPSG_Reply
 {
     struct SState
     {
-        enum EState {
-            eInProgress,
-            eSuccess,
-            eNotFound,
-            eForbidden,
-            eError,
-        };
-
         SPSG_CV<> change;
 
-        SState() : m_State(eInProgress) {}
+        SState() : m_InProgress(true), m_Status(EPSG_Status::eSuccess) {}
 
-        const volatile atomic<EState>& GetState() const volatile { return m_State; }
-        EPSG_Status GetStatus() const volatile { return FromState(m_State); }
+        EPSG_Status GetStatus() const volatile { return m_Status; }
         string GetError();
+        const volatile atomic_bool& InProgress() const volatile { return m_InProgress; }
 
-        bool InProgress() const volatile { return m_State == eInProgress; }
-
-        void SetState(EState state) volatile
+        void SetStatus(EPSG_Status status, bool reset) volatile
         {
-            auto expected = eInProgress;
-
-            if (m_State.compare_exchange_strong(expected, state)) {
-                change.NotifyOne();
-            }
+            EPSG_Status expected = m_Status;
+            while (((expected < status) || reset) && !m_Status.compare_exchange_weak(expected, status));
         }
 
-        void AddError(string message) { m_Messages.push_back(move(message)); }
-        void SetComplete() { SetState(m_Messages.empty() ? eSuccess : eError); }
+        void AddError(string message, EPSG_Status status = EPSG_Status::eError)
+        {
+            m_Messages.push_back(move(message));
+            SetStatus(status, false);
+        }
 
-        static EState FromRequestStatus(int status);
-        static EPSG_Status FromState(EState status);
+        void SetComplete() volatile { if (m_InProgress.exchange(false)) change.NotifyOne(); }
+
+        static EPSG_Status FromRequestStatus(int status);
 
     private:
-        atomic<EState> m_State;
+        atomic_bool m_InProgress;
+        atomic<EPSG_Status> m_Status;
         vector<string> m_Messages;
     };
 
@@ -416,7 +408,7 @@ struct SPSG_Reply
     {}
 
     void SetComplete();
-    void SetFailed(string message, SState::EState state = SState::eError);
+    void SetFailed(string message, EPSG_Status status = EPSG_Status::eError);
 };
 
 struct SPSG_Retries
