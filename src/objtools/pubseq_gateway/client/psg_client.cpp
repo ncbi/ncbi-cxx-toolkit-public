@@ -414,7 +414,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
     auto& args = item.args;
     auto& chunks = item.chunks;
 
-    if ((status == EPSG_Status::eSuccess) || (status == EPSG_Status::eInProgress)) {
+    if (status == EPSG_Status::eSuccess) {
         switch (type) {
             case CPSG_ReplyItem::eBlobData:         return CreateImpl(item_ts, args, stats);
             case CPSG_ReplyItem::eSkippedBlob:      return CreateImpl(reason, args, stats);
@@ -1295,7 +1295,7 @@ CPSG_NamedAnnotStatus::TId2AnnotStatusList CPSG_NamedAnnotStatus::GetId2AnnotSta
             error = !value.IsInteger();
 
             if (!error) {
-                auto status = SPSG_Reply::SState::FromState(SPSG_Reply::SState::FromRequestStatus(static_cast<int>(value.AsInteger())));
+                auto status = SPSG_Reply::SState::FromRequestStatus(static_cast<int>(value.AsInteger()));
                 rv.emplace_back(it.GetKey(), status);
             }
         }
@@ -1412,7 +1412,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
         }
     }
-    while (reply_item.WaitUntil(reply_state.GetState(), deadline, SPSG_Reply::SState::eInProgress, true));
+    while (reply_item.WaitUntil(reply_state.InProgress(), deadline, false, true));
 
     return {};
 }
