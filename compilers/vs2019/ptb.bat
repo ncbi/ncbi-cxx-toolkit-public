@@ -207,9 +207,6 @@ if not exist "%PTB_EXE%" (
   if not "%NCBICONF_MSVC%"=="" (
     echo // > "%NCBICONF_MSVC%"
   )
-  if not exist "%TREE_ROOT%\include\common\ncbi_build_ver.h" (
-    echo // > "%TREE_ROOT%\include\common\ncbi_build_ver.h"
-  )
   if exist "%PTB_SLN%" (
     @echo %DEVENV% "%PTB_SLN%" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
     %DEVENV% "%PTB_SLN%" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
