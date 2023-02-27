@@ -986,10 +986,8 @@ EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
     auto& state = ts->state;
 
     do {
-        auto status = state.GetStatus();
-
-        if (status != EPSG_Status::eInProgress) {
-            return status;
+        if (!state.InProgress()) {
+            return state.GetStatus();
         }
     }
     while (state.change.WaitUntil(deadline));
