@@ -35,7 +35,11 @@
 #include <objtools/edit/huge_asn_reader.hpp>
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+
 #include <map>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -63,6 +67,7 @@ public:
 private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context) override;
+    void x_SetSeqEntryHooks(CObjectIStream& objStream, TContext& context);
 
     void x_CreateSmallGenomeSets();
     void x_PruneIfFeatsIncomplete();
@@ -82,6 +87,20 @@ private:
     map<string, list<TBioseqSetInfo>> m_FluLabelToSetInfo;
     map<TFileSize, string> m_SetPosToFluLabel;
     set<CConstRef<CSeq_id>, CRefLess> m_HasIncompleteFeats;
+
+public:
+    using TFeatId = CFeat_id::TLocal::TId;
+    set<TFeatId> m_FeatIds;
+    using TFeatIdMap = map<TFeatId, TFeatId>;
+    using TPosToFeatIds = map<CHugeAsnReader::TStreamPos, TFeatIdMap>;
+    TPosToFeatIds m_PosToFeatIdMap;
+
+private:
+    set<TFeatId> m_ExistingIds;
+    set<TFeatId> m_NewIds;
+    set<TFeatId> m_NewExistingIds;
+    TFeatIdMap   m_RemappedIds;
+    TFeatId      m_IdOffset{0};
 };
 
 END_SCOPE(object)

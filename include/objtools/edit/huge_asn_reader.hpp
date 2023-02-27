@@ -154,6 +154,9 @@ protected:
 
     virtual void x_SetHooks(CObjectIStream& objStream, TContext& context);
     virtual void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context);
+    virtual void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context);
+    virtual void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context);
+
     void x_ResetTopEntry();
     using TStreamPos = streampos;
     TStreamPos GetCurrentPos() const;
