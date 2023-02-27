@@ -45,7 +45,9 @@
 #undef NCBI_TEAMCITY_PROJECT_NAME
 #undef NCBI_TEAMCITY_BUILDCONF_NAME
 #undef NCBI_TEAMCITY_BUILD_ID
-#include <common/ncbi_build_ver.h>
+#ifdef HAVE_COMMON_NCBI_BUILD_VER_H
+#  include <common/ncbi_build_ver.h>
+#endif
 #ifndef NCBI_REVISION
 #  define NCBI_REVISION ""
 #endif
