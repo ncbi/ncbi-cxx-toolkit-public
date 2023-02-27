@@ -71,7 +71,7 @@ public:
     //
 public:
     CGff2Reader(
-        int iFlags,
+        TReaderFlags iFlags,
         const string& name = "",
         const string& title = "",
         SeqIdResolver resolver = CReadUtil::AsSeqId,

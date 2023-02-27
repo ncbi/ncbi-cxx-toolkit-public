@@ -102,7 +102,7 @@ CGffBaseColumns::~CGffBaseColumns()
 
 //  ============================================================================
 CRef<CSeq_id> CGffBaseColumns::GetSeqId(
-    int flags,
+    TReaderFlags flags,
     SeqIdResolver seqidresolve ) const
 //  ============================================================================
 {
@@ -114,7 +114,7 @@ CRef<CSeq_id> CGffBaseColumns::GetSeqId(
 
 //  ============================================================================
 CRef<CSeq_loc> CGffBaseColumns::GetSeqLoc(
-    int flags,
+    TReaderFlags flags,
     SeqIdResolver seqidresolve ) const
 //  ============================================================================
 {
@@ -130,7 +130,7 @@ CRef<CSeq_loc> CGffBaseColumns::GetSeqLoc(
 
 //  ----------------------------------------------------------------------------
 bool CGffBaseColumns::InitializeFeature(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
     //  ----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ bool CGffBaseColumns::InitializeFeature(
 
 //  ============================================================================
 bool CGffBaseColumns::xInitFeatureId(
-    int,
+    TReaderFlags,
     CRef<CSeq_feat> pFeature ) const
 //  ============================================================================
 {
@@ -159,7 +159,7 @@ bool CGffBaseColumns::xInitFeatureId(
 
 //  ============================================================================
 bool CGffBaseColumns::xInitFeatureLocation(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
 //  ============================================================================
@@ -170,7 +170,7 @@ bool CGffBaseColumns::xInitFeatureLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGffBaseColumns::xInitFeatureData(
-    int flags,
+    TReaderFlags flags,
     CRef<CSeq_feat> pFeature ) const
     //  ----------------------------------------------------------------------------
 {

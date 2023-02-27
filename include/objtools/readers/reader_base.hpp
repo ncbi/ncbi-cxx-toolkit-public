@@ -81,7 +81,7 @@ public:
 
         fAsRaw = 1<<3,
     };
-    typedef long TReaderFlags;
+    using TReaderFlags = long;
     enum ObjectType {
         OT_UNKNOWN,
         OT_SEQANNOT,

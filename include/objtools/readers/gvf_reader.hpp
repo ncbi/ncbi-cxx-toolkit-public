@@ -80,7 +80,7 @@ class NCBI_XOBJREAD_EXPORT CGvfReader
 {
 public:
     CGvfReader(
-        unsigned int uFlags,
+        TReaderFlags uFlags,
         const string& name = "",
         const string& title = "",
         CReaderListener* = nullptr);

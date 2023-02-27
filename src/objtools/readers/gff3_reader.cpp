@@ -190,7 +190,7 @@ string CGff3ReadRecord::x_NormalizedAttributeKey(
 
 //  ----------------------------------------------------------------------------
 CGff3Reader::CGff3Reader(
-    unsigned int uFlags,
+    TReaderFlags uFlags,
     const string& name,
     const string& title,
     SeqIdResolver resolver,

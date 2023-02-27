@@ -44,7 +44,8 @@ class CGffBaseColumns
 {
 public:
     using TFrame = CCdregion::EFrame;
-    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, long, bool);
+    using TReaderFlags = long; //technical debt: duplicated in reader_base
+    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, TReaderFlags, bool);
 
     CGffBaseColumns();
 
@@ -105,16 +106,16 @@ public:
     };
 
     CRef<CSeq_id> GetSeqId(
-        int,
+        TReaderFlags,
         SeqIdResolver = nullptr ) const;
 
     CRef<CSeq_loc> GetSeqLoc(
-        int,
+        TReaderFlags,
         SeqIdResolver seqidresolve = nullptr) const;
 
     // feature initialization:
     virtual bool InitializeFeature(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
@@ -132,16 +133,16 @@ public:
     }
 
     virtual bool xInitFeatureId(
-        int, //flags
+        TReaderFlags,
         CRef<CSeq_feat> ) const;
 
     virtual bool xInitFeatureLocation(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
     virtual bool xInitFeatureData(
-        int,
+        TReaderFlags,
         CRef<CSeq_feat>) const;
 
     // utility:
