@@ -589,6 +589,16 @@
    fun:__tcf_3
 }
 {
+   boost/unit_test::ut_detail::global_configuration_impl
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_Znwm
+   fun:_ZN5boost9unit_test9ut_detail25global_configuration_imp*
+   ...
+   fun:_ZN5boost17execution_monitor*
+}
+
+{
    LZO/do_compress
    Memcheck:Cond
    fun:do_compress
@@ -629,6 +639,28 @@
    Memcheck:Cond
    ...
    obj:*/python-*/*
+}
+
+{
+   GRPC
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN4grpc8internal22GrpcLibraryInitializerC1Ev
+   fun:_Z41__static_initialization_and_destruction_0ii
+}
+{
+   GRPC
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:grpc_init
+}
+{
+   GRPC
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:grp_once_init
 }
 
 
@@ -691,6 +723,13 @@
     fun:__libc_csu_init
 }
 {
+   corelib/ncbi::s_GetThreadId() 
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:_ZN4ncbi13s_GetThreadIdEv
+}
+{
     corelib/SSystemMutex/InitializeDynamic
     Memcheck:Cond
     fun:_ZN4ncbi12SSystemMutex17InitializeDynamicEv
@@ -747,16 +786,46 @@
    CDllResolver::TryCandidate() -- deliberate leak to avoid automatic unloading DLL from a memory
    Memcheck:Leak
    fun:_Znwm
-   fun:_ZN4ncbi*CDll4LoadEv
    ...
    fun:_ZN4ncbi12CDllResolver*TryCandidate*
 }
 {
-   CDllResolver::TryCandidate() -- deliberate leak to avoid automatic unloading DLL from a memory
+   corelib/CSafeStatic<ncbi::CTls
    Memcheck:Leak
-   match-leak-kinds: definite
    fun:_Znwm
-   fun:_ZN4ncbi12CDllResolver*TryCandidate*
+   ...
+   fun:_ZN4ncbi11CSafeStatic*CTls*GetEv
+}
+
+
+#===============================================================================
+# connect
+
+{
+   connect/CORE_SetLOCK(MT_LOCK_cxx2c()) - creates a new CRWLock -- deliberate leak
+   Memcheck:Leak
+   fun:malloc
+   fun:MT_LOCK_Create
+   fun:_ZN4ncbi13MT_LOCK_cxx2cEPNS_7CRWLockEb
+}
+{
+   connect/CORE_SetLOG(LOG_cxx2c()) - creates a new LOG -- deliberate leak
+   Memcheck:Leak
+   fun:malloc
+   fun:LOG_Create
+   fun:_ZN4ncbi9LOG_cxx2cEv
+}
+
+
+#===============================================================================
+# db
+
+{
+   db/bdb/ncbi::CBDB_Env::Remove() - uses NCBI_LSAN_DISABLE_GUARD - so ignore
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:_ZN4ncbi8CBDB_Env6RemoveEv
 }
 
 
@@ -898,6 +967,13 @@
     fun:_ZNK4ncbi21CEnumeratedTypeValues11ValueToNameEv
 }
 {
+   serial/CEnumeratedTypeValues::ValueToName() - uses NCBI_LSAN_DISABLE_GUARD - so ignore
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:_ZNK4ncbi21CEnumeratedTypeValues11ValueToName*
+}
+{
     serial/classinfo
     Memcheck:Leak
     fun:__builtin_new
@@ -988,7 +1064,6 @@
     fun:_Znwj
     fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
 }
-
 
 
 ################################################################################
