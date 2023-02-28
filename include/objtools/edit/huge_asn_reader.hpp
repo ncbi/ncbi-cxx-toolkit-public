@@ -174,16 +174,17 @@ private:
 
     ILineErrorListener * mp_MessageListener = nullptr;
     TStreamPos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
-    TStreamPos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
     CHugeFile*           m_file             = nullptr;
 
 // global lists, readonly after indexing
-    TBioseqList               m_bioseq_list;
 protected:
+    TBioseqList               m_bioseq_list;
+    TStreamPos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
     int                             m_max_local_id     = 0;
     TBioseqSetList                  m_bioseq_set_list;
     CRef<CSeq_entry>                m_top_entry;
     std::list<CConstRef<CSeq_id>>   m_top_ids;
+    bool m_HasHugeSetAnnot{ false };
 private:
     CConstRef<CSubmit_block>  m_submit_block;
 
@@ -192,7 +193,6 @@ private:
     TBioseqSetIndex           m_FlattenedIndex;
     TBioseqSetList            m_FlattenedSets;
     TBioseqSetList::const_iterator  m_Current;
-    bool m_HasHugeSetAnnot{ false };
     const CBioseq_set::TClass* m_pTopLevelClass { nullptr };
 };
 

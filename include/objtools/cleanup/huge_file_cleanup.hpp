@@ -67,7 +67,8 @@ public:
 private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context) override;
-    void x_SetSeqEntryHooks(CObjectIStream& objStream, TContext& context);
+    void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context) override;
+    void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context) override;
 
     void x_CreateSmallGenomeSets();
     void x_PruneIfFeatsIncomplete();
