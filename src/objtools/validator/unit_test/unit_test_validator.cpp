@@ -347,13 +347,8 @@ static void SetCountryOnSrc(CBioSource& src, string country)
     if (NStr::IsBlank(country)) {
         if (src.IsSetSubtype()) {
             auto& cont = src.SetSubtype();
-            for (auto it = cont.begin(); it != cont.end();) {
-                if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_country) {
-                    it = cont.erase(it);
-                } else {
-                    ++it;
-                }
-            }
+            cont.remove_if(
+                [](CSubSource* it) { return (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_country); });
         }
     } else {
         CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_country, country));
@@ -362,6 +357,12 @@ static void SetCountryOnSrc(CBioSource& src, string country)
 }
 #endif
 
+static string ToAsn1(const CRef<CSeq_entry>& entry)
+{
+    CNcbiOstrstream os;
+    os << MSerial_AsnText << entry;
+    return os.str();
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -10824,19 +10825,12 @@ BOOST_AUTO_TEST_CASE(Test_Generic_UnexpectedPubStatusComment)
 BOOST_AUTO_TEST_CASE(Test_PKG_NoCdRegionPtr)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-
     CRef<CSeq_entry> pentry = unit_test_util::BuildGoodProtSeq();
     if (pentry->SetSeq().IsSetDescr()) {
         auto& cont = pentry->SetSeq().SetDescr().Set();
-        for (auto it = cont.begin(); it != cont.end();) {
-            if ((*it)->IsSource() || (*it)->IsPub()) {
-                it = cont.erase(it);
-            } else {
-                ++it;
-            }
-        }
+        cont.remove_if(
+            [](CSeqdesc* it) { return (it->IsSource() || it->IsPub()); });
     }
-
     entry->SetSet().SetSeq_set().push_back(pentry);
 
     STANDARD_SETUP
@@ -10889,13 +10883,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
     CRef<CSeq_entry> nentry2 = unit_test_util::BuildGoodSeq();
     if (nentry2->SetSeq().IsSetDescr()) {
         auto& cont = nentry2->SetSeq().SetDescr().Set();
-        for (auto it = cont.begin(); it != cont.end();) {
-            if ((*it)->IsSource() || (*it)->IsPub()) {
-                it = cont.erase(it);
-            } else {
-                ++it;
-            }
-        }
+        cont.remove_if(
+            [](CSeqdesc* it) { return (it->IsSource() || it->IsPub()); });
     }
     entry->SetSet().SetSeq_set().push_back(nentry2);
     entry->SetSet().SetSeq_set().push_back(pentry);
@@ -22704,14 +22693,9 @@ void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string&
 void TestOneStrain(const string& taxname, const string& strain, const string& lineage, bool expect_err)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CBioseq::TDescr::Tdata::iterator it = entry->SetSeq().SetDescr().Set().begin();
-    while (it != entry->SetSeq().SetDescr().Set().end()) {
-        if ((*it)->IsSource()) {
-            it = entry->SetSeq().SetDescr().Set().erase(it);
-        } else {
-            ++it;
-        }
-    }
+    CBioseq::TDescr::Tdata cont = entry->SetSeq().SetDescr().Set();
+    cont.remove_if(
+        [](CSeqdesc* it) { return (it->IsSource()); });
     AddStrainDescriptor(*entry, taxname, strain, lineage); // expect no report
     STANDARD_SETUP
 
