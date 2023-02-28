@@ -5,7 +5,7 @@ from optparse import OptionParser
 from urllib import request as urlrequest
 
 
-XSLT_FILE_NAME = 'json2html_test.xsl'
+XSLT_FILE_NAME = 'psg_help_json2html.xsl'
 
 def getContentType(response):
     for item in response.getheaders():
