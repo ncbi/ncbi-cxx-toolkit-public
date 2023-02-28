@@ -99,6 +99,37 @@ function(NCBI_internal_postproc_NCBI_tree)
 endfunction()
 
 #############################################################################
+function(NCBI_internal_add_ncbi_revision_target)
+    if(EXISTS ${NCBITK_TREE_ROOT}/.git/index)
+        set(_dep ${NCBITK_TREE_ROOT}/.git/index)
+    elseif(EXISTS ${NCBITK_TREE_ROOT}/.svn/wc.db)
+        set(_dep ${NCBITK_TREE_ROOT}/.svn/wc.db)
+    else()
+        set(_dep)
+    endif()
+    if(NOT "${_dep}" STREQUAL "")
+        add_custom_command(
+            OUTPUT "${NCBITK_INC_ROOT}/common/ncbi_revision.h"
+            COMMAND ${CMAKE_COMMAND}
+                -DNCBITK_BUILDTIME=TRUE
+                -DNCBITK_INC_ROOT=${NCBITK_INC_ROOT}
+                -DNCBITK_TREE_ROOT=${NCBITK_TREE_ROOT}
+                -P ${NCBITK_TREE_ROOT}/${NCBI_DIRNAME_CMAKECFG}/CMakeChecks.srcid.cmake
+            DEPENDS ${_dep}
+        )
+        add_custom_target(
+            ZERO_CHECK_NCBI
+            DEPENDS "${NCBITK_INC_ROOT}/common/ncbi_revision.h"
+        )
+    endif()
+endfunction()
+function(NCBI_internal_add_ncbi_revision_dependency)
+    if(TARGET ZERO_CHECK_NCBI)
+        add_dependencies(${NCBI_PROJECT} ZERO_CHECK_NCBI)
+    endif()
+endfunction()
+
+#############################################################################
 function(NCBI_internal_handle_VDB_rpath)
     get_property(_req GLOBAL PROPERTY NCBI_PTBPROP_REQUIRES_${NCBI_PROJECT})
     if(VDB IN_LIST _req AND NOT "${NCBI_${NCBI_PROJECT}_TYPE}" STREQUAL "STATIC")
@@ -284,6 +315,11 @@ if(NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
     if(UNIX AND NOT APPLE)
         NCBI_register_hook(ALL_ADDED    NCBI_internal_postproc_NCBI_tree)
     endif()
+endif()
+if(NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
+    AND NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT ENV{NCBI_AUTOMATED_BUILD})
+    NCBI_register_hook(COLLECTED     NCBI_internal_add_ncbi_revision_target)
+    NCBI_register_hook(TARGET_ADDED  NCBI_internal_add_ncbi_revision_dependency)
 endif()
 if(DEFINED NCBI_PTBCFG_PACKAGE_DEPS)
     NCBI_register_hook(COLLECTED    NCBI_internal_rank_projects)

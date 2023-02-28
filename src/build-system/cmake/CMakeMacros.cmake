@@ -74,28 +74,6 @@ function(NCBI_process_imports _file)
 endfunction()
 
 ##############################################################################
-macro(NCBI_util_ToCygwinPath _value _result)
-    set(${_result} "${_value}")
-    if(WIN32)
-        string(FIND ${_value} ":" _pos)
-        if(${_pos} EQUAL 1)
-            string(REPLACE ":" ""  _tmp "${_value}")
-            set(${_result} "/cygdrive/${_tmp}")
-        endif()
-    endif()
-endmacro()
-
-##############################################################################
-macro(NCBI_Subversion_WC_INFO _dir _prefix)
-    if(CYGWIN)
-        NCBI_util_ToCygwinPath(${_dir} _tmp)
-        Subversion_WC_INFO(${_tmp} ${_prefix})
-    else()
-        Subversion_WC_INFO(${_dir} ${_prefix})
-    endif()
-endmacro()
-
-##############################################################################
 # assume all files are in the same directory
 function(NCBI_util_gitignore _f)
     set( _files ${ARGV})
