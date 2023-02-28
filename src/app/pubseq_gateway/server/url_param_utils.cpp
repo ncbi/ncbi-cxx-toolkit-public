@@ -666,6 +666,7 @@ CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
                              protobuf + "' and '" +
                              json + "' and '" +
                              native + "'.");
+        return false;
     }
     return true;
 }
