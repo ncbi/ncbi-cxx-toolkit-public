@@ -39,6 +39,9 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/readers/objhook_lambdas.hpp>
+#include <serial/objistr.hpp>
+#include <serial/streamiter.hpp>
+
 #include "newcleanupp.hpp"
 #include "influenza_set.hpp" 
 
@@ -528,50 +531,112 @@ void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext
 }
 
 
-void CCleanupHugeAsnReader::x_SetSeqEntryHooks(CObjectIStream& objStream, TContext& context)
+void CCleanupHugeAsnReader::x_SetBioseqHooks(CObjectIStream& objStream, TContext& context)
 {
+    CObjectTypeInfo bioseq_info = CType<CBioseq>();
 
-    SetLocalSkipHook(CType<CSeq_entry>(), objStream,
+    SetLocalSkipHook(bioseq_info, objStream,
+        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
+    {
+        auto pos = in.GetStreamPos() + m_next_pos;
+        context.bioseq_stack.push_back({});
+
+        auto parent = context.bioseq_set_stack.back();
+        const bool hasGenbankParent = (parent->m_class == CBioseq_set::eClass_genbank);
+        if (hasGenbankParent) {
+            m_NewIds.clear();
+            m_NewExistingIds.clear();
+            m_RemappedIds.clear();    
+        }
+
+        type.GetTypeInfo()->DefaultSkipData(in);
+
+        auto& bioseqinfo = context.bioseq_stack.back();
+        m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol, bioseqinfo.m_repr});
+        context.bioseq_stack.pop_back();
+
+        if (hasGenbankParent) {
+            m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
+            m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
+            if (!m_RemappedIds.empty()) {
+                m_PosToFeatIdMap.emplace(pos, m_RemappedIds);
+            }
+        }
+
+    });
+}
+
+
+void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context)
+{
+    CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
+
+    SetLocalSkipHook(bioseq_set_info, objStream,
             [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
             {
-                auto parentSet = context.bioseq_set_stack.back();
-                if (parentSet->m_class == CBioseq_set::eClass_genbank) {
+                auto pos = in.GetStreamPos() + m_next_pos;
+                auto parent = context.bioseq_set_stack.back();
+                const bool hasGenbankParent = (parent->m_class == CBioseq_set::eClass_genbank);
+                if (hasGenbankParent) {
                     m_NewIds.clear();
                     m_NewExistingIds.clear();
                     m_RemappedIds.clear();    
                 }
 
-                type.GetTypeInfo()->DefaultSkipData(in);
+                m_bioseq_set_list.push_back({pos, parent});
 
-                m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
-                m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
-            });
+                auto last = prev(m_bioseq_set_list.end());
+
+                context.bioseq_set_stack.push_back(last);
+
+                CObjectInfo objectInfo(type.GetTypeInfo());
+                for (CIStreamClassMemberIterator it(in, type.GetTypeInfo()); it; ++it) {
+                    it.ReadClassMember(objectInfo);
+                    if ((*it).GetAlias() == "class") {
+                        auto memIdx = (*it).GetMemberIndex();
+                        CObjectInfo memberInfo = CObjectInfoMI(objectInfo, memIdx).GetMember();
+                        last->m_class = *CTypeConverter<CBioseq_set::EClass>::SafeCast(memberInfo.GetObjectPtr());
+                    }
+                }
+                
+                auto* pBioseqSet = CTypeConverter<CBioseq_set>::SafeCast(objectInfo.GetObjectPtr());
 
 
-    SetLocalReadHook(CType<CSeq_entry>(), objStream,
-            [this, &context](CObjectIStream& in, const CObjectInfo& object)
-            {
-                auto parentSet = context.bioseq_set_stack.back();
-                if (parentSet->m_class == CBioseq_set::eClass_genbank) {
-                    m_NewIds.clear();
-                    m_NewExistingIds.clear();
-                    m_RemappedIds.clear();    
+                //type.GetTypeInfo()->DefaultReadData(in, pBioseqSet);
+
+                if (pBioseqSet->IsSetLevel()) {
+                    last->m_Level = pBioseqSet->GetLevel();
                 }
 
-                object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+               // last->m_class = pBioseqSet->GetClass();
+                if (pBioseqSet->IsSetDescr()) {
+                    last->m_descr.Reset(&(pBioseqSet->GetDescr()));
+                }
 
-                m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
-                m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
+                if (IsHugeSet(last->m_class) &&
+                    last->m_HasAnnot) {
+                    m_HasHugeSetAnnot = true;
+                }
+
+                context.bioseq_set_stack.pop_back();
+
+                if (hasGenbankParent) {
+                    m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
+                    m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
+                    if (!m_RemappedIds.empty()) {
+                        m_PosToFeatIdMap.emplace(pos, m_RemappedIds);
+                    }
+                }
             });
 }
+
+
 
 
 void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
 {
     TParent::x_SetHooks(objStream, context);
-
-    x_SetSeqEntryHooks(objStream, context);
-
+    
     if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
         return;
     }
