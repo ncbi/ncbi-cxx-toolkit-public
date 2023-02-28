@@ -22693,7 +22693,7 @@ void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string&
 void TestOneStrain(const string& taxname, const string& strain, const string& lineage, bool expect_err)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CBioseq::TDescr::Tdata cont = entry->SetSeq().SetDescr().Set();
+    CBioseq::TDescr::Tdata& cont = entry->SetSeq().SetDescr().Set();
     cont.remove_if(
         [](CSeqdesc* it) { return (it->IsSource()); });
     AddStrainDescriptor(*entry, taxname, strain, lineage); // expect no report
