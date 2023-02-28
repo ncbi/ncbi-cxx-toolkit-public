@@ -43,6 +43,8 @@ static const string     kDescription = "description";
 static const string     kAllowedValues = "allowed values";
 static const string     kDefault = "default";
 static const string     kType = "type";
+static const string     kTitle = "title";
+static const string     kTable = "table";
 
 
 
@@ -69,14 +71,44 @@ void AppendTseOptionParameter(CJsonNode &  node,
     CJsonNode   tse_option(CJsonNode::NewObjectNode());
     tse_option.SetBoolean(kMandatory, false);
     tse_option.SetString(kType, "String");
-    tse_option.SetString("description",
-        "TSE option controls what blob is provided:\n"
-        "Value | ID2 split available                          | ID2 split not available\n"
-        "none  | Nothing                                      | Nothing\n"
-        "whole | Split INFO blob only                         | Nothing\n"
-        "orig  | Split INFO blob only                         | All Cassandra data chunks of the blob itself\n"
-        "smart | All split blobs                              | All Cassandra data chunks of the blob itself\n"
-        "slim  | All Cassandra data chunks of the blob itself | All Cassandra data chunks of the blob itself");
+
+    CJsonNode   tse_table(CJsonNode::NewObjectNode());
+    tse_table.SetString(kTitle, "TSE option controls what blob is provided:");
+
+    CJsonNode   table(CJsonNode::NewArrayNode());
+    CJsonNode   row1(CJsonNode::NewArrayNode());
+    row1.AppendString("Value");
+    row1.AppendString("ID2 split available");
+    row1.AppendString("ID2 split not available");
+    table.Append(row1);
+    CJsonNode   row2(CJsonNode::NewArrayNode());
+    row2.AppendString("none");
+    row2.AppendString("Nothing");
+    row2.AppendString("Nothing");
+    table.Append(row2);
+    CJsonNode   row3(CJsonNode::NewArrayNode());
+    row3.AppendString("whole");
+    row3.AppendString("Split INFO blob only");
+    row3.AppendString("Nothing");
+    table.Append(row3);
+    CJsonNode   row4(CJsonNode::NewArrayNode());
+    row4.AppendString("orig");
+    row4.AppendString("Split INFO blob only");
+    row4.AppendString("All Cassandra data chunks of the blob itself");
+    table.Append(row4);
+    CJsonNode   row5(CJsonNode::NewArrayNode());
+    row5.AppendString("smart");
+    row5.AppendString("All split blobs");
+    row5.AppendString("All Cassandra data chunks of the blob itself");
+    table.Append(row5);
+    CJsonNode   row6(CJsonNode::NewArrayNode());
+    row6.AppendString("slim");
+    row6.AppendString("All Cassandra data chunks of the blob itself");
+    row6.AppendString("All Cassandra data chunks of the blob itself");
+    table.Append(row6);
+    tse_table.SetByKey(kTable, table);
+
+    tse_option.SetByKey(kDescription, tse_table);
     tse_option.SetString(kAllowedValues,
         "none, whole, orig, smart and slim");
     tse_option.SetString(kDefault, default_value);
@@ -104,15 +136,32 @@ void AppendUseCacheParameter(CJsonNode &  node)
     CJsonNode   use_cache(CJsonNode::NewObjectNode());
     use_cache.SetBoolean(kMandatory, false);
     use_cache.SetString(kType, "String");
-    use_cache.SetString(kDescription,
+
+    CJsonNode   use_cache_table(CJsonNode::NewObjectNode());
+    use_cache_table.SetString(kTitle,
         "The option controls if the Cassandra LMDB cache and/or database "
         "should be used. It affects the seq id resolution step and "
-        "the blob properties lookup step. The following options are available:\n"
-        "no: do not use LMDB cache (tables SI2CSI, BIOSEQ_INFO and BLOB_PROP) "
-        "at all; use only Cassandra database for the lookups.\n"
-        "yes: do not use tables SI2CSI, BIOSEQ_INFO and BLOB_PROP in the "
-        "Cassandra database; use only the LMDB cache.\n"
-        "not provided: use the LMDB cache if at all possible; then, fallback to Cassandra storage.");
+        "the blob properties lookup step. The following options are available:");
+
+    CJsonNode   table(CJsonNode::NewArrayNode());
+    CJsonNode   row1(CJsonNode::NewArrayNode());
+    row1.AppendString("no");
+    row1.AppendString("do not use LMDB cache (tables SI2CSI, BIOSEQ_INFO and BLOB_PROP) "
+                      "at all; use only Cassandra database for the lookups.");
+    table.Append(row1);
+    CJsonNode   row2(CJsonNode::NewArrayNode());
+    row2.AppendString("yes");
+    row2.AppendString("do not use tables SI2CSI, BIOSEQ_INFO and BLOB_PROP in the "
+                      "Cassandra database; use only the LMDB cache.");
+    table.Append(row2);
+    CJsonNode   row3(CJsonNode::NewArrayNode());
+    row3.AppendString("not provided");
+    row3.AppendString("use the LMDB cache if at all possible; "
+                      "then, fallback to Cassandra storage.");
+    table.Append(row3);
+    use_cache_table.SetByKey(kTable, table);
+
+    use_cache.SetByKey(kDescription, use_cache_table);
     use_cache.SetString(kAllowedValues,
         "yes, no and not provided");
     use_cache.SetString(kDefault,
@@ -223,15 +272,30 @@ void AppendAccSubstitutionParameter(CJsonNode &  node)
     CJsonNode   acc_substitution(CJsonNode::NewObjectNode());
     acc_substitution.SetBoolean(kMandatory, false);
     acc_substitution.SetString(kType, "String");
-    acc_substitution.SetString(kDescription,
-        "The option controls how the bioseq info accession substitution is done."
-        "The supported policy values are:\n"
-        "default: substitute if version value (version <= 0) or seq_id_type is Gi(12)\n"
-        "limited: substitute only if the resolved record's seq_id_type is GI(12)\n"
-        "never: the accession substitution is never done\n"
+
+    CJsonNode   subst_table(CJsonNode::NewObjectNode());
+    subst_table.SetString(kTitle,
+        "The option controls how the bioseq info accession substitution is done. "
         "If the substitution is needed then the seq_ids list is analyzed. "
         "If there is one with Gi then it is taken for substitution. "
-        "Otherwise an arbitrary one is picked.");
+        "Otherwise an arbitrary one is picked. "
+        "The supported policy values are:");
+    CJsonNode   table(CJsonNode::NewArrayNode());
+    CJsonNode   row1(CJsonNode::NewArrayNode());
+    row1.AppendString("default");
+    row1.AppendString("substitute if version value (version <= 0) or seq_id_type is Gi(12)");
+    table.Append(row1);
+    CJsonNode   row2(CJsonNode::NewArrayNode());
+    row2.AppendString("limited");
+    row2.AppendString("substitute only if the resolved record's seq_id_type is GI(12)");
+    table.Append(row2);
+    CJsonNode   row3(CJsonNode::NewArrayNode());
+    row3.AppendString("never");
+    row3.AppendString("the accession substitution is never done");
+    table.Append(row3);
+    subst_table.SetByKey(kTable, table);
+
+    acc_substitution.SetByKey(kDescription, subst_table);
     acc_substitution.SetString(kAllowedValues,
         "limited, never or default");
     acc_substitution.SetString(kDefault, "default");
@@ -260,12 +324,28 @@ void AppendId2InfoParameter(CJsonNode &  node)
     CJsonNode   id2_info(CJsonNode::NewObjectNode());
     id2_info.SetBoolean(kMandatory, true);
     id2_info.SetString(kType, "String");
-    id2_info.SetString(kDescription,
-        "The Cassandra processor recognizes two formats as follows:\n"
-        "- 3 or 4 integers separated by '.': <sat>.<info>.<chunks>[.<split version>]\n"
-        "- psg~~tse_id-<sat>.<sat key>[~~tse_last_modified-<int>[~~tse_split_version-<int>]\n"
-        "The other processors may recognize the following format:\n"
-        "id2~~tse_id-<string>~~tse_last_modified-<int>~~tse_split_version-<int>");
+
+    CJsonNode   fmt_table(CJsonNode::NewObjectNode());
+    fmt_table.SetString(kTitle,
+        "The following formats are recognized:");
+
+    CJsonNode   table(CJsonNode::NewArrayNode());
+    CJsonNode   row1(CJsonNode::NewArrayNode());
+    row1.AppendString("Cassandra processor, option 1");
+    row1.AppendString("3 or 4 integers separated by '.': "
+                      "<sat>.<info>.<chunks>[.<split version>]");
+    table.Append(row1);
+    CJsonNode   row2(CJsonNode::NewArrayNode());
+    row2.AppendString("Cassandra processor, option 2");
+    row2.AppendString("psg~~tse_id-<sat>.<sat key>[~~tse_last_modified-<int>[~~tse_split_version-<int>]");
+    table.Append(row2);
+    CJsonNode   row3(CJsonNode::NewArrayNode());
+    row3.AppendString("Other processors");
+    row3.AppendString("id2~~tse_id-<string>~~tse_last_modified-<int>~~tse_split_version-<int>");
+    table.Append(row3);
+    fmt_table.SetByKey(kTable, table);
+
+    id2_info.SetByKey(kDescription, fmt_table);
     id2_info.SetString(kAllowedValues,
         "A string in a format recognisable by one of the processors");
     id2_info.SetString(kDefault, "No default");
@@ -316,11 +396,27 @@ void AppendFmtParameter(CJsonNode &  node)
     CJsonNode   fmt(CJsonNode::NewObjectNode());
     fmt.SetBoolean(kMandatory, false);
     fmt.SetString(kType, "String");
-    fmt.SetString(kDescription,
-        "The format of the data sent to the client. Available options:\n"
-        "protobuf: bioseq info will be sent as a protobuf binary data\n"
-        "json: bioseq info will be sent as a serialized JSON dictionary\n"
-        "native:  the server decides what format to use: protobuf or json.");
+
+    CJsonNode   fmt_table(CJsonNode::NewObjectNode());
+    fmt_table.SetString(kTitle,
+        "The format of the data sent to the client. Available options:");
+
+    CJsonNode   table(CJsonNode::NewArrayNode());
+    CJsonNode   row1(CJsonNode::NewArrayNode());
+    row1.AppendString("protobuf");
+    row1.AppendString("bioseq info will be sent as a protobuf binary data");
+    table.Append(row1);
+    CJsonNode   row2(CJsonNode::NewArrayNode());
+    row2.AppendString("json");
+    row2.AppendString("bioseq info will be sent as a serialized JSON dictionary");
+    table.Append(row2);
+    CJsonNode   row3(CJsonNode::NewArrayNode());
+    row3.AppendString("native");
+    row3.AppendString("the server decides what format to use: protobuf or json");
+    table.Append(row3);
+    fmt_table.SetByKey(kTable, table);
+
+    fmt.SetByKey(kDescription, fmt_table);
     fmt.SetString(kAllowedValues,
         "protobuf, json or native");
     fmt.SetString(kDefault, "native");
@@ -409,19 +505,47 @@ void AppendSendBlobIfSmallParameter(CJsonNode &  node)
     CJsonNode   send_blob_if_small(CJsonNode::NewObjectNode());
     send_blob_if_small.SetBoolean(kMandatory, false);
     send_blob_if_small.SetString(kType, "Integer");
-    send_blob_if_small.SetString(kDescription,
-        "Controls what blob or chunk will be sent to the client.\n"
-        "- tse -- value of the tse URL parameter\n"
-        "- id2-split -- whether the ID2-split version of the blob is available\n"
-        "- small blob -- size of the compressed blob data <= send_blob_if_small\n"
-        "- large blob -- size of the compressed blob data > send_blob_if_small\n"
-        "| tse   | id2-split | small blob                          | large blob                                 |\n"
-        "| slim  | no        | Send original (non-split) blob data | Do not send original (non-split) blob data |\n"
-        "| smart | no        | Send original (non-split) blob data | Send original (non-split) blob data        |\n"
-        "| slim  | yes       | Send all ID2 chunks of the blob     | Send only split-info chunk                 |\n"
-        "| smart | yes       | Send all ID2 chunks of the blob     | Send only split-info chunk                 |\n"
+
+    CJsonNode   send_table(CJsonNode::NewObjectNode());
+    send_table.SetString(kTitle,
+        "Controls what blob or chunk will be sent to the client. "
         "If [SERVER]/send_blob_if_small config value is greater than "
         "what is provided then [SERVER]/send_blob_if_small will be used.");
+
+    CJsonNode   table(CJsonNode::NewArrayNode());
+    CJsonNode   row1(CJsonNode::NewArrayNode());
+    row1.AppendString("tse (value of the tse URL parameter)");
+    row1.AppendString("id2-split (whether the ID2-split version of the blob is available)");
+    row1.AppendString("small blob (size of the compressed blob data <= send_blob_if_small)");
+    row1.AppendString("large blob (size of the compressed blob data > send_blob_if_small)");
+    table.Append(row1);
+    CJsonNode   row2(CJsonNode::NewArrayNode());
+    row2.AppendString("slim");
+    row2.AppendString("no");
+    row2.AppendString("Send original (non-split) blob data");
+    row2.AppendString("Do not send original (non-split) blob data");
+    table.Append(row2);
+    CJsonNode   row3(CJsonNode::NewArrayNode());
+    row3.AppendString("smart");
+    row3.AppendString("no");
+    row3.AppendString("Send original (non-split) blob data");
+    row3.AppendString("Send original (non-split) blob data");
+    table.Append(row3);
+    CJsonNode   row4(CJsonNode::NewArrayNode());
+    row4.AppendString("slim");
+    row4.AppendString("yes");
+    row4.AppendString("Send all ID2 chunks of the blob");
+    row4.AppendString("Send only split-info chunk");
+    table.Append(row4);
+    CJsonNode   row5(CJsonNode::NewArrayNode());
+    row5.AppendString("smart");
+    row5.AppendString("yes");
+    row5.AppendString("Send all ID2 chunks of the blob");
+    row5.AppendString("Send only split-info chunk");
+    table.Append(row5);
+    send_table.SetByKey(kTable, table);
+
+    send_blob_if_small.SetByKey(kDescription, table);
     send_blob_if_small.SetString(kAllowedValues,
         "An integer greater or equal 0");
     send_blob_if_small.SetString(kDefault, "0");
@@ -651,7 +775,7 @@ CJsonNode  GetIdGetblobRequestNode(void)
 
     CJsonNode   id_getblob_reply(CJsonNode::NewObjectNode());
     id_getblob_reply.SetString(kDescription,
-        "The PSG protocol is used in the HTML content. "
+        "The PSG protocol is used in the HTTP body. "
         "The blob properties and chunks are provided.");
     id_getblob.SetByKey("reply", id_getblob_reply);
 
@@ -685,7 +809,7 @@ CJsonNode  GetIdGetRequestNode(void)
 
     CJsonNode   id_get_reply(CJsonNode::NewObjectNode());
     id_get_reply.SetString(kDescription,
-        "The PSG protocol is used in the HTML content. "
+        "The PSG protocol is used in the HTTP body. "
         "The bioseq info, blob properties and chunks are provided.");
     id_get.SetByKey("reply", id_get_reply);
     return id_get;
@@ -711,7 +835,7 @@ CJsonNode  GetIdGetTseChunkRequestNode(void)
 
     CJsonNode   id_get_tse_chunk_reply(CJsonNode::NewObjectNode());
     id_get_tse_chunk_reply.SetString(kDescription,
-        "The PSG protocol is used in the HTML content. "
+        "The PSG protocol is used in the HTTP body. "
         "The blob properties and chunks are provided.");
     id_get_tse_chunk.SetByKey("reply", id_get_tse_chunk_reply);
 
@@ -754,7 +878,7 @@ CJsonNode  GetIdResolveRequestNode(void)
 
     CJsonNode   id_resolve_reply(CJsonNode::NewObjectNode());
     id_resolve_reply.SetString(kDescription,
-        "The bioseq info is sent back in the HTML content as binary protobuf "
+        "The bioseq info is sent back in the HTTP body as binary protobuf "
         "or as PSG protocol chunks depending on the protocol choice");
     id_resolve.SetByKey("reply", id_resolve_reply);
 
@@ -781,7 +905,7 @@ CJsonNode  GetIpgResolveRequestNode(void)
 
     CJsonNode   ipg_resolve_reply(CJsonNode::NewObjectNode());
     ipg_resolve_reply.SetString(kDescription,
-        "The ipg record(s) is sent baback in the HTML content as PSG protocol "
+        "The ipg record(s) is sent baback in the HTTP body as PSG protocol "
         "chunks");
     ipg_resolve.SetByKey("reply", ipg_resolve_reply);
 
@@ -816,7 +940,7 @@ CJsonNode  GetIdGetNaRequestNode(void)
 
     CJsonNode   id_get_na_reply(CJsonNode::NewObjectNode());
     id_get_na_reply.SetString(kDescription,
-        "The PSG protocol is used in the HTML content. "
+        "The PSG protocol is used in the HTTP body. "
         "The bioseq info and named annotation chunks are provided.");
     id_get_na.SetByKey("reply", id_get_na_reply);
 
@@ -843,7 +967,7 @@ CJsonNode  GetIdAccessionVersionHistoryRequestNode(void)
 
     CJsonNode   id_acc_ver_hist_reply(CJsonNode::NewObjectNode());
     id_acc_ver_hist_reply.SetString(kDescription,
-        "The PSG protocol is used in the HTML content. "
+        "The PSG protocol is used in the HTTP body. "
         "The bioseq info and accession version history chunks are provided.");
     id_acc_ver_hist.SetByKey("reply", id_acc_ver_hist_reply);
 
@@ -861,7 +985,7 @@ CJsonNode  GetAdminConfigRequestNode(void)
 
     CJsonNode   admin_config_reply(CJsonNode::NewObjectNode());
     admin_config_reply.SetString(kDescription,
-        "The HTML content is a JSON dictionary with "
+        "The HTTP body is a JSON dictionary with "
         "the configuration information.");
     admin_config.SetByKey("reply", admin_config_reply);
 
@@ -879,7 +1003,7 @@ CJsonNode  GetAdminInfoRequestNode(void)
 
     CJsonNode   admin_info_reply(CJsonNode::NewObjectNode());
     admin_info_reply.SetString(kDescription,
-        "The HTML content is a JSON dictionary with "
+        "The HTTP body is a JSON dictionary with "
         "the run-time information like resource consumption");
     admin_info.SetByKey("reply", admin_info_reply);
 
@@ -897,7 +1021,7 @@ CJsonNode  GetAdminStatusRequestNode(void)
 
     CJsonNode   admin_status_reply(CJsonNode::NewObjectNode());
     admin_status_reply.SetString(kDescription,
-        "The HTML content is a JSON dictionary with "
+        "The HTTP body is a JSON dictionary with "
         "various event counters");
     admin_status.SetByKey("reply", admin_status_reply);
 
@@ -936,7 +1060,7 @@ CJsonNode  GetAdminGetAlertsRequestNode(void)
 
     CJsonNode   admin_get_alerts_reply(CJsonNode::NewObjectNode());
     admin_get_alerts_reply.SetString(kDescription,
-        "The HTML content is a JSON dictionary with "
+        "The HTTP body is a JSON dictionary with "
         "the current server alerts");
     admin_get_alerts.SetByKey("reply", admin_get_alerts_reply);
 
@@ -980,7 +1104,7 @@ CJsonNode  GetAdminStatisticsRequestNode(void)
 
     CJsonNode   admin_statistics_reply(CJsonNode::NewObjectNode());
     admin_statistics_reply.SetString(kDescription,
-        "The HTML content is a JSON dictionary with "
+        "The HTTP body is a JSON dictionary with "
         "the collected statistics information");
     admin_statistics.SetByKey("reply", admin_statistics_reply);
 
@@ -1003,7 +1127,7 @@ CJsonNode  GetTestIoRequestNode(void)
 
     CJsonNode   test_io_reply(CJsonNode::NewObjectNode());
     test_io_reply.SetString(kDescription,
-        "The HTML content is a random data of the requested length");
+        "The HTTP body is a random data of the requested length");
     test_io.SetByKey("reply", test_io_reply);
 
     return test_io;
@@ -1038,7 +1162,7 @@ CJsonNode  GetUnknownRequestNode(void)
 
     CJsonNode   unknown_reply(CJsonNode::NewObjectNode());
     unknown_reply.SetString(kDescription,
-        "The HTML content uses PSG protocol for a 'bad request' message");
+        "The HTTP body uses PSG protocol for a 'bad request' message");
     unknown.SetByKey("reply", unknown_reply);
     return unknown;
 }
