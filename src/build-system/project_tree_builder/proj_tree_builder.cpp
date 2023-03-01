@@ -1304,11 +1304,11 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     ///////////////////////////////////
 
     //requires
-    list<string> requires;
+    list<string> reqs;
     list<string> req_lst;
     if (makefile.CollectValues("REQUIRES", req_lst,
         CSimpleMakeFileContents::eSortUnique)) {
-        project_makefile.Redefine(req_lst,requires);
+        project_makefile.Redefine(req_lst,reqs);
     }
     
     //LIBS
@@ -1360,7 +1360,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                       source_base_dir,
                       sources, 
                       depends_ids,
-                      requires,
+                      reqs,
                       libs_3_party,
                       include_dirs,
                       defines,
@@ -1425,7 +1425,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if ( k != makefile.m_Contents.end() && !k->second.empty() ) {
         check_timeout = NStr::Join(k->second, " ");
     }
-    GetApp().GetSite().CollectRequires(requires);
+    GetApp().GetSite().CollectRequires(reqs);
     bool check_requires_ok = true;
     string check_requires;
     k = makefile.m_Contents.find("CHECK_REQUIRES");
@@ -1493,7 +1493,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
 
     project.m_ProjTags.push_back("exe");
-    if (find(requires.begin(), requires.end(), "internal") == requires.end() ) {
+    if (find(reqs.begin(), reqs.end(), "internal") == reqs.end() ) {
         project.m_ProjTags.push_back("public");
     } else {
         project.m_ProjTags.push_back("internal");
@@ -1649,13 +1649,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                       GetApp().GetBuildType().GetType() == CBuildType::eDll);
 
     //requires
-    list<string> requires;
+    list<string> reqs;
     list<string> req_lst;
     if (m->second.CollectValues("REQUIRES",req_lst,
         CSimpleMakeFileContents::eSortUnique)) {
         CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
             source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eLib)));
-        project_makefile.Redefine(req_lst,requires);        
+        project_makefile.Redefine(req_lst,reqs);        
     }
 
     //CPPFLAGS
@@ -1741,14 +1741,14 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                                            source_base_dir,
                                            sources, 
                                            depends_ids,
-                                           requires,
+                                           reqs,
                                            libs_3_party,
                                            include_dirs,
                                            defines,
                                            maketype,
         IdentifySlnGUID(source_base_dir, proj_key));
 
-    GetApp().GetSite().CollectRequires(requires);
+    GetApp().GetSite().CollectRequires(reqs);
     (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
     (tree->m_Projects[proj_key]).m_MkName = applib_mfilepath;
     (tree->m_Projects[proj_key]).m_DataSource = CSimpleMakeFileContents(applib_mfilepath);
@@ -1771,7 +1771,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     }
 
     tree->m_Projects[proj_key].m_ProjTags.push_back("lib");
-    if (find(requires.begin(), requires.end(), "internal") == requires.end() ) {
+    if (find(reqs.begin(), reqs.end(), "internal") == reqs.end() ) {
         tree->m_Projects[proj_key].m_ProjTags.push_back("public");
     } else {
         tree->m_Projects[proj_key].m_ProjTags.push_back("internal");
@@ -1943,8 +1943,8 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
         SMakeProjectT::ConvertLibDepends(depends, &depends_ids /*, &applib_mfilepath*/);
     }
 
-    list<string> requires;
-    requires.push_back("DLL");
+    list<string> reqs;
+    reqs.push_back("DLL");
 
     list<string> sources;
     list<string> libs_3_party;
@@ -1956,7 +1956,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
                                            source_base_dir,
                                            sources, 
                                            depends_ids,
-                                           requires,
+                                           reqs,
                                            libs_3_party,
                                            include_dirs,
                                            defines,
@@ -2401,13 +2401,13 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     }
 
     //requires
-    list<string> requires;
+    list<string> reqs;
     list<string> req_lst;
     if (m->second.CollectValues("REQUIRES", req_lst,
         CSimpleMakeFileContents::eSortUnique)) {
         CMsvcProjectMakefile project_makefile( CDirEntry::ConcatPath(
             source_base_dir, CreateMsvcProjectMakefileName(proj_name, CProjKey::eMsvc)));
-        project_makefile.Redefine(req_lst,requires);        
+        project_makefile.Redefine(req_lst,reqs);        
     }
 
     list<string> libs_3_party;
@@ -2425,7 +2425,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                        source_base_dir,
                        sources, 
                        depends_ids,
-                       requires,
+                       reqs,
                        libs_3_party,
                        include_dirs,
                        defines,
@@ -2761,10 +2761,10 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
         if (CDirEntry(fileloc).Exists()) {
             CSymResolver sym(fileloc);
             bool is_good = true;
-            string requires;
-            if (sym.GetValue("REQUIRES", requires)) {
+            string reqs;
+            if (sym.GetValue("REQUIRES", reqs)) {
                 list<string> items;
-                NStr::Split(requires, LIST_SEPARATOR, items, NStr::fSplit_Tokenize);
+                NStr::Split(reqs, LIST_SEPARATOR, items, NStr::fSplit_Tokenize);
                 for(const string& i : items) {
                     if (!GetApp().GetSite().IsProvided(i)) {
                         PTB_WARNING_EX(kEmptyStr, ePTB_FileExcluded, "Custom metadata " << fileloc << " rejected because of unmet requirement: " << i);

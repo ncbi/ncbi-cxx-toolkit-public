@@ -611,9 +611,9 @@ int CMsvcProjectRuleMakefile::GetRulePriority(const SConfigInfo& config) const
 
 //-----------------------------------------------------------------------------
 static string s_CreateRuleMakefileFilename(CProjItem::TProjType project_type,
-                                           const string& requires)
+                                           const string& reqs)
 {
-    string name = "Makefile." + requires;
+    string name = "Makefile." + reqs;
     switch (project_type) {
     case CProjKey::eApp:
         name += ".app";
@@ -638,12 +638,12 @@ CMsvcCombinedProjectMakefile::CMsvcCombinedProjectMakefile
     :m_ProjectMakefile(project_makefile)
 {
     ITERATE(list<string>, p, requires_list) {
-        const string& requires = *p;
+        const string& reqs = *p;
         string rule_path = rules_basedir;
         rule_path = 
             CDirEntry::ConcatPath(rule_path, 
                                   s_CreateRuleMakefileFilename(project_type, 
-                                                               requires));
+                                                               reqs));
         
         TRule rule(new CMsvcProjectRuleMakefile(rule_path, project_type== CProjKey::eDll));
         if ( !rule->IsEmpty() )
