@@ -3645,6 +3645,7 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
             }
             indel_count -= frameshift_count;
             size_t cds_mismatch_count = 0;
+            bool start_codon_mismatch = false;
             CSeqVector prot(cds_feat->GetProduct(), *m_scope,
                             CBioseq_Handle::eCoding_Iupac);
             const CTrans_table &translate =
@@ -3678,6 +3679,12 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                         : translate.GetCodonResidue(state);
                     if (translated_codon != prot[pos]) {
                         ++cds_mismatch_count;
+                        if (genomic_codon->GetStart(eExtreme_Biological) ==
+                            cds_feat->GetLocation().GetStart(eExtreme_Biological)
+                         && !cds_feat->GetLocation().IsPartialStart(eExtreme_Biological))
+                        {
+                            start_codon_mismatch = true;
+                        }
                     }
                 }
             }
@@ -3705,6 +3712,9 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                                  + "% coverage";
                     }
                 cds_comment += " compared to this genomic sequence";
+            }
+            if (start_codon_mismatch) {
+                align_info->AddField("start_codon_mismatches", 1);
             }
         }
         rna_comment = "The RefSeq transcript";
