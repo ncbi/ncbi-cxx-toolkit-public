@@ -349,7 +349,7 @@ namespace NWinHook
         bool IsPatched(const void* addr);
         DWORD GetRVAFromExportSection(
             HMODULE hmodOriginal,
-            PSTR    pszFuncName
+            PCSTR   pszFuncName
             );
 
     private:
@@ -612,7 +612,7 @@ namespace NWinHook
     ////////////////////////////////////////////////////////////////////////////
     DWORD CKernell32::GetRVAFromExportSection(
         HMODULE hmodOriginal,
-        PSTR    pszFuncName
+        PCSTR   pszFuncName
         )
     {
         DWORD rva = 0;
