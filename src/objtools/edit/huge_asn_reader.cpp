@@ -384,11 +384,23 @@ void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, CHugeAsnReader:
     SetLocalSkipHook(CType<CFeat_id>(), objStream,
         [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
     {
-        auto id = Ref(new CFeat_id);
-        type.GetTypeInfo()->DefaultReadData(in, id);
-        if (id->IsLocal() && id->GetLocal().IsId())
+        auto pFeatId = Ref(new CFeat_id());
+        type.GetTypeInfo()->DefaultReadData(in, pFeatId);
+        if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
         {
-            m_max_local_id = std::max(m_max_local_id, id->GetLocal().GetId());
+            m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
+        }
+    });
+
+    SetLocalReadHook(CType<CFeat_id>(), objStream, 
+            [this](CObjectIStream& in, const CObjectInfo& object)
+    {
+        auto* pObject = object.GetObjectPtr();
+        object.GetTypeInfo()->DefaultReadData(in, pObject);
+        auto* pFeatId = CTypeConverter<CFeat_id>::SafeCast(pObject);
+        if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
+        {
+            m_max_local_id = std::max(m_max_local_id, pFeatId->GetLocal().GetId());
         }
     });
 }
