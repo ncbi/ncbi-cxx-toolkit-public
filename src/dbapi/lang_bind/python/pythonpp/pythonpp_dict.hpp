@@ -53,20 +53,20 @@ protected:
     T value;            //< value
 
 public:
-    CDictProxy<T> (CDictHelper<T>& map, const std::string& k)
+    CDictProxy(CDictHelper<T>& map, const std::string& k)
     : s(map), value()
     {
         key = CString(k);
         if(map.HasKey(key)) value = map.GetItem(key);
     };
 
-    CDictProxy<T> (CDictHelper<T>& map, const CObject& k)
+    CDictProxy(CDictHelper<T>& map, const CObject& k)
         : s(map), key(k), value()
     {
         if(map.HasKey(key)) value = map.GetItem(key);
     };
 
-    ~CDictProxy<T>(void)
+    ~CDictProxy(void)
     {
     }
 
