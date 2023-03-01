@@ -846,6 +846,10 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
             }
         }
 
+        if (const auto status = NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow)) {
+            item.state.SetStatus(SPSG_Reply::SState::FromRequestStatus(status), true);
+        }
+
         rv = (item_type != SPSG_Args::eBlob) || !args.GetValue("reason").empty();
 
     } else if (chunk_type.first == SPSG_Args::eUnknownChunk) {
