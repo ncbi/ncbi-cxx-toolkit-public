@@ -1394,7 +1394,7 @@ CTaxon1::GetTaxId4GI(TGi gi, TTaxId& tax_id_out )
         } else { // Internal: wrong respond type
             SetLastError( "INTERNAL: TaxService response type is not Id4gi" );
         }
-    } else if( GetLastError() != NULL && NStr::EqualNocase( GetLastError(), "ERROR: id4gi: No taxid for this gi") ) {
+    } else if( NStr::EqualNocase( GetLastError(), "ERROR: id4gi: No taxid for this gi") ) {
         tax_id_out = ZERO_TAX_ID;
         return true;
     }

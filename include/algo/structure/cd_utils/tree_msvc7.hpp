@@ -122,6 +122,8 @@ class NCBI_CDUTILS_EXPORT tree {
 
             T&             operator*() const;
             T*             operator->() const;
+            bool           operator==(const iterator_base&) const;
+            bool           operator!=(const iterator_base&) const;
 
             void         skip_children(); // do not iterate over children of this node
             unsigned int number_of_children() const;
@@ -143,8 +145,6 @@ class NCBI_CDUTILS_EXPORT tree {
             pre_order_iterator(const iterator_base&);
             pre_order_iterator(const sibling_iterator&);
 
-            bool    operator==(const pre_order_iterator&) const;
-            bool    operator!=(const pre_order_iterator&) const;
             pre_order_iterator&  operator++();
             pre_order_iterator&  operator--();
             pre_order_iterator   operator++(int);
@@ -160,8 +160,6 @@ class NCBI_CDUTILS_EXPORT tree {
             post_order_iterator(const iterator_base&);
             post_order_iterator(const sibling_iterator&);
 
-            bool    operator==(const post_order_iterator&) const;
-            bool    operator!=(const post_order_iterator&) const;
             post_order_iterator&  operator++();
             post_order_iterator&  operator--();
             post_order_iterator   operator++(int);
@@ -182,8 +180,6 @@ class NCBI_CDUTILS_EXPORT tree {
             fixed_depth_iterator(const sibling_iterator&);
             fixed_depth_iterator(const fixed_depth_iterator&);
 
-            bool    operator==(const fixed_depth_iterator&) const;
-            bool    operator!=(const fixed_depth_iterator&) const;
             fixed_depth_iterator&  operator++();
             fixed_depth_iterator&  operator--();
             fixed_depth_iterator   operator++(int);
@@ -204,8 +200,6 @@ class NCBI_CDUTILS_EXPORT tree {
             sibling_iterator(const sibling_iterator&);
             sibling_iterator(const iterator_base&);
 
-            bool    operator==(const sibling_iterator&) const;
-            bool    operator!=(const sibling_iterator&) const;
             sibling_iterator&  operator++();
             sibling_iterator&  operator--();
             sibling_iterator   operator++(int);
@@ -1419,42 +1413,14 @@ T* tree<T, tree_node_allocator>::iterator_base::operator->() const
    }
 
 template <class T, class tree_node_allocator>
-bool tree<T, tree_node_allocator>::post_order_iterator::operator!=(const post_order_iterator& other) const
+bool tree<T, tree_node_allocator>::iterator_base::operator!=(const iterator_base& other) const
    {
    if(other.node!=this->node) return true;
    else return false;
    }
 
 template <class T, class tree_node_allocator>
-bool tree<T, tree_node_allocator>::post_order_iterator::operator==(const post_order_iterator& other) const
-   {
-   if(other.node==this->node) return true;
-   else return false;
-   }
-
-template <class T, class tree_node_allocator>
-bool tree<T, tree_node_allocator>::pre_order_iterator::operator!=(const pre_order_iterator& other) const
-   {
-   if(other.node!=this->node) return true;
-   else return false;
-   }
-
-template <class T, class tree_node_allocator>
-bool tree<T, tree_node_allocator>::pre_order_iterator::operator==(const pre_order_iterator& other) const
-   {
-   if(other.node==this->node) return true;
-   else return false;
-   }
-
-template <class T, class tree_node_allocator>
-bool tree<T, tree_node_allocator>::sibling_iterator::operator!=(const sibling_iterator& other) const
-   {
-   if(other.node!=this->node) return true;
-   else return false;
-   }
-
-template <class T, class tree_node_allocator>
-bool tree<T, tree_node_allocator>::sibling_iterator::operator==(const sibling_iterator& other) const
+bool tree<T, tree_node_allocator>::iterator_base::operator==(const iterator_base& other) const
    {
    if(other.node==this->node) return true;
    else return false;
