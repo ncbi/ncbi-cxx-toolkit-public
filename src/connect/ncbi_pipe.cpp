@@ -1041,6 +1041,7 @@ static int s_ExecShell(const char* command,
 }
 
 
+// Note this is executing in a separate process: no environment locks necessary
 static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
 {
     // CAUTION (security):  the current directory is in the path on purpose
@@ -1061,7 +1062,6 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     }
 
     // Get the PATH environment variable
-    CORE_LOCK_READ;
     const char* path = getenv("PATH");
     if (!path) {
         path = kPathDefault;
@@ -1094,7 +1094,6 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         int error;
         ::execve(buf, argv, envp);
         if ((error = errno) == ENOEXEC) {
-            CORE_UNLOCK;
             return s_ExecShell(buf, argv, envp);
         }
         switch (error) {
@@ -1108,7 +1107,6 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
             break;
         default:
             // We found an executable file, but could not execute it
-            CORE_UNLOCK;
             _ASSERT(error);
             return -1;
         }
@@ -1118,7 +1116,6 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         path = next + 1;
     }
 
-    CORE_UNLOCK;
     if (eacces_err) {
         errno = EACCES;
     }
@@ -1235,8 +1232,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         ::fcntl(status_pipe[1], F_SETFD, 
                 ::fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
 
-        // Fork child process
-        switch (m_Pid = CCurrentProcess::Fork()) {
+        // Fork off a child process
+        switch (m_Pid = ::fork()) {
         case (TPid)(-1):
             PIPE_THROW(errno,
                        "Failed fork()");
@@ -1278,7 +1275,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             } else {
                 (void) ::freopen("/dev/null", "w", stdout);
             }
-            if        (IS_SET(create_flags, CPipe::fStdErr_Open)) {
+            if (IS_SET(create_flags, CPipe::fStdErr_Open)) {
                 if (pipe_err[1] != STDERR_FILENO) {
                     if (::dup2(pipe_err[1], STDERR_FILENO) < 0) {
                         s_Exit(-1, status_pipe[1]);
@@ -1313,7 +1310,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             x_args[++i] = 0;
 
             // Change current working directory if specified
-            if (!current_dir.empty()) {
+            if (!current_dir.empty()  &&  current_dir != ".") {
                 (void) ::chdir(current_dir.c_str());
             }
             // Execute the program
@@ -1323,7 +1320,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                  const_cast<char**>(x_args),
                                  const_cast<char**>(env));
             } else {
-                status = ::execvp(cmd.c_str(), const_cast<char**>(x_args));
+                status = ::execvp(cmd.c_str(),
+                                  const_cast<char**>(x_args));
             }
             s_Exit(status, status_pipe[1]);
 
