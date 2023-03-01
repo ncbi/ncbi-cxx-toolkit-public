@@ -1647,29 +1647,28 @@ void CGenbankFormatter::FormatFeature
         x_GetFeatureSpanAndScriptStart(*text_os, fkey, f.GetLoc(), *f.GetContext());
     }
 
-#if 1
     list<string>        l;
     Wrap(l, fkey, feat->GetLoc().GetString(), eFeat );
 
-    // In HTML mode, if not taking a "slice" (i.e. -from and -to args )
-    // we need to add a link
-    if ( bHtml && f.GetContext()->GetLocation().IsWhole() ) {
-        // we will need to pad since the feature's key might be smaller than strDummy
+    // ID-5922 : in HTML mode, we need to add a link that can serve 2 purposes:
+    // 1. Direct hyperlink to open the flatfile for an interval encompassing this feature, or
+    // 2. To show the feature information and highlight its location on the sequence "in place"
+    // on the already generated flat file view (which itself can be either a full sequence,
+    // or a location on it).
+    // In case 2, the absolute offsets included in the link are adjusted to the relative offsets
+    // by the Javascript responsible for howing the highlights.
+    string strFeatKey;
+    if (s_GetLinkFeatureKey(f, *feat, fkey, strFeatKey, m_uFeatureCount))
+    {
+        // We will need to pad since the feature's key might be smaller than strDummy
         // negative padding means we need to remove spaces.
         // const int padding_needed = (int)strDummy.length() - (int)feat->GetKey().length();
-        string strFeatKey;
-        if (s_GetLinkFeatureKey(f, *feat, fkey, strFeatKey, m_uFeatureCount))
-        {
-            // strFeatKey += string( padding_needed, ' ' );
-            NON_CONST_ITERATE(list<string>, it, l) {
-                // string::size_type dummy_loc = (*it).find(strDummy);
-                NStr::ReplaceInPlace( *it, fkey, strFeatKey );
-            }
+        // strFeatKey += string( padding_needed, ' ' );
+        NON_CONST_ITERATE(list<string>, it, l) {
+            // string::size_type dummy_loc = (*it).find(strDummy);
+            NStr::ReplaceInPlace( *it, fkey, strFeatKey );
         }
     }
-
-#else
-#endif
 
     text_os->AddParagraph(l, f.GetObject());
 
