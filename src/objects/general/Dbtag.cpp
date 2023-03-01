@@ -138,7 +138,7 @@ CDbtag::TDbtagGroup xFindCorrectCaps(const string& v, string_view& correct_caps)
     const auto& _cont = sc_ApprovedTags;
 
     if (auto it = _cont.find(v); it != _cont.end()) {
-        if (it->second.m_alias == v)
+        if (it->second.m_alias == string_view(v))
             correct_caps = it->second.m_alias;
         else
             correct_caps = it->first;

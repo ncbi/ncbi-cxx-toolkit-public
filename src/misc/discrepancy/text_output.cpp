@@ -178,7 +178,7 @@ static void RecursiveText(ostream& out, const TReportItemList& list, unsigned sh
             out << "FATAL: ";
         }
         auto title = s_RemoveInitialUnderscore(it->GetTitle());
-        auto IsDupDefline = (title == "DUP_DEFLINE");
+        auto IsDupDefline = (title == string_view("DUP_DEFLINE"));
         out << title << ": " << it->GetMsg() << '\n';
         TReportItemList subs = it->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
@@ -210,7 +210,8 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned
     for (const auto& it : list) {
         auto title = it->GetTitle();
         auto msg = it->GetMsg();
-        bool includeInSummary = (level == 0 )  ||  (title == "SOURCE_QUALS"  &&  level == 1);
+        bool includeInSummary = (level == 0 )
+            ||  (title == string_view("SOURCE_QUALS")  &&  level == 1);
         if (includeInSummary) {
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
@@ -236,7 +237,8 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
 {
     bool found = false;
     for (const auto& it : list) {
-        if (it->IsFatal() && it->GetTitle() != "SOURCE_QUALS" && it->GetTitle() != "SUSPECT_PRODUCT_NAMES") {
+        if (it->IsFatal() && it->GetTitle() != string_view("SOURCE_QUALS")
+            && it->GetTitle() != string_view("SUSPECT_PRODUCT_NAMES")) {
             found = true;
             if (level == 0) {
                 out << "FATAL: ";

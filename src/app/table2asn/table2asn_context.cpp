@@ -304,7 +304,7 @@ string CTable2AsnContext::GenerateOutputFilename(eFiles kind, string_view basena
         basename = m_current_file;
 
     CDirEntry::SplitPath(string(basename), &dir, &base);
-    if (basename == "-" || dir == "/dev") {
+    if (basename == string_view("-") || dir == "/dev") {
         CDirEntry::SplitPath(m_current_file, &dir, &base);
         outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
     }

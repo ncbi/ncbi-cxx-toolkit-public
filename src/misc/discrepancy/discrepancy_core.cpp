@@ -133,7 +133,7 @@ eTestNames GetDiscrepancyCaseName(string_view name)
     if (it != CCaseRegistry::GetAliasMap().end())
         return it->second;
 
-    if (name.substr(0, 5) == "DISC_") {
+    if (NStr::StartsWith(name, "DISC_")) {
         return GetDiscrepancyCaseName(name.substr(5));
     }
 

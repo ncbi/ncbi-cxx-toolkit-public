@@ -861,13 +861,13 @@ bool CTempString::operator>(const CTempString str) const
 inline
 bool operator==(const char* str1, const CTempString str2)
 {
-    return str2 == str1;
+    return str2 == CTempString(str1);
 }
 
 inline
 bool operator==(const string& str1, const CTempString str2)
 {
-    return str2 == str1;
+    return str2 == CTempString(str1);
 }
 
 inline
