@@ -329,7 +329,8 @@ struct _Alloc_traits
 {
     typedef _Allocator _Orig;
 #  if defined (_STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM)
-    typedef typename std::allocator_traits<_Allocator>::rebind_alloc<_Tp>
+    typedef typename std::allocator_traits<_Allocator>
+                        ::template rebind_alloc<_Tp>
         allocator_type;
     static allocator_type create_allocator(const _Orig& __a)
     { return allocator_type(__a); }
@@ -346,7 +347,8 @@ template <class _Tp, class _Alloc>
 inline _STLP_TYPENAME_ON_RETURN_TYPE
 _Alloc_traits<_Tp, _Alloc>::allocator_type  _STLP_CALL
 __stl_alloc_create(const _Alloc& __a, const _Tp*) {
-    typedef typename std::allocator_traits<_Alloc>::rebind_alloc<_Tp>
+    typedef typename std::allocator_traits<_Alloc>
+                        ::template rebind_alloc<_Tp>
         _Rebound_type;
     return _Rebound_type(__a);
 }
