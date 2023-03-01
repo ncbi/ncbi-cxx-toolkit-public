@@ -1684,20 +1684,20 @@ public:
     typedef CErrnoTemplExceptionEx<TBase, NCBI_ERRNO_CODE_WRAPPER, NCBI_ERRNO_STR_WRAPPER> CParent;
 
     /// Constructor.
-    CErrnoTemplException<TBase>(const CDiagCompileInfo&    info,
-                                const CException*          prev_exception,
-                                typename CParent::EErrCode err_code,
-                                const string&              message,
-                                EDiagSev                   severity = eDiag_Error)
+    CErrnoTemplException(const CDiagCompileInfo&    info,
+                         const CException*          prev_exception,
+                         typename CParent::EErrCode err_code,
+                         const string&              message,
+                         EDiagSev                   severity = eDiag_Error)
         : CParent(info, prev_exception, message, NCBI_ERRNO_CODE_WRAPPER(), severity, 0)
-    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException<TBase>, CParent)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException, CParent)
 
 protected:
-    CErrnoTemplException<TBase>(const CDiagCompileInfo&    info,
-                                const CException*          prev_exception,
-                                const string&              message,
-                                EDiagSev                   severity,
-                                CException::TFlags         flags)
+    CErrnoTemplException(const CDiagCompileInfo&    info,
+                         const CException*          prev_exception,
+                         const string&              message,
+                         EDiagSev                   severity,
+                         CException::TFlags         flags)
         : CParent(info, prev_exception, message, NCBI_ERRNO_CODE_WRAPPER(), severity, flags) {
     }
 };
@@ -1714,20 +1714,20 @@ public:
     typedef CErrnoTemplExceptionEx<TBase, NCBI_LASTERROR_CODE_WRAPPER, NCBI_LASTERROR_STR_WRAPPER> CParent;
 
     /// Constructor.
-    CErrnoTemplException_Win<TBase>(const CDiagCompileInfo&    info,
-                                    const CException*          prev_exception,
-                                    typename CParent::EErrCode err_code,
-                                    const string&              message,
-                                    EDiagSev                   severity = eDiag_Error)
+    CErrnoTemplException_Win(const CDiagCompileInfo&    info,
+                             const CException*          prev_exception,
+                             typename CParent::EErrCode err_code,
+                             const string&              message,
+                             EDiagSev                   severity = eDiag_Error)
         : CParent(info, prev_exception, message, NCBI_LASTERROR_CODE_WRAPPER(), severity, 0)
-    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException_Win<TBase>, CParent)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException_Win, CParent)
 
 protected:
-    CErrnoTemplException_Win<TBase>(const CDiagCompileInfo&    info,
-                                    const CException*          prev_exception,
-                                    const string&              message,
-                                    EDiagSev                   severity,
-                                    CException::TFlags         flags)
+    CErrnoTemplException_Win(const CDiagCompileInfo&    info,
+                             const CException*          prev_exception,
+                             const string&              message,
+                             EDiagSev                   severity,
+                             CException::TFlags         flags)
         : CParent(info, prev_exception, message, NCBI_LASTERROR_CODE_WRAPPER(), severity, flags) {
     }
 };

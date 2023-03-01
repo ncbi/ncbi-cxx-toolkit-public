@@ -610,7 +610,7 @@ template<typename TObject>
 class CSerial_FilterReadObjectsHook : public CReadObjectHook
 {
 public:
-    CSerial_FilterReadObjectsHook<TObject>(
+    CSerial_FilterReadObjectsHook(
         CSerial_FilterObjectsHook<TObject>* processor)
         : m_processor(processor)
     {
