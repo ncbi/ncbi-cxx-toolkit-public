@@ -161,7 +161,7 @@ public:
     // What we have to define:
     void   GetConfigureDefines    (list<string>* defines) const;
 
-    void   CollectRequires(const list<string>& requires) const;
+    void   CollectRequires(const list<string>& reqs) const;
     void   GetRequiresInfo(const SConfigInfo& config, list<string>& list_enabled, list<string>& list_disabled) const;
 
     // Lib Choices related:

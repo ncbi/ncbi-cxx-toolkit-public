@@ -466,9 +466,9 @@ void CMsvcSite::GetConfigureDefines(list<string>* defines) const
                 *defines, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
-void  CMsvcSite::CollectRequires(const list<string>& requires) const
+void  CMsvcSite::CollectRequires(const list<string>& reqs) const
 {
-    m_Requires.insert(requires.begin(), requires.end());
+    m_Requires.insert(reqs.begin(), reqs.end());
 }
 
 void  CMsvcSite::GetRequiresInfo(const SConfigInfo& config, list<string>& list_enabled, list<string>& list_disabled) const

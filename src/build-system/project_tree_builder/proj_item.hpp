@@ -66,7 +66,7 @@ public:
               const string&         sources_base,
               const list<string>&   sources, 
               const list<CProjKey>& depends,
-              const list<string>&   requires,
+              const list<string>&   reqs,
               const list<string>&   libs_3_party,
               const list<string>&   include_dirs,
               const list<string>&   defines,

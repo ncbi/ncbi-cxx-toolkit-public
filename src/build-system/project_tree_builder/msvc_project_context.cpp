@@ -414,16 +414,16 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
-        const string& requires = *p;
-        if (site.Is3PartyLibWithChoice(requires)) {
-            if (site.GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
+        const string& reqs = *p;
+        if (site.Is3PartyLibWithChoice(reqs)) {
+            if (site.GetChoiceFor3PartyLib(reqs, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
         SLibInfo lib_info;
-        site.GetLibInfo(requires, cfg_info, &lib_info);
+        site.GetLibInfo(reqs, cfg_info, &lib_info);
         if ( site.IsLibOk(lib_info) &&
-            GetApp().GetSite().IsLibEnabledInConfig(requires, cfg_info)) {
+            GetApp().GetSite().IsLibEnabledInConfig(reqs, cfg_info)) {
             if ( !lib_info.m_Libs.empty() ) {
                 copy(lib_info.m_Libs.begin(), lib_info.m_Libs.end(), 
                     back_inserter(additional_libs));
@@ -435,7 +435,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         } else {
             if (!lib_info.IsEmpty() && !lib_info.m_Libs.empty()) {
                 PTB_WARNING_EX(lib_info.m_LibPath, ePTB_FileNotFound,
-                               requires << "|" << cfg_info.GetConfigFullName()
+                               reqs << "|" << cfg_info.GetConfigFullName()
                                << " unavailable: missing additional libraries: "
                                << NStr::Join(lib_info.m_Libs,";"));
 
@@ -528,23 +528,23 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
-        const string& requires = *p;
-        if (site.Is3PartyLibWithChoice(requires)) {
-            if (site.GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
+        const string& reqs = *p;
+        if (site.Is3PartyLibWithChoice(reqs)) {
+            if (site.GetChoiceFor3PartyLib(reqs, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
         SLibInfo lib_info;
-        site.GetLibInfo(requires, cfg_info, &lib_info);
+        site.GetLibInfo(reqs, cfg_info, &lib_info);
         if ( site.IsLibOk(lib_info) &&
-             site.IsLibEnabledInConfig(requires, cfg_info) ) {
+             site.IsLibEnabledInConfig(reqs, cfg_info) ) {
             if ( !lib_info.m_LibPath.empty() ) {
                 dir_list.push_back(CDirEntry::AddTrailingPathSeparator(lib_info.m_LibPath));
             }
         } else {
             if (!lib_info.IsEmpty()) {
                 PTB_WARNING_EX(lib_info.m_LibPath, ePTB_FileNotFound,
-                               requires << "|" << cfg_info.GetConfigFullName()
+                               reqs << "|" << cfg_info.GetConfigFullName()
                                << " unavailable: library folder ignored: "
                                << lib_info.m_LibPath);
             }
@@ -603,11 +603,11 @@ CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
 bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj, string* unmet)
 {
     ITERATE(list<string>, p, prj.m_Requires) {
-        const string& requires = *p;
-        if ( !GetApp().GetSite().IsProvided(requires) &&
-             !GetApp().GetSite().IsProvided(requires, false) ) {
+        const string& reqs = *p;
+        if ( !GetApp().GetSite().IsProvided(reqs) &&
+             !GetApp().GetSite().IsProvided(reqs, false) ) {
             if (unmet) {
-                *unmet = requires;
+                *unmet = reqs;
             }
             return false;
         }
@@ -650,20 +650,20 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
     const CMsvcSite& site = GetApp().GetSite();
     bool result = true;
     ITERATE(list<string>, p, libs_3party) {
-        const string& requires = *p;
+        const string& reqs = *p;
         SLibInfo lib_info;
-        site.GetLibInfo(requires, config, &lib_info);
+        site.GetLibInfo(reqs, config, &lib_info);
         
         if ( lib_info.IsEmpty() ) {
             bool st = 
                 (config.m_rtType == SConfigInfo::rtSingleThreaded ||
                  config.m_rtType == SConfigInfo::rtSingleThreadedDebug);
-            if ((requires == "MT" && st) || (requires == "-MT" && !st)) {
+            if ((reqs == "MT" && st) || (reqs == "-MT" && !st)) {
                 if (unmet) {
                     if (!unmet->empty()) {
                         *unmet += ", ";
                     }
-                    *unmet += requires;
+                    *unmet += reqs;
                 }
                 result = false;
             }
@@ -671,36 +671,36 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
         }
 
         bool disabled = false;
-        if ( !site.IsLibEnabledInConfig(requires, config) ) {
+        if ( !site.IsLibEnabledInConfig(reqs, config) ) {
             if (unmet) {
                 if (!unmet->empty()) {
                     *unmet += ", ";
                 }
-                *unmet += requires;
+                *unmet += reqs;
             }
-            if (find( libs_required.begin(), libs_required.end(), requires )
+            if (find( libs_required.begin(), libs_required.end(), reqs )
                    != libs_required.end()) {
                 result = false;
             }
             disabled = true;
         }
 
-        if ( !site.IsLibOk(lib_info,true) && !site.Is3PartyLibWithChoice(requires) ) {
+        if ( !site.IsLibOk(lib_info,true) && !site.Is3PartyLibWithChoice(reqs) ) {
             disabled = true;
-            if (find( libs_required.begin(), libs_required.end(), requires )
+            if (find( libs_required.begin(), libs_required.end(), reqs )
                    != libs_required.end()) {
                 if (unmet_req) {
                     if (!unmet_req->empty()) {
                         *unmet_req += ", ";
                     }
-                    *unmet_req += requires;
+                    *unmet_req += reqs;
                 }
             }
         }
         if (disabled) {
-            s_DisabledPackages[config.GetConfigFullName()].insert(requires);
+            s_DisabledPackages[config.GetConfigFullName()].insert(reqs);
         } else {
-            s_EnabledPackages[config.GetConfigFullName()].insert(requires);
+            s_EnabledPackages[config.GetConfigFullName()].insert(reqs);
         }
     }
 
