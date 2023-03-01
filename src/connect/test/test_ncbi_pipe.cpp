@@ -558,17 +558,28 @@ int CTest::Run(void)
         ERR_POST(Warning << "Pipe closed okay because of an extended delay");
 
 
-    // ExecWait() with a corner case
+    // ExecWait()
     ERR_POST(Info << "TEST:  ExecWait()");
-    istringstream in("ABCDEF");
+    static const char* const env[] = { "PATH=/bin:/usr/bin:", 0 };
+    istringstream in("ABCDEF\n");
+    CPipe::EFinish finish;
+
+    finish = CPipe::ExecWait("cat", { "-" },
+                             in, cout, cerr, exitcode, kEmptyStr, env);
+    ERR_POST(Info << "Command completed with exit code " << exitcode);
+    _ASSERT(finish == CPipe::eDone);
+
+    // ExecWait() with a corner case
+    ERR_POST(Info << "TEST:  ExecWait() corner case");
     in.exceptions(NcbiFailbit | NcbiBadbit);
     try {
         in.clear(NcbiFailbit);
     } catch (...) {
         ;
     }
-    CPipe::EFinish finish = CPipe::ExecWait("echo", { "Hello, world!" },
-                                            in, cout, cerr, exitcode);
+
+    finish = CPipe::ExecWait("echo", { "Hello, world!" },
+                             in, cout, cerr, exitcode, kEmptyStr, env);
     ERR_POST(Info << "Command completed with exit code " << exitcode);
     _ASSERT(finish == CPipe::eDone);
 
