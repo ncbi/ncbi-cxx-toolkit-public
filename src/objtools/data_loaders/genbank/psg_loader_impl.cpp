@@ -1155,7 +1155,7 @@ static bool CannotProcess(const CSeq_id_Handle& sih)
 
 
 template<class Call>
-typename std::result_of<Call()>::type
+typename std::invoke_result<Call>::type
 CPSGDataLoader_Impl::CallWithRetry(Call&& call,
                                    const char* name,
                                    int retry_count)

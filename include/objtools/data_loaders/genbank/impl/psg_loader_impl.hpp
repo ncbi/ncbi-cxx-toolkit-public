@@ -200,7 +200,7 @@ public:
     static bool NCBI_XLOADER_GENBANK_EXPORT GetGetBlobByIdShouldFail();
 
     template<class Call>
-    typename std::result_of<Call()>::type
+    typename std::invoke_result<Call>::type
     CallWithRetry(Call&& call,
                   const char* name,
                   int retry_count = 0);
