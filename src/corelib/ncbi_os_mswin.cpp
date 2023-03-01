@@ -306,6 +306,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     PSID    owner_sid = NULL;
     PSID    group_sid = NULL;
     bool    success   = false;
+    SECURITY_INFORMATION security_info = 0;
 
     // Get SIDs for new owner and group
     if ( !owner.empty() ) {
@@ -326,7 +327,6 @@ bool CWinSecurity::SetFileOwner(const string& filename,
 
     // Change owner
 
-    SECURITY_INFORMATION security_info = 0;
     if ( owner_sid ) {
         security_info |= OWNER_SECURITY_INFORMATION;
     }
