@@ -44,6 +44,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CFeat_id;
+
 class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
     public edit::CHugeAsnReader
 {
@@ -66,9 +68,11 @@ public:
     const CCleanupChangeCore& GetChanges() const;
 private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
-    void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context) override;
+    void x_SetSeqFeatHooks(CObjectIStream& objStream, TContext& context);
+
+    void x_RecordFeatureId(const CFeat_id& featId);
 
     void x_CreateSmallGenomeSets();
     void x_PruneIfFeatsIncomplete();

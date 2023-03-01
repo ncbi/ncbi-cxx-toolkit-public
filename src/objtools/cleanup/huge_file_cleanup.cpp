@@ -466,68 +466,29 @@ static void s_FindNextOffset(const TFeatIdSet &existing_ids,
 }
 
 
-void CCleanupHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context)
+void CCleanupHugeAsnReader::x_RecordFeatureId(const CFeat_id& featId) 
 {
+    if (!featId.IsLocal() || !featId.GetLocal().IsId()) {
+        return;
+    }
 
-    SetLocalSkipHook(CType<CFeat_id>(), objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
-        {
-            auto pFeatId = Ref(new CFeat_id);
-            type.GetTypeInfo()->DefaultReadData(in, pFeatId);
-            if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
-            {
-                const auto id = pFeatId->GetLocal().GetId();
-
-                if (m_ExistingIds.find(id) != m_ExistingIds.end() ||
-                    m_NewIds.find(id) != m_NewIds.end()) {
-                    auto it = m_RemappedIds.find(id);
-                    if (it != m_RemappedIds.end()) {
-                        m_IdOffset = it->second;    
-                    }
-                    else {
-                        s_FindNextOffset(m_ExistingIds, m_NewExistingIds, m_NewIds, m_IdOffset);
-                        m_RemappedIds.emplace(id, m_IdOffset);
-                    }
-                    m_NewIds.insert(m_IdOffset);
-                }
-                else {
-                    m_NewExistingIds.insert(id);
-                }
-
-                m_max_local_id = std::max(m_max_local_id, id);
-            }
-        });
-
-
-    SetLocalReadHook(CType<CFeat_id>(), objStream,
-            [this](CObjectIStream& in, const CObjectInfo& object)
-            {
-                auto* pObject = object.GetObjectPtr();
-                object.GetTypeInfo()->DefaultReadData(in, pObject);
-                auto* pFeatId = CTypeConverter<CFeat_id>::SafeCast(pObject);
-                if (pFeatId->IsLocal() && pFeatId->GetLocal().IsId())
-                {
-                    const auto id = pFeatId->GetLocal().GetId();
-
-                    if (m_ExistingIds.find(id) != m_ExistingIds.end() ||
-                        m_NewIds.find(id) != m_NewIds.end()) {
-                        auto it = m_RemappedIds.find(id);
-                        if (it != m_RemappedIds.end()) {
-                            m_IdOffset = it->second;    
-                        }
-                        else {
-                            s_FindNextOffset(m_ExistingIds, m_NewExistingIds, m_NewIds, m_IdOffset);
-                            m_RemappedIds.emplace(id, m_IdOffset);
-                        }
-                        m_NewIds.insert(m_IdOffset);
-                    }
-                    else {
-                        m_NewExistingIds.insert(id);
-                    }
-
-                    m_max_local_id = std::max(m_max_local_id, id);
-                }
-            });
+    const auto id = featId.GetLocal().GetId();
+                    
+    if (m_ExistingIds.find(id) != m_ExistingIds.end() ||
+            m_NewIds.find(id) != m_NewIds.end()) {
+        auto it = m_RemappedIds.find(id);
+        if (it != m_RemappedIds.end()) {
+            m_IdOffset = it->second;    
+        }
+        else {
+            s_FindNextOffset(m_ExistingIds, m_NewExistingIds, m_NewIds, m_IdOffset);
+            m_RemappedIds.emplace(id, m_IdOffset);
+        }
+        m_NewIds.insert(m_IdOffset);
+    }
+    else {
+        m_NewExistingIds.insert(id);
+    }
 }
 
 
@@ -631,15 +592,28 @@ void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TCont
 }
 
 
-
-
-void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
+void CCleanupHugeAsnReader::x_SetSeqFeatHooks(CObjectIStream& objStream, TContext& context)
 {
-    TParent::x_SetHooks(objStream, context);
-    
-    if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
-        return;
-    }
+
+    SetLocalReadHook(CType<CSeq_feat>(), objStream,
+            [this](CObjectIStream& in, const CObjectInfo& object)
+            {
+                auto* pObject = object.GetObjectPtr();
+                object.GetTypeInfo()->DefaultReadData(in, pObject);
+                auto* pSeqFeat = CTypeConverter<CSeq_feat>::SafeCast(pObject);
+
+                if (pSeqFeat->IsSetId()) {
+                    x_RecordFeatureId(pSeqFeat->GetId());
+                }
+
+                if (pSeqFeat->IsSetIds()) {
+                    for (auto pFeatId : pSeqFeat->GetIds()) {
+                        if (pFeatId) {
+                            x_RecordFeatureId(*pFeatId);
+                        }
+                    }
+                }
+            });
 
 
     SetLocalSkipHook(CType<CSeq_feat>(), objStream,
@@ -647,6 +621,24 @@ void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& cont
             {
                 auto pSeqFeat = Ref(new CSeq_feat());
                 type.GetTypeInfo()->DefaultReadData(in, pSeqFeat);
+
+                if (pSeqFeat->IsSetId()) {
+                    x_RecordFeatureId(pSeqFeat->GetId());
+                }
+
+                if (pSeqFeat->IsSetIds()) {
+                    for (auto pFeatId : pSeqFeat->GetIds()) {
+                        if (pFeatId) {
+                            x_RecordFeatureId(*pFeatId);
+                        }
+                    }
+                }
+
+                
+                if (!(m_CleanupOptions & eEnableSmallGenomeSets)) {
+                    return;
+                }
+
                 if (pSeqFeat->IsSetData() &&
                     (pSeqFeat->GetData().IsCdregion() ||
                     pSeqFeat->GetData().IsGene())) {
@@ -660,6 +652,18 @@ void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& cont
                     }   
                 }
             });
+
+
+}
+
+
+
+
+void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& context)
+{
+    TParent::x_SetHooks(objStream, context);
+
+    x_SetSeqFeatHooks(objStream, context);
 }
 
 
