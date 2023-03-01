@@ -276,6 +276,7 @@ int CBlastnApp::x_RunMTBySplitDB()
     	PrintErrorArchive(a, bah.GetMessages());
     }
 
+    m_UsageReport.AddParam(CBlastUsageReport::eTask, m_CmdLineArgs->GetTask());
 	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     BLAST_PROF_STOP( APP.MAIN );
@@ -361,6 +362,7 @@ int CBlastnApp::x_RunMTBySplitQuery()
     BLAST_PROF_ADD( THREADS , (int)m_CmdLineArgs->GetNumThreads() );
     BLAST_PROF_ADD( EXIT_STATUS , (int)status );
     BLAST_PROF_REPORT ;
+    m_UsageReport.AddParam(CBlastUsageReport::eTask, m_CmdLineArgs->GetTask());
     m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;

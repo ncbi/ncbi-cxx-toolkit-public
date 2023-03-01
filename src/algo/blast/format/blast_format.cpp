@@ -2468,8 +2468,6 @@ void CBlastFormat::LogBlastSearchInfo(CBlastUsageReport & report)
 	if (report.IsEnabled()) {
 		report.AddParam(CBlastUsageReport::eProgram, m_Program);
 		EProgram task = m_Options->GetProgram();
-		string task_str =  EProgramToTaskName(task);
-		report.AddParam(CBlastUsageReport::eTask, task_str);
 		report.AddParam(CBlastUsageReport::eEvalueThreshold, m_Options->GetEvalueThreshold());
 		report.AddParam(CBlastUsageReport::eHitListSize, m_Options->GetHitlistSize());
 		report.AddParam(CBlastUsageReport::eOutputFmt, m_FormatType);

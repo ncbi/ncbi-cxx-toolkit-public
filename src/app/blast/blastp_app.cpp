@@ -239,6 +239,7 @@ int CBlastpApp::x_RunMTBySplitDB()
        	PrintErrorArchive(a, bah.GetMessages());
     }
 
+    m_UsageReport.AddParam(CBlastUsageReport::eTask, m_CmdLineArgs->GetTask());
     m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
@@ -312,6 +313,7 @@ int CBlastpApp::x_RunMTBySplitQuery()
     	const CArgs & a = GetArgs();
     	PrintErrorArchive(a, bah.GetMessages());
     }
+    m_UsageReport.AddParam(CBlastUsageReport::eTask, m_CmdLineArgs->GetTask());
     m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
     return status;
