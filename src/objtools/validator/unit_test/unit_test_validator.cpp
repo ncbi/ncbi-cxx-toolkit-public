@@ -357,6 +357,7 @@ static void SetCountryOnSrc(CBioSource& src, string country)
 }
 #endif
 
+NCBI_UNUSED
 static string ToAsn1(const CRef<CSeq_entry>& entry)
 {
     CNcbiOstrstream os;
