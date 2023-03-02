@@ -37,13 +37,15 @@
 #include <list>
 using namespace std;
 
+class IPSGS_Processor;
+
 
 struct SPSGSeqId {
     int16_t     seq_id_type;
     string      seq_id;
 };
 
-void PSGSortSeqIds(list<SPSGSeqId>& seq_ids);
+void PSGSortSeqIds(list<SPSGSeqId>& seq_ids, IPSGS_Processor *  processor);
 string StripTrailingVerticalBars(const string &  seq_id);
 
 #endif /* PSGS_SEQ_ID_UTILS__HPP */

@@ -324,15 +324,6 @@ protected:
 };
 
 
-// The difference to the class member version of ParseInputSeqId() is that
-// this one cannot produce tracing to the client even if the incoming request
-// wants tracing and no error message is formed in case of type mismatch
-EPSGS_SeqIdParsingResult ParseInputSeqId(
-    objects::CSeq_id& seq_id,
-    const string& request_seq_id,
-    int request_seq_id_type);
-
-
 // Basically the logic is the same as in GetEffectiveSeqIdType() member
 // This one does not send traces and does not provide the effective seq_id,
 // just tells if there is not conflict between types
