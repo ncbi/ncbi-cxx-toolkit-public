@@ -66,6 +66,13 @@ public:
     CRef<CSeq_entry> LoadSeqEntry(const TBioseqSetInfo& info,
             eAddTopEntry add_top_entry = eAddTopEntry::yes) const override;
     const CCleanupChangeCore& GetChanges() const;
+
+
+    using TFeatId = CFeat_id::TLocal::TId;
+    set<TFeatId> m_FeatIds;
+    using TFeatIdMap = map<TFeatId, TFeatId>;
+    using TPosToFeatIds = map<CHugeAsnReader::TStreamPos, TFeatIdMap>;
+
 private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context) override;
@@ -93,19 +100,13 @@ private:
     map<TFileSize, string> m_SetPosToFluLabel;
     set<CConstRef<CSeq_id>, CRefLess> m_HasIncompleteFeats;
 
-public:
-    using TFeatId = CFeat_id::TLocal::TId;
-    set<TFeatId> m_FeatIds;
-    using TFeatIdMap = map<TFeatId, TFeatId>;
-    using TPosToFeatIds = map<CHugeAsnReader::TStreamPos, TFeatIdMap>;
-    TPosToFeatIds m_PosToFeatIdMap;
-
 private:
-    set<TFeatId> m_ExistingIds;
-    set<TFeatId> m_NewIds;
-    set<TFeatId> m_NewExistingIds;
-    TFeatIdMap   m_RemappedIds;
-    TFeatId      m_IdOffset{0};
+    set<TFeatId>  m_ExistingIds;
+    set<TFeatId>  m_NewIds;
+    set<TFeatId>  m_NewExistingIds;
+    TFeatIdMap    m_RemappedIds;
+    TFeatId       m_IdOffset{0};
+    TPosToFeatIds m_PosToFeatIdMap;
 };
 
 END_SCOPE(object)
