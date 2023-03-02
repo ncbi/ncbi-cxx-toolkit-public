@@ -14,4 +14,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 REQUIRES = objects algo
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans

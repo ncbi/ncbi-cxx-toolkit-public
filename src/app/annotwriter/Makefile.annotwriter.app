@@ -15,6 +15,6 @@ LIBS = $(DATA_LOADERS_UTIL_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG
 
 REQUIRES = BerkeleyDB objects -Cygwin
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans
 
 POST_LINK = $(VDB_POST_LINK)

@@ -13,4 +13,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD  =
 CHECK_COPY = gtfreader_test_cases
 
-WATCHERS = ludwigf foleyjp
+WATCHERS = foleyjp gotvyans

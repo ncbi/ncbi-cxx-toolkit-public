@@ -28,4 +28,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects BerkeleyDB SQLITE3
 
-WATCHERS = ludwigf gotvyans dondosha foleyjp
+WATCHERS = dondosha foleyjp gotvyans

@@ -14,4 +14,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD  =
 CHECK_COPY = pslwriter_test_cases
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans

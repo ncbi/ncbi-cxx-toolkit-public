@@ -16,4 +16,4 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(BLAST_THIRD_PARTY
 REQUIRES = objects algo -Cygwin
 
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans
