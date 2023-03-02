@@ -1,6 +1,7 @@
 corelib$
 util$
 util/regexp$
+util/checksum
 util/xregexp
 util/compress
 util/qparse$
