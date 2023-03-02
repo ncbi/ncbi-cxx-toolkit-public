@@ -365,8 +365,9 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
     SPSGS_ResolveRequest& resolve_request = GetRequest()->GetRequest<SPSGS_ResolveRequest>();
     m_OutputFormat = resolve_request.m_OutputFormat;
     m_SeqId.Reset(new CSeq_id());
-    if (ParseInputSeqId(*m_SeqId, resolve_request.m_SeqId, resolve_request.m_SeqIdType) != ePSGS_ParsedOK) {
-        PSG_WARNING("Bad seq-id: " << resolve_request.m_SeqId);
+    string err;
+    if (ParseInputSeqId(*m_SeqId, resolve_request.m_SeqId, resolve_request.m_SeqIdType, &err) != ePSGS_ParsedOK) {
+        PSG_ERROR("Error parsing seq-id: " << (err.empty() ? resolve_request.m_SeqId : err));
         x_Finish(ePSGS_Error);
         return;
     }
@@ -433,8 +434,9 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
 {
     SPSGS_BlobBySeqIdRequest& get_request = GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>();
     m_SeqId.Reset(new CSeq_id());
-    if (ParseInputSeqId(*m_SeqId, get_request.m_SeqId, get_request.m_SeqIdType) != ePSGS_ParsedOK) {
-        PSG_WARNING("Bad seq-id: " << get_request.m_SeqId);
+    string err;
+    if (ParseInputSeqId(*m_SeqId, get_request.m_SeqId, get_request.m_SeqIdType, &err) != ePSGS_ParsedOK) {
+        PSG_ERROR("Error parsing seq-id: " << (err.empty() ? get_request.m_SeqId : err));
         x_Finish(ePSGS_Error);
         return;
     }

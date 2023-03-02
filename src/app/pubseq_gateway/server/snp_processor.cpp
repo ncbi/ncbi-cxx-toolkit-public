@@ -920,7 +920,7 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
             string err;
             if (!m_Client->IsValidSeqId(get<1>(it), get<0>(it))) continue;
             if (ParseInputSeqId(id, get<1>(it), get<0>(it), &err) != ePSGS_ParsedOK) {
-                PSG_ERROR("Error parsing seq-id: " << err);
+                PSG_ERROR("Error parsing seq-id: " << (err.empty() ? get<1>(it) : err));
                 continue;
             }
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
