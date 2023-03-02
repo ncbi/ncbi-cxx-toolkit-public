@@ -232,6 +232,109 @@ void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry) const
 }
 
 
+using TFeatIdMap = CCleanupHugeAsnReader::TFeatIdMap;
+
+
+static void s_UpdateFeatureId(CFeat_id& featId, const TFeatIdMap& idMap)
+{
+    if (!featId.IsLocal() || !featId.GetLocal().IsId()) {
+        return;
+    }
+    const auto id = featId.GetLocal().GetId();
+    if (auto it=idMap.find(id); it != idMap.end()) {
+        featId.SetLocal().SetId() = it->second;
+    }
+}
+
+
+static void s_UpdateFeatureIds(CSeq_feat& feat, const TFeatIdMap& idMap)
+{
+    if (feat.IsSetId()) {
+        s_UpdateFeatureId(feat.SetId(), idMap);
+    }
+
+    if (feat.IsSetIds()) {
+        for (auto pFeatId : feat.SetIds()) {
+            if (pFeatId) {
+                s_UpdateFeatureId(*pFeatId, idMap);
+            }
+        }
+    }
+
+    if (feat.IsSetXref()) {
+        for (auto pXref : feat.SetXref()) {
+            if (pXref && pXref->IsSetId()) {
+                s_UpdateFeatureId(pXref->SetId(), idMap);
+            }
+        }
+    }
+}
+
+
+static void s_UpdateFeatureIds(CSeq_annot& annot, const TFeatIdMap& idMap) 
+{
+    if (!annot.IsFtable()) {
+        return;
+    }
+
+    for (auto pSeqFeat : annot.SetData().SetFtable()) {
+        if (pSeqFeat) {
+            s_UpdateFeatureIds(*pSeqFeat, idMap);
+        }
+    }
+}
+
+
+static void s_UpdateFeatureIds(CBioseq& bioseq, const TFeatIdMap& idMap) {
+    if (!bioseq.IsSetAnnot()) {
+        return;
+    }
+
+    for (auto pAnnot : bioseq.SetAnnot()) {
+        if (pAnnot) {
+            s_UpdateFeatureIds(*pAnnot, idMap);
+        }
+    }
+}
+
+
+static void s_UpdateFeatureIds(CBioseq_set& bioseqSet, const TFeatIdMap& idMap)
+{
+    if (bioseqSet.IsSetAnnot()) {
+        for (auto pAnnot : bioseqSet.SetAnnot()) {
+            if (pAnnot) {
+                s_UpdateFeatureIds(*pAnnot, idMap);
+            }
+        }
+    }
+
+    if (bioseqSet.IsSetSeq_set()) {
+        for (auto pSubEntry : bioseqSet.SetSeq_set()) {
+            if (pSubEntry) {
+                if (pSubEntry->IsSeq()) {
+                    s_UpdateFeatureIds(pSubEntry->SetSeq(), idMap);
+                }
+                else {
+                    s_UpdateFeatureIds(pSubEntry->SetSet(), idMap);
+                }
+            }
+        }
+    }
+}
+
+
+
+static void s_UpdateFeatureIds(CSeq_entry& entry, const TFeatIdMap& idMap)
+{
+    if (entry.IsSeq()) {
+        s_UpdateFeatureIds(entry.SetSeq(), idMap);
+    }
+    else {
+        s_UpdateFeatureIds(entry.SetSet(), idMap);
+    }
+}
+
+
 CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
         const TBioseqSetInfo& info,
         eAddTopEntry add_top_entry) const
@@ -256,6 +359,13 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
     if (add_top_entry == eAddTopEntry::yes) {
         x_AddTopLevelDescriptors(*pEntry);
     }
+            
+    if (auto posIt = m_PosToFeatIdMap.find(info.m_pos);
+        posIt != m_PosToFeatIdMap.end()) {
+        s_UpdateFeatureIds(*pEntry, posIt->second);
+    }
+
+
     return pEntry;
 }
 
