@@ -34,6 +34,7 @@
 #include "ipsgs_processor.hpp"
 #include "pubseq_gateway.hpp"
 #include "insdc_utils.hpp"
+#include "psgs_seq_id_utils.hpp"
 
 
 string
@@ -233,11 +234,12 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     string* err_msg)
 {
     bool    need_trace = m_Request->NeedTrace();
+    string  stripped_seq_id = StripTrailingVerticalBars(request_seq_id);
 
     try {
         seq_id.Set(request_seq_id);
         if (need_trace)
-            m_Reply->SendTrace("Parsing CSeq_id('" + request_seq_id +
+            m_Reply->SendTrace("Parsing CSeq_id('" + stripped_seq_id +
                              "') succeeded", m_Request->GetStartTimestamp());
 
         if (request_seq_id_type <= 0) {
@@ -286,7 +288,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
         }
     } catch (...) {
         if (need_trace)
-            m_Reply->SendTrace("Parsing CSeq_id('" + request_seq_id +
+            m_Reply->SendTrace("Parsing CSeq_id('" + stripped_seq_id +
                                "') failed (exception)",
                                m_Request->GetStartTimestamp());
     }
@@ -296,11 +298,11 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
         try {
             seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
                        (CSeq_id_Base::E_Choice)(request_seq_id_type),
-                       request_seq_id);
+                       stripped_seq_id);
             if (need_trace) {
                 m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
                                    to_string(request_seq_id_type) +
-                                   ", '" + request_seq_id + "') succeeded.\n"
+                                   ", '" + stripped_seq_id + "') succeeded.\n"
                                    "Parsing CSeq_id finished OK (#4)",
                                    m_Request->GetStartTimestamp());
             }
@@ -309,7 +311,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
             if (need_trace)
                 m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
                                    to_string(request_seq_id_type) +
-                                   ", '" + request_seq_id + "') failed (exception)",
+                                   ", '" + stripped_seq_id + "') failed (exception)",
                                    m_Request->GetStartTimestamp());
         }
     }
@@ -317,51 +319,6 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     if (need_trace) {
         m_Reply->SendTrace("Parsing CSeq_id finished FAILED",
                            m_Request->GetStartTimestamp());
-    }
-
-    return ePSGS_ParseFailed;
-}
-
-
-EPSGS_SeqIdParsingResult ParseInputSeqId(
-    CSeq_id& seq_id,
-    const string& request_seq_id,
-    int request_seq_id_type)
-{
-    try {
-        seq_id.Set(request_seq_id);
-
-        if (request_seq_id_type <= 0) {
-            return ePSGS_ParsedOK;
-        }
-
-        // Check the parsed type with the given
-        if (AreSeqIdTypesMatched(seq_id, request_seq_id_type)) {
-            return ePSGS_ParsedOK;
-        }
-
-        // seq_id_type from URL and from CSeq_id differ
-        CSeq_id_Base::E_Choice  seq_id_type = seq_id.Which();
-
-        if (IsINSDCSeqIdType(request_seq_id_type) &&
-            IsINSDCSeqIdType(seq_id_type)) {
-            // Both seq_id_types belong to INSDC
-            return ePSGS_ParsedOK;
-        }
-
-        // Type mismatch
-    } catch (...) {
-    }
-
-    // Second variation of Set()
-    if (request_seq_id_type > 0) {
-        try {
-            seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
-                       (CSeq_id_Base::E_Choice)(request_seq_id_type),
-                       request_seq_id);
-            return ePSGS_ParsedOK;
-        } catch (...) {
-        }
     }
 
     return ePSGS_ParseFailed;

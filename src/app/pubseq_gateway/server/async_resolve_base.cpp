@@ -213,7 +213,7 @@ void CPSGS_AsyncResolveBase::SetupSeqIdToResolve(void)
 
         // Sort the seq ids to resolve so that the most likely to resolve are
         // in front
-        PSGSortSeqIds(m_SeqIdsToResolve);
+        PSGSortSeqIds(m_SeqIdsToResolve, this);
 
         if (m_SeqIdsToResolve.size() > 1) {
             if (m_Request->NeedTrace()) {

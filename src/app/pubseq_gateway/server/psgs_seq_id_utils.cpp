@@ -78,14 +78,16 @@ static bool s_SortSeqIdPredicate(const CRef<CSeq_id> &  lhs,
 }
 
 
-void PSGSortSeqIds(list<SPSGSeqId>& seq_ids)
+void PSGSortSeqIds(list<SPSGSeqId>& seq_ids,
+                   IPSGS_Processor *  processor)
 {
     list<SPSGSeqId>         unparsed_seq_ids;
     list<CRef<CSeq_id>>     parsed_seq_ids;
 
     for (const auto &  item : seq_ids) {
         CRef<CSeq_id>     seq_id(new CSeq_id);
-        if (ParseInputSeqId(*seq_id, item.seq_id, item.seq_id_type) == ePSGS_ParsedOK) {
+        if (processor->ParseInputSeqId(*seq_id, item.seq_id,
+                                       item.seq_id_type, nullptr) == ePSGS_ParsedOK) {
             parsed_seq_ids.push_back(seq_id);
         } else {
             unparsed_seq_ids.push_back(item);
