@@ -10,4 +10,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans

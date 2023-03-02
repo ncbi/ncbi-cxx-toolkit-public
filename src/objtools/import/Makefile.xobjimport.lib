@@ -19,6 +19,6 @@ LIB =	xobjimport
 
 DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans
 
 USES_LIBRARIES = xobjutil

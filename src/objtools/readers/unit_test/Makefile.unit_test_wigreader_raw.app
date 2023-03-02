@@ -13,4 +13,4 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD  =
 CHECK_COPY = wigreader_test_cases_raw
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans

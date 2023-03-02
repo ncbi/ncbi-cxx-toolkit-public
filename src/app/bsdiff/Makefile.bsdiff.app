@@ -20,4 +20,4 @@ POST_LINK = $(VDB_POST_LINK)
 
 REQUIRES = objects $(VDB_REQ) LIBXML LIBXSLT
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans

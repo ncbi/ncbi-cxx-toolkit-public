@@ -23,4 +23,4 @@ POST_LINK = $(VDB_POST_LINK)
 REQUIRES = BerkeleyDB objects
 
 
-WATCHERS = ludwigf foleyjp
+WATCHERS = foleyjp gotvyans

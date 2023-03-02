@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = jcherry sapojnik stakhovv ludwigf ucko gotvyans foleyjp
+WATCHERS = jcherry sapojnik stakhovv ucko foleyjp gotvyans
 
 
 ASN_DEP = submit
