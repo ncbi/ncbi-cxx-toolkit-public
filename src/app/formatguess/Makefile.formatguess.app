@@ -12,6 +12,6 @@ LIB  = xmlwrapp $(OBJREAD_LIBS) seqset $(SEQ_LIBS) pub medline biblio \
        general xser xconnect xutil xncbi
 LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans
 
 REQUIRES = objects LIBXML LIBXSLT

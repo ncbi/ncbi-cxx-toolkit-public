@@ -19,4 +19,4 @@ REQUIRES = objects algo -Cygwin
 # proj_tag gbench allows to include multireader into sviwer build tree 
 PROJ_TAG = gbench
 
-WATCHERS = ludwigf gotvyans
+WATCHERS = gotvyans

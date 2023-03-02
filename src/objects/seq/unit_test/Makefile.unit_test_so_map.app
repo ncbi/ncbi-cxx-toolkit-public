@@ -12,4 +12,4 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 CHECK_CMD =
 
-WATCHERS = ludwigf
+WATCHERS = gotvyans
