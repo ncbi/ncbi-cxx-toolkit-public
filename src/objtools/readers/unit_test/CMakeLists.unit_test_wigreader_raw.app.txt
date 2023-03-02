@@ -6,6 +6,6 @@ NCBI_begin_app(unit_test_wigreader_raw)
   NCBI_uses_toolkit_libraries(xobjread)
   NCBI_set_test_assets(wigreader_test_cases_raw)
   NCBI_add_test()
-  NCBI_project_watchers(ludwigf)
+  NCBI_project_watchers(gotvyans)
 NCBI_end_app()
 

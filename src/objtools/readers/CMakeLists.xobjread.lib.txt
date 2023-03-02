@@ -25,6 +25,6 @@ NCBI_begin_lib(xobjread)
     message_listener line_error
   )
   NCBI_uses_toolkit_libraries(submit xlogging)
-  NCBI_project_watchers(jcherry sapojnik stakhovv ludwigf ucko gotvyans foleyjp)
+  NCBI_project_watchers(gotvyans jcherry sapojnik stakhovv ucko foleyjp)
 NCBI_end_lib()
 

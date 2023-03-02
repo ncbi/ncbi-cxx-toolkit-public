@@ -15,6 +15,6 @@ NCBI_begin_lib(xformat)
     gather_iter html_anchor_item inst_info_map gene_finder flat_qual_slots
   )
   NCBI_uses_toolkit_libraries(gbseq xalnmgr xcleanup)
-  NCBI_project_watchers(ludwigf dicuccio)
+  NCBI_project_watchers(gotvyans dicuccio)
 NCBI_end_lib()
 
