@@ -467,14 +467,41 @@ static void RecursiveXML(ostream& out, const TReportItemList& list, unsigned sho
     }
 }
 
+static list<CRef<CDiscrepancyCore>> x_ReorderList(const std::vector<eTestNames>& order, const TDiscrepancyCoreMap& tests)
+{
+    vector<std::pair<TDiscrepancyCoreMap::key_type, TDiscrepancyCoreMap::mapped_type>> vec;
+    vec.reserve(tests.size());
+    for (const auto& test : tests) {
+        vec.push_back(test);
+    }
+
+    sort(vec.begin(), vec.end(), [&order](auto& l, auto r)
+    {
+        auto it_l = std::find(order.begin(), order.end(), l.first);
+        auto it_r = std::find(order.begin(), order.end(), r.first);
+        // in case the test is not put into ordering list, compare by test value
+        if (it_l == it_r)
+            return r.first < l.first;
+        return it_l < it_r;
+    });
+
+    list<CRef<CDiscrepancyCore>> result;
+
+    for (const auto& test : vec) {
+        result.push_back(test.second);
+    }
+
+    return result;
+}
 
 void CDiscrepancyProductImpl::OutputXML(ostream& out, unsigned short flags)
 {
     out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     out << "<discrepancy_report>\n";
 
-    for (const auto& tst : m_Tests) {
-        TReportItemList rep = tst.second->GetReport();
+    auto sorted = x_ReorderList(g_ReportOrder1, m_Tests);
+    for (const auto& test : sorted) {
+        TReportItemList rep = test->GetReport();
         if (rep.empty()) {
             continue;
         }
@@ -486,8 +513,8 @@ void CDiscrepancyProductImpl::OutputXML(ostream& out, unsigned short flags)
             }
         }
         Indent(out, 1);
-        out << "<test name=\"" << s_RemoveInitialUnderscore(tst.second->GetSName())
-            << "\" description=\"" << NStr::XmlEncode(tst.second->GetDescription())
+        out << "<test name=\"" << s_RemoveInitialUnderscore(test->GetSName())
+            << "\" description=\"" << NStr::XmlEncode(test->GetDescription())
             << "\" severity=\"" << SevLevel[max_sev]
             << "\" cardinality=\"" << rep.size() << "\">\n";
         RecursiveXML(out, rep, flags, 2);
