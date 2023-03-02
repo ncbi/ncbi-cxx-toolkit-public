@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(asn2flat)
-  NCBI_project_watchers(ludwigf gotvyans foleyjp)
+  NCBI_project_watchers(gotvyans foleyjp)
   NCBI_sources(asn2flat)
   NCBI_uses_toolkit_libraries(data_loaders_util xformat xobjwrite)
 

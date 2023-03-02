@@ -14,5 +14,5 @@ NCBI_begin_lib(xobjimport)
     annot_import_data
   )
   NCBI_uses_toolkit_libraries(xobjutil)
-  NCBI_project_watchers(ludwigf)
+  NCBI_project_watchers(gotvyans)
 NCBI_end_lib()

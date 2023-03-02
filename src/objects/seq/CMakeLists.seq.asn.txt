@@ -17,7 +17,7 @@ NCBI_begin_lib(seq)
     ../seqtable/seqtable.asn
   )
   NCBI_uses_toolkit_libraries(pub seqcode sequtil)
-  NCBI_project_watchers(vasilche grichenk stakhovv ludwigf)
+  NCBI_project_watchers(gotvyans vasilche grichenk stakhovv)
 NCBI_end_lib()
 
 

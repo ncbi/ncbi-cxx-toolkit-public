@@ -5,6 +5,6 @@ NCBI_begin_app(unit_test_so_map)
   NCBI_uses_toolkit_libraries(seq test_boost)
   NCBI_set_test_assets(data)
   NCBI_add_test()
-  NCBI_project_watchers(ludwigf)
+  NCBI_project_watchers(gotvyans)
 NCBI_end_app()
 

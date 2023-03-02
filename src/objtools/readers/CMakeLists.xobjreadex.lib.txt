@@ -7,6 +7,6 @@ NCBI_begin_lib(xobjreadex)
     source_mod_parser_wrapper
   )
   NCBI_uses_toolkit_libraries(xobjread xobjutil seqset)
-  NCBI_project_watchers(dicuccio ludwigf gotvyans)
+  NCBI_project_watchers(gotvyans dicuccio)
 NCBI_end_lib()
 
