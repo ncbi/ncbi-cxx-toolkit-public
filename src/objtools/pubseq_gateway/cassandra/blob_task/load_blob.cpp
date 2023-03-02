@@ -94,6 +94,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_Blob(make_unique<CBlobRecord>(sat_key))
     , m_Modified(modified)
     , m_LoadChunks(load_chunks)
+    , m_Mode( eBlobTaskModeDefault)
 {
     m_Blob->SetModified(modified);
 }
@@ -111,7 +112,30 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
     , m_ExplicitBlob(true)
+    , m_Mode( eBlobTaskModeDefault)
 {
+}
+
+//:::::::
+CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
+    shared_ptr<CCassConnection> conn,
+    const string & keyspace,
+    CBlobRecord::TSatKey sat,
+    CBlobRecord::TSatKey sat_key,
+    CBlobRecord::TSatKey chunk,
+    CBlobRecord::TSatKey need_old,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(conn), keyspace, 0, true, move(data_error_cb))
+    , m_Blob(make_unique<CBlobRecord>(0))
+    , m_Modified(-1)
+    , m_LoadChunks(false)
+{
+    m_Mode = eBlobTaskFindID2Chunk;
+    m_FindChunk.m_Sat      = sat;
+    m_FindChunk.m_Sat_key  = sat_key;
+    m_FindChunk.m_Chunk    = chunk;
+    m_FindChunk.m_Need_old = need_old;
 }
 
 bool CCassBlobTaskLoadBlob::IsBlobPropsFound() const
@@ -127,6 +151,11 @@ void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallbackEx callback)
 void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
 {
     m_PropsCallback = move(callback);
+}
+
+void CCassBlobTaskLoadBlob::SetFindID2ChunkIDCallback( TFindID2ChunkIDCallback callback)
+{
+    m_FindID2ChunkIDCallback = move(callback);
 }
 
 void CCassBlobTaskLoadBlob::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
@@ -150,6 +179,12 @@ void CCassBlobTaskLoadBlob::Wait1()
                 return;
             case eInit:
                 // m_Blob has already been provided explicitly so we can move to eFinishedPropsFetch
+                if( m_Mode == eBlobTaskFindID2Chunk)
+                {
+                    b_need_repeat = true;
+                    m_State = eFind_ID2_Chunk;
+                    break;
+                }
                 if (m_ExplicitBlob) {
                     m_State = eFinishedPropsFetch;
                     m_RemainingSize = m_Blob->GetSize();
@@ -312,6 +347,36 @@ void CCassBlobTaskLoadBlob::Wait1()
                 break;
             }
 
+            case eFind_ID2_Chunk:
+            {
+                x_FindID2ChunkID_Query();
+                m_State = eWaitingForID2ChunkID;
+                // b_need_repeat == false : waiting is outside this function
+                break;
+            }
+            
+            case eWaitingForID2ChunkID:
+            {
+                x_FindID2ChunkID_Wait();
+                m_State = eIsID2ChunkPacked;
+                //m_State = eDone;
+                break;
+            }
+            
+            case eIsID2ChunkPacked:
+            {
+                x_IsID2ChunkPacked_Query();
+                m_State = eWaitingForID2ChunkPacked;
+                break;
+            }
+            
+            case eWaitingForID2ChunkPacked:
+            {
+                x_IsID2ChunkPacked_Wait();
+                m_State = eDone;
+                break;
+            }
+            
             default: {
                 char msg[1024];
                 string keyspace = GetKeySpace();
@@ -428,6 +493,94 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
         }
     }
     qry.Query(GetQueryConsistency(), true, m_UsePrepared);
+}
+
+//:::::::
+void CCassBlobTaskLoadBlob::x_FindID2ChunkID_Query()
+{
+    CloseAll();
+    m_QueryArr.clear();
+    m_QueryArr.push_back({m_Conn->NewQuery(), 0});
+    auto qry = m_QueryArr[0].query;
+    string sql = "SELECT ent_type, ent FROM " + GetKeySpace() + ".split"
+        " WHERE sat = ? AND sat_key = ? AND split_id = ?";
+    qry->SetSQL( sql, 3);
+    qry->BindInt16( 0, m_FindChunk.m_Sat);
+    qry->BindInt32( 1, m_FindChunk.m_Sat_key);
+    qry->BindInt32( 2, m_FindChunk.m_Chunk);
+    SetupQueryCB3( qry);
+    qry->Query( GetQueryConsistency(), m_Async, m_UsePrepared);
+}
+
+//:::::::
+void CCassBlobTaskLoadBlob::x_FindID2ChunkID_Wait()
+{
+    auto& it = m_QueryArr[0];
+    if( !CheckReady(it)) return;
+
+    while( 1)
+    {
+        it.query->NextRow();
+
+        if( it.query->IsEOF()) break;
+        int ent_type = it.query->FieldGetInt32Value(0);
+        int ent      = it.query->FieldGetInt32Value(1);
+        m_FindChunk.m_Found = true;
+        if( !(ent_type & 32))
+        {
+            m_FindChunk.m_ID2_chunk_id = ent;
+            break;
+        }
+        else if( m_FindChunk.m_Need_old)
+        {
+            m_FindChunk.m_ID2_chunk_id = ent;
+        }
+    }
+    
+    it.query->Close();
+    CloseAll();
+    m_QueryArr.clear();
+
+    //if( m_FindID2ChunkIDCallback)
+    //    m_FindID2ChunkIDCallback( m_FindChunk.m_Found, m_FindChunk.m_ID2_chunk_id);
+}
+
+//:::::::
+void CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Query()
+{
+    CloseAll();
+    m_QueryArr.clear();
+    m_QueryArr.push_back({m_Conn->NewQuery(), 0});
+    auto qry = m_QueryArr[0].query;
+    string sql = "SELECT size, size_unpacked FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
+    qry->SetSQL( sql, 1);
+    qry->BindInt32( 0, m_FindChunk.m_ID2_chunk_id);
+    SetupQueryCB3( qry);
+    qry->Query( GetQueryConsistency(), m_Async, m_UsePrepared);
+}
+
+//:::::::
+void CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Wait()
+{
+    auto& it = m_QueryArr[0];
+    if( !CheckReady(it)) return;
+
+    while( 1)
+    {
+        it.query->NextRow();
+
+        if( it.query->IsEOF()) break;
+        int64_t size          = it.query->FieldGetInt64Value(0);
+        int64_t size_unpacked = it.query->FieldGetInt64Value(1);
+        m_FindChunk.m_Packed = (size < size_unpacked);
+    }
+    
+    it.query->Close();
+    CloseAll();
+    m_QueryArr.clear();
+
+    if( m_FindID2ChunkIDCallback)
+      m_FindID2ChunkIDCallback( m_FindChunk.m_Found, m_FindChunk.m_ID2_chunk_id, m_FindChunk.m_Packed);
 }
 
 unique_ptr<CBlobRecord> CCassBlobTaskLoadBlob::ConsumeBlobRecord()
