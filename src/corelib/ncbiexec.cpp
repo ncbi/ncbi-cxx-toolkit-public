@@ -492,7 +492,7 @@ void s_Create_Env(
         NCBI_THROW(CExecException, eSpawn, "CExec::" #func "() failed"); \
     } \
     CResult result; \
-    if ((mode & fModeMask) == eWait) { \
+    if ((mode & static_cast<EMode>(fModeMask)) == eWait) { \
         result.m_Flags = CResult::fExitCode; \
         result.m_Result.exitcode = (TExitCode)status; \
     } else { \

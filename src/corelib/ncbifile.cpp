@@ -1006,7 +1006,8 @@ bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode,
             mode = perms; \
         } \
         /* clear auxiliary bits */ \
-        mode &= ~(fDefault | fModeAdd | fModeRemove | fModeNoChange); \
+        mode &= ~(fDefault | static_cast<TMode>( \
+                       fModeAdd | fModeRemove | fModeNoChange)); \
     }
 
 
@@ -4359,7 +4360,7 @@ bool CDir::Remove(TRemoveFlags flags) const
 
 #if !defined(NCBI_OS_MSWIN)
     // Make directory writable for user to remove any entry inside
-    SetMode(CDirEntry::fWrite | CDirEntry::fModeAdd, 
+    SetMode(CDirEntry::fWrite | static_cast<TMode>(CDirEntry::fModeAdd), 
             CDirEntry::fModeNoChange,
             CDirEntry::fModeNoChange);
 #endif
