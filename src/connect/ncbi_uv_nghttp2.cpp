@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#define HAVE_LOCAL_NCBI_BUILD_VER_H 1
+
 #include "connect_misc_impl.hpp"
 
 #include <connect/impl/ncbi_uv_nghttp2.hpp>
