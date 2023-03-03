@@ -48,11 +48,14 @@
 
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_book.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/ArticleId.hpp>
 #include <objects/biblio/ArticleIdSet.hpp>
+#include <objects/biblio/PubStatusDateSet.hpp>
+
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Date.hpp>
@@ -417,6 +420,13 @@ void IPubmedUpdater::Normalize(CPub& pub)
                 return chl < chr;
             };
             ids.sort(pred);
+        }
+
+        if (A.IsSetFrom() && A.GetFrom().IsBook()) {
+            CCit_book& book = A.SetFrom().SetBook();
+            if (book.IsSetImp() && book.GetImp().IsSetHistory()) {
+                book.SetImp().ResetHistory();
+            }
         }
     }
 }
