@@ -258,10 +258,17 @@ private:
         void Stop() { m_InputQueue.Stop(m_InputQueue.eDrain); }
 
         void Submitter(CPSG_Queue& output);
+
+        using TItemComplete = void (SImpl::*)(EPSG_Status, const shared_ptr<CPSG_ReplyItem>&);
+        using TReplyComplete = void (SImpl::*)(EPSG_Status, const shared_ptr<CPSG_Reply>&);
+
+        TItemComplete GetItemComplete();
+        TReplyComplete GetReplyComplete();
+
+    private:
         void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
         void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
-    private:
         void Init() {}
 
         const TParams& m_Params;
