@@ -176,9 +176,10 @@ void s_ReadCheck1(IReader*               rdr,
                   size_t                 control_size)
 {
     size_t read;
-    size_t total_read = 0;
+    NCBI_UNUSED size_t total_read = 0;
     unsigned char* ptr = buf2;
     ERW_Result res;
+
     while (1) {
         res = rdr->Read(ptr, size, &read);
         total_read += read;

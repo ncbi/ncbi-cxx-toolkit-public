@@ -114,10 +114,8 @@ int CTestLogrotateApplication::Run(void)
     CNcbiStreamoff     limit   = args["limit"].AsInteger();
     bool               direct  = args["direct"];
     bool               perline = args["perline"];
-    IOS_BASE::openmode mode    = IOS_BASE::app | IOS_BASE::ate | IOS_BASE::out;
 
     if (args["prefill"]) {
-        mode |= IOS_BASE::binary;
         CNcbiOfstream out(logname.c_str(),
                           IOS_BASE::out | IOS_BASE::trunc | IOS_BASE::binary);
         int size = args["prefill"].AsInteger();
