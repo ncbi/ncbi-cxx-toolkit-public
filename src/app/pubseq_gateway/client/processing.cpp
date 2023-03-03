@@ -185,12 +185,6 @@ CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, EIfAddRequestID if_
     }
 }
 
-CJsonResponse::CJsonResponse(const string& id, bool result) :
-    CJsonResponse(id)
-{
-    Set("result", result);
-}
-
 CJsonResponse::CJsonResponse(const string& id, const CJsonResponse& result) :
     CJsonResponse(id)
 {

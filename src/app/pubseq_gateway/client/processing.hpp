@@ -85,7 +85,6 @@ public:
     template <class TItem>
     CJsonResponse(EPSG_Status status, TItem item, EIfAddRequestID if_add_request_id = eAddRequestID);
 
-    CJsonResponse(const string& id, bool result);
     CJsonResponse(const string& id, const CJsonResponse& result);
     CJsonResponse(const string& id, int code, const string& message);
 
