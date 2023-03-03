@@ -97,7 +97,7 @@ template <ETerm term, EComparison comparison, typename TValue>
 struct SConditionImpl : SCondition
 {
     SConditionImpl(TValue value) :
-        SCondition(comparison + term * eNumberOfComparisons),
+        SCondition(comparison + static_cast<size_t>(term) * eNumberOfComparisons),
         m_Value(value)
     {
     }
