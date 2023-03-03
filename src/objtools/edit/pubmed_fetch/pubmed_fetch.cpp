@@ -62,6 +62,7 @@ public:
         arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
+        arg_desc->AddFlag("normalize", "Normalize output deterministically for tests", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
         arg_desc->AddFlag("stats", "Only print execution statistics");
         SetupArgDescriptions(arg_desc.release());
     }
@@ -129,6 +130,8 @@ public:
             }
         }
 
+        bool bNormalize = args["normalize"].AsBoolean();
+
         ostream* output = nullptr;
         if (args["o"]) {
             output = &args["o"].AsOutputFile();
@@ -138,9 +141,9 @@ public:
 
         unique_ptr<IPubmedUpdater> upd;
         if (bTypeMLA) {
-            upd.reset(new CMLAUpdater(true));
+            upd.reset(new CMLAUpdater(true)); // bNormalize
         } else {
-            upd.reset(new CEUtilsUpdater(true));
+            upd.reset(new CEUtilsUpdater(true)); // bNormalize
         }
 
         bool       bstats = args["stats"];
