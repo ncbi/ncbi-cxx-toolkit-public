@@ -98,7 +98,7 @@ public:
         : m_Value((static_cast<TValue>(host) << 16) | port)
         { }
 
-    CEndpointKey(const CTempString& name, NStr::TConvErrFlags flags = 0);
+    CEndpointKey(const CTempString& name, NStr::TStringToNumFlags flags = 0);
 
     Uint4 GetHost(void) const {
         _ASSERT(m_Value >> 48 == 0);

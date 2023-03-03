@@ -2783,7 +2783,7 @@ void NStr::PtrToString(string& out_str, const void* value)
 }
 
 
-const void* NStr::StringToPtr(const CTempStringEx str, TConvErrFlags flags)
+const void* NStr::StringToPtr(const CTempStringEx str, TStringToNumFlags flags)
 {
     errno = 0;
     void *ptr = NULL;

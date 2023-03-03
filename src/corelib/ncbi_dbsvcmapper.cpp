@@ -39,7 +39,8 @@
 BEGIN_NCBI_SCOPE
 
 
-CEndpointKey::CEndpointKey(const CTempString& name, NStr::TConvErrFlags flags)
+CEndpointKey::CEndpointKey(const CTempString& name,
+                           NStr::TStringToNumFlags flags)
 {
     CTempString  address  = name;
     SIZE_TYPE    pos      = name.find_first_not_of("0123456789.:");
