@@ -54,9 +54,9 @@ void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
     bool queuing_was_forbidden;
     {{
         CMutexGuard guard(m_Mutex);
-        old_max = m_MaxThreads;
+        old_max = m_MaxThreads.Get();
         queuing_was_forbidden = m_QueuingForbidden;
-        m_MaxThreads = 0;  // Forbid spawning new threads
+        m_MaxThreads.Set(0);  // Forbid spawning new threads
         m_QueuingForbidden = false; // Always queue normally here.
         n = m_ThreadCount.Get(); // Capture for use without mutex
     }}
@@ -94,7 +94,7 @@ void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
     CMutexGuard guard(m_Mutex);
     m_QueuingForbidden = queuing_was_forbidden;
     if ((flags & fKill_Reopen) != 0) {
-        m_MaxThreads = old_max;
+        m_MaxThreads.Set(old_max);
     }
 }
 
@@ -102,7 +102,7 @@ void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
 void CStdPoolOfThreads::Register(TThread& thread)
 {
     CMutexGuard guard(m_Mutex);
-    if (m_MaxThreads > 0) {
+    if (m_MaxThreads.Get() > 0) {
         m_Threads.push_back(CRef<TThread>(&thread));
     } else {
         NCBI_THROW(CThreadException, eRunError,
@@ -113,7 +113,7 @@ void CStdPoolOfThreads::Register(TThread& thread)
 void CStdPoolOfThreads::UnRegister(TThread& thread)
 {
     CMutexGuard guard(m_Mutex);
-    if (m_MaxThreads > 0) {
+    if (m_MaxThreads.Get() > 0) {
         TThreads::iterator it = find(m_Threads.begin(), m_Threads.end(),
                                      CRef<TThread>(&thread));
         if (it != m_Threads.end()) {
