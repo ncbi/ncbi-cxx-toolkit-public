@@ -98,6 +98,8 @@ private:
     template <class TItem, class... TArgs>
     void FillWithRequestID(EPSG_Status status, TItem item, TArgs&&... args);
 
+    template <class TItem>
+    void Fill(EPSG_Status status, TItem item, string first_message);
     void Fill(EPSG_Status status, shared_ptr<CPSG_Reply> reply) { Fill(reply, status); }
     void Fill(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item);
 
@@ -112,7 +114,7 @@ private:
     void Fill(shared_ptr<CPSG_IpgInfo> ipg_info);
 
     template <class TItem>
-    void Fill(TItem item, EPSG_Status status);
+    void Fill(TItem item, EPSG_Status status) { Fill(status, item, item->GetNextMessage()); }
 
     template <class TReplyItem>
     void Set(const char* name, shared_ptr<TReplyItem>& reply_item)

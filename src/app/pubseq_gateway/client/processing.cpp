@@ -433,15 +433,11 @@ void CJsonResponse::Fill(shared_ptr<CPSG_IpgInfo> ipg_info)
 }
 
 template <class TItem>
-void CJsonResponse::Fill(TItem item, EPSG_Status status)
+void CJsonResponse::Fill(EPSG_Status status, TItem item, string first_message)
 {
     Set("status", s_StrStatus(status));
 
-    for (;;) {
-        auto message = item->GetNextMessage();
-
-        if (message.empty()) return;
-
+    for (auto message = move(first_message); !message.empty(); message = item->GetNextMessage()) {
         if (auto errors = m_JsonObj["errors"]; errors.IsNull()) {
             errors.ResetArray().push_back(message);
         } else {
@@ -725,6 +721,12 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
     return data_only_copy;
 }
 
+struct SBatchResolveContext : string
+{
+    set<EPSG_Status> reported;
+    SBatchResolveContext(string id) : string(move(id)) {}
+};
+
 template <>
 void CParallelProcessing<SBatchResolveParams>::SImpl::Init()
 {
@@ -745,7 +747,7 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::Submitter(CPSG_Queue& outp
     while (m_InputQueue.Pop(id)) {
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
         auto bio_id = CPSG_BioId(id, m_Params.type);
-        auto user_context = make_shared<string>(move(id));
+        auto user_context = make_shared<SBatchResolveContext>(move(id));
         auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), m_Params.bio_id_resolution, move(user_context));
 
         request->IncludeInfo(m_Params.include_info);
@@ -757,30 +759,58 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::Submitter(CPSG_Queue& outp
     output.Stop();
 }
 
+using verbose = true_type;
+using no_verbose = false_type;
+
 template <>
 template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<verbose>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     CProcessing::ItemComplete(m_JsonOut, status, item);
 }
 
 template <>
 template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<no_verbose>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
-    CProcessing::ReplyComplete(m_JsonOut, status, reply);
+    auto context = item->GetReply()->GetRequest()->GetUserContext<SBatchResolveContext>();
+    _ASSERT(context);
+    context->reported.emplace(status);
+
+    ItemComplete<verbose>(status, item);
+}
+
+template <>
+template <>
+void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<verbose>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    CJsonResponse result_doc(status, reply);
+    m_JsonOut << result_doc;
+}
+
+template <>
+template <>
+void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<no_verbose>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    auto context = reply->GetRequest()->GetUserContext<SBatchResolveContext>();
+    _ASSERT(context);
+
+    if (auto first_message = reply->GetNextMessage(); !first_message.empty() || (context->reported.find(status) == context->reported.end())) {
+        CJsonResponse result_doc(status, reply, first_message);
+        m_JsonOut << result_doc;
+    }
 }
 
 template <>
 CParallelProcessing<SBatchResolveParams>::SImpl::TItemComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetItemComplete()
 {
-    return &SImpl::ItemComplete<>;
+    return SParams::verbose ? &SImpl::ItemComplete<verbose> : &SImpl::ItemComplete<no_verbose>;
 }
 
 template <>
 CParallelProcessing<SBatchResolveParams>::SImpl::TReplyComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetReplyComplete()
 {
-    return &SImpl::ReplyComplete<>;
+    return SParams::verbose ? &SImpl::ReplyComplete<verbose> : &SImpl::ReplyComplete<no_verbose>;
 }
 
 template <>
