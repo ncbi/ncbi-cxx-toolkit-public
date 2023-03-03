@@ -242,33 +242,6 @@ enum class EEncoding {
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
-    /// Common conversion flags.
-    enum EConvErrFlags {
-        /// Do not throw an exception on error.
-        /// Could be used with methods throwing an exception by default, ignored otherwise.
-        /// Just return zero and set errno to non-zero instead of throwing an exception.
-        /// We recommend the following technique to check against errors
-        /// with minimum overhead when this flag is used:
-        /// @code
-        ///     if (!retval  &&  errno != 0)
-        ///        ERROR;
-        /// @endcode
-        /// And for StringToDouble*() variants:
-        /// @code
-        ///     if (retval == HUGE_VAL  ||  retval == -HUGE_VAL  ||  
-        ///        !retval  &&  errno != 0)
-        ///        ERROR;
-        /// @endcode
-        fConvErr_NoThrow      = (1 <<  0),
-        /*
-        fConvErr_NoErrno      = (1 <<  1),  ///< Do not set errno at all.
-                                            ///< If used together with fConvErr_NoThrow flag
-                                            ///< returns 0 on error (-1 for StringToNonNegativeInt).
-        */
-        fConvErr_NoErrMessage = (1 <<  2)   ///< Set errno, but do not set CNcbiError message on error
-    };
-    typedef int TConvErrFlags;    ///< Bitwise OR of "EConvErrFlags"
-
     /// Number to string conversion flags.
     ///
     /// NOTE: 
@@ -294,6 +267,28 @@ public:
 
     /// String to number conversion flags.
     enum EStringToNumFlags {
+        /// Do not throw an exception on error.
+        /// Could be used with methods throwing an exception by default, ignored otherwise.
+        /// Just return zero and set errno to non-zero instead of throwing an exception.
+        /// We recommend the following technique to check against errors
+        /// with minimum overhead when this flag is used:
+        /// @code
+        ///     if (!retval  &&  errno != 0)
+        ///        ERROR;
+        /// @endcode
+        /// And for StringToDouble*() variants:
+        /// @code
+        ///     if (retval == HUGE_VAL  ||  retval == -HUGE_VAL  ||  
+        ///        !retval  &&  errno != 0)
+        ///        ERROR;
+        /// @endcode
+        fConvErr_NoThrow      = (1 <<  0),
+        /*
+        fConvErr_NoErrno      = (1 <<  1),  ///< Do not set errno at all.
+                                            ///< If used together with fConvErr_NoThrow flag
+                                            ///< returns 0 on error (-1 for StringToNonNegativeInt).
+        */
+        fConvErr_NoErrMessage = (1 <<  2),  ///< Set errno, but do not set CNcbiError message on error
         fMandatorySign           = (1 << 17),     ///< Check on mandatory sign. See 'ENumToStringFlags::fWithSign'.
         fAllowCommas             = (1 << 18),     ///< Allow commas. See 'ENumToStringFlags::fWithCommas'.
         fAllowLeadingSpaces      = (1 << 19),     ///< Ignore leading spaces in converted string.
@@ -312,7 +307,9 @@ public:
         fDS_ProhibitFractions    = (1 << 27),     ///< StringToUInt8_DataSize(): Ignore any fraction part of a value, "1.2K" ~ "1K"
         fDS_ProhibitSpaceBeforeSuffix = (1 << 28) ///< StringToUInt8_DataSize(): Do not allow spaces between value and suffix, like "10 K".
     };
+    typedef EStringToNumFlags EConvErrFlags; ///< Formerly split out
     typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
+    typedef TStringToNumFlags TConvErrFlags; ///< Formerly split out
 
     /// Convert string to a numeric value.
     ///
@@ -375,7 +372,7 @@ public:
     /// @return
     ///   - If conversion succeeds, set errno to zero and return the converted value.
     ///   - Otherwise, set errno to non-zero and return -1.
-    static int StringToNonNegativeInt(const CTempString str, TConvErrFlags flags = 0);
+    static int StringToNonNegativeInt(const CTempString str, TStringToNumFlags flags = 0);
 
     /// @deprecated
     ///   Use template-based StringToNumeric<> or StringToNonNegativeInt() instead.
@@ -645,7 +642,7 @@ public:
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
     ///   - Otherwise, set errno to non-zero and return NULL.
-    static const void* StringToPtr(const CTempStringEx str, TConvErrFlags flags = 0);
+    static const void* StringToPtr(const CTempStringEx str, TStringToNumFlags flags = 0);
 
     /// Convert character to integer.
     ///
