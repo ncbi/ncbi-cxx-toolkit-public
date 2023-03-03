@@ -760,6 +760,18 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete(EPSG_Status 
 }
 
 template <>
+CParallelProcessing<SBatchResolveParams>::SImpl::TItemComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetItemComplete()
+{
+    return &SImpl::ItemComplete;
+}
+
+template <>
+CParallelProcessing<SBatchResolveParams>::SImpl::TReplyComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetReplyComplete()
+{
+    return &SImpl::ReplyComplete;
+}
+
+template <>
 void CParallelProcessing<SInteractiveParams>::SImpl::Submitter(CPSG_Queue& output)
 {
     CJson_Document json_schema_doc(CProcessing::RequestSchema());
@@ -826,6 +838,18 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete(EPSG_Status st
     m_JsonOut << CJsonResponse(request_id, result_doc);
 }
 
+template <>
+CParallelProcessing<SInteractiveParams>::SImpl::TItemComplete CParallelProcessing<SInteractiveParams>::SImpl::GetItemComplete()
+{
+    return &SImpl::ItemComplete;
+}
+
+template <>
+CParallelProcessing<SInteractiveParams>::SImpl::TReplyComplete CParallelProcessing<SInteractiveParams>::SImpl::GetReplyComplete()
+{
+    return &SImpl::ReplyComplete;
+}
+
 template <class TParams>
 CParallelProcessing<TParams>::SImpl::SImpl(const TParams& params) :
     m_Params(params),
@@ -839,8 +863,8 @@ CParallelProcessing<TParams>::CParallelProcessing(const TParams& params) :
     m_Impl(params)
 {
     using namespace placeholders;
-    auto item_complete = bind(&SImpl::ItemComplete, &m_Impl, _1, _2);
-    auto reply_complete = bind(&SImpl::ReplyComplete, &m_Impl, _1, _2);
+    auto item_complete = bind(m_Impl.GetItemComplete(), &m_Impl, _1, _2);
+    auto reply_complete = bind(m_Impl.GetReplyComplete(), &m_Impl, _1, _2);
 
     for (int n = params.worker_threads; n > 0; --n) {
         m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
