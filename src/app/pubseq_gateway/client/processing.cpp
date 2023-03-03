@@ -162,18 +162,12 @@ SJsonOut::~SJsonOut()
     }
 }
 
-template <class TItem>
-CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, EIfAddRequestID if_add_request_id) :
+template <class... TArgs>
+CJsonResponse::CJsonResponse(EPSG_Status status, TArgs&&... args) :
     m_JsonObj(SetObject())
 {
-    if (if_add_request_id == eAddRequestID) {
-        if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
-            Set("request_id", *request_id);
-        }
-    }
-
     try {
-        Fill(status, item);
+        FillWithRequestID(status, forward<TArgs>(args)...);
     }
     catch (exception& e) {
         CJson_Document new_doc;
@@ -211,6 +205,22 @@ CJsonResponse::CJsonResponse(const string& id) :
     } else {
         id_value.SetString(id);
     }
+}
+
+template <class TItem>
+void CJsonResponse::FillWithRequestID(EPSG_Status status, TItem item, EDoNotAddRequestID)
+{
+    Fill(status, move(item));
+}
+
+template <class TItem, class... TArgs>
+void CJsonResponse::FillWithRequestID(EPSG_Status status, TItem item, TArgs&&... args)
+{
+    if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
+        Set("request_id", *request_id);
+    }
+
+    Fill(status, move(item), forward<TArgs>(args)...);
 }
 
 const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
