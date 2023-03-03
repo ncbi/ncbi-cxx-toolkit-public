@@ -504,9 +504,9 @@ protected:
     volatile TACValue        m_MaxUrgentThreads;
     int                      m_Threshold; ///< for delta
     /// The current number of threads in the pool
-    CAtomicCounter           m_ThreadCount;
+    CAtomicCounter_WithAutoInit m_ThreadCount;
     /// The current number of urgent threads running now
-    CAtomicCounter           m_UrgentThreadCount;
+    CAtomicCounter_WithAutoInit m_UrgentThreadCount;
     /// The difference between the number of unfinished requests and
     /// the total number of threads in the pool.
     volatile int             m_Delta;
@@ -1063,8 +1063,6 @@ CPoolOfThreads<TRequest>::CPoolOfThreads(unsigned int max_threads,
       m_QueuingForbidden(queue_size == 0),
       m_ThreadName(thread_name)
 {
-    m_ThreadCount.Set(0);
-    m_UrgentThreadCount.Set(0);
 }
 
 
