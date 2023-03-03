@@ -499,9 +499,9 @@ protected:
     typedef CAtomicCounter::TValue TACValue;
 
     /// The maximum number of threads the pool can hold
-    volatile TACValue        m_MaxThreads;
+    CAtomicCounter_WithAutoInit m_MaxThreads;
     /// The maximum number of urgent threads running simultaneously
-    volatile TACValue        m_MaxUrgentThreads;
+    CAtomicCounter_WithAutoInit m_MaxUrgentThreads;
     int                      m_Threshold; ///< for delta
     /// The current number of threads in the pool
     CAtomicCounter_WithAutoInit m_ThreadCount;
@@ -509,7 +509,7 @@ protected:
     CAtomicCounter_WithAutoInit m_UrgentThreadCount;
     /// The difference between the number of unfinished requests and
     /// the total number of threads in the pool.
-    volatile int             m_Delta;
+    atomic<int>              m_Delta;
     /// The guard for m_MaxThreads, m_MaxUrgentThreads, and m_Delta.
     mutable CMutex           m_Mutex;
     /// The request queue
@@ -1116,11 +1116,12 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
 
     if (m_Queue.IsFull()) {
         return false; // temporary blockage
-    } else if (m_Delta < 0) {
+    } else if (m_Delta.load() < 0) {
         return true;
-    } else if (m_ThreadCount.Get() < m_MaxThreads) {
+    } else if (m_ThreadCount.Get() < m_MaxThreads.Get()) {
         return true;
-    } else if (urgent  &&  m_UrgentThreadCount.Get() < m_MaxUrgentThreads) {
+    } else if (urgent
+               &&  m_UrgentThreadCount.Get() < m_MaxUrgentThreads.Get()) {
         return true;
     } else {
         try {
@@ -1128,8 +1129,7 @@ bool CPoolOfThreads<TRequest>::HasImmediateRoom(bool urgent) const
             // This should be redundant with the m_Delta < 0 case, now that
             // m_Mutex guards it.
             ERR_POST_XX(Util_Thread, 5,
-                        "Possible thread pool bug.  delta: "
-                          << const_cast<int&>(m_Delta)
+                        "Possible thread pool bug.  delta: " << m_Delta.load()
                           << "; hunger: " << m_Queue.GetHunger());
             return true;
         } catch (...) {
@@ -1175,10 +1175,11 @@ CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
         }
         handle = m_Queue.Put(req, priority, timeout_sec, timeout_nsec);
         if (++m_Delta >= m_Threshold
-            &&  m_ThreadCount.Get() < m_MaxThreads) {
+            &&  m_ThreadCount.Get() < m_MaxThreads.Get()) {
             // Add another thread to the pool because they're all busy.
             new_thread = true;
-        } else if (urgent && m_UrgentThreadCount.Get() >= m_MaxUrgentThreads) {
+        } else if (urgent
+                   &&  m_UrgentThreadCount.Get() >= m_MaxUrgentThreads.Get()) {
             // Prevent from running a new urgent thread if we have reached
             // the maximum number of urgent threads
             urgent = false;
