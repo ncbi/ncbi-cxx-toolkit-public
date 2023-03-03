@@ -195,19 +195,22 @@ NCBI_XNCBI_EXPORT const char* g_DiagUnknownFunction(void);
 ///   ERR_POST, ERR_POST_X, ERR_POST_EX
 #define SEVERITY_POST(severity, message)                  \
     do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_##severity)) \
-            ERR_POST(severity << message); while(0)
+            ERR_POST(severity << message); \
+    while(0)
 #define WARNING_POST(message) SEVERITY_POST(Warning, message)
 #define INFO_POST(message) SEVERITY_POST(Info, message)
 #define TRACE_POST(message) SEVERITY_POST(Trace, message)
 #define SEVERITY_POST_X(severity, subcode, message)       \
     do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_##severity)) \
-            ERR_POST_X(subcode, severity << message); while(0)
+            ERR_POST_X(subcode, severity << message); \
+    while(0)
 #define WARNING_POST_X(subcode, message) SEVERITY_POST_X(Warning, subcode, message)
 #define INFO_POST_X(subcode, message) SEVERITY_POST_X(Info, subcode, message)
 #define TRACE_POST_X(subcode, message) SEVERITY_POST_X(Trace, subcode, message)
 #define SEVERITY_POST_EX(severity, errcode, subcode, message) \
     do if (NCBI_NS_NCBI::IsVisibleDiagPostLevel(NCBI_NS_NCBI::eDiag_##severity)) \
-            ERR_POST_EX(errcode, subcode, severity << message); while(0)
+            ERR_POST_EX(errcode, subcode, severity << message); \
+    while(0)
 #define WARNING_POST_EX(errcode, subcode, message) SEVERITY_POST_EX(Warning, errcode, subcode, message)
 #define INFO_POST_EX(errcode, message) SEVERITY_POST_EX(Info, errcode, subcode, message)
 #define TRACE_POST_EX(errcode, message) SEVERITY_POST_EX(Trace, errcode, subcode, message)
