@@ -748,13 +748,15 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::Submitter(CPSG_Queue& outp
 }
 
 template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+template <>
+void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     CProcessing::ItemComplete(m_JsonOut, status, item);
 }
 
 template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+template <>
+void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     CProcessing::ReplyComplete(m_JsonOut, status, reply);
 }
@@ -762,13 +764,13 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete(EPSG_Status 
 template <>
 CParallelProcessing<SBatchResolveParams>::SImpl::TItemComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetItemComplete()
 {
-    return &SImpl::ItemComplete;
+    return &SImpl::ItemComplete<>;
 }
 
 template <>
 CParallelProcessing<SBatchResolveParams>::SImpl::TReplyComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetReplyComplete()
 {
-    return &SImpl::ReplyComplete;
+    return &SImpl::ReplyComplete<>;
 }
 
 template <>
@@ -807,7 +809,8 @@ void CParallelProcessing<SInteractiveParams>::SImpl::Submitter(CPSG_Queue& outpu
 }
 
 template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+template <>
+void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
     CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
@@ -829,7 +832,8 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete(EPSG_Status s
 }
 
 template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+template <>
+void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete<>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     const auto request = item->GetReply()->GetRequest();
     const auto& request_id = *request->GetUserContext<string>();
@@ -841,13 +845,13 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete(EPSG_Status st
 template <>
 CParallelProcessing<SInteractiveParams>::SImpl::TItemComplete CParallelProcessing<SInteractiveParams>::SImpl::GetItemComplete()
 {
-    return &SImpl::ItemComplete;
+    return &SImpl::ItemComplete<>;
 }
 
 template <>
 CParallelProcessing<SInteractiveParams>::SImpl::TReplyComplete CParallelProcessing<SInteractiveParams>::SImpl::GetReplyComplete()
 {
-    return &SImpl::ReplyComplete;
+    return &SImpl::ReplyComplete<>;
 }
 
 template <class TParams>

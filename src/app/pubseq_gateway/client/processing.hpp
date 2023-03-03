@@ -266,8 +266,8 @@ private:
         TReplyComplete GetReplyComplete();
 
     private:
-        void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
-        void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
+        template <class... TArgs> void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+        template <class... TArgs> void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
         void Init() {}
 
