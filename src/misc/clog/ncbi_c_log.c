@@ -498,7 +498,11 @@ void s_SleepMicroSec(unsigned long mc_sec)
 #elif defined(NCBI_OS_UNIX)
     struct timeval delay;
     delay.tv_sec  = (long)(mc_sec / 1000000);
-    delay.tv_usec = (long)(mc_sec % 1000000);
+    #if defined(NCBI_OS_DARWIN)    
+        delay.tv_usec = (int)(mc_sec % 1000000);
+    #else
+        delay.tv_usec = (long)(mc_sec % 1000000);
+    #endif  
     while (select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay) < 0) {
         break;
     }
@@ -685,7 +689,11 @@ static TNcbiLog_TID s_GetTID(void)
 #  if defined(SYS_gettid)
     tid = (TNcbiLog_TID)syscall(SYS_gettid); /* NCBI_FAKE_WARNING: Clang */
 #  else
-    tid = (TNcbiLog_TID)pthread_self();      /* NCBI_FAKE_WARNING */
+    // pthread_self() function returns the pthread handle of the calling thread.
+    // On Mac OS X >= 10.6 and iOS >= 3.2 non-portable pthread_getthreadid_np()
+    // can be used to return an integral identifier for the thread, 
+    // but pthread_self() is good enough for our needs and portable.
+    tid = (TNcbiLog_TID)pthread_self(); /* NCBI_FAKE_WARNING */
 #  endif
 #elif defined(NCBI_OS_MSWIN)
     tid = GetCurrentThreadId();
