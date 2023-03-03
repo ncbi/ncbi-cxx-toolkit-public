@@ -75,8 +75,8 @@ string ctransition_ErrMessage(const char* format, ...)
     char buffer[kMax];
     va_list args;
     va_start(args, format);
-    int n = vsprintf(buffer, format, args);
-    if (n > kMax) {
+    int n = vsnprintf(buffer, kMax, format, args);
+    if (n < 0 || n >= kMax) {
         _TROUBLE;
     }
     va_end(args);
