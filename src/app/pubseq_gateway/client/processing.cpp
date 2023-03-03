@@ -808,27 +808,51 @@ void CParallelProcessing<SInteractiveParams>::SImpl::Submitter(CPSG_Queue& outpu
     output.Stop();
 }
 
+using testing = true_type;
+using no_testing = false_type;
+using server_mode = true_type;
+using no_server_mode = false_type;
+
 template <>
 template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<testing, server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
-    CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
-
-    if (m_Params.testing) {
-        guard.Release();
-    } else {
-        guard.SetStatus(s_PsgStatusToRequestStatus(status));
-    }
-
-    if (!m_Params.server && (status == EPSG_Status::eSuccess)) {
-        return;
-    }
-
     const auto& request_id = *request->GetUserContext<string>();
 
     CJsonResponse result_doc(status, reply, CJsonResponse::eDoNotAddRequestID);
     m_JsonOut << CJsonResponse(request_id, result_doc);
+}
+
+template <>
+template <>
+void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<testing, no_server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    if (status != EPSG_Status::eSuccess) {
+        ReplyComplete<testing, server_mode>(status, reply);
+    }
+}
+
+template <>
+template <>
+void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<no_testing, server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    const auto request = reply->GetRequest();
+    CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
+    guard.SetStatus(s_PsgStatusToRequestStatus(status));
+
+    ReplyComplete<testing, server_mode>(status, reply);
+}
+
+template <>
+template <>
+void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<no_testing, no_server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    const auto request = reply->GetRequest();
+    CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
+    guard.SetStatus(s_PsgStatusToRequestStatus(status));
+
+    ReplyComplete<testing, no_server_mode>(status, reply);
 }
 
 template <>
@@ -851,7 +875,11 @@ CParallelProcessing<SInteractiveParams>::SImpl::TItemComplete CParallelProcessin
 template <>
 CParallelProcessing<SInteractiveParams>::SImpl::TReplyComplete CParallelProcessing<SInteractiveParams>::SImpl::GetReplyComplete()
 {
-    return &SImpl::ReplyComplete<>;
+    if (m_Params.testing) {
+       return m_Params.server ? &SImpl::ReplyComplete<testing, server_mode> : &SImpl::ReplyComplete<testing, no_server_mode>;
+    } else {
+       return m_Params.server ? &SImpl::ReplyComplete<no_testing, server_mode> : &SImpl::ReplyComplete<no_testing, no_server_mode>;
+    }
 }
 
 template <class TParams>
