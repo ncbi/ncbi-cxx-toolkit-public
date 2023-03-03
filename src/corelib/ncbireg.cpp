@@ -868,7 +868,8 @@ bool IRWRegistry::Unset(const string& section, const string& name,
                         TFlags flags)
 {
     x_CheckFlags("IRWRegistry::Unset", flags,
-                 fTPFlags | fCountCleared | fSectionlessEntries);
+                 static_cast<TFlags>(fTPFlags) | fCountCleared
+                 | fSectionlessEntries);
     string clean_section = NStr::TruncateSpaces(section);
     if ( !IsNameSection(clean_section, flags) ) {
         _TRACE("IRWRegistry::Unset: bad section name \""
