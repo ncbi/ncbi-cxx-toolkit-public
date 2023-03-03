@@ -499,7 +499,7 @@ void CFileData::Reset(void)
 
 void CFileData::Load(const string& file_name)
 {
-    static size_t dummy_counter;
+    NCBI_UNUSED static size_t dummy_counter;
 
     CStopWatch sw(CStopWatch::eStart);
     m_file.reset(new CMemoryFile(file_name));
