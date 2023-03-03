@@ -131,10 +131,12 @@ private:
     CRequestStatus::ECode
     x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
     CRequestStatus::ECode
+    x_ConcludeIDGetNARequestStatus(shared_ptr<CPSGS_Request> request,
+                                   shared_ptr<CPSGS_Reply> reply);
+    CRequestStatus::ECode
     x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply,
-                            IPSGS_Processor::EPSGS_Status  best_status,
-                            IPSGS_Processor::EPSGS_Status  worst_status);
+                            vector<IPSGS_Processor::EPSGS_Status>  proc_statuses);
     void x_SendTrace(const string &  msg,
                      shared_ptr<CPSGS_Request> request,
                      shared_ptr<CPSGS_Reply> reply);

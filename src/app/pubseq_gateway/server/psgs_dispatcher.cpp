@@ -422,18 +422,17 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         }
     }
 
-    auto                            reply = processor->GetReply();
-    auto                            request = processor->GetRequest();
-    size_t                          request_id = request->GetRequestId();
-    size_t                          bucket_index = x_GetBucketIndex(request_id);
-    IPSGS_Processor::EPSGS_Status   best_status = processor->GetStatus();
-    IPSGS_Processor::EPSGS_Status   worst_status = processor->GetStatus();
-    IPSGS_Processor::EPSGS_Status   processor_status = processor->GetStatus();
-    bool                            need_trace = request->NeedTrace();
-    bool                            started_processor_finished = false;
+    auto                                    reply = processor->GetReply();
+    auto                                    request = processor->GetRequest();
+    size_t                                  request_id = request->GetRequestId();
+    size_t                                  bucket_index = x_GetBucketIndex(request_id);
+    IPSGS_Processor::EPSGS_Status           processor_status = processor->GetStatus();
+    bool                                    need_trace = request->NeedTrace();
+    bool                                    started_processor_finished = false;
+    vector<IPSGS_Processor::EPSGS_Status>   proc_statuses;
 
-    size_t                          finishing_count = 0;
-    size_t                          finished_count = 0;
+    size_t                                  finishing_count = 0;
+    size_t                                  finished_count = 0;
 
     if (processor_status == IPSGS_Processor::ePSGS_InProgress) {
         // Call by mistake? The processor reports status as in progress and
@@ -463,6 +462,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
     }
 
     for (auto &  proc: procs->second->m_Processors) {
+
+        proc_statuses.push_back(proc.m_Processor->GetStatus());
 
         if (proc.m_Processor.get() == processor) {
 
@@ -559,9 +560,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                         break;
                 } // End of (proc.m_DispatchStatus) switch
 
-                best_status = min(best_status, proc.m_FinishStatus);
-                worst_status = max(worst_status, proc.m_FinishStatus);
-
             } // End of report source condition handling
 
             if (processor == procs->second->m_StartedProcessing) {
@@ -575,8 +573,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
         switch (proc.m_DispatchStatus) {
             case ePSGS_Finished:
-                best_status = min(best_status, proc.m_FinishStatus);
-                worst_status = max(worst_status, proc.m_FinishStatus);
                 ++finished_count;
                 break;
             case ePSGS_Up:
@@ -624,10 +620,15 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
         }
 
         if (!reply->IsFinished() && reply->IsOutputReady() && started_processor_finished) {
-            CRequestStatus::ECode   request_status =
-                                        x_ConcludeRequestStatus(request, reply,
-                                                                best_status,
-                                                                worst_status);
+            CRequestStatus::ECode   request_status = CRequestStatus::e200_Ok;
+            if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
+                // This way is only for ID/get_na requests
+                request_status = x_ConcludeIDGetNARequestStatus(request, reply);
+            } else {
+                // This way is for all the other requests
+                request_status = x_ConcludeRequestStatus(request, reply, proc_statuses);
+            }
+
             if (need_trace) {
                 x_SendTrace(
                     "Dispatcher: request processing finished; "
@@ -777,113 +778,137 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
 
 
 CRequestStatus::ECode
-CPSGS_Dispatcher::x_ConcludeRequestStatus(
-                            shared_ptr<CPSGS_Request> request,
-                            shared_ptr<CPSGS_Reply> reply,
-                            IPSGS_Processor::EPSGS_Status  best_status,
-                            IPSGS_Processor::EPSGS_Status  worst_status)
+CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
+                                          shared_ptr<CPSGS_Reply> reply,
+                                          vector<IPSGS_Processor::EPSGS_Status>  proc_statuses)
 {
-    CPSGS_Request::EPSGS_Type   request_type = request->GetRequestType();
-    bool                        need_trace = request->NeedTrace();
+    // Used for all requests except ID/get_na (see
+    // x_ConcludeIDGetNARequestStatus(...) as well.
 
-    // The procedure of the concluding the request status differs depending on
-    // the request type. The ID/get_na request has a unique way
-    if (request_type == CPSGS_Request::ePSGS_AnnotationRequest) {
-        // The request status is based on per-NA results
-        SPSGS_AnnotRequest *    annot_request = & request->GetRequest<SPSGS_AnnotRequest>();
-        auto                    processed_names = annot_request->GetProcessedNames();
-
-        // Filter out good names from all the other sets. It may be because a
-        // sent happened by one porocessor but an error condition was met by
-        // the other processor
-
-        set<string>         not_found_names = annot_request->GetNotFoundNames();
-        map<string, int>    error_names = annot_request->GetErrorNames();
-        for (const auto &  item : processed_names) {
-            not_found_names.erase(item.second);  // 404
-            error_names.erase(item.second);      // 500, 503, 504
-        }
-
-
-        int     overall_status = 200;
-        // Now for each requested NA form a code
-        map<string, int>        result_per_na;
-        size_t                  count_200 = 0;
-        for (const auto &  name : annot_request->m_Names) {
-            if (annot_request->WasSent(name)) {
-                result_per_na[name] = 200;
+    // The status is based on individual processor statuses
+    size_t                  count_200 = 0;
+    size_t                  count_404_or_cancel = 0;
+    size_t                  count_timeout = 0;
+    for (const auto  status: proc_statuses) {
+        switch (status) {
+            case IPSGS_Processor::ePSGS_Done:
                 ++count_200;
-                continue;
-            }
-
-            auto it = error_names.find(name);
-            if (not_found_names.find(name) != not_found_names.end() &&
-                it == error_names.end()) {
-                // All of the processors reported the anotation as not found
-                result_per_na[name] = 404;
-                continue;
-            }
-
-            if (it != error_names.end()) {
-                // Explicitly reported as limited or error or timeout
-                result_per_na[name] = it->second;
-                overall_status = max(overall_status, it->second);
-                continue;
-            }
-
-            // Here: should not really happened; the annotation is not reported
-            // in any way. Most probably a processor forgot to report it as not
-            // found.
-            result_per_na[name] = 404;
+                break;
+            case IPSGS_Processor::ePSGS_NotFound:
+            case IPSGS_Processor::ePSGS_Canceled:
+                ++count_404_or_cancel;
+                break;
+            case IPSGS_Processor::ePSGS_Timeout:
+                ++count_timeout;
+                break;
+            case IPSGS_Processor::ePSGS_Error:
+                break;
+            default:
+                break;
         }
-
-        // Send the per NA information to the client
-        reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
-
-        if (overall_status == 200) {
-            if (count_200 == 0) {
-                overall_status = 404;
-            }
-        }
-
-        return static_cast<CRequestStatus::ECode>(overall_status);
     }
 
-    // This is for all the other requests
-    CRequestStatus::ECode       request_status =
-                                    x_MapProcessorFinishToStatus(best_status);
-    if (request->GetLimitedProcessorCount() > 0 &&
-        request_status == CRequestStatus::e404_NotFound) {
-        // The working processors found nothing but there were
-        // processors which have not been tried to instantiate because
-        // they reached the concurrency limit. So the status should be
-        // calculated in a different way as worst among those
-        // processors which worked and 503 as a substitute for the one
-        // which was not instantiated
-        request_status = max(x_MapProcessorFinishToStatus(worst_status),
-                             CRequestStatus::e503_ServiceUnavailable);
-        if (need_trace) {
-            x_SendTrace(
-                "Dispatcher: request status has been calculated as "
-                "the worst because the working processors found nothing "
-                "and there were " + to_string(request->GetLimitedProcessorCount()) +
-                " processor(s) which have not been tried to be instantiated "
-                "due to their concurrency limit has been exceeded (" +
-                request->GetLimitedProcessorsMessage() + ")",
-                request, reply);
-        }
+    if (count_200 > 0) {
+        // At least one processor completed OK
+        return CRequestStatus::e200_Ok;
+    }
 
+    size_t  count_limited_procs = request->GetLimitedProcessorCount();
+    if (count_404_or_cancel == proc_statuses.size() &&
+        count_limited_procs == 0) {
+        // All processors not found or canceled and there were no limited
+        // processors
+        return CRequestStatus::e404_NotFound;
+    }
+
+    // Here: the worst status should be returned
+    //       limited processors are treated as finished with 503
+
+    if (count_timeout > 0) {
+        // At least one processor had a timeout
+        return CRequestStatus::e504_GatewayTimeout;
+    }
+
+    if (count_limited_procs > 0) {
+        // At least one processor was limited due to concurrency
         string  msg = "Instantiated processors found nothing and there were " +
-                      to_string(request->GetLimitedProcessorCount()) +
+                      to_string(count_limited_procs) +
                       " processor(s) which have not been tried to be instantiated "
                       "due to their concurrency limit has been exceeded (" +
                       request->GetLimitedProcessorsMessage() + ")";
-        reply->PrepareReplyMessage(msg, request_status,
+        reply->PrepareReplyMessage(msg, CRequestStatus::e503_ServiceUnavailable,
                                    ePSGS_NotFoundAndNotInstantiated, eDiag_Error);
         PSG_ERROR(msg);
+        return CRequestStatus::e503_ServiceUnavailable;
     }
 
-    return request_status;
+    return CRequestStatus::e500_InternalServerError;
+}
+
+
+CRequestStatus::ECode
+CPSGS_Dispatcher::x_ConcludeIDGetNARequestStatus(
+                            shared_ptr<CPSGS_Request> request,
+                            shared_ptr<CPSGS_Reply> reply)
+{
+    // The request status is based on per-NA results
+    SPSGS_AnnotRequest *    annot_request = & request->GetRequest<SPSGS_AnnotRequest>();
+    auto                    processed_names = annot_request->GetProcessedNames();
+
+    // Filter out good names from all the other sets. It may be because a
+    // sent happened by one porocessor but an error condition was met by
+    // the other processor
+
+    set<string>         not_found_names = annot_request->GetNotFoundNames();
+    map<string, int>    error_names = annot_request->GetErrorNames();
+    for (const auto &  item : processed_names) {
+        not_found_names.erase(item.second);  // 404
+        error_names.erase(item.second);      // 500, 503, 504
+    }
+
+
+    int     overall_status = 200;
+    // Now for each requested NA form a code
+    map<string, int>        result_per_na;
+    size_t                  count_200 = 0;
+    for (const auto &  name : annot_request->m_Names) {
+        if (annot_request->WasSent(name)) {
+            result_per_na[name] = 200;
+            ++count_200;
+            continue;
+        }
+
+        auto it = error_names.find(name);
+        if (not_found_names.find(name) != not_found_names.end() &&
+            it == error_names.end()) {
+            // All of the processors reported the anotation as not found
+            result_per_na[name] = 404;
+            continue;
+        }
+
+        if (it != error_names.end()) {
+            // Explicitly reported as limited or error or timeout
+            result_per_na[name] = it->second;
+            overall_status = max(overall_status, it->second);
+            continue;
+        }
+
+        // Here: should not really happened; the annotation is not reported
+        // in any way. Most probably a processor forgot to report it as not
+        // found.
+        result_per_na[name] = 404;
+    }
+
+    // Send the per NA information to the client
+    reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
+
+    if (overall_status == 200) {
+        if (count_200 == 0) {
+            overall_status = 404;
+        }
+    }
+
+    return static_cast<CRequestStatus::ECode>(overall_status);
 }
 
 
