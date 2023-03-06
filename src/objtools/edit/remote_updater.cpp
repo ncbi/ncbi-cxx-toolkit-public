@@ -360,14 +360,14 @@ CRemoteUpdater& CRemoteUpdater::GetInstance()
     return instance;
 }
 
-CRemoteUpdater::CRemoteUpdater(FLogger logger, EPubmedSource pms) :
-    m_logger{ logger }, m_pm_source(pms)
+CRemoteUpdater::CRemoteUpdater(FLogger logger, EPubmedSource pms, bool bNormalize) :
+    m_logger{ logger }, m_pm_source(pms), m_pm_normalize(bNormalize)
 {
     xSetFromConfig();
 }
 
-CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource pms) :
-    m_pMessageListener(pMessageListener), m_pm_source(pms)
+CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource pms, bool bNormalize) :
+    m_pMessageListener(pMessageListener), m_pm_source(pms), m_pm_normalize(bNormalize)
 {
     if (m_pMessageListener) {
         m_logger = [this](const string& error_message) {
