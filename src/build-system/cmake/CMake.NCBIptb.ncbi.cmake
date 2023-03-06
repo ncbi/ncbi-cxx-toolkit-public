@@ -294,10 +294,14 @@ function(NCBI_internal_configure_cd_reporter)
     set(top_src_dir ${abs_top_srcdir})
     set(status_dir ${NCBI_BUILD_ROOT}/status)
     configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
+    configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.sh.in
+                   ${build_root}/build-system/run_with_cd_reporter.sh @ONLY)
     # copy to build_root and set executable permissions (configure_file doesn't set permissions)
-    file(COPY ${build_root}/build-system/run_with_cd_reporter.py DESTINATION ${build_root}
+    file(COPY ${build_root}/build-system/run_with_cd_reporter.py
+              ${build_root}/build-system/run_with_cd_reporter.sh
+        DESTINATION ${build_root}
         FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.py)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${build_root}/run_with_cd_reporter.sh)
 endfunction()
 
 if(UNIX AND NOT APPLE)

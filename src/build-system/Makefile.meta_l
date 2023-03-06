@@ -28,8 +28,8 @@ endif
 ### Protect against two MAKE processes running in the same dir
 
 ifneq "" "$(filter-out @*@, $(CD_REPORTER))"
-  ifneq "" "$(wildcard $(PYTHON3))"
-    RUN_WITH_CD_REPORTER = $(build_root)/build/run_with_cd_reporter.py
+  ifneq "" "$(wildcard $(PYTHON3) $(VIRTUAL_ENV)/bin/python3)"
+    RUN_WITH_CD_REPORTER = $(build_root)/build/run_with_cd_reporter.sh
   endif
 endif
 
