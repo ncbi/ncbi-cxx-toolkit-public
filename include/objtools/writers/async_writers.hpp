@@ -88,6 +88,10 @@ public:
         m_queue.push_back({});
     }
 
+    void clear() {
+        m_queue.clear();
+    }
+
     auto pop_front()
     {
         return m_queue.pop_front();
@@ -181,10 +185,18 @@ public:
             if (!token_future.valid()) {
                 return {};
             }
-            TToken token = token_future.get(); // this can throw an exception that was caught within the thread
-            if (chain_func) {
-                chain_func(token);
+
+            TToken token;
+            try {
+                token = token_future.get(); // this can throw an exception that was caught within the thread
+                if (chain_func) {
+                    chain_func(token);
+                }
             }
+            catch(...) {
+                m_pipeline.clear();
+                throw;
+            }   
 
             return token;
         };
