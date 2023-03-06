@@ -47,7 +47,10 @@ inline char* MemNew(size_t sz)
     return p;
 }
 inline void MemSet(void* p, int n, size_t sz) { std::memset(p, n, sz); }
-inline void MemCpy(void* p, const void* q, size_t sz) { if (q) std::memcpy(p, q, sz); }
+inline void MemCpy(void* p, const void* q, size_t sz)
+{
+    if (q) std::memcpy(p, q, sz);
+}
 inline void MemFree(char* p)
 {
     delete[] p;
@@ -63,14 +66,15 @@ inline char*  StringSave(const char* s)
     std::memcpy(p, s, n);
     return p;
 }
+
 inline const char* StringStr(const char* s1, const char* s2) { return std::strstr(s1, s2); }
-inline char* StringStr(char* s1, const char* s2) { return std::strstr(s1, s2); }
-inline void StringCat(char* d, const char* s) { std::strcat(d, s); }
-inline void StringCpy(char* d, const char* s) { std::strcpy(d, s); }
-inline void StringNCpy(char* d, const char* s, size_t n) { std::strncpy(d, s, n); }
+inline char*       StringStr(char* s1, const char* s2) { return std::strstr(s1, s2); }
+inline void        StringCat(char* d, const char* s) { std::strcat(d, s); }
+inline void        StringCpy(char* d, const char* s) { std::strcpy(d, s); }
+inline void        StringNCpy(char* d, const char* s, size_t n) { std::strncpy(d, s, n); }
 inline const char* StringChr(const char* s, const char c) { return std::strchr(s, c); }
-inline char* StringChr(char* s, const char c) { return std::strchr(s, c); }
-inline char* StringRChr(char* s, const char c) { return std::strrchr(s, c); }
+inline char*       StringChr(char* s, const char c) { return std::strchr(s, c); }
+inline char*       StringRChr(char* s, const char c) { return std::strrchr(s, c); }
 
 inline int StringCmp(const char* s1, const char* s2)
 {

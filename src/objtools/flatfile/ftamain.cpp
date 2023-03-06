@@ -71,7 +71,7 @@
 #include "entry.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "ftamain.cpp"
 
@@ -264,10 +264,10 @@ static bool CompareDataV(const Indexblk* p1, const Indexblk* p2)
 /**********************************************************/
 static void CheckDupEntries(ParserPtr pp)
 {
-    Int4         i;
-    Int4         j;
-    IndexblkPtr  first;
-    IndexblkPtr  second;
+    Int4        i;
+    Int4        j;
+    IndexblkPtr first;
+    IndexblkPtr second;
 
     vector<IndexblkPtr> tibp = pp->entrylist;
     tibp.resize(pp->indx);
@@ -963,7 +963,7 @@ void fta_init_pp(Parser& pp)
     // pp.fpo = nullptr;
     // fta_fill_find_pub_option(&pp, false, false);
 
-    pp.indx                  = 0;
+    pp.indx = 0;
     pp.entrylist.clear();
     pp.curindx               = 0;
     pp.seqtype               = CSeq_id::e_not_set;

@@ -47,7 +47,7 @@
 #include "keyword_parse.hpp"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "em_index.cpp"
 
@@ -251,14 +251,15 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             after_DT         = false;
 
             line_sv = nullptr;
-            auto   keywordEnd = emblKeywords[ParFlatEM_END];
-            auto   keywordId  = emblKeywords[ParFlat_ID];
-            auto   keywordNi  = emblKeywords[ParFlat_NI];
-            auto   keywordAh  = emblKeywords[ParFlat_AH];
-            auto   keywordSq  = emblKeywords[ParFlat_SQ];
-            auto   keywordOs  = emblKeywords[ParFlat_OS];
-            auto   keywordSv  = emblKeywords[ParFlat_SV];
-            auto   keywordKw  = emblKeywords[ParFlat_KW];
+
+            auto keywordEnd = emblKeywords[ParFlatEM_END];
+            auto keywordId  = emblKeywords[ParFlat_ID];
+            auto keywordNi  = emblKeywords[ParFlat_NI];
+            auto keywordAh  = emblKeywords[ParFlat_AH];
+            auto keywordSq  = emblKeywords[ParFlat_SQ];
+            auto keywordOs  = emblKeywords[ParFlat_OS];
+            auto keywordSv  = emblKeywords[ParFlat_SV];
+            auto keywordKw  = emblKeywords[ParFlat_KW];
 
             while (! end_of_file &&
                    ! StringEquN(finfo.str, keywordEnd.c_str(), keywordEnd.size())) {

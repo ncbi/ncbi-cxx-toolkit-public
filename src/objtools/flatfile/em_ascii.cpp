@@ -89,7 +89,7 @@
 #include "keyword_parse.hpp"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "em_ascii.cpp"
 
@@ -947,9 +947,9 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     char*       kwp;
     Char        dataclass[4];
     Char        ch;
-    CEMBL_block::TDiv div;
 
-    TKeywordList keywords;
+    CEMBL_block::TDiv div;
+    TKeywordList      keywords;
 
     bool if_cds;
     bool pat_ref = false;
@@ -1295,8 +1295,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
         } else if (StringEqu(gbdiv.c_str(), "SYN") && bio_src &&
-                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic)
-        {
+                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic) {
             gbdiv.clear();
         }
     } else if (mol_info.IsSetTech()) {
@@ -2164,13 +2163,11 @@ bool EmblAscii(ParserPtr pp)
     Int4  total = 0;
     char* ptr;
     char* eptr;
-    //DataBlkPtr  entry;
+
+    // DataBlkPtr  entry;
     EntryBlkPtr ebp;
-
-
-    TEntryList seq_entries;
-
-    CSeq_loc locs;
+    TEntryList  seq_entries;
+    CSeq_loc    locs;
 
     bool        reject_set;
     bool        seq_long = false;
@@ -2186,7 +2183,7 @@ bool EmblAscii(ParserPtr pp)
         if (! ibp->drop) {
             unique_ptr<DataBlk, decltype(&xFreeEntry)> pEntry(
                 LoadEntry(pp, ibp->offset, ibp->len), &xFreeEntry);
-            //pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
+            // pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
             if (! pEntry) {
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
                 return false;
@@ -2197,10 +2194,9 @@ bool EmblAscii(ParserPtr pp)
             eptr  = ptr + pEntry->len;
             curkw = ParFlat_ID;
 
-            //TODO: below is a potentially infinite cycle!!!!
+            // TODO: below is a potentially infinite cycle!!!!
             while (curkw != ParFlatEM_END) {
-                /* ptr points to current keyword's memory line
-                 */
+                /* ptr points to current keyword's memory line */
                 ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
             }
 
@@ -2437,6 +2433,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     char*       bptr;
     char*       kw;
     char*       kwp;
+
     CEMBL_block::EDiv div;
 
     bool pat_ref = false;
@@ -2723,8 +2720,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
         } else if (StringEqu(gbdiv.c_str(), "SYN") && bio_src &&
-                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic)
-        {
+                   bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic) {
             gbdiv.clear();
         }
     } else if (mol_info.IsSetTech()) {

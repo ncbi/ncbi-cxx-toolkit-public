@@ -61,7 +61,7 @@
 #include "utilfun.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "genref.cpp"
 
@@ -80,8 +80,9 @@ typedef std::set<string> TLocusTagSet;
 
 struct AccMinMax {
     CRef<CSeq_id> pId;
-    //    string acc;
-    //    Int2        ver=INT2_MIN;
+
+    // string acc;
+    // Int2   ver = INT2_MIN;
     Int4 min = -1;
     Int4 max = -1;
 };
@@ -494,9 +495,10 @@ static bool CompareGeneListName(const GeneListPtr& sp1, const GeneListPtr& sp2)
 /**********************************************************/
 static GeneNodePtr sort_gnp_list(GeneNodePtr gnp)
 {
-    Int4         index;
-    Int4         total;
-    GeneListPtr  glp;
+    Int4 index;
+    Int4 total;
+
+    GeneListPtr glp;
 
     total = 0;
     for (glp = gnp->glp; glp; glp = glp->next)
@@ -2113,9 +2115,10 @@ static bool CompareGeneLocsMinMax(const GeneLocsPtr& sp1, const GeneLocsPtr& sp2
 /**********************************************************/
 static GeneLocsPtr fta_sort_feat_list(GeneLocsPtr gelop)
 {
-    Int4         index;
-    Int4         total;
-    GeneLocsPtr  glp;
+    Int4 index;
+    Int4 total;
+
+    GeneLocsPtr glp;
 
     total = 0;
     for (glp = gelop; glp; glp = glp->next)

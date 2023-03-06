@@ -53,23 +53,18 @@ void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, bool* drop);
 bool fta_strings_same(const char* s1, const char* s2);
 
 bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info);
-
 bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum, Int2 vernum, size_t len, Int2 col_data, bool tpa);
-
 void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, bool* drop, Parser::ESource source);
-
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<objects::CUser_object>& dbuop);
+int  fta_check_con_for_wgs(objects::CBioseq& bioseq);
 
-int fta_check_con_for_wgs(objects::CBioseq& bioseq);
-
-
-Int4  fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const char* name, bool iscon);
-void  fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
+Int4   fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const char* name, bool iscon);
+void   fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
 string GetQSFromFile(FILE* fd, const Indexblk* ibp);
-void  fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
-void  fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
-void  fta_set_molinfo_completeness(objects::CBioseq& bioseq, const Indexblk* ibp);
-bool  fta_number_is_huge(const char* s);
+void   fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
+void   fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
+void   fta_set_molinfo_completeness(objects::CBioseq& bioseq, const Indexblk* ibp);
+bool   fta_number_is_huge(const char* s);
 
 void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num);
 bool fta_if_valid_biosample(const char* id, bool dblink);

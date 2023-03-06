@@ -35,7 +35,7 @@
 #include "indx_err.h"
 
 #ifdef THIS_MODULE
-#    undef THIS_MODULE
+#  undef THIS_MODULE
 #endif
 
 #define THIS_MODULE "indx_err"

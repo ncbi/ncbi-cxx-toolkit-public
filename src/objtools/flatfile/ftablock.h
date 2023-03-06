@@ -226,7 +226,7 @@ struct Indexblk {
     string       organism;                    /* The value of /organism qualifier */
     TTaxId       taxid         = ZERO_TAX_ID; /* The value gotten from source feature
                                                 /db_xref qualifier if any */
-    bool         no_gc_warning = false; /* If TRUE then suppress
+    bool         no_gc_warning = false;       /* If TRUE then suppress
                                                    ERR_SERVER_GcFromSuppliedLineage
                                                    WARNING message */
     size_t       qsoffset      = 0;
@@ -316,7 +316,7 @@ public:
         }
     };
 
-    //static void operator delete(void* p);
+    // static void operator delete(void* p);
     ~DataBlk();
 
     bool mSimpleDelete = false;

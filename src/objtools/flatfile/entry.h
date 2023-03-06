@@ -60,7 +60,10 @@ struct Entry {
     Entry(
         ParserPtr   pp,
         const char* baseData) :
-        mPp(pp), mBaseData(baseData){};
+        mPp(pp),
+        mBaseData(baseData)
+    {
+    }
 
     ~Entry()
     {

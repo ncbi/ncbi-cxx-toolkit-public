@@ -58,7 +58,7 @@
 #include "buf_data_loader.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "buf_data_loader.cpp"
 

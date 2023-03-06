@@ -49,7 +49,7 @@ USING_SCOPE(objects);
 
 static const char* this_module = "medarch";
 #ifdef THIS_MODULE
-#    undef THIS_MODULE
+#  undef THIS_MODULE
 #endif
 #define THIS_MODULE this_module
 

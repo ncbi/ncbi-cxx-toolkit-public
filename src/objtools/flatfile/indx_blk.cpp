@@ -46,7 +46,7 @@
 #include <map>
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "indx_blk.cpp"
 
@@ -419,9 +419,10 @@ static bool CheckLocus(const char* locus, Parser::ESource source)
 static bool CheckLocusSP(const char* locus)
 {
     const char* p;
-    bool  underscore = false;
-    Int2  x;
-    Int2  y;
+
+    bool underscore = false;
+    Int2 x;
+    Int2 y;
 
     for (p = locus, x = y = 0; *p != '\0'; p++) {
         if ((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z')) {
@@ -728,12 +729,12 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
     }
 
     offsets.bases = Int4(it - begin(locusLine));
-
-    it         = sFindNextNonSpace(locusLine, space_it);
-    offsets.bp = Int4(it - begin(locusLine));
+    it            = sFindNextNonSpace(locusLine, space_it);
+    offsets.bp    = Int4(it - begin(locusLine));
 
     it = sFindNextSpace(locusLine, it);
     it = sFindNextNonSpace(locusLine, it);
+
     // the next one might be a strand
     // or might be a molecule
     space_it       = sFindNextSpace(locusLine, it);
