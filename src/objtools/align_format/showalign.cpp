@@ -1173,7 +1173,7 @@ void s_CalculateIdentity(const string& sequence_standard,
     match = 0;
     align_length = 0;
     int start = 0;
-    int end = sequence.size() - 1;
+    int end = (int)sequence.size() - 1;
     for(int i = 0; i < (int)sequence.size(); i++){
         if (sequence[i] != gap_char){
             start = i;
@@ -1443,7 +1443,7 @@ void CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out
     alnRoInfo->show_seq_property_label = (m_AlignOption&eShowSequencePropertyLabel &&
                                           m_AlignOption&eMergeAlign &&
                                           m_AV->GetWidth(0) != 3 && m_AV->GetWidth(1) != 3) ? true : false;
-    unsigned int rowSetsCount = 1;
+    int rowSetsCount = 1;
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
         //Used for download query range specified by m_QueryAnchoredSetIndex
@@ -4135,7 +4135,6 @@ void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
         && (int)m_AV->GetBioseqHandle(1).GetBioseqLength()
         >= k_GetDynamicFeatureSeqLength){
         if(m_DynamicFeature){
-            const CSeq_id& subject_seqid = m_AV->GetSeqId(1);
             const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);
 			aln_vec_info->actual_range = range;
 			if(range.GetFrom() > range.GetTo()){
@@ -4444,16 +4443,16 @@ static void s_MakeDomainString(int aln_from, int aln_to, const string& domain_na
         domain_string[0] = '<';
         domain_string[domain_string.size()-1] = '>';
         //put the domain name in the middle of the string
-        int midpoint = domain_string.size()/2;
+        int midpoint = ((int)domain_string.size())/2;
         int first_possible_pos = 1;
         int actual_first_pos = max(first_possible_pos,  midpoint - ((int)domain_name.size())/2);
 
-        for (int i = actual_first_pos, j = 0; i < domain_string.size() - 1 && j < domain_name.size(); i ++, j ++){
+        for (SIZE_TYPE i = actual_first_pos, j = 0; i < domain_string.size() - 1 && j < domain_name.size(); i ++, j ++){
             domain_string[i] = domain_name[j];
         }
     }
 
-    for (int i = 0; i < (int)domain_string.size(); i++){
+    for (SIZE_TYPE i = 0; i < domain_string.size(); i++){
         final_domain[i + aln_from] = domain_string[i];
     }
 }

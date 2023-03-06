@@ -1609,7 +1609,7 @@ static void s_GetCigarString(const CSeq_align& align, string& cigar, int query_l
 }
   
 static string s_InsertGap(const string& nuc_without_gap, const string& nuc, const string& prot, char gap_char) {
-    int new_prot_size = nuc.size()/3 + ((nuc.size()%3 ==2)?1:0);
+    SIZE_TYPE new_prot_size = nuc.size()/3 + ((nuc.size()%3 ==2)?1:0);
     string new_prot (new_prot_size, ' ');
     int num_gaps = 0;
     int num_bases = 0;
@@ -1752,9 +1752,9 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         alnvec.GetWholeAlnSeqString(1, subject);
 
         int num_ident = 0;
-        int length = min(query.size(), subject.size());
+        SIZE_TYPE length = min(query.size(), subject.size());
 
-        for (int i = 0; i < length; ++i) {
+        for (SIZE_TYPE i = 0; i < length; ++i) {
             if (query[i] == subject[i]) {
                 ++num_ident;
             }
@@ -1781,9 +1781,9 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         alnvec.GetWholeAlnSeqString(1, subject);
 
         int num_ident = 0;
-        int length = min(query.size(), subject.size());
+        SIZE_TYPE length = min(query.size(), subject.size());
 
-        for (int i = 0; i < length; ++i) {
+        for (SIZE_TYPE i = 0; i < length; ++i) {
             if (query[i] == subject[i]) {
                 ++num_ident;
             }
@@ -1811,9 +1811,9 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         alnvec.GetWholeAlnSeqString(1, subject);
         
         int num_ident = 0;
-        int length = min(query.size(), subject.size());
+        SIZE_TYPE length = min(query.size(), subject.size());
         
-        for (int i = 0; i < length; ++i) {
+        for (SIZE_TYPE i = 0; i < length; ++i) {
             if (query[i] == subject[i]) {
                 ++num_ident;
             }
@@ -1928,9 +1928,9 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
         alnvec_c.GetWholeAlnSeqString(1, subject);
         
         int num_ident = 0;
-        int length = min(query.size(), subject.size());
+        SIZE_TYPE length = min(query.size(), subject.size());
         
-        for (int i = 0; i < length; ++i) {
+        for (SIZE_TYPE i = 0; i < length; ++i) {
             if (query[i] == subject[i]) {
                 ++num_ident;
             }
@@ -2576,10 +2576,10 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                                       m_Cdr3SeqTrans, 
                                       CSeqTranslator::fIs5PrimePartial, NULL, NULL);
         }
-        int query_length = m_Query.length();
+        SIZE_TYPE query_length = m_Query.length();
         int airrcdr3start = max(m_Cdr3Start -3, 0);
         m_AirrCdr3Seq = m_Query.substr(airrcdr3start, min(m_Cdr3End - m_Cdr3Start + 7, 
-                                                          query_length - airrcdr3start));
+                                                          (int)(query_length - airrcdr3start)));
         if ((int)m_AirrCdr3Seq.size() >= 3) {
             string airr_cdr3_seq_for_translatioin = m_AirrCdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
             

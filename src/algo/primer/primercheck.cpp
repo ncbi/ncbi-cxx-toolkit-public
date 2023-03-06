@@ -162,7 +162,7 @@ static void s_CountGaps(const string& xcript,
         }
      }
 
-     for(int i = xcript.size() - 1; i >= 0; i--){
+     for(SIZE_TYPE i = xcript.size() - 1; i >= 0; i--){
         if (xcript[i] == master_gap_char) {
             master_end_gap ++;
         } else {
@@ -171,7 +171,7 @@ static void s_CountGaps(const string& xcript,
      }
      
      if (master_start_gap == 0) {//can only have gap on either master or slave, not both
-         for(int i = 0; i < (int)xcript.size(); i ++){
+         for(SIZE_TYPE i = 0; i < xcript.size(); i ++){
              if (xcript[i] == slave_gap_char) {
                  slave_start_gap ++;
              } else {
@@ -180,7 +180,7 @@ static void s_CountGaps(const string& xcript,
          }
      }
      if (master_end_gap == 0){
-         for(int i = xcript.size() - 1; i >= 0; i--){
+         for(SIZE_TYPE i = xcript.size() - 1; i >= 0; i--){
              if (xcript[i] == slave_gap_char) {
                  slave_end_gap ++;
              } else {
@@ -581,7 +581,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
      if (!nw_align_modified) {
        
 
-         align_length = xcript.size();
+         align_length = (int)xcript.size();
          
          ITERATE(string, iter, xcript) {
              switch(*iter) {
@@ -593,7 +593,7 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
              }
          }
          
-         TSeqPos master_letter_len = xcript.size() - num_master_gap;
+         TSeqPos master_letter_len = (TSeqPos)xcript.size() - num_master_gap;
          int num_bp = 0;
          ITERATE(string, the_iter, xcript) {
              switch(*the_iter) {
@@ -1964,7 +1964,7 @@ void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
         
     }
     int num_hits = m_SortHit.size();
-    int num_hsp = input_hits.Get().size();
+    int num_hsp = (int)input_hits.Get().size();
     int hsp_hit_ratio = 0;
 
     if (num_hits > 0) {
