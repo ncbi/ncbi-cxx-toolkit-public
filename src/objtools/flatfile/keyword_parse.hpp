@@ -47,9 +47,7 @@ class CKeywordParser
 //  ----------------------------------------------------------------------------
 {
 public:
-    CKeywordParser(
-        Parser::EFormat format);
-
+    CKeywordParser(Parser::EFormat format);
     ~CKeywordParser();
 
     const list<string> KeywordList() const;
@@ -67,12 +65,13 @@ private:
     void xCleanupFixWgsThirdPartyData();
 
     Parser::EFormat mFormat;
-    list<string> mKeywords;
+    list<string>    mKeywords;
+
     string mPending;
-    bool mDataFinal;
-    bool mDataClean;
+    bool   mDataFinal;
+    bool   mDataClean;
 };
 
 END_NCBI_SCOPE
 
-#endif //FLATFILE__KEYWORD_PARSE__HPP
+#endif // FLATFILE__KEYWORD_PARSE__HPP

@@ -46,7 +46,7 @@
 #include "entry.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "gb_index.cpp"
 
@@ -105,9 +105,9 @@ vector<string> genbankKeywords = {
  **********************************************************/
 static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
 {
-    char* str;
+    char*       str;
     const char* p;
-    char* q;
+    char*       q;
 
     if (! segnum)
         return false;

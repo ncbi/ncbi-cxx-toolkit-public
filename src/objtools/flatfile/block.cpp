@@ -43,7 +43,7 @@
 #include "utilfun.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "block.cpp"
 BEGIN_NCBI_SCOPE
@@ -206,19 +206,20 @@ static bool QSNoSequenceRecordErr(bool accver, QSStructPtr qssp)
 /**********************************************************/
 bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 {
-    QSStructPtr  qssp;
-    QSStructPtr  tqssp;
-    QSStructPtr  tqsspprev;
-    char*        p;
-    char*        q;
-    bool         ret;
-    size_t       i;
-    Int4         count;
-    Int4         j;
-    Int4         k;
-    Int4         l;
-    Int2         m;
-    Char         buf[1024];
+    QSStructPtr qssp;
+    QSStructPtr tqssp;
+    QSStructPtr tqsspprev;
+
+    char*  p;
+    char*  q;
+    bool   ret;
+    size_t i;
+    Int4   count;
+    Int4   j;
+    Int4   k;
+    Int4   l;
+    Int2   m;
+    Char   buf[1024];
 
     if (! pp->qsfd)
         return true;

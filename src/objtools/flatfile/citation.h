@@ -56,7 +56,6 @@ public:
 
     void SetBioseq(const objects::CBioseq* bioseq);
     void SetPubEquiv(const objects::CPub_equiv* pub_equiv);
-
     void SetPub(const objects::CPub* pub);
 };
 
@@ -65,4 +64,4 @@ void SetMinimumPub(const CPubInfo& pub_info, TPubList& pubs);
 
 END_NCBI_SCOPE
 
-#endif //CITATION_H
+#endif // CITATION_H

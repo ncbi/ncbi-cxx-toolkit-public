@@ -40,8 +40,8 @@ BEGIN_NCBI_SCOPE
 bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr pp);
 
 /* routines for checking the feature location has join or order
-* among other segment
-*/
+ * among other segment
+ */
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 void CheckFeatSeqLoc(TEntryList& seq_entries);

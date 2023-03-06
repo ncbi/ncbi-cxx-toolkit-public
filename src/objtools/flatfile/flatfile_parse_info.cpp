@@ -25,7 +25,7 @@
  *
  * File Name: flatfile_parse_info.cpp
  *
- * Author: 
+ * Author:
  *
  * File Description:
  *      Main routines for parsing flat files to ASN.1 file format.

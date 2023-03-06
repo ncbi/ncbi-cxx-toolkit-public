@@ -44,7 +44,8 @@ struct FinfoBlk {
     size_t pos;      /* the current file position */
 
     FinfoBlk() :
-        line(0), pos(0)
+        line(0),
+        pos(0)
     {
         str[0] = 0;
     }
@@ -56,7 +57,10 @@ struct IndBlkNode {
     IndBlkNode* next;
 
     IndBlkNode(Indexblk* ibp_) :
-        ibp(ibp_), next(nullptr) {}
+        ibp(ibp_),
+        next(nullptr)
+    {
+    }
 };
 using IndBlkNextPtr = IndBlkNode*;
 
@@ -69,14 +73,15 @@ bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlk& finfo, const
 
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo);
 bool        GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip);
-//bool        GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip);
+// bool        GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip);
+
 void CloseFiles(ParserPtr pp);
 void MsgSkipTitleFail(const Char* flatfile, FinfoBlk& finfo);
 bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
 void ResetParserStruct(ParserPtr pp);
 bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
 
-//bool  IsValidAccessPrefix(char* acc, char** accpref);
+// bool IsValidAccessPrefix(char* acc, char** accpref);
 
 void DelNoneDigitTail(char* str);
 int  fta_if_wgs_acc(const CTempString& accession);
@@ -96,7 +101,7 @@ const Char**               GetAccArray(Parser::ESource source);
 bool                       isSupportedAccession(objects::CSeq_id::E_Choice type);
 objects::CSeq_id::E_Choice GetNucAccOwner(const char* accession);
 objects::CSeq_id::E_Choice GetProtAccOwner(const char* acc);
-//void    FreeParser(ParserPtr pp);
+// void    FreeParser(ParserPtr pp);
 END_NCBI_SCOPE
 
 #endif

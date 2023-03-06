@@ -59,7 +59,7 @@
 #include "utilfun.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "fta_qscore.cpp"
 
@@ -71,19 +71,19 @@ USING_SCOPE(objects);
 
 #define IS_DIGIT_OR_NA(c) ((c) == 'N' || (c) == 'A' || ('0' <= (c) && (c) <= '9'))
 
-#define QSBUF_MAXLINE 256      /* Maximum length for a line of data   \
+#define QSBUF_MAXLINE      256 /* Maximum length for a line of data   \
                                   read from a buffer of quality-score \
                                   data, plus one for the terminal     \
                                   newline character. */
-#define QSBUF_MAXACC 51        /* Maximum length for an accession    \
+#define QSBUF_MAXACC        51 /* Maximum length for an accession    \
                                   read from the 'defline' at the     \
                                   start of a buffer of quality-score \
                                   data, plus one for \0 */
-#define QSBUF_MAXTITLE 101     /* Maximum length for the title read  \
+#define QSBUF_MAXTITLE     101 /* Maximum length for the title read  \
                                   from the 'defline' at the start of \
                                   a buffer of quality-score data,    \
                                   plus one for \0 */
-#define QSBUF_MAXSCORES 100    /* Maximum number of scores expected \
+#define QSBUF_MAXSCORES    100 /* Maximum number of scores expected \
                                   in a line of score data read from \
                                   from a quality-score buffer */
 #define QS_MIN_VALID_SCORE 0   /* Minimum valid quality score value */

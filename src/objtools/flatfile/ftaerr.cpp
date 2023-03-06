@@ -12,7 +12,7 @@
 #include "ftacpp.hpp"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "ftaerr.cpp"
 
@@ -148,6 +148,7 @@ void FtaErrGetMsgCodes(
     FtaMsgModFiles*  bmmfp;
     FtaMsgModTag*    bmmtp;
     FILE*            fd;
+
     char* p;
     char* q;
     char  s[2048];

@@ -74,7 +74,7 @@
 #include "utilfun.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "add.cpp"
 
@@ -1093,19 +1093,20 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     FTATpaBlockPtr tftbp;
     FTATpaBlockPtr ft;
 
-    string buf;
-    char* p;
-    char* q;
-    char* r;
-    char* t;
+    string      buf;
+    char*       p;
+    char*       q;
+    char*       r;
+    char*       t;
     const char* bad_accession;
-    bool  bad_line;
-    bool  bad_interval;
-    Char  ch;
-    Int4  from1;
-    Int4  to1;
-    Int4  len1;
-    Int4  len2;
+    bool        bad_line;
+    bool        bad_interval;
+    Char        ch;
+    Int4        from1;
+    Int4        to1;
+    Int4        len1;
+    Int4        len2;
+
     CSeq_id::E_Choice choice;
 
     if (! offset || ! acnum || len < 2)

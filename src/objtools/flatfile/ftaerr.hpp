@@ -8,7 +8,7 @@
 USING_NCBI_SCOPE;
 
 #ifndef THIS_MODULE
-#    define THIS_MODULE ""
+#  define THIS_MODULE ""
 #endif
 
 #define PREFIX_ACCESSION 01
@@ -17,15 +17,15 @@ USING_NCBI_SCOPE;
 
 /* Here: LOG - for logfile, MSG - for stderr
  */
-#define EO_MSG_CODES 0001     /* Show string codes gotten \
+#define EO_MSG_CODES     0001 /* Show string codes gotten \
                                * from .msg file */
-#define EO_LOG_CODES 0002     /* Show string codes gotten \
+#define EO_LOG_CODES     0002 /* Show string codes gotten \
                                * from .msg file */
 #define EO_LOGTO_USRFILE 0004 /* Has no effect */
 #define EO_MSG_MSGTEXT   0010 /* Has no effect */
 #define EO_MSG_FILELINE  0020 /* Code file name and \
                                  line number */
-#define EO_LOG_FILELINE 0040  /* Code file name and \
+#define EO_LOG_FILELINE  0040 /* Code file name and \
                                  line number */
 
 #define EO_LOG_USRFILE   EO_LOGTO_USRFILE /* Has no effect */
@@ -89,13 +89,10 @@ void FtaDeletePrefix(int prefix);
     ( CNcbiDiag(DIAG_COMPILE_INFO, (EDiagSev) sev).GetRef()      \
     << ErrCode(err_code) << FtaErrMessage(__VA_ARGS__) << Endm )
 */
-#define ErrPostEx (Nlm_ErrSetContext(THIS_MODULE, \
-                                     __FILE__,    \
-                                     __LINE__),   \
-                   Nlm_ErrPostEx)
+#define ErrPostEx (Nlm_ErrSetContext(THIS_MODULE, __FILE__, __LINE__), Nlm_ErrPostEx)
 
 #define ErrPostStr ErrPostEx
 
 END_NCBI_SCOPE
 
-#endif //FTAERR_HPP
+#endif // FTAERR_HPP

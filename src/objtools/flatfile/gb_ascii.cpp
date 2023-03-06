@@ -86,7 +86,7 @@
 
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "gb_ascii.cpp"
 
@@ -652,8 +652,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
             gbb->ResetDiv();
         } else if (gbb->GetDiv() == "SYN" && bio_src && bio_src->IsSetOrigin() &&
-                   bio_src->GetOrigin() == CBioSource::eOrigin_synthetic)
-        {
+                   bio_src->GetOrigin() == CBioSource::eOrigin_synthetic) {
             gbb->ResetDiv();
         }
     } else if (mol_info.IsSetTech()) {
@@ -1440,8 +1439,8 @@ bool GenBankAsciiOrig(ParserPtr pp)
         pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
         if (! pEntry) {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-            //MemFree(dnaconv);
-            //MemFree(protconv);
+            // dnaconv.reset();
+            // protconv.reset();
             return false;
         }
 
@@ -1691,13 +1690,12 @@ bool GenBankAsciiOrig(ParserPtr pp)
             fta_find_pub_explore(pp, seq_entries);
 
             /* change qual "citation" on features to SeqFeat.cit
-            * find citation in the list by serial_number.
-            * If serial number not found remove /citation
-            */
+             * find citation in the list by serial_number.
+             * If serial number not found remove /citation
+             */
             ProcessCitations(seq_entries);
 
-            /* check for long sequences in each segment
-             */
+            /* check for long sequences in each segment */
             if (pp->limit != 0) {
                 if (ibp->segnum != 0) {
                     int j = segindx;
@@ -2356,8 +2354,7 @@ static void FindFeatSeqLoc(TEntryList& seq_entries, TSeqFeatList& feats)
             if (IsSegBioseq(first_id) || ! bioseq->IsSetAnnot())
                 continue;
 
-            /* process this bioseq entry
-            */
+            /* process this bioseq entry */
             CBioseq::TAnnot annots = bioseq->SetAnnot();
             for (CBioseq::TAnnot::iterator annot = annots.begin(); annot != annots.end();) {
                 if (! (*annot)->IsSetData() || ! (*annot)->GetData().IsFtable()) {

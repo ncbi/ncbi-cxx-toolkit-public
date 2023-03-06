@@ -79,7 +79,7 @@
 #include "flatfile_message_reporter.hpp"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "ftanet.cpp"
 

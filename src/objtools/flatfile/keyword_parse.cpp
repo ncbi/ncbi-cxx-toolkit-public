@@ -34,28 +34,26 @@
 
 #include "flatparse_report.hpp"
 #include "keyword_parse.hpp"
-//#include "ftaerr.hpp"
-//# include <objtools/flatfile/flat2err.h>
+// #include "ftaerr.hpp"
+// #include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
 //  ----------------------------------------------------------------------------
 CKeywordParser::CKeywordParser(
     Parser::EFormat format) :
-//  ----------------------------------------------------------------------------
     mFormat(format)
 {
     xInitialize();
-};
+}
 
 //  ----------------------------------------------------------------------------
 CKeywordParser::~CKeywordParser()
-//  ----------------------------------------------------------------------------
-{};
+{
+}
 
 //  ----------------------------------------------------------------------------
-void
-CKeywordParser::xInitialize()
+void CKeywordParser::xInitialize()
 //  ----------------------------------------------------------------------------
 {
     mDataFinal = mDataClean = false;
@@ -64,7 +62,7 @@ CKeywordParser::xInitialize()
 }
 
 //  ----------------------------------------------------------------------------
-const list<string> 
+const list<string>
 CKeywordParser::KeywordList() const
 //  ----------------------------------------------------------------------------
 {
@@ -72,8 +70,7 @@ CKeywordParser::KeywordList() const
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::AddDataLine(
+void CKeywordParser::AddDataLine(
     const string& line)
 //  ----------------------------------------------------------------------------
 {
@@ -91,7 +88,7 @@ CKeywordParser::AddDataLine(
         data = NStr::TruncateSpaces(data.substr(2));
         break;
     }
-    if (!mPending.empty() && !NStr::EndsWith(mPending, ";")) {
+    if (! mPending.empty() && ! NStr::EndsWith(mPending, ";")) {
         mPending += ' ';
     }
     mPending += data;
@@ -99,15 +96,14 @@ CKeywordParser::AddDataLine(
         xFinalize();
         return;
     }
-    if (!NStr::EndsWith(mPending, ";")) {
+    if (! NStr::EndsWith(mPending, ";")) {
         mPending += ' ';
         return;
     }
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::xFinalize()
+void CKeywordParser::xFinalize()
 //  ----------------------------------------------------------------------------
 {
     list<string> words;
@@ -120,14 +116,13 @@ CKeywordParser::xFinalize()
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::Cleanup()
+void CKeywordParser::Cleanup()
 //  ----------------------------------------------------------------------------
 {
     if (mDataClean) {
         return;
     }
-    if (!mDataFinal) {
+    if (! mDataFinal) {
         // throw
     }
     if (mFormat == Parser::EFormat::SPROT) {
@@ -138,11 +133,10 @@ CKeywordParser::Cleanup()
 }
 
 //  ----------------------------------------------------------------------------
-void 
-CKeywordParser::xCleanupStripEco()
+void CKeywordParser::xCleanupStripEco()
 //  ----------------------------------------------------------------------------
 {
-    for (auto keyword: mKeywords) {
+    for (auto keyword : mKeywords) {
         auto ecoStart = keyword.find("{ECO:");
         while (ecoStart != string::npos) {
             auto ecoStop = keyword.find("}", ecoStart);
@@ -153,18 +147,18 @@ CKeywordParser::xCleanupStripEco()
             while (keyword[ecoStop + 1] == ' ') {
                 ++ecoStop;
             }
-            keyword = keyword.substr(0, ecoStart) + keyword.substr(ecoStop + 1);
+            keyword  = keyword.substr(0, ecoStart) + keyword.substr(ecoStop + 1);
             ecoStart = keyword.find("{ECO:", ecoStart);
         }
     }
 }
 
 //  ----------------------------------------------------------------------------
-void
-CKeywordParser::xCleanupFixWgsThirdPartyData()
+void CKeywordParser::xCleanupFixWgsThirdPartyData()
 //  ----------------------------------------------------------------------------
 {
     const string problematic("WGS Third Party Data");
+
     auto keywordIt = mKeywords.begin();
     while (keywordIt != mKeywords.end()) {
         string& keyword = *keywordIt;
