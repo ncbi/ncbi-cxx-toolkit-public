@@ -11,7 +11,8 @@ COPY  = /bin/cp -p
 # $(abs_top_srcdir), so explicitly list any new root configurables to
 # ensure they get picked up properly.
 ROOT_CONFIGURABLES  = $(builddir)/Makefile* $(builddir)/*.sh \
-                      $(builddir)/run_with_cd_reporter.py
+                      $(builddir)/run_with_cd_reporter.py \
+                      $(builddir)/run_with_cd_reporter.sh
 CONFIGURABLES = $(ROOT_CONFIGURABLES) $(LOCAL_CONFIGURABLES)
 
 UPDATE_CONFIGURABLE = $(abs_top_srcdir)/scripts/common/impl/update_configurable.sh $(build_root)
