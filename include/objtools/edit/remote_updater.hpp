@@ -100,8 +100,8 @@ public:
     // With this constructor, failure to retrieve
     // a publication for a PMID is logged with the supplied message listener.
     // If no message listener is supplied, an exception is thrown.
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource = EPubmedSource::eMLA);
-    CRemoteUpdater(FLogger logger, EPubmedSource = EPubmedSource::eMLA);
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource = EPubmedSource::eMLA, bool bNormalize = false);
+    CRemoteUpdater(FLogger logger, EPubmedSource = EPubmedSource::eMLA, bool bNormalize = false);
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
@@ -151,7 +151,7 @@ private:
     EPubmedSource              m_pm_source = EPubmedSource::eNone;
     unique_ptr<IPubmedUpdater> m_pubmed;
     bool                       m_pm_use_cache = true;
-    bool                       m_pm_normalize = true;
+    bool                       m_pm_normalize = false;
     TPubInterceptor            m_pm_interceptor = nullptr;
 
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
