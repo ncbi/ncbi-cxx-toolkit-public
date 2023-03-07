@@ -61,6 +61,7 @@ PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, wr_buf_size,                   64 *
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_streams,        100,                10      );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_submits,        150,                1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  40,                 1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_requests_per_server, 500,           100     );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        6,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
@@ -1004,6 +1005,7 @@ bool SPSG_IoSession::Fail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " closed: " << error_code);
+    server.available_streams++;
 
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
         if (auto [processor_id, req] = it->second.Get(); req) {
@@ -1095,6 +1097,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, TPSG_ProcessorI
         return false;
     }
 
+    server.available_streams--;
     req->SetSubmittedBy(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
@@ -1381,8 +1384,8 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             // Skip all full sessions
             for (; (session != server_sessions.end()) && session->IsFull(); ++session);
 
-            // All existing sessions are full and no new sessions are allowed
-            if (session == server_sessions.end()) {
+            // If server has reached its limit or all existing sessions are full and no new sessions are allowed
+            if ((server.available_streams <= 0) || (session == server_sessions.end())) {
                 PSG_IO_TRACE("Server '" << server.address << "' has no room for a request");
 
             // Session is available or can be created
@@ -1609,7 +1612,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
     for (auto& server : discovered) {
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
-            servers.emplace_back(server.first, rate, m_ThrottleParams, handle->loop);
+            servers.emplace_back(server.first, rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop);
             PSG_DISCOVERY_TRACE("Server '" << server.first << "' added to service '" <<
                     service_name << "' with rate = " << rate);
         }

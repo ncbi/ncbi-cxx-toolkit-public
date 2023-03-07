@@ -202,6 +202,7 @@ struct SPSG_Params
 {
     TPSG_DebugPrintout debug_printout;
     TPSG_MaxConcurrentSubmits max_concurrent_submits;
+    TPSG_MaxConcurrentRequestsPerServer max_concurrent_requests_per_server;
     TPSG_RequestsPerIo requests_per_io;
     TPSG_IoTimerPeriod io_timer_period;
     const unsigned request_timeout;
@@ -214,6 +215,7 @@ struct SPSG_Params
     SPSG_Params() :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
+        max_concurrent_requests_per_server(TPSG_MaxConcurrentRequestsPerServer::eGetDefault),
         requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         io_timer_period(TPSG_IoTimerPeriod::eGetDefault),
         request_timeout(s_GetRequestTimeout(io_timer_period)),
@@ -650,12 +652,14 @@ struct SPSG_Server
 {
     const SSocketAddress address;
     atomic<double> rate;
+    atomic_int available_streams;
     atomic_uint stats;
     SPSG_Throttling throttling;
 
-    SPSG_Server(SSocketAddress a, double r, SPSG_ThrottleParams p, uv_loop_t* l) :
+    SPSG_Server(SSocketAddress a, double r, int as, SPSG_ThrottleParams p, uv_loop_t* l) :
         address(move(a)),
         rate(r),
+        available_streams(as),
         stats(0),
         throttling(address, move(p), l)
     {}
@@ -971,6 +975,7 @@ private:
 struct SPSG_DiscoveryImpl
 {
     SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, function<void()> on_discovery) :
+        m_Params(params),
         m_NoServers(params, servers),
         m_Service(move(service)),
         m_Stats(move(stats)),
@@ -998,6 +1003,7 @@ private:
         uint64_t m_Passed = 0;
     };
 
+    SPSG_Params m_Params;
     SNoServers m_NoServers;
     CServiceDiscovery m_Service;
     shared_ptr<SPSG_Stats> m_Stats;
