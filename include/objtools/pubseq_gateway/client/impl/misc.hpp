@@ -289,6 +289,9 @@ using TPSG_MaxConcurrentSubmits = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_submi
 NCBI_PARAM_DECL(unsigned, PSG, max_sessions);
 typedef NCBI_PARAM_TYPE(PSG, max_sessions) TPSG_MaxSessions;
 
+NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_requests_per_server);
+using TPSG_MaxConcurrentRequestsPerServer = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_requests_per_server);
+
 NCBI_PARAM_DECL(unsigned, PSG, num_io);
 typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
 
