@@ -137,8 +137,8 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
 CRPCClient_Base::~CRPCClient_Base(void)
 {
     try {
-        Disconnect();
-    } STD_CATCH_ALL_XX(Serial_RPCClient, 2, "CRPCClient_Base::Disconnect()");
+        x_Disconnect();
+    } STD_CATCH_ALL_XX(Serial_RPCClient, 2, "CRPCClient_Base::x_Disconnect()");
 }
 
 
@@ -202,6 +202,9 @@ void CRPCClient_Base::SetAffinity(const string& affinity)
 
 void CRPCClient_Base::x_Disconnect(void)
 {
+    if (m_Out.get() != nullptr) {
+        m_Out->SetFlags(CObjectOStream::fFlagNoAutoFlush);
+    }
     m_In.reset();
     m_Out.reset();
     m_Stream.reset();
@@ -210,6 +213,9 @@ void CRPCClient_Base::x_Disconnect(void)
 
 void CRPCClient_Base::x_SetStream(CNcbiIostream* stream)
 {
+    if (m_Out.get() != nullptr) {
+        m_Out->SetFlags(CObjectOStream::fFlagNoAutoFlush);
+    }
     m_In .reset();
     m_Out.reset();
     m_Stream.reset(stream);
