@@ -64,8 +64,13 @@ class CRequestContext_PassThrough;
 class NCBI_XNCBI_EXPORT CSharedHitId
 {
 public:
-    explicit CSharedHitId(const string& hit)
-        : m_HitId(hit), m_SubHitId(0), m_AppState(GetDiagContext().GetAppState()) {}
+    /// Set new hit id, checks its validity
+    explicit CSharedHitId(const string& hit_id)
+        : m_SubHitId(0), m_AppState(GetDiagContext().GetAppState())
+    { 
+        x_SetHitId(hit_id);
+    }
+
     CSharedHitId(void) : m_SubHitId(0) {}
     ~CSharedHitId(void) {}
 
@@ -90,7 +95,7 @@ public:
     {
         m_SharedSubHitId.Reset();
         m_SubHitId = 0;
-        m_HitId = hit_id;
+        x_SetHitId(hit_id);
         m_AppState = GetDiagContext().GetAppState();
     }
 
@@ -115,6 +120,10 @@ public:
             m_AppState == eDiagAppState_Request ||
             m_AppState == eDiagAppState_RequestEnd;
     }
+
+private:
+    /// Set new hit id, checks its validity
+    void x_SetHitId(const string& hit_id);
 
 private:
     typedef CObjectFor<CAtomicCounter> TSharedCounter;

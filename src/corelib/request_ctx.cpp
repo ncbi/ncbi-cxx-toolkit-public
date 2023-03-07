@@ -45,13 +45,128 @@
 BEGIN_NCBI_SCOPE
 
 
-static const char* kPassThrough_Sid = "ncbi_sid";
-static const char* kPassThrough_Phid = "ncbi_phid";
+static const char* kPassThrough_Sid      = "ncbi_sid";
+static const char* kPassThrough_Phid     = "ncbi_phid";
 static const char* kPassThrough_ClientIp = "ncbi_client_ip";
-static const char* kPassThrough_Dtab = "ncbi_dtab";
+static const char* kPassThrough_Dtab     = "ncbi_dtab";
 
 
 CAtomicCounter CRequestContext::sm_VersionCounter;
+
+
+// What to do on a bad hit ID -- allow-and-report by default
+
+enum EOnBadHitID {
+    eOnBadPHID_Allow,
+    eOnBadPHID_AllowAndReport,
+    eOnBadPHID_Ignore,
+    eOnBadPHID_IgnoreAndReport,
+    eOnBadPHID_Throw
+};
+
+NCBI_PARAM_ENUM_DECL(EOnBadHitID, Log, On_Bad_Hit_Id);
+NCBI_PARAM_ENUM_ARRAY(EOnBadHitID, Log, On_Bad_Hit_Id)
+{
+    {"Allow", eOnBadPHID_Allow},
+    {"AllowAndReport", eOnBadPHID_AllowAndReport},
+    {"Ignore", eOnBadPHID_Ignore},
+    {"IgnoreAndReport", eOnBadPHID_IgnoreAndReport},
+    {"Throw", eOnBadPHID_Throw}
+};
+NCBI_PARAM_ENUM_DEF_EX(EOnBadHitID, Log, On_Bad_Hit_Id, 
+                       eOnBadPHID_AllowAndReport,
+                       eParam_NoThread,
+                       LOG_ON_BAD_HIT_ID);
+typedef NCBI_PARAM_TYPE(Log, On_Bad_Hit_Id) TOnBadHitId;
+
+
+static const char* kAllowedIdMarkchars = "_-.:@";
+
+
+static bool IsValidHitID(const string& hit) 
+{
+    string id_std = kAllowedIdMarkchars;
+    size_t pos = 0;
+    size_t sep_pos = NPOS;
+    // Allow aphanumeric and some markup before the first separator (dot).
+    for (; pos < hit.size(); pos++) {
+        char c = hit[pos];
+        if (c == '.') {
+            sep_pos = pos;
+            break;
+        }
+        if (!isalnum(c)  &&  id_std.find(c) == NPOS) {
+            return false;
+        }
+    }
+    // Hit id must be present before the first separator.
+    // Note that empty hit id is still allowed if there are no sub-hit ids.
+    if (sep_pos == 0) return false;
+    if (sep_pos == NPOS) return true;
+    // Separator found - make sure the rest of the id contains only separators
+    // and valid sub-hit ids: a prefix consisting of allowed chars and some
+    // digits (XYZ.1.J2.T34).
+    size_t last_digit = sep_pos;
+    for (pos = sep_pos + 1; pos < hit.size(); pos++) {
+        char c = hit[pos];
+        if (c == '.') {
+            // Need at least one char between separators.
+            if (pos == sep_pos + 1) return false;
+            // Need at least one digit before separator.
+            if (last_digit + 1 != pos) return false;
+            sep_pos = pos;
+            continue;
+        }
+        if (!isalnum(c)  &&  id_std.find(c) == NPOS) {
+            return false;
+        }
+        if ( isdigit(c) ) last_digit = pos;
+    }
+    // Make sure the last char is digit.
+    return pos > sep_pos + 1;
+}
+
+
+void CSharedHitId::x_SetHitId(const string& hit_id)
+{
+    if (GetHitId() == hit_id) {
+        return;
+    }
+    if (!IsValidHitID(hit_id)) {
+        static CSafeStatic<TOnBadHitId> action;
+        switch (action->Get()) {
+        case eOnBadPHID_Ignore:
+            return;
+        case eOnBadPHID_IgnoreAndReport:
+            ERR_POST_X(27, Warning << "Bad hit ID format: " << NStr::PrintableString(hit_id));
+            return;
+        case eOnBadPHID_Throw:
+            NCBI_THROW(CRequestContextException, eBadHit, "Bad hit ID format: " + NStr::PrintableString(hit_id));
+            break;
+        case eOnBadPHID_Allow:
+            m_HitId = hit_id;
+            break;
+        case eOnBadPHID_AllowAndReport:
+            // Regardless allow status lets sanitize bad value, 
+            // allow letters, digits and selected marks only, remove all other chars
+            m_HitId = NStr::Sanitize(hit_id, kAllowedIdMarkchars,
+                                     ""   /* not allowed chars, not used */,
+                                     '.'  /* replacement char, not used */,
+                                     NStr::fSS_alnum | NStr::fSS_Remove);
+            if (m_HitId.empty()) {
+                NCBI_THROW(CRequestContextException, eBadHit,
+                    "Bad hit ID format, contains not allowed characters only: " + NStr::PrintableString(hit_id));
+            }
+            ERR_POST_X(27, Warning << "Bad hit ID format: " << NStr::PrintableString(hit_id)
+                                   << ", sanitized value will be used : " << m_HitId);
+            break;
+        }
+    }
+    else {
+        m_HitId = hit_id;
+    }
+}
+
 
 
 CRequestContext::CRequestContext(TContextFlags flags)
@@ -278,109 +393,19 @@ bool CRequestContext::GetDefaultAutoIncRequestIDOnPost(void)
 }
 
 
-enum EOnBadHitID {
-    eOnBadPHID_Allow,
-    eOnBadPHID_AllowAndReport,
-    eOnBadPHID_Ignore,
-    eOnBadPHID_IgnoreAndReport,
-    eOnBadPHID_Throw
-};
 
-NCBI_PARAM_ENUM_DECL(EOnBadHitID, Log, On_Bad_Hit_Id);
-NCBI_PARAM_ENUM_ARRAY(EOnBadHitID, Log, On_Bad_Hit_Id)
-{
-    {"Allow", eOnBadPHID_Allow},
-    {"AllowAndReport", eOnBadPHID_AllowAndReport},
-    {"Ignore", eOnBadPHID_Ignore},
-    {"IgnoreAndReport", eOnBadPHID_IgnoreAndReport},
-    {"Throw", eOnBadPHID_Throw}
-};
-NCBI_PARAM_ENUM_DEF_EX(EOnBadHitID, Log, On_Bad_Hit_Id,
-                       eOnBadPHID_AllowAndReport,
-                       eParam_NoThread,
-                       LOG_ON_BAD_HIT_ID);
-typedef NCBI_PARAM_TYPE(Log, On_Bad_Hit_Id) TOnBadHitId;
-
-
-static const char* kAllowedIdMarkchars = "_-.:@";
-
-
-static bool IsValidHitID(const string& hit) {
-    string id_std = kAllowedIdMarkchars;
-    size_t pos = 0;
-    size_t sep_pos = NPOS;
-    // Allow aphanumeric and some markup before the first separator (dot).
-    for (; pos < hit.size(); pos++) {
-        char c = hit[pos];
-        if (c == '.') {
-            sep_pos = pos;
-            break;
-        }
-        if (!isalnum(c)  &&  id_std.find(c) == NPOS) {
-            return false;
-        }
-    }
-    // Hit id must be present before the first separator.
-    // Note that empty hit id is still allowed if there are no sub-hit ids.
-    if (sep_pos == 0) return false;
-    if (sep_pos == NPOS) return true;
-    // Separator found - make sure the rest of the id contains only separators
-    // and valid sub-hit ids: a prefix consisting of allowed chars and some
-    // digits (XYZ.1.J2.T34).
-    size_t last_digit = sep_pos;
-    for (pos = sep_pos + 1; pos < hit.size(); pos++) {
-        char c = hit[pos];
-        if (c == '.') {
-            // Need at least one char between separators.
-            if (pos == sep_pos + 1) return false;
-            // Need at least one digit before separator.
-            if (last_digit + 1 != pos) return false;
-            sep_pos = pos;
-            continue;
-        }
-        if (!isalnum(c)  &&  id_std.find(c) == NPOS) {
-            return false;
-        }
-        if ( isdigit(c) ) last_digit = pos;
-    }
-    // Make sure the last char is digit.
-    return pos > sep_pos + 1;
-}
 
 
 void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
 {
     if (!x_CanModify()) return;
+
     const string& hit = hit_id.GetHitId();
     if (m_HitIDLoggedFlag & fLoggedOnRequest) {
         // Show warning when changing hit id after is has been logged.
-        ERR_POST_X(28, Warning << "Changing hit ID after one has been logged. "
-            "New hit id is: " << hit);
-    }
-
-    if (m_HitID.GetHitId() != hit) {
-        static CSafeStatic<TOnBadHitId> action;
-        if (!IsValidHitID(hit)) {
-            switch (action->Get()) {
-            case eOnBadPHID_Ignore:
-                return;
-            case eOnBadPHID_AllowAndReport:
-                ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
-                break;
-            case eOnBadPHID_IgnoreAndReport:
-                ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
-                return;
-            case eOnBadPHID_Throw:
-                NCBI_THROW(CRequestContextException, eBadHit,
-                    "Bad hit ID format: " + hit);
-                break;
-            case eOnBadPHID_Allow:
-                break;
-            }
-        }
+        ERR_POST_X(28, Warning << "Changing hit ID after one has been logged. New hit id is: " << hit);
     }
     x_SetProp(eProp_HitID);
-
     m_SubHitIDCache.clear();
     m_HitID = hit_id;
     x_Modify();
