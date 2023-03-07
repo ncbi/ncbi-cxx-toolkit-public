@@ -120,10 +120,9 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // evalue cutoff
     if (!m_IsIgBlast) {
-        arg_desc.AddDefaultKey(kArgEvalue, "evalue",
-                     "Expectation value (E) threshold for saving hits ",
-                     CArgDescriptions::eDouble,
-                     NStr::DoubleToString(BLAST_EXPECT_VALUE));
+        arg_desc.AddOptionalKey(kArgEvalue, "evalue",
+                     "Expectation value (E) threshold for saving hits. Default = 10 (1000 for blastn-short )",
+                     CArgDescriptions::eDouble);
     } else if (m_QueryIsProtein) {
         arg_desc.AddDefaultKey(kArgEvalue, "evalue",
                      "Expectation value (E) threshold for saving hits ",
@@ -321,13 +320,12 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                         CArgDescriptions::eBoolean,
                         kDfltArgLookupTableMaskingOnlyProt);
     } else {
-        arg_desc.AddDefaultKey(kArgDustFiltering, "DUST_options",
+        arg_desc.AddOptionalKey(kArgDustFiltering, "DUST_options",
                         "Filter query sequence with DUST "
                         "(Format: '" + kDfltArgApplyFiltering + "', " +
                         "'level window linker', or '" + kDfltArgNoFiltering +
-                        "' to disable)",
-                        CArgDescriptions::eString, m_FilterByDefault
-                        ? kDfltArgDustFiltering : kDfltArgNoFiltering);
+                        "' to disable) Default = '20 64 1' ('" + kDfltArgNoFiltering + "' for blastn-short)",
+                        CArgDescriptions::eString);
         arg_desc.AddOptionalKey(kArgFilteringDb, "filtering_database",
                 "BLAST database containing filtering elements (i.e.: repeats)",
                 CArgDescriptions::eString);
