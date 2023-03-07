@@ -88,6 +88,11 @@ public:
         m_queue.push_back({});
     }
 
+
+    void cancel() {
+        m_queue.cancel();
+    }
+
     void clear() {
         m_queue.clear();
     }
@@ -194,7 +199,7 @@ public:
                 }
             }
             catch(...) {
-                m_pipeline.clear();
+                m_pipeline.cancel(); 
                 throw;
             }   
 
