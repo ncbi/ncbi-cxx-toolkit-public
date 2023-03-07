@@ -16,12 +16,17 @@ SPEC = $(MODULE_ASN)
 # the ASN.1-centric default for compatibility with older versions.
 IMPFILES = $(MODULE_IMPORT:=.asn)
 FILES = $(MODULE).files
+ifeq "" "$(wildcard $(MODULE)__.cpp)"
+  NEEDED = $(FILES) $(MODULE)__.cpp
+else
+  NEEDED = $(FILES)
+endif
 
 all: sources # makefiles
 
 all_files: sources # makefiles
 
-sources: $(FILES) #$(FULL_MODULE) $(FULL_MODULE_BASE)
+sources: $(NEEDED) #$(FULL_MODULE) $(FULL_MODULE_BASE)
 
 clean_sources:
 	-$(RM) $(FILES)
@@ -38,7 +43,7 @@ purge_all_files:
 	    $(MODULE).dump
 
 .NO_PARALLEL:
-$(FILES): $(SPEC) $(DATATOOL) $(MODULE).def $(MODULE).module $(IMPDEPS)
+$(NEEDED): $(SPEC) $(DATATOOL) $(MODULE).def $(MODULE).module $(IMPDEPS)
 	$(DATATOOL_WRAPPER) $(DATATOOL) -oR $(top_srcdir) \
 	    -opm $(MODULE_SEARCH) -m $(SPEC) -M "$(IMPFILES)" -oA \
 	    -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' \
