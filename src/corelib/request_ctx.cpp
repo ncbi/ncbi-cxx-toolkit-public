@@ -158,7 +158,7 @@ void CSharedHitId::x_SetHitId(const string& hit_id)
                     "Bad hit ID format, contains not allowed characters only: " + NStr::PrintableString(hit_id));
             }
             ERR_POST_X(27, Warning << "Bad hit ID format: " << NStr::PrintableString(hit_id)
-                                   << ", sanitized value will be used : " << m_HitId);
+                                   << ", sanitized value will be used: " << m_HitId);
             break;
         }
     }
