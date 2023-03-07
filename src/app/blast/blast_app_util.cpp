@@ -765,12 +765,11 @@ void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet& results,
        LoadSequencesToScope(ids, ranges, scope);
 	} catch (CException& e) {
 	   if(s_IsUsingRemoteBlastDbDataLoader()) {
-          NCBI_THROW(CBlastSystemException, eNetworkError,
-                     "Error fetching sequence data from BLAST databases at NCBI, "
+          ERR_POST(Warning << "Error fetching sequence data from BLAST databases at NCBI, "
                      "please try again later");
 	   }
 	   else {
-          NCBI_RETHROW_SAME(e, "Error pre-fetching sequence data ");
+          ERR_POST(Warning << "Error pre-fetching sequence data");
 	   }
    }
 
