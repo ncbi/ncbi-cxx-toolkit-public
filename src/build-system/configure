@@ -2181,7 +2181,7 @@ Optional Packages:
  --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH
  --with-lfs              enable large file support to the extent possible
  --with-limited-linker   don't attempt to build especially large projects
- --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader,BM64
+ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader,BM64,C++20,C2X
  --with-skew-guard       catch incomplete rebuilds
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
@@ -6328,6 +6328,8 @@ USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
 
+want_cxx20=no
+want_c2x=no
 if test -n "$with_experimental"; then
    NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
    want_gi32=no
@@ -6371,6 +6373,12 @@ $as_echo "#define NCBI_STRICT_GI 1" >>confdefs.h
 $as_echo "#define BM64ADDR 1" >>confdefs.h
 
                       WithFeatures="$WithFeatures${WithFeaturesSep}BM64"; WithFeaturesSep=" "
+            ;;
+         C++20 )
+            want_cxx20=yes
+            ;;
+         C2X )
+            want_c2x=yes
             ;;
          * )
             as_fn_error $? "unrecognized experimental feature \"$x\"." "$LINENO" 5
@@ -10426,6 +10434,14 @@ modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
 modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x -std=gnu99"
 modern_c_stds="$modern_c_stds -std=gnu9x"
 
+if test "$want_cxx20" = yes; then
+   modern_cxx_stds="-std=gnu++20"
+fi
+
+if test "$want_c2x" = yes; then
+   modern_c_stds="-std=gnu2x $modern_c_stds"
+fi
+
 if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
    is_ubuntu=yes
 else
@@ -10464,7 +10480,11 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_prog_modern_cxx" >&5
 $as_echo "$ncbi_cv_prog_modern_cxx" >&6; }
 if test "$ncbi_cv_prog_modern_cxx" = no; then
-   as_fn_error $? "Please upgrade to a compiler supporting C++ '17, such as GCC 7.1 or newer." "$LINENO" 5
+   if test "$want_cxx20" = yes; then
+      as_fn_error $? "Please upgrade to a compiler supporting C++20, such as GCC 10 or newer." "$LINENO" 5
+   else
+      as_fn_error $? "Please upgrade to a compiler supporting C++ '17, such as GCC 7.1 or newer." "$LINENO" 5
+   fi
 else
    CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
