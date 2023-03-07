@@ -198,7 +198,7 @@ AC_ARG_WITH(lfs,
 AC_ARG_WITH(limited-linker,
    [ --with-limited-linker   don't attempt to build especially large projects])
 AC_ARG_WITH(experimental,
-   [ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader,BM64])
+   [ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader,BM64,C++20,C2X])
 AC_ARG_WITH(skew-guard,
    [ --with-skew-guard       catch incomplete rebuilds])
 
@@ -1006,6 +1006,8 @@ USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
 
+want_cxx20=no
+want_c2x=no
 if test -n "$with_experimental"; then
    NCBI_C_PATH_TAGS="/ncbi.gi64 .gi64"
    want_gi32=no
@@ -1043,6 +1045,12 @@ if test -n "$with_experimental"; then
          BM64 )
             AC_DEFINE(BM64ADDR, 1, [Define to 1 to use 64-bit bitset indices.])
             NCBI_FEATURE(BM64)
+            ;;
+         C++20 )
+            want_cxx20=yes
+            ;;
+         C2X )
+            want_c2x=yes
             ;;
          * )
             AC_MSG_ERROR([unrecognized experimental feature "$x".])
@@ -2155,6 +2163,14 @@ modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
 modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x -std=gnu99"
 modern_c_stds="$modern_c_stds -std=gnu9x"
 
+if test "$want_cxx20" = yes; then
+   modern_cxx_stds="-std=gnu++20"
+fi
+
+if test "$want_c2x" = yes; then
+   modern_c_stds="-std=gnu2x $modern_c_stds"
+fi
+
 if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
    is_ubuntu=yes
 else
@@ -2174,7 +2190,11 @@ AC_CACHE_CHECK([how to enable modern C++ features in $CXX],
        done
        CXX=$orig_CXX])
 if test "$ncbi_cv_prog_modern_cxx" = no; then
-   AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '17, such as GCC 7.1 or newer.])
+   if test "$want_cxx20" = yes; then
+      AC_MSG_ERROR([Please upgrade to a compiler supporting C++20, such as GCC 10 or newer.])
+   else
+      AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '17, such as GCC 7.1 or newer.])
+   fi
 else
    CXX="$CXX $ncbi_cv_prog_modern_cxx"
 fi
