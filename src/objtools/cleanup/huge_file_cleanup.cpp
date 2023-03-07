@@ -346,6 +346,11 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
             pSmallGenomeEntry->SetSet().SetClass() = CBioseq_set::eClass_small_genome_set;
             for (const auto& setInfo : m_FluLabelToSetInfo.at(it->second)) {
                 auto pSubEntry = TParent::LoadSeqEntry(setInfo, eAddTopEntry::no);
+
+                if (auto posIt = m_PosToFeatIdMap.find(setInfo.m_pos);
+                        posIt != m_PosToFeatIdMap.end()) {
+                    s_UpdateFeatureIds(*pSubEntry, posIt->second);
+                }
                 pSmallGenomeEntry->SetSet().SetSeq_set().push_back(pSubEntry);
             }
             if (add_top_entry == eAddTopEntry::yes) {
