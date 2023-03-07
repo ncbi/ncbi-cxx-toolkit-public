@@ -80,12 +80,26 @@ public:
                 const auto& const_ref = m_queue;
                 return m_trottle(const_ref);
             });
-            m_queue.push_back(std::move(msg));
-            if (m_extrem < m_queue.size())
-                m_extrem = m_queue.size();
+
+            if (!m_canceled) {
+                m_queue.push_back(std::move(msg));
+                if (m_extrem < m_queue.size())
+                    m_extrem = m_queue.size();
+            }
         }
         m_cv.notify_all();
     }
+
+    void cancel()
+    {
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_queue.clear();
+            m_canceled = true;
+        }
+        m_cv.notify_all();
+    }
+
     void clear()
     {
         {
@@ -95,6 +109,7 @@ public:
         }
         m_cv.notify_all();
     }
+
     value_type pop_front()
     {
         value_type message;
@@ -118,6 +133,7 @@ private:
     std::mutex              m_mutex;
     std::condition_variable m_cv;
     size_t                  m_extrem = 0;
+    bool                    m_canceled{false};
 };
 
 template<class _T>
