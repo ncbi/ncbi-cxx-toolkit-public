@@ -12426,7 +12426,9 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
         ChangeMade(CCleanupChange::eChangeOther);
     }
 
-    CFixFeatureId::s_ApplyToSeqInSet(seh);
+    if (!(m_Options & CCleanup::eClean_InHugeSeqSet)) {
+        CFixFeatureId::s_ApplyToSeqInSet(seh);
+    }
 }
 
 
