@@ -142,6 +142,12 @@ bool CCleanupHugeAsnReader::x_LooksLikeNucProtSet() const
 }
 
 
+bool CCleanupHugeAsnReader::x_IsExtendedCleanup() const
+{
+    return (m_CleanupOptions & eExtendedCleanup);
+}
+
+
 void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors() 
 {
 
@@ -158,7 +164,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     CCleanup cleanup;
     m_Changes += *cleanup.BasicCleanup(m_top_entry->SetDescr());
     
-    if (!(m_CleanupOptions & eExtendedCleanup)) {
+    if (!x_IsExtendedCleanup()) {
         return;
     }
 
@@ -202,7 +208,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
 
 void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry) const
 {
-    if (!(m_CleanupOptions & eExtendedCleanup) ||
+    if ((!x_IsExtendedCleanup()) ||
         (m_TopLevelBiosources.empty() && m_pTopLevelMolInfo.Empty())) {
         return;
     }
@@ -346,10 +352,12 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
             pSmallGenomeEntry->SetSet().SetClass() = CBioseq_set::eClass_small_genome_set;
             for (const auto& setInfo : m_FluLabelToSetInfo.at(it->second)) {
                 auto pSubEntry = TParent::LoadSeqEntry(setInfo, eAddTopEntry::no);
-
-                if (auto posIt = m_FeatIdInfo.PosToIdMap.find(setInfo.m_pos);
+                
+                if (x_IsExtendedCleanup()) {
+                    if (auto posIt = m_FeatIdInfo.PosToIdMap.find(setInfo.m_pos);
                         posIt != m_FeatIdInfo.PosToIdMap.end()) {
-                    s_UpdateFeatureIds(*pSubEntry, posIt->second);
+                        s_UpdateFeatureIds(*pSubEntry, posIt->second);
+                    }
                 }
                 pSmallGenomeEntry->SetSet().SetSeq_set().push_back(pSubEntry);
             }
@@ -364,10 +372,12 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
     if (add_top_entry == eAddTopEntry::yes) {
         x_AddTopLevelDescriptors(*pEntry);
     }
-            
-    if (auto posIt = m_FeatIdInfo.PosToIdMap.find(info.m_pos);
-        posIt != m_FeatIdInfo.PosToIdMap.end()) {
-        s_UpdateFeatureIds(*pEntry, posIt->second);
+    
+    if (x_IsExtendedCleanup()) {    
+        if (auto posIt = m_FeatIdInfo.PosToIdMap.find(info.m_pos);
+            posIt != m_FeatIdInfo.PosToIdMap.end()) {
+            s_UpdateFeatureIds(*pEntry, posIt->second);
+        }
     }
 
 
@@ -631,7 +641,7 @@ void CCleanupHugeAsnReader::x_SetBioseqHooks(CObjectIStream& objStream, TContext
         m_bioseq_list.push_back({pos, parent, bioseqinfo.m_length, bioseqinfo.m_descr, bioseqinfo.m_ids, bioseqinfo.m_mol, bioseqinfo.m_repr});
         context.bioseq_stack.pop_back();
 
-        if (hasGenbankParent) {
+        if (x_IsExtendedCleanup() && hasGenbankParent) {
             m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewExistingIds.begin(), m_FeatIdInfo.NewExistingIds.end());
             m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewIds.begin(), m_FeatIdInfo.NewIds.end());
             if (!m_FeatIdInfo.RemappedIds.empty()) {
@@ -677,14 +687,10 @@ void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TCont
                 
                 auto* pBioseqSet = CTypeConverter<CBioseq_set>::SafeCast(objectInfo.GetObjectPtr());
 
-
-                //type.GetTypeInfo()->DefaultReadData(in, pBioseqSet);
-
                 if (pBioseqSet->IsSetLevel()) {
                     last->m_Level = pBioseqSet->GetLevel();
                 }
 
-               // last->m_class = pBioseqSet->GetClass();
                 if (pBioseqSet->IsSetDescr()) {
                     last->m_descr.Reset(&(pBioseqSet->GetDescr()));
                 }
@@ -696,7 +702,7 @@ void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TCont
 
                 context.bioseq_set_stack.pop_back();
 
-                if (hasGenbankParent) {
+                if (x_IsExtendedCleanup() && hasGenbankParent) {
                     m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewExistingIds.begin(), m_FeatIdInfo.NewExistingIds.end());
                     m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewIds.begin(), m_FeatIdInfo.NewIds.end());
                     if (!m_FeatIdInfo.RemappedIds.empty()) {
@@ -715,6 +721,11 @@ void CCleanupHugeAsnReader::x_SetSeqFeatHooks(CObjectIStream& objStream, TContex
             {
                 auto* pObject = object.GetObjectPtr();
                 object.GetTypeInfo()->DefaultReadData(in, pObject);
+
+                if (!x_IsExtendedCleanup()) {
+                    return;
+                }
+                
                 auto* pSeqFeat = CTypeConverter<CSeq_feat>::SafeCast(pObject);
 
                 if (pSeqFeat->IsSetId()) {
@@ -736,15 +747,17 @@ void CCleanupHugeAsnReader::x_SetSeqFeatHooks(CObjectIStream& objStream, TContex
             {
                 auto pSeqFeat = Ref(new CSeq_feat());
                 type.GetTypeInfo()->DefaultReadData(in, pSeqFeat);
+                
+                if (x_IsExtendedCleanup()) {
+                    if (pSeqFeat->IsSetId()) {
+                        x_RecordFeatureId(pSeqFeat->GetId());
+                    }
 
-                if (pSeqFeat->IsSetId()) {
-                    x_RecordFeatureId(pSeqFeat->GetId());
-                }
-
-                if (pSeqFeat->IsSetIds()) {
-                    for (auto pFeatId : pSeqFeat->GetIds()) {
-                        if (pFeatId) {
-                            x_RecordFeatureId(*pFeatId);
+                    if (pSeqFeat->IsSetIds()) {
+                        for (auto pFeatId : pSeqFeat->GetIds()) {
+                            if (pFeatId) {
+                                x_RecordFeatureId(*pFeatId);
+                            }
                         }
                     }
                 }
