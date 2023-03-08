@@ -51,7 +51,8 @@ set(NCBI_ThirdParty_SQLITE3       ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE P
 set(NCBI_ThirdParty_BerkeleyDB    ${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1 CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_SybaseNetPath "/opt/sybase/clients/16.0-64bit" CACHE PATH "SybaseNetPath")
 set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
-set(NCBI_ThirdParty_PYTHON        "/opt/python-3.8" CACHE PATH "PYTHON root")
+set(NCBI_ThirdParty_PYTHON_VERSION "3.9")
+set(NCBI_ThirdParty_PYTHON        "/opt/python-${NCBI_ThirdParty_PYTHON_VERSION}" CACHE PATH "PYTHON root")
 set(NCBI_ThirdParty_VDB           ${NCBI_OPT_ROOT}/trace_software/vdb/vdb-versions/cxx_toolkit/3 CACHE PATH "VDB root")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(NCBI_ThirdParty_XML           ${NCBI_TOOLS_ROOT}/libxml-2.9.1 CACHE PATH "XML root")
@@ -488,7 +489,7 @@ endif()
 
 #############################################################################
 # PYTHON
-NCBI_define_Xcomponent(NAME PYTHON LIB python3.8 python3 INCLUDE python3.8)
+NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_VERSION} python3 INCLUDE python${NCBI_ThirdParty_PYTHON_VERSION})
 NCBIcomponent_report(PYTHON)
 
 #############################################################################
