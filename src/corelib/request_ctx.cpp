@@ -139,12 +139,10 @@ void CSharedHitId::x_SetHitId(const string& hit_id)
         switch (action->Get()) {
         case eOnBadPHID_Allow:
         case eOnBadPHID_AllowAndReport:
-            // Regardless the allow status lets sanitize bad value, 
-            // allow letters, digits and selected marks only, remove all other chars
-            m_HitId = NStr::Sanitize(hit_id, kAllowedIdMarkchars,
-                                     ""   /* not allowed chars, not used */,
-                                     '_'  /* replacement char for bad symbols */,
-                                     NStr::fSS_alnum | NStr::fSS_NoMerge);
+            // Regardless of the allow status lets sanitize bad value, 
+            // allow letters, digits and selected marks only, remlace all bad chars with '_'.
+            // Resulting PHID still can be invalid, see CXX-12891
+            m_HitId = NStr::Sanitize(hit_id, kAllowedIdMarkchars, "", '_', NStr::fSS_alnum | NStr::fSS_NoMerge);
             if (action->Get() == eOnBadPHID_AllowAndReport) {
                 ERR_POST_X(27, Warning << "Bad hit ID format: " << NStr::PrintableString(hit_id)
                                        << ", sanitized value will be used: " << m_HitId);
