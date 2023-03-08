@@ -785,9 +785,10 @@ CMakeBlastDBApp::x_VerifyInputFilesType(const vector<CTempString>& filenames,
         }
 
         CNcbiIfstream f(seq_file.c_str(), ios::binary);
-        if(x_ConvertToSupportedType(x_GuessFileType(f)) != input_type) {
-            string error_msg = seq_file + " does not match input format type, default input type is FASTA";
-            NCBI_THROW(CInvalidDataException, eInvalidInput, error_msg);
+        if(input_type == eFasta && x_ConvertToSupportedType(x_GuessFileType(f)) != eFasta) {
+            string msg = "\nInput file " + seq_file + " does NOT appear to be FASTA (processing anyway).\n" \
+                 + "Advise validating database with 'blastdbcheck -dbtype [prot|nucl] -db ${DBNAME}'\n";
+            ERR_POST(Warning << msg);
         }
     }
     return;
