@@ -157,7 +157,8 @@ public:
                     const CDataLoader::TChunkSet& chunks);
 
     void GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets);
-    void GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets);
+    typedef set<CSeq_id_Handle> TLoadedSeqIds;
+    void GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& loaded, TTSE_LockSets& tse_sets);
 
     typedef CDataLoader::TSeqIdSets TSeqIdSets;
     typedef CDataLoader::TCDD_Locks TCDD_Locks;
