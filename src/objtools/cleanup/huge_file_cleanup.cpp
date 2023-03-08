@@ -232,7 +232,7 @@ void CCleanupHugeAsnReader::x_AddTopLevelDescriptors(CSeq_entry& entry) const
 }
 
 
-using TFeatIdMap = CCleanupHugeAsnReader::TFeatIdMap;
+using TFeatIdMap = map<CCleanupHugeAsnReader::TFeatId,CCleanupHugeAsnReader::TFeatId>;
 
 
 static void s_UpdateFeatureId(CFeat_id& featId, const TFeatIdMap& idMap)
@@ -347,8 +347,8 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
             for (const auto& setInfo : m_FluLabelToSetInfo.at(it->second)) {
                 auto pSubEntry = TParent::LoadSeqEntry(setInfo, eAddTopEntry::no);
 
-                if (auto posIt = m_PosToFeatIdMap.find(setInfo.m_pos);
-                        posIt != m_PosToFeatIdMap.end()) {
+                if (auto posIt = m_FeatIdInfo.PosToIdMap.find(setInfo.m_pos);
+                        posIt != m_FeatIdInfo.PosToIdMap.end()) {
                     s_UpdateFeatureIds(*pSubEntry, posIt->second);
                 }
                 pSmallGenomeEntry->SetSet().SetSeq_set().push_back(pSubEntry);
@@ -365,8 +365,8 @@ CRef<CSeq_entry> CCleanupHugeAsnReader::LoadSeqEntry(
         x_AddTopLevelDescriptors(*pEntry);
     }
             
-    if (auto posIt = m_PosToFeatIdMap.find(info.m_pos);
-        posIt != m_PosToFeatIdMap.end()) {
+    if (auto posIt = m_FeatIdInfo.PosToIdMap.find(info.m_pos);
+        posIt != m_FeatIdInfo.PosToIdMap.end()) {
         s_UpdateFeatureIds(*pEntry, posIt->second);
     }
 
@@ -589,20 +589,20 @@ void CCleanupHugeAsnReader::x_RecordFeatureId(const CFeat_id& featId)
 
     const auto id = featId.GetLocal().GetId();
                     
-    if (m_ExistingIds.find(id) != m_ExistingIds.end() ||
-            m_NewIds.find(id) != m_NewIds.end()) {
-        auto it = m_RemappedIds.find(id);
-        if (it != m_RemappedIds.end()) {
-            m_IdOffset = it->second;    
+    if (m_FeatIdInfo.ExistingIds.find(id) != m_FeatIdInfo.ExistingIds.end() ||
+            m_FeatIdInfo.NewIds.find(id) != m_FeatIdInfo.NewIds.end()) {
+        auto it = m_FeatIdInfo.RemappedIds.find(id);
+        if (it != m_FeatIdInfo.RemappedIds.end()) {
+            m_FeatIdInfo.IdOffset = it->second;    
         }
         else {
-            s_FindNextOffset(m_ExistingIds, m_NewExistingIds, m_NewIds, m_IdOffset);
-            m_RemappedIds.emplace(id, m_IdOffset);
+            s_FindNextOffset(m_FeatIdInfo.ExistingIds, m_FeatIdInfo.NewExistingIds, m_FeatIdInfo.NewIds, m_FeatIdInfo.IdOffset);
+            m_FeatIdInfo.RemappedIds.emplace(id, m_FeatIdInfo.IdOffset);
         }
-        m_NewIds.insert(m_IdOffset);
+        m_FeatIdInfo.NewIds.insert(m_FeatIdInfo.IdOffset);
     }
     else {
-        m_NewExistingIds.insert(id);
+        m_FeatIdInfo.NewExistingIds.insert(id);
     }
 }
 
@@ -620,9 +620,9 @@ void CCleanupHugeAsnReader::x_SetBioseqHooks(CObjectIStream& objStream, TContext
         auto parent = context.bioseq_set_stack.back();
         const bool hasGenbankParent = (parent->m_class == CBioseq_set::eClass_genbank);
         if (hasGenbankParent) {
-            m_NewIds.clear();
-            m_NewExistingIds.clear();
-            m_RemappedIds.clear();    
+            m_FeatIdInfo.NewIds.clear();
+            m_FeatIdInfo.NewExistingIds.clear();
+            m_FeatIdInfo.RemappedIds.clear();    
         }
 
         type.GetTypeInfo()->DefaultSkipData(in);
@@ -632,10 +632,10 @@ void CCleanupHugeAsnReader::x_SetBioseqHooks(CObjectIStream& objStream, TContext
         context.bioseq_stack.pop_back();
 
         if (hasGenbankParent) {
-            m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
-            m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
-            if (!m_RemappedIds.empty()) {
-                m_PosToFeatIdMap.emplace(pos, m_RemappedIds);
+            m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewExistingIds.begin(), m_FeatIdInfo.NewExistingIds.end());
+            m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewIds.begin(), m_FeatIdInfo.NewIds.end());
+            if (!m_FeatIdInfo.RemappedIds.empty()) {
+                m_FeatIdInfo.PosToIdMap.emplace(pos, m_FeatIdInfo.RemappedIds);
             }
         }
 
@@ -654,9 +654,9 @@ void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TCont
                 auto parent = context.bioseq_set_stack.back();
                 const bool hasGenbankParent = (parent->m_class == CBioseq_set::eClass_genbank);
                 if (hasGenbankParent) {
-                    m_NewIds.clear();
-                    m_NewExistingIds.clear();
-                    m_RemappedIds.clear();    
+                    m_FeatIdInfo.NewIds.clear();
+                    m_FeatIdInfo.NewExistingIds.clear();
+                    m_FeatIdInfo.RemappedIds.clear();    
                 }
 
                 m_bioseq_set_list.push_back({pos, parent});
@@ -697,10 +697,10 @@ void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TCont
                 context.bioseq_set_stack.pop_back();
 
                 if (hasGenbankParent) {
-                    m_ExistingIds.insert(m_NewExistingIds.begin(), m_NewExistingIds.end());
-                    m_ExistingIds.insert(m_NewIds.begin(), m_NewIds.end());
-                    if (!m_RemappedIds.empty()) {
-                        m_PosToFeatIdMap.emplace(pos, m_RemappedIds);
+                    m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewExistingIds.begin(), m_FeatIdInfo.NewExistingIds.end());
+                    m_FeatIdInfo.ExistingIds.insert(m_FeatIdInfo.NewIds.begin(), m_FeatIdInfo.NewIds.end());
+                    if (!m_FeatIdInfo.RemappedIds.empty()) {
+                        m_FeatIdInfo.PosToIdMap.emplace(pos, m_FeatIdInfo.RemappedIds);
                     }
                 }
             });
