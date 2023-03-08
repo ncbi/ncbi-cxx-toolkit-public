@@ -2129,19 +2129,23 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
 
 void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets)
 {
+    TLoadedSeqIds loaded;
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobsOnce, this,
-                       data_source, ref(tse_sets)),
+                       data_source, ref(loaded), ref(tse_sets)),
                   "GetBlobs",
                   m_BulkRetryCount);
 }
 
 
-void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& tse_sets)
+void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& loaded, TTSE_LockSets& tse_sets)
 {
     if (!data_source) return;
     CPSG_TaskGroup group(*m_ThreadPool);
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         const CSeq_id_Handle& idh = tse_set->first;
+        if ( loaded.count(idh) ) {
+            continue;
+        }
         CPSG_BioId bio_id(idh);
         auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
         CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
@@ -2161,6 +2165,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& 
             new CPSG_Blob_Task(reply, group, idh, data_source, *this, true));
         group.AddTask(task);
     }
+    size_t failed_count = 0;
     // Waiting for skipped blobs can block all pool threads. To prevent this postpone
     // waiting until all other tasks are completed.
     typedef list<CRef<CPSG_Blob_Task>> TTasks;
@@ -2171,25 +2176,40 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TTSE_LockSets& 
         _ASSERT(task);
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         if (task->GetStatus() == CThreadPool_Task::eFailed) {
-            _TRACE("Failed to get blob for " << task->m_Id);
-            group.CancelAll();
-            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load blobs for "+task->m_Id.AsString());
+            ++failed_count;
+            continue;
         }
         if (task->m_Skipped) {
             skipped_tasks.push_back(task);
             continue;
         }
         SReplyResult res = task->m_ReplyResult;
-        if (task->m_ReplyResult.lock) tse_sets[task->m_Id].insert(task->m_ReplyResult.lock);
+        if (task->m_ReplyResult.lock) {
+            tse_sets[task->m_Id].insert(task->m_ReplyResult.lock);
+        }
+        loaded.insert(task->m_Id);
     }
     NON_CONST_ITERATE(TTasks, it, skipped_tasks) {
         CPSG_Blob_Task& task = **it;
         SReplyResult result = task.WaitForSkipped();
         if (!result.lock) {
             // Force reloading blob
-            result = x_RetryBlobRequest(task.m_ReplyResult.blob_id, data_source, task.m_Id);
+            try {
+                result = x_RetryBlobRequest(task.m_ReplyResult.blob_id, data_source, task.m_Id);
+            }
+            catch ( CException& /*doen't matter*/ ) {
+                ++failed_count;
+                continue;
+            }
         }
-        if (result.lock) tse_sets[task.m_Id].insert(result.lock);
+        if (result.lock) {
+            tse_sets[task.m_Id].insert(result.lock);
+        }
+        loaded.insert(task.m_Id);
+    }
+    if ( failed_count ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<failed_count<<" blobs");
     }
 }
 
@@ -2461,6 +2481,17 @@ static bool s_SameId(const CPSG_BlobId* id1, const CPSG_BlobId& id2)
 }
 
 
+static bool s_HasFailedStatus(const CPSG_NamedAnnotStatus& na_status)
+{
+    for ( auto& s : na_status.GetId2AnnotStatusList() ) {
+        if ( s.second == EPSG_Status::eError ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CPSGDataLoader_Impl::x_ReadCDDChunk(CDataSource* data_source,
                                          CDataLoader::TChunk chunk,
                                          const CPSG_BlobInfo& blob_info,
@@ -2517,6 +2548,7 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
     
     bool failed = false;
     shared_ptr<CPSG_NamedAnnotInfo> cdd_info;
+    shared_ptr<CPSG_NamedAnnotStatus> cdd_status;
     
     // load CDD blob id
     {{
@@ -2551,6 +2583,12 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
                     cdd_info = na_info;
                 }
             }
+            if (reply_item->GetType() == CPSG_ReplyItem::eNamedAnnotStatus) {
+                cdd_status = static_pointer_cast<CPSG_NamedAnnotStatus>(reply_item);
+                if ( s_HasFailedStatus(*cdd_status) ) {
+                    failed = true;
+                }
+            }
             if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
                 blob_info = static_pointer_cast<CPSG_BlobInfo>(reply_item);
             }
@@ -2559,9 +2597,7 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
             }
         }
         if ( failed ) {
-            // TODO
-            x_CreateEmptyLocalCDDEntry(data_source, chunk);
-            return nullptr;
+            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to get CDD blob-id for "+bio_id.Repr());
         }
         if ( !cdd_info ) {
             x_CreateEmptyLocalCDDEntry(data_source, chunk);
@@ -2662,15 +2698,24 @@ public:
     ~CPSG_AnnotRecordsNA_Task(void) override {}
 
     list<shared_ptr<CPSG_NamedAnnotInfo>> m_AnnotInfo;
+    shared_ptr<CPSG_NamedAnnotStatus> m_AnnotStatus;
 
     void Finish(void) override {
         m_AnnotInfo.clear();
+        m_AnnotStatus.reset();
     }
 
 protected:
     void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
         if (item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
             m_AnnotInfo.push_back(static_pointer_cast<CPSG_NamedAnnotInfo>(item));
+        }
+        if (item->GetType() == CPSG_ReplyItem::eNamedAnnotStatus) {
+            m_AnnotStatus = static_pointer_cast<CPSG_NamedAnnotStatus>(item);
+            if ( s_HasFailedStatus(*m_AnnotStatus) ) {
+                m_Status = eFailed;
+                RequestToCancel();
+            }
         }
     }
 };
@@ -2685,10 +2730,12 @@ public:
 
     shared_ptr<CPSG_BioseqInfo> m_BioseqInfo;
     list<shared_ptr<CPSG_NamedAnnotInfo>> m_AnnotInfo;
+    shared_ptr<CPSG_NamedAnnotStatus> m_AnnotStatus;
 
     void Finish(void) override {
         m_BioseqInfo.reset();
         m_AnnotInfo.clear();
+        m_AnnotStatus.reset();
     }
 
 protected:
@@ -2698,6 +2745,13 @@ protected:
         }
         if (item->GetType() == CPSG_ReplyItem::eNamedAnnotInfo) {
             m_AnnotInfo.push_back(static_pointer_cast<CPSG_NamedAnnotInfo>(item));
+        }
+        if (item->GetType() == CPSG_ReplyItem::eNamedAnnotStatus) {
+            m_AnnotStatus = static_pointer_cast<CPSG_NamedAnnotStatus>(item);
+            if ( s_HasFailedStatus(*m_AnnotStatus) ) {
+                m_Status = eFailed;
+                RequestToCancel();
+            }
         }
     }
 };
@@ -2969,6 +3023,7 @@ public:
 
     size_t m_Idx;
     shared_ptr<CPSG_NamedAnnotInfo> m_AnnotInfo;
+    shared_ptr<CPSG_NamedAnnotStatus> m_AnnotStatus;
     shared_ptr<CPSG_BlobInfo> m_BlobInfo;
     shared_ptr<CPSG_BlobData> m_BlobData;
 
@@ -2984,6 +3039,13 @@ protected:
         switch (item->GetType()) {
         case CPSG_ReplyItem::eNamedAnnotInfo:
             m_AnnotInfo = static_pointer_cast<CPSG_NamedAnnotInfo>(item);
+            break;
+        case CPSG_ReplyItem::eNamedAnnotStatus:
+            m_AnnotStatus = static_pointer_cast<CPSG_NamedAnnotStatus>(item);
+            if ( s_HasFailedStatus(*m_AnnotStatus) ) {
+                m_Status = eFailed;
+                RequestToCancel();
+            }
             break;
         case CPSG_ReplyItem::eBlobInfo:
             m_BlobInfo = static_pointer_cast<CPSG_BlobInfo>(item);
@@ -3010,8 +3072,10 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
     vector<SCDDIds> cdd_ids(id_sets.size());
     vector<CRef<CPSG_CDDAnnotBulk_Task>> tasks;
     for (size_t i = 0; i < id_sets.size(); ++i) {
-        TIds ids;
-        ids.insert(ids.end(), id_sets[i].begin(), id_sets[i].end());
+        if ( loaded[i] ) {
+            continue;
+        }
+        const TIds& ids = id_sets[i];
         cdd_ids[i] = x_GetCDDIds(ids);
         // Skip if it's known that the bioseq has no CDDs.
         if (m_CDDInfoCache) {
@@ -3050,9 +3114,10 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         request->IncludeData(CPSG_Request_Biodata::eWholeTSE);
         auto reply = x_SendRequest(request);
         tasks.push_back(Ref(new CPSG_CDDAnnotBulk_Task(reply, group, i)));
-        group.AddTask(tasks[i]);
+        group.AddTask(tasks.back());
     }
 
+    size_t failed_count = 0;
     typedef list<CRef<CPSG_CDDAnnotBulk_Task>> TTasks;
     TTasks skipped_tasks;
     list<shared_ptr<CPSG_Task_Guard>> guards;
@@ -3061,7 +3126,8 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         _ASSERT(task);
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         if (task->GetStatus() == CThreadPool_Task::eFailed) {
-            _TRACE("Failed to get CDD annots for " << id_sets[task->m_Idx].front().AsString());
+            ++failed_count;
+            continue;
         }
         if (!task->m_AnnotInfo || !task->m_BlobInfo || !task->m_BlobData) continue;
         auto idx = task->m_Idx;
@@ -3070,7 +3136,6 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         auto blob_data = task->m_BlobData;
         if ( s_SameId(blob_info->GetId<CPSG_BlobId>(), annot_info->GetBlobId()) &&
              s_SameId(blob_data->GetId<CPSG_BlobId>(), annot_info->GetBlobId()) ) {
-            _TRACE("Got CDD entry: " << annot_info->GetBlobId().Repr());
 
             CDataLoader::TBlobId dl_blob_id;
             if ( kCreateLocalCDDEntries ) {
@@ -3102,7 +3167,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
 
             unique_ptr<CObjectIStream> in(GetBlobDataStream(*blob_info, *blob_data));
             if (!in.get()) {
-                _TRACE("Failed to open blob data stream for blob-id " << annot_info->GetBlobId().GetId());
+                ++failed_count;
                 continue;
             }
             CRef<CSeq_entry> entry(new CSeq_entry);
@@ -3131,6 +3196,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         if (result.lock) ret[task.m_Idx] = result.lock;
     }
     */
+    if ( failed_count ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some CDD annots in bulk request");
+    }
 }
 
 
