@@ -132,9 +132,24 @@ void CSharedHitId::x_SetHitId(const string& hit_id)
     if (GetHitId() == hit_id) {
         return;
     }
-    if (!IsValidHitID(hit_id)) {
+    if (IsValidHitID(hit_id)) {
+        m_HitId = hit_id;
+    } else {
         static CSafeStatic<TOnBadHitId> action;
         switch (action->Get()) {
+        case eOnBadPHID_Allow:
+        case eOnBadPHID_AllowAndReport:
+            // Regardless the allow status lets sanitize bad value, 
+            // allow letters, digits and selected marks only, remove all other chars
+            m_HitId = NStr::Sanitize(hit_id, kAllowedIdMarkchars,
+                                     ""   /* not allowed chars, not used */,
+                                     '_'  /* replacement char for bad symbols */,
+                                     NStr::fSS_alnum | NStr::fSS_NoMerge);
+            if (action->Get() == eOnBadPHID_AllowAndReport) {
+                ERR_POST_X(27, Warning << "Bad hit ID format: " << NStr::PrintableString(hit_id)
+                                       << ", sanitized value will be used: " << m_HitId);
+            }
+            break;
         case eOnBadPHID_Ignore:
             return;
         case eOnBadPHID_IgnoreAndReport:
@@ -143,27 +158,7 @@ void CSharedHitId::x_SetHitId(const string& hit_id)
         case eOnBadPHID_Throw:
             NCBI_THROW(CRequestContextException, eBadHit, "Bad hit ID format: " + NStr::PrintableString(hit_id));
             break;
-        case eOnBadPHID_Allow:
-            m_HitId = hit_id;
-            break;
-        case eOnBadPHID_AllowAndReport:
-            // Regardless allow status lets sanitize bad value, 
-            // allow letters, digits and selected marks only, remove all other chars
-            m_HitId = NStr::Sanitize(hit_id, kAllowedIdMarkchars,
-                                     ""   /* not allowed chars, not used */,
-                                     '.'  /* replacement char, not used */,
-                                     NStr::fSS_alnum | NStr::fSS_Remove);
-            if (m_HitId.empty()) {
-                NCBI_THROW(CRequestContextException, eBadHit,
-                    "Bad hit ID format, contains not allowed characters only: " + NStr::PrintableString(hit_id));
-            }
-            ERR_POST_X(27, Warning << "Bad hit ID format: " << NStr::PrintableString(hit_id)
-                                   << ", sanitized value will be used: " << m_HitId);
-            break;
         }
-    }
-    else {
-        m_HitId = hit_id;
     }
 }
 
