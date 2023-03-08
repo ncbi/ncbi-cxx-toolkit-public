@@ -394,8 +394,25 @@ void IPubmedUpdater::Normalize(CPub& pub)
     if (pub.IsArticle()) {
         CCit_art& A = pub.SetArticle();
         if (A.IsSetIds()) {
-            auto& ids  = A.SetIds().Set();
-            auto  pred = [](const CRef<CArticleId>& l, const CRef<CArticleId>& r) -> bool {
+            auto& ids = A.SetIds().Set();
+
+            // Strip ELocationID; RW-1954
+            auto IsELocationID = [](const CRef<CArticleId>& id) -> bool {
+                if (id->IsOther()) {
+                    const CDbtag& dbt = id->GetOther();
+                    if (dbt.CanGetDb()) {
+                        const string& dbn = dbt.GetDb();
+                        if (NStr::StartsWith(dbn, "ELocationID", NStr::eNocase)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+            ids.remove_if(IsELocationID);
+
+            // sort ids; RW-1865
+            auto pred = [](const CRef<CArticleId>& l, const CRef<CArticleId>& r) -> bool {
                 CArticleId::E_Choice chl = l->Which();
                 CArticleId::E_Choice chr = r->Which();
                 if (chl == CArticleId::e_Other && chr == CArticleId::e_Other) {
