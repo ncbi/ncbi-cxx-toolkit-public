@@ -236,9 +236,13 @@ void s_PrintLocAsJavascriptArray(
     for( ; loc_piece_iter ; ++loc_piece_iter ) {
 
         CSeq_id_Handle seq_id_handle = loc_piece_iter.GetSeq_id_Handle();
+        
+#if 0   // ID-7625 : this condition is not necessary. It prevents locations from being properly
+        // included when features are annotated on components of CON sequences. 
         if( seq_id_handle && bioseq_handle && ! bioseq_handle.IsSynonym(seq_id_handle) ) {
             continue;
         }
+#endif
 
         if( ! is_first ) {
             result << ",";
