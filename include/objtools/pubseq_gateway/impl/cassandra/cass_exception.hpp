@@ -89,7 +89,7 @@ class CCassandraException: public CException
         x_InitErrCode(static_cast<CException::EErrCode>(error_code));
     }
 
-    virtual const char* GetErrCodeString(void) const
+    const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
             case eUnknown:                return "eUnknown";
@@ -134,17 +134,17 @@ class CCassandraException: public CException
     NCBI_EXCEPTION_DEFAULT(CCassandraException, CException);
 
  protected:
-    virtual void x_Init(const CDiagCompileInfo &  info,
-                        const string &  message,
-                        const CException *  prev_exception,
-                        EDiagSev  severity)
+    void x_Init(const CDiagCompileInfo &  info,
+                const string &  message,
+                const CException *  prev_exception,
+                EDiagSev  severity) override
     {
         m_OpTimeMs = 0;
         ERR_POST(Info << "CCassandraException: " << message);
         CException::x_Init(info, message, prev_exception, severity);
     }
 
-    virtual void x_Assign(const CException &  src)
+    void x_Assign(const CException &  src) override
     {
         const CCassandraException* _src = dynamic_cast<const CCassandraException*>(&src);
         if (_src) {
