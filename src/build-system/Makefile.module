@@ -17,7 +17,7 @@ SPEC = $(MODULE_ASN)
 IMPFILES = $(MODULE_IMPORT:=.asn)
 FILES = $(MODULE).files
 ifeq "" "$(wildcard $(MODULE)__.cpp)"
-  NEEDED = $(FILES) $(MODULE)__.cpp
+  NEEDED = $(MODULE)__.cpp
 else
   NEEDED = $(FILES)
 endif
