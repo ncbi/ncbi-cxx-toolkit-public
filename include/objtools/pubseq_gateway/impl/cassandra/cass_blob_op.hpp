@@ -66,8 +66,8 @@ class CCassBlobWaiter
  public:
     CCassBlobWaiter(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter& operator=(const CCassBlobWaiter&) = delete;
-    CCassBlobWaiter(CCassBlobWaiter&&) = default;
-    CCassBlobWaiter& operator=(CCassBlobWaiter&&) = default;
+    CCassBlobWaiter(CCassBlobWaiter&&) = delete;
+    CCassBlobWaiter& operator=(CCassBlobWaiter&&) = delete;
 
     CCassBlobWaiter(
         shared_ptr<CCassConnection> conn,
@@ -105,7 +105,7 @@ class CCassBlobWaiter
         return m_Cancelled;
     }
 
-    virtual void Cancel(void)
+    virtual void Cancel()
     {
         if (m_State != eDone) {
             m_Cancelled = true;
@@ -113,7 +113,7 @@ class CCassBlobWaiter
         }
     }
 
-    bool Wait(void)
+    bool Wait()
     {
         while (m_State != eDone && m_State != eError && !m_Cancelled) {
             try {
@@ -306,8 +306,8 @@ class CCassBlobWaiter
         return CASS_CONSISTENCY_LOCAL_QUORUM;
     }
 
-    bool CheckMaxActive(void);
-    virtual void Wait1(void) = 0;
+    bool CheckMaxActive();
+    virtual void Wait1() = 0;
 
     TDataErrorCallback              m_ErrorCb;
     weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
@@ -360,7 +360,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         m_Keyspace = keyspace;
     }
 
-    string GetKeyspace(void) const
+    string GetKeyspace() const
     {
         return m_Keyspace;
     }
@@ -375,7 +375,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
     bool GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value);
     void UpdateSetting(unsigned int op_timeout_ms, const string & domain, const string & name, const string & value);
 
-    shared_ptr<CCassConnection> GetConn(void)
+    shared_ptr<CCassConnection> GetConn()
     {
         if (!m_Conn) {
             NCBI_THROW(CCassandraException, eSeqFailed, "CCassBlobOp instance is not initialized with DB connection");
