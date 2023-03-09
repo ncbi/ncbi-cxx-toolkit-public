@@ -75,13 +75,13 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
 static unique_ptr<edit::IPubmedUpdater> s_updater;
 
 /**********************************************************/
-void InitPubmedClient(bool use_eutils)
+void InitPubmedClient(bool use_eutils, bool normalize)
 {
     if (! s_updater) {
         if (use_eutils) {
-            s_updater.reset(new edit::CEUtilsUpdater(true));
+            s_updater.reset(new edit::CEUtilsUpdater(normalize));
         } else {
-            s_updater.reset(new edit::CMLAUpdater(true));
+            s_updater.reset(new edit::CMLAUpdater(normalize));
         }
     }
 }
