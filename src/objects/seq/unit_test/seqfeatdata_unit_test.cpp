@@ -193,9 +193,17 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
 
 BOOST_AUTO_TEST_CASE(Test_OrgMod_FixHost)
 {
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("No"),"missing");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("no"),"missing");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("NO"),"missing");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("None"),"missing");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("none"),"missing");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("nonE"),"missing");
     BOOST_CHECK_EQUAL(COrgMod::FixHost("misc"),"missing");
     BOOST_CHECK_EQUAL(COrgMod::FixHost("obscured"),"obscured");
     BOOST_CHECK_EQUAL(COrgMod::FixHost("homo sapiens"), "Homo sapiens");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("HUMAN"), "Homo sapiens");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("Not Determined"), "unknown");
 }
 
 
