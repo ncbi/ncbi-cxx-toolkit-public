@@ -79,9 +79,9 @@
 #define CONV_NUCL2PROT_COORDINATES(length) (length) / CODON_LENGTH
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
-NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 13;
+NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 14;
 NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 0;
-NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Jan-01-2022";
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "Apr-10-2023";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers
     to various preallocated structures and arrays. */
