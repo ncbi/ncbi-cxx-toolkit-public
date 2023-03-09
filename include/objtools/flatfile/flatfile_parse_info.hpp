@@ -147,6 +147,7 @@ struct Parser {
     Uint1       medserver    = 0;                /* == 1, if MedArchInit() call
                                          succeeded */
     bool        use_eutils   = false;
+    bool        normalize    = false;
 
     struct SFindPubOptions {
         bool always_look = true; /* if TRUE, look up even if muid in
