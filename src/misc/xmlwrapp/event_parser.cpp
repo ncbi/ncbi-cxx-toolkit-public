@@ -343,6 +343,12 @@ bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
     if (!messages)
         msgs.reset(temp = new error_messages);
 
+    // In a usual scenario the errors_ are initialized when parse_chunk() is
+    // invoked. It is however possible that the stream is broken so
+    // parse_finish() needs errors_ to be initialized as well. So here is the
+    // initialization.
+    pimpl_->errors_ = temp;
+
     if (!parse_finished_)
         parse_finish(temp, how);
 
