@@ -967,7 +967,7 @@ string COrgMod::FixHostCapitalization(const string& value)
 }
 
 
-typedef map<string, string, PNocase> THostFixMap;
+typedef map<const char*, const char*, PNocase> THostFixMap;
 
 const static THostFixMap s_hostFixupMap = {
     { "-", "missing" },
@@ -999,7 +999,7 @@ string COrgMod::FixHost(const string& value)
 {
     string fix = value;
 
-    auto possible_fix = s_hostFixupMap.find(value);
+    auto possible_fix = s_hostFixupMap.find(value.c_str());
     if (possible_fix != s_hostFixupMap.end()) {
         fix = possible_fix->second;
     }
