@@ -971,9 +971,7 @@ typedef map<const char*, const char*, PNocase> THostFixMap;
 
 const static THostFixMap s_hostFixupMap = {
     { "-", "missing" },
-    { "No", "missing" },
     { "no", "missing" },
-    { "None", "missing" },
     { "none", "missing" },
     { "NA", "not available" },
     { "N/A", "not available" },
