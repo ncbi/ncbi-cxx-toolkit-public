@@ -191,6 +191,13 @@ BOOST_AUTO_TEST_CASE(Test_CapitalizationFix)
 
 }
 
+BOOST_AUTO_TEST_CASE(Test_OrgMod_FixHost)
+{
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("misc"),"missing");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("obscured"),"obscured");
+    BOOST_CHECK_EQUAL(COrgMod::FixHost("homo sapiens"), "Homo sapiens");
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
