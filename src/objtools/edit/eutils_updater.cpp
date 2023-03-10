@@ -393,6 +393,22 @@ void IPubmedUpdater::Normalize(CPub& pub)
 {
     if (pub.IsArticle()) {
         CCit_art& A = pub.SetArticle();
+
+        // trim title end; RW-1946
+        if (A.IsSetTitle() && ! A.GetTitle().Get().empty()) {
+            auto& title = A.SetTitle().Set().front();
+            if (title->IsName()) {
+                string& name = title->SetName();
+                auto    n    = name.size();
+                if (n > 1) {
+                    char ch = name[n - 1];
+                    if (ch == ' ' || ch == '.') {
+                        name.erase(n - 1);
+                    }
+                }
+            }
+        }
+
         if (A.IsSetIds()) {
             auto& ids = A.SetIds().Set();
 
