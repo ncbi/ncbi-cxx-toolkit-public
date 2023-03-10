@@ -2209,7 +2209,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& 
             try {
                 result = x_RetryBlobRequest(task.m_ReplyResult.blob_id, data_source, task.m_Id);
             }
-            catch ( CException& /*doen't matter*/ ) {
+            catch ( CException& /*doesn't matter*/ ) {
                 ++failed_count;
                 continue;
             }
@@ -2691,12 +2691,17 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
     }
     group.WaitAll();
     // check if all chunks are loaded
+    size_t failed_count = 0;
     ITERATE(CDataLoader::TChunkSet, it, chunks) {
         const CTSE_Chunk_Info & chunk = **it;
         if (!chunk.IsLoaded()) {
             _TRACE("Failed to load chunk " << chunk.GetChunkId() << " of " << dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId()).ToPsgId());
-            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some chunks");
+            ++failed_count;
         }
+    }
+    if ( failed_count ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<failed_count<<" chunks");
     }
 }
 
@@ -3090,6 +3095,8 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         // Skip if it's known that the bioseq has no CDDs.
         if (m_CDDInfoCache) {
             if (cdd_ids[i].gi && m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
+                // no CDDs for this Seq-id
+                loaded[i] = true;
                 continue;
             }
         }
@@ -3112,6 +3119,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         if ( x_CheckAnnotCache(kCDDAnnotName, ids, data_source, nullptr, locks) ) {
             _ASSERT(locks.size() == 1);
             ret[i] = *locks.begin();
+            loaded[i] = true;
             continue;
         }
  
@@ -3139,8 +3147,12 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             ++failed_count;
             continue;
         }
-        if (!task->m_AnnotInfo || !task->m_BlobInfo || !task->m_BlobData) continue;
         auto idx = task->m_Idx;
+        if (!task->m_AnnotInfo || !task->m_BlobInfo || !task->m_BlobData) {
+            // no CDDs
+            loaded[idx] = true;
+            continue;
+        }
         auto annot_info = task->m_AnnotInfo;
         auto blob_info = task->m_BlobInfo;
         auto blob_data = task->m_BlobData;
@@ -3207,7 +3219,8 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
     }
     */
     if ( failed_count ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some CDD annots in bulk request");
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<failed_count<<" CDD annots in bulk request");
     }
 }
 
@@ -3243,7 +3256,8 @@ void CPSGDataLoader_Impl::GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds&
         }
     }
     if ( counts.second ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some acc.ver in bulk request");
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" acc.ver in bulk request");
     }
 }
 
@@ -3271,7 +3285,8 @@ void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret
         }
     }
     if ( counts.second ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some acc.ver in bulk request");
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" acc.ver in bulk request");
     }
 }
 
@@ -3300,7 +3315,8 @@ void CPSGDataLoader_Impl::GetSequenceLengthsOnce(const TIds& ids, TLoaded& loade
         }
     }
     if ( counts.second ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some sequence lengths in bulk request");
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" sequence lengths in bulk request");
     }
 }
 
@@ -3328,7 +3344,8 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
         }
     }
     if ( counts.second ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to load some sequence types in bulk request");
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" sequence types in bulk request");
     }
 }
 
