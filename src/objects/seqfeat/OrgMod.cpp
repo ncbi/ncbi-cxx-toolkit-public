@@ -39,6 +39,7 @@
 #include <util/static_map.hpp>
 #include <util/util_misc.hpp>
 #include <util/line_reader.hpp>
+#include <util/compile_time.hpp>
 #include <serial/enumvalues.hpp>
 
 #include <objects/general/general_macros.hpp>
@@ -966,7 +967,7 @@ string COrgMod::FixHostCapitalization(const string& value)
     return fix;
 }
 
-
+/*
 typedef map<const char*, const char*, PNocase> THostFixMap;
 
 const static THostFixMap s_hostFixupMap = {
@@ -992,6 +993,36 @@ const static THostFixMap s_hostFixupMap = {
     { "human", "Homo sapiens" },
     { "homo sapiens", "Homo sapiens" }
 };
+*/
+
+
+static constexpr auto s_hostFixupMap =
+ct::const_map<ct::tagStrNocase, const char*>::construct({
+    { "-", "missing" },
+    { "no", "missing" },
+    { "none", "missing" },
+    { "NA", "not available" },
+    { "N/A", "not available" },
+    { "n/a", "not available" },
+    { "free-living", "natural / free-living" },
+    { "natural", "natural / free-living" },
+    { "not available", "not available" },
+    { "not collected", "not collected" },
+    { "not applicable", "not applicable" },
+    { "NR", "not applicable" },
+    { "not known", "unknown" },
+    { "other", "missing" },
+    { "misc", "missing" },
+    { "not determined", "unknown" },
+    { "unknown", "unknown" },
+    { "not available: to be reported later", "not available" },
+    { "obscured", "obscured" },
+    { "human", "Homo sapiens" },
+    { "homo sapiens", "Homo sapiens" }
+});
+
+
+
 
 string COrgMod::FixHost(const string& value)
 {
