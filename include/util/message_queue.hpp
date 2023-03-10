@@ -73,6 +73,11 @@ public:
     ~TMessageQueue() {}
     void push_back(value_type msg)
     { // notice passing value_type as a value
+
+        if (m_canceled){
+            return;
+        }
+
         {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_cv.wait(lock, [this]()->bool
@@ -92,12 +97,8 @@ public:
 
     void cancel()
     {
-        {
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_queue.clear();
-            m_canceled = true;
-        }
-        m_cv.notify_all();
+        m_canceled = true;
+        clear();
     }
 
     void clear()
@@ -133,7 +134,7 @@ private:
     std::mutex              m_mutex;
     std::condition_variable m_cv;
     size_t                  m_extrem = 0;
-    bool                    m_canceled{false};
+    atomic_bool             m_canceled{false};
 };
 
 template<class _T>
