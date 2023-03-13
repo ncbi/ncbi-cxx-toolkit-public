@@ -100,7 +100,7 @@ else
 endif
 
 ifneq "" "$(findstring :$(libdir):,:$(ORIG_LD_LIBRARY_PATH):)"
-  make_dll_link += ; $(LN_S) -f $(libdir)/$(2) $(LD_LIBRARY_PATH)/
+  make_dll_link += ; $(LN_S) -f $(libdir)/$(1) $(LD_LIBRARY_PATH)/
 endif
 
 JUST_TOUCH = 0
