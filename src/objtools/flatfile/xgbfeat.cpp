@@ -16,7 +16,7 @@
 #include "xgbfeat.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "xgbfeat.cpp"
 
@@ -35,7 +35,7 @@ USING_SCOPE(objects);
 static const Char* this_module = "validatr";
 
 #ifdef THIS_MODULE
-#    undef THIS_MODULE
+#  undef THIS_MODULE
 #endif
 #define THIS_MODULE this_module
 

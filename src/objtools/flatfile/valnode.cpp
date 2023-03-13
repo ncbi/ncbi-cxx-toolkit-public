@@ -38,7 +38,7 @@
 #include "valnode.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "valnode.cpp"
 
@@ -203,15 +203,15 @@ ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, co
 
 static char* ValNodeMergeStrsExEx(ValNodePtr list, const char* separator, const char* pfx, const char* sfx)
 {
-    size_t     len;
-    size_t     lens;
-    size_t     pfx_len;
-    char*      ptr;
+    size_t      len;
+    size_t      lens;
+    size_t      pfx_len;
+    char*       ptr;
     const char* sep;
-    size_t     sfx_len;
-    char*      str;
-    string     tmp;
-    ValNodePtr vnp;
+    size_t      sfx_len;
+    char*       str;
+    string      tmp;
+    ValNodePtr  vnp;
 
     if (! list)
         return nullptr;

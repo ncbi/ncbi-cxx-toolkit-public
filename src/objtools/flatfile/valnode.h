@@ -35,11 +35,11 @@
 #define VALNODE_H
 
 /*****************************************************************************
-*
-*   DataVal = a universal data type
-*   ValNode = a linked list of DataVal
-*
-*****************************************************************************/
+ *
+ *   DataVal = a universal data type
+ *   ValNode = a linked list of DataVal
+ *
+ *****************************************************************************/
 
 BEGIN_NCBI_SCOPE
 

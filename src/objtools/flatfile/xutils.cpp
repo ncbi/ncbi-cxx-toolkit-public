@@ -41,7 +41,7 @@
 #include <objects/seq/Seq_literal.hpp>
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "xutils.cpp"
 

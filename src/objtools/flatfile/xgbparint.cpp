@@ -42,7 +42,7 @@
 #include "xgbparint.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "xgbparint.cpp"
 
@@ -410,7 +410,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
     if (*linein) {
         string line{ linein };
         NStr::TruncateSpacesInPlace(line);
-        auto length      = line.size();
+        auto     length      = line.size();
         unsigned current_col = 0;
 
         while (current_col < length) {
@@ -969,19 +969,18 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
     auto            end_it = end(tokens);
 
     if (currentPt->choice == ETokenType::eAccession) {
-        if (accver && currentPt->data.find('.') >= currentPt->data.size()-1) {
+        if (accver && currentPt->data.find('.') >= currentPt->data.size() - 1) {
             xgbparse_error("Missing accession's version",
-                            tokens,
-                            currentPt);
+                           tokens,
+                           currentPt);
         }
 
         new_id = Ref(new CSeq_id(currentPt->data));
 
         ++currentPt;
-        if (currentPt == end_it)
-        {
+        if (currentPt == end_it) {
             xgbparse_error("Nothing after accession",
-                           tokens, 
+                           tokens,
                            currentPt);
             new_id.Reset();
             keep_rawPt = true;
@@ -1070,8 +1069,8 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                 case ETokenType::eGroup:
                 case ETokenType::eAccession:
                     xgbparse_error("problem with 2nd number",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     keep_rawPt = true;
                     ++numErrors;
                     return CRef<CSeq_loc>();
@@ -1084,16 +1083,16 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                 case ETokenType::eGt:
                 case ETokenType::eLt:
                     xgbparse_error("Missing \'..\'",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     keep_rawPt = true;
                     ++numErrors;
                     return CRef<CSeq_loc>();
                 case ETokenType::eCaret:
                     if (ret->GetInt().IsSetFuzz_from()) {
                         xgbparse_error("\'<\' then \'^\'",
-                                        tokens,
-                                        currentPt);
+                                       tokens,
+                                       currentPt);
                         keep_rawPt = true;
                         ++numErrors;
                         return CRef<CSeq_loc>();
@@ -1122,8 +1121,8 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                     if (currentPt->choice == ETokenType::eRight) {
                         if (ret->GetInt().IsSetFuzz_from()) {
                             xgbparse_error("\'^\' then \'>\'",
-                                            tokens,
-                                            currentPt);
+                                           tokens,
+                                           currentPt);
                             keep_rawPt = true;
                             ++numErrors;
                             return CRef<CSeq_loc>();
@@ -1156,8 +1155,8 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
 
                     if (ret->IsInt() &&
                         ret->GetInt().GetFrom() == ret->GetInt().GetTo() &&
-                        !ret->GetInt().IsSetFuzz_from() &&
-                        !ret->GetInt().IsSetFuzz_to()) {
+                        ! ret->GetInt().IsSetFuzz_from() &&
+                        ! ret->GetInt().IsSetFuzz_to()) {
                         /*-------if interval really a point, make is so ----*/
                         sConvertIntToPoint(*ret);
                     }
@@ -1202,14 +1201,14 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                 ++currentPt;
                 if (currentPt == end_it) {
                     xgbparse_error("unexpected end of usable tokens",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     throw CGBLocException();
                 }
                 if (currentPt->choice != ETokenType::eLeft) {
                     xgbparse_error("Missing \'(\'", /* paran match  ) */
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     throw CGBLocException();
                 }
 
@@ -1217,17 +1216,17 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                 ++currentPt;
                 if (currentPt == end_it) {
                     xgbparse_error("illegal null contents",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     throw CGBLocException();
                 }
 
                 if (currentPt->choice == ETokenType::eRight) { /* paran match ( */
                     xgbparse_error("Premature \')\'",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     throw CGBLocException();
-                } 
+                }
                 retval = xgbloc_ver(keep_rawPt, parenPt, currentPt, tokens, numErrors, seq_ids, accver);
 
                 if (retval.NotEmpty())
@@ -1237,16 +1236,16 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                 if (currentPt != end_it) {
                     if (currentPt->choice != ETokenType::eRight) {
                         xgbparse_error("Missing \')\'",
-                                        tokens,
-                                        currentPt);
+                                       tokens,
+                                       currentPt);
                         throw CGBLocException();
                     } 
                     --parenPt;
                     ++currentPt;
                 } else {
                     xgbparse_error("Missing \')\'",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     throw CGBLocException();
                 }
                 break;
@@ -1273,8 +1272,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
             /* ERROR */
             case ETokenType::eString:
                 xgbparse_error("string in loc",
-                                tokens,
-                                current_token);
+                               tokens,
+                               current_token);
                 throw CGBLocException();
             /*--- no break on purpose---*/
             default:
@@ -1284,8 +1283,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
             case ETokenType::eComma:
             case ETokenType::eSingleDot:
                 xgbparse_error("illegal initial loc token",
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
 
             /* Interval, occurs on recursion */
@@ -1309,8 +1308,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
             case ETokenType::eReplace:
                 /*-------illegal at this level --*/
                 xgbparse_error("illegal replace",
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
             case ETokenType::eSites:
                 in_sites = true;
@@ -1319,24 +1318,23 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
             }
         } while (in_sites && currentPt != end_it);
 
-
-        if (!numErrors && !did_complement && retval && 
-            !retval->IsNull() && !retval->IsInt() && ! retval->IsPnt()) {
+        if (! numErrors && ! did_complement && retval &&
+            ! retval->IsNull() && ! retval->IsInt() && ! retval->IsPnt()) {
             /*--------
              * ONLY THE CHOICE has been set. the "join", etc. only has been noted
              *----*/
             ++currentPt;
             if (currentPt == end_it) {
                 xgbparse_error("unexpected end of interval tokens",
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
             } 
                     
             if (currentPt->choice != ETokenType::eLeft) {
                 xgbparse_error("Missing \'(\'",
-                                tokens,
-                                currentPt); /* paran match  ) */
+                               tokens,
+                               currentPt); /* paran match  ) */
                 throw CGBLocException();
             }
 
@@ -1344,16 +1342,16 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
             ++currentPt;
             if (currentPt == end_it) {
                 xgbparse_error("illegal null contents",
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
-            } 
+            }
 
             if (currentPt->choice == ETokenType::eRight) { /* paran match ( */
                 xgbparse_error("Premature \')\'",
                                 tokens,
                                 currentPt);
-                        throw CGBLocException();
+                throw CGBLocException();
             }
 
             while (! numErrors && currentPt != end_it) {
@@ -1368,7 +1366,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                 if (currentPt == end_it)
                     break;
 
-                CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, currentPt, 
+                CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, currentPt,
                                                      tokens, numErrors, seq_ids, accver);
 
                 if (next_loc.NotEmpty()) {
@@ -1402,22 +1400,21 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
 
             if (currentPt == end_it) {
                 xgbparse_error("unexpected end of usable tokens",
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
-            } 
-            
+            }
+
             if (currentPt->choice != ETokenType::eRight) {
                 xgbparse_error("Missing \')\'" /* paran match  ) */,
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
-            } 
+            }
             --parenPt;
             ++currentPt;
         }
-    }
-    catch (CGBLocException&) {
+    } catch (CGBLocException&) {
         keep_rawPt = true;
         ++numErrors;
         if (retval) {
@@ -1447,11 +1444,10 @@ static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt, TTokenIt& c
                            currentPt);
             keep_rawPt = true;
             ++numErrors;
-        } 
-        else if (currentPt->choice != ETokenType::eComma) {
+        } else if (currentPt->choice != ETokenType::eComma) {
             xgbparse_error("Missing comma after first location in replace",
-                            tokens,
-                            currentPt);
+                           tokens,
+                           currentPt);
             ++numErrors;
         }
     } else {
