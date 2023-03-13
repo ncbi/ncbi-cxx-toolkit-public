@@ -276,6 +276,8 @@ protected:
                           size_t blob_size);
     void x_RegisterTimingNotFound(EPSGOperation operation);
     
+    static bool s_SimulateError();
+    
 private:
     CRef<CRequestContext> m_Context;
     CRef<COSGConnectionPool> m_ConnectionPool;

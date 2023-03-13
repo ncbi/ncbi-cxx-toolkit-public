@@ -166,6 +166,23 @@ private:
 END_LOCAL_NAMESPACE;
 
 
+NCBI_PARAM_DECL(int, SNP_PROCESSOR, ERROR_RATE);
+NCBI_PARAM_DEF(int, SNP_PROCESSOR, ERROR_RATE, 0);
+
+static bool s_SimulateError()
+{
+    static int error_rate = NCBI_PARAM_TYPE(SNP_PROCESSOR, ERROR_RATE)::GetDefault();
+    if ( error_rate > 0 ) {
+        static int error_counter = 0;
+        if ( ++error_counter >= error_rate ) {
+            error_counter = 0;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CPSGS_SNPProcessor
 /////////////////////////////////////////////////////////////////////////////
@@ -508,25 +525,34 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
     if (x_IsCanceled()) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_SNPDataError = "simulated SNP processor error";
+        m_SNPData.clear();
+    }
+    for ( auto& s : m_SNPData ) {
+        if ( s_SimulateError() ) {
+            s.m_Error = "simulated SNP processor error";
+        }
+    }
     if (m_SNPData.empty()) {
         if ( m_SNPDataError.empty() ) {
             x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
+            return;
         }
         else {
             x_SendError(m_SNPDataError);
             x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_Error);
             x_Finish(ePSGS_Error);
+            return;
         }
-        return;
     }
     if (!x_SignalStartProcessing()) {
         return;
     }
     set<string> has_error;
     set<string> has_data;
-    map<string, SPSGS_AnnotRequest::EPSGS_ResultStatus> na_status;
     for (auto& data : m_SNPData) {
         if ( !data.m_Error.empty() ) {
             has_error.insert(data.m_Name);
@@ -595,10 +621,21 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
     if (x_IsCanceled()) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_SNPDataError = "simulated SNP processor error";
+        m_SNPData.clear();
+    }
     if (m_SNPData.empty()) {
-        x_RegisterTimingNotFound(eNARetrieve);
-        x_Finish(ePSGS_NotFound);
-        return;
+        if ( m_SNPDataError.empty() ) {
+            x_RegisterTimingNotFound(eNARetrieve);
+            x_Finish(ePSGS_NotFound);
+            return;
+        }
+        else {
+            x_SendError(m_SNPDataError);
+            x_Finish(ePSGS_Error);
+            return;
+        }
     }
     if (!x_SignalStartProcessing()) {
         return;
@@ -651,10 +688,21 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
     if (x_IsCanceled()) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_SNPDataError = "simulated SNP processor error";
+        m_SNPData.clear();
+    }
     if (m_SNPData.empty()) {
-        x_RegisterTimingNotFound(eTseChunkRetrieve);
-        x_Finish(ePSGS_NotFound);
-        return;
+        if ( m_SNPDataError.empty() ) {
+            x_RegisterTimingNotFound(eTseChunkRetrieve);
+            x_Finish(ePSGS_NotFound);
+            return;
+        }
+        else {
+            x_SendError(m_SNPDataError);
+            x_Finish(ePSGS_Error);
+            return;
+        }
     }
     if (!x_SignalStartProcessing()) {
         return;

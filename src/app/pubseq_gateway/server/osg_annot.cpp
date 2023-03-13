@@ -42,6 +42,7 @@
 #include <objects/id2/id2__.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
 #include <util/range.hpp>
+#include <corelib/ncbi_param.hpp>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(psg);
@@ -292,6 +293,14 @@ void CPSGS_OSGAnnot::ProcessReplies()
         }
     }
     if ( IsCanceled() ) {
+        return;
+    }
+    if ( s_SimulateError() ) {
+        SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+        for ( auto& name : m_NamesToProcess ) {
+            annot_request.ReportResultStatus(name, SPSGS_AnnotRequest::ePSGS_RS_Error);
+        }
+        FinalizeResult(ePSGS_Error);
         return;
     }
     SendReplies();

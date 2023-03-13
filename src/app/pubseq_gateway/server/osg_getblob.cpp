@@ -190,6 +190,10 @@ void CPSGS_OSGGetBlob::ProcessReplies()
         FinalizeResult(ePSGS_Canceled);
         return;
     }
+    if ( s_SimulateError() ) {
+        FinalizeResult(ePSGS_Error);
+        return;
+    }
     SendBlob();
 }
 
@@ -274,6 +278,10 @@ void CPSGS_OSGGetChunks::ProcessReplies()
     }
     if ( SignalStartProcessing() == ePSGS_Cancel ) {
         FinalizeResult(ePSGS_Canceled);
+        return;
+    }
+    if ( s_SimulateError() ) {
+        FinalizeResult(ePSGS_Error);
         return;
     }
     SendBlob();

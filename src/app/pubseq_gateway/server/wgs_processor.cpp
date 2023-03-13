@@ -176,6 +176,23 @@ private:
 END_LOCAL_NAMESPACE;
 
 
+NCBI_PARAM_DECL(int, WGS_PROCESSOR, ERROR_RATE);
+NCBI_PARAM_DEF(int, WGS_PROCESSOR, ERROR_RATE, 0);
+
+static bool s_SimulateError()
+{
+    static int error_rate = NCBI_PARAM_TYPE(WGS_PROCESSOR, ERROR_RATE)::GetDefault();
+    if ( error_rate > 0 ) {
+        static int error_counter = 0;
+        if ( ++error_counter >= error_rate ) {
+            error_counter = 0;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CPSGS_WGSProcessor
 /////////////////////////////////////////////////////////////////////////////
@@ -398,6 +415,10 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_WGSDataError = "simulated WGS processor error";
+        m_WGSData.reset();
+    }
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
         if ( m_WGSDataError.empty() ) {
             x_Finish(ePSGS_NotFound);
@@ -474,6 +495,10 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_WGSDataError = "simulated WGS processor error";
+        m_WGSData.reset();
+    }
     // NOTE: m_Data may be null if the blob was excluded.
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
         if ( m_WGSDataError.empty() ) {
@@ -538,6 +563,10 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_WGSDataError = "simulated WGS processor error";
+        m_WGSData.reset();
+    }
     if ( !m_WGSData ) {
         if ( m_WGSDataError.empty() ) {
             x_RegisterTimingNotFound(eBlobRetrieve);
@@ -600,6 +629,10 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
     GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
+    }
+    if ( s_SimulateError() ) {
+        m_WGSDataError = "simulated WGS processor error";
+        m_WGSData.reset();
     }
     if ( !m_WGSData ) {
         if ( m_WGSDataError.empty() ) {
