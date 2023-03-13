@@ -45,6 +45,10 @@
 #include <connect/ncbi_monkey.hpp>
 #include <common/ncbi_sanitizers.h>
 
+#ifdef NCBI_POSIX_THREADS
+#include <pthread.h>
+#endif // NCBI_POSIX_THREADS
+
 #define NCBI_USE_ERRCODE_X   Connect_Core
 
 
@@ -299,15 +303,14 @@ static void s_LOG_Handler(void*             /*data*/,
         diag.SetErrorCode(mess->err_code, mess->err_subcode);
         diag << mess->message;
         if (mess->raw_size) {
-            diag <<
-                "\n#################### [BEGIN] Raw Data (" <<
-                mess->raw_size <<
-                " byte" << (mess->raw_size != 1 ? "s" : "") << "):\n" <<
-                NStr::PrintableString
-                (CTempString(static_cast<const char*>(mess->raw_data),
-                             mess->raw_size),
-                 NStr::fNewLine_Passthru | NStr::fNonAscii_Quote) <<
-                "\n#################### [_END_] Raw Data";
+            diag << "\n#################### [BEGIN] Raw Data ("
+                 << mess->raw_size
+                 << " byte" << &"s"[!(mess->raw_size != 1)] << "):\n"
+                 << NStr::PrintableString
+                    (CTempString(static_cast<const char*>(mess->raw_data),
+                                 mess->raw_size),
+                     NStr::fNewLine_Passthru | NStr::fNonAscii_Quote)
+                 << "\n#################### [_END_] Raw Data";
         }
         diag << Endm;
         if (level == eDiag_Fatal)
@@ -595,6 +598,19 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
 #endif //NCBI_MONKEY
 
 
+extern "C" {
+static void x_PreFork(void)
+{
+    CORE_LOCK_WRITE;
+}
+
+static void x_PostFork(void)
+{
+    CORE_UNLOCK;
+}
+} // extern "C"
+
+
 static volatile enum EConnectInit {
     eConnectInit_Weak     = -1,  ///< CConn_Initer
     eConnectInit_Intact   =  0,  ///< Not yet visited
@@ -679,11 +695,22 @@ static void s_Init(const IRWRegistry* reg  = 0,
     s_CORE_Set |=  x_set;
 
     if (s_ConnectInit == eConnectInit_Intact) {
+        int err = 0;
         g_NCBI_ConnectRandomSeed
             = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
         if (x_set  &&  atexit(s_Fini) != 0)
-            ERR_POST_X(9, Critical << "Failed to register exit handler");
+            err |= 1;
+#ifdef NCBI_POSIX_THREADS
+        if (pthread_atfork(x_PreFork, x_PostFork, x_PostFork) != 0)
+            err |= 2;
+#endif // NCBI_POSIX_THREADS
+        if (err) {
+            static const char* what[] = {0, "exit", "fork", "exit/fork"};
+            ERR_POST_X(9, Critical
+                       << "Failed to register "
+                       << what[err] << " handler" << &"s"[!(err == 3)]);
+        }
     }
 
     g_CORE_GetAppName     = s_GetAppName;
