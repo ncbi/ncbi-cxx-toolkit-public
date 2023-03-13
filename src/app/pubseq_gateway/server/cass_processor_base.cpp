@@ -82,6 +82,9 @@ void CPSGS_CassProcessorBase::Cancel(void)
 }
 
 
+NCBI_PARAM_DECL(int, CASSANDRA_PROCESSOR, ERROR_RATE);
+NCBI_PARAM_DEF(int, CASSANDRA_PROCESSOR, ERROR_RATE, 0);
+
 void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
 {
     // It is safe to unlock the request many times
@@ -95,6 +98,15 @@ void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
         return;
     }
 
+    static int error_rate = NCBI_PARAM_TYPE(CASSANDRA_PROCESSOR, ERROR_RATE)::GetDefault();
+    if ( error_rate > 0 && !m_FinishSignalled ) {
+        static int error_counter = 0;
+        if ( ++error_counter >= error_rate ) {
+            error_counter = 0;
+            m_Status = CRequestStatus::e500_InternalServerError;
+        }
+    }
+    
     if (m_Status == CRequestStatus::e100_Continue) {
         // That means the processor has not updated the status explicitly and
         // it actually means everything is fine, i.e. 200.

@@ -121,6 +121,23 @@ private:
 END_LOCAL_NAMESPACE;
 
 
+NCBI_PARAM_DECL(int, CDD_PROCESSOR, ERROR_RATE);
+NCBI_PARAM_DEF(int, CDD_PROCESSOR, ERROR_RATE, 0);
+
+static bool s_SimulateError()
+{
+    static int error_rate = NCBI_PARAM_TYPE(CDD_PROCESSOR, ERROR_RATE)::GetDefault();
+    if ( error_rate > 0 ) {
+        static int error_counter = 0;
+        if ( ++error_counter >= error_rate ) {
+            error_counter = 0;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
     : m_ClientPool(new CCDDClientPool()),
       m_Status(ePSGS_NotFound),
@@ -476,6 +493,11 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
     if ( x_IsCanceled() ) {
         return;
     }
+    if ( s_SimulateError() ) {
+        m_Error = "simulated CDD processor error";
+        m_CDDBlob.info.Reset();
+        m_CDDBlob.data.Reset();
+    }
     if ( !m_CDDBlob.info ) {
         if ( !m_Error.empty() ) {
             x_SendError(m_Error);
@@ -512,6 +534,11 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
     GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
+    }
+    if ( s_SimulateError() ) {
+        m_Error = "simulated CDD processor error";
+        m_CDDBlob.info.Reset();
+        m_CDDBlob.data.Reset();
     }
     if ( !m_CDDBlob.info  ||  !m_CDDBlob.data ) {
         if ( !m_Error.empty() ) {
@@ -550,6 +577,11 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
     GetRequest()->SetRequestContext();
     if ( x_IsCanceled() ) {
         return;
+    }
+    if ( s_SimulateError() ) {
+        m_Error = "simulated CDD processor error";
+        m_CDDBlob.info.Reset();
+        m_CDDBlob.data.Reset();
     }
     if ( !m_CDDBlob.data ) {
         if ( !m_Error.empty() ) {

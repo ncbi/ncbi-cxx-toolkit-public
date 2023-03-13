@@ -191,6 +191,10 @@ void CPSGS_OSGResolve::ProcessReplies()
         SendTrace("OSG-resolve: canceled");
         return;
     }
+    if ( s_SimulateError() ) {
+        FinalizeResult(ePSGS_Error);
+        return;
+    }
     SendTrace("OSG-resolve: sending reply");
     if ( m_BioseqInfoFlags == 0 ) {
         FinalizeResult(ePSGS_NotFound);
@@ -324,6 +328,10 @@ void CPSGS_OSGGetBlobBySeqId::ProcessReplies()
     }
     if ( IsCanceled() ) {
         SendTrace("OSG-get: canceled");
+        return;
+    }
+    if ( s_SimulateError() ) {
+        FinalizeResult(ePSGS_Error);
         return;
     }
     SendTrace("OSG-get: sending reply");

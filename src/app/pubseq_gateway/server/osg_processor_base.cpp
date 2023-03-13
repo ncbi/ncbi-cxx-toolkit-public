@@ -77,6 +77,23 @@ BEGIN_NAMESPACE(osg);
 
 static thread_local bool m_UVLoop;
 
+NCBI_PARAM_DECL(int, OSG_PROCESSOR, ERROR_RATE);
+NCBI_PARAM_DEF(int, OSG_PROCESSOR, ERROR_RATE, 0);
+
+bool CPSGS_OSGProcessorBase::s_SimulateError()
+{
+    static int error_rate = NCBI_PARAM_TYPE(OSG_PROCESSOR, ERROR_RATE)::GetDefault();
+    if ( error_rate > 0 ) {
+        static int error_counter = 0;
+        if ( ++error_counter >= error_rate ) {
+            error_counter = 0;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 CPSGS_OSGProcessorBase::CPSGS_OSGProcessorBase(TEnabledFlags enabled_flags,
                                                const CRef<COSGConnectionPool>& pool,
                                                const shared_ptr<CPSGS_Request>& request,
