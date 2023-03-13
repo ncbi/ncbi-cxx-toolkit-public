@@ -49,7 +49,8 @@ inline char* MemNew(size_t sz)
 inline void MemSet(void* p, int n, size_t sz) { std::memset(p, n, sz); }
 inline void MemCpy(void* p, const void* q, size_t sz)
 {
-    if (q) std::memcpy(p, q, sz);
+    if (q)
+        std::memcpy(p, q, sz);
 }
 inline void MemFree(char* p)
 {
@@ -60,7 +61,7 @@ inline size_t StringLen(const char* s) { return s ? std::strlen(s) : 0; }
 inline char*  StringSave(const char* s)
 {
     if (! s)
-        return 0;
+        return nullptr;
     const size_t n = std::strlen(s) + 1;
     char*        p = new char[n];
     std::memcpy(p, s, n);

@@ -75,7 +75,7 @@ USING_SCOPE(objects);
                                   read from a buffer of quality-score \
                                   data, plus one for the terminal     \
                                   newline character. */
-#define QSBUF_MAXACC        51 /* Maximum length for an accession    \
+#define QSBUF_MAXACC       51  /* Maximum length for an accession    \
                                   read from the 'defline' at the     \
                                   start of a buffer of quality-score \
                                   data, plus one for \0 */

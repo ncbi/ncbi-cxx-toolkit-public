@@ -51,7 +51,7 @@
 #include "utilfun.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "utilfun.cpp"
 

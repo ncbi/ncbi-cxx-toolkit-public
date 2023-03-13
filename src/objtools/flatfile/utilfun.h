@@ -58,7 +58,7 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
 /**********************************************************/
 
 /* relative routines for tokenize string
-    */
+ */
 TokenStatBlk* TokenString(char* str, Char delimiter);
 void          FreeTokenstatblk(TokenStatBlk* tsbp);
 void          FreeTokenblk(TokenBlk* tbp);
@@ -67,64 +67,64 @@ bool          ParseAccessionRange(list<string>& tokens, int skip);
 void          UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist);
 
 /* Return array position of the matched length of string in array_string.
-    * Return -1 if no match.
-    */
+ * Return -1 if no match.
+ */
 Int2 fta_StringMatch(const Char** array, const Char* text);
 
 /* Return array position of the matched length of string (ignored case)
-    * in array_string.
-    * Return -1 if no match.
-    */
+ * in array_string.
+ * Return -1 if no match.
+ */
 Int2 StringMatchIcase(const Char** array, const Char* text);
 
 char* StringIStr(const Char* where, const Char* what);
 
 /* Return array position of the string in the array_string.
-    * Return -1 if no match.
-    */
+ * Return -1 if no match.
+ */
 Int2 MatchArrayString(const Char** array, const Char* text);
 Int2 MatchArrayIString(const Char** array, const Char* text);
 
 /* Return array position of the string in the array_string if any
-    * array_string is in the substring of "text".
-    * Return -1 if no match.
-    */
+ * array_string is in the substring of "text".
+ * Return -1 if no match.
+ */
 Int2 MatchArraySubString(const Char** array, const Char* text);
 Int2 MatchArrayISubString(const Char** array, const Char* text);
 
 /* Return a string which replace newline to blank and skip "XX" line data.
-    */
+ */
 char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 col_data);
 void  xGetBlkDataReplaceNewLine(string&, int indent);
 
 /* Delete any tailing ' ', '\n', '\\', ',', ';', '~', '.', ':'
-    * characters.
-    */
+ * characters.
+ */
 void CleanTailNoneAlphaChar(char* str);
 void CleanTailNoneAlphaCharInString(std::string& str);
 
 char* PointToNextToken(char* ptr);
 
 /* Return the current token which ptr points to and ptr will points to
-    * next token after the routine return.
-    */
+ * next token after the routine return.
+ */
 char* GetTheCurrentToken(char** ptr);
 
 /* Search The character letter.
-    * Return NULL if not found; otherwise, return a pointer points first
-    * occurrence The character.
-    */
+ * Return NULL if not found; otherwise, return a pointer points first
+ * occurrence The character.
+ */
 char* SrchTheChar(char* bptr, char* eptr, Char letter);
 
 /* Search The string.
-    * Return NULL if not found; otherwise, return a pointer points first
-    * occurrence The string.
-    */
+ * Return NULL if not found; otherwise, return a pointer points first
+ * occurrence The string.
+ */
 char* SrchTheStr(char* bptr, char* eptr, const char* str);
 
 void CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 
-//int SrchKeyword(const string& ptr, const vector<string>&  keywordList);
+// int SrchKeyword(const string& ptr, const vector<string>&  keywordList);
 int              SrchKeyword(const CTempString& ptr, const vector<string>& keywordList);
 bool             CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin);
 char*            SrchNodeType(DataBlk* entry, Int4 type, size_t* len);

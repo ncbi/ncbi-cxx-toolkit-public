@@ -66,7 +66,7 @@
 #include "ref.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "sp_ref.cpp"
 
@@ -710,8 +710,8 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     if (ed_pos == NPOS) /* no authors found */
         return false;
 
-    string temp1 = bptr.substr(0, ed_pos);
-    const Char* temp2 = bptr.c_str() + ed_pos;
+    string      temp1 = bptr.substr(0, ed_pos);
+    const char* temp2 = &bptr[ed_pos];
     if (*temp2 == 'S')
         temp2++;
     if (*temp2 == '.')

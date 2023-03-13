@@ -98,7 +98,7 @@
 #include "xgbparint.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "nucprot.cpp"
 
@@ -1258,6 +1258,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
 static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, char* qval, bool intercodon, const char* gcode, unsigned char* method)
 {
     const char* ptr;
+
     string msg2;
     Int2   residue;
     Int4   num = 0;

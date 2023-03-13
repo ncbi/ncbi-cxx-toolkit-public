@@ -52,7 +52,7 @@
 #include "utilfun.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "utilref.cpp"
 
@@ -344,9 +344,11 @@ static Int4 check_mix_pages_range(char* pages)
         *p  = '\0';
         ch2 = *q;
         *q  = '\0';
+
         bool j = StringEqu(page1, page2);
-        *p  = ch1;
-        *q  = ch2;
+
+        *p = ch1;
+        *q = ch2;
         if (! j) {
             *dash = '-';
             return (-1);

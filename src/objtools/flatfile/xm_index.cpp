@@ -44,7 +44,7 @@
 #include "fta_xml.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "xm_index.cpp"
 
@@ -1299,7 +1299,7 @@ static Int2 XMLGetRefType(char* reftag, size_t bases)
     if (*p == '\0')
         return (ParFlat_REF_NO_TARGET);
 
-    const string str = "(bases 1 to " + to_string(bases) + ")";
+    const string str  = "(bases 1 to " + to_string(bases) + ")";
     const string str1 = "(bases 1 to " + to_string(bases) + ";";
 
     if (StringStr(p, str.c_str()) || StringStr(p, str1.c_str()))

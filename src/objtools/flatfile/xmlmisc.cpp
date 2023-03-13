@@ -38,7 +38,7 @@
 #include "xmlmisc.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "xmlmisc.cpp"
 
@@ -373,7 +373,7 @@ static XmlObjPtr ProcessAttribute(char* str)
 
 static XmlObjPtr ProcessStartTag(ValNodePtr* curr, XmlObjPtr parent, const Char* name)
 {
-    XmlObjPtr attr, child, lastattr = nullptr, lastchild = nullptr, xop = nullptr;
+    XmlObjPtr     attr, child, lastattr = nullptr, lastchild = nullptr, xop = nullptr;
     unsigned char choice;
     char*         str;
     ValNodePtr    vnp;

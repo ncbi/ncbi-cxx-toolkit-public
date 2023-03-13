@@ -68,9 +68,9 @@ bool CQualCleanup::CleanAndValidate(
         { "translation", &CQualCleanup::xCleanAndValidateTranslation },
     };
 
-    //if (qualKey == "note"  && qualVal.find("C. briggsae CBR-UBC-20 protein;") != string::npos) {
-    //    cerr << "";
-    //}
+    // if (qualKey == "note" && qualVal.find("C. briggsae CBR-UBC-20 protein;") != string::npos) {
+    //     cerr << "";
+    // }
     // consult notes for RW-1600 for documentation on the below
 
     auto validatorIt = validators.find(qualKey);
@@ -250,13 +250,13 @@ bool CQualCleanup::xCleanFollowCommasWithBlanks(
 bool xIsWordBoundary(
     char c)
 {
-    //if (std::isalnum(c)) {
-    //    return false;
-    //}
-    //const string extraWordChars("_");
-    //return extraWordChars.find(c) == string::npos;
+    // if (std::isalnum(c)) {
+    //     return false;
+    // }
+    // const string extraWordChars("_");
+    // return extraWordChars.find(c) == string::npos;
 
-    return (c != '_' && ! std::isalnum(c)); //until it gets more complicated
+    return (c != '_' && ! std::isalnum(c)); // until it gets more complicated
 }
 
 string::size_type xFindWordBoundary(

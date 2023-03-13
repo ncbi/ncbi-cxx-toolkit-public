@@ -79,7 +79,7 @@
 #include "fta_xml.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "ref.cpp"
 
@@ -1267,6 +1267,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 {
     const char** b;
     char*        s;
+
     CCit_sub::TMedium medium = CCit_sub::eMedium_other;
 
     CRef<CCit_sub> ret;
@@ -1467,6 +1468,7 @@ static CRef<CCit_gen> fta_get_citgen(char* bptr, CRef<CAuth_list>& auth_list, CR
 CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, bool has_muid, CRef<CCit_art>& cit_art, Int4 er)
 {
     CImprint::EPrepub pre = static_cast<CImprint::EPrepub>(0);
+
     char* p;
     char* nearend;
     char* end;

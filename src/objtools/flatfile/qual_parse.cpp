@@ -81,9 +81,9 @@ bool CQualParser::GetNextQualifier(
     //  that.
     // Let's hope we don't have to go there.
 
-    //if (mCurrent->find("/protein_id=\"BAA00994") != string::npos) {
-    //    cerr << "";
-    //}
+    // if (mCurrent->find("/protein_id=\"BAA00994") != string::npos) {
+    //     cerr << "";
+    // }
 
     qualKey.clear();
     qualVal.clear();
@@ -238,7 +238,7 @@ bool CQualParser::xParseQualifierCont(
         return false;
     }
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
-    ++mCurrent; //we are going to accept it, so flush it out
+    ++mCurrent; // we are going to accept it, so flush it out
 
     thereIsMore = true;
     if (NStr::EndsWith(cleaned, '\"')) {
@@ -285,13 +285,13 @@ void CQualParser::xQualValAppendLine(
     //  or two characters.
     //
 
-    //if (qualKey == "note"  &&
-    //        qualData.find(
-    //        "Catalytic activity: GTP cyclohydrolases II convert") != string::npos) {
-    //    cerr << ""; //breakpoint
-    //}
+    // if (qualKey == "note" &&
+    //         qualData.find(
+    //         "Catalytic activity: GTP cyclohydrolases II convert") != string::npos) {
+    //     cerr << ""; // breakpoint
+    // }
     //
-    string lastDataChunkSeen = "";
+    string lastDataChunkSeen;
     if (qualKey == mLastKeyForDataChunk) {
         lastDataChunkSeen = mLastDataChunkForKey;
     } else {

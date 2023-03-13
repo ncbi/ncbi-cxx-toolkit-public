@@ -45,7 +45,7 @@
 #include "entry.h"
 
 #ifdef THIS_FILE
-#    undef THIS_FILE
+#  undef THIS_FILE
 #endif
 #define THIS_FILE "sp_index.cpp"
 
