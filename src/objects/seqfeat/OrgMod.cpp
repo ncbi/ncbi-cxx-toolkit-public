@@ -967,34 +967,6 @@ string COrgMod::FixHostCapitalization(const string& value)
     return fix;
 }
 
-/*
-typedef map<const char*, const char*, PNocase> THostFixMap;
-
-const static THostFixMap s_hostFixupMap = {
-    { "-", "missing" },
-    { "no", "missing" },
-    { "none", "missing" },
-    { "NA", "not available" },
-    { "N/A", "not available" },
-    { "n/a", "not available" },
-    { "free-living", "natural / free-living" },
-    { "natural", "natural / free-living" },
-    { "not available", "not available" },
-    { "not collected", "not collected" },
-    { "not applicable", "not applicable" },
-    { "NR", "not applicable" },
-    { "not known", "unknown" },
-    { "other", "missing" },
-    { "misc", "missing" },
-    { "not determined", "unknown" },
-    { "unknown", "unknown" },
-    { "not available: to be reported later", "not available" },
-    { "obscured", "obscured" },
-    { "human", "Homo sapiens" },
-    { "homo sapiens", "Homo sapiens" }
-};
-*/
-
 
 static constexpr auto s_hostFixupMap =
 ct::const_map<ct::tagStrNocase, const char*>::construct({
@@ -1028,7 +1000,7 @@ string COrgMod::FixHost(const string& value)
 {
     string fix = value;
 
-    auto possible_fix = s_hostFixupMap.find(value.c_str());
+    auto possible_fix = s_hostFixupMap.find(value);
     if (possible_fix != s_hostFixupMap.end()) {
         fix = possible_fix->second;
     }
