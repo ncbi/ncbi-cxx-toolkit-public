@@ -2975,8 +2975,8 @@ extern int/*bool*/ URL_DecodeEx
  size_t*     dst_written,
  const char* allow_symbols)
 {
-    char* src = (char*) src_buf;
-    char* dst = (char*) dst_buf;
+    const char* src = (char* const) src_buf;
+    char*       dst = (char*)       dst_buf;
 
     *src_read    = 0;
     *dst_written = 0;
@@ -2988,13 +2988,12 @@ extern int/*bool*/ URL_DecodeEx
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
           ++(*src_read), ++(*dst_written), ++src, ++dst) {
         switch ( *src ) {
-        case '+': {
+        case '+':
             *dst = ' ';
             break;
-        }
-        case '%': {
-            int i1, i2;
+        case '%':
             if (*src_read + 2 < src_size) {
+                int i1, i2;
                 if ((i1 = s_HexChar(src[1])) != -1  &&
                     (i2 = s_HexChar(src[2])) != -1) {
                     *dst = (char)((i1 << 4) + i2);
@@ -3009,8 +3008,7 @@ extern int/*bool*/ URL_DecodeEx
             if (!allow_symbols  ||  *allow_symbols)
                 return *dst_written ? 1/*true*/ : 0/*false*/;
             /*FALLTHRU*/
-        }
-        default: {
+        default:
             if (VALID_URL_SYMBOL(*src)
                 ||  (allow_symbols  &&  (!*allow_symbols
                                          ||  strchr(allow_symbols, *src)))) {
@@ -3018,11 +3016,11 @@ extern int/*bool*/ URL_DecodeEx
             } else
                 return *dst_written ? 1/*true*/ : 0/*false*/;
         }
-        }/*switch*/
     }
 
-    assert(src == (char*) src_buf + *src_read   );
-    assert(dst == (char*) dst_buf + *dst_written);
+    assert(src == (const char*) src_buf + *src_read   );
+    assert(dst == (char*)       dst_buf + *dst_written);
+    assert(*src_read  &&  *dst_written);
     return 1/*true*/;
 }
 
@@ -3049,8 +3047,8 @@ extern void URL_EncodeEx
  size_t*     dst_written,
  const char* allow_symbols)
 {
-    char* src = (char*) src_buf;
-    char* dst = (char*) dst_buf;
+    const char* src = (const char*) src_buf;
+    char*       dst = (char*)       dst_buf;
 
     *src_read    = 0;
     *dst_written = 0;
@@ -3060,8 +3058,11 @@ extern void URL_EncodeEx
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
           ++(*src_read), ++(*dst_written), ++src, ++dst) {
         const char* subst = allow_symbols ? strchr(allow_symbols, *src) : 0;
-        if (!subst)
-            subst = s_EncodeTable[*((unsigned char*) src)];
+        if (subst) {
+            *dst = *subst;
+            continue;
+        }
+        subst = s_EncodeTable[*((unsigned char*) src)];
         if (*subst != '%') {
             *dst = *subst;
         } else if (*dst_written < dst_size - 2) {
@@ -3070,10 +3071,10 @@ extern void URL_EncodeEx
             *(++dst) = *(++subst);
             *dst_written += 2;
         } else
-            return;
+            break;
     }
-    assert(src == (char*) src_buf + *src_read   );
-    assert(dst == (char*) dst_buf + *dst_written);
+    assert(src == (const char*) src_buf + *src_read   );
+    assert(dst == (char*)       dst_buf + *dst_written);
 }
 
 
