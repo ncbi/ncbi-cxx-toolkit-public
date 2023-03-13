@@ -24,8 +24,9 @@ ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
   endif
   new_llp := $(shell $(collect_libs) $(outside_lib_root))
   ifneq "" "$(new_llp)"
+    ORIG_LD_LIBRARY_PATH := $(LD_LIBRARY_PATH)
     LD_LIBRARY_PATH = $(new_llp)
-    export LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH ORIG_LD_LIBRARY_PATH
   endif
 endif
 

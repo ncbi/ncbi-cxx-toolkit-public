@@ -99,6 +99,10 @@ else
   make_dll_link = :
 endif
 
+ifneq "" "$(findstring :$(libdir):,:$(ORIG_LD_LIBRARY_PATH):)"
+  make_dll_link += ; $(LN_S) -f $(libdir)/$(2) $(LD_LIBRARY_PATH)/
+endif
+
 JUST_TOUCH = 0
 ifneq "$(patsubst %,$(LDD_R),$(wildcard $(XDLL)))" ""
   DLL_DEP = $(wildcard $(XDLL_LIBS:%=$(libdir)/@lib_pre@%@dll_ext@))
