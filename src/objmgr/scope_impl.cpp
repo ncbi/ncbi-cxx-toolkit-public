@@ -2395,13 +2395,20 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
 void CScope_Impl::x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                         TTSE_MatchSet* save_match,
                                         const TTSE_LockMatchSet_DS& add,
-                                        CDataSource_ScopeInfo& ds_info)
+                                        CDataSource_ScopeInfo& ds_info,
+                                        CDataLoader::TProcessedNAs* filter_nas)
 {
     lock.reserve(lock.size()+add.size());
     if ( save_match ) {
         save_match->reserve(save_match->size()+add.size());
     }
     ITERATE( TTSE_LockMatchSet_DS, it, add ) {
+        if ( filter_nas &&
+             it->first->GetName().IsNamed() &&
+             filter_nas->count(it->first->GetName().GetName()) ) {
+            // filter out this name
+            continue;
+        }
         TTSE_Lock tse_lock = x_GetTSE_Lock(it->first, ds_info);
         if ( !tse_lock ) {
             continue;
@@ -2429,6 +2436,27 @@ void CScope_Impl::x_LockMatchSet(TTSE_LockMatchSet& lock,
 }
 
 
+void CScope_Impl::x_UpdateProcessedNAs(const SAnnotSelector*& sel,
+                                       unique_ptr<SAnnotSelector>& sel_copy,
+                                       CDataLoader::TProcessedNAs& filter_nas,
+                                       CDataLoader::TProcessedNAs& processed_nas)
+{
+    if ( !processed_nas.empty() ) {
+        if ( sel && !sel_copy ) {
+            sel_copy.reset(new SAnnotSelector(*sel));
+            sel = sel_copy.get();
+        }
+        for ( auto& na : processed_nas ) {
+            if ( sel_copy ) {
+                sel_copy->ExcludeNamedAnnotAccession(na);
+            }
+            filter_nas.insert(na);
+        }
+        processed_nas.clear();
+    }
+}
+
+
 void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
                                               TTSE_MatchSet* save_match,
                                               const TSeq_idSet& ids,
@@ -2443,7 +2471,7 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
     }
 
     unique_ptr<SAnnotSelector> sel_copy;
-    CDataLoader::TProcessedNAs processed_nas;
+    CDataLoader::TProcessedNAs processed_nas, filter_nas;
     
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CPrefetchManager::IsActive();
@@ -2463,17 +2491,8 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
         else {
             ds.GetTSESetWithOrphanAnnots(ids, ds_lock, sel, &processed_nas);
         }
-        if ( sel && !processed_nas.empty() ) {
-            if ( !sel_copy ) {
-                sel_copy.reset(new SAnnotSelector(*sel));
-                sel = sel_copy.get();
-            }
-            for ( auto& na : processed_nas ) {
-                sel_copy->ExcludeNamedAnnotAccession(na);
-            }
-            processed_nas.clear();
-        }
-        x_AddTSESetWithAnnots(lock, save_match, ds_lock, *it);
+        x_AddTSESetWithAnnots(lock, save_match, ds_lock, *it, &filter_nas);
+        x_UpdateProcessedNAs(sel, sel_copy, filter_nas, processed_nas);
     }
 }
 
@@ -2487,7 +2506,7 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
     CDataSource_ScopeInfo* ds_info = &binfo.x_GetTSE_ScopeInfo().GetDSInfo();
 
     unique_ptr<SAnnotSelector> sel_copy;
-    CDataLoader::TProcessedNAs processed_nas;
+    CDataLoader::TProcessedNAs processed_nas, filter_nas;
     
     // orphan annotations on all synonyms of Bioseq
     TSeq_idSet ids;
@@ -2530,17 +2549,8 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
         else {
             ds.GetTSESetWithOrphanAnnots(ids, ds_lock, sel, &processed_nas);
         }
-        if ( sel && !processed_nas.empty() ) {
-            if ( !sel_copy ) {
-                sel_copy.reset(new SAnnotSelector(*sel));
-                sel = sel_copy.get();
-            }
-            for ( auto& na : processed_nas ) {
-                sel_copy->ExcludeNamedAnnotAccession(na);
-            }
-            processed_nas.clear();
-        }
-        x_AddTSESetWithAnnots(lock, save_match, ds_lock, *it);
+        x_AddTSESetWithAnnots(lock, save_match, ds_lock, *it, &filter_nas);
+        x_UpdateProcessedNAs(sel, sel_copy, filter_nas, processed_nas);
     }
     sort(lock.begin(), lock.end());
     lock.erase(unique(lock.begin(), lock.end()), lock.end());
