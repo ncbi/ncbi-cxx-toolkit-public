@@ -33,7 +33,7 @@ Linux64-Centos : Release : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-ma
 Linux64-Centos : Debug   : GCC.sh 7.3.0 --with-debug    --with-mt --with-flat-makefile
 Linux64-Centos : O2g     : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-makefile --with-symbols
 
-#USE_COMPONENTS
+USE_COMPONENTS
 
 TEST: test_netstorage_release.py --verbose -s ${packagedir} -a  ${packagedir}.tar,gz -u netstorage_ddl -p 'netstorage_Az@!812' -t notused prepare
 TEST: test_netstorage_release.py --verbose -s ${packagedir} -a  ${packagedir}.tar,gz -u netstorage_ddl -p 'netstorage_Az@!812' -t notused run
