@@ -604,7 +604,8 @@ private:
     void x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
                                TTSE_MatchSet* save_match,
                                const TTSE_LockMatchSet_DS& add,
-                               CDataSource_ScopeInfo& ds_info);
+                               CDataSource_ScopeInfo& ds_info,
+                               CDataLoader::TProcessedNAs* filter_nas = 0);
     void x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
                                      TTSE_MatchSet* save_match,
                                      const TSeq_idSet& ids,
@@ -617,6 +618,11 @@ private:
     void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
                                      CBioseq_ScopeInfo& binfo,
                                      const SAnnotSelector* sel);
+    
+    void x_UpdateProcessedNAs(const SAnnotSelector*& sel,
+                              unique_ptr<SAnnotSelector>& sel_copy,
+                              CDataLoader::TProcessedNAs& filter_nas,
+                              CDataLoader::TProcessedNAs& processed_nas);
 
     void x_LockMatchSet(TTSE_LockMatchSet& lock,
                         const TTSE_MatchSet& match);
