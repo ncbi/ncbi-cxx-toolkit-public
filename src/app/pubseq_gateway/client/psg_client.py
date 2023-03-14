@@ -103,10 +103,15 @@ class PsgClient:
                     return
 
                 prefix = [reply_type or 'Reply', status]
-                messages = result['errors']
+                messages = result.get('errors', [])
                 self._report_error(data, prefix, messages)
                 yield result
-                continue
+
+                # An item
+                if reply_type:
+                    continue
+
+                return
 
             # A JSON-RPC error?
             result = data.get('error', {})
@@ -282,7 +287,8 @@ def get_all_ipgs(psg_client, ipgs, /, max_ids=1000):
                 ipg_id = reply.get('ipg', {})
                 nucleotide = reply.get('nucleotide', {})
 
-                ids.append([protein, ipg_id, nucleotide])
+                if protein or ipg_id:
+                    ids.append([protein, ipg_id, nucleotide])
 
         if len(ids) >= max_ids:
             break
