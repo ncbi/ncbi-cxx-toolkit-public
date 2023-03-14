@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Authors: Sergey Satskiy
 #
@@ -13,14 +13,12 @@ import sys
 import socket
 import errno
 from optparse import OptionParser
-from ncbi_grid_dev import json_over_uttp, uttp
-#from ncbi_grid_1_0.ncbi import json_over_uttp, uttp
+from ncbi.grid import json_over_uttp, uttp
 import pprint
 import readline
-#import rlcompleter
 import atexit
 import os
-import simplejson as json
+import json
 
 historyPath = os.path.expanduser( "~/.nstconsole" )
 
@@ -44,6 +42,32 @@ except:
 
 SESSIONID = '1111111111111111_0000SID'
 NCBI_PHID = 'Fake_NCBI_PHID'
+
+# A wrapper around a socket to reduce the adjustments in the
+# uttp/json_over_uttp modules
+# Basically the meaningful change is adding decode() to recv()
+class SockWrapper:
+
+    def __init__(self, host, port, timeout):
+
+        self.__s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+        self.__s.settimeout( timeout )
+        self.__s.connect( (host, port) )
+
+    def flush(self):
+        pass
+
+    def send(self, data):
+        self.__s.send(data)
+
+    def write(self, data):
+        self.send(data)
+
+    def recv(self, bufsize):
+        data = self.__s.recv(bufsize)
+        if hasattr(data, 'decode'):
+            data = data.decode()
+        return data
 
 
 
@@ -121,13 +145,7 @@ class NetStorageConsole:
         self.__commandSN = 0
 
         # Create the connection
-        socket.socket.write = socket.socket.send
-        socket.socket.flush = lambda ignore: ignore
-        socket.socket.readline = socket.socket.recv
-
-        self.__sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-        self.__sock.connect( ( host_, port_ ) )
-
+        self.__sock = SockWrapper(host_, port_, 10)
         self.__nst = json_over_uttp.MessageExchange( self.__sock, self.__sock )
 
     def clientMain( self ):
@@ -136,7 +154,7 @@ class NetStorageConsole:
         # Main loop
         userInput = ""
         while True:
-            userInput = raw_input( "command >> " )
+            userInput = input( "command >> " )
             userInput = userInput.strip()
             if userInput == "":
                 self.checkIncomingMessage()
@@ -145,8 +163,8 @@ class NetStorageConsole:
             # Split the input
             try:
                 arguments = self.splitArguments( userInput )
-            except Exception, exc:
-                print "Error splitting command into parts: " + str( exc )
+            except Exception as exc:
+                print("Error splitting command into parts: " + str(exc))
                 continue
 
             # There is at least one argument which is a command name
@@ -170,11 +188,11 @@ class NetStorageConsole:
             data = self.__sock.recv( 8, socket.MSG_PEEK | socket.MSG_DONTWAIT )
             if len( data ) == 0:
                 return False
-        except socket.error, e:
+        except socket.error as e:
             if e.args[0] == errno.EAGAIN:
                 return False
             if e.args[0] == errno.ECONNRESET:
-                print "Server socket has been closed"
+                print("Server socket has been closed")
                 sys.exit( errno.ECONNRESET )
             raise
         return True
@@ -195,8 +213,8 @@ class NetStorageConsole:
         # Try to find candidates
         candidates = self.getCandidates( command )
         if len( candidates ) == 0:
-            print "The command '" + command + "' is not supported. " + \
-                  "Type'help' to get the list of supported commands"
+            print("The command '" + command + "' is not supported. " +
+                  "Type'help' to get the list of supported commands")
             return None
 
         if len( candidates ) == 1:
@@ -206,8 +224,8 @@ class NetStorageConsole:
         names = candidates[ 0 ][ 0 ]
         for cand in candidates[  1 : ]:
             names += ", " + cand[ 0 ]
-        print "The command '" + command + \
-              "' is ambiguous. Candidates are: " + names
+        print("The command '" + command +
+              "' is ambiguous. Candidates are: " + names)
         return None
 
     def getCandidates( self, cmd ):
@@ -296,9 +314,9 @@ class NetStorageConsole:
 
     def printCommandList( self, arguments ):
         " Prints the available commands "
-        print "Available commands:"
+        print("Available commands:")
         for key in self.__commandMap.keys():
-            print key
+            print(key)
         return
 
     def printHelp( self, arguments ):
@@ -307,27 +325,27 @@ class NetStorageConsole:
             self.printCommandList( [] )
             return
         if len( arguments ) > 1:
-            print "Too many arguments. 0 or 1 (command name) arguments are accepted"
+            print("Too many arguments. 0 or 1 (command name) arguments are accepted")
             return
 
         command  = arguments[ 0 ]
         candidates = self.getCandidates( command )
         if len( candidates ) == 0:
-            print "Cannot find any commands like '" + command + "'"
+            print("Cannot find any commands like '" + command + "'")
             self.printCommandList( [] )
             return
 
         for candidate in candidates:
             key = candidate[ 0 ]
-            print key + ": " + self.__commandMap[ key ][ 1 ]
+            print(key + ": " + self.__commandMap[ key ][ 1 ])
         return
 
     def sendHello( self, arguments ):
         " Sends the HELLO message "
         if len( arguments ) > 3:
-            print "The 'hello' command accepts 0 or 1 argument (client name) " \
-                  "or 2 arguments (+ service name) " \
-                  "or 3 arguments (+ metadata option)"
+            print("The 'hello' command accepts 0 or 1 argument (client name) "
+                  "or 2 arguments (+ service name) "
+                  "or 3 arguments (+ metadata option)")
             return
 
         client = "nstconsole - debugging NetStorage console"
@@ -370,7 +388,7 @@ class NetStorageConsole:
     def sendBye( self, arguments ):
         " Sends the BYE message "
         if len( arguments ) != 0:
-            print "The 'bye' command does not accept any arguments"
+            print("The 'bye' command does not accept any arguments")
             return
 
         message = { 'Type':         'BYE',
@@ -383,7 +401,7 @@ class NetStorageConsole:
     def sendInfo( self, arguments ):
         " Sends INFO request "
         if len( arguments ) != 0:
-            print "The 'info' command does not accept any arguments"
+            print("The 'info' command does not accept any arguments")
             return
 
         message = { 'Type':         'INFO',
@@ -396,7 +414,7 @@ class NetStorageConsole:
     def sendConfiguration( self, arguments ):
         " Sends CONFIGURATION request "
         if len( arguments ) != 0:
-            print "The 'configuration' command does not accept any arguments"
+            print("The 'configuration' command does not accept any arguments")
             return
 
         message = { 'Type':         'CONFIGURATION',
@@ -409,15 +427,15 @@ class NetStorageConsole:
     def sendShutdown( self, arguments ):
         " Sends SHUTDOWN request "
         if len( arguments ) > 1:
-            print "The 'shutdown' commands takes 0 " \
-                  "(default: soft) or 1 argument "
+            print("The 'shutdown' commands takes 0 "
+                  "(default: soft) or 1 argument ")
             return
 
         mode = "soft"
         if len( arguments ) == 1:
             mode = arguments[ 0 ].lower()
             if mode != "soft" and mode != "hard":
-                print "The allowed values of the argument are 'soft' and 'hard'"
+                print("The allowed values of the argument are 'soft' and 'hard'")
                 return
 
         message = { 'Type':         'SHUTDOWN',
@@ -431,7 +449,7 @@ class NetStorageConsole:
     def sendGetClientsInfo( self, arguments ):
         " Sends GETCLIENTSINFO request "
         if len( arguments ) != 0:
-            print "The 'getclientsinfo' command does not accept any arguments"
+            print("The 'getclientsinfo' command does not accept any arguments")
             return
 
         message = { 'Type':         'GETCLIENTSINFO',
@@ -460,20 +478,20 @@ class NetStorageConsole:
     def __create( self, arguments, storage ):
         " Sends the create command "
         if len( arguments ) != 1:
-            print "Exactly one argument is required "
+            print("Exactly one argument is required")
             return
 
         fileName = arguments[ 0 ]
 
         if not os.path.exists( fileName ):
-            print "File '" + fileName + "' is not found"
+            print("File '" + fileName + "' is not found")
             return
 
         try:
             f = open( fileName, "r" )
             content = f.read()
-        except Exception, ex:
-            print "File operation error: " + str( ex )
+        except Exception as ex:
+            print("File operation error: " + str(ex))
             return
 
         message = { 'Type':         'CREATE',
@@ -490,7 +508,7 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed, no data will be transferred"
+            print("Command failed, no data will be transferred")
             return
 
         uttp_writer = self.__nst.get_uttp_writer()
@@ -506,7 +524,7 @@ class NetStorageConsole:
 
         response = self.receive()
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed, the blob has not been written [completely]"
+            print("Command failed, the blob has not been written [completely]")
         return
 
     def sendCreateOnFT( self, arguments ):
@@ -520,21 +538,21 @@ class NetStorageConsole:
     def upload( self, arguments ):
         " Uploads a file "
         if len( arguments ) < 2:
-            print "Two arguments required: locator and file"
+            print("Two arguments required: locator and file")
             return
 
         locator = arguments[ 0 ]
         fileName = arguments[ 1 ]
 
         if not os.path.exists( fileName ):
-            print "File '" + fileName + "' is not found"
+            print("File '" + fileName + "' is not found")
             return
 
         try:
             f = open( fileName, "r" )
             content = f.read()
-        except Exception, ex:
-            print "File operation error: " + str( ex )
+        except Exception as ex:
+            print("File operation error: " + str(ex))
             return
 
         message = { 'Type':         'WRITE',
@@ -545,7 +563,7 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed, no data will be transferred"
+            print("Command failed, no data will be transferred")
             return
 
         uttp_writer = self.__nst.get_uttp_writer()
@@ -561,14 +579,14 @@ class NetStorageConsole:
 
         response = self.receive()
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed, the blob has not been written [completely]"
+            print("Command failed, the blob has not been written [completely]")
         return
 
     def delete( self, arguments ):
         " Deletes the given object "
 
         if len( arguments ) != 1:
-            print "Exactly one argument is required "
+            print("Exactly one argument is required")
             return
 
         objectLoc = arguments[ 0 ]
@@ -581,14 +599,14 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def download( self, arguments ):
         " Reads the given object "
 
         if len( arguments ) != 1:
-            print "Exactly one argument is required "
+            print("Exactly one argument is required")
             return
 
         objectLoc = arguments[ 0 ]
@@ -601,7 +619,7 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
             return
 
         uttp_reader = self.__nst.get_uttp_reader()
@@ -616,14 +634,14 @@ class NetStorageConsole:
 
                 if event == uttp.Reader.CHUNK_PART or \
                         event == uttp.Reader.CHUNK:
-                    print uttp_reader.get_chunk(),
+                    print(uttp_reader.get_chunk(), end='')
                 elif event == uttp.Reader.CONTROL_SYMBOL:
                     if uttp_reader.get_control_symbol() != '\n':
                         raise Exception( "Invalid data stream terminator" )
-                    print '<<EOF'
+                    print('<<EOF')
                     response = self.receive()
                     if "Status" not in response or response[ "Status" ] != "OK":
-                        print "Command failed"
+                        print("Command failed")
                     return
                 else:
                     raise Exception( "Unexpected UTTP packet type" )
@@ -631,7 +649,7 @@ class NetStorageConsole:
     def exists( self, arguments ):
         " Tells if an object exists "
         if len( arguments ) != 1:
-            print "Exactly one argument is required "
+            print("Exactly one argument is required")
             return
 
         objectLoc = arguments[ 0 ]
@@ -643,13 +661,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def getsize( self, arguments ):
         " Tells if an object exists "
         if len( arguments ) != 1:
-            print "Exactly one argument is required "
+            print("Exactly one argument is required")
             return
 
         objectLoc = arguments[ 0 ]
@@ -661,13 +679,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendGetObjectInfo( self, arguments ):
         " Sends the getobjectinfo request "
         if len( arguments ) != 1:
-            print "Exactly one argument is required "
+            print("Exactly one argument is required")
             return
 
         objectLoc = arguments[ 0 ]
@@ -679,13 +697,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendGetAttrList( self, arguments ):
         " Sends GETATTRLIST message "
         if len( arguments ) != 1:
-            print "Exactly 1 argument is required: locator"
+            print("Exactly 1 argument is required: locator")
             return
 
         objectLoc = arguments[ 0 ]
@@ -698,13 +716,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendGetClientObjects( self, arguments ):
         " Sends GETCLIENTOBJECTS message "
         if len( arguments ) < 1:
-            print "At least client name must be provided"
+            print("At least client name must be provided")
             return
 
         clientName = arguments[ 0 ]
@@ -718,13 +736,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendGetAttr( self, arguments ):
         " Sends GETATTR message "
         if len( arguments ) != 2:
-            print "Exactly 2 arguments are required: locator and attribute name "
+            print("Exactly 2 arguments are required: locator and attribute name ")
             return
 
         objectLoc = arguments[ 0 ]
@@ -739,13 +757,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendDelAttr( self, arguments ):
         " Sends DELATTR message "
         if len( arguments ) != 2:
-            print "Exactly 2 arguments are required: locator and attribute name "
+            print("Exactly 2 arguments are required: locator and attribute name ")
             return
 
         objectLoc = arguments[ 0 ]
@@ -760,14 +778,14 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
 
     def relocate( self, arguments ):
         " Sends RELOCATE message "
         if len( arguments ) < 2:
-            print "At least two arguments are required "
+            print("At least two arguments are required ")
             return
 
         srcLoc = arguments[ 0 ]
@@ -780,14 +798,14 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
 
     def health( self, arguments ):
         " Sends HEALTH message "
         if len( arguments ) != 0:
-            print "The 'health' command does not accept any arguments"
+            print("The 'health' command does not accept any arguments")
             return
 
         message = { 'Type':         'HEALTH',
@@ -801,7 +819,7 @@ class NetStorageConsole:
     def getMetadataInfo( self, arguments ):
         " Sends GETMETADATAINFO message "
         if len( arguments ) != 0:
-            print "The 'getmetadatainfo' command does not accept any arguments"
+            print("The 'getmetadatainfo' command does not accept any arguments")
             return
 
         message = { 'Type':         'GETMETADATAINFO',
@@ -815,7 +833,7 @@ class NetStorageConsole:
     def reconfigure( self, arguments ):
         " Sends RECONFIGURE message "
         if len( arguments ) != 0:
-            print "The 'reconfigure' command does not accept any arguments"
+            print("The 'reconfigure' command does not accept any arguments")
             return
 
         message = { 'Type':         'RECONFIGURE',
@@ -829,7 +847,7 @@ class NetStorageConsole:
     def ackalert( self, arguments ):
         " Sends ACKALERT message "
         if len( arguments ) != 2:
-            print "Exactly two argument are required: alert name and the user"
+            print("Exactly two argument are required: alert name and the user")
             return
 
         alertName = arguments[ 0 ]
@@ -844,15 +862,15 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
 
     def sendSetAttr( self, arguments ):
         " Sends SETATTR message "
         if len( arguments ) != 3:
-            print "Exactly 3 arguments are required: locator, " \
-                  "attribute name and atrribute value"
+            print("Exactly 3 arguments are required: locator, "
+                  "attribute name and atrribute value")
             return
 
         objectLoc = arguments[ 0 ]
@@ -869,14 +887,14 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendSetexp( self, arguments ):
         " Sends SETEXPTIME message "
         if len( arguments ) != 2:
-            print "Exactly 2 arguments are required: locator " \
-                  "and ttl in seconds"
+            print("Exactly 2 arguments are required: locator "
+                  "and ttl in seconds")
             return
 
         objectLoc = arguments[ 0 ]
@@ -891,13 +909,13 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def sendLockFTPath( self, arguments ):
         " Sends LOCKFTPATH message "
         if len( arguments ) != 1:
-            print "Exactly 1 argument isrequired: locator"
+            print("Exactly 1 argument isrequired: locator")
             return
 
         objectLoc = arguments[ 0 ]
@@ -909,7 +927,7 @@ class NetStorageConsole:
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
-            print "Command failed"
+            print("Command failed")
         return
 
     def exchange( self, message ):
@@ -933,7 +951,7 @@ class NetStorageConsole:
     @staticmethod
     def printMessage( prefix, response ):
         " Prints the server response "
-        print prefix + ":"
+        print(prefix + ":")
         prettyPrinter = pprint.PrettyPrinter( indent = 4 )
         prettyPrinter.pprint( response )
         return
@@ -942,7 +960,7 @@ class NetStorageConsole:
 def parserError( parser_, message ):
     " Prints the message and help on stderr "
     sys.stdout = sys.stderr
-    print message
+    print(message)
     parser_.print_help()
     return
 
@@ -985,8 +1003,8 @@ if __name__ == "__main__":
             sys.exit( 1 )
 
         returnValue = NetStorageConsole(host, port).clientMain()
-    except Exception, exc:
-        print >> sys.stderr, str( exc )
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
         returnValue = 4
 
     sys.exit( returnValue )
