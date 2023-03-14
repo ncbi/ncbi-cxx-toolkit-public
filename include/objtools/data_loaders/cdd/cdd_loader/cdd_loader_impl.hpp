@@ -91,8 +91,10 @@ public:
     typedef CDataLoader::TSeq_idSet TSeq_idSet;
     typedef CDataLoader::TBlobId TBlobId;
     typedef CCDDClientPool::SCDDBlob TBlob;
+    typedef CDataLoader::TTSE_LockSet TTSE_LockSet;
+    typedef CDataLoader::TProcessedNAs TProcessedNAs;
 
-    CDataLoader::TTSE_LockSet GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds);
+    TTSE_LockSet GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds, TProcessedNAs* processed_nas);
 
 private:
     CCDDClientPool m_ClientPool;
