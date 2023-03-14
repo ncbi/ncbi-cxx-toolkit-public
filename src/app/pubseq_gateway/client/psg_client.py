@@ -96,10 +96,15 @@ class PsgClient:
                     return
 
                 prefix = [reply_type or 'Reply', status]
-                messages = result['errors']
+                messages = result.get('errors', [])
                 self._report_error(data, prefix, messages)
                 yield result
-                continue
+
+                # An item
+                if reply_type:
+                    continue
+
+                return
 
             # A JSON-RPC error?
             result = data.get('error', {})
@@ -230,7 +235,6 @@ def get_ids(psg_client, bio_ids, /, max_blob_ids=1000, max_chunk_ids=1000):
             break
 
     return {'blob_id': list(blob_ids)}, {'chunk_id': list(chunk_ids)}
-
 
 def check_binary(args):
     if shutil.which(args.binary) is None:
