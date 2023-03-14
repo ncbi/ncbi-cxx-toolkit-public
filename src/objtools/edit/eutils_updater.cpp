@@ -394,16 +394,19 @@ void IPubmedUpdater::Normalize(CPub& pub)
     if (pub.IsArticle()) {
         CCit_art& A = pub.SetArticle();
 #if 0
-        // trim title end; RW-1946
+        // Ensure period at title end; RW-1946
         if (A.IsSetTitle() && ! A.GetTitle().Get().empty()) {
             auto& title = A.SetTitle().Set().front();
             if (title->IsName()) {
                 string& name = title->SetName();
-                auto    n    = name.size();
-                if (n > 1) {
-                    char ch = name[n - 1];
-                    if (ch == ' ' || ch == '.') {
-                        name.erase(n - 1);
+                if (! name.empty()) {
+                    char ch = name.back();
+                    if (ch != '.') {
+                        if (ch == ' ') {
+                            name.back() = '.';
+                        } else {
+                            name.push_back('.');
+                        }
                     }
                 }
             }
