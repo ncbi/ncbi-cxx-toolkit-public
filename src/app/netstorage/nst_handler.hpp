@@ -49,6 +49,10 @@
 
 BEGIN_NCBI_SCOPE
 
+const size_t    kReadBufferSize = 1024 * 1024;
+const size_t    kWriteBufferSize = 16 * 1024;
+
+
 // Forward declarations
 class CNetStorageServer;
 struct SCommonRequestArguments;
@@ -199,12 +203,12 @@ private:
         eReadRawData
     };
 
-    char *                  m_ReadBuffer;
+    char                    m_ReadBuffer[kReadBufferSize];
     EReadMode               m_ReadMode;
     CUTTPReader             m_UTTPReader;
     CJsonOverUTTPReader     m_JSONReader;
 
-    char *                  m_WriteBuffer;
+    char                    m_WriteBuffer[kWriteBufferSize];
     CUTTPWriter             m_UTTPWriter;
     CJsonOverUTTPWriter     m_JSONWriter;
 

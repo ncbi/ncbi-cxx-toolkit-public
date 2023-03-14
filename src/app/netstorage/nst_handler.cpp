@@ -58,8 +58,6 @@
 USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
-const size_t    kReadBufferSize = 1024 * 1024;
-const size_t    kWriteBufferSize = 16 * 1024;
 
 const string    kObjectExpired = "NetStorage object has expired";
 const string    kObjectNotFound = "NetStorage object is not found";
@@ -166,9 +164,7 @@ void CRelocateCallback::Callback(CJsonNode  info)
 
 CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
     : m_Server(server),
-      m_ReadBuffer(NULL),
       m_ReadMode(CNetStorageHandler::eReadMessages),
-      m_WriteBuffer(NULL),
       m_JSONWriter(m_UTTPWriter),
       m_ObjectBeingWritten(eVoid),
       m_DataMessageSN(-1),
@@ -179,23 +175,12 @@ CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
       m_FirstMessage(true),
       m_WriteCreateNeedMetaDBUpdate(false)
 {
-    m_ReadBuffer = new char[ kReadBufferSize ];
-    try {
-        m_WriteBuffer = new char[ kWriteBufferSize ];
-    } catch (...) {
-        delete [] m_ReadBuffer;
-        throw;
-    }
-
     m_UTTPWriter.Reset(m_WriteBuffer, kWriteBufferSize);
 }
 
 
 CNetStorageHandler::~CNetStorageHandler()
-{
-    delete [] m_WriteBuffer;
-    delete [] m_ReadBuffer;
-}
+{}
 
 
 EIO_Event
@@ -287,6 +272,13 @@ void CNetStorageHandler::OnRead(void)
                     // All the incoming objects must be dictionaries
                     x_SetConnRequestStatus(eStatus_BadRequest);
                     m_Server->CloseConnection(&GetSocket());
+                    return;
+                }
+
+                if (socket.GetStatus(eIO_Open) != eIO_Success) {
+                    // while we are in the loop of reading it is possible that
+                    // the socket was closed, e.g. by the client side
+                    // In this case it makes no sense to continue
                     return;
                 }
 
@@ -966,7 +958,10 @@ void  CNetStorageHandler::x_OnSocketWriteError(
 
     // Register the socket error with the client
     m_Server->GetClientRegistry().RegisterSocketWriteError(m_Client);
-    m_Server->CloseConnection(&GetSocket());
+
+    if (status != eIO_Closed) {
+        m_Server->CloseConnection(&GetSocket());
+    }
 }
 
 
