@@ -61,7 +61,7 @@ void AppendBlobIdParameter(CJsonNode &  node)
         "Non empty string. The interpretation of the blob id depends on "
         "a processor. Cassandra processor expects the following format: "
         "<sat>.<sat key> where boath are integers");
-    blob_id.SetString(kDefault, "No default");
+    blob_id.SetString(kDefault, "");
     node.SetByKey("blob_id", blob_id);
 }
 
@@ -127,7 +127,7 @@ void AppendLastModifiedParameter(CJsonNode &  node)
         "Positive integer. Not provided means that the most recent "
         "match will be selected.");
     last_modified.SetString(kDefault,
-        "Not provided");
+        "");
     node.SetByKey("last_modified", last_modified);
 }
 
@@ -155,7 +155,7 @@ void AppendUseCacheParameter(CJsonNode &  node)
                       "Cassandra database; use only the LMDB cache.");
     table.Append(row2);
     CJsonNode   row3(CJsonNode::NewArrayNode());
-    row3.AppendString("not provided");
+    row3.AppendString("");
     row3.AppendString("use the LMDB cache if at all possible; "
                       "then, fallback to Cassandra storage.");
     table.Append(row3);
@@ -164,8 +164,7 @@ void AppendUseCacheParameter(CJsonNode &  node)
     use_cache.SetByKey(kDescription, use_cache_table);
     use_cache.SetString(kAllowedValues,
         "yes, no and not provided");
-    use_cache.SetString(kDefault,
-        "Not provided");
+    use_cache.SetString(kDefault, "");
     node.SetByKey("use_cache", use_cache);
 }
 
@@ -189,7 +188,7 @@ void AppendSeqIdParameter(CJsonNode &  node)
     seq_id.SetString(kDescription,
         "Sequence identifier");
     seq_id.SetString(kAllowedValues, "A string identifier");
-    seq_id.SetString(kDefault, "No default");
+    seq_id.SetString(kDefault, "");
     node.SetByKey("seq_id", seq_id);
 }
 
@@ -202,7 +201,7 @@ void AppendSeqIdParameterForGetNA(CJsonNode &  node)
         "Sequence identifier. "
         "This or seq_ids parameter value must be provided for the request.");
     seq_id.SetString(kAllowedValues, "A string identifier");
-    seq_id.SetString(kDefault, "Not provided");
+    seq_id.SetString(kDefault, "");
     node.SetByKey("seq_id", seq_id);
 }
 
@@ -216,7 +215,7 @@ void AppendSeqIdsParameterForGetNA(CJsonNode &  node)
         "This or seq_id parameter value must be provided for the request.");
     seq_ids.SetString(kAllowedValues,
         "A list of space separated string identifiers");
-    seq_ids.SetString(kDefault, "Not provided");
+    seq_ids.SetString(kDefault, "");
     node.SetByKey("seq_ids", seq_ids);
 }
 
@@ -229,7 +228,7 @@ void AppendSeqIdTypeParameter(CJsonNode &  node)
         "Sequence identifier type");
     seq_id_type.SetString(kAllowedValues,
         "Integer type greater than 0");
-    seq_id_type.SetString(kDefault, "Not provided");
+    seq_id_type.SetString(kDefault, "");
     node.SetByKey("seq_id_type", seq_id_type);
 }
 
@@ -249,7 +248,7 @@ void AppendExcludeBlobsParameter(CJsonNode &  node)
         "in conjunction with the client_id parameter.");
     exclude_blobs.SetString(kAllowedValues,
         "A list of blob indentifiers");
-    exclude_blobs.SetString(kDefault, "Not provided");
+    exclude_blobs.SetString(kDefault, "");
     node.SetByKey("exclude_blobs", exclude_blobs);
 }
 
@@ -263,7 +262,7 @@ void AppendClientIdParameter(CJsonNode &  node)
         "feature takes place.");
     client_id.SetString(kAllowedValues,
         "A string identifier");
-    client_id.SetString(kDefault, "Not provided");
+    client_id.SetString(kDefault, "");
     node.SetByKey("client_id", client_id);
 }
 
@@ -315,7 +314,7 @@ void AppendId2ChunkParameter(CJsonNode &  node)
         "Integer greater or equal 0. "
         "Some processors may introduce more strict rules. For example, "
         "Cassandra processor requires the chunk number to be greater than 0.");
-    id2_chunk.SetString(kDefault, "No default");
+    id2_chunk.SetString(kDefault, "");
     node.SetByKey("id2_chunk", id2_chunk);
 }
 
@@ -348,7 +347,7 @@ void AppendId2InfoParameter(CJsonNode &  node)
     id2_info.SetByKey(kDescription, fmt_table);
     id2_info.SetString(kAllowedValues,
         "A string in a format recognisable by one of the processors");
-    id2_info.SetString(kDefault, "No default");
+    id2_info.SetString(kDefault, "");
     node.SetByKey("id2_info", id2_info);
 }
 
@@ -361,7 +360,7 @@ void AppendProteinParameter(CJsonNode &  node)
         "The protein to be resolved. It may be ommitted if ipg is provided.");
     protein.SetString(kAllowedValues,
         "A string identifier");
-    protein.SetString(kDefault, "No default");
+    protein.SetString(kDefault, "");
     node.SetByKey("protein", protein);
 }
 
@@ -374,7 +373,7 @@ void AppendNucleotideParameter(CJsonNode &  node)
         "The nucleotide to be resolved.");
     nucleotide.SetString(kAllowedValues,
         "A string identifier");
-    nucleotide.SetString(kDefault, "No default");
+    nucleotide.SetString(kDefault, "");
     node.SetByKey("nucleotide", nucleotide);
 }
 
@@ -387,7 +386,7 @@ void AppendIpgParameter(CJsonNode &  node)
         "The ipg to be resolved. It may be ommitted if protein is provided.");
     ipg.SetString(kAllowedValues,
         "An integer greater than 0");
-    ipg.SetString(kDefault, "Not provided");
+    ipg.SetString(kDefault, "");
     node.SetByKey("ipg", ipg);
 }
 
@@ -446,7 +445,7 @@ void AppendNamesParameter(CJsonNode &  node)
         "A comma separated list of named annotations to be retrieved.");
     names.SetString(kAllowedValues,
         "A string");
-    names.SetString(kDefault, "Not provided");
+    names.SetString(kDefault, "");
     node.SetByKey("names", names);
 }
 
@@ -471,7 +470,7 @@ void AppendEnableProcessorParameter(CJsonNode &  node)
         "A name of a processor which is allowed to process a request. "
         "The parameter can be repeated as many times as needed.");
     enable_processor.SetString(kAllowedValues, "A string");
-    enable_processor.SetString(kDefault, "Not provided");
+    enable_processor.SetString(kDefault, "");
     node.SetByKey("enable_processor", enable_processor);
 }
 
@@ -484,7 +483,7 @@ void AppendDisableProcessorParameter(CJsonNode &  node)
         "A name of a processor which is disallowed to process a request. "
         "The parameter can be repeated as many times as needed.");
     disable_processor.SetString(kAllowedValues, "A string");
-    disable_processor.SetString(kDefault, "Not provided");
+    disable_processor.SetString(kDefault, "");
     node.SetByKey("disable_processor", disable_processor);
 }
 
@@ -574,7 +573,7 @@ void AppendUsernameParameter(CJsonNode &  node)
     username.SetString(kDescription,
         "The user name who requested the shutdown");
     username.SetString(kAllowedValues, "A string identifier");
-    username.SetString(kDefault, "Not provided");
+    username.SetString(kDefault, "");
     node.SetByKey("username", username);
 }
 
@@ -588,7 +587,7 @@ void AppendAuthTokenParameter(CJsonNode &  node)
         "[ADMIN]/auth_token value is configured then the request must have the "
         "token value matching the configured to be granted.");
     auth_token.SetString(kAllowedValues, "A string identifier");
-    auth_token.SetString(kDefault, "Not provided");
+    auth_token.SetString(kDefault, "");
     node.SetByKey("auth_token", auth_token);
 }
 
@@ -616,7 +615,7 @@ void AppendAlertParameter(CJsonNode &  node)
     alert.SetString(kDescription,
         "The alert identifier to acknowledge");
     alert.SetString(kAllowedValues, "A string identifier");
-    alert.SetString(kDefault, "No default");
+    alert.SetString(kDefault, "");
     node.SetByKey("alert", alert);
 }
 
@@ -628,7 +627,7 @@ void AppendAckAlertUsernameParameter(CJsonNode &  node)
     username.SetString(kDescription,
         "The user name who acknowledges the alert");
     username.SetString(kAllowedValues, "A string identifier");
-    username.SetString(kDefault, "No default");
+    username.SetString(kDefault, "");
     node.SetByKey("username", username);
 }
 
@@ -680,7 +679,7 @@ void AppendHistogramNamesParameter(CJsonNode &  node)
         "(listed in histogram_names) which intersect with "
         "the specified time period.");
     histogram_names.SetString(kAllowedValues, "A comma separated list of string identifiers");
-    histogram_names.SetString(kDefault, "Not provided");
+    histogram_names.SetString(kDefault, "");
     node.SetByKey("histogram_names", histogram_names);
 }
 
@@ -693,7 +692,7 @@ void AppendReturnDataSizeParameter(CJsonNode &  node)
         "Size in bytes (positive integer up to 1000000000) which should be "
         "sent to the client. The data are random.");
     return_data_size.SetString(kAllowedValues, "An integer in the range 0 ... 1000000000");
-    return_data_size.SetString(kDefault, "No default");
+    return_data_size.SetString(kDefault, "");
     node.SetByKey("return_data_size", return_data_size);
 }
 
