@@ -209,7 +209,7 @@ CCDDDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
 {
     TSeq_idSet ids;
     ids.insert(idh);
-    return m_Impl->GetBlobBySeq_ids(ids, *GetDataSource());
+    return GetOrphanAnnotRecordsNA(ids, sel, processed_nas);
 }
 
 
@@ -218,7 +218,7 @@ CCDDDataLoader::GetOrphanAnnotRecordsNA(const TSeq_idSet& ids,
     const SAnnotSelector* sel,
     TProcessedNAs* processed_nas)
 {
-    return m_Impl->GetBlobBySeq_ids(ids, *GetDataSource());
+    return m_Impl->GetBlobBySeq_ids(ids, *GetDataSource(), processed_nas);
 }
 
 
@@ -345,7 +345,7 @@ CCDDDataLoader_Impl::~CCDDDataLoader_Impl(void)
 
 
 CDataLoader::TTSE_LockSet
-CCDDDataLoader_Impl::GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds)
+CCDDDataLoader_Impl::GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds, TProcessedNAs* processed_nas)
 {
     CDataLoader::TTSE_LockSet ret;
     TBlob blob = m_ClientPool.GetBlobBySeq_ids(ids);
@@ -362,9 +362,8 @@ CCDDDataLoader_Impl::GetBlobBySeq_ids(const TSeq_idSet& ids, CDataSource& ds)
         load_lock->SetSeq_entry(*entry);
         load_lock.SetLoaded();
     }
-    if (load_lock.IsLoaded()) {
-        ret.insert(load_lock);
-    }
+    ret.insert(load_lock);
+    CDataLoader::SetProcessedNA("CDD", processed_nas);
     return ret;
 }
 
