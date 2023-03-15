@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Mar  9 11:44:29 EST 2023; formally
+/* time_t value corresponding to Wed Mar 15 05:12:02 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1678380269UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1678871522UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1391,7 +1391,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMNH\ts\tThe Cleveland Museum of Natural History\t\t\t",
 "CMNH:Birds\ts\tThe Cleveland Museum of Natural History, Birds Collection\t\t\t",
 "CMNS\ts\tMuseum of Natural History, Shanghai\t\t\t",
-"CMNZ\ts\tCanterbury Museum\tCMC,CMC<NZ>\t\t",
+"CMNZ\ts\tCanterbury Museum\tCMC<NZ>\t\t",
 "CMPH\ts\tColegio de Postgraduados\t\t\t",
 "CMPR\ts\tCentre for Medicinal Plants Research\t\t\t",
 "CMPUJ\tc\tColeccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)\tCMDM-PUJ\t\t",
@@ -4587,7 +4587,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MCZ\ts\tMuseum of Comparative Zoology, Harvard University\tMCZC\t\t",
 "MCZ:Cryo\ts\tMuseum of Comparative Zoology, Harvard University, Cryogenic Collection\t\t\t",
 "MCZ:Ent\ts\tMuseum of Comparative Zoology, Harvard University, Entomology Collection\t\thttp://mczbase.mcz.harvard.edu/guid/MCZ:Ent:\t",
-"MCZ:Herp\ts\tMuseum of Comparative Zoology, Harvard University, Herpetology Collection\tA,R\thttp://mczbase.mcz.harvard.edu/guid/MCZ:Herp:\t",
+"MCZ:Herp\ts\tMuseum of Comparative Zoology, Harvard University, Herpetology Collection\tMCZ:A,MCZ:R\thttp://mczbase.mcz.harvard.edu/guid/MCZ:Herp:\t",
 "MCZ:Ich\ts\tMuseum of Comparative Zoology, Harvard University, Ichthyology Collection\tFish\thttp://mczbase.mcz.harvard.edu/guid/MCZ:Fish:\t",
 "MCZ:IP\ts\tMuseum of Comparative Zoology, Harvard University, Invertebrate Paleontology Collection\t\thttp://mczbase.mcz.harvard.edu/guid/MCZ:IP:\t",
 "MCZ:IZ\ts\tMuseum of Comparative Zoology, Harvard University, Invertebrate Zoology Collection\t\thttp://mczbase.mcz.harvard.edu/guid/MCZ:IZ:\t",
