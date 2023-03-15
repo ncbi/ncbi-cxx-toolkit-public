@@ -1265,49 +1265,56 @@ void CMultiReader::AddAnnots(list<CRef<CSeq_annot>>& annots, CScope& scope) cons
     }
 }
 
-
-bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it) const
+static CRef<CSeq_id> s_GetAnnotId(const CSeq_annot& annot)
 {
-    CRef<CSeq_id> annot_id;
-    if (annot_it->IsSetId())
+    CRef<CSeq_id> pAnnotId;
+    if (annot.IsSetId())
     {
-        annot_id.Reset(new CSeq_id);
-        const CAnnot_id& tmp_annot_id = *(*annot_it).GetId().front();
-        if (tmp_annot_id.IsLocal())
-            annot_id->SetLocal().Assign(tmp_annot_id.GetLocal());
-        else
-            if (tmp_annot_id.IsGeneral())
-            {
-                annot_id->SetGeneral().Assign(tmp_annot_id.GetGeneral());
-            }
-            else
-            {
-                //cerr << "Unknown id type:" << annot_id.Which() << endl;
-                return false;
-            }
-    }
-    else
-        if (!annot_it->GetData().GetFtable().empty())
-        {
-            // get a reference to CSeq_id instance, we'd need to update it recently
-            // 5 column feature reader has a single shared instance for all features
-            // update one at once would change all the features
-            annot_id.Reset((CSeq_id*)annot_it->GetData().GetFtable().front()->GetLocation().GetId());
+        pAnnotId.Reset(new CSeq_id());
+        const CAnnot_id& firstId = *(annot.GetId().front());
+        if (firstId.IsLocal()) {
+            pAnnotId->SetLocal().Assign(firstId.GetLocal());
         }
+        else if (firstId.IsGeneral())
+        {
+            pAnnotId->SetGeneral().Assign(firstId.GetGeneral());
+        }
+        else {
+            return pAnnotId;
+        }
+    }
+    else if (!annot.GetData().GetFtable().empty())
+    {
+        // get a reference to CSeq_id instance, we'd need to update it recently
+        // 5 column feature reader has a single shared instance for all features
+        // update one at once would change all the features
+        pAnnotId.Reset(const_cast<CSeq_id*>(annot.GetData().GetFtable().front()->GetLocation().GetId()));
+    }
 
+    return pAnnotId;
+}
+
+
+
+bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& pAnnot) const
+{
+    CRef<CSeq_id> pAnnotId = s_GetAnnotId(*pAnnot);
+    if (!pAnnotId) {
+        return false;
+    }
 
     CBioseq::TId ids;
-    CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*annot_id);
-    if (!bioseq_h && annot_id->IsLocal() && annot_id->GetLocal().IsStr())
+    CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*pAnnotId);
+    if (!bioseq_h && pAnnotId->IsLocal() && pAnnotId->GetLocal().IsStr())
     {
-        CSeq_id::ParseIDs(ids, annot_id->GetLocal().GetStr());
+        CSeq_id::ParseIDs(ids, pAnnotId->GetLocal().GetStr());
         if (ids.size() == 1)
         {
             bioseq_h = scope.GetBioseqHandle(*ids.front());
         }
         if (!bioseq_h && !m_context.m_genome_center_id.empty())
         {
-            string id = "gnl|" + m_context.m_genome_center_id + "|" + annot_id->GetLocal().GetStr();
+            string id = "gnl|" + m_context.m_genome_center_id + "|" + pAnnotId->GetLocal().GetStr();
             ids.clear();
             CSeq_id::ParseIDs(ids, id);
             if (ids.size() == 1)
@@ -1318,25 +1325,26 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it) const
     }
     if (!bioseq_h)
     {
-        CRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*annot_id);
+        CRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*pAnnotId);
         if (alt_id)
         {
             bioseq_h = scope.GetBioseqHandle(*alt_id);
         }
     }
+
     if (bioseq_h)
     {
         // update ids
         CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
         CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
-        CRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
+        CRef<CSeq_id> matching_id = GetIdByKind(*pAnnotId, bioseq.GetId());
 
         if (matching_id.Empty())
             matching_id = ids.front();
 
-        if (matching_id && !annot_id->Equals(*matching_id))
+        if (matching_id && !pAnnotId->Equals(*matching_id))
         {
-            x_ModifySeqIds(*annot_it, annot_id, matching_id);
+            x_ModifySeqIds(*pAnnot, pAnnotId, matching_id);
         }
 
         CRef<CSeq_annot> existing;
@@ -1350,24 +1358,24 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& annot_it) const
         }
 
         if (existing.Empty())
-            bioseq.SetAnnot().push_back(annot_it);
+            bioseq.SetAnnot().push_back(pAnnot);
         else {
             objects::edit::CFeatTableEdit featEdit(*existing);
-            featEdit.MergeFeatures(annot_it->SetData().SetFtable());
+            featEdit.MergeFeatures(pAnnot->SetData().SetFtable());
         }
-        annot_it.Reset();
+        pAnnot.Reset();
     }
 #ifdef _DEBUG
     else
     {
-        //cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
+        //cerr << MSerial_AsnText << "Found unmatched annot: " << *pAnnotId << endl;
     }
     if (false)
     {
         CNcbiOfstream debug_annot("annot.sqn");
         debug_annot << MSerial_AsnText
             << MSerial_VerifyNo
-            << *annot_it;
+            << *pAnnot;
     }
 #endif
     return true;

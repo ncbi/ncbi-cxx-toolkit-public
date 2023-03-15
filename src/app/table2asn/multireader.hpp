@@ -4,7 +4,6 @@
 #include <util/format_guess.hpp>
 #include <corelib/ncbistre.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 namespace objects
