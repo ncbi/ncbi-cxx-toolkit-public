@@ -3988,7 +3988,6 @@ string CDeflineGenerator::GenerateDefline (
             ++desc;
         }
         bool ok = true;
-        bool limitAutoDef = true;
         bool suppressedFeats = false;
 
         if (desc) {
@@ -4018,31 +4017,7 @@ string CDeflineGenerator::GenerateDefline (
                     }
                 }
             }
-        }
 
-        /*
-        if (desc) {
-            const CUser_object& uo = desc->GetUser();
-            if( uo.IsSetData() ) {
-                ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
-                    const CUser_field &field = **field_iter;
-                    if( ! field.IsSetData() || ! field.GetData().IsStr() ||
-                        ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
-                        continue;
-                    }
-                    if ( field.GetLabel().GetStr() == "FeatureListType" ) {
-                        string featlisttype = field.GetData().GetStr();
-                        if ( featlisttype == "List All Features" ||
-                             featlisttype == "Complete Sequence" ||
-                             featlisttype == "Complete Genome" ) {
-                            limitAutoDef = true;
-                        }
-                    }
-                }
-            }
-        }
-        */
-        if (limitAutoDef) {
             int numGenes = 0;
             int numCDSs = 0;
             int numMiscs = 0;
@@ -4075,8 +4050,7 @@ string CDeflineGenerator::GenerateDefline (
             if (numGenes + numCDSs > 50 && !suppressedFeats) {
                 ok = false;
             }
-        }
-        if (desc) {
+
             if (ok) {
                 CAutoDef autodef;
                 autodef.SetOptionsObject(desc->GetUser());
@@ -4086,7 +4060,14 @@ string CDeflineGenerator::GenerateDefline (
                 mod_combo.SetOptions(options);
                 m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh, m_Feat_Tree);
                 s_TrimMainTitle (m_MainTitle);
+                preferredSuffix = "";
+                customFeatureClause = "";
+                singleMiscComment = "";
             }
+        } else {
+            preferredSuffix = "";
+            customFeatureClause = "";
+            singleMiscComment = "";
         }
     }
 
