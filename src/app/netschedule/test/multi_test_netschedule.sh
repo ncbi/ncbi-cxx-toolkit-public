@@ -1,5 +1,5 @@
 
-/opt/python-all/bin/virtualenv3.8 .nsmultitest
+/opt/python-all/bin/virtualenv3.11 .nsmultitest
 source .nsmultitest/bin/activate
 pip install grid-python
 
