@@ -554,17 +554,33 @@ string CPubseqGatewayApp::x_GetCmdLineArguments(void) const
 }
 
 
-static string   kNcbiSidHeader = "HTTP_NCBI_SID";
-static string   kNcbiPhidHeader = "HTTP_NCBI_PHID";
-static string   kXForwardedForHeader = "X-Forwarded-For";
-static string   kUserAgentHeader = "User-Agent";
-static string   kUserAgentApplog = "USER_AGENT";
-static string   kRequestPathApplog = "request_path";
+static string       kNcbiSidHeader = "HTTP_NCBI_SID";
+static string       kNcbiPhidHeader = "HTTP_NCBI_PHID";
+static string       kXForwardedForHeader = "X-Forwarded-For";
+static string       kUserAgentHeader = "User-Agent";
+static string       kUserAgentApplog = "USER_AGENT";
+static string       kRequestPathApplog = "request_path";
+
+// If log is off, each log_sampling_ratio-th request needs to be logged anyway
+// so there is a sequential request counter
+static uint64_t     s_request_number = 0;
 CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
                                                 CHttpRequest &  req) const
 {
+    bool                    need_log_sampling = false;
     CRef<CRequestContext>   context;
-    if (g_Log) {
+
+    if (!g_Log) {
+        if (m_Settings.m_LogSamplingRatio > 0) {
+            ++s_request_number;
+            if (s_request_number >= m_Settings.m_LogSamplingRatio) {
+                need_log_sampling = true;
+                s_request_number = 0;
+            }
+        }
+    }
+
+    if (g_Log || need_log_sampling) {
         context.Reset(new CRequestContext());
         context->SetRequestID();
 
