@@ -65,6 +65,7 @@ const unsigned int      kMaxRetriesDefault = 1;
 const string            kDefaultRootKeyspace = "sat_info2";
 const size_t            kDefaultHttpMaxBacklog = 1024;
 const size_t            kDefaultHttpMaxRunning = 32;
+const size_t            kDefaultLogSamplingRatio = 0;
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultLog = true;
@@ -116,6 +117,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_RootKeyspace(kDefaultRootKeyspace),
     m_HttpMaxBacklog(kDefaultHttpMaxBacklog),
     m_HttpMaxRunning(kDefaultHttpMaxRunning),
+    m_LogSamplingRatio(kDefaultLogSamplingRatio),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -194,6 +196,8 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                        kDefaultHttpMaxBacklog);
     m_HttpMaxRunning = registry.GetInt(kServerSection, "http_max_running",
                                        kDefaultHttpMaxRunning);
+    m_LogSamplingRatio = registry.GetInt(kServerSection, "log_sampling_ratio",
+                                         kDefaultLogSamplingRatio);
     m_SendBlobIfSmall = x_GetDataSize(registry, kServerSection,
                                       "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
@@ -559,6 +563,15 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
                     "reset to the default value (" +
                     to_string(kDefaultHttpMaxRunning) + ").");
         m_HttpMaxRunning = kDefaultHttpMaxRunning;
+    }
+
+    if (m_LogSamplingRatio < 0) {
+        PSG_WARNING("Invalid " + kServerSection + "]/log_sampling_ratio value (" +
+                    to_string(m_LogSamplingRatio) + "). "
+                    "The log sampling ratio must be greater or equal 0. The log sampling ratio is "
+                    "reset to the default value (" +
+                    to_string(kDefaultLogSamplingRatio) + ").");
+        m_LogSamplingRatio = kDefaultLogSamplingRatio;
     }
 
     if (m_MaxHops <= 0) {
