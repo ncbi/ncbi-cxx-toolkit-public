@@ -1355,7 +1355,7 @@ CMNFI	s	Canadian Museum of Nature, Fish Collection
 CMNH	s	The Cleveland Museum of Natural History			
 CMNH:Birds	s	The Cleveland Museum of Natural History, Birds Collection			
 CMNS	s	Museum of Natural History, Shanghai			
-CMNZ	s	Canterbury Museum	CMC,CMC<NZ>		
+CMNZ	s	Canterbury Museum	CMC<NZ>		
 CMPH	s	Colegio de Postgraduados			
 CMPR	s	Centre for Medicinal Plants Research			
 CMPUJ	c	Coleccion de Microorganismos de la Pontificia Universidad Javeriana (Collection Microorganisms of the Pontificia Universidad Javeriana)	CMDM-PUJ		
@@ -4551,7 +4551,7 @@ MCW	s	Milton College, Biology Department
 MCZ	s	Museum of Comparative Zoology, Harvard University	MCZC		
 MCZ:Cryo	s	Museum of Comparative Zoology, Harvard University, Cryogenic Collection			
 MCZ:Ent	s	Museum of Comparative Zoology, Harvard University, Entomology Collection		http://mczbase.mcz.harvard.edu/guid/MCZ:Ent:	
-MCZ:Herp	s	Museum of Comparative Zoology, Harvard University, Herpetology Collection	A,R	http://mczbase.mcz.harvard.edu/guid/MCZ:Herp:	
+MCZ:Herp	s	Museum of Comparative Zoology, Harvard University, Herpetology Collection	MCZ:A,MCZ:R	http://mczbase.mcz.harvard.edu/guid/MCZ:Herp:	
 MCZ:Ich	s	Museum of Comparative Zoology, Harvard University, Ichthyology Collection	Fish	http://mczbase.mcz.harvard.edu/guid/MCZ:Fish:	
 MCZ:IP	s	Museum of Comparative Zoology, Harvard University, Invertebrate Paleontology Collection		http://mczbase.mcz.harvard.edu/guid/MCZ:IP:	
 MCZ:IZ	s	Museum of Comparative Zoology, Harvard University, Invertebrate Zoology Collection		http://mczbase.mcz.harvard.edu/guid/MCZ:IZ:	
