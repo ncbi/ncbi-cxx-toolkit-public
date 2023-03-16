@@ -33,6 +33,7 @@
  */
 
 #include "psgs_request.hpp"
+#include "timing.hpp"
 #include <sra/readers/sra/snpread.hpp>
 #include <objects/dbsnp/primary_track/snpptis.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -83,6 +84,7 @@ struct SSNPData
     CRef<objects::CID2S_Split_Info> m_SplitInfo;
     CRef<objects::CID2S_Chunk> m_Chunk;
     int m_SplitVersion = 0;
+    psg_time_point_t m_Start = psg_clock_t::now();
 };
 
 
@@ -330,6 +332,10 @@ private:
     CRef<objects::CID2S_Seq_annot_Info> x_GetFeatInfo(const string& name, const objects::CSeq_id_Handle& id);
     CRef<objects::CID2S_Seq_annot_Info> x_GetGraphInfo(const string& name, const objects::CSeq_id_Handle& id);
 
+    void x_RegisterTiming(psg_time_point_t start,
+                          EPSGOperation operation,
+                          EPSGOperationStatus status);
+    
     SSNPProcessor_Config m_Config;
     shared_ptr<objects::CVDBMgr> m_Mgr;
     CRef<objects::CSnpPtisClient> m_PTISClient;
