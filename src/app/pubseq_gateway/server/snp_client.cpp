@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "snp_client.hpp"
+#include "pubseq_gateway.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/general/general__.hpp>
@@ -819,7 +820,9 @@ void CSNPFileInfo::x_Initialize(CSNPClient& client, const string& csra)
     if (m_AnnotName.empty()) {
         m_AnnotName = m_Accession;
     }
+    psg_time_point_t start = psg_clock_t::now();
     m_SNPDb = CSNPDb(*client.m_Mgr, m_FileName);
+    client.x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
 }
 
 
@@ -1246,6 +1249,15 @@ CRef<CID2S_Seq_annot_Info> CSNPClient::x_GetGraphInfo(const string& name, const 
     annot_info->SetGraph();
     annot_info->SetSeq_loc().SetWhole_seq_id().Assign(*id.GetSeqId());
     return annot_info;
+}
+
+
+void CSNPClient::x_RegisterTiming(psg_time_point_t start,
+                                  EPSGOperation operation,
+                                  EPSGOperationStatus status)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(nullptr, operation, status, start, 0);
 }
 
 

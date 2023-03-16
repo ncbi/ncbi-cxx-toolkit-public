@@ -718,29 +718,31 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
 }
 
 
-void CPSGS_SNPProcessor::x_RegisterTiming(EPSGOperation operation,
+void CPSGS_SNPProcessor::x_RegisterTiming(psg_time_point_t start,
+                                          EPSGOperation operation,
                                           EPSGOperationStatus status,
                                           size_t blob_size)
 {
     CPubseqGatewayApp::GetInstance()->
-        GetTiming().Register(this, operation, status, m_Start, blob_size);
+        GetTiming().Register(this, operation, status, start, blob_size);
 }
 
 
-void CPSGS_SNPProcessor::x_RegisterTimingFound(EPSGOperation operation,
+void CPSGS_SNPProcessor::x_RegisterTimingFound(psg_time_point_t start,
+                                               EPSGOperation operation,
                                                const CID2_Reply_Data& data)
 {
     size_t blob_size = 0;
     for ( auto& chunk : data.GetData() ) {
         blob_size += chunk->size();
     }
-    x_RegisterTiming(operation, eOpStatusFound, blob_size);
+    x_RegisterTiming(start, operation, eOpStatusFound, blob_size);
 }
 
 
 void CPSGS_SNPProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
 {
-    x_RegisterTiming(operation, eOpStatusNotFound, 0);
+    x_RegisterTiming(m_Start, operation, eOpStatusNotFound, 0);
 }
 
 
@@ -762,7 +764,7 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
         // higher priority processor already processed this request
         return;
     }
-    x_RegisterTiming(eNAResolve, eOpStatusFound, 0);
+    x_RegisterTiming(data.m_Start, eNAResolve, eOpStatusFound, 0);
     CJsonNode json(CJsonNode::NewObjectNode());
     json.SetString("blob_id", data.m_BlobId);
     ostringstream annot_str;
@@ -796,7 +798,7 @@ void CPSGS_SNPProcessor::x_SendChunk(void)
     for (auto& data : m_SNPData) {
         CID2_Reply_Data id2_data;
         x_WriteData(id2_data, *data.m_Chunk);
-        x_RegisterTimingFound(eTseChunkRetrieve, id2_data);
+        x_RegisterTimingFound(data.m_Start, eTseChunkRetrieve, id2_data);
         CBlobRecord chunk_blob_props;
         s_SetBlobDataProps(chunk_blob_props, id2_data);
         x_SendChunkBlobProps(m_Id2Info, m_ChunkId, chunk_blob_props);
@@ -817,7 +819,7 @@ void CPSGS_SNPProcessor::x_SendSplitInfo(const SSNPData& data)
     CBlobRecord split_info_blob_props;
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, info);
-    x_RegisterTimingFound(eNARetrieve, id2_data);
+    x_RegisterTimingFound(data.m_Start, eNARetrieve, id2_data);
     s_SetBlobDataProps(split_info_blob_props, id2_data);
     x_SendChunkBlobProps(id2_info, kSplitInfoChunk, split_info_blob_props);
     x_SendChunkBlobData(id2_info, kSplitInfoChunk, id2_data);
@@ -830,7 +832,7 @@ void CPSGS_SNPProcessor::x_SendMainEntry(const SSNPData& data)
     string main_blob_id = m_PSGBlobId + ".0.0";
     CID2_Reply_Data id2_data;
     x_WriteData(id2_data, entry);
-    x_RegisterTimingFound(eNARetrieve, id2_data);
+    x_RegisterTimingFound(data.m_Start, eNARetrieve, id2_data);
 
     CBlobRecord main_blob_props;
     s_SetBlobDataProps(main_blob_props, id2_data);
