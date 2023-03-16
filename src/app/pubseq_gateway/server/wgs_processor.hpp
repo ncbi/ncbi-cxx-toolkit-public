@@ -112,10 +112,12 @@ private:
     typedef int TID2ChunkId;
     typedef vector<string> TBlobIds;
 
-    void x_RegisterTiming(EPSGOperation operation,
+    void x_RegisterTiming(psg_time_point_t start,
+                          EPSGOperation operation,
                           EPSGOperationStatus status,
                           size_t blob_size);
-    void x_RegisterTimingFound(EPSGOperation operation,
+    void x_RegisterTimingFound(psg_time_point_t start,
+                               EPSGOperation operation,
                                const objects::CID2_Reply_Data& data);
     void x_RegisterTimingNotFound(EPSGOperation operation);
     EOutputFormat x_GetOutputFormat(void);

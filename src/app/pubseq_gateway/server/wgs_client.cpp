@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "wgs_client.hpp"
+#include "pubseq_gateway.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
@@ -406,6 +407,15 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
 }
 
 
+void CWGSClient::x_RegisterTiming(psg_time_point_t start,
+                                  EPSGOperation operation,
+                                  EPSGOperationStatus status)
+{
+    CPubseqGatewayApp::GetInstance()->
+        GetTiming().Register(nullptr, operation, status, start, 0);
+}
+
+
 CWGSDb CWGSClient::GetWGSDb(const string& prefix)
 {
     CWGSDb wgs_db;
@@ -425,11 +435,13 @@ CWGSDb CWGSClient::GetWGSDb(const string& prefix)
             if ( !wgs_db ) {
                 // create new DB
                 try {
+                    psg_time_point_t start = psg_clock_t::now();
                     wgs_db = CWGSDb(m_Mgr, prefix);
                     if ( s_AddMasterDescrLevel() != eAddMasterDescr_none ) {
                         wgs_db.LoadMasterDescr();
                     }
                     info->m_WGSDb = wgs_db;
+                    x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
                 }
                 catch ( CSraException& exc ) {
                     if ( exc.GetErrCode() == exc.eNotFoundDb ||

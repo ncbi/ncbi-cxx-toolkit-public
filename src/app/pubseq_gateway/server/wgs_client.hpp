@@ -33,6 +33,7 @@
  */
 
 #include "psgs_request.hpp"
+#include "timing.hpp"
 #include <util/thread_nonstop.hpp>
 #include <util/limited_size_map.hpp>
 #include <objects/general/general__.hpp>
@@ -93,6 +94,7 @@ struct SWGSData
     CRef<objects::CAsnBinData>      m_Data;
     bool                            m_Excluded = false;
     bool                            m_Compress = false;
+    psg_time_point_t                m_Start = psg_clock_t::now();
 };
 
 
@@ -215,6 +217,10 @@ private:
                      const SWGSSeqInfo& seq,
                      const objects::CAsnBinData& data) const;
 
+    void x_RegisterTiming(psg_time_point_t start,
+                          EPSGOperation operation,
+                          EPSGOperationStatus status);
+    
     SWGSProcessor_Config m_Config;
     CMutex m_Mutex;
     objects::CVDBMgr m_Mgr;
