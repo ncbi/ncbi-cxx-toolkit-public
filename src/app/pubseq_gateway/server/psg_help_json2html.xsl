@@ -14,9 +14,27 @@
 			<header>
 				<title>JSON to HTML test</title>
 				<style>
-				  table, th, td {
-					border: 1px solid;
+					table, th, td {
+						border: 1px solid;
+						padding: 10px;
+						}
+					table {
+						border-collapse: collapse;
+						}
+					th {
+						background-color: #D8D8D8;
+						font-size: larger;
+						font-weight: bold;
 					}
+					table.first-column > tbody > tr > td:nth-of-type(1) {
+						font-size: larger;
+						font-weight: bold;
+						background-color: #F5F5F5;
+					}
+					table.nested td {
+						border-color: silver;
+					}
+					
 				</style>
 			</header>		
 			<body>
@@ -30,7 +48,10 @@
 	<xsl:template match="map" xpath-default-namespace="http://www.w3.org/2005/xpath-functions">	
 		<xsl:call-template name="doAbout">
 			<xsl:with-param name="nodeAbout" select="map[@key='about']" />
-		</xsl:call-template>	
+		</xsl:call-template>
+		<xsl:call-template name="doTOC">
+			<xsl:with-param name="nodeRequests" select="map[@key='requests']" />
+		</xsl:call-template>		
 		<xsl:call-template name="doRequests">
 			<xsl:with-param name="nodeRequests" select="map[@key='requests']" />
 		</xsl:call-template>	
@@ -53,13 +74,30 @@
 				<xsl:for-each select="$nodeAbout/string[not(@key='name') and not(@key='description')]">
 				  <tr><td><xsl:value-of select="@key"/></td><td><xsl:value-of select="."/></td></tr>
 				</xsl:for-each>
-		</table>			
+		</table>
+			<br/>
+			<hr/>
+			<br/>
+			<br/>		
 	</xsl:template>
+	
+	<!-- display TOC -->
+	<xsl:template name="doTOC" xpath-default-namespace="http://www.w3.org/2005/xpath-functions">
+	 <xsl:param name="nodeRequests" />
+	 <h2>Commands</h2>
+		<ul>
+			<xsl:for-each select="$nodeRequests/map">
+				<li><a><xsl:attribute name="href"><xsl:value-of select="concat('#', translate(@key, '/', '_'))"/></xsl:attribute><xsl:value-of select="@key"/></a></li>	 
+			</xsl:for-each>
+		</ul>
+	</xsl:template>
+	
 
 	<!-- display a list of requests -->
 	<xsl:template name="doRequests" xpath-default-namespace="http://www.w3.org/2005/xpath-functions">
 	  <xsl:param name="nodeRequests" />
 				<xsl:for-each select="$nodeRequests/map">
+				  <a><xsl:attribute name="id"><xsl:value-of select="translate(@key, '/', '_')"/></xsl:attribute></a>
 				  <h2><xsl:value-of select="@key"/></h2>
 				  <p><xsl:value-of select="string[@key='description']"/></p>
 				  
@@ -68,7 +106,11 @@
 				  </xsl:call-template>
 
 				  <h3>Reply</h3>
-				  <p><xsl:value-of select="map[@key='reply']/string[@key='description']"/></p>		
+				  <p><xsl:value-of select="map[@key='reply']/string[@key='description']"/></p>
+
+					<hr/>
+					<br/>
+					<br/>				  
 				  
 				</xsl:for-each>
 	  
@@ -78,8 +120,9 @@
 	<xsl:template name="doParameters" xpath-default-namespace="http://www.w3.org/2005/xpath-functions">
 		<xsl:param name="nodeParameters" />
 		<xsl:if test="count($nodeParameters/map) &gt; 0">
-		<table>
-	
+		<table class="first-column">
+				<!-- headers -->
+				<tr><th>Parameter</th><th>Optional</th><th>Type</th><th>Description</th><th>Allowed Values</th><th>Default</th></tr>
 				<xsl:for-each select="$nodeParameters/map">
 				<tr>
 				
@@ -99,7 +142,7 @@
 				
 				
 				<!-- allowed values -->
-				<td>
+				<td class="description">
 				<xsl:choose>
 				  <xsl:when test="map[@key='description']">
 					<xsl:call-template name="descriptionTable">
@@ -146,8 +189,9 @@
 	<xsl:template name="descriptionTable" xpath-default-namespace="http://www.w3.org/2005/xpath-functions">
 		<xsl:param name="descNode" />
 		<xsl:value-of select="$descNode/string[@key='title']" />
+		<br/><br/>
 		<xsl:if test="$descNode/array[@key='table']">
-			<table>
+			<table class="nested">
 				<xsl:for-each select="$descNode/array[@key='table']/array">
 				  <tr>
 					<xsl:for-each select="string">
