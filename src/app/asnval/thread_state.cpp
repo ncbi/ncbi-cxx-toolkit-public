@@ -925,6 +925,7 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename)
             if (!asninfo) {
                 PrintValidError(ReportReadFailure(nullptr));
                 LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to process invalid ASN.1 file " + filename);
+                break;
             }
 
             try {
