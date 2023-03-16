@@ -143,6 +143,21 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalAuthorName, "%s", p);
             continue;
         }
+        if(author->GetName().GetName().IsSetLast() &&
+           !author->GetName().GetName().IsSetFirst())
+        {
+            char *last = (char *) author->SetName().SetName().SetLast().c_str();
+            p = StringChr(last, '|');
+            if(p)
+            {
+                *p++ = '\0';
+                while(*p == ' ')
+                    p++;
+                if(*p != '\0')
+                    author->SetName().SetName().SetFirst((const char *) p);
+            }
+            author->SetName().SetName().SetLast((const char *) last);
+        }
 
         if (author->GetName().GetName().IsSetInitials()) {
             string& initials = author->SetName().SetName().SetInitials();
