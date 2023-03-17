@@ -225,6 +225,12 @@ TIMING_CLASS(CNAResolveTiming);
 // VDB opening timing
 TIMING_CLASS(CVDBOpenTiming);
 
+// SNP PTIS lookup timing
+TIMING_CLASS(CSNPPTISLookupTiming);
+
+// WGS VDB lookup timing
+TIMING_CLASS(CWGSVDBLookupTiming);
+
 // Resolution
 TIMING_CLASS(CResolutionTiming);
 
@@ -331,6 +337,8 @@ class COperationTiming
         vector<unique_ptr<CTSEChunkRetrieveTiming>>         m_TSEChunkRetrieveTiming;
         vector<unique_ptr<CNAResolveTiming>>                m_NAResolveTiming;
         vector<unique_ptr<CVDBOpenTiming>>                  m_VDBOpenTiming;
+        vector<unique_ptr<CSNPPTISLookupTiming>>            m_SNPPTISLookupTiming;
+        vector<unique_ptr<CWGSVDBLookupTiming>>             m_WGSVDBLookupTiming;
 
         // The index is calculated basing on the blob size
         vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;

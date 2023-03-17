@@ -236,6 +236,8 @@ TIMING_CLASS_DEF(CIPGResolveRetrieveTiming);
 TIMING_CLASS_DEF(CTSEChunkRetrieveTiming);
 TIMING_CLASS_DEF(CNAResolveTiming);
 TIMING_CLASS_DEF(CVDBOpenTiming);
+TIMING_CLASS_DEF(CSNPPTISLookupTiming);
+TIMING_CLASS_DEF(CWGSVDBLookupTiming);
 TIMING_CLASS_DEF(CResolutionTiming);
 TIMING_CLASS_DEF(CBacklogTiming);
 
@@ -394,6 +396,16 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CVDBOpenTiming>(
                 new CVDBOpenTiming(min_stat_value, max_stat_value,
                                    n_bins, scale_type, reset_to_default)));
+
+        m_SNPPTISLookupTiming.push_back(
+            unique_ptr<CSNPPTISLookupTiming>(
+                new CSNPPTISLookupTiming(min_stat_value, max_stat_value,
+                                         n_bins, scale_type, reset_to_default)));
+
+        m_WGSVDBLookupTiming.push_back(
+            unique_ptr<CWGSVDBLookupTiming>(
+                new CWGSVDBLookupTiming(min_stat_value, max_stat_value,
+                                        n_bins, scale_type, reset_to_default)));
 
     }
 
@@ -655,6 +667,30 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
           SInfo(m_VDBOpenTiming[1].get(),
                 "VDB opening failure",
                 "The timing of the failed VDB opening"
+               )
+        },
+        { "SNPPTISLookupFound",
+          SInfo(m_SNPPTISLookupTiming[0].get(),
+                "SNP PTIS lookup found",
+                "The timing of the SNP PTIS lookup success"
+               )
+        },
+        { "SNPPTISLookupNotFound",
+          SInfo(m_SNPPTISLookupTiming[1].get(),
+                "SNP PTIS lookup not found",
+                "The timing of the SNP PTIS lookup when nothing was found"
+               )
+        },
+        { "WGSVDBLookupFound",
+          SInfo(m_WGSVDBLookupTiming[0].get(),
+                "WGS VDB lookup found",
+                "The timing of the WGS VDB lookup success"
+               )
+        },
+        { "WGSVDBLookupNotFound",
+          SInfo(m_WGSVDBLookupTiming[1].get(),
+                "WGS VDB lookup not found",
+                "The timing of the WGS VDB lookup when nothing was found"
                )
         },
         { "HugeBlobRetrieval",
@@ -955,6 +991,12 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
         case eVDBOpen:
             m_VDBOpenTiming[index]->Add(mks);
             break;
+        case eSNP_PTISLookup:
+            m_SNPPTISLookupTiming[index]->Add(mks);
+            break;
+        case eWGS_VDBLookup:
+            m_WGSVDBLookupTiming[index]->Add(mks);
+            break;
     }
 }
 
@@ -1017,6 +1059,8 @@ void COperationTiming::Rotate(void)
         m_TSEChunkRetrieveTiming[k]->Rotate();
         m_NAResolveTiming[k]->Rotate();
         m_VDBOpenTiming[k]->Rotate();
+        m_SNPPTISLookupTiming[k]->Rotate();
+        m_WGSVDBLookupTiming[k]->Rotate();
     }
 
     m_HugeBlobRetrievalTiming->Rotate();
@@ -1069,6 +1113,8 @@ void COperationTiming::Reset(void)
             m_TSEChunkRetrieveTiming[k]->Reset();
             m_NAResolveTiming[k]->Reset();
             m_VDBOpenTiming[k]->Reset();
+            m_SNPPTISLookupTiming[k]->Reset();
+            m_WGSVDBLookupTiming[k]->Reset();
         }
 
         m_HugeBlobRetrievalTiming->Reset();
