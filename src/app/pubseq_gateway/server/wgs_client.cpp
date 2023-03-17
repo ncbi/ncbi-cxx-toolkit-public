@@ -776,7 +776,10 @@ CWGSClient::SWGSSeqInfo
 CWGSClient::ResolveGi(TGi gi, bool skip_lookup)
 {
     CRef<CWGSResolver> wgs_resolver = GetWGSResolver();
+    psg_time_point_t start = psg_clock_t::now();
     CWGSResolver::TWGSPrefixes prefixes = wgs_resolver->GetPrefixes(gi);
+    x_RegisterTiming(start, eWGS_VDBLookup,
+                     prefixes.empty()? eOpStatusNotFound: eOpStatusFound);
     ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
         if (skip_lookup) {
             SWGSSeqInfo fake_info;
@@ -887,7 +890,10 @@ CWGSClient::ResolveProtAcc(const CTextseq_id& id, bool skip_lookup)
     int ask_version = id.IsSetVersion()? id.GetVersion(): -1;
     
     CRef<CWGSResolver> wgs_resolver = GetWGSResolver();
+    psg_time_point_t start = psg_clock_t::now();
     CWGSResolver::TWGSPrefixes prefixes = wgs_resolver->GetPrefixes(acc);
+    x_RegisterTiming(start, eWGS_VDBLookup,
+                     prefixes.empty()? eOpStatusNotFound: eOpStatusFound);
     ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
         if (skip_lookup) {
             SWGSSeqInfo fake_info;

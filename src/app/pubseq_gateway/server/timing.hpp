@@ -89,7 +89,9 @@ enum EPSGOperation {
     eTseChunkRetrieve,
     eNAResolve,
     eVDBOpen,
-    eBacklog
+    eBacklog,
+    eSNP_PTISLookup,
+    eWGS_VDBLookup
 };
 
 

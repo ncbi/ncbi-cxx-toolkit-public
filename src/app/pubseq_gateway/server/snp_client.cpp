@@ -1118,7 +1118,10 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const string
                 return ret;
             }
             // find default SNP track
+            psg_time_point_t start = psg_clock_t::now();
             string na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
+            x_RegisterTiming(start, eSNP_PTISLookup,
+                             na_acc.empty()? eOpStatusNotFound: eOpStatusFound);
             if (na_acc.empty()) {
                 // no default SNP track
                 return ret;
