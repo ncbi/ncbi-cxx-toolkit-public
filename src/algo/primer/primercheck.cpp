@@ -162,7 +162,7 @@ static void s_CountGaps(const string& xcript,
         }
      }
 
-     for(SIZE_TYPE i = xcript.size() - 1; i >= 0; i--){
+     for(int i = (int)xcript.size() - 1; i >= 0; i--){
         if (xcript[i] == master_gap_char) {
             master_end_gap ++;
         } else {
@@ -180,7 +180,7 @@ static void s_CountGaps(const string& xcript,
          }
      }
      if (master_end_gap == 0){
-         for(SIZE_TYPE i = xcript.size() - 1; i >= 0; i--){
+         for(int i = (int)xcript.size() - 1; i >= 0; i--){
              if (xcript[i] == slave_gap_char) {
                  slave_end_gap ++;
              } else {
@@ -1963,7 +1963,7 @@ void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
         m_SortHit.push_back(each_hit);
         
     }
-    int num_hits = m_SortHit.size();
+    int num_hits = (int)m_SortHit.size();
     int num_hsp = (int)input_hits.Get().size();
     int hsp_hit_ratio = 0;
 
