@@ -2134,13 +2134,24 @@ static list<string> s_GetLinkoutUrl(int linkout,
         linkout_list.push_back(url_link);
     }
     if (linkout & eStructure){
+        CSeq_id seqID(firstAcc);        
         string struct_link = CAlignFormatUtil::GetURLFromRegistry(
                                                              "STRUCTURE_URL");
 
-        url_link = struct_link.empty() ? kStructureUrl : struct_link;
-        lnk_displ = textLink ? "Structure" : kStructureImg;  
+        url_link = struct_link.empty() ? kStructureUrl : struct_link;        
+        string linkTitle;
+        if(seqID.Which() == CSeq_id::e_Pdb) {
+            lnk_displ = textLink ? "Structure" : kStructureImg;  
+            linkTitle = " title=\"View 3D structure <@label@>\"";                    
+        }
+        else {
+            url_link = kStructureAlphaFoldUrl;
+            lnk_displ = textLink ? "AlphaFold Structure" : kStructureImg;  
+            linkTitle = " title=\"View AlphaFold 3D structure <@label@>\"";                    
+        }
         
-        string linkTitle = " title=\"View 3D structure <@label@>\"";        
+        
+        
         string molID,chainID;
         NStr::SplitInTwo(firstAcc,"_",molID,chainID);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"molid",molID);
@@ -2151,7 +2162,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         }        
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
-    }
+    }    
     if (linkout & eGeo){
         url_link = CAlignFormatUtil::GetURLFromRegistry("GEO");        
         lnk_displ = textLink ? "GEO Profiles" : kGeoImg; 
@@ -2366,7 +2377,6 @@ list<string> CAlignFormatUtil::GetLinkoutUrl(int linkout, const CBioseq::TId& id
 
     return linkout_list;
 }
-
 
 static int s_LinkLetterToType(string linkLetter)
 {
