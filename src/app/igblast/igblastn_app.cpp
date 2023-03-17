@@ -727,7 +727,7 @@ int CIgBlastnApp::Run(void)
         //const CBlastOptions& opt = m_opts_hndl->GetOptions();
 	m_worker_thread_num = m_CmdLineArgs->GetNumThreads();
         //logging
-        threads_log = m_CmdLineArgs->GetNumThreads();
+        threads_log = (int) m_CmdLineArgs->GetNumThreads();
         //do not allow multi-threading for remote blast
         if (m_CmdLineArgs->ExecuteRemotely()){
             m_worker_thread_num = 1;
