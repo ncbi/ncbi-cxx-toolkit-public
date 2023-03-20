@@ -138,29 +138,29 @@ namespace
         return CRef<CSeq_id>();
     }
 
-    void x_ModifySeqIds(CSerialObject& obj, CConstRef<CSeq_id> match, CRef<CSeq_id> new_id)
+    void s_ModifySeqIds(CSeq_annot& annot, const CSeq_id& match, CRef<CSeq_id> new_id)
     {
 #if 0
-        CTypeIterator<CSeq_id> visitor(obj);
+        CTypeIterator<CSeq_id> visitor(annot);
 
         while (visitor)
         {
             CSeq_id& id = *visitor;
-            if (match.Empty() || id.Compare(*match) == CSeq_id::e_YES)
+            if (id.Compare(match) == CSeq_id::e_YES)
             {
                 id.Assign(*new_id);
             }
             ++visitor;
         }
 #else
-        CTypeIterator<CSeq_loc> visitor(obj);
+        CTypeIterator<CSeq_loc> visitor(annot);
 
         CSeq_id& id = *new_id;
         while (visitor)
         {
             CSeq_loc& loc = *visitor;
 
-            if (match.Empty() || loc.GetId()->Compare(*match) == CSeq_id::e_YES)
+            if (loc.GetId()->Compare(match) == CSeq_id::e_YES)
             {
                 loc.SetId(id);
             }
@@ -1294,6 +1294,31 @@ static CRef<CSeq_id> s_GetAnnotId(const CSeq_annot& annot)
     return pAnnotId;
 }
 
+/*
+bool s_MatchBioseqToAnnot(const CSeq_id& seqId, const CSeq_id& annotId, const string& genomeCenterId)
+{
+
+    if (seqId.IsGeneral() &&
+        seqId.GetGeneral().IsSetDb() &&
+        (seqId.GetGeneral().GetDb() == genomeCenterId) &&
+        (seqId.GetGeneral().IsSetTag() && seqId.GetGeneral().GetTag().IsStr())) {
+
+        const auto& tag = seqId.GetGeneral().GetTag().GetStr();
+
+        return (annotId.IsLocal() && annotId.GetLocal().IsStr() && 
+                (annotId.GetLocal().GetStr() == seqId.GetGeneral().GetTag().GetStr()));
+    } else if (annotId.IsLocal() && annotId.GetLocal().IsStr()) {
+        CBioseq::TId ids;
+        CSeq_id::ParseIDs(ids, annotId.GetLocal().GetStr());
+        if (ids.size() == 1) {
+            // attempt to match seqId and annotId
+
+        }
+    }
+
+    return false;
+}
+*/
 
 
 bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& pAnnot) const
@@ -1303,26 +1328,39 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& pAnnot) const
         return false;
     }
 
-    CBioseq::TId ids;
+    CRef<CSeq_id> pMatchingId;
+
     CBioseq_Handle bioseq_h = scope.GetBioseqHandle(*pAnnotId);
     if (!bioseq_h && pAnnotId->IsLocal() && pAnnotId->GetLocal().IsStr())
     {
-        CSeq_id::ParseIDs(ids, pAnnotId->GetLocal().GetStr());
+        const auto& localStr = pAnnotId->GetLocal().GetStr();
+        CBioseq::TId ids;
+        CSeq_id::ParseIDs(ids, localStr);
         if (ids.size() == 1)
         {
             bioseq_h = scope.GetBioseqHandle(*ids.front());
-        }
-        if (!bioseq_h && !m_context.m_genome_center_id.empty())
-        {
-            string id = "gnl|" + m_context.m_genome_center_id + "|" + pAnnotId->GetLocal().GetStr();
-            ids.clear();
-            CSeq_id::ParseIDs(ids, id);
-            if (ids.size() == 1)
-            {
-                bioseq_h = scope.GetBioseqHandle(*ids.front());
+            if (bioseq_h) {
+                pMatchingId = ids.front();
             }
         }
+
+        CRef<CSeq_id> pGeneralId;
+        if (!bioseq_h && !m_context.m_genome_center_id.empty()) {
+            if (localStr.find('|') == NPOS) {
+                auto pDbtag = Ref(new CDbtag());
+                pDbtag->SetDb(m_context.m_genome_center_id);
+                pDbtag->SetTag().SetStr(localStr);
+                pGeneralId = Ref(new CSeq_id(*pDbtag));
+                bioseq_h = scope.GetBioseqHandle(*pGeneralId);
+                ids.clear();
+                if (bioseq_h) {
+                    pMatchingId = pGeneralId;
+                }
+            }
+        }   
     }
+
+
     if (!bioseq_h)
     {
         CRef<CSeq_id> alt_id = GetSeqIdWithoutVersion(*pAnnotId);
@@ -1337,14 +1375,14 @@ bool CMultiReader::xFixupAnnot(CScope& scope, CRef<CSeq_annot>& pAnnot) const
         // update ids
         CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
         CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
-        CRef<CSeq_id> matching_id = GetIdByKind(*pAnnotId, bioseq.GetId());
 
-        if (matching_id.Empty())
-            matching_id = ids.front();
+        if (!pMatchingId) {
+            pMatchingId = GetIdByKind(*pAnnotId, bioseq.GetId());
+        }
 
-        if (matching_id && !pAnnotId->Equals(*matching_id))
+        if (pMatchingId && !pAnnotId->Equals(*pMatchingId))
         {
-            x_ModifySeqIds(*pAnnot, pAnnotId, matching_id);
+            s_ModifySeqIds(*pAnnot, *pAnnotId, pMatchingId);
         }
 
         CRef<CSeq_annot> existing;
