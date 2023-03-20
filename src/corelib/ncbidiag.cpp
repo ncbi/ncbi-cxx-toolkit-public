@@ -1630,7 +1630,6 @@ CDiagContext::TUID s_CreateUID(CDiagContext::TUID base)
     TPID pid = CDiagContext::GetPID();
     time_t t = time(0);
 
-    _ASSERT(base > 0);
     base &= 0xFFFF;
 
     // The low 4 bits are reserved for GUID generator version number.
