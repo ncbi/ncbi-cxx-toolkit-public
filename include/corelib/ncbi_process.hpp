@@ -255,26 +255,64 @@ public:
     enum FForkFlags {
         fFF_UpdateDiag      = 1,  ///< Reset diagnostics timer and log an
                                   ///< app-start message in the child process.
-        fFF_AllowExceptions = 32, ///< Throw an exception if fork(2) failed.
+        fFF_Exec            = 2,  ///< User plan to use exec(3) or execve(2) to "replace" forked child
+                                  ///< process with another program as soon as possible after fork,
+                                  ///< so we can skip some initialization and checks. Cancels fFF_UpdateDiag.
+        fFF_AllowExceptions = 32  ///< Throw an exception on error.
     };
     /// Bit-wise OR of FForkFlags @sa FForkFlags
     typedef unsigned TForkFlags;
 
-    /// Fork the process. Update PID and GUID used for logging.
+    /// Fork the process. Update PID and GUID used for logging (by default).
     ///
+    /// @warning
+    ///   The  child  process is created with a single thread, the one that called fork().
+    ///   The entire virtual address space of the parent is replicated in the child,
+    ///   including the states of mutexes, condition variables, open file descriptors,
+    ///   pthreads objects, and etc. But child process doesn't inherit or reset many
+    ///   other properties. Be aware. Consult fork(2) man-pages for a full details.
+    /// @warning
+    ///   Fork() should be called from a single-threaded application, even if it built
+    ///   in MT configurations. If you have many running threads in the parent process,
+    ///   this can lead to unpredictable results and various deadlocks.
+    ///   "After a fork() in a multithreaded program, the child can safely call only 
+    ///   async-signal-safe functions." until it calls execve(2) to replace a forked
+    ///   child process as soon as possible after Fork().
+    ///   See https://man7.org/linux/man-pages/man2/fork.2.html
     /// @return
     ///   In the parent process, the call returns the child process ID.
     ///   In the child process, the call returns zero.
-    ///   In case of an error, unless the fFF_AllowExceptions flag is
-    ///   given, the call returns -1.
-    ///
+    ///   In case of an error, unless the fFF_AllowExceptions flag is specified,
+    ///   the call returns -1.
     /// @throw
     ///   If the fFF_AllowExceptions flag is specified, throws a CCoreException
     ///   in case of a fork(2) failure. If the platform does not support process
     ///   forking, an exception is always thrown regardless of whether
     ///   the fFF_AllowExceptions flag is specified.
-    ///
+    /// @note
+    ///   Implemented for Unix only.
+    /// @sa ForkForExec
+    /// 
     static TPid Fork(TForkFlags flags = fFF_UpdateDiag);
+
+    /// Fork the process for "replacing" a child process with a new process.
+    ///
+    /// Special version of Fork() with a different name for easier recognizing.
+    /// Assumes that the user will replace child process after this call with using
+    /// exec(3) or execve(2) calls as soon as possible. The child can safely call
+    /// only async-signal-safe functions after Fork() until the child process 
+    /// has replaced. This mean no memory allocation, streams, logging and etc.
+    /// Please consult the list of sync-signal-safe functions before using, like:
+    /// https://man7.org/linux/man-pages/man7/signal-safety.7.html
+    /// 
+    /// @return
+    ///   In the parent process, the call returns the child process ID.
+    ///   In the child process, the call returns zero.
+    ///   In case of an error, unless the fFF_AllowExceptions flag is specified,
+    ///   the call returns -1.
+    /// @sa Fork
+    ///
+    static TPid ForkForExec(TForkFlags flags = 0) { return Fork(flags | fFF_Exec); };
 
     /// Daemonization flags
     enum FDaemonFlags {

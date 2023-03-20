@@ -304,24 +304,45 @@ static string s_ErrnoToString()
 }
 #endif
 
+
 TPid CCurrentProcess::Fork(CProcess::TForkFlags flags)
 {
 #ifdef NCBI_OS_UNIX
+
+    // Issue a warning if not a single thread is used that
+    // can lead to a not-async safe calls (and potential problems)
+    bool use_async_safe = CCurrentProcess::GetThreadCount() > 1;
+    if (!(flags & fFF_Exec)  &&  use_async_safe) {
+        ERR_POST_X(3, Warning << "It is not safe to call Fork() from a multithreaded program");
+    }
     TPid pid = ::fork();
-    if (pid == 0)
-        // Only update PID and UID in the child process.
-        CDiagContext::UpdateOnFork((flags & fFF_UpdateDiag) != 0 ?
-                                   CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart : 0);
+    if (pid == 0) {
+        // child process:
+        // Update Diag API after fork, except fFF_Exec cases
+        if (!(flags & fFF_Exec)) {
+            CDiagContext::TOnForkFlags f = 0;
+            if (flags & fFF_UpdateDiag) {
+                f |= (CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart);
+            }
+            if (use_async_safe) {
+                f |= CDiagContext::fOnFork_AsyncSafe;
+            }
+            // Update PID and UID in the child process
+            CDiagContext::UpdateOnFork(f);
+        }
+    }
     else if (pid == (TPid)(-1) && (flags & fFF_AllowExceptions) != 0) {
         NCBI_THROW_FMT(CCoreException, eCore,
                        "CCurrentProcess::Fork(): Cannot fork: " << s_ErrnoToString());
     }
     return pid;
+
 #else
     NCBI_THROW(CCoreException, eCore,
                "CCurrentProcess::Fork() not implemented on this platform");
 #endif
 }
+
 
 #ifdef NCBI_OS_UNIX
 namespace {

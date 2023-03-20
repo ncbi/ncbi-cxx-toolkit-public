@@ -60,7 +60,7 @@ NCBI_DEFINE_ERRCODE_X(Corelib_StreamUtil, 116,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_Threads,    117,  4);
 NCBI_DEFINE_ERRCODE_X(Corelib_Dll,        118,  2);
 NCBI_DEFINE_ERRCODE_X(Corelib_TestBoost,  119,  6);
-NCBI_DEFINE_ERRCODE_X(Corelib_Process,    120,  2);
+NCBI_DEFINE_ERRCODE_X(Corelib_Process,    120,  3);
 NCBI_DEFINE_ERRCODE_X(Corelib_Mutex,      121,  2);
 NCBI_DEFINE_ERRCODE_X(Corelib_Cookies,    122,  7);
 NCBI_DEFINE_ERRCODE_X(Corelib_Message,    123,  2);

@@ -1936,14 +1936,18 @@ public:
     typedef Uint8 TPID;
     /// Get cached PID (read real PID if not cached yet).
     static TPID GetPID(void);
-    /// Reset PID cache (e.g. after fork). Return true if PID was updated
-    /// (in the child process).
+    /// Reset PID cache (e.g. after fork). Return true if PID was updated.
     static bool UpdatePID(void);
+    static bool UpdatePID_AsyncSafe(void);
 
     /// Actions to perform in UpdateOnFork().
     enum FOnForkAction {
         fOnFork_PrintStart = 1 << 0,   ///< Log app-start.
-        fOnFork_ResetTimer = 1 << 1    ///< Reset execution timer.
+        fOnFork_ResetTimer = 1 << 1,   ///< Reset execution timer.
+        fOnFork_AsyncSafe  = 1 << 15   ///< After a fork() in a multithreaded program, the child can
+                                       ///< safely call only async-signal-safe functions. So we can do
+                                       ///< only a limited set of operations updating diag context there.
+                                       ///< Cancels both previous flags as not async-signal-safe. 
     };
     typedef int TOnForkFlags;
 
@@ -1951,6 +1955,21 @@ public:
     /// child process). If PID has not changed (parent process), no other
     /// actions are performed. For this reason the method will not do anything
     /// after the first call, since no PID changes will be detected.
+    /// @warning
+    ///   The program can be built using multithreaded configurations, but for safety it should
+    ///   have a single thread before fork(). Only in this case it is safe to use any code 
+    ///   in the child process.
+    /// @warning
+    ///   If  your program runs many threads and you call fork() one of them, it is safe to use
+    ///   async-safe calls only, otherwise you can get a dedlock, especially if you use thread 
+    ///   locking methods and synchronizations, like mutexes and etc.
+    ///   Diag API is not async-safe, because use strings, memory allocations, streams and etc.
+    ///   Also, in such cases you need to use fOnFork_AsyncSafe flag to use async safe operations
+    ///   only inside this method. Note that this flag disable some initialization of the Diag API
+    ///   after forking.
+    /// 
+    /// @sa UpdatePID(), UpdatePID_AsyncSafe(), CCurrentProcess::GetThreadCount(), CCurrentProcess::Fork()
+    ///
     static void UpdateOnFork(TOnForkFlags flags);
 
     typedef SDiagMessage::TUID TUID;
@@ -2287,6 +2306,8 @@ private:
 
     // Initialize UID
     void x_CreateUID(void) const;
+    void x_CreateUID_AsyncSafe(void) const;
+
     // Write message to the log using current handler
     void x_PrintMessage(SDiagMessage::EEventType event,
                         const string&            message);

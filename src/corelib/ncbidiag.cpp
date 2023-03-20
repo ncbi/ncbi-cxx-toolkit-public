@@ -1565,7 +1565,6 @@ bool CDiagContext::UpdatePID(void)
     TPID old_pid = sm_PID;
     TPID new_pid = CCurrentProcess::GetPid();
     if (sm_PID == new_pid) {
-        // Parent process does not need to update pid/guid
         return false;
     }
     sm_PID = new_pid;
@@ -1581,31 +1580,60 @@ bool CDiagContext::UpdatePID(void)
 }
 
 
+bool CDiagContext::UpdatePID_AsyncSafe(void)
+{
+    TPID new_pid = CCurrentProcess::GetPid();
+    if (sm_PID == new_pid) {
+        return false;
+    }
+    sm_PID = new_pid;
+    // Update GUID to match the new PID.
+    // GetDiagContext() call is not async safe in common, but should be safe
+    // after Diag API initialization, it's just doing a pointer type cast.
+    GetDiagContext().x_CreateUID_AsyncSafe();
+    return true;
+}
+
+
 void CDiagContext::UpdateOnFork(TOnForkFlags flags)
 {
-    CDiagContext& ctx = GetDiagContext();
-    // Do not perform any actions in the parent process.
+    if (flags & fOnFork_AsyncSafe) {
+        UpdatePID_AsyncSafe();
+        return;
+    }
+    // not async safe:
+
+    // Do not perform any actions in the parent process
     if ( !UpdatePID() ) return;
+
     if (flags & fOnFork_ResetTimer) {
-        ctx.m_StopWatch->Restart();
+        GetDiagContext().m_StopWatch->Restart();
     }
     if (flags & fOnFork_PrintStart) {
-        ctx.PrintStart(kEmptyStr);
+        GetDiagContext().PrintStart(kEmptyStr);
     }
 }
 
 
-void CDiagContext::x_CreateUID(void) const
+const CDiagContext::TUID kUID_InitBase =  212;
+const CDiagContext::TUID kUID_Mult     = 1265;
+
+CDiagContext::TUID s_CreateUID(CDiagContext::TUID base)
 {
-    Int8 pid = GetPID();
+    // This method expected to be async-signal-safe
+    // https://man7.org/linux/man-pages/man7/signal-safety.7.html
+    // All non-async-safe code should go to x_CreateUID().
+
+    typedef CDiagContext::TPID TPID;
+    typedef CDiagContext::TUID TUID;
+    
+    TPID pid = CDiagContext::GetPID();
     time_t t = time(0);
-    const string& host = GetHost();
-    TUID h = 212;
-    ITERATE(string, s, host) {
-        h = h*1265 + *s;
-    }
-    h &= 0xFFFF;
-    // The low 4 bits are reserved as GUID generator version number.
+
+    _ASSERT(base > 0);
+    base &= 0xFFFF;
+
+    // The low 4 bits are reserved for GUID generator version number.
     // As of October 2017 the following versions are used:
     //   0 - very old C++ Toolkit
     //   1 - contemporary C++ Toolkit
@@ -1615,10 +1643,48 @@ void CDiagContext::x_CreateUID(void) const
     //   5 - Java
     //   6 - Scala
     //  13 - Perl (NcbiApplog.pm)
-    m_UID = (TUID(h) << 48) |
-        ((TUID(pid) & 0xFFFF) << 32) |
-        ((TUID(t) & 0xFFFFFFF) << 4) |
-        1; // version #1 - fixed type conversion bug
+
+    return (TUID(base) << 48) |
+           ((TUID(pid) & 0xFFFF) << 32) |
+           ((TUID(t) & 0xFFFFFFF) << 4) |
+           1; // version #1 - fixed type conversion bug
+}
+
+void CDiagContext::x_CreateUID(void) const
+{
+    TUID base = kUID_InitBase;
+    const string& host = GetHost();
+    for (auto c : host) {
+        base = base * kUID_Mult + c;
+    }
+    m_UID = s_CreateUID(base);
+}
+
+void CDiagContext::x_CreateUID_AsyncSafe(void) const
+{
+    // This method expected to be async-signal-safe
+    // https://man7.org/linux/man-pages/man7/signal-safety.7.html
+    // Implemented for Unix only, on other platforms works the same
+    // as a regular x_CreateUID().
+    
+#if defined(NCBI_OS_UNIX)
+    TUID base = kUID_InitBase;
+    struct utsname buf;
+    if (uname(&buf) >= 0) {
+        const char* s = buf.nodename;
+        while (*s) {
+            base = base * kUID_Mult + *s;
+            s++;
+        }
+    }
+    else {
+        // Rough workaround in case of uname() error
+        base = base * kUID_Mult + (TUID)GetPID();
+    }
+    m_UID = s_CreateUID(base);
+#else 
+    x_CreateUID();
+#endif
 }
 
 
