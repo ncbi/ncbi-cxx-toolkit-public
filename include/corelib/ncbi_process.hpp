@@ -255,7 +255,7 @@ public:
     enum FForkFlags {
         fFF_UpdateDiag      = 1,  ///< Reset diagnostics timer and log an
                                   ///< app-start message in the child process.
-        fFF_Exec            = 2,  ///< User plan to use exec(3) or execve(2) to "replace" forked child
+        fFF_Exec            = 2,  ///< User plans to use exec(3) or execve(2) to "replace" forked child
                                   ///< process with another program as soon as possible after fork,
                                   ///< so we can skip some initialization and checks. Cancels fFF_UpdateDiag.
         fFF_AllowExceptions = 32  ///< Throw an exception on error.
