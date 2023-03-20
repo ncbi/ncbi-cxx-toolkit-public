@@ -305,7 +305,8 @@ public:
     };
     enum FOnForkAction {
         fOnFork_PrintStart = 1 << 0,   ///< Log app-start.
-        fOnFork_ResetTimer = 1 << 1    ///< Reset execution timer.
+        fOnFork_ResetTimer = 1 << 1,   ///< Reset execution timer.
+        fOnFork_AsyncSafe  = 1 << 15
     };
     typedef int TOnForkFlags;
     static void UpdateOnFork(TOnForkFlags flags);
