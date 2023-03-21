@@ -520,9 +520,31 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
     return rval;
 }
 
+// null term exemption values, must be in alphabetical order (case sensitive)
+static const char* const s_Null_CollectionDates[] = {
+    "missing",
+    "missing: control sample",
+    "missing: data agreement established pre-2023",
+    "missing: endangered species",
+    "missing: human-identifiable",
+    "missing: lab stock",
+    "missing: sample group",
+    "missing: synthetic construct",
+    "missing: third party data",
+    "not applicable",
+    "not collected",
+    "not provided",
+    "restricted access"
+};
+typedef CStaticArraySet<const char*, PCase_CStr> TCStrSet;
+static const TCStrSet s_Null_CollectionDatesSet(s_Null_CollectionDates, sizeof(s_Null_CollectionDates), __FILE__, __LINE__);
+
 string CSubSource::GetCollectionDateProblem (const string& date_string)
 {
     string problem;
+    if (s_Null_CollectionDatesSet.find(date_string.c_str()) != s_Null_CollectionDatesSet.end()) {
+        return problem;
+    }
     size_t rval = CheckDateFormat(date_string);
     if (rval & eDateFormatFlag_bad_format) {
         problem = "Collection_date format is not in DD-Mmm-YYYY format";
@@ -3201,7 +3223,6 @@ static const char* const s_Countries[] = {
     "Zambia",
     "Zimbabwe"
 };
-typedef CStaticArraySet<const char*, PCase_CStr> TCStrSet;
 static const TCStrSet s_CountriesSet(s_Countries, sizeof(s_Countries), __FILE__, __LINE__);
 
 // former legal country names, must be in alphabetical order (case sensitive)
@@ -3225,6 +3246,24 @@ static const char* const s_Former_Countries[] = {
 };
 static const TCStrSet s_Former_CountriesSet(s_Former_Countries, sizeof(s_Former_Countries), __FILE__, __LINE__);
 
+// null term exemption values, must be in alphabetical order (case sensitive)
+static const char* const s_Null_Countries[] = {
+    "missing",
+    "missing: control sample",
+    "missing: data agreement established pre-2023",
+    "missing: endangered species",
+    "missing: human-identifiable",
+    "missing: lab stock",
+    "missing: sample group",
+    "missing: synthetic construct",
+    "missing: third party data",
+    "not applicable",
+    "not collected",
+    "not provided",
+    "restricted access"
+};
+static const TCStrSet s_Null_CountriesSet(s_Null_Countries, sizeof(s_Null_Countries), __FILE__, __LINE__);
+
 bool CCountries::IsValid(const string& country)
 {
     string name = country;
@@ -3241,6 +3280,8 @@ bool CCountries::IsValid(const string& country)
     if (s_CountriesSet.find(name.c_str()) != s_CountriesSet.end()) {
         return true;
     } else if (s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end()) {
+        return true;
+    } else if (s_Null_CountriesSet.find(name.c_str()) != s_Null_CountriesSet.end()) {
         return true;
     } else {
         return false;
@@ -3269,6 +3310,9 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
     if ( s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end() ) {
         return true;
     }
+    if ( s_Null_CountriesSet.find(name.c_str()) != s_Null_CountriesSet.end() ) {
+        return true;
+    }
     // slow check for miscapitalized
     ITERATE ( TCStrSet, it, s_CountriesSet ) {
         if ( NStr::EqualNocase(name, *it) ) {
@@ -3277,6 +3321,12 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
         }
     }
     ITERATE ( TCStrSet, it, s_Former_CountriesSet ) {
+        if ( NStr::EqualNocase(name, *it) ) {
+            is_miscapitalized = true;
+            return true;
+        }
+    }
+    ITERATE ( TCStrSet, it, s_Null_CountriesSet ) {
         if ( NStr::EqualNocase(name, *it) ) {
             is_miscapitalized = true;
             return true;
