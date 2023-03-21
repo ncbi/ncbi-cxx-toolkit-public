@@ -542,6 +542,14 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
 {
+    if(opt == eBlastOpt_EvalueThreshold) {
+        typedef objects::CBlast4_cutoff TCutoff;
+        CRef<TCutoff> cutoff(new TCutoff);
+        cutoff->SetE_value(v);
+        x_SetParam(CBlast4Field::Get(opt), cutoff);
+        return;
+    }
+
     if (m_DefaultsMode) {
         return;
     }

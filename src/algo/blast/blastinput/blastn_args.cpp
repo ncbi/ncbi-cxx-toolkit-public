@@ -69,8 +69,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true,
-                                     false, false, false));
+    arg.Reset(new CGenericSearchArgs(eBlastTypeBlastn));
     m_Args.push_back(arg);
 
     arg.Reset(new CNuclArgs);

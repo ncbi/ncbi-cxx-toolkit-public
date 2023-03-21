@@ -355,7 +355,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         {
              opts->SetMatchReward(1);
              opts->SetMismatchPenalty(-3);
-             opts->SetEvalueThreshold(50);
+             opts->SetEvalueThreshold(1000);
              opts->SetWordSize(7);
              opts->ClearFilterOptions();
         }

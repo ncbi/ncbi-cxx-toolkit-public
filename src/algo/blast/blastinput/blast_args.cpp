@@ -113,6 +113,23 @@ CTaskCmdLineArgs::ExtractAlgorithmOptions(const CArgs& /* cmd_line_args */,
     // only relevant tasks are added (@sa CBlastnAppArgs)
 }
 
+CGenericSearchArgs::CGenericSearchArgs(EBlastProgramType program)
+{
+	// Only support blastn for now
+	if (program == eBlastTypeBlastn) {
+		m_QueryIsProtein = false;
+		m_IsRpsBlast = false;
+	    m_ShowPercentIdentity= true;
+	    m_IsTblastx= false;
+	    m_IsIgBlast = false;
+	    m_SuppressSumStats = true;
+	    m_IsBlastn = true;
+	}
+	else {
+		 NCBI_THROW(CInputException, eInvalidInput, "Invalid program");
+	}
+}
+
 void
 CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
@@ -120,9 +137,11 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // evalue cutoff
     if (!m_IsIgBlast) {
-        arg_desc.AddOptionalKey(kArgEvalue, "evalue",
-                     "Expectation value (E) threshold for saving hits. Default = 10 (1000 for blastn-short )",
-                     CArgDescriptions::eDouble);
+    	string des = "Expectation value (E) threshold for saving hits. Default = 10";
+    	if(m_IsBlastn) {
+    		des += " (1000 for blastn-short)";
+    	}
+        arg_desc.AddOptionalKey(kArgEvalue, "evalue", des, CArgDescriptions::eDouble);
     } else if (m_QueryIsProtein) {
         arg_desc.AddDefaultKey(kArgEvalue, "evalue",
                      "Expectation value (E) threshold for saving hits ",
