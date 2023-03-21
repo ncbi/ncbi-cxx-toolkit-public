@@ -1295,9 +1295,8 @@ static CRef<CSeq_id> s_GetAnnotId(const CSeq_annot& annot)
 }
 
 /*
-bool s_MatchBioseqToAnnot(const CSeq_id& seqId, const CSeq_id& annotId, const string& genomeCenterId)
+static bool s_NonTrivialMatch(const CSeq_id& seqId, const CSeq_id& annotId, const string& genomeCenterId)
 {
-
     if (seqId.IsGeneral() &&
         seqId.GetGeneral().IsSetDb() &&
         (seqId.GetGeneral().GetDb() == genomeCenterId) &&
@@ -1311,12 +1310,43 @@ bool s_MatchBioseqToAnnot(const CSeq_id& seqId, const CSeq_id& annotId, const st
         CBioseq::TId ids;
         CSeq_id::ParseIDs(ids, annotId.GetLocal().GetStr());
         if (ids.size() == 1) {
-            // attempt to match seqId and annotId
+            if (ids.front()->Compare(seqId) == CSeq_id::e_YES) {
+                return true;
+            }
+        }
+    }
+}
 
+
+static CRef<CSeq_id> s_MatchBioseqToAnnot(const list<CRef<CSeq_id>>& bioseqIds, 
+        const CRef<CSeq_id>& pAnnotId, 
+        const string& genomeCenterId)
+{
+    _ASSERT(pAnnotId);
+
+    list<CRef<CSeq_id>> tmpIds = bioseqIds; // create a copy to sort
+    using TComp = PPtrLess<CRef<CSeq_id>>;
+        
+    tmpIds.sort(TComp());
+
+    auto it = lower_bound(tmpIds.begin(), tmpIds.end(), pAnnotId, TComp());
+    if (it != tmpIds.end()) {
+        const auto& bioseqId = **it;
+        if (bioseqId.CompareOrdered(*pAnnotId) == 0) {
+            return *it;
+        }
+        if (bioseqId.Compare(*pAnnotId) == CSeq_id::E_SIC::e_YES) {
+            return *it;
         }
     }
 
-    return false;
+    for (auto pSeqId : tmpIds) {
+        if (s_NonTrivialMatch(*pSeqId, *pAnnotId, genomeCenterId)) {
+            return pSeqId;
+        }
+    }
+
+    return CRef<CSeq_id>();    
 }
 */
 
