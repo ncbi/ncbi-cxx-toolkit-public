@@ -1768,6 +1768,15 @@ bool CBioSource::RemoveNullTerms()
     if (IsSetSubtype()) {
         CBioSource::TSubtype::iterator s = SetSubtype().begin();
         while (s != SetSubtype().end()) {
+            if ((*s)->IsSetSubtype()) {
+                if ((*s)->GetSubtype() == CSubSource::eSubtype_country || (*s)->GetSubtype() == CSubSource::eSubtype_collection_date) {
+                    // skip "missing" null exemption value (RW-1944)
+                    if ((*s)->IsSetName() && NStr::EqualNocase((*s)->GetName(), "missing")) {
+                        ++s;
+                        continue;
+                    }
+                }
+            }
             if ((*s)->IsSetName() &&
                 (NStr::EqualNocase((*s)->GetName(), "Missing")
                  || NStr::EqualNocase((*s)->GetName(), "N/A"))) {
