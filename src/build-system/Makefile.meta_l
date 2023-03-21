@@ -53,8 +53,10 @@ ifeq "$(srcdir)" "."
     RELEASE_PTB =
   else
     COMMON_SH   =  $(abs_top_srcdir)/scripts/common/common.sh
-    PLATFORM    := $(shell . $(COMMON_SH) && COMMON_DetectPlatform)
-    RELEASE_PTB =  $(PTB_ROOT)/$(PLATFORM)/project_tree_builder.RELEASE
+    ifneq "" "$(wildcard $(PTB_ROOT))"
+      PLATFORM    := $(shell . $(COMMON_SH) && COMMON_DetectPlatform)
+      RELEASE_PTB =  $(PTB_ROOT)/$(PLATFORM)/project_tree_builder.RELEASE
+    endif
   endif
   PTB_CANDIDATES =  $(PREBUILT_PTB_EXE) $(RELEASE_PTB) $(BOOTSTRAP_PTB)
   PTB            := $(word 1, $(wildcard $(PTB_CANDIDATES)))
