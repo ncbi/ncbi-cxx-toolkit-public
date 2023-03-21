@@ -158,6 +158,18 @@ private:
     unique_ptr<CCDDBlobCache> m_Cache;
 };
 
+class NCBI_CDD_ACCESS_EXPORT CCDDClientException : public CException
+{
+public:
+    enum EErrCode {
+        eClientError, // Communication error
+        eReplyError,  // Error in CDD reply
+        eOtherError
+    };
+    virtual const char* GetErrCodeString(void) const override;
+    NCBI_EXCEPTION_DEFAULT(CCDDClientException,CException);
+};
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
