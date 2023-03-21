@@ -136,13 +136,7 @@ CRef<CCDD_Reply> CCDDClient::AskBlobId(int serial_number, const CSeq_id& seq_id)
     cdd_request->SetRequest().SetGet_blob_id().Assign(seq_id);
     cdd_packet.Set().push_back(cdd_request);
     CRef<CCDD_Reply> cdd_reply(new CCDD_Reply);
-    try {
-        Ask(cdd_packet, *cdd_reply);
-    }
-    catch (exception& e) {
-        ERR_POST(e.what());
-        return null;
-    }
+    Ask(cdd_packet, *cdd_reply);
     return cdd_reply;
 }
 
@@ -155,13 +149,7 @@ CRef<CCDD_Reply> CCDDClient::AskBlob(int serial_number, const CID2_Blob_Id& blob
     cdd_request->SetRequest().SetGet_blob().Assign(blob_id);
     cdd_packet.Set().push_back(cdd_request);
     CRef<CCDD_Reply> cdd_reply(new CCDD_Reply);
-    try {
-        Ask(cdd_packet, *cdd_reply);
-    }
-    catch (exception& e) {
-        ERR_POST(e.what());
-        return null;
-    }
+    Ask(cdd_packet, *cdd_reply);
     return cdd_reply;
 }
 
@@ -380,12 +368,9 @@ CCDDClientPool::SCDDBlob CCDDClientPool::GetBlobBySeq_id(CSeq_id_Handle idh)
         ret.data.Reset(&cdd_blob.SetBlob());
         m_Cache->Add(ret);
     }
-    catch (exception& e) {
-        ERR_POST("CDD - get-blob-by-seq-id request failed: " << e.what());
-        client.Discard();
-    }
     catch (...) {
         client.Discard();
+        throw;
     }
     return ret;
 }
@@ -439,12 +424,9 @@ CCDDClientPool::SCDDBlob CCDDClientPool::GetBlobBySeq_ids(const TSeq_idSet& ids)
         ret.data.Reset(&cdd_blob.SetBlob());
         m_Cache->Add(ret);
     }
-    catch (exception& e) {
-        ERR_POST("CDD - get-blob-by-seq-ids request failed: " << e.what());
-        client.Discard();
-    }
     catch (...) {
         client.Discard();
+        throw;
     }
     return ret;
 }
@@ -476,12 +458,9 @@ CCDDClientPool::TBlobInfo CCDDClientPool::GetBlobIdBySeq_id(CSeq_id_Handle idh)
         blob.info.Reset(&cdd_reply->SetReply().SetGet_blob_id());
         m_Cache->Add(blob);
     }
-    catch (exception& e) {
-        ERR_POST("CDD - get-blob-id request failed: " << e.what());
-        client.Discard();
-    }
     catch (...) {
         client.Discard();
+        throw;
     }
     return blob.info;
 }
@@ -523,12 +502,9 @@ CCDDClientPool::TBlobData CCDDClientPool::x_RequestBlobData(const TBlobId& blob_
         }
         ret.Reset(&cdd_reply->SetReply().SetGet_blob());
     }
-    catch (exception& e) {
-        ERR_POST("CDD - get-blob request failed: " << e.what());
-        client.Discard();
-    }
     catch (...) {
         client.Discard();
+        throw;
     }
     return ret;
 }
@@ -541,14 +517,16 @@ bool CCDDClientPool::x_CheckReply(CRef<CCDD_Reply>& reply, int serial, CCDD_Repl
     if (reply->IsSetError()) {
         const CCDD_Error& e = reply->GetError();
         ERR_POST("CDD - reply error: " << e.GetMessage() << " (code " << e.GetCode() << ", severity " << (int)e.GetSeverity() << ").");
-        return false;
+        NCBI_THROW(CCDDClientException, eReplyError, e.GetMessage());
     }
     if (reply->GetSerial_number() != serial) {
         ERR_POST("CDD - serial number mismatch: " << serial << " != " << reply->GetSerial_number());
+        NCBI_THROW(CCDDClientException, eClientError, "CDD - serial number mismatch");
         return false;
     }
     if (reply->GetReply().Which() != choice) {
         ERR_POST("CDD - wrong reply type: " << reply->GetReply().Which() << " != " << choice);
+        NCBI_THROW(CCDDClientException, eClientError, "CDD - reply type mismatch");
         return false;
     }
     return true;
@@ -653,6 +631,16 @@ CRef<CCDDClientPool::TBlobId> CCDDClientPool::StringToBlobId(const string& s)
     }
     catch (...) {}
     return ret;
+}
+
+
+const char* CCDDClientException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eReplyError:   return "eReplyError";
+    case eOtherError:   return "eOtherError";
+    default:            return CException::GetErrCodeString();
+    }
 }
 
 
