@@ -183,7 +183,7 @@ else # elif test -n "$NCBI"; then
     fi
     if [ -d "$inst_root" ]; then
         ncbi_platform=`COMMON_DetectPlatform`
-    endif
+    fi
     version=`cat $top_srcdir/src/build-system/datatool_version.txt`
     if "$inst_root/$ncbi_platform/$version/datatool" -version >/dev/null 2>&1; \
     then
