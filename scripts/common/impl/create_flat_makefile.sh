@@ -69,7 +69,9 @@ buildptb="no"
 remoteptbonly="no"
 req_gui_cfg="no"
 savedcfg=""
-PLATFORM=`COMMON_DetectPlatform`
+if [ -d "$relroot" ]; then
+  PLATFORM=`COMMON_DetectPlatform`
+fi
 shift
 
 dest=""
