@@ -1993,6 +1993,21 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr14)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckWGSFeat1)
+{
+    if ( !s_HaveVDBWGS() ) {
+        LOG_POST("Skipping test for WGS VDB split features without VDB");
+        return;
+    }
+    LOG_POST("Checking WGS VDB split features");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAAAA010000001"));
+    BOOST_REQUIRE(bh);
+    CFeat_CI feat_it(bh, CRange<TSeqPos>(100000, 500000));
+    BOOST_CHECK_EQUAL(feat_it.GetSize(), 800u);
+}
+
+
 enum EInstType {
     eInst_ext, // inst.ext is set, inst.seq-data is not set
     eInst_data, // inst.ext is not set, inst.seq-data is set
@@ -2028,6 +2043,34 @@ BOOST_AUTO_TEST_CASE(CheckSplitSeqData)
     s_CheckSplitSeqData(*scope, "499533515", eInst_data);
     s_CheckSplitSeqData(*scope, "10086043", eInst_split_data);
     s_CheckSplitSeqData(*scope, "8894296", eInst_split_data);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckSeqState)
+{
+    LOG_POST("Checking GetSequenceState()");
+    CRef<CScope> scope = s_InitScope();
+    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("NM_001007539.1");
+    CBioseq_Handle::TBioseqStateFlags state = CBioseq_Handle::fState_suppress_perm;
+    LOG_POST("1st scope->GetSequenceState(id)");
+    BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+    LOG_POST("2nd scope->GetSequenceState(id)");
+    BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+    CBioseq_Handle bh = scope->GetBioseqHandle(id);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), state);
+    LOG_POST("3rd scope->GetSequenceState(id)");
+    BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+    bh.Reset();
+    LOG_POST("4th scope->GetSequenceState(id)");
+    BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+    scope = s_InitScope(false);
+    LOG_POST("5th scope->GetSequenceState(id)");
+    BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+    scope.Reset();
+    scope = s_InitScope(true);
+    LOG_POST("6th scope->GetSequenceState(id)");
+    BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
 }
 
 
@@ -2338,6 +2381,7 @@ NCBITEST_INIT_TREE()
         NCBITEST_DISABLE(CheckWGSMasterDescr12);
         NCBITEST_DISABLE(CheckWGSMasterDescr13);
         NCBITEST_DISABLE(CheckWGSMasterDescr14);
+        NCBITEST_DISABLE(CheckWGSFeat1);
     }
 #if defined(NCBI_THREADS) && !defined(RUN_SLOW_MT_TESTS)
     NCBITEST_DISABLE(MTCrash1);
