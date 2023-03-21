@@ -400,7 +400,10 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
         ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
         ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
         ret->m_Id2BlobState = id2_blob_state;
-        ret->m_Data = new CAsnBinData(*it.GetChunkData(chunk_id, flags));
+        ret->m_Data = it.GetChunkData(chunk_id, flags);
+        if ( !ret->m_Data ) {
+            ret->m_Data = new CAsnBinData(*it.GetChunk(chunk_id, flags));
+        }
         ret->m_Compress = GetCompress(m_Config.m_CompressData, seq, *ret->m_Data);
     }
     return ret;
