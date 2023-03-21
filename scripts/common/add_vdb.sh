@@ -11,7 +11,7 @@ root=`pwd`
 ptb_ini=../src/build-system/project_tree_builder.ini
 tag=`sed -ne 's,.*/vdb-versions/,,p' $ptb_ini`
 name=ncbi-vdb${tag:+"-$tag"}
-platform=`COMMON_DetectPlatform`
+platform=`COMMON_DetectPlatform 2>/dev/null`
 
 mkdir -p src
 cd src
