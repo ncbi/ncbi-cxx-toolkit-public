@@ -109,7 +109,7 @@ CBlastnVdbAppArgs::CBlastnVdbAppArgs()
     arg.Reset(m_StdCmdLineArgs);
     m_Args.push_back(arg);
 
-    arg.Reset(new CGenericSearchArgs(kQueryIsProtein, false, true));
+    arg.Reset(new CGenericSearchArgs(eBlastTypeBlastn));
     m_Args.push_back(arg);
 
     arg.Reset(new CNuclArgs);
