@@ -2380,10 +2380,6 @@ void CDataSource::x_ReleaseLastLock(CTSE_Lock& lock)
 void CDataSource::x_ReleaseLastLoadLock(CTSE_LoadLock& lock)
 {
     CRef<CTSE_Info> info = lock.m_Info;
-    if ( info->m_LoadState == CTSE_Info::eNotLoaded ) {
-        // reset TSE info into empty state
-        info->x_Reset();
-    }
     lock.m_Info.Reset();
     lock.m_DataSource.Reset();
     x_ReleaseLastTSELock(info);
@@ -2457,6 +2453,10 @@ void CTSE_LoadLock::ReleaseLoadLock(void)
             if ( m_LoadLockOwner == current ) {
                 x_GetGuard().Release();
             }
+        }
+        else {
+            // reset TSE info into empty state
+            m_Info->x_Reset();
         }
         m_LoadLock.Reset();
     }
