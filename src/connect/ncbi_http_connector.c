@@ -249,7 +249,7 @@ static EHTTP_Auth x_Authenticate(SHttpConnector* uuu,
     userlen = strlen(user);
     passlen = strlen(pass);
     s = buf + sizeof(buf) - passlen;
-    if (pass[0] == '['  &&  pass[passlen - 1] == ']') {
+    if (passlen > 2  &&  pass[0] == '['  &&  pass[passlen - 1] == ']') {
         if (BASE64_Decode(pass + 1, passlen - 2, &len, s, passlen, &n)
             &&  len == passlen - 2) {
             len = n;
@@ -348,7 +348,7 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
     if (retval/*advisory of no change if < 0 but we don't trust it :-)*/) {
         int same_host = -1/*undef*/;
         if (uuu->sock) {
-            int close = 0/*false*/;
+            int/*bool*/ close = 0/*false*/;
             if (!x_SameHost(uuu->net_info->http_proxy_host,
                                  net_info->http_proxy_host)
                 ||  (uuu->net_info->http_proxy_host[0]  &&
@@ -378,7 +378,7 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                        !x_SamePort(uuu->net_info->port,
                                    uuu->net_info->scheme,
                                         net_info->port,
-                                   net_info->scheme)) {
+                                        net_info->scheme)) {
                 close = 1/*true*/;
             }
             if (close) {
@@ -523,11 +523,12 @@ static EHTTP_Redirect x_Redirect(SHttpConnector* uuu, const SRetry* retry)
 /* Try to fix connection parameters (called for an unconnected connector) */
 static EIO_Status s_Adjust(SHttpConnector* uuu,
                            const SRetry*   retry,
+                           EIO_Status      status,
                            EExtractMode    extract)
 {
-    EIO_Status status;
     const char* msg;
 
+    assert(status != eIO_Success);
     assert(!retry  ||  !retry->data  ||  *retry->data);
     assert(!uuu->sock  &&  uuu->can_connect != fCC_None);
 
@@ -715,7 +716,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             free(url);
     }
     uuu->can_connect = fCC_None;
-    return eIO_Unknown;
+    return status;
 }
 
 
@@ -1084,10 +1085,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             assert(!sock);
 
         assert(status != eIO_Success);
-        if (status == eIO_Closed)
-            status  = eIO_Unknown;
         /* connection failed, try another server */
-        if (s_Adjust(uuu, 0, extract) != eIO_Success)
+        if ((status = s_Adjust(uuu, 0, status, extract)) != eIO_Success)
             break;
     }
 
@@ -1101,6 +1100,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             SOCK_Destroy(sock);
         }
         assert(!uuu->sock);
+        if (status == eIO_Closed)
+            status  = eIO_Unknown;
     }
     return status;
 }
@@ -1236,7 +1237,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
         /* write failed; close and try to use another server, if possible */
         s_DropConnection(uuu, eCS_NotInitiated);
         assert(status != eIO_Success);
-        if ((status = s_Adjust(uuu, 0, extract)) != eIO_Success)
+        if ((status = s_Adjust(uuu, 0, status, extract)) != eIO_Success)
             break;
     }
 
@@ -2132,7 +2133,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         /* HTTP header read error; disconnect and retry */
         assert(status != eIO_Success);
         s_DropConnection(uuu, eCS_NotInitiated);
-        adjust = s_Adjust(uuu, &retry, extract);
+        adjust = s_Adjust(uuu, &retry, status, extract);
         if (retry.data)
             free((void*) retry.data);
         if (adjust != eIO_Success) {
