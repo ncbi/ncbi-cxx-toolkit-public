@@ -1020,7 +1020,7 @@ void epimpl::event_entity_reference (const xmlChar *name) {
 void epimpl::event_warning (const std::string &message) {
     if (!parser_status_) return;
 
-    int     line = xmlLastError.line;
+    long    line = xmlLastError.line;
     if (line < 0)
         line = 0;
     std::string     filename;
@@ -1045,7 +1045,7 @@ void epimpl::event_warning (const std::string &message) {
 void epimpl::event_error (const std::string &message) {
     if (!parser_status_) return;
 
-    int     line = xmlLastError.line;
+    long    line = xmlLastError.line;
     if (line < 0)
         line = 0;
     std::string     filename;
@@ -1071,7 +1071,7 @@ void epimpl::event_error (const std::string &message) {
 void epimpl::event_fatal_error (const std::string &message) {
     if (!parser_status_) return;
 
-    int     line = xmlLastError.line;
+    long    line = xmlLastError.line;
     if (line < 0)
         line = 0;
     std::string     filename;

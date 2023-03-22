@@ -1620,7 +1620,7 @@ node_set xml::node::convert_to_nset(void *  object_as_void) const {
         case XPATH_NUMBER:
             type_name = "number";
             char    buffer[64];
-            sprintf(buffer, "%g", object->floatval);
+            snprintf(buffer, 64, "%g", object->floatval);
             content = std::string(buffer);
             break;
         case XPATH_STRING:

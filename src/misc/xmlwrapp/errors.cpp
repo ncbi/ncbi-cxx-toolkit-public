@@ -52,7 +52,7 @@ std::string error_message::message_type_str(message_type mt) {
 
 error_message::error_message(const std::string& message,
                              message_type msg_type,
-                             int line, const std::string& filename) :
+                             long line, const std::string& filename) :
     message_type_(msg_type), message_(message),
     line_(line), filename_(filename)
 {}
@@ -66,7 +66,7 @@ std::string error_message::get_message (void) const {
 }
 
 
-int error_message::get_line (void) const {
+long error_message::get_line (void) const {
     return line_;
 }
 

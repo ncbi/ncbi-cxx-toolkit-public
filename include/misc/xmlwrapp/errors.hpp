@@ -74,7 +74,7 @@ public:
     **/
     error_message(const std::string& message,
                   message_type msg_type,
-                  int line,
+                  long line,
                   const std::string& filename);
 
     /**
@@ -96,7 +96,7 @@ public:
      *
      * @return The line number, 0 if not available.
     **/
-    int get_line (void) const;
+    long get_line (void) const;
 
     /**
      * Get the file name.
@@ -123,7 +123,7 @@ public:
 private:
     message_type message_type_;
     std::string  message_;
-    int          line_;
+    long         line_;
     std::string  filename_;
 };
 
