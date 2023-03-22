@@ -149,6 +149,7 @@ private:
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
 
     EPubmedSource              m_pm_source = EPubmedSource::eNone;
+    string                     m_pm_url;
     unique_ptr<IPubmedUpdater> m_pubmed;
     bool                       m_pm_use_cache = true;
     bool                       m_pm_normalize = false;

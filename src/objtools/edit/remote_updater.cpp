@@ -281,7 +281,8 @@ bool CRemoteUpdater::xSetFromConfig()
         const CNcbiRegistry& cfg = app->GetConfig();
 
         if (cfg.HasEntry("RemotePubmedUpdate")) {
-            string s = cfg.Get("RemotePubmedUpdate", "Source");
+            const string sect = "RemotePubmedUpdate";
+            string s = cfg.Get(sect, "Source");
             NStr::ToLower(s);
             if (s == "medarch") {
                 m_pm_source = EPubmedSource::eMLA;
@@ -291,19 +292,24 @@ bool CRemoteUpdater::xSetFromConfig()
                 m_pm_source = EPubmedSource::eNone;
             }
 
-            if (cfg.HasEntry("RemotePubmedUpdate", "UseCache")) {
-                m_pm_use_cache = cfg.GetBool("RemotePubmedUpdate", "UseCache", true);
+            if (cfg.HasEntry(sect, "URL")) {
+                m_pm_url = cfg.GetString(sect, "URL", {});
+            }
+
+            if (cfg.HasEntry(sect, "UseCache")) {
+                m_pm_use_cache = cfg.GetBool(sect, "UseCache", true);
             }
         }
 
         if (cfg.HasEntry("RemoteTaxonomyUpdate")) {
-            int delay = cfg.GetInt("RemoteTaxonomyUpdate", "RetryDelay", 20);
+            const string sect = "RemoteTaxonomyUpdate";
+            int delay = cfg.GetInt(sect, "RetryDelay", 20);
             if (delay < 0)
                 delay = 20;
-            int count = cfg.GetInt("RemoteTaxonomyUpdate", "RetryCount", 5);
+            int count = cfg.GetInt(sect, "RetryCount", 5);
             if (count < 0)
                 count = 5;
-            bool exponential = cfg.GetBool("RemoteTaxonomyUpdate", "RetryExponentially", false);
+            bool exponential = cfg.GetBool(sect, "RetryExponentially", false);
 
             SetTaxonTimeout(static_cast<unsigned>(delay), static_cast<unsigned>(count), exponential);
             return true;
@@ -472,6 +478,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                     m_pubmed.reset(new CEUtilsUpdaterWithCache(m_pm_normalize));
                 } else {
                     m_pubmed.reset(new CEUtilsUpdater(m_pm_normalize));
+                }
+                if (! m_pm_url.empty()) {
+                    CEUtils_Request::SetBaseURL(m_pm_url);
                 }
                 if (m_pm_interceptor)
                     m_pubmed->SetPubInterceptor(m_pm_interceptor);
