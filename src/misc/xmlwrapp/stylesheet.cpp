@@ -327,7 +327,7 @@ static void error_cb(void *c, const char *message, ...)
 
     if (s_impl->messages_ != NULL) {
         // Need to insert the error information into the user provided container
-        int             line = 0;
+        long            line = 0;
         std::string     filename;
 
         // Supposedly the current served node

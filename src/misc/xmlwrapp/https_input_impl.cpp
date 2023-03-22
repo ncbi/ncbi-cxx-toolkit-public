@@ -142,7 +142,7 @@ namespace xml {
 
         void append_https_message(const std::string &             msg,
                                   error_message::message_type     msg_type,
-                                  int                             line,
+                                  long                            line,
                                   const std::string &             fname)
         {
             #if defined(HTTPS_ERRORS_USE_POD)
@@ -229,7 +229,7 @@ namespace {
             if (ctxt->stream_->GetStatusCode() != 200) {
                 char    status_buffer[64];
 
-                sprintf(status_buffer, "%d", ctxt->stream_->GetStatusCode());
+                snprintf(status_buffer, 64, "%d", ctxt->stream_->GetStatusCode());
                 xml::impl::append_https_message(
                     "Error reading from URI " +
                     ctxt->uri_ + ". Last status: " +
@@ -253,7 +253,7 @@ namespace {
             return -1;
         }
 
-        return ctxt->stream_->gcount();
+        return static_cast<int>(ctxt->stream_->gcount());
     }
 
 

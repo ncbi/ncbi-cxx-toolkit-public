@@ -211,7 +211,7 @@ namespace {
         try {
             error_messages *p = static_cast<error_messages*>(v);
             if (p) {
-                int     line = xmlLastError.line;
+                long    line = xmlLastError.line;
                 if (line < 0)
                     line = 0;
                 std::string     filename;
