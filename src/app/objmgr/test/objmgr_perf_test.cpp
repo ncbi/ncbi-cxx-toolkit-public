@@ -220,11 +220,20 @@ void CPerfTestApp::Init(void)
 int CPerfTestApp::Run(void)
 {
     if (GetEnvironment().Get("NCBI_RUN_UNDER_INSPXE") == "1") {
-        cout << "The test is disabled under Intel Inspector." << endl;
+        cout << "NCBI_UNITTEST_DISABLED - The test is disabled under Intel Inspector." << endl;
         return 0;
     }
 
     const CArgs& args = GetArgs();
+
+    // Allow to disable non-PSG tests using environment variable
+    const string& psg_only_env =
+        GetEnvironment().Get("NCBI_OBJMGR_PERF_TEST_PSG_ONLY");
+    if (!psg_only_env.empty()  &&  NStr::StringToBool(psg_only_env)
+        &&  args["loader"].AsString() != "psg") {
+        cout << "NCBI_UNITTEST_DISABLED - Non-PSG test is disabled (using $NCBI_OBJMGR_PERF_TEST_PSG_ONLY environment variable)" << endl;
+        return 0;
+    }
 
     if (args["stat"]) {
         m_TimeStat = args["t"].AsString()[0];
@@ -268,6 +277,7 @@ int CPerfTestApp::Run(void)
                 GenBankReaders_Register_Pubseq2();
             }
 #else
+            cout << "NCBI_UNITTEST_DISABLED" << endl;
             ERR_POST("PubseqOS reader not supported");
             return 0;
 #endif
