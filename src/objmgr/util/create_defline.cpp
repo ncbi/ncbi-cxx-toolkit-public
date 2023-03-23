@@ -2855,8 +2855,7 @@ void CDeflineGenerator::x_SetPrefix (
 void CDeflineGenerator::x_SetSuffix (
     string& suffix,
     const CBioseq_Handle& bsh,
-    bool appendComplete,
-    string preferredSuffix
+    bool appendComplete
 )
 
 {
@@ -2864,13 +2863,9 @@ void CDeflineGenerator::x_SetSuffix (
     string study;
     string comp;
 
-    if (! preferredSuffix.empty()) {
-        NStr::ToLower( preferredSuffix );
-    }
-
     switch (m_MITech) {
         case NCBI_TECH(htgs_0):
-            if (m_MainTitle.find ("LOW-PASS") == NPOS && preferredSuffix.find ("low-pass") == NPOS) {
+            if (m_MainTitle.find ("LOW-PASS") == NPOS) {
                 type = ", LOW-PASS SEQUENCE SAMPLING";
             }
             break;
@@ -2878,11 +2873,11 @@ void CDeflineGenerator::x_SetSuffix (
         case NCBI_TECH(htgs_2):
         {
             if (m_HTGSDraft) {
-                if (m_MainTitle.find ("WORKING DRAFT") == NPOS && preferredSuffix.find ("working draft") == NPOS) {
+                if (m_MainTitle.find ("WORKING DRAFT") == NPOS) {
                     type = ", WORKING DRAFT SEQUENCE";
                 }
             } else if (!m_HTGSCancelled) {
-                if (m_MainTitle.find ("SEQUENCING IN") == NPOS && preferredSuffix.find ("sequencing in") == NPOS) {
+                if (m_MainTitle.find ("SEQUENCING IN") == NPOS) {
                     type = ", *** SEQUENCING IN PROGRESS ***";
                 }
             }
@@ -2908,31 +2903,31 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         }
         case NCBI_TECH(htgs_3):
-            if (m_MainTitle.find ("complete sequence") == NPOS && preferredSuffix.find ("complete sequence") == NPOS) {
+            if (m_MainTitle.find ("complete sequence") == NPOS) {
                 type = ", complete sequence";
             }
             break;
         case NCBI_TECH(est):
-            if (m_MainTitle.find ("mRNA sequence") == NPOS && preferredSuffix.find ("mrna sequence") == NPOS) {
+            if (m_MainTitle.find ("mRNA sequence") == NPOS) {
                 type = ", mRNA sequence";
             }
             break;
         case NCBI_TECH(sts):
-            if (m_MainTitle.find ("sequence tagged site") == NPOS && preferredSuffix.find ("sequence tagged site") == NPOS) {
+            if (m_MainTitle.find ("sequence tagged site") == NPOS) {
                 type = ", sequence tagged site";
             }
             break;
         case NCBI_TECH(survey):
-            if (m_MainTitle.find ("genomic survey sequence") == NPOS && preferredSuffix.find ("genomic survey sequence") == NPOS) {
+            if (m_MainTitle.find ("genomic survey sequence") == NPOS) {
                 type = ", genomic survey sequence";
             }
             break;
         case NCBI_TECH(wgs):
             if (m_WGSMaster) {
-                if (m_MainTitle.find ("whole genome shotgun sequencing project") == NPOS && preferredSuffix.find ("whole genome shotgun sequencing project") == NPOS){
+                if (m_MainTitle.find ("whole genome shotgun sequencing project") == NPOS){
                     type = ", whole genome shotgun sequencing project";
                 }
-            } else if (m_MainTitle.find ("whole genome shotgun sequence") == NPOS && preferredSuffix.find ("whole genome shotgun sequence") == NPOS) {
+            } else if (m_MainTitle.find ("whole genome shotgun sequence") == NPOS) {
                 if (! m_Organelle.empty()  &&  m_MainTitle.find(m_Organelle) == NPOS) {
                     if ((NStr::EqualNocase (m_Organelle, "mitochondrial") || NStr::EqualNocase (m_Organelle, "mitochondrion")) &&
                         (m_MainTitle.find("mitochondrial") != NPOS || m_MainTitle.find("mitochondrion") != NPOS)) {
@@ -2948,11 +2943,11 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         case NCBI_TECH(tsa):
             if (m_TSAMaster) {
-                if (m_MainTitle.find("transcriptome shotgun assembly") == NPOS && preferredSuffix.find("transcriptome shotgun assembly") == NPOS) {
+                if (m_MainTitle.find("transcriptome shotgun assembly") == NPOS) {
                     type = ", transcriptome shotgun assembly";
                 }
             } else {
-                if (m_MainTitle.find ("RNA sequence") == NPOS && preferredSuffix.find ("rna sequence") == NPOS) {
+                if (m_MainTitle.find ("RNA sequence") == NPOS) {
                     switch (m_MIBiomol) {
                         case NCBI_BIOMOL(mRNA):
                             type = ", mRNA sequence";
@@ -2979,15 +2974,15 @@ void CDeflineGenerator::x_SetSuffix (
             break;
         case NCBI_TECH(targeted):
             if (m_TLSMaster) {
-                if (m_MainTitle.find ("targeted locus study") == NPOS && preferredSuffix.find ("targeted locus study") == NPOS) {
+                if (m_MainTitle.find ("targeted locus study") == NPOS) {
                     type = ", targeted locus study";
                 }
             } else {
-                if (m_MainTitle.find ("sequence") == NPOS && preferredSuffix.find ("sequence") == NPOS) {
+                if (m_MainTitle.find ("sequence") == NPOS) {
                    type += ", sequence";
                 }
             }
-            if (! m_TargetedLocus.empty() && m_MainTitle.find (m_TargetedLocus) == NPOS && preferredSuffix.find (m_TargetedLocus) == NPOS) {
+            if (! m_TargetedLocus.empty() && m_MainTitle.find (m_TargetedLocus) == NPOS) {
                 study = m_TargetedLocus;
             }
             break;
@@ -2995,34 +2990,9 @@ void CDeflineGenerator::x_SetSuffix (
             break;
     }
 
-    if (appendComplete || ! preferredSuffix.empty()) {
+    if (appendComplete) {
         if (m_MainTitle.find ("complete") == NPOS && m_MainTitle.find ("partial") == NPOS) {
-            if (! preferredSuffix.empty()) {
-                size_t pos = m_MainTitle.find (", complete");
-                if (pos == NPOS) {
-                    pos = m_MainTitle.find (", partial");
-                }
-                if (pos == NPOS) {
-                    pos = m_MainTitle.find (", sequence");
-                }
-                if (pos == NPOS) {
-                    pos = m_MainTitle.find (", whole genome shotgun sequence");
-                }
-                if (pos != NPOS) {
-                    m_MainTitle.erase (pos);
-                }
-                NStr::ToLower( preferredSuffix );
-                string tempTitle = m_MainTitle;
-                NStr::ToLower( tempTitle );
-                pos = tempTitle.find (preferredSuffix);
-                if (pos == NPOS) {
-                    if (preferredSuffix.find(" ") != NPOS) {
-                        comp = ", " + preferredSuffix;
-                    } else {
-                        comp = " " + preferredSuffix;
-                    }
-                }
-            } else if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
+            if (m_MICompleteness == NCBI_COMPLETENESS(complete)) {
                 if (m_IsPlasmid) {
                     comp = ", complete sequence";
                 } else if (m_Genome == NCBI_GENOME(mitochondrion) ||
@@ -3940,9 +3910,6 @@ string CDeflineGenerator::GenerateDefline (
 {
     bool capitalize = true;
     bool appendComplete = false;
-    string preferredSuffix = "";
-    string customFeatureClause = "";
-    string singleMiscComment = "";
 
     string prefix; // from a small set of compile-time constants
     string suffix;
@@ -3987,71 +3954,16 @@ string CDeflineGenerator::GenerateDefline (
         while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
             ++desc;
         }
-        bool ok = true;
 
         if (desc) {
-            const CUser_object& uo = desc->GetUser();
-            if( uo.IsSetData() ) {
-                ITERATE( CUser_object::TData, field_iter, uo.GetData() ) {
-                    const CUser_field &field = **field_iter;
-                    if( ! field.IsSetLabel() || ! field.GetLabel().IsStr() ) {
-                        continue;
-                    }
-                    string fld = field.GetLabel().GetStr();
-                    if ( fld == "FeatureListType" ) {
-                        if ( ! field.IsSetData() || ! field.GetData().IsStr() ) {
-                            continue;
-                        }
-                        string featlisttype = field.GetData().GetStr();
-                        if ( featlisttype != "List All Features" ) {
-                            preferredSuffix = featlisttype;
-                        }
-                    } else if ( fld == "CustomFeatureClause" ) {
-                        if ( ! field.IsSetData() || ! field.GetData().IsStr() ) {
-                            continue;
-                        }
-                        customFeatureClause = field.GetData().GetStr();
-                    }
-                }
-            }
-
-            int numMiscs = 0;
-            string lastMiscComment;
-            lastMiscComment.clear();
-            CSeq_annot_CI annot_ci(bsh);
-            for (; annot_ci; ++annot_ci) {
-                const CSeq_annot_Handle& annt = *annot_ci;
-                CConstRef<CSeq_annot> pAnnot = annt.GetCompleteSeq_annot();
-                const CSeq_annot& antx = *pAnnot;
-                FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, antx) {
-                    const CSeq_feat& sft = **feat_it;
-                    const CSeqFeatData& data = sft.GetData();
-                    CSeqFeatData::ESubtype subtype = data.GetSubtype();
-                    if (subtype == CSeqFeatData::eSubtype_misc_feature) {
-                        numMiscs++;
-                        if (sft.IsSetComment()) {
-                            lastMiscComment = sft.GetComment();
-                        }
-                    }
-                }
-            }
-            if (numMiscs == 1) {
-                singleMiscComment = lastMiscComment;
-            }
-
-            if (ok) {
-                CAutoDef autodef;
-                autodef.SetOptionsObject(desc->GetUser());
-                CAutoDefModifierCombo mod_combo;
-                CAutoDefOptions options;
-                options.InitFromUserObject(desc->GetUser());
-                mod_combo.SetOptions(options);
-                m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh, m_Feat_Tree);
-                s_TrimMainTitle (m_MainTitle);
-                preferredSuffix = "";
-                customFeatureClause = "";
-                singleMiscComment = "";
-            }
+            CAutoDef autodef;
+            autodef.SetOptionsObject(desc->GetUser());
+            CAutoDefModifierCombo mod_combo;
+            CAutoDefOptions options;
+            options.InitFromUserObject(desc->GetUser());
+            mod_combo.SetOptions(options);
+            m_MainTitle = autodef.GetOneDefLine(&mod_combo, bsh);
+            s_TrimMainTitle (m_MainTitle);
         }
     }
 
@@ -4139,13 +4051,7 @@ string CDeflineGenerator::GenerateDefline (
     x_SetPrefix(prefix, bsh);
 
     // calculate suffix
-    if (! customFeatureClause.empty()) {
-        preferredSuffix = customFeatureClause;
-    }
-    if (preferredSuffix.empty() && ! singleMiscComment.empty()) {
-        preferredSuffix = singleMiscComment;
-    }
-    x_SetSuffix (suffix, bsh, appendComplete, preferredSuffix);
+    x_SetSuffix (suffix, bsh, appendComplete);
 
     string mag;
     if (! m_MetaGenomeSource.empty()) {

@@ -218,8 +218,7 @@ private:
     void x_SetSuffix (
         string& suffix,
         const CBioseq_Handle& bsh,
-        bool appendComplete,
-        string preferredSuffix
+        bool appendComplete
     );
 
     void x_AdjustProteinTitleSuffix (

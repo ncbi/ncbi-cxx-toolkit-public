@@ -993,12 +993,7 @@ string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_
         }
         if (numGenes + numCDSs > 100) {
             // too many features will drastically slow down performance, bypass (RW-1578)
-            feature_clauses = x_GetFeatureClauses(bh);
-            if (NStr::IsBlank(feature_clauses)) {
-                feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
-            } else {
-                feature_clauses = " " + feature_clauses;
-            }
+            feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
             return feature_clauses;
         }
     }
