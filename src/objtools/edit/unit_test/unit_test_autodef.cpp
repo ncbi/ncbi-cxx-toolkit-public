@@ -3183,7 +3183,7 @@ BOOST_AUTO_TEST_CASE(Test_ClauseListOptions)
     CheckDeflineMatches(entry, true, CAutoDefOptions::ePartialGenome);
     CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::ePartialGenome);
 
-    AddTitle(entry, "Sebaea microphylla whole genome shotgun sequence.");
+    AddTitle(entry, "Sebaea microphylla, whole genome shotgun sequence.");
     CheckDeflineMatches(entry, true, CAutoDefOptions::eWholeGenomeShotgunSequence);
     CheckDeflineMatchesWithDescr(entry, true, CAutoDefOptions::eWholeGenomeShotgunSequence);
 }
