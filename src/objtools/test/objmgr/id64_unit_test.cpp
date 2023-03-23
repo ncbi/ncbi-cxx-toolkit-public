@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
-    s_CheckFeat(sel, "2500000194", CRange<TSeqPos>::GetWhole());
+    s_CheckFeat(sel, "2150811132", CRange<TSeqPos>::GetWhole());
 }
 
 
@@ -514,7 +514,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
-    s_CheckGraph(sel, "2500000194", CRange<TSeqPos>::GetWhole());
+    s_CheckGraph(sel, "2150811132", CRange<TSeqPos>::GetWhole());
 }
 
 #if 0
@@ -762,9 +762,9 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph5000)
     LOG_POST("Checking ExtAnnot SNP NA graph @@5000");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
-    sel.IncludeNamedAnnotAccession("NA000306983.1#1@@5000");
-    sel.AddNamedAnnots("NA000306983.1#1@@5000");
-    s_CheckGraph(sel, "CM029356.1", CRange<TSeqPos>::GetWhole());
+    sel.IncludeNamedAnnotAccession("NA000146873.19#1@@5000");
+    sel.AddNamedAnnots("NA000146873.19#1@@5000");
+    s_CheckGraph(sel, "NM_001397487.1", CRange<TSeqPos>::GetWhole());
 }
 
 
@@ -773,9 +773,9 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPNAGraph100)
     LOG_POST("Checking ExtAnnot SNP NA graph @@100");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
-    sel.IncludeNamedAnnotAccession("NA000306983.1#1@@100");
-    sel.AddNamedAnnots("NA000306983.1#1@@100");
-    s_CheckGraph(sel, "2500000194", CRange<TSeqPos>::GetWhole());
+    sel.IncludeNamedAnnotAccession("NA000146873.19#1@@100");
+    sel.AddNamedAnnots("NA000146873.19#1@@100");
+    s_CheckGraph(sel, "2150811132", CRange<TSeqPos>::GetWhole());
 }
 
 
@@ -784,9 +784,9 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPNA)
     LOG_POST("Checking ExtAnnot SNP NA");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
-    sel.IncludeNamedAnnotAccession("NA000306983.1#1");
-    sel.AddNamedAnnots("NA000306983.1#1");
-    s_CheckFeat(sel, "CM029356", CRange<TSeqPos>::GetWhole());
+    sel.IncludeNamedAnnotAccession("NA000146873.19#1");
+    sel.AddNamedAnnots("NA000146873.19#1");
+    s_CheckFeat(sel, "NM_001397487", CRange<TSeqPos>::GetWhole());
 }
 
 
@@ -1483,7 +1483,7 @@ NCBITEST_INIT_TREE()
         NCBITEST_DISABLE(CheckSplitSeqData);
         NCBITEST_DISABLE(CheckSplitNucProtSet);
     }
-    if ( 1 || !s_HaveVDBSNP() ) { // TEMP !!!!!!!!!!!!!!!!!!!!!
+    if ( !s_HaveVDBSNP() ) {
         NCBITEST_DISABLE(CheckExtSNP);
         NCBITEST_DISABLE(CheckExtSNPGraph);
         NCBITEST_DISABLE(CheckExtSNPNAGraph5000);
