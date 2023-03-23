@@ -33,12 +33,14 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/util/autodef.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <objmgr/annot_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -748,12 +750,12 @@ string OrganelleByGenome(unsigned int genome_val)
 
 static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
 {
-	unsigned int product_flag = CBioSource::eGenome_unknown;
-	string::size_type pos;
+    unsigned int product_flag = CBioSource::eGenome_unknown;
+    string::size_type pos;
 
-	SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
+    SAnnotSelector sel(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI feat_ci(bh, sel);
-	while (feat_ci && product_flag == CBioSource::eGenome_unknown) {
+    while (feat_ci && product_flag == CBioSource::eGenome_unknown) {
         if (feat_ci->IsSetProduct()) {
             string label;
             CConstRef<CSeq_feat> prot
@@ -786,8 +788,8 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
                 }
             }
         }
-		++feat_ci;
-	}
+        ++feat_ci;
+    }
     return product_flag;
 }
 
@@ -796,15 +798,15 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                                  CBioseq_Handle bh)
 {
     bool pluralize = false;
-	unsigned int product_flag_to_use;
+    unsigned int product_flag_to_use;
     unsigned int nuclear_copy_flag = CBioSource::eGenome_unknown;
     
-	if (m_Options.GetSpecifyNuclearProduct()) {
-	    product_flag_to_use = s_GetProductFlagFromCDSProductNames (bh);
-	} else {
-		product_flag_to_use = m_Options.GetProductFlag();
+    if (m_Options.GetSpecifyNuclearProduct()) {
+        product_flag_to_use = s_GetProductFlagFromCDSProductNames (bh);
+    } else {
+        product_flag_to_use = m_Options.GetProductFlag();
         nuclear_copy_flag = m_Options.GetNuclearCopyFlag();
-	}
+    }
     if (NStr::Find(feature_clauses, "genes") != NCBI_NS_STD::string::npos) {
         pluralize = true;
     } else {
@@ -895,7 +897,7 @@ string CAutoDef::x_GetNonFeatureListEnding()
             end = " sequence.";
             break;
         case CAutoDefOptions::eWholeGenomeShotgunSequence:
-            end = " whole genome shotgun sequence.";
+            end = ", whole genome shotgun sequence.";
             break;
         default:
             break;
@@ -969,8 +971,39 @@ string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome
 string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
     string feature_clauses;
-    if (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures ||
-        (IsBioseqmRNA(bh) && IsInGenProdSet(bh))) {
+    bool listAllFeatures = (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures);
+    if (listAllFeatures) {
+        int numGenes = 0;
+        int numCDSs = 0;
+        CSeq_annot_CI annot_ci(bh);
+        for (; annot_ci; ++annot_ci) {
+            const CSeq_annot_Handle& annt = *annot_ci;
+            CConstRef<CSeq_annot> pAnnot = annt.GetCompleteSeq_annot();
+            const CSeq_annot& antx = *pAnnot;
+            FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, antx) {
+                const CSeq_feat& sft = **feat_it;
+                const CSeqFeatData& data = sft.GetData();
+                CSeqFeatData::ESubtype subtype = data.GetSubtype();
+                if (subtype == CSeqFeatData::eSubtype_gene) {
+                    numGenes++;
+                } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
+                    numCDSs++;
+                }
+            }
+        }
+        if (numGenes + numCDSs > 100) {
+            // too many features will drastically slow down performance, bypass (RW-1578)
+            feature_clauses = x_GetFeatureClauses(bh);
+            if (NStr::IsBlank(feature_clauses)) {
+                feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
+            } else {
+                feature_clauses = " " + feature_clauses;
+            }
+            return feature_clauses;
+        }
+    }
+    
+    if (listAllFeatures || (IsBioseqmRNA(bh) && IsInGenProdSet(bh))) {
         feature_clauses = x_GetFeatureClauses(bh);
         if (NStr::IsBlank(feature_clauses)) {
             feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
