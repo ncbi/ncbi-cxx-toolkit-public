@@ -3988,7 +3988,6 @@ string CDeflineGenerator::GenerateDefline (
             ++desc;
         }
         bool ok = true;
-        bool suppressedFeats = false;
 
         if (desc) {
             const CUser_object& uo = desc->GetUser();
@@ -4007,8 +4006,6 @@ string CDeflineGenerator::GenerateDefline (
                         if ( featlisttype != "List All Features" ) {
                             preferredSuffix = featlisttype;
                         }
-                    } else if ( fld == "SuppressedFeatures" ) {
-                        suppressedFeats = true;
                     } else if ( fld == "CustomFeatureClause" ) {
                         if ( ! field.IsSetData() || ! field.GetData().IsStr() ) {
                             continue;
@@ -4018,8 +4015,6 @@ string CDeflineGenerator::GenerateDefline (
                 }
             }
 
-            int numGenes = 0;
-            int numCDSs = 0;
             int numMiscs = 0;
             string lastMiscComment;
             lastMiscComment.clear();
@@ -4032,11 +4027,7 @@ string CDeflineGenerator::GenerateDefline (
                     const CSeq_feat& sft = **feat_it;
                     const CSeqFeatData& data = sft.GetData();
                     CSeqFeatData::ESubtype subtype = data.GetSubtype();
-                    if (subtype == CSeqFeatData::eSubtype_gene) {
-                        numGenes++;
-                    } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
-                        numCDSs++;
-                    } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
+                    if (subtype == CSeqFeatData::eSubtype_misc_feature) {
                         numMiscs++;
                         if (sft.IsSetComment()) {
                             lastMiscComment = sft.GetComment();
@@ -4046,9 +4037,6 @@ string CDeflineGenerator::GenerateDefline (
             }
             if (numMiscs == 1) {
                 singleMiscComment = lastMiscComment;
-            }
-            if (numGenes + numCDSs > 50 && !suppressedFeats) {
-                ok = false;
             }
 
             if (ok) {
@@ -4064,10 +4052,6 @@ string CDeflineGenerator::GenerateDefline (
                 customFeatureClause = "";
                 singleMiscComment = "";
             }
-        } else {
-            preferredSuffix = "";
-            customFeatureClause = "";
-            singleMiscComment = "";
         }
     }
 
