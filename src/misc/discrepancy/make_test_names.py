@@ -10,7 +10,7 @@ class CBuildTestNames:
         self.all_codes=list()
         self.autofix=list()
 
-        self.LoadIncFile()
+        #self.LoadIncFile()
 
     def Parse(self, modules):
         for n in modules:
@@ -50,6 +50,7 @@ enum class eTestNames
                     code = re.sub(r'^DISCREPANCY_AUTOFIX\(([A-Za-z0-9_]+).*[\r\n]', r'\1', line)
                     if code:
                         self.autofix.append(code)
+
 
     def LoadIncFile(self):
         self.old_inc_file=''
