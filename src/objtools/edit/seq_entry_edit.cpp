@@ -1904,7 +1904,7 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
 /// @return            A vector of the adjustments to the sequence,
 ///                    which can be used to fix the locations of features
 ///                    on the sequence.
-TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_length)
+TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, TSeqPos unknown_length)
 {
     TLocAdjustmentVector changes;
 
@@ -1914,9 +1914,9 @@ TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_
         return changes;
     }
 
-    size_t pos = 0;
+    TSeqPos pos = 0;
     NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, inst.SetExt().SetDelta().Set()) {
-        size_t orig_len = 0;
+        TSeqPos orig_len = 0;
         if ((*it)->IsLiteral()) {
             if ((*it)->GetLiteral().IsSetLength()) {
                 orig_len = (*it)->GetLiteral().GetLength();
