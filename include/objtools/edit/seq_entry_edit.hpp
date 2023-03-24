@@ -182,11 +182,11 @@ void ConvertRawToDeltaByNs(CBioseq_Handle bsh,
                            size_t min_known, int max_known,
                            bool is_assembly_gap = false, int gap_type = CSeq_gap::eType_unknown, int linkage = -1, int linkage_evidence = -1 );
 
-typedef pair<size_t, int> TLocAdjustment;
+typedef pair<TSeqPos, int> TLocAdjustment;
 typedef vector<TLocAdjustment> TLocAdjustmentVector;
 
 NCBI_XOBJEDIT_EXPORT
-TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_length = 100);
+TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, TSeqPos unknown_length = 100);
 
 NCBI_XOBJEDIT_EXPORT
 void SetLinkageType(CSeq_ext& ext, CSeq_gap::TType linkage_type);
