@@ -1332,6 +1332,7 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
 void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 {
     size_t sessions = 0;
+    auto some_server_hit_request_limit = false;
 
     for (auto& server_sessions : m_Sessions) {
         // There is always at least one session per server
@@ -1343,6 +1344,10 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
         if (rate) {
             ++sessions;
+        }
+
+        if (server.available_streams <= 0) {
+            some_server_hit_request_limit = true;
         }
     }
 
@@ -1384,9 +1389,14 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             // Skip all full sessions
             for (; (session != server_sessions.end()) && session->IsFull(); ++session);
 
-            // If server has reached its limit or all existing sessions are full and no new sessions are allowed
-            if ((server.available_streams <= 0) || (session == server_sessions.end())) {
-                PSG_IO_TRACE("Server '" << server.address << "' has no room for a request");
+            // If server has reached its limit
+            if (server.available_streams <= 0) {
+                some_server_hit_request_limit = true;
+                PSG_IO_TRACE("Server '" << server.address << "' has no room for a request (reached request limit)");
+
+            // If all existing sessions are full and no new sessions are allowed
+            } else if (session == server_sessions.end()) {
+                PSG_IO_TRACE("Server '" << server.address << "' has no room for a request (reached session limit)");
 
             // Session is available or can be created
             } else {
@@ -1466,7 +1476,8 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     }
 
     // Continue processing of requests in the IO thread queue on next UV loop iteration
-    if (sessions) {
+    // Cannot Signal() in OnStreamClose() in case of some_server_hit_request_limit as there may be multiple I/O threads waiting
+    if (sessions || some_server_hit_request_limit) {
         queue.Signal();
     }
 
