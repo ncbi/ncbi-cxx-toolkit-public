@@ -11,7 +11,8 @@ function(define_discrepancy_testnames_target variable access value current_list_
     get_filename_component(_source_dir ${current_list_file} DIRECTORY)
     file(RELATIVE_PATH _rel_path ${NCBI_SRC_ROOT} ${_source_dir})
     set(_target_dir ${NCBI_INC_ROOT}/${_rel_path})
-    unset(_rel_path)
+    # intermediate location at inc folder
+    set(_target_dir_int ${NCBI_CFGINC_ROOT}/${_rel_path})
 
     set(_cpp_files)
 
@@ -20,16 +21,17 @@ function(define_discrepancy_testnames_target variable access value current_list_
     endforeach()
 
     add_custom_command(
-        OUTPUT ${_target_dir}/testnames.inc
-        COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir}/testnames.inc ${_cpp_files}
+        OUTPUT ${_target_dir_int}/testnames.int
+        COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir_int}/testnames.int ${_cpp_files}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/testnames.int ${_target_dir}/testnames.inc
         COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
         WORKING_DIRECTORY ${_source_dir}
-        DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/make_test_names.py
+        DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/make_test_names.py ${_source_dir}/CMakeLists.txt
         )
 
     add_custom_target(
         discrepancy.testnames
-        DEPENDS ${_target_dir}/testnames.inc
+        DEPENDS ${_target_dir_int}/testnames.int
     )
 
     unset(_cpp_files)
