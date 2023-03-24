@@ -345,6 +345,7 @@ endif()
 # UNIX
 include(CheckCXXCompilerFlag)
 include(CheckCCompilerFlag)
+include(CheckLinkerFlag)
 
 set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
 set(_tmp ${CMAKE_CXX_COMPILER_VERSION})
@@ -546,6 +547,7 @@ endif (APPLE)
 
 if (CMAKE_COMPILER_IS_GNUCC)
     add_compile_options(-Wall -Wno-format-y2k )
+    add_link_options(-Wl,--as-needed)
 endif()
 
 macro(set_cxx_compiler_flag_optional)
