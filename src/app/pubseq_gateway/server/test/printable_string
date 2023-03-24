@@ -197,7 +197,7 @@ def main():
     decode_parser.set_defaults(subcmd=decode)
 
     encode_parser = subparsers.add_parser(
-            'encode', aliases=['e', 'dec'],
+            'encode', aliases=['e', 'enc'],
             help="Encode a supplied binary as a printable representation.")
     encode_parser.add_argument(
             "-e", "--exempt",
