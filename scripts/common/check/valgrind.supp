@@ -668,6 +668,12 @@
 # corelib
 
 {
+   corelib/CNcbiApplicationAPI::AppMain() -- check command line for presence special arguments - intended leak
+   Memcheck:Leak
+   fun:_Znam
+   fun:_ZN4ncbi*CNcbiApplicationAPI*AppMain
+}
+{
     corelib/CStackTrace 
     Memcheck:Leak
     match-leak-kinds: definite
@@ -789,12 +795,42 @@
    ...
    fun:_ZN4ncbi12CDllResolver*TryCandidate*
 }
+
+# CSafeStatic<T> should be reviewed and suppressed for each case
 {
    corelib/CSafeStatic<ncbi::CTls
    Memcheck:Leak
    fun:_Znwm
    ...
    fun:_ZN4ncbi11CSafeStatic*CTls*GetEv
+}
+{
+   corelib/CSafeStatic<ncbi::CParam
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:_ZN4ncbi11CSafeStatic*CParam*
+}
+{
+   corelib/CSafeStatic<string
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:_ZN4ncbi11CSafeStatic*basic_string*
+}
+{
+   corelib/CSafeStatic<CRandomSupplier
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:_ZN4ncbi11CSafeStatic*CRandomSupplier*
+}
+{
+   corelib/test_ncbireg_mt - intended, not important
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   fun:_ZN11CTestRegApp12TestApp_InitEv
 }
 
 
