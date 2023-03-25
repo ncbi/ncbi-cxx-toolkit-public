@@ -465,7 +465,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_dbCloneLib, "https://www.ncbi.nlm.nih.gov/sites/entrez?db=clonelib&cmd=Retrieve&list_uids=" },
     { CDbtag::eDbtagType_dbEST, "https://www.ncbi.nlm.nih.gov/nucest/" },
     { CDbtag::eDbtagType_dbProbe, "https://www.ncbi.nlm.nih.gov/sites/entrez?db=probe&cmd=Retrieve&list_uids=" },
-    { CDbtag::eDbtagType_dbSNP, "https://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?type=rs&rs=" },
+    { CDbtag::eDbtagType_dbSNP, "https://www.ncbi.nlm.nih.gov/snp/rs" },
     { CDbtag::eDbtagType_dbSTS, "https://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_dictyBase, "https://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid=" },
     { CDbtag::eDbtagType_miRBase, "http://www.mirbase.org/cgi-bin/mirna_entry.pl?acc=" }, // https not available tested 7/13/2016
