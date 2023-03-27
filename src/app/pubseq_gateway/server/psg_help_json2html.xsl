@@ -12,7 +12,7 @@
 	<xsl:template name="main" >
 		<html>
 			<header>
-				<title>JSON to HTML test</title>
+				<title>PubSeq Gateway - Help Page</title>
 				<style>
 					table, th, td {
 						border: 1px solid;
