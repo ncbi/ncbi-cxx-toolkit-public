@@ -47,6 +47,7 @@
 
 #include <util/row_reader_ncbi_tsv.hpp>
 #include <mutex>
+#include <util/compile_time.hpp>
 
 // generated classes
 
@@ -520,8 +521,11 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
     return rval;
 }
 
-// null term exemption values, must be in alphabetical order (case sensitive)
-static const char* const s_Null_CollectionDates[] = {
+typedef CStaticArraySet<const char*, PCase_CStr> TCStrSet;
+
+// null term exemption values, order is not important
+MAKE_CONST_SET(s_Null_CollectionDatesSet, ct::tagStrCase,
+{
     "missing",
     "missing: control sample",
     "missing: data agreement established pre-2023",
@@ -534,10 +538,8 @@ static const char* const s_Null_CollectionDates[] = {
     "not applicable",
     "not collected",
     "not provided",
-    "restricted access"
-};
-typedef CStaticArraySet<const char*, PCase_CStr> TCStrSet;
-static const TCStrSet s_Null_CollectionDatesSet(s_Null_CollectionDates, sizeof(s_Null_CollectionDates), __FILE__, __LINE__);
+    "restricted access",
+})
 
 string CSubSource::GetCollectionDateProblem (const string& date_string)
 {
