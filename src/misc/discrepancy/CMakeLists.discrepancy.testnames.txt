@@ -22,6 +22,7 @@ function(define_discrepancy_testnames_target variable access value current_list_
 
     add_custom_command(
         OUTPUT ${_target_dir_int}/testnames.int
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_target_dir_int}
         COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir_int}/testnames.int ${_cpp_files}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/testnames.int ${_target_dir}/testnames.inc
         COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
