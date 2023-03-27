@@ -1171,11 +1171,9 @@ CJsonNode   GetAboutNode(void)
 {
     CJsonNode   about_node(CJsonNode::NewObjectNode());
 
-    about_node.SetString("name", "PubSeq Gateway Daemon");
+    about_node.SetString("name", "PubSeq Gateway");
     about_node.SetString(kDescription,
-        "The primary daemon functionality is to provide the following services: "
-        "accession resolution, blobs retrieval based on accession or on blob "
-        "identification and named annotations retrieval");
+        "Accession resolution and retrieval of bio-sequences. Retrieval of named annotations.");
     about_node.SetString("version", PUBSEQ_GATEWAY_VERSION);
     about_node.SetString("build-date", PUBSEQ_GATEWAY_BUILD_DATE);
     return about_node;
