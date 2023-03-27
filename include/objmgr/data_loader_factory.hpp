@@ -47,13 +47,15 @@ class CDataLoader;
 
 /////////////////////////////////////////////////////////////////////////////
 
-// Parameters used by all factories
+// Name of parameters used by all factories
 
-const string kCFParam_ObjectManagerPtr     = "ObjectManagerPtr";     // pointer
-const string kCFParam_DataLoader_Priority  = "DataLoader_Priority";  // int
+// pointer
+#define kCFParam_ObjectManagerPtr     "ObjectManagerPtr"
+// int
+#define kCFParam_DataLoader_Priority  "DataLoader_Priority"
 
 // string: any value except "Default" results in eNonDefault
-const string kCFParam_DataLoader_IsDefault = "DataLoader_IsDefault";
+#define kCFParam_DataLoader_IsDefault "DataLoader_IsDefault"
 
 
 class NCBI_XOBJMGR_EXPORT CDataLoaderFactory
