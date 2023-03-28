@@ -992,6 +992,7 @@ protected:
 private:
     CTSE_LoadLock   m_TSE_LoadLock;
     CRef<CTSE_Chunk_Info> m_Chunk;
+    AutoPtr<CInitGuard>   m_ChunkLoadLock;
     bool m_AllowIncompleteLoading;
 };
 

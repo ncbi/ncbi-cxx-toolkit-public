@@ -624,6 +624,12 @@ void CLoadLockSetter::x_Init(CLoadLockBlob& lock, TChunkId chunk_id)
         else {
             x_SelectChunk(chunk_id);
         }
+        if ( m_Chunk ) {
+            m_ChunkLoadLock = m_Chunk->GetLoadInitGuard();
+            if ( !m_ChunkLoadLock.get() || !*m_ChunkLoadLock.get() ) {
+                m_ChunkLoadLock.reset();
+            }
+        }
     }
 }
 
@@ -673,6 +679,7 @@ void CLoadLockSetter::SetLoaded(void)
             LOG_POST(Info<<"GBLoader:"<<SChunkId(*m_Chunk)<<" loaded");
         }
         m_Chunk->SetLoaded();
+        m_ChunkLoadLock.reset();
     }
 }
 
