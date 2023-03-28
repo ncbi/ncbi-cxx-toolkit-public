@@ -289,11 +289,11 @@ class COperationTiming
     public:
         // Blob size is taken into consideration only if
         // operation == eBlobRetrieve
-        void Register(IPSGS_Processor *  processor,
-                      EPSGOperation  operation,
-                      EPSGOperationStatus  status,
-                      const psg_time_point_t &  op_begin_ts,
-                      size_t  blob_size=0);
+        uint64_t Register(IPSGS_Processor *  processor,
+                          EPSGOperation  operation,
+                          EPSGOperationStatus  status,
+                          const psg_time_point_t &  op_begin_ts,
+                          size_t  blob_size=0);
         void RegisterForTimeSeries(CPSGS_Request::EPSGS_Type  request_type,
                                    CRequestStatus::ECode  status);
 

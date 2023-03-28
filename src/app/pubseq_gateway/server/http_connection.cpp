@@ -341,9 +341,23 @@ void CHttpConnection::x_MaintainBacklog(void)
 
         m_BacklogRequests.pop_front();
 
-        auto *  app = CPubseqGatewayApp::GetInstance();
-        app->GetTiming().Register(nullptr, eBacklog, eOpStatusFound,
-                                  backlog_start);
+        auto *      app = CPubseqGatewayApp::GetInstance();
+        uint64_t    mks = app->GetTiming().Register(nullptr, eBacklog,
+                                                    eOpStatusFound,
+                                                    backlog_start);
+        if (mks == 0) {
+            // The timing was disabled
+            auto            now = psg_clock_t::now();
+            mks = chrono::duration_cast<chrono::microseconds>(now - backlog_start).count();
+        }
+        request->SetBacklogTime(mks);
+
+        auto    context = request->GetRequestContext();
+        if (context.NotNull()) {
+            CDiagContext::SetRequestContext(context);
+            GetDiagContext().Extra().Print("backlog_time_mks", mks);
+            CDiagContext::SetRequestContext(NULL);
+        }
 
         x_Start(request, reply, move(processor_names));
     }

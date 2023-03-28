@@ -885,18 +885,18 @@ ssize_t COperationTiming::x_GetBlobRetrievalBinIndex(unsigned long  blob_size)
 }
 
 
-void COperationTiming::Register(IPSGS_Processor *  processor,
-                                EPSGOperation  operation,
-                                EPSGOperationStatus  status,
-                                const psg_time_point_t &  op_begin_ts,
-                                unsigned long  blob_size)
+uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
+                                    EPSGOperation  operation,
+                                    EPSGOperationStatus  status,
+                                    const psg_time_point_t &  op_begin_ts,
+                                    unsigned long  blob_size)
 {
     if (!m_OnlyForProcessor.empty()) {
         // May need to skip timing collection
         if (processor != nullptr) {
             if (m_OnlyForProcessor != processor->GetGroupName()) {
                 // Skipping because it is not the configured group
-                return;
+                return 0;
             }
         }
     }
@@ -998,6 +998,8 @@ void COperationTiming::Register(IPSGS_Processor *  processor,
             m_WGSVDBLookupTiming[index]->Add(mks);
             break;
     }
+
+    return mks;
 }
 
 

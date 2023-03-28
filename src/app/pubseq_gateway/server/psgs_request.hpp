@@ -143,6 +143,16 @@ public:
         return m_RequestId;
     }
 
+    void  SetBacklogTime(uint64_t  val)
+    {
+        m_BacklogTimeMks = val;
+    }
+
+    uint64_t  GetBacklogTime(void) const
+    {
+        return m_BacklogTimeMks;
+    }
+
     void  SetConcurrentProcessorCount(size_t  cnt)
     {
         m_ConcurrentProcessorCount = cnt;
@@ -205,6 +215,7 @@ private:
     unique_ptr<SPSGS_RequestBase>   m_Request;
     CRef<CRequestContext>           m_RequestContext;
     size_t                          m_RequestId;
+    uint64_t                        m_BacklogTimeMks;
 
 private:
     struct SWaitData
