@@ -67,7 +67,7 @@ CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
                        tcp_max_connections));
 
     h2o_config_init(&m_HttpCfg);
-    m_HttpCfg.server_name = h2o_iovec_init(H2O_STRLIT("PSG " NCBI_PACKAGE_VERSION " h2o/" H2O_VERSION));
+    m_HttpCfg.server_name = h2o_iovec_init(H2O_STRLIT("PSG/" NCBI_PACKAGE_VERSION " h2o/" H2O_VERSION));
     m_HttpCfgInitialized = true;
 
     sm_CdUid = getenv("CD_UID");
