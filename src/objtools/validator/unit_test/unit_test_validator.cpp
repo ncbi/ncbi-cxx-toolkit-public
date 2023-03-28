@@ -10836,6 +10836,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NoCdRegionPtr)
 
     STANDARD_SETUP
 
+    auto orphans = validator::ListOrphanProteins(seh);
+    BOOST_CHECK(orphans.empty());
+
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoCdRegionPtr",
                                                  "No CdRegion in nuc-prot set points to this protein"));
     // AddChromosomeNoLocation(expected_errors, entry);
