@@ -330,7 +330,8 @@ int CPubseqGatewayApp::Run(void)
                                         m_Settings.m_NStatBins,
                                         m_Settings.m_StatScaleType,
                                         m_Settings.m_SmallBlobSize,
-                                        m_Settings.m_OnlyForProcessor));
+                                        m_Settings.m_OnlyForProcessor,
+                                        m_Settings.m_LogTimingThreshold));
 
     // Setup IPG huge report
     ipg::CPubseqGatewayHugeIpgReportHelper::SetHugeIpgDisabled(

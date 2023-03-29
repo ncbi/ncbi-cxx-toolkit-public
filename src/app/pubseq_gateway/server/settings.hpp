@@ -69,6 +69,7 @@ struct SPubseqGatewaySettings
     size_t                              m_HttpMaxBacklog;
     size_t                              m_HttpMaxRunning;
     size_t                              m_LogSamplingRatio;
+    size_t                              m_LogTimingThreshold;
 
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;
