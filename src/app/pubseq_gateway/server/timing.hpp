@@ -63,7 +63,7 @@ enum EPSGOperationStatus {
 
 enum EPSGOperation {
     // Low level: more or less monolit operations
-    eLookupLmdbSi2csi,              // (2)
+    eLookupLmdbSi2csi = 0,          // (2)
     eLookupLmdbBioseqInfo,          // (2)
     eLookupLmdbBlobProp,            // (2)
     eLookupCassSi2csi,              // (2)
@@ -91,7 +91,10 @@ enum EPSGOperation {
     eVDBOpen,
     eBacklog,
     eSNP_PTISLookup,
-    eWGS_VDBLookup
+    eWGS_VDBLookup,
+
+    eOperationLast  // Not for using in the processors' code.
+                    // It is for allocating an array with an applog identifiers
 };
 
 
@@ -283,7 +286,8 @@ class COperationTiming
                          unsigned long  n_bins,
                          const string &  stat_type,
                          unsigned long  small_blob_size,
-                         const string &  only_for_processor);
+                         const string &  only_for_processor,
+                         size_t  log_timing_threshold);
         ~COperationTiming() {}
 
     public:
@@ -317,6 +321,8 @@ class COperationTiming
 
     private:
         string                                              m_OnlyForProcessor;
+        size_t                                              m_LogTimingThresholdMks;
+        string                                              m_TooLongIDs[eOperationLast];
 
         // Note: 2 items, found and not found
         vector<unique_ptr<CLmdbCacheTiming>>                m_LookupLmdbSi2csiTiming;
@@ -399,6 +405,7 @@ class COperationTiming
             SInfo & operator=(SInfo &&) = default;
         };
         map<string, SInfo>                                  m_NamesMap;
+
 
         mutable mutex                                       m_Lock; // reset-rotate-serialize lock
 

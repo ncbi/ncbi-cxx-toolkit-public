@@ -66,6 +66,7 @@ const string            kDefaultRootKeyspace = "sat_info2";
 const size_t            kDefaultHttpMaxBacklog = 1024;
 const size_t            kDefaultHttpMaxRunning = 32;
 const size_t            kDefaultLogSamplingRatio = 0;
+const size_t            kDefaultLogTimingThreshold = 1000;
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultLog = true;
@@ -118,6 +119,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpMaxBacklog(kDefaultHttpMaxBacklog),
     m_HttpMaxRunning(kDefaultHttpMaxRunning),
     m_LogSamplingRatio(kDefaultLogSamplingRatio),
+    m_LogTimingThreshold(kDefaultLogTimingThreshold),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -198,6 +200,8 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                        kDefaultHttpMaxRunning);
     m_LogSamplingRatio = registry.GetInt(kServerSection, "log_sampling_ratio",
                                          kDefaultLogSamplingRatio);
+    m_LogTimingThreshold = registry.GetInt(kServerSection, "log_timing_threshold",
+                                           kDefaultLogTimingThreshold);
     m_SendBlobIfSmall = x_GetDataSize(registry, kServerSection,
                                       "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
@@ -572,6 +576,15 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
                     "reset to the default value (" +
                     to_string(kDefaultLogSamplingRatio) + ").");
         m_LogSamplingRatio = kDefaultLogSamplingRatio;
+    }
+
+    if (m_LogTimingThreshold < 0) {
+        PSG_WARNING("Invalid " + kServerSection + "]/log_timing_threshold value (" +
+                    to_string(m_LogTimingThreshold) + "). "
+                    "The log timing threshold must be greater or equal 0. The log timing threshold is "
+                    "reset to the default value (" +
+                    to_string(kDefaultLogTimingThreshold) + ").");
+        m_LogTimingThreshold = kDefaultLogTimingThreshold;
     }
 
     if (m_MaxHops <= 0) {

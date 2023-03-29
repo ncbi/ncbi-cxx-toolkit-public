@@ -313,8 +313,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    unsigned long  n_bins,
                                    const string &  stat_type,
                                    unsigned long  small_blob_size,
-                                   const string &  only_for_processor) :
+                                   const string &  only_for_processor,
+                                   size_t  log_timing_threshold) :
     m_OnlyForProcessor(only_for_processor),
+    m_LogTimingThresholdMks(log_timing_threshold * 1000),
     m_HugeBlobByteCounter(0)
 {
     auto        scale_type = TOnePSGTiming::eLog2;
@@ -822,6 +824,33 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             }
         }
     }
+
+    // Initialize the applog identifiers for the case when an operation is too
+    // long
+    m_TooLongIDs[eLookupLmdbSi2csi] = "lookup_lmdb_si2csi_too_long";
+    m_TooLongIDs[eLookupLmdbBioseqInfo] = "lookup_lmdb_bioseq_info_too_long";
+    m_TooLongIDs[eLookupLmdbBlobProp] = "lookup_lmdb_blob_prop_too_long";
+    m_TooLongIDs[eLookupCassSi2csi] = "lookup_cass_si2csi_too_long";
+    m_TooLongIDs[eLookupCassBioseqInfo] = "lookup_cass_bioseq_info_too_long";
+    m_TooLongIDs[eLookupCassBlobProp] = "lookup_cass_blob_prop_too_long";
+    m_TooLongIDs[eResolutionLmdb] = "resolution_lmdb_too_long";
+    m_TooLongIDs[eResolutionCass] = "resolution_cass_too_long";
+    m_TooLongIDs[eResolutionError] = "resolution_error_too_long";
+    m_TooLongIDs[eResolutionNotFound] = "resolution_not_found_too_long";
+    m_TooLongIDs[eResolutionFound] = "resolution_found_too_long";
+    m_TooLongIDs[eResolutionFoundInCassandra] = "resolution_found_in_cass_too_long";
+    m_TooLongIDs[eBlobRetrieve] = "blob_retrieve_too_long";
+    m_TooLongIDs[eNARetrieve] = "na_retrieve_too_long";
+    m_TooLongIDs[eSplitHistoryRetrieve] = "split_history_retrieve_too_long";
+    m_TooLongIDs[ePublicCommentRetrieve] = "public_comment_retrieve_too_long";
+    m_TooLongIDs[eAccVerHistRetrieve] = "acc_ver_hist_retrieve_too_long";
+    m_TooLongIDs[eIPGResolveRetrieve] = "iog_resolve_retrieve_too_long";
+    m_TooLongIDs[eTseChunkRetrieve] = "tse_chunk_retrieve_too_long";
+    m_TooLongIDs[eNAResolve] = "na_resolve_too_long";
+    m_TooLongIDs[eVDBOpen] = "vdb_open_too_long";
+    m_TooLongIDs[eBacklog] = "backlog_too_long";
+    m_TooLongIDs[eSNP_PTISLookup] = "snp_ptis_lookup_too_long";
+    m_TooLongIDs[eWGS_VDBLookup] = "wgs_vdb_lookup_too_long";
 }
 
 
@@ -997,6 +1026,28 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
         case eWGS_VDBLookup:
             m_WGSVDBLookupTiming[index]->Add(mks);
             break;
+        default:
+            break;
+    }
+
+    // NOTE: backlog time is not going to be logged. The reason is that the
+    // processor pointer is not available at the moment of registering the
+    // backlog time. Thus 'backlog_time_mks' is registerd outside of this
+    // method at CHttpConnection::x_MaintainBacklog and it will be logged (if
+    // log is switched on) regardless of the threshold.
+    if (m_LogTimingThresholdMks > 0) {
+        if (mks > m_LogTimingThresholdMks) {
+            if (processor != nullptr) {
+                auto    request = processor->GetRequest();
+                if (request->GetRequestContext().NotNull()) {
+                    CRequestContextResetter     context_resetter;
+                    request->SetRequestContext();
+
+                    GetDiagContext().Extra().Print("op_too_long", mks);
+                    GetDiagContext().Extra().Print(m_TooLongIDs[operation], mks);
+                }
+            }
+        }
     }
 
     return mks;
