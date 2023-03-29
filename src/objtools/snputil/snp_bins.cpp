@@ -147,7 +147,7 @@ int NSnpBins::ChooseSignificant(const SBinEntry* entry1, const SBinEntry* entry2
                             ?   1
                             :   2;
     } else {
-        return (entry1->pvalue > entry2->pvalue)
+        return ((entry1->pvalue ? -log10(entry1->pvalue) : 0.) > (entry2->pvalue ? -log10(entry2->pvalue) : 0.))
                                 ? 1
                                 : 2;
     }
@@ -229,7 +229,7 @@ CRef<NSnpBins::SBinEntry> NSnpBins::GetEntry(const objects::CSeq_annot_Handle& a
         entry->pos_end  = col_pos_end.TryGet(annot, row, pos_end) ? (TSeqPos)pos_end : kInvalidSeqPos;
         entry->trackSubType = col_sub_type.TryGet(annot, row, trackSubType) ? trackSubType : "";
         entry->snpid  = col_snpid.TryGet(annot, row, snpid) ? (unsigned int)snpid : 0;
-        entry->pvalue = (col_val.TryGet(annot, row, pvalue) || col_val_synonym.TryGet(annot, row, pvalue)) ? -log10(pvalue) : 0;
+        entry->pvalue = (col_val.TryGet(annot, row, pvalue) || col_val_synonym.TryGet(annot, row, pvalue)) ? pvalue : 0;
         entry->trait = col_trait.TryGet(annot, row, trait) ? trait : "";
         entry->pmids  = col_pmids.TryGet(annot, row, pmids) ? pmids : "";
         entry->genes_reported = col_rgenes.TryGet(annot, row, rgenes) ? rgenes : "";
