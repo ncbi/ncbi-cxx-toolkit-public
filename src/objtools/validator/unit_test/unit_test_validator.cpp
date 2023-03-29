@@ -11420,11 +11420,18 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
     CheckErrors(*eval, expected_errors);
 
     scope.RemoveTopLevelSeqEntry(seh);
+    auto& idlist = entry->SetSeq().SetId();
+    CRef<CSeq_id> id1(new CSeq_id);
+    id1->SetGibbmt(12345);
+    idlist.push_back(id1);
+    CRef<CSeq_id> id2(new CSeq_id);
+    id2->SetGibbsq(23456);
+    idlist.push_back(id2);
     CRef<CSeq_id> id_pat(new CSeq_id);
     id_pat->SetPatent().SetSeqid(1);
     id_pat->SetPatent().SetCit().SetCountry("USA");
     id_pat->SetPatent().SetCit().SetId().SetNumber("1");
-    entry->SetSeq().SetId().push_back(id_pat);
+    idlist.push_back(id_pat);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     expected_errors.clear();
