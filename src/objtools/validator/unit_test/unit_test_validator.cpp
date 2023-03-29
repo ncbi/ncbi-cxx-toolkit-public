@@ -11415,8 +11415,19 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetId().SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    ChangeErrorAcc(expected_errors, "ref|NC_123456|");
     eval = validator.Validate(seh, options);
+    ChangeErrorAcc(expected_errors, "ref|NC_123456|");
+    CheckErrors(*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_id> id_pat(new CSeq_id);
+    id_pat->SetPatent().SetSeqid(1);
+    id_pat->SetPatent().SetCit().SetCountry("USA");
+    id_pat->SetPatent().SetCit().SetId().SetNumber("1");
+    entry->SetSeq().SetId().push_back(id_pat);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.clear();
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
