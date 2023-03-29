@@ -1944,151 +1944,221 @@ special2 LT+6 embl_tpa_nuc
 special  OB000001-OB660024  embl_con
 
 # Some "EMBL" WGS nucleotide accessions are really third-party annotations.
-special  CAADSF000000000-CAADSF999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAADSF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAADSM000000000-CAAGJX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAAGKD000000000-CAAGKQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAAGKS000000000-CAAGRI999999999  embl_tpa_wgs_nuc # 6+9
 special  CAAGRK000000000-CAAGSH999999999  embl_tpa_wgs_nuc # 6+9
-special  CAAHDL000000000-CAAHDL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAAHDL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAAHDO000000000-CAAHFA999999999  embl_tpa_wgs_nuc # 6+9
 special  CABPVU000000000-CABUTS999999999  embl_tpa_wgs_nuc # 6+9
 special  CABUTU000000000-CABVEI999999999  embl_tpa_wgs_nuc # 6+9
-special  CABVEV000000000-CABVEV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CABVEV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CABVEX000000000-CABVGH999999999  embl_tpa_wgs_nuc # 6+9
 special  CADEPO000000000-CADEVH999999999  embl_tpa_wgs_nuc # 6+9
 special  CADEVJ000000000-CADFGZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFHB000000000-CADFHB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFHB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFHD000000000-CADFHE999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFHJ000000000-CADFHJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFHO000000000-CADFHO999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFHU000000000-CADFHU999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFIH000000000-CADFIH999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFIK000000000-CADFIK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFHJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFHO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFHU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFIH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFIK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFIN000000000-CADFIO999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFIS000000000-CADFIT999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFIW000000000-CADFIW999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFJB000000000-CADFJB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFIW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFJB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFJH000000000-CADFJJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFJL000000000-CADFJL999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFJN000000000-CADFJN999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFJQ000000000-CADFJQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFJS000000000-CADFJS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFJL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFJN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFJQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFJS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFJU000000000-CADFJW999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFKB000000000-CADFKB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFKB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFKF000000000-CADFKG999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFKJ000000000-CADFKJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFKL000000000-CADFKL999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFKS000000000-CADFKS999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFKY000000000-CADFKY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFKJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFKL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFKS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFKY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFLF000000000-CADFLG999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFLT000000000-CADFLT999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFMD000000000-CADFMD999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFMI000000000-CADFMI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFLT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFMD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFMI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFMR000000000-CADFMS999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFMX000000000-CADFMX999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFNE000000000-CADFNE999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFNK000000000-CADFNK999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFNO000000000-CADFNO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFMX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFNE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFNK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFNO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFNR000000000-CADFNS999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFNW000000000-CADFNY999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFOC000000000-CADFOC999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFOE000000000-CADFOE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFOC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFOE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFOI000000000-CADFOJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFOM000000000-CADFOM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFOM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFOT000000000-CADFOU999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFOX000000000-CADFOY999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFPB000000000-CADFPB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFPB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFPF000000000-CADFPG999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFPK000000000-CADFPK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFPK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFPM000000000-CADFPN999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFPQ000000000-CADFPQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFPQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFPX000000000-CADFPZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFQB000000000-CADFQB999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFQL000000000-CADFQL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFQB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFQL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFQP000000000-CADFQR999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFQU000000000-CADFQU999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFQY000000000-CADFQY999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFRA000000000-CADFRA999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFRE000000000-CADFRE999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFRG000000000-CADFRG999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFRJ000000000-CADFRJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFRR000000000-CADFRR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFQU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFQY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFRA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFRE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFRG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFRJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFRR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFRV000000000-CADFRW999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFRY000000000-CADFSB999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFSD000000000-CADFSD999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFSL000000000-CADFSL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFSD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFSL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFSS000000000-CADFST999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFSW000000000-CADFSW999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFSZ000000000-CADFSZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFSW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CADFSZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFTF000000000-CADFTG999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFTJ000000000-CADFTL999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFTS000000000-CADFTS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFTS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFTU000000000-CADFTY999999999  embl_tpa_wgs_nuc # 6+9
-special  CADFUB000000000-CADFUB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADFUB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CADFUE000000000-CADFUF999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFUH000000000-CADFUK999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFUM000000000-CADFUO999999999  embl_tpa_wgs_nuc # 6+9
 special  CADFUQ000000000-CADFUT999999999  embl_tpa_wgs_nuc # 6+9
-special  CADKUY000000000-CADKUY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CADKUY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJJIC000000000-CAJJID999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJIG000000000-CAJJIK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJJIM000000000-CAJJIM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJJIM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJJIQ000000000-CAJJJK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJJJM000000000-CAJMTE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJSFZ000000000-CAJSGD999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJTIX000000000-CAJTJC999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJTJE000000000-CAJTJH999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJTJJ000000000-CAJTJJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJTJJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJTJS000000000-CAJTJT999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJTJV000000000-CAJTJV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJTJV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJTJY000000000-CAJTKB999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJTKE000000000-CAJTKE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJTKE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJTKG000000000-CAJTKL999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJTKS000000000-CAJTKS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJTKS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJTKU000000000-CAJTXH999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJTXK000000000-CAJURP999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJURR000000000-CAJURR999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJURT000000000-CAJURT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJURR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAJURT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJURV000000000-CAJUSB999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJUSD000000000-CAJUSU999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJUSW000000000-CAJUSW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJUSW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJUSZ000000000-CAJUTC999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJUTE000000000-CAJUTE999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJUTH000000000-CAJUTH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJUTE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAJUTH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJUTJ000000000-CAJUTM999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJUTQ000000000-CAJUTQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJUTS000000000-CAJUTS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJUTQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAJUTS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJUTV000000000-CAJUTW999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJUTY000000000-CAJUUA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJVVG000000000-CAJVVN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJVVR000000000-CAJVVX999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJVVZ000000000-CAJVVZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJVVZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJVWG000000000-CAJYBX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJYCH000000000-CAJYCJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJYLB000000000-CAJYLB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJYLB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJZDA000000000-CAJZFS999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZFU000000000-CAJZHB999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZHD000000000-CAJZHK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJZHP000000000-CAJZHP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJZHP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAJZHR000000000-CAJZHT999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZHV000000000-CAJZHZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZIB000000000-CAJZJZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZKB000000000-CAJZLA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZLC000000000-CAJZLH999999999  embl_tpa_wgs_nuc # 6+9
 special  CAJZLJ000000000-CAJZLK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJZLM000000000-CAJZLM999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJZLO000000000-CAJZLO999999999  embl_tpa_wgs_nuc # 6+9
-special  CAJZLS000000000-CAJZLS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAJZLM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAJZLO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAJZLS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKAEN000000000-CAKAIS999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKAOQ000000000-CAKASD999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKMHU000000000-CAKMHU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKMHU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKMHW000000000-CAKMJE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKMKY000000000-CAKMLH999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKMLJ000000000-CAKMLK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKMLM000000000-CAKMME999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKMMH000000000-CAKMMO999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKMMQ000000000-CAKMMQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKMMS000000000-CAKMMS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKMMQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAKMMS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKMMU000000000-CAKMMV999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKMMX000000000-CAKMMZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKMNB000000000-CAKMNE999999999  embl_tpa_wgs_nuc # 6+9
@@ -2098,24 +2168,33 @@ special  CAKMRL000000000-CAKMRN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKNFQ000000000-CAKNSC999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZFW000000000-CAKZJO999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZJV000000000-CAKZRW999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZSJ000000000-CAKZSJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZSJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZSL000000000-CAKZSM999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZSP000000000-CAKZSP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZSP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZSR000000000-CAKZST999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZSW000000000-CAKZTC999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZTF000000000-CAKZTF999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZTF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZTH000000000-CAKZTL999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZTN000000000-CAKZTN999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZTP000000000-CAKZTP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZTN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAKZTP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZTR000000000-CAKZTS999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZTU000000000-CAKZTX999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZUA000000000-CAKZUA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZUA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZUC000000000-CAKZUD999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZUH000000000-CAKZUI999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZUO000000000-CAKZUO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZUO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZUW000000000-CAKZUZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZVH000000000-CAKZVH999999999  embl_tpa_wgs_nuc # 6+9
-special  CAKZVM000000000-CAKZVM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAKZVH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAKZVM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAKZVO000000000-CAKZVT999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZVV000000000-CAKZWE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAKZWG000000000-CAKZWO999999999  embl_tpa_wgs_nuc # 6+9
@@ -2126,10 +2205,13 @@ special  CALAHT000000000-CALAIE999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAIG000000000-CALAII999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAIK000000000-CALAIN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAIP000000000-CALAIV999999999  embl_tpa_wgs_nuc # 6+9
-special  CALAJC000000000-CALAJC999999999  embl_tpa_wgs_nuc # 6+9
-special  CALAJE000000000-CALAJE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALAJC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALAJE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALAJI000000000-CALAJJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALAJU000000000-CALAJU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALAJU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALAJW000000000-CALAJY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAKA000000000-CALAKD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAKF000000000-CALAKG999999999  embl_tpa_wgs_nuc # 6+9
@@ -2137,13 +2219,16 @@ special  CALAKI000000000-CALAKK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAKN000000000-CALAKP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAKS000000000-CALAKT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAKV000000000-CALAKY999999999  embl_tpa_wgs_nuc # 6+9
-special  CALALA000000000-CALALA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALALA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALALC000000000-CALAMG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAMJ000000000-CALAMK999999999  embl_tpa_wgs_nuc # 6+9
-special  CALAMP000000000-CALAMP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALAMP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALAMR000000000-CALAMW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAMY000000000-CALAMZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALANB000000000-CALANB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALANB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALANE000000000-CALANI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALANK000000000-CALANX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALAOA000000000-CALAOB999999999  embl_tpa_wgs_nuc # 6+9
@@ -2155,7 +2240,8 @@ special  CALBAL000000000-CALBBG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBBI000000000-CALBBP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBBR000000000-CALBCM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBCP000000000-CALBCW999999999  embl_tpa_wgs_nuc # 6+9
-special  CALBDA000000000-CALBDA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALBDA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALBDC000000000-CALBDF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBDH000000000-CALBDN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBDP000000000-CALBDX999999999  embl_tpa_wgs_nuc # 6+9
@@ -2164,20 +2250,26 @@ special  CALBEM000000000-CALBUG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBUJ000000000-CALBUP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBUR000000000-CALBUZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBVB000000000-CALBVH999999999  embl_tpa_wgs_nuc # 6+9
-special  CALBVJ000000000-CALBVJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALBVJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALBWE000000000-CALBWJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBWL000000000-CALBWR999999999  embl_tpa_wgs_nuc # 6+9
 special  CALBWT000000000-CALCDC999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCDE000000000-CALCIN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCIP000000000-CALCJG999999999  embl_tpa_wgs_nuc # 6+9
-special  CALCJJ000000000-CALCJJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALCJL000000000-CALCJL999999999  embl_tpa_wgs_nuc # 6+9
-special  CALCJQ000000000-CALCJQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALCJU000000000-CALCJU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALCJJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALCJL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALCJQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALCJU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALCJW000000000-CALCKF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCKH000000000-CALCKO999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCKS000000000-CALCKT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALCKV000000000-CALCKV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALCKV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALCKZ000000000-CALCLK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCLM000000000-CALCLN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCLQ000000000-CALCMD999999999  embl_tpa_wgs_nuc # 6+9
@@ -2186,9 +2278,11 @@ special  CALCML000000000-CALCMT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCMW000000000-CALCRH999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCRJ000000000-CALCUV999999999  embl_tpa_wgs_nuc # 6+9
 special  CALCUX000000000-CALDAU999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDAW000000000-CALDAW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDAW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALDBA000000000-CALDBE999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDBG000000000-CALDBG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDBG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALDBI000000000-CALDCB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDCD000000000-CALDCJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDCM000000000-CALDCN999999999  embl_tpa_wgs_nuc # 6+9
@@ -2201,14 +2295,17 @@ special  CALDDZ000000000-CALDEA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDEC000000000-CALDEL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDEQ000000000-CALDEV999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDEX000000000-CALDEY999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDFA000000000-CALDFA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDFA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALDFC000000000-CALDFU999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDFX000000000-CALDFX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDFX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALDGB000000000-CALDGE999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDGG000000000-CALDGM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDGO000000000-CALDGP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDGR000000000-CALDHC999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDHE000000000-CALDHE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDHE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALDHN000000000-CALDHY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDIA000000000-CALDKT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDKW000000000-CALDSN999999999  embl_tpa_wgs_nuc # 6+9
@@ -2225,9 +2322,11 @@ special  CALDXA000000000-CALDXI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDXK000000000-CALDXX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDXZ000000000-CALDYB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALDYD000000000-CALDYI999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDYK000000000-CALDYK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDYK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALDZM000000000-CALDZN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALDZV000000000-CALDZV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALDZV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALEAA000000000-CALEAB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEAH000000000-CALEAP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEAR000000000-CALEAU999999999  embl_tpa_wgs_nuc # 6+9
@@ -2239,8 +2338,10 @@ special  CALECG000000000-CALECO999999999  embl_tpa_wgs_nuc # 6+9
 special  CALECR000000000-CALECS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALECU000000000-CALECY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEDA000000000-CALEDG999999999  embl_tpa_wgs_nuc # 6+9
-special  CALEDK000000000-CALEDK999999999  embl_tpa_wgs_nuc # 6+9
-special  CALEDM000000000-CALEDM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALEDK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALEDM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALEDO000000000-CALEDQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEDX000000000-CALEEB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEED000000000-CALEPD999999999  embl_tpa_wgs_nuc # 6+9
@@ -2250,7 +2351,8 @@ special  CALETM000000000-CALETT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALETV000000000-CALETW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALETY000000000-CALEUF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEUH000000000-CALEUN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALEUP000000000-CALEUP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALEUP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALEUR000000000-CALEUW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEUZ000000000-CALEVQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEVS000000000-CALEVY999999999  embl_tpa_wgs_nuc # 6+9
@@ -2262,14 +2364,19 @@ special  CALEXQ000000000-CALEXZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEYB000000000-CALEYC999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEYE000000000-CALEYJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALEYL000000000-CALFAJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALFAL000000000-CALFAL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALFAL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALFAN000000000-CALFAU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALFAW000000000-CALFAX999999999  embl_tpa_wgs_nuc # 6+9
-special  CALFAZ000000000-CALFAZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALFBY000000000-CALFBY999999999  embl_tpa_wgs_nuc # 6+9
-special  CALFCA000000000-CALFCA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALFAZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALFBY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALFCA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALFCC000000000-CALFCD999999999  embl_tpa_wgs_nuc # 6+9
-special  CALFCH000000000-CALFCH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALFCH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALFCJ000000000-CALFCT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALFCW000000000-CALFCY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALFDB000000000-CALFDG999999999  embl_tpa_wgs_nuc # 6+9
@@ -2284,55 +2391,71 @@ special  CALFSK000000000-CALFUG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALFUY000000000-CALFVC999999999  embl_tpa_wgs_nuc # 6+9
 special  CALFXA000000000-CALGAS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGAX000000000-CALGJP999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGJY000000000-CALGJY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGJY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGKF000000000-CALGKG999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGKM000000000-CALGKM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGKM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGKO000000000-CALGKU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGKW000000000-CALGLD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGLF000000000-CALGLI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGLK000000000-CALGLQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGMG000000000-CALGMI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGMK000000000-CALGML999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGMN000000000-CALGMN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGMN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGMP000000000-CALGMQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGMU000000000-CALGMZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGNB000000000-CALGNC999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGNF000000000-CALGNF999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGNF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGNL000000000-CALGNM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGNQ000000000-CALGNR999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGNV000000000-CALGNV999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGNY000000000-CALGNY999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGOD000000000-CALGOD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGNV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALGNY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALGOD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGOH000000000-CALGPF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGPP000000000-CALGPZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGQB000000000-CALGQB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGQB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGQD000000000-CALGQK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGQM000000000-CALGQT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGQW000000000-CALGQW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGQW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGQY000000000-CALGVO999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGVQ000000000-CALGVY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGWA000000000-CALGWG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGWI000000000-CALGWM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGWO000000000-CALGWU999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGWW000000000-CALGWW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGWZ000000000-CALGXA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGXC000000000-CALGXI999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGXK000000000-CALGXK999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGXM000000000-CALGXM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGXK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALGXM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGXO000000000-CALGXS999999999  embl_tpa_wgs_nuc # 6+9
-special  CALGXU000000000-CALGXU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALGXU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALGXW000000000-CALGXY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGYC000000000-CALGYZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGZE000000000-CALGZN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALGZP000000000-CALHAA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHAC000000000-CALHAD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHBG000000000-CALHBI999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHBK000000000-CALHBK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHBK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHBM000000000-CALHBN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHBS000000000-CALHBT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHBV000000000-CALHBV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHBV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHBX000000000-CALHCA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHCD000000000-CALHCD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHCD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHCR000000000-CALHDF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHDH000000000-CALHDX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHDZ000000000-CALHED999999999  embl_tpa_wgs_nuc # 6+9
@@ -2343,19 +2466,24 @@ special  CALHFH000000000-CALHFP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHFR000000000-CALHGD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHGF000000000-CALHGH999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHGK000000000-CALHGN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHGP000000000-CALHGP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHGP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHGR000000000-CALHGW999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHGY000000000-CALHGY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHGY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHHA000000000-CALHHB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHHD000000000-CALHHG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHHI000000000-CALHHN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHHP000000000-CALHHP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHHP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHHR000000000-CALHHX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHHZ000000000-CALHIA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHIC000000000-CALHIK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHIM000000000-CALHIN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHIQ000000000-CALHIQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHIS000000000-CALHIS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHIQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALHIS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHIY000000000-CALHJC999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHJG000000000-CALHJJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHJL000000000-CALHJN999999999  embl_tpa_wgs_nuc # 6+9
@@ -2368,9 +2496,11 @@ special  CALHMD000000000-CALHMF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHMH000000000-CALHML999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHMN000000000-CALHMU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHMW000000000-CALHMZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHNB000000000-CALHNB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHNB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHND000000000-CALHNH999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHNJ000000000-CALHNJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHNJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHNL000000000-CALHNR999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHNT000000000-CALHNW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHNY000000000-CALHOH999999999  embl_tpa_wgs_nuc # 6+9
@@ -2380,29 +2510,39 @@ special  CALHOY000000000-CALHPG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHPL000000000-CALHPT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHPV000000000-CALHQB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHQD000000000-CALHQV999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHQX000000000-CALHQX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHQX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHQZ000000000-CALHRA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHRE000000000-CALHRG999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHRI000000000-CALHRI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHRI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHRK000000000-CALHRP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHRR000000000-CALHRT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHRV000000000-CALHRV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHRV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHRX000000000-CALHRY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHSC000000000-CALHSS999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHSU000000000-CALHSU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHSU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHSW000000000-CALHSX999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHSZ000000000-CALHSZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHSZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHTC000000000-CALHTE999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHTG000000000-CALHTQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHTS000000000-CALHTU999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHTW000000000-CALHTW999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHTZ000000000-CALHTZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHTW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALHTZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHUB000000000-CALHUF999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHUH000000000-CALHUH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHUH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHUJ000000000-CALHUL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHUN000000000-CALHUY999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHVA000000000-CALHVA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHVC000000000-CALHVC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHVA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALHVC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHVE000000000-CALHVG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHVI000000000-CALHVO999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHVQ000000000-CALHVW999999999  embl_tpa_wgs_nuc # 6+9
@@ -2410,21 +2550,27 @@ special  CALHVY000000000-CALHWJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHWL000000000-CALHWN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHWP000000000-CALHXA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHXD000000000-CALHXE999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHXH000000000-CALHXH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHXH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHXJ000000000-CALHXT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHXV000000000-CALHXV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHXV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHXX000000000-CALHYD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHYF000000000-CALHYK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHYN000000000-CALHYW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALHYZ000000000-CALHZM999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHZO000000000-CALHZO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHZO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHZQ000000000-CALHZS999999999  embl_tpa_wgs_nuc # 6+9
-special  CALHZU000000000-CALHZU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALHZU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALHZW000000000-CALIAE999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIAH000000000-CALIAT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIAV000000000-CALIBH999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIBJ000000000-CALIBJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIBM000000000-CALIBM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIBJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALIBM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIBS000000000-CALICB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALICD000000000-CALICL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALICN000000000-CALIDH999999999  embl_tpa_wgs_nuc # 6+9
@@ -2439,20 +2585,25 @@ special  CALIES000000000-CALIFK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIFN000000000-CALIFX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIFZ000000000-CALIGH999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIGJ000000000-CALIGO999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIGQ000000000-CALIGQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIGQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIGS000000000-CALIHA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIHC000000000-CALIHE999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIHG000000000-CALIHK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIHM000000000-CALIHT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIHV000000000-CALIHV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIHV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIHX000000000-CALIHZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIIB000000000-CALIIB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIIB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIID000000000-CALIIJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIIM000000000-CALIIO999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIIQ000000000-CALIIV999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIIX000000000-CALIIX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIIX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIIZ000000000-CALIJB999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIJD000000000-CALIJD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIJD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIJF000000000-CALIJI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIJK000000000-CALIJL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIJN000000000-CALIJY999999999  embl_tpa_wgs_nuc # 6+9
@@ -2460,18 +2611,25 @@ special  CALIKA000000000-CALIKI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIKY000000000-CALILA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALILC000000000-CALILO999999999  embl_tpa_wgs_nuc # 6+9
 special  CALILQ000000000-CALIMA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIMC000000000-CALIMC999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIME000000000-CALIME999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIMK000000000-CALIMK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIMC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALIME+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALIMK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIMM000000000-CALIMU999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIMW000000000-CALIMW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIMW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIMY000000000-CALINA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALINC000000000-CALINC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALINC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALING000000000-CALINI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALINK000000000-CALINL999999999  embl_tpa_wgs_nuc # 6+9
-special  CALINN000000000-CALINN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALINN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALINR000000000-CALIOB999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIOD000000000-CALIOD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIOD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIOF000000000-CALIOK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIOM000000000-CALIOS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIOU000000000-CALIOW999999999  embl_tpa_wgs_nuc # 6+9
@@ -2480,21 +2638,26 @@ special  CALIPD000000000-CALIQD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIQF000000000-CALIQN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIQP000000000-CALIRB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIRE000000000-CALIRL999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIRN000000000-CALIRN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIRN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIRT000000000-CALISA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALISC000000000-CALISC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALISC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALISE000000000-CALISJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALISL000000000-CALISN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALISQ000000000-CALIST999999999  embl_tpa_wgs_nuc # 6+9
-special  CALISV000000000-CALISV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALISV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALISX000000000-CALITB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALITD000000000-CALITI999999999  embl_tpa_wgs_nuc # 6+9
 special  CALITK000000000-CALITL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALITQ000000000-CALITU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALITW000000000-CALIUA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIUC000000000-CALIUF999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIUH000000000-CALIUH999999999  embl_tpa_wgs_nuc # 6+9
-special  CALIUN000000000-CALIUN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALIUH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALIUN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALIUP000000000-CALIUW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIUZ000000000-CALIVD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIVF000000000-CALIVM999999999  embl_tpa_wgs_nuc # 6+9
@@ -2510,7 +2673,8 @@ special  CALIZG000000000-CALIZH999999999  embl_tpa_wgs_nuc # 6+9
 special  CALIZJ000000000-CALIZZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJAB000000000-CALJAD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJAF000000000-CALJAJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJAO000000000-CALJAO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJAO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJAR000000000-CALJAY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJBA000000000-CALJBG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJBI000000000-CALJBM999999999  embl_tpa_wgs_nuc # 6+9
@@ -2520,12 +2684,14 @@ special  CALJBU000000000-CALJBX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJCA000000000-CALJCE999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJCG000000000-CALJCX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJCZ000000000-CALJDC999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJDE000000000-CALJDE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJDE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJDI000000000-CALJDJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJDL000000000-CALJDM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJDP000000000-CALJDS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJDV000000000-CALJED999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJIC000000000-CALJIC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJIC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJIE000000000-CALJIG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJII000000000-CALJIM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJIO000000000-CALJIP999999999  embl_tpa_wgs_nuc # 6+9
@@ -2533,44 +2699,58 @@ special  CALJIR000000000-CALJIT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJIV000000000-CALJIX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJJA000000000-CALJJB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJJD000000000-CALJJN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJJP000000000-CALJJP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJJP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJJS000000000-CALJJT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJJW000000000-CALJJW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJJW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJKA000000000-CALJMB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJME000000000-CALJMG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJMJ000000000-CALJMT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJMV000000000-CALJMX999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJMZ000000000-CALJMZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJMZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJNF000000000-CALJNH999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJNK000000000-CALJNQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJNS000000000-CALJNU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJNW000000000-CALJNZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJOG000000000-CALJOG999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJOI000000000-CALJOI999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJOL000000000-CALJOL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJOG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALJOI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALJOL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJON000000000-CALJPE999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJPG000000000-CALJPG999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJPI000000000-CALJPI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJPG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALJPI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJPK000000000-CALJPN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJPP000000000-CALJPP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJPP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJPR000000000-CALJPS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJPU000000000-CALJQF999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJQH000000000-CALJQH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJQH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJQL000000000-CALJQW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJQY000000000-CALJRV999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJRX000000000-CALJSA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJSC000000000-CALJSP999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJSR000000000-CALJSU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJSW000000000-CALJTM999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJTO000000000-CALJTO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJTO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJTQ000000000-CALJTR999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJTU000000000-CALJTU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJTU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJTW000000000-CALJVG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJWM000000000-CALJWN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJWP000000000-CALJWQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJWS000000000-CALJWS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJWS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJWU000000000-CALJWX999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJXA000000000-CALJXA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJXA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJXC000000000-CALJXD999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJXF000000000-CALJXN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJXP000000000-CALJXT999999999  embl_tpa_wgs_nuc # 6+9
@@ -2579,28 +2759,35 @@ special  CALJYD000000000-CALJYF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJYI000000000-CALJYQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJYS000000000-CALJYV999999999  embl_tpa_wgs_nuc # 6+9
 special  CALJYX000000000-CALJZM999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJZO000000000-CALJZO999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJZR000000000-CALJZR999999999  embl_tpa_wgs_nuc # 6+9
-special  CALJZT000000000-CALJZT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALJZO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALJZR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALJZT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALJZV000000000-CALKBH999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKBJ000000000-CALKBT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKHJ000000000-CALKIW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKKC000000000-CALKKM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKKO000000000-CALKKU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKKW000000000-CALKLB999999999  embl_tpa_wgs_nuc # 6+9
-special  CALKLE000000000-CALKLE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALKLE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALKLG000000000-CALKLN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKLQ000000000-CALKLR999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKLT000000000-CALKLW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKLY000000000-CALKMB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKMD000000000-CALKME999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKMG000000000-CALKMN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALKMP000000000-CALKMP999999999  embl_tpa_wgs_nuc # 6+9
-special  CALKMR000000000-CALKMR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALKMP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALKMR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALKPG000000000-CALKPL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKPN000000000-CALKPX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKPZ000000000-CALKQT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALKQV000000000-CALKQV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALKQV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALKQX000000000-CALKRJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKRL000000000-CALKRM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKRO000000000-CALKRT999999999  embl_tpa_wgs_nuc # 6+9
@@ -2608,16 +2795,19 @@ special  CALKRV000000000-CALKRY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKSA000000000-CALKTG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKTI000000000-CALKTT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKTV000000000-CALKUT999999999  embl_tpa_wgs_nuc # 6+9
-special  CALKUV000000000-CALKUV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALKUV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALKUX000000000-CALKUZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKVB000000000-CALKVL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKVQ000000000-CALKXB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKYE000000000-CALKZG999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKZI000000000-CALKZM999999999  embl_tpa_wgs_nuc # 6+9
 special  CALKZO000000000-CALKZQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLAS000000000-CALLAS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLAS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLAX000000000-CALLAY999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLBF000000000-CALLBF999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLBF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLBP000000000-CALLBQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLBS000000000-CALLBT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLBV000000000-CALLCC999999999  embl_tpa_wgs_nuc # 6+9
@@ -2643,38 +2833,48 @@ special  CALLGT000000000-CALLHF999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLHJ000000000-CALLHK999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLHM000000000-CALLHS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLHV000000000-CALLIE999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLIH000000000-CALLIH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLIH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLIR000000000-CALLJB999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLJV000000000-CALLKN999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLLT000000000-CALLLT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLLT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLMO000000000-CALLMU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLMW000000000-CALLND999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLNF000000000-CALLNS999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLNU000000000-CALLNW999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLNZ000000000-CALLNZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLNZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLOC000000000-CALLOQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLOT000000000-CALLPB999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLPD000000000-CALLPD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLPD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLPF000000000-CALLPH999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLPJ000000000-CALLPJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLPJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLQD000000000-CALLQO999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLQQ000000000-CALLQQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLQQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLQS000000000-CALLQX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLRA000000000-CALLRO999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLRQ000000000-CALLRQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLRQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLRS000000000-CALLRT999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLRV000000000-CALLTW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLTY000000000-CALLUA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLUC000000000-CALLUE999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLVH000000000-CALLVH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLVH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLVJ000000000-CALLVW999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLVZ000000000-CALLWA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLWC000000000-CALLWL999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLWP000000000-CALLWU999999999  embl_tpa_wgs_nuc # 6+9
 special  CALLWW000000000-CALLXA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLXG000000000-CALLXG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLXG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLXL000000000-CALLYE999999999  embl_tpa_wgs_nuc # 6+9
-special  CALLYG000000000-CALLYG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALLYG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CALLYJ000000000-CALMEX999999999  embl_tpa_wgs_nuc # 6+9
 special  CALMEZ000000000-CALMHN999999999  embl_tpa_wgs_nuc # 6+9
 special  CALMHR000000000-CALMKP999999999  embl_tpa_wgs_nuc # 6+9
@@ -2683,72 +2883,104 @@ special  CALMRJ000000000-CALMVA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALMVE000000000-CALMWA999999999  embl_tpa_wgs_nuc # 6+9
 special  CALMWD000000000-CALNCY999999999  embl_tpa_wgs_nuc # 6+9
 special  CALNEE000000000-CALNHU999999999  embl_tpa_wgs_nuc # 6+9
-special  CALNPA000000000-CALNPA999999999  embl_tpa_wgs_nuc # 6+9
-special  CALNRV000000000-CALNRV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CALNPA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CALNRV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPDC000000000-CAMPDU999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPDW000000000-CAMPDY999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPFV000000000-CAMPFV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPFV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPGF000000000-CAMPKX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPLK000000000-CAMPOS999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPPG000000000-CAMPPG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPPG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPTU000000000-CAMPTV999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPTY000000000-CAMPUA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPUE000000000-CAMPUF999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPUH000000000-CAMPUN999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPUP000000000-CAMPUP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPUP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPUW000000000-CAMPUX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPVA000000000-CAMPVB999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPVD000000000-CAMPVD999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPVF000000000-CAMPVF999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPVK000000000-CAMPVK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPVM000000000-CAMPVM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPVD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPVF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPVK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPVM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPVO000000000-CAMPVT999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPVV000000000-CAMPVW999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPVY000000000-CAMPWD999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPWI000000000-CAMPWI999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPWK000000000-CAMPWK999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPWI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPWK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPWN000000000-CAMPWO999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPWQ000000000-CAMPWS999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPWU000000000-CAMPWU999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPWW000000000-CAMPWW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPWU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPWW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPWY000000000-CAMPXE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPXG000000000-CAMPXI999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPXN000000000-CAMPXN999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPXP000000000-CAMPXP999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPXV000000000-CAMPXV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPXN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPXP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPXV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPYB000000000-CAMPYD999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPYH000000000-CAMPYH999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPYJ000000000-CAMPYJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPYN000000000-CAMPYN999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPYQ000000000-CAMPYQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPYH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPYJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPYN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMPYQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPYS000000000-CAMPYT999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMPYV000000000-CAMPYV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMPYV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMPYX000000000-CAMPYY999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPZA000000000-CAMPZB999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMPZD000000000-CAMPZE999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQAB000000000-CAMQAB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQAB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQAO000000000-CAMQAP999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQAR000000000-CAMQAR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQAR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQAT000000000-CAMQAU999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMQAW000000000-CAMQBA999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQBE000000000-CAMQBE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQBE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQBG000000000-CAMQBI999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQBN000000000-CAMQBN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQBN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQBP000000000-CAMQBW999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQBZ000000000-CAMQBZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQBZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQCD000000000-CAMQCF999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQCH000000000-CAMQCH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQCH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQCK000000000-CAMQCO999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMQCR000000000-CAMQCS999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQCZ000000000-CAMQCZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQCZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQDC000000000-CAMQDD999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQDG000000000-CAMQDG999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQDS000000000-CAMQDS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQDG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMQDS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQEN000000000-CAMQEO999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMQEQ000000000-CAMQET999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMQFA000000000-CAMQFC999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQFE000000000-CAMQFE999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMQFL000000000-CAMQFL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMQFE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAMQFL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMQFR000000000-CAMQFT999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMQGL000000000-CAMQPX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMQQL000000000-CAMQTP999999999  embl_tpa_wgs_nuc # 6+9
@@ -2767,7 +2999,8 @@ special  CAMRAA000000000-CAMRAR999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMRAT000000000-CAMRAX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMRBA000000000-CAMREN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMREP000000000-CAMRFE999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMRGM000000000-CAMRGM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMRGM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMRSF000000000-CAMRXA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMSBO000000000-CAMSEK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMSEM000000000-CAMSLM999999999  embl_tpa_wgs_nuc # 6+9
@@ -2781,11 +3014,13 @@ special  CAMUSS000000000-CAMWBN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMWBP000000000-CAMWCS999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMWCU000000000-CAMWEA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMWEC000000000-CAMXAO999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMXAQ000000000-CAMXAQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMXAQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMXAS000000000-CAMXAV999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMXAX000000000-CAMXAZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMXBB000000000-CAMXBF999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMXBH000000000-CAMXBH999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMXBH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMXCV000000000-CAMXCZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMXHZ000000000-CAMXUF999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMXVC000000000-CAMYGE999999999  embl_tpa_wgs_nuc # 6+9
@@ -2793,7 +3028,8 @@ special  CAMYGH000000000-CAMYGQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMYGS000000000-CAMYHG999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMYHI000000000-CAMYIA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMYOQ000000000-CAMYPB999999999  embl_tpa_wgs_nuc # 6+9
-special  CAMYPD000000000-CAMYPD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAMYPD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAMYPF000000000-CAMYTO999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMYTY000000000-CAMZJH999999999  embl_tpa_wgs_nuc # 6+9
 special  CAMZXK000000000-CANACM999999999  embl_tpa_wgs_nuc # 6+9
@@ -2822,71 +3058,103 @@ special  CANOOR000000000-CANOQF999999999  embl_tpa_wgs_nuc # 6+9
 special  CANOQQ000000000-CANPDD999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPDG000000000-CANPDL999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPDN000000000-CANPDO999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPDQ000000000-CANPDQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPDS000000000-CANPDS999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPDU000000000-CANPDU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPDQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPDS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPDU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPDW000000000-CANPDY999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPEA000000000-CANPEE999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPEG000000000-CANPEH999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPEK000000000-CANPEL999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPEO000000000-CANPEO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPEO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPEQ000000000-CANPER999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPET000000000-CANPEU999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPEW000000000-CANPFL999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPFO000000000-CANPFP999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPFR000000000-CANPFR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPFR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPFT000000000-CANPFU999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPFW000000000-CANPFW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPFW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPFY000000000-CANPFZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPGB000000000-CANPGE999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPGH000000000-CANPGI999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPGK000000000-CANPGV999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPGX000000000-CANPGX999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPGZ000000000-CANPGZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPHB000000000-CANPHB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPGX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPGZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPHB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPHE000000000-CANPIV999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPIX000000000-CANPJA999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPJC000000000-CANPJC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPJC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPJF000000000-CANPJI999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPJK000000000-CANPJN999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPJP000000000-CANPJQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPJS000000000-CANPJX999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPJZ000000000-CANPJZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPJZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPKB000000000-CANPKC999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPKE000000000-CANPKE999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPKH000000000-CANPKH999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPKJ000000000-CANPKJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPKL000000000-CANPKL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPKE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPKH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPKJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPKL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPKT000000000-CANPKU999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPKW000000000-CANPKX999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPKZ000000000-CANPKZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPKZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPLB000000000-CANPLI999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPLM000000000-CANPLM999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPLO000000000-CANPLO999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPMK000000000-CANPMK999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPMP000000000-CANPMP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPLM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPLO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPMK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPMP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPMR000000000-CANPMT999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPMV000000000-CANPMW999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPMZ000000000-CANPNQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPNS000000000-CANPNX999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPNZ000000000-CANPNZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPNZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPOC000000000-CANPOF999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPOH000000000-CANPOM999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPOO000000000-CANPOO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPOO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPOS000000000-CANPOW999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPOY000000000-CANPOY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPOY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPPA000000000-CANPPC999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPPE000000000-CANPPQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPPW000000000-CANPPW999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPQE000000000-CANPQE999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPQS000000000-CANPQS999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPQU000000000-CANPQU999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPQW000000000-CANPQW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPPW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPQE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPQS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPQU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPQW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPRF000000000-CANPRG999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPTD000000000-CANPTD999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPTH000000000-CANPTH999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPTM000000000-CANPTM999999999  embl_tpa_wgs_nuc # 6+9
-special  CANPTO000000000-CANPTO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CANPTD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPTH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPTM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CANPTO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CANPTS000000000-CANPTW999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPUC000000000-CANPUE999999999  embl_tpa_wgs_nuc # 6+9
 special  CANPUG000000000-CANPUI999999999  embl_tpa_wgs_nuc # 6+9
@@ -2902,7 +3170,8 @@ special  CANTDX000000000-CANTFF999999999  embl_tpa_wgs_nuc # 6+9
 special  CANTFN000000000-CANTKU999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJBL000000000-CAOJBM999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJBO000000000-CAOJBP999999999  embl_tpa_wgs_nuc # 6+9
-special  CAOJBT000000000-CAOJBT999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAOJBT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAOJBX000000000-CAOJBZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJCC000000000-CAOJCK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOJCT000000000-CAOJOB999999999  embl_tpa_wgs_nuc # 6+9
@@ -2914,40 +3183,56 @@ special  CAOKEH000000000-CAOKFE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKFG000000000-CAOKGU999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKGW000000000-CAOKNL999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKNN000000000-CAOKRJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAOKRM000000000-CAOKRM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAOKRM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CAOKRP000000000-CAOKSS999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKSU000000000-CAOKTE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKTU000000000-CAOKTV999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKTX000000000-CAOKXA999999999  embl_tpa_wgs_nuc # 6+9
 special  CAOKXC000000000-CAOKXH999999999  embl_tpa_wgs_nuc # 6+9
-special  CAOLCF000000000-CAOLCF999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAOLCF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CASBEU000000000-CASBIE999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
-special  HBHG00000000-HBHG99999999  embl_tpa_tsa_nuc # 4+8
-special  HBHS00000000-HBHS99999999  embl_tpa_tsa_nuc # 4+8
-special  HBRC00000000-HBRC99999999  embl_tpa_tsa_nuc # 4+8
-special  HBRG00000000-HBRG99999999  embl_tpa_tsa_nuc # 4+8
+special2 HBHG+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBHS+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBRC+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBRG+8 embl_tpa_tsa_nuc
+: 00000000-99999999
 special  HBRM00000000-HBRN99999999  embl_tpa_tsa_nuc # 4+8
 special  HBRR00000000-HBRS99999999  embl_tpa_tsa_nuc # 4+8
 special  HBRU00000000-HBRV99999999  embl_tpa_tsa_nuc # 4+8
-special  HBRZ00000000-HBRZ99999999  embl_tpa_tsa_nuc # 4+8
+special2 HBRZ+8 embl_tpa_tsa_nuc
+: 00000000-99999999
 special  HBSB00000000-HBSP99999999  embl_tpa_tsa_nuc # 4+8
-special  HBSZ00000000-HBSZ99999999  embl_tpa_tsa_nuc # 4+8
-special  HBTB00000000-HBTB99999999  embl_tpa_tsa_nuc # 4+8
+special2 HBSZ+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBTB+8 embl_tpa_tsa_nuc
+: 00000000-99999999
 special  HBXM00000000-HBXN99999999  embl_tpa_tsa_nuc # 4+8
 special  HBXP00000000-HBXU99999999  embl_tpa_tsa_nuc # 4+8
 special  HBXW00000000-HBYC99999999  embl_tpa_tsa_nuc # 4+8
 special  HBYF00000000-HBYO99999999  embl_tpa_tsa_nuc # 4+8
-special  HBYQ00000000-HBYQ99999999  embl_tpa_tsa_nuc # 4+8
-special  HBYS00000000-HBYS99999999  embl_tpa_tsa_nuc # 4+8
-special  HBYU00000000-HBYU99999999  embl_tpa_tsa_nuc # 4+8
+special2 HBYQ+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBYS+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBYU+8 embl_tpa_tsa_nuc
+: 00000000-99999999
 special  HBYX00000000-HBYY99999999  embl_tpa_tsa_nuc # 4+8
-special  HBZI00000000-HBZI99999999  embl_tpa_tsa_nuc # 4+8
-special  HBZK00000000-HBZK99999999  embl_tpa_tsa_nuc # 4+8
+special2 HBZI+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBZK+8 embl_tpa_tsa_nuc
+: 00000000-99999999
 special  HBZM00000000-HBZN99999999  embl_tpa_tsa_nuc # 4+8
-special  HBZQ00000000-HBZQ99999999  embl_tpa_tsa_nuc # 4+8
-special  HBZS00000000-HBZS99999999  embl_tpa_tsa_nuc # 4+8
+special2 HBZQ+8 embl_tpa_tsa_nuc
+: 00000000-99999999
+special2 HBZS+8 embl_tpa_tsa_nuc
+: 00000000-99999999
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
