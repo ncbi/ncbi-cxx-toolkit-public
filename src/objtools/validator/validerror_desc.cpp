@@ -659,7 +659,7 @@ static bool x_IsBadBioSampleFormat (
     return false;
 }
 
-static bool x_IsBadAltBioSampleFormat (
+static bool x_IsNotAltBioSampleFormat (
     const string& str
 )
 
@@ -720,8 +720,7 @@ static bool x_IsBadBioProjectFormat (
     if (str [1] != 'R') return true;
     if (str [2] != 'J') return true;
     if (str [3] != 'E' && str [3] != 'N' && str [3] != 'D') return true;
-    ch = str [4];
-    if (! isupper (ch)) return true;
+    if (str [4] != 'A' && str [4] != 'B') return true;
 
     for (i = 5; i < str.length(); i++) {
         ch = str [i];
@@ -769,16 +768,27 @@ bool CValidError_desc::ValidateDblink
                         const CUser_field::C_Data::TStrs& strs = fdata.GetStrs();
                         ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                             const string& str = *st_itr;
-                            if (x_IsBadBioSampleFormat(str) && x_IsBadAltBioSampleFormat(str)) {
-                                PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
-                                    "Bad BioSample format - " + str, *m_Ctx, desc);
+                            if (x_IsBadBioSampleFormat(str)) {
+                                if (x_IsNotAltBioSampleFormat(str)) {
+                                    PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
+                                        "Bad BioSample format - " + str, *m_Ctx, desc);
+                                } else {
+                                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkBadBioSample,
+                                        "Old BioSample format - " + str, *m_Ctx, desc);
+                                }
                             }
                         }
-                    } else if (fdata.IsStr() &&
-                               x_IsBadBioSampleFormat(fdata.GetStr()) &&
-                               x_IsBadAltBioSampleFormat(fdata.GetStr())) {
-                        PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
-                            "Bad BioSample format - " + fdata.GetStr(), *m_Ctx, desc);
+                    } else if (fdata.IsStr()) {
+                        const string& str = fdata.GetStr();
+                        if  (x_IsBadBioSampleFormat(str)) {
+                            if (x_IsNotAltBioSampleFormat(str)) {
+                                PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
+                                    "Bad BioSample format - " + fdata.GetStr(), *m_Ctx, desc);
+                            } else {
+                                PostErr(eDiag_Warning, eErr_SEQ_DESCR_DBLinkBadBioSample,
+                                    "Old BioSample format - " + fdata.GetStr(), *m_Ctx, desc);
+                            }
+                        }
                     }
                 }
             } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
