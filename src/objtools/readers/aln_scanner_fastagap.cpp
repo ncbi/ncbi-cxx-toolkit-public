@@ -84,10 +84,10 @@ CAlnScannerFastaGap::xImportAlignmentData(
 //  ----------------------------------------------------------------------------
 {
     bool waitingForSeqData = false;
-    vector<int> expectedDataSizes;
-    int currentDataLineIndex = 0;
+    vector<unsigned> expectedDataSizes;
+    unsigned currentDataLineIndex = 0;
     bool processingFirstSequence = true;
-    int expectedNumLines = 0;
+    unsigned expectedNumLines = 0;
 
     string line;
     int lineNumber = 0;
@@ -96,7 +96,6 @@ CAlnScannerFastaGap::xImportAlignmentData(
 
         string seqId;
         string defLine;
-        string seqData;
 
         if (waitingForSeqData) {
             if (line.empty()  ||  NStr::StartsWith(line, ">")) {
@@ -112,7 +111,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                 else {
 
                     if (!expectedNumLines) {
-                        expectedNumLines = expectedDataSizes.size();
+                        expectedNumLines = static_cast<unsigned>(expectedDataSizes.size());
                     }
                     auto currentDataSize = seqData.size();
                     auto expectedDataSize = (currentDataLineIndex < expectedNumLines) ?

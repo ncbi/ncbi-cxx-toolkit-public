@@ -49,7 +49,6 @@ void CSeqIdValidate::operator()(const CSeq_id& seqId,
         int lineNum,
         CAlnErrorReporter* pErrorReporter)
 {
-
     if (!pErrorReporter) {
         return;
     }
@@ -93,9 +92,9 @@ void CSeqIdValidate::operator()(const CSeq_id& seqId,
 
 void CSeqIdValidate::operator()(const list<CRef<CSeq_id>>& ids,
         int lineNum,
-        CAlnErrorReporter* pErrorReporter) {
-
-    for (auto pSeqId : ids) {
+        CAlnErrorReporter* pErrorReporter)
+{
+    for (const auto& pSeqId : ids) {
         operator()(*pSeqId, lineNum, pErrorReporter);
     }
 }
@@ -152,9 +151,9 @@ void CFastaIdValidate::SetMaxAccessionLength(size_t length)
 }
 
 
-static string s_GetIDLengthErrorString(int length,
+static string s_GetIDLengthErrorString(size_t length,
         const string& idType,
-        int maxAllowedLength,
+        size_t maxAllowedLength,
         int lineNum)
 {
     string err_message =
@@ -246,7 +245,7 @@ void CFastaIdValidate::CheckForExcessiveNucData(
 {
     const auto& idString = id.GetSeqIdString();
     if (idString.length() > kWarnNumNucCharsAtEnd) {
-        TSeqPos numNucChars = CountPossibleNucResidues(idString);
+        auto numNucChars = CountPossibleNucResidues(idString);
         if (numNucChars > kWarnNumNucCharsAtEnd) {
             const string err_message =
             "Fasta Reader: sequence id ends with " +

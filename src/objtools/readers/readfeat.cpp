@@ -1560,7 +1560,7 @@ CFeatureTableReader_Imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string
             }
             CGetSeqLocFromStringHelper helper;
             CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, m_seq_id, & helper);
-            if (anticodon == NULL) {
+            if (! anticodon) {
                 ext_trna.ResetAa();
                 return false;
             } else {
@@ -1832,7 +1832,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToImp (
 )
 
 {
-    const char *str = NULL;
+    const char* str = nullptr;
 
     CSeqFeatData::ESubtype subtype = sfdata.GetSubtype ();
 
@@ -1924,7 +1924,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToImp (
             break;
     }
 
-    if( NULL != str ) {
+    if (str) {
         CSeq_feat::TExt& ext = sfp->SetExt ();
         CObject_id& obj = ext.SetType ();
         if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
@@ -2221,7 +2221,7 @@ void CFeatureTableReader_Imp::x_CreateGenesFromCDSs(
                     // CDS's loc minus gene's loc should be an empty location
                     // because the CDS should be entirely on the gene
                     CRef<CSeq_loc> pCdsMinusGeneLoc = cds_loc.Subtract(
-                        gene_loc, CSeq_loc::fSortAndMerge_All, NULL, NULL);
+                        gene_loc, CSeq_loc::fSortAndMerge_All, nullptr, nullptr);
                     if( pCdsMinusGeneLoc &&
                         ! pCdsMinusGeneLoc->IsNull() &&
                         ! pCdsMinusGeneLoc->IsEmpty() )
@@ -2900,7 +2900,7 @@ bool CFeatureTableReader_Imp::x_SetupSeqFeat (
     if (feat.empty ()) return false;
 
     // check filter, if any
-    if( NULL != filter ) {
+    if (filter) {
         ITableFilter::EAction action = filter->GetFeatAction(feat);
         if( action != ITableFilter::eAction_Okay ) {
             x_ProcessMsg(
@@ -3048,7 +3048,7 @@ void CFeatureTableReader_Imp::x_ProcessMsg(
     const string& strErrorMessage,
     const ILineError::TVecOfLines & vecOfOtherLines)
 {
-    x_ProcessMsg(m_reader ? m_reader->GetLineNumber() : m_LineNumber,
+    x_ProcessMsg(m_reader ? static_cast<unsigned>(m_reader->GetLineNumber()) : m_LineNumber,
         eProblem,
         eSeverity,
         strFeatureName,
@@ -3172,8 +3172,8 @@ void CFeatureTableReader_Imp::x_FinishFeature(CRef<CSeq_feat>& feat,
         (!feat->SetData().SetPub().IsSetPub() ||
           feat->SetData().SetPub().GetPub().Get().empty())) {
         const int line_number = m_reader->AtEOF() ?
-                                m_reader->GetLineNumber() :
-                                m_reader->GetLineNumber()-1;
+                                static_cast<unsigned>(m_reader->GetLineNumber()) :
+                                static_cast<unsigned>(m_reader->GetLineNumber())-1;
 
         string msg = "Reference feature is empty. Skipping feature.";
 
@@ -3308,7 +3308,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
         if( m_reader->GetLineNumber() % 10000 == 0 &&
             m_reader->GetLineNumber() > 0 )
         {
-            PutProgress(m_real_seqid, m_reader->GetLineNumber(), m_pMessageListener);
+            PutProgress(m_real_seqid, static_cast<unsigned>(m_reader->GetLineNumber()), m_pMessageListener);
         }
 
         // skip empty lines.
@@ -3367,7 +3367,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                     choiceToFeatMap.insert(
                         TChoiceToFeatMap::value_type(
                         eChoice,
-                        SFeatAndLineNum(sfp, m_reader->GetLineNumber())));
+                        SFeatAndLineNum(sfp, static_cast<unsigned>(m_reader->GetLineNumber()))));
 
                     // if new feature is a CDS, remember it for later lookups
                     if( eChoice == CSeqFeatData::e_Cdregion ) {
@@ -3676,7 +3676,7 @@ CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
         CTempString line = *++(*pLineReader);
         if( ParseInitialFeatureLine(line, orig_seqid, annotname) ) {
             CFeatureTableReader_Imp::PutProgress(orig_seqid,
-                                                 pLineReader->GetLineNumber(),
+                                                 static_cast<unsigned>(pLineReader->GetLineNumber()),
                                                  reader.GetErrorListenerPtr());
         }
     }
@@ -3796,7 +3796,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
         // otherwise, take the first feature, which should be representative
         const CSeq_feat& feat    = *annot->GetData().GetFtable().front();
         const CSeq_id*   feat_id = feat.GetLocation().GetId();
-        CBioseq*         seq     = NULL;
+        CBioseq*         seq     = nullptr;
         _ASSERT(feat_id); // we expect a uniform sequence ID
         seq = seq_map[feat_id].GetPointer();
         if (seq) { // found a match
