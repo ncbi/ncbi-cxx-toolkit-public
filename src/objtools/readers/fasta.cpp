@@ -2006,8 +2006,8 @@ void CFastaReader::x_ApplyMods(
         CModHandler::TModList mods;
         CTitleParser::Apply(processed_title, mods, remainder);
 
-        const auto pFirstID = bioseq.GetFirstId();
-        _ASSERT(pFirstID != nullptr);
+        const auto* pFirstID = bioseq.GetFirstId();
+        _ASSERT(pFirstID);
         const auto idString = pFirstID->AsFastaString();
 
         CDefaultModErrorReporter
@@ -2137,7 +2137,7 @@ void CFastaReader::PostWarning(
     string sSeqId = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);
     AutoPtr<CObjReaderLineException> pLineExpt(
         CObjReaderLineException::Create(
-        (_eSeverity), _uLineNum,
+        (_eSeverity), static_cast<unsigned>(_uLineNum),
         _MessageStrmOps,
         (_eProblem),
         sSeqId, (_sFeature),
