@@ -383,21 +383,21 @@ static TTaxId s_GetTaxId(const CBioseq & bio)
     return ZERO_TAX_ID;
 }
 
-static bool s_GenerateTitle(const CBioseq & bio)
+static bool s_HasTitle(const CBioseq & bio)
 {
     if (! bio.CanGetDescr()) {
-        return true;
+        return false;
     }
 
     ITERATE(list< CRef< CSeqdesc > >, iter, bio.GetDescr().Get()) {
         const CSeqdesc & desc = **iter;
 
         if (desc.IsTitle()) {
-            return false;
+            return true;
         }
     }
 
-    return true;
+    return false;
 }
 
 class CSeqEntrySource : public IBioseqSource {
@@ -487,10 +487,8 @@ public:
         }
 
         m_bio = Begin(*m_entry);
-        for (CTypeIterator<CBioseq> it = Begin(*m_entry); it; ++it) {
-            m_scope->AddBioseq(*it);
-        }
         m_entry->Parentize();
+        m_scope->AddTopLevelSeqEntry(*m_entry);
     }
 
     virtual CConstRef<CBioseq> GetNext()
@@ -510,9 +508,18 @@ public:
                 }
             }
 
-            if (s_GenerateTitle(*m_bio)) {
-                sequence::CDeflineGenerator gen;
-                const string & title = gen.GenerateDefline(*m_bio , *m_scope);
+            const sequence::CDeflineGenerator::TUserFlags flags = sequence::CDeflineGenerator::fUseAutoDef;
+            sequence::CDeflineGenerator gen;
+            const string & title = gen.GenerateDefline(*m_bio , *m_scope, flags);
+            string old_title;
+            if (s_HasTitle(*m_bio)) {
+                for (auto& i: m_bio->SetDescr().Set()) {
+                    if (i->IsTitle()) {
+                        old_title = i->GetTitle();
+                        i->SetTitle(title);
+                    }
+                }
+            } else {
                 CRef<CSeqdesc> des(new CSeqdesc);
                 des->SetTitle(title);
                 CSeq_descr& desr(m_bio->SetDescr());
