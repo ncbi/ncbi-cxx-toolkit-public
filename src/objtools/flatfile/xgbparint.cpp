@@ -1239,7 +1239,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                                        tokens,
                                        currentPt);
                         throw CGBLocException();
-                    } 
+                    }
                     --parenPt;
                     ++currentPt;
                 } else {
@@ -1329,8 +1329,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                                tokens,
                                currentPt);
                 throw CGBLocException();
-            } 
-                    
+            }
+
             if (currentPt->choice != ETokenType::eLeft) {
                 xgbparse_error("Missing \'(\'",
                                tokens,
@@ -1349,14 +1349,14 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
 
             if (currentPt->choice == ETokenType::eRight) { /* paran match ( */
                 xgbparse_error("Premature \')\'",
-                                tokens,
-                                currentPt);
+                               tokens,
+                               currentPt);
                 throw CGBLocException();
             }
 
             while (! numErrors && currentPt != end_it) {
                 if (currentPt->choice == ETokenType::eRight) {
-                    while (currentPt != end_it && 
+                    while (currentPt != end_it &&
                            currentPt->choice == ETokenType::eRight) {
                         --parenPt;
                     }
@@ -1366,9 +1366,7 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                 if (currentPt == end_it)
                     break;
 
-                CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, currentPt,
-                                                     tokens, numErrors, seq_ids, accver);
-
+                CRef<CSeq_loc> next_loc = xgbloc_ver(keep_rawPt, parenPt, currentPt, tokens, numErrors, seq_ids, accver);
                 if (next_loc.NotEmpty()) {
                     if (retval->IsMix())
                         retval->SetMix().AddSeqLoc(*next_loc);
@@ -1392,8 +1390,8 @@ static CRef<CSeq_loc> xgbloc_ver(bool& keep_rawPt, int& parenPt, TTokenIt& curre
                     }
                 } else {
                     xgbparse_error("Illegal token after interval",
-                                    tokens,
-                                    currentPt);
+                                   tokens,
+                                   currentPt);
                     throw CGBLocException();
                 }
             }
