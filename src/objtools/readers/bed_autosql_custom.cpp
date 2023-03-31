@@ -49,12 +49,13 @@ BEGIN_SCOPE(objects);
 CAutoSqlCustomField::FormatHandlers  CAutoSqlCustomField::mFormatHandlers = {
 //  ============================================================================
     {"double", CAutoSqlCustomField::AddDouble},
+    {"float", CAutoSqlCustomField::AddDouble},
     {"int", CAutoSqlCustomField::AddInt},
     {"int[]", CAutoSqlCustomField::AddIntArray},
     {"lstring", CAutoSqlCustomField::AddString},
     {"string", CAutoSqlCustomField::AddString},
     {"uint", CAutoSqlCustomField::AddUint},
-    {"uint[]", CAutoSqlCustomField::AddIntArray},
+    {"uint[]", CAutoSqlCustomField::AddUintArray},
 };
 
 //  ============================================================================
