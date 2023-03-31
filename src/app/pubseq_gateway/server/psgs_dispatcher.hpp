@@ -341,42 +341,34 @@ private:
 
         size_t GetCurrentCount(void) const
         {
-            size_t  ret;
-            while (m_CountLock.exchange(true)) {}   // get lock
-            ret = m_CurrentCount;
-            m_CountLock = false;                    // unlock
-            return ret;
+            CSpinlockGuard      guard(&m_CountLock);
+            return m_CurrentCount;
         }
 
         void IncrementLimitReachedCount(void)
         {
-            while (m_CountLock.exchange(true)) {}   // get lock
+            CSpinlockGuard      guard(&m_CountLock);
             ++m_LimitReachedCount;
-            m_CountLock = false;                    // unlock
+        }
+
+        void GetCurrentAndLimitReachedCounts(size_t *  current,
+                                             size_t *  limit_reached)
+        {
+            CSpinlockGuard      guard(&m_CountLock);
+            *current = m_CurrentCount;
+            *limit_reached = m_LimitReachedCount;
         }
 
         void IncrementCurrentCount(void)
         {
-            while (m_CountLock.exchange(true)) {}   // get lock
+            CSpinlockGuard      guard(&m_CountLock);
             ++m_CurrentCount;
-            m_CountLock = false;                    // unlock
         }
 
         void DecrementCurrentCount(void)
         {
-            while (m_CountLock.exchange(true)) {}   // get lock
+            CSpinlockGuard      guard(&m_CountLock);
             --m_CurrentCount;
-            m_CountLock = false;                    // unlock
-        }
-
-        void Lock(void)
-        {
-            while (m_CountLock.exchange(true)) {}
-        }
-
-        void Unlock(void)
-        {
-            m_CountLock = false;
         }
     };
 

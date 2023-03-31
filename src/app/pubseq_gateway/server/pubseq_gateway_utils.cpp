@@ -1559,3 +1559,16 @@ void DismissErrorRequestContext(CRef<CRequestContext>   context,
     }
 }
 
+
+CSpinlockGuard::CSpinlockGuard(atomic<bool> *  spinlock) :
+    m_Spinlock(spinlock)
+{
+    while (m_Spinlock->exchange(true)) {}
+}
+
+
+CSpinlockGuard::~CSpinlockGuard()
+{
+    *m_Spinlock = false;
+}
+
