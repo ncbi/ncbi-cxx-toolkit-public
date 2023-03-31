@@ -535,7 +535,7 @@ private:
     const TPSG_ProcessorId m_Id;
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Time = 0;
-    inline thread_local static TPSG_ProcessorId sm_NextId = TPSG_ProcessorId{};
+    inline static atomic<TPSG_ProcessorId> sm_NextId;
 };
 
 struct SPSG_AsyncQueue : SUv_Async
