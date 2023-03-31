@@ -132,9 +132,8 @@ public:
 
     size_t  GetItemId(void)
     {
-        while (m_NextItemIdLock.exchange(true)) {}
+        CSpinlockGuard      guard(&m_NextItemIdLock);
         auto    ret = ++m_NextItemId;
-        m_NextItemIdLock = false;
         return ret;
     }
 

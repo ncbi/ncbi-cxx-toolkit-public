@@ -360,6 +360,18 @@ private:
 };
 
 
+// Spinlock guard
+class CSpinlockGuard
+{
+public:
+    CSpinlockGuard(atomic<bool> *  spinlock);
+    ~CSpinlockGuard();
+
+private:
+    atomic<bool> *  m_Spinlock;
+};
+
+
 string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
 unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point);
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);

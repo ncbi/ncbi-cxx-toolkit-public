@@ -1208,12 +1208,12 @@ map<string, size_t>  CPSGS_Dispatcher::GetConcurrentCounters(void)
     map<string, size_t>     ret;    // name -> current counter
 
     for (size_t  index = 0; index < m_RegisteredProcessorGroups.size(); ++index) {
-        m_ProcessorConcurrency[index].Lock();
-
-        ret[m_RegisteredProcessorGroups[index]] = m_ProcessorConcurrency[index].m_CurrentCount;
-        ret[m_RegisteredProcessorGroups[index] + "-Limit"] = m_ProcessorConcurrency[index].m_LimitReachedCount;
-
-        m_ProcessorConcurrency[index].Unlock();
+        size_t      current_count;
+        size_t      limit_reached_count;
+        m_ProcessorConcurrency[index].GetCurrentAndLimitReachedCounts(&current_count,
+                                                                      &limit_reached_count);
+        ret[m_RegisteredProcessorGroups[index]] = current_count;
+        ret[m_RegisteredProcessorGroups[index] + "-Limit"] = limit_reached_count;
     }
 
     return ret;

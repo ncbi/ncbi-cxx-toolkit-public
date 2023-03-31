@@ -44,9 +44,8 @@ static size_t           s_NextRequestId = 0;
 
 size_t  GetNextRequestId(void)
 {
-    while (s_RequestIdLock.exchange(true)) {}   // acquire lock
+    CSpinlockGuard      guard(&s_RequestIdLock);
     auto request_id = ++s_NextRequestId;
-    s_RequestIdLock = false;                    // release lock
     return request_id;
 }
 
@@ -488,8 +487,7 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
                                           const string &  name)
 {
     TProcessorPriority      ret = kUnknownPriority;
-
-    while (m_Lock.exchange(true)) {}        // acquire lock
+    CSpinlockGuard          guard(&m_Lock);
 
     for (auto &  item : m_Processed) {
         if (item.second == name) {
@@ -500,7 +498,6 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
     // Add to the list regardless if it was in the list or not
     m_Processed.push_back(make_pair(priority, name));
 
-    m_Lock = false;                         // release lock
     return ret;
 }
 
@@ -508,10 +505,9 @@ SPSGS_AnnotRequest::RegisterProcessedName(TProcessorPriority  priority,
 TProcessorPriority
 SPSGS_AnnotRequest::RegisterBioseqInfo(TProcessorPriority  priority)
 {
-    while (m_Lock.exchange(true)) {}        // acquire lock
+    CSpinlockGuard          guard(&m_Lock);
     TProcessorPriority      ret = m_ProcessedBioseqInfo;
     m_ProcessedBioseqInfo = max(m_ProcessedBioseqInfo, priority);
-    m_Lock = false;                         // release lock
     return ret;
 }
 
@@ -523,7 +519,7 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
 {
     vector<string>      ret = m_Names;
 
-    while (m_Lock.exchange(true)) {}        // acquire lock
+    CSpinlockGuard      guard(&m_Lock);
     for (const auto &  item : m_Processed) {
         if (item.first >= priority) {
             auto    it = find(ret.begin(), ret.end(), item.second);
@@ -532,7 +528,6 @@ SPSGS_AnnotRequest::GetNotProcessedName(TProcessorPriority  priority)
             }
         }
     }
-    m_Lock = false;                         // release lock
     return ret;
 }
 
@@ -550,10 +545,8 @@ bool SPSGS_AnnotRequest::WasSent(const string &  annot_name) const
 vector<pair<TProcessorPriority, string>>
 SPSGS_AnnotRequest::GetProcessedNames(void) const
 {
-    while (m_Lock.exchange(true)) {}        // acquire lock
-    auto    ret = m_Processed;
-    m_Lock = false;                         // release lock
-    return ret;
+    CSpinlockGuard      guard(&m_Lock);
+    return m_Processed;
 }
 
 
@@ -561,17 +554,15 @@ void
 SPSGS_AnnotRequest::ReportResultStatus(const string &  annot_name,
                                        EPSGS_ResultStatus  rs)
 {
+    CSpinlockGuard      guard(&m_Lock);
+
     switch (rs) {
         case ePSGS_RS_NotFound:
-            while (m_Lock.exchange(true)) {}        // acquire lock
             m_NotFound.insert(annot_name);
-            m_Lock = false;                         // release lock
             break;
         case ePSGS_RS_Error:
         case ePSGS_RS_Timeout:
         case ePSGS_RS_Unavailable:
-            while (m_Lock.exchange(true)) {}        // acquire lock
-
             {
                 auto it = m_ErrorAnnotations.find(annot_name);
                 if (it == m_ErrorAnnotations.end()) {
@@ -582,8 +573,6 @@ SPSGS_AnnotRequest::ReportResultStatus(const string &  annot_name,
                     }
                 }
             }
-
-            m_Lock = false;                         // release lock
             break;
     }
 }
@@ -598,7 +587,7 @@ void  SPSGS_AnnotRequest::ReportBlobError(TProcessorPriority  priority,
         return;
     }
 
-    while (m_Lock.exchange(true)) {}        // acquire lock
+    CSpinlockGuard      guard(&m_Lock);
 
     // Mark specifically this processor annotation as the one with an error
     // i.e. move it from 'ok' to the corresponding list
@@ -606,7 +595,6 @@ void  SPSGS_AnnotRequest::ReportBlobError(TProcessorPriority  priority,
         if (it->first == priority && it->second == m_Names[0]) {
             m_Processed.erase(it);
 
-            while (m_Lock.exchange(true)) {}        // acquire lock
             switch (rs) {
                 case ePSGS_RS_NotFound:
                     // Strictly speaking this must not happened.
@@ -632,12 +620,9 @@ void  SPSGS_AnnotRequest::ReportBlobError(TProcessorPriority  priority,
                     }
                     break;
             }
-            m_Lock = false;                         // release lock
             break;
         }
     }
-
-    m_Lock = false;                         // release lock
 }
 
 
