@@ -94,7 +94,10 @@ public:
 
 public:
     IPSGS_Processor() :
-        m_FinishSignalled(false), m_UVThreadId(0)
+        m_FinishSignalled(false), m_UVThreadId(0),
+        m_ProcessInvokeTimestampInitialized(false),
+        m_SignalStartTimestampInitialized(false),
+        m_SignalFinishTimestampInitialized(false)
     {}
 
     virtual ~IPSGS_Processor()
@@ -269,6 +272,38 @@ public:
         return m_UVThreadId != 0;
     }
 
+    /// Provides the timestamp of when the Process() method was called
+    /// @return
+    ///  Process() method invoke timestamp
+    psg_time_point_t GetProcessInvokeTimestamp(bool &  is_valid) const
+    {
+        is_valid = m_ProcessInvokeTimestampInitialized;
+        return m_ProcessInvokeTimestamp;
+    }
+
+    /// Provides the timestamp of when the processor called
+    /// SignalStartProcessing() method
+    /// @return
+    ///  SignalStartProcessing() method invoke timestamp
+    psg_time_point_t GetSignalStartTimestamp(bool &  is_valid) const
+    {
+        is_valid = m_SignalStartTimestampInitialized;
+        return m_SignalStartTimestamp;
+    }
+
+    /// Provides the timestamp of when the processor called
+    /// SignalFinishProcessing() method
+    /// @return
+    ///  SignalFinishProcessing() method invoke timestamp
+    psg_time_point_t GetSignalFinishTimestamp(bool &  is_valid) const
+    {
+        is_valid = m_SignalFinishTimestampInitialized;
+        return m_SignalFinishTimestamp;
+    }
+
+    /// Called just before the virtual Process() method is called
+    void OnBeforeProcess(void);
+
 public:
     /// Tells wether to continue or not after a processor called
     /// SignalStartProcessing() method.
@@ -321,6 +356,16 @@ protected:
 protected:
     bool                        m_FinishSignalled;
     uv_thread_t                 m_UVThreadId;
+
+private:
+    bool                        m_ProcessInvokeTimestampInitialized;
+    psg_time_point_t            m_ProcessInvokeTimestamp;
+
+    bool                        m_SignalStartTimestampInitialized;
+    psg_time_point_t            m_SignalStartTimestamp;
+
+    bool                        m_SignalFinishTimestampInitialized;
+    psg_time_point_t            m_SignalFinishTimestamp;
 };
 
 

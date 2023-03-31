@@ -108,6 +108,7 @@ void CPendingOperation::Start(void)
     }
 
     try {
+        m_Processor->OnBeforeProcess();
         m_Processor->Process();
     } catch (const exception &  exc) {
         string  msg = "Failure to start processor " + m_Processor->GetName() +

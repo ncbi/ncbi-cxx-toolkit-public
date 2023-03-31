@@ -93,6 +93,7 @@ struct SPubseqGatewaySettings
 
     // [DEBUG]
     bool                                m_AllowIOTest;
+    bool                                m_AllowProcessorTiming;
 
     // [IPG]
     string                              m_IPGKeyspace;
