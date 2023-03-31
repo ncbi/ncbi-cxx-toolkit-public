@@ -75,6 +75,7 @@ const unsigned int      kDefaultExcludeCachePurgePercentage = 20;
 const unsigned int      kDefaultExcludeCacheInactivityPurge = 60;
 const unsigned int      kDefaultMaxHops = 2;
 const bool              kDefaultAllowIOTest = false;
+const bool              kDefaultAllowProcessorTiming = false;
 const string            kDefaultOnlyForProcessor = "";
 const double            kDefaultResendTimeoutSec = 0.2;
 const double            kDefaultRequestTimeoutSec = 30.0;
@@ -131,6 +132,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_ExcludeCachePurgePercentage(kDefaultExcludeCachePurgePercentage),
     m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
     m_AllowIOTest(kDefaultAllowIOTest),
+    m_AllowProcessorTiming(kDefaultAllowProcessorTiming),
     m_SSLEnable(kDefaultSSLEnable),
     m_SSLCiphers(kDefaultSSLCiphers),
     m_TestSeqId(kDefaultTestSeqId),
@@ -279,6 +281,8 @@ void SPubseqGatewaySettings::x_ReadDebugSection(const CNcbiRegistry &   registry
 {
     m_AllowIOTest = registry.GetBool(kDebugSection, "psg_allow_io_test",
                                      kDefaultAllowIOTest);
+    m_AllowProcessorTiming = registry.GetBool(kDebugSection, "allow_processor_timing",
+                                              kDefaultAllowProcessorTiming);
 }
 
 

@@ -82,6 +82,10 @@ bool                    g_Trace = kDefaultTrace;
 // It is used in the context resetter to avoid unnecessary context resets
 bool                    g_Log = true;
 
+// Memorize the configured on/off flag for the processor timing
+// It is used in the processor base class and the dispatcher
+bool                    g_AllowProcessorTiming = false;
+
 // Create the shutdown related data. It is used in a few places:
 // a URL handler, signal handlers, watchdog handlers
 SShutdownData           g_ShutdownData;
@@ -140,6 +144,7 @@ void CPubseqGatewayApp::ParseArgs(void)
 
     m_Settings.Read(GetConfig(), m_Alerts);
     g_Log = m_Settings.m_Log;
+    g_AllowProcessorTiming = m_Settings.m_AllowProcessorTiming;
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");

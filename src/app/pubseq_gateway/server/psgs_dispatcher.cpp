@@ -37,6 +37,9 @@
 #include "pubseq_gateway_convert_utils.hpp"
 
 
+extern bool     g_AllowProcessorTiming;
+
+
 USING_NCBI_SCOPE;
 
 // libuv timer callback
@@ -1252,7 +1255,6 @@ void CPSGS_Dispatcher::PopulateStatus(CJsonNode &  status)
             shared_ptr<CPSGS_Request>   request = first_proc->GetRequest();
 
             CJsonNode  proc_group(CJsonNode::NewObjectNode());
-            proc_group.SetInteger("Request ID", processors_group.second->m_RequestId);
             proc_group.SetByKey("Request details", request->Serialize());
             proc_group.SetBoolean("Timer active", processors_group.second->m_TimerActive);
             proc_group.SetBoolean("Timer handle closed", processors_group.second->m_TimerClosed);
@@ -1268,15 +1270,54 @@ void CPSGS_Dispatcher::PopulateStatus(CJsonNode &  status)
                 proc_group.SetString("Signal start processor", processors_group.second->m_StartedProcessing->GetName());
 
             CJsonNode   processors(CJsonNode::NewArrayNode());
+            auto        now = psg_clock_t::now();
 
             for (const auto &  processor : processors_group.second->m_Processors) {
-                CJsonNode  proc(CJsonNode::NewObjectNode());
-                proc.SetString("Name", processor.m_Processor->GetName());
-                proc.SetString("Dispatch status",
+
+                CJsonNode   proc(CJsonNode::NewObjectNode());
+
+                uint64_t            mks;
+                bool                is_valid = false;
+                psg_time_point_t    timestamp;
+
+                if (g_AllowProcessorTiming) {
+                    timestamp = processor.m_Processor->GetProcessInvokeTimestamp(is_valid);
+                    if (is_valid) {
+                        mks = chrono::duration_cast<chrono::microseconds>(now - timestamp).count();
+                        proc.SetInteger("processor started ago mks", mks);
+                    } else {
+                        proc.SetString("processor started ago mks", "Not happened yet");
+                    }
+
+                    timestamp = processor.m_Processor->GetSignalStartTimestamp(is_valid);
+                    if (is_valid) {
+                        mks = chrono::duration_cast<chrono::microseconds>(now - timestamp).count();
+                        proc.SetInteger("processor signal start ago mks", mks);
+                    } else {
+                        proc.SetString("processor signal start ago mks", "Not happened yet");
+                    }
+
+                    timestamp = processor.m_Processor->GetSignalFinishTimestamp(is_valid);
+                    if (is_valid) {
+                        mks = chrono::duration_cast<chrono::microseconds>(now - timestamp).count();
+                        proc.SetInteger("processor signal finish ago mks", mks);
+                    } else {
+                        proc.SetString("processor signal finish ago mks", "Not happened yet");
+                    }
+                } else {
+                    proc.SetString("processor started ago mks", "Collecting switched off");
+                    proc.SetString("processor signal start ago mks", "Collecting switched off");
+                    proc.SetString("processor signal finish ago mks", "Collecting switched off");
+                }
+
+                proc.SetString("processor name", processor.m_Processor->GetName());
+                proc.SetString("processor group name", processor.m_Processor->GetGroupName());
+                proc.SetInteger("processor priority", processor.m_Processor->GetPriority());
+                proc.SetString("dispatch status",
                                CPSGS_Dispatcher::ProcessorStatusToString(processor.m_DispatchStatus));
-                proc.SetString("Finish status",
+                proc.SetString("finish status",
                                IPSGS_Processor::StatusToString(processor.m_FinishStatus));
-                proc.SetString("Processor reported status",
+                proc.SetString("processor reported status",
                                IPSGS_Processor::StatusToString(processor.m_Processor->GetStatus()));
                 processors.Append(proc);
             }
@@ -1287,6 +1328,5 @@ void CPSGS_Dispatcher::PopulateStatus(CJsonNode &  status)
 
         m_GroupsLock[index].unlock();
     }
-
 }
 

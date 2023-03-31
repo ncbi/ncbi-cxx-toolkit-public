@@ -299,11 +299,18 @@ string CPSGS_Request::GetName(void) const
 
 CJsonNode CPSGS_Request::Serialize(void) const
 {
-    if (m_Request)
-        return m_Request->Serialize();
+    CJsonNode       json;
 
-    CJsonNode       json(CJsonNode::NewObjectNode());
-    json.SetString("name", GetName());
+    if (m_Request) {
+        json = m_Request->Serialize();
+    } else {
+        json = CJsonNode::NewObjectNode();
+        json.SetString("request name", GetName());
+    }
+
+    json.SetInteger("request id", m_RequestId);
+    json.SetInteger("backlog time mks", m_BacklogTimeMks);
+    json.SetInteger("concurrent processor count", m_ConcurrentProcessorCount);
     return json;
 }
 
@@ -330,7 +337,7 @@ void SPSGS_RequestBase::AppendCommonParameters(CJsonNode &  json) const
     auto            now = psg_clock_t::now();
     uint64_t        mks = chrono::duration_cast<chrono::microseconds>
                             (now - m_StartTimestamp).count();
-    json.SetInteger("started ago mks", mks);
+    json.SetInteger("created ago mks", mks);
 
     CJsonNode   enabled_procs(CJsonNode::NewArrayNode());
     for (const auto &  name : m_EnabledProcessors) {
@@ -350,7 +357,7 @@ CJsonNode SPSGS_ResolveRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
     json.SetInteger("include data flags", m_IncludeDataFlags);
@@ -377,7 +384,7 @@ CJsonNode SPSGS_BlobBySeqIdRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
 
@@ -400,7 +407,7 @@ CJsonNode SPSGS_BlobBySatSatKeyRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     json.SetString("blob id", m_BlobId.GetId());
     json.SetInteger("last modified", m_LastModified);
 
@@ -414,7 +421,7 @@ CJsonNode SPSGS_AnnotRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
 
@@ -442,7 +449,7 @@ CJsonNode SPSGS_AccessionVersionHistoryRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     json.SetString("seq id", m_SeqId);
     json.SetInteger("seq id type", m_SeqIdType);
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
@@ -457,7 +464,7 @@ CJsonNode SPSGS_IPGResolveRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     if (m_Protein.has_value())
         json.SetString("protein", m_Protein.value());
     else
@@ -638,7 +645,7 @@ CJsonNode SPSGS_TSEChunkRequest::Serialize(void) const
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("name", GetName());
+    json.SetString("request name", GetName());
     json.SetInteger("id2 chunk", m_Id2Chunk);
     json.SetString("id2 info", m_Id2Info);
     json.SetString("use cache", CacheAndDbUseToString(m_UseCache));

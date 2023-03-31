@@ -36,6 +36,8 @@
 #include "insdc_utils.hpp"
 #include "psgs_seq_id_utils.hpp"
 
+extern bool     g_AllowProcessorTiming;
+
 
 string
 IPSGS_Processor::StatusToString(IPSGS_Processor::EPSGS_Status  status)
@@ -87,12 +89,28 @@ IPSGS_Processor::StatusToProgressMessage(IPSGS_Processor::EPSGS_Status  status)
 IPSGS_Processor::EPSGS_StartProcessing
 IPSGS_Processor::SignalStartProcessing(void)
 {
+    if (g_AllowProcessorTiming) {
+        if (!m_SignalStartTimestampInitialized) {
+            // Memorize the first time only
+            m_SignalStartTimestamp = psg_clock_t::now();
+            m_SignalStartTimestampInitialized = true;
+        }
+    }
+
     return CPubseqGatewayApp::GetInstance()->SignalStartProcessing(this);
 }
 
 
 void IPSGS_Processor::SignalFinishProcessing(void)
 {
+    if (g_AllowProcessorTiming) {
+        if (!m_SignalFinishTimestampInitialized) {
+            // Memorize the first time only
+            m_SignalFinishTimestamp = psg_clock_t::now();
+            m_SignalFinishTimestampInitialized = true;
+        }
+    }
+
     if (!m_FinishSignalled) {
         CPubseqGatewayApp::GetInstance()->SignalFinishProcessing(
                                 this, CPSGS_Dispatcher::ePSGS_Processor);
@@ -322,6 +340,16 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     }
 
     return ePSGS_ParseFailed;
+}
+
+
+void IPSGS_Processor::OnBeforeProcess(void)
+{
+    // At the moment just memorize the current time
+    if (g_AllowProcessorTiming) {
+        m_ProcessInvokeTimestamp = psg_clock_t::now();
+        m_ProcessInvokeTimestampInitialized = true;
+    }
 }
 
 
