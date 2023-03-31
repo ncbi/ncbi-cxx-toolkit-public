@@ -73,7 +73,13 @@ cd c++/*/build
 %install
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
 cd c++/*/bin
-%__install -m755 blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast makembindex segmasker dustmasker windowmasker makeblastdb makeprofiledb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck blast_formatter_vdb blast_vdb_cmd blastn_vdb tblastn_vdb legacy_blast.pl update_blastdb.pl cleanup-blastdb-volumes.py get_species_taxids.sh $RPM_BUILD_ROOT/%_bindir
+%__install -v -m755 blastp blastn blastx tblastn tblastx psiblast rpsblast rpstblastn blast_formatter deltablast makembindex segmasker dustmasker windowmasker makeblastdb makeprofiledb blastdbcmd blastdb_aliastool convert2blastmask blastdbcheck blast_formatter_vdb blast_vdb_cmd blastn_vdb tblastn_vdb legacy_blast.pl update_blastdb.pl cleanup-blastdb-volumes.py get_species_taxids.sh $RPM_BUILD_ROOT/%_bindir
+
+cd -
+%__mkdir_p $RPM_BUILD_ROOT/%_docdir/ncbi-blast-%{version}
+cd c++/scripts/projects/blast/
+%__install -v BLAST_PRIVACY ChangeLog LICENSE README $RPM_BUILD_ROOT/%_docdir/ncbi-blast-%{version}/
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -81,6 +87,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 %_bindir/*
+%_docdir/ncbi-blast-%{version}
 
 %changelog
 * Tue Mar 20 2012 <blast-help@ncbi.nlm.nih.gov>
