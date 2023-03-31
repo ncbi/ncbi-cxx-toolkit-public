@@ -95,8 +95,7 @@ bool CAutoSqlCustomField::AddDouble(
     double floatVal = 0;
     try {
         floatVal = NStr::StringToDouble(value);
-    }
-    catch (CStringException&) {
+    } catch (const CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
@@ -122,8 +121,7 @@ bool CAutoSqlCustomField::AddInt(
     int intVal = 0;
     try {
         intVal = NStr::StringToInt(value);
-    }
-    catch (CStringException&) {
+    } catch (const CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
@@ -153,8 +151,7 @@ bool CAutoSqlCustomField::AddIntArray(
             intStrs.begin(), intStrs.end(),
             std::back_inserter(realInts),
             [] (const string& str) -> int { return NStr::StringToInt(str);} );
-    }
-    catch(CStringException&) {
+    } catch (const CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
@@ -194,7 +191,7 @@ bool CAutoSqlCustomField::AddUint(
     unsigned uintVal = 0;
     try {
         uintVal = NStr::StringToUInt(value);
-    } catch (CStringException&) {
+    } catch (const CStringException&) {
         CReaderMessage warning(
             eDiag_Warning,
             lineNo,
@@ -261,8 +258,7 @@ CAutoSqlCustomField::xHandleSpecialCaseRgb(
         int intVal = 0;
         try {
             intVal = NStr::StringToInt(valueStr.substr(1), 0, 16);
-        }
-        catch (CStringException&) {
+        } catch (const CStringException&) {
             CReaderMessage warning(
                 eDiag_Warning,
                 columnData.LineNo(),
@@ -281,8 +277,7 @@ CAutoSqlCustomField::xHandleSpecialCaseRgb(
         try {
             rgbInt = 256*256*NStr::StringToInt(rgb[0]) +
                 256*NStr::StringToInt(rgb[1]) + NStr::StringToInt(rgb[2]);
-        }
-        catch (CStringException&) {
+        } catch (const CStringException&) {
             CReaderMessage warning(
                 eDiag_Warning,
                 columnData.LineNo(),
