@@ -182,15 +182,27 @@ bool CAutoSqlCustomField::AddString(
 
 //  ============================================================================
 bool CAutoSqlCustomField::AddUint(
-    const string& key,
-    const string& value,
-    unsigned int lineNo,
-    int bedFlags,
-    CUser_object& uo,
+    const string&          key,
+    const string&          value,
+    unsigned int           lineNo,
+    int                    bedFlags,
+    CUser_object&          uo,
     CReaderMessageHandler& messageHandler)
 //  ============================================================================
 {
-    return AddInt(key, value, lineNo, bedFlags, uo, messageHandler);
+    unsigned uintVal = 0;
+    try {
+        uintVal = NStr::StringToUInt(value);
+    } catch (CStringException&) {
+        CReaderMessage warning(
+            eDiag_Warning,
+            lineNo,
+            string("BED: Unable to convert \"") + key + "\" value \"" + value +
+                "\" to uint. Defaulting to 0");
+        messageHandler.Report(warning);
+    }
+    uo.AddField(key, static_cast<Int8>(uintVal));
+    return true;
 }
 
 //  ============================================================================
