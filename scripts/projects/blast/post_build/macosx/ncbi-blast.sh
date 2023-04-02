@@ -28,9 +28,13 @@ prep_data_collection_notice_file()
 # JIRA SB-3327 use provided BLAST_PRIVACY
   if [ ! -f ${SCRIPTDIR}/../../BLAST_PRIVACY  ] ; then
       echo "ERROR: missing: ${SCRIPTDIR}/../../BLAST_PRIVACY"
+  elif [ -f $INSTALLDIR/BLAST_PRIVACY ] ; then
+      echo "$INSTALLDIR/BLAST_PRIVACY already exists"
+  elif [ -f $STAGE_DIR1/doc/BLAST_PRIVACY ] ; then
+      echo "$STAGE_DIR1/doc/BLAST_PRIVACY already exists"
   else
-    cp -p ${SCRIPTDIR}/../../BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
-    cp -p ${SCRIPTDIR}/../../BLAST_PRIVACY $INSTALLDIR
+    cp -vp ${SCRIPTDIR}/../../BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
+    cp -vp ${SCRIPTDIR}/../../BLAST_PRIVACY $INSTALLDIR
   fi
 }
 
