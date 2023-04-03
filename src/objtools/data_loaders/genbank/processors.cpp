@@ -1512,6 +1512,14 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id, chunk_id);
     if ( blob.IsLoadedChunk() ) {
+        if ( chunk_id >= 0 ) {
+            // the same chunk can be load multiple times by getblob request
+            // do not treat this situation as an error since
+            // the chunk was actually loaded successfully
+            ERR_POST_X(4, Info << "CProcessor_ID2: "
+                       "double load of "<<blob_id<<'/'<<chunk_id);
+            return;
+        }
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_ID2: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
