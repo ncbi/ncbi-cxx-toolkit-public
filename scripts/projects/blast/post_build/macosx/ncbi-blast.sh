@@ -29,8 +29,8 @@ prep_data_collection_notice_file()
   if [ ! -f ${SCRIPTDIR}/../../BLAST_PRIVACY  ] ; then
       echo "ERROR: missing: ${SCRIPTDIR}/../../BLAST_PRIVACY"
   else
-    cp -vp ${SCRIPTDIR}/../../BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
-    cp -vp ${SCRIPTDIR}/../../BLAST_PRIVACY $INSTALLDIR
+    cp -p ${SCRIPTDIR}/../../BLAST_PRIVACY $STAGE_DIR1/doc/BLAST_PRIVACY
+    cp -p ${SCRIPTDIR}/../../BLAST_PRIVACY $INSTALLDIR
   fi
 }
 
