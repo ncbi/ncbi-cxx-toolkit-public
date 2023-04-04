@@ -60,9 +60,9 @@ public:
     const_iterator end(void) const;
 
     // Add a new range
-    void AddRange(TRange range, ENa_strand strand/* = eNa_strand_unknown*/);
+    void AddRange(TRange range, ENa_strand strand);
     void AddRange(TRange range, ENa_strand strand,
-                  bool more_before, bool more_after);
+                  bool more_before, bool more_after, bool circular_rna = false);
     // Merge a new range with the existing ranges
     void MergeRange(TRange range, ENa_strand strand);
 

@@ -113,10 +113,10 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
 
 
 void CHandleRange::AddRange(TRange range, ENa_strand strand,
-                            bool more_before, bool more_after)
+                            bool more_before, bool more_after, bool circular_rna)
 {
     if ( !m_Ranges.empty()  &&  m_IsSingleStrand ) {
-        if ( strand != m_Ranges.front().second) {
+        if ( strand != m_Ranges.front().second ) {
             // Different strands, the location can not be circular
             if ( m_IsCircular ) {
                 // Different strands, the location can not be circular
@@ -141,7 +141,7 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand,
         }
         else {
             // Same strand, but location may become circular
-            if ( !m_IsCircular ) {
+            if ( !m_IsCircular && !circular_rna ) {
                 // Check if location becomes circular
                 NON_CONST_REVERSE_ITERATE ( TRanges, it, m_Ranges ) {
                     // compare with last non-empty range

@@ -96,7 +96,8 @@ public:
 
     enum ETransSplicing {
         eNoTransSplicing,
-        eTransSplicing
+        eTransSplicing,
+        eCircularRNA
     };
     struct SAddState;
     

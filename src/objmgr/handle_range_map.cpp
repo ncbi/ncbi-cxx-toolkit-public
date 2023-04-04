@@ -274,7 +274,7 @@ void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
             }
         }
     }
-    hr.AddRange(range, strand);
+    hr.AddRange(range, strand, false, false, state.m_TransSplicing == eCircularRNA);
     state.m_PrevId = h;
     state.m_PrevStrand = strand;
     state.m_PrevRange = range;
