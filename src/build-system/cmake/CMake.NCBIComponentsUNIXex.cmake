@@ -485,6 +485,9 @@ if (NCBI_COMPONENT_Sybase_FOUND)
     set(NCBI_COMPONENT_Sybase_DEFINES ${NCBI_COMPONENT_Sybase_DEFINES} SYB_LP64)
     set(SYBASE_PATH ${NCBI_ThirdParty_SybaseNetPath})
     set(SYBASE_LCL_PATH "${NCBI_ThirdParty_SybaseLocalPath}")
+    if(CMAKE_COMPILER_IS_GNUCC)
+        set(NCBI_COMPONENT_Sybase_LIBS -Wl,--no-as-needed ${NCBI_COMPONENT_Sybase_LIBS})
+    endif()
 endif()
 
 #############################################################################
