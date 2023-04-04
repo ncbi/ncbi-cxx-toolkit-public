@@ -201,7 +201,7 @@ public:
     };
     typedef int TFlags; ///< binary OR of CFastaOstream::EFlags
 
-    void Write(const CSeq_entry_Handle& handle, const CSeq_loc* location = 0);
+    void Write(const CSeq_entry_Handle& handle, const CSeq_loc* location = nullptr);
 
     inline
     void SetFlags(TFlags flags)
@@ -217,7 +217,7 @@ public:
 protected:
     struct TStreams
     {
-        TStreams() : m_ostream(0), m_fasta_stream(0)
+        TStreams() : m_ostream(nullptr), m_fasta_stream(nullptr)
         {
         }
         string         m_filename;

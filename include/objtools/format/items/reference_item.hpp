@@ -118,7 +118,7 @@ public:
     /// constructors
     CReferenceItem(const CSeqdesc&  desc, CBioseqContext& ctx);
     CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx,
-        const CSeq_loc* loc = NULL);
+        const CSeq_loc* loc = nullptr);
     CReferenceItem(const CSubmit_block&  sub, CBioseqContext& ctx);
     
     /// destructor

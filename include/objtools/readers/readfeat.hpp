@@ -84,7 +84,7 @@ public:
     CFeature_table_reader(TReaderFlags fReaderFlags = 0);
 
     CFeature_table_reader(ILineReader& lr,
-                          ILineErrorListener* pErrors=0);
+                          ILineErrorListener* pErrors = nullptr);
 
     ~CFeature_table_reader();
 
@@ -96,67 +96,67 @@ public:
     CRef<CSeq_annot>    ReadSeqAnnot (ILineReader &lr, ILineErrorListener *pErrors) override;
 
     CRef<CSeq_annot> ReadSequinFeatureTable(const TFlags flags=0,
-                                            ITableFilter* filter=0,
+                                            ITableFilter* filter = nullptr,
                                             const string& seqid_prefix = kEmptyStr);
 
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
                                                    const TFlags flags = 0,
-                                                   ILineErrorListener* pMessageListener=0,
-                                                   ITableFilter *filter = 0,
+                                                   ILineErrorListener* pMessageListener = nullptr,
+                                                   ITableFilter* filter = nullptr,
                                                    const string& seqid_prefix = kEmptyStr);
 
-    static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
-                                                    const TFlags flags = 0,
-                                                    ILineErrorListener* pMessageListener=0,
-                                                   ITableFilter *filter = 0);
+    static CRef<CSeq_annot> ReadSequinFeatureTable(CNcbiIstream& ifs,
+                                                   const TFlags flags = 0,
+                                                   ILineErrorListener* pMessageListener = nullptr,
+                                                   ITableFilter* filter = nullptr);
 
-    static CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
-                                                    const string& seqid,
-                                                    const string& annotname,
-                                                    const TFlags flags = 0,
-                                                    ILineErrorListener* pMessageListener=0,
-                                                   ITableFilter *filter = 0);
+    static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
+                                                   const string& seqid,
+                                                   const string& annotname,
+                                                   const TFlags flags = 0,
+                                                   ILineErrorListener* pMessageListener = nullptr,
+                                                   ITableFilter* filter = nullptr);
 
-    static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
-                                                    const string& seqid,
-                                                    const string& annotname,
-                                                    const TFlags flags = 0,
-                                                    ILineErrorListener* pMessageListener=0,
-                                                   ITableFilter *filter = 0);
+    static CRef<CSeq_annot> ReadSequinFeatureTable(CNcbiIstream& ifs,
+                                                   const string& seqid,
+                                                   const string& annotname,
+                                                   const TFlags flags = 0,
+                                                   ILineErrorListener* pMessageListener = nullptr,
+                                                   ITableFilter* filter = nullptr);
 
     // read all feature tables available from the input, attaching each
     // at an appropriate position within the Seq-entry object
     static void ReadSequinFeatureTables(ILineReader& reader,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0,
-                                        ILineErrorListener* pMessageListener=0,
-                                        ITableFilter *filter = 0);
+                                        ILineErrorListener* pMessageListener = nullptr,
+                                        ITableFilter* filter = nullptr);
 
     static void ReadSequinFeatureTables(CNcbiIstream& ifs,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0,
-                                        ILineErrorListener* pMessageListener=0,
-                                        ITableFilter *filter = 0);
+                                        ILineErrorListener* pMessageListener = nullptr,
+                                        ITableFilter* filter = nullptr);
 
     // create single feature from key
-    static CRef<CSeq_feat> CreateSeqFeat (const string& feat,
-                                          CSeq_loc& location,
-                                          const TFlags flags = 0,
-                                          ILineErrorListener* pMessageListener = 0,
-                                          unsigned int line = 0,
-                                          std::string *seq_id = 0,
-                                          ITableFilter *filter = 0);
+    static CRef<CSeq_feat> CreateSeqFeat(const string& feat,
+                                         CSeq_loc& location,
+                                         const TFlags flags = 0,
+                                         ILineErrorListener* pMessageListener = nullptr,
+                                         unsigned int line = 0,
+                                         std::string* seq_id = nullptr,
+                                         ITableFilter* filter = nullptr);
 
     // add single qualifier to feature
-    static void AddFeatQual (CRef<CSeq_feat> sfp,
-                             const string& feat_name,
-                             const string& qual,
-                             const string& val,
-                             const TFlags flags = 0,
-                             ILineErrorListener* pMessageListener=0,
-                             int line = 0,
-                             const string &seq_id = std::string() );
+    static void AddFeatQual(CRef<CSeq_feat> sfp,
+                            const string& feat_name,
+                            const string& qual,
+                            const string& val,
+                            const TFlags flags = 0,
+                            ILineErrorListener* pMessageListener = nullptr,
+                            int line = 0,
+                            const string& seq_id = std::string());
 
     /// If line_arg is a feature line (e.g. ">Feature lcl|seq1"), then
     /// it will parse it and return true.

@@ -73,10 +73,10 @@ protected:
 
     // reader argument is used for notification of version auto-detection via SetVersion()
     CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto,
-        CAgpReader* reader = NULL );
+        CAgpReader* reader = nullptr);
     // constructs a default error handler
     CAgpRow(EAgpVersion agp_version = eAgpVersion_auto,
-        CAgpReader* reader = NULL);
+        CAgpReader* reader = nullptr);
 
     CAgpRow(const CAgpRow &);
 
@@ -86,13 +86,13 @@ public:
 
     static CRef<CAgpRow> New(
         CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto,
-        CAgpReader* reader=NULL)
+        CAgpReader* reader = nullptr)
     {
         return Ref(new CAgpRow(arg, agp_version, reader));
     }
 
     static CRef<CAgpRow> New(EAgpVersion agp_version = eAgpVersion_auto,
-        CAgpReader* reader=NULL)
+        CAgpReader* reader = nullptr)
     {
         return Ref( new CAgpRow(agp_version, reader) );
     }
@@ -784,7 +784,7 @@ public:
 
     // Print individual error counts (important if we skipped some errors)
     typedef map<int,string> TMapCcodeToString;
-    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false, TMapCcodeToString* hints=NULL);
+    void PrintMessageCounts(CNcbiOstream& ostr, int from, int to=E_First, bool report_lines_skipped=false, TMapCcodeToString* hints=nullptr);
 
 protected:
     // Count errors of each type, including skipped ones.
@@ -873,7 +873,7 @@ class NCBI_XOBJREAD_EXPORT CAccPatternCounter : public map<string, CPatternStats
 {
 public:
     typedef vector<double> TDoubleVec;
-    iterator AddName(const string& name, TDoubleVec* runsOfDigits=NULL);
+    iterator AddName(const string& name, TDoubleVec* runsOfDigits = nullptr);
 
     // Replace "0"s in a simple pattern like BCM_Spur_v0.0_Scaffold0
     // (which is a key in this map) with real numbers or [ranges].

@@ -86,9 +86,9 @@ public:
     };
 
     // Construtor / Destructor
-    CCleanup(CScope* scope = NULL, EScopeOptions scope_handling = eScope_Copy);
+    CCleanup(CScope* scope = nullptr, EScopeOptions scope_handling = eScope_Copy);
     CCleanup(const CCleanup&) = delete;
-    CCleanup& operator= (const CCleanup&) = delete;
+    CCleanup& operator=(const CCleanup&) = delete;
 
     ~CCleanup();
 

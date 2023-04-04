@@ -50,7 +50,7 @@ class NCBI_FORMAT_EXPORT CFlatItemOStream : public CObject
 {
 public:
     // NB: formatter must be allocated on the heap!
-    CFlatItemOStream(IFormatter* formatter = 0);
+    CFlatItemOStream(IFormatter* formatter = nullptr);
 
     /// If a subclass overrides this, it must call the parent
     /// class's version as its first action.
@@ -71,7 +71,7 @@ protected:
 inline
 CFlatItemOStream& operator<<(CFlatItemOStream& os, CConstRef<IFlatItem>& item)
 {
-    if ( item != 0  &&  !item->Skip() ) {
+    if (item && ! item->Skip()) {
         os.AddItem(item);
     }
     return os;

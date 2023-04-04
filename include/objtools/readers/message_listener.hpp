@@ -132,7 +132,7 @@ class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public objects::IMessageListen
 //  ============================================================================
 {
 public:
-    CMessageListenerBase() : m_pProgressOstrm(0) {};
+    CMessageListenerBase() : m_pProgressOstrm(nullptr) {}
     virtual ~CMessageListenerBase() {};
 
 public:

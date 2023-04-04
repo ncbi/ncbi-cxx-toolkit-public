@@ -77,7 +77,7 @@ public:
 protected:
     typedef CRange<TSeqPos> TRange;
 
-    CFlatGatherer(void) : m_pCanceledCallback(NULL) {}
+    CFlatGatherer() : m_pCanceledCallback(nullptr) {}
 
     CFlatItemOStream& ItemOS     (void) const { return *m_ItemOS;  }
     CBioseqContext& Context      (void) const { return *m_Current; }

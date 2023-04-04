@@ -112,7 +112,7 @@ public:
     virtual string StrPhase() const;
     virtual string StrAttributes() const;
 
-    bool CanGetLocation() const { return 0 != m_pLoc; };
+    bool CanGetLocation() const { return m_pLoc != nullptr; }
     const CSeq_loc& GetLocation() const {
         return *m_pLoc; };
     unsigned int SeqStart() const {return mSeqStart; };

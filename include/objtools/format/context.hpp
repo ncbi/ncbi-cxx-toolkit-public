@@ -81,16 +81,16 @@ public:
     CBioseqContext(
         const CBioseq_Handle& seq,
         CFlatFileContext& ffctx,
-        CMasterContext* mctx = 0,
-        CTopLevelSeqEntryContext *tlsec = 0);
+        CMasterContext* mctx = nullptr,
+        CTopLevelSeqEntryContext* tlsec = nullptr);
 
     CBioseqContext(
         const CBioseq_Handle& prev_seq,
         const CBioseq_Handle& seq,
         const CBioseq_Handle& next_seq,
         CFlatFileContext& ffctx,
-        CMasterContext* mctx = 0,
-        CTopLevelSeqEntryContext *tlsec = 0);
+        CMasterContext* mctx = nullptr,
+        CTopLevelSeqEntryContext* tlsec = nullptr);
     // destructor
     ~CBioseqContext(void);
 
@@ -292,7 +292,7 @@ private:
     bool x_IsInSGS(void) const;
     bool x_IsInGPS(void) const;
     bool x_IsInNucProt(void) const;
-    void x_SetLocation(const CSeq_loc* user_loc = 0);
+    void x_SetLocation(const CSeq_loc* user_loc = nullptr);
     void x_SetMapper(const CSeq_loc& loc);
     void x_SetHasMultiIntervalGenes(void) const;
     void x_SetDataFromUserObjects(void);
@@ -470,7 +470,7 @@ public:
     bool UsingSeqEntryIndex(void) const { return (m_Idx != 0); }
     const CRef<CSeqEntryIndex> GetSeqEntryIndex(void) const { return m_Idx; }
     void SetSeqEntryIndex(CRef<CSeqEntryIndex> idx) { m_Idx = idx; }
-    void ResetSeqEntryIndex(void) { m_Idx.Reset(NULL); }
+    void ResetSeqEntryIndex(void) { m_Idx.Reset(); }
 
     bool GetSGS(void) const { return m_SmallGenomeSet; }
     void SetSGS(const bool sgs) { m_SmallGenomeSet = sgs; }
@@ -768,7 +768,7 @@ const SAnnotSelector* CFlatFileContext::GetAnnotSelector(void) const
 inline
 SAnnotSelector& CFlatFileContext::SetAnnotSelector(void)
 {
-    if ( m_Selector.get() == 0 ) {
+    if (! m_Selector) {
         m_Selector.reset(new SAnnotSelector(CSeq_annot::TData::e_Ftable));
     }
 
