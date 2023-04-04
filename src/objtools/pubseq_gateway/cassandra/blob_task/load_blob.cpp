@@ -223,7 +223,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                     qry->Query(GetQueryConsistency(), m_Async, m_UsePrepared);
                     m_State = eWaitingForPropsFetch;
                 }
-            break;
+                break;
 
             case eWaitingForPropsFetch: {
                 auto& it = m_QueryArr[0];
@@ -357,9 +357,12 @@ void CCassBlobTaskLoadBlob::Wait1()
             
             case eWaitingForID2ChunkID:
             {
-                x_FindID2ChunkID_Wait();
-                m_State = eIsID2ChunkPacked;
-                //m_State = eDone;
+                if( x_FindID2ChunkID_Wait())
+                {
+                    m_State = eIsID2ChunkPacked;
+                    //m_State = eDone;
+                    b_need_repeat = true;
+                }
                 break;
             }
             
@@ -372,8 +375,7 @@ void CCassBlobTaskLoadBlob::Wait1()
             
             case eWaitingForID2ChunkPacked:
             {
-                x_IsID2ChunkPacked_Wait();
-                m_State = eDone;
+                if( x_IsID2ChunkPacked_Wait() ) { m_State = eDone; }
                 break;
             }
             
@@ -388,7 +390,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                     eDiag_Error, msg);
             }
         }
-    } while (b_need_repeat);
+    } while( b_need_repeat);
 }
 
 bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed() const
@@ -513,10 +515,10 @@ void CCassBlobTaskLoadBlob::x_FindID2ChunkID_Query()
 }
 
 //:::::::
-void CCassBlobTaskLoadBlob::x_FindID2ChunkID_Wait()
+bool CCassBlobTaskLoadBlob::x_FindID2ChunkID_Wait()
 {
     auto& it = m_QueryArr[0];
-    if( !CheckReady(it)) return;
+    if( !CheckReady(it)) return false;
 
     while( 1)
     {
@@ -543,6 +545,7 @@ void CCassBlobTaskLoadBlob::x_FindID2ChunkID_Wait()
 
     //if( m_FindID2ChunkIDCallback)
     //    m_FindID2ChunkIDCallback( m_FindChunk.m_Found, m_FindChunk.m_ID2_chunk_id);
+    return true;
 }
 
 //:::::::
@@ -560,10 +563,10 @@ void CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Query()
 }
 
 //:::::::
-void CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Wait()
+bool CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Wait()
 {
     auto& it = m_QueryArr[0];
-    if( !CheckReady(it)) return;
+    if( !CheckReady(it)) return false;
 
     while( 1)
     {
@@ -581,6 +584,8 @@ void CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Wait()
 
     if( m_FindID2ChunkIDCallback)
       m_FindID2ChunkIDCallback( m_FindChunk.m_Found, m_FindChunk.m_ID2_chunk_id, m_FindChunk.m_Packed);
+
+    return true;
 }
 
 unique_ptr<CBlobRecord> CCassBlobTaskLoadBlob::ConsumeBlobRecord()

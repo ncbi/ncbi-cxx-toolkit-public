@@ -186,9 +186,9 @@ public:
     void x_RequestChunksAhead();
     void x_RequestChunk(CCassQuery& qry, int32_t chunk_no);
     void x_FindID2ChunkID_Query();
-    void x_FindID2ChunkID_Wait();  
+    bool x_FindID2ChunkID_Wait();  
     void x_IsID2ChunkPacked_Query();
-    void x_IsID2ChunkPacked_Wait();
+    bool x_IsID2ChunkPacked_Wait();
 
     TBlobChunkCallbackEx    m_ChunkCallback{nullptr};
     TBlobPropsCallback      m_PropsCallback{nullptr};
