@@ -235,7 +235,7 @@ static void s_AgpWrite(CNcbiOstream& os,
                 if (idh)
                 {
                     idh.GetSeqId()->GetLabel(&id_str, CSeq_id::eContent);
-                    if( comp_id_mapper != NULL ) {
+                    if (comp_id_mapper) {
                         comp_id_mapper->do_map( id_str );
                     }
                 }
@@ -312,7 +312,7 @@ void AgpWrite(CNcbiOstream& os,
               int agp_version )
 {
     s_AgpWrite(os, seq_map, 0, seq_map.GetLength(&scope),
-               object_id, NULL, NULL, scope, component_types,
+               object_id, nullptr, nullptr, scope, component_types,
                comp_id_mapper, agp_version);
 }
 
@@ -324,7 +324,7 @@ void AgpWrite(CNcbiOstream& os,
               int agp_version )
 {
     s_AgpWrite(os, *s_SeqMapForHandle(handle), 0, handle.GetBioseqLength(),
-               object_id, NULL, NULL,
+               object_id, nullptr, nullptr,
                handle.GetScope(), component_types, comp_id_mapper, agp_version);
 }
 
@@ -338,7 +338,7 @@ void AgpWrite(CNcbiOstream& os,
               int agp_version )
 {
     s_AgpWrite(os, *s_SeqMapForHandle(handle), from, to,
-               object_id, NULL, NULL,
+               object_id, nullptr, nullptr,
                handle.GetScope(), component_types, comp_id_mapper, agp_version);
 }
 

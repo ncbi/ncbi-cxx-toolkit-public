@@ -88,10 +88,10 @@ static string s_GetGOText(
     const bool is_ftable,
     const bool is_html)
 {
-    const string* text_string = NULL,
-                * evidence = NULL,
-                * go_id = NULL,
-                * go_ref = NULL;
+    const string *text_string = nullptr,
+                 *evidence = nullptr,
+                 *go_id = nullptr,
+                 *go_ref = nullptr;
     string temp;
     int pmid = 0;
 
@@ -124,19 +124,19 @@ static string s_GetGOText(
     }
 
     string go_text;
-    if (text_string != NULL) {
+    if (text_string) {
         go_text = *text_string;
     }
     if ( is_ftable ) {
         go_text += '|';
-        if (go_id != NULL) {
+        if (go_id) {
             go_text += *go_id;
         }
         go_text += '|';
         if ( pmid != 0 ) {
             go_text +=  NStr::IntToString(pmid);
         }
-        if (evidence != NULL) {
+        if (evidence) {
             go_text += '|';
             go_text += *evidence;
         }
@@ -144,7 +144,7 @@ static string s_GetGOText(
         bool add_dash = false;
         // RW-922 only make one link from GO:id - text.
         go_text.clear();
-        if (go_id != NULL) {
+        if (go_id) {
             if( is_html ) {
                 go_text += "<a href=\"";
                 go_text += strLinkBaseGeneOntology + *go_id + "\">";
@@ -153,34 +153,34 @@ static string s_GetGOText(
             go_text += *go_id;
             add_dash = true;
         }
-        if ( text_string != 0 && text_string->length() > 0 ) {
+        if (text_string && text_string->length() > 0) {
             if (add_dash) {
               go_text += string( " - " );
             }
             // NO, we NO LONGER have the dash here even if there's no go_id (RETAIN compatibility with CHANGE in C)
             go_text += *text_string;
         }
-        if( is_html && go_id != NULL ) {
+        if (is_html && go_id) {
             go_text += "</a>";
         }
-        if ( evidence != 0 ) {
+        if (evidence) {
             go_text += string( " [Evidence " ) + *evidence + string( "]" );
         }
         if ( pmid != 0 ) {
             string pmid_str = NStr::IntToString(pmid);
 
             go_text += " [PMID ";
-            if( is_html && go_id != NULL ) {
+            if (is_html && go_id) {
                 go_text += "<a href=\"";
                 go_text += strLinkBasePubmed + pmid_str + "\">";
             }
             go_text += pmid_str;
-            if( is_html && go_id != NULL ) {
+            if(is_html && go_id) {
                 go_text += "</a>";
             }
             go_text += "]";
         }
-        if ( go_ref != 0 ) {
+        if (go_ref) {
             go_text += " [GO Ref ";
             if( is_html ) {
                 go_text += "<a href=\"";
@@ -759,7 +759,7 @@ void CFlatIllegalQVal::Format(TFlatQuals& q, const CTempString& name, CBioseqCon
 void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
                             CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
-    const char* s = 0;
+    const char* s = nullptr;
     switch ( m_Biomol ) {
 
     default:
@@ -833,13 +833,13 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
 
     }
 
-    if ( s == 0 ) {
+    if (! s) {
         switch ( m_Mol ) {
         case CSeq_inst::eMol_rna:
             s = "unassigned RNA";
             break;
         case CSeq_inst::eMol_aa:
-            s = 0;
+            s = nullptr;
             break;
         case CSeq_inst::eMol_dna:
         default:
@@ -848,7 +848,7 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
         }
     }
 
-    if ( s != 0 ) {
+    if (s) {
         x_AddFQ(q, name, s);
     }
 }
@@ -1460,7 +1460,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
             // Special case for EST or GSS: we don't filter the dbtags as toughly
             CDbtag::EIsEstOrGss is_est_or_gss = CDbtag::eIsEstOrGss_No;
             const CMolInfo* mol_info = ctx.GetMolinfo();
-            if( NULL != mol_info && mol_info->CanGetTech() ) {
+            if (mol_info && mol_info->CanGetTech()) {
                 if( mol_info->GetTech() == CMolInfo::eTech_est || mol_info->GetTech() == CMolInfo::eTech_survey ) {
                     is_est_or_gss = CDbtag::eIsEstOrGss_Yes;
                 }
@@ -1550,7 +1550,7 @@ bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
     while (gxref != end  &&  gxref->first == eFQ_gene_xref) {
         const CFlatXrefQVal* xrefqv =
             dynamic_cast<const CFlatXrefQVal*>(gxref->second.GetPointerOrNull());
-        if (xrefqv != NULL) {
+        if (xrefqv) {
             ITERATE (TXref, dbt, xrefqv->m_Value) {
                 if (dbtag.Match(**dbt)) {
                     return true;
@@ -1563,7 +1563,7 @@ bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
     for ( TQCI it = gxrefs.first; it != gxrefs.second; ++it ) {
         const CFlatXrefQVal* xrefqv =
             dynamic_cast<const CFlatXrefQVal*>(it->second.GetPointerOrNull());
-        if ( xrefqv != 0 ) {
+        if (xrefqv) {
             ITERATE (TXref, dbt, xrefqv->m_Value) {
                 if ( dbtag.Match(**dbt) ) {
                     return true;
@@ -1613,7 +1613,7 @@ void CFlatModelEvQVal::Format
 {
     size_t num_mrna = 0, num_prot = 0, num_est = 0, num_long_sra = 0;
     size_t rnaseq_base_coverage = 0, rnaseq_biosamples_introns_full = 0;
-    const string* method = 0;
+    const string* method = nullptr;
 
     ITERATE (CUser_object::TData, it, m_Value->GetData()) {
         const CUser_field& field = **it;
@@ -1663,7 +1663,7 @@ void CFlatModelEvQVal::Format
 
     CNcbiOstrstream text;
     text << "Derived by automated computational analysis";
-    if (method != NULL  &&  !NStr::IsBlank(*method)) {
+    if (method && ! NStr::IsBlank(*method)) {
          text << " using gene prediction method: " << *method;
     }
     text << ".";

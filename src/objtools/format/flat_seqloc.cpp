@@ -82,7 +82,7 @@ static bool s_IsVirtualSeqInt
 static bool s_IsVirtualLocation(const CSeq_loc& loc, const CBioseq_Handle& seq)
 {
     const CSeq_id* id = loc.GetId();
-    return (id != NULL) ?
+    return id ?
         s_IsVirtualId(CSeq_id_Handle::GetHandle(*id), seq) :
         false;
 }
@@ -269,7 +269,7 @@ bool CFlatSeqLoc::x_Add
     case CSeq_loc::e_Null:
     {{
         const CFlatGapLoc* gap = dynamic_cast<const CFlatGapLoc*>(&loc);
-        if (gap == 0) {
+        if (! gap) {
             oss << "gap()";
             break;
         }
@@ -351,7 +351,7 @@ bool CFlatSeqLoc::x_Add
         const char* delim = "";
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
-            const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : 0;
+            const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : nullptr;
             if (!x_Add(*it, fuzz, oss, ( ctx.Config().DoHTML() ? eHTML_Yes : eHTML_None ), eForce_None, eSource_Other, show_all_accns, suppress_accession )) {
                 delim = "";
             } else {
@@ -530,7 +530,7 @@ bool CFlatSeqLoc::x_Add
     x_AddID(si.GetId(), oss, ctx, type, show_all_accns, suppress_accession);
 
     // get the fuzz we need, but certain kinds of fuzz do not belong in an interval
-    const CSeq_interval::TFuzz_from *from_fuzz = (si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0);
+    const CSeq_interval::TFuzz_from *from_fuzz = (si.IsSetFuzz_from() ? &si.GetFuzz_from() : nullptr);
 
     x_Add(from, from_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
 
@@ -539,7 +539,7 @@ bool CFlatSeqLoc::x_Add
     {
         oss << "..";
 
-        const CSeq_interval::TFuzz_from *to_fuzz = (si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0);
+        const CSeq_interval::TFuzz_from *to_fuzz = (si.IsSetFuzz_to() ? &si.GetFuzz_to() : nullptr);
 
         x_Add(to, to_fuzz, oss, ( do_html ? eHTML_Yes : eHTML_None ));
     }
@@ -573,7 +573,7 @@ bool CFlatSeqLoc::x_Add
     if( is_comp ) {
         oss << "complement(";
     }
-    x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0,
+    x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : nullptr,
         oss, ( do_html ? eHTML_Yes : eHTML_None ),
         ( (eType_assembly == type) ? eForce_ToRange : eForce_None ),
         eSource_Point );
@@ -600,7 +600,7 @@ bool CFlatSeqLoc::x_Add
 
     const bool bFromSeqPoint = (source == eSource_Point);
 
-    if ( fuzz != 0 ) {
+    if (fuzz) {
         switch ( fuzz->Which() ) {
         case CInt_fuzz::e_P_m:
             {
@@ -741,7 +741,7 @@ bool CFlatSeqLoc::x_IsAccessionVersion( CSeq_id_Handle id )
         return false;
     }
 
-    return ( seq_id->GetTextseq_Id() != NULL );
+    return (seq_id->GetTextseq_Id() != nullptr);
 }
 
 void

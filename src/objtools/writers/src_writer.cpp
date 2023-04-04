@@ -200,7 +200,7 @@ bool CSrcWriter::WriteSeqEntry(
             vecIdBsh.push_back(make_pair("",*bci));
         }
     }
-    WriteBioseqHandles(vecIdBsh, sAllSeqEntryFields, out, 0);
+    WriteBioseqHandles(vecIdBsh, sAllSeqEntryFields, out);
 
     return true;
 }
@@ -592,8 +592,8 @@ bool CSrcWriter::xGather(
         string auths;
         string comma;
         string affls;
-        const CCit_sub* latest_sub = 0;
-        const CDate* latest_date = 0;
+        const CCit_sub* latest_sub = nullptr;
+        const CDate* latest_date = nullptr;
         for (CSeqdesc_CI pdit(bsh, CSeqdesc::e_Pub); pdit; ++pdit) {
             const CPubdesc& pubdesc = pdit->GetPub();
             if (pubdesc.IsSetPub()) {
@@ -604,7 +604,7 @@ bool CSrcWriter::xGather(
                             const CCit_sub& sub = (*it)->GetSub();
                             if (sub.IsSetDate()) {
                                 const CDate& curr_date = sub.GetDate();
-                                if (latest_date != 0) {
+                                if (latest_date) {
                                     if (latest_date->Compare(curr_date) == CDate::eCompare_before) {
                                         latest_sub = &sub;
                                         latest_date = &curr_date;
@@ -619,7 +619,7 @@ bool CSrcWriter::xGather(
                 }
             }
         }
-        if (latest_sub != 0) {
+        if (latest_sub) {
            if (latest_sub->IsSetAuthors()) {
               const CAuth_list& authors = latest_sub->GetAuthors();
               if (authors.IsSetNames()) {

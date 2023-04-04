@@ -198,7 +198,7 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
     x_SetObject(desc);
     m_Pubdesc.Reset(&(desc.GetPub()));
 
-    if (ctx.GetMapper() != NULL) {
+    if (ctx.GetMapper()) {
         m_Loc.Reset(ctx.GetMapper()->Map(ctx.GetLocation()));
     } else {
         m_Loc.Reset(&ctx.GetLocation());
@@ -222,9 +222,9 @@ CReferenceItem::CReferenceItem
 
     m_Pubdesc.Reset(&(feat.GetData().GetPub()));
 
-    if (loc != NULL) {
+    if (loc) {
         m_Loc.Reset(loc);
-    } else if ( ctx.GetMapper() != 0 ) {
+    } else if (ctx.GetMapper()) {
         m_Loc.Reset(ctx.GetMapper()->Map(feat.GetLocation()));
     } else {
         m_Loc.Reset(&(feat.GetLocation()));
@@ -396,8 +396,8 @@ static void s_CombineRefs
         const CPubdesc& prev_pubdesc = prev_ref.GetPubdesc();
         const CPubdesc& curr_pubdesc = curr_ref.GetPubdesc();
 
-        const CPubdesc::TFig* new_fig = ( (! prev_pubdesc.IsSetFig() && curr_pubdesc.IsSetFig()) ? &curr_pubdesc.GetFig() : NULL );
-        const CPubdesc::TMaploc *new_maploc = ( (! prev_pubdesc.IsSetMaploc() && curr_pubdesc.IsSetMaploc()) ? &curr_pubdesc.GetMaploc() : NULL );
+        const CPubdesc::TFig* new_fig = ((! prev_pubdesc.IsSetFig() && curr_pubdesc.IsSetFig()) ? &curr_pubdesc.GetFig() : nullptr);
+        const CPubdesc::TMaploc* new_maploc = ((! prev_pubdesc.IsSetMaploc() && curr_pubdesc.IsSetMaploc()) ? &curr_pubdesc.GetMaploc() : nullptr );
         // the "false" is arbitrary and won't get ever used
         const CPubdesc::TPoly_a new_poly_a =
             ( curr_pubdesc.IsSetPoly_a() ? curr_pubdesc.GetPoly_a() : false );
@@ -405,7 +405,7 @@ static void s_CombineRefs
         prev_ref.SetRemark(
             new_fig,
             new_maploc,
-            ( (! prev_pubdesc.IsSetPoly_a() && curr_pubdesc.IsSetPoly_a()) ? &new_poly_a : NULL )
+            ((! prev_pubdesc.IsSetPoly_a() && curr_pubdesc.IsSetPoly_a()) ? &new_poly_a : nullptr)
         );
     }
 }
@@ -655,7 +655,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
 
     const CPubdesc::TPub& pub = m_Pubdesc->GetPub();
 
-    /*if (ctx.GetSubmitBlock() != NULL) {
+    /*if (ctx.GetSubmitBlock()) {
         m_Title = "Direct Submission";
         m_Sub.Reset(&ctx.GetSubmitBlock()->GetCit());
         m_PubType = ePub_sub;
@@ -1719,11 +1719,11 @@ bool LessThan::operator()
     // put pub descriptors before features, sort features by location
     const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>(ref1->GetObject());
     const CSeq_feat* f2 = dynamic_cast<const CSeq_feat*>(ref2->GetObject());
-    if (f1 == NULL  &&  f2 != NULL) {
+    if (! f1  &&  f2) {
         return true;
-    } else if (f1 != NULL  &&  f2 == NULL) {
+    } else if (f1 && ! f2) {
         return false;
-    } else if (f1 != NULL  &&  f2 != NULL) {
+    } else if (f1 && f2) {
         CSeq_loc::TRange r1 = f1->GetLocation().GetTotalRange();
         CSeq_loc::TRange r2 = f2->GetLocation().GetTotalRange();
         if (r1 < r2) {

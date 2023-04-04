@@ -123,7 +123,7 @@ class CDefaultIdErrorReporter
 public:
     CDefaultIdErrorReporter(CAlnErrorReporter* pErrorReporter)
         : m_pErrorReporter(pErrorReporter)
-        { _ASSERT(m_pErrorReporter != nullptr); }
+        { _ASSERT(m_pErrorReporter); }
 
 
     void operator()(EDiagSev severity,
@@ -814,7 +814,7 @@ void CAlnReader::x_AddMods(const SLineInfo& defline_info,
     }
 
     auto pFirstID = bioseq.GetFirstId();
-    _ASSERT(pFirstID != nullptr);
+    _ASSERT(pFirstID);
     const auto idString = pFirstID->AsFastaString();
 
     CDefaultModErrorReporter

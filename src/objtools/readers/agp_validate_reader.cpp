@@ -116,7 +116,7 @@ CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len,
   m_CheckCompNames=false; // checkCompNames;
   m_unplaced=false;
   m_explicit_scaf=false;
-  m_row_output=NULL;
+  m_row_output=nullptr;
 
   Reset(false);
 }
@@ -149,7 +149,7 @@ void CAgpValidateReader::OnComment()
   // No other callbacks invoked for this line.
   m_CommentLineCount++;
 
-  if(m_row_output) m_row_output->SaveRow(m_line, CRef<CAgpRow>(), NULL);
+  if(m_row_output) m_row_output->SaveRow(m_line, CRef<CAgpRow>(), nullptr);
 }
 
 void CAgpValidateReader::OnGapOrComponent()
@@ -214,7 +214,7 @@ void CAgpValidateReader::OnGapOrComponent()
       m_last_scaf_start_line=m_line_num;
       m_last_scaf_start_is_obj=false;
     }
-    if(m_row_output) m_row_output->SaveRow(m_line, m_this_row, NULL);
+    if(m_row_output) m_row_output->SaveRow(m_line, m_this_row, nullptr);
   }
   else { // component line
     m_CompCount++;
@@ -460,7 +460,7 @@ void CAgpValidateReader::OnGapOrComponent()
       m_AgpErr->Msg(CAgpErrEx::W_BreakingGapSameCompId, sameComId_otherScaf);
     }
 
-    if(m_row_output && !row_saved) m_row_output->SaveRow(m_line, m_this_row, NULL);
+    if(m_row_output && !row_saved) m_row_output->SaveRow(m_line, m_this_row, nullptr);
   }
 
   CAgpErrEx* errEx = static_cast<CAgpErrEx*>(GetErrorHandler());
@@ -1143,7 +1143,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
 
   if(m_ObjCount) {
     x_PrintPatterns(m_objNamePatterns, "Object names",
-      m_CheckObjLen ? m_comp2len->m_count : 0, NULL,
+      m_CheckObjLen ? m_comp2len->m_count : 0, nullptr,
       out, use_xml
     );
   }
@@ -1157,7 +1157,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     }
     bool hasSuspicious = x_PrintPatterns(compNamePatterns, "Component names",
       m_CheckObjLen ? 0 : m_comp2len->m_count,
-      m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : NULL,
+      m_comp2len == &m_scaf2len ? " Scaffold from component AGP" : nullptr,
       out, use_xml
     );
     if(!m_CheckCompNames && hasSuspicious ) {
@@ -1594,7 +1594,7 @@ void CAgpValidateReader::CIdsNotInAgp::Print(CNcbiOstream& out, const string& ms
     }
   }
   else {
-    m_reader.x_PrintPatterns(m_patterns, NcbiEmptyString, 0, NULL, out, false);
+    m_reader.x_PrintPatterns(m_patterns, NcbiEmptyString, 0, nullptr, out, false);
   }
 }
 
@@ -1606,7 +1606,7 @@ void CAgpValidateReader::CIdsNotInAgp::PrintXml(CNcbiOstream& out, const string&
   for(set<string>::iterator it = m_ids.begin();  it != m_ids.end(); ++it) {
     out << " <name>" << NStr::XmlEncode(*it) << "</name>\n";
   }
-  m_reader.x_PrintPatterns(m_patterns, NcbiEmptyString, 0, NULL, out, true);
+  m_reader.x_PrintPatterns(m_patterns, NcbiEmptyString, 0, nullptr, out, true);
   out << "</MissingSeqNames>\n";
 }
 

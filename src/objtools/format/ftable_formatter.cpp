@@ -75,7 +75,7 @@ void CFtableFormatter::FormatFeatHeader
         // !!! Get id for GI (need support from objmgr)
     }
 
-    if ( id != 0 ) {
+    if (id) {
         list<string> l;
         l.push_back(">Feature " + id->AsFastaString());
         text_os.AddParagraph(l);

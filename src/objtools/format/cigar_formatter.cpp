@@ -52,7 +52,7 @@ CCIGAR_Formatter::CCIGAR_Formatter(const CSeq_align&    aln,
                                    CScope*              scope,
                                    TCIGARFlags          flags)
     : m_Align(aln),
-      m_CurAlign(NULL),
+      m_CurAlign(nullptr),
       m_Scope(scope),
       m_Flags(flags),
       m_IsFirstSubalign(true),
@@ -126,7 +126,7 @@ void CCIGAR_Formatter::x_FormatAlignmentRows(const CSeq_align& sa,
                 StartSubAlignment();
                 x_FormatAlignmentRows(**it, width_inverted);
                 EndSubAlignment();
-                m_CurAlign = NULL;
+                m_CurAlign = nullptr;
                 m_IsFirstSubalign = false;
             }
             break;

@@ -377,8 +377,8 @@ void CFlatFileGenerator::Generate
                     break;
                 case CSeq_id::e_Other:
                     {
-                         const CTextseq_id* tsid = sid.GetTextseq_Id ();
-                        if (tsid != NULL && tsid->IsSetAccession()) {
+                        const CTextseq_id* tsid = sid.GetTextseq_Id();
+                        if (tsid && tsid->IsSetAccession()) {
                             const string& acc = tsid->GetAccession().substr(0, 3);
                             if (acc == "NC_") {
                                 isNc = true;

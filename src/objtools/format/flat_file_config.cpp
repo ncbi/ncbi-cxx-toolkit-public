@@ -322,8 +322,8 @@ CFlatFileConfig::CFlatFileConfig(
     m_FeatDepth = 0;
     m_GapDepth = 0;
     SetGenbankBlocks(fGenbankBlocks_All);
-    SetGenbankBlockCallback(NULL);
-    SetCanceledCallback(NULL);
+    SetGenbankBlockCallback(nullptr);
+    SetCanceledCallback(nullptr);
     BasicCleanup(false);
 
     // FTable always requires master style

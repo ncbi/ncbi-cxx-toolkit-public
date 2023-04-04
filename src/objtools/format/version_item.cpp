@@ -84,7 +84,7 @@ const string& CVersionItem::GetAccession(void) const
 
 void CVersionItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    if ( ctx.GetPrimaryId() != 0 ) {
+    if (ctx.GetPrimaryId()) {
         const CSeq_id& id = *ctx.GetPrimaryId();
         switch ( id.Which() ) {
         case CSeq_id::e_Genbank:

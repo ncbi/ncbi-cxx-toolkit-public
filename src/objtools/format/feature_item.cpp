@@ -230,7 +230,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
     bool pseudo = feat.IsSetPseudo()  &&  feat.GetPseudo() ;
     if ( !pseudo && !ctx.IsEMBL() && !ctx.IsDDBJ() ) {
         const CGene_ref* grp = feat.GetGeneXref();
-        if ( grp == NULL ) {
+        if (! grp) {
             CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, scope);
             if (gene) {
                 pseudo = gene->IsSetPseudo()  &&  gene->GetPseudo();
@@ -239,7 +239,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
                 }
             }
         }
-        if ( !pseudo  &&  grp != NULL ) {
+        if (! pseudo && grp) {
             pseudo = grp->GetPseudo();
         }
     }
@@ -262,7 +262,7 @@ static bool s_CheckQuals_cdregion(const CMappedFeat& feat,
         try {
             id.Reset(&(GetId(feat.GetProduct(), &scope)));
         } catch ( CException& ) {
-            id.Reset(NULL);
+            id.Reset();
         }
         if (id) {
             if ((id->IsGi()  &&  id->GetGi() > ZERO_GI) ||  id->IsLocal()) {
@@ -999,7 +999,7 @@ CFeatureItemBase::CFeatureItemBase
  const CSeq_loc* loc,
  bool suppressAccession) :
     CFlatItem(&ctx), m_Feat(feat), m_Feat_Tree(ftree), m_Loc(loc ? loc :
-                                         (feat ? &feat.GetLocation() : NULL)),
+                                         (feat ? &feat.GetLocation() : nullptr)),
     m_SuppressAccession(suppressAccession)
 {
     if (m_Feat) {
@@ -1181,7 +1181,7 @@ void CFeatureItem::x_AddQualOperon(
     }
 
     const CGene_ref* gene_ref = m_Feat.GetGeneXref();
-    if ( gene_ref == NULL  ||  !gene_ref->IsSuppressed()) {
+    if (! gene_ref || ! gene_ref->IsSuppressed()) {
             const CSeq_loc& operon_loc = ( ctx.IsProt() || !IsMapped() ) ?
                 m_Feat.GetLocation() : GetLoc();
         CConstRef<CSeq_feat> operon
@@ -1312,7 +1312,7 @@ void CFeatureItem::x_AddQualSeqfeatNote(CBioseqContext &ctx)
     // It's set from the feature's product's best protein's comment
     if( GetContext()->IsProt() && IsMappedFromProt() && m_Feat.IsSetProduct() ) {
         const CSeq_id* prod_id = m_Feat.GetProduct().GetId();
-        if( prod_id != NULL ) {
+        if (prod_id) {
             CBioseq_Handle prod_bioseq = GetContext()->GetScope().GetBioseqHandle(*prod_id);
             if( prod_bioseq ) {
                 CMappedFeat best_prot_feat = s_GetBestProtFeature( prod_bioseq );
@@ -1556,7 +1556,7 @@ void CFeatureItem::x_AddQualGeneXref(
     if ( type == CSeqFeatData::e_Cdregion || type == CSeqFeatData::e_Rna ) {
         if ( ! gene_ref && gene_feat ) {
             gene_ref = &gene_feat->GetData().GetGene();
-            if ( gene_ref != NULL  &&  gene_ref->IsSetDb() ) {
+            if (gene_ref && gene_ref->IsSetDb()) {
                 x_AddQual(
                     eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
             } else if ( gene_feat->IsSetDbxref() ) {
@@ -1673,11 +1673,11 @@ void CFeatureItem::x_AddQualsIdx(
         }
     }}
 
-    const CGene_ref* gene_ref = 0;
+    const CGene_ref* gene_ref = nullptr;
     CConstRef<CSeq_feat> gene_feat;
-    const CGene_ref* feat_gene_xref = 0;
+    const CGene_ref* feat_gene_xref = nullptr;
     feat_gene_xref = m_Feat.GetGeneXref();
-    if (feat_gene_xref == 0 && parentFeatureItem) {
+    if (! feat_gene_xref && parentFeatureItem) {
         feat_gene_xref = parentFeatureItem->GetFeat().GetGeneXref();
     }
     bool suppressed = false;
@@ -1715,7 +1715,7 @@ void CFeatureItem::x_AddQualsIdx(
                 if (fsx) {
                     const CMappedFeat mf = fsx->GetMappedFeat();
                     if (mf) {
-                        const CGene_ref* gr = 0;
+                        const CGene_ref* gr = nullptr;
                         CConstRef<CSeq_feat> gf;
                         gf = &(mf.GetMappedFeature());
                         gr = &(mf.GetData().GetGene());
@@ -1981,7 +1981,7 @@ void CFeatureItem::x_AddQuals(
         }
     }}
 
-    const CGene_ref* gene_ref = 0;
+    const CGene_ref* gene_ref = nullptr;
     CConstRef<CSeq_feat> gene_feat;
     const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
     bool suppressed = false;
@@ -2564,7 +2564,7 @@ void CFeatureItem::x_AddQualProteinConflict(
     {
         if (!ctx.IsProt() || !IsMappedFromCDNA()) {
             bool has_prot = false;
-            if (m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId() != 0) {
+            if (m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId()) {
                 has_prot = (sequence::GetLength(m_Feat.GetProduct(), &ctx.GetScope()) > 0);
             }
             if (has_prot) {
@@ -2659,7 +2659,7 @@ void CFeatureItem::x_GetAssociatedProtInfoIdx(
     if (! bsx) return;
 
 
-    protRef = 0;
+    protRef = nullptr;
     if ( protHandle ) {
         CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
         if (! idx) return;
@@ -2701,7 +2701,7 @@ void CFeatureItem::x_GetAssociatedProtInfo(
         }
     }
 
-    protRef = 0;
+    protRef = nullptr;
     if ( protHandle ) {
         protFeat = s_GetBestProtFeature( protHandle );
         if ( protFeat ) {
@@ -3024,7 +3024,7 @@ void CFeatureItem::x_AddQualsCdregionIdx(
     }
     inset = (inset % 3);
 
-    const CProt_ref* protRef = 0;
+    const CProt_ref* protRef = nullptr;
     CMappedFeat protFeat;
     CConstRef<CSeq_id> prot_id;
 
@@ -3085,7 +3085,7 @@ void CFeatureItem::x_AddQualsCdregion(
 {
     const CCdregion& cdr = cds.GetData().GetCdregion();
 
-    const CProt_ref* protRef = 0;
+    const CProt_ref* protRef = nullptr;
     CMappedFeat protFeat;
     CConstRef<CSeq_id> prot_id;
 
@@ -3660,14 +3660,14 @@ void CFeatureItem::x_AddQualsGene(
                                   subtype != CSeqFeatData::eSubtype_telomere);
 
     const string* locus = (gene_ref->IsSetLocus()  &&  !NStr::IsBlank(gene_ref->GetLocus())) ?
-        &gene_ref->GetLocus() : NULL;
+        &gene_ref->GetLocus() : nullptr;
     const string* desc = (gene_ref->IsSetDesc() &&  !NStr::IsBlank(gene_ref->GetDesc())) ?
-        &gene_ref->GetDesc() : NULL;
+        &gene_ref->GetDesc() : nullptr;
     const TGeneSyn* syn = (gene_ref->IsSetSyn()  &&  !gene_ref->GetSyn().empty()) ?
-        &gene_ref->GetSyn() : NULL;
+        &gene_ref->GetSyn() : nullptr;
     const string* locus_tag =
         (gene_ref->IsSetLocus_tag()  &&  !NStr::IsBlank(gene_ref->GetLocus_tag())) ?
-        &gene_ref->GetLocus_tag() : 0;
+        &gene_ref->GetLocus_tag() : nullptr;
 
     if ( ctx.IsProt() ) {
         // skip if GenPept format and not gene or CDS
@@ -3678,19 +3678,19 @@ void CFeatureItem::x_AddQualsGene(
 
     //  gene:
     if ( !from_overlap  ||  okay_to_propage ) {
-        if ( locus != 0 ) {
+        if (locus) {
             m_Gene = *locus;
         }
-        else if ( ( desc != 0 ) && okay_to_propage ) {
+        else if (desc && okay_to_propage) {
             m_Gene = *desc;
         }
-        else if (syn != NULL) {
+        else if (syn) {
             CGene_ref::TSyn syns = *syn;
             m_Gene = syns.front();
         }
         if( !m_Gene.empty() ) {
             // we suppress the /gene qual when there's no locus but there is a locus tag (imitates C toolkit)
-            if ( NULL != locus || NULL == locus_tag ) {
+            if (locus || ! locus_tag) {
                 x_AddQual(eFQ_gene, new CFlatGeneQVal(m_Gene));
             }
         }
@@ -3698,27 +3698,27 @@ void CFeatureItem::x_AddQualsGene(
 
     //  locus tag:
     if ( gene_ref  ||  okay_to_propage ) {
-        if (locus != NULL) {
-            if (locus_tag != NULL) {
+        if (locus) {
+            if (locus_tag) {
                 x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag, CFormatQual::eTrim_WhitespaceOnly));
             }
         }
-        else if (locus_tag != NULL) {
+        else if (locus_tag) {
             x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag, CFormatQual::eTrim_WhitespaceOnly));
         }
     }
 
     //  gene desc:
     if ( gene_ref  ||  okay_to_propage ) {
-        if (locus != NULL) {
-            if (is_gene  &&  desc != NULL) {
+        if (locus) {
+            if (is_gene && desc) {
                 string desc_cleaned = *desc;
                 RemovePeriodFromEnd( desc_cleaned, true );
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(desc_cleaned));
             }
         }
-        else if (locus_tag != NULL) {
-            if (is_gene  &&  desc != NULL) {
+        else if (locus_tag) {
+            if (is_gene && desc) {
                 x_AddQual(eFQ_gene_desc, new CFlatStringQVal(*desc));
             }
         }
@@ -3726,23 +3726,23 @@ void CFeatureItem::x_AddQualsGene(
 
     //  gene syn:
     if ( gene_ref  ||  okay_to_propage ) {
-        if (locus != NULL) {
-            if (syn != NULL) {
+        if (locus) {
+            if (syn) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
-        } else if (locus_tag != NULL) {
-            if (syn != NULL) {
+        } else if (locus_tag) {
+            if (syn) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
-        } else if (desc != NULL) {
-            if (syn != NULL) {
+        } else if (desc) {
+            if (syn) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
             }
-        } else if (syn != NULL) {
+        } else if (syn) {
             CGene_ref::TSyn syns = *syn;
             syns.pop_front();
             // ... and the rest as synonyms
-            if (syn != NULL) {
+            if (syn) {
                 x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(syns));
             }
         }
@@ -3939,7 +3939,7 @@ void CFeatureItem::x_AddQualsProt(
                                ! feat_it->GetLocation().Equals( m_Feat.GetLocation() ) ) {
                              loc = loc->Subtract(feat_it->GetLocation(),
                                                  CSeq_loc::fSortAndMerge_All,
-                                                 NULL, NULL);
+                                                 nullptr, nullptr);
                          }
                      }}
                     break;
@@ -4022,7 +4022,7 @@ void CFeatureItem::x_AddQualsProt(
          !ctx.IsRefSeq()  &&  !ctx.IsProt()  &&
          data.GetSubtype() == CSeqFeatData::eSubtype_preprotein ) {
         const CFlatStringQVal* product = x_GetStringQual(eFQ_product);
-        if (product != NULL) {
+        if (product) {
             x_AddQual(eFQ_encodes, new CFlatStringQVal("encodes " + product->GetValue()));
             x_RemoveQuals(eFQ_product);
         }
@@ -4345,10 +4345,10 @@ void CFeatureItem::x_ImportQuals(
             } else {
                 const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
                 const string& gene_val =
-                    gene != NULL ? gene->GetValue() : kEmptyStr;
+                    gene ? gene->GetValue() : kEmptyStr;
                 const CFlatStringQVal* product = x_GetStringQual(eFQ_product);
                 const string& product_val =
-                    product != NULL ? product->GetValue() : kEmptyStr;
+                    product ? product->GetValue() : kEmptyStr;
                 if (val != gene_val  &&  val != product_val) {
                     if ( ! ctx.Config().CodonRecognizedToNote() ||
                          ! x_HasQual(eFQ_trna_codons) ||
@@ -4904,19 +4904,19 @@ void CFeatureItem::x_FormatGOQualCombined
     string::size_type this_part_beginning_text_string_pos = 0;
 
     // now concatenate their values into the variable "combined"
-    const string *pLastQualTextString = NULL;
+    const string* pLastQualTextString = nullptr;
     ITERATE( vector<CConstRef<CFlatGoQVal> >, iter, goQuals ) {
 
         // Use thisQualTextString to tell when we have consecutive quals with the
         // same text string.
         const string *pThisQualTextString = &(*iter)->GetTextString();
-        if( NULL == pThisQualTextString ) {
+        if (! pThisQualTextString) {
             continue;
         }
 
         (*iter)->Format(temp_qvec, name, *GetContext(), flags);
 
-        if( pLastQualTextString == NULL || ! NStr::EqualNocase( *pLastQualTextString, *pThisQualTextString ) ) {
+        if(! pLastQualTextString || ! NStr::EqualNocase(*pLastQualTextString, *pThisQualTextString)) {
             // normal case: each CFlatGoQVal has its own part
             if( ! combined.empty() ) {
                 combined += "; ";
@@ -4944,7 +4944,7 @@ void CFeatureItem::x_FormatGOQualCombined
 
         pLastQualTextString = pThisQualTextString;
     }
-    pLastQualTextString = NULL; // just to make sure we don't accidentally use it
+    pLastQualTextString = nullptr; // just to make sure we don't accidentally use it
 
     // add the final merged CFormatQual
     if( ! combined.empty() ) {
@@ -4957,7 +4957,7 @@ void CFeatureItem::x_FormatGOQualCombined
 
 const CFlatStringQVal* CFeatureItem::x_GetStringQual(EFeatureQualifier slot) const
 {
-    const IFlatQVal* qual = 0;
+    const IFlatQVal* qual = nullptr;
     if ( x_HasQual(slot) ) {
         qual = m_Quals.Find(slot)->second;
     }
@@ -4967,7 +4967,7 @@ const CFlatStringQVal* CFeatureItem::x_GetStringQual(EFeatureQualifier slot) con
 
 CFlatStringListQVal* CFeatureItem::x_GetStringListQual(EFeatureQualifier slot) const
 {
-    IFlatQVal* qual = 0;
+    IFlatQVal* qual = nullptr;
     if (x_HasQual(slot)) {
         qual = const_cast<IFlatQVal*>(&*m_Quals.Find(slot)->second);
     }
@@ -4976,7 +4976,7 @@ CFlatStringListQVal* CFeatureItem::x_GetStringListQual(EFeatureQualifier slot) c
 
 CFlatProductNamesQVal * CFeatureItem::x_GetFlatProductNamesQual(EFeatureQualifier slot) const
 {
-    IFlatQVal* qual = 0;
+    IFlatQVal* qual = nullptr;
     if (x_HasQual(slot)) {
         qual = const_cast<IFlatQVal*>(&*m_Quals.Find(slot)->second);
     }
@@ -5054,7 +5054,7 @@ void CFeatureItem::x_CleanQuals(
         ?
         &gene_ref->GetSyn()
         :
-        0;
+        nullptr;
     const CBioseqContext& ctx = *GetContext();
 
     if (ctx.Config().DropIllegalQuals()) {
@@ -5067,27 +5067,27 @@ void CFeatureItem::x_CleanQuals(
     const CFlatStringQVal* standard_name = x_GetStringQual(eFQ_standard_name);
     const CFlatStringQVal* seqfeat_note = x_GetStringQual(eFQ_seqfeat_note);
 
-    if (gene != NULL) {
+    if (gene) {
         const string& gene_name = gene->GetValue();
 
         // /gene same as feature.comment will suppress /note
         if (m_Feat.IsSetComment()) {
             if (NStr::Equal(gene_name, m_Feat.GetComment())) {
                 x_RemoveQuals(eFQ_seqfeat_note);
-                seqfeat_note = NULL;
+                seqfeat_note = nullptr;
             }
         }
 
         // remove protein description that equals the gene name, case sensitive
-        if (prot_desc != NULL) {
+        if (prot_desc) {
             if (s_StrEqualDisregardFinalPeriod(gene_name, prot_desc->GetValue(), NStr::eCase)) {
                 x_RemoveQuals(eFQ_prot_desc);
-                prot_desc = NULL;
+                prot_desc = nullptr;
             }
         }
 
         // remove prot name if equals gene
-        if (prot_names != NULL) {
+        if (prot_names) {
 
             CProt_ref::TName::iterator remove_start = prot_names->SetValue().begin();
             ++remove_start; // The "++" is because the first one shouldn't be erased since it's used for the product
@@ -5097,16 +5097,16 @@ void CFeatureItem::x_CleanQuals(
 
             if (prot_names->GetValue().empty()) {
                 x_RemoveQuals(eFQ_prot_names);
-                prot_names = NULL;
+                prot_names = nullptr;
             }
         }
     }
 
-    if (prot_desc != NULL) {
+    if (prot_desc) {
         const string& pdesc = prot_desc->GetValue();
 
         // remove prot name if in prot_desc
-        if (prot_names != NULL) {
+        if (prot_names) {
             CProt_ref::TName::iterator remove_start = prot_names->SetValue().begin();
             ++remove_start; // The "++" is because the first one shouldn't be erased since it's used for the product
             CProt_ref::TName::iterator new_end =
@@ -5116,35 +5116,35 @@ void CFeatureItem::x_CleanQuals(
 
             if (prot_names->GetValue().empty()) {
                 x_RemoveQuals(eFQ_prot_names);
-                prot_names = NULL;
+                prot_names = nullptr;
             }
         }
         // remove protein description that equals the cds product, case sensitive
         const CFlatStringQVal* cds_prod = x_GetStringQual(eFQ_cds_product);
-        if (cds_prod != NULL) {
+        if (cds_prod) {
             if (NStr::Equal(pdesc, cds_prod->GetValue())) {
                 x_RemoveQuals(eFQ_prot_desc);
-                prot_desc = NULL;
+                prot_desc = nullptr;
             }
         }
 
         // remove protein description that equals the standard name
-        if (prot_desc != NULL  &&  standard_name != NULL) {
+        if (prot_desc && standard_name) {
             // We use s_StrEqualDisregardFinalPeriod rather than plain NStr::EqualNoCase
             // because of, e.g., CU638784
             if (s_StrEqualDisregardFinalPeriod(pdesc, standard_name->GetValue(), NStr::eNocase )) {
                 x_RemoveQuals(eFQ_prot_desc);
-                prot_desc = NULL;
+                prot_desc = nullptr;
             }
         }
 
         // remove protein description that equals a gene synonym
         // NC_001823 leave in prot_desc if no cds_product
-        if (prot_desc != NULL  &&  gene_syn != NULL  &&  cds_prod != NULL) {
+        if (prot_desc && gene_syn && cds_prod) {
             ITERATE (TGeneSyn, it, *gene_syn) {
                 if (!NStr::IsBlank(*it)  &&  pdesc == *it) {
                     x_RemoveQuals(eFQ_prot_desc);
-                    prot_desc = NULL;
+                    prot_desc = nullptr;
                     break;
                 }
             }
@@ -5158,16 +5158,16 @@ void CFeatureItem::x_CleanQuals(
         const CFlatStringQVal* product     = x_GetStringQual(eFQ_product);
         const CFlatStringQVal* cds_product = x_GetStringQual(eFQ_cds_product);
 
-        if (product != NULL) {
+        if (product) {
             if (NStr::EqualNocase(product->GetValue(), feat_comment)) {
                 x_RemoveQuals(eFQ_seqfeat_note);
-                seqfeat_note = NULL;
+                seqfeat_note = nullptr;
             }
         }
-        if (cds_product != NULL && seqfeat_note != NULL) {
+        if (cds_product && seqfeat_note) {
             if ( s_StrEqualDisregardFinalPeriod(cds_product->GetValue(), seqfeat_note->GetValue(), NStr::eCase ) ) {
                 x_RemoveQuals(eFQ_seqfeat_note);
-                seqfeat_note = NULL;
+                seqfeat_note = nullptr;
             }
         }
         // suppress selenocysteine note if already in comment
@@ -5176,13 +5176,13 @@ void CFeatureItem::x_CleanQuals(
 //        }
 
         // /EC_number same as feat.comment will suppress /note
-        if( seqfeat_note != NULL ) {
+        if (seqfeat_note) {
             for (TQCI it = x_GetQual(eFQ_EC_number); it != m_Quals.end()  &&  it->first == eFQ_EC_number; ++it) {
                 const CFlatStringQVal* ec = dynamic_cast<const CFlatStringQVal*>(it->second.GetPointerOrNull());
-                if (ec != NULL) {
+                if (ec) {
                     if (NStr::EqualNocase(seqfeat_note->GetValue(), ec->GetValue())) {
                         x_RemoveQuals(eFQ_seqfeat_note);
-                        seqfeat_note = NULL;
+                        seqfeat_note = nullptr;
                         break;
                     }
                 }
@@ -5192,30 +5192,30 @@ void CFeatureItem::x_CleanQuals(
         // this sort of note provides no additional info (we already know this is a tRNA by other places)
         if( feat_comment == "tRNA-" ) {
             x_RemoveQuals(eFQ_seqfeat_note);
-            seqfeat_note = NULL;
+            seqfeat_note = nullptr;
         }
     }
 
     const CFlatStringQVal* note = x_GetStringQual(eFQ_seqfeat_note);
-    if (note != NULL  &&  standard_name != NULL) {
+    if (note && standard_name) {
         if (NStr::Equal(note->GetValue(), standard_name->GetValue())) {
             x_RemoveQuals(eFQ_seqfeat_note);
-            note = NULL;
+            note = nullptr;
         }
     }
-    if ( ! ctx.IsProt() && note != NULL  &&  gene_syn != NULL) {
+    if (! ctx.IsProt() && note && gene_syn) {
         ITERATE (TGeneSyn, it, *gene_syn) {
             if (NStr::EqualNocase(note->GetValue(), *it)) {
                 x_RemoveQuals(eFQ_seqfeat_note);
-                note = NULL;
+                note = nullptr;
                 break;
             }
         }
     }
-    if( note != NULL && prot_desc != NULL ) { // e.g. L07143, U28372
+    if (note && prot_desc) { // e.g. L07143, U28372
         if( NStr::Find(prot_desc->GetValue(), note->GetValue()) != NPOS ) {
             x_RemoveQuals(eFQ_seqfeat_note);
-            note = NULL;
+            note = nullptr;
         }
     }
 
@@ -5223,7 +5223,7 @@ void CFeatureItem::x_CleanQuals(
     // (Obviously, this part must come after the part that cleans up
     // the prot_descs, otherwise we may think we have a prot_desc, when the
     // prot_desc is actually to be removed )
-    if( note != NULL && x_GetStringQual(eFQ_prot_desc ) ) {
+    if (note && x_GetStringQual(eFQ_prot_desc)) {
         const_cast<CFlatStringQVal*>(note)->SetAddPeriod( false );
     }
 
@@ -5231,7 +5231,7 @@ void CFeatureItem::x_CleanQuals(
     if( ctx.Config().IsModeRelease() || ctx.Config().IsModeEntrez() ) {
 
         const CFlatStringQVal *mobile_element_type = x_GetStringQual( eFQ_mobile_element_type );
-        if( NULL != mobile_element_type && ! s_ValidateMobileElementType(mobile_element_type->GetValue()) ) {
+        if (mobile_element_type && ! s_ValidateMobileElementType(mobile_element_type->GetValue())) {
             x_RemoveQuals( eFQ_mobile_element_type );
         }
 
@@ -5471,7 +5471,7 @@ void CFeatureItem::x_AddFTableQuals(
         x_AddFTableQual("pseudo");
     }
     const CGene_ref* grp = m_Feat.GetGeneXref();
-    if ( grp != 0 ) {
+    if (grp) {
         string gene_label;
         if (grp->IsSuppressed()) {
             gene_label = "-";
@@ -5755,10 +5755,10 @@ string CFeatureItem::x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_loca
     if (!seq.IsSetId()) {
         return kEmptyStr;
     }
-    const CSeq_id* accn = NULL;
-    const CSeq_id* local = NULL;
-    const CSeq_id* general = NULL;
-    const CSeq_id* gi = NULL;
+    const CSeq_id* accn = nullptr;
+    const CSeq_id* local = nullptr;
+    const CSeq_id* general = nullptr;
+    const CSeq_id* gi = nullptr;
 
     ITERATE(CBioseq::TId, it, seq.GetId()) {
         switch ((*it)->Which()) {
@@ -5793,22 +5793,22 @@ string CFeatureItem::x_SeqIdWriteForTable(const CBioseq& seq, bool suppress_loca
 
     string label;
 
-    if (accn != NULL) {
+    if (accn) {
         label = accn->AsFastaString();
     }
 
-    if (general != NULL) {
+    if (general) {
         if (!label.empty()) {
             label += "|";
         }
         label += general->AsFastaString();
     }
 
-    if (local != NULL && (!suppress_local) && label.empty()) {
+    if (local && (! suppress_local) && label.empty()) {
         label = local->AsFastaString();
     }
 
-    if (gi != NULL && giOK && label.empty()) {
+    if (gi && giOK && label.empty()) {
         label = gi->AsFastaString();
     }
 
@@ -6227,17 +6227,17 @@ static string s_GetSpecimenVoucherText(
         if( voucher_info_ref->m_PrependCollection) {
             text << coll;
         }
-        if( voucher_info_ref->m_Prefix != NULL ) {
+        if (voucher_info_ref->m_Prefix) {
             text << *voucher_info_ref->m_Prefix;
         }
-        if( voucher_info_ref->m_Trim != NULL ) {
+        if (voucher_info_ref->m_Trim) {
             const string& trim = *voucher_info_ref->m_Trim;
             if (NStr::StartsWith(id, trim)) {
                 NStr::TrimPrefixInPlace(id, trim);
                 NStr::TruncateSpacesInPlace(id);
             }
         }
-        if( voucher_info_ref->m_PadTo > 0 && voucher_info_ref->m_PadWith != NULL) {
+        if (voucher_info_ref->m_PadTo > 0 && voucher_info_ref->m_PadWith) {
             int len_id = id.length();
             int len_pad = voucher_info_ref->m_PadWith->length();
             while (len_id < voucher_info_ref->m_PadTo) {

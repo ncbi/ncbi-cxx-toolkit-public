@@ -143,7 +143,7 @@ namespace {
                 break;
             default:
                 // normal case: just print the string we got back
-                m_orig_text_os.AddLine(m_block_text_str, NULL, eAddNewline_No);
+                m_orig_text_os.AddLine(m_block_text_str, nullptr, eAddNewline_No);
                 break;
             }
         }
@@ -320,7 +320,7 @@ void CGenbankFormatter::EndSection
     else {
         l.push_back("//");
     }
-    text_os.AddParagraph(l, NULL);
+    text_os.AddParagraph(l, nullptr);
 
     if( bHtml && cfg.IsModeEntrez() ) {
         text_os.AddLine(
@@ -1426,7 +1426,7 @@ void CGenbankFormatter::FormatFeatHeader
 
     Wrap(l, "FEATURES", "Location/Qualifiers", eFeatHead);
 
-    text_os.AddParagraph(l, NULL);
+    text_os.AddParagraph(l, nullptr);
 
     text_os.Flush();
 }
@@ -1607,7 +1607,7 @@ void CGenbankFormatter::FormatFeature
 //  ============================================================================
 {
     CRef<IFlatTextOStream> p_text_os;
-    IFlatTextOStream *text_os = NULL;
+    IFlatTextOStream* text_os = nullptr;
     {
         // this works differently from the others because we have to check
         // the underlying type
@@ -1620,11 +1620,11 @@ void CGenbankFormatter::FormatFeature
         {
             const CFeatureItem *p_feature_item =
                 dynamic_cast<const CFeatureItem *>(&f);
-            if (text_os == NULL && p_feature_item) {
+            if (! text_os && p_feature_item) {
                 text_os = &s_WrapOstreamIfCallbackExists(p_text_os, *p_feature_item, orig_text_os);
             }
         }
-        _ASSERT(text_os != NULL);
+        _ASSERT(text_os);
     }
 
     bool bHtml = f.GetContext()->Config().DoHTML();

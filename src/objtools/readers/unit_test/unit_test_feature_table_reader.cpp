@@ -181,8 +181,8 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     // no errors expected by default
      const TErrList & expected_errors = TErrList(),
      CFeature_table_reader::TFlags additional_flags = 0,
-     ILineErrorListener * pMessageListener = NULL,
-     CSimpleTableFilter *p_tbl_filter = nullptr);
+     ILineErrorListener* pMessageListener = nullptr,
+     CSimpleTableFilter* p_tbl_filter = nullptr);
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
@@ -218,7 +218,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
 
     s_CheckErrorsVersusExpected( pMessageListener, expected_errors );
 
-    BOOST_REQUIRE(annot != NULL);
+    BOOST_REQUIRE(annot);
     BOOST_REQUIRE(annot->IsFtable());
 
     // Make sure that annot can be serialized out
@@ -237,7 +237,7 @@ s_ReadMultipleTablesFromString(
     // no errors expected by default
     const TErrList & expected_errors = TErrList(),
     CFeature_table_reader::TFlags additional_flags = 0,
-    ILineErrorListener * pMessageListener = NULL );
+    ILineErrorListener* pMessageListener = nullptr);
 
 static TAnnotRefListPtr
 s_ReadMultipleTablesFromString(
@@ -266,7 +266,7 @@ s_ReadMultipleTablesFromString(
         additional_flags,
         pMessageListener,
         &tbl_filter
-        )) != NULL)
+        )) != nullptr)
     {
             BOOST_REQUIRE(annot->IsFtable());
             if( annot->GetData().GetFtable().empty() ) {

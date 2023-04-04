@@ -583,7 +583,7 @@ namespace {
                 TRefStd< vector<CLinkage_evidence::EType> > pLinkEvidsExpected )
     {
         // check number of deltas
-        const CDelta_ext::Tdata * pDeltaData = NULL;
+        const CDelta_ext::Tdata* pDeltaData = nullptr;
         if (pBioseq->IsSetInst() && pBioseq->GetInst().IsSetExt() && pBioseq->GetInst().GetExt().IsDelta())
             pDeltaData = & pBioseq->GetInst().GetExt().GetDelta().Get();
         if( pNumDeltasExpected ) {
@@ -652,7 +652,7 @@ namespace {
             NCBITEST_CHECK( ! pSeqGap ||
                 ! FIELD_EQUALS(*pSeqGap, Linkage, CSeq_gap::eLinkage_linked) );
         }
-        const CSeq_gap::TLinkage_evidence * pLinkEvidObjs = NULL;
+        const CSeq_gap::TLinkage_evidence* pLinkEvidObjs = nullptr;
         if (pSeqGap.NotNull() && pSeqGap->IsSetLinkage_evidence())
             pLinkEvidObjs = & pSeqGap->GetLinkage_evidence();
         if( pLinkEvidsExpected ) {
@@ -1351,7 +1351,7 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
         // should NOT contain a gap per se
         NCBITEST_CHECK( ! pBioseq->GetInst().GetSeq_data().IsGap() );
 
-        CSeqVector seq_vec(*pBioseq, NULL, CBioseq_Handle::eCoding_Iupac);
+        CSeqVector seq_vec(*pBioseq, nullptr, CBioseq_Handle::eCoding_Iupac);
 
         const string & kExpectedBases = kExpectedBasesIfKnown;
 
@@ -1615,7 +1615,7 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
             pBioseq->GetFirstId()->GetLocal().GetStr(),
             kLocalId );
 
-        CSeqVector seqvec( *pBioseq, NULL, CBioseq_Handle::eCoding_Iupac );
+        CSeqVector seqvec(*pBioseq, nullptr, CBioseq_Handle::eCoding_Iupac);
         BOOST_CHECK_EQUAL_COLLECTIONS(
             kSeq.begin(), kSeq.end(),
             seqvec.begin(), seqvec.end() );

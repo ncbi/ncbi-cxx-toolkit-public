@@ -113,7 +113,7 @@ CCommentItem::CCommentItem
         ExpandTildes(m_Comment.back(), eTilde_comment);
     }
     // swap(m_First, sm_FirstComment);
-    if ( obj != 0 ) {
+    if (obj) {
         x_SetObject(*obj);
     }
 }
@@ -421,7 +421,7 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
         return kEmptyStr;
     }
 
-    const string* uvc = 0, *bic = 0, *smc = 0;
+    const string *uvc = nullptr, *bic = nullptr, *smc = nullptr;
 
     if ( uo.HasField("UniVecComment") ) {
         const CUser_field& uf = uo.GetField("UniVecComment");
@@ -444,15 +444,15 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
 
     CNcbiOstrstream text;
     string pfx;
-    if ( uvc != 0 ) {
+    if (uvc) {
         text << pfx << "Vector Explanation: " << *uvc;
         pfx = "~";
     }
-    if ( bic != 0 ) {
+    if (bic) {
         text << pfx << "Bankit Comment: " << *bic;
         pfx = "~";
     }
-    if ( smc != 0 ) {
+    if (smc) {
         text << pfx << "Bankit Comment: " << *smc;
         pfx = "~";
     }
@@ -575,7 +575,7 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
  string* st)
 {
     TRefTrackStatus retval = eRefTrackStatus_Unknown;
-    if ( st != 0 ) {
+    if (st) {
         st->erase();
     }
     if ( !uo.HasField("Status") ) {
@@ -605,7 +605,7 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
             retval = eRefTrackStatus_TSA;
         }
 
-        if ( st != 0  &&  retval != eRefTrackStatus_Unknown ) {
+        if (st && retval != eRefTrackStatus_Unknown) {
             *st = NStr::ToUpper(status);
         }
     }
@@ -1320,7 +1320,7 @@ static bool s_GetEncodeValues
         return false;
     }
 
-    const string* name = NULL;
+    const string* name = nullptr;
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source); it; ++it) {
         const CBioSource& bio = it->GetSource();
         ITERATE (CBioSource::TSubtype, st, bio.GetSubtype()) {
@@ -1330,7 +1330,7 @@ static bool s_GetEncodeValues
             }
         }
     }
-    if (name != NULL) {
+    if (name) {
         chromosome = *name;
     } else {
         return false;
@@ -1582,19 +1582,19 @@ string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
 void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 {
     const CObject* obj = GetObject();
-    if (obj == NULL) {
+    if (! obj) {
         return;
     }
     const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj);
-    if (desc != NULL) {
+    if (desc) {
         x_GatherDescInfo(*desc, ctx);
     } else {
         const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
-        if (feat != NULL) {
+        if (feat) {
             x_GatherFeatInfo(*feat, ctx);
         } else {
             const CUser_object * userObject = dynamic_cast<const CUser_object*>(obj);
-            if(userObject != NULL) {
+            if (userObject) {
                 x_GatherUserObjInfo(*userObject);
             }
         }

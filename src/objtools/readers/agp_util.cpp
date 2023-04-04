@@ -360,7 +360,7 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
 };
 
 CSafeStatic<CAgpRow::TMapStrEGap> CAgpRow::gap_type_codes(
-    & CAgpRow::gap_type_codes_creator, NULL );
+    &CAgpRow::gap_type_codes_creator, nullptr);
 
 // static
 CAgpRow::TMapStrEGap * CAgpRow::gap_type_codes_creator(void)

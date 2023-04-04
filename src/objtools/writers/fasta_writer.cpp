@@ -1064,8 +1064,8 @@ CFastaOstreamComp::~CFastaOstreamComp()
 {
     NON_CONST_ITERATE(vector<TStreams>, it, m_streams)
     {
-        delete it->m_fasta_stream; it->m_fasta_stream = 0;
-        delete it->m_ostream; it->m_ostream = 0;
+        delete it->m_fasta_stream; it->m_fasta_stream = nullptr;
+        delete it->m_ostream; it->m_ostream = nullptr;
     }
 }
 
@@ -1073,7 +1073,7 @@ void CFastaOstreamComp::x_GetNewFilename(string& filename, E_FileSection sel)
 {
     filename = m_dir;
     filename += m_filename_without_ext;
-    const char* suffix = 0;
+    const char* suffix = nullptr;
     switch (sel)
     {
     case eFS_nucleotide:
@@ -1089,7 +1089,7 @@ void CFastaOstreamComp::x_GetNewFilename(string& filename, E_FileSection sel)
         _ASSERT(0);
     }
     filename.append(suffix);
-    const char* ext = 0;
+    const char* ext = nullptr;
     switch (sel)
     {
     case eFS_nucleotide:
@@ -1129,11 +1129,11 @@ CFastaOstreamComp::TStreams& CFastaOstreamComp::x_GetStream(E_FileSection sel)
     {
         x_GetNewFilename(res.m_filename, sel);
     }
-    if (res.m_ostream == 0)
+    if (! res.m_ostream)
     {
         res.m_ostream = x_GetOutputStream(res.m_filename, sel);
     }
-    if (res.m_fasta_stream == 0)
+    if (! res.m_fasta_stream)
     {
         res.m_fasta_stream = x_GetFastaOstream(*res.m_ostream, sel);
     }

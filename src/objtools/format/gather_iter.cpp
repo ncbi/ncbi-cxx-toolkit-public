@@ -55,13 +55,13 @@ CGather_Iter::CGather_Iter(
 
 CGather_Iter::operator bool(void) const
 {
-    return NULL != m_BioseqIter.get() || ! m_SeqEntryIterStack.empty();
+    return m_BioseqIter || ! m_SeqEntryIterStack.empty();
 }
 
 
 CGather_Iter &CGather_Iter::operator++(void)
 {
-    _ASSERT( NULL != m_BioseqIter.get() );
+    _ASSERT(m_BioseqIter);
 
     ++(*m_BioseqIter);
     for ( ; (*m_BioseqIter); ++(*m_BioseqIter) ) {

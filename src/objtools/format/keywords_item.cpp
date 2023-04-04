@@ -192,7 +192,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     // add keywords based on mol-info
     ETechFlags tech = e_not_set;
     // don't do tech-related keywords if molinfo isn't set
-    if( ctx.GetMolinfo() != NULL ) {
+    if (ctx.GetMolinfo()) {
         switch ( ctx.GetTech() ) {
         case CMolInfo::eTech_est:
             tech = eEST;
@@ -395,7 +395,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
-        const list<string>* keywords = NULL;
+        const list<string>* keywords = nullptr;
 
         switch (it->Which()) {
         case CSeqdesc::e_Pir:
@@ -414,11 +414,11 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
             keywords = &(it->GetPrf().GetKeywords());
             break;
         default:
-            keywords = NULL;
+            keywords = nullptr;
             break;
         }
 
-        if (keywords != NULL) {
+        if (keywords) {
             if (!IsSetObject()) {
                 x_SetObject(*it);
             }

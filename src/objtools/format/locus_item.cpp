@@ -289,7 +289,7 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
         const static size_t MAX_LOCUS_ACCN_LEN = 38;
 
         const CTextseq_id* tsip = id.GetSeqId()->GetTextseq_Id();
-        if (tsip != NULL) {
+        if (tsip) {
             if (s_IsGenomeView(ctx)) {
                 if (tsip->IsSetAccession()) {
                     m_Name = tsip->GetAccession();
@@ -451,7 +451,7 @@ static CTempString x_GetDivisionProcIdx(const CBioseqContext& ctx, const CBioseq
 {
     CTempString division;
 
-    const CBioSource* bsrc = 0;
+    const CBioSource* bsrc = nullptr;
 
     CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
     if (! idx) return division;
@@ -617,7 +617,7 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
 {
     CTempString division;
 
-    const CBioSource* bsrc = 0;
+    const CBioSource* bsrc = nullptr;
 
     // Find the BioSource object for this sequnece.
     CSeqdesc_CI src_desc(bsh, CSeqdesc::e_Source);
@@ -853,8 +853,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
             ++embl_desc ) {
                 const CEMBL_block& embl = embl_desc->GetEmbl();
                 if ( embl.CanGetDiv() ) {
-                    if ( embl.GetDiv() == CEMBL_block::eDiv_other  &&
-                        molinfo == 0 ) {
+                    if (embl.GetDiv() == CEMBL_block::eDiv_other && ! molinfo) {
                             m_Division = "HUM";
                         } else {
                             m_Division = embl.GetDiv();
@@ -877,7 +876,7 @@ void CLocusItem::x_SetDate(CBioseqContext& ctx)
     const CBioseq_Handle& bsh = ctx.GetHandle();
 
     const CDate* date = x_GetDateForBioseq(bsh);
-    if ( date == 0 ) {
+    if (! date) {
         // if bioseq is product of CDS or mRNA feature, get
         // date from parent bioseq.
         CBioseq_Handle parent = GetNucleotideParent(bsh);
@@ -895,7 +894,7 @@ void CLocusItem::x_SetDate(CBioseqContext& ctx)
 
 const CDate* CLocusItem::x_GetDateForBioseq(const CBioseq_Handle& bsh) const
 {
-    const CDate* result = 0;
+    const CDate* result = nullptr;
 
     {{
         CSeqdesc_CI desc(bsh, CSeqdesc::e_Update_date);
@@ -973,11 +972,11 @@ const CDate* CLocusItem::x_GetDateForBioseq(const CBioseq_Handle& bsh) const
 
 const CDate* CLocusItem::x_GetLaterDate(const CDate* d1, const CDate* d2) const
 {
-    if ( d1 == 0 || d1->Which() == CDate::e_Str ) {
+    if (! d1 || d1->Which() == CDate::e_Str) {
         return d2;
     }
 
-    if ( d2 == 0 || d2->Which() == CDate::e_Str ) {
+    if (! d2 || d2->Which() == CDate::e_Str) {
         return d1;
     }
 

@@ -66,7 +66,7 @@ USING_SCOPE(sequence);
 //  ----------------------------------------------------------------------------
 CStartItem::CStartItem( CSeq_entry_Handle seh )
 //  ----------------------------------------------------------------------------
-    : CCtrlItem(0)
+    : CCtrlItem()
 {
     x_SetDate( seh );
 }
