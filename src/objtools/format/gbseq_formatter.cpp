@@ -274,7 +274,7 @@ void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_
         NStr::ReplaceInPlace(str,"</GB", "</INSD");
     }
 
-    text_os.AddLine(str, NULL, IFlatTextOStream::eAddNewline_No);
+    text_os.AddLine(str, nullptr, IFlatTextOStream::eAddNewline_No);
 
     text_os.Flush();
 

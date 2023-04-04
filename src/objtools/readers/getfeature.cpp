@@ -39,9 +39,9 @@ BEGIN_SCOPE (objects)
 
 CGetFeature::CGetFeature(string feat_file, string index_file){
     m_FeatFile = new CNcbiIfstream(feat_file.c_str(), IOS_BASE::binary);
-    m_FeatFileIndex  = new CNcbiIfstream(index_file.c_str(), IOS_BASE::binary);
-    m_5FeatInfo = NULL;
-    m_3FeatInfo = NULL;
+    m_FeatFileIndex = new CNcbiIfstream(index_file.c_str(), IOS_BASE::binary);
+    m_5FeatInfo = nullptr;
+    m_3FeatInfo = nullptr;
 }
 
 
@@ -51,8 +51,8 @@ vector<SFeatInfo*>& CGetFeature::GetFeatInfo(const string& id_str,
                                                  SFeatInfo*& feat3,
                                                  int max_feature ){
     x_Clear();
-    m_5FeatInfo = NULL;
-    m_3FeatInfo = NULL;
+    m_5FeatInfo = nullptr;
+    m_3FeatInfo = nullptr;
     if(m_FeatFileIndex && m_FeatFile && *m_FeatFileIndex && *m_FeatFile){
         unsigned int offset = 0;
         map<string, unsigned int>::const_iterator iter = m_OffsetMap.find(id_str);

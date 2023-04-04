@@ -97,7 +97,7 @@ void CIdMapperGCAssembly::x_AddUnversionedMapping(const CSeq_id&        src_id,
     // Try to create accession-only id, add mapping to the same destination.
     CSeq_id acc_id;
     acc_id.Assign(src_id);
-    CTextseq_id* txt_id = 0;
+    CTextseq_id* txt_id = nullptr;
     switch ( src_id.Which() ) {
     case CSeq_id::e_Genbank:
         txt_id = &acc_id.SetGenbank();

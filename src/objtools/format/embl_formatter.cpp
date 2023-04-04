@@ -182,7 +182,7 @@ void CEmblFormatter::FormatDate
 
     // Create Date
     const CDate* dp = date.GetCreateDate();
-    if ( dp != 0 ) {
+    if (dp) {
         DateToString(*dp, date_str);
     }
 
@@ -193,7 +193,7 @@ void CEmblFormatter::FormatDate
 
     // Update Date
     dp = date.GetUpdateDate();
-    if ( dp != 0 ) {
+    if (dp) {
         date_str.erase();
         DateToString(*dp, date_str);
     }
@@ -372,7 +372,7 @@ void CEmblFormatter::x_Reference
         ref_line << "(sites)";
     } else if ( reftype == CPubdesc::eReftype_no_target ) {
     } else {
-        const CSeq_loc* loc = ref.GetLoc() != 0 ? ref.GetLoc() : ctx.GetLocation();
+        const CSeq_loc* loc = ref.GetLoc() ? ref.GetLoc() : ctx.GetLocation();
         x_FormatRefLocation(ref_line, *loc, " to ", "; ",
             ctx.IsProt(), ctx.GetScope());
     }

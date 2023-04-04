@@ -80,7 +80,7 @@ CBioseqContext::CBioseqContext
  CMasterContext* mctx,
  CTopLevelSeqEntryContext *tlsec) :
     m_Handle(seq),
-    m_pOpticalMapPoints(NULL),
+    m_pOpticalMapPoints(nullptr),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
     m_HasParts(false),
@@ -126,7 +126,7 @@ CBioseqContext::CBioseqContext
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
-    m_RefCache(0),
+    m_RefCache(nullptr),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
 {
@@ -144,7 +144,7 @@ CBioseqContext::CBioseqContext
     m_PrevHandle(prev_seq),
     m_Handle(seq),
     m_NextHandle(next_seq),
-    m_pOpticalMapPoints(NULL),
+    m_pOpticalMapPoints(nullptr),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
     m_HasParts(false),
@@ -190,7 +190,7 @@ CBioseqContext::CBioseqContext
     m_ShowAnnotCommentAsCOMMENT(false),
     m_ShowAnnotCommentAsCOMMENT_checked(false),
     m_FFCtx(ffctx),
-    m_RefCache(0),
+    m_RefCache(nullptr),
     m_Master(mctx),
     m_TLSeqEntryCtx(tlsec)
 {
@@ -277,7 +277,7 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 {
     CRef<CSeq_loc> loc;
 
-    if (user_loc != NULL) {
+    if (user_loc) {
         // map the user location to the current bioseq
         CSeq_id_Handle idh1 = CSeq_id_Handle::GetHandle(*m_Handle.GetSeqId());
         CSeq_id_Handle idh2 = sequence::GetIdHandle(*user_loc, &m_Handle.GetScope());
@@ -795,7 +795,7 @@ void CBioseqContext::x_SetId(void)
     ITERATE (CBioseq::TId, id_iter, m_Handle.GetBioseqCore()->GetId()) {
         const CSeq_id& id = **id_iter;
         const CTextseq_id* tsip = id.GetTextseq_Id();
-        const string& acc = (tsip != 0  &&  tsip->CanGetAccession()) ?
+        const string& acc = (tsip && tsip->CanGetAccession()) ?
             tsip->GetAccession() : kEmptyStr;
 
         CSeq_id::EAccessionInfo acc_info = id.IdentifyAccession();
@@ -956,7 +956,7 @@ CSeq_inst::TRepr CBioseqContext::x_GetRepr(void) const
 const CMolInfo* CBioseqContext::x_GetMolInfo(void) const
 {
     CSeqdesc_CI desc(m_Handle, CSeqdesc::e_Molinfo);
-    return desc ? &desc->GetMolinfo() : 0;
+    return desc ? &desc->GetMolinfo() : nullptr;
 }
 
 
@@ -1188,7 +1188,7 @@ static void s_GetNameForBioseq(const CBioseq_Handle& seq, string& name)
 
     if (sip) {
         const CTextseq_id* tsip = sip->GetTextseq_Id();
-        if (tsip != NULL  &&  tsip->CanGetName()) {
+        if (tsip && tsip->CanGetName()) {
             name = tsip->GetName();
         }
     }
@@ -1337,7 +1337,7 @@ CTopLevelSeqEntryContext::CTopLevelSeqEntryContext( const CSeq_entry_Handle &ent
                         case CSeq_id_Base::e_Genbank:
                         case CSeq_id_Base::e_Tpg:
                             // Genbank allows merging only if it's the old-style 1 + 5 accessions
-                            if( NULL != seqId->GetTextseq_Id() &&
+                            if( seqId->GetTextseq_Id() &&
                                 seqId->GetTextseq_Id()->IsSetAccession() &&
                                 seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
                                     m_CanSourcePubsBeFused = true;

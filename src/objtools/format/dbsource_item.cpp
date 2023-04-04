@@ -184,12 +184,12 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 
         // find generating feature
         const CSeq_feat* feat = sequence::GetCDSForProduct(seq);
-        if (feat == NULL) {
+        if (! feat) {
             // may also be protein product of mature peptide feature
             feat = sequence::GetPROTForProduct(seq);
         }
 
-        if (feat != NULL) {
+        if (feat) {
             const CSeq_loc& loc = feat->GetLocation();
             CSeq_entry_Handle topLevelEntry = seq.GetTopLevelEntry();
             if (s_HasLocalBioseq(loc, topLevelEntry)) {
@@ -198,7 +198,7 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
                 }
             } /* else {
                 const CSeq_id *cds_seq_id = loc.GetId();
-                if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
+                if (cds_seq_id && cds_seq_id->IsGi()) {
                     CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
                     s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
                 }
@@ -219,10 +219,10 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
 
-        if( m_DBSource.empty() && feat != NULL ) {
+        if (m_DBSource.empty() && feat) {
             const CSeq_loc& loc = feat->GetLocation();
             const CSeq_id *cds_seq_id = loc.GetId();
-            if( NULL != cds_seq_id && cds_seq_id->IsGi() ) {
+            if (cds_seq_id && cds_seq_id->IsGi()) {
                 CSeq_id_Base::TGi cds_gi = cds_seq_id->GetGi();
                 // s_AddToUniqueIdList( CSeq_id_Handle::GetHandle(cds_gi), unique_ids);
                 m_DBSource.push_back( x_FormatDBSourceID( CSeq_id_Handle::GetHandle(cds_gi) ) );
@@ -300,7 +300,7 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
     if (pir.CanGetSeqref()) {
         list<string> xrefs;
         ITERATE (CPIR_block::TSeqref, it, pir.GetSeqref()) {
-            const char* type = 0;
+            const char* type = nullptr;
             switch ((*it)->Which()) {
             case CSeq_id::e_Genbank:    type = "genbank ";    break;
             case CSeq_id::e_Embl:       type = "embl ";       break;
@@ -414,7 +414,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
                 xrefs.push_back(acc);
             }
             /**
-            const char* s = 0;
+            const char* s = nullptr;
             switch ((*it)->Which()) {
             case CSeq_id::e_Genbank:  s = "genbank accession ";          break;
             case CSeq_id::e_Embl:     s = "embl accession ";             break;
@@ -591,7 +591,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
     default:
         {{
             const CTextseq_id* tsid = id->GetTextseq_Id();
-            if (tsid == NULL) {
+            if (! tsid) {
                 return kEmptyStr;
             }
             string s, sep, comma, ht;

@@ -125,14 +125,14 @@ public:
             return false;
         }
         if( ! obj1.IsNull() ) {
-            CSubSource_Base::TSubtype subtypevalue1 = ( obj1->CanGetSubtype() ? obj1->GetSubtype() : 0 );
-            CSubSource_Base::TSubtype subtypevalue2 = ( obj2->CanGetSubtype() ? obj2->GetSubtype() : 0 );
+            CSubSource::TSubtype subtypevalue1 = ( obj1->CanGetSubtype() ? obj1->GetSubtype() : 0 );
+            CSubSource::TSubtype subtypevalue2 = ( obj2->CanGetSubtype() ? obj2->GetSubtype() : 0 );
             if( subtypevalue1 != subtypevalue2 ) {
                 return false;
             }
 
-            const CSubSource_Base::TName &name1 = ( obj1->CanGetName() ? obj1->GetName() : kEmptyStr );
-            const CSubSource_Base::TName &name2 = ( obj2->CanGetName() ? obj2->GetName() : kEmptyStr );
+            const CSubSource::TName &name1 = ( obj1->CanGetName() ? obj1->GetName() : kEmptyStr );
+            const CSubSource::TName &name2 = ( obj2->CanGetName() ? obj2->GetName() : kEmptyStr );
             if( name1 != name2 ) {
                 return false;
             }
@@ -200,7 +200,7 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
             "This format is currently not supported");
     }
 
-    return 0;
+    return nullptr;
 }
 
 
@@ -442,14 +442,14 @@ void CFlatGatherer::x_GatherBioseq(
     // d. not FTable format
     if ( s_IsSegmented(seq)  &&  s_HasSegments(seq)       &&
          (cfg.IsStyleNormal()  ||  cfg.IsStyleSegment())  &&
-         (m_Context->GetLocation() == 0)                  &&
+         (! m_Context->GetLocation())                     &&
          ( !cfg.IsFormatFTable()  ||  cfg.ShowFtablePeptides() ) ) {
          x_DoMultipleSections(seq);
     } else {
 
         // display as a single bioseq (single section)
         m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, 0,
-            (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : NULL)));
+            (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : nullptr)));
         if ( m_Context->UsingSeqEntryIndex() && ! cfg.DisableReferenceCache() ) {
             CRef<CSeqEntryIndex> idx = m_Context->GetSeqEntryIndex();
             if (idx) {
@@ -732,7 +732,7 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
     }
 
     // add seq-submit citation
-    if (m_Current->GetSubmitBlock() != NULL) {
+    if (m_Current->GetSubmitBlock()) {
         CBioseqContext::TRef ref(new CReferenceItem(*m_Current->GetSubmitBlock(),
             *m_Current));
         refs.push_back(ref);
@@ -836,7 +836,7 @@ void CFlatGatherer::x_GatherReferencesIdx(const CSeq_loc& loc, TReferences& refs
     */
 
     // add seq-submit citation
-    if (m_Current->GetSubmitBlock() != NULL) {
+    if (m_Current->GetSubmitBlock()) {
         CBioseqContext::TRef ref(new CReferenceItem(*m_Current->GetSubmitBlock(),
             *m_Current));
         refs.push_back(ref);
@@ -849,7 +849,7 @@ void CFlatGatherer::x_GatherCDSReferences(TReferences& refs) const
     _ASSERT(m_Current->IsProt());
 
     const CSeq_feat* cds = GetCDSForProduct(m_Current->GetHandle());
-    if (cds == NULL) {
+    if (! cds) {
         return;
     }
     const CSeq_loc& cds_loc = cds->GetLocation();
@@ -1129,7 +1129,7 @@ void CFlatGatherer::x_FlushComments(void) const
     CConstRef<IFlatItem> item;
     NON_CONST_ITERATE (TCommentVec, it, m_Comments) {
         CGsdbComment* gsdb = dynamic_cast<CGsdbComment*>(it->GetPointerOrNull());
-        if ( gsdb != 0   &&  it != last ) {
+        if (gsdb && it != last) {
             gsdb->AddPeriod();
         }
         item.Reset( *it );
@@ -1271,8 +1271,8 @@ void CFlatGatherer::x_AuthorizedAccessComment(CBioseqContext& ctx) const
 void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
     EGenomeAnnotComment eGenomeAnnotComment) const
 {
-    const CObject_id* local_id = 0;
-    const CObject_id* file_id = 0;
+    const CObject_id* local_id = nullptr;
+    const CObject_id* file_id = nullptr;
 
     string genome_build_number =
         CGenomeAnnotComment::GetGenomeBuildNumber(ctx.GetHandle());
@@ -1358,10 +1358,10 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
 
     if ( ctx.IsTPA()  ||  ctx.IsGED() ) {
         if ( ctx.Config().IsModeGBench()  ||  ctx.Config().IsModeDump() ) {
-            if ( local_id != 0 ) {
+            if (local_id) {
                 x_AddComment(new CLocalIdComment(*local_id, ctx));
             }
-            if( file_id != 0 ) {
+            if (file_id) {
                 x_AddComment(new CFileIdComment(*file_id, ctx));
             }
         }
@@ -1679,11 +1679,11 @@ void CFlatGatherer::x_UnorderedComments(CBioseqContext& ctx) const
     if ( !desc ) {
         return;
     }
-    const list<string>* keywords = NULL;
+    const list<string>* keywords = nullptr;
     const CGB_block& gb = desc->GetGenbank();
     if (gb.CanGetKeywords()) {
         keywords = &(gb.GetKeywords());
-        if (keywords != NULL) {
+        if (keywords) {
             ITERATE (list<string>, kwd, *keywords) {
                 if (NStr::EqualNocase (*kwd, "UNORDERED")) {
                     x_AddComment(new CCommentItem(
@@ -2309,7 +2309,7 @@ void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
                         case CSeq_id_Base::e_Genbank:
                         case CSeq_id_Base::e_Tpg:
                             // Genbank allows merging only if it's the old-style 1 + 5 accessions
-                            if( NULL != seqId->GetTextseq_Id() &&
+                            if (seqId->GetTextseq_Id() &&
                                 seqId->GetTextseq_Id()->GetAccession().length() == 6 ) {
                                     sourcePubFuse = true;
                             }
@@ -2546,7 +2546,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         }
     }}
     // only for non-user selector
-    if (ctx.GetAnnotSelector() == NULL) {
+    if (! ctx.GetAnnotSelector()) {
         sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
         if (GetStrand(ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus) {
             sel.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);  // sort in reverse biological order
@@ -2694,7 +2694,7 @@ static bool s_SeqLocEndsOnBioseq(const CSeq_loc& loc, CBioseqContext& ctx,
 /* gcc warning: "defined but not used"
 static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
 {
-    if ( ctx.GetMapper() != 0 ) {
+    if (ctx.GetMapper()) {
         return ctx.GetMapper();
     }
     const CFlatFileConfig& cfg = ctx.Config();
@@ -2702,18 +2702,18 @@ static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
     // do not create mapper if:
     // 1 .segmented but not doing master style.
     if (ctx.IsSegmented()  &&  !cfg.IsStyleMaster()) {
-        return 0;
+        return nullptr;
     } else if (!ctx.IsSegmented()) {
         // 2. not delta, or delta and supress contig featuers
         if (!ctx.IsDelta()  ||  !cfg.ShowContigFeatures()) {
-            return 0;
+            return nullptr;
         }
     }
 
     // ... otherwise
     CSeq_loc_Mapper* mapper = new CSeq_loc_Mapper(ctx.GetHandle(),
         CSeq_loc_Mapper::eSeqMap_Up);
-    if (mapper != NULL) {
+    if (mapper) {
         mapper->SetMergeAbutting();
         mapper->KeepNonmappingRanges();
     }
@@ -2762,7 +2762,7 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
     TSeqPos end_pos = gap_it.GetEndPosition();
 
     // attempt to find CSeq_gap info
-    const CSeq_gap * pGap = NULL;
+    const CSeq_gap* pGap = nullptr;
     if( gap_it.IsSetData() && gap_it.GetData().IsGap() ) {
         pGap = &gap_it.GetData().GetGap();
     } else {
@@ -3976,7 +3976,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
 
     SAnnotSelector sel;
     SAnnotSelector* selp = &sel;
-    if (ctx.GetAnnotSelector() != NULL) {
+    if (ctx.GetAnnotSelector()) {
         selp = &ctx.SetAnnotSelector();
     }
     s_SetSelection(*selp, ctx);
@@ -3999,7 +3999,7 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
     }
 
     CSeq_loc loc;
-    if ( ctx.GetMasterLocation() != 0 ) {
+    if (ctx.GetMasterLocation()) {
         loc.Assign(*ctx.GetMasterLocation());
     } else {
         loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
@@ -4039,13 +4039,13 @@ void CFlatGatherer::x_GatherFeaturesIdx(void) const
                     &ctx.GetScope());
                 mapper.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle | CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
                 CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
-                cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
+                cds_prod = cds_prod->Merge((s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All), nullptr);
 
                 // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
                 // In that case, we shrink the cds's location back one residue.
                 if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
                     const CSeq_id *cds_prod_seq_id = cds.GetProduct().GetId();
-                    if( cds_prod_seq_id != NULL ) {
+                    if (cds_prod_seq_id) {
                         CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( *cds_prod_seq_id );
                         if( prod_bioseq_handle ) {
                             const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();
@@ -4112,7 +4112,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
     SAnnotSelector sel;
     SAnnotSelector* selp = &sel;
-    if (ctx.GetAnnotSelector() != NULL) {
+    if (ctx.GetAnnotSelector()) {
         selp = &ctx.SetAnnotSelector();
     }
     s_SetSelection(*selp, ctx);
@@ -4135,7 +4135,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
     }
 
     CSeq_loc loc;
-    if ( ctx.GetMasterLocation() != 0 ) {
+    if (ctx.GetMasterLocation()) {
         loc.Assign(*ctx.GetMasterLocation());
     } else {
         loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
@@ -4171,13 +4171,13 @@ void CFlatGatherer::x_GatherFeatures(void) const
                     &ctx.GetScope());
                 mapper.SetFuzzOption( CSeq_loc_Mapper::fFuzzOption_CStyle | CSeq_loc_Mapper::fFuzzOption_RemoveLimTlOrTr );
                 CRef<CSeq_loc> cds_prod = mapper.Map(cds.GetLocation());
-                cds_prod = cds_prod->Merge( ( s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All ), NULL );
+                cds_prod = cds_prod->Merge((s_IsCircularTopology(ctx) ? CSeq_loc::fMerge_All : CSeq_loc::fSortAndMerge_All), nullptr);
 
                 // it's a common case that we map one residue past the edge of the protein (e.g. NM_131089).
                 // In that case, we shrink the cds's location back one residue.
                 if( cds_prod->IsInt() && cds.GetProduct().IsWhole() ) {
                     const CSeq_id *cds_prod_seq_id = cds.GetProduct().GetId();
-                    if( cds_prod_seq_id != NULL ) {
+                    if (cds_prod_seq_id) {
                         CBioseq_Handle prod_bioseq_handle = ctx.GetScope().GetBioseqHandle( *cds_prod_seq_id );
                         if( prod_bioseq_handle ) {
                             const TSeqPos bioseq_len = prod_bioseq_handle.GetBioseqLength();

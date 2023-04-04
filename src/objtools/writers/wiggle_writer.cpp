@@ -78,7 +78,7 @@ CWiggleWriter::CWiggleWriter(
     size_t uTrackSize ) :
 //  ----------------------------------------------------------------------------
     CWriterBase(ostr, 0),
-    mpScope(0),
+    mpScope(nullptr),
     m_uTrackSize(uTrackSize == 0 ? size_t( -1 ) : uTrackSize)
 {
 };

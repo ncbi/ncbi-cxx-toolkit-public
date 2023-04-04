@@ -201,11 +201,11 @@ namespace {
             const TErrInfo * pExpectedErrInfo =
                 ( (err_idx < expectedErrInfoVec.size()) ?
                 &expectedErrInfoVec[err_idx] :
-                NULL );
+                nullptr );
             const TErrInfo * pResultingErrInfo =
                 ( (err_idx < resultingErrInfoVec.size()) ?
                 &resultingErrInfoVec[err_idx] :
-                NULL );
+                nullptr );
             // skip this iteration if they match
             if( pExpectedErrInfo && pResultingErrInfo &&
                 pExpectedErrInfo->first == pResultingErrInfo->first &&
@@ -472,7 +472,7 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
     vecTypeInfos.push_back( CBioseq_set::GetTypeInfo() );
     vecTypeInfos.push_back( CBioseq::GetTypeInfo() );
     // ends with NULL
-    vecTypeInfos.push_back( NULL );
+    vecTypeInfos.push_back(nullptr);
 
     // try every combination of each flag
     // (conveniently, that's just every non-negative
@@ -485,7 +485,7 @@ BOOST_AUTO_TEST_CASE(OutputBioseqsFlagTest)
 
             CAgpConverter agpConverter(
                 pTemplateBioseq,
-                ( bUseSubmitBlock ? pSubmitBlock.GetPointer() : NULL ) );
+                ( bUseSubmitBlock ? pSubmitBlock.GetPointer() : nullptr ) );
 
             ITERATE_BOTH_BOOL_VALUES(bMultipleBioseqsPerAGPFile) {
 

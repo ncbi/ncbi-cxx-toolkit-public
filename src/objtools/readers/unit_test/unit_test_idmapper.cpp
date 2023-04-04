@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(Test_EvenMoreComplexLocMapper)
 
          CRef<CSeq_loc> loc4 = mapper.Map(loc3);
 
-         BOOST_CHECK_EQUAL(loc4->GetId(), (const CSeq_id*)NULL);
+         BOOST_CHECK_EQUAL(loc4->GetId(), (const CSeq_id*)nullptr);
          BOOST_CHECK_EQUAL(loc4->Which(), CSeq_loc::e_Packed_int);
 
          CSeq_loc_CI loc_iter(*loc4);

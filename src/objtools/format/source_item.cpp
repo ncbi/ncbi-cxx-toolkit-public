@@ -413,8 +413,8 @@ void CSourceItem::x_SetSource
         if ( org.CanGetOrgname() ) {
             const COrgName& org_name = org.GetOrgname();
 
-            const string *com = 0, *acr = 0, *syn = 0, *ana = 0,
-                *gbacr = 0, *gbana = 0, *gbsyn = 0, *met = 0;
+            const string *com = nullptr, *acr = nullptr, *syn = nullptr, *ana = nullptr,
+                *gbacr = nullptr, *gbana = nullptr, *gbsyn = nullptr, *met = nullptr;
             int numcom = 0, numacr = 0, numsyn = 0, numana = 0, numgbacr = 0,
                 numgbana = 0, numgbsyn = 0, nummet = 0;
             ITERATE( COrgName::TMod, mod, org_name.GetMod() ) {
@@ -458,46 +458,46 @@ void CSourceItem::x_SetSource
             }
 
             if (numacr > 1) {
-               acr = NULL;
+               acr = nullptr;
             }
             if (numana > 1) {
-               ana = NULL;
+               ana = nullptr;
             }
             if (numcom > 1) {
-               com = NULL;
+               com = nullptr;
             }
             if (numsyn > 1) {
-               syn = NULL;
+               syn = nullptr;
             }
             if (numgbacr > 1) {
-               gbacr = NULL;
+               gbacr = nullptr;
             }
             if (numgbana > 1) {
-               gbana = NULL;
+               gbana = nullptr;
             }
             if (numgbsyn > 1) {
-               gbsyn = NULL;
+               gbsyn = nullptr;
             }
             if( nummet > 1 ) {
-                met = NULL;
+                met = nullptr;
             }
 
-            if( m_Common->empty()  &&  met != 0 ) {
+            if (m_Common->empty() && met) {
                 m_Common = met;
-            } else if ( m_Common->empty()  &&  syn != 0 ) {
+            } else if (m_Common->empty() && syn) {
                 m_Common = syn;
-            } else if ( m_Common->empty()  &&  acr != 0 ) {
+            } else if (m_Common->empty() && acr) {
                 m_Common = acr;
-            } else if ( m_Common->empty()  &&  ana != 0 ) {
+            } else if (m_Common->empty() && ana) {
                 m_Common = ana;
                 m_UsingAnamorph = true;
-            } else if ( m_Common->empty()  &&  com != 0 ) {
+            } else if (m_Common->empty() && com) {
                 m_Common = com;
-            } else if ( m_Common->empty()  &&  gbsyn != 0 ) {
+            } else if (m_Common->empty() && gbsyn) {
                 m_Common = gbsyn;
-            } else if ( m_Common->empty()  &&  gbacr != 0 ) {
+            } else if (m_Common->empty() && gbacr) {
                 m_Common = gbacr;
-            } else if ( m_Common->empty()  &&  gbana != 0 ) {
+            } else if (m_Common->empty() && gbana) {
                 m_Common = gbana;
                 m_UsingAnamorph = true;
             }

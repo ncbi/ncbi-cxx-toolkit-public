@@ -53,7 +53,7 @@ BEGIN_SCOPE(objects)
 
 
 CAccessionItem::CAccessionItem(CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_ExtraAccessions(0), m_IsSetRegion(false)
+    CFlatItem(&ctx), m_ExtraAccessions(), m_IsSetRegion(false)
 {
     x_GatherInfo(ctx);
 }
@@ -80,7 +80,7 @@ void CAccessionItem::Format
 
 void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    if ( ctx.GetPrimaryId() == 0 ) {
+    if (! ctx.GetPrimaryId()) {
         x_SetSkip();
         return;
     }
@@ -128,7 +128,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
     // (i.e. command-line args "-from" and "-to" )
     if( ctx.GetLocation().IsWhole() ) {
 
-        const list<string>* xtra = 0;
+        const list<string>* xtra = nullptr;
         CSeqdesc_CI gb_desc(ctx.GetHandle(), CSeqdesc::e_Genbank);
         if ( gb_desc ) {
             x_SetObject(*gb_desc);
@@ -143,7 +143,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
 
-        if ( xtra != 0 ) {
+        if (xtra) {
             // no validation done if less than a certain number of accessions
             // TODO: When we've switched completely away from C, we should
             //       probably *always* validate accessions.
