@@ -1434,7 +1434,7 @@ static void s_FormatJournal
     if (cfg.IsFormatGenbank() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq()) {
         if (prepub == CImprint::ePrepub_in_press) {
             jour << " In press";
-        } else if (imp.IsSetPubstatus()  &&  imp.GetPubstatus() == 10  &&  NStr::IsBlank(pages)) {
+        } else if (imp.IsSetPubstatus() && imp.GetPubstatus() == ePubStatus_aheadofprint && NStr::IsBlank(pages)) {
             jour << " In press";
         }
     }

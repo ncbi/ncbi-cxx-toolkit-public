@@ -948,7 +948,7 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
                 }
                 if (imp.IsSetPubstatus()) {
                     CImprint::TPubstatus pubstatus = imp.GetPubstatus();
-                    if (pubstatus == 3) {
+                    if (pubstatus == ePubStatus_epublish) {
                         is_epublish = true;
                     }
                 }
@@ -1162,7 +1162,7 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
     // electronic journal
     if (imp.IsSetPubstatus()) {
         CImprint::TPubstatus pubstatus = imp.GetPubstatus();
-        m_Elect = (pubstatus == 3  || pubstatus == 10);
+        m_Elect = (pubstatus == ePubStatus_epublish || pubstatus == ePubStatus_aheadofprint);
     }
 
     // date
@@ -1474,10 +1474,10 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                         if ( imp.CanGetPubstatus() ) {
                             CImprint::TPubstatus pubstatus = imp.GetPubstatus();
                             switch ( pubstatus ) {
-                            case 3:
+                            case ePubStatus_epublish:
                                 l.push_back( "Publication Status: Online-Only" );
                                 break;
-                            case 10:
+                            case ePubStatus_aheadofprint:
                                 l.push_back( "Publication Status: Available-Online prior to print" );
                                 break;
                             default:

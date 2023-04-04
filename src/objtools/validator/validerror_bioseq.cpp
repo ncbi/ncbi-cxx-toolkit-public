@@ -3211,7 +3211,7 @@ int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
     return bsh.GetBioseqLength() ? count * 100 / bsh.GetBioseqLength() : 100;
 }
 
-
+static
 bool s_GetFlankingGapTypes(const CSeq_inst& inst, CSeq_gap::TType& fst, CSeq_gap::TType& lst)
 {
     CSeq_gap::TType first = CSeq_gap::eType_unknown;
@@ -3227,7 +3227,7 @@ bool s_GetFlankingGapTypes(const CSeq_inst& inst, CSeq_gap::TType& fst, CSeq_gap
                 const CSeq_literal& lit = (*iter)->GetLiteral();
                 if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap()) {
                     const CSeq_gap& gap = lit.GetSeq_data().GetGap();
-                    int gaptype = 0;
+                    CSeq_gap::TType gaptype = CSeq_gap::eType_unknown;
                     if (gap.IsSetType()) {
                         gaptype = gap.GetType();
                     }
@@ -3237,7 +3237,7 @@ bool s_GetFlankingGapTypes(const CSeq_inst& inst, CSeq_gap::TType& fst, CSeq_gap
                         last = gaptype;
                     }
                 } else {
-                    last = 0;
+                    last = CSeq_gap::eType_unknown;
                 }
             }
             is_first = false;
