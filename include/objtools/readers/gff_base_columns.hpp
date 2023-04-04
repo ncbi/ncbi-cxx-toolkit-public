@@ -94,16 +94,16 @@ public:
     };
 
     bool IsSetScore() const {
-        return m_pdScore != 0;
-    };
+        return m_pdScore != nullptr;
+    }
 
     bool IsSetStrand() const {
-        return m_peStrand != 0;
-    };
+        return m_peStrand != nullptr;
+    }
 
     bool IsSetPhase() const {
-        return m_pePhase != 0;
-    };
+        return m_pePhase != nullptr;
+    }
 
     CRef<CSeq_id> GetSeqId(
         TReaderFlags,

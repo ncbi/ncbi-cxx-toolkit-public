@@ -70,9 +70,9 @@ public:
     /// @param agp_version
     ///   What is the AGP version of the input?  Default is to auto-detect AGP version,
     ///   which is likely what the user wants to do most of the time.
-    CAgpToSeqEntry( TFlags fFlags = 0,
+    CAgpToSeqEntry(TFlags fFlags = 0,
         EAgpVersion agp_version = eAgpVersion_auto,
-        CAgpErr* arg = NULL );
+        CAgpErr* arg = nullptr);
 
     /// This gets the results found, but don't call before finalizing.  We are intentionally
     /// giving a non-const reference because the caller is free to

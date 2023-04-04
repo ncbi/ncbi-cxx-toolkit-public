@@ -85,7 +85,7 @@ public:
 
    size_t LoadCommentsByRow(ILineReader& reader, CStructComment& cmt)
    {
-       objects::CUser_object* user = 0;
+       objects::CUser_object* user = nullptr;
 
        while (!reader.AtEOF())
        {

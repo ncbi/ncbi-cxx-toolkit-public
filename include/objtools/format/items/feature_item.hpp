@@ -405,7 +405,7 @@ public:
     CSourceFeatureItem(const CBioSource& src, TRange range,
         CBioseqContext& ctx, CRef<feature::CFeatTree> ftree);
     CSourceFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
-        CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = NULL);
+        CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = nullptr);
 
     void SetObject(const CSerialObject& obj) { x_SetObject(obj); }
 

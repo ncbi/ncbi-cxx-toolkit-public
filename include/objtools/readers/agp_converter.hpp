@@ -109,7 +109,7 @@ public:
     ///   This is called whenever an error occurs.  The caller will want to give a subclass of CErrorHandler if the caller wants differently functionality from the default (which is to just print to stderr)
     CAgpConverter(
         CConstRef<objects::CBioseq> pTemplateBioseq,
-        const objects::CSubmit_block * pSubmitBlock = NULL,
+        const objects::CSubmit_block* pSubmitBlock = nullptr,
         TOutputFlags fOutputFlags = 0,
         CRef<CErrorHandler> pErrorHandler = CRef<CErrorHandler>() );
 
@@ -199,7 +199,7 @@ public:
         const string & sDirName,
         const std::vector<std::string> & vecAgpFileNames,
         const string & sSuffix = kEmptyStr,
-        IFileWrittenCallback * pFileWrittenCallback = NULL ) const;
+        IFileWrittenCallback* pFileWrittenCallback = nullptr) const;
 
     /// Convert string to flag
     static TOutputFlags OutputFlagStringToEnum(const string & sEnumAsString);

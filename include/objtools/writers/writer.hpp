@@ -60,7 +60,7 @@ public:
         ICanceled* pCanceller) { mpCancelled = pCanceller; };
 
     bool IsCanceled() const {
-        if (0 == mpCancelled) {
+        if (! mpCancelled) {
             return false;
         }
         return mpCancelled->IsCanceled();

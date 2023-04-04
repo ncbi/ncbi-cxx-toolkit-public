@@ -55,10 +55,10 @@ public:
     COStreamTextOStream(CNcbiOstream& os);
 
     virtual void AddParagraph(const list<string>& text,
-                              const CSerialObject* obj = 0);
+                              const CSerialObject* obj = nullptr);
 
     virtual void AddLine( const CTempString& line,
-                          const CSerialObject* obj = 0,
+                          const CSerialObject* obj = nullptr,
                           EAddNewline add_newline = eAddNewline_Yes );
 
     virtual void Flush( void );

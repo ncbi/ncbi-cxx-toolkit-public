@@ -51,7 +51,7 @@ class NCBI_FORMAT_EXPORT CFormatItemOStream : public CFlatItemOStream
 public:
     // NB: formatter and text_os must be allocated on the heap!
     CFormatItemOStream(IFlatTextOStream* text_os,
-                       IFormatter* formatter = 0);
+                       IFormatter* formatter = nullptr);
 
     // NB: item must be allocated on the heap!
     virtual void AddItem(CConstRef<IFlatItem> item);

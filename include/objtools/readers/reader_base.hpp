@@ -122,7 +122,7 @@ public:
     static CReaderBase* GetReader(
         CFormatGuess::EFormat format,
         TReaderFlags flags = 0,
-        CReaderListener* = nullptr );
+        CReaderListener* = nullptr);
 
     /// Read an object from a given input stream, render it as the most
     /// appropriate Genbank object.
@@ -134,7 +134,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         CNcbiIstream& istr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read an object from a given line reader, render it as the most
     /// appropriate Genbank object. This will be Seq-annot by default
@@ -151,7 +151,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read an object from a given input stream, render it as a single
     /// Seq-annot. Return empty Seq-annot otherwise.
@@ -163,7 +163,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream& istr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read an object from a given line reader, render it as a single
     /// Seq-annot, if possible. Return empty Seq-annot otherwise.
@@ -175,7 +175,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots.
@@ -190,7 +190,7 @@ public:
     ReadSeqAnnots(
         TAnnots& annots,
         CNcbiIstream& istr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots.
@@ -205,7 +205,7 @@ public:
     ReadSeqAnnots(
         TAnnots& annots,
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read an object from a given input stream, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
@@ -217,7 +217,7 @@ public:
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         CNcbiIstream& istr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     /// Read an object from a given line reader, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
@@ -229,7 +229,7 @@ public:
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader& lr,
-        ILineErrorListener* pErrors=0 );
+        ILineErrorListener* pErrors = nullptr);
 
     void
     SetProgressReportInterval(
@@ -237,7 +237,7 @@ public:
 
     void
     SetCanceler(
-        ICanceled* =0);
+        ICanceled* = nullptr);
 
     bool
     IsCanceled() const { return m_pCanceler && m_pCanceler->IsCanceled(); };

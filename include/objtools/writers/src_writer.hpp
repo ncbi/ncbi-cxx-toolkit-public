@@ -105,7 +105,7 @@ public:
         const vector<pair<string,CBioseq_Handle> >&,
         const FIELDS&,
         CNcbiOstream&,
-        ILineErrorListener* = 0);
+        ILineErrorListener* = nullptr);
 
     /// Set the column delimiter for the output table.
     void SetDelimiter(
@@ -116,7 +116,7 @@ public:
     /// Verify that each string in fields is a valid qualifier name.
     static bool ValidateFields(
         const FIELDS& fields,
-        ILineErrorListener* = 0);
+        ILineErrorListener* = nullptr);
 
     /** Write a table of all qualifier-field entries occurring
       * in the BioSources for a given Seq-entry,
@@ -131,27 +131,27 @@ public:
 protected:
     void xInit();
 
-    virtual bool xGather(CBioseq_Handle, string id, const FIELDS&, ILineErrorListener* =0);
-    virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =0);
-    virtual bool xGatherGi(CBioseq_Handle, ILineErrorListener* =0);
-    virtual bool xGatherLocalId(CBioseq_Handle, ILineErrorListener* = 0);
-    virtual bool xGatherBankitId(CBioseq_Handle, ILineErrorListener* = 0);
-    virtual bool xGatherDefline(CBioseq_Handle, ILineErrorListener* =0);
-    virtual bool xTryDefaultId(const string& id, ILineErrorListener* =0);
-    virtual bool xHandleSourceField(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGather(CBioseq_Handle, string id, const FIELDS&, ILineErrorListener* =nullptr);
+    virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =nullptr);
+    virtual bool xGatherGi(CBioseq_Handle, ILineErrorListener* =nullptr);
+    virtual bool xGatherLocalId(CBioseq_Handle, ILineErrorListener* = nullptr);
+    virtual bool xGatherBankitId(CBioseq_Handle, ILineErrorListener* = nullptr);
+    virtual bool xGatherDefline(CBioseq_Handle, ILineErrorListener* =nullptr);
+    virtual bool xTryDefaultId(const string& id, ILineErrorListener* =nullptr);
+    virtual bool xHandleSourceField(const CBioSource&, const string&, ILineErrorListener* =nullptr);
 
 
-    virtual bool xGatherTaxname(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherDivision(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherGenome(const CBioSource&, const string&,  ILineErrorListener* =0);
-    virtual bool xGatherOrigin(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherSubtypeFeat(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherOrgModFeat(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherOrgCommon(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherOrgnameLineage(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherPcrPrimers(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherDb(const CBioSource&, const string&, ILineErrorListener* =0);
-    virtual bool xGatherTaxonId(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherTaxname(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherDivision(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherGenome(const CBioSource&, const string&,  ILineErrorListener* =nullptr);
+    virtual bool xGatherOrigin(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherSubtypeFeat(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherOrgModFeat(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherOrgCommon(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherOrgnameLineage(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherPcrPrimers(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherDb(const CBioSource&, const string&, ILineErrorListener* =nullptr);
+    virtual bool xGatherTaxonId(const CBioSource&, const string&, ILineErrorListener* =nullptr);
 
     virtual bool xFormatTabDelimited(const FIELDS&, CNcbiOstream&);
 

@@ -54,7 +54,7 @@ class NCBI_FORMAT_EXPORT CFlatGapLoc : public CSeq_loc
 public:
     typedef TSeqPos TLength;
 
-    CFlatGapLoc(TLength value) : m_Length(value), m_Fuzz(NULL) { SetNull(); }
+    CFlatGapLoc(TLength value) : m_Length(value), m_Fuzz(nullptr) { SetNull(); }
 
     TLength GetLength(void) const { return m_Length; }
     void SetLength(const TLength& value) { m_Length = value; }

@@ -63,7 +63,7 @@ public:
     typedef CAlnMap::TSignedRange TRange;
 
     CCIGAR_Formatter(const CSeq_align&  aln,
-                     CScope*            scope = 0,
+                     CScope*            scope = nullptr,
                      TCIGARFlags        flags = fCIGAR_Default);
     virtual ~CCIGAR_Formatter(void);
 

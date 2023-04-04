@@ -184,7 +184,7 @@ protected:
   //void x_PrintIdsNotInAgp(CNcbiOstream& out=cout, bool use_xml=false);
 
   // true: a suspicious mix of ids - some look like GenBank accessions, some do not.
-  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label=NULL, CNcbiOstream& out=cout, bool use_xml=false);
+  static bool x_PrintPatterns(CAccPatternCounter& namePatterns, const string& strHeader, int fasta_count, const char* count_label=nullptr, CNcbiOstream& out=cout, bool use_xml=false);
 
   CAgpErrEx* m_AgpErr;
   int m_CommentLineCount;

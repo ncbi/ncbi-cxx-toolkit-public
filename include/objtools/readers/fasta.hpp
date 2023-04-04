@@ -141,16 +141,16 @@ public:
 
     /// Read a single effective sequence, which may turn out to be a
     /// segmented set.
-    virtual CRef<CSeq_entry> ReadOneSeq(ILineErrorListener * pMessageListener = 0);
+    virtual CRef<CSeq_entry> ReadOneSeq(ILineErrorListener* pMessageListener = nullptr);
 
     /// Read multiple sequences (by default, as many as are available.)
-    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int, ILineErrorListener * pMessageListener = 0);
+    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int, ILineErrorListener* pMessageListener = nullptr);
 
     /// Read as many sequences as are available, and interpret them as
     /// an alignment, with hyphens marking relative deletions.
     /// @param reference_row
     ///   0-based; the special value -1 yields a full (pseudo-?)N-way alignment.
-    CRef<CSeq_entry> ReadAlignedSet(int reference_row, ILineErrorListener * pMessageListener = 0);
+    CRef<CSeq_entry> ReadAlignedSet(int reference_row, ILineErrorListener* pMessageListener = nullptr);
 
     // also allow changing?
     TFlags GetFlags(void) const { return m_Flags.top(); }
@@ -275,7 +275,7 @@ protected:
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
     // inline utilities
-    void CloseGap(bool atStartOfLine=true, ILineErrorListener * pMessageListener = 0) {
+    void CloseGap(bool atStartOfLine=true, ILineErrorListener* pMessageListener = nullptr) {
         if (m_CurrentGapLength > 0) {
             x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
             m_CurrentGapLength = 0;
