@@ -791,7 +791,6 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
 }
 
 string CLocusItem::GetDivision(const CBioseq_Handle& bsh, const CBioseqContext* ctx)
-
 {
     if ( bsh.IsSetInst_Repr() && bsh.GetInst_Repr() == CSeq_inst::eRepr_delta) {
         if (bsh.IsSetInst_Ext()) {
@@ -806,7 +805,7 @@ string CLocusItem::GetDivision(const CBioseq_Handle& bsh, const CBioseqContext* 
         }
     }
 
-    CMolInfo::TTech tech = 0;
+    CMolInfo::TTech tech = CMolInfo::eTech_unknown;
 
     CSeqdesc_CI::TDescChoices desc_choices;
     desc_choices.reserve(1);

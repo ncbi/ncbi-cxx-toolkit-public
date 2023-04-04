@@ -152,7 +152,7 @@ string CAutoDefWithTaxonomy::GetDocsumDefLine(CSeq_entry_Handle se)
     string feature_clauses;
     CBioseq_CI bi(se, CSeq_inst::eMol_na);
     if (bi) {
-        unsigned int genome_val = CBioSource::eGenome_unknown;
+        CBioSource::TGenome genome_val = CBioSource::eGenome_unknown;
         CSeqdesc_CI di(*bi, CSeqdesc::e_Source);
         if (di && di->GetSource().IsSetGenome()) {
             genome_val = di->GetSource().GetGenome();
