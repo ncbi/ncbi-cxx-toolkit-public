@@ -430,9 +430,13 @@ void CAnnotObject_Info::x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
     hrmaps[0].clear();
     hrmaps[0].SetMasterSeq(master);
     CHandleRangeMap::ETransSplicing mode = CHandleRangeMap::eNoTransSplicing;
-    if ( feat.IsSetExcept_text() &&
-         feat.GetExcept_text().find("trans-splicing") != NPOS ) {
-        mode = CHandleRangeMap::eTransSplicing;
+    if ( feat.IsSetExcept_text() ) {
+        if ( feat.GetExcept_text().find("trans-splicing") != NPOS ) {
+            mode = CHandleRangeMap::eTransSplicing;
+        }
+        else if ( feat.GetExcept_text().find("circular RNA") != NPOS ) {
+            mode = CHandleRangeMap::eCircularRNA;
+        }
     }
     hrmaps[0].AddLocation(feat.GetLocation(), mode);
     if ( feat.IsSetProduct() ) {
