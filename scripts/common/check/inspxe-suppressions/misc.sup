@@ -48,7 +48,6 @@ suppression = {
 		}
 	}
 }
-
 suppression = {
 	name = "Invalid partial memory access in libxml - cannot do anything"
 	type = {invalid_memory_access_partial}
@@ -60,6 +59,16 @@ suppression = {
 		allocation={
 			...;
 			func=xmlLoadExternalEntity;
+		}
+	}
+}
+suppression = {
+	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ncbi-vdb-md.dll,func=parse_decimal;
 		}
 	}
 }
