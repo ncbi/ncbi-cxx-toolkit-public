@@ -919,7 +919,11 @@ const CSeq_entry *ctx)
             "Sex and mating type should not both be present", obj, ctx);
     }
     if (bsrc.IsSetGenome() && bsrc.GetGenome() == CBioSource::eGenome_plasmid && !count[CSubSource::eSubtype_plasmid_name]) {
-        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MissingPlasmidName,
+        EDiagSev sev = eDiag_Warning;
+        if (m_genomeSubmission) {
+            sev = eDiag_Error;
+        }
+        PostObjErr(sev, eErr_SEQ_DESCR_MissingPlasmidName,
             "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known.",
             obj, ctx);
     }
