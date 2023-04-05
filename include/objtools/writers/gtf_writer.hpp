@@ -96,24 +96,24 @@ public:
     ~CGtfWriter();
 
     bool WriteHeader() override;
-    virtual bool WriteHeader(
+    bool WriteHeader(
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
 
 protected:
-    virtual bool x_WriteBioseqHandle(
-        CBioseq_Handle ) override;
+    bool x_WriteBioseqHandle(
+        CBioseq_Handle) override;
 
-    virtual bool xAssignFeatureType(
+    bool xAssignFeatureType(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
-    virtual bool xAssignFeatureMethod(
+    bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
-    virtual bool xAssignFeatureAttributesFormatSpecific(
+    bool xAssignFeatureAttributesFormatSpecific(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
@@ -129,15 +129,15 @@ protected:
         CGtfRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-    virtual bool xAssignFeatureAttributeNote(
+    bool xAssignFeatureAttributeNote(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeatureAttributeDbxref(
+    bool xAssignFeatureAttributeDbxref(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeatureAttributesQualifiers(
+    bool xAssignFeatureAttributesQualifiers(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
@@ -151,9 +151,9 @@ protected:
     bool xWriteRecord(
         const CGffWriteRecord* );
 
-    virtual bool xWriteFeature(
+    bool xWriteFeature(
         CGffFeatureContext&,
-        const CMappedFeat& ) override;
+        const CMappedFeat&) override;
     virtual bool xWriteRecordsGene(
         CGffFeatureContext&,
         const CMappedFeat& );
