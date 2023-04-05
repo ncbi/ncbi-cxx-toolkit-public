@@ -58,7 +58,7 @@ public:
     size_t GetNum  (void) const { return m_Num;   }
     size_t GetCount(void) const { return m_Count; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

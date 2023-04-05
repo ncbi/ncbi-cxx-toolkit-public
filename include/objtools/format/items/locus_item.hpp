@@ -73,7 +73,7 @@ public:
     const string& GetDivision (void) const;
     const string& GetDate     (void) const;
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 
     static string GetDivision(const CBioseq_Handle& bsh, const CBioseqContext* ctx = 0);
 

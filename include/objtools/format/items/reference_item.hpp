@@ -76,7 +76,7 @@ public:
     int GetLength(void) const { return m_Length; }
     bool IsProt(void) const { return m_IsProt; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
 
     // data
@@ -192,7 +192,7 @@ public:
 
     static void ChangeMedlineAuthorsToISO(CRef<CPub> pub);
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
  
     CReferenceItem(const CReferenceItem& value);

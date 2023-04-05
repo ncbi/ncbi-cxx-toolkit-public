@@ -61,7 +61,7 @@ public:
     TGi GetGi(void) const;
     const string& GetAccession(void) const;
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

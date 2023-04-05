@@ -50,7 +50,7 @@ class CSeq_entry_Handle;
 class NCBI_FORMAT_EXPORT CCtrlItem : public CFlatItem
 {
 public:
-    CCtrlItem(CBioseqContext* bctx = 0) : CFlatItem(bctx) {}
+    CCtrlItem(CBioseqContext* bctx = nullptr) : CFlatItem(bctx) {}
 };
 
 
@@ -70,7 +70,7 @@ public:
         f.Start(text_os);
     }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_SetDate(CSeq_entry_Handle);
     string m_Date;
@@ -94,7 +94,7 @@ public:
         f.StartSection(*this, text_os);
     }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 };
 
 
@@ -112,7 +112,7 @@ public:
         f.EndSection(*this, text_os);
     }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 };
 
 
@@ -130,7 +130,7 @@ public:
         f.End(text_os);
     }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 };
 
 
