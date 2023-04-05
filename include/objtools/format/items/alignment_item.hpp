@@ -57,7 +57,7 @@ public:
 
     const CSeq_align& GetAlign(void) const { return *m_Align; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
     // data

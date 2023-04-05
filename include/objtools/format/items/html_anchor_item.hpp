@@ -47,7 +47,7 @@ public:
     const string &GetLabelCore(void) const { return m_LabelCore; }
     TGi           GetGI(void)        const { return m_GI; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

@@ -64,7 +64,7 @@ public:
 
     const string& GetString(void) const { return m_Str; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     // types
     typedef CConstRef<CSeq_align>            TAln;

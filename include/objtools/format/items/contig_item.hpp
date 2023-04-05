@@ -60,7 +60,7 @@ public:
 
     const CSeq_loc& GetLoc(void) const { return *m_Loc; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
     // data

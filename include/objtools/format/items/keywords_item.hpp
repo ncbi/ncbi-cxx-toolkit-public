@@ -64,7 +64,7 @@ public:
 
     const TKeywords& GetKeywords(void) const;
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

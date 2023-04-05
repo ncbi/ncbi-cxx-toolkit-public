@@ -67,7 +67,7 @@ public:
 
     const CSeq_id& GetId(void) const { return *m_Id; }  // for FTable format
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
@@ -173,7 +173,7 @@ public:
     // fetaure key (name)
     string GetKey(void) const;
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 
     // mapping
     bool IsMapped           (void) const { return m_Mapped != eMapped_not_mapped;   }
@@ -421,7 +421,7 @@ public:
 
     void SetLoc(const CSeq_loc& loc);
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 
 private:
     typedef CQualContainer<ESourceQualifier> TQuals;

@@ -150,7 +150,7 @@ public:
 
     // static void ResetFirst(void) { sm_FirstComment = true; }
 
-    virtual EItem GetItemType(void) const;
+    EItem GetItemType() const override;
 protected:
 
     enum EPeriod {
