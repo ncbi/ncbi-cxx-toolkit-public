@@ -167,8 +167,8 @@ public:
         const string& defaultMethod) { m_sDefaultMethod = defaultMethod; };
     void SetBioseqHandle(CBioseq_Handle bsh);
 
-    virtual bool WriteHeader() override;
-    virtual bool WriteHeader(
+    bool WriteHeader() override;
+    bool WriteHeader(
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
     bool WriteAlign(
         const CSeq_align&,
@@ -179,10 +179,10 @@ protected:
     typedef list<pair<CConstRef<CSeq_align>, string>> TAlignCache;
 
 protected:
-    virtual bool x_WriteBioseqHandle(
-        CBioseq_Handle ) override;
-    virtual bool x_WriteSeqAnnotHandle(
-        CSeq_annot_Handle ) override;
+    bool x_WriteBioseqHandle(
+        CBioseq_Handle) override;
+    bool x_WriteSeqAnnotHandle(
+        CSeq_annot_Handle) override;
     virtual bool x_WriteFeatureContext(
         CGffFeatureContext&);
 
@@ -208,7 +208,7 @@ protected:
         CBioseq_Handle );
     virtual bool xWriteSource(
         CBioseq_Handle);
-    virtual bool xWriteFeature(
+    bool xWriteFeature(
         CFeat_CI feat_it) override;
 
     virtual bool xWriteSequence(
@@ -250,7 +250,7 @@ protected:
     virtual bool xWriteFeatureCDJVSegment(
         CGffFeatureContext&,
         const CMappedFeat& );
-    virtual bool xWriteAllChildren(
+    bool xWriteAllChildren(
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
@@ -401,37 +401,37 @@ protected:
         const CBioSource&);
 
     //begin mss-234//
-    virtual bool xAssignFeature(
+    bool xAssignFeature(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeatureType(
+    bool xAssignFeatureType(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeatureMethod(
+    bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeatureEndpoints(
+    bool xAssignFeatureEndpoints(
         CGffFeatureRecord& record,
         CGffFeatureContext&,
         const CMappedFeat& mapped_feat) override;
-    virtual bool xAssignFeatureStrand(
+    bool xAssignFeatureStrand(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeaturePhase(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
-
-    virtual bool xAssignFeatureAttributesFormatIndependent(
+    bool xAssignFeaturePhase(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
-    virtual bool xAssignFeatureAttributesFormatSpecific(
+    bool xAssignFeatureAttributesFormatIndependent(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+
+    bool xAssignFeatureAttributesFormatSpecific(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;

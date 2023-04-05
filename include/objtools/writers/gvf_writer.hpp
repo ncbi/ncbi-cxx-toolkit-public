@@ -55,19 +55,19 @@ public:
         unsigned int = fNormal );
     virtual ~CGvfWriter();
 
-    virtual bool WriteHeader() override;
-    virtual bool WriteHeader(
+    bool WriteHeader() override;
+    bool WriteHeader(
         const CSeq_annot& ) override;
 
 protected:
-    virtual bool x_WriteSeqAnnotHandle(
+    bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle ) override;
 
-    virtual bool xWriteFeature(
+    bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat& ) override;
 
-    virtual bool xWriteRecord(
+    bool xWriteRecord(
         const CGffBaseRecord& ) override;
 
     virtual bool xWriteFeatureVariationRef(
@@ -79,12 +79,12 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
-    virtual bool xAssignFeatureType(
+    bool xAssignFeatureType(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
 
-    virtual bool xAssignFeatureMethod(
+    bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
