@@ -580,6 +580,16 @@ void CPSGSCounters::PopulateDictionary(CJsonNode &  dict)
 }
 
 
+void CPSGSCounters::Reset(void)
+{
+    for (size_t  k=0; k < ePSGS_MaxCounter; ++k) {
+        if (m_Counters[k]->m_Type == SCounterInfo::ePSGS_Monotonic) {
+            m_Counters[k]->m_Value = 0;
+        }
+    }
+}
+
+
 void CPSGSCounters::AppendValueNode(CJsonNode &  dict, const string &  id,
                                     const string &  name, const string &  description,
                                     uint64_t  value)

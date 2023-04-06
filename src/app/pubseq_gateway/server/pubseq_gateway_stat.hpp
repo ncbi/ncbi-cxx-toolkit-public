@@ -163,6 +163,7 @@ class CPSGSCounters
     void IncrementRequestStopCounter(int  status);
     void UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf);
+    void Reset(void);
 
     public:
         void PopulateDictionary(CJsonNode &  dict);
