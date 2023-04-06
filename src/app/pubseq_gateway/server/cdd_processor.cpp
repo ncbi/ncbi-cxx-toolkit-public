@@ -57,7 +57,7 @@ USING_SCOPE(objects);
 static const string kCDDAnnotName = "CDD";
 static const string kCDDProcessorGroupName = "CDD";
 static const string kCDDProcessorName = "CDD";
-static const string kCDDProcessorSection = "WGS_PROCESSOR";
+static const string kCDDProcessorSection = "CDD_PROCESSOR";
 const CID2_Blob_Id::TSat kCDDSat = 8087;
 
 static const string kParamMaxConn = "maxconn";
