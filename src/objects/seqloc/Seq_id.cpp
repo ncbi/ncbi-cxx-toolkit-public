@@ -3035,14 +3035,40 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
 int CSeq_id::BaseTextScore(void) const
 {
     switch (Which()) {
-    case e_not_set:                                return 83;
-    case e_Giim:                                   return 20;
-    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 20;
-    case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
-    case e_Local:   case e_Patent:                 return 10;
-    case e_Gpipe:   case e_Named_annot_track:      return 9;
-    case e_Other:                                  return 8;
-    default:                                       return 5;
+    // Accession and accession-like ids - only one can be present in a bioseq's list of ids,
+    // the order is not important.
+    case e_Other:
+    case e_Swissprot:
+    case e_Pir:
+    case e_Pdb:
+    case e_Genbank:
+    case e_Embl:
+    case e_Ddbj:
+    case e_Tpg:
+    case e_Tpe:
+    case e_Tpd:                 return 10;
+
+    // Second group of mutually exclusive ids, any order can be used.
+    case e_Gpipe:
+    case e_Named_annot_track:
+    case e_Prf:                 return 20;
+    case e_Patent:              return 50;
+
+    // "local" < "general" < "gi"
+    case e_Local:               return 50;
+    case e_General:             return 60;
+    case e_Gi:                  return PreferAccessionOverGi() ? kMaxScore + 1 : 70;
+
+    // All other ids rank just above "not-set" except the obsolete ones listed below.
+    case e_not_set:             return 100;
+
+    // Obsolete ids, lowest rank, any order is OK.
+    case e_Giim:
+    case e_Gibbmt:
+    case e_Gibbsq:              return 1000;
+
+    // All other ids should go just above "not-set".
+    default:                    return 90;
     }
 }
 
