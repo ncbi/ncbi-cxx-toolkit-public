@@ -1861,6 +1861,8 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 
         if (reset) {
             m_Timing->Reset();
+            m_Counters.Reset();
+
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->SendOk(nullptr, 0, true);
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
