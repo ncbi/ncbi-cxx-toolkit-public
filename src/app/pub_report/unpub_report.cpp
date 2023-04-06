@@ -342,11 +342,11 @@ static void CollectDataGen(const CCit_gen& cit, CPubData& data)
 
 static void CollectDataArt(const CCit_art& cit, CPubData& data)
 {
-    _ASSERT(cit.IsSetFrom() && cit.GetFrom().IsJournal() && "cit should be a journal");
+    NCBI_ASSERT(cit.IsSetFrom() && cit.GetFrom().IsJournal(), "cit should be a journal");
 
     const CCit_jour& from_journal = cit.GetFrom().GetJournal();
 
-    _ASSERT(from_journal.IsSetImp() && "Imprint should be set");
+    NCBI_ASSERT(from_journal.IsSetImp(), "Imprint should be set");
     const CImprint& imprint = from_journal.GetImp();
 
     if (cit.IsSetAuthors()) {
@@ -854,7 +854,7 @@ static string authors_cmp_result_label[] = {
 
 static string GetAuthorsCmpResultStr(AuthorNameMatch res)
 {
-    _ASSERT(res < eLastValue && "Invalid res value");
+    NCBI_ASSERT(res < eLastValue, "Invalid res value");
     return authors_cmp_result_label[res];
 }
 
@@ -1046,7 +1046,8 @@ void CUnpublishedReport::CompleteReport()
         CRef<CPubmed_entry> pubmed_entry;
         TEntrezId     pmid = RetrievePMid(*pub, pubmed_entry);
         if (pmid != ZERO_ENTREZ_ID) {
-            _ASSERT(pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit() && "MedEntry and MedEntry.Cit should be present at this point");
+            NCBI_ASSERT(pubmed_entry->IsSetMedent() && pubmed_entry->GetMedent().IsSetCit(),
+                        "MedEntry and MedEntry.Cit should be present at this point");
             ReportOnePub(m_out, pubmed_entry->GetMedent().GetCit(), *pub, pmid);
         }
     }
