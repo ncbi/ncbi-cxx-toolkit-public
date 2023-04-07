@@ -343,7 +343,6 @@ static void CollectDataGen(const CCit_gen& cit, CPubData& data)
 static void CollectDataArt(const CCit_art& cit, CPubData& data)
 {
     NCBI_ASSERT(cit.IsSetFrom() && cit.GetFrom().IsJournal(), "cit should be a journal");
-
     const CCit_jour& from_journal = cit.GetFrom().GetJournal();
 
     NCBI_ASSERT(from_journal.IsSetImp(), "Imprint should be set");
@@ -745,13 +744,36 @@ static TEntrezId ConvertPMCtoPMID(TEntrezId pmc)
     return pmid;
 }
 
+static void NormalizeTitle(string& s)
+{
+    for (char& c : s) {
+        switch (c) {
+        case '.':
+        case '"':
+        case '(':
+        case ')':
+        case '[':
+        case ']':
+        case ':':
+            c = ' ';
+            break;
+        default:
+            if (isupper(c)) {
+                c = tolower(c);
+            }
+            break;
+        }
+    }
+}
+
 TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CRef<CPubmed_entry>& pubmed_entry) const
 {
-    CEutilsClient& eutils       = GetEUtils();
-    CHydraSearch&  hydra_search = GetHydraSearch();
+    CEutilsClient& eutils = GetEUtils();
 
-    // TODO: look at MLA search
-    string term = NStr::Join(data.GetSeqIds(), " AND ");
+    // TODO: CEUtilsUpdater::CitMatch()
+    string title = data.GetTitle();
+    NormalizeTitle(title);
+    string term = title + "[title]";
 
     TEntrezId pmid = ZERO_ENTREZ_ID;
 
@@ -770,7 +792,7 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data, CRef<CPubmed_en
     }
 
     if (pmid == ZERO_ENTREZ_ID) {
-        pmid = DoHydraSearch(hydra_search, data);
+        pmid = DoHydraSearch(GetHydraSearch(), data);
     }
 
     if (pmid != ZERO_ENTREZ_ID) {
