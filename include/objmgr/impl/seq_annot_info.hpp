@@ -155,6 +155,7 @@ public:
     void ReorderFtable(const vector<CSeq_feat_Handle>& feats);
 
     void Update(TAnnotIndex index);
+    void UpdateAll();
 
     void AddFeatId(TAnnotIndex index,
                    const CObject_id& id,

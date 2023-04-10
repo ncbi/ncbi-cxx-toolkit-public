@@ -456,5 +456,12 @@ void CSeq_annot_EditHandle::ReorderFtable(const vector<CSeq_feat_Handle>& feats)
 }
 
 
+void CSeq_annot_EditHandle::Update() const
+{
+    x_GetScopeImpl().x_ClearAnnotCache();
+    x_GetInfo().UpdateAll();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
