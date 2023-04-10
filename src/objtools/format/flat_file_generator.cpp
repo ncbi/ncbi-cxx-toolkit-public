@@ -619,9 +619,20 @@ void CFlatFileGenerator::Generate
  CNcbiOstream* m_Ou
  )
 {
+    // useSeqEntryIndexing now turned ON by default
+    useSeqEntryIndexing = true;
+
+    /*
     // useSeqEntryIndexing argument also set by relevant flags in CFlatFileConfig
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
         useSeqEntryIndexing = true;
+    }
+    */
+
+    // Setting the -custom 1048576 bit flag turns OFF default indexing
+    if ( m_Ctx->GetConfig().DisableDefaultIndex() ) {
+        useSeqEntryIndexing = false;
+        m_Ctx->SetConfig().SetUseSeqEntryIndexer(false);
     }
 
     if (useSeqEntryIndexing) {

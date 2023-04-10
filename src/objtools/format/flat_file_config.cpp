@@ -599,7 +599,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "DisableReferenceCache (65536) - disable reference cache\n"
          DENT "ShowDeflineModifiers (131072) - show definition line modifiers\n"
          DENT "DoNotUseAutoDef      (262144) - suppress automatic defline generator\n"
-         DENT "OldTpaDisplay        (542288) - old TPA display with PRIMARY block",
+         DENT "OldTpaDisplay        (542288) - old TPA display with PRIMARY block\n"
+         DENT "DisableDefaultIndex (1048576) - disable SeqEntry indexer",
 
                                  CArgDescriptions::eString, "");
 #undef DENT
@@ -685,7 +686,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  CArgDescriptions::eInteger, "1");
 
          // test faster looping
-         arg_desc->AddFlag("faster", "Test faster internal looping");
+         arg_desc->AddFlag("faster", "Use faster internal looping");
+         arg_desc->AddFlag("slower", "Disable faster internal looping");
      }}
 }
 
@@ -936,6 +938,7 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
                     DOFLG(DisableReferenceCache),
                     DOFLG(ShowDeflineModifiers),
                     DOFLG(DoNotUseAutoDef),
+                    DOFLG(DisableDefaultIndex),
 #undef DOFLG
                 };
 
@@ -971,6 +974,7 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
             DOFLG(DisableReferenceCache),
             DOFLG(ShowDeflineModifiers),
             DOFLG(DoNotUseAutoDef),
+            DOFLG(DisableDefaultIndex),
 #undef DOFLG
         };
         static const size_t kArraySize = ArraySize(kDescrTable);

@@ -1104,7 +1104,11 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
         }
     }
 
-    if (args["faster"] || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web") {
+    bool useFaster = true;
+    if (args["slower"]) {
+    	useFaster = false;
+    }
+    if (useFaster || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web") {
 
         try {
             x_FFGenerate(seh, context);
