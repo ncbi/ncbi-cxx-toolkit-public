@@ -2033,7 +2033,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         m_AirrData[*iter] = NcbiEmptyString;
     }
  
-    if (align_result && !align_result.Empty() && align_result->IsSet() && align_result->CanGet()) {
+    if (align_result && !align_result.Empty() && align_result->IsSet() && align_result->CanGet() && !(align_result->Get().empty())) {
         string query_id = NcbiEmptyString;
         
         const list<CRef<CSeq_id> > query_seqid = GetQueryId();
