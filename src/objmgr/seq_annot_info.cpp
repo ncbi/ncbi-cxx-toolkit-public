@@ -1631,6 +1631,20 @@ void CSeq_annot_Info::Update(TAnnotIndex index)
 }
 
 
+void CSeq_annot_Info::UpdateAll()
+{
+    if ( m_SNP_Info ) {
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "CSeq_annot_Handle: cannot update index of SNP table");
+    }
+    if ( !x_DirtyAnnotIndex() ) {
+        x_UnmapAnnotObjects(GetTSE_Info());
+        m_ObjectIndex.Clear();
+        x_SetDirtyAnnotIndex();
+    }
+}
+
+
 void CSeq_annot_Info::Remove(TAnnotIndex index)
 {
     _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
