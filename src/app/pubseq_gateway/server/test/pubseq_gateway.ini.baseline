@@ -134,6 +134,15 @@ enabled=true
 
 [OSG_PROCESSOR]
 enabled=true
+enabled_snp=false
+enabled_wgs=false
+
+[snp_processor]
+enabled=true
+
+[wgs_processor]
+enabled=true
+
 
 [HEALTH]
 test_seq_id=RuBBiSH
