@@ -124,18 +124,14 @@ if (WIN32)
     set(NCBI_COMPILER_MSVC 1)
     set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
     set(NCBI_COMPILER_VERSION ${MSVC_VERSION})
-    set(NCBI_COMPILER_ALT "VS_")
-    if ("${NCBI_COMPILER_VERSION}" LESS "1900")
-        set(NCBI_COMPILER_ALT ${NCBI_COMPILER_ALT}2015)
-    elseif ("${NCBI_COMPILER_VERSION}" LESS "1924")
-        set(NCBI_COMPILER_ALT ${NCBI_COMPILER_ALT}2017)
-    else()
-        set(NCBI_COMPILER_ALT ${NCBI_COMPILER_ALT}2019)
-    endif()
+
+    set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
+    set(NCBI_DEFAULT_RESOURCES "${NCBI_TREE_CMAKECFG}/ncbi.rc")
+    set(NCBI_DEFAULT_DLLENTRY  "${NCBI_TREE_CMAKECFG}/dll_main.cpp")
+    set(NCBI_DEFAULT_GUIENTRY  "${NCBI_TREE_CMAKECFG}/winmain.cpp")
 
     list(LENGTH CMAKE_CONFIGURATION_TYPES _count)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1" AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
-        set(NCBI_CONFIGURATION_RUNTIMELIB "")
         if (BUILD_SHARED_LIBS)
             set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
         else()
@@ -146,16 +142,6 @@ if (WIN32)
             endif()
         endif()
         set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
-        foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
-            string(TOUPPER ${_cfg} _cfg)
-            set(CMAKE_CXX_FLAGS_${_cfg} "")
-            set(CMAKE_C_FLAGS_${_cfg} "")
-            set(CMAKE_EXE_LINKER_FLAGS_${_cfg} "")
-            set(CMAKE_SHARED_LINKER_FLAGS_${_cfg} "")
-        endforeach()
-
-        set(NCBI_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES})
-        list(LENGTH NCBI_CONFIGURATION_TYPES NCBI_CONFIGURATION_TYPES_COUNT)
 
         if(CfgProps IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 
@@ -219,26 +205,6 @@ if (WIN32)
             set(CMAKE_EXE_LINKER_FLAGS "/DEBUG ${CMAKE_EXE_LINKER_FLAGS}")
             set(CMAKE_SHARED_LINKER_FLAGS "/DEBUG ${CMAKE_SHARED_LINKER_FLAGS}")
         endif()
-
-    else()
-        if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
-            set(NCBI_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
-        elseif (NOT "${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
-            set(NCBI_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES})
-        endif()
-        list(LENGTH NCBI_CONFIGURATION_TYPES NCBI_CONFIGURATION_TYPES_COUNT)
-        if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
-            NCBI_util_Cfg_ToStd(${NCBI_CONFIGURATION_TYPES} STD_BUILD_TYPE)
-        else()
-            set(STD_BUILD_TYPE "Multiple")
-        endif()
-        if ("${CMAKE_MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreaded" OR "${CMAKE_MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreadedDebug"
-            OR    "${MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreaded" OR       "${MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreadedDebug")
-            set(NCBI_CONFIGURATION_RUNTIMELIB "MT")
-        else()
-            set(NCBI_CONFIGURATION_RUNTIMELIB "DLL")
-        endif()
-		set(NCBI_DEFAULT_USEPCH OFF)
     endif()
 
     if(DEFINED NCBI_PTBCFG_MAPPED_SOURCE)
@@ -264,10 +230,25 @@ if (WIN32)
 			set(NCBI_DEFAULT_USEPCH OFF)
 		endif()
     endif()
-    set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
-    set(NCBI_DEFAULT_RESOURCES "${NCBI_TREE_CMAKECFG}/ncbi.rc")
-    set(NCBI_DEFAULT_DLLENTRY  "${NCBI_TREE_CMAKECFG}/dll_main.cpp")
-    set(NCBI_DEFAULT_GUIENTRY  "${NCBI_TREE_CMAKECFG}/winmain.cpp")
+
+    if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
+        set(NCBI_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
+    elseif (NOT "${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
+        set(NCBI_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES})
+    endif()
+    list(LENGTH NCBI_CONFIGURATION_TYPES NCBI_CONFIGURATION_TYPES_COUNT)
+    if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
+        if ("${CMAKE_MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreaded" OR "${CMAKE_MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreadedDebug"
+            OR    "${MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreaded" OR       "${MSVC_RUNTIME_LIBRARY}" STREQUAL "MultiThreadedDebug")
+            set(NCBI_CONFIGURATION_RUNTIMELIB "MT")
+        else()
+            set(NCBI_CONFIGURATION_RUNTIMELIB "DLL")
+        endif()
+        NCBI_util_Cfg_ToStd(${NCBI_CONFIGURATION_TYPES} STD_BUILD_TYPE)
+    else()
+        set(NCBI_CONFIGURATION_RUNTIMELIB "")
+        set(STD_BUILD_TYPE "Multiple")
+    endif()
 
     return()
 
@@ -287,7 +268,6 @@ elseif (XCODE)
     list(GET _tmp 1 _v2)
     list(GET _tmp 2 _v3)
     set(NCBI_COMPILER_VERSION ${_v1}${_v2}${_v3})
-    set(NCBI_COMPILER_ALT ${NCBI_COMPILER})
 
     list(LENGTH CMAKE_CONFIGURATION_TYPES _count)
     if ("${CMAKE_BUILD_TYPE}" STREQUAL "" AND NOT "${_count}" EQUAL "1" AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
@@ -298,9 +278,6 @@ elseif (XCODE)
             set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
         endif()
         set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
-        set(NCBI_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES})
-        list(LENGTH NCBI_CONFIGURATION_TYPES NCBI_CONFIGURATION_TYPES_COUNT)
-        set(NCBI_CONFIGURATION_RUNTIMELIB "")
 
         set(CMAKE_CXX_FLAGS_DEBUGDLL   "-g -gdwarf -ggdb3 -O0 -D_DEBUG")
         set(CMAKE_CXX_FLAGS_DEBUGMT    "-g -gdwarf -ggdb3 -O0 -D_DEBUG")
@@ -313,19 +290,6 @@ elseif (XCODE)
         set(CMAKE_C_FLAGS_RELEASEMT  "-Os -DNDEBUG")
 
         add_link_options(-stdlib=libc++ -framework CoreServices)
-    else()
-        if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
-            set(NCBI_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
-        elseif (NOT "${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
-            set(NCBI_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES})
-        endif()
-        list(LENGTH NCBI_CONFIGURATION_TYPES NCBI_CONFIGURATION_TYPES_COUNT)
-        if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
-            NCBI_util_Cfg_ToStd(${NCBI_CONFIGURATION_TYPES} STD_BUILD_TYPE)
-        else()
-            set(STD_BUILD_TYPE "Multiple")
-        endif()
-        set(NCBI_CONFIGURATION_RUNTIMELIB "DLL")
     endif()
 
     add_compile_definitions(NCBI_XCODE_BUILD _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64)
@@ -338,6 +302,19 @@ elseif (XCODE)
 
     set(NCBI_DEFAULT_USEPCH ON)
 
+    if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
+        set(NCBI_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE})
+    elseif (NOT "${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
+        set(NCBI_CONFIGURATION_TYPES ${CMAKE_CONFIGURATION_TYPES})
+    endif()
+    list(LENGTH NCBI_CONFIGURATION_TYPES NCBI_CONFIGURATION_TYPES_COUNT)
+    if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
+        set(NCBI_CONFIGURATION_RUNTIMELIB "DLL")
+        NCBI_util_Cfg_ToStd(${NCBI_CONFIGURATION_TYPES} STD_BUILD_TYPE)
+    else()
+        set(STD_BUILD_TYPE "Multiple")
+    endif()
+
     return()
 endif()
 
@@ -346,7 +323,40 @@ endif()
 include(CheckCXXCompilerFlag)
 include(CheckCCompilerFlag)
 include(CheckLinkerFlag)
+option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
+option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
 
+macro(set_cxx_compiler_flag_optional)
+    foreach (var ${ARGN})
+        check_cxx_compiler_flag("${var}" _COMPILER_SUPPORTS_FLAG)
+        if (_COMPILER_SUPPORTS_FLAG)
+            message(STATUS "The compiler ${CMAKE_CXX_COMPILER} supports ${var}")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${var}")
+            break()
+        endif()
+    endforeach()
+    if (_COMPILER_SUPPORTS_FLAG)
+    else()
+        message(WARNING "The compiler ${CMAKE_CXX_COMPILER} has no support for any of ${ARGN}")
+    endif()
+endmacro()
+
+macro(set_c_compiler_flag_optional)
+    foreach (var ${ARGN})
+        check_c_compiler_flag(${var} _COMPILER_SUPPORTS_FLAG)
+        if (_COMPILER_SUPPORTS_FLAG)
+            message(STATUS "The compiler ${CMAKE_C_COMPILER} supports ${var}")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${var}")
+            break()
+        endif()
+    endforeach()
+    if (_COMPILER_SUPPORTS_FLAG)
+    else()
+        message(WARNING "The compiler ${CMAKE_C_COMPILER} has no support for any of ${ARGN}")
+    endif()
+endmacro()
+
+#----------------------------------------------------------------------------
 set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
 set(_tmp ${CMAKE_CXX_COMPILER_VERSION})
 string(REPLACE "." ";" _tmp "${_tmp}")
@@ -404,53 +414,27 @@ if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     endif()
 endif()
 
-message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")
-message(STATUS "NCBI Compiler: ${NCBI_COMPILER}")
-message(STATUS "NCBI Compiler Version: ${NCBI_COMPILER_VERSION}")
-message(STATUS "NCBI Compiler Version Tag: ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${CMAKE_BUILD_TYPE}")
-
-#
 # Threading libraries
 find_package(Threads REQUIRED)
-## message("CMAKE_THREAD_LIBS_INIT: ${CMAKE_THREAD_LIBS_INIT}")
-## message("CMAKE_USE_SPROC_INIT: ${CMAKE_USE_SPROC_INIT}")
-## message("CMAKE_USE_WIN32_THREADS_INIT: ${CMAKE_USE_WIN32_THREADS_INIT}")
-## message("CMAKE_USE_PTHREADS_INIT: ${CMAKE_USE_PTHREADS_INIT}")
-## message("CMAKE_HP_PTHREADS_INIT: ${CMAKE_HP_PTHREADS_INIT}")
 if (CMAKE_USE_PTHREADS_INIT)
     add_compile_definitions(_MT _REENTRANT _THREAD_SAFE)
     set(NCBI_POSIX_THREADS 1)
 endif (CMAKE_USE_PTHREADS_INIT)
 
-#
 # OpenMP
 if (NOT APPLE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
     AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
     AND NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-find_package(OpenMP)
-## message("OPENMP_FOUND: ${OPENMP_FOUND}")
-## message("OpenMP_CXX_SPEC_DATE: ${OpenMP_CXX_SPEC_DATE}")
-if (OPENMP_FOUND)
-    add_compile_options(${OpenMP_CXX_FLAGS})
-    add_link_options(${OpenMP_CXX_FLAGS})
-endif (OPENMP_FOUND)
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+        add_compile_options(${OpenMP_CXX_FLAGS})
+        add_link_options(${OpenMP_CXX_FLAGS})
+    endif (OPENMP_FOUND)
 endif()
 
 if(NCBI_PTBCFG_PACKAGED)
     return()
 endif()
-
-# pass these back for ccache to pick up
-set(ENV{CCACHE_UMASK} 002)
-set(ENV{CCACHE_BASEDIR} ${top_src_dir})
-#
-# See:
-# http://stackoverflow.com/questions/32752446/using-compiler-prefix-commands-with-cmake-distcc-ccache
-#
-# There are better ways to do this
-option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
-option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
 
 #----------------------------------------------------------------------------
 # flags may be set by configuration scripts
@@ -550,36 +534,6 @@ if (CMAKE_COMPILER_IS_GNUCC)
     add_link_options(-Wl,--as-needed)
 endif()
 
-macro(set_cxx_compiler_flag_optional)
-    foreach (var ${ARGN})
-        check_cxx_compiler_flag("${var}" _COMPILER_SUPPORTS_FLAG)
-        if (_COMPILER_SUPPORTS_FLAG)
-            message(STATUS "The compiler ${CMAKE_CXX_COMPILER} supports ${var}")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${var}")
-            break()
-        endif()
-    endforeach()
-    if (_COMPILER_SUPPORTS_FLAG)
-    else()
-        message(WARNING "The compiler ${CMAKE_CXX_COMPILER} has no support for any of ${ARGN}")
-    endif()
-endmacro()
-
-macro(set_c_compiler_flag_optional)
-    foreach (var ${ARGN})
-        check_c_compiler_flag(${var} _COMPILER_SUPPORTS_FLAG)
-        if (_COMPILER_SUPPORTS_FLAG)
-            message(STATUS "The compiler ${CMAKE_C_COMPILER} supports ${var}")
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${var}")
-            break()
-        endif()
-    endforeach()
-    if (_COMPILER_SUPPORTS_FLAG)
-    else()
-        message(WARNING "The compiler ${CMAKE_C_COMPILER} has no support for any of ${ARGN}")
-    endif()
-endmacro()
-
 if(NOT NCBI_PTBCFG_PACKAGING
     AND "${HOST_CPU}" MATCHES "x86"
     AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
@@ -587,6 +541,50 @@ if(NOT NCBI_PTBCFG_PACKAGING
 	set_c_compiler_flag_optional  ("-msse4.2")
 endif()
 
+#set(CMAKE_SHARED_LINKER_FLAGS_DYNAMIC "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+set(CMAKE_SHARED_LINKER_FLAGS_RDYNAMIC "${CMAKE_SHARED_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS_ALLOW_UNDEFINED "${CMAKE_SHARED_LINKER_FLAGS}")
+if (NOT APPLE)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+endif ()
+
+if (NOT WIN32 AND NOT APPLE AND NOT CYGWIN)
+#this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
+endif()
+
+#----------------------------------------------------------------------------
+# RPATH
+
+if (NOT NCBI_PTBCFG_CUSTOMRPATH)
+# Establishing sane RPATH definitions
+# use, i.e. don't skip the full RPATH for the build tree
+    SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+# when building, use the install RPATH already
+    SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+    if (APPLE)
+        set(CMAKE_INSTALL_RPATH "@executable_path/../${NCBI_DIRNAME_SHARED}")
+    else()
+        set(CMAKE_INSTALL_RPATH "$ORIGIN/../${NCBI_DIRNAME_SHARED}")
+    endif()
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+    if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+        set(CMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH TRUE)
+    endif()
+endif()
+
+#----------------------------------------------------------------------------
+# CCACHE, DISTCC
+
+# pass these back for ccache to pick up
+set(ENV{CCACHE_UMASK} 002)
+set(ENV{CCACHE_BASEDIR} ${top_src_dir})
 
 find_program(CCACHE_EXECUTABLE ccache
              PATHS /usr/local/ccache/4.4/bin /usr/local/ccache/3.2.5/bin/)
@@ -627,6 +625,9 @@ if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
     endif()
 endif()
 
+# See:
+# http://stackoverflow.com/questions/32752446/using-compiler-prefix-commands-with-cmake-distcc-ccache
+
 set(NCBI_COMPILER_WRAPPER "")
 if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE AND CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
     set(NCBI_COMPILER_WRAPPER "CCACHE_BASEDIR=${top_src_dir} CCACHE_PREFIX=${DISTCC_EXECUTABLE} ${CCACHE_EXECUTABLE} ${NCBI_COMPILER_WRAPPER}")
@@ -634,58 +635,9 @@ elseif (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE)
     set(NCBI_COMPILER_WRAPPER "${DISTCC_EXECUTABLE} ${NCBI_COMPILER_WRAPPER}")
 elseif(CMAKE_USE_CCACHE AND CCACHE_EXECUTABLE)
     set(NCBI_COMPILER_WRAPPER "CCACHE_BASEDIR=${top_src_dir} ${CCACHE_EXECUTABLE} ${NCBI_COMPILER_WRAPPER}")
-    # pass these back for ccache to pick up
-    set(ENV{CCACHE_BASEDIR} ${top_src_dir})
-    message(STATUS "Enabling ccache: ${CCACHE_EXECUTABLE}")
-    message(STATUS "  ccache basedir: ${top_src_dir}")
 endif()
-
+message(STATUS "NCBI_COMPILER_WRAPPER = ${NCBI_COMPILER_WRAPPER}")
 set(CMAKE_CXX_COMPILE_OBJECT
     "${NCBI_COMPILER_WRAPPER} ${CMAKE_CXX_COMPILE_OBJECT}")
-
 set(CMAKE_C_COMPILE_OBJECT
     "${NCBI_COMPILER_WRAPPER} ${CMAKE_C_COMPILE_OBJECT}")
-
-message(STATUS "NCBI_COMPILER_WRAPPER = ${NCBI_COMPILER_WRAPPER}")
-
-
-#
-# NOTE:
-# uncomment this for strict mode for library compilation
-#
-#set(CMAKE_SHARED_LINKER_FLAGS_DYNAMIC "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
-
-set(CMAKE_SHARED_LINKER_FLAGS_RDYNAMIC "${CMAKE_SHARED_LINKER_FLAGS}") # for smooth transition, please don't use
-set(CMAKE_SHARED_LINKER_FLAGS_ALLOW_UNDEFINED "${CMAKE_SHARED_LINKER_FLAGS}")
-if (NOT APPLE)
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
-endif ()
-
-
-if (NOT WIN32 AND NOT APPLE AND NOT CYGWIN)
-#this add RUNPATH to binaries (RPATH is already there anyway), which makes it more like binaries built by C++ Toolkit
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
-endif()
-
-if (NOT NCBI_PTBCFG_CUSTOMRPATH)
-# Establishing sane RPATH definitions
-# use, i.e. don't skip the full RPATH for the build tree
-    SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-
-# when building, use the install RPATH already
-    SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-
-    if (APPLE)
-        set(CMAKE_INSTALL_RPATH "@executable_path/../${NCBI_DIRNAME_SHARED}")
-    else()
-        set(CMAKE_INSTALL_RPATH "$ORIGIN/../${NCBI_DIRNAME_SHARED}")
-    endif()
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-    SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-    if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
-        set(CMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH TRUE)
-    endif()
-endif()
