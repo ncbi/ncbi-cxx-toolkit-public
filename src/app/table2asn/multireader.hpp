@@ -3,6 +3,8 @@
 
 #include <util/format_guess.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbiutil.hpp>
+#include <shared_mutex>
 
 BEGIN_NCBI_SCOPE
 
@@ -39,24 +41,27 @@ public:
     ~CMultiReader();
 
     using TAnnots = list<CRef<CSeq_annot>>;
+    using TAnnotMap = map<string, list<CRef<CSeq_annot>>>;
 
     static const set<TTypeInfo> kSupportedTypes;
 
     void LoadTemplate(const string& ifname);
     void LoadGFF3Fasta(istream& in, TAnnots& annots);
-    void AddAnnots(TAnnots& annots, CScope& scope) const;
-    bool LoadAnnots(const string& filename, TAnnots& annots);
+    void LoadGFF3Fasta(istream& in, TAnnotMap& annotMap);
+    void AddAnnots(TAnnotMap& annotMap, set<string>& matchedAnnots, CBioseq& bioseq) const;
+
+    void LoadAnnotMap(const string& filename, TAnnotMap& annotMap);
+    void AddAnnotToMap(CRef<CSeq_annot> pAnnot, TAnnotMap& annotMap);
     void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc) const;
     void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source) const;
     void WriteObject(const CSerialObject&, ostream&);
     CRef<objects::CSeq_entry> ReadAlignment(CNcbiIstream& instream, const CArgs& args);
     CRef<CSerialObject> ReadNextEntry();
-    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots);
+    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnotMap& annotMap);
     CRef<CSerialObject> FetchEntry(const CFormatGuess::EFormat& format, const string& objectType,
-            unique_ptr<CNcbiIstream>& pIstr, TAnnots& annots);
+            unique_ptr<CNcbiIstream>& pIstr, TAnnotMap& annotMap);
     static
     void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
-
 protected:
 private:
     void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source) const;
@@ -73,12 +78,15 @@ private:
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
     void x_PostProcessAnnots(TAnnots& annots) const;
     bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
-    bool xFixupAnnot(objects::CScope&, CRef<objects::CSeq_annot>&) const;
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename) const;
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream) const;
     CFormatGuess::EFormat xInputGetFormat(CNcbiIstream&, CFileContentInfo* = nullptr) const;
     CFormatGuess::EFormat xAnnotGetFormat(CNcbiIstream&) const;
+
+    bool x_HasMatch(bool matchVersions, 
+        const string& idString, TAnnotMap& annotMap, set<string>& matchedAnnots, list<CRef<CSeq_annot>>& annots) const;
+    bool x_HasExactMatch(const string& idString, TAnnotMap& annotMap, set<string>& matchedAnnots, list<CRef<CSeq_annot>>& annots) const;
 
     int  m_iFlags;
     string m_AnnotName;
@@ -87,7 +95,10 @@ private:
     unique_ptr<CObjectIStream> m_obj_stream;
     shared_ptr<objects::CGff3LocationMerger> m_gff3_merger;
     bool mAtSequenceData;
+    mutable shared_mutex m_Mutex;
 };
+
+void g_ModifySeqIds(CSeq_annot& annot, const CSeq_id& match, CRef<CSeq_id> new_id);
 
 END_NCBI_SCOPE
 
