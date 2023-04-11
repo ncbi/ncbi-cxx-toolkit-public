@@ -794,6 +794,7 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_
                 return false;
         } else {
             auto topobject = x_ProcessTraditionally(process.GetReader());
+            m_Out->ResetLocalHooks();
             *m_Out << *topobject;
         }
 
