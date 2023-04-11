@@ -61,6 +61,10 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "AcceptFailure", "TCP socket accept failure",
             "The number of times a TCP accept failed");
+    m_Counters[ePSGS_OpTooLong] =
+        new SCounterInfo(
+            "OperationTooLong", "Operation took too long",
+            "The number of times an operation (like a backend retrieval) took longer tnah a configurable time");
     m_Counters[ePSGS_InsufficientArgs] =
         new SCounterInfo(
             "InsufficientArgumentsCount", "Insufficient arguments counter",

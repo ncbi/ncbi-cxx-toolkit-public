@@ -96,6 +96,7 @@ class CPSGSCounters
             ePSGS_NonProtocolRequests,
             ePSGS_NoProcessorInstantiated,
             ePSGS_AcceptFailure,
+            ePSGS_OpTooLong,
 
             // Request stop statuses
             ePSGS_100,

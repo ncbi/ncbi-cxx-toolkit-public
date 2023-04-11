@@ -1038,6 +1038,9 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
     if (m_LogTimingThresholdMks > 0) {
         if (mks > m_LogTimingThresholdMks) {
             if (processor != nullptr) {
+                auto        app = CPubseqGatewayApp::GetInstance();
+                app->GetCounters().Increment(CPSGSCounters::ePSGS_OpTooLong);
+
                 auto    request = processor->GetRequest();
                 if (request->GetRequestContext().NotNull()) {
                     CRequestContextResetter     context_resetter;
