@@ -220,9 +220,18 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
     THugeFileWriteContext context;
     CHugeFastaReader fasta_reader(m_context);
     if (hugeFile.m_format == CFormatGuess::eGff3) {
-        list<CRef<CSeq_annot>> annots;
-        m_reader->LoadGFF3Fasta(*hugeFile.m_stream, annots);
-        m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
+        TAnnotMap annotMap;
+        m_reader->LoadGFF3Fasta(*hugeFile.m_stream, annotMap);
+        for (auto entry : annotMap) {
+            auto it = m_secret_files->m_AnnotMap.find(entry.first);    
+            if (it == m_secret_files->m_AnnotMap.end()) {
+                m_secret_files->m_AnnotMap.emplace(entry.first, entry.second);
+            }
+            else {
+                it->second.splice(it->second.end(), entry.second);
+            }
+        }
+
         fasta_reader.Open(&hugeFile, m_context.m_logger);
         context.source = &fasta_reader;
         context.is_fasta = true;

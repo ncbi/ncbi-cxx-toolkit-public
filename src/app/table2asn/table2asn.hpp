@@ -37,6 +37,7 @@
 
 #include "table2asn_context.hpp"
 #include "async_token.hpp"
+#include "multireader.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -72,6 +73,8 @@ public:
         return Run();
     }
 
+    using TAnnotMap = CMultiReader::TAnnotMap;
+
 private:
 
     static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
@@ -81,7 +84,7 @@ private:
     void ProcessOneFile(CNcbiOstream* output);
     void xProcessOneFile(CFormatGuess::EFormat format, 
             CRef<CSerialObject> pInputObject, 
-            list<CRef<CSeq_annot>>& annots,
+            TAnnotMap& annotMap,
             CNcbiOstream* output);
     void ProcessHugeFile(edit::CHugeFile& hugeFile, CNcbiOstream* output);
     void ProcessOneFile(CFormatGuess::EFormat format, const string& contentType, unique_ptr<CNcbiIstream>& pIstr, CNcbiOstream* output);
@@ -104,8 +107,8 @@ private:
     void LoadDSCFile(const string& pathname);
     void LoadAdditionalFiles();
     void LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments);
-    void LoadAnnots(const string& pathname, list<CRef<CSeq_annot>>& annots);
-    void AddAnnots(CScope& scope);
+    void LoadAnnotMap(const string& pathname, TAnnotMap& annotMap);
+    void AddAnnots(CSeq_entry& entry);
     void SetupAndOpenDiagnosticStreams();
     void SetupAndOpenDataStreams();
     void CloseDiagnosticStreams();
@@ -118,7 +121,8 @@ private:
     struct TAdditionalFiles
     {
         unique_ptr<CTable2AsnStructuredCommentsReader> m_struct_comments;
-        list<CRef<CSeq_annot>> m_Annots;
+        CMultiReader::TAnnotMap m_AnnotMap;
+        set<string> m_MatchedAnnots;
         CRef<CSeq_entry> m_replacement_proteins;
         CRef<CSeq_entry> m_possible_proteins;
         CRef<CSeq_descr> m_descriptors;

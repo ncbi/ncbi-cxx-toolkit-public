@@ -1442,35 +1442,43 @@ void CTbl2AsnApp::ProcessOneFile(CFormatGuess::EFormat format,
         unique_ptr<CNcbiIstream>& pIstr,
         CNcbiOstream* output)
 {
-    CMultiReader::TAnnots annots;
+    CMultiReader::TAnnotMap annotMap;
     CRef<CSerialObject> pInputObject =
         m_reader->FetchEntry(format,
                              contentType,
                              pIstr,
-                             annots);
+                             annotMap);
 
-    xProcessOneFile(format, pInputObject, annots, output);
+    xProcessOneFile(format, pInputObject, annotMap, output);
 }
 
 
 void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
 {
     CRef<CSerialObject> input_obj;
-    CMultiReader::TAnnots annots;
-    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annots);
-    xProcessOneFile(format, input_obj, annots, output);
+    CMultiReader::TAnnotMap annotMap;
+    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annotMap);
+    xProcessOneFile(format, input_obj, annotMap, output);
 }
 
 void CTbl2AsnApp::xProcessOneFile(
         CFormatGuess::EFormat format,
         CRef<CSerialObject> input_obj,
-        CMultiReader::TAnnots& annots,
+        TAnnotMap& annotMap,
         CNcbiOstream* output)
 {
 
-    if (!annots.empty()) {
-       m_secret_files->m_Annots.splice(m_secret_files->m_Annots.end(), annots);
-       annots.clear();
+    if (!annotMap.empty()) {
+        for (auto entry : annotMap) {
+            auto it = m_secret_files->m_AnnotMap.find(entry.first);    
+            if (it == m_secret_files->m_AnnotMap.end()) {
+                m_secret_files->m_AnnotMap.emplace(entry.first, entry.second);
+            }
+            else {
+                it->second.splice(it->second.end(), entry.second);
+            }
+        }
+        annotMap.clear(); 
     }
     do
     {
@@ -1618,12 +1626,9 @@ void CTbl2AsnApp::xProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& 
             m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
     }
 
-    if (!m_global_files.m_Annots.empty() || !m_secret_files->m_Annots.empty())
+    if (!m_global_files.m_AnnotMap.empty() || !m_secret_files->m_AnnotMap.empty())
     {
-        CScope scope(*m_context.m_ObjMgr);
-        scope.AddTopLevelSeqEntry(result);
-
-        AddAnnots(scope);
+        AddAnnots(result);
     }
 }
 
@@ -1653,14 +1658,13 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, TAsyncToken& 
             m_reader->ApplyDescriptors(*token.top_entry, *m_secret_files->m_descriptors);
     }
 
-    if (!m_global_files.m_Annots.empty() || !m_secret_files->m_Annots.empty())
+    if (!m_global_files.m_AnnotMap.empty() || !m_secret_files->m_AnnotMap.empty())
     {
-        CScope scope(*m_context.m_ObjMgr);
-        scope.AddTopLevelSeqEntry(*token.top_entry);
-
-        AddAnnots(scope);
+        AddAnnots(*token.top_entry);
     }
 }
+
+
 
 void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result) const
 {
@@ -1709,7 +1713,8 @@ void CTbl2AsnApp::LoadPRTFile(const string& pathname)
     m_secret_files->m_possible_proteins = m_secret_files->m_feature_table_reader->ReadProtein(*reader);
 }
 
-void CTbl2AsnApp::LoadAnnots(const string& pathname, CMultiReader::TAnnots& annots)
+
+void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
 {
     CFile file(pathname);
 
@@ -1727,14 +1732,29 @@ void CTbl2AsnApp::LoadAnnots(const string& pathname, CMultiReader::TAnnots& anno
         return;
     }
 
-    m_reader->LoadAnnots(pathname, annots);
+    m_reader->LoadAnnotMap(pathname, annotMap);
 }
 
-void CTbl2AsnApp::AddAnnots(CScope& scope)
+
+
+void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
 {
-    m_reader->AddAnnots(m_global_files.m_Annots, scope);
-    if (m_secret_files)
-        m_reader->AddAnnots(m_secret_files->m_Annots, scope);
+    if (entry.IsSeq()) {
+        if (entry.GetSeq().IsAa()) { // only nucleotide sequences
+            return;    
+        }
+        m_reader->AddAnnots(m_global_files.m_AnnotMap, m_global_files.m_MatchedAnnots, entry.SetSeq());
+        if (m_secret_files) {
+            m_reader->AddAnnots(m_secret_files->m_AnnotMap, m_secret_files->m_MatchedAnnots, entry.SetSeq());
+        }    
+    }
+    else if (entry.GetSet().IsSetSeq_set()) {
+        for (auto pSubEntry : entry.SetSet().SetSeq_set()) {
+            if (pSubEntry) {
+                AddAnnots(*pSubEntry);
+            }
+        }
+    }
 }
 
 void CTbl2AsnApp::LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments)
@@ -1784,20 +1804,23 @@ void CTbl2AsnApp::LoadAdditionalFiles()
     LoadCMTFile(m_context.m_single_structure_cmt, m_global_files.m_struct_comments);
     LoadCMTFile(name + ".cmt", m_secret_files->m_struct_comments);
 
-    if (!m_context.m_single_annot_file.empty() && m_global_files.m_Annots.empty())
-    { // load only once
-        LoadAnnots(m_context.m_single_annot_file, m_global_files.m_Annots);
-    }
-    else
+   // if (m_context.m_can_use_huge_files && !m_context.m_disable_huge_files) {
     {
-        for (auto suffix : {".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
-            LoadAnnots(name + suffix, m_secret_files->m_Annots);
+        if (!m_context.m_single_annot_file.empty() && m_global_files.m_AnnotMap.empty())
+        { // load only once
+            LoadAnnotMap(m_context.m_single_annot_file, m_global_files.m_AnnotMap);
         }
+        else
+        {
+            for (auto suffix : {".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
+                LoadAnnotMap(name + suffix, m_secret_files->m_AnnotMap);
+            }
 #ifdef THIS_IS_TRUNK_BUILD
-        for (auto suffix : {".gbf"}) {
-            LoadAnnots(name + suffix, m_secret_files->m_Annots);
-        }
+            for (auto suffix : {".gbf"}) {
+                LoadAnnotMap(name + suffix, m_secret_files->m_AnnotMap);
+            }
 #endif
+        }
     }
 }
 
