@@ -322,7 +322,6 @@ endif()
 # UNIX
 include(CheckCXXCompilerFlag)
 include(CheckCCompilerFlag)
-include(CheckLinkerFlag)
 option(CMAKE_USE_CCACHE "Use 'ccache' as a preprocessor" OFF)
 option(CMAKE_USE_DISTCC "Use 'distcc' as a preprocessor" OFF)
 
