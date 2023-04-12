@@ -292,7 +292,7 @@ template class NCBI_XNCBI_EXPORT CNcbistrstream_Base<IO_PREFIX::strstream,  IOS_
 
 #else  // NCBI_SHUN_OSTRSTREAM
 
-#if 0
+#if 1
 //typedef IO_PREFIX::stringbuf      CNcbiStrstreambuf;
 typedef IO_PREFIX::istringstream  CNcbiIstrstream;
 typedef IO_PREFIX::ostringstream  CNcbiOstrstream;
