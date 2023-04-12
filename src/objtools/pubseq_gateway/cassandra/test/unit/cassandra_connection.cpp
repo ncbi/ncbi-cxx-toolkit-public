@@ -118,6 +118,11 @@ TEST_F(CCassConnectionTest, LocalPeersList) {
     for (auto const& peer : peer_list) {
         EXPECT_EQ(0UL, peer.find("130.14."));
     }
+    peer_list = connection->GetLocalPeersAddressList("");
+    EXPECT_EQ(8UL, peer_list.size());
+    for (auto const& peer : peer_list) {
+        EXPECT_EQ(0UL, peer.find("130.14."));
+    }
 }
 
 TEST_F(CCassConnectionTest, GetSizeEstimates) {

@@ -181,6 +181,9 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     const CassPrepared * Prepare(const string & sql);
 
  public:
+
+    static constexpr int16_t kCassDefaultPort = 9042;
+
     using TTokenValue = int64_t;
     using TTokenRanges = vector<pair<TTokenValue, TTokenValue>>;
 
@@ -218,6 +221,12 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     /// @param password
     ///   Password to connect to Cassandra cluster
     void SetCredentials(string const& username, string const& password);
+
+    /// Get port number this connection uses to access cluster
+    int16_t GetPort() const
+    {
+        return m_port ? m_port : kCassDefaultPort;
+    }
 
     void SetLoadBalancing(loadbalancing_policy_t policy);
     void SetTokenAware(bool value);
