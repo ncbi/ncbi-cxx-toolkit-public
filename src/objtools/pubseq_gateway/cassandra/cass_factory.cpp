@@ -146,7 +146,7 @@ void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
     ReloadConfig(registry);
 }
 
-void CCassConnectionFactory::ReloadConfig(void)
+void CCassConnectionFactory::ReloadConfig()
 {
     if (m_CfgName.empty()) {
         NCBI_THROW(CCassandraException, eGeneric, "Configuration file is not specified");
@@ -192,6 +192,11 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
 
         ProcessParams();
     }
+}
+
+void CCassConnectionFactory::SetServiceName(string const& service)
+{
+    m_CassHosts = service;
 }
 
 
@@ -258,9 +263,9 @@ string CCassConnectionFactory::GetPassword() const
 }
 
 
-shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
+shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance()
 {
-    shared_ptr<CCassConnection>     rv(new CCassConnection());
+    shared_ptr<CCassConnection> rv(new CCassConnection());
 
     rv->SetLoadBalancing(m_LoadBalancing);
     rv->SetTokenAware(m_TokenAware);
@@ -274,12 +279,14 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
     rv->SetFallBackRdConsistency(m_CassFallbackRdConsistency);
     rv->SetBlackList(m_CassBlackList);
 
-    if (m_CassFallbackWrConsistency != 0)
+    if (m_CassFallbackWrConsistency != 0) {
         rv->SetFallBackWrConsistency(m_CassFallbackWrConsistency);
+    }
 
     if (m_LogEnabled) {
         rv->SetLogging(m_LogSeverity);
-    } else {
+    }
+    else {
         rv->DisableLogging();
     }
 

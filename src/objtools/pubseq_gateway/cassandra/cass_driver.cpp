@@ -687,11 +687,19 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
 
 vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacenter)
 {
-    string peers_sql{"SELECT rpc_address FROM system.peers WHERE data_center = ? ALLOW FILTERING"};
+    string peers_sql;
+    if (datacenter.empty()) {
+        peers_sql = "SELECT rpc_address FROM system.peers";
+    }
+    else {
+        peers_sql = "SELECT rpc_address FROM system.peers WHERE data_center = ? ALLOW FILTERING";
+    }
     set<string> hosts;
     auto query = NewQuery();
-    query->SetSQL(peers_sql, 1);
-    query->BindStr(0, datacenter);
+    query->SetSQL(peers_sql, datacenter.empty() ? 0 : 1);
+    if (!datacenter.empty()) {
+        query->BindStr(0, datacenter);
+    }
     query->Query(CCassConsistency::kLocalOne, false, false);
     while (query->NextRow() == ar_dataready) {
         hosts.insert(query->FieldGetStrValue(0));
@@ -702,8 +710,10 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
     // Second pass to fetch view from other host (lets choose first from current peer list)
     query = NewQuery();
     query->SetHost(*hosts.begin());
-    query->SetSQL(peers_sql, 1);
-    query->BindStr(0, datacenter);
+    query->SetSQL(peers_sql, datacenter.empty() ? 0 : 1);
+    if (!datacenter.empty()) {
+        query->BindStr(0, datacenter);
+    }
     query->Query(CCassConsistency::kLocalOne, false, false);
     while (query->NextRow() == ar_dataready) {
         hosts.insert(query->FieldGetStrValue(0));
@@ -1192,8 +1202,7 @@ void CCassQuery::Query(TCassConsistency c, bool  run_async,
     }
 
     if (!m_execution_host.empty()) {
-        int port = m_connection->m_port ? m_connection->m_port : 9042;
-        cass_statement_set_host_n(m_statement, m_execution_host.c_str(), m_execution_host.size(), port);
+        cass_statement_set_host_n(m_statement, m_execution_host.c_str(), m_execution_host.size(), m_connection->GetPort());
     }
 
     try {

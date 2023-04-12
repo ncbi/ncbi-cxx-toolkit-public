@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors: Sergey Satskiy
+ * Authors: Sergey Satskiy, Dmitrii Saprykin
  *
  * File Description:
  *
@@ -35,6 +35,9 @@
  */
 
 #include <corelib/ncbistd.hpp>
+
+#include <optional>
+
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 #include "IdCassScope.hpp"
@@ -86,6 +89,222 @@ bool FetchMessages(const string &  mapping_keyspace,
                    shared_ptr<CCassConnection>  conn,
                    CPSGMessages &  messages,
                    string &  err_msg);
+//------------------------------------------------------------------------------
+
+struct SSatInfoEntry final
+{
+    static constexpr int32_t kInvalidSat{-100};
+
+    int32_t sat{kInvalidSat};
+    ECassSchemaType schema_type{eUnknownSchema};
+    string keyspace;
+    string service;
+    shared_ptr<CCassConnection> connection;
+};
+
+enum class ESatInfoRefreshSchemaResult : char
+{
+    eUndefined = 0,
+    eSatInfoUpdated = 1,
+    eSatInfoUnchanged = 2,
+    eSatInfoKeyspaceUndefined = 3,
+    eSatInfoSat2KeyspaceEmpty = 4,
+    eResolverKeyspaceDuplicated = 6,
+    eResolverKeyspaceUndefined = 7,
+    eBlobKeyspacesEmpty = 8,
+    eLbsmServiceNotResolved = 9,
+};
+
+enum class ESatInfoRefreshMessagesResult : char
+{
+    eUndefined = 0,
+    eMessagesUpdated = 1,
+    eMessagesUnchanged = 2,
+    eSatInfoKeyspaceUndefined = 3,
+    eSatInfoMessagesEmpty = 4,
+};
+
+class CSatInfoSchemaProvider;
+
+class CSatInfoSchema final
+{
+ public:
+    friend class CSatInfoSchemaProvider;
+
+    CSatInfoSchema() = delete;
+
+    /// @param registry
+    ///   Configuration registry used to create new cluster connections
+    /// @param registry_section
+    ///   Registry section name used as a template creating new cluster connection
+    ///   {service} entry of registry section gets replaced by {service} from {sat_info3.sat2keyspace} table
+    CSatInfoSchema(
+        CNcbiRegistry const & registry,
+        string const & registry_section
+    );
+
+    optional<SSatInfoEntry> GetBlobKeyspace(int32_t sat) const;
+    vector<SSatInfoEntry> GetNAKeyspaces() const;
+    SSatInfoEntry GetResolverKeyspace() const;
+
+    int32_t GetMaxBlobKeyspaceSat() const;
+
+ private:
+    shared_ptr<CCassConnection> x_GetConnectionByService(string const& service) const;
+    shared_ptr<CCassConnection> x_GetConnectionByConnectionPoint(string const& connection_point) const;
+
+    optional<ESatInfoRefreshSchemaResult> x_AddClusterConnection(shared_ptr<CCassConnection> const& connection, bool is_default);
+    optional<ESatInfoRefreshSchemaResult> x_AddSatInfoEntry(SSatInfoEntry&& entry, shared_ptr<CSatInfoSchema> const& old_schema);
+    optional<ESatInfoRefreshSchemaResult> x_AddClusterByServiceName(
+        string const& service,
+        shared_ptr<CSatInfoSchema> const& old_schema,
+        shared_ptr<CCassConnection>& cluster
+    );
+    optional<ESatInfoRefreshSchemaResult> x_ResolveServiceName(string const& service, vector<string>& connection_points);
+
+    const CNcbiRegistry & m_Registry;
+    string m_RegistrySection;
+
+    // Mapping {sat => Connection to blob keyspace}
+    map<int32_t, SSatInfoEntry> m_BlobKeyspaces;
+
+    // List of BioseqNA connections
+    vector<SSatInfoEntry> m_BioseqNaKeyspaces;
+
+    // Connection to resolve keyspace
+    SSatInfoEntry m_ResolverKeyspace;
+
+    // Host:port => ClusterConnection
+    map<string, shared_ptr<CCassConnection>> m_Point2Cluster;
+
+    // ServiceName from service column => ClusterConnection
+    map<string, shared_ptr<CCassConnection>> m_Service2Cluster;
+
+    // Default cluster connection
+    shared_ptr<CCassConnection> m_DefaultCluster;
+};
+
+class CSatInfoSchemaProvider final
+{
+ public:
+
+    /// @param sat_info_keyspace
+    ///   Name of Cassandra keyspace to use as a source of configuration
+    /// @param domain
+    ///   Name of configuration domain for that provider
+    /// @param sat_info_connection
+    ///   Connection to Cassandra cluster hosting {sat_info_keyspace}
+    /// @param registry
+    ///   Configuration registry used to create new cluster connections
+    /// @param registry_section
+    ///   Registry section name used as a template creating new cluster connection
+    ///   {service} entry of registry section gets replaced by {service} from {sat_info3.sat2keyspace} table
+    CSatInfoSchemaProvider(
+        string const& sat_info_keyspace,
+        string const & domain,
+        shared_ptr<CCassConnection> sat_info_connection,
+        const CNcbiRegistry & registry,
+        const string & registry_section
+    );
+
+    /// Changes configuration domain for existing provider
+    ///
+    /// @param domain
+    ///   Name of configuration domain for that provider
+    ///
+    /// @for_tests, @not_thread_safe
+    void SetDomain(string const& domain)
+    {
+        m_Domain = domain;
+    }
+
+    /// Get blob keyspace connection by sat id
+    ///
+    /// @param sat
+    ///   Blob sat id
+    ///
+    /// @return
+    ///   Configuration entry of empty optional
+    ///   if sat does not exists or has non blob schema type
+    ///
+    /// @thread_safe
+    optional<SSatInfoEntry> GetBlobKeyspace(int32_t sat) const;
+
+    /// Get list of BioseqNA keyspaces connections
+    ///
+    /// @thread_safe
+    vector<SSatInfoEntry> GetNAKeyspaces() const;
+
+    /// Get connection to resolve keyspace
+    ///
+    /// @thread_safe
+    SSatInfoEntry GetResolverKeyspace() const;
+
+    /// Get max id value for existing blob sat
+    ///
+    /// @thread_safe
+    int32_t GetMaxBlobKeyspaceSat() const;
+
+    /// Get configured message by name
+    ///
+    /// @param name
+    ///   Message name
+    ///
+    /// @thread_safe
+    string GetMessage(string const& name) const;
+
+    /// Refresh information for configuration database {sat_info3.sat2keyspace}
+    ///
+    /// @param appy
+    ///   - true to apply changes
+    ///   - false to check if configuration database content changed
+    ///
+    /// @return
+    ///   Operation result
+    ///
+    /// @non_thread_safe - Should be called from a single control thread
+    ESatInfoRefreshSchemaResult RefreshSchema(bool apply);
+
+    /// Refresh information for messages database {sat_info3.messages}
+    ///
+    /// @param appy
+    ///   - true to apply changes
+    ///   - false to check if configuration database content changed
+    ///
+    /// @return
+    ///   Operation result
+    ///
+    /// @non_thread_safe - Should be called from a single control thread
+    ESatInfoRefreshMessagesResult RefreshMessages(bool apply);
+
+    /// Get configuration schema snapshot
+    ///
+    /// @thread_safe
+    shared_ptr<CSatInfoSchema> GetSchema() const;
+
+    /// Get messages snapshot
+    ///
+    /// @thread_safe
+    shared_ptr<CPSGMessages> GetMessages() const;
+
+ private:
+    optional<ESatInfoRefreshSchemaResult> x_PopulateNewSchema(
+        shared_ptr<CSatInfoSchema>& schema,
+        vector<SSatInfoEntry>&& sat_info,
+        shared_ptr<CSatInfoSchema> const& old_schema
+    ) const;
+
+    string m_SatInfoKeyspace;
+    string m_Domain;
+    shared_ptr<CCassConnection> m_SatInfoConnection;
+
+    const CNcbiRegistry & m_Registry;
+    string m_RegistrySection;
+
+    shared_ptr<CSatInfoSchema> m_SatInfoSchema;
+    shared_ptr<CPSGMessages> m_SatInfoMessages;
+    size_t m_SatInfoHash{0};
+};
 
 END_IDBLOB_SCOPE
 

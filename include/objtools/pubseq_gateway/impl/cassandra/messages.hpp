@@ -69,6 +69,16 @@ class CPSGMessages
         return "";
     }
 
+    bool operator==(CPSGMessages const& a) const
+    {
+        return m_Messages == a.m_Messages;
+    }
+
+    bool IsEmpty() const
+    {
+        return m_Messages.empty();
+    }
+
  private:
     TCollection m_Messages;
 };

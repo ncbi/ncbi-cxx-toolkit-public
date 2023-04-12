@@ -59,15 +59,17 @@ class CCassConnectionFactory:
     void AppParseArgs(const CArgs &  args);
     void LoadConfig(const string &  cfg_name, const string &  section);
     void LoadConfig(const CNcbiRegistry &  registry, const string &  section);
-    void ReloadConfig(void);
+    void ReloadConfig();
     void ReloadConfig(const CNcbiRegistry &  registry);
-    shared_ptr<CCassConnection> CreateInstance(void);
+    shared_ptr<CCassConnection> CreateInstance();
 
     void GetHostPort(string & hostlist, short & port);
     string GetUserName() const;
     string GetPassword() const;
 
-    static shared_ptr<CCassConnectionFactory> s_Create(void)
+    void SetServiceName(string const& service);
+
+    static shared_ptr<CCassConnectionFactory> s_Create()
     {
         return make_shared<CCassConnectionFactory>();
     }
