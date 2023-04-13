@@ -1,4 +1,3 @@
-	d	National Center for Biotechnology Information			
 	s	Australian National Insect Collection			
 	s	Colecao de Culturas da Universidade de Brasilia			
 # $Id$
