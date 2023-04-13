@@ -4,7 +4,7 @@
 ##
 ##  NCBI CMake wrapper: Get all kinds of source tree IDs
 ##                      update ncbi_revision.h
-##  NOTE: this script is called both during confguration and build
+##  NOTE: this script is called both during configuration and build
 ##        in the latter case (NCBITK_BUILDTIME), some checks are disabled
 ##
 ##    Author: Andrei Gourianov, gouriano@ncbi
