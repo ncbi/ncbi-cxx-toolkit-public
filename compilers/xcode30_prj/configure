@@ -281,7 +281,7 @@ platform=`xcodebuild -version 2>/dev/null | grep 'Xcode [0-9][0-9]*' | sed -e 's
 
 # ------- target architecture
 if test "$use_64" == "yes"; then
-  use_arch="x86_64"
+  use_arch="x86_64,arm64"
 else
   use_arch="i386"
 fi 
