@@ -273,5 +273,14 @@ TEST_F(CSatInfoProviderTest, BasicMessages) {
     EXPECT_EQ("", provider.GetMessage("MESSAGE2"));
 }
 
+TEST_F(CSatInfoProviderTest, CassException) {
+    CSatInfoSchemaProvider provider(
+        "NON_EXISTENT_KEYSPACE", "PSG_CASS_UNIT1", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    EXPECT_THROW(provider.RefreshMessages(true), CCassandraException);
+    EXPECT_THROW(provider.RefreshSchema(true), CCassandraException);
+}
+
 
 }  // namespace
