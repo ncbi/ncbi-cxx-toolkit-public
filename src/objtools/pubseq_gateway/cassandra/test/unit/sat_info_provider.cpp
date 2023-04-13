@@ -33,6 +33,9 @@
 
 #include <ncbi_pch.hpp>
 
+#include <optional>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include <corelib/ncbireg.hpp>
@@ -40,6 +43,18 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
+
+BEGIN_IDBLOB_SCOPE
+
+bool operator==(const SSatInfoEntry& a, const SSatInfoEntry& b) {
+    return a.keyspace == b.keyspace
+        && a.connection == b.connection
+        && a.schema_type == b.schema_type
+        && a.sat == b.sat;
+}
+
+END_IDBLOB_SCOPE
+
 
 namespace {
 
@@ -117,25 +132,140 @@ TEST_F(CSatInfoProviderTest, Basic) {
     auto sat4 = provider.GetBlobKeyspace(4);
     auto sat5 = provider.GetBlobKeyspace(5);
     auto sat23 = provider.GetBlobKeyspace(23);
+    auto sat24 = provider.GetBlobKeyspace(24);
+    auto sat52 = provider.GetBlobKeyspace(52);
+    auto sat1000 = provider.GetBlobKeyspace(1000);
     ASSERT_TRUE(sat4.has_value());
     ASSERT_TRUE(sat5.has_value());
     ASSERT_TRUE(sat23.has_value());
+    ASSERT_TRUE(sat24.has_value());
+    ASSERT_FALSE(sat1000.has_value());
 
     ASSERT_NE(nullptr, provider.GetResolverKeyspace().connection);
     ASSERT_NE(nullptr, sat4.value().connection);
     ASSERT_NE(nullptr, sat5.value().connection);
     ASSERT_NE(nullptr, sat23.value().connection);
+    ASSERT_NE(nullptr, sat24.value().connection);
+    ASSERT_NE(nullptr, sat52.value().connection);
 
     ASSERT_EQ("idmain2", provider.GetResolverKeyspace().keyspace);
     ASSERT_EQ("satncbi_extended", sat4.value().keyspace);
     ASSERT_EQ("satprot_v2", sat5.value().keyspace);
     ASSERT_EQ("satddbj_wgs", sat23.value().keyspace);
+    ASSERT_EQ("satold03", sat24.value().keyspace);
+    ASSERT_EQ("nannotg3", sat52.value().keyspace);
 
     EXPECT_EQ(sat4.value().connection.get(), sat5.value().connection.get());
+    EXPECT_EQ(sat4.value().connection.get(), sat24.value().connection.get());
     EXPECT_NE(sat4.value().connection.get(), sat23.value().connection.get());
 
     EXPECT_EQ("DC1", sat4.value().connection->GetDatacenterName());
     EXPECT_EQ("BETHESDA", sat23.value().connection->GetDatacenterName());
+
+    vector<SSatInfoEntry> na_keyspaces = {sat52.value()};
+    EXPECT_EQ(na_keyspaces, provider.GetNAKeyspaces());
+
+    // Reload from other domain
+    provider.SetDomain("PSG_CASS_UNIT2");
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(false));
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
+
+    auto sat23_reloaded = provider.GetBlobKeyspace(23);
+    ASSERT_TRUE(sat23_reloaded.has_value());
+    // Connection should be inherited from previous schema version (no Cassandra reconnect)
+    EXPECT_EQ(sat23_reloaded.value().connection.get(), sat23.value().connection.get());
+    EXPECT_EQ(230, provider.GetMaxBlobKeyspaceSat());
+
+    // Reload from other domain
+    provider.SetDomain("PSG_CASS_UNIT2.1");
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(false));
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
+
+    auto sat230 = provider.GetBlobKeyspace(230);
+    ASSERT_TRUE(sat230.has_value());
+    // Connection should be inherited from previous schema version (no Cassandra reconnect)
+    EXPECT_EQ(sat230.value().connection.get(), sat23.value().connection.get());
 }
+
+TEST_F(CSatInfoProviderTest, NotLoaded) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    ASSERT_EQ(nullopt, provider.GetBlobKeyspace(23));
+    ASSERT_EQ(nullptr, provider.GetResolverKeyspace().connection);
+    ASSERT_EQ("", provider.GetResolverKeyspace().keyspace);
+    ASSERT_TRUE(provider.GetNAKeyspaces().empty());
+    EXPECT_EQ(-1, provider.GetMaxBlobKeyspaceSat());
+}
+
+TEST_F(CSatInfoProviderTest, ServiceResolutionErrors) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT3", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
+
+    provider.SetDomain("PSG_CASS_UNIT4");
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
+
+    provider.SetDomain("PSG_CASS_UNIT5");
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
+}
+
+TEST_F(CSatInfoProviderTest, ResolverKeyspaceDuplicated) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT6", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated, provider.RefreshSchema(true));
+}
+
+TEST_F(CSatInfoProviderTest, ResolverKeyspaceUndefined) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT7", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined, provider.RefreshSchema(true));
+}
+
+TEST_F(CSatInfoProviderTest, BlobKeyspacesUndefined) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT8", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eBlobKeyspacesEmpty, provider.RefreshSchema(true));
+}
+
+TEST_F(CSatInfoProviderTest, EmptyMessages) {
+    {
+        CSatInfoSchemaProvider provider(
+            m_KeyspaceName, "PSG_CASS_UNIT7", m_Connection,
+            m_Registry, m_ConfigSection
+        );
+        EXPECT_EQ("", provider.GetMessage("ANY"));
+        EXPECT_EQ(ESatInfoRefreshMessagesResult::eSatInfoMessagesEmpty, provider.RefreshMessages(false));
+    }
+    {
+        CSatInfoSchemaProvider provider(
+            "", "PSG_CASS_UNIT7", m_Connection,
+            m_Registry, m_ConfigSection
+        );
+        EXPECT_EQ(ESatInfoRefreshMessagesResult::eSatInfoKeyspaceUndefined, provider.RefreshMessages(false));
+    }
+}
+
+TEST_F(CSatInfoProviderTest, BasicMessages) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
+        m_Registry, m_ConfigSection
+    );
+    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, provider.RefreshMessages(false));
+    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, provider.RefreshMessages(true));
+    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUnchanged, provider.RefreshMessages(true));
+    EXPECT_EQ("MESSAGE1_TEXT", provider.GetMessage("MESSAGE1"));
+    EXPECT_EQ("", provider.GetMessage("MESSAGE2"));
+}
+
 
 }  // namespace

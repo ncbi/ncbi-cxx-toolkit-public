@@ -193,6 +193,16 @@ bool FetchMessages(const string &  mapping_keyspace,
 
 BEGIN_SCOPE()
 
+bool CanRetry(CCassandraException const& e, int retries)
+{
+    return
+        (
+            e.GetErrCode() == CCassandraException::eQueryTimeout
+            || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
+        )
+        && retries > 0;
+}
+
 vector<SSatInfoEntry>
 ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CCassConnection>& connection)
 {
@@ -219,17 +229,10 @@ ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CC
                 }
             }
         }
-        catch (const CCassandraException& e) {
-            if ((
-                    e.GetErrCode() == CCassandraException::eQueryTimeout
-                    || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
-                )
-                && i > 0
-            ) {
-                continue;
+        catch (CCassandraException const& e) {
+            if (!CanRetry(e, i)) {
+                throw;
             }
-            throw;
-
         }
         break;
     }
@@ -262,16 +265,10 @@ ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<C
             }
             break;
         }
-        catch (const CCassandraException& e) {
-            if ((
-                    e.GetErrCode() == CCassandraException::eQueryTimeout
-                    || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
-                )
-                && i > 0
-            ) {
-                continue;
+        catch (CCassandraException const& e) {
+            if (!CanRetry(e, i)) {
+                throw;
             }
-            throw;
         }
     }
     return result;
@@ -279,7 +276,7 @@ ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<C
 
 string GetAddressString(string const& host, bool is_host)
 {
-    if (is_host) {
+    if (is_host && !CSocketAPI::isip(host, false)) {
         auto addr = CSocketAPI::gethostbyname(host);
         if (addr == 0) {
             return "";
@@ -626,7 +623,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
         }
     }
     if (schema->m_ResolverKeyspace.keyspace.empty() || !schema->m_ResolverKeyspace.connection) {
-        return ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated;
+        return ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined;
     }
     if (schema->GetMaxBlobKeyspaceSat() == -1) {
         return ESatInfoRefreshSchemaResult::eBlobKeyspacesEmpty;
