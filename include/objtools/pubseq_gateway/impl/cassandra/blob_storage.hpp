@@ -287,12 +287,19 @@ class CSatInfoSchemaProvider final
     /// @thread_safe
     shared_ptr<CPSGMessages> GetMessages() const;
 
+    /// Get detailed message for last refresh operation (common for RefreshSchema and RefreshMessages).
+    /// Empty string in case there were no errors
+    ///
+    /// @thread_safe
+    string GetRefreshErrorMessage() const;
+
  private:
+    void x_SetRefreshErrorMessage(string const& message);
     optional<ESatInfoRefreshSchemaResult> x_PopulateNewSchema(
         shared_ptr<CSatInfoSchema>& schema,
         vector<SSatInfoEntry>&& sat_info,
         shared_ptr<CSatInfoSchema> const& old_schema
-    ) const;
+    );
 
     string m_SatInfoKeyspace;
     string m_Domain;
@@ -304,6 +311,8 @@ class CSatInfoSchemaProvider final
     shared_ptr<CSatInfoSchema> m_SatInfoSchema;
     shared_ptr<CPSGMessages> m_SatInfoMessages;
     size_t m_SatInfoHash{0};
+
+    shared_ptr<string> m_RefreshErrorMessage;
 };
 
 END_IDBLOB_SCOPE

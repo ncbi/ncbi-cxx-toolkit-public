@@ -582,10 +582,12 @@ shared_ptr<CPSGMessages> CSatInfoSchemaProvider::GetMessages() const
 ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
 {
     if (m_SatInfoKeyspace.empty()) {
+        x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshSchemaResult::eSatInfoKeyspaceUndefined;
     }
     auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, m_SatInfoConnection);
     if (rows.empty()) {
+        x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".sat2keyspace info is empty");
         return ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty;
     }
     auto rows_hash = HashSatInfoData(rows);
@@ -610,7 +612,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
     shared_ptr<CSatInfoSchema>& schema,
     vector<SSatInfoEntry>&& sat_info,
     shared_ptr<CSatInfoSchema> const& old_schema
-) const
+)
 {
     auto result = schema->x_AddClusterConnection(m_SatInfoConnection, true);
     if (result.has_value()) {
@@ -619,13 +621,27 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
     for (auto& entry : sat_info) {
         auto result = schema->x_AddSatInfoEntry(move(entry), old_schema);
         if (result.has_value()) {
+            switch(result.value()) {
+            case ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated:
+                x_SetRefreshErrorMessage("More than one resolver keyspace in the " +
+                    m_SatInfoKeyspace + ".sat2keyspace table");
+            break;
+            case ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved:
+                x_SetRefreshErrorMessage("Cannot resolve service name: '" + entry.service + "'");
+            break;
+            default:
+                x_SetRefreshErrorMessage("Unexpected result for SatInfoEntry processing: "
+                    + to_string(static_cast<int64_t>(result.value())));
+            }
             return result.value();
         }
     }
     if (schema->m_ResolverKeyspace.keyspace.empty() || !schema->m_ResolverKeyspace.connection) {
+        x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined;
     }
     if (schema->GetMaxBlobKeyspaceSat() == -1) {
+        x_SetRefreshErrorMessage("sat2keyspace is incomplete");
         return ESatInfoRefreshSchemaResult::eBlobKeyspacesEmpty;
     }
     return {};
@@ -634,10 +650,12 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
 ESatInfoRefreshMessagesResult CSatInfoSchemaProvider::RefreshMessages(bool apply)
 {
     if (m_SatInfoKeyspace.empty()) {
+        x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshMessagesResult::eSatInfoKeyspaceUndefined;
     }
     auto messages = ReadCassandraMessages(m_SatInfoKeyspace, m_Domain, m_SatInfoConnection);
     if (messages->IsEmpty()) {
+        x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".messages info is empty");
         return ESatInfoRefreshMessagesResult::eSatInfoMessagesEmpty;
     }
 
@@ -650,6 +668,18 @@ ESatInfoRefreshMessagesResult CSatInfoSchemaProvider::RefreshMessages(bool apply
     }
     atomic_store(&m_SatInfoMessages, move(messages));
     return ESatInfoRefreshMessagesResult::eMessagesUpdated;
+}
+
+string CSatInfoSchemaProvider::GetRefreshErrorMessage() const
+{
+    auto p = atomic_load(&m_RefreshErrorMessage);
+    return p ? *p : "";
+}
+
+void CSatInfoSchemaProvider::x_SetRefreshErrorMessage(string const& message)
+{
+    auto msg = make_shared<string>(message);
+    atomic_store(&m_RefreshErrorMessage, move(msg));
 }
 
 
