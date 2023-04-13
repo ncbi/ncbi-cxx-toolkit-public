@@ -518,8 +518,8 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
             m_BlobKeyspaces.emplace(entry.sat, move(entry));
             break;
         }
-        case eUnknownSchema:
-            break;
+        case eUnknownSchema: // LCOV_EXCL_LINE
+            break; // LCOV_EXCL_LINE
     }
     return {};
 }
