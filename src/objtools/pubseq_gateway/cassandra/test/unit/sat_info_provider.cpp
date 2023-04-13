@@ -104,6 +104,7 @@ TEST_F(CSatInfoProviderTest, Smoke) {
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(false));
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(false));
+    EXPECT_EQ("", provider.GetRefreshErrorMessage());
 }
 
 TEST_F(CSatInfoProviderTest, DomainDoesNotExist) {
@@ -112,6 +113,7 @@ TEST_F(CSatInfoProviderTest, DomainDoesNotExist) {
         m_Registry, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty, provider.RefreshSchema(false));
+    EXPECT_FALSE(provider.GetRefreshErrorMessage().empty());
 }
 
 TEST_F(CSatInfoProviderTest, EmptySatInfoName) {
@@ -120,6 +122,7 @@ TEST_F(CSatInfoProviderTest, EmptySatInfoName) {
         m_Registry, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoKeyspaceUndefined, provider.RefreshSchema(false));
+    EXPECT_EQ("mapping_keyspace is not specified", provider.GetRefreshErrorMessage());
 }
 
 TEST_F(CSatInfoProviderTest, Basic) {
@@ -205,12 +208,15 @@ TEST_F(CSatInfoProviderTest, ServiceResolutionErrors) {
         m_Registry, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
+    EXPECT_FALSE(provider.GetRefreshErrorMessage().empty());
 
     provider.SetDomain("PSG_CASS_UNIT4");
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
+    EXPECT_FALSE(provider.GetRefreshErrorMessage().empty());
 
     provider.SetDomain("PSG_CASS_UNIT5");
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
+    EXPECT_FALSE(provider.GetRefreshErrorMessage().empty());
 }
 
 TEST_F(CSatInfoProviderTest, ResolverKeyspaceDuplicated) {
