@@ -199,6 +199,11 @@ void CCassConnectionFactory::SetServiceName(string const& service)
     m_CassHosts = service;
 }
 
+void CCassConnectionFactory::SetDataNamespace(string const& data_namespace)
+{
+    m_CassDataNamespace = data_namespace;
+}
+
 
 void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
 {

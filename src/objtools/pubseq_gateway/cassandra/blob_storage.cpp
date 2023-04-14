@@ -476,6 +476,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterByServiceName(
         auto factory = CCassConnectionFactory::s_Create();
         factory->LoadConfig(m_Registry, m_RegistrySection);
         factory->SetServiceName(service);
+        factory->SetDataNamespace("");
         cluster = factory->CreateInstance();
         cluster->Connect();
         m_Service2Cluster[service] = cluster;
