@@ -274,7 +274,7 @@ CRemoteBlastDbAdapter::SeqidToOid(const CSeq_id & id, int & oid)
     seqids.push_back(CRef<CSeq_id>(const_cast<CSeq_id*>(&id)));
     
     CBlastServices::GetSequencesInfo(seqids, m_DbName, seqtype, bioseqs, errors,
-                                   warnings, kVerbose);
+                                   warnings, kVerbose, true);
     if ( !errors.empty() || !warnings.empty() || bioseqs.empty() ) {
         return RemoteBlastDbLoader_ErrorHandler(errors, warnings);
     }
@@ -313,7 +313,7 @@ CRemoteBlastDbAdapter::SeqidToOidBatch(const vector< CRef<CSeq_id> >& ids,
     
     CBlastServices::GetSequencesInfo
         (const_cast< vector< CRef<CSeq_id> >& >(*&ids), m_DbName, seqtype,
-         bioseqs, errors, warnings, kVerbose);
+         bioseqs, errors, warnings, kVerbose, true);
     if ( !errors.empty() || !warnings.empty() || bioseqs.empty() ) {
         return RemoteBlastDbLoader_ErrorHandler(errors, warnings);
     }
