@@ -1523,6 +1523,9 @@ bool CGff3Writer::xWriteNucleotideFeature(
     return false;
 }
 
+
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
     CGffFeatureContext& fc,
@@ -1533,8 +1536,7 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
-    bool isTransSpliced = (mf.IsSetExcept_text()  &&  
-        NStr::Find(mf.GetExcept_text(), "trans-splicing") != NPOS);
+    const bool isTransSpliced = CWriteUtil::IsTransspliced(mf);
     if (isTransSpliced) {
         unsigned int inPoint, outPoint;
         CWriteUtil::GetTranssplicedEndpoints(mf.GetLocation(), inPoint, outPoint);
@@ -1555,7 +1557,9 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
         unsigned int wrapSize(0), wrapPoint(0);
-        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        if (!isTransSpliced) {
+            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        }
 
         for (it = sublocs.begin(); it != sublocs.end(); ++it) {
             const CSeq_interval& subint = **it;
@@ -1592,8 +1596,8 @@ bool CGff3Writer::xWriteFeatureTrna(
         return false;
     }
 
-
-    if(CWriteUtil::IsTransspliced(mf)){
+    const auto isTransSpliced = CWriteUtil::IsTransspliced(mf);
+    if(isTransSpliced){
         xAssignFeatureAttributeParentGene(*pRna, fc, mf);
         TSeqPos seqlength = 0;
         if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
@@ -1615,8 +1619,9 @@ bool CGff3Writer::xWriteFeatureTrna(
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
 
         unsigned int wrapSize(0), wrapPoint(0);
-        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
-
+        if (!isTransSpliced) {
+            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        }
         int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
@@ -2669,7 +2674,9 @@ bool CGff3Writer::xWriteFeatureCds(
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
         unsigned int wrapSize(0), wrapPoint(0);
-        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        if (!CWriteUtil::IsTransspliced(mf)) {
+            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        }
 
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
@@ -2752,7 +2759,9 @@ bool CGff3Writer::xWriteFeatureRna(
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
         unsigned int wrapSize(0), wrapPoint(0);
-        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        if (!CWriteUtil::IsTransspliced(mf)) {
+            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        }
 
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
@@ -2812,7 +2821,9 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
 
         unsigned int wrapSize(0), wrapPoint(0);
-        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        if (!CWriteUtil::IsTransspliced(mf)) {
+            sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+        }
 
         for (auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
@@ -2910,7 +2921,9 @@ bool CGff3Writer::xWriteFeatureProtein(
     list< CRef< CSeq_interval > > sublocs( packedInt.GetPacked_int().Get() );
 
     unsigned int wrapSize(0), wrapPoint(0);
-    sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+    if (!CWriteUtil::IsTransspliced(cds)) {
+        sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
+    }
 
     for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
         const CSeq_interval& subint = **it;
