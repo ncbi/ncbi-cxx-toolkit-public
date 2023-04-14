@@ -68,6 +68,7 @@ class CCassConnectionFactory:
     string GetPassword() const;
 
     void SetServiceName(string const& service);
+    void SetDataNamespace(string const& data_namespace);
 
     static shared_ptr<CCassConnectionFactory> s_Create()
     {
