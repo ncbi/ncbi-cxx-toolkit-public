@@ -30,7 +30,7 @@
 *
 * File Description:
 *   item representing end of section line (slash line)
-*   
+*
 */
 #include <corelib/ncbistd.hpp>
 
@@ -63,17 +63,17 @@ public:
 
     CWGSItem(TWGSType type, const string& first, const string& last,
         const CUser_object& uo, CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     TWGSType      GetType   (void) const { return m_Type;  }
     const string& GetFirstID(void) const { return m_First; }
     const string& GetLastID (void) const { return m_Last;  }
 
     EItem GetItemType() const override;
 private:
-    
-    
-    void x_GatherInfo(CBioseqContext& ctx);
+
+
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     TWGSType    m_Type;

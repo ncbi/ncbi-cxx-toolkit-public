@@ -56,13 +56,13 @@ class NCBI_FORMAT_EXPORT CContigItem : public CFlatItem
 {
 public:
     CContigItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const CSeq_loc& GetLoc(void) const { return *m_Loc; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     // data
     CRef<CSeq_loc>     m_Loc;
 };

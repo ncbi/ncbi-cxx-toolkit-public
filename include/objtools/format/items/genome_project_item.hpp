@@ -59,14 +59,14 @@ public:
     typedef vector< TDBLinkLine > TDBLinkLineVec;
 
     CGenomeProjectItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     const vector<int> & GetProjectNumbers(void) const;
     const TDBLinkLineVec & GetDBLinkLines(void) const;
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     vector<int> m_ProjectNumbers;

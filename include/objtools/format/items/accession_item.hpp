@@ -31,7 +31,7 @@
 *
 * File Description:
 *   Accession item for flat-file generator
-*   
+*
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -61,8 +61,8 @@ public:
     typedef vector<string>  TExtra_accessions;
 
     CAccessionItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     const string& GetAccession(void) const;
     const string& GetWGSAccession(void) const;
     const string& GetTSAAccession(void) const;
@@ -74,7 +74,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     string              m_Accession;

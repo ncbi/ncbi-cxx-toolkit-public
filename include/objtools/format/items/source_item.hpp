@@ -64,7 +64,7 @@ public:
 
     CSourceItem(CBioseqContext& ctx);
     CSourceItem(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const string&       GetTaxname      (void) const;
     const string&       GetCommon       (void) const;
@@ -77,7 +77,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     void x_GatherInfoIdx(CBioseqContext& ctx);
     void x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj);
 
@@ -108,42 +108,42 @@ private:
 
 inline
 const string& CSourceItem::GetTaxname(void) const
-{ 
+{
     return *m_Taxname;
 }
 
 
 inline
 const string& CSourceItem::GetCommon(void) const
-{ 
+{
     return *m_Common;
 }
 
 
 inline
 const string& CSourceItem::GetLineage(void) const
-{ 
+{
     return m_Lineage;
 }
 
 
 inline
 const string& CSourceItem::GetOrganelle(void) const
-{ 
+{
     return *m_Organelle;
 }
 
 
 inline
 const string& CSourceItem::GetSourceLine(void) const
-{ 
+{
     return *m_SourceLine;
 }
 
 
 inline
 const list<string>& CSourceItem::GetMod(void) const
-{ 
+{
     return *m_Mod;
 }
 
@@ -157,7 +157,7 @@ CSourceItem::TTaxid CSourceItem::GetTaxid(void) const
 
 inline
 bool CSourceItem::IsUsingAnamorph(void) const
-{ 
+{
     return m_UsingAnamorph;
 }
 

@@ -30,7 +30,7 @@
 *
 * File Description:
 *   item representing date (for EMBL format)
-*   
+*
 */
 #include <corelib/ncbistd.hpp>
 
@@ -56,14 +56,14 @@ class NCBI_FORMAT_EXPORT CDateItem : public CFlatItem
 {
 public:
     CDateItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     const CDate* GetCreateDate(void) const { return m_CreateDate; }
     const CDate* GetUpdateDate(void) const { return m_UpdateDate; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     CConstRef<CDate> m_CreateDate;

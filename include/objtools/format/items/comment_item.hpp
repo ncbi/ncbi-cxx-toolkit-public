@@ -96,7 +96,7 @@ public:
     CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx);
     CCommentItem(const CUser_object & userObject, CBioseqContext& ctx);
 
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     NCBI_DEPRECATED
     const string GetComment(void) const;
@@ -129,7 +129,7 @@ public:
         eGenomeBuildComment_Yes
     };
     static string GetStringForRefTrack(const CBioseqContext& ctx, const CUser_object& uo,
-        const CBioseq_Handle& seq, 
+        const CBioseq_Handle& seq,
         EGenomeBuildComment eGenomeBuildComment = eGenomeBuildComment_Yes
         );
     static string GetStringForRefSeqGenome(const CUser_object& uo);
@@ -160,7 +160,7 @@ protected:
 
     CCommentItem(CBioseqContext& ctx, bool need_period = true);
 
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     void x_GatherDescInfo(const CSeqdesc& desc, CBioseqContext& ctx);
     void x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx);
     void x_GatherUserObjInfo(const CUser_object& userObject );
@@ -184,13 +184,13 @@ private:
 
     enum EFragmentType {
         /// typical fragment
-        eFragmentType_Normal, 
+        eFragmentType_Normal,
         // a fragment on a circular sequence that wraps around the origin
-        eFragmentType_WrapAround, 
+        eFragmentType_WrapAround,
     };
     static void x_GetStringForOpticalMap_WriteFragmentLine(
-        ostream & str, 
-        TSeqPos prevEndPos, 
+        ostream & str,
+        TSeqPos prevEndPos,
         TSeqPos thisEndPos,
         TSeqPos uBioseqLength,
         EFragmentType eFragmentType);

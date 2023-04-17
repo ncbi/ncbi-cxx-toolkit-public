@@ -54,14 +54,14 @@ BEGIN_SCOPE(objects)
 class CTrna_ext;
 
 //  ============================================================================
-class NCBI_FORMAT_EXPORT CFeatHeaderItem : 
+class NCBI_FORMAT_EXPORT CFeatHeaderItem :
     public CFlatItem
 //  ============================================================================
 {
 public:
     CFeatHeaderItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter,
-        IFlatTextOStream& text_os) const {
+        IFlatTextOStream& text_os) const override {
         formatter.FormatFeatHeader(*this, text_os);
     }
 
@@ -69,7 +69,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     CConstRef<CSeq_id>  m_Id;  // for FTable format
@@ -77,7 +77,7 @@ private:
 
 
 //  ============================================================================
-class NCBI_FORMAT_EXPORT CFlatFeature : 
+class NCBI_FORMAT_EXPORT CFlatFeature :
     public CObject
 //  ============================================================================
 {
@@ -106,7 +106,7 @@ private:
 
 
 //  ============================================================================
-class NCBI_FORMAT_EXPORT CFeatureItemBase: 
+class NCBI_FORMAT_EXPORT CFeatureItemBase:
     public CFlatItem
 //  ============================================================================
 {
@@ -116,13 +116,13 @@ public:
         formatter.FormatFeature(*this, text_os);
     }
     bool operator<(const CFeatureItemBase& f2) const {
-        //return m_Feat.Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; 
+        //return m_Feat.Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0;
         return m_Feat < f2.m_Feat;
     }
     const CMappedFeat& GetFeat(void)  const { return m_Feat; }
     const CSeq_loc&    GetLoc(void)   const { return *m_Loc; }
 
-    virtual string GetKey(void) const { 
+    virtual string GetKey(void) const {
         return m_Feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
     }
 
@@ -146,7 +146,7 @@ protected:
 
 
 //  ============================================================================
-class NCBI_FORMAT_EXPORT CFeatureItem: 
+class NCBI_FORMAT_EXPORT CFeatureItem:
     public CFeatureItemBase
 //  ============================================================================
 {
@@ -171,7 +171,7 @@ public:
     virtual ~CFeatureItem() {};
 
     // fetaure key (name)
-    string GetKey(void) const;
+    string GetKey(void) const override;
 
     EItem GetItemType() const override;
 
@@ -201,7 +201,7 @@ protected:
     void x_AddQualsRegulatoryClass( CBioseqContext& ctx, CSeqFeatData::ESubtype subtype );
     void x_AddQualsRecombinationClass( CBioseqContext& ctx, CSeqFeatData::ESubtype subtype );
 
-    void x_AddQualPseudo( CBioseqContext&, CSeqFeatData::E_Choice, 
+    void x_AddQualPseudo( CBioseqContext&, CSeqFeatData::E_Choice,
         CSeqFeatData::ESubtype, bool );
     void x_AddQualExceptions( CBioseqContext& );
     void x_AddQualNote( CConstRef<CSeq_feat> );
@@ -216,7 +216,7 @@ protected:
     void x_AddQualTranslationExceptionIdx( const CCdregion&, CBioseqContext&, string& tr_ex );
     void x_AddQualProteinConflict( const CCdregion&, CBioseqContext& );
     void x_AddQualCodedBy( CBioseqContext& );
-    void x_AddQualProteinId( CBioseqContext&, const CBioseq_Handle&, CConstRef<CSeq_id> );  
+    void x_AddQualProteinId( CBioseqContext&, const CBioseq_Handle&, CConstRef<CSeq_id> );
     void x_AddQualProtComment( const CBioseq_Handle& );
     void x_AddQualProtMethod( const CBioseq_Handle& );
     void x_AddQualProtNote( const CProt_ref*, const CMappedFeat& );
@@ -247,7 +247,7 @@ protected:
     void x_AddQualsVariation( CBioseqContext& ctx );
 
     void x_AddQuals( CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
-    void x_AddQuals( CBioseqContext& ctx ) { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }
+    void x_AddQuals( CBioseqContext& ctx ) override { x_AddQuals( ctx, CConstRef<CFeatureItem>() ); }
     void x_AddQualsIdx( CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem );
     void x_AddQualsIdx( CBioseqContext& ctx ) { x_AddQualsIdx( ctx, CConstRef<CFeatureItem>() ); }
 
@@ -308,7 +308,7 @@ protected:
     typedef TQuals::iterator                  TQI;
     typedef TQuals::const_iterator            TQCI;
     typedef IFlatQVal::TFlags                 TQualFlags;
-     
+
     // qualifiers container
     void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) {
         m_Quals.AddQual(slot, value);
@@ -316,7 +316,7 @@ protected:
     void x_RemoveQuals(EFeatureQualifier slot) const {
         m_Quals.RemoveQuals(slot);
     }
-    bool x_HasQual(EFeatureQualifier slot) const { 
+    bool x_HasQual(EFeatureQualifier slot) const {
         return m_Quals.HasQual(slot);
     }
     /*pair<TQCI, TQCI> x_GetQual(EFeatureQualifier slot) const {
@@ -333,11 +333,11 @@ protected:
     bool x_HasMethodtRNAscanSE(void) const;
 
     // format
-    void x_FormatQuals(CFlatFeature& ff) const;
+    void x_FormatQuals(CFlatFeature& ff) const override;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(EFeatureQualifier slot, const char* name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatNoteQual(EFeatureQualifier slot, const CTempString & name, 
+    void x_FormatNoteQual(EFeatureQualifier slot, const CTempString & name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
     void x_FormatGOQualCombined( EFeatureQualifier slot, const CTempString & name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
@@ -364,7 +364,7 @@ inline void CFeatureItem::x_AddQualDb(
     }
     x_AddQual(eFQ_gene_xref, new CFlatXrefQVal( gene_ref->GetDb() ) );
 }
-    
+
 //  ----------------------------------------------------------------------------
 inline void CFeatureItem::x_AddQualCitation()
 //  ----------------------------------------------------------------------------
@@ -376,7 +376,7 @@ inline void CFeatureItem::x_AddQualCitation()
 }
 
 //  ----------------------------------------------------------------------------
-inline void CFeatureItem::x_AddQualsGb( 
+inline void CFeatureItem::x_AddQualsGb(
     CBioseqContext& ctx )
 //  ----------------------------------------------------------------------------
 {
@@ -395,7 +395,7 @@ inline void CFeatureItem::x_AddQualExt()
 }
 
 //  ============================================================================
-class NCBI_FORMAT_EXPORT CSourceFeatureItem: 
+class NCBI_FORMAT_EXPORT CSourceFeatureItem:
     public CFeatureItemBase
 //  ============================================================================
 {
@@ -413,7 +413,7 @@ public:
     const CBioSource& GetSource(void) const {
         return m_Feat.GetData().GetBiosrc();
     }
-    string GetKey(void) const { return "source"; }
+    string GetKey(void) const override { return "source"; }
 
     bool IsFocus    (void) const { return m_IsFocus;     }
     bool IsSynthetic(void) const { return m_IsSynthetic; }
@@ -428,19 +428,19 @@ private:
     typedef TQuals::const_iterator           TQCI;
     typedef IFlatQVal::TFlags                TQualFlags;
 
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
-    void x_AddQuals(CBioseqContext& ctx);
+    void x_AddQuals(CBioseqContext& ctx) override;
     void x_AddQuals(const CBioSource& src, CBioseqContext& ctx) const;
     void x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) const;
     void x_AddPcrPrimersQuals(const CBioSource& src, CBioseqContext& ctx) const;
 
     // XXX - massage slot as necessary and perhaps sanity-check value's type
     void x_AddQual (ESourceQualifier slot, const IFlatQVal* value) const {
-        m_Quals.AddQual(slot, value); 
+        m_Quals.AddQual(slot, value);
     }
 
-    void x_FormatQuals(CFlatFeature& ff) const;
+    void x_FormatQuals(CFlatFeature& ff) const override;
     void x_FormatGBNoteQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(ESourceQualifier slot, const CTempString& name,

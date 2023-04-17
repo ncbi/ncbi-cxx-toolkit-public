@@ -54,13 +54,13 @@ class NCBI_FORMAT_EXPORT CDeflineItem : public CFlatItem
 {
 public:
     CDeflineItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const string& GetDefline(void) const;
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     string      m_Defline;

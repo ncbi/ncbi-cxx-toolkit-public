@@ -56,14 +56,14 @@ class NCBI_FORMAT_EXPORT CVersionItem : public CFlatItem
 {
 public:
     CVersionItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     TGi GetGi(void) const;
     const string& GetAccession(void) const;
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     TGi     m_Gi;

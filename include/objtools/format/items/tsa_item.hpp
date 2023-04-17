@@ -30,7 +30,7 @@
 *
 * File Description:
 *   item representing TSA
-*   
+*
 */
 #include <corelib/ncbistd.hpp>
 
@@ -64,8 +64,8 @@ public:
 
     CTSAItem(TTSAType type, const string& first, const string& last,
         const CUser_object& uo, CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     TTSAType      GetType   (void) const { return m_Type;  }
     const string& GetFirstID(void) const { return m_First; }
     const string& GetLastID (void) const { return m_Last;  }
@@ -73,7 +73,7 @@ public:
     EItem GetItemType() const override;
 private:
 
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     TTSAType    m_Type;
