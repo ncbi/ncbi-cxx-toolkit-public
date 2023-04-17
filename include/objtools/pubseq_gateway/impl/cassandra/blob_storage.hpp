@@ -218,6 +218,13 @@ class CSatInfoSchemaProvider final
         m_Domain = domain;
     }
 
+    /// Changes Cassandra connection used to communicate with sat_info3
+    ///
+    /// @used in genbank-blobdaemon project
+    ///
+    /// @thread_safe
+    void SetSatInfoConnection(shared_ptr<CCassConnection> sat_info_connection);
+
     /// Get blob keyspace connection by sat id
     ///
     /// @param sat
@@ -294,6 +301,7 @@ class CSatInfoSchemaProvider final
     string GetRefreshErrorMessage() const;
 
  private:
+    shared_ptr<CCassConnection> x_GetSatInfoConnection() const;
     void x_SetRefreshErrorMessage(string const& message);
     optional<ESatInfoRefreshSchemaResult> x_PopulateNewSchema(
         shared_ptr<CSatInfoSchema>& schema,

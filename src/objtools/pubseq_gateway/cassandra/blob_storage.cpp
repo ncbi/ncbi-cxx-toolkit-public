@@ -204,7 +204,7 @@ bool CanRetry(CCassandraException const& e, int retries)
 }
 
 vector<SSatInfoEntry>
-ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CCassConnection>& connection)
+ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CCassConnection> connection)
 {
     vector<SSatInfoEntry> result;
     for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
@@ -248,7 +248,7 @@ ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CC
 }
 
 shared_ptr<CPSGMessages>
-ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<CCassConnection>& connection)
+ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<CCassConnection> connection)
 {
     auto result = make_shared<CPSGMessages>();
     for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
@@ -537,7 +537,16 @@ CSatInfoSchemaProvider::CSatInfoSchemaProvider(
     , m_SatInfoConnection(move(sat_info_connection))
     , m_Registry(registry)
     , m_RegistrySection(registry_section)
+{}
+
+void CSatInfoSchemaProvider::SetSatInfoConnection(shared_ptr<CCassConnection> sat_info_connection)
 {
+    atomic_store(&m_SatInfoConnection, move(sat_info_connection));
+}
+
+shared_ptr<CCassConnection> CSatInfoSchemaProvider::x_GetSatInfoConnection() const
+{
+    return atomic_load(&m_SatInfoConnection);
 }
 
 optional<SSatInfoEntry> CSatInfoSchemaProvider::GetBlobKeyspace(int32_t sat) const
@@ -586,7 +595,7 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
         x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshSchemaResult::eSatInfoKeyspaceUndefined;
     }
-    auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, m_SatInfoConnection);
+    auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection());
     if (rows.empty()) {
         x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".sat2keyspace info is empty");
         return ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty;
@@ -615,7 +624,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
     shared_ptr<CSatInfoSchema> const& old_schema
 )
 {
-    auto result = schema->x_AddClusterConnection(m_SatInfoConnection, true);
+    auto result = schema->x_AddClusterConnection(x_GetSatInfoConnection(), true);
     if (result.has_value()) {
         return result.value();
     }
@@ -654,7 +663,7 @@ ESatInfoRefreshMessagesResult CSatInfoSchemaProvider::RefreshMessages(bool apply
         x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshMessagesResult::eSatInfoKeyspaceUndefined;
     }
-    auto messages = ReadCassandraMessages(m_SatInfoKeyspace, m_Domain, m_SatInfoConnection);
+    auto messages = ReadCassandraMessages(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection());
     if (messages->IsEmpty()) {
         x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".messages info is empty");
         return ESatInfoRefreshMessagesResult::eSatInfoMessagesEmpty;
