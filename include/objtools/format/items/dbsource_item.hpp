@@ -29,7 +29,7 @@
 * Author: Mati Shomrat
 *
 * File Description:
-*   
+*
 */
 #include <corelib/ncbistd.hpp>
 
@@ -54,13 +54,13 @@ public:
     typedef list<string> TDBSource;
 
     CDBSourceItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     const TDBSource& GetDBSource(void) const { return m_DBSource; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     void x_AddPIRBlock(CBioseqContext& ctx);
     void x_AddSPBlock(CBioseqContext& ctx);
     void x_AddPRFBlock(CBioseqContext& ctx);

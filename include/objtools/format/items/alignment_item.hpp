@@ -53,13 +53,13 @@ class NCBI_FORMAT_EXPORT CAlignmentItem : public CFlatItem
 {
 public:
     CAlignmentItem(const CSeq_align& align, CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const CSeq_align& GetAlign(void) const { return *m_Align; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     // data
     CConstRef<CSeq_align> m_Align;
 };

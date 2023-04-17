@@ -60,13 +60,13 @@ public:
     typedef vector<string> TKeywords;
 
     CKeywordsItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const TKeywords& GetKeywords(void) const;
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     void x_AddKeyword(const string& keyword);
 
@@ -78,9 +78,9 @@ private:
 //===============================  inline methods  ==========================
 
 inline
-const CKeywordsItem::TKeywords& CKeywordsItem::GetKeywords(void) const 
-{ 
-    return m_Keywords; 
+const CKeywordsItem::TKeywords& CKeywordsItem::GetKeywords(void) const
+{
+    return m_Keywords;
 }
 
 //===========================  end of inline methods  =======================

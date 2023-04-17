@@ -70,7 +70,7 @@ public:
     typedef vector<string>* TCache;
 
     CCacheItem(CBioseqContext& ctx, TCache csh, int length, bool is_prot);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const TCache& GetCache(void) const { return m_Cache; }
     int GetLength(void) const { return m_Length; }
@@ -120,13 +120,13 @@ public:
     CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx,
         const CSeq_loc* loc = nullptr);
     CReferenceItem(const CSubmit_block&  sub, CBioseqContext& ctx);
-    
+
     /// destructor
     ~CReferenceItem();
 
     /// format
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     TPubType          GetPubType   (void) const { return m_PubType;    }
     TCategory         GetCategory  (void) const { return m_Category;   }
     const CPubdesc&   GetPubdesc   (void) const { return *m_Pubdesc;   }
@@ -164,7 +164,7 @@ public:
     const string&     GetOldPII    (void) const { return m_OldPII;             }
 
     const string&     GetTitle     (void) const { return m_Title;              }
-    
+
     const string&     GetUniqueStr (void) const;
 
     bool              IsJustUids   (void) const { return m_JustUids;   }
@@ -194,11 +194,11 @@ public:
 
     EItem GetItemType() const override;
 private:
- 
+
     CReferenceItem(const CReferenceItem& value);
     CReferenceItem& operator=(const CReferenceItem& value);
-    
-    void x_GatherInfo(CBioseqContext& ctx);
+
+    void x_GatherInfo(CBioseqContext& ctx) override;
     void x_Init(const CPub&           pub,  CBioseqContext& ctx);
     void x_Init(const CCit_gen&       gen,  CBioseqContext& ctx);
     void x_Init(const CCit_sub&       sub,  CBioseqContext& ctx);
@@ -213,7 +213,7 @@ private:
 
     void x_AddAuthors(const CAuth_list& auth);
     void x_AddImprint(const CImprint& imp, CBioseqContext& ctx);
-    
+
     // Genbank format specific
     void x_GatherRemark(CBioseqContext& ctx);
 

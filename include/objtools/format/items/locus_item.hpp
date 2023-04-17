@@ -62,7 +62,7 @@ public:
     typedef CSeq_inst::TTopology    TTopology;
 
     CLocusItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const string& GetName     (void) const;
     const string& GetFullName (void) const;
@@ -79,7 +79,7 @@ public:
 
 private:
 
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     void x_SetName(CBioseqContext& ctx);
     void x_SetLength(CBioseqContext& ctx);
     void x_SetStrand(CBioseqContext& ctx);

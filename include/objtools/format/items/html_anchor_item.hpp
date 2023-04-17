@@ -42,14 +42,14 @@ class CHtmlAnchorItem : public CFlatItem
 {
 public:
     CHtmlAnchorItem( CBioseqContext& ctx, const string &label_core );
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const string &GetLabelCore(void) const { return m_LabelCore; }
     TGi           GetGI(void)        const { return m_GI; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     const string  m_LabelCore;

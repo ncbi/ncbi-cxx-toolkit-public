@@ -30,7 +30,7 @@
 *
 * File Description:
 *   item representing end of section line (slash line)
-*   
+*
 */
 #include <corelib/ncbistd.hpp>
 
@@ -64,9 +64,9 @@ class NCBI_FORMAT_EXPORT CStartItem : public CCtrlItem
 {
 public:
     CStartItem() : CCtrlItem() {};
-    
+
     CStartItem(CSeq_entry_Handle);
-    void Format(IFormatter& f, IFlatTextOStream& text_os) const {
+    void Format(IFormatter& f, IFlatTextOStream& text_os) const override {
         f.Start(text_os);
     }
 
@@ -81,7 +81,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 //
 // START SECTION
-// 
+//
 // Signals the begining of a new section
 
 class NCBI_FORMAT_EXPORT CStartSectionItem : public CCtrlItem
@@ -90,7 +90,7 @@ public:
     CStartSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {
         // CCommentItem::ResetFirst();
     }
-    void Format(IFormatter& f, IFlatTextOStream& text_os) const {
+    void Format(IFormatter& f, IFlatTextOStream& text_os) const override {
         f.StartSection(*this, text_os);
     }
 
@@ -108,7 +108,7 @@ class NCBI_FORMAT_EXPORT CEndSectionItem : public CCtrlItem
 {
 public:
     CEndSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {}
-    void Format(IFormatter& f, IFlatTextOStream& text_os) const {
+    void Format(IFormatter& f, IFlatTextOStream& text_os) const override {
         f.EndSection(*this, text_os);
     }
 
@@ -126,7 +126,7 @@ class NCBI_FORMAT_EXPORT CEndItem : public CCtrlItem
 {
 public:
     CEndItem(void) {}
-    void Format(IFormatter& f, IFlatTextOStream& text_os) const {
+    void Format(IFormatter& f, IFlatTextOStream& text_os) const override {
         f.End(text_os);
     }
 

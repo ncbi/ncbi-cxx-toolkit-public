@@ -30,7 +30,7 @@
 *
 * File Description:
 *   Indicate a gap region on a bioseq
-*   
+*
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -56,15 +56,15 @@ public:
     typedef std::vector<std::string> TEvidence;
 
     // constructors
-    CGapItem( TSeqPos from, TSeqPos to, CBioseqContext& ctx, 
+    CGapItem( TSeqPos from, TSeqPos to, CBioseqContext& ctx,
         const string &sFeatureName, // e.g. "gap" or "assembly_gap"
         const string &sType,
         const TEvidence &sEvidence,
         TSeqPos estimated_length = kInvalidSeqPos // unknown length by default
     );
 
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     TSeqPos GetFrom(void) const;
     TSeqPos GetTo(void) const;
 
@@ -81,7 +81,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx) {}
+    void x_GatherInfo(CBioseqContext& ctx) override {}
 
     // data
     TSeqPos     m_From, m_To;

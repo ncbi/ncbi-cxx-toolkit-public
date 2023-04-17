@@ -30,7 +30,7 @@
 *
 * File Description:
 *   Origin item for flat-file generator
-*   
+*
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -55,10 +55,10 @@ class IFormatter;
 class NCBI_FORMAT_EXPORT CSequenceItem : public CFlatItem
 {
 public:
-    CSequenceItem(TSeqPos from, TSeqPos to, bool first, 
+    CSequenceItem(TSeqPos from, TSeqPos to, bool first,
                 CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     const CSeqVector& GetSequence(void) const;
     TSeqPos GetFrom(void) const;
     TSeqPos GetTo(void) const;
@@ -66,7 +66,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     TSeqPos     m_From, m_To;

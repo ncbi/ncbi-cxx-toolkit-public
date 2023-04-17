@@ -31,7 +31,7 @@
 *
 * File Description:
 *   base count item for flat-file generator
-*   
+*
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -57,8 +57,8 @@ class NCBI_FORMAT_EXPORT CBaseCountItem : public CFlatItem
 {
 public:
     CBaseCountItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     void GetCounts(SIZE_TYPE& a, SIZE_TYPE& c, SIZE_TYPE& g, SIZE_TYPE& t,
         SIZE_TYPE& other) const;
     SIZE_TYPE GetA(void) const { return m_A; }
@@ -69,7 +69,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     mutable TSeqPos     m_A, m_C, m_G, m_T, m_Other;

@@ -53,14 +53,14 @@ class NCBI_FORMAT_EXPORT CSegmentItem : public CFlatItem
 {
 public:
     CSegmentItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     size_t GetNum  (void) const { return m_Num;   }
     size_t GetCount(void) const { return m_Count; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     size_t   m_Num;     // # of this segment

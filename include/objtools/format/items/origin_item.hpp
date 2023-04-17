@@ -53,13 +53,13 @@ class NCBI_FORMAT_EXPORT COriginItem : public CFlatItem
 {
 public:
     COriginItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
-    
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
+
     const string& GetOrigin(void) const { return m_Origin; }
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
 
     // data
     string  m_Origin;

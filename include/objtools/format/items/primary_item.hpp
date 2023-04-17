@@ -60,7 +60,7 @@ class NCBI_FORMAT_EXPORT CPrimaryItem : public CFlatItem
 {
 public:
     CPrimaryItem(CBioseqContext& ctx);
-    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const override;
 
     const string& GetString(void) const { return m_Str; }
 
@@ -72,7 +72,7 @@ private:
     typedef list< CConstRef< CSeq_align > >  TAlnConstList;
     typedef multimap<CAlnMap::TRange,  TAln> TAlnMap;
 
-    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx) override;
     void x_GetStrForPrimary(CBioseqContext& ctx);
     void x_CollectSegments(TAlnConstList&, const TAlnList& aln_list);
     void x_CollectSegments(TAlnConstList&, const CSeq_align& aln);
