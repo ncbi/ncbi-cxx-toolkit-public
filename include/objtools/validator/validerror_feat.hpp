@@ -136,8 +136,8 @@ public:
 
     static vector<string> GetAccessionsFromInferenceString (string inference, string &prefix, string &remainder, bool &same_species);
     static bool GetPrefixAndAccessionFromInferenceAccession (string inf_accession, string &prefix, string &accession);
-    static EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to);
-    static EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
+    static EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to, CScope* scope = nullptr);
+    static EInferenceValidCode ValidateInference(string inference, bool fetch_accession, CScope* scope = nullptr);
 
     // functions expected to be used in Discrepancy Report
     bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);

@@ -317,7 +317,7 @@ bool s_IsAllDigitsOrPeriods (string str)
 }
 
 
-CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to)
+CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to, CScope* scope)
 {
     if (NStr::IsBlank (accession)) {
         return eInferenceValidCode_empty;
@@ -378,7 +378,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                     rsult = eInferenceValidCode_bad_accession;
                 } else if (fetch_accession) {
                     // Test to see if accession is public
-                    if (!IsSequenceFetchable(remainder)) {
+                    if (!IsSequenceFetchable(remainder, scope)) {
                         rsult = eInferenceValidCode_accession_version_not_public;
                     }
                 }
@@ -449,7 +449,7 @@ vector<string> CValidError_feat::GetAccessionsFromInferenceString (string infere
 }
 
 
-CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string inference, bool fetch_accession)
+CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string inference, bool fetch_accession, CScope* scope)
 {
     if (NStr::IsBlank (inference)) {
         return eInferenceValidCode_empty;
@@ -477,7 +477,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
     if (rsult == eInferenceValidCode_valid) {
         for (size_t i = 0; i < accessions.size(); i++) {
             NStr::TruncateSpacesInPlace (accessions[i]);
-            rsult = ValidateInferenceAccession (accessions[i], fetch_accession, is_similar_to);
+            rsult = ValidateInferenceAccession (accessions[i], fetch_accession, is_similar_to, scope);
             if (rsult != eInferenceValidCode_valid) {
                 break;
             }

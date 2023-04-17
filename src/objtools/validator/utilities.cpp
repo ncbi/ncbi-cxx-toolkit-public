@@ -2718,16 +2718,24 @@ bool HasNoStop(const CSeq_feat& feat, CScope* scope)
 //LCOV_EXCL_STOP
 
 
-bool IsSequenceFetchable(const CSeq_id& id)
+bool IsSequenceFetchable(const CSeq_id& id, CScope* scope)
 {
     bool fetchable = false;
     try {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
-        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-        scope->AddDefaults();
-        CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
-        if (bsh) {
-            fetchable = true;
+        if (scope) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+            CScope::TIds ids = scope->GetIds(idh);
+            if (ids.size() > 0) {
+                fetchable = true;
+            }
+        } else {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+            CRef<CScope> scopex(new CScope(*CObjectManager::GetInstance()));
+            scopex->AddDefaults();
+            CBioseq_Handle bsh = scopex->GetBioseqHandle(idh);
+            if (bsh) {
+                fetchable = true;
+            }
         }
     } catch (CException& ) {
     } catch (std::exception &) {
@@ -2736,13 +2744,13 @@ bool IsSequenceFetchable(const CSeq_id& id)
 }
 
 
-bool IsSequenceFetchable(const string& seq_id)
+bool IsSequenceFetchable(const string& seq_id, CScope* scope)
 {
     bool fetchable = false;
     try {
         CRef<CSeq_id> id(new CSeq_id(seq_id));
         if (id) {
-            fetchable = IsSequenceFetchable(*id);
+            fetchable = IsSequenceFetchable(*id, scope);
         }
     } catch (CException& ) {
     } catch (std::exception &) {

@@ -261,8 +261,8 @@ vector<TSeqPos> GetMismatches(const CSeq_feat& feat, const CSeqVector& prot_vec,
 void CalculateEffectiveTranslationLengths(const string& transl_prot, const CSeqVector& prot_vec, size_t &len, size_t& prot_len);
 bool NCBI_VALIDATOR_EXPORT HasNoStop(const CSeq_feat& feat, CScope* scope);
 
-bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const CSeq_id& id);
-bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const string& seq_id);
+bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const CSeq_id& id, CScope* scope = nullptr);
+bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const string& seq_id, CScope* scope = nullptr);
 
 bool NCBI_VALIDATOR_EXPORT DoesFeatureHaveUnnecessaryException(const CSeq_feat& feat, CScope& scope);
 
