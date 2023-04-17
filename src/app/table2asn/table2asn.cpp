@@ -1740,19 +1740,32 @@ void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
 void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
 {
     if (entry.IsSeq()) {
-        if (entry.GetSeq().IsAa()) { // only nucleotide sequences
-            return;    
-        }
         m_reader->AddAnnots(m_global_files.m_AnnotMap, m_global_files.m_MatchedAnnots, entry.SetSeq());
         if (m_secret_files) {
             m_reader->AddAnnots(m_secret_files->m_AnnotMap, m_secret_files->m_MatchedAnnots, entry.SetSeq());
         }    
+        return;
     }
-    else if (entry.GetSet().IsSetSeq_set()) {
+    
+    if (!entry.GetSet().IsSetSeq_set()) {
+        return;
+    }
+
+    // If this is a nuc-prot set, only add annotations to the nucleotide sequence
+    if (entry.GetSet().IsSetClass() && 
+        entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
+    { // We expect the nucleotide sequence to appear first, but this will work even if it doesn't.  
         for (auto pSubEntry : entry.SetSet().SetSeq_set()) {
-            if (pSubEntry) {
+            if (pSubEntry && pSubEntry->IsSeq() && pSubEntry->GetSeq().IsNa()) {
                 AddAnnots(*pSubEntry);
+                return;
             }
+        }   
+    }
+
+    for (auto pSubEntry : entry.SetSet().SetSeq_set()) {
+        if (pSubEntry) {
+            AddAnnots(*pSubEntry);
         }
     }
 }
