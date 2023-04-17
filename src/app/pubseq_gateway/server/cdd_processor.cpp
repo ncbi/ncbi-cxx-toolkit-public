@@ -35,6 +35,7 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "psgs_thread_pool.hpp"
 #include <objtools/data_loaders/cdd/cdd_access/cdd_client.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Rep_Get_Blob_By_Seq_Id.hpp>
 #include <objtools/data_loaders/cdd/cdd_access/CDD_Reply_Get_Blob_Id.hpp>
@@ -146,8 +147,12 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
 {
     const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
     unsigned int max_conn = registry.GetInt(kCDDProcessorSection, kParamMaxConn, kDefaultMaxConn);
-    if (max_conn == 0) max_conn = 1;
-    m_ThreadPool.reset(new CThreadPool(kMax_UInt, max_conn));
+    if (max_conn == 0) {
+        max_conn = kDefaultMaxConn;
+    }
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt,
+                                       new CPSGS_ThreadPool_Controller(
+                                           min(3u, max_conn), max_conn)));
 }
 
 CPSGS_CDDProcessor::CPSGS_CDDProcessor(

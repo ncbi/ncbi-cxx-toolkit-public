@@ -41,6 +41,7 @@
 #include "osg_resolve_base.hpp"
 #include "id2info.hpp"
 #include "insdc_utils.hpp"
+#include "psgs_thread_pool.hpp"
 #include <corelib/rwstream.hpp>
 #include <serial/serial.hpp>
 #include <serial/objostrasnb.hpp>
@@ -266,8 +267,12 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
     m_Config->m_AllowNonRefSeq = registry.GetBool(kSNPProcessorSection, PARAM_ALLOW_NON_REFSEQ, DEFAULT_ALLOW_NON_REFSEQ);
 
     unsigned int max_conn = registry.GetInt(kSNPProcessorSection, kParamMaxConn, kDefaultMaxConn);
-    if (max_conn == 0) max_conn = 1;
-    m_ThreadPool.reset(new CThreadPool(kMax_UInt, max_conn));
+    if (max_conn == 0) {
+        max_conn = kDefaultMaxConn;
+    }
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt,
+                                       new CPSGS_ThreadPool_Controller(
+                                           min(3u, max_conn), max_conn)));
 }
 
 

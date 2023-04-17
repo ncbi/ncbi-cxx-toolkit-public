@@ -41,6 +41,7 @@
 #include "osg_resolve_base.hpp"
 #include "id2info.hpp"
 #include "cass_processor_base.hpp"
+#include "psgs_thread_pool.hpp"
 #include <sra/readers/sra/wgsread.hpp>
 #include <sra/readers/sra/wgsresolver.hpp>
 #include <corelib/rwstream.hpp>
@@ -260,8 +261,12 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
     m_Config->m_UpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
 
     unsigned int max_conn = registry.GetInt(kWGSProcessorSection, kParamMaxConn, kDefaultMaxConn);
-    if (max_conn == 0) max_conn = 1;
-    m_ThreadPool.reset(new CThreadPool(kMax_UInt, max_conn));
+    if (max_conn == 0) {
+        max_conn = kDefaultMaxConn;
+    }
+    m_ThreadPool.reset(new CThreadPool(kMax_UInt,
+                                       new CPSGS_ThreadPool_Controller(
+                                           min(3u, max_conn), max_conn)));
 }
 
 
