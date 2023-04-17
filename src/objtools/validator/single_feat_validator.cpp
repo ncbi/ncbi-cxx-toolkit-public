@@ -483,7 +483,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
         if (qual.IsSetVal()) {
             val = qual.GetVal();
         }
-        CValidError_feat::EInferenceValidCode rsult = CValidError_feat::ValidateInference(val, m_Imp.ValidateInferenceAccessions());
+        CValidError_feat::EInferenceValidCode rsult = CValidError_feat::ValidateInference(val, m_Imp.ValidateInferenceAccessions(), &m_Scope);
         if (rsult > CValidError_feat::eInferenceValidCode_valid) {
             if (NStr::IsBlank(val)) {
                 val = "?";
