@@ -61,10 +61,10 @@ const unsigned short    kWorkersDefault = 64;
 const unsigned int      kListenerBacklogDefault = 256;
 const unsigned short    kTcpMaxConnDefault = 4096;
 const unsigned int      kTimeoutDefault = 30000;
-const unsigned int      kMaxRetriesDefault = 1;
+const unsigned int      kMaxRetriesDefault = 2;
 const string            kDefaultRootKeyspace = "sat_info2";
 const size_t            kDefaultHttpMaxBacklog = 1024;
-const size_t            kDefaultHttpMaxRunning = 32;
+const size_t            kDefaultHttpMaxRunning = 64;
 const size_t            kDefaultLogSamplingRatio = 0;
 const size_t            kDefaultLogTimingThreshold = 1000;
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
@@ -79,7 +79,7 @@ const bool              kDefaultAllowProcessorTiming = false;
 const string            kDefaultOnlyForProcessor = "";
 const double            kDefaultResendTimeoutSec = 0.2;
 const double            kDefaultRequestTimeoutSec = 30.0;
-const size_t            kDefaultProcessorMaxConcurrency = 800;
+const size_t            kDefaultProcessorMaxConcurrency = 1200;
 const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
 const string            kDefaultIPGKeyspace = "ipg_storage";
 const size_t            kDefaultIPGPageSize = 1024;
@@ -96,8 +96,8 @@ const bool              kDefaultTestSeqIdIgnoreError = true;
 const bool              kDefaultCassandraProcessorsEnabled = true;
 const bool              kDefaultOSGProcessorsEnabled = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
-const bool              kDefaultWGSProcessorsEnabled = false;
-const bool              kDefaultSNPProcessorsEnabled = false;
+const bool              kDefaultWGSProcessorsEnabled = true;
+const bool              kDefaultSNPProcessorsEnabled = true;
 
 
 

@@ -62,9 +62,6 @@ type=log
 
 
 [CASSANDRA_DB]
-; default: false
-cassandralog=false
-
 ; Connection timeout in ms
 ; Default: 30000
 ctimeout=15000
@@ -76,15 +73,6 @@ qtimeout=2500
 ; Data namespace
 ; Default: empty string
 namespace=
-
-; Fallback read consistency
-; Default: false
-fallbackrdconsistency=false
-
-; Lower down consistency of BD write operations if local quorum can't be achieved
-; 0 - default cassandra driver behavior
-; Default: 0
-fallbackwriteconsistency=0
 
 ; Load balancing policy. Accepted values are: DCAware, RoundRobin
 ; Default: DCAware

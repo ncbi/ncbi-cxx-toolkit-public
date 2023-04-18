@@ -46,7 +46,7 @@ using namespace std;
 USING_NCBI_SCOPE;
 
 
-const unsigned long     kMinStatValue = 1;
+const unsigned long     kMinStatValue = 0;
 const unsigned long     kMaxStatValue = 16 * 1024 * 1024;
 const unsigned long     kNStatBins = 24;
 const string            kStatScaleType = "log";
