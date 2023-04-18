@@ -126,8 +126,8 @@ static void RemoveSpacesAndCommas(string& str)
 /**********************************************************/
 void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
 {
-    ValNodePtr vnp;
-    char*      p;
+    ValNodePtr  vnp;
+    const char* p;
 
     if (! token)
         return;
@@ -143,20 +143,18 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalAuthorName, "%s", p);
             continue;
         }
-        if(author->GetName().GetName().IsSetLast() &&
-           !author->GetName().GetName().IsSetFirst())
-        {
-            char *last = (char *) author->SetName().SetName().SetLast().c_str();
-            p = StringChr(last, '|');
-            if(p)
-            {
-                *p++ = '\0';
-                while(*p == ' ')
-                    p++;
-                if(*p != '\0')
-                    author->SetName().SetName().SetFirst((const char *) p);
+        if (author->GetName().GetName().IsSetLast() &&
+            ! author->GetName().GetName().IsSetFirst()) {
+            auto& name = author->SetName().SetName();
+            auto& last = name.SetLast();
+            auto  i    = last.find('|');
+            if (i != string::npos) {
+                string s = last.substr(i + 1);
+                last.resize(i);
+                NStr::TruncateSpacesInPlace(s);
+                if (! s.empty())
+                    name.SetFirst(move(s));
             }
-            author->SetName().SetName().SetLast((const char *) last);
         }
 
         if (author->GetName().GetName().IsSetInitials()) {

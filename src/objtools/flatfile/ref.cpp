@@ -1844,7 +1844,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
         if (*q != '\0') {
             q = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_JOURNAL);
             r = StringChr(p, ',');
-            if(r != NULL && StringChr(r + 1, '.') == NULL)
+            if (r && ! StringChr(r + 1, '.'))
                 *r = '|';
             get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
             MemFree(q);
