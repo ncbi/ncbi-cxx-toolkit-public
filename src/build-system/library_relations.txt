@@ -635,10 +635,8 @@ lzo2 needs3party $(ORIG_LIBS)
 macro needs $(SEQ_LIBS)
 macro needs pub
 mapdata needs mv_align
-mapdata needs mv_metacli
 mapview needs mapdata
 mapview needs mv_entrez
-mapview needs mvobjutil
 mapview needs seqset
 mapviewcli needs mapview
 medlars needs biblio
@@ -711,7 +709,6 @@ mv_types needs $(SEQ_LIBS)
 mv_types needs gui_utils
 mv_types needs pub
 mv_webdata needs mapview
-mvobjutil needs mv_align
 mvobjutil needs mv_metacli
 mysqlclient needs $(Z_LIB)
 mysqlclient needs3party $(NETWORK_LIBS)
