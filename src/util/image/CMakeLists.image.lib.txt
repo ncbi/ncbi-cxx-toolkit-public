@@ -7,7 +7,7 @@ NCBI_begin_lib(ximage)
   )
   NCBI_uses_toolkit_libraries(xncbi)
   NCBI_requires(Z)
-  NCBI_optional_components(JPEG PNG GIF TIFF)
+  NCBI_optional_components(TIFF JPEG PNG GIF)
   NCBI_project_watchers(dicuccio)
 NCBI_end_lib()
 
