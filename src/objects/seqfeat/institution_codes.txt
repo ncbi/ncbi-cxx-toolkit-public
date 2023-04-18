@@ -1,5 +1,6 @@
 	s	Australian National Insect Collection			
 	s	Colecao de Culturas da Universidade de Brasilia			
+	sc	Centro de Investigacion y Extension Forestal Andino Patagonico			
 # $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
