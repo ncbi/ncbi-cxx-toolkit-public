@@ -686,10 +686,7 @@ static TEntrezId DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
     vector<int> uids;
 
     try {
-        hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePMC, CHydraSearch::EScoreCutoff::eCutoff_Medium);
-        if (uids.empty()) {
-            hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePUBMED, CHydraSearch::EScoreCutoff::eCutoff_Medium);
-        }
+        hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePUBMED, CHydraSearch::EScoreCutoff::eCutoff_Medium);
     } catch (CException& e) {
         ERR_POST(Warning << "failed while Hydra search: " << e);
     }
