@@ -1377,32 +1377,16 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     assert(m_Impl);
     assert(m_Impl->reply);
 
-    auto& reply_item = m_Impl->reply->reply_item;
-    auto& reply_state = reply_item->state;
-
-    do {
-        bool was_in_progress = reply_state.InProgress();
-
-        if (auto new_items_locked = m_Impl->reply->new_items.GetLock()) {
-            auto& new_items = *new_items_locked;
-
-            while (!new_items.empty()) {
-                auto& item_ts = *new_items.front();
-                new_items.pop_front();
-
-                // Do not hold lock on item_ts around this call!
-                if (auto rv = m_Impl->Create(item_ts)) {
-                    return rv;
-                }
-            }
-        }
-
+    while (auto new_item = m_Impl->reply->GetNextItem(deadline)) {
         // No more reply items
-        if (!was_in_progress) {
+        if (auto item_ts = new_item.value(); !item_ts) {
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
+
+        // Do not hold lock on item_ts around this call!
+        } else if (auto rv = m_Impl->Create(*item_ts)) {
+            return rv;
         }
     }
-    while (reply_item.WaitUntil(reply_state.InProgress(), deadline, false, true));
 
     return {};
 }
