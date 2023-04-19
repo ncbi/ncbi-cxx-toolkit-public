@@ -10,7 +10,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB  = ncbi_xdbapi_ftds \
        ncbi_xdbapi_ftds100 $(FTDS100_LIB) $(DBAPI_CTLIB) $(DBAPI_ODBC) \
-       dbapi$(STATIC) dbapi_util_blobstore$(STATIC) dbapi_driver$(STATIC) \
+       dbapi$(STATIC) dbapi_util_blobstore$(STATIC) dbapi_driver$(DLL) \
        $(XCONNEXT) xconnect $(COMPRESS_LIBS) xutil test_boost xncbi
 
 LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) \

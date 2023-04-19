@@ -6,7 +6,7 @@ SRC = dbapi_unit_test_common dbapi_context_test
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB  = ncbi_xdbapi_ftds ncbi_xdbapi_ftds100 $(FTDS100_LIB) $(DBAPI_CTLIB) \
-       $(DBAPI_ODBC) dbapi$(STATIC) dbapi_driver$(STATIC) \
+       $(DBAPI_ODBC) dbapi$(STATIC) dbapi_driver$(DLL) \
        $(XCONNEXT) xconnect xutil test_boost xncbi
 
 LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) \
