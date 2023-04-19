@@ -648,6 +648,29 @@ void SPSG_Reply::SetFailed(string message, EPSG_Status status)
     queue->NotifyOne();
 }
 
+optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)
+{
+    do {
+        bool was_in_progress = reply_item->state.InProgress();
+
+        if (auto new_items_locked = new_items.GetLock()) {
+            if (!new_items_locked->empty()) {
+                auto rv = new_items_locked->front();
+                new_items_locked->pop_front();
+                return rv;
+            }
+        }
+
+        // No more reply items
+        if (!was_in_progress) {
+            return nullptr;
+        }
+    }
+    while (reply_item.WaitUntil(reply_item->state.InProgress(), deadline, false, true));
+
+    return nullopt;
+}
+
 shared_ptr<void> SPSG_Request::SContext::Set()
 {
     auto guard = m_ExistingGuard.lock();

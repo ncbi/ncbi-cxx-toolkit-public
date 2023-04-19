@@ -411,6 +411,7 @@ struct SPSG_Reply
 
     void SetComplete();
     void SetFailed(string message, EPSG_Status status = EPSG_Status::eError);
+    optional<SItem::TTS*> GetNextItem(CDeadline deadline);
 };
 
 struct SPSG_Retries

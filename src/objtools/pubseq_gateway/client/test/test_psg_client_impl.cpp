@@ -297,41 +297,20 @@ void SFixture::MtReading()
     auto dispatcher_impl = [&]() {
         CDeadline deadline(kReadingDeadline, 0);
 
-        for (;;) {
-            bool empty_items = false;
-
-            if (auto items_locked = reply->items.GetLock()) {
-                auto& items = *items_locked;
-
-                for (auto& item_ts : items) {
-                    auto reader = readers.find(&item_ts);
-
-                    if (reader == readers.end()) {
-                        auto item_locked = item_ts.GetLock();
-                        auto& chunks = item_locked->chunks;
-
-                        if (chunks.empty()) {
-                            empty_items = true;
-                        } else {
-                            auto blob_id = item_locked->args.GetValue("blob_id");
-                            auto src_blob = src_blobs.find(blob_id);
-
-                            BOOST_REQUIRE_MESSAGE_MT_SAFE(src_blob != src_blobs.end(), "Unknown blob received");
-
-                            thread t = thread(reader_impl, src_blob->second, ref(item_ts));
-                            readers.emplace(&item_ts, move(t));
-                        }
-                    }
-                }
-            }
-
-            if (readers.size() == src_blobs.size()) break;
-
-            if (empty_items) {
-                reply->reply_item.WaitUntil(CTimeout(0, 1));
-
-            } else if (!reply->reply_item.WaitUntil(deadline)) {
+        while (auto new_item = reply->GetNextItem(deadline)) {
+            // No more reply items
+            if (auto item_ts = new_item.value(); !item_ts) {
                 break;
+
+            } else if (auto reader = readers.find(item_ts); reader == readers.end()) {
+                auto item_locked = item_ts->GetLock();
+                auto blob_id = item_locked->args.GetValue("blob_id");
+                auto src_blob = src_blobs.find(blob_id);
+
+                BOOST_REQUIRE_MESSAGE_MT_SAFE(src_blob != src_blobs.end(), "Unknown blob received");
+
+                thread t = thread(reader_impl, src_blob->second, ref(*item_ts));
+                readers.emplace(item_ts, move(t));
             }
         }
 
