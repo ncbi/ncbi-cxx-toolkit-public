@@ -376,6 +376,7 @@ struct SPSG_Reply
         }
 
         void SetComplete() volatile { if (m_InProgress.exchange(false)) change.NotifyOne(); }
+        void Reset();
 
         static EPSG_Status FromRequestStatus(int status);
 
@@ -394,6 +395,8 @@ struct SPSG_Reply
         SPSG_Nullable<size_t> expected;
         size_t received = 0;
         SState state;
+
+        void Reset();
     };
 
     SThreadSafe<list<SItem::TTS>> items;
@@ -412,6 +415,7 @@ struct SPSG_Reply
     void SetComplete();
     void SetFailed(string message, EPSG_Status status = EPSG_Status::eError);
     optional<SItem::TTS*> GetNextItem(CDeadline deadline);
+    void Reset();
 };
 
 struct SPSG_Retries
@@ -455,6 +459,7 @@ struct SPSG_Processor
 
     bool CanBe(TId id) const { return (m_Id == id) || !m_Id; }
     void Set(TId id) { _ASSERT(CanBe(id)); m_Id = id; }
+    void Reset() { m_Id = TId{}; }
 
     static auto GetNextId() { return ++sm_NextId; }
 
@@ -483,7 +488,7 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    enum EStateResult { eContinue, eStop };
+    enum EStateResult { eContinue, eStop, eRetry };
     EStateResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
     {
         processed_by.Set(processor_id);
@@ -510,6 +515,7 @@ struct SPSG_Request
 
     bool Retry(const SUvNgHttp2_Error& error, bool refused_stream = false);
     bool Fail(SPSG_Processor::TId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    void Reset();
 
 private:
     EStateResult StatePrefix(const char*& data, size_t& len);

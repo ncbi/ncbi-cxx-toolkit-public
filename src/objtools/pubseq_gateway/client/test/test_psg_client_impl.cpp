@@ -136,6 +136,7 @@ struct SFixture
     static thread_local SRandom r;
     unordered_map<string, TData> src_blobs;
     TIncomingData src_chunks;
+    TIncomingData unparsable_chunks;
 
     SFixture();
 
@@ -216,10 +217,18 @@ bool SFixture::SReceiver::Process()
 
             if (auto read = m_Stream.gcount()) {
                 if (auto [processor_id, req] = m_Request.Get(); req) {
-                    req->OnReplyData(processor_id, m_Buf.data(), read);
+                    auto result = req->OnReplyData(processor_id, m_Buf.data(), read);
+
+                    if (result == SPSG_Request::eContinue) {
+                        return true;
+
+                    } else if (result == SPSG_Request::eRetry) {
+                        req->Reset();
+                    }
                 }
 
-                return true;
+                m_It = m_End;
+                return false;
             }
         }
 
@@ -247,6 +256,8 @@ SFixture::SFixture()
     const size_t kMessagesMax = 3;
     const size_t kMessageSizeMin = 20;
     const size_t kMessageSizeMax = 100;
+    const size_t kPrefixPartMin = 1;
+    const size_t kPrefixPartMax = 18;
 
     SetDiagPostLevel(eDiag_Info);
 
@@ -305,6 +316,18 @@ SFixture::SFixture()
 
     src_chunks.emplace_back();
     s_OutputArgs(src_chunks.back(), r, s_GetReplyMetaArgs(src_chunks.size()));
+
+
+    // Generating unparsable source (starting with a good looking part of the prefix)
+
+    for (size_t i = r.Get(kChunksMin, kChunksMax); i > 0; --i) {
+        auto chunk_size = r.Get(kSizeMin, kSizeMax);
+        r.Fill(buf.data(), chunk_size);
+        unparsable_chunks.emplace_back();
+        unparsable_chunks.back().append(buf.data(), chunk_size);
+    }
+
+    unparsable_chunks.emplace_front(src_chunks.front().substr(0, r.Get(kPrefixPartMin, kPrefixPartMax)));
 }
 
 template <class TReadImpl>
@@ -403,6 +426,19 @@ void SFixture::Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply,
             r.Shuffle(receivers.begin(), receivers.end());
         }
     };
+
+
+    // Test receiving unparsable data
+
+    receivers.emplace_back(make_unique<SReceiver>(unparsable_chunks, request));
+    receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
+
+    receive_impl();
+
+    BOOST_REQUIRE_MESSAGE_MT_SAFE(!reply->GetNextItem(CDeadline::eNoWait), "Got an item from unparsable data");
+
+
+    // Test receiving normal data
 
     for (auto i = r.Get(kReceiversMin, kReceiversMax); i > 0; --i) {
         receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
