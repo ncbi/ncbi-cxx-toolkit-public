@@ -687,33 +687,30 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
 
 vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacenter)
 {
-    string peers_sql;
-    if (datacenter.empty()) {
-        peers_sql = "SELECT rpc_address FROM system.peers";
-    }
-    else {
-        peers_sql = "SELECT rpc_address FROM system.peers WHERE data_center = ? ALLOW FILTERING";
-    }
     set<string> hosts;
     auto query = NewQuery();
-    query->SetSQL(peers_sql, datacenter.empty() ? 0 : 1);
-    if (!datacenter.empty()) {
-        query->BindStr(0, datacenter);
-    }
+    query->SetSQL("SELECT rpc_address, data_center FROM system.local", 0);
     query->Query(CCassConsistency::kLocalOne, false, false);
-    while (query->NextRow() == ar_dataready) {
-        hosts.insert(query->FieldGetStrValue(0));
+    query->NextRow();
+    string rpc_address = query->FieldGetStrValue(0);
+    string local_datacenter = query->FieldGetStrValue(1);
+    if (datacenter.empty() || datacenter == local_datacenter) {
+        hosts.insert(rpc_address);
     }
-    if (hosts.empty()) {
+    if (rpc_address.empty()) {
         return {};
     }
-    // Second pass to fetch view from other host (lets choose first from current peer list)
+    // Second pass to fetch peers list (needs to be executed from the same host)
     query = NewQuery();
-    query->SetHost(*hosts.begin());
-    query->SetSQL(peers_sql, datacenter.empty() ? 0 : 1);
-    if (!datacenter.empty()) {
+    query->SetHost(rpc_address);
+    if (datacenter.empty()) {
+        query->SetSQL("SELECT rpc_address FROM system.peers", 0);
+    }
+    else {
+        query->SetSQL("SELECT rpc_address FROM system.peers WHERE data_center = ? ALLOW FILTERING", 1);
         query->BindStr(0, datacenter);
     }
+
     query->Query(CCassConsistency::kLocalOne, false, false);
     while (query->NextRow() == ar_dataready) {
         hosts.insert(query->FieldGetStrValue(0));
