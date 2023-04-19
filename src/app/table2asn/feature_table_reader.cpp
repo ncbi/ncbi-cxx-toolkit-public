@@ -1834,8 +1834,7 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
     auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
     pScope->AddTopLevelSeqEntry(seq_entry);
 
-    list<CRef<CSeq_feat>> regions;
-    multimap<CConstRef<CSeq_id>, CRef<CSeq_feat>> mapped_regions;
+    map<CConstRef<CSeq_id>, list<CRef<CSeq_feat>>, PPtrLess<CConstRef<CSeq_id>>> mapped_regions;
     for (auto its : region_its) {
         for (auto feat_it : its.feat_its) {
             auto pRegion = *feat_it;
@@ -1847,7 +1846,7 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
             pRegion->SetLocation(*pMappedLoc);
             auto pId = s_GetIdFromLocation(*pMappedLoc);
             if (pId) {
-                mapped_regions.emplace(CConstRef<CSeq_id>(pId), pRegion);
+                mapped_regions[CConstRef<CSeq_id>(pId)].push_back(pRegion);
                 (*its.annot_it)->SetData().SetFtable().erase(feat_it);
             }
         }
@@ -1868,17 +1867,14 @@ void CFeatureTableReader::MoveRegionsToProteins(CSeq_entry& seq_entry)
 
         CRef<CSeq_annot> pAnnot;
         for (auto pId : bioseq.GetId()) {
-            auto it = mapped_regions.begin();
-            while (it != mapped_regions.end()) {
-                if (it->first->Compare(*pId) == CSeq_id::e_YES) {
-                    if (!pAnnot) {
-                       pAnnot = Ref(new CSeq_annot());
-                    }
-                    pAnnot->SetData().SetFtable().push_back(it->second);
-                    it = mapped_regions.erase(it);
-                    continue;
+            auto it = mapped_regions.lower_bound(pId);
+            while (it != mapped_regions.end() && (it->first->Compare(*pId) == CSeq_id::e_YES)) {
+                if (!pAnnot) {
+                    pAnnot = Ref(new CSeq_annot());
                 }
-                ++it;
+                auto& ftable = pAnnot->SetData().SetFtable();
+                ftable.splice(ftable.end(), it->second);
+                it = mapped_regions.erase(it);
             }
         }
 
