@@ -1535,14 +1535,21 @@ EDiagSev CValidError_imp::x_SalmonellaErrorLevel()
 
 static bool s_IsUndefinedSpecies(const string& taxname)
 {
-    return (NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
+    if (NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
             NStr::EndsWith(taxname, " sp", NStr::eNocase) ||
             NStr::EndsWith(taxname, " (in: Fungi)", NStr::eNocase) ||
             NStr::EndsWith(taxname, " (in: Bacteria)", NStr::eNocase) ||
             NStr::EndsWith(taxname, " bacterium", NStr::eNocase) ||
             NStr::EndsWith(taxname, " archaeon", NStr::eNocase) ||
             NStr::EqualNocase(taxname, "bacterium") ||
-            NStr::EqualNocase(taxname, "archaeon"));
+            NStr::EqualNocase(taxname, "archaeon")) {
+        return true;
+    }
+    auto pos = NStr::Find(taxname, "sp. (in: ");
+    if (pos > 0 && NStr::EndsWith(taxname, ")")) {
+        return true;
+    }
+    return false;
 }
 
 
