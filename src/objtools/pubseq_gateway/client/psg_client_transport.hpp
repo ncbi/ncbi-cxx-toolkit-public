@@ -483,10 +483,18 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    void OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
+    enum EStateResult { eContinue, eStop };
+    EStateResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
     {
         processed_by.Set(processor_id);
-        while (len && (this->*m_State)(data, len));
+
+        while (len) {
+            if (auto rv = (this->*m_State)(data, len); rv != eContinue) {
+                return rv;
+            }
+        }
+
+        return eContinue;
     }
 
     auto& OnReplyDone(SPSG_Processor::TId processor_id)
@@ -504,18 +512,14 @@ struct SPSG_Request
     bool Fail(SPSG_Processor::TId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
 private:
-    bool StatePrefix(const char*& data, size_t& len);
-    bool StateArgs(const char*& data, size_t& len);
-    bool StateData(const char*& data, size_t& len);
+    EStateResult StatePrefix(const char*& data, size_t& len);
+    EStateResult StateArgs  (const char*& data, size_t& len);
+    EStateResult StateData  (const char*& data, size_t& len);
+    EStateResult Add();
 
-    void SetStatePrefix()  { Add(); m_State = &SPSG_Request::StatePrefix; }
-    void SetStateArgs()           { m_State = &SPSG_Request::StateArgs;   }
-    void SetStateData(size_t dtr) { m_State = &SPSG_Request::StateData;   m_Buffer.data_to_read = dtr; }
-
-    void Add();
     bool UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
 
-    using TState = bool (SPSG_Request::*)(const char*& data, size_t& len);
+    using TState = EStateResult (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;
 
     struct SBuffer
