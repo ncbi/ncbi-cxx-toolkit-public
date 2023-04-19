@@ -740,9 +740,6 @@ SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& 
 
         // Full prefix matched
         if (++index == kPrefix.size()) {
-            // No retries after receiving any data
-            m_Retries.Zero();
-
             m_State = &SPSG_Request::StateArgs;
             return eContinue;
         }
@@ -838,7 +835,12 @@ SPSG_Request::EStateResult SPSG_Request::Add()
 
     if (item_type == SPSG_Args::eReply) {
         if (auto item_locked = reply_item_ts.GetLock()) {
-            UpdateItem(item_type, *item_locked, args);
+            if (auto update_result = UpdateItem(item_type, *item_locked, args); update_result == eRetry503) {
+                return eRetry;
+            } else if (update_result == eNewItem) {
+                // No retries after returning any data to users
+                m_Retries.Zero();
+            }
         }
 
         // Item must be unlocked before notifying
@@ -866,13 +868,20 @@ SPSG_Request::EStateResult SPSG_Request::Add()
         }
 
         if (auto item_locked = item_by_id->GetLock()) {
-            auto to_return = UpdateItem(item_type, *item_locked, args);
+            auto update_result = UpdateItem(item_type, *item_locked, args);
+
+            if (update_result == eRetry503) {
+                return eRetry;
+            }
 
             if (to_create) {
                 item_locked->args = move(args);
             }
 
-            if (to_return) {
+            if (update_result == eNewItem) {
+                // No retries after returning any data to users
+                m_Retries.Zero();
+
                 reply->new_items.GetLock()->emplace_back(item_by_id);
             }
 
@@ -888,15 +897,16 @@ SPSG_Request::EStateResult SPSG_Request::Add()
     return eContinue;
 }
 
-bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
+SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
 {
     auto get_status = [&]() { return NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow); };
+    auto can_retry_503 = [&](auto s, auto m) { return (s == CRequestStatus::e503_ServiceUnavailable) && Retry(m); };
 
     ++item.received;
 
     auto chunk_type = args.GetValue<SPSG_Args::eChunkType>();
     auto& chunk = m_Buffer.chunk;
-    auto rv = false;
+    auto rv = eSuccess;
 
     if (chunk_type.first & SPSG_Args::eMeta) {
         auto n_chunks = args.GetValue("n_chunks");
@@ -911,11 +921,15 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
             }
         }
 
-        if (const auto status = get_status()) {
+        if (const auto status = get_status(); can_retry_503(status, "Server returned a meta with status 503")) {
+            return eRetry503;
+        } else if (status) {
             item.state.SetStatus(SPSG_Reply::SState::FromRequestStatus(status), true);
         }
 
-        rv = (item_type != SPSG_Args::eBlob) || !args.GetValue("reason").empty();
+        if ((item_type != SPSG_Args::eBlob) || !args.GetValue("reason").empty()) {
+            rv = eNewItem;
+        }
 
     } else if (chunk_type.first == SPSG_Args::eUnknownChunk) {
         static atomic_bool reported(false);
@@ -938,8 +952,9 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
             ERR_POST(Info << chunk);
         } else if (severity == eDiag_Trace) {
             ERR_POST(Trace << chunk);
+        } else if (const auto status = get_status(); can_retry_503(status, chunk.c_str())) {
+            return eRetry503;
         } else {
-            const auto status = get_status();
             item.state.AddError(move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
         }
 
@@ -950,7 +965,9 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
         auto index = blob_chunk.empty() ? 0 : stoul(blob_chunk);
 
         if (item_type == SPSG_Args::eBlob) {
-            rv = !index;
+            if (!index) {
+                rv = eNewItem;
+            }
 
             if (auto stats = reply->stats.lock()) {
                 auto has_blob_id = !args.GetValue<SPSG_Args::eBlobId>().get().empty();
