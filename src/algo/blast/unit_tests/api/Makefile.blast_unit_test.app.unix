@@ -1,0 +1,4 @@
+# $Id$
+# Avoid ODR violations caught by GCC 12's sanitizer.
+BLAST_LIBS  := $(filter-out submit,$(BLAST_LIBS))
+OBJMGR_LIBS := $(OBJMGR_LIBS:dbapi_driver=dbapi_driver$(DLL))

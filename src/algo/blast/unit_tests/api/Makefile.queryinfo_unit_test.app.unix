@@ -1,0 +1,1 @@
+include $(srcdir)/Makefile.blast_unit_test.app.unix
