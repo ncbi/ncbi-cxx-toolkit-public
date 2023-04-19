@@ -35,6 +35,7 @@
 
 #include <corelib/test_boost.hpp>
 
+#include <algorithm>
 #include <deque>
 #include <thread>
 #include <random>
@@ -100,10 +101,12 @@ struct SFixture
     constexpr static size_t kSizeMax = 1024 * 1024;
     constexpr static size_t kSleepMin = 5;
     constexpr static size_t kSleepMax = 13;
+    constexpr static size_t kReceiversMin = 2;
+    constexpr static size_t kReceiversMax = 10;
 
     struct SReceiver
     {
-        SReceiver(TIncomingData& src, shared_ptr<SPSG_Request> request) :
+        SReceiver(TIncomingData& src, SPSG_TimedRequest request) :
             m_It(src.begin()),
             m_End(src.end()),
             m_Request(move(request)),
@@ -126,7 +129,7 @@ struct SFixture
         TIncomingData::iterator m_It;
         TIncomingData::iterator m_End;
         stringstream m_Stream;
-        shared_ptr<SPSG_Request> m_Request;
+        SPSG_TimedRequest m_Request;
         vector<char> m_Buf;
     };
 
@@ -212,7 +215,10 @@ bool SFixture::SReceiver::Process()
             m_Stream.read(m_Buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = m_Stream.gcount()) {
-                m_Request->OnReplyData(TPSG_ProcessorId{}, m_Buf.data(), read);
+                if (auto [processor_id, req] = m_Request.Get(); req) {
+                    req->OnReplyData(processor_id, m_Buf.data(), read);
+                }
+
                 return true;
             }
         }
@@ -226,7 +232,9 @@ bool SFixture::SReceiver::Process()
 
 void SFixture::SReceiver::Complete()
 {
-    m_Request->reply->SetComplete();
+    if (auto [processor_id, req] = m_Request.Get(); req) {
+        req->OnReplyDone(processor_id)->SetComplete();
+    }
 }
 
 SFixture::SFixture()
@@ -383,21 +391,28 @@ void SFixture::MtReading()
 void SFixture::Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, bool sleep)
 {
     auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
-    SReceiver receiver(src_chunks, request);
+    vector<unique_ptr<SReceiver>> receivers;
 
     auto receive_impl = [&]() {
-        while (receiver.Process()) {
+        while (count_if(receivers.begin(), receivers.end(), mem_fn(&SReceiver::Process))) {
             if (sleep) {
                 auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
                 this_thread::sleep_for(ms);
             }
-        }
 
+            r.Shuffle(receivers.begin(), receivers.end());
+        }
     };
+
+    for (auto i = r.Get(kReceiversMin, kReceiversMax); i > 0; --i) {
+        receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
+    }
 
     receive_impl();
 
-    receiver.Complete();
+    for (auto& receiver : receivers) {
+        receiver->Complete();
+    }
 }
 
 BOOST_FIXTURE_TEST_SUITE(PSG, SFixture)
