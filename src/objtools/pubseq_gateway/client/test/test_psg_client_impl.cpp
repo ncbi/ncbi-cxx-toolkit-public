@@ -94,7 +94,7 @@ private:
 struct SFixture
 {
     using TData = vector<char>;
-    using TIncomingData = deque<stringstream>;
+    using TIncomingData = deque<string>;
 
     constexpr static size_t kSizeMin = 100 * 1024;
     constexpr static size_t kSizeMax = 1024 * 1024;
@@ -109,14 +109,23 @@ struct SFixture
             m_Request(move(request)),
             m_Buf(kSizeMax)
         {
+            SetStream();
         }
 
         bool Process();
         void Complete();
 
     private:
+        void SetStream()
+        {
+            m_Stream.str(m_It == m_End ? string() : *m_It);
+            m_Stream.clear();
+            m_Stream.seekg(0);
+        }
+
         TIncomingData::iterator m_It;
         TIncomingData::iterator m_End;
+        stringstream m_Stream;
         shared_ptr<SPSG_Request> m_Request;
         vector<char> m_Buf;
     };
@@ -126,7 +135,6 @@ struct SFixture
     TIncomingData src_chunks;
 
     SFixture();
-    void Reset();
 
     template <class TReadImpl>
     void MtReading();
@@ -135,8 +143,10 @@ struct SFixture
 
 thread_local SRandom SFixture::r;
 
-void s_OutputArgs(ostream& os, SRandom& r, vector<string> args)
+void s_OutputArgs(string& s, SRandom& r, vector<string> args)
 {
+    ostringstream os(s);
+
     r.Shuffle(args.begin(), args.end());
 
     const char* delim = "\n\nPSG-Reply-Chunk: ";
@@ -147,6 +157,7 @@ void s_OutputArgs(ostream& os, SRandom& r, vector<string> args)
     }
 
     os << '\n';
+    s = os.str();
 }
 
 vector<string> s_GetReplyMetaArgs(size_t n_chunks)
@@ -197,8 +208,6 @@ vector<string> s_GetBlobMessageArgs(size_t item_id, const string& blob_id, const
 bool SFixture::SReceiver::Process()
 {
     while (m_It != m_End) {
-        auto& m_Stream = *m_It;
-
         while (m_Stream) {
             m_Stream.read(m_Buf.data(), r.Get(kSizeMin, kSizeMax));
 
@@ -209,6 +218,7 @@ bool SFixture::SReceiver::Process()
         }
 
         ++m_It;
+        SetStream();
     }
 
     return false;
@@ -260,7 +270,7 @@ SFixture::SFixture()
 
             s_OutputArgs(src_chunks.back(), r, s_GetBlobDataArgs(blobs_number, blob_id, i, chunk_size));
             r.Fill(buf.data(), chunk_size);
-            chunk_stream.write(buf.data(), chunk_size);
+            chunk_stream.append(buf.data(), chunk_size);
             blob_data.insert(blob_data.end(), &buf[0], &buf[chunk_size]);
         }
 
@@ -277,7 +287,7 @@ SFixture::SFixture()
             }
 
             s_OutputArgs(src_chunks.back(), r, s_GetBlobMessageArgs(blobs_number, blob_id, severity, message_size));
-            message_stream << r.GetString(message_size);
+            message_stream += r.GetString(message_size);
         }
 
         --blobs_number;
@@ -289,19 +299,9 @@ SFixture::SFixture()
     s_OutputArgs(src_chunks.back(), r, s_GetReplyMetaArgs(src_chunks.size()));
 }
 
-void SFixture::Reset()
-{
-    for (auto& ss : src_chunks) {
-        ss.clear();
-        ss.seekg(0);
-    }
-}
-
 template <class TReadImpl>
 void SFixture::MtReading()
 {
-    Reset();
-
     const unsigned kReadingDeadline = 300;
 
     const SPSG_Params params;
@@ -404,8 +404,6 @@ BOOST_FIXTURE_TEST_SUITE(PSG, SFixture)
 
 BOOST_AUTO_TEST_CASE(Request)
 {
-    Reset();
-
     const SPSG_Params params;
     auto queue = make_shared<TPSG_Queue>();
     auto reply = make_shared<SPSG_Reply>("", params, queue);
