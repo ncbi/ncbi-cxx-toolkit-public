@@ -121,7 +121,7 @@ public:
         {
         }
     CTreeNode(const TKeyGetter& getter, const TValue& value = TValue());
-    ~CTreeNode();
+    virtual ~CTreeNode();
 
     CTreeNode(const TTreeType& tree);
     CTreeNode& operator =(const TTreeType& tree);
