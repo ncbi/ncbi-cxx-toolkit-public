@@ -694,7 +694,7 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
     _ASSERT(reply);
 }
 
-bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
+SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& len)
 {
     static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
 
@@ -710,11 +710,11 @@ bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
 
         // Full prefix matched
         if (++index == kPrefix.size()) {
-            SetStateArgs();
-            return true;
+            m_State = &SPSG_Request::StateArgs;
+            return eContinue;
         }
 
-        if (!len) return true;
+        if (!len) return eContinue;
     }
 
     // Check failed
@@ -723,15 +723,15 @@ bool SPSG_Request::StatePrefix(const char*& data, size_t& len)
     stringstream ss;
     ss << "Protocol error: prefix mismatch, expected '" << kPrefix << "' vs received '" << matched << different << '\'';
     reply->reply_item.GetLock()->state.AddError(ss.str());
-    return false;
+    return eStop;
 }
 
-bool SPSG_Request::StateArgs(const char*& data, size_t& len)
+SPSG_Request::EStateResult SPSG_Request::StateArgs(const char*& data, size_t& len)
 {
     // Accumulating args
     while (*data != '\n') {
         m_Buffer.args_buffer.push_back(*data++);
-        if (!--len) return true;
+        if (!--len) return eContinue;
     }
 
     ++data;
@@ -745,21 +745,23 @@ bool SPSG_Request::StateArgs(const char*& data, size_t& len)
     m_Buffer.args = move(args);
 
     if (size) {
-        SetStateData(size);
+        m_State = &SPSG_Request::StateData;
+        m_Buffer.data_to_read = size;
     } else {
-        SetStatePrefix();
+        m_State = &SPSG_Request::StatePrefix;
+        return Add();
     }
 
-    return true;
+    return eContinue;
 }
 
-bool SPSG_Request::StateData(const char*& data, size_t& len)
+SPSG_Request::EStateResult SPSG_Request::StateData(const char*& data, size_t& len)
 {
     // Accumulating data
     const auto data_size = min(m_Buffer.data_to_read, len);
 
     // Do not add an empty part
-    if (!data_size) return true;
+    if (!data_size) return eContinue;
 
     auto& chunk = m_Buffer.chunk;
     chunk.append(data, data_size);
@@ -768,10 +770,11 @@ bool SPSG_Request::StateData(const char*& data, size_t& len)
     m_Buffer.data_to_read -= data_size;
 
     if (!m_Buffer.data_to_read) {
-        SetStatePrefix();
+        m_State = &SPSG_Request::StatePrefix;
+        return Add();
     }
 
-    return true;
+    return eContinue;
 }
 
 EDiagSev s_GetSeverity(const string& severity)
@@ -788,7 +791,7 @@ EDiagSev s_GetSeverity(const string& severity)
     return eDiag_Error;
 }
 
-void SPSG_Request::Add()
+SPSG_Request::EStateResult SPSG_Request::Add()
 {
     auto context_guard = context.Set();
 
@@ -847,6 +850,7 @@ void SPSG_Request::Add()
 
     reply->queue->NotifyOne();
     m_Buffer = SBuffer();
+    return eContinue;
 }
 
 bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
