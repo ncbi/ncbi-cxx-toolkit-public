@@ -101,6 +101,26 @@ struct SFixture
     constexpr static size_t kSleepMin = 5;
     constexpr static size_t kSleepMax = 13;
 
+    struct SReceiver
+    {
+        SReceiver(TIncomingData& src, shared_ptr<SPSG_Request> request) :
+            m_It(src.begin()),
+            m_End(src.end()),
+            m_Request(move(request)),
+            m_Buf(kSizeMax)
+        {
+        }
+
+        bool Process();
+        void Complete();
+
+    private:
+        TIncomingData::iterator m_It;
+        TIncomingData::iterator m_End;
+        shared_ptr<SPSG_Request> m_Request;
+        vector<char> m_Buf;
+    };
+
     static thread_local SRandom r;
     unordered_map<string, TData> src_blobs;
     TIncomingData src_chunks;
@@ -110,6 +130,7 @@ struct SFixture
 
     template <class TReadImpl>
     void MtReading();
+    void Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, bool sleep);
 };
 
 thread_local SRandom SFixture::r;
@@ -171,6 +192,31 @@ vector<string> s_GetBlobMessageArgs(size_t item_id, const string& blob_id, const
         "severity=" + severity,
         "size=" + to_string(size)
     };
+}
+
+bool SFixture::SReceiver::Process()
+{
+    while (m_It != m_End) {
+        auto& m_Stream = *m_It;
+
+        while (m_Stream) {
+            m_Stream.read(m_Buf.data(), r.Get(kSizeMin, kSizeMax));
+
+            if (auto read = m_Stream.gcount()) {
+                m_Request->OnReplyData(TPSG_ProcessorId{}, m_Buf.data(), read);
+                return true;
+            }
+        }
+
+        ++m_It;
+    }
+
+    return false;
+}
+
+void SFixture::SReceiver::Complete()
+{
+    m_Request->reply->SetComplete();
 }
 
 SFixture::SFixture()
@@ -326,28 +372,32 @@ void SFixture::MtReading()
 
     // Sending
 
-    vector<char> buf(kSizeMax);
-    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
-
-    for (auto& chunk_stream : src_chunks) {
-        do {
-            chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
-
-            if (auto read = chunk_stream.gcount()) {
-                request->OnReplyData(TPSG_ProcessorId{}, buf.data(), read);
-            }
-
-            auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
-            this_thread::sleep_for(ms);
-        } while (chunk_stream);
-    }
-
-    reply->SetComplete();
+    Receive(params, reply, true);
 
 
     // Waiting
 
     dispatcher.join();
+}
+
+void SFixture::Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, bool sleep)
+{
+    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
+    SReceiver receiver(src_chunks, request);
+
+    auto receive_impl = [&]() {
+        while (receiver.Process()) {
+            if (sleep) {
+                auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
+                this_thread::sleep_for(ms);
+            }
+        }
+
+    };
+
+    receive_impl();
+
+    receiver.Complete();
 }
 
 BOOST_FIXTURE_TEST_SUITE(PSG, SFixture)
@@ -363,20 +413,7 @@ BOOST_AUTO_TEST_CASE(Request)
 
     // Reading
 
-    vector<char> buf(kSizeMax);
-    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
-
-    for (auto& chunk_stream : src_chunks) {
-        do {
-            chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
-
-            if (auto read = chunk_stream.gcount()) {
-                request->OnReplyData(TPSG_ProcessorId{}, buf.data(), read);
-            }
-        } while (chunk_stream);
-    }
-
-    reply->SetComplete();
+    Receive(params, reply, false);
 
 
     // Checking
