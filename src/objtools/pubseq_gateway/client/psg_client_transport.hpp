@@ -523,7 +523,8 @@ private:
     EStateResult StateData  (const char*& data, size_t& len);
     EStateResult Add();
 
-    bool UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
+    enum EUpdateResult { eSuccess, eNewItem, eRetry503 };
+    EUpdateResult UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
 
     using TState = EStateResult (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;

@@ -137,6 +137,7 @@ struct SFixture
     unordered_map<string, TData> src_blobs;
     TIncomingData src_chunks;
     TIncomingData unparsable_chunks;
+    TIncomingData error_503_chunks;
 
     SFixture();
 
@@ -328,6 +329,31 @@ SFixture::SFixture()
     }
 
     unparsable_chunks.emplace_front(src_chunks.front().substr(0, r.Get(kPrefixPartMin, kPrefixPartMax)));
+
+
+    // Generating error 503 source (splitting first chunk so parallel reading of src_chunks wouldn't succeed on retry)
+
+    auto blob_id = "id_" + to_string(r.Get());
+    auto blob_meta = s_GetBlobMetaArgs(1, blob_id, 2);
+    blob_meta.emplace_back("status=503");
+    error_503_chunks.emplace_back();
+    s_OutputArgs(error_503_chunks.back(), r, blob_meta);
+
+    auto message_size = r.Get(kMessageSizeMin, kMessageSizeMax);
+    auto blob_message = s_GetBlobMessageArgs(1, blob_id, "error", message_size);
+    blob_message.emplace_back("status=503");
+    error_503_chunks.emplace_back();
+    s_OutputArgs(error_503_chunks.back(), r, blob_message);
+    error_503_chunks.back() += r.GetString(message_size);
+
+    r.Shuffle(error_503_chunks.begin(), error_503_chunks.end());
+
+    const auto prefix_part_size = r.Get(kPrefixPartMin, kPrefixPartMax);
+    error_503_chunks.front().erase(0, prefix_part_size);
+    error_503_chunks.emplace_front(src_chunks.front().substr(0, prefix_part_size));
+
+    error_503_chunks.emplace_back();
+    s_OutputArgs(error_503_chunks.back(), r, s_GetReplyMetaArgs(error_503_chunks.size()));
 }
 
 template <class TReadImpl>
@@ -436,6 +462,16 @@ void SFixture::Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply,
     receive_impl();
 
     BOOST_REQUIRE_MESSAGE_MT_SAFE(!reply->GetNextItem(CDeadline::eNoWait), "Got an item from unparsable data");
+
+
+    // Test receiving "503" with a retry possible
+
+    receivers.emplace_back(make_unique<SReceiver>(error_503_chunks, request));
+    receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
+
+    receive_impl();
+
+    BOOST_REQUIRE_MESSAGE_MT_SAFE(!reply->GetNextItem(CDeadline::eNoWait), "Got an item from \"error 503\" data");
 
 
     // Test receiving normal data
