@@ -94,10 +94,16 @@ private:
 struct SFixture
 {
     using TData = vector<char>;
+    using TIncomingData = deque<stringstream>;
+
+    constexpr static size_t kSizeMin = 100 * 1024;
+    constexpr static size_t kSizeMax = 1024 * 1024;
+    constexpr static size_t kSleepMin = 5;
+    constexpr static size_t kSleepMax = 13;
 
     static thread_local SRandom r;
     unordered_map<string, TData> src_blobs;
-    deque<stringstream> src_chunks;
+    TIncomingData src_chunks;
 
     SFixture();
     void Reset();
@@ -173,8 +179,6 @@ SFixture::SFixture()
     const size_t kBlobsMax = 11;
     const size_t kChunksMin = 3;
     const size_t kChunksMax = 17;
-    const size_t kSizeMin = 100 * 1024;
-    const size_t kSizeMax = 1024 * 1024;
     const size_t kMessagesMin = 0;
     const size_t kMessagesMax = 3;
     const size_t kMessageSizeMin = 20;
@@ -233,10 +237,10 @@ SFixture::SFixture()
         --blobs_number;
     }
 
+    r.Shuffle(src_chunks.begin(), src_chunks.end());
+
     src_chunks.emplace_back();
     s_OutputArgs(src_chunks.back(), r, s_GetReplyMetaArgs(src_chunks.size()));
-
-    r.Shuffle(src_chunks.begin(), src_chunks.end());
 }
 
 void SFixture::Reset()
@@ -252,10 +256,6 @@ void SFixture::MtReading()
 {
     Reset();
 
-    const size_t kSizeMin = 100 * 1024;
-    constexpr static size_t kSizeMax = 1024 * 1024;
-    const size_t kSleepMin = 5;
-    const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
 
     const SPSG_Params params;
@@ -327,14 +327,14 @@ void SFixture::MtReading()
     // Sending
 
     vector<char> buf(kSizeMax);
-    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
+    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
 
     for (auto& chunk_stream : src_chunks) {
         do {
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = chunk_stream.gcount()) {
-                request.OnReplyData(TPSG_ProcessorId{}, buf.data(), read);
+                request->OnReplyData(TPSG_ProcessorId{}, buf.data(), read);
             }
 
             auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
@@ -356,9 +356,6 @@ BOOST_AUTO_TEST_CASE(Request)
 {
     Reset();
 
-    const size_t kSizeMin = 100 * 1024;
-    const size_t kSizeMax = 1024 * 1024;
-
     const SPSG_Params params;
     auto queue = make_shared<TPSG_Queue>();
     auto reply = make_shared<SPSG_Reply>("", params, queue);
@@ -367,14 +364,14 @@ BOOST_AUTO_TEST_CASE(Request)
     // Reading
 
     vector<char> buf(kSizeMax);
-    SPSG_Request request(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
+    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
 
     for (auto& chunk_stream : src_chunks) {
         do {
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
             if (auto read = chunk_stream.gcount()) {
-                request.OnReplyData(TPSG_ProcessorId{}, buf.data(), read);
+                request->OnReplyData(TPSG_ProcessorId{}, buf.data(), read);
             }
         } while (chunk_stream);
     }
