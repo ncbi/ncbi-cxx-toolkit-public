@@ -438,8 +438,30 @@ private:
     TValues m_Values;
 };
 
-using TPSG_SubmitterId = const void*;
-using TPSG_ProcessorId = unsigned;
+struct SPSG_Submitter
+{
+    using TId = const void*;
+
+    bool CanBe(TId id) const { return !m_Id || (m_Id != id); }
+    void Set(TId id) { m_Id = id; }
+
+private:
+    TId m_Id = nullptr;
+};
+
+struct SPSG_Processor
+{
+    using TId = unsigned;
+
+    bool CanBe(TId id) const { return (m_Id == id) || !m_Id; }
+    void Set(TId id) { _ASSERT(CanBe(id)); m_Id = id; }
+
+    static auto GetNextId() { return ++sm_NextId; }
+
+private:
+    TId m_Id = TId{};
+    inline static atomic<TId> sm_NextId;
+};
 
 struct SPSG_Request
 {
@@ -456,18 +478,20 @@ struct SPSG_Request
     const string full_path;
     shared_ptr<SPSG_Reply> reply;
     SContext context;
+    SPSG_Submitter submitted_by;
+    SPSG_Processor processed_by;
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    void OnReplyData(TPSG_ProcessorId processor_id, const char* data, size_t len)
+    void OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
     {
-        SetProcessedBy(processor_id);
+        processed_by.Set(processor_id);
         while (len && (this->*m_State)(data, len));
     }
 
-    auto& OnReplyDone(TPSG_ProcessorId processor_id)
+    auto& OnReplyDone(SPSG_Processor::TId processor_id)
     {
-        SetProcessedBy(processor_id);
+        processed_by.Set(processor_id);
         return reply;
     }
 
@@ -476,14 +500,8 @@ struct SPSG_Request
         return m_Retries.Get(type, refused_stream);
     }
 
-    bool CanBeSubmittedBy(TPSG_SubmitterId submitter_id) const { return !m_SubmittedBy || (m_SubmittedBy != submitter_id); }
-    void SetSubmittedBy(TPSG_SubmitterId submitter_id) { m_SubmittedBy = submitter_id; }
-
-    bool CanBeProcessedBy(TPSG_ProcessorId processor_id) const { return !m_ProcessedBy || (m_ProcessedBy == processor_id); }
-    void SetProcessedBy(TPSG_ProcessorId processor_id) { _ASSERT(CanBeProcessedBy(processor_id)); m_ProcessedBy = processor_id; }
-
     bool Retry(const SUvNgHttp2_Error& error, bool refused_stream = false);
-    bool Fail(TPSG_ProcessorId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    bool Fail(SPSG_Processor::TId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
 private:
     bool StatePrefix(const char*& data, size_t& len);
@@ -512,18 +530,16 @@ private:
     SBuffer m_Buffer;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     SPSG_Retries m_Retries;
-    TPSG_SubmitterId m_SubmittedBy = nullptr;
-    TPSG_ProcessorId m_ProcessedBy = TPSG_ProcessorId{};
 };
 
 struct SPSG_TimedRequest
 {
-    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Id(++sm_NextId), m_Request(move(r)) {}
+    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Id(SPSG_Processor::GetNextId()), m_Request(move(r)) {}
 
     auto Get()
     {
         _ASSERT(m_Request);
-        return make_pair(m_Id, m_Request->CanBeProcessedBy(m_Id) ? m_Request : nullptr);
+        return make_pair(m_Id, m_Request->processed_by.CanBe(m_Id) ? m_Request : nullptr);
     }
 
     unsigned AddTime() { return ++m_Time; }
@@ -533,10 +549,9 @@ struct SPSG_TimedRequest
     bool CheckExpiration(const SPSG_Params& params, const SUvNgHttp2_Error& error, TOnRetry on_retry, TOnFail on_fail);
 
 private:
-    const TPSG_ProcessorId m_Id;
+    const SPSG_Processor::TId m_Id;
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Time = 0;
-    inline static atomic<TPSG_ProcessorId> sm_NextId;
 };
 
 struct SPSG_AsyncQueue : SUv_Async
@@ -673,8 +688,8 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     template <class... TNgHttp2Cbs>
     SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
-    bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->CanBeSubmittedBy(GetInternalId()); }
-    bool ProcessRequest(SPSG_TimedRequest timed_req, TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req);
+    bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->submitted_by.CanBe(GetInternalId()); }
+    bool ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request>& req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
@@ -689,11 +704,11 @@ private:
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
-    TPSG_SubmitterId GetInternalId() const { return this; }
+    SPSG_Submitter::TId GetInternalId() const { return this; }
 
-    bool Fail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
+    bool Fail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false);
 
-    bool RetryFail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
+    bool RetryFail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         if (req->Retry(error, refused_stream)) {
             m_Queue.Emplace(req);

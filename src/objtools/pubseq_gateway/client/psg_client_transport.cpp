@@ -998,7 +998,7 @@ bool SPSG_Request::Retry(const SUvNgHttp2_Error& error, bool refused_stream)
     return false;
 }
 
-bool SPSG_Request::Fail(TPSG_ProcessorId processor_id, const SUvNgHttp2_Error& error, bool refused_stream)
+bool SPSG_Request::Fail(SPSG_Processor::TId processor_id, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     if (GetRetries(SPSG_Retries::eFail, refused_stream)) {
         return false;
@@ -1011,7 +1011,7 @@ bool SPSG_Request::Fail(TPSG_ProcessorId processor_id, const SUvNgHttp2_Error& e
     return true;
 }
 
-bool SPSG_IoSession::Fail(TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
+bool SPSG_IoSession::Fail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     auto context_guard = req->context.Set();
     auto rv = req->Fail(processor_id, error, refused_stream);
@@ -1084,7 +1084,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     return 0;
 }
 
-bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, TPSG_ProcessorId processor_id, shared_ptr<SPSG_Request>& req)
+bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request>& req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
@@ -1121,7 +1121,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, TPSG_ProcessorI
     }
 
     server.available_streams--;
-    req->SetSubmittedBy(GetInternalId());
+    req->submitted_by.Set(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
     m_Requests.emplace(stream_id, move(timed_req));
