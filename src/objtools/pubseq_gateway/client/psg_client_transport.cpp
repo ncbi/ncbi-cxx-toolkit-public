@@ -855,6 +855,8 @@ SPSG_Request::EStateResult SPSG_Request::Add()
 
 bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
 {
+    auto get_status = [&]() { return NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow); };
+
     ++item.received;
 
     auto chunk_type = args.GetValue<SPSG_Args::eChunkType>();
@@ -874,7 +876,7 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
             }
         }
 
-        if (const auto status = NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow)) {
+        if (const auto status = get_status()) {
             item.state.SetStatus(SPSG_Reply::SState::FromRequestStatus(status), true);
         }
 
@@ -902,7 +904,7 @@ bool SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem&
         } else if (severity == eDiag_Trace) {
             ERR_POST(Trace << chunk);
         } else {
-            const auto status = NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow);
+            const auto status = get_status();
             item.state.AddError(move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
         }
 
@@ -1073,11 +1075,11 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
         PSG_IO_SESSION_TRACE(this << '/' << stream_id << " status: " << status_str);
 
         if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
-            if (auto [processor_id, req] = it->second.Get(); req) {
-                const auto request_status = static_cast<CRequestStatus::ECode>(atoi(status_str));
-                const auto status = SPSG_Reply::SState::FromRequestStatus(request_status);
+            const auto request_status = static_cast<CRequestStatus::ECode>(atoi(status_str));
+            const auto status = SPSG_Reply::SState::FromRequestStatus(request_status);
 
-                if (status != EPSG_Status::eSuccess) {
+            if (status != EPSG_Status::eSuccess) {
+                if (auto [processor_id, req] = it->second.Get(); req) {
                     const auto error = to_string(request_status) + ' ' + CRequestStatus::GetStdStatusMessage(request_status);
                     req->OnReplyDone(processor_id)->SetFailed(error, status);
                 }
