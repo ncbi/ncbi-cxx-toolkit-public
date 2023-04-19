@@ -589,6 +589,13 @@ string SPSG_Reply::SState::GetError()
     return rv;
 }
 
+void SPSG_Reply::SState::Reset()
+{
+    m_InProgress.store(true);
+    m_Status.store(EPSG_Status::eSuccess);
+    m_Messages.clear();
+}
+
 EPSG_Status SPSG_Reply::SState::FromRequestStatus(int status)
 {
     switch (status) {
@@ -598,6 +605,15 @@ EPSG_Status SPSG_Reply::SState::FromRequestStatus(int status)
         case CRequestStatus::e404_NotFound:         return EPSG_Status::eNotFound;
         default:                                    return EPSG_Status::eError;
     }
+}
+
+void SPSG_Reply::SItem::Reset()
+{
+    chunks.clear();
+    args = SPSG_Args{};
+    expected = null;
+    received = 0;
+    state.Reset();
 }
 
 void SPSG_Reply::SetComplete()
@@ -671,6 +687,12 @@ optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)
     return nullopt;
 }
 
+void SPSG_Reply::Reset()
+{
+    items.GetLock()->clear();
+    reply_item.GetLock()->Reset();
+}
+
 shared_ptr<void> SPSG_Request::SContext::Set()
 {
     auto guard = m_ExistingGuard.lock();
@@ -694,12 +716,20 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
     _ASSERT(reply);
 }
 
+void SPSG_Request::Reset()
+{
+    // Reduce failure counter as well (retry counter is reduced in Retry() before returning eRetry)
+    GetRetries(SPSG_Retries::eFail, false);
+
+    reply->Reset();
+    processed_by.Reset();
+    m_Buffer = SBuffer{};
+    m_ItemsByID.clear();
+}
+
 SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& len)
 {
     static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
-
-    // No retries after receiving any data
-    m_Retries.Zero();
 
     auto& index = m_Buffer.prefix_index;
 
@@ -710,6 +740,9 @@ SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& 
 
         // Full prefix matched
         if (++index == kPrefix.size()) {
+            // No retries after receiving any data
+            m_Retries.Zero();
+
             m_State = &SPSG_Request::StateArgs;
             return eContinue;
         }
@@ -718,11 +751,13 @@ SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& 
     }
 
     // Check failed
-    const auto matched = CTempString(kPrefix, 0, index);
-    const auto different = CTempString(data, min(len, kPrefix.size() - index));
-    stringstream ss;
-    ss << "Protocol error: prefix mismatch, expected '" << kPrefix << "' vs received '" << matched << different << '\'';
-    reply->reply_item.GetLock()->state.AddError(ss.str());
+    const auto message = "Protocol error: prefix mismatch";
+
+    if (Retry(message)) {
+        return eRetry;
+    }
+
+    reply->reply_item.GetLock()->state.AddError(message);
     return eStop;
 }
 
@@ -984,9 +1019,22 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
         if (auto [processor_id, req] = it->second.Get(); req) {
-            req->OnReplyData(processor_id, (const char*)data, len);
-            it->second.ResetTime();
+            auto result = req->OnReplyData(processor_id, (const char*)data, len);
+
+            if (result == SPSG_Request::eContinue) {
+                it->second.ResetTime();
+                return 0;
+
+            } else if (result == SPSG_Request::eRetry) {
+                req->Reset();
+                m_Queue.Emplace(req);
+
+            } else {
+                req->reply->SetComplete();
+            }
         }
+
+        m_Requests.erase(it);
     }
 
     return 0;
@@ -1082,6 +1130,8 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
                 if (auto [processor_id, req] = it->second.Get(); req) {
                     const auto error = to_string(request_status) + ' ' + CRequestStatus::GetStdStatusMessage(request_status);
                     req->OnReplyDone(processor_id)->SetFailed(error, status);
+                } else {
+                    m_Requests.erase(it);
                 }
             }
         }
