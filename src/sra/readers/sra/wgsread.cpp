@@ -238,6 +238,11 @@ static SProfiler sw_GetSeq_entry;
 static SProfiler sw_GetSeq_entryData;
 static SProfiler sw_GetSplitInfo;
 static SProfiler sw_GetSplitInfoData;
+static SProfiler sw_InitSplit;
+static SProfiler sw_GetFeatLocIdTypeRange;
+static SProfiler sw_GetFeatLocIdTypeFeat;
+static SProfiler sw_GetFeatLocIdTypeFeatBytes;
+static SProfiler sw_GetFeatBytes;
 static SProfiler sw_GetChunk;
 static SProfiler sw_CreateQualityChunk;
 static SProfiler sw_CreateDataChunk;
@@ -2314,11 +2319,13 @@ void CWGSDb_Impl::x_InitIdParams(void)
         }
         else if ( CKMDataNode node = CKMDataNode(meta, "TAXID", CKMDataNode::eMissing_Allow) ) {
             // common taxid
-            m_CommonTaxId = node.GetUint4();
-            m_HasCommonTaxId = true;
-            if ( has_static_taxid && static_taxid != m_CommonTaxId ) {
-                m_CommonTaxId = ZERO_TAX_ID;
-                m_HasCommonTaxId = false;
+            if ( node.GetSize() != 0 ) {
+                m_CommonTaxId = node.GetUint4();
+                m_HasCommonTaxId = true;
+                if ( has_static_taxid && static_taxid != m_CommonTaxId ) {
+                    m_CommonTaxId = ZERO_TAX_ID;
+                    m_HasCommonTaxId = false;
+                }
             }
         }
     }
@@ -3662,6 +3669,28 @@ TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc, int ask_version)
 }
 
 
+bool CWGSDb_Impl::CanHaveGis()
+{
+    bool can_have_gis = false;
+    auto cur = Seq();
+    if ( cur->m_GI && *cur->GI(1) != 0 ) {
+        can_have_gis = true;
+    }
+    Put(cur);
+    return can_have_gis;
+}
+
+
+bool CWGSDb_Impl::HasFeatures()
+{
+    bool has_features = false;
+    auto cur = Feat();
+    has_features = cur && cur->m_Cursor.GetRowIdRange().second > 0;
+    Put(cur);
+    return has_features;
+}
+
+
 CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
 {
     if ( m_FeatLocIdType == eFeatLocIdUninitialized ) {
@@ -3669,6 +3698,7 @@ CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
             if ( CRef<SFeatTableCursor> cur = Feat() ) {
                 TVDBRowId feat_row_id = 1;
                 try {
+                    PROFILE(sw_GetFeatLocIdTypeRange);
                     CRef<SSeqTableCursor> seq = Seq();
                     auto row_range = seq->m_Cursor.GetRowIdRange(seq->m_FEAT_ROW_START.GetIndex());
                     for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
@@ -3684,8 +3714,13 @@ CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
                 catch ( exception& /*ignored*/ ) {
                     // use first feature in the file
                 }
+                PROFILE(sw_GetFeatLocIdTypeFeat);
                 CRef<CSeq_feat> feat(new CSeq_feat);
-                CTempString bytes = *cur->SEQ_FEAT(feat_row_id);
+                CTempString bytes;
+                {{
+                    PROFILE(sw_GetFeatLocIdTypeFeatBytes);
+                    bytes = *cur->SEQ_FEAT(feat_row_id);
+                }}
                 cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
                 cur.GetNCObject().m_ObjStr >> *feat;
                 Put(cur);
@@ -3757,9 +3792,9 @@ struct SWGSCreateInfo : SWGSDb_Defs
             feat_id = main_id;
             // fix feature ids
             // it can be accession.version and accession
-            EFeatLocIdType feat_loc_id_type = db->GetFeatLocIdType();
-            if ( feat_loc_id_type != eFeatLocIdGi ) {
-                if ( feat_id->IsGi() ) {
+            if ( feat_id->IsGi() ) {
+                EFeatLocIdType feat_loc_id_type = db->GetFeatLocIdType();
+                if ( feat_loc_id_type != eFeatLocIdGi ) {
                     feat_id = it.GetId(flags & ~fIds_gi);
                 }
             }
@@ -5548,12 +5583,12 @@ CRef<CID2S_Chunk_Info> SWGSFeatChunkInfo::CreateChunkInfo(int index,
             }
             // fix feature ids
             // it can be accession.version and accession
-            if ( feat_loc_id_type == eFeatLocIdUninitialized ) {
-                feat_loc_id_type = prot_it.GetDb().GetFeatLocIdType();
-            }
-            if ( feat_loc_id_type == eFeatLocIdGi ) {
-                CSeq_id::TGi gi = prot_it.GetGi();
-                if ( gi != ZERO_GI ) {
+            CSeq_id::TGi gi = prot_it.GetGi();
+            if ( gi != ZERO_GI ) {
+                if ( feat_loc_id_type == eFeatLocIdUninitialized ) {
+                    feat_loc_id_type = prot_it.GetDb().GetFeatLocIdType();
+                }
+                if ( feat_loc_id_type == eFeatLocIdGi ) {
                     if ( gi != gi_range_stop ) {
                         s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
                         gi_range_start = gi;
@@ -5924,6 +5959,7 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
 bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
 {
     // split data if...
+    PROFILE(sw_InitSplit);
     if ( kEnableSplitData && (info.flags & fSplitSeqData) &&
          ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
          HasGapInfo() && // we have explicit gap info
@@ -7671,6 +7707,7 @@ CRange<TSeqPos> CWGSFeatureIterator::GetLocRange(void) const
 
 CTempString CWGSFeatureIterator::GetSeq_featBytes(void) const
 {
+    PROFILE(sw_GetFeatBytes);
     return *m_Cur->SEQ_FEAT(m_CurrId);
 }
 
