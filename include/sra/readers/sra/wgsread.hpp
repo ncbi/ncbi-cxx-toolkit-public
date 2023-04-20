@@ -409,6 +409,8 @@ public:
     {
         return m_CommonTaxId;
     }
+    bool CanHaveGis();
+    bool HasFeatures();
     
     struct SAmbiguityInfo;
     
