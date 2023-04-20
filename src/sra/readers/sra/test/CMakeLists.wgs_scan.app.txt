@@ -1,0 +1,11 @@
+# $Id$
+
+NCBI_begin_app(wgs_scan)
+  NCBI_sources(wgs_scan)
+  NCBI_uses_toolkit_libraries(sraread xobjmgr)
+  NCBI_requires(VDB)
+
+  NCBI_set_test_requires(in-house-resources)
+
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
