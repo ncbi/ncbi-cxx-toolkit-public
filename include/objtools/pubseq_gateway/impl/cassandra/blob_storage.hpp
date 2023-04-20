@@ -35,6 +35,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <optional>
 
@@ -131,17 +132,7 @@ class CSatInfoSchema final
  public:
     friend class CSatInfoSchemaProvider;
 
-    CSatInfoSchema() = delete;
-
-    /// @param registry
-    ///   Configuration registry used to create new cluster connections
-    /// @param registry_section
-    ///   Registry section name used as a template creating new cluster connection
-    ///   {service} entry of registry section gets replaced by {service} from {sat_info3.sat2keyspace} table
-    CSatInfoSchema(
-        CNcbiRegistry const & registry,
-        string const & registry_section
-    );
+    CSatInfoSchema() = default;
 
     optional<SSatInfoEntry> GetBlobKeyspace(int32_t sat) const;
     vector<SSatInfoEntry> GetNAKeyspaces() const;
@@ -154,16 +145,20 @@ class CSatInfoSchema final
     shared_ptr<CCassConnection> x_GetConnectionByConnectionPoint(string const& connection_point) const;
 
     optional<ESatInfoRefreshSchemaResult> x_AddClusterConnection(shared_ptr<CCassConnection> const& connection, bool is_default);
-    optional<ESatInfoRefreshSchemaResult> x_AddSatInfoEntry(SSatInfoEntry&& entry, shared_ptr<CSatInfoSchema> const& old_schema);
+    optional<ESatInfoRefreshSchemaResult> x_AddSatInfoEntry(
+        SSatInfoEntry&& entry,
+        shared_ptr<CSatInfoSchema> const& old_schema,
+        shared_ptr<IRegistry const> const& registry,
+        string const& registry_section
+    );
     optional<ESatInfoRefreshSchemaResult> x_AddClusterByServiceName(
         string const& service,
         shared_ptr<CSatInfoSchema> const& old_schema,
-        shared_ptr<CCassConnection>& cluster
+        shared_ptr<CCassConnection>& cluster,
+        shared_ptr<IRegistry const> const& registry,
+        string const& registry_section
     );
     optional<ESatInfoRefreshSchemaResult> x_ResolveServiceName(string const& service, vector<string>& connection_points);
-
-    const CNcbiRegistry & m_Registry;
-    string m_RegistrySection;
 
     // Mapping {sat => Connection to blob keyspace}
     map<int32_t, SSatInfoEntry> m_BlobKeyspaces;
@@ -201,10 +196,10 @@ class CSatInfoSchemaProvider final
     ///   {service} entry of registry section gets replaced by {service} from {sat_info3.sat2keyspace} table
     CSatInfoSchemaProvider(
         string const& sat_info_keyspace,
-        string const & domain,
+        string const& domain,
         shared_ptr<CCassConnection> sat_info_connection,
-        const CNcbiRegistry & registry,
-        const string & registry_section
+        shared_ptr<IRegistry const> registry,
+        string const& registry_section
     );
 
     /// Changes configuration domain for existing provider
@@ -304,16 +299,16 @@ class CSatInfoSchemaProvider final
     shared_ptr<CCassConnection> x_GetSatInfoConnection() const;
     void x_SetRefreshErrorMessage(string const& message);
     optional<ESatInfoRefreshSchemaResult> x_PopulateNewSchema(
-        shared_ptr<CSatInfoSchema>& schema,
-        vector<SSatInfoEntry>&& sat_info,
-        shared_ptr<CSatInfoSchema> const& old_schema
+        shared_ptr<CSatInfoSchema>& new_schema,
+        shared_ptr<CSatInfoSchema> const& old_schema,
+        vector<SSatInfoEntry>&& sat_info
     );
 
     string m_SatInfoKeyspace;
     string m_Domain;
     shared_ptr<CCassConnection> m_SatInfoConnection;
 
-    const CNcbiRegistry & m_Registry;
+    shared_ptr<IRegistry const> m_Registry;
     string m_RegistrySection;
 
     shared_ptr<CSatInfoSchema> m_SatInfoSchema;

@@ -38,6 +38,7 @@
 #include "IdCassScope.hpp"
 
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <memory>
 #include <string>
@@ -59,8 +60,10 @@ class CCassConnectionFactory:
     void AppParseArgs(const CArgs &  args);
     void LoadConfig(const string &  cfg_name, const string &  section);
     void LoadConfig(const CNcbiRegistry &  registry, const string &  section);
+    void LoadConfig(IRegistry const* registry, string const& section);
     void ReloadConfig();
     void ReloadConfig(const CNcbiRegistry &  registry);
+    void ReloadConfig(IRegistry const* registry);
     shared_ptr<CCassConnection> CreateInstance();
 
     void GetHostPort(string & hostlist, short & port);

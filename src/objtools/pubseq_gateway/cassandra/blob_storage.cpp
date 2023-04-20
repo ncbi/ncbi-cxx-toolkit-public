@@ -307,15 +307,6 @@ size_t HashSatInfoData(vector<SSatInfoEntry> const& rows)
 
 END_SCOPE()
 
-CSatInfoSchema::CSatInfoSchema(
-    CNcbiRegistry const & registry,
-    string const & registry_section
-)
-    : m_Registry(registry)
-    , m_RegistrySection(registry_section)
-{
-}
-
 optional<SSatInfoEntry> CSatInfoSchema::GetBlobKeyspace(int32_t sat) const
 {
     auto itr = m_BlobKeyspaces.find(sat);
@@ -428,7 +419,9 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveServiceName(strin
 optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterByServiceName(
     string const& service,
     shared_ptr<CSatInfoSchema> const& old_schema,
-    shared_ptr<CCassConnection>& cluster
+    shared_ptr<CCassConnection>& cluster,
+    shared_ptr<IRegistry const> const& registry,
+    string const& registry_section
 )
 {
     // Check this schema data
@@ -474,7 +467,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterByServiceName(
     // Make NEW connection
     {
         auto factory = CCassConnectionFactory::s_Create();
-        factory->LoadConfig(m_Registry, m_RegistrySection);
+        factory->LoadConfig(registry.get(), registry_section);
         factory->SetServiceName(service);
         factory->SetDataNamespace("");
         cluster = factory->CreateInstance();
@@ -489,11 +482,13 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterByServiceName(
 
 optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
     SSatInfoEntry&& entry,
-    shared_ptr<CSatInfoSchema> const& old_schema
+    shared_ptr<CSatInfoSchema> const& old_schema,
+    shared_ptr<IRegistry const> const& registry,
+    string const& registry_section
 )
 {
     shared_ptr<CCassConnection> connection;
-    auto result = x_AddClusterByServiceName(entry.service, old_schema, connection);
+    auto result = x_AddClusterByServiceName(entry.service, old_schema, connection, registry, registry_section);
     if (result.has_value()) {
         return result;
     }
@@ -527,15 +522,15 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
 
 CSatInfoSchemaProvider::CSatInfoSchemaProvider(
     string const& sat_info_keyspace,
-    string const & domain,
+    string const& domain,
     shared_ptr<CCassConnection> sat_info_connection,
-    const CNcbiRegistry & registry,
-    const string & registry_section
+    shared_ptr<IRegistry const> registry,
+    string const& registry_section
 )
     : m_SatInfoKeyspace(sat_info_keyspace)
     , m_Domain(domain)
     , m_SatInfoConnection(move(sat_info_connection))
-    , m_Registry(registry)
+    , m_Registry(move(registry))
     , m_RegistrySection(registry_section)
 {}
 
@@ -607,9 +602,9 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
     else if (!apply) {
         return ESatInfoRefreshSchemaResult::eSatInfoUpdated;
     }
-    auto schema = make_shared<CSatInfoSchema>(m_Registry, m_RegistrySection);
+    auto schema = make_shared<CSatInfoSchema>();
     auto old_schema = GetSchema();
-    auto result = x_PopulateNewSchema(schema, move(rows), old_schema);
+    auto result = x_PopulateNewSchema(schema, old_schema, move(rows));
     if (result.has_value()) {
         return result.value();
     }
@@ -619,17 +614,17 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
 }
 
 optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchema(
-    shared_ptr<CSatInfoSchema>& schema,
-    vector<SSatInfoEntry>&& sat_info,
-    shared_ptr<CSatInfoSchema> const& old_schema
+    shared_ptr<CSatInfoSchema>& new_schema,
+    shared_ptr<CSatInfoSchema> const& old_schema,
+    vector<SSatInfoEntry>&& sat_info
 )
 {
-    auto result = schema->x_AddClusterConnection(x_GetSatInfoConnection(), true);
+    auto result = new_schema->x_AddClusterConnection(x_GetSatInfoConnection(), true);
     if (result.has_value()) {
         return result.value();
     }
     for (auto& entry : sat_info) {
-        auto result = schema->x_AddSatInfoEntry(move(entry), old_schema);
+        auto result = new_schema->x_AddSatInfoEntry(move(entry), old_schema, m_Registry, m_RegistrySection);
         if (result.has_value()) {
             switch(result.value()) {
             case ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated:
@@ -646,11 +641,11 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
             return result.value();
         }
     }
-    if (schema->m_ResolverKeyspace.keyspace.empty() || !schema->m_ResolverKeyspace.connection) {
+    if (new_schema->m_ResolverKeyspace.keyspace.empty() || !new_schema->m_ResolverKeyspace.connection) {
         x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined;
     }
-    if (schema->GetMaxBlobKeyspaceSat() == -1) {
+    if (new_schema->GetMaxBlobKeyspaceSat() == -1) {
         x_SetRefreshErrorMessage("sat2keyspace is incomplete");
         return ESatInfoRefreshSchemaResult::eBlobKeyspacesEmpty;
     }
