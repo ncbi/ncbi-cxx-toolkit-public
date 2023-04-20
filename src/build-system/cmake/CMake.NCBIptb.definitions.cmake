@@ -93,7 +93,7 @@ set(incinternal     ${NCBI_INC_ROOT}/${NCBI_DIRNAME_INTERNAL})
 # After CMake language processing, \\\\\\1 becomes \\\1.
 # The first \\ places a literal \ in the output. The second \1 is the placeholder that gets replaced by the match.
 string(REGEX REPLACE "([][^$.\\*+?|()])" "\\\\\\1" _tmp ${CMAKE_CURRENT_SOURCE_DIR})
-if (NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT ${CMAKE_CURRENT_LIST_DIR} MATCHES "^${_tmp}/")
+if (NCBI_PTBCFG_PACKAGED OR (NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT ${CMAKE_CURRENT_LIST_DIR} MATCHES "^${_tmp}/"))
     get_filename_component(NCBI_EXTERNAL_TREE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../.."   ABSOLUTE)
     message(STATUS "Found NCBI C++ Toolkit: ${NCBI_EXTERNAL_TREE_ROOT}")
 endif()
