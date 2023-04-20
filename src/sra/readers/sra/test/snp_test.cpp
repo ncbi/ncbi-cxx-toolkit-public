@@ -47,7 +47,9 @@
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <serial/serial.hpp>
-#include <thread>
+#ifdef NCBI_THREADS
+# include <thread>
+#endif
 
 #include <common/test_assert.h>  /* This header must go last */
 
