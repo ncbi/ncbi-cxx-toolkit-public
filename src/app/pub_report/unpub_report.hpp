@@ -42,7 +42,6 @@
 
 namespace ncbi
 {
-    class CHydraSearch;
     class CEutilsClient;
     namespace objects
     {
@@ -78,7 +77,6 @@ public:
     void ResetDate();
 
 private:
-    CHydraSearch&  GetHydraSearch() const;
     CEutilsClient& GetEUtils() const;
 
     TEntrezId RetrievePMid(const CPubData& data) const;
@@ -91,7 +89,6 @@ private:
         m_pubs_need_date;
 
     ncbi::CNcbiOstream&               m_out;
-    mutable shared_ptr<CHydraSearch>  m_hydra_search;
     mutable shared_ptr<CEutilsClient> m_eutils;
 
     CRef<CDate_std> m_date;
