@@ -514,14 +514,6 @@ void CUnpublishedReport::ReportUnpublished(const CPub& pub)
     }
 }
 
-CHydraSearch& CUnpublishedReport::GetHydraSearch() const
-{
-    if (! m_hydra_search) {
-        m_hydra_search.reset(new CHydraSearch);
-    }
-    return *m_hydra_search;
-}
-
 CEutilsClient& CUnpublishedReport::GetEUtils() const
 {
     if (! m_eutils) {
@@ -667,7 +659,7 @@ static TEntrezId DoEUtilsSearch(CEutilsClient& eutils, const string& database, c
     return pmid;
 }
 
-static TEntrezId DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
+static TEntrezId DoHydraSearch(const CPubData& data)
 {
     // title
     string query = NStr::Join(data.GetTitleWords(), "+");
@@ -686,7 +678,7 @@ static TEntrezId DoHydraSearch(CHydraSearch& hydra_search, const CPubData& data)
     vector<int> uids;
 
     try {
-        hydra_search.DoHydraSearch(query, uids, CHydraSearch::ESearch::ePUBMED, CHydraSearch::EScoreCutoff::eCutoff_Medium);
+        CHydraSearch().DoHydraSearch(query, uids, CHydraSearch::ESearch::ePUBMED, CHydraSearch::EScoreCutoff::eCutoff_Medium);
     } catch (CException& e) {
         ERR_POST(Warning << "failed while Hydra search: " << e);
     }
@@ -789,7 +781,7 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data) const
     }
 
     if (pmid == ZERO_ENTREZ_ID) {
-        pmid = DoHydraSearch(GetHydraSearch(), data);
+        pmid = DoHydraSearch(data);
     }
 
     return pmid;
