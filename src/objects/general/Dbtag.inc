@@ -26,6 +26,7 @@
   { "ECOCYC",              { CDbtag::fGenBank, CDbtag::eDbtagType_ECOCYC } },
   { "ERIC",                { CDbtag::fGenBank, CDbtag::eDbtagType_ERIC } },
   { "ESTLIB",              { CDbtag::fGenBank, CDbtag::eDbtagType_ESTLIB } },
+  { "EchinoBase",          { CDbtag::fGenBank | CDbtag::fRefSeq, CDbtag::eDbtagType_EchinoBase } },
   { "EcoGene",             { CDbtag::fGenBank, CDbtag::eDbtagType_EcoGene } },
   { "EnsemblGenomes",      { CDbtag::fGenBank, CDbtag::eDbtagType_EnsemblGenomes } },
   { "EnsemblGenomes-Gn",   { CDbtag::fGenBank, CDbtag::eDbtagType_EnsemblGenomes_Gn } },

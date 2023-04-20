@@ -223,7 +223,8 @@ public:
         eDbtagType_MarpolBase,
         eDbtagType_dbVar,
         eDbtagType_EnsemblRapid,
-        eDbtagType_AllianceGenome
+        eDbtagType_AllianceGenome,
+        eDbtagType_EchinoBase
     };
 
     enum EDbtagGroup {
