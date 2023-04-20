@@ -70,8 +70,10 @@ class CSatInfoProviderTest
  protected:
     static void SetUpTestCase() {
         m_Registry.Set(m_ConfigSection, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        m_RegistryPtr = make_shared<CCompoundRegistry>();
+        m_RegistryPtr->Add(m_Registry);
         m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(m_Registry, m_ConfigSection);
+        m_Factory->LoadConfig(m_RegistryPtr.get(), m_ConfigSection);
         m_Connection = m_Factory->CreateInstance();
         m_Connection->Connect();
     }
@@ -87,6 +89,7 @@ class CSatInfoProviderTest
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
     static CNcbiRegistry m_Registry;
+    static shared_ptr<CCompoundRegistry> m_RegistryPtr;
 
     string m_KeyspaceName{"sat_info3"};
 };
@@ -96,11 +99,12 @@ const char* CSatInfoProviderTest::m_ConfigSection = "TEST";
 shared_ptr<CCassConnectionFactory> CSatInfoProviderTest::m_Factory(nullptr);
 shared_ptr<CCassConnection> CSatInfoProviderTest::m_Connection(nullptr);
 CNcbiRegistry CSatInfoProviderTest::m_Registry;
+shared_ptr<CCompoundRegistry> CSatInfoProviderTest::m_RegistryPtr(nullptr);
 
 TEST_F(CSatInfoProviderTest, Smoke) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(false));
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(false));
@@ -110,7 +114,7 @@ TEST_F(CSatInfoProviderTest, Smoke) {
 TEST_F(CSatInfoProviderTest, DomainDoesNotExist) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "DomainDoesNotExist", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty, provider.RefreshSchema(false));
     EXPECT_FALSE(provider.GetRefreshErrorMessage().empty());
@@ -119,7 +123,7 @@ TEST_F(CSatInfoProviderTest, DomainDoesNotExist) {
 TEST_F(CSatInfoProviderTest, EmptySatInfoName) {
     CSatInfoSchemaProvider provider(
         "", "PSG_CASS_UNIT1", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoKeyspaceUndefined, provider.RefreshSchema(false));
     EXPECT_EQ("mapping_keyspace is not specified", provider.GetRefreshErrorMessage());
@@ -128,7 +132,7 @@ TEST_F(CSatInfoProviderTest, EmptySatInfoName) {
 TEST_F(CSatInfoProviderTest, Basic) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUnchanged, provider.RefreshSchema(false));
@@ -193,7 +197,7 @@ TEST_F(CSatInfoProviderTest, Basic) {
 TEST_F(CSatInfoProviderTest, NotLoaded) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     ASSERT_EQ(nullopt, provider.GetBlobKeyspace(23));
     ASSERT_EQ(nullptr, provider.GetResolverKeyspace().connection);
@@ -205,7 +209,7 @@ TEST_F(CSatInfoProviderTest, NotLoaded) {
 TEST_F(CSatInfoProviderTest, ServiceResolutionErrors) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT3", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved, provider.RefreshSchema(true));
     EXPECT_FALSE(provider.GetRefreshErrorMessage().empty());
@@ -222,7 +226,7 @@ TEST_F(CSatInfoProviderTest, ServiceResolutionErrors) {
 TEST_F(CSatInfoProviderTest, ResolverKeyspaceDuplicated) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT6", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated, provider.RefreshSchema(true));
 }
@@ -230,7 +234,7 @@ TEST_F(CSatInfoProviderTest, ResolverKeyspaceDuplicated) {
 TEST_F(CSatInfoProviderTest, ResolverKeyspaceUndefined) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT7", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined, provider.RefreshSchema(true));
 }
@@ -238,7 +242,7 @@ TEST_F(CSatInfoProviderTest, ResolverKeyspaceUndefined) {
 TEST_F(CSatInfoProviderTest, BlobKeyspacesUndefined) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT8", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eBlobKeyspacesEmpty, provider.RefreshSchema(true));
 }
@@ -247,7 +251,7 @@ TEST_F(CSatInfoProviderTest, EmptyMessages) {
     {
         CSatInfoSchemaProvider provider(
             m_KeyspaceName, "PSG_CASS_UNIT7", m_Connection,
-            m_Registry, m_ConfigSection
+            m_RegistryPtr, m_ConfigSection
         );
         EXPECT_EQ("", provider.GetMessage("ANY"));
         EXPECT_EQ(ESatInfoRefreshMessagesResult::eSatInfoMessagesEmpty, provider.RefreshMessages(false));
@@ -255,7 +259,7 @@ TEST_F(CSatInfoProviderTest, EmptyMessages) {
     {
         CSatInfoSchemaProvider provider(
             "", "PSG_CASS_UNIT7", m_Connection,
-            m_Registry, m_ConfigSection
+            m_RegistryPtr, m_ConfigSection
         );
         EXPECT_EQ(ESatInfoRefreshMessagesResult::eSatInfoKeyspaceUndefined, provider.RefreshMessages(false));
     }
@@ -264,7 +268,7 @@ TEST_F(CSatInfoProviderTest, EmptyMessages) {
 TEST_F(CSatInfoProviderTest, BasicMessages) {
     CSatInfoSchemaProvider provider(
         m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, provider.RefreshMessages(false));
     EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, provider.RefreshMessages(true));
@@ -276,7 +280,7 @@ TEST_F(CSatInfoProviderTest, BasicMessages) {
 TEST_F(CSatInfoProviderTest, CassException) {
     CSatInfoSchemaProvider provider(
         "NON_EXISTENT_KEYSPACE", "PSG_CASS_UNIT1", m_Connection,
-        m_Registry, m_ConfigSection
+        m_RegistryPtr, m_ConfigSection
     );
     EXPECT_THROW(provider.RefreshMessages(true), CCassandraException);
     EXPECT_THROW(provider.RefreshSchema(true), CCassandraException);

@@ -146,6 +146,13 @@ void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
     ReloadConfig(registry);
 }
 
+void CCassConnectionFactory::LoadConfig(IRegistry const* registry, string const& section)
+{
+    m_Section = section;
+    m_CfgName = "";
+    ReloadConfig(registry);
+}
+
 void CCassConnectionFactory::ReloadConfig()
 {
     if (m_CfgName.empty()) {
@@ -163,32 +170,36 @@ void CCassConnectionFactory::ReloadConfig()
 
 void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry & registry)
 {
-    CFastMutexGuard _(m_RunTimeParams);
+    ReloadConfig(&registry);
+}
 
+void CCassConnectionFactory::ReloadConfig(IRegistry const* registry)
+{
+    CFastMutexGuard _(m_RunTimeParams);
     if (m_Section.empty()) {
         m_Section = kCassConfigSection;
     }
 
-    if (!registry.Empty()) {
-        m_CassConnTimeoutMs = registry.GetInt(m_Section, "ctimeout", kCassConnTimeoutDefault);
-        m_CassQueryTimeoutMs = registry.GetInt(m_Section, "qtimeout", kCassQueryTimeoutDefault);
-        m_CassQueryRetryTimeoutMs = registry.GetInt(m_Section, "qtimeout_retry", 0);
-        m_MaxRetries = registry.GetInt(m_Section, "maxretries", kMaxRetriesDefault);
-        m_CassDataNamespace = registry.GetString(m_Section, "namespace", "");
-        m_CassFallbackRdConsistency = registry.GetBool(m_Section, "fallbackrdconsistency", false);
-        m_CassFallbackWrConsistency = registry.GetInt(
+    if (registry && !registry->Empty()) {
+        m_CassConnTimeoutMs = registry->GetInt(m_Section, "ctimeout", kCassConnTimeoutDefault);
+        m_CassQueryTimeoutMs = registry->GetInt(m_Section, "qtimeout", kCassQueryTimeoutDefault);
+        m_CassQueryRetryTimeoutMs = registry->GetInt(m_Section, "qtimeout_retry", 0);
+        m_MaxRetries = registry->GetInt(m_Section, "maxretries", kMaxRetriesDefault);
+        m_CassDataNamespace = registry->GetString(m_Section, "namespace", "");
+        m_CassFallbackRdConsistency = registry->GetBool(m_Section, "fallbackrdconsistency", false);
+        m_CassFallbackWrConsistency = registry->GetInt(
             m_Section, "fallbackwriteconsistency", kCassFallbackWrConsistencyDefault);
-        m_LoadBalancingStr = registry.GetString(m_Section, "loadbalancing", "");
-        m_TokenAware = registry.GetBool(m_Section, "tokenaware", true);
-        m_LatencyAware = registry.GetBool(m_Section, "latencyaware", true);
-        m_NumThreadsIo = registry.GetInt(m_Section, "numthreadsio", kNumThreadsIoDefault);
-        m_NumConnPerHost = registry.GetInt(m_Section, "numconnperhost", kNumConnPerHostDefault);
-        m_Keepalive = registry.GetInt(m_Section, "keepalive", kKeepaliveDefault);
-        m_PassFile = registry.GetString(m_Section, "password_file", "");
-        m_PassSection = registry.GetString(m_Section, "password_section", "");
-        m_CassHosts = registry.GetString(m_Section, "service", "");
-        m_CassBlackList = registry.GetString(m_Section, "black_list", "");
-        m_LogEnabled = registry.GetBool(m_Section, "log", false);
+        m_LoadBalancingStr = registry->GetString(m_Section, "loadbalancing", "");
+        m_TokenAware = registry->GetBool(m_Section, "tokenaware", true);
+        m_LatencyAware = registry->GetBool(m_Section, "latencyaware", true);
+        m_NumThreadsIo = registry->GetInt(m_Section, "numthreadsio", kNumThreadsIoDefault);
+        m_NumConnPerHost = registry->GetInt(m_Section, "numconnperhost", kNumConnPerHostDefault);
+        m_Keepalive = registry->GetInt(m_Section, "keepalive", kKeepaliveDefault);
+        m_PassFile = registry->GetString(m_Section, "password_file", "");
+        m_PassSection = registry->GetString(m_Section, "password_section", "");
+        m_CassHosts = registry->GetString(m_Section, "service", "");
+        m_CassBlackList = registry->GetString(m_Section, "black_list", "");
+        m_LogEnabled = registry->GetBool(m_Section, "log", false);
 
         ProcessParams();
     }
