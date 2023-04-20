@@ -499,6 +499,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_dbVar, "https://www.ncbi.nlm.nih.gov/dbvar/variants/" },
     { CDbtag::eDbtagType_EnsemblRapid, "https://rapid.ensembl.org/id/" },
     { CDbtag::eDbtagType_AllianceGenome, "https://www.alliancegenome.org/gene/" },
+    { CDbtag::eDbtagType_EchinoBase, "https://www.echinobase.org/entry/gene/showgene.do?method=displayGeneSummary&geneId=" },
 
     { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
