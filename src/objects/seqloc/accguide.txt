@@ -1480,7 +1480,7 @@ version  1 # of file format
 2+6  OQ  gb_dirsub
 2+8  OQ  gb_other_nuc
 2+10 OQ  gb_other_nuc
-2+6  OR  gb_other_nuc
+2+6  OR  gb_dirsub
 2+8  OR  gb_other_nuc
 2+10 OR  gb_other_nuc
 2+6  OS  gb_other_nuc
