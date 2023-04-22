@@ -1,6 +1,5 @@
 	s	Australian National Insect Collection			
 	s	Colecao de Culturas da Universidade de Brasilia			
-	sc	Centro de Investigacion y Extension Forestal Andino Patagonico			
 # $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
@@ -1242,6 +1241,7 @@ CICV	c	Centro de Investigaciones en Ciencias Veterinarias
 CICY	s	Centro de Investigacion Cientifica de Yucatan, A.C. (CICY)			
 CIDA	s	Albertson College, Museum of Natural History			
 CIECRO	s	County Record Office, Cambridgeshire			
+CIEFAP	sc	Centro de Investigacion y Extension Forestal Andino Patagonico			
 CIES	c	Centro de Investigacion, Experimentacion y Servicios del Champinon			
 CIFE	s	Central Institute of Fisheries Education			
 CIIDIR	s	Instituto Politecnico Nacional			
