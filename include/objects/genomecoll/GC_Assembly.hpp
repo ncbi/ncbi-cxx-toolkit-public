@@ -134,6 +134,12 @@ public:
     void GetMolecules(TSequenceList& molecules,
                       ESubset        subset) const;
 
+    /// Retrieve a subset of molecules separately for each unit, in the same
+    /// order in which the units are returned by GetAssemblyUnits()
+    ///
+    void GetMoleculesByUnit(vector<TSequenceList>& molecules,
+                            ESubset        subset) const;
+
     /// Retrieve a list of all assembly units contained in this assembly
     TAssemblyUnits GetAssemblyUnits() const;
 

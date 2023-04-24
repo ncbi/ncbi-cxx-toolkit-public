@@ -818,6 +818,24 @@ static void s_Extract(const CGC_AssemblySet& set,
 }
 
 
+static void s_Extract(const CGC_AssemblySet& set,
+                      vector< list< CConstRef<CGC_Sequence> > >& molecules,
+                      CGC_Assembly::ESubset subset)
+{
+    molecules.clear();
+    molecules.resize(set.IsSetMore_assemblies()
+         ? set.GetMore_assemblies().size() + 1 : 1);
+    vector< list< CConstRef<CGC_Sequence> > >::iterator unit_it = molecules.begin();
+    s_Extract(set.GetPrimary_assembly(), *unit_it++, subset);
+    if (set.IsSetMore_assemblies()) {
+        ITERATE (CGC_AssemblySet::TMore_assemblies, it,
+                 set.GetMore_assemblies()) {
+            s_Extract(**it, *unit_it++, subset);
+        }
+    }
+}
+
+
 static void s_Extract(const CGC_Assembly& assm,
                       list< CConstRef<CGC_Sequence> >& molecules,
                       CGC_Assembly::ESubset subset)
@@ -830,8 +848,28 @@ static void s_Extract(const CGC_Assembly& assm,
 }
 
 
+static void s_Extract(const CGC_Assembly& assm,
+                      vector< list< CConstRef<CGC_Sequence> > >& molecules,
+                      CGC_Assembly::ESubset subset)
+{
+    if (assm.IsUnit()) {
+        molecules.resize(1);
+        molecules.front().clear();
+        s_Extract(assm.GetUnit(), molecules.front(), subset);
+    } else {
+        s_Extract(assm.GetAssembly_set(), molecules, subset);
+    }
+}
+
+
 void CGC_Assembly::GetMolecules(list< CConstRef<CGC_Sequence> >& molecules,
                                 ESubset subset) const
+{
+    s_Extract(*this, molecules, subset);
+}
+
+void CGC_Assembly::GetMoleculesByUnit(vector<TSequenceList>& molecules,
+                            ESubset        subset) const
 {
     s_Extract(*this, molecules, subset);
 }
