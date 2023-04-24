@@ -365,13 +365,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         return m_Keyspace;
     }
 
-    void UpdateBlobFlagsExtended(
-        unsigned int op_timeout_ms,
-        CBlobRecord::TSatKey key,
-        EBlobFlags flag,
-        bool set_flag
-    );
-
     bool GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value);
     void UpdateSetting(unsigned int op_timeout_ms, const string & domain, const string & name, const string & value);
 
