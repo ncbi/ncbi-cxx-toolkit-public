@@ -354,9 +354,10 @@ void CHttpConnection::x_MaintainBacklog(void)
 
         auto    context = request->GetRequestContext();
         if (context.NotNull()) {
-            CDiagContext::SetRequestContext(context);
+            CRequestContextResetter     context_resetter;
+            request->SetRequestContext();
+
             GetDiagContext().Extra().Print("backlog_time_mks", mks);
-            CDiagContext::SetRequestContext(NULL);
         }
 
         x_Start(request, reply, move(processor_names));

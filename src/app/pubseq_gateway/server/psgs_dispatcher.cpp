@@ -247,7 +247,11 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         string                  msg;
         CRequestStatus::ECode   status_code;
         size_t                  limited_processor_count = request->GetLimitedProcessorCount();
-        if (limited_processor_count == 0) {
+
+        CRequestContextResetter     context_resetter;
+        request->SetRequestContext();
+
+        if (limited_processor_count == 0 && false) {
             msg = "No matching processors found";
             status_code = CRequestStatus::e404_NotFound;
             PSG_WARNING(msg);
