@@ -97,10 +97,32 @@ static int/*bool*/ s_Inited = 0/*false*/;
 static SIPRange s_LocalIP[256 + 1] = { { eIPRange_None } };
 
 
-#ifdef HAVE_LIBCONNEXT
-
-
-#  include "ext/ncbi_localip.c"
+static const struct {
+    EIPRangeType t;
+    unsigned int a;
+    unsigned int b;
+} kLocalIP[] = {
+    /* localnet (localhost):  127/8 */
+#if defined(IN_CLASSA) && defined(IN_CLASSA_NET) && defined(IN_CLASSA_NSHIFT)
+#  if IN_CLASSA_MAX <= IN_LOOPBACKNET
+#    error "IN_LOOPBACKNET is out of range"
+#  endif /*IN_CLASSA_MAX<=IN_LOOPBACKNET*/
+    { eIPRange_Network, IN_LOOPBACKNET << IN_CLASSA_NSHIFT, IN_CLASSA_NET },
+#else
+    { eIPRange_Network, INADDR_LOOPBACK - 1,                0xFF000000    },
+#endif /*IN_CLASSA && IN_CLASSA_NET && IN_CLASSA_NSHIFT*/
+    /* from assigned IP ranges */
+    { eIPRange_Range,   0x820E0800, 0x820E09FF }, /* 130.14.{8|9}.0/24       */
+    { eIPRange_Range,   0x820E0B00, 0x820E0CFF }, /* 130.14.1{1|2}.0/24      */
+    { eIPRange_Range,   0x820E1400, 0x820E1AFF }, /* 130.14.20.0..27.255     */
+    { eIPRange_Range,   0x820E1B40, 0x820E1BFF }, /*  w/o 130.14.27.0/26     */
+    { eIPRange_Network, 0x820E1D00, 0xFFFFFF00 }, /* 130.14.29.yyy           */
+    { eIPRange_Network, 0xA5700700, 0xFFFFFF00 }, /* 165.112.7.zzz (colo)    */
+    /* from private IP ranges */
+    { eIPRange_Network, 0x0A0A0000, 0xFFFF0000 }, /* 10.10/16 from cl.A      */
+    { eIPRange_Network, 0x0A140000, 0xFFFF0000 }, /* 10.20/16 from cl.A      */
+    { eIPRange_None }
+};
 
 
 static const SIPRange* x_IsOverlappingRange(const SIPRange* start,
@@ -327,15 +349,6 @@ static void s_LoadLocalIPs(void)
     }
     s_LocalIP[n].type = eIPRange_None;
 }
-
-
-#else
-
-
-#  define s_LoadLocalIPs()  /*void*/
-
-
-#endif /*HAVE_LIBCONNEXT*/
 
 
 extern void NcbiInitLocalIP(void)
