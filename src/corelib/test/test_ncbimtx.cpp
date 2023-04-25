@@ -91,4 +91,38 @@ BOOST_AUTO_TEST_CASE(SemaphorePostRace)
     }
 }
 
+BOOST_AUTO_TEST_CASE(MutexRace)
+{
+    const size_t kObjectCount = 10;
+    const size_t kThreadCount = 50;
+    const size_t kPassCount = 100000;
+
+    struct SObject {
+        CMutex mutex;
+        size_t counter;
+    };
+    vector<unique_ptr<SObject>> objs;
+    for ( size_t i = 0; i < kObjectCount; ++i ) {
+        objs.push_back(make_unique<SObject>());
+    }
+    vector<thread> tt;
+    for ( size_t i = 0; i < kThreadCount; ++i ) {
+        tt.push_back(thread([&]() {
+            for ( size_t p = 0; p < kPassCount; ++p ) {
+                for ( size_t i = 0; i < kObjectCount; ++i ) {
+                    CMutexGuard guard(objs[i]->mutex);
+                    objs[i]->counter += 1;
+                    guard.Release();
+                }
+            }
+        }));
+    }
+    for ( auto& t : tt ) {
+        t.join();
+    }
+    for ( size_t i = 0; i < kObjectCount; ++i ) {
+        BOOST_CHECK_EQUAL(objs[i]->counter, kThreadCount*kPassCount);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
