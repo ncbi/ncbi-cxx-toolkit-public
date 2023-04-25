@@ -1703,7 +1703,7 @@ void CId2ReaderBase::x_DumpReply(TConn conn,
                                  const char* msg)
 {
     if ( GetDebugLevel() >= eTraceConn   ) {
-        CDebugPrinter s(0, "CId2Reader");
+        CDebugPrinter s(conn, "CId2Reader");
         s << msg;
         if ( GetDebugLevel() >= eTraceASN ) {
             if ( GetDebugLevel() >= eTraceBlobData ) {
@@ -1943,7 +1943,7 @@ int CId2ReaderBase::x_GetReplyIndex(CReaderRequestResult& result,
                                     SId2PacketInfo& packet,
                                     const CID2_Reply& reply)
 {
-    int num = reply.GetSerial_number() - packet.start_serial_num;
+    int num = reply.IsSetSerial_number()? reply.GetSerial_number() - packet.start_serial_num: -1;
     if ( reply.IsSetDiscard() ) {
         // discard whole reply for now
         return -1;
