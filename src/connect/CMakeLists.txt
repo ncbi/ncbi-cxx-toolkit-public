@@ -4,14 +4,8 @@
 # independent C++ toolkit library
 # These variables capture the split
 
-if (WIN32)
-    set(lbsm_src ncbi_lbsmd_stub ncbi_strerror)
-else()
-    if(EXISTS ${NCBI_CURRENT_SOURCE_DIR}/ncbi_lbsm.c)
-        set(lbsm_src ncbi_lbsm.c ncbi_lbsm_ipc.c ncbi_lbsmd.c)
-    else(WIN32)
-        set(lbsm_src ncbi_lbsmd_stub)
-    endif()
+if (NOT WIN32)
+    set(lbsm_src ncbi_lbsm ncbi_lbsm_ipc)
 endif()
 
 set(SRC_TLS
@@ -55,7 +49,7 @@ set(SRC_C
     ncbi_service ncbi_sendmail ncbi_base64 ncbi_heapmgr ncbi_lb
     ncbi_socket_connector ncbi_file_connector ncbi_http_connector
     ncbi_memory_connector ncbi_service_connector ncbi_ftp_connector
-    ncbi_version ncbi_iprange ncbi_local ncbi_dispd
+    ncbi_version ncbi_iprange ncbi_local ncbi_lbsmd ncbi_dispd
     ncbi_linkerd ncbi_namerd parson
     ncbi_localip ncbi_lbdns
     ${lbsm_src}
@@ -75,4 +69,3 @@ set(SRC_CXX
 NCBI_disable_pch()
 NCBI_add_library(connect connssl xxconnect xxconnect2 xconnect xthrserv)
 NCBI_add_subdirectory(services ext test daemons)
-
