@@ -40,6 +40,8 @@
 
 BEGIN_NCBI_SCOPE
 
+DEFINE_STATIC_FAST_MUTEX(s_UpdateMutex);
+
 CDelayBuffer::~CDelayBuffer(void)
 {
 }
@@ -60,6 +62,13 @@ void CDelayBuffer::Forget(void)
 
 void CDelayBuffer::DoUpdate(void)
 {
+    if ( m_Info.get() == nullptr ) {
+        return;
+    }
+    CFastMutexGuard guard(s_UpdateMutex);
+    if ( m_Info.get() == nullptr ) {
+        return;
+    }
     _ASSERT(m_Info.get() != 0);
     SInfo& info = *m_Info;
 
