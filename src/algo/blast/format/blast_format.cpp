@@ -975,10 +975,8 @@ void CBlastFormat::x_PrintAirrRearrangement(const blast::CIgBlastResults& result
     // tabular formatting just prints each alignment in turn
     // (plus a header)
 
-    const CBlastTabularInfo::EFieldDelimiter kDelim =
-            (m_FormatType == CFormattingArgs::eCommaSeparatedValues
-             ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
-
+    const CBlastTabularInfo::EFieldDelimiter kDelim = CBlastTabularInfo::eTab;
+    
     CIgBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
     tabinfo.SetParseLocalIds(m_BelieveQuery);
 
