@@ -32,7 +32,7 @@
 #include <corelib/ncbi_config.hpp>
 #include <objtools/data_loaders/genbank/impl/reader_service.hpp>
 #include <objtools/data_loaders/genbank/reader_service_params.h>
-#include <objtools/data_loaders/genbank/impl/reader_id2_base.hpp>
+#include <objtools/data_loaders/genbank/reader.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbithr.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -72,7 +72,7 @@ static CIncreasingTime::SAllParams s_OpenTimeoutParams = {
     }
 };
 
-typedef CId2ReaderBase::CDebugPrinter CDebugPrinter;
+typedef CReader::CDebugPrinter CDebugPrinter;
 
 
 NCBI_PARAM_DECL(int, GENBANK, CONN_DEBUG);
