@@ -243,6 +243,13 @@ unsigned CSeq_id_Handle::GetHash(void) const
 }
 
 
+bool CSeq_id_Handle::IsAllowedSNPScaleLimit(CSeq_id::ESNPScaleLimit scale_limit) const
+{
+    CConstRef<CSeq_id> id = GetSeqId();
+    return id && id->IsAllowedSNPScaleLimit(scale_limit);
+}
+
+
 string GetDirectLabel(const CSeq_id& id)
 {
     string ret;

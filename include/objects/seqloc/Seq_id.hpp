@@ -811,6 +811,19 @@ public:
     const static size_t kMaxGeneralTagLength = 50;
     const static size_t kMaxAccessionLength  = 30;
 
+    /// SNP annotation scale limits
+    enum ESNPScaleLimit {
+        eSNPScaleLimit_Default, // Use server defaults
+        eSNPScaleLimit_Unit,
+        eSNPScaleLimit_Contig,
+        eSNPScaleLimit_Supercontig,
+        eSNPScaleLimit_Chromosome
+    };
+
+    static const char* GetSNPScaleLimit_Name(ESNPScaleLimit value);
+    static ESNPScaleLimit GetSNPScaleLimit_Value(const string& name);
+    bool IsAllowedSNPScaleLimit(ESNPScaleLimit scale_limit) const;
+
 private:
     enum ETypeVariant {
         eTV_plain,

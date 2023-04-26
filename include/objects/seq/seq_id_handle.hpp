@@ -332,6 +332,8 @@ public:
             swap(m_Variant, idh.m_Variant);
         }
 
+    bool NCBI_SEQ_EXPORT IsAllowedSNPScaleLimit(CSeq_id::ESNPScaleLimit scale_limit) const;
+
 public:
     const CSeq_id_Info* x_GetInfo(void) const {
         return m_Info;
