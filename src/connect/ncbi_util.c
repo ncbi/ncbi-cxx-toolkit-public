@@ -1388,6 +1388,17 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
 }
 
 
+extern int/*bool*/ UTIL_HelpRequested(int argc, char** argv)
+{
+    return argc == 2  &&  ((*argv[1] == '-'  ||  *argv[1] == '/')  &&
+                           (strcmp    (argv[1] + 1, "?")      == 0  ||
+                            strcasecmp(argv[1] + 1, "h")      == 0  ||
+                            strcasecmp(argv[1] + 1, "help")   == 0  ||
+                            strcasecmp(argv[1],     "--help") == 0))
+        ? 1/*true*/ : 0/*false*/;
+}
+
+
 #ifdef NCBI_OS_MSWIN
 
 
