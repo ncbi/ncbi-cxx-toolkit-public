@@ -4,7 +4,7 @@
 # independent C++ toolkit library
 # These variables capture the split
 
-if (NOT WIN32)
+if (UNIX)
     set(lbsm_src ncbi_lbsm ncbi_lbsm_ipc)
 endif()
 
