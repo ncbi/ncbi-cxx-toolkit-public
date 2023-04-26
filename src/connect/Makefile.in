@@ -10,7 +10,7 @@
 #################################
 
 LIB_PROJ = connssl connect xxconnect xconnect xxconnect2 xthrserv 
-SUB_PROJ = services daemons ext test
+SUB_PROJ = services ext test
 
 WATCHERS = lavr
 
