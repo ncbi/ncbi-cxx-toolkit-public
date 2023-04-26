@@ -412,7 +412,7 @@ struct SSystemMutex
 
     volatile TThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
 
-    volatile int m_Count; ///< # of recursive (in the same thread) locks
+    atomic<int> m_Count; ///< # of recursive (in the same thread) locks
 
     /// Acquire mutex for the current thread.
     NCBI_XNCBI_EXPORT

@@ -354,9 +354,10 @@ void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
     m_Mutex.CheckInitialized();
 
     TThreadSystemID owner = GetCurrentThreadSystemID();
-    if ( m_Count > 0 && m_Owner == owner ) {
+    auto count = m_Count.load(memory_order_acquire);
+    if ( count > 0 && m_Owner == owner ) {
         // Don't lock twice, just increase the counter
-        m_Count++;
+        m_Count.store(count+1, memory_order_release);
         return;
     }
 
@@ -364,7 +365,7 @@ void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
     m_Mutex.Lock(lock);
     assert(m_Count == 0);
     m_Owner = owner;
-    m_Count = 1;
+    m_Count.store(1, memory_order_release);
 }
 
 bool SSystemMutex::TryLock(void)
@@ -372,9 +373,10 @@ bool SSystemMutex::TryLock(void)
     m_Mutex.CheckInitialized();
 
     TThreadSystemID owner = GetCurrentThreadSystemID();
-    if ( m_Count > 0 && m_Owner == owner ) {
+    auto count = m_Count.load(memory_order_acquire);
+    if ( count > 0 && m_Owner == owner ) {
         // Don't lock twice, just increase the counter
-        m_Count++;
+        m_Count.store(count+1, memory_order_release);
         return true;
     }
 
@@ -382,7 +384,7 @@ bool SSystemMutex::TryLock(void)
     if ( m_Mutex.TryLock() ) {
         assert(m_Count == 0);
         m_Owner = owner;
-        m_Count = 1;
+        m_Count.store(1, memory_order_release);
         return true;
     }
 
@@ -397,16 +399,17 @@ void SSystemMutex::Unlock(SSystemFastMutex::ELockSemantics lock)
     // No unlocks by threads other than owner.
     // This includes no unlocks of unlocked mutex.
     TThreadSystemID owner = GetCurrentThreadSystemID();
-    if ( m_Count == 0 || m_Owner != owner ) {
+    auto count = m_Count.load(memory_order_acquire);
+    if ( count == 0 || m_Owner != owner ) {
         ThrowNotOwned();
     }
 
     // No real unlocks if counter > 1, just decrease it
-    if (--m_Count > 0) {
+    m_Count.store(--count, memory_order_release);
+    if ( count > 0 ) {
         return;
     }
 
-    assert(m_Count == 0);
     // This was the last lock - clear the owner and unlock the mutex
     m_Mutex.Unlock(lock);
 }
