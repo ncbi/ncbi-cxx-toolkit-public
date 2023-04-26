@@ -760,6 +760,13 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
  );
 
 
+/** Given the main()'s argc and argv return non-zero (true) if the arguments
+ *  specify that only a help option was requested. Return 0 (false), otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_HelpRequested
+(int argc, char** argv);
+
+
 /** Conversion from Unicode to UTF8, and back.  MSWIN-specific and internal.
  *
  * @note  UTIL_ReleaseBufferOnHeap() must be used to free the buffers returned
