@@ -1,4 +1,3 @@
-	s	Colecao de Culturas da Universidade de Brasilia			
 # $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
@@ -252,7 +251,6 @@ ANGU	s	Instituto Nacional de Tecnologia Agropecuaria
 ANGUC	s	Universite Catholiques de l'Ouest			
 ANH	s	Andong National University, School of Bioresource Science			
 ANHC	s	Arkansas Natural Heritage Commission Herbarium			
-ANIC	s	Australian National Insect Collection			
 ANIC	s	Australian National Insect Collection			
 ANK	s	Ankara UEniversitesi, Biyoloji Boeluemue			
 ANKO	s	Forest Research Institute, Turkey			
