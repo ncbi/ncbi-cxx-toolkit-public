@@ -3542,6 +3542,55 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
 }
 
 
+const char* CSeq_id::GetSNPScaleLimit_Name(ESNPScaleLimit value)
+{
+    switch (value) {
+    case CSeq_id::eSNPScaleLimit_Unit: return "unit";
+    case CSeq_id::eSNPScaleLimit_Contig: return "contig";
+    case CSeq_id::eSNPScaleLimit_Supercontig: return "supercontig";
+    case CSeq_id::eSNPScaleLimit_Chromosome: return "chromosome";
+    default: return "";
+    }
+}
+
+
+CSeq_id::ESNPScaleLimit CSeq_id::GetSNPScaleLimit_Value(const string& name)
+{
+    if (name == "unit") return eSNPScaleLimit_Unit;
+    if (name == "contig") return eSNPScaleLimit_Contig;
+    if (name == "supercontig") return eSNPScaleLimit_Supercontig;
+    if (name == "chromosome") return eSNPScaleLimit_Chromosome;
+    return eSNPScaleLimit_Default;
+}
+
+
+bool CSeq_id::IsAllowedSNPScaleLimit(ESNPScaleLimit scale_limit) const
+{
+    if (scale_limit == eSNPScaleLimit_Default || IsGi()) return true;
+    auto text_id = GetTextseq_Id();
+    if (!text_id || !text_id->IsSetAccession() || !text_id->IsSetVersion()) return true;
+    EAccessionInfo acc_info = IdentifyAccession();
+    if (GetAccType(acc_info) == e_Other) {
+        ESNPScaleLimit min_limit = eSNPScaleLimit_Unit;
+        switch (acc_info & eAcc_division_mask) {
+        case eAcc_chromosome: // AC_ / NC_
+            min_limit = eSNPScaleLimit_Chromosome;
+            break;
+        case eAcc_wgs_intermed: // NW_
+            min_limit = eSNPScaleLimit_Supercontig;
+            break;
+        case eAcc_con: // NT_ / NZ_?(?)
+            min_limit = eSNPScaleLimit_Contig;
+            break;
+        default:
+            break;
+        }
+        if (scale_limit < min_limit) return false;
+    }
+    return true;
+}
+
+
 SSeqIdRange::SSeqIdRange(const CTempString& s, TFlags flags)
     : start(0), stop(0), digits(0), acc_info(CSeq_id::eAcc_unknown)
 {
