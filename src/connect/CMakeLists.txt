@@ -67,5 +67,5 @@ set(SRC_CXX
     )
 
 NCBI_disable_pch()
-NCBI_add_library(conssl connect xxconnect xxconnect2 xconnect xthrserv)
+NCBI_add_library(connssl connect xxconnect xxconnect2 xconnect xthrserv)
 NCBI_add_subdirectory(services ext test)
