@@ -942,6 +942,58 @@ CPubseqGatewayApp::x_GetNucleotide(CHttpRequest &  req,
 
 
 bool
+CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
+                                      shared_ptr<CPSGS_Reply>  reply,
+                                      const psg_time_point_t &  now,
+                                      optional<CSeq_id::ESNPScaleLimit> &  snp_scale_limit)
+{
+    static string       kSNPScaleLimitParam = "snp_scale_limit";
+    static string       kChromosome = "chromosome";
+    static string       kContig = "contig";
+    static string       kSupercontig = "supercontig";
+    static string       kUnit = "unit";
+
+    SRequestParameter   snp_scale_limit_param = x_GetParam(req, kSNPScaleLimitParam);
+    if (snp_scale_limit_param.m_Found) {
+        if (snp_scale_limit_param.m_Value.empty()) {
+            // Empty string is OK. There is no assignment so the processor will
+            // see it as 'not set'
+            return true;
+        }
+        if (snp_scale_limit_param.m_Value == kChromosome) {
+            snp_scale_limit = CSeq_id::eSNPScaleLimit_Chromosome;
+            return true;
+        }
+        if (snp_scale_limit_param.m_Value == kContig) {
+            snp_scale_limit = CSeq_id::eSNPScaleLimit_Contig;
+            return true;
+        }
+        if (snp_scale_limit_param.m_Value == kSupercontig) {
+            snp_scale_limit = CSeq_id::eSNPScaleLimit_Supercontig;
+            return true;
+        }
+        if (snp_scale_limit_param.m_Value == kUnit) {
+            snp_scale_limit = CSeq_id::eSNPScaleLimit_Unit;
+            return true;
+        }
+
+        x_MalformedArguments(reply, now,
+                             "Malformed '" + kSNPScaleLimitParam + "' parameter. "
+                             "Acceptable values are '" +
+                             kChromosome + "' and '" +
+                             kContig + "' and '" +
+                             kSupercontig + "' and '" +
+                             kUnit + "'.");
+        return false;
+    }
+
+    // This is the case when there was no parameter in the incoming URL
+    // There is no assignment so the processors will see it as 'not set'
+    return true;
+}
+
+
+bool
 CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply,
                                    const psg_time_point_t &  now,

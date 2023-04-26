@@ -35,6 +35,7 @@
 #include <corelib/request_ctx.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/fetch_split_history.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <connect/services/json_over_uttp.hpp>
 #include <string>
 #include <vector>
@@ -46,6 +47,7 @@
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
+USING_SCOPE(objects);
 
 
 // Blob identifier consists of two integers: sat and sat key.
@@ -673,12 +675,13 @@ struct SPSGS_BlobBySatSatKeyRequest : public SPSGS_BlobRequestBase
 
 struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
 {
-    string                          m_SeqId;
-    int                             m_SeqIdType;
-    vector<string>                  m_Names;
-    unsigned long                   m_ResendTimeoutMks;
-    vector<string>                  m_SeqIds;
-    bool                            m_SeqIdResolve;
+    string                              m_SeqId;
+    int                                 m_SeqIdType;
+    vector<string>                      m_Names;
+    unsigned long                       m_ResendTimeoutMks;
+    vector<string>                      m_SeqIds;
+    bool                                m_SeqIdResolve;
+    optional<CSeq_id::ESNPScaleLimit>   m_SNPScaleLimit;
 
     SPSGS_AnnotRequest(const string &  seq_id,
                        int  seq_id_type,
@@ -690,6 +693,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                        SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option,
                        int  send_blob_if_small,
                        bool seq_id_resolve,
+                       optional<CSeq_id::ESNPScaleLimit> &  snp_scale_limit,
                        int  hops,
                        EPSGS_Trace  trace,
                        bool  processor_events,
@@ -706,6 +710,7 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
         m_SeqIds(move(seq_ids)),
         m_SeqIdResolve(seq_id_resolve),
+        m_SNPScaleLimit(snp_scale_limit),
         m_Lock(false),
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}

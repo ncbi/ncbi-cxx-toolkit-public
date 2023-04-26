@@ -793,6 +793,15 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
             return 0;
         }
 
+        optional<CSeq_id::ESNPScaleLimit>    snp_scale_limit;
+        if (!x_GetSNPScaleLimit(req, reply, now, snp_scale_limit)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            m_Counters.Increment(CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
+        }
+
         // Parameters processing has finished
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
@@ -803,6 +812,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         tse_option, send_blob_if_small, seq_id_resolve,
+                        snp_scale_limit,
                         hops, trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));

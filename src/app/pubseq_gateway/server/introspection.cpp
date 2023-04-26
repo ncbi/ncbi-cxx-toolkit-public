@@ -747,6 +747,21 @@ void AppendResendTimeoutParameter(CJsonNode &  node)
         "Floating point value greater or equal 0.0");
     resend_timeout_param.SetString(kDefault,
         "Taken from [SERVER]/resend_timeout configuration setting");
+    node.SetByKey("resend_timeout", resend_timeout_param);
+}
+
+
+void AppendSNPScaleLimitParameter(CJsonNode &  node)
+{
+    CJsonNode   snp_scale_limit_param(CJsonNode::NewObjectNode());
+    snp_scale_limit_param.SetBoolean(kMandatory, false);
+    snp_scale_limit_param.SetString(kType, "String");
+    snp_scale_limit_param.SetString(kDescription,
+        "GenBank ID2 SNP reader parameter");
+    snp_scale_limit_param.SetString(kAllowedValues,
+        "chromosome, contig, supercontig, unit and not provided");
+    snp_scale_limit_param.SetString(kDefault, "");
+    node.SetByKey("snp_scale_limit", snp_scale_limit_param);
 }
 
 
@@ -930,6 +945,7 @@ CJsonNode  GetIdGetNaRequestNode(void)
     AppendSendBlobIfSmallParameter(id_get_na_params);
     AppendSeqIdResolveParameter(id_get_na_params);
     AppendResendTimeoutParameter(id_get_na_params);
+    AppendSNPScaleLimitParameter(id_get_na_params);
     AppendTraceParameter(id_get_na_params);
     AppendHopsParameter(id_get_na_params);
     AppendEnableProcessorParameter(id_get_na_params);

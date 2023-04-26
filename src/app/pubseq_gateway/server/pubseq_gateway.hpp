@@ -40,6 +40,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 #include "pending_operation.hpp"
 #include "http_daemon.hpp"
@@ -58,6 +59,7 @@
 
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 const long  kMaxTestIOSize = 1000000000;
@@ -438,6 +440,10 @@ private:
                          shared_ptr<CPSGS_Reply>  reply,
                          const psg_time_point_t &  now,
                          vector<pair<int, int>> &  time_series);
+    bool x_GetSNPScaleLimit(CHttpRequest &  req,
+                            shared_ptr<CPSGS_Reply>  reply,
+                            const psg_time_point_t &  now,
+                            optional<CSeq_id::ESNPScaleLimit> &  snp_scale_limit);
 
 private:
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
