@@ -615,7 +615,6 @@ krb5 needs3party k5crypto
 lapack needs3party $(ORIG_LIBS)
 lapackwrapp needs3party $(LAPACK_LIBS)
 lapackwrapp needs3party $(ORIG_LIBS)
-lbsmdapi needs connect
 lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
