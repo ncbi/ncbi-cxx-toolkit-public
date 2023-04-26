@@ -34,7 +34,7 @@
 #include "ncbi_lbsmd.h"
 
 
-#ifndef NCBI_OS_MSWIN
+#ifdef NCBI_OS_UNIX
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_lb.h"
@@ -1445,4 +1445,4 @@ int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo,
 }
 
 
-#endif /*NCBI_OS_MSWIN*/
+#endif /*NCBI_OS_UNIX*/
