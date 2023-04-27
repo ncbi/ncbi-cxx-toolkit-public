@@ -415,10 +415,11 @@ if(NCBI_PTBCFG_PACKAGED)
     return()
 endif()
 
+if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+endif()
+
 if(NOT NCBI_PTBCFG_FLAGS_DEFINED)
-    if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
-        set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
-    endif()
 #----------------------------------------------------------------------------
 # flags may be set by configuration scripts
     if(NOT "$ENV{NCBI_COMPILER_C_FLAGS}" STREQUAL "")
@@ -448,10 +449,6 @@ if(NOT NCBI_PTBCFG_FLAGS_DEFINED)
         if("${NCBI_COMPILER_VERSION}" LESS "700")
             add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
         endif()
-        if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-            set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-            set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
-        endif()
 
     elseif(NCBI_COMPILER_ICC)
 
@@ -476,22 +473,16 @@ if(NOT NCBI_PTBCFG_FLAGS_DEFINED)
         endif()
     endif()
 
+    set(CMAKE_CXX_FLAGS_DEBUG "${_gdw4r} ${_ggdb3} -O0" CACHE STRING "" FORCE)
+    set(CMAKE_C_FLAGS_DEBUG   "${_gdw4r} ${_ggdb3} -O0" CACHE STRING "" FORCE)
     if (NCBI_PTBCFG_DEBUG_SYMBOLS)
-        set(CMAKE_CXX_FLAGS_RELEASE "${_gdw4r} ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-        set(CMAKE_C_FLAGS_RELEASE   "${_gdw4r} ${_ggdb3} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+        set(CMAKE_CXX_FLAGS_RELEASE "${_gdw4r} ${_ggdb3} -O3" CACHE STRING "" FORCE)
+        set(CMAKE_C_FLAGS_RELEASE   "${_gdw4r} ${_ggdb3} -O3" CACHE STRING "" FORCE)
     else()
-        set(CMAKE_CXX_FLAGS_RELEASE "${_gdw4r} ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
-        set(CMAKE_C_FLAGS_RELEASE   "${_gdw4r} ${_ggdb1} -O3 -DNDEBUG" CACHE STRING "" FORCE)
+        set(CMAKE_CXX_FLAGS_RELEASE "${_gdw4r} ${_ggdb1} -O3" CACHE STRING "" FORCE)
+        set(CMAKE_C_FLAGS_RELEASE   "${_gdw4r} ${_ggdb1} -O3" CACHE STRING "" FORCE)
     endif()
-    set(CMAKE_CXX_FLAGS_DEBUG "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
-    set(CMAKE_C_FLAGS_DEBUG   "-gdwarf-4 ${_ggdb3} -O0 -D_DEBUG" CACHE STRING "" FORCE)
 
-    if (CMAKE_COMPILER_IS_GNUCC)
-        if(Coverage IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-            add_compile_options(--coverage)
-            add_link_options(--coverage)
-        endif()
-    endif()
     if(CYGWIN)
         set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wa,-mbig-obj")
         set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}  -Wa,-mbig-obj")
@@ -499,35 +490,6 @@ if(NOT NCBI_PTBCFG_FLAGS_DEFINED)
     if (CMAKE_COMPILER_IS_GNUCC)
         add_compile_options(-Wall -Wno-format-y2k )
         add_link_options(-Wl,--as-needed)
-    endif()
-
-    if(NOT NCBI_PTBCFG_PACKAGING
-        AND "${HOST_CPU}" MATCHES "x86"
-        AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-	    NCBI_util_set_cxx_compiler_flag_optional("-msse4.2")
-	    NCBI_util_set_c_compiler_flag_optional  ("-msse4.2")
-    endif()
-
-    if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        add_compile_definitions(_GLIBCXX_DEBUG)
-        set(Boost_USE_DEBUG_RUNTIME 1)
-        set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}MaxDebug")
-
-        if(NCBI_COMPILER_GCC)
-            add_compile_options(-fstack-check -fsanitize=address)
-            add_link_options(-fsanitize=address)
-        endif()
-    endif()
-
-# OpenMP
-    if (NOT APPLE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
-        AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
-        AND NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        find_package(OpenMP)
-        if (OPENMP_FOUND)
-            add_compile_options(${OpenMP_CXX_FLAGS})
-            add_link_options(${OpenMP_CXX_FLAGS})
-        endif (OPENMP_FOUND)
     endif()
 
 #set(CMAKE_SHARED_LINKER_FLAGS_DYNAMIC "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
@@ -543,12 +505,57 @@ if(NOT NCBI_PTBCFG_FLAGS_DEFINED)
     endif()
 endif(NOT NCBI_PTBCFG_FLAGS_DEFINED)
 
+if (CMAKE_COMPILER_IS_GNUCC)
+    if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+        set(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+    endif()
+    if(Coverage IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        add_compile_options(--coverage)
+        add_link_options(--coverage)
+    endif()
+endif()
+
+if(NOT NCBI_PTBCFG_PACKAGING
+    AND "${HOST_CPU}" MATCHES "x86"
+    AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+	NCBI_util_set_cxx_compiler_flag_optional("-msse4.2")
+	NCBI_util_set_c_compiler_flag_optional  ("-msse4.2")
+endif()
+
+if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_compile_definitions(_GLIBCXX_DEBUG)
+    set(Boost_USE_DEBUG_RUNTIME 1)
+    set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}MaxDebug")
+
+    if(NCBI_COMPILER_GCC)
+        add_compile_options(-fstack-check -fsanitize=address)
+        add_link_options(-fsanitize=address)
+    endif()
+endif()
+
+# OpenMP
+if (NOT APPLE AND NOT CYGWIN AND NOT NCBI_COMPILER_LLVM_CLANG
+    AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
+    AND NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+        add_compile_options(${OpenMP_CXX_FLAGS})
+        add_link_options(${OpenMP_CXX_FLAGS})
+    endif (OPENMP_FOUND)
+endif()
+
+if("${STD_BUILD_TYPE}" STREQUAL "Debug")
+    add_compile_definitions(_DEBUG)
+else()
+    add_compile_definitions(NDEBUG)
+endif()
+
 if (APPLE)
     add_compile_definitions(_LARGEFILE_SOURCE _FILE_OFFSET_BITS=64)
 elseif (UNIX AND NOT CYGWIN)
     add_compile_definitions(_LARGEFILE_SOURCE _LARGEFILE64_SOURCE _FILE_OFFSET_BITS=64)
 endif (APPLE)
-
 
 if(DEFINED NCBI_PTBCFG_MAPPED_SOURCE)
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${NCBI_TREE_ROOT}=${NCBI_PTBCFG_MAPPED_SOURCE}")
