@@ -1029,9 +1029,6 @@
 /* Define to 1 if libzstd is available. */
 #cmakedefine HAVE_LIBZSTD 1
 
-/* Define to 1 if local LBSM support is available. */
-#cmakedefine HAVE_LOCAL_LBSM 1
-
 /* Define to 1 if MySQL is available. */
 #cmakedefine HAVE_MYSQL 1
 

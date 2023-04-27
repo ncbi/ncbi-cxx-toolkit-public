@@ -166,14 +166,6 @@ set(NCBI_REQUIRE_TLS_FOUND YES)
 list(APPEND NCBI_ALL_REQUIRES TLS)
 
 #############################################################################
-# local_lbsm
-if(NOT NCBI_COMPONENT_local_lbsm_DISABLED AND NOT WIN32 AND EXISTS ${NCBITK_SRC_ROOT}/connect/ncbi_lbsm.c)
-    set(NCBI_REQUIRE_local_lbsm_FOUND YES)
-    set(HAVE_LOCAL_LBSM 1)
-endif()
-NCBIcomponent_report(local_lbsm)
-
-#############################################################################
 # LocalPCRE
 if (NOT NCBI_COMPONENT_LocalPCRE_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/regexp AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
