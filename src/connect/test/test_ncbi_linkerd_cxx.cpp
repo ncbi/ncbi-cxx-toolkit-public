@@ -37,7 +37,7 @@
 
 #include <ncbi_pch.hpp>     // This header must go first
 
-#include "../ncbi_lbsm_ipc.h"
+#include "../ncbi_lbsmd.h"
 #include <connect/ncbi_http_session.hpp>
 #include <connect/ncbi_socket.h>
 #include <corelib/ncbi_url.hpp>
