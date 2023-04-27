@@ -52,6 +52,9 @@
 #define LBSM_DEFAULT_FEEDFILE        LBSM_DEFAULT_HOMEDIR "run/.lbsmd"
 #define LBSM_DEFAULT_INFOFILE        LBSM_DEFAULT_HOMEDIR "run/lbsmd"
 
+
+#ifdef NCBI_OS_UNIX
+
 /* Current LBSM heap version */
 #define LBSM_HEAP_VERSION_MAJ        1
 #define LBSM_HEAP_VERSION_MIN        3
@@ -275,6 +278,8 @@ const SLBSM_Host*    LBSM_LookupHost
  unsigned              addr,         /* host IP addr (n.b.o) to look for     */
  const SLBSM_Entry*    hint          /* hint to where start looking from     */
  );
+
+#endif /*NCBI_OS_UNIX/
 
 
 /* Calculate status of the service based on machine load and rating.
