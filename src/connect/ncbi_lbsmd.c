@@ -1335,7 +1335,7 @@ int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo,
 /*ARGSUSED*/
 int LBSM_LBSMD(int/*bool*/ check_n_lock)
 {
-    return -1;
+    return -1/*failure*/;
 }
 
 
