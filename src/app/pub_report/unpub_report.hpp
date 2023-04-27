@@ -62,7 +62,7 @@ class CPubData;
 class CUnpublishedReport : public CBaseReport
 {
 public:
-    CUnpublishedReport(ncbi::CNcbiOstream& out, int max_date_check);
+    CUnpublishedReport(ncbi::CNcbiOstream& out, int max_date_check, bool nohydra);
 
     void CompleteReport() override;
     void SetCurrentSeqId(const std::string& name) override;
@@ -94,6 +94,7 @@ private:
     CRef<CDate_std> m_date;
 
     int m_max_date_check;
+    bool m_nohydra;
 };
 
 }
