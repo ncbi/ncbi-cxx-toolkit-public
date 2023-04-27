@@ -4987,6 +4987,8 @@ MSB	s	Museum of Southwestern Biology
 MSB:Bird	s	Museum of Southwestern Biology, Bird Collection		http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
 MSB:Fishes	s	Museum of Southwestern Biology, Fish Collection			
 MSB:Herp	s	Museum of Southwestern Biology, Herpetology Collection			
+MSB:Host	s	Museum of Southwestern Biology, Host collections of Division of Parasites			
+MSB:Inv	s	Museum of Southwestern Biology, Invertebrate Collections			
 MSB:Mamm	s	Museum of Southwestern Biology, Mammal Collection		http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
 MSB:Para	s	Museum of Southwestern Biology, Parasitology Collection		http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
 MSB<BGR>	s	Museum Sophia			
