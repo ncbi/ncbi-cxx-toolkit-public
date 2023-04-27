@@ -547,7 +547,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
         if (! fpiStrsubcode.empty()) {
             textStream << "." << fpiStrsubcode.c_str();
         }
-        textStream << "]  ";
+        textStream << "] ";
     }
 
     if (bmp->show_log_codeline) {
