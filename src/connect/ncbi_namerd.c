@@ -1079,7 +1079,7 @@ static const char* x_ReadLine(const char* path, char* line, size_t size)
     size_t len = 0;
     FILE* fp = fopen(path, "r");
     if (fp) {
-        if (fgets(line, size, fp)  &&  (len = strlen(line)) > 0) {
+        if (fgets(line, (int) size, fp)  &&  (len = strlen(line)) > 0) {
             if (line[len - 1] == '\n') {
                 if (--len  &&  line[len - 1] == '\r')
                     --len;
