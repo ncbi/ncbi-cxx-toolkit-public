@@ -534,7 +534,7 @@ private:
     mutable CAtomicCounter_WithAutoInit m_CntWaitNotFull;
 
     /// ID of the thread in which the queue has been locked by a guardian
-    mutable TThreadSystemID m_CurGuardTID;
+    mutable atomic<TThreadSystemID> m_CurGuardTID;
 
     /// Number of lockings of this queue with access guardians in one thread
     mutable int m_LockCount;
@@ -1448,7 +1448,7 @@ void CSyncQueue<Type, Container, Traits>::x_GuardedLock(
         // it's not because this happens only after wait on m_TrigLock's value
         // (to be reset to 0) and in x_GuardedUnlock it happens before
         // m_TrigLock's value raised to 1.
-        CThread::GetSystemID(&m_CurGuardTID);
+        m_CurGuardTID = GetCurrentThreadSystemID();
         m_LockCount = 1;
     }
 }
@@ -1477,9 +1477,7 @@ bool CSyncQueue<Type, Container, Traits>::x_IsGuarded(void) const
     if (m_CurGuardTID == TThreadSystemID(kThreadSystemID_None))
         return false;
 
-    TThreadSystemID thread_id;
-    CThread::GetSystemID(&thread_id);
-    return m_CurGuardTID == thread_id;
+    return m_CurGuardTID == GetCurrentThreadSystemID();
 }
 
 
