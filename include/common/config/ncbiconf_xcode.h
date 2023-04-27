@@ -449,9 +449,6 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 
-/* Define to 1 if local LBSM support is available. */
-/* #undef HAVE_LOCAL_LBSM */
-
 /* Define to 1 if you have the `lutimes' function. */
 /* #undef HAVE_LUTIMES */
 
