@@ -281,6 +281,7 @@ const SLBSM_Host*    LBSM_LookupHost
 /* Calculate status of the service based on machine load and rating.
  * NOTE: Last 2 arguments are not used if rate <= 0.0 (static or down server).
  */
+NCBI_XCONNECT_EXPORT
 double               LBSM_CalculateStatus
 (double                rate,  /* [in] service rate                           */
  double                fine,  /* [in] feedback penalty from application(s)   */

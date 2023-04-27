@@ -126,7 +126,8 @@ int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo,
 
 
 /* Redecl from ncbi_lbsm_ipc.h */
-NCBI_XCONNECT_EXPORT int LBSM_LBSMD(int/*bool*/ check_n_lock);
+NCBI_XCONNECT_EXPORT
+int LBSM_LBSMD(int/*bool*/ check_n_lock);
 
 
 #ifdef __cplusplus
