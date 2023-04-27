@@ -37,6 +37,7 @@
 
 #include <ncbi_pch.hpp>     // This header must go first
 
+#include "../ncbi_lbsm_ipc.h"
 #include <connect/ncbi_http_session.hpp>
 #include <connect/ncbi_socket.h>
 #include <corelib/ncbi_url.hpp>
@@ -789,12 +790,10 @@ int CTestNcbiLinkerdCxxApp::Run(void)
     ERR_POST(Info << "CTestNcbiLinkerdCxxApp::Run()   $Id$");
 
     for (auto test : s_Tests) {
-#if !defined(NCBI_OS_LINUX)  ||  !defined(HAVE_LOCAL_LBSM)
-        if (test.mapper == eLbsmd) {
+        if (test.mapper == eLbsmd  &&  (LBSM_LBSMD(0) <= 0  ||  errno != EAGAIN)/*LBSMD not running*/) {
             ++num_skipped;
             continue;
         }
-#endif
         SelectMapper(test.mapper);
         int result = 1;
              if (test.func == eHttpGet)         result = TestGet_Http(num_run, test);
