@@ -119,8 +119,9 @@ case $cxx_version in
   [2-9][0-9] | [2-9][0-9].* )
     NCBI_CLANG_CC=$CC
     NCBI_CLANG_CXX=$CXX
+    NCBI_CLANG_NAME="ICC"
     libICC=$intel_root/Compiler/$cxx_path/compiler/lib/intel64 
-    export NCBI_CLANG_CC NCBI_CLANG_CXX libICC
+    export NCBI_CLANG_CC NCBI_CLANG_CXX NCBI_CLANG_NAME libICC
     exec "`dirname $0`"/cmClang.sh "$@"
     ;;
 esac
