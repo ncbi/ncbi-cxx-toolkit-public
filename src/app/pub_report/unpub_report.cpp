@@ -646,6 +646,9 @@ static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& 
     return ret;
 }
 
+
+// Hydra replacement RW-1918
+
 static bool ParseJson(const string& json, vector<TEntrezId>& pmids, string& msg)
 {
     CJson_Document doc(json);
@@ -665,10 +668,12 @@ static bool ParseJson(const string& json, vector<TEntrezId>& pmids, string& msg)
     }
 
     const auto& result_obj = result.GetObject();
+#ifdef _DEBUG
     const auto& count = result_obj.at("count");
     _ASSERT(count.GetValue().IsNumber());
     const auto& type = result_obj.at("type");
     _ASSERT(type.GetValue().GetString() == "uids");
+#endif
     const auto& uids = result_obj.at("uids");
     if (! uids.IsArray()) {
         msg = "uids is not an array";
@@ -871,16 +876,16 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data) const
 
 bool CUnpublishedReport::FetchPub(TEntrezId pmid, const CPubData& data, CRef<CPubmed_entry>& pubmed_entry) const
 {
-    CNcbiStrstream asnPubMedEntry;
+    CNcbiStrstream xml_stream;
     eutils::CPubmedArticleSet pas;
 
     CEutilsClient& eutils = GetEUtils();
     vector<TEntrezId> uids { pmid };
 
     try {
-        eutils.Fetch("PubMed", uids, asnPubMedEntry, "xml");
-        if (asnPubMedEntry) {
-            asnPubMedEntry >> MSerial_Xml >> pas;
+        eutils.Fetch("PubMed", uids, xml_stream, "xml");
+        if (xml_stream) {
+            xml_stream >> MSerial_Xml >> pas;
         }
     } catch (CException& e) {
         // skips exceptions those may occur during Fetch(...) and '>>'
