@@ -175,9 +175,6 @@ blastinput needs3party $(BLAST_THIRD_PARTY_LIBS)
 blaststoreasncpp_g needs bl2seqasn_g
 blastxml needs xser
 blastxml2 needs xser
-bob_g needs splitdbasn_g
-bob_g needs xncbi
-bob_g needs3party netblast
 boost_unit_test_framework-gcc73-mt-d-64 needs3party $(ORIG_LIBS)
 boringcrypto needs3party $(ORIG_LIBS)
 boringssl needs3party $(ORIG_LIBS)
@@ -615,6 +612,7 @@ krb5 needs3party k5crypto
 lapack needs3party $(ORIG_LIBS)
 lapackwrapp needs3party $(LAPACK_LIBS)
 lapackwrapp needs3party $(ORIG_LIBS)
+lbsmdapi needs connect
 lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
