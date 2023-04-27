@@ -410,7 +410,7 @@ struct SSystemMutex
 {
     SSystemFastMutex m_Mutex; ///< Mutex value
 
-    volatile TThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
+    atomic<TThreadSystemID> m_Owner; ///< Platform-dependent owner thread ID
 
     atomic<int> m_Count; ///< # of recursive (in the same thread) locks
 
