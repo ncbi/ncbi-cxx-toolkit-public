@@ -30,6 +30,7 @@
  *
  */
 
+#include "ncbi_config.h"
 #include "ncbi_lbsmd.h"
 
 
