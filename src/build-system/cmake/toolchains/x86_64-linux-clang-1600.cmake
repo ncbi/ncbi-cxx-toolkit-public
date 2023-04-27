@@ -12,8 +12,8 @@ include_guard(GLOBAL)
 set(CMAKE_C_COMPILER "/usr/local/llvm/16.0.0/bin/clang")
 set(CMAKE_CXX_COMPILER "/usr/local/llvm/16.0.0/bin/clang++")
 
-set(CMAKE_C_FLAGS "-nostdinc++ \
-    -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
+set(CMAKE_C_FLAGS
+    "-isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/x86_64-redhat-linux-gnu  \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/backward \
     -gdwarf-4"
@@ -21,8 +21,8 @@ set(CMAKE_C_FLAGS "-nostdinc++ \
 set(CMAKE_C_FLAGS_DEBUG   "-ggdb3 -O0")
 set(CMAKE_C_FLAGS_RELEASE "-ggdb1 -O3")
 
-set(CMAKE_CXX_FLAGS "-nostdinc++ \
-    -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
+set(CMAKE_CXX_FLAGS
+    "-isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/x86_64-redhat-linux-gnu \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/backward \
     -gdwarf-4"

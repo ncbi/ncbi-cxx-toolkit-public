@@ -12,8 +12,8 @@ include_guard(GLOBAL)
 set(CMAKE_C_COMPILER "/usr/local/intel/Compiler/21.0/compiler/latest/linux/bin/icx")
 set(CMAKE_CXX_COMPILER "/usr/local/intel/Compiler/21.0/compiler/latest/linux/bin/icpx")
 
-set(CMAKE_C_FLAGS "-nostdinc++ \
-    -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
+set(CMAKE_C_FLAGS
+    "-isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/x86_64-redhat-linux-gnu  \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/backward \
     -ffp-model=precise -fPIC"
@@ -21,8 +21,8 @@ set(CMAKE_C_FLAGS "-nostdinc++ \
 set(CMAKE_C_FLAGS_DEBUG   "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 
-set(CMAKE_CXX_FLAGS "-nostdinc++ \
-    -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
+set(CMAKE_CXX_FLAGS
+    "-isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/x86_64-redhat-linux-gnu \
     -isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0/backward \
     -ffp-model=precise -fPIC"
