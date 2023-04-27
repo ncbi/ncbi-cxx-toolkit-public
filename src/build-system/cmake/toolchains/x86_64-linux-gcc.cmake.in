@@ -1,16 +1,16 @@
 #############################################################################
-# $
+# $Id$
 #############################################################################
 #############################################################################
 ##
 ##  NCBI CMake wrapper
-##  GCC 7.3.0 toolchain
+##  GCC toolchain template
 
 set(NCBI_PTBCFG_FLAGS_DEFINED YES)
 include_guard(GLOBAL)
 
-set(CMAKE_C_COMPILER "/opt/ncbi/gcc/7.3.0/bin/gcc")
-set(CMAKE_CXX_COMPILER "/opt/ncbi/gcc/7.3.0/bin/g++")
+set(CMAKE_C_COMPILER "${CC}")
+set(CMAKE_CXX_COMPILER "${CXX}")
 
 set(CMAKE_C_FLAGS              "-gdwarf-4 -Wall -Wno-format-y2k")
 set(CMAKE_C_FLAGS_DEBUG        "-ggdb3 -O0")
