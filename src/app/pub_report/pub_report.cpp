@@ -76,6 +76,7 @@ private:
     ESerialDataFormat GetSerialDataFormat() const;
 
     int GetMaxDateCheck() const;
+    bool GetEutilsOnly() const;
 
     CNcbiIstream* GetInputStream();
     CNcbiOstream* GetOutputStream();
@@ -93,6 +94,7 @@ void CPubReportApp::Init()
     arg_desc->AddDefaultKey("Q", "ReportType", "Report Type", CArgDescriptions::eString, "j");
     arg_desc->AddDefaultKey("b", "BinaryFormat", "Binary mode", CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("max-date-check", "MaxDateCheck", "Maximal amount of years from the publication date", CArgDescriptions::eInteger, "1");
+    arg_desc->AddFlag("nohydra", "EUtils search only, not CitMatch/api", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
 
     SetupArgDescriptions(arg_desc.release()); // call CreateArgs
 }
@@ -133,6 +135,12 @@ int CPubReportApp::GetMaxDateCheck() const
     return ret;
 }
 
+bool CPubReportApp::GetEutilsOnly() const
+{
+    const CArgs& args = GetArgs();
+    return args["nohydra"].AsBoolean();
+}
+
 bool CPubReportApp::IsJournalReport() const
 {
     return GetArgs()["Q"].AsString() == "j";
@@ -166,7 +174,7 @@ int CPubReportApp::Run()
         report = journal_report;
     } else if (IsUnpublishedReport()) {
 
-        shared_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out, GetMaxDateCheck()));
+        shared_ptr<CUnpublishedReport> unpub_report(new CUnpublishedReport(*out, GetMaxDateCheck(), GetEutilsOnly()));
         pub_hook.Reset(new CSkipPubUnpublishedHook(*unpub_report));
         report = unpub_report;
     } else {

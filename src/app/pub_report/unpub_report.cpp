@@ -315,9 +315,10 @@ private:
 /////////////////////////////////////////////////
 
 
-CUnpublishedReport::CUnpublishedReport(CNcbiOstream& out, int max_date_check) :
+CUnpublishedReport::CUnpublishedReport(CNcbiOstream& out, int max_date_check, bool nohydra) :
     m_out(out),
-    m_max_date_check(max_date_check)
+    m_max_date_check(max_date_check),
+    m_nohydra(nohydra)
 {
 }
 
@@ -867,7 +868,7 @@ TEntrezId CUnpublishedReport::RetrievePMid(const CPubData& data) const
         }
     }
 
-    if (pmid == ZERO_ENTREZ_ID) {
+    if (pmid == ZERO_ENTREZ_ID && ! m_nohydra) {
         pmid = DoHydraSearch(data);
     }
 
@@ -883,7 +884,7 @@ bool CUnpublishedReport::FetchPub(TEntrezId pmid, const CPubData& data, CRef<CPu
     vector<TEntrezId> uids { pmid };
 
     try {
-        eutils.Fetch("PubMed", uids, xml_stream, "xml");
+        eutils.Fetch("PubMed", uids, xml_stream);
         if (xml_stream) {
             xml_stream >> MSerial_Xml >> pas;
         }
