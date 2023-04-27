@@ -156,24 +156,6 @@ const SLBSM_Host* LBSM_LookupHost(HEAP               heap,
 }
 
 
-double LBSM_CalculateStatus(double rate, double fine, ESERV_Algo algo,
-                            const SLBSM_HostLoad* load)
-{
-    double status;
-
-    if (!rate)
-        return 0.0;
-    if (unlikely(rate < LBSM_STANDBY_THRESHOLD))
-        status = rate < 0.0 ? -LBSM_DEFAULT_RATE : LBSM_DEFAULT_RATE;
-    else
-        status = algo & eSERV_Blast ? load->statusBLAST : load->status;
-    status *= rate / LBSM_DEFAULT_RATE;
-    /* accurately apply fine: avoid imperfections with 100% */
-    status *= (100. - (fine < 0. ? 0. : fine > 100. ? 100. : fine)) / 100.0;
-    return fabs(status); /*paranoid but safe*/
-}
-
-
 int/*bool*/ LBSM_SubmitPenaltyOrRerate(const char*    name,
                                        ESERV_Type     type,
                                        double         rate,

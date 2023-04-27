@@ -53,8 +53,6 @@
 #define LBSM_DEFAULT_INFOFILE        LBSM_DEFAULT_HOMEDIR "run/lbsmd"
 
 
-#ifdef NCBI_OS_UNIX
-
 /* Current LBSM heap version */
 #define LBSM_HEAP_VERSION_MAJ        1
 #define LBSM_HEAP_VERSION_MIN        3
@@ -88,7 +86,7 @@ extern "C" {
 #    endif
 #  elif  defined(NCBI_OS_IRIX)
 #    pragma pack 4
-#  elif !defined(__i386)  &&  !defined(_CRAYC)
+#  elif !defined(NCBI_OS_MSWIN)  &&  !defined(__i386)  &&  !defined(_CRAYC)
 #    error "Don't know how to pack on this platform"
 #  endif
 #else
@@ -278,8 +276,6 @@ const SLBSM_Host*    LBSM_LookupHost
  unsigned              addr,         /* host IP addr (n.b.o) to look for     */
  const SLBSM_Entry*    hint          /* hint to where start looking from     */
  );
-
-#endif /*NCBI_OS_UNIX/
 
 
 /* Calculate status of the service based on machine load and rating.
