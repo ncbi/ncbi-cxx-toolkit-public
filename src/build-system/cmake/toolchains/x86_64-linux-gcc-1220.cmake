@@ -4,7 +4,7 @@
 #############################################################################
 ##
 ##  NCBI CMake wrapper
-##  GCC toolchain template
+##  GCC 12.2.0 toolchain
 
 set(NCBI_PTBCFG_FLAGS_DEFINED YES)
 include_guard(GLOBAL)
