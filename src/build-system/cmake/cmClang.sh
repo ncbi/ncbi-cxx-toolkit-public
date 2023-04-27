@@ -15,6 +15,7 @@ script_args="$@"
 ## Path to the compiler
 CXX=${NCBI_CLANG_CXX-clang++}
 CC=${NCBI_CLANG_CC-clang}
+CCNAME=${NCBI_CLANG_NAME-clang}
 
 Usage() {
     echo "USAGE:   $script_name [version] [configure-flags] | -h]"
@@ -85,7 +86,20 @@ EOF
     exit 1
 fi
 
+export CC CXX
 gccver=7.3.0
+#if [ -x ${script_dir}/toolchains/cmkTool.sh ]; then
+if false; then
+  export GCCVER="${gccver}"
+  export LIBICC="${libICC}"
+  toolchain=`exec ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
+  result=$?
+  if test $result -ne 0; then
+    echo $toolchain 1>&2
+    exit $result
+  fi
+  export NCBI_TOOLCHAIN=$toolchain
+else
 if test -x /opt/ncbi/gcc/${gccver}/bin/gcc; then
   inc1="/opt/ncbi/gcc/${gccver}/include/c++/${gccver}"
   inc2="/opt/ncbi/gcc/${gccver}/include/c++/${gccver}/x86_64-redhat-linux-gnu"
@@ -104,7 +118,7 @@ if test -n "$libICC"; then
   NCBI_COMPILER_SHARED_LINKER_FLAGS="${NCBI_COMPILER_EXE_LINKER_FLAGS}"
 fi
 export NCBI_COMPILER_C_FLAGS NCBI_COMPILER_CXX_FLAGS NCBI_COMPILER_EXE_LINKER_FLAGS NCBI_COMPILER_SHARED_LINKER_FLAGS
-export CC CXX
+fi
 
 if [ -z "$CMAKECFGRECURSIONGUARD" ]; then
   exec ${script_dir}/cmake-cfg-unix.sh --rootdir=$script_dir/../../.. --caller=$script_name "$@"
