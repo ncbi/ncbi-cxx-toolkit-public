@@ -30,9 +30,7 @@
  *
  */
 
-#include "ncbi_config.h"
 #include "ncbi_lbsmd.h"
-#include "ncbi_lbsm_ipc.h"
 
 
 #ifdef NCBI_OS_UNIX
@@ -40,6 +38,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_lb.h"
 #include "ncbi_lbsm.h"
+#include "ncbi_lbsm_ipc.h"
 #include "ncbi_priv.h"
 #include "ncbi_version.h"
 #include <errno.h>
