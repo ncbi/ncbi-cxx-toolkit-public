@@ -667,8 +667,6 @@ AC_ARG_WITH(3psw,
    [ --without-3psw          do not use any of the above packages])
 
 ## Optional projects
-AC_ARG_WITH(local-lbsm,
-   [ --without-local-lbsm    turn off support for IPC with locally running LBSMD])
 AC_ARG_WITH(ncbi-crypt,
    [ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt])
 AC_ARG_WITH(connext,
@@ -878,7 +876,6 @@ fi
 if test "$with_bin_release" = "yes" ; then
    # Default some other options accordingly
    : ${with_ncbi_public=yes}
-   : ${with_local_lbsm=no}
    : ${with_ncbi_crypt=no}
    : ${with_connext=no}
    : ${with_libdw=no}
@@ -9088,37 +9085,6 @@ CPPFLAGS="$orig_CPPFLAGS"
 ### --------------------------------------------
 
 
-## `local_lbsm' support
-
-local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
-
-## requires semaphores (lacking on older versions of Cygwin and Darwin)
-if test $ncbi_cv_sys_semaphores = no; then
-    NCBI_MISSING_PACKAGE(local-lbsm)
-fi
-## disable by default even on newer Cygwin, as its semaphores don't
-## actually work very well
-test $OSTYPE = cygwin  &&  : ${with_local_lbsm=no}
-
-for fff in $local_lbsm ; do
-   if test ! -f ${real_srcdir}/src/connect/${fff}.c ; then
-      if test "$with_local_lbsm" = "yes" ; then
-         AC_MSG_ERROR([--with-local-lbsm:  src/connect/${fff}.c is  missing])
-      fi
-      with_local_lbsm="no"
-      break
-   fi
-done
-
-if test "$with_local_lbsm" = "no" ; then
-   local_lbsm="ncbi_lbsmd_stub"
-else
-   NCBI_PROJECT(local_lbsm)
-   AC_DEFINE(HAVE_LOCAL_LBSM, 1,
-             [Define to 1 if local LBSM support is available.])
-fi
-
-
 ## `connext' support
 
 connext="ncbi_dblb ncbi_ifconf ncbi_localnet"
@@ -9657,7 +9623,6 @@ AC_SUBST(WHOLE_ARCHIVE)
 AC_SUBST(NO_WHOLE_ARCHIVE)
 
 AC_SUBST(OPT_GROUPS)
-AC_SUBST(local_lbsm)
 AC_SUBST(ncbi_crypt)
 AC_SUBST(CONNEXT)
 AC_SUBST(XCONNEXT)
