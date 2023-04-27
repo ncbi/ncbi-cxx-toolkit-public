@@ -110,6 +110,7 @@ union semun {
  * This must be the first call prior to any shared resources use, as it sets up
  * an internal semaphore ID for all locking/unlocking code.
  */
+NCBI_XCONNECT_EXPORT
 int LBSM_LBSMD(int/*bool*/ check_n_lock);
 
 

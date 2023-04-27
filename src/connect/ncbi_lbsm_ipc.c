@@ -661,7 +661,7 @@ int LBSM_LBSMD(int/*bool*/ check_n_lock)
     int id;
 
     if (g_LBSM_NOSYSVIPC)
-        return  0;
+        return check_n_lock ? 0 : -1;
 
 #if defined(NCBI_OS_CYGWIN)  &&  defined(SIGSYS)
     {{
