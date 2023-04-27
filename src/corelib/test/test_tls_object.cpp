@@ -328,36 +328,47 @@ typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
 #ifdef NCBI_NO_THREADS
 static TLastNewPtrMultiple s_LastNewPtrMultiple;
 #else
-static TTlsKey s_LastNewPtrMultiple_key;
-#endif
+static atomic<TTlsKey> s_LastNewPtrMultiple_key;
+
+static inline
+TTlsKey sx_GetLastNewPtrMultipleCurrentKey(void)
+{
+    return s_LastNewPtrMultiple_key.load(memory_order_relaxed);
+}
 
 struct SEraseLastNewPtrMultiple {
     static void sx_Cleanup(void* ptr)
     {
         TLastNewPtrMultiple* set = static_cast<TLastNewPtrMultiple*>(ptr);
-#ifdef NCBI_THREADS
-        s_ReportTLSPtr(s_LastNewPtrMultiple_key, "- Deleting ", set);
-#endif
+        auto key = sx_GetLastNewPtrMultipleCurrentKey();
+        s_ReportTLSPtr(key, "- Deleting ", set);
         delete set;
-    }
-    ~SEraseLastNewPtrMultiple() {
 #ifdef NCBI_WIN32_THREADS
-        sx_Cleanup(TlsGetValue(s_LastNewPtrMultiple_key));
+        TlsSetValue(key, nullptr);
+#else
+        pthread_setspecific(key, nullptr);
 #endif
     }
+#ifdef NCBI_WIN32_THREADS
+    ~SEraseLastNewPtrMultiple() {
+        auto key = sx_GetLastNewPtrMultipleCurrentKey();
+        TLastNewPtrMultiple* set = (TLastNewPtrMultiple*)TlsGetValue(key);
+        s_ReportTLSPtr(key, "- Deleting ", set);
+        delete set;
+        TlsSetValue(key, nullptr);
+    }
+#endif
 };
 
-static
-TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
+static inline
+TTlsKey sx_GetLastNewPtrMultipleKey(void)
 {
-#ifdef NCBI_NO_THREADS
-    return s_LastNewPtrMultiple;
-#else
-    if ( !s_LastNewPtrMultiple_key ) {
+    auto key = sx_GetLastNewPtrMultipleCurrentKey();
+    if ( !key ) {
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
         NCBI_NS_NCBI::CFastMutexGuard guard(s_InitMutex);
-        if ( !s_LastNewPtrMultiple_key ) {
-            TTlsKey key = 0;
+        key = s_LastNewPtrMultiple_key.load(memory_order_acquire);
+        if ( !key ) {
             do {
 #  ifdef NCBI_WIN32_THREADS
                 _VERIFY((key = TlsAlloc()) != DWORD(-1));
@@ -368,24 +379,35 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
 #  ifndef NCBI_WIN32_THREADS
             pthread_setspecific(key, 0);
 #  endif
-            s_LastNewPtrMultiple_key = key;
+            s_LastNewPtrMultiple_key.store(key, memory_order_release);
         }
     }
+    return key;
+}
+#endif
+
+static
+TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
+{
+#ifdef NCBI_NO_THREADS
+    return s_LastNewPtrMultiple;
+#else
+    auto key = sx_GetLastNewPtrMultipleKey();
     TLastNewPtrMultiple* set;
 #  ifdef NCBI_WIN32_THREADS
-    set = (TLastNewPtrMultiple*)TlsGetValue(s_LastNewPtrMultiple_key);
+    set = (TLastNewPtrMultiple*)TlsGetValue(key);
 #  else
-    set = (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
+    set = (TLastNewPtrMultiple*)pthread_getspecific(key);
 #  endif
     if ( !set ) {
         set = new TLastNewPtrMultiple();
 #  ifdef NCBI_WIN32_THREADS
-        TlsSetValue(s_LastNewPtrMultiple_key, set);
+        TlsSetValue(key, set);
         static thread_local SEraseLastNewPtrMultiple s_Cleanup;
 #  else
-        pthread_setspecific(s_LastNewPtrMultiple_key, set);
+        pthread_setspecific(key, set);
 #  endif
-        s_ReportTLSPtr(s_LastNewPtrMultiple_key, "+ Allocated", set);
+        s_ReportTLSPtr(key, "+ Allocated", set);
     }
     return *set;
 #endif
