@@ -355,16 +355,16 @@ void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
 
     TThreadSystemID owner = GetCurrentThreadSystemID();
     auto count = m_Count.load(memory_order_acquire);
-    if ( count > 0 && m_Owner == owner ) {
+    if ( count > 0 && m_Owner.load(memory_order_relaxed) == owner ) {
         // Don't lock twice, just increase the counter
-        m_Count.store(count+1, memory_order_release);
+        m_Count.store(++count, memory_order_release);
         return;
     }
 
     // Lock the mutex and remember the owner
     m_Mutex.Lock(lock);
     assert(m_Count == 0);
-    m_Owner = owner;
+    m_Owner.store(owner, memory_order_relaxed);
     m_Count.store(1, memory_order_release);
 }
 
@@ -374,16 +374,16 @@ bool SSystemMutex::TryLock(void)
 
     TThreadSystemID owner = GetCurrentThreadSystemID();
     auto count = m_Count.load(memory_order_acquire);
-    if ( count > 0 && m_Owner == owner ) {
+    if ( count > 0 && m_Owner.load(memory_order_relaxed) == owner ) {
         // Don't lock twice, just increase the counter
-        m_Count.store(count+1, memory_order_release);
+        m_Count.store(++count, memory_order_release);
         return true;
     }
 
     // If TryLock is successful, remember the owner
     if ( m_Mutex.TryLock() ) {
-        assert(m_Count == 0);
-        m_Owner = owner;
+        assert(m_Count.load(memory_order_relaxed) == 0);
+        m_Owner.store(owner, memory_order_relaxed);
         m_Count.store(1, memory_order_release);
         return true;
     }
@@ -400,7 +400,7 @@ void SSystemMutex::Unlock(SSystemFastMutex::ELockSemantics lock)
     // This includes no unlocks of unlocked mutex.
     TThreadSystemID owner = GetCurrentThreadSystemID();
     auto count = m_Count.load(memory_order_acquire);
-    if ( count == 0 || m_Owner != owner ) {
+    if ( count == 0 || m_Owner.load(memory_order_relaxed) != owner ) {
         ThrowNotOwned();
     }
 

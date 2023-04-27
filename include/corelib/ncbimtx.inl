@@ -106,8 +106,8 @@ inline
 void SSystemMutex::InitializeDynamic(void)
 {
     m_Mutex.InitializeDynamic();
-    m_Owner = 0;
-    m_Count = 0;
+    m_Owner.store(0, memory_order_relaxed);
+    m_Count.store(0, memory_order_release);
 }
 
 
