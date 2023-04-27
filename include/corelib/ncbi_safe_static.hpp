@@ -53,6 +53,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CObject;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -151,9 +152,29 @@ protected:
     {}
 
     /// Pointer to the data
-    const void* m_Ptr;
+    atomic<const void*> m_Ptr;
 
     DECLARE_CLASS_STATIC_MUTEX(sm_ClassMutex);
+
+protected:
+    const void* x_GetPtr() const {
+        return m_Ptr.load(memory_order_acquire);
+    }
+    void x_SetPtr(const void* ptr) {
+        m_Ptr.store(ptr, memory_order_release);
+    }
+    bool x_IsSetPtr() const {
+        return x_GetPtr() != nullptr;
+    }
+    const void* x_ReleasePtr() {
+        if ( auto ptr = x_GetPtr() ) {
+            x_SetPtr(0);
+            return ptr;
+        }
+        else {
+            return nullptr;
+        }
+    }
 
 private:
     friend struct SSimpleLock<CSafeStaticPtr_Base>;
@@ -425,6 +446,9 @@ template <class T,
     class Callbacks = CSafeStatic_Callbacks<T> >
 class CSafeStatic : public CSafeStaticPtr_Base
 {
+    static T* x_CastPtr(const void* ptr) {
+        return static_cast<T*>(const_cast<void*>(ptr));
+    }
 public:
     typedef Callbacks TCallbacks;
     typedef CSafeStatic<T, TCallbacks> TThisType;
@@ -481,29 +505,29 @@ public:
     /// Create the variable if not created yet, return the reference.
     T& Get(void)
     {
-        if ( !m_Ptr ) {
+        if ( !x_IsSetPtr() ) {
             x_Init();
         }
-        return *static_cast<T*>(const_cast<void*>(m_Ptr));
+        return *x_CastPtr(x_GetPtr());
     }
 
     T* operator-> (void) { return &Get(); }
     T& operator*  (void) { return  Get(); }
 
 private:
-    CSafeStatic(const CSafeStatic&);
-    CSafeStatic& operator=(const CSafeStatic&);
+    CSafeStatic(const CSafeStatic&) = delete;
+    CSafeStatic& operator=(const CSafeStatic&) = delete;
 
     void x_Init(void) {
         TInstanceMutexGuard guard(*this);
-        if ( m_Ptr == 0 ) {
+        if ( !x_IsSetPtr() ) {
             // Create the object and register for cleanup
             T* ptr = 0;
             try {
                 ptr = m_Callbacks.Create();
                 TAllocator::s_AddReference(ptr);
+                x_SetPtr(ptr);
                 CSafeStaticGuard::Register(this);
-                m_Ptr = ptr;
             }
             catch (CException& e) {
                 TAllocator::s_RemoveReference(ptr);
@@ -522,9 +546,8 @@ private:
                                TInstanceMutexGuard& guard)
     {
         TThisType* this_ptr = static_cast<TThisType*>(safe_static);
-        if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
+        if ( T* ptr = x_CastPtr(this_ptr->x_ReleasePtr()) ) {
             TCallbacks callbacks = this_ptr->m_Callbacks;
-            this_ptr->m_Ptr = 0;
             guard.Release();
             callbacks.Cleanup(*ptr);
             TAllocator::s_RemoveReference(ptr);
@@ -579,6 +602,9 @@ public:
 template <class T>
 class CSafeStaticPtr : public CSafeStaticPtr_Base
 {
+    static T* x_CastPtr(const void* ptr) {
+        return static_cast<T*>(const_cast<void*>(ptr));
+    }
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
 
@@ -597,10 +623,10 @@ public:
     /// Create the variable if not created yet, return the reference.
     T& Get(void)
     {
-        if ( !m_Ptr ) {
+        if ( !x_IsSetPtr() ) {
             x_Init();
         }
-        return *static_cast<T*>(const_cast<void*>(m_Ptr));
+        return *x_CastPtr(x_GetPtr());
     }
     /// Get the existing object or create a new one using the provided
     /// FUserCreate object.
@@ -609,10 +635,10 @@ public:
     NCBI_DEPRECATED
     T& Get(FUserCreate user_create)
     {
-        if ( !m_Ptr ) {
+        if ( !x_IsSetPtr() ) {
             x_Init(user_create);
         }
-        return *static_cast<T*>(const_cast<void*>(m_Ptr));
+        return *x_CastPtr(x_GetPtr());
     }
 
     T* operator -> (void) { return &Get(); }
@@ -636,9 +662,8 @@ private:
                                TInstanceMutexGuard& guard)
     {
         CSafeStaticPtr<T>* this_ptr = static_cast<CSafeStaticPtr<T>*>(safe_static);
-        if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
+        if ( T* ptr = x_CastPtr(this_ptr->x_ReleasePtr()) ) {
             CSafeStaticPtr_Base::FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
-            this_ptr->m_Ptr = 0;
             guard.Release();
             if ( user_cleanup ) {
                 user_cleanup(ptr);
@@ -663,6 +688,9 @@ private:
 template <class T>
 class CSafeStaticRef : public CSafeStaticPtr_Base
 {
+    static T* x_CastPtr(const void* ptr) {
+        return static_cast<T*>(const_cast<void*>(ptr));
+    }
 public:
     typedef CSafeStaticLifeSpan TLifeSpan;
 
@@ -681,10 +709,10 @@ public:
     /// Create the variable if not created yet, return the reference.
     T& Get(void)
     {
-        if ( !m_Ptr ) {
+        if ( !x_IsSetPtr() ) {
             x_Init();
         }
-        return *static_cast<T*>(const_cast<void*>(m_Ptr));
+        return *x_CastPtr(x_GetPtr());
     }
     /// Get the existing object or create a new one using the provided
     /// FUserCreate object.
@@ -693,10 +721,10 @@ public:
     NCBI_DEPRECATED
     T& Get(FUserCreate user_create)
     {
-        if ( !m_Ptr ) {
+        if ( !x_IsSetPtr() ) {
             x_Init(user_create);
         }
-        return *static_cast<T*>(const_cast<void*>(m_Ptr));
+        return *x_CastPtr(x_GetPtr());
     }
 
     T* operator -> (void) { return &Get(); }
@@ -719,9 +747,8 @@ private:
                                TInstanceMutexGuard& guard)
     {
         CSafeStaticRef<T>* this_ptr = static_cast<CSafeStaticRef<T>*>(safe_static);
-        if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
+        if ( T* ptr = x_CastPtr(this_ptr->x_ReleasePtr()) ) {
             CSafeStaticPtr_Base::FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
-            this_ptr->m_Ptr = 0;
             guard.Release();
             if ( user_cleanup ) {
                 user_cleanup(ptr);
@@ -750,10 +777,10 @@ inline
 void CSafeStaticPtr<T>::Set(T* object)
 {
     TInstanceMutexGuard guard(*this);
-    if ( m_Ptr == 0 ) {
+    if ( !x_IsSetPtr() ) {
         // Set the new object and register for cleanup
         if ( object ) {
-            m_Ptr = object;
+            x_SetPtr(object);
             CSafeStaticGuard::Register(this);
         }
     }
@@ -765,9 +792,9 @@ inline
 void CSafeStaticPtr<T>::x_Init(void)
 {
     TInstanceMutexGuard guard(*this);
-    if ( m_Ptr == 0 ) {
+    if ( !x_IsSetPtr() ) {
         // Create the object and register for cleanup
-        m_Ptr = new T;
+        x_SetPtr(new T);
         CSafeStaticGuard::Register(this);
     }
 }
@@ -779,10 +806,10 @@ inline
 void CSafeStaticPtr<T>::x_Init(FUserCreate user_create)
 {
     TInstanceMutexGuard guard(*this);
-    if ( m_Ptr == 0 ) {
+    if ( !x_IsSetPtr() ) {
         // Create the object and register for cleanup
-        m_Ptr = user_create();
-        if ( m_Ptr ) {
+        if ( auto ptr = user_create() ) {
+            x_SetPtr(ptr);
             CSafeStaticGuard::Register(this);
         }
     }
@@ -794,11 +821,11 @@ inline
 void CSafeStaticRef<T>::Set(T* object)
 {
     TInstanceMutexGuard guard(*this);
-    if ( m_Ptr == 0 ) {
+    if ( !x_IsSetPtr() ) {
         // Set the new object and register for cleanup
         if ( object ) {
             object->AddReference();
-            m_Ptr = object;
+            x_SetPtr(object);
             CSafeStaticGuard::Register(this);
         }
     }
@@ -810,11 +837,11 @@ inline
 void CSafeStaticRef<T>::x_Init(void)
 {
     TInstanceMutexGuard guard(*this);
-    if ( m_Ptr == 0 ) {
+    if ( !x_IsSetPtr() ) {
         // Create the object and register for cleanup
         T* ptr = new T;
         ptr->AddReference();
-        m_Ptr = ptr;
+        x_SetPtr(ptr);
         CSafeStaticGuard::Register(this);
     }
 }
@@ -826,12 +853,12 @@ inline
 void CSafeStaticRef<T>::x_Init(FUserCreate user_create)
 {
     TInstanceMutexGuard guard(*this);
-    if ( m_Ptr == 0 ) {
+    if ( !x_IsSetPtr() ) {
         // Create the object and register for cleanup
         T* ptr = user_create();
         if ( ptr ) {
             ptr->AddReference();
-            m_Ptr = ptr;
+            x_SetPtr(ptr);
             CSafeStaticGuard::Register(this);
         }
     }
