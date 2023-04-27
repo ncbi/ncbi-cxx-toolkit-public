@@ -342,8 +342,6 @@ BACKWARD_CPP_LIBS    = @BACKWARD_CPP_LIBS@
 # (see in "configure.ac" for the pre-set defaults)
 #
 
-# --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
-LOCAL_LBSM = @local_lbsm@
 # --with-ncbi-crypt:  --->  src/connect/ext/Makefile.connext.lib
 NCBI_CRYPT = @ncbi_crypt@
 
