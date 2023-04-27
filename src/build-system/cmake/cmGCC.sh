@@ -105,6 +105,17 @@ EOF
 fi
 
 export CC CXX
+
+if false; then
+  toolchain=`exec ${script_dir}/toolchains/cmkTool.sh "GCC" ${cxx_version}  "$@"`
+  result=$?
+  if test $result -ne 0; then
+    echo $toolchain 1>&2
+    exit $result
+  fi
+  export NCBI_TOOLCHAIN=$toolchain
+fi
+
 if [ -z "$CMAKECFGRECURSIONGUARD" ]; then
   exec ${script_dir}/cmake-cfg-unix.sh --rootdir=$script_dir/../../.. --caller=$script_name "$@"
 else
