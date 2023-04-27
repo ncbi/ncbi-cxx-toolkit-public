@@ -32,6 +32,7 @@
 
 #include "ncbi_config.h"
 #include "ncbi_lbsmd.h"
+#include "ncbi_lbsm_ipc.h"
 
 
 #ifdef NCBI_OS_UNIX
@@ -39,7 +40,6 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_lb.h"
 #include "ncbi_lbsm.h"
-#include "ncbi_lbsm_ipc.h"
 #include "ncbi_priv.h"
 #include "ncbi_version.h"
 #include <errno.h>
@@ -1330,6 +1330,13 @@ int/*bool*/ LBSM_HINFO_Status(const HOST_INFO hinfo,
 
 
 #else
+
+
+/*ARGSUSED*/
+int LBSM_LBSMD(int/*bool*/ check_n_lock)
+{
+    return -1;
+}
 
 
 /*ARGSUSED*/
