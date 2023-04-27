@@ -293,7 +293,8 @@ static int Test_MultiProcess_Child(int test, string lockname)
         LOG_CHILD("lock");
         lock.Lock();
         LOG_CHILD("locked");
-        SleepSec(3);
+        SleepSec(2);
+        LOG_CHILD("exiting");
         return IPCL_SUCCESS;
         
     case 4:
