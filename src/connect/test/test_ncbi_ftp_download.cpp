@@ -221,11 +221,11 @@ protected:
         CNcbiOstrstream os;
         os << current;
         string line = CNcbiOstrstreamToString(os);
-        streamsize linelen = (streamsize) line.size();
+        size_t linelen = line.size();
         NcbiCerr.flush();
         NcbiCout << line;
         if (s_IsATTY()  &&  linelen < SCREEN_COLS) {
-            NcbiCout << NcbiSetw(SCREEN_COLS - linelen) << ' ';
+            NcbiCout << NcbiSetw(SCREEN_COLS - int(linelen)) << ' ';
         }
         NcbiCout << NcbiEndl;
         TFile file(current.GetName(), current.GetSize());
@@ -351,15 +351,15 @@ size_t CListProcessor::Run(void)
     do {
         string line;
         getline(*m_Stream, line);
-        streamsize linelen = (streamsize) line.size();
-        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+        size_t linelen = line.size();
+        if (linelen/*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
             line.resize(--linelen);
         }
-        if (linelen /*!line.empty()*/) {
+        if (linelen/*!line.empty()*/) {
             NcbiCerr.flush();
             NcbiCout << line;
             if (s_IsATTY()  &&  linelen < SCREEN_COLS) {
-                NcbiCout << NcbiSetw(SCREEN_COLS - linelen) << ' ';
+                NcbiCout << NcbiSetw(SCREEN_COLS - int(linelen)) << ' ';
             }
             NcbiCout << NcbiEndl;
             CTar::TFile file = make_pair(line, (Uint8) 0);
@@ -538,11 +538,11 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
             os << "              ";
         }
         string line = CNcbiOstrstreamToString(os);
-        streamsize linelen = (streamsize) line.size();
+        size_t linelen = line.size();
         NcbiCout.flush();
         NcbiCerr << line;
         if (linelen < SCREEN_COLS) {
-            NcbiCerr << NcbiSetw(SCREEN_COLS - linelen) << ' ';
+            NcbiCerr << NcbiSetw(SCREEN_COLS - int(linelen)) << ' ';
         }
         NcbiCerr << '\r' << NcbiFlush;
     }
@@ -697,7 +697,7 @@ static void s_FTPStat(iostream& ftp)
         string line;
         getline(ftp, line);
         size_t linelen = line.size();
-        if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
+        if (linelen/*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
             line.resize(--linelen);
         }
         NStr::TruncateSpacesInPlace(line);
