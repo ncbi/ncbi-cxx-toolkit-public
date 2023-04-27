@@ -441,12 +441,44 @@ else
 fi
 
 ############################################################################# 
-
-if [ -n "$CC" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"
+if [ -z "$BUILD_ROOT" ]; then
+  if test "$CMAKE_GENERATOR" = "Xcode"; then
+    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
+    if test "$BUILD_SHARED_LIBS" = "ON"; then
+      BUILD_ROOT="$BUILD_ROOT"-DLL
+    fi
+  else
+    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
+    if test "$BUILD_SHARED_LIBS" = "ON"; then
+      BUILD_ROOT="$BUILD_ROOT"DLL
+    fi
+#BUILD_ROOT="$BUILD_ROOT"64
+  fi
 fi
-if [ -n "$CXX" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER=$(Quote "$CXX")"
+
+cd ${tree_root}
+mkdir -p ${BUILD_ROOT}/build
+if [ ! -d ${BUILD_ROOT}/build ]; then
+  Error "Failed to create directory: ${BUILD_ROOT}/build"
+  exit 1
+fi
+
+############################################################################# 
+if [ -n "$NCBI_TOOLCHAIN" ]; then
+  mv -f $NCBI_TOOLCHAIN ${BUILD_ROOT}/build/ncbi_toolchain.cmake
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=$(Quote "${tree_root}/${BUILD_ROOT}/build/ncbi_toolchain.cmake")"
+else
+  if [ -n "$CC" ]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"
+  fi
+  if [ -n "$CXX" ]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER=$(Quote "$CXX")"
+  fi
+
+#CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
+  if [ -n "$NCBI_COMPILER_EXE_LINKER_FLAGS" ]; then
+    CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${NCBI_COMPILER_EXE_LINKER_FLAGS}")"
+  fi
 fi
 if [ -n "$CMAKE_GENERATOR" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$CMAKE_GENERATOR")"
@@ -475,37 +507,12 @@ if test "$CONANCOMPONENTS" = "ON"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCONANCOMPONENTS=ON"
 fi
 
-#CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
-if [ -n "$NCBI_COMPILER_EXE_LINKER_FLAGS" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${NCBI_COMPILER_EXE_LINKER_FLAGS}")"
-fi
-
-if [ -z "$BUILD_ROOT" ]; then
-  if test "$CMAKE_GENERATOR" = "Xcode"; then
-    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
-    if test "$BUILD_SHARED_LIBS" = "ON"; then
-      BUILD_ROOT="$BUILD_ROOT"-DLL
-    fi
-  else
-    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
-    if test "$BUILD_SHARED_LIBS" = "ON"; then
-      BUILD_ROOT="$BUILD_ROOT"DLL
-    fi
-#BUILD_ROOT="$BUILD_ROOT"64
-  fi
-fi
-
 cd ${tree_root}
 Check_function_exists configure_ext_PreCMake && configure_ext_PreCMake
 # true to debug
 if false; then
-  echo mkdir -p ${BUILD_ROOT}/build 
   echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 else
-mkdir -p ${BUILD_ROOT}/build
-if [ ! -d ${BUILD_ROOT}/build ]; then
-  Error "Failed to create directory: ${BUILD_ROOT}/build"
-fi
 cd ${BUILD_ROOT}/build 
 
 if [ -f "${tree_root}/CMakeLists.txt" ]; then
