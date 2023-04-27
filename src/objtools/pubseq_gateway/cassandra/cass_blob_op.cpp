@@ -81,7 +81,6 @@ void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, const string & keysp
         || *chunk_size < kChunkSizeMin
     ) {
         *chunk_size = kChunkSizeDefault;
-        UpdateSetting(timeout_ms, keyspace, kSettingLargeChunkSize, NStr::NumericToString(*chunk_size));
     }
 }
 
@@ -91,27 +90,6 @@ void CCassBlobOp::GetBigBlobSizeLimit(unsigned int timeout_ms, const string & ke
     if (!GetSetting(timeout_ms, keyspace, kSettingBigBlobSize, s) || !NStr::StringToNumeric(s, value)) {
         *value = -1;
     }
-}
-
-/*****************************************************
-
-                IN-TABLE    SETTINGS
-
-*****************************************************/
-
-void CCassBlobOp::UpdateSetting(unsigned int timeout_ms, const string & domain, const string & name, const string & value)
-{
-    CCassConnection::Perform(timeout_ms, nullptr, nullptr,
-        [this, domain, name, value](bool /*is_repeated*/) {
-            auto qry = m_Conn->NewQuery();
-            qry->SetSQL("INSERT INTO maintenance.settings (domain, name, value) VALUES(?, ?, ?)", 3);
-            qry->BindStr(0, domain);
-            qry->BindStr(1, name);
-            qry->BindStr(2, value);
-            qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
-            return true;
-        }
-    );
 }
 
 bool CCassBlobOp::GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value)

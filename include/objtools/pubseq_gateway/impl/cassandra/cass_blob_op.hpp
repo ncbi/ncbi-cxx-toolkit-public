@@ -350,7 +350,10 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         m_Conn = nullptr;
     }
 
+    NCBI_STD_DEPRECATED("GetBlobChunkSize() is deprecated and will be deleted after 08/01/2023")
     void GetBlobChunkSize(unsigned int timeout_ms, const string & keyspace, int64_t * chunk_size);
+
+    NCBI_STD_DEPRECATED("GetBigBlobSizeLimit() is deprecated and will be deleted after 08/01/2023")
     void GetBigBlobSizeLimit(unsigned int timeout_ms, const string & keyspace, int64_t * value);
 
     /// It is unsafe to use this function.
@@ -365,8 +368,8 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         return m_Keyspace;
     }
 
+    NCBI_STD_DEPRECATED("GetSetting() is deprecated and will be deleted after 08/01/2023")
     bool GetSetting(unsigned int op_timeout_ms, const string & domain, const string & name, string & value);
-    void UpdateSetting(unsigned int op_timeout_ms, const string & domain, const string & name, const string & value);
 
     shared_ptr<CCassConnection> GetConn()
     {
