@@ -252,7 +252,7 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
     return locks;
 }
 
-DEFINE_STATIC_FAST_MUTEX(s_Oid_Mutex);
+DEFINE_STATIC_MUTEX(s_Oid_Mutex);
 
 void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
                                     int oid,
@@ -267,7 +267,7 @@ void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
                                                      m_UseFixedSizeSlices,
                                                      slice_size));
     {
-        CFastMutexGuard guard(s_Oid_Mutex);
+        CMutexGuard guard(s_Oid_Mutex);
         cached->RegisterIds(m_Ids);
     }
     
@@ -379,7 +379,7 @@ void CBlastDbDataLoader::GetChunk(TChunk chunk)
 int CBlastDbDataLoader::x_GetOid(const CSeq_id_Handle& idh)
 {
     {
-        CFastMutexGuard guard(s_Oid_Mutex);
+        CMutexGuard guard(s_Oid_Mutex);
         TIdMap::iterator iter = m_Ids.find(idh);
         if ( iter != m_Ids.end() ) {
             return iter->second;
@@ -417,7 +417,7 @@ int CBlastDbDataLoader::x_GetOid(const CSeq_id_Handle& idh)
     }
     
     {
-        CFastMutexGuard guard(s_Oid_Mutex);
+        CMutexGuard guard(s_Oid_Mutex);
         m_Ids.insert(TIdMap::value_type(idh, oid));
     }
     return oid;
