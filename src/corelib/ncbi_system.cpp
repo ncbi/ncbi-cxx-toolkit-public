@@ -775,15 +775,16 @@ double CSystemInfo::GetUptime(void)
 
 unsigned long CSystemInfo::GetVirtualMemoryPageSize(void)
 {
-    static unsigned long ps = 0;
-    if (ps) {
-        return ps;
+    static atomic<unsigned long> cached_value;
+    auto value = cached_value.load(memory_order_relaxed);
+    if ( value ) {
+        return value;
     }
 
 #if defined(NCBI_OS_MSWIN)
     SYSTEM_INFO si;
     GetSystemInfo(&si);
-    ps = (unsigned long) si.dwPageSize;
+    value = (unsigned long) si.dwPageSize;
 
 #elif defined(NCBI_OS_UNIX) 
     long x = 0;
@@ -798,49 +799,53 @@ unsigned long CSystemInfo::GetVirtualMemoryPageSize(void)
         CNcbiError::SetFromErrno();
         return 0;
     }
-    ps = x;
+    value = x;
 #else
     CNcbiError::Set(CNcbiError::eNotSupported);
 #endif //NCBI_OS_...
 
-    return ps;
+    cached_value.store(value, memory_order_relaxed);
+    return value;
 }
 
 
 unsigned long CSystemInfo::GetVirtualMemoryAllocationGranularity(void)
 {
-    static unsigned long ag = 0;
-    if (!ag) {
+    static atomic<unsigned long> cached_value;
+    auto value = cached_value.load(memory_order_relaxed);
+    if (!value) {
 #if defined(NCBI_OS_MSWIN)
         SYSTEM_INFO si;
         GetSystemInfo(&si);
-        ag = (unsigned long) si.dwAllocationGranularity;
+        value = (unsigned long) si.dwAllocationGranularity;
 #else
-        ag = GetVirtualMemoryPageSize();
+        value = GetVirtualMemoryPageSize();
 #endif
+        cached_value.store(value, memory_order_relaxed);
     }
-    return ag;
+    return value;
 }
 
 
 Uint8 CSystemInfo::GetTotalPhysicalMemorySize(void)
 {
-    static Uint8 ms = 0;
-    if (ms) {
-        return ms;
+    static atomic<Uint8> cached_value;
+    auto value = cached_value.load(memory_order_relaxed);
+    if (value) {
+        return value;
     }
 
 #if defined(NCBI_OS_MSWIN)
     MEMORYSTATUSEX st;
     st.dwLength = sizeof(st);
     if ( ::GlobalMemoryStatusEx(&st) ) {
-        ms = st.ullTotalPhys;
+        value = st.ullTotalPhys;
     }
 
 #elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PHYS_PAGES)
     unsigned long num_pages = sysconf(_SC_PHYS_PAGES);
     if (long(num_pages) != -1L) {
-        ms = GetVirtualMemoryPageSize() * Uint8(num_pages);
+        value = GetVirtualMemoryPageSize() * Uint8(num_pages);
     }
 
 #elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
@@ -856,7 +861,7 @@ Uint8 CSystemInfo::GetTotalPhysicalMemorySize(void)
     #endif
     size_t len = sizeof(physmem);
     if (sysctl(mib, 2, &physmem, &len, NULL, 0) == 0  &&  len == sizeof(physmem)){
-        ms = Uint8(physmem);
+        value = Uint8(physmem);
     }
     #if defined(NCBI_OS_DARWIN)
     {
@@ -866,7 +871,7 @@ Uint8 CSystemInfo::GetTotalPhysicalMemorySize(void)
         mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
         if (host_statistics(my_host, HOST_VM_INFO,
                             (integer_t*) &vm_stat, &count) == KERN_SUCCESS) {
-            ms = GetVirtualMemoryPageSize() *
+            value = GetVirtualMemoryPageSize() *
                    ( Uint8(vm_stat.free_count) + 
                      Uint8(vm_stat.active_count) +
                      Uint8(vm_stat.inactive_count) + 
@@ -878,13 +883,14 @@ Uint8 CSystemInfo::GetTotalPhysicalMemorySize(void)
 #elif defined(NCBI_OS_IRIX)
     struct rminfo rmi;
     if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
-        ms = GetVirtualMemoryPageSize() * Uint8(rmi.physmem);
+        value = GetVirtualMemoryPageSize() * Uint8(rmi.physmem);
     }
 
 #else
     CNcbiError::Set(CNcbiError::eNotSupported);
 #endif
-    return ms;
+    cached_value.store(value, memory_order_relaxed);
+    return value;
 }
 
 
@@ -942,9 +948,10 @@ clock_t CSystemInfo::GetClockTicksPerSecond(void)
     return CLOCKS_PER_SEC;
 
 #elif defined(NCBI_OS_UNIX)
-    static clock_t ticks = 0;
-    if ( ticks ) {
-        return ticks;
+    static atomic<clock_t> cached_value;
+    auto value = cached_value.load(memory_order_relaxed);
+    if ( value ) {
+        return value;
     }
     clock_t t = sysconf(_SC_CLK_TCK);
     #if defined(CLK_TCK)
@@ -953,8 +960,9 @@ clock_t CSystemInfo::GetClockTicksPerSecond(void)
         if (!t  ||  t == (clock_t)(-1)) t = CLOCKS_PER_SEC;
     #endif
     if (t  &&  t != (clock_t)(-1)) {
-        ticks = t;
-        return t;
+        value = t;
+        cached_value.store(value, memory_order_relaxed);
+        return value;
     }
     CNcbiError::SetFromErrno();
 
