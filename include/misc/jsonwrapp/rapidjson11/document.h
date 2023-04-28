@@ -1495,7 +1495,9 @@ public:
         MemberIterator pos = MemberBegin() + (first - MemberBegin());
         for (MemberIterator itr = pos; itr != last; ++itr)
             itr->~Member();
-        std::memmove(&*pos, &*last, static_cast<size_t>(MemberEnd() - last) * sizeof(Member));
+        // NCBI: Copy as void* to override constructor-bypass warnings.
+        std::memmove(static_cast<void*>(&*pos), &*last,
+                     static_cast<size_t>(MemberEnd() - last) * sizeof(Member));
         data_.o.size -= static_cast<SizeType>(last - first);
         return pos;
     }
@@ -1699,7 +1701,9 @@ public:
         ValueIterator pos = Begin() + (first - Begin());
         for (ValueIterator itr = pos; itr != last; ++itr)
             itr->~GenericValue();       
-        std::memmove(pos, last, static_cast<size_t>(End() - last) * sizeof(GenericValue));
+        // NCBI: Copy as void* to override constructor-bypass warnings.
+        std::memmove(static_cast<void*>(pos), last,
+                     static_cast<size_t>(End() - last) * sizeof(GenericValue));
         data_.a.size -= static_cast<SizeType>(last - first);
         return pos;
     }
@@ -2004,8 +2008,9 @@ private:
     void SetArrayRaw(GenericValue* values, SizeType count, Allocator& allocator) {
         data_.f.flags = kArrayFlag;
         if (count) {
-            GenericValue* e = static_cast<GenericValue*>(allocator.Malloc(count * sizeof(GenericValue)));
-            SetElementsPointer(e);
+            // NCBI: Copy as void* to override constructor-bypass warnings.
+            void* e = allocator.Malloc(count * sizeof(GenericValue));
+            SetElementsPointer(static_cast<GenericValue*>(e));
             std::memcpy(e, values, count * sizeof(GenericValue));
         }
         else
@@ -2019,8 +2024,9 @@ SetValueAllocator(&allocator);
     void SetObjectRaw(Member* members, SizeType count, Allocator& allocator) {
         data_.f.flags = kObjectFlag;
         if (count) {
-            Member* m = static_cast<Member*>(allocator.Malloc(count * sizeof(Member)));
-            SetMembersPointer(m);
+            // NCBI: Copy as void* to override constructor-bypass warnings.
+            void* m = allocator.Malloc(count * sizeof(Member));
+            SetMembersPointer(static_cast<Member*>(m));
             std::memcpy(m, members, count * sizeof(Member));
         }
         else
