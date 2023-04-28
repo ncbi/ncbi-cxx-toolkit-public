@@ -991,11 +991,18 @@ private:
         io->OnQueue(handle);
     }
 
-    using TSessions = deque<SUvNgHttp2_Session<SPSG_IoSession>>;
+    struct SServerSessions
+    {
+        deque<SUvNgHttp2_Session<SPSG_IoSession>> sessions;
+        double current_rate = 0.0;
+
+        SPSG_Server& operator*() { _ASSERT(!sessions.empty()); return sessions.front().server; }
+        SPSG_Server* operator->() { return &operator*(); }
+    };
 
     SPSG_Params m_Params;
     SPSG_Servers::TTS& m_Servers;
-    deque<pair<TSessions, double>> m_Sessions;
+    deque<SServerSessions> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
 };
 
