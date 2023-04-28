@@ -565,6 +565,10 @@ private:
     unsigned m_Time = 0;
 };
 
+struct SPSG_AsyncQueue;
+
+using TPSG_AsyncQueues = deque<SPSG_AsyncQueue>;
+
 struct SPSG_AsyncQueue : SUv_Async
 {
 private:
@@ -954,11 +958,10 @@ private:
 
 struct SPSG_IoImpl
 {
-    SPSG_AsyncQueue m_Queue;
-
-    SPSG_IoImpl(const SPSG_Params& params, SPSG_Servers::TTS& servers) :
+    SPSG_IoImpl(const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueue& queue) :
         m_Params(params),
         m_Servers(servers),
+        m_Queue(queue),
         m_Random(piecewise_construct, {}, forward_as_tuple(random_device()()))
     {}
 
@@ -1002,6 +1005,7 @@ private:
 
     SPSG_Params m_Params;
     SPSG_Servers::TTS& m_Servers;
+    SPSG_AsyncQueue& m_Queue;
     deque<SServerSessions> m_Sessions;
     pair<uniform_real_distribution<>, default_random_engine> m_Random;
 };
@@ -1061,9 +1065,10 @@ public:
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
-    void OnDiscovery() { for (auto& io : m_Io) io->m_Queue.Signal(); }
+    void OnDiscovery() { for (auto& queue : m_Queues) queue.Signal(); }
 
     SUv_Barrier m_Barrier;
+    TPSG_AsyncQueues m_Queues;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     atomic<size_t> m_RequestCounter;

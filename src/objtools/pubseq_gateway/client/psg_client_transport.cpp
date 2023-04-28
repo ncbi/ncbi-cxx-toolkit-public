@@ -1843,7 +1843,7 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
 
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, io_timer_period, io_timer_period, params, m_Servers));
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back()));
     }
 
     m_Barrier.Wait();
@@ -1856,8 +1856,8 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
     }
 
     const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
-    m_Io[idx]->m_Queue.Emplace(move(req));
-    m_Io[idx]->m_Queue.Signal();
+    m_Queues[idx].Emplace(move(req));
+    m_Queues[idx].Signal();
     return true;
 }
 
