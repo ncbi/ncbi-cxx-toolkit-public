@@ -1390,8 +1390,8 @@ void SPSG_IoImpl::OnShutdown(uv_async_t*)
 {
     queue.Close();
 
-    for (auto& server_sessions : m_Sessions) {
-        for (auto& session : server_sessions.first) {
+    for (auto& server : m_Sessions) {
+        for (auto& session : server.sessions) {
             session.Reset("Shutdown is in process", SUv_Tcp::eNormalClose);
         }
     }
@@ -1419,8 +1419,7 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
 
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
-        m_Sessions.emplace_back(TSessions(), 0.0);
-        m_Sessions.back().first.emplace_back(server, m_Params, queue, handle->loop);
+        m_Sessions.emplace_back().sessions.emplace_back(server, m_Params, queue, handle->loop);
         PSG_IO_TRACE("Session for server '" << server.address << "' was added");
     }
 }
@@ -1430,19 +1429,14 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     size_t sessions = 0;
     auto some_server_hit_request_limit = false;
 
-    for (auto& server_sessions : m_Sessions) {
-        // There is always at least one session per server
-        _ASSERT(server_sessions.first.size());
+    for (auto& server : m_Sessions) {
+        server.current_rate = server->throttling.Active() ? 0.0 : server->rate.load();
 
-        auto& server = server_sessions.first.front().server;
-        auto& rate = server_sessions.second;
-        rate = server.throttling.Active() ? 0.0 : server.rate.load();
-
-        if (rate) {
+        if (server.current_rate) {
             ++sessions;
         }
 
-        if (server.available_streams <= 0) {
+        if (server->available_streams <= 0) {
             some_server_hit_request_limit = true;
         }
     }
@@ -1460,43 +1454,38 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
         for (;;) {
             // Skip all sessions already marked unavailable in this iteration
-            while (!i->second) {
+            while (!i->current_rate) {
                 next_i();
             }
 
-            // There is always at least one session per server
-            _ASSERT(i->first.size());
-
             // These references depend on i and can only be used if it stays the same
-            auto& server_sessions = i->first;
-            auto& server = server_sessions.front().server;
-            auto& session_rate = i->second;
+            auto& server = *i;
 
-            auto session = server_sessions.begin();
+            auto session = server.sessions.begin();
 
-            auto last_session = [&]() { return distance(session, server_sessions.end()) == 1; };
+            auto last_session = [&]() { return distance(session, server.sessions.end()) == 1; };
             auto add_session = [&]() {
-                    if (server_sessions.size() >= TPSG_MaxSessions::GetDefault()) return false;
-                    server_sessions.emplace_back(server, m_Params, queue, handle->loop);
-                    PSG_IO_TRACE("Additional session for server '" << server.address << "' was added");
+                    if (server.sessions.size() >= TPSG_MaxSessions::GetDefault()) return false;
+                    server.sessions.emplace_back(*server, m_Params, queue, handle->loop);
+                    PSG_IO_TRACE("Additional session for server '" << server->address << "' was added");
                     return true;
                 };
 
             // Skip all full sessions
-            for (; (session != server_sessions.end()) && session->IsFull(); ++session);
+            for (; (session != server.sessions.end()) && session->IsFull(); ++session);
 
             // If server has reached its limit
-            if (server.available_streams <= 0) {
+            if (server->available_streams <= 0) {
                 some_server_hit_request_limit = true;
-                PSG_IO_TRACE("Server '" << server.address << "' has no room for a request (reached request limit)");
+                PSG_IO_TRACE("Server '" << server->address << "' has no room for a request (reached request limit)");
 
             // If all existing sessions are full and no new sessions are allowed
-            } else if (session == server_sessions.end()) {
-                PSG_IO_TRACE("Server '" << server.address << "' has no room for a request (reached session limit)");
+            } else if (session == server.sessions.end()) {
+                PSG_IO_TRACE("Server '" << server->address << "' has no room for a request (reached session limit)");
 
             // Session is available or can be created
             } else {
-                rate -= session_rate;
+                rate -= server.current_rate;
 
                 if (rate >= 0.0) {
                     // Check remaining rate against next available session
@@ -1505,7 +1494,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                 }
 
                 // Checking if throttling has been activated in a different thread
-                if (!server.throttling.Active()) {
+                if (!server->throttling.Active()) {
                     auto [timed_req, processor_id, req] = queue.Pop();
 
                     if (!req) {
@@ -1522,7 +1511,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         do {
                             if (last_session()) {
                                 if (add_session()) {
-                                    session = prev(server_sessions.end());
+                                    session = prev(server.sessions.end());
                                 } else {
                                     session = original_session;
                                 }
@@ -1541,7 +1530,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         PSG_IO_TRACE("Server '" << session->GetId() << "' will get request '" <<
                                 req_id << "' with rate = " << original_rate);
                         --remaining_submits;
-                        ++server.stats;
+                        ++server->stats;
 
                         // Add new session if allowed to
                         if (session->IsFull() && last_session()) {
@@ -1553,7 +1542,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
                         PSG_IO_TRACE("Server '" << session->GetId() << "' failed to process request '" <<
                                 req_id << "' with rate = " << original_rate);
 
-                        if (!server.throttling.Active()) {
+                        if (!server->throttling.Active()) {
                             break;
                         }
                     }
@@ -1563,8 +1552,8 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             // Current session is unavailable.
             // Check if there are some other sessions available
             if (--sessions) {
-                d = uniform_real_distribution<>(d.min() + session_rate);
-                session_rate = 0.0;
+                d = uniform_real_distribution<>(d.min() + server.current_rate);
+                server.current_rate = 0.0;
             }
 
             break;
@@ -1736,8 +1725,8 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
         CheckRequestExpiration();
     }
 
-    for (auto& server_sessions : m_Sessions) {
-        for (auto& session : server_sessions.first) {
+    for (auto& server : m_Sessions) {
+        for (auto& session : server.sessions) {
             session.CheckRequestExpiration();
         }
     }
