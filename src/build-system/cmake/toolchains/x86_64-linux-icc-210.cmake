@@ -20,6 +20,7 @@ set(CMAKE_C_FLAGS
 )
 set(CMAKE_C_FLAGS_DEBUG   "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO  "-g -O3")
 
 set(CMAKE_CXX_FLAGS
     "-isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
@@ -29,6 +30,7 @@ set(CMAKE_CXX_FLAGS
 )
 set(CMAKE_CXX_FLAGS_DEBUG   "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g -O3")
 
 set(CMAKE_EXE_LINKER_FLAGS
     "-L/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \

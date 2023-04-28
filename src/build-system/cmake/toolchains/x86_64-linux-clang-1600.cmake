@@ -20,6 +20,7 @@ set(CMAKE_C_FLAGS
 )
 set(CMAKE_C_FLAGS_DEBUG   "-ggdb3 -O0")
 set(CMAKE_C_FLAGS_RELEASE "-ggdb1 -O3")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO  "-ggdb3 -O3")
 
 set(CMAKE_CXX_FLAGS
     "-isystem /opt/ncbi/gcc/7.3.0/include/c++/7.3.0 \
@@ -29,6 +30,7 @@ set(CMAKE_CXX_FLAGS
 )
 set(CMAKE_CXX_FLAGS_DEBUG   "-ggdb3 -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-ggdb1 -O3")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-ggdb3 -O3")
 
 set(CMAKE_EXE_LINKER_FLAGS
     "-L/opt/ncbi/gcc/7.3.0/lib/gcc/x86_64-redhat-linux-gnu/7.3.0 \
