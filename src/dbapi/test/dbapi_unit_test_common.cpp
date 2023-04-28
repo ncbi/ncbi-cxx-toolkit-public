@@ -38,7 +38,7 @@
 
 #include <connect/ncbi_core_cxx.hpp>
 #ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_crypt.h>
+#  include <internal/cppcore/connext2/ncbi_crypt.h>
 #endif
 
 #include <dbapi/driver/drivers.hpp>
