@@ -1246,22 +1246,69 @@ COperationTiming::Serialize(int  most_ancient_time,
         // The time series needs to be serialized only if the container is not
         // empty.
         if (!time_series.empty()) {
-            ret.SetByKey("ID_get_time_series",
-                         m_IdGetStat.Serialize(time_series));
-            ret.SetByKey("ID_getblob_time_series",
-                         m_IdGetblobStat.Serialize(time_series));
-            ret.SetByKey("ID_resolve_time_series",
-                         m_IdResolveStat.Serialize(time_series));
-            ret.SetByKey("ID_acc_ver_hist_time_series",
-                         m_IdAccVerHistStat.Serialize(time_series));
-            ret.SetByKey("ID_get_tse_chunk_time_series",
-                         m_IdGetTSEChunkStat.Serialize(time_series));
-            ret.SetByKey("ID_get_na_time_series",
-                         m_IdGetNAStat.Serialize(time_series));
-            ret.SetByKey("IPG_resolve_time_series",
-                         m_IpgResolveStat.Serialize(time_series));
-        }
 
+            // The collection of data switches to the next slot almost
+            // synchronously so it is possible to get the current index and
+            // loop from one of them
+            bool        loop;
+            size_t      current_index;
+            m_IdGetStat.GetLoopAndIndex(loop, current_index);
+
+            ret.SetByKey("ID_get_time_series",
+                         m_IdGetStat.Serialize(time_series, loop, current_index));
+            ret.SetByKey("ID_getblob_time_series",
+                         m_IdGetblobStat.Serialize(time_series, loop, current_index));
+            ret.SetByKey("ID_resolve_time_series",
+                         m_IdResolveStat.Serialize(time_series, loop, current_index));
+            ret.SetByKey("ID_acc_ver_hist_time_series",
+                         m_IdAccVerHistStat.Serialize(time_series, loop, current_index));
+            ret.SetByKey("ID_get_tse_chunk_time_series",
+                         m_IdGetTSEChunkStat.Serialize(time_series, loop, current_index));
+            ret.SetByKey("ID_get_na_time_series",
+                         m_IdGetNAStat.Serialize(time_series, loop, current_index));
+            ret.SetByKey("IPG_resolve_time_series",
+                         m_IpgResolveStat.Serialize(time_series, loop, current_index));
+
+            // Here: need to calculate the max of requests separately for each
+            // kind of response: ok, error, warning, not found
+            // Note: the logic of the raw data index is the same as in the
+            // serialization above
+            size_t      raw_index;
+            if (current_index == 0) {
+                raw_index = CRequestTimeSeries::kSeriesIntervals - 1;
+                loop = false;   // to avoid going the second time over
+            } else {
+                raw_index = current_index - 1;
+            }
+
+            uint64_t    max_requests = 0;
+            uint64_t    max_errors = 0;
+            uint64_t    max_warnings = 0;
+            uint64_t    max_not_found = 0;
+            for (;;) {
+                x_UpdateMaxReqsStat(raw_index, max_requests, max_errors,
+                                    max_warnings, max_not_found);
+                if (raw_index == 0)
+                    break;
+                --raw_index;
+            }
+
+            if (loop) {
+                raw_index = CRequestTimeSeries::kSeriesIntervals - 1;
+                while (raw_index > current_index + 1) {
+                    x_UpdateMaxReqsStat(raw_index, max_requests, max_errors,
+                                        max_warnings, max_not_found);
+                    --raw_index;
+                }
+            }
+
+            // Add the max requests (converted to per sec) to the serialized
+            // data
+            ret.SetDouble("MaxPerSec_Requests", max_requests / 60.0);
+            ret.SetDouble("MaxPerSec_Errors", max_errors / 60.0);
+            ret.SetDouble("MaxPerSec_Warnings", max_warnings / 60.0);
+            ret.SetDouble("MaxPerSec_NotFound", max_not_found / 60.0);
+        }
     } else {
         lock_guard<mutex>       guard(m_Lock);
 
@@ -1293,3 +1340,31 @@ COperationTiming::Serialize(int  most_ancient_time,
 
     return ret;
 }
+
+
+void
+COperationTiming::x_UpdateMaxReqsStat(size_t  index,
+                                      uint64_t &  max_requests,
+                                      uint64_t &  max_errors,
+                                      uint64_t &  max_warnings,
+                                      uint64_t &  max_not_found) const
+{
+    uint64_t    requests = 0;
+    uint64_t    errors = 0;
+    uint64_t    warnings = 0;
+    uint64_t    not_found = 0;
+
+    m_IdGetStat.AppendData(index, requests, errors, warnings, not_found);
+    m_IdGetblobStat.AppendData(index, requests, errors, warnings, not_found);
+    m_IdResolveStat.AppendData(index, requests, errors, warnings, not_found);
+    m_IdAccVerHistStat.AppendData(index, requests, errors, warnings, not_found);
+    m_IdGetTSEChunkStat.AppendData(index, requests, errors, warnings, not_found);
+    m_IdGetNAStat.AppendData(index, requests, errors, warnings, not_found);
+    m_IpgResolveStat.AppendData(index, requests, errors, warnings, not_found);
+
+    max_requests = max(max_requests, requests);
+    max_errors = max(max_errors, errors);
+    max_warnings = max(max_warnings, warnings);
+    max_not_found = max(max_not_found, not_found);
+}
+

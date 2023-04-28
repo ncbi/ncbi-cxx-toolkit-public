@@ -318,6 +318,11 @@ class COperationTiming
                                  TOnePSGTiming::EScaleType  stat_type,
                                  unsigned long  small_blob_size);
         ssize_t x_GetBlobRetrievalBinIndex(unsigned long  blob_size);
+        void x_UpdateMaxReqsStat(size_t  index,
+                                 uint64_t &  max_requests,
+                                 uint64_t &  max_errors,
+                                 uint64_t &  max_warnings,
+                                 uint64_t &  max_not_found) const;
 
     private:
         string                                              m_OnlyForProcessor;

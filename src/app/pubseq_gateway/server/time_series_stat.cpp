@@ -126,10 +126,9 @@ void CRequestTimeSeries::Reset(void)
 }
 
 
-CJsonNode  CRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_series) const
+CJsonNode  CRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_series,
+                                         bool  loop, size_t  current_index) const
 {
-    bool        loop = m_Loop;
-    size_t      current_index = m_CurrentIndex.load();
     CJsonNode   ret(CJsonNode::NewObjectNode());
 
     ret.SetByKey("Requests",
@@ -265,7 +264,6 @@ CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
     } else {
         ret.SetDouble("RestAvgReqPerSec", 0.0);
     }
-
 
     ret.SetInteger("TotalRequests", total_reqs);
     ret.SetDouble("MaxReqPerSec", max_n_req_per_min / 60.0);
