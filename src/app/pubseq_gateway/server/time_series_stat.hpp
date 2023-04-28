@@ -38,15 +38,17 @@
 USING_NCBI_SCOPE;
 
 
-// Request time series for:
-// - number of requests
-// - number of errors
-// - number of warnings
-// - number of not found
-// All the values are collected for 30 days with a granularity of a minute
-const size_t    kSeriesIntervals = 60*24*30;
 class CRequestTimeSeries
 {
+    public:
+        // Request time series for:
+        // - number of requests
+        // - number of errors
+        // - number of warnings
+        // - number of not found
+        // All the values are collected for 30 days with a granularity of a minute
+        static constexpr size_t    kSeriesIntervals = 60*24*30;
+
     public:
         enum EPSGSCounter
         {
@@ -61,8 +63,31 @@ class CRequestTimeSeries
         void Add(EPSGSCounter  counter);
         void Rotate(void);
         void Reset(void);
-        CJsonNode  Serialize(const vector<pair<int, int>> &  time_series) const;
+        CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             bool  loop, size_t  current_index) const;
         static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
+
+    public:
+        // This is to be able to sum values from different requests.
+        // Sinse the change of the slot for a minute is almost synchronous for
+        // all the requests the current values can be received from any of them
+        // and then iterate from outside.
+        void GetLoopAndIndex(bool &  loop, size_t &  current_index) const
+        {
+            loop = m_Loop;
+            current_index = m_CurrentIndex.load();
+        }
+        void AppendData(size_t      index,
+                        uint64_t &  requests,
+                        uint64_t &  errors,
+                        uint64_t &  warnings,
+                        uint64_t &  not_found) const
+        {
+            requests += m_Requests[index];
+            errors += m_Errors[index];
+            warnings += m_Warnings[index];
+            not_found += m_NotFound[index];
+        }
 
     private:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,
