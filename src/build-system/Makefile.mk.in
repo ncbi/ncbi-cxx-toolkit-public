@@ -342,9 +342,6 @@ BACKWARD_CPP_LIBS    = @BACKWARD_CPP_LIBS@
 # (see in "configure.ac" for the pre-set defaults)
 #
 
-# --with-ncbi-crypt:  --->  src/connect/ext/Makefile.connext.lib
-NCBI_CRYPT = @ncbi_crypt@
-
 # non-public (X)CONNECT extensions
 CONNEXT  = @CONNEXT@
 XCONNEXT = @XCONNEXT@
