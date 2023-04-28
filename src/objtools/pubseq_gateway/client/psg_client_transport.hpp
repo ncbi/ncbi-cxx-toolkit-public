@@ -992,15 +992,12 @@ protected:
 private:
     void CheckForNewServers(uv_async_t* handle)
     {
-        const auto servers_size = m_Servers->size();
-        const auto sessions_size = m_Sessions.size();
-
-        if (servers_size > sessions_size) {
-            AddNewServers(servers_size, sessions_size, handle);
+        if (m_Servers->size() > m_Sessions.size()) {
+            AddNewServers(handle);
         }
     }
 
-    void AddNewServers(size_t servers_size, size_t sessions_size, uv_async_t* handle);
+    void AddNewServers(uv_async_t* handle);
     void OnQueue(uv_async_t* handle);
     void CheckRequestExpiration();
     void FailRequests();
