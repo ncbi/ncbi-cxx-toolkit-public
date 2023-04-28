@@ -1417,13 +1417,17 @@ void SPSG_DiscoveryImpl::OnShutdown(uv_async_t*)
     if (m_Stats) m_Stats->Stop();
 }
 
-void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_async_t* handle)
+void SPSG_IoImpl::AddNewServers(uv_async_t* handle)
 {
-    _ASSERT(servers_size > sessions_size);
-
     // Add new session(s) if new server(s) have been added
     auto servers_locked = m_Servers.GetLock();
     auto& servers = *servers_locked;
+
+    // m_Servers->size() can be used for new_servers only after locking m_Servers to avoid a race
+    const auto servers_size = m_Servers->size();
+    const auto sessions_size = m_Sessions.size();
+
+    _ASSERT(servers_size >= sessions_size);
 
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
