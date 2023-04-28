@@ -1100,7 +1100,11 @@ bool SPSG_IoSession::Fail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Requ
 int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t error_code)
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " closed: " << error_code);
-    server.available_streams++;
+
+    if (!server.available_streams++) {
+        PSG_IO_TRACE("Server '" << server.address << "' became available");
+        m_Queue.SignalAll();
+    }
 
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
         if (auto [processor_id, req] = it->second.Get(); req) {
@@ -1715,7 +1719,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         }
     }
 
-    m_OnDiscovery();
+    m_QueuesRef.SignalAll();
 }
 
 void SPSG_IoImpl::OnTimer(uv_timer_t*)
@@ -1835,7 +1839,7 @@ uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     stats(s_GetStats(m_Servers)),
     m_Barrier(TPSG_NumIo::GetDefault() + 2),
-    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, bind(&SPSG_IoCoordinator::OnDiscovery, this)),
+    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, m_Queues),
     m_RequestCounter(0),
     m_RequestId(1)
 {
@@ -1843,7 +1847,7 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
 
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back()));
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back(m_Queues)));
     }
 
     m_Barrier.Wait();

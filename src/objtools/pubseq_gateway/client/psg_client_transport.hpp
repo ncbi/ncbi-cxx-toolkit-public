@@ -569,7 +569,16 @@ struct SPSG_AsyncQueue;
 
 using TPSG_AsyncQueues = deque<SPSG_AsyncQueue>;
 
-struct SPSG_AsyncQueue : SUv_Async
+struct SPSG_AsyncQueuesRef
+{
+    SPSG_AsyncQueuesRef(TPSG_AsyncQueues& queues) : m_Queues(queues) {}
+    void SignalAll();
+
+private:
+    TPSG_AsyncQueues& m_Queues;
+};
+
+struct SPSG_AsyncQueue : SUv_Async, SPSG_AsyncQueuesRef
 {
 private:
     static auto s_Pop(list<SPSG_TimedRequest>& queue)
@@ -580,6 +589,8 @@ private:
     }
 
 public:
+    using SPSG_AsyncQueuesRef::SPSG_AsyncQueuesRef;
+
     auto Pop()
     {
         auto locked = m_Queue.GetLock();
@@ -596,6 +607,8 @@ public:
 
     SThreadSafe<list<SPSG_TimedRequest>> m_Queue;
 };
+
+inline void SPSG_AsyncQueuesRef::SignalAll() { for (auto& queue : m_Queues) queue.Signal(); }
 
 struct SPSG_ThrottleParams
 {
@@ -1012,13 +1025,13 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, function<void()> on_discovery) :
+    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueuesRef queues_ref) :
         m_Params(params),
         m_NoServers(params, servers),
         m_Service(move(service)),
         m_Stats(move(stats)),
         m_Servers(servers),
-        m_OnDiscovery(move(on_discovery))
+        m_QueuesRef(move(queues_ref))
     {}
 
 protected:
@@ -1046,7 +1059,7 @@ private:
     CServiceDiscovery m_Service;
     shared_ptr<SPSG_Stats> m_Stats;
     SPSG_Servers::TTS& m_Servers;
-    function<void()> m_OnDiscovery;
+    SPSG_AsyncQueuesRef m_QueuesRef;
     SPSG_ThrottleParams m_ThrottleParams;
 };
 
@@ -1065,8 +1078,6 @@ public:
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
-    void OnDiscovery() { for (auto& queue : m_Queues) queue.Signal(); }
-
     SUv_Barrier m_Barrier;
     TPSG_AsyncQueues m_Queues;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
