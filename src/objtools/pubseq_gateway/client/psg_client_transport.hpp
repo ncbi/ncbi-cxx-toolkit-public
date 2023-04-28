@@ -586,7 +586,6 @@ public:
     void Emplace(TArgs&&... args)
     {
         m_Queue.GetLock()->emplace_back(forward<TArgs>(args)...);
-        Signal();
     }
 
     auto GetLockedQueue() { return m_Queue.GetLock(); }
@@ -723,6 +722,7 @@ private:
     {
         if (req->Retry(error, refused_stream)) {
             m_Queue.Emplace(req);
+            m_Queue.Signal();
         }
 
         return Fail(processor_id, req, error, refused_stream);
