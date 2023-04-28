@@ -1434,147 +1434,126 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
 
 void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 {
-    size_t sessions = 0;
-    auto some_server_hit_request_limit = false;
+    auto available_servers = 0;
 
     for (auto& server : m_Sessions) {
-        server.current_rate = server->throttling.Active() ? 0.0 : server->rate.load();
+        server.current_rate = server->rate.load();
 
         if (server.current_rate) {
-            ++sessions;
-        }
-
-        if (server->available_streams <= 0) {
-            some_server_hit_request_limit = true;
+            ++available_servers;
         }
     }
 
-    TPSG_MaxConcurrentSubmits::TValue remaining_submits = m_Params.max_concurrent_submits;
-    auto d = m_Random.first;
+    auto remaining_submits = m_Params.max_concurrent_submits.Get();
+
     auto i = m_Sessions.begin();
-    auto next_i = [&]() { if (++i == m_Sessions.end()) i = m_Sessions.begin(); };
+    auto [timed_req, processor_id, req] = decltype(m_Queue.Pop()){};
+    auto d = m_Random.first;
+    auto request_rate = 0.0;
+    auto target_rate = 0.0;
+    _DEBUG_ARG(string req_id);
 
-    // We have to find available session first and then get a request,
-    // as we may not be able to put the request back into the queue after (if it's full)
-    while (sessions && remaining_submits) {
-        auto rate = d(m_Random.second);
-        _DEBUG_ARG(const auto original_rate = rate);
+    // Clang requires '&timed_req = timed_req, &processor_id = processor_id, &req = req'
+    auto get_request = [&, &timed_req = timed_req, &processor_id = processor_id, &req = req]() {
+        tie(timed_req, processor_id, req) = m_Queue.Pop();
 
-        for (;;) {
-            // Skip all sessions already marked unavailable in this iteration
-            while (!i->current_rate) {
-                next_i();
-            }
+        if (!req) {
+            PSG_IO_TRACE("No [more] requests pending");
+            return false;
+        }
 
-            // These references depend on i and can only be used if it stays the same
-            auto& server = *i;
+        request_rate = 0.0;
+        target_rate = d(m_Random.second);
+        _DEBUG_CODE(req_id = req->reply->debug_printout.id;);
+        PSG_IO_TRACE("Ready to submit request '" << req_id << '\'');
+        return true;
+    };
 
-            auto session = server.sessions.begin();
+    auto next_server = [&]() {
+        if (++i == m_Sessions.end()) i = m_Sessions.begin();
+    };
 
-            auto last_session = [&]() { return distance(session, server.sessions.end()) == 1; };
-            auto add_session = [&]() {
-                    if (server.sessions.size() >= TPSG_MaxSessions::GetDefault()) return false;
+    auto ignore_server = [&]() {
+        d = uniform_real_distribution<>(0.0, d.max() - i->current_rate);
+        i->current_rate = 0.0;
+        --available_servers;
+        next_server();
+    };
+
+    auto find_session = [&]() {
+        auto s = i->sessions.begin();
+        for (; (s != i->sessions.end()) && s->IsFull(); ++s);
+        return make_pair(s != i->sessions.end(), s);
+    };
+
+    while (available_servers && remaining_submits) {
+        // Try to get a request if needed
+        if (!req && !get_request()) {
+            return;
+        }
+
+        // Select a server from available according to target rate
+        for (; request_rate += i->current_rate, request_rate < target_rate; next_server());
+
+        auto& server = *i;
+
+        // If throttling has been activated (possibly in a different thread)
+        if (server->throttling.Active()) {
+            PSG_IO_TRACE("Server '" << server->address << "' is throttled, ignoring");
+            ignore_server();
+
+        // If server has reached its limit (possibly in a different thread)
+        } else if (server->available_streams <= 0) {
+            PSG_IO_TRACE("Server '" << server->address << "' is at request limit, ignoring");
+            ignore_server();
+
+        // If all server sessions are full
+        } else if (auto [found, session] = find_session(); !found) {
+            PSG_IO_TRACE("Server '" << server->address << "' has no sessions available, ignoring");
+            ignore_server();
+
+        // If this is a competitive stream, try a different server
+        } else if (!session->CanProcessRequest(req)) {
+            PSG_IO_TRACE("Server '" << session->GetId() << "' already working/worked on the request, trying to find another one");
+            // Reset submitter ID and move to next server (the same server will be submitted to if it's the only one available)
+            req->submitted_by.Reset();
+            next_server();
+
+        // If failed to submit
+        } else if (!session->ProcessRequest(*move(timed_req), processor_id, move(req))) {
+            PSG_IO_TRACE("Server '" << session->GetId() << "' failed to get request '" << req_id << "' with rate = " << target_rate);
+            next_server();
+
+        // Submitted successfully
+        } else {
+            PSG_IO_TRACE("Server '" << session->GetId() << "' got request '" << req_id << "' with rate = " << target_rate);
+            --remaining_submits;
+            ++server->stats;
+
+            // Add new session if needed and allowed to
+            if (session->IsFull() && (distance(session, server.sessions.end()) == 1)) {
+                if (server.sessions.size() >= TPSG_MaxSessions::GetDefault()) {
+                    PSG_IO_TRACE("Server '" << server->address << "' reached session limit");
+                    ignore_server();
+                } else {
                     server.sessions.emplace_back(*server, m_Params, m_Queue, handle->loop);
                     PSG_IO_TRACE("Additional session for server '" << server->address << "' was added");
-                    return true;
-                };
-
-            // Skip all full sessions
-            for (; (session != server.sessions.end()) && session->IsFull(); ++session);
-
-            // If server has reached its limit
-            if (server->available_streams <= 0) {
-                some_server_hit_request_limit = true;
-
-            // If all existing sessions are full and no new sessions are allowed
-            } else if (session == server.sessions.end()) {
-                PSG_IO_TRACE("Server '" << server->address << "' has no room for a request (reached session limit)");
-
-            // Session is available or can be created
-            } else {
-                rate -= server.current_rate;
-
-                if (rate >= 0.0) {
-                    // Check remaining rate against next available session
-                    next_i();
-                    continue;
-                }
-
-                // Checking if throttling has been activated in a different thread
-                if (!server->throttling.Active()) {
-                    auto [timed_req, processor_id, req] = m_Queue.Pop();
-
-                    if (!req) {
-                        PSG_IO_TRACE("No [more] requests pending");
-                        return;
-                    }
-
-                    _DEBUG_ARG(const auto req_id = req->reply->debug_printout.id);
-
-                    // Try to submit to a different session if this is a competitive stream
-                    if (!session->CanProcessRequest(req)) {
-                        auto original_session = session;
-
-                        do {
-                            if (last_session()) {
-                                if (add_session()) {
-                                    session = prev(server.sessions.end());
-                                } else {
-                                    session = original_session;
-                                }
-
-                                break;
-                            }
-
-                            ++session;
-                        }
-                        while (session->IsFull());
-                    }
-
-                    bool result = session->ProcessRequest(*move(timed_req), processor_id, req);
-
-                    if (result) {
-                        PSG_IO_TRACE("Server '" << session->GetId() << "' will get request '" <<
-                                req_id << "' with rate = " << original_rate);
-                        --remaining_submits;
-                        ++server->stats;
-
-                        // Add new session if allowed to
-                        if (session->IsFull() && last_session()) {
-                            add_session();
-                        }
-
-                        break;
-                    } else {
-                        PSG_IO_TRACE("Server '" << session->GetId() << "' failed to process request '" <<
-                                req_id << "' with rate = " << original_rate);
-
-                        if (!server->throttling.Active()) {
-                            break;
-                        }
-                    }
                 }
             }
-
-            // Current session is unavailable.
-            // Check if there are some other sessions available
-            if (--sessions) {
-                d = uniform_real_distribution<>(d.min() + server.current_rate);
-                server.current_rate = 0.0;
-            }
-
-            break;
         }
     }
 
-    // Continue processing of requests in the IO thread queue on next UV loop iteration
-    // Cannot Signal() in OnStreamClose() in case of some_server_hit_request_limit as there may be multiple I/O threads waiting
-    if (sessions || some_server_hit_request_limit) {
-        m_Queue.Signal();
+    if (req) {
+        // Do not need to signal here
+        m_Queue.Emplace(*move(timed_req));
     }
 
-    PSG_IO_TRACE((sessions ? "Max concurrent submits reached" : "No sessions available [anymore]") <<
-            ", submitted: " << m_Params.max_concurrent_submits - remaining_submits);
+    if (!remaining_submits) {
+        PSG_IO_TRACE("Max concurrent submits reached, submitted: " << m_Params.max_concurrent_submits);
+        m_Queue.Signal();
+    } else {
+        PSG_IO_TRACE("No sessions available [anymore], submitted: " << m_Params.max_concurrent_submits - remaining_submits);
+    }
 }
 
 void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
