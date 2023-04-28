@@ -37,9 +37,6 @@
 #include <corelib/expr.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
-#ifdef HAVE_LIBCONNEXT
-#  include <internal/cppcore/connext2/ncbi_crypt.h>
-#endif
 
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
@@ -367,11 +364,7 @@ NCBITEST_INIT_VARIABLES(parser)
 
     ///////////////////////
     // Configuration-related ...
-#ifdef HAVE_LIBCONNEXT
-    parser->AddSymbol("HAVE_LibConnExt", CRYPT_Version(-1) != -1);
-#else
-    parser->AddSymbol("HAVE_LibConnExt", false);
-#endif
+    parser->AddSymbol("HAVE_LibConnExt", true);
 
 #ifdef HAVE_LIBSYBASE
     parser->AddSymbol("HAVE_Sybase", true);
