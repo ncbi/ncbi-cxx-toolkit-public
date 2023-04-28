@@ -224,6 +224,7 @@ Optional Packages:
  --without-mongodb       do not use MongoDB
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
+ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt
  --without-connext       do not build non-public CONNECT library extensions
  --without-serial        do not build the serialization library and tools
  --without-objects       do not generate/build serializeable objects from ASNs

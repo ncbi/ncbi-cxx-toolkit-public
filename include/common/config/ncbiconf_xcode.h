@@ -470,6 +470,9 @@
 /* Define to 1 if the NCBI C toolkit is available. */
 /* #undef HAVE_NCBI_C */
 
+/* Define to 1 if the real version of ncbi_crypt support is available. */
+/* #undef HAVE_NCBI_CRYPT */
+
 /* Define to 1 if you have the <netdb.h> header file. */
 #define HAVE_NETDB_H 1
 
