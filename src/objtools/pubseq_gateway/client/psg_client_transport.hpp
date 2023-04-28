@@ -448,6 +448,7 @@ struct SPSG_Submitter
 
     bool CanBe(TId id) const { return !m_Id || (m_Id != id); }
     void Set(TId id) { m_Id = id; }
+    void Reset() { m_Id = nullptr; }
 
 private:
     TId m_Id = nullptr;
@@ -547,6 +548,9 @@ struct SPSG_TimedRequest
 {
     SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Id(SPSG_Processor::GetNextId()), m_Request(move(r)) {}
 
+    SPSG_TimedRequest(SPSG_TimedRequest&&) = default;
+    SPSG_TimedRequest& operator=(SPSG_TimedRequest&&) = default;
+
     auto Get()
     {
         _ASSERT(m_Request);
@@ -560,7 +564,7 @@ struct SPSG_TimedRequest
     bool CheckExpiration(const SPSG_Params& params, const SUvNgHttp2_Error& error, TOnRetry on_retry, TOnFail on_fail);
 
 private:
-    const SPSG_Processor::TId m_Id;
+    SPSG_Processor::TId m_Id;
     shared_ptr<SPSG_Request> m_Request;
     unsigned m_Time = 0;
 };
@@ -584,8 +588,9 @@ private:
     static auto s_Pop(list<SPSG_TimedRequest>& queue)
     {
         auto timed_req = move(queue.front());
+        auto p = timed_req.Get();
         queue.pop_front();
-        return tuple_cat(make_tuple(make_optional(timed_req)), timed_req.Get());
+        return tuple_cat(make_tuple(make_optional(move(timed_req))), move(p));
     }
 
 public:
@@ -716,7 +721,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks);
 
     bool CanProcessRequest(shared_ptr<SPSG_Request>& req) { return req->submitted_by.CanBe(GetInternalId()); }
-    bool ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request>& req);
+    bool ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req);
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 

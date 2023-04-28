@@ -1162,7 +1162,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
     return 0;
 }
 
-bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request>& req)
+bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req)
 {
     PSG_IO_SESSION_TRACE(this << " processing requests");
 
@@ -1198,7 +1198,10 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
         return false;
     }
 
-    server.available_streams--;
+    if (!--server.available_streams) {
+        PSG_IO_TRACE("Server '" << server.address << "' reached request limit");
+    }
+
     req->submitted_by.Set(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
@@ -1482,7 +1485,6 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             // If server has reached its limit
             if (server->available_streams <= 0) {
                 some_server_hit_request_limit = true;
-                PSG_IO_TRACE("Server '" << server->address << "' has no room for a request (reached request limit)");
 
             // If all existing sessions are full and no new sessions are allowed
             } else if (session == server.sessions.end()) {
@@ -1714,6 +1716,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         if (server.second > numeric_limits<double>::epsilon()) {
             auto rate = server.second / rate_total;
             servers.emplace_back(server.first, rate, m_Params.max_concurrent_requests_per_server, m_ThrottleParams, handle->loop);
+            _DEBUG_CODE(server.first.GetHostName();); // To avoid splitting the trace message below by gethostbyaddr
             PSG_DISCOVERY_TRACE("Server '" << server.first << "' added to service '" <<
                     service_name << "' with rate = " << rate);
         }
