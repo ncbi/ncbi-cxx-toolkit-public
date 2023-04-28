@@ -1050,6 +1050,8 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
             } else {
                 req->reply->SetComplete();
             }
+
+            server.throttling.AddFailure();
         }
 
         m_Requests.erase(it);
@@ -1088,8 +1090,9 @@ bool SPSG_IoSession::Fail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Requ
     auto context_guard = req->context.Set();
     auto rv = req->Fail(processor_id, error, refused_stream);
 
+    server.throttling.AddFailure();
+
     if (rv) {
-        server.throttling.AddFailure();
         PSG_THROTTLING_TRACE("Server '" << GetId() << "' failed to process request '" <<
                 req->reply->debug_printout.id << "', " << error);
     }
