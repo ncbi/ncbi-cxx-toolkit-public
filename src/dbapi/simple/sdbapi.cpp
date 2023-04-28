@@ -46,7 +46,7 @@
 #define NCBI_USE_ERRCODE_X  Dbapi_Sdbapi
 
 
-#ifdef HAVE_LIBCONNEXT
+#if 0//def HAVE_LIBCONNEXT
 #  include "sdb_decryptor.cpp"
 #endif
 
