@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Apr 27 05:12:02 EDT 2023; formally
+/* time_t value corresponding to Fri Apr 28 05:12:02 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1682586722UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1682673122UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5023,7 +5023,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MSB:Bird\ts\tMuseum of Southwestern Biology, Bird Collection\t\thttp://arctos.database.museum/SpecimenDetail.cfm?GUID=\t",
 "MSB:Fishes\ts\tMuseum of Southwestern Biology, Fish Collection\t\t\t",
 "MSB:Herp\ts\tMuseum of Southwestern Biology, Herpetology Collection\t\t\t",
-"MSB:Host\ts\tMuseum of Southwestern Biology, Host collections of Division of Parasites\t\t\t",
+"MSB:Host\ts\tMuseum of Southwestern Biology, Host collections of Division of Parasites\t\thttp://arctos.database.museum/SpecimenDetail.cfm?GUID=\t",
 "MSB:Inv\ts\tMuseum of Southwestern Biology, Invertebrate Collections\t\t\t",
 "MSB:Mamm\ts\tMuseum of Southwestern Biology, Mammal Collection\t\thttp://arctos.database.museum/SpecimenDetail.cfm?GUID=\t",
 "MSB:Para\ts\tMuseum of Southwestern Biology, Parasitology Collection\t\thttp://arctos.database.museum/SpecimenDetail.cfm?GUID=\t",
