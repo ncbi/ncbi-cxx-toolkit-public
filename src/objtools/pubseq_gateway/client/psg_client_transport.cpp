@@ -1045,6 +1045,7 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
             } else if (result == SPSG_Request::eRetry) {
                 req->Reset();
                 m_Queue.Emplace(req);
+                m_Queue.Signal();
 
             } else {
                 req->reply->SetComplete();
@@ -1244,7 +1245,7 @@ void SPSG_IoSession::CheckRequestExpiration()
     SUvNgHttp2_Error error("Request timeout for ");
     error << GetId();
 
-    auto on_retry = [&](auto req) { m_Queue.Emplace(req); };
+    auto on_retry = [&](auto req) { m_Queue.Emplace(req); m_Queue.Signal(); };
     auto on_fail = [&](auto processor_id, auto req) { Fail(processor_id, req, error); };
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
@@ -1856,6 +1857,7 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
 
     const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
     m_Io[idx]->queue.Emplace(move(req));
+    m_Io[idx]->queue.Signal();
     return true;
 }
 
