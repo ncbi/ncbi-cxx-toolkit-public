@@ -954,7 +954,7 @@ private:
 
 struct SPSG_IoImpl
 {
-    SPSG_AsyncQueue queue;
+    SPSG_AsyncQueue m_Queue;
 
     SPSG_IoImpl(const SPSG_Params& params, SPSG_Servers::TTS& servers) :
         m_Params(params),
@@ -1061,7 +1061,7 @@ public:
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
-    void OnDiscovery() { for (auto& io : m_Io) io->queue.Signal(); }
+    void OnDiscovery() { for (auto& io : m_Io) io->m_Queue.Signal(); }
 
     SUv_Barrier m_Barrier;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;

@@ -1389,7 +1389,7 @@ void SPSG_Throttling::SStats::Reset()
 
 void SPSG_IoImpl::OnShutdown(uv_async_t*)
 {
-    queue.Close();
+    m_Queue.Close();
 
     for (auto& server : m_Sessions) {
         for (auto& session : server.sessions) {
@@ -1420,7 +1420,7 @@ void SPSG_IoImpl::AddNewServers(size_t servers_size, size_t sessions_size, uv_as
 
     for (auto new_servers = servers_size - sessions_size; new_servers; --new_servers) {
         auto& server = servers[servers_size - new_servers];
-        m_Sessions.emplace_back().sessions.emplace_back(server, m_Params, queue, handle->loop);
+        m_Sessions.emplace_back().sessions.emplace_back(server, m_Params, m_Queue, handle->loop);
         PSG_IO_TRACE("Session for server '" << server.address << "' was added");
     }
 }
@@ -1467,7 +1467,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             auto last_session = [&]() { return distance(session, server.sessions.end()) == 1; };
             auto add_session = [&]() {
                     if (server.sessions.size() >= TPSG_MaxSessions::GetDefault()) return false;
-                    server.sessions.emplace_back(*server, m_Params, queue, handle->loop);
+                    server.sessions.emplace_back(*server, m_Params, m_Queue, handle->loop);
                     PSG_IO_TRACE("Additional session for server '" << server->address << "' was added");
                     return true;
                 };
@@ -1496,7 +1496,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
                 // Checking if throttling has been activated in a different thread
                 if (!server->throttling.Active()) {
-                    auto [timed_req, processor_id, req] = queue.Pop();
+                    auto [timed_req, processor_id, req] = m_Queue.Pop();
 
                     if (!req) {
                         PSG_IO_TRACE("No [more] requests pending");
@@ -1564,7 +1564,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     // Continue processing of requests in the IO thread queue on next UV loop iteration
     // Cannot Signal() in OnStreamClose() in case of some_server_hit_request_limit as there may be multiple I/O threads waiting
     if (sessions || some_server_hit_request_limit) {
-        queue.Signal();
+        m_Queue.Signal();
     }
 
     PSG_IO_TRACE((sessions ? "Max concurrent submits reached" : "No sessions available [anymore]") <<
@@ -1735,11 +1735,11 @@ void SPSG_IoImpl::OnTimer(uv_timer_t*)
 
 void SPSG_IoImpl::CheckRequestExpiration()
 {
-    auto queue_locked = queue.GetLockedQueue();
+    auto queue_locked = m_Queue.GetLockedQueue();
     list<SPSG_TimedRequest> retries;
     SUvNgHttp2_Error error("Request timeout before submitting");
 
-    auto on_retry = [&](auto req) { retries.emplace_back(req); this->queue.Signal(); }; // MS VS requires 'this' here
+    auto on_retry = [&](auto req) { retries.emplace_back(req); m_Queue.Signal(); };
     auto on_fail = [&](auto processor_id, auto req) { req->Fail(processor_id, error); };
 
     for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
@@ -1755,7 +1755,7 @@ void SPSG_IoImpl::CheckRequestExpiration()
 
 void SPSG_IoImpl::FailRequests()
 {
-    auto queue_locked = queue.GetLockedQueue();
+    auto queue_locked = m_Queue.GetLockedQueue();
     SUvNgHttp2_Error error("No servers to process request");
 
     for (auto& timed_req : *queue_locked) {
@@ -1773,7 +1773,7 @@ void SPSG_IoImpl::FailRequests()
 
 void SPSG_IoImpl::OnExecute(uv_loop_t& loop)
 {
-    queue.Init(this, &loop, s_OnQueue);
+    m_Queue.Init(this, &loop, s_OnQueue);
 }
 
 void SPSG_IoImpl::AfterExecute()
@@ -1856,8 +1856,8 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
     }
 
     const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
-    m_Io[idx]->queue.Emplace(move(req));
-    m_Io[idx]->queue.Signal();
+    m_Io[idx]->m_Queue.Emplace(move(req));
+    m_Io[idx]->m_Queue.Signal();
     return true;
 }
 
