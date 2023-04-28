@@ -1249,6 +1249,7 @@ static const char* s_NcbiFeatures[] = {
     "dbapi",
     "gbench",
     "gui",
+    "ncbi_crypt",
     "objects",
     "serial"
 };

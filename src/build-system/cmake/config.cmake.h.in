@@ -1035,6 +1035,9 @@
 /* Define to 1 if the NCBI C toolkit is available. */
 #cmakedefine HAVE_NCBI_C 1
 
+/* Define to 1 if the real version of ncbi_crypt support is available. */
+#define HAVE_NCBI_CRYPT 1
+
 /* Define to 1 if you have NCBI's SRA/VDB SDK/Toolkit. */
 #cmakedefine HAVE_NCBI_VDB 1
 
