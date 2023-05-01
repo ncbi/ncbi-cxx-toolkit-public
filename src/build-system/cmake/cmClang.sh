@@ -89,10 +89,10 @@ fi
 export CC CXX
 gccver=7.3.0
 #if [ -x ${script_dir}/toolchains/cmkTool.sh ]; then
-if false; then
+if true; then
   export GCCVER="${gccver}"
   export LIBICC="${libICC}"
-  toolchain=`exec ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
+  toolchain=`eval ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
   result=$?
   if test $result -ne 0; then
     echo $toolchain 1>&2

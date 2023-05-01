@@ -15,6 +15,7 @@ script_args="$@"
 ## Path to the compiler
 CXX="g++"
 CC="gcc"
+CCNAME="gcc"
 
 Usage() {
     echo "USAGE:   $script_name [version] [configure-flags] | -h]"
@@ -106,8 +107,8 @@ fi
 
 export CC CXX
 
-if false; then
-  toolchain=`exec ${script_dir}/toolchains/cmkTool.sh "GCC" ${cxx_version}  "$@"`
+if true; then
+  toolchain=`eval ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
   result=$?
   if test $result -ne 0; then
     echo $toolchain 1>&2
