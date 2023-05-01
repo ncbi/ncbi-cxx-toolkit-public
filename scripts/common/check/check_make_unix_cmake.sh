@@ -391,8 +391,15 @@ if test -z "\$NCBI_EXPORT_PROJECT"; then
     export NCBI_CONFIG__LOG__FILE
 fi
 
-# Add additional necessary directories to PATH: current, build, scripts, utility and $HOME/bin (for Ubuntu).
 PATH="\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:.:\${build_dir}:\${bin_dir}:\${PATH}"
+
+export PATH
+# Add additional necessary directories to PATH: current, build, scripts, utility and \$HOME/bin (for Ubuntu, automated build only)
+if test -n "\$NCBI_AUTOMATED_BUILD"; then
+    PATH="\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:\$HOME/bin:.:\${build_dir}:\${bin_dir}:\${PATH}"
+else
+    PATH="\${script_dir}/common/impl:\$NCBI/bin/_production/CPPCORE:.:\${build_dir}:\${bin_dir}:\${PATH}"
+fi
 export PATH
 
 # Export bin and lib pathes
