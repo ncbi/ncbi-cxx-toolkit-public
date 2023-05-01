@@ -1,0 +1,8 @@
+
+NCBI_begin_app(hyperclust)
+  NCBI_sources(cobalt_app_util hyperclust)
+  NCBI_requires(-Cygwin)
+  NCBI_uses_toolkit_libraries(cobalt)
+  NCBI_project_watchers(boratyng)
+NCBI_end_app()
+
