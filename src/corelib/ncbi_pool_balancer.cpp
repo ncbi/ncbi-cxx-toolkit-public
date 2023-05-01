@@ -134,10 +134,8 @@ void CPoolBalancer::x_InitFromCounts(const TCounts& counts)
         }
         m_TotalCount = 0;
     }
+    double legacy_base_ranking = 0.0;
     for (const auto& cit : counts) {
-        if (cit.second == 0) {
-            continue;
-        }
         CTempString  name  = cit.first;
         auto         key   = x_NameToKey(name);
         auto         eit   = m_Endpoints.lower_bound(key);
@@ -155,18 +153,29 @@ void CPoolBalancer::x_InitFromCounts(const TCounts& counts)
         if ( eit != m_Endpoints.end() ) {
             auto& endpoint = eit->second;
             if (endpoint.ref.Empty()) {
-                static const double kRanking = numeric_limits<double>::min();
+                if (legacy_base_ranking == 0.0) {
+                    if (m_Rankings.empty()) {
+                        legacy_base_ranking = 1.0; // arbitrary >0
+                    } else {
+                        legacy_base_ranking = 1e-4 * *m_Rankings.begin();
+                    }
+                }
+                // scaled Poisson distribution peaking around 4 and 5,
+                // using a hardcoded approximation of log(5).
+                double ranking
+                    = std::exp(1.61 * cit.second - lgamma(cit.second + 1));
+
                 if (exp.IsEmpty()) {
                     exp.SetCurrent();
                     exp.AddSecond(10);
                 }
                 endpoint.ref.Reset(new CDBServerOption
                                    (name, key.GetHost(), key.GetPort(),
-                                    kRanking,
+                                    ranking,
                                     CDBServerOption::fState_Normal,
                                     exp.GetTimeT()));
-                m_Rankings.insert(kRanking);
-                endpoint.effective_ranking = kRanking;
+                m_Rankings.insert(ranking);
+                endpoint.effective_ranking = ranking;
             }
             endpoint.actual_count += cit.second;
         }
