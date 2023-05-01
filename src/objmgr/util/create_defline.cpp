@@ -1669,7 +1669,7 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
     }
 
     if (add_gen_tag) {
-        joiner.Add("completeness", (x_IsComplete() ? ", complete genome" : ", genome"), eHideType);
+        joiner.Add("completeness", (x_IsComplete() ? ", complete genome" : ", partial genome"), eHideType);
     } else {
         joiner.Add("completeness", (x_IsComplete() ? ", complete sequence" : ", partial sequence"), eHideType);
     }
