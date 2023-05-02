@@ -466,7 +466,7 @@ fi
 ############################################################################# 
 if [ -z "$NCBI_TOOLCHAIN" ]; then
   export CC CXX
-  NCBI_TOOLCHAIN=`eval ${script_dir}/toolchains/cmkTool.sh "${CC_NAME}" "${CC_VERSION}"  "$@"`
+  NCBI_TOOLCHAIN=`exec ${script_dir}/toolchains/cmkTool.sh "${CC_NAME}" "${CC_VERSION}"  "$@"`
   result=$?
   if test $result -ne 0; then
     NCBI_TOOLCHAIN=""

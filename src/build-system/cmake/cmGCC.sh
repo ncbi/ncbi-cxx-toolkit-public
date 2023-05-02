@@ -108,7 +108,7 @@ fi
 export CC CXX
 
 if true; then
-  toolchain=`eval ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
+  toolchain=`exec ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
   result=$?
   if test $result -ne 0; then
     echo $toolchain 1>&2
