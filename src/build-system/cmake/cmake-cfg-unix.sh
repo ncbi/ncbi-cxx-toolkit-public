@@ -464,7 +464,7 @@ if [ ! -d ${BUILD_ROOT}/build ]; then
 fi
 
 ############################################################################# 
-if [ false ]
+if [ false ]; then
 if [ -z "$NCBI_TOOLCHAIN" ]; then
   export CC CXX
   NCBI_TOOLCHAIN=`eval ${script_dir}/toolchains/cmkTool.sh "${CC_NAME}" "${CC_VERSION}"  "$@"`
