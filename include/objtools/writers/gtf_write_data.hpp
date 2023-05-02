@@ -57,13 +57,19 @@ public:
     ~CGtfRecord() {};
 
 public:
-    void SetCdsPhase(
-        const list< CRef< CSeq_interval > >&,
-        ENa_strand );
+ NCBI_DEPRECATED void SetCdsPhase(
+        const list<CRef< CSeq_interval>>& intervals,
+        ENa_strand strand,
+        int startingPhase=0);
 
-    void SetCdsPhase_Force(
+    void SetCdsPhase(
         int phase) {
-            mPhase = NStr::NumericToString(phase); };
+            mPhase = phase; };
+
+NCBI_DEPRECATED void SetCdsPhase_Force(
+        int phase) {
+        SetCdsPhase(phase);
+    };
 
     unsigned int GetExtent() const {
         return (mSeqStop - mSeqStart + 1);

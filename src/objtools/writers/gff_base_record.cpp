@@ -55,8 +55,7 @@ CGffBaseRecord::CGffBaseRecord(
     mSeqStart(0),
     mSeqStop(0),
     mScore("."),
-    mStrand("."),
-    mPhase(".")
+    mStrand(".")
 //  ----------------------------------------------------------------------------
 {
 }
@@ -304,7 +303,7 @@ void CGffBaseRecord::SetPhase(
     unsigned int phase )
 //  ----------------------------------------------------------------------------
 {
-    mPhase = NStr::IntToString((3+phase)%3);
+    mPhase = ((3+phase)%3);
 }
 
 //  ----------------------------------------------------------------------------
@@ -339,8 +338,12 @@ string CGffBaseRecord::StrStrand() const
 string CGffBaseRecord::StrPhase() const
 //  ----------------------------------------------------------------------------
 {
-    return mPhase;
-}
+    if (mPhase) {
+        return NStr::IntToString(*mPhase);
+    }
+    // else
+    return ".";
+}   
 
 //  ----------------------------------------------------------------------------
 bool lessAttrCit(

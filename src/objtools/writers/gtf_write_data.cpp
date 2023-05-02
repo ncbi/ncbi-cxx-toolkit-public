@@ -155,32 +155,31 @@ string CGtfRecord::StrStructibutes() const
 //  ----------------------------------------------------------------------------
 void CGtfRecord::SetCdsPhase(
     const list<CRef<CSeq_interval> > & cdsLocs,
-    ENa_strand eStrand )
+    ENa_strand eStrand,
+    int startingPhase)
 //  ----------------------------------------------------------------------------
 {
     if ( cdsLocs.empty() ) {
         return;
     }
-    mPhase = "0";
+    mPhase = startingPhase;
     if ( eStrand == eNa_strand_minus ) {
         unsigned int uTopSize = 0;
-        list<CRef<CSeq_interval> >::const_iterator it = cdsLocs.begin();
-        for ( ; it != cdsLocs.end(); ++it ) {
-            if ( (*it)->CanGetFrom()  && (*it)->GetFrom() > mSeqStop ) {
+        for (auto it = cdsLocs.begin(); it != cdsLocs.end(); ++it ) {
+            if ( (*it)->IsSetFrom()  && (*it)->GetFrom() > mSeqStop ) {
                 uTopSize += (*it)->GetLength();
             }
         }
-        mPhase = NStr::NumericToString((3 - (uTopSize % 3) ) % 3);
+        mPhase = ((3 - ((uTopSize+3 - startingPhase) % 3) ) % 3);
     }
     else {
         unsigned int uBottomSize = 0;
-        list<CRef<CSeq_interval> >::const_iterator it = cdsLocs.begin();
-        for ( ; it != cdsLocs.end(); ++it ) {
-            if ( (*it)->CanGetFrom()  &&  (*it)->GetTo() < mSeqStart ) {
+        for (auto it = cdsLocs.begin() ; it != cdsLocs.end(); ++it ) {
+            if ( (*it)->IsSetTo()  &&  (*it)->GetTo() < mSeqStart ) {
                 uBottomSize += (*it)->GetLength();
             }
         }
-        mPhase = NStr::NumericToString((3 - (uBottomSize % 3) ) % 3);
+        mPhase = ((3 - ((uBottomSize+3 - startingPhase) % 3) ) % 3);
     }
 }
 
