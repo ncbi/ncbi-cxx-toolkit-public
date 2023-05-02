@@ -247,7 +247,7 @@ CIdMapperConfig::TargetHandle(
 {
     //maybe it's a straight GI number ...
     try {
-        CSeq_id target( CSeq_id::e_Gi, NStr::StringToInt( strId ) );
+        CSeq_id target( CSeq_id::e_Gi, NStr::StringToNumeric<TGi>( strId ) );
         return CSeq_id_Handle::GetHandle( target );
     }
     catch( CException& ) {
