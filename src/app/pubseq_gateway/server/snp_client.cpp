@@ -1107,10 +1107,15 @@ void CSNPClient::EnsureCacheSize(size_t size)
  }
 
 
-vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const string& name)
+vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
+    const string& name, CSeq_id::ESNPScaleLimit scale_limit)
 {
     vector<SSNPData> ret;
     try {
+        if (scale_limit == CSeq_id::eSNPScaleLimit_Default) {
+            scale_limit = m_Config.m_SNPScaleLimit;
+        }
+        if (!id.IsAllowedSNPScaleLimit(scale_limit)) return ret;
         if (m_Config.m_AddPTIS && name == "SNP") {
             // default SNP track
             string acc_ver = s_GetAccVer(id);
@@ -1194,20 +1199,6 @@ vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const string
         data.m_Name = name;
         data.m_Error = "Exception when handling get_na request: " + string(exc.what());
         ret.push_back(data);
-    }
-    return ret;
-}
-
-
-vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id, const vector<string>& names)
-{
-    vector<SSNPData> ret;
-    // RefSeq ids only
-    if (!IsValidSeqId(id)) return ret;
-    EnsureCacheSize(names.size());
-    for (const auto& name : names) {
-        auto data = GetAnnotInfo(id, name);
-        ret.insert(ret.end(), data.begin(),data.end());
     }
     return ret;
 }

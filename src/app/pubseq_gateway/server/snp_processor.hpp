@@ -167,6 +167,7 @@ private:
     string m_SNPDataError;
     bool m_Unlocked;
     bool m_PreResolving;
+    objects::CSeq_id::ESNPScaleLimit m_ScaleLimit;
 };
 
 

@@ -68,6 +68,7 @@ struct SSNPProcessor_Config
     bool m_AddPTIS = true;
     vector<string> m_VDBFiles;
     bool m_AllowNonRefSeq = false;
+    objects::CSeq_id::ESNPScaleLimit m_SNPScaleLimit = objects::CSeq_id::eSNPScaleLimit_Default;
 };
 
 
@@ -305,8 +306,8 @@ public:
                                     TProcessorPriority priority = 0) const;
     bool CanProcessRequest(CPSGS_Request& request, TProcessorPriority priority) const;
 
-    vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id, const vector<string>& names);
-    vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id, const string& name);
+    vector<SSNPData> GetAnnotInfo(const objects::CSeq_id_Handle& id,
+        const string& name, objects::CSeq_id::ESNPScaleLimit scale_limit);
     SSNPData GetBlobByBlobId(const string& blob_id);
     SSNPData GetChunk(const string& id2info, int chunk_id);
 
