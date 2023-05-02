@@ -464,6 +464,7 @@ if [ ! -d ${BUILD_ROOT}/build ]; then
 fi
 
 ############################################################################# 
+if [ false ]
 if [ -z "$NCBI_TOOLCHAIN" ]; then
   export CC CXX
   NCBI_TOOLCHAIN=`eval ${script_dir}/toolchains/cmkTool.sh "${CC_NAME}" "${CC_VERSION}"  "$@"`
@@ -472,8 +473,9 @@ if [ -z "$NCBI_TOOLCHAIN" ]; then
     NCBI_TOOLCHAIN=""
   fi
 fi
+fi
 if [ -r "$NCBI_TOOLCHAIN" ]; then
-  mv -f $NCBI_TOOLCHAIN ${tree_root}/${BUILD_ROOT}/build/ncbi_toolchain.cmake
+  mv -f $NCBI_TOOLCHAIN ${BUILD_ROOT}/build/ncbi_toolchain.cmake
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=$(Quote "${tree_root}/${BUILD_ROOT}/build/ncbi_toolchain.cmake")"
 else
   if [ -n "$CC" ]; then
