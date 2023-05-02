@@ -472,8 +472,8 @@ if [ -z "$NCBI_TOOLCHAIN" ]; then
     NCBI_TOOLCHAIN=""
   fi
 fi
-if [ -n "$NCBI_TOOLCHAIN" ]; then
-  mv -f $NCBI_TOOLCHAIN ${BUILD_ROOT}/build/ncbi_toolchain.cmake
+if [ -r "$NCBI_TOOLCHAIN" ]; then
+  mv -f $NCBI_TOOLCHAIN ${tree_root}/${BUILD_ROOT}/build/ncbi_toolchain.cmake
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_TOOLCHAIN_FILE=$(Quote "${tree_root}/${BUILD_ROOT}/build/ncbi_toolchain.cmake")"
 else
   if [ -n "$CC" ]; then
