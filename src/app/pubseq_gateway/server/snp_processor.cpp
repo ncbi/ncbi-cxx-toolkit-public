@@ -196,6 +196,7 @@ static bool s_SimulateError()
 #define PARAM_ANNOT_NAME "annot_name"
 #define PARAM_ADD_PTIS "add_ptis"
 #define PARAM_ALLOW_NON_REFSEQ "allow_non_refseq"
+#define PARAM_SNP_SCALE_LIMIT "snp_scale_limit"
 
 #define DEFAULT_GC_CACHE_SIZE 10
 #define DEFAULT_MISSING_GC_SIZE 10000
@@ -204,12 +205,14 @@ static bool s_SimulateError()
 #define DEFAULT_ANNOT_NAME ""
 #define DEFAULT_ADD_PTIS true
 #define DEFAULT_ALLOW_NON_REFSEQ false
+#define DEFAULT_SNP_SCALE_LIMIT ""
 
 
 CPSGS_SNPProcessor::CPSGS_SNPProcessor(void)
     : m_Config(new SSNPProcessor_Config),
       m_Unlocked(true),
-      m_PreResolving(false)
+      m_PreResolving(false),
+      m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
     x_LoadConfig();
 }
@@ -233,7 +236,8 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
       m_Start(psg_clock_t::now()),
       m_Status(ePSGS_InProgress),
       m_Unlocked(true),
-      m_PreResolving(false)
+      m_PreResolving(false),
+      m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
     if ( request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest ) {
         m_ProcessNAs = m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>(), priority);
@@ -265,6 +269,9 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
         m_Config->m_AddPTIS = false;
     }
     m_Config->m_AllowNonRefSeq = registry.GetBool(kSNPProcessorSection, PARAM_ALLOW_NON_REFSEQ, DEFAULT_ALLOW_NON_REFSEQ);
+
+    string scale_limit = registry.GetString(kSNPProcessorSection, PARAM_SNP_SCALE_LIMIT, DEFAULT_SNP_SCALE_LIMIT);
+    m_Config->m_SNPScaleLimit = CSeq_id::GetSNPScaleLimit_Value(scale_limit);
 
     unsigned int max_conn = registry.GetInt(kSNPProcessorSection, kParamMaxConn, kDefaultMaxConn);
     if (max_conn == 0) {
@@ -492,6 +499,7 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
     }
+    m_ScaleLimit = annot_request.m_SNPScaleLimit.value_or(CSeq_id::eSNPScaleLimit_Default);
     m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
 }
 
@@ -507,7 +515,7 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
         try {
             for (auto& id : m_SeqIds) {
                 if (!m_Client->IsValidSeqId(id)) continue;
-                auto data = m_Client->GetAnnotInfo(id, name);
+                auto data = m_Client->GetAnnotInfo(id, name, m_ScaleLimit);
                 m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
             }
         }
