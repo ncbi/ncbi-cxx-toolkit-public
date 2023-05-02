@@ -377,6 +377,7 @@ def test_cmd(args):
         sys.exit(0 if result else -1)
 
 def generate_cmd(args):
+    args.testing = False
     request_generator = RequestGenerator()
 
     if args.TYPE == 'named_annot':
