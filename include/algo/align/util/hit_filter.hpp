@@ -1029,7 +1029,7 @@ protected:
 
     // merging of abutting hits sharing same ids and subject strand
     // (plus query strand assumed)
-    void static sx_TestAndMerge(typename THitRefs::iterator ii_beg,
+    static void sx_TestAndMerge(typename THitRefs::iterator ii_beg,
                                 typename THitRefs::iterator ii_end,
                                 const THitEnds& hit_ends,
                                 const double& maxlenfr,
