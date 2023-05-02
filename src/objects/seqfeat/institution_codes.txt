@@ -3,6 +3,7 @@ A	s	Arnold Arboretum, Harvard University
 AA	s	Ministry of Science, Academy of Sciences			
 AAAG	s	Alan and Anita Gillogly			
 AAC	c	Arignar Anna College			
+AAFC	c	AAFC			
 AAFC-PRC	s	Agriculture and Agri-Food Canada Potato Research Station			
 AAH	s	Arnold Arboretum, Harvard University			
 AAMU	s	Alabama Agricultural and Mechanical University			
