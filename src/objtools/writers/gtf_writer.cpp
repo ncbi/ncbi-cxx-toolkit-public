@@ -55,6 +55,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
@@ -452,9 +453,16 @@ bool CGtfWriter::xAssignFeaturesCds(
     const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
 
     bool needsPartNumbers = xIntervalsNeedPartNumbers(sublocs);
+
+    int phase {0};
+    const auto& cdsFeat = mf.GetMappedFeature();
+    if (cdsFeat.GetData().GetCdregion().IsSetFrame()) {
+        phase = max(cdsFeat.GetData().GetCdregion().GetFrame()-1, 0);
+    }
+    
     unsigned int partNum = 1;
-    for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
-        const CSeq_interval& intv = **it;
+    for (auto pInterval : sublocs) {
+        const CSeq_interval& intv = *pInterval;
         auto strand = intv.IsSetStrand() ? intv.GetStrand() : eNa_strand_plus;
         CRef<CGtfRecord> pRecord(
             new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
@@ -471,8 +479,9 @@ bool CGtfWriter::xAssignFeaturesCds(
         else {
             transcriptId = pRecord->TranscriptId();
         }
-        pRecord->SetCdsPhase(sublocs, strand);
+        pRecord->SetCdsPhase(phase);
         recordList.push_back(pRecord);
+        phase = (3 - ((intv.GetLength()+3 - phase)%3))%3;
     }
 
     // subtract stop_codon in the end:
@@ -539,7 +548,7 @@ bool CGtfWriter::xAssignFeaturesCds(
                 pRecord->SetTranscriptId(transcriptId);
             }
             _ASSERT(baseCount < 3);
-            pRecord->SetCdsPhase_Force((3-baseCount)%3);
+            pRecord->SetCdsPhase((3-baseCount)%3);
             baseCount += pRecord->GetExtent();
             recordList.push_back(pRecord);
             currentIt++;
@@ -592,7 +601,7 @@ bool CGtfWriter::xAssignFeaturesCds(
                 pRecord->SetPartNumber(partNumber++);
             }
             _ASSERT(baseCount < 3);
-            pRecord->SetCdsPhase_Force((3-baseCount)%3);
+            pRecord->SetCdsPhase((3-baseCount)%3);
             baseCount += pRecord->GetExtent();
             recordList.push_back(pRecord);
         }

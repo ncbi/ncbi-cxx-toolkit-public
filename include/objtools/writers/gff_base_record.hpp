@@ -36,6 +36,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <optional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -141,7 +142,7 @@ protected:
     unsigned int mSeqStop;
     string mScore;
     string mStrand;
-    string mPhase;
+    optional<int> mPhase;
     TAttributes mAttributes;
     TScores mExtraScores;
 };
