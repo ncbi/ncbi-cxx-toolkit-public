@@ -245,6 +245,8 @@ protected:
             return "GZipFile";
         case CCompressStream::eConcatenatedGZipFile:
             return "GZipFile";
+        case CCompressStream::eZstd:
+            return "ZStandard";
         };
         NCBI_THROW(CException, eUnknown, "unexpected compression method");
     }
