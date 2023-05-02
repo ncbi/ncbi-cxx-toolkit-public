@@ -177,13 +177,20 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
         const bool is_protein = 
             Blast_SubjectIsProtein(opts_hndl->GetOptions().GetProgramType())
 			? true : false;
-        SDataLoaderConfig config(is_protein);
-        CBlastScopeSource scope_src(config);
+        CRef<CBlastScopeSource> scope_src;
+        if (search_db.Empty()) {
+        	SDataLoaderConfig config(is_protein);
+        	scope_src.Reset(new CBlastScopeSource(config));
+        }
+        else {
+        	SDataLoaderConfig config(search_db->GetDatabaseName(), is_protein);
+        	scope_src.Reset(new CBlastScopeSource(config));
+        }
         // configure scope to fetch sequences remotely for formatting
         if (scope.NotEmpty()) {
-            scope_src.AddDataLoaders(scope);
+            scope_src->AddDataLoaders(scope);
         } else {
-            scope = scope_src.NewScope();
+            scope = scope_src->NewScope();
         }
     } else {
         if (scope.Empty()) {
