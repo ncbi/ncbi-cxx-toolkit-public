@@ -92,7 +92,7 @@ gccver=7.3.0
 if true; then
   export GCCVER="${gccver}"
   export LIBICC="${libICC}"
-  toolchain=`eval ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
+  toolchain=`exec ${script_dir}/toolchains/cmkTool.sh $CCNAME ${cxx_version}  "$@"`
   result=$?
   if test $result -ne 0; then
     echo $toolchain 1>&2
