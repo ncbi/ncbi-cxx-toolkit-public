@@ -82,7 +82,8 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_HasWildcardInAnnotsNames(false),
       m_FilterMask(0),
       m_FilterBits(0),
-      m_ExcludeIfGeneIsSuppressed(false)
+      m_ExcludeIfGeneIsSuppressed(false),
+      m_SNPScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
         SetFeatType(feat);
@@ -116,7 +117,8 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_HasWildcardInAnnotsNames(false),
       m_FilterMask(0),
       m_FilterBits(0),
-      m_ExcludeIfGeneIsSuppressed(false)
+      m_ExcludeIfGeneIsSuppressed(false),
+      m_SNPScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
 }
 
@@ -146,7 +148,8 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_HasWildcardInAnnotsNames(false),
       m_FilterMask(0),
       m_FilterBits(0),
-      m_ExcludeIfGeneIsSuppressed(false)
+      m_ExcludeIfGeneIsSuppressed(false),
+      m_SNPScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
 }
 
@@ -204,6 +207,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         }
         m_IgnoreFarLocationsForSorting = sel.m_IgnoreFarLocationsForSorting;
         m_ExcludeIfGeneIsSuppressed = sel.m_ExcludeIfGeneIsSuppressed;
+        m_SNPScaleLimit = sel.m_SNPScaleLimit;
     }
     return *this;
 }

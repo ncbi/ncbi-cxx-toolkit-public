@@ -2301,7 +2301,12 @@ CScope_Impl::x_GetAnnotRef_Info(const SAnnotSelector* sel,
 {
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         TSeq_idMapLock::TWriteLockGuard guard(m_Seq_idMapLock);
-        return na_info[sel->GetNamedAnnotAccessions()];
+        const auto& accs = sel->GetNamedAnnotAccessions();
+        int adjust = 0;
+        if (accs.find("SNP") != accs.end() && sel->GetSNPScaleLimit() != CSeq_id::eSNPScaleLimit_Default) {
+            adjust = sel->GetSNPScaleLimit();
+        }
+        return na_info[{sel->GetNamedAnnotAccessions(), adjust}];
     }
     else {
         return main_info;

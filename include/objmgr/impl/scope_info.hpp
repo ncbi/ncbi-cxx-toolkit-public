@@ -525,7 +525,15 @@ public:
         volatile int m_SearchTimestamp;
         TTSE_MatchSet match;
     };
-    typedef SAnnotSelector::TNamedAnnotAccessions       TNASetKey;
+    struct SNASetKey {
+        SAnnotSelector::TNamedAnnotAccessions accessions;
+        int adjust = 0;
+        bool operator<(const SNASetKey& other) const {
+            if (adjust != other.adjust) return adjust < other.adjust;
+            return accessions < other.accessions;
+        }
+    };
+    typedef SNASetKey                                   TNASetKey;
     typedef CInitMutex<SAnnotSetCache>                  TAnnotRefInfo;
     typedef map<TNASetKey, TAnnotRefInfo>               TNAAnnotRefInfo;
     typedef TIndexIds                                   TIds;
