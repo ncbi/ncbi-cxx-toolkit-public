@@ -825,6 +825,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         return m_ExcludeIfGeneIsSuppressed;
     }
 
+    typedef CSeq_id::ESNPScaleLimit TSNPScaleLimit;
+    TSNPScaleLimit GetSNPScaleLimit(void) const { return m_SNPScaleLimit; }
+    SAnnotSelector& SetSNPScaleLimit(TSNPScaleLimit value) { m_SNPScaleLimit = value; return *this; }
+    SAnnotSelector& ResetSNPScaleLimit(void) { m_SNPScaleLimit = CSeq_id::eSNPScaleLimit_Default; return *this; }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -878,6 +883,7 @@ protected:
     TBitFilter            m_FilterMask;
     TBitFilter            m_FilterBits;
     bool                  m_ExcludeIfGeneIsSuppressed;
+    TSNPScaleLimit        m_SNPScaleLimit;
 };
 
 
