@@ -49,6 +49,20 @@
 #include <sra/data_loaders/snp/impl/snploader_impl.hpp>
 
 BEGIN_NCBI_SCOPE
+
+NCBI_PARAM_ENUM_ARRAY(objects::CSeq_id::ESNPScaleLimit, SNP_LOADER, SCALE_LIMIT) {
+    {"", objects::CSeq_id::eSNPScaleLimit_Default},
+    {"Unit", objects::CSeq_id::eSNPScaleLimit_Unit},
+    {"Contig", objects::CSeq_id::eSNPScaleLimit_Contig},
+    {"Supercontig", objects::CSeq_id::eSNPScaleLimit_Supercontig},
+    {"Chromosome", objects::CSeq_id::eSNPScaleLimit_Chromosome},
+};
+NCBI_PARAM_ENUM_DECL(objects::CSeq_id::ESNPScaleLimit, SNP_LOADER, SCALE_LIMIT);
+NCBI_PARAM_ENUM_DEF_EX(objects::CSeq_id::ESNPScaleLimit, SNP_LOADER, SCALE_LIMIT,
+                       objects::CSeq_id::eSNPScaleLimit_Default,
+                       0, SNP_LOADER_SCALE_LIMIT);
+typedef NCBI_PARAM_TYPE(SNP_LOADER, SCALE_LIMIT) TScale_Limit;
+
 BEGIN_SCOPE(objects)
 
 class CDataLoader;
@@ -347,6 +361,18 @@ CSNPDataLoader::TAnnotNames CSNPDataLoader::GetPossibleAnnotNames(void) const
 bool CSNPDataLoader::IsUsingPTIS()
 {
     return CSnpPtisClient::IsEnabled();
+}
+
+
+CSeq_id::ESNPScaleLimit CSNPDataLoader::GetSNP_Scale_Limit(void)
+{
+    return TScale_Limit::GetDefault();
+}
+
+
+void CSNPDataLoader::SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value)
+{
+    TScale_Limit::SetDefault(value);
 }
 
 
