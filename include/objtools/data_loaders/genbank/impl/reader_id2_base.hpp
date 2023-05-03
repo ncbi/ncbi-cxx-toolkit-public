@@ -156,6 +156,11 @@ public:
     static bool GetVDB_CDD_Enabled();
     static void SetVDB_CDD_Enabled(bool enabled = true);
 
+    // Get global default value.
+    static CSeq_id::ESNPScaleLimit GetSNP_Scale_Limit(void);
+    // Set global default value.
+    static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
+
 protected:
     virtual string x_ConnDescription(TConn conn) const = 0;
 

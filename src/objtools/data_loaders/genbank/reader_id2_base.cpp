@@ -74,6 +74,21 @@ BEGIN_NCBI_SCOPE
 
 NCBI_DEFINE_ERR_SUBCODE_X(16);
 
+
+NCBI_PARAM_ENUM_ARRAY(objects::CSeq_id::ESNPScaleLimit, GENBANK, ID2SNP_SCALE_LIMIT) {
+    {"", objects::CSeq_id::eSNPScaleLimit_Default},
+    {"Unit", objects::CSeq_id::eSNPScaleLimit_Unit},
+    {"Contig", objects::CSeq_id::eSNPScaleLimit_Contig},
+    {"Supercontig", objects::CSeq_id::eSNPScaleLimit_Supercontig},
+    {"Chromosome", objects::CSeq_id::eSNPScaleLimit_Chromosome},
+};
+NCBI_PARAM_ENUM_DECL(objects::CSeq_id::ESNPScaleLimit, GENBANK, ID2SNP_SCALE_LIMIT);
+NCBI_PARAM_ENUM_DEF_EX(objects::CSeq_id::ESNPScaleLimit, GENBANK, ID2SNP_SCALE_LIMIT,
+                       objects::CSeq_id::eSNPScaleLimit_Default,
+                       eParam_NoThread, GENBANK_ID2SNP_SCALE_LIMIT);
+typedef NCBI_PARAM_TYPE(GENBANK, ID2SNP_SCALE_LIMIT) TID2SNP_Scale_Limit;
+
+
 BEGIN_SCOPE(objects)
 
 NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
@@ -105,6 +120,7 @@ NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_SNP, true,
 NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_CDD, true,
     eParam_NoThread, GENBANK_VDB_CDD);
 
+
 int CId2ReaderBase::GetDebugLevel(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG)> s_Value;
@@ -121,6 +137,18 @@ bool CId2ReaderBase::GetVDB_CDD_Enabled()
 void CId2ReaderBase::SetVDB_CDD_Enabled(bool enabled)
 {
     return NCBI_PARAM_TYPE(GENBANK, VDB_CDD)::SetDefault(enabled);
+}
+
+
+CSeq_id::ESNPScaleLimit CId2ReaderBase::GetSNP_Scale_Limit(void)
+{
+    return TID2SNP_Scale_Limit::GetDefault();
+}
+
+
+void CId2ReaderBase::SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value)
+{
+    TID2SNP_Scale_Limit::SetDefault(value);
 }
 
 
@@ -1165,9 +1193,17 @@ bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     x_SetResolve(get_blob_id, *seq_id.GetSeqId());
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         CID2_Request_Get_Blob_Id::TSources& srcs = get_blob_id.SetSources();
-        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
-                  sel->GetNamedAnnotAccessions() ) {
+        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, sel->GetNamedAnnotAccessions() ) {
             srcs.push_back(it->first);
+            if (it->first == "SNP") {
+                CSeq_id::ESNPScaleLimit snp_scale_limit = sel ? sel->GetSNPScaleLimit() : CSeq_id::eSNPScaleLimit_Default;
+                if (snp_scale_limit != CSeq_id::eSNPScaleLimit_Default) {
+                    CRef<CID2_Param> param(new CID2_Param);
+                    param->SetName("snp:scale-limit");
+                    param->SetValue().push_back(CSeq_id::GetSNPScaleLimit_Name(snp_scale_limit));
+                    req.SetParams().Set().push_back(param);
+                }
+            }
         }
     }
     x_ProcessRequest(result, req, sel);
@@ -1655,6 +1691,13 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
                 // enable VDB-based CDD sequences
                 param->SetValue().push_back("vdb-cdd");
             }
+            request.SetParams().Set().push_back(param);
+        }
+        auto scale_limit = GetSNP_Scale_Limit();
+        if (scale_limit != CSeq_id::eSNPScaleLimit_Default) {
+            CRef<CID2_Param> param(new CID2_Param);
+            param->SetName("snp:scale-limit");
+            param->SetValue().push_back(CSeq_id::GetSNPScaleLimit_Name(scale_limit));
             request.SetParams().Set().push_back(param);
         }
     }

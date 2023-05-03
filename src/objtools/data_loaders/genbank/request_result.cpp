@@ -1731,6 +1731,13 @@ CReaderRequestResult::s_KeyBlobIds(const CSeq_id_Handle& seq_id,
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
                   sel->GetNamedAnnotAccessions() ) {
             key.second += it->first;
+            if (key.second == "SNP") {
+                auto scale_limit = sel->GetSNPScaleLimit();
+                if (scale_limit != CSeq_id::eSNPScaleLimit_Default) {
+                    key.second += "@";
+                    key.second += CSeq_id::GetSNPScaleLimit_Name(scale_limit);
+                }
+            }
             key.second += ',';
         }
     }
