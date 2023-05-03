@@ -3997,6 +3997,7 @@ KUZ<JPN>	s	Zoological Collection of the Kyoto University
 KUZC	s	Kyushu University, Zoological Collection			
 KVCH	s	Kivach Nature Reserve			
 KW	s	National Academy of Sciences of Ukraine			
+KW-A	sc	Phycological herbarium (Algotheca)			
 KWBC	s	Kirby W. Brown			
 KWHA	s	Ukrainian National Academy of Sciences			
 KWHU	s	O. V. Fomin Botanical Garden of National Taras Schevchenko University of Kiev			
