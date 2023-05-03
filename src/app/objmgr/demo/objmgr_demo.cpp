@@ -208,6 +208,13 @@ void CDemoApp::Init(void)
     arg_desc->SetConstraint("missing",
                             &(*new CArgAllow_Strings,
                             "ignore", "search", "fail"));
+    arg_desc->AddOptionalKey("snp_scale", "SNPScaleLimit",
+                             "SNP scale limit",
+                             CArgDescriptions::eString);
+    arg_desc->SetConstraint("snp_scale",
+                            &(*new CArgAllow_Strings,
+                            "unit", "contig", "supercontig", "chromosome"));
+
     arg_desc->AddFlag("limit_tse", "Limit annotations from sequence TSE only");
     arg_desc->AddFlag("externals", "Search for external features only");
 
@@ -1838,6 +1845,10 @@ int CDemoApp::Run(void)
             CSeqFeatData::ESubtype feat_subtype = CSeqFeatData::ESubtype(args["exclude_feat_subtype"].AsInteger());
             base_sel.ExcludeFeatSubtype(feat_subtype);
             sel_msg = "req";
+        }
+        if (args["snp_scale"]) {
+            auto scale = CSeq_id::GetSNPScaleLimit_Value(args["snp_scale"].AsString());
+            if (scale != CSeq_id::eSNPScaleLimit_Default) base_sel.SetSNPScaleLimit(scale);
         }
         base_sel.SetByProduct(by_product);
 
