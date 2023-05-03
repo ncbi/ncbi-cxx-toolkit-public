@@ -530,6 +530,11 @@ public:
 
     EIncludeData GetIncludeData() const { return m_IncludeData; }
 
+    /// Scale-limit parameter for SNP annotations
+    using ESNPScaleLimit = objects::CSeq_id::ESNPScaleLimit;
+    void SetSNPScaleLimit(ESNPScaleLimit snp_scale_limit) { m_SNPScaleLimit = snp_scale_limit; }
+    ESNPScaleLimit GetSNPScaleLimit() const { return m_SNPScaleLimit; }
+
 private:
     EType x_GetType() const override { return eNamedAnnotInfo; }
     string x_GetId() const override { return GetBioId().Repr(); }
@@ -540,6 +545,7 @@ private:
     EPSG_BioIdResolution m_BioIdResolution;
     EPSG_AccSubstitution m_AccSubstitution = EPSG_AccSubstitution::Default;
     EIncludeData m_IncludeData = EIncludeData::eDefault;
+    ESNPScaleLimit m_SNPScaleLimit = ESNPScaleLimit::eSNPScaleLimit_Default;
 };
 
 

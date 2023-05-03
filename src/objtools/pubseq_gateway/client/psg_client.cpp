@@ -866,6 +866,10 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 
     os << s_GetAccSubstitution(m_AccSubstitution);
     os << s_GetBioIdResolution(m_BioIdResolution);
+
+    if (m_SNPScaleLimit != ESNPScaleLimit::eSNPScaleLimit_Default) {
+        os << "&snp_scale_limit=" << objects::CSeq_id::GetSNPScaleLimit_Name(m_SNPScaleLimit);
+    }
 }
 
 void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
