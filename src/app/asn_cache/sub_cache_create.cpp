@@ -50,6 +50,10 @@
 
 #include <serial/iterator.hpp>
 
+#include <connect/ncbi_pipe.hpp>
+
+#include <dbapi/simple/sdbapi.hpp>
+
 #include <util/file_manifest.hpp>
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
@@ -643,7 +647,9 @@ public:
           m_RecordsNotFound(0),
           m_RecordsWithdrawn(0),
           m_MaxRecursionLevel(kMax_Int),
-          m_IdType(sequence::eGetId_HandleDefault)
+          m_IdType(sequence::eGetId_HandleDefault),
+          m_AcceptNonGi(true),
+          m_GbLoader(NULL)
     {
     }
 
@@ -684,6 +690,8 @@ private:
     void IndexNewBlobsInSubCache(const TIndexMapById& index_map,
                                  const CDir &    cache_root);
 
+    CBioseq_Handle x_GetBioseqHandle(const CSeq_id_Handle &idh);
+
     size_t m_TotalRecords;
     size_t m_RecordsNotInMainCache;
     size_t m_RecordsInSubCache;
@@ -691,14 +699,34 @@ private:
     size_t m_RecordsWithdrawn;
     int    m_MaxRecursionLevel;
     sequence::EGetIdType m_IdType;
+    CTime  m_FreezeDate;
+    string m_IdstatExecutable;
+    bool   m_AcceptNonGi;
+    CGBDataLoader *m_GbLoader;
+    CRef<CScope> m_Scope;
 
     CStopWatch  m_Stopwatch;
 
     SSubcacheIndexData m_BlankIndexData;
     TCachedSeqIds m_cached_seq_ids;
     TCachedSeqIds m_output_seq_ids;
+
+    struct SBlobVersion {
+        int sat;
+        int satkey;
+        TGi gi;
+        CTime date_loaded;
+
+        SBlobVersion(const string &line = "");
+
+        static map<string,int> s_SatelliteMap;
+
+        static void s_PopulateSatelliteMap();
+    };
+
 };
 
+map<string,int> CAsnSubCacheCreateApplication::SBlobVersion::s_SatelliteMap;
 
 /////////////////////////////////////////////////////////////////////////////
 //  Init test for all different types of arguments
@@ -830,6 +858,28 @@ void CAsnSubCacheCreateApplication::Init(void)
                             &(*new CArgAllow_Strings,
                               "canonical", "best"));
 
+    arg_desc->AddOptionalKey("freeze-date", "FreezeDate",
+                             "When fetching missing blobs, Get old blobs from "
+                             "no later than specified date; format M/D/Y. "
+                             "Supported for gis only",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("idstat-executable", "IdstatExecutable",
+                             "Path to idstat executable",
+                             CArgDescriptions::eString);
+    arg_desc->SetDependency("freeze-date",
+                            CArgDescriptions::eRequires, "fetch-missing");
+    arg_desc->SetDependency("freeze-date",
+                            CArgDescriptions::eRequires, "idstat-executable");
+
+    arg_desc->AddFlag("accept-non-gi",
+                      "Allow non-gi seq-ids, and get the latest version of the "
+                       "sequence, ignoring freeze date. Default, if freeze "
+                       "date is specified without this flag, is to fail if any "
+                       "of the input seq-ids are not gis");
+    arg_desc->SetDependency("accept-non-gi",
+                            CArgDescriptions::eRequires, "freeze-date");
+
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
 
     // Setup arg.descriptions for this application
@@ -958,29 +1008,37 @@ int CAsnSubCacheCreateApplication::Run(void)
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CDataLoadersUtil::SetupObjectManager(args, *om);
 
+    m_Scope.Reset(new CScope(*om));
+    m_Scope->AddDefaults();
+
+    if (args["freeze-date"]) {
+        m_FreezeDate = CTime(args["freeze-date"].AsString(), "M/D/Y");
+        m_IdstatExecutable = args["idstat-executable"].AsString();
+        m_AcceptNonGi = args["accept-non-gi"];
+        m_GbLoader = dynamic_cast<CGBDataLoader *>(om->FindDataLoader("GBLOADER"));
+        if (!m_GbLoader) {
+            NCBI_THROW(CException, eUnknown, "freeze-date requires genbank loader");
+        }
+        SBlobVersion::s_PopulateSatelliteMap();
+    }
+
     if (args["no-wgs-master-descs"]) {
+        if (!m_GbLoader) {
+            m_GbLoader = dynamic_cast<CGBDataLoader *>(om->FindDataLoader("GBLOADER"));
+        }
+        m_GbLoader->SetAddWGSMasterDescr(false);
+#ifdef HAVE_NCBI_VDB
         CObjectManager::TRegisteredNames registered_names;
         om->GetRegisteredNames(registered_names);
         for (const string& loader_name: registered_names) {
             CDataLoader* loader = om->FindDataLoader(loader_name);
             _ASSERT(loader);
-            {{
-                CGBDataLoader* gb_loader = dynamic_cast<CGBDataLoader*>(loader);
-                if (gb_loader) {
-                    gb_loader->SetAddWGSMasterDescr(false);
-                    continue;
-                }
-            }}
-#ifdef HAVE_NCBI_VDB
-            {{
-                CWGSDataLoader* wgs_loader = dynamic_cast<CWGSDataLoader*>(loader);
-                if (wgs_loader) {
-                    wgs_loader->SetAddWGSMasterDescr(false);
-                    continue;
-                }
-            }}
-#endif
+            CWGSDataLoader* wgs_loader = dynamic_cast<CWGSDataLoader*>(loader);
+            if (wgs_loader) {
+                wgs_loader->SetAddWGSMasterDescr(false);
+            }
         }
+#endif
     }
 
     CStopWatch  sw;
@@ -1237,8 +1295,6 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
     if (! ids_missing.empty()) {
         SBlobInserter inserter(subcache_root,
                                extract_delta, extract_product);
-        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
-        scope->AddDefaults();
         ITERATE (TIndexRefList, it, ids_missing) {
 
             if (CSignal::IsSignaled()) {
@@ -1256,7 +1312,7 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
             index_map.erase(*it);
             bool is_withdrawn = false;
             try {
-                bsh = scope->GetBioseqHandle(idh);
+                bsh = x_GetBioseqHandle(idh);
                 if ( !bsh ) {
                     is_withdrawn =
                         bsh.GetState() & CBioseq_Handle::fState_withdrawn;
@@ -1509,10 +1565,9 @@ CAsnSubCacheCreateApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index
         }
 
         m_RecordsInSubCache += ids_found.size();
-        CRef<CScope> scope;
-        if (m_IdType != sequence::eGetId_HandleDefault) {
-            scope.Reset(new CScope(*CObjectManager::GetInstance()));
-            scope->AddDefaults();
+        if (!m_Scope && m_IdType != sequence::eGetId_HandleDefault) {
+            m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
+            m_Scope->AddDefaults();
         }
         ITERATE (vector<TIndexRef>, iter, ids_found) {
             /// We already have this blob in the sub-cache; invalidate index data, so
@@ -1522,7 +1577,7 @@ CAsnSubCacheCreateApplication::x_EliminateIdsAlreadyInCache(TIndexMapById& index
                     output_idh = idh;
             if (m_cached_seq_ids.count(idh)) {
                 if (m_IdType != sequence::eGetId_HandleDefault) {
-                    output_idh = sequence::GetId(idh, *scope, m_IdType);
+                    output_idh = sequence::GetId(idh, *m_Scope, m_IdType);
                     if (!output_idh) {
                         output_idh = idh;
                     }
@@ -1583,7 +1638,86 @@ IndexNewBlobsInSubCache(const TIndexMapById& index_map,
     }
 }
 
+CBioseq_Handle CAsnSubCacheCreateApplication::
+x_GetBioseqHandle(const CSeq_id_Handle &idh)
+{
+    if (m_FreezeDate.IsEmpty()) {
+        return m_Scope->GetBioseqHandle(idh);
+    }
+    if (!idh.IsGi()) {
+        if (m_AcceptNonGi) {
+            ERR_POST(Warning << "Can't get frozen version of " << idh
+                             << "; getting latest version");
+            return m_Scope->GetBioseqHandle(idh);
+        } else {
+            NCBI_THROW(CException, eUnknown, "Can't get frozen version of "
+                                           + idh.AsString());
+        }
+    }
 
+    vector<string> args { "-i", "PUBSEQ_OS_GI64", "-g" };
+    args.push_back(NStr::NumericToString(GI_TO(unsigned long, idh.GetGi())));
+
+    ostringstream idstat_out, idstat_err;
+    int idstat_exit;
+    CNcbiIstrstream istr("");
+
+    CPipe::ExecWait(GetArgs()["idstat-executable"].AsString(), args, istr,
+                    idstat_out, idstat_err, idstat_exit);
+    cerr << idstat_err.str();
+
+    if(0 != idstat_exit) {
+        NCBI_THROW(CException, eUnknown, "idstat returned: " + NStr::NumericToString(idstat_exit));
+    }
+
+    vector<string> idstat_lines;
+    NStr::Split(idstat_out.str(), "\n", idstat_lines);
+    bool reached_data = false;
+    for (const string &line : idstat_lines) {
+        if (!reached_data) {
+            if (!line.empty() && line[0] == '-') {
+                /// data will start after this line
+                reached_data = true;
+            }
+            continue;
+        }
+        SBlobVersion bv(line);
+        if (bv.gi == idh.GetGi() && bv.date_loaded <= m_FreezeDate) {
+            CScope::TBlobId blob_id =
+                m_GbLoader->GetBlobIdFromSatSatKey(bv.sat, bv.satkey, 0);
+            CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(m_GbLoader,
+                                                                blob_id);
+            return seh.GetBioseqHandle(idh);
+        }
+    }
+    NCBI_THROW(CException, eUnknown, "Can't find version of " + idh.AsString()
+                         + " from before " + m_FreezeDate.AsString());
+}
+
+CAsnSubCacheCreateApplication::SBlobVersion::SBlobVersion(const string &line)
+: sat(0), satkey(0), gi(ZERO_GI)
+{
+    if (line.empty() || line[0] == ' ') {
+        return;
+    }
+
+    vector<string> tokens;
+    NStr::Split(line, " ", tokens, NStr::fSplit_Tokenize);
+    gi = GI_FROM(Int8, NStr::StringToInt8(tokens[1]));
+    sat = s_SatelliteMap[tokens[3]];
+    satkey = NStr::StringToInt(tokens[2]);
+    date_loaded = CTime(tokens[8], "M/D/Y");
+}
+
+void CAsnSubCacheCreateApplication::SBlobVersion::s_PopulateSatelliteMap()
+{
+    CDatabase db("dbapi://anyone:allowed@ENTREZ_MAIN/IdMain");
+    db.Connect();
+    CQuery query = db.NewQuery("select sat_id,satellite from Satellite");
+    for (const auto &row : query) {
+        s_SatelliteMap[row["satellite"].AsString()] = row["sat_id"].AsInt4();
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
