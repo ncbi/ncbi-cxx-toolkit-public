@@ -774,6 +774,12 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
             if ( m_AddPTIS && it->first == "SNP" ) {
+                auto scale_limit = sel->GetSNPScaleLimit();
+                if (scale_limit == CSeq_id::eSNPScaleLimit_Default) {
+                    scale_limit = CSNPDataLoader::GetSNP_Scale_Limit();
+                }
+                if (!id.IsAllowedSNPScaleLimit(scale_limit)) continue;
+
                 // default SNP track
                 string acc_ver = s_GetAccVer(id);
                 if ( !acc_ver.empty() ) {

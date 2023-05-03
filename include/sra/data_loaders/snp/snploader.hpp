@@ -125,6 +125,11 @@ public:
 
     static bool IsUsingPTIS();
 
+    // Get global default value.
+    static CSeq_id::ESNPScaleLimit GetSNP_Scale_Limit(void);
+    // Set global default value.
+    static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
+
 private:
     typedef CParamLoaderMaker<CSNPDataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CSNPDataLoader, SLoaderParams>;
