@@ -474,7 +474,7 @@ if [ -z "$NCBI_TOOLCHAIN" ]; then
 fi
 if [ -r "$NCBI_TOOLCHAIN" ]; then
   tcpath=${BUILD_ROOT}/build/ncbi_toolchain.cmake
-  if [ "${tcpath}" == "${tcpath#/}" ]; then
+  if test "${tcpath}" = "${tcpath#/}" ; then
     tcpath=${tree_root}/${BUILD_ROOT}/build/ncbi_toolchain.cmake
   fi
   mv -f $NCBI_TOOLCHAIN ${tcpath}
