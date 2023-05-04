@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Feb 14 13:22:03 EST 2023
-; formally
+/* time_t value corresponding to Thu May  4 12:31:06 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_deleted_Timestamp = 1676398923UL;
+static const unsigned long kECNum_deleted_Timestamp = 1683217866UL;
 static const char* const kECNum_deleted[] = {
     "1.1.1.74",
     "1.1.1.128",
@@ -101,6 +100,7 @@ static const char* const kECNum_deleted[] = {
     "2.4.1.154",
     "2.4.1.235",
     "2.5.1.99",
+    "2.6.1.8",
     "2.6.1.20",
     "2.6.1.68",
     "2.6.1.69",
