@@ -11,7 +11,7 @@ script_dir=`dirname $0`
 CCNAME=$1
 CCVERSION=$2
 
-processor=`uname -p | tr '[:upper:]' '[:lower:]'`
+processor=`uname -m | tr '[:upper:]' '[:lower:]'`
 os=`uname | tr '[:upper:]' '[:lower:]'`
 compiler=`echo ${CCNAME} | tr '[:upper:]' '[:lower:]'`
 version=`echo ${CCVERSION} | tr -d '.'`
