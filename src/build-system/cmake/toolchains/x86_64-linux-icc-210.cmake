@@ -53,3 +53,14 @@ set(CMAKE_SHARED_LINKER_FLAGS
     -Wl,-rpath,/opt/ncbi/gcc/7.3.0/lib64 \
     -Wl,--no-undefined"
 )
+
+#----------------------------------------------------------------------------
+set(NCBI_COMPILER_FLAGS_SSE       "-msse4.2")
+
+set(NCBI_COMPILER_FLAGS_COVERAGE  "--coverage")
+set(NCBI_LINKER_FLAGS_COVERAGE     "--coverage")
+
+set(NCBI_COMPILER_FLAGS_MAXDEBUG  "")
+set(NCBI_LINKER_FLAGS_MAXDEBUG   "")
+
+set(NCBI_LINKER_FLAGS_STATICCOMPONENTS "-static-libgcc -static-libstdc++")
