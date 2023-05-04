@@ -518,13 +518,11 @@ if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     endif()
 endif()
 
-if(NOT NCBI_PTBCFG_PACKAGING
-    AND "${HOST_CPU}" MATCHES "x86"
-    AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+if(NOT NCBI_PTBCFG_PACKAGING AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     if(DEFINED NCBI_COMPILER_FLAGS_SSE)
         set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} ${NCBI_COMPILER_FLAGS_SSE}")
         set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${NCBI_COMPILER_FLAGS_SSE}")
-    else()
+    elseif("${HOST_CPU}" MATCHES "x86")
 	    NCBI_util_set_cxx_compiler_flag_optional("-msse4.2")
 	    NCBI_util_set_c_compiler_flag_optional  ("-msse4.2")
     endif()
