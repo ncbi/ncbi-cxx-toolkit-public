@@ -479,6 +479,7 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
         x_Finish(ePSGS_NotFound);
         return;
     }
+    m_ScaleLimit = annot_request.m_SNPScaleLimit.value_or(CSeq_id::eSNPScaleLimit_Default);
     bool need_resolve = true;
     for (size_t i = 0; i < m_SeqIds.size(); ++i) {
         if (m_Client->IsValidSeqId(m_SeqIds[i])) {
@@ -499,7 +500,6 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
             return;
         }
     }
-    m_ScaleLimit = annot_request.m_SNPScaleLimit.value_or(CSeq_id::eSNPScaleLimit_Default);
     m_ThreadPool->AddTask(new CSNPThreadPoolTask_GetAnnotation(*this));
 }
 
