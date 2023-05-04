@@ -24,3 +24,14 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-ggdb3 -O3")
 
 set(CMAKE_EXE_LINKER_FLAGS     "-Wl,--enable-new-dtags  -Wl,--as-needed")
 set(CMAKE_SHARED_LINKER_FLAGS  "-Wl,--no-undefined  -Wl,--as-needed")
+
+#----------------------------------------------------------------------------
+set(NCBI_COMPILER_FLAGS_SSE       "")
+
+set(NCBI_COMPILER_FLAGS_COVERAGE  "--coverage")
+set(NCBI_LINKER_FLAGS_COVERAGE     "--coverage")
+
+set(NCBI_COMPILER_FLAGS_MAXDEBUG  "-fsanitize=address")
+set(NCBI_LINKER_FLAGS_MAXDEBUG   "-fsanitize=address")
+
+set(NCBI_LINKER_FLAGS_STATICCOMPONENTS "-static-libgcc -static-libstdc++")
