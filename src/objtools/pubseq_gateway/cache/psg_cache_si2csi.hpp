@@ -50,7 +50,7 @@ class CPubseqGatewayCacheSi2Csi
 {
  public:
     explicit CPubseqGatewayCacheSi2Csi(const string& file_name);
-    virtual ~CPubseqGatewayCacheSi2Csi() override;
+    ~CPubseqGatewayCacheSi2Csi() override;
     void Open();
 
     vector<CSI2CSIRecord> Fetch(CSi2CsiFetchRequest const& request);

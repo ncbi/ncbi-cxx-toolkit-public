@@ -62,8 +62,8 @@ class CPsgCacheBlobPropTest
     {
         CNcbiIfstream i(GetConfigPath(), ifstream::in | ifstream::binary);
         CNcbiRegistry r(i);
-        string file_name = r.GetString("LMDB_CACHE", "blob_prop", "");
-        m_Cache = make_unique<CPubseqGatewayCache>("", "", file_name);
+        m_CacheFilePath = r.GetString("LMDB_CACHE", "blob_prop", "");
+        m_Cache = make_unique<CPubseqGatewayCache>("", "", m_CacheFilePath);
         m_Cache->Open({0, 4});
     }
 
@@ -84,9 +84,11 @@ class CPsgCacheBlobPropTest
     }
 
     static unique_ptr<CPubseqGatewayCache> m_Cache;
+    static string m_CacheFilePath;
 };
 
 unique_ptr<CPubseqGatewayCache> CPsgCacheBlobPropTest::m_Cache(nullptr);
+string CPsgCacheBlobPropTest::m_CacheFilePath;
 
 TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
 {
@@ -198,6 +200,36 @@ TEST_F(CPsgCacheBlobPropTest, EnumerateBlobProp)
         }
     );
     EXPECT_EQ(1020, rows);
+}
+
+TEST_F(CPsgCacheBlobPropTest, DisableSatDatabase)
+{
+    {
+        auto cache = make_unique<CPubseqGatewayCache>("", "", m_CacheFilePath);
+        testing::internal::CaptureStderr();
+        cache->Open({0, 111});
+        auto stderr = testing::internal::GetCapturedStderr();
+        EXPECT_EQ(
+            "Warning: BlobProp cache: database disabled (#STATUS[111][\"DISABLED\"] == \"yes\" OR #STATUS[111] does not exist)"
+            " for #DATA[111], cache for sat = 111 will not be used.\n",
+            stderr
+        );
+    }
+    {
+        auto cache = make_unique<CPubseqGatewayCache>("", "", m_CacheFilePath);
+        testing::internal::CaptureStderr();
+        cache->Open({0, 112});
+        auto stderr = testing::internal::GetCapturedStderr();
+        EXPECT_EQ(
+            "Warning: BlobProp cache: database disabled (#STATUS[112][\"DISABLED\"] == \"yes\" OR #STATUS[112] does not exist)"
+            " for #DATA[112], cache for sat = 112 will not be used.\n",
+            stderr
+        );
+        CPubseqGatewayCache::TBlobPropRequest request;
+        request.SetSat(112).SetSatKey(2054006);
+        auto response = cache->FetchBlobProp(request);
+        EXPECT_TRUE(response.empty());
+    }
 }
 
 END_SCOPE()
