@@ -54,7 +54,7 @@ class CPubseqGatewayCacheBlobProp
     using TBlobPropEnumerateFn = function<bool(int32_t, int64_t)>;
 
     explicit CPubseqGatewayCacheBlobProp(const string& file_name);
-    virtual ~CPubseqGatewayCacheBlobProp() override;
+    ~CPubseqGatewayCacheBlobProp() override;
     void Open(const set<int>& sat_ids);
 
     vector<CBlobRecord> Fetch(CBlobFetchRequest const& request);
@@ -68,6 +68,12 @@ class CPubseqGatewayCacheBlobProp
 
  private:
     bool x_ExtractRecord(CBlobRecord& record, lmdb::val const& value) const;
+
+    // Checks #STATUS[sat] database for "DISABLED" key
+    // returns False
+    //   -- If #STATUS[sat] does not exist
+    //   -- If "DISABLED" key exists and is equal string("yes")
+    bool x_CanOpenSatDatabase(int32_t sat, CLMDBReadOnlyTxn& rtxn);
     vector<unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>> m_Dbis;
 };
 

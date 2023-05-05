@@ -81,7 +81,7 @@ class CPubseqGatewayCacheBase
 {
  public:
     explicit CPubseqGatewayCacheBase(const string& file_name);
-    virtual ~CPubseqGatewayCacheBase();
+    virtual ~CPubseqGatewayCacheBase() = default;
     // @throws lmdb::error
     void Open();
 

@@ -49,7 +49,7 @@ class CPubseqGatewayCacheBioseqInfo
 {
  public:
     explicit CPubseqGatewayCacheBioseqInfo(const string& file_name);
-    virtual ~CPubseqGatewayCacheBioseqInfo() override;
+    ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
 
     vector<CBioseqInfoRecord> Fetch(CBioseqInfoFetchRequest const& request);

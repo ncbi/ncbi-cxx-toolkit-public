@@ -73,28 +73,35 @@ void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
     CPubseqGatewayCacheBase::Open();
     auto rdtxn = BeginReadTxn();
     for (const auto & sat_id : sat_ids) {
-        unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> pdbi;
+        unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>> pdbi{nullptr};
         string sat_dbi = string("#DATA[") + to_string(sat_id) + "]";
-        try {
-            pdbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
-                new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}),
-                [this](lmdb::dbi* dbi){
-                    if (dbi && *dbi) {
-                        dbi->close(*m_Env);
+        if (x_CanOpenSatDatabase(sat_id, rdtxn)) {
+            try {
+                pdbi = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>(
+                    new lmdb::dbi({lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0)}),
+                    [this](lmdb::dbi* dbi){
+                        if (dbi && *dbi) {
+                            dbi->close(*m_Env);
+                        }
+                        delete(dbi);
                     }
-                    delete(dbi);
-                }
-            );
+                );
+            }
+            catch (const lmdb::error& e) {
+                ERR_POST(Warning << "BlobProp cache: failed to open " << sat_dbi << " dbi: " << e.what()
+                    << ", cache for sat = " << sat_id << " will not be used.");
+                pdbi = nullptr;
+            }
         }
-        catch (const lmdb::error& e) {
-            ERR_POST(Warning << "BlobProp cache: failed to open " << sat_dbi << " dbi: " << e.what()
-                << ", cache for sat = " << sat_id << " will not be used.");
-            pdbi = nullptr;
+        else {
+            ERR_POST(Warning << "BlobProp cache: database disabled (#STATUS[" << sat_id << "][\"DISABLED\"] == \"yes\" OR #STATUS["
+                << sat_id << "] does not exist) for " << sat_dbi << ", cache for sat = " << sat_id << " will not be used.");
         }
         if (static_cast<size_t>(sat_id) > m_Dbis.size()) {
             m_Dbis.resize(sat_id);
         }
         m_Dbis.push_back(move(pdbi));
+
     }
 }
 
@@ -117,6 +124,40 @@ bool CPubseqGatewayCacheBlobProp::x_ExtractRecord(CBlobRecord& record, lmdb::val
         .SetSizeUnpacked(info.size_unpacked())
         .SetUserName(info.username());
     return true;
+}
+
+bool CPubseqGatewayCacheBlobProp::x_CanOpenSatDatabase(int32_t sat, CLMDBReadOnlyTxn& rtxn)
+{
+    using TDbiPtr = unique_ptr<lmdb::dbi, function<void(lmdb::dbi*)>>;
+    string sat_dbi = string("#STATUS[") + to_string(sat) + "]";
+    try {
+        TDbiPtr handle(
+            new lmdb::dbi({lmdb::dbi::open(rtxn, sat_dbi.c_str(), 0)}),
+            [this]
+            (lmdb::dbi* dbi) {
+                if (dbi && *dbi) {
+                    dbi->close(*m_Env);
+                }
+                delete(dbi);
+            }
+        );
+        lmdb::val value;
+        if (handle->get(rtxn, lmdb::val("DISABLED"), value)) {
+            string option_value;
+            value.assign_to(option_value);
+            return option_value != "yes";
+        }
+        else {
+            return true;
+        }
+
+    }
+    catch (const lmdb::error& e) {
+        if (e.code() != MDB_NOTFOUND) {
+            throw;
+        }
+    }
+    return false;
 }
 
 vector<CBlobRecord> CPubseqGatewayCacheBlobProp::Fetch(CBlobFetchRequest const& request)

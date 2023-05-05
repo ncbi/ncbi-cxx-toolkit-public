@@ -48,11 +48,7 @@ BEGIN_IDBLOB_SCOPE
 CPubseqGatewayCacheBase::CPubseqGatewayCacheBase(const string& file_name)
     : m_FileName(file_name)
 {
-    m_Env.reset(new lmdb::env(lmdb::env::create()));
-}
-
-CPubseqGatewayCacheBase::~CPubseqGatewayCacheBase()
-{
+    m_Env = make_unique<lmdb::env>(lmdb::env::create());
 }
 
 CLMDBReadOnlyTxn CPubseqGatewayCacheBase::BeginReadTxn()

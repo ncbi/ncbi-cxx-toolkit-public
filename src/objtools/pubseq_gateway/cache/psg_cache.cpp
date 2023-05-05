@@ -98,7 +98,9 @@ USING_NCBI_SCOPE;
 const size_t CPubseqGatewayCache::kRuntimeErrorLimit = 10;
 
 CPubseqGatewayCache::CPubseqGatewayCache(
-    const string& bioseq_info_file_name, const string& si2csi_file_name, const string& blob_prop_file_name
+    const string& bioseq_info_file_name,
+    const string& si2csi_file_name,
+    const string& blob_prop_file_name
 )
     : m_BioseqInfoPath(bioseq_info_file_name)
     , m_Si2CsiPath(si2csi_file_name)
@@ -113,7 +115,7 @@ CPubseqGatewayCache::~CPubseqGatewayCache()
 void CPubseqGatewayCache::Open(const set<int>& sat_ids)
 {
     if (!m_BioseqInfoPath.empty()) {
-        m_BioseqInfoCache.reset(new CPubseqGatewayCacheBioseqInfo(m_BioseqInfoPath));
+        m_BioseqInfoCache = make_unique<CPubseqGatewayCacheBioseqInfo>(m_BioseqInfoPath);
         try {
             m_BioseqInfoCache->Open();
         } catch (const lmdb::error& e) {
@@ -126,7 +128,7 @@ void CPubseqGatewayCache::Open(const set<int>& sat_ids)
         }
     }
     if (!m_Si2CsiPath.empty()) {
-        m_Si2CsiCache.reset(new CPubseqGatewayCacheSi2Csi(m_Si2CsiPath));
+        m_Si2CsiCache = make_unique<CPubseqGatewayCacheSi2Csi>(m_Si2CsiPath);
         try {
             m_Si2CsiCache->Open();
         } catch (const lmdb::error& e) {
@@ -138,7 +140,7 @@ void CPubseqGatewayCache::Open(const set<int>& sat_ids)
         }
     }
     if (!m_BlobPropPath.empty()) {
-        m_BlobPropCache.reset(new CPubseqGatewayCacheBlobProp(m_BlobPropPath));
+        m_BlobPropCache = make_unique<CPubseqGatewayCacheBlobProp>(m_BlobPropPath);
         try {
             m_BlobPropCache->Open(sat_ids);
         } catch (const lmdb::error& e) {
@@ -169,7 +171,7 @@ CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfo(TB
     return TBioseqInfoResponse();
 }
 
-CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfoLast(void)
+CPubseqGatewayCache::TBioseqInfoResponse CPubseqGatewayCache::FetchBioseqInfoLast()
 {
     if (m_BioseqInfoCache) {
         TBioseqInfoResponse response = m_BioseqInfoCache->FetchLast();
@@ -215,7 +217,7 @@ CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2Csi(TSi2CsiReq
     return TSi2CsiResponse();
 }
 
-CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2CsiLast(void)
+CPubseqGatewayCache::TSi2CsiResponse CPubseqGatewayCache::FetchSi2CsiLast()
 {
     if (m_Si2CsiCache) {
         return m_Si2CsiCache->FetchLast();
