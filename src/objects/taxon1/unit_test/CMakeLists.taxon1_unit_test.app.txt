@@ -1,0 +1,8 @@
+
+NCBI_begin_app(taxon1_unit_test.app)
+  NCBI_sources(taxon1_unit_test.app)
+  NCBI_requires(SQLITE3)
+  NCBI_uses_toolkit_libraries(local_taxon sqlitewrapp)
+  NCBI_requires(Boost.Test.Included)
+NCBI_end_app()
+
