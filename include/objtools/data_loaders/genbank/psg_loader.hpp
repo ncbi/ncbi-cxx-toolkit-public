@@ -157,6 +157,10 @@ public:
     void GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret) override;
     void GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret) override;
 
+    // Global default SNP scale limit.
+    static CSeq_id::ESNPScaleLimit GetSNP_Scale_Limit(void);
+    static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
+
 private:
     typedef CParamLoaderMaker<CPSGDataLoader, CGBLoaderParams> TMaker;
     friend class CParamLoaderMaker<CPSGDataLoader, CGBLoaderParams>;

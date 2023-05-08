@@ -51,6 +51,20 @@
 #if defined(HAVE_PSG_LOADER)
 
 BEGIN_NCBI_SCOPE
+
+NCBI_PARAM_ENUM_ARRAY(objects::CSeq_id::ESNPScaleLimit, PSG_LOADER, SNP_SCALE_LIMIT) {
+    {"", objects::CSeq_id::eSNPScaleLimit_Default},
+    {"Unit", objects::CSeq_id::eSNPScaleLimit_Unit},
+    {"Contig", objects::CSeq_id::eSNPScaleLimit_Contig},
+    {"Supercontig", objects::CSeq_id::eSNPScaleLimit_Supercontig},
+    {"Chromosome", objects::CSeq_id::eSNPScaleLimit_Chromosome},
+};
+NCBI_PARAM_ENUM_DECL(objects::CSeq_id::ESNPScaleLimit, PSG_LOADER, SNP_SCALE_LIMIT);
+NCBI_PARAM_ENUM_DEF_EX(objects::CSeq_id::ESNPScaleLimit, PSG_LOADER, SNP_SCALE_LIMIT,
+                       objects::CSeq_id::eSNPScaleLimit_Default,
+                       eParam_NoThread, PSG_LOADER_SNP_SCALE_LIMIT);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, SNP_SCALE_LIMIT) TSNP_Scale_Limit;
+
 BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
@@ -140,6 +154,19 @@ CConstRef<CPsgBlobId> CPsgBlobId::GetPsgBlobId(const CBlobId& blob_id)
 #define PSGLOADER_HUP_NAME "GBLOADER-HUP"
 
 const char kDataLoader_PSG_DriverName[] = "psg";
+
+
+CSeq_id::ESNPScaleLimit CPSGDataLoader::GetSNP_Scale_Limit(void)
+{
+    return TSNP_Scale_Limit::GetDefault();
+}
+
+
+void CPSGDataLoader::SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value)
+{
+    TSNP_Scale_Limit::SetDefault(value);
+}
+
 
 CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager& om,

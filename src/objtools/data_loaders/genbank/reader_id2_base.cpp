@@ -1197,6 +1197,9 @@ bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
             srcs.push_back(it->first);
             if (it->first == "SNP") {
                 CSeq_id::ESNPScaleLimit snp_scale_limit = sel ? sel->GetSNPScaleLimit() : CSeq_id::eSNPScaleLimit_Default;
+                if (snp_scale_limit == CSeq_id::eSNPScaleLimit_Default) {
+                    snp_scale_limit = GetSNP_Scale_Limit();
+                }
                 if (snp_scale_limit != CSeq_id::eSNPScaleLimit_Default) {
                     CRef<CID2_Param> param(new CID2_Param);
                     param->SetName("snp:scale-limit");
