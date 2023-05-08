@@ -75,7 +75,10 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
         if $clients; then
             grep '^clients[     ]*=' $dir/$base.def >/dev/null 2>&1 || continue
         fi
-        if $force || [ ! -f $dir/$base.files ]; then
+        if $force; then
+            rm -f $dir/$base.files
+        fi
+        if [ ! -f $dir/$base.files ]; then
             echo $spec
             if (cd $dir && $new_module $flag $base >/dev/null 2>&1); then
                 : # all good
@@ -98,7 +101,7 @@ splitdb_dir=src/internal/blast/SplitDB/asn
 if [ -f $splitdb_dir/Makefile.asntool ]; then
     top_srcdir=`pwd`
     builds=`ls -dt $top_srcdir/*/build $top_srcdir/.[A-Z]??*/build 2>/dev/null`
-    for builddir in $builds $NCBI/c++.metastable/Release/build; do
+    for builddir in $builds $NCBI/c++.metastable/ReleaseMT/build; do
         if [ -f $builddir/Makefile.mk ]; then
             break
         fi
