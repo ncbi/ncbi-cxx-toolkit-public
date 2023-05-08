@@ -999,27 +999,6 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
-(const CBioseq_Handle& bsh,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
-
-}
-
-
-void CFlatFileGenerator::Generate
 (const CSeq_submit& submit,
  CScope& scope,
  CNcbiOstream& os)
@@ -1112,6 +1091,92 @@ void CFlatFileGenerator::Generate
     Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
 }
 
+
+void CFlatFileGenerator::Generate
+(const CBioseq_Handle& bsh,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_submit& submit,
+ CScope& scope,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
+{
+    _ASSERT(submit.CanGetData());
+    _ASSERT(submit.CanGetSub());
+    _ASSERT(submit.GetData().IsEntrys());
+    _ASSERT(!submit.GetData().GetEntrys().empty());
+
+    // NB: though the spec specifies a submission may contain multiple entries
+    // this is not the case. A submission should only have a single Top-level
+    // Seq-entry
+    CConstRef<CSeq_entry> e(submit.GetData().GetEntrys().front());
+    if (e.NotEmpty()) {
+        // get Seq_entry_Handle from scope
+        CSeq_entry_Handle entry;
+        try {
+            entry = scope.GetSeq_entryHandle(*e);
+        } catch (CException&) {}
+
+        if (!entry) {  // add to scope if not already in it
+            entry = scope.AddTopLevelSeqEntry(*e);
+        }
+        // "remember" the submission block
+        m_Ctx->SetSubmit(submit.GetSub());
+
+        CRef<CFlatItemOStream>
+            item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+        Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+    }
+}
+
+
+void CFlatFileGenerator::Generate
+(const CBioseq& bioseq,
+ CScope& scope,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+}
+
+
 void CFlatFileGenerator::Generate
 (const CSeq_loc& loc,
  CScope& scope,
@@ -1143,6 +1208,36 @@ void CFlatFileGenerator::Generate
     }
 
     Generate(entry, os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_id& id,
+ const TRange& range,
+ ENa_strand strand,
+ CScope& scope,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing,
+ CNcbiOstream* m_Os,
+ CNcbiOstream* m_On,
+ CNcbiOstream* m_Og,
+ CNcbiOstream* m_Or,
+ CNcbiOstream* m_Op,
+ CNcbiOstream* m_Ou
+ )
+{
+    CRef<CSeq_id> id2(new CSeq_id);
+    id2->Assign(id);
+    CRef<CSeq_loc> loc;
+    if ( range.IsWhole() ) {
+        loc.Reset(new CSeq_loc);
+        loc->SetWhole(*id2);
+    } else {
+        loc.Reset(new CSeq_loc(*id2, range.GetFrom(), range.GetTo(), strand));
+    }
+    if ( loc ) {
+        Generate(*loc, scope, os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+    }
 }
 
 
