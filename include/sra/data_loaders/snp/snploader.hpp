@@ -125,9 +125,8 @@ public:
 
     static bool IsUsingPTIS();
 
-    // Get global default value.
+    // Global default SNP scale limit.
     static CSeq_id::ESNPScaleLimit GetSNP_Scale_Limit(void);
-    // Set global default value.
     static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
 
 private:

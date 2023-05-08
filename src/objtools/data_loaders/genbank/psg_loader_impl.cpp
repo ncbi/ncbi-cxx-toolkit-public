@@ -239,6 +239,7 @@ struct SPsgAnnotInfo
     TIds ids;
     TInfos infos;
     CDeadline deadline;
+
 private:
     SPsgAnnotInfo(const SPsgAnnotInfo&);
     SPsgAnnotInfo& operator=(const SPsgAnnotInfo&);
@@ -2893,6 +2894,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
     if ( !kCreateLocalCDDEntries && !x_CheckAnnotCache(kCDDAnnotName, ids, data_source, processed_nas, locks) ) {
         annot_names.push_back(kCDDAnnotName);
     }
+    auto snp_scale_limit = CSeq_id::eSNPScaleLimit_Default;
+    string snp_name = "SNP"; // name used for caching SNP annots with scale-limit.
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         CPSG_BioIds bio_ids;
         for (auto& id : ids) {
@@ -2904,13 +2907,25 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                 // CDDs are added as external annotations
                 continue;
             }
-            if ( !x_CheckAnnotCache(it->first, ids, data_source, processed_nas, locks) ) {
+            string name = it->first;
+            if (name == "SNP") {
+                snp_scale_limit = sel->GetSNPScaleLimit();
+                if (snp_scale_limit == CSeq_id::eSNPScaleLimit_Default) {
+                    snp_scale_limit = CPSGDataLoader::GetSNP_Scale_Limit();
+                }
+                if (snp_scale_limit != CSeq_id::eSNPScaleLimit_Default) {
+                    snp_name = "SNP::" + NStr::NumericToString((int)snp_scale_limit);
+                    name = snp_name;
+                }
+            }
+            if ( !x_CheckAnnotCache(name, ids, data_source, processed_nas, locks) ) {
                 annot_names.push_back(it->first);
             }
         }
 
         if ( !annot_names.empty() ) {
             auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_ids), annot_names);
+            request->SetSNPScaleLimit(snp_scale_limit);
             auto reply = x_SendRequest(request);
             CPSG_TaskGroup group(*m_ThreadPool);
             CRef<CPSG_AnnotRecordsNA_Task> task(new CPSG_AnnotRecordsNA_Task(reply, group));
@@ -2949,7 +2964,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                 }
                 if (!ids.empty() && !infos_by_name.empty()) {
                     for(auto infos : infos_by_name) {
-                        m_AnnotCache->Add(infos.second, infos.first, ids);
+                        m_AnnotCache->Add(infos.second, (infos.first == "SNP" ? snp_name : infos.first), ids);
                     }
                 }
             }
