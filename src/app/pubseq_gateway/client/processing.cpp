@@ -766,7 +766,7 @@ template <>
 template <>
 void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<verbose>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
-    CProcessing::ItemComplete(m_JsonOut, status, item);
+    CProcessing::ItemComplete(json_out, status, item);
 }
 
 template <>
@@ -785,7 +785,7 @@ template <>
 void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<verbose>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     CJsonResponse result_doc(status, reply);
-    m_JsonOut << result_doc;
+    json_out << result_doc;
 }
 
 template <>
@@ -797,7 +797,7 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<no_verbose>(
 
     if (auto first_message = reply->GetNextMessage(); !first_message.empty() || (context->reported.find(status) == context->reported.end())) {
         CJsonResponse result_doc(status, reply, first_message);
-        m_JsonOut << result_doc;
+        json_out << result_doc;
     }
 }
 
@@ -826,11 +826,11 @@ void CParallelProcessing<SInteractiveParams>::SImpl::Submitter(CPSG_Queue& outpu
         CJson_Document json_doc;
 
         if (!json_doc.ParseString(line)) {
-            m_JsonOut << CJsonResponse(s_GetId(json_doc), eJsonRpc_ParseError, json_doc.GetReadError());
+            json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_ParseError, json_doc.GetReadError());
         } else if (!json_schema.Validate(json_doc)) {
-            m_JsonOut << CJsonResponse(s_GetId(json_doc), eJsonRpc_InvalidRequest, json_schema.GetValidationError());
+            json_out << CJsonResponse(s_GetId(json_doc), eJsonRpc_InvalidRequest, json_schema.GetValidationError());
         } else {
-            if (m_Params.echo) m_JsonOut << json_doc;
+            if (m_Params.echo) json_out << json_doc;
 
             CJson_ConstObject json_obj(json_doc.GetObject());
             auto method = json_obj["method"].GetValue().GetString();
@@ -861,7 +861,7 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<testing, serv
     const auto& request_id = *request->GetUserContext<string>();
 
     CJsonResponse result_doc(status, reply, CJsonResponse::eDoNotAddRequestID);
-    m_JsonOut << CJsonResponse(request_id, result_doc);
+    json_out << CJsonResponse(request_id, result_doc);
 }
 
 template <>
@@ -903,7 +903,7 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete<>(EPSG_Status 
     const auto& request_id = *request->GetUserContext<string>();
 
     CJsonResponse result_doc(status, item, CJsonResponse::eDoNotAddRequestID);
-    m_JsonOut << CJsonResponse(request_id, result_doc);
+    json_out << CJsonResponse(request_id, result_doc);
 }
 
 template <>
@@ -924,8 +924,8 @@ CParallelProcessing<SInteractiveParams>::SImpl::TReplyComplete CParallelProcessi
 
 template <class TParams>
 CParallelProcessing<TParams>::SImpl::SImpl(const TParams& params) :
-    m_Params(params),
-    m_JsonOut(params.pipe, params.server)
+    json_out(params.pipe, params.server),
+    m_Params(params)
 {
     Init();
 }
