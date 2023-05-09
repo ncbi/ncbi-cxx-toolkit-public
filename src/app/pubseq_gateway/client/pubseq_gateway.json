@@ -62,16 +62,6 @@
         }
       }
     },
-    "ipg_resolve": {
-      "description": "Request IPG info",
-      "Request-specific Parameters": {
-        "optional": {
-          "ipg": "IPG",
-          "nucleotide": "Nucleotide",
-          "protein": "Protein"
-        }
-      }
-    },
     "named_annot": {
       "description": "Request named annotations info by bio ID(s)",
       "Request-specific Parameters": {
@@ -139,6 +129,28 @@
           "date-changed": "Return date changed info",
           "gi": "Return GI",
           "all-info-except": "Return all info except explicitly specified by other flags"
+        }
+      }
+    },
+    "ipg_resolve": {
+      "method": {
+        "GET": {
+          "description": "Request IPG info",
+          "Method-specific Parameters": {
+            "optional": {
+              "ipg": "IPG",
+              "nucleotide": "Nucleotide",
+              "protein": "Protein"
+            }
+          }
+        },
+        "POST": {
+          "description": "Batch request IPG info by protein and, optionally, by nucleotide",
+          "Method-specific Parameters": {
+            "mandatory": {
+              "List of IDs": "One 'protein[,nucleotide]' per line in the request body"
+            }
+          }
         }
       }
     }

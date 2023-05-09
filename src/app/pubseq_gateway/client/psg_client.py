@@ -479,7 +479,7 @@ def cgi_help_cmd(args):
                     exclude.setdefault(arg1, {}).setdefault(arg2, None)
 
             require = {name:list(data.keys()) for name, data in require.items()}
-            exclude = {name:list(data.keys()) for name, data in exclude.items()}
+            exclude = {name: [v for v in data.keys() if v not in hide_keys] for name, data in exclude.items()}
             requests.add(req_name, req_desc, require, exclude)
 
             for pos in arg.iterfind('ns:positional', ns):
@@ -584,7 +584,17 @@ def cgi_help_cmd(args):
     post_resolve['description'] = 'Batch request biodata info by bio IDs'
     post_resolve['Method-specific Parameters'] = {'mandatory': {'List of bio IDs': 'One bio ID per line in the request body'}}
 
+    # Update description for IPG resolve (add POST IPG batch-resolve)
+    get_ipg_resolve = result_reqs.pop('ipg_resolve')
+    ipg_resolve_params = get_ipg_resolve.pop('Request-specific Parameters')
+    ipg_resolve_optional = ipg_resolve_params.pop('optional')
+    post_ipg_resolve = get_ipg_resolve.copy()
+    get_ipg_resolve['Method-specific Parameters'] = {'optional': ipg_resolve_optional}
+    post_ipg_resolve['description'] = 'Batch request IPG info by protein and, optionally, by nucleotide'
+    post_ipg_resolve['Method-specific Parameters'] = {'mandatory': {'List of IDs': 'One \'protein[,nucleotide]\' per line in the request body'}}
+
     result_reqs['resolve'] = {'method': {'GET': get_resolve, 'POST': post_resolve}, 'Request-specific Parameters': resolve_params}
+    result_reqs['ipg_resolve'] = {'method': {'GET': get_ipg_resolve, 'POST': post_ipg_resolve} }
     result = {'request': result_reqs, 'Common Parameters': common_params}
     json.dump(result, args.output_file, indent=2)
 

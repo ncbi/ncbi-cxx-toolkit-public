@@ -150,6 +150,8 @@ struct SBatchResolve : SParallelProcessing<SBatchResolveParams>
     }
 };
 
+using TIpgBatchResolve = SParallelProcessing<TIpgBatchResolveParams>;
+
 }
 
 template <>
@@ -345,7 +347,13 @@ int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
     SResponse response = ctx.GetResponse();
 
     if (auto is = request.GetRequestMethod() == CCgiRequest::eMethod_POST ? request.GetInputStream() : nullptr) {
-        rv = CProcessing::ParallelProcessing(NParamsBuilder::SBatchResolve(entries), *is);
+        if (type == "resolve") {
+            rv = CProcessing::ParallelProcessing(NParamsBuilder::SBatchResolve(entries), *is);
+        } else if (type == "ipg_resolve") {
+            rv = CProcessing::ParallelProcessing(NParamsBuilder::TIpgBatchResolve(entries), *is);
+        } else {
+            rv = int(EPSG_Status::eError);
+        }
     } else {
         const auto builder = NParamsBuilder::SOneRequest(entries);
 

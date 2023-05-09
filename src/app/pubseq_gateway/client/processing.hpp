@@ -219,6 +219,8 @@ struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
     {}
 };
 
+using TIpgBatchResolveParams = SParallelProcessingParams;
+
 struct SInteractiveParams : SParallelProcessingParams
 {
     const bool echo;
@@ -314,6 +316,7 @@ private:
 
     static bool ReadLine(string& line, istream& is = cin);
     static CParallelProcessing<SBatchResolveParams> CreateParallelProcessing(const SBatchResolveParams& params);
+    static CParallelProcessing<TIpgBatchResolveParams> CreateParallelProcessing(const TIpgBatchResolveParams& params);
     static CParallelProcessing<SInteractiveParams> CreateParallelProcessing(const SInteractiveParams& params);
 };
 

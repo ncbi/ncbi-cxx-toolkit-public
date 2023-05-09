@@ -813,6 +813,24 @@ typename CParallelProcessing<TParams>::SImpl::TReplyComplete CParallelProcessing
 }
 
 template <>
+void CParallelProcessing<TIpgBatchResolveParams>::SImpl::Submitter(CPSG_Queue& output)
+{
+    string line, protein, n;
+
+    while (m_InputQueue.Pop(line)) {
+        _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
+
+        auto nucleotide = NStr::SplitInTwo(line, ",", protein, n) ? CPSG_Request_IpgResolve::TNucleotide(n) : null;
+        auto user_context = make_shared<SBatchResolveContext>(move(line));
+        auto request = make_shared<CPSG_Request_IpgResolve>(move(protein), 0, move(nucleotide),  move(user_context));
+
+        _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
+    }
+
+    output.Stop();
+}
+
+template <>
 void CParallelProcessing<SInteractiveParams>::SImpl::Init()
 {
 }
@@ -1194,6 +1212,7 @@ bool CProcessing::ReadLine(string& line, istream& is)
 }
 
 CParallelProcessing<SBatchResolveParams> CProcessing::CreateParallelProcessing(const SBatchResolveParams& params) { return params; }
+CParallelProcessing<TIpgBatchResolveParams> CProcessing::CreateParallelProcessing(const TIpgBatchResolveParams& params) { return params; }
 CParallelProcessing<SInteractiveParams> CProcessing::CreateParallelProcessing(const SInteractiveParams& params) { return params; }
 
 SInteractiveNewRequestStart::SInteractiveNewRequestStart(const string& request, CJson_ConstObject params_obj)
