@@ -259,6 +259,8 @@ public:
 private:
     struct SImpl
     {
+        SJsonOut json_out;
+
         SImpl(const TParams& params);
 
         void Process(string line) { m_InputQueue.Push(move(line)); }
@@ -280,7 +282,6 @@ private:
 
         const TParams& m_Params;
         CPSG_WaitingQueue<string> m_InputQueue;
-        SJsonOut m_JsonOut;
     };
 
     struct SThread
