@@ -268,16 +268,13 @@ private:
 
         void Submitter(CPSG_Queue& output);
 
-        using TItemComplete = void (SImpl::*)(EPSG_Status, const shared_ptr<CPSG_ReplyItem>&);
-        using TReplyComplete = void (SImpl::*)(EPSG_Status, const shared_ptr<CPSG_Reply>&);
+        using TItemComplete = void (*)(SJsonOut&, EPSG_Status, const shared_ptr<CPSG_ReplyItem>&);
+        using TReplyComplete = void (*)(SJsonOut&, EPSG_Status, const shared_ptr<CPSG_Reply>&);
 
         TItemComplete GetItemComplete();
         TReplyComplete GetReplyComplete();
 
     private:
-        template <class... TArgs> void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
-        template <class... TArgs> void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
-
         void Init();
 
         const TParams& m_Params;
@@ -308,9 +305,6 @@ public:
     static int ParallelProcessing(const TParams& params, istream& is = cin);
     static int Performance(const SPerformanceParams& params);
     static int JsonCheck(istream* schema_is);
-
-    static void ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
-    static void ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
     static CJson_Document RequestSchema();
 
