@@ -9,7 +9,7 @@
 # WGMLST_LIBPATH
 
 find_package(LIBWGMLST
-    PATHS /panfs/pan1/gpipe/ThirdParty/skesa-1.1/${NCBI_COMPILER}-${NCBI_COMPILER_VERSION_DOTTED}
+    PATHS /netmnt/vast01/gp/ThirdParty/skesa-1.1/${NCBI_COMPILER}-${NCBI_COMPILER_VERSION_DOTTED}
     NO_DEFAULT_PATH
 )
 
