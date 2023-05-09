@@ -169,6 +169,14 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
                 False,
                 True
             ],
+            'snp_scale_limit': [
+                None,
+                'default',
+                'unit',
+                'contig',
+                'supercontig',
+                'chromosome'
+            ],
             'resend_timeout': [
                 None,
                 0,
@@ -191,7 +199,7 @@ def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
             'resolve':      [bio_ids,       ['include_info', 'acc_substitution', 'bio_id_resolution']],
             'biodata':      [bio_ids,       ['include_data', 'exclude_blobs', 'acc_substitution', 'bio_id_resolution', 'resend_timeout']],
             'blob':         [blob_ids,      ['include_data', 'user_args']],
-            'named_annot':  [named_annots,  ['include_data', 'acc_substitution', 'bio_id_resolution']],
+            'named_annot':  [named_annots,  ['include_data', 'acc_substitution', 'bio_id_resolution', 'snp_scale_limit']],
             'chunk':        [chunk_ids,     ['user_args',    'user_args']],
             'ipg_resolve':  [ipgs,          ['user_args',    'user_args']]
         }

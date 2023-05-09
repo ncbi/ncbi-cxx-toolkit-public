@@ -1582,6 +1582,16 @@ CJson_Document CProcessing::RequestSchema()
                 "never"
             ]
         },
+        "snp_scale_limit": {
+            "$id": "#snp_scale_limit",
+            "enum": [
+                "default",
+                "unit",
+                "contig",
+                "supercontig",
+                "chromosome"
+            ]
+        },
         "context": {
             "$id": "#context",
             "type": "object",
@@ -1669,6 +1679,7 @@ CJson_Document CProcessing::RequestSchema()
                         "named_annots": { "$ref": "#/definitions/named_annots" },
                         "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
                         "bio_id_resolution": { "type": "boolean" },
+                        "snp_scale_limit": { "$ref": "#/definitions/snp_scale_limit" },
                         "context": { "$ref": "#/definitions/context" },
                         "user_args": { "$ref": "#/definitions/user_args" }
                     },
