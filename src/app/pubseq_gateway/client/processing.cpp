@@ -727,8 +727,8 @@ struct SBatchResolveContext : string
     SBatchResolveContext(string id) : string(move(id)) {}
 };
 
-template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::Init()
+template <class TParams>
+void CParallelProcessing<TParams>::SImpl::Init()
 {
         auto& ctx = CDiagContext::GetRequestContext();
 
@@ -811,6 +811,11 @@ template <>
 CParallelProcessing<SBatchResolveParams>::SImpl::TReplyComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetReplyComplete()
 {
     return SParams::verbose ? &SImpl::ReplyComplete<verbose> : &SImpl::ReplyComplete<no_verbose>;
+}
+
+template <>
+void CParallelProcessing<SInteractiveParams>::SImpl::Init()
+{
 }
 
 template <>

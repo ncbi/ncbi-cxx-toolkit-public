@@ -278,7 +278,7 @@ private:
         template <class... TArgs> void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
         template <class... TArgs> void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
-        void Init() {}
+        void Init();
 
         const TParams& m_Params;
         CPSG_WaitingQueue<string> m_InputQueue;
