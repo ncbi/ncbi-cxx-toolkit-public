@@ -212,8 +212,9 @@ template <>
 void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddOptionalPositional("ID", "Bio ID", CArgDescriptions::eString);
-    arg_desc.AddDefaultKey("id-file", "FILENAME", "File containing bio IDs to resolve (one per line)", CArgDescriptions::eInputFile, "-");
-    arg_desc.SetDependency("id-file", CArgDescriptions::eExcludes, "ID");
+    arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing bio IDs to resolve (one per line)", CArgDescriptions::eInputFile, "-");
+    arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "ID");
+    arg_desc.AddAlias("id-file", "input-file");
     arg_desc.AddFlag("server-mode", "Output one response per line");
     arg_desc.SetDependency("server-mode", CArgDescriptions::eExcludes, "ID");
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
@@ -401,16 +402,16 @@ template <class TParams>
 struct SParallelProcessing : SBase<TParams>, SIoRedirector
 {
     template <class... TInitArgs>
-    SParallelProcessing(const CArgs& args, const string& filename, TInitArgs&&... init_args) :
+    SParallelProcessing(const CArgs& args, TInitArgs&&... init_args) :
         SBase<TParams>{
             args,
             args["rate"].AsInteger(),
             max(1, min(10, args["worker-threads"].AsInteger())),
-            args[filename].AsString() == "-",
+            args["input-file"].AsString() == "-",
             args["server-mode"].AsBoolean(),
             forward<TInitArgs>(init_args)...
         },
-        SIoRedirector(cin, args[filename].AsInputFile())
+        SIoRedirector(cin, args["input-file"].AsInputFile())
     {
     }
 };
@@ -420,7 +421,6 @@ struct SBatchResolve : SParallelProcessing<SBatchResolveParams>
     SBatchResolve(const CArgs& args) :
         SParallelProcessing<SBatchResolveParams>{
             args,
-            "id-file",
             SRequestBuilder::GetResolveParams(args)
         }
     {
@@ -432,7 +432,6 @@ struct SInteractive : SParallelProcessing<SInteractiveParams>
     SInteractive(const CArgs& args) :
         SParallelProcessing<SInteractiveParams>{
             args,
-            "input-file",
             args["echo"].HasValue(),
             args["testing"].HasValue()
         }
