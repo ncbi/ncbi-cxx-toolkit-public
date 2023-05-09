@@ -441,7 +441,7 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
     const string Mask = RunRegistry->Get(Category, "mask");
     CSeqMasker* Masker = NULL;
     if(!Mask.empty()) {
-        string NMer = "/panfs/pan1/gpipe/ThirdParty/WindowMasker/data/" + Mask;
+        string NMer = "/netmnt/vast01/gp/ThirdParty/WindowMasker/data/" + Mask;
         Masker = new CSeqMasker(NMer,
                         0, 1, 1, 0, 0, 0, 0, 0, 0, false, 0, 0, 0, 0, "mean", 0, false, 0, false);
     }
