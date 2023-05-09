@@ -993,6 +993,10 @@ string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_
         }
         if (numGenes + numCDSs > 100) {
             // too many features will drastically slow down performance, bypass (RW-1578)
+            const string& custom = m_Options.GetCustomFeatureClause();
+            if (!NStr::IsBlank(custom)) {
+                return custom;
+            }
             feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
             return feature_clauses;
         }
@@ -1087,7 +1091,10 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_H
 
     string keyword = GetKeywordPrefix(bh);
 
-    return keyword + org_desc + feature_clauses;
+    if (!NStr::IsBlank(feature_clauses)) {
+        return keyword + org_desc + " " + feature_clauses;
+    }
+    return keyword + org_desc;
 }
 
 
