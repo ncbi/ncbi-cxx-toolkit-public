@@ -82,6 +82,7 @@
         "optional": {
           "acc-substitution": "ACC substitution",
           "output-fmt": "Format for blob data to return in (instead of raw data), (accepts: asn|asnb|json|xml), (requires: annot-only)",
+          "snp-scale-limit": "SNP scale limit, (accepts: chromosome|contig|supercontig|unit)",
           "type": "Type of the first bio ID"
         },
         "flags": {

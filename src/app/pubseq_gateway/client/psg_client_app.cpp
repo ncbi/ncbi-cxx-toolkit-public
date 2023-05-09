@@ -244,6 +244,8 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_NamedAnnotInfo>(CArgDescriptions&
     arg_desc.AddOptionalKey("type", "TYPE", "Type of the first bio ID", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     arg_desc.AddFlag("no-bio-id-resolution", "Do not try to resolve provided bio ID(s) before use");
+    arg_desc.AddOptionalKey("snp-scale-limit", "LIMIT", "SNP scale limit", CArgDescriptions::eString);
+    arg_desc.SetConstraint("snp-scale-limit", new CArgAllow_Strings{"unit", "contig", "supercontig", "chromosome"});
     s_InitDataOnly(arg_desc, false);
     s_InitDataFlags(arg_desc);
 }
@@ -476,6 +478,7 @@ struct SRequestBuilder::SReader<CArgs>
     auto GetProtein() const { return input["protein"].HasValue() ? input["protein"].AsString() : string(); }
     auto GetIpg() const { return input["ipg"].HasValue() ? input["ipg"].AsInt8() : 0; }
     auto GetNucleotide() const { return input["nucleotide"].HasValue() ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].AsString()) : null; }
+    auto GetSNPScaleLimit() const { return input["snp-scale-limit"].HasValue() ? objects::CSeq_id::GetSNPScaleLimit_Value(input["snp-scale-limit"].AsString()) : CPSG_Request_NamedAnnotInfo::ESNPScaleLimit::eSNPScaleLimit_Default; }
     SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
 };
 

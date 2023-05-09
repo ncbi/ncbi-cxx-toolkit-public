@@ -394,6 +394,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     auto GetProtein() const { return input.has("protein") ? input["protein"].GetValue().GetString() : string(); }
     auto GetIpg() const { return input.has("ipg") ? input["ipg"].GetValue().GetInt8() : 0; }
     auto GetNucleotide() const { return input.has("nucleotide") ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].GetValue().GetString()) : null; }
+    auto GetSNPScaleLimit() const { return input.has("snp_scale_limit") ? objects::CSeq_id::GetSNPScaleLimit_Value(input["snp_scale_limit"].GetValue().GetString()) : CPSG_Request_NamedAnnotInfo::ESNPScaleLimit::eSNPScaleLimit_Default; }
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
 
 private:
@@ -543,6 +544,7 @@ shared_ptr<CPSG_Request_NamedAnnotInfo> SRequestBuilder::SImpl<CPSG_Request_Name
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     request->SetAccSubstitution(reader.GetAccSubstitution());
+    request->SetSNPScaleLimit(reader.GetSNPScaleLimit());
     return request;
 }
 

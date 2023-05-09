@@ -173,6 +173,7 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
     auto GetProtein() const { return input.GetString("protein"); }
     auto GetIpg() const { return input.Get("ipg", [](const auto& v) { return NStr::StringToInt8(v); }, 0); }
     auto GetNucleotide() const { return input.Get("nucleotide", [](const auto& v) { return CPSG_Request_IpgResolve::TNucleotide(v); }, null); }
+    auto GetSNPScaleLimit() const { return objects::CSeq_id::GetSNPScaleLimit_Value(input.GetString("snp-scale-limit")); }
     SPSG_UserArgs GetUserArgs() const { return NStr::URLDecode(input.GetString("user-args")); }
 };
 
