@@ -265,6 +265,13 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_IpgResolve>(CArgDescriptions& arg
     arg_desc.AddOptionalKey("protein", "PROTEIN", "Protein", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("ipg", "IPG", "IPG", CArgDescriptions::eInt8);
     arg_desc.AddOptionalKey("nucleotide", "NUCLEOTIDE", "Nucleotide", CArgDescriptions::eString);
+    arg_desc.AddDefaultKey("input-file", "FILENAME", "File containing proteins to resolve (one 'protein[,nucleotide]' per line)", CArgDescriptions::eInputFile, "-");
+    arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "protein");
+    arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "ipg");
+    arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "nucleotide");
+    arg_desc.AddFlag("server-mode", "Output one response per line");
+    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
+    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 }
 
 template<>
@@ -427,6 +434,8 @@ struct SBatchResolve : SParallelProcessing<SBatchResolveParams>
     }
 };
 
+using TIpgBatchResolve = SParallelProcessing<TIpgBatchResolveParams>;
+
 struct SInteractive : SParallelProcessing<SInteractiveParams>
 {
     SInteractive(const CArgs& args) :
@@ -545,6 +554,19 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
         return CProcessing::OneRequest(NParamsBuilder::SOneRequest(args), request);
     } else {
         return CProcessing::ParallelProcessing(NParamsBuilder::SBatchResolve(args));
+    }
+}
+
+template<>
+int CPsgClientApp::RunRequest<CPSG_Request_IpgResolve>(const CArgs& args)
+{
+    const auto single_request = args["protein"].HasValue() || args["ipg"].HasValue();
+
+    if (single_request) {
+        auto request = SRequestBuilder::Build<CPSG_Request_IpgResolve>(args);
+        return CProcessing::OneRequest(NParamsBuilder::SOneRequest(args), request);
+    } else {
+        return CProcessing::ParallelProcessing(NParamsBuilder::TIpgBatchResolve(args));
     }
 }
 
