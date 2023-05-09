@@ -670,17 +670,23 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     }
 }
 
-void CProcessing::ItemComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+template <class... TArgs>
+void s_ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
-    CJsonResponse result_doc(status, item);
-    output << result_doc;
+    json_out << CJsonResponse(status, item);
 }
 
-void CProcessing::ReplyComplete(SJsonOut& output, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+template <class... TArgs>
+void s_ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    json_out << CJsonResponse(status, reply);
+}
+
+template <>
+void s_ReplyComplete<SOneRequestParams>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     if (status != EPSG_Status::eSuccess) {
-        CJsonResponse result_doc(status, reply);
-        output << result_doc;
+        s_ReplyComplete<>(json_out, status, reply);
     }
 }
 
@@ -710,8 +716,8 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
         auto reply_complete = bind(&SDataOnlyCopy::ReplyComplete, &data_only_copy, _1, _2);
         queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     } else {
-        auto item_complete = bind(&CProcessing::ItemComplete, ref(json_out), _1, _2);
-        auto reply_complete = bind(&CProcessing::ReplyComplete, ref(json_out), _1, _2);
+        auto item_complete = bind(&s_ItemComplete<SOneRequestParams>, ref(json_out), _1, _2);
+        auto reply_complete = bind(&s_ReplyComplete<SOneRequestParams>, ref(json_out), _1, _2);
         queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     }
 
@@ -763,34 +769,17 @@ using verbose = true_type;
 using no_verbose = false_type;
 
 template <>
-template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<verbose>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
-{
-    CProcessing::ItemComplete(json_out, status, item);
-}
-
-template <>
-template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ItemComplete<no_verbose>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+void s_ItemComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     auto context = item->GetReply()->GetRequest()->GetUserContext<SBatchResolveContext>();
     _ASSERT(context);
     context->reported.emplace(status);
 
-    ItemComplete<verbose>(status, item);
+    s_ItemComplete<verbose>(json_out, status, item);
 }
 
 template <>
-template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<verbose>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
-{
-    CJsonResponse result_doc(status, reply);
-    json_out << result_doc;
-}
-
-template <>
-template <>
-void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<no_verbose>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void s_ReplyComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     auto context = reply->GetRequest()->GetUserContext<SBatchResolveContext>();
     _ASSERT(context);
@@ -801,16 +790,26 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::ReplyComplete<no_verbose>(
     }
 }
 
-template <>
-CParallelProcessing<SBatchResolveParams>::SImpl::TItemComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetItemComplete()
+template <class TParams>
+typename CParallelProcessing<TParams>::SImpl::TItemComplete CParallelProcessing<TParams>::SImpl::GetItemComplete()
 {
-    return SParams::verbose ? &SImpl::ItemComplete<verbose> : &SImpl::ItemComplete<no_verbose>;
+    // MS VS does not like the ternary operator here anymore
+    if (SParams::verbose) {
+        return &s_ItemComplete<verbose>;
+    } else {
+        return &s_ItemComplete<no_verbose>;
+    }
 }
 
-template <>
-CParallelProcessing<SBatchResolveParams>::SImpl::TReplyComplete CParallelProcessing<SBatchResolveParams>::SImpl::GetReplyComplete()
+template <class TParams>
+typename CParallelProcessing<TParams>::SImpl::TReplyComplete CParallelProcessing<TParams>::SImpl::GetReplyComplete()
 {
-    return SParams::verbose ? &SImpl::ReplyComplete<verbose> : &SImpl::ReplyComplete<no_verbose>;
+    // MS VS does not like the ternary operator here anymore
+    if (SParams::verbose) {
+        return &s_ReplyComplete<verbose>;
+    } else {
+        return &s_ReplyComplete<no_verbose>;
+    }
 }
 
 template <>
@@ -859,8 +858,7 @@ using server_mode = true_type;
 using no_server_mode = false_type;
 
 template <>
-template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<testing, server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void s_ReplyComplete<SInteractiveParams, testing, server_mode>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
     const auto& request_id = *request->GetUserContext<string>();
@@ -870,39 +868,35 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<testing, serv
 }
 
 template <>
-template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<testing, no_server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void s_ReplyComplete<SInteractiveParams, testing, no_server_mode>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     if (status != EPSG_Status::eSuccess) {
-        ReplyComplete<testing, server_mode>(status, reply);
+        s_ReplyComplete<SInteractiveParams, testing, server_mode>(json_out, status, reply);
     }
 }
 
 template <>
-template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<no_testing, server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void s_ReplyComplete<SInteractiveParams, no_testing, server_mode>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
     CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
     guard.SetStatus(s_PsgStatusToRequestStatus(status));
 
-    ReplyComplete<testing, server_mode>(status, reply);
+    s_ReplyComplete<SInteractiveParams, testing, server_mode>(json_out, status, reply);
 }
 
 template <>
-template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ReplyComplete<no_testing, no_server_mode>(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void s_ReplyComplete<SInteractiveParams, no_testing, no_server_mode>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     const auto request = reply->GetRequest();
     CRequestContextGuard_Base guard(request->GetRequestContext()->Clone());
     guard.SetStatus(s_PsgStatusToRequestStatus(status));
 
-    ReplyComplete<testing, no_server_mode>(status, reply);
+    s_ReplyComplete<SInteractiveParams, testing, no_server_mode>(json_out, status, reply);
 }
 
 template <>
-template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete<>(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+void s_ItemComplete<SInteractiveParams>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     const auto request = item->GetReply()->GetRequest();
     const auto& request_id = *request->GetUserContext<string>();
@@ -914,16 +908,26 @@ void CParallelProcessing<SInteractiveParams>::SImpl::ItemComplete<>(EPSG_Status 
 template <>
 CParallelProcessing<SInteractiveParams>::SImpl::TItemComplete CParallelProcessing<SInteractiveParams>::SImpl::GetItemComplete()
 {
-    return &SImpl::ItemComplete<>;
+    return &s_ItemComplete<SInteractiveParams>;
 }
 
 template <>
 CParallelProcessing<SInteractiveParams>::SImpl::TReplyComplete CParallelProcessing<SInteractiveParams>::SImpl::GetReplyComplete()
 {
     if (m_Params.testing) {
-       return m_Params.server ? &SImpl::ReplyComplete<testing, server_mode> : &SImpl::ReplyComplete<testing, no_server_mode>;
+        // MS VS does not like the ternary operator here anymore
+        if (m_Params.server) {
+            return &s_ReplyComplete<SInteractiveParams, testing, server_mode>;
+        } else {
+            return &s_ReplyComplete<SInteractiveParams, testing, no_server_mode>;
+        }
     } else {
-       return m_Params.server ? &SImpl::ReplyComplete<no_testing, server_mode> : &SImpl::ReplyComplete<no_testing, no_server_mode>;
+        // MS VS does not like the ternary operator here anymore
+        if (m_Params.server) {
+            return &s_ReplyComplete<SInteractiveParams, no_testing, server_mode>;
+        } else {
+            return &s_ReplyComplete<SInteractiveParams, no_testing, no_server_mode>;
+        }
     }
 }
 
@@ -940,8 +944,8 @@ CParallelProcessing<TParams>::CParallelProcessing(const TParams& params) :
     m_Impl(params)
 {
     using namespace placeholders;
-    auto item_complete = bind(m_Impl.GetItemComplete(), &m_Impl, _1, _2);
-    auto reply_complete = bind(m_Impl.GetReplyComplete(), &m_Impl, _1, _2);
+    auto item_complete = bind(m_Impl.GetItemComplete(), ref(m_Impl.json_out), _1, _2);
+    auto reply_complete = bind(m_Impl.GetReplyComplete(), ref(m_Impl.json_out), _1, _2);
 
     for (int n = params.worker_threads; n > 0; --n) {
         m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
