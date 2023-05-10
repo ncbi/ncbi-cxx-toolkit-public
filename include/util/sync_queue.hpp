@@ -513,7 +513,7 @@ private:
     /// Current number of elements in the queue.
     /// Stored separately because some containers do not provide a size()
     /// method working in constant time
-    volatile TSize m_Size;
+    atomic<TSize> m_Size;
 
     /// Maximum size of the queue
     const TSize m_MaxSize;
@@ -1248,6 +1248,27 @@ CSyncQueue<Type, Container, Traits>::CSyncQueue(TSize max_size)
 
 template <class Type, class Container, class Traits>
 inline
+typename CSyncQueue<Type, Container, Traits>::TSize
+    CSyncQueue<Type, Container, Traits>::GetSize(void) const
+{
+    // GCC thread sanitizer says this is a data race. It was decided to
+    // consider it rather as timing for this particular case so the method is
+    // included into sanitizer suppressions
+    return m_Size;
+}
+
+
+template <class Type, class Container, class Traits>
+inline
+typename CSyncQueue<Type, Container, Traits>::TSize
+    CSyncQueue<Type, Container, Traits>::GetMaxSize(void) const
+{
+    return m_MaxSize;
+}
+
+
+template <class Type, class Container, class Traits>
+inline
 bool CSyncQueue<Type, Container, Traits>::IsEmpty(void) const
 {
     return m_Size == 0;
@@ -1478,27 +1499,6 @@ bool CSyncQueue<Type, Container, Traits>::x_IsGuarded(void) const
         return false;
 
     return m_CurGuardTID == GetCurrentThreadSystemID();
-}
-
-
-template <class Type, class Container, class Traits>
-inline
-typename CSyncQueue<Type, Container, Traits>::TSize
-    CSyncQueue<Type, Container, Traits>::GetSize(void) const
-{
-    // GCC thread sanitizer says this is a data race. It was decided to
-    // consider it rather as timing for this particular case so the method is
-    // included into sanitizer suppressions
-    return m_Size;
-}
-
-
-template <class Type, class Container, class Traits>
-inline
-typename CSyncQueue<Type, Container, Traits>::TSize
-    CSyncQueue<Type, Container, Traits>::GetMaxSize(void) const
-{
-    return m_MaxSize;
 }
 
 
