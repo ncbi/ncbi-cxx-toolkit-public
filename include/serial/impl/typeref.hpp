@@ -94,7 +94,7 @@ public:
     ~CTypeRef(void);
 
     TTypeInfo Get(void) const;
-    DECLARE_OPERATOR_BOOL(m_Getter != sx_GetAbort);
+    DECLARE_OPERATOR_BOOL(m_Getter.load(memory_order_acquire) != sx_GetAbort);
 
     bool operator==(const CTypeRef& typeRef) const
     {
@@ -115,8 +115,9 @@ private:
     static TTypeInfo sx_GetProc(const CTypeRef& typeRef);
     static TTypeInfo sx_GetResolve(const CTypeRef& typeRef);
 
-    TTypeInfo (*m_Getter)(const CTypeRef& );
-    TTypeInfo m_ReturnData;
+    typedef TTypeInfo (*TGetter)(const CTypeRef& );
+    atomic<TGetter> m_Getter;
+    atomic<TTypeInfo> m_ReturnData;
     union {
         TGetProc m_GetProcData;
         CTypeInfoSource* m_ResolveData;

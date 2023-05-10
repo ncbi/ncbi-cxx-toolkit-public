@@ -101,34 +101,35 @@ CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
 
 void CTypeRef::Unref(void)
 {
-    if ( m_Getter == sx_GetResolve ) {
+    if ( m_Getter.load(memory_order_acquire) == sx_GetResolve ) {
         XSERIAL_TYPEINFO_WRITELOCK;
-        if ( m_Getter == sx_GetResolve ) {
-            m_Getter = sx_GetAbort;
+        if ( m_Getter.load(memory_order_acquire) == sx_GetResolve ) {
+            m_Getter.store(sx_GetAbort, memory_order_release);
             if ( m_ResolveData->m_RefCount.Add(-1) <= 0 ) {
                 delete m_ResolveData;
                 m_ResolveData = 0;
             }
         }
     }
-    m_Getter = sx_GetAbort;
-    m_ReturnData = 0;
+    m_Getter.store(sx_GetAbort, memory_order_release);
+    m_ReturnData.store(0, memory_order_release);
 }
 
 void CTypeRef::Assign(const CTypeRef& typeRef)
 {
-    if ( typeRef.m_ReturnData ) {
-        m_ReturnData = typeRef.m_ReturnData;
-        m_Getter = sx_GetReturn;
+    if ( auto data = typeRef.m_ReturnData.load(memory_order_relaxed) ) {
+        m_ReturnData.store(data, memory_order_release);
+        m_Getter.store(sx_GetReturn, memory_order_release);
     }
     else {
         XSERIAL_TYPEINFO_WRITELOCK;
-        m_ReturnData = typeRef.m_ReturnData;
-        m_Getter = typeRef.m_Getter;
-        if ( m_Getter == sx_GetProc ) {
+        m_ReturnData.store(typeRef.m_ReturnData.load(memory_order_acquire), memory_order_release);
+        auto getter = typeRef.m_Getter.load(memory_order_acquire);
+        m_Getter.store(getter, memory_order_release);
+        if ( getter == sx_GetProc ) {
             m_GetProcData = typeRef.m_GetProcData;
         }
-        else if ( m_Getter == sx_GetResolve ) {
+        else if ( getter == sx_GetResolve ) {
             (m_ResolveData = typeRef.m_ResolveData)->m_RefCount.Add(1);
         }
     }
@@ -137,8 +138,9 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
 TTypeInfo CTypeRef::sx_GetAbort(const CTypeRef& typeRef)
 {
     XSERIAL_TYPEINFO_WRITELOCK;
-    if (typeRef.m_Getter != sx_GetAbort)
-        return typeRef.m_Getter(typeRef);
+    auto getter = typeRef.m_Getter.load(memory_order_acquire);
+    if (getter != sx_GetAbort)
+        return getter(typeRef);
     NCBI_THROW(CSerialException,eFail, "uninitialized type ref");
 }
 
@@ -150,21 +152,23 @@ TTypeInfo CTypeRef::sx_GetReturn(const CTypeRef& typeRef)
 TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 {
     XSERIAL_TYPEINFO_WRITELOCK;
-    if (typeRef.m_Getter != sx_GetProc)
-        return typeRef.m_Getter(typeRef);
+    auto getter = typeRef.m_Getter.load(memory_order_acquire);
+    if (getter != sx_GetProc)
+        return getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_GetProcData();
     if ( !typeInfo )
         NCBI_THROW(CSerialException,eFail, "cannot resolve type ref");
-    const_cast<CTypeRef&>(typeRef).m_ReturnData = typeInfo;
-    const_cast<CTypeRef&>(typeRef).m_Getter = sx_GetReturn;
+    const_cast<CTypeRef&>(typeRef).m_ReturnData.store(typeInfo, memory_order_release);
+    const_cast<CTypeRef&>(typeRef).m_Getter.store(sx_GetReturn, memory_order_release);
     return typeInfo;
 }
 
 TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
 {
     XSERIAL_TYPEINFO_WRITELOCK;
-    if (typeRef.m_Getter != sx_GetResolve)
-        return typeRef.m_Getter(typeRef);
+    auto getter = typeRef.m_Getter.load(memory_order_acquire);
+    if (getter != sx_GetResolve)
+        return getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_ResolveData->GetTypeInfo();
     if ( !typeInfo )
         NCBI_THROW(CSerialException,eFail, "cannot resolve type ref");
@@ -172,8 +176,8 @@ TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
         delete typeRef.m_ResolveData;
         const_cast<CTypeRef&>(typeRef).m_ResolveData = 0;
     }
-    const_cast<CTypeRef&>(typeRef).m_ReturnData = typeInfo;
-    const_cast<CTypeRef&>(typeRef).m_Getter = sx_GetReturn;
+    const_cast<CTypeRef&>(typeRef).m_ReturnData.store(typeInfo, memory_order_release);
+    const_cast<CTypeRef&>(typeRef).m_Getter.store(sx_GetReturn, memory_order_release);
     return typeInfo;
 }
 
