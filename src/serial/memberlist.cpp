@@ -45,33 +45,31 @@
 BEGIN_NCBI_SCOPE
 
 CItemsInfo::CItemsInfo(void)
-    : m_ZeroTagIndex(kInvalidMember)
+    : m_ItemsByName(0),
+      m_ZeroTagIndex(kInvalidMember),
+      m_ItemsByTag(0),
+      m_ItemsByOffset(0)
 {
 }
 
 CItemsInfo::~CItemsInfo(void)
 {
-// NOTE:  This compiler bug was fixed by Jan 24 2002, test passed with:
-//           CC: Sun WorkShop 6 update 2 C++ 5.3 Patch 111685-03 2001/10/19
-//        We leave the workaround here for maybe half a year (for other guys).
-#if defined(NCBI_COMPILER_WORKSHOP)
-// We have to use two #if's here because KAI C++ cannot handle #if foo == bar
-#  if (NCBI_COMPILER_VERSION == 530)
-    // BW_010::  to workaround (already reported to SUN, CASE ID 62563729)
-    //           internal bug of the SUN Forte 6 Update 1 and Update 2 compiler
-    (void) atoi("5");
-#  endif
-#endif
+    ClearIndexes();
+}
+
+void CItemsInfo::ClearIndexes()
+{
+    // clear cached maps (byname and bytag)
+    delete m_ItemsByName.exchange(nullptr);
+    m_ZeroTagIndex = kInvalidMember;
+    delete m_ItemsByTag.exchange(nullptr);
+    delete m_ItemsByOffset.exchange(nullptr);
+
 }
 
 void CItemsInfo::AddItem(CItemInfo* item)
 {
-    // clear cached maps (byname and bytag)
-    m_ItemsByName.reset();
-    m_ZeroTagIndex = kInvalidMember;
-    m_ItemsByTag.reset();
-    m_ItemsByOffset.reset();
-
+    ClearIndexes();
     // add item
     m_Items.push_back(AutoPtr<CItemInfo>(item));
     item->m_Index = LastIndex();
@@ -117,12 +115,13 @@ DEFINE_STATIC_FAST_MUTEX(s_ItemsMapMutex);
 
 const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
 {
-    TItemsByName* items = m_ItemsByName.get();
+    TItemsByName* items = m_ItemsByName.load(memory_order_acquire);
     if ( !items ) {
         CFastMutexGuard GUARD(s_ItemsMapMutex);
-        items = m_ItemsByName.get();
+        items = m_ItemsByName.load(memory_order_acquire);
         if ( !items ) {
-            shared_ptr<TItemsByName> keep(items = new TItemsByName);
+            unique_ptr<TItemsByName> keep = make_unique<TItemsByName>();
+            items = keep.get();
             for ( CIterator i(*this); i.Valid(); ++i ) {
                 const CItemInfo* itemInfo = GetItemInfo(i);
                 const string& name = itemInfo->GetId().GetName();
@@ -132,7 +131,8 @@ const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
                             string("duplicate member name: ")+name);
                 }
             }
-            m_ItemsByName = keep;
+            m_ItemsByName.store(items, memory_order_release);
+            keep.release();
         }
     }
     return *items;
@@ -141,13 +141,14 @@ const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
 const CItemsInfo::TItemsByOffset&
 CItemsInfo::GetItemsByOffset(void) const
 {
-    TItemsByOffset* items = m_ItemsByOffset.get();
+    TItemsByOffset* items = m_ItemsByOffset.load(memory_order_acquire);
     if ( !items ) {
         CFastMutexGuard GUARD(s_ItemsMapMutex);
-        items = m_ItemsByOffset.get();
+        items = m_ItemsByOffset.load(memory_order_acquire);
         if ( !items ) {
             // create map
-            shared_ptr<TItemsByOffset> keep(items = new TItemsByOffset);
+            unique_ptr<TItemsByOffset> keep = make_unique<TItemsByOffset>();
+            items = keep.get();
             // fill map 
             for ( CIterator i(*this); i.Valid(); ++i ) {
                 const CItemInfo* itemInfo = GetItemInfo(i);
@@ -169,7 +170,8 @@ CItemsInfo::GetItemsByOffset(void) const
             nextOffset = offset + m_Members[m->second]->GetSize();
         }
 */
-            m_ItemsByOffset = keep;
+            m_ItemsByOffset.store(items, memory_order_release);
+            keep.release();
         }
     }
     return *items;
@@ -206,10 +208,12 @@ pair<TMemberIndex, const CItemsInfo::TItemsByTag*>
 CItemsInfo::GetItemsByTagInfo(void) const
 {
     typedef pair<TMemberIndex, const TItemsByTag*> TReturn;
-    TReturn ret(m_ZeroTagIndex, m_ItemsByTag.get());
+    TReturn ret(m_ZeroTagIndex.load(memory_order_acquire),
+                m_ItemsByTag.load(memory_order_acquire));
     if ( ret.first == kInvalidMember && ret.second == 0 ) {
         CFastMutexGuard GUARD(s_ItemsMapMutex);
-        ret = TReturn(m_ZeroTagIndex, m_ItemsByTag.get());
+        ret = TReturn(m_ZeroTagIndex.load(memory_order_acquire),
+                      m_ItemsByTag.load(memory_order_acquire));
         if ( ret.first == kInvalidMember && ret.second == 0 ) {
             {
                 CIterator i(*this);
@@ -228,10 +232,10 @@ CItemsInfo::GetItemsByTagInfo(void) const
                 }
             }
             if ( ret.first != kInvalidMember ) {
-                m_ZeroTagIndex = ret.first;
+                m_ZeroTagIndex.store(ret.first, memory_order_release);
             }
             else {
-                shared_ptr<TItemsByTag> items(new TItemsByTag);
+                unique_ptr<TItemsByTag> items = make_unique<TItemsByTag>();
                 for ( CIterator i(*this); i.Valid(); ++i ) {
                     TTagAndClass tc = GetTagAndClass(i);
                     if (tc.first >= 0) {
@@ -242,7 +246,7 @@ CItemsInfo::GetItemsByTagInfo(void) const
                     }
                 }
                 ret.second = items.get();
-                m_ItemsByTag = items;
+                m_ItemsByTag.store(items.release(), memory_order_release);
             }
         }
     }
@@ -295,7 +299,6 @@ TMemberIndex CItemsInfo::FindDeep(const CTempString& name, TMemberIndex pos) con
     }
     for (CIterator item(*this, pos); item.Valid(); ++item) {
         const CItemInfo* info = GetItemInfo(item);
-        const CMemberId& id = info->GetId();
         const CClassTypeInfoBase* classType =
             dynamic_cast<const CClassTypeInfoBase*>(
                 FindRealTypeInfo(info->GetTypeInfo()));
@@ -434,9 +437,10 @@ TMemberIndex CItemsInfo::Find(const CTempString& name, TMemberIndex pos) const
 
 TMemberIndex CItemsInfo::Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass) const
 {
-    TMemberIndex zero_index = m_ZeroTagIndex;
-    if ( zero_index == kInvalidMember && !m_ItemsByTag.get() ) {
-        zero_index = GetItemsByTagInfo().first;
+    TMemberIndex zero_index = m_ZeroTagIndex.load(memory_order_acquire);
+    const TItemsByTag* items_by_tag = m_ItemsByTag.load(memory_order_acquire);
+    if ( zero_index == kInvalidMember && !items_by_tag ) {
+        tie(zero_index, items_by_tag) = GetItemsByTagInfo();
     }
     if ( zero_index != kInvalidMember ) {
         TMemberIndex index = tag + zero_index;
@@ -445,8 +449,8 @@ TMemberIndex CItemsInfo::Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass) cons
         return index;
     }
     else {
-        TItemsByTag::const_iterator mi = m_ItemsByTag->find( make_pair(tag,tagclass));
-        if ( mi == m_ItemsByTag->end() )
+        TItemsByTag::const_iterator mi = items_by_tag->find( make_pair(tag,tagclass));
+        if ( mi == items_by_tag->end() )
             return kInvalidMember;
         return mi->second;
     }
@@ -455,7 +459,7 @@ TMemberIndex CItemsInfo::Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass) cons
 TMemberIndex CItemsInfo::Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass, TMemberIndex pos) const
 {
     TMemberIndex zero_index = m_ZeroTagIndex;
-    if ( zero_index == kInvalidMember && !m_ItemsByTag.get() ) {
+    if ( zero_index == kInvalidMember && !m_ItemsByTag.load(memory_order_acquire) ) {
         zero_index = GetItemsByTagInfo().first;
     }
     if ( zero_index != kInvalidMember ) {
