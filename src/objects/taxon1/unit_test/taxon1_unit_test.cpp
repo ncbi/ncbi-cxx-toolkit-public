@@ -543,11 +543,11 @@ BOOST_AUTO_TEST_CASE(test_tax1_getAllNames)
 BOOST_AUTO_TEST_CASE(test_tax1_getTaxId4GI)
 {
     TTaxId taxid = 0;
-    bool b = tax1.GetTaxId4GI( TGi(1000), taxid );
+    bool b = tax1.GetTaxId4GI( TGi(1000L), taxid );
     BOOST_REQUIRE( b == true );
     BOOST_REQUIRE( taxid == 9749 );
     // Not found
-    b = tax1.GetTaxId4GI( TGi(0), taxid );
+    b = tax1.GetTaxId4GI( TGi(0L), taxid );
     BOOST_REQUIRE( b == true );
     BOOST_REQUIRE( taxid == 0 );
 
