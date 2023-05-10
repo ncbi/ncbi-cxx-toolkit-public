@@ -543,15 +543,15 @@ BOOST_AUTO_TEST_CASE(test_tax1_getAllNames)
 BOOST_AUTO_TEST_CASE(test_tax1_getTaxId4GI)
 {
     TTaxId taxid = 0;
-    bool b = tax1.GetTaxId4GI( TGi(1000L), taxid );
+    bool b = tax1.GetTaxId4GI( GI_CONST(1000), taxid );
     BOOST_REQUIRE( b == true );
     BOOST_REQUIRE( taxid == 9749 );
     // Not found
-    b = tax1.GetTaxId4GI( TGi(0L), taxid );
+    b = tax1.GetTaxId4GI( ZERO_GI, taxid );
     BOOST_REQUIRE( b == true );
     BOOST_REQUIRE( taxid == 0 );
 
-    b = tax1.GetTaxId4GI( TGi(0x100000000LL + 1000), taxid );
+    b = tax1.GetTaxId4GI( GI_CONST(0x100000000LL + 1000), taxid );
     BOOST_REQUIRE( b == true );
     if( ncbi::NStr::EndsWith( CNcbiApplicationAPI::Instance()->GetArgs()["service"].AsString(), "dev", ncbi::NStr::eNocase ) ) {
         BOOST_REQUIRE( taxid == 9749 );
