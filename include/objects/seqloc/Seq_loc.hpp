@@ -394,10 +394,10 @@ private:
         kSeveralIds = -3
     };
 
-    mutable volatile TSeqPos m_TotalRangeCacheFrom;
-    mutable volatile TSeqPos m_TotalRangeCacheToOpen;
+    mutable atomic<TSeqPos>         m_TotalRangeCacheFrom;
+    mutable atomic<TSeqPos>         m_TotalRangeCacheToOpen;
     // Seq-id for the whole seq-loc or null if multiple IDs were found
-    mutable const CSeq_id* volatile m_IdCache;
+    mutable atomic<const CSeq_id*>  m_IdCache;
 };
 
 
@@ -882,14 +882,14 @@ protected:
 inline
 void CSeq_loc::InvalidateTotalRangeCache(void) const
 {
-    m_TotalRangeCacheFrom = TSeqPos(kDirtyCache);
+    m_TotalRangeCacheFrom.store(TSeqPos(kDirtyCache), memory_order_release);
 }
 
 
 inline
 void CSeq_loc::InvalidateIdCache(void) const
 {
-    m_IdCache = NULL;
+    m_IdCache.store(NULL, memory_order_release);
 }
 
 
@@ -912,12 +912,12 @@ CSeq_loc::CSeq_loc(void)
 inline
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
-    TSeqPos range_from  = m_TotalRangeCacheFrom;
+    TSeqPos range_from  = m_TotalRangeCacheFrom.load(memory_order_acquire);
     if ( range_from == TSeqPos(kDirtyCache) ) {
         return x_UpdateTotalRange();
     }
     else {
-        TSeqPos range_to_open  = m_TotalRangeCacheToOpen;
+        TSeqPos range_to_open  = m_TotalRangeCacheToOpen.load(memory_order_relaxed);
         return COpenRange<TSeqPos>(range_from, range_to_open);
     }
 }
@@ -926,12 +926,12 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 inline
 bool CSeq_loc::CheckId(const CSeq_id*& id, bool may_throw) const
 {
-    const CSeq_id* my_id = m_IdCache;
+    const CSeq_id* my_id = m_IdCache.load(memory_order_acquire);
     if ( my_id == NULL ) {
         if ( !x_CheckId(my_id, may_throw) ) {
             return false;
         }
-        m_IdCache = my_id;
+        m_IdCache.store(my_id, memory_order_release);
     }
     return x_UpdateId(id, my_id, may_throw);
 }
@@ -952,7 +952,7 @@ void CSeq_loc::SetId(const CSeq_id& id)
     CRef<CSeq_id> nc_id(new CSeq_id);
     nc_id->Assign(id);
     SetId(*nc_id);
-    m_IdCache = nc_id.GetPointer();
+    m_IdCache.store(nc_id.GetPointer(), memory_order_release);
 }
 
 
