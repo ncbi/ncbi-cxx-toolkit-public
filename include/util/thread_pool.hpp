@@ -187,13 +187,13 @@ private:
     /// Flag indicating that the task is already added to some pool
     CAtomicCounter_WithAutoInit m_IsBusy;
     /// Pool owning this task
-    CThreadPool_Impl*  m_Pool;
+    atomic<CThreadPool_Impl*> m_Pool;
     /// Priority of the task
     unsigned int       m_Priority;
     /// Status of the task
-    EStatus            m_Status;
+    atomic<EStatus>    m_Status;
     /// Flag indicating if cancellation of the task was already requested
-    volatile bool      m_CancelRequested;
+    atomic<bool>       m_CancelRequested;
 };
 
 
@@ -586,7 +586,7 @@ private:
     void x_DetachFromPool(void);
 
     /// ThreadPool to which this controller is attached
-    CThreadPool_Impl*  m_Pool;
+    atomic<CThreadPool_Impl*> m_Pool;
     /// Minimum number of threads in pool
     unsigned int       m_MinThreads;
     /// Maximum number of threads in pool
