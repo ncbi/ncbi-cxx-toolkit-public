@@ -107,7 +107,7 @@ private:
     size_t               m_BufSize;
     void*                m_DelPtr;
 
-    static volatile int  sm_Index;
+    static atomic<int>   sm_Index;
     static void          x_Callback(IOS_BASE::event, IOS_BASE&, int);
 
     static const size_t  kMinBufSize;
@@ -117,7 +117,7 @@ private:
 const size_t CPushback_Streambuf::kMinBufSize = 4096;
 
 
-volatile int CPushback_Streambuf::sm_Index = -1;  // uninited
+atomic<int> CPushback_Streambuf::sm_Index = -1;  // uninited
 
 
 void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
@@ -125,7 +125,7 @@ void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
                                      int             index)
 {
     if (event == IOS_BASE::erase_event) {
-        _ASSERT(index == sm_Index);
+        _ASSERT(index == sm_Index.load(memory_order_relaxed));
         delete static_cast<streambuf*> (ios.pword(index));
     }
 }
@@ -143,18 +143,21 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     m_Sb = m_Is.rdbuf(this);
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (m_Sb);
     try {
+        auto index = sm_Index.load(memory_order_relaxed);
         if (!sb) {
-            if (sm_Index == -1) {
+            if (index == -1) {
                 DEFINE_STATIC_FAST_MUTEX(s_PushbackMutex);
                 CFastMutexGuard guard(s_PushbackMutex);
-                if (sm_Index == -1) {
-                    sm_Index  = IOS_BASE::xalloc();
+                index = sm_Index.load(memory_order_acquire);
+                if (index == -1) {
+                    index = IOS_BASE::xalloc();
+                    sm_Index.store(index, memory_order_release);
                 }
             }
-            m_Is.register_callback(x_Callback, sm_Index);
+            m_Is.register_callback(x_Callback, index);
         }
-        m_Next = static_cast<CPushback_Streambuf*> (m_Is.pword(sm_Index));
-        m_Is.pword(sm_Index) = this;
+        m_Next = static_cast<CPushback_Streambuf*> (m_Is.pword(index));
+        m_Is.pword(index) = this;
     }
     STD_CATCH_ALL_X(1, (m_Is.clear(NcbiBadbit),
                         "CPushback_Streambuf::CPushback_Streambuf"));
@@ -163,8 +166,9 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
 
 CPushback_Streambuf::~CPushback_Streambuf()
 {
-    if (m_Is.pword(sm_Index) == this) {
-        m_Is.pword(sm_Index)  = 0;
+    auto index = sm_Index.load(memory_order_relaxed);
+    if (m_Is.pword(index) == this) {
+        m_Is.pword(index)  = 0;
     }
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
     delete m_Next;
