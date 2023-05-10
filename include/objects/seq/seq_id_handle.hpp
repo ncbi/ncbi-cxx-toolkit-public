@@ -86,22 +86,22 @@ public:
     // locking
     void AddLock(void) const
         {
-            m_LockCounter.Add(1);
+            ++m_LockCounter;
         }
     void RemoveLock(void) const
         {
-            if ( m_LockCounter.Add(-1) <= 0 ) {
+            if ( --m_LockCounter <= 0 ) {
                 x_RemoveLastLock();
             }
         }
     bool IsLocked(void) const
         {
-            return m_LockCounter.Get() != 0;
+            return m_LockCounter != 0;
         }
 
     CSeq_id::E_Choice GetType(void) const
         {
-            return m_Seq_id_Type;
+            return m_Seq_id_Type.load(memory_order_relaxed);
         }
     CSeq_id_Mapper& GetMapper(void) const
         {
@@ -116,8 +116,8 @@ protected:
 
     NCBI_SEQ_EXPORT void x_RemoveLastLock(void) const;
 
-    mutable CAtomicCounter_WithAutoInit m_LockCounter;
-    CSeq_id::E_Choice            m_Seq_id_Type;
+    mutable atomic<Uint8>        m_LockCounter{0};
+    atomic<CSeq_id::E_Choice>    m_Seq_id_Type;
     CConstRef<CSeq_id>           m_Seq_id;
     mutable CRef<CSeq_id_Mapper> m_Mapper;
 
