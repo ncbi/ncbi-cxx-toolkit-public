@@ -814,6 +814,11 @@ public:
         m_Interrupt.SetInterruptCallback(prg_callback, data);
     }
 
+    void SetScope(CScope &scope)
+    {   m_scope = &scope; }
+
+    void SetTranslationTable(int gcode)
+    { m_matrix.SetTranslationTable(new CTranslationTable(gcode, m_scoring.GetAltStarts())); }
 
 private:
     virtual int stage1() = 0;
@@ -1058,6 +1063,11 @@ CProSplign::~CProSplign()
 {
 }
 
+void CProSplign::SetTranslationTable(int gcode)
+{
+    m_implementation->SetTranslationTable(gcode);
+}
+
 namespace {
 /// true if first and last aa are aligned, nothing about inside holes
 bool IsProteinSpanWhole(const CSpliced_seg& sps)
@@ -1232,6 +1242,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
         refined_align->SetType(CSeq_align::eType_disc);
     }
 
+    m_implementation->SetScope(scope);
     m_implementation->SeekStartStop(*refined_align);
     prosplign::SetScores(*refined_align, scope, output_options.GetScoreMatrix());
 
