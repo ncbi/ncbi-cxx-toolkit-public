@@ -7,7 +7,7 @@
 LC_ALL=C
 export LC_ALL
 
-new_module=$NCBI/c++.metastable/Release/build/new_module.sh
+new_module=$NCBI/c++.metastable/ReleaseMT/build/new_module.sh
 clients=false
 force=false
 
