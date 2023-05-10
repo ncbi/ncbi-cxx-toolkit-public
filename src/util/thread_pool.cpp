@@ -367,7 +367,7 @@ private:
     /// FALSE - queue_size == 0, TRUE - queue_size > 0
     bool                             m_IsQueueAllowed;
     /// If pool is already aborted or not
-    volatile bool                    m_Aborted;
+    atomic<bool>                     m_Aborted;
     /// Semaphore for waiting for threads finishing in Abort() method
     ///
     /// @sa Abort()
@@ -379,7 +379,7 @@ private:
     /// any case. Also everything is written with the assumption that there's
     /// no other threads (besides this very thread pool) that could call any
     /// methods here.
-    volatile bool                    m_Suspended;
+    atomic<bool>                     m_Suspended;
     /// Requested requirements for the exclusive execution environment
     volatile TExclusiveFlags         m_SuspendFlags;
     /// Flag indicating if flush of threads requested after adding exclusive
@@ -486,9 +486,9 @@ private:
     /// Pool running the thread
     CRef<CThreadPool_Impl>       m_Pool;
     /// If the thread is already asked to finish or not
-    volatile bool                m_Finishing;
+    atomic<bool>                 m_Finishing;
     /// If cancel of the currently executing task is requested or not
-    volatile bool                m_CancelRequested;
+    atomic<bool>                 m_CancelRequested;
     /// Idleness of the thread
     bool                         m_IsIdle;
     /// Task currently executing in the thread
@@ -542,9 +542,9 @@ private:
     /// Semaphore for idle sleeping
     CSemaphore              m_IdleTrigger;
     /// If finishing of the thread is already requested
-    volatile bool           m_Finishing;
+    atomic<bool>            m_Finishing;
     /// If the thread has already finished its Main() method
-    volatile bool           m_Finished;
+    atomic<bool>            m_Finished;
     /// Currently executing exclusive task
     CRef<CThreadPool_Task>  m_CurrentTask;
     /// Flag indicating that thread should pass eOther event to the controller
@@ -719,7 +719,7 @@ CThreadPool_Impl::IsAborted(void) const
 inline bool
 CThreadPool_Impl::IsSuspended(void) const
 {
-    return m_Suspended;
+    return m_Suspended.load(memory_order_acquire);
 }
 
 inline unsigned int
@@ -759,7 +759,7 @@ CThreadPool_Impl::CallController(CThreadPool_Controller::EEvent event)
 {
     CThreadPool_Controller* controller = m_Controller.GetNCPointerOrNull();
     if (controller  &&  ! m_Aborted  &&
-        (! m_Suspended  ||  event == CThreadPool_Controller::eSuspend))
+        (! IsSuspended()  ||  event == CThreadPool_Controller::eSuspend))
     {
         controller->HandleEvent(event);
     }
@@ -812,7 +812,7 @@ CThreadPool_Impl::ThreadStateChanged(void)
             m_AbortWait.Post();
         }
     }
-    else if (m_Suspended) {
+    else if (IsSuspended()) {
         if (((m_SuspendFlags & CThreadPool::fFlushThreads)
                  &&  GetThreadsCount() == 0)
             ||  (! (m_SuspendFlags & CThreadPool::fFlushThreads)
@@ -841,7 +841,7 @@ CThreadPool_Impl::ThreadStopped(CThreadPool_ThreadImpl* thread)
 inline CRef<CThreadPool_Task>
 CThreadPool_Impl::TryGetNextTask(void)
 {
-    if ( !m_Suspended ) {
+    if ( !IsSuspended() ) {
         TQueue::TAccessGuard guard(m_Queue);
 
         if (m_Queue.GetSize() != 0) {
@@ -890,7 +890,7 @@ inline void
 CThreadPool_Impl::RequestSuspend(TExclusiveFlags flags)
 {
     m_SuspendFlags = flags;
-    m_Suspended = true;
+    m_Suspended.store(true, memory_order_release);
     if (flags & CThreadPool::fCancelQueuedTasks) {
         x_CancelQueuedTasks();
     }
@@ -908,7 +908,7 @@ CThreadPool_Impl::RequestSuspend(TExclusiveFlags flags)
 inline void
 CThreadPool_Impl::ResumeWork(void)
 {
-    m_Suspended = false;
+    m_Suspended.store(false, memory_order_release);
 
     CallController(CThreadPool_Controller::eResume);
 
@@ -1454,7 +1454,7 @@ CThreadPool_Impl::x_Init(CThreadPool*             pool_intf,
     m_ExecutingTasks.Set(0);
     m_TotalTasks.Set(0);
     m_Aborted = false;
-    m_Suspended = false;
+    m_Suspended.store(false, memory_order_relaxed);
     m_FlushRequested = false;
     m_ThreadsMode = (threads_mode | CThread::fRunDetached)
                      & ~CThread::fRunAllowST;
@@ -1476,7 +1476,10 @@ CThreadPool_Impl::DestroyReference(void)
     Abort(&m_DestroyTimeout);
 
     m_Interface = NULL;
-    m_ServiceThread = NULL;
+    {{
+        CThreadPool_Guard guard(this);
+        m_ServiceThread = NULL;
+    }}
     m_SelfRef = NULL;
 }
 
@@ -1553,7 +1556,7 @@ CThreadPool_Impl::SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle)
 {
     CThreadPool_Guard guard(this);
 
-    if (is_idle  &&  !m_Suspended  &&  m_Queue.GetSize() != 0) {
+    if (is_idle  &&  !IsSuspended()  &&  m_Queue.GetSize() != 0) {
         thread->WakeUp();
         return false;
     }
@@ -1575,7 +1578,7 @@ CThreadPool_Impl::SetThreadIdle(CThreadPool_ThreadImpl* thread, bool is_idle)
     }
     to_ins->insert(thread);
 
-    if (is_idle  &&  m_Suspended
+    if (is_idle  &&  IsSuspended()
         &&  (m_SuspendFlags & CThreadPool::fFlushThreads))
     {
         thread->RequestToFinish();
@@ -1590,7 +1593,7 @@ CThreadPool_Impl::x_NoNewTaskAllowed(void) const
 {
     return
         m_Aborted  ||
-        (m_Suspended  &&  (m_SuspendFlags & CThreadPool::fDoNotAllowNewTasks));
+        (IsSuspended()  &&  (m_SuspendFlags & CThreadPool::fDoNotAllowNewTasks));
 }
 
 bool
@@ -1604,7 +1607,7 @@ CThreadPool_Impl::x_CanAddImmediateTask(void) const
     }
 
     return
-        !m_Suspended  &&
+        !IsSuspended()  &&
         (unsigned int) m_TotalTasks.Get() < m_Controller->GetMaxThreads();
 }
 
@@ -1722,7 +1725,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
     // able to acquire the mutex
     CThreadPool::TExclusiveFlags check_flags
         = CThreadPool::fDoNotAllowNewTasks | CThreadPool::fCancelQueuedTasks;
-    if (m_Aborted  ||  (m_Suspended
+    if (m_Aborted  ||  (IsSuspended()
                         &&  (m_SuspendFlags & check_flags)  == check_flags))
     {
         if (m_Queue.GetSize() != 0) {
@@ -1737,7 +1740,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
         LaunchThreads(cnt_req - GetThreadsCount());
     }
 
-    if (! m_Suspended) {
+    if (! IsSuspended()) {
         int count = GetQueuedTasksCount();
         ITERATE(TThreadsList, it, m_IdleThreads) {
             if (! (*it)->IsFinishing()) {
@@ -1884,7 +1887,7 @@ CThreadPool_Impl::FlushThreads(CThreadPool::EFlushType flush_type)
     }
 
     if (flush_type == CThreadPool::eStartImmediately
-        ||  (flush_type == CThreadPool::eWaitToFinish  &&  m_Suspended))
+        ||  (flush_type == CThreadPool::eWaitToFinish  &&  IsSuspended()))
     {
         FinishThreads(GetThreadsCount());
     }
