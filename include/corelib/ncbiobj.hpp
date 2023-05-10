@@ -306,8 +306,8 @@ protected:
     virtual void DeleteThis(void);
 
 public:
-    typedef CAtomicCounter   TCounter;  ///< Counter type is CAtomiCounter
-    typedef TCounter::TValue TCount;    ///< Alias for value type of counter
+    typedef atomic<Uint8>    TCounter;  ///< Counter type is CAtomiCounter
+    typedef Uint8            TCount;    ///< Alias for value type of counter
 
     /// Define possible object states.
     /// 
@@ -453,28 +453,28 @@ bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
 inline
 bool CObject::CanBeDeleted(void) const THROWS_NONE
 {
-    return ObjectStateCanBeDeleted(m_Counter.Get());
+    return ObjectStateCanBeDeleted(m_Counter);
 }
 
 
 inline
 bool CObject::IsAllocatedInPool(void) const THROWS_NONE
 {
-    return ObjectStateIsAllocatedInPool(m_Counter.Get());
+    return ObjectStateIsAllocatedInPool(m_Counter);
 }
 
 
 inline
 bool CObject::Referenced(void) const THROWS_NONE
 {
-    return ObjectStateReferenced(m_Counter.Get());
+    return ObjectStateReferenced(m_Counter);
 }
 
 
 inline
 bool CObject::ReferencedOnlyOnce(void) const THROWS_NONE
 {
-    return ObjectStateReferencedOnlyOnce(m_Counter.Get());
+    return ObjectStateReferencedOnlyOnce(m_Counter);
 }
 
 
@@ -488,9 +488,9 @@ CObject& CObject::operator=(const CObject& ) THROWS_NONE
 inline
 void CObject::AddReference(void) const
 {
-    TCount newCount = m_Counter.Add(eCounterStep);
+    TCount newCount = (m_Counter += eCounterStep);
     if ( !ObjectStateReferenced(newCount) ) {
-        m_Counter.Add(-eCounterStep); // undo
+        m_Counter -= eCounterStep; // undo
         CheckReferenceOverflow(newCount - eCounterStep);
     }
 }
@@ -499,7 +499,7 @@ void CObject::AddReference(void) const
 inline
 void CObject::RemoveReference(void) const
 {
-    TCount newCount = m_Counter.Add(-eCounterStep);
+    TCount newCount = (m_Counter -= eCounterStep);
     if ( !ObjectStateReferenced(newCount) ) {
         RemoveLastReference(newCount);
     }

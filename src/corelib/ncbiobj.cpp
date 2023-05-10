@@ -497,7 +497,7 @@ void* CObject::operator new(size_t size)
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterNew);
 #  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
-    static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterNew);
+    static_cast<CObject*>(ptr)->m_Counter = eMagicCounterNew;
 #endif// USE_TLS_PTR
     return ptr;
 #endif
@@ -512,7 +512,7 @@ void CObject::operator delete(void* ptr)
 # ifdef _DEBUG
     TCount magic = sx_PopLastNewPtr(ptr);
     if ( !magic ) { // counter already initialized
-        magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+        magic = static_cast<CObject*>(ptr)->m_Counter;
     }
 # else// !_DEBUG
     // Just remove saved operator new info.
@@ -520,7 +520,7 @@ void CObject::operator delete(void* ptr)
 # endif// _DEBUG
 #else// !USE_TLS_PTR
 # ifdef _DEBUG
-    TCount magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+    TCount magic = static_cast<CObject*>(ptr)->m_Counter;
 # endif// _DEBUG
 #endif// USE_TLS_PTR
 
@@ -549,7 +549,7 @@ void CObject::operator delete(void* _DEBUG_ARG(ptr), void* /*place*/)
 #if !USE_TLS_PTR
 # ifdef _DEBUG
     CObject* objectPtr = static_cast<CObject*>(ptr);
-    TCount magic = objectPtr->m_Counter.Get();
+    TCount magic = objectPtr->m_Counter;
     // magic can be equal to:
     // 1. eMagicCounterDeleted when memory is freed after CObject destructor.
     // 2. 0 when memory is freed before CObject constructor.
@@ -577,7 +577,7 @@ void* CObject::operator new(size_t size, CObjectMemoryPool* memory_pool)
 #  if USE_COMPLEX_MASK
     GetSecondCounter(static_cast<CObject*>(ptr))->Set(eMagicCounterPoolNew);
 #  endif// USE_COMPLEX_MASK
-    static_cast<CObject*>(ptr)->m_Counter.Set(eMagicCounterPoolNew);
+    static_cast<CObject*>(ptr)->m_Counter = eMagicCounterPoolNew;
 #endif// USE_TLS_PTR
     return ptr;
 }
@@ -591,7 +591,7 @@ void CObject::operator delete(void* ptr, CObjectMemoryPool* memory_pool)
 # ifdef _DEBUG
     TCount magic = sx_PopLastNewPtr(ptr);
     if ( !magic ) { // counter already initialized
-        magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+        magic = static_cast<CObject*>(ptr)->m_Counter;
     }
 # else// !_DEBUG
     // Just remove saved operator new info.
@@ -599,7 +599,7 @@ void CObject::operator delete(void* ptr, CObjectMemoryPool* memory_pool)
 # endif// _DEBUG
 #else// !USE_TLS_PTR
 # ifdef _DEBUG
-    TCount magic = static_cast<CObject*>(ptr)->m_Counter.Get();
+    TCount magic = static_cast<CObject*>(ptr)->m_Counter;
 # endif//_DEBUG
 #endif// USE_TLS_PTR
 
@@ -650,11 +650,11 @@ void CObject::InitCounter(void)
         switch ( type ) {
         case eMagicCounterNew:
             // allocated in heap
-            m_Counter.Set(eInitCounterInHeap);
+            m_Counter = eInitCounterInHeap;
             break;
         case eMagicCounterPoolNew:
             // allocated in memory pool
-            m_Counter.Set(eInitCounterInPool);
+            m_Counter = eInitCounterInPool;
             break;
         default:
             ERR_POST_X(1, ObjFatal << "CObject::InitCounter: "
@@ -662,23 +662,23 @@ void CObject::InitCounter(void)
                        " at "<<StackTrace);
             // something is broken in TLS data
             // mark as not in heap
-            m_Counter.Set(eInitCounterNotInHeap);
+            m_Counter = eInitCounterNotInHeap;
             break;
         }
     }
     else {
         // surely not in heap
-        m_Counter.Set(eInitCounterNotInHeap);
+        m_Counter = eInitCounterNotInHeap;
     }
 #else
     // This code can't use Get(), which may block waiting for an
     // update that will never happen.
     // ATTENTION:  this code can cause UMR (Uninit Mem Read) -- it's okay here!
-    TCount main_counter = m_Counter.m_Value;
+    TCount main_counter = m_Counter;
     if ( main_counter != eMagicCounterNew &&
          main_counter != eMagicCounterPoolNew ) {
         // takes care of statically allocated case
-        m_Counter.Set(eInitCounterNotInHeap);
+        m_Counter = eInitCounterNotInHeap;
     }
     else {
         bool inStack = false;
@@ -720,15 +720,15 @@ void CObject::InitCounter(void)
         
         if ( inStack ) {
             // surely not in heap
-            m_Counter.Set(eInitCounterInStack);
+            m_Counter = eInitCounterInStack;
         }
         else if ( main_counter == eMagicCounterNew ) {
             // allocated in heap
-            m_Counter.Set(eInitCounterInHeap);
+            m_Counter = eInitCounterInHeap;
         }
         else {
             // allocated in memory pool
-            m_Counter.Set(eInitCounterInPool);
+            m_Counter = eInitCounterInPool;
         }
     }
 #endif
@@ -749,7 +749,7 @@ CObject::CObject(const CObject& /*src*/)
 
 CObject::~CObject(void)
 {
-    TCount count = m_Counter.Get();
+    TCount count = m_Counter;
     if ( ObjectStateUnreferenced(count) ) {
         // reference counter is zero -> ok
     }
@@ -778,7 +778,7 @@ CObject::~CObject(void)
     else {
         final_magic = eMagicCounterDeleted;
     }
-    m_Counter.Set(final_magic);
+    m_Counter = final_magic;
 }
 
 
@@ -808,7 +808,7 @@ void CObject::CheckReferenceOverflow(TCount count) const
 
 void CObject::DeleteThis(void)
 {
-    TCount count = m_Counter.Get();
+    TCount count = m_Counter;
     // Counter could be changed by some other thread,
     // we should take care of that.
     if ( (count & eInitCounterInHeap) == eInitCounterInHeap ) {
@@ -839,7 +839,7 @@ void CObject::RemoveLastReference(TCount count) const
 
     // Error here
     // restore original value
-    count = m_Counter.Add(eCounterStep);
+    count = (m_Counter += eCounterStep);
     // bad object
     if ( ObjectStateValid(count) ) {
         ERR_POST_X(4, ObjFatal << "CObject::RemoveLastReference: "
@@ -859,11 +859,11 @@ void CObject::RemoveLastReference(TCount count) const
 
 void CObject::ReleaseReference(void) const
 {
-    TCount count = m_Counter.Add(-eCounterStep);
+    TCount count = (m_Counter -= eCounterStep);
     if ( ObjectStateValid(count) ) {
         return;
     }
-    m_Counter.Add(eCounterStep); // undo
+    m_Counter += eCounterStep; // undo
 
     // error
     if ( count == eMagicCounterDeleted ||
@@ -885,7 +885,7 @@ void CObject::DoNotDeleteThisObject(void)
 {
     TCount count;
 #if USE_TLS_PTR
-    count = m_Counter.Get();
+    count = m_Counter;
     if ( ObjectStateValid(count) ) {
         if ( ObjectStateCanBeDeleted(count) ) {
             NCBI_THROW(CObjectException, eHeapState,
@@ -898,11 +898,11 @@ void CObject::DoNotDeleteThisObject(void)
 #else
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
-        count = m_Counter.Get();
+        count = m_Counter;
         if ( ObjectStateValid(count) ) {
             // valid and unreferenced
             // reset all 'in heap' flags -> make it non-heap without signature
-            m_Counter.Add(-int(count & eStateBitsInHeapMask));
+            m_Counter -= (count & eStateBitsInHeapMask);
             return;
         }
     }}
@@ -928,7 +928,7 @@ void CObject::DoDeleteThisObject(void)
 #ifndef USE_SINGLE_ALLOC
     TCount count;
 #if USE_TLS_PTR
-    count = m_Counter.Get();
+    count = m_Counter;
     if ( ObjectStateValid(count) ) {
         if ( !ObjectStateCanBeDeleted(count) ) {
             NCBI_THROW(CObjectException, eHeapState,
@@ -941,13 +941,13 @@ void CObject::DoDeleteThisObject(void)
 #else
     {{
         CFastMutexGuard LOCK(sm_ObjectMutex);
-        count = m_Counter.Get();
+        count = m_Counter;
         // DoDeleteThisObject is not allowed for stack objects
         static const TCount eCheckBits = eStateBitsValid | eStateBitsHeapSignature;
         if ( (count & eCheckBits) == eCheckBits ) {
             if ( !(count & eStateBitsInHeap) ) {
                 // set 'in heap' flag
-                m_Counter.Add(eStateBitsInHeap);
+                m_Counter += eStateBitsInHeap;
             }
             return;
         }
@@ -1267,10 +1267,10 @@ CWeakObject::~CWeakObject(void)
 inline
 bool CWeakObject::x_AddWeakReference(CObject* obj)
 {
-    CObject::TCount newCount = obj->m_Counter.Add(CObject::eCounterStep);
+    CObject::TCount newCount = obj->m_Counter += CObject::eCounterStep;
 
     if ( CObject::ObjectStateReferencedOnlyOnce(newCount) ) {
-        obj->m_Counter.Add(-CObject::eCounterStep);
+        obj->m_Counter -= CObject::eCounterStep;
         return false;
     }
     return true;
