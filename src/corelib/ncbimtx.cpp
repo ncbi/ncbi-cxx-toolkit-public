@@ -1671,8 +1671,8 @@ struct SSemaphore
 {
 #if defined(NCBI_POSIX_THREADS)
     unsigned int     max_count;
-    unsigned int     count;
-    unsigned int     wait_count;  // # of threads currently waiting on the sema
+    atomic<unsigned int> count;
+    atomic<unsigned int> wait_count;  // # of threads currently waiting on the sema
     pthread_mutex_t  mutex;
     pthread_cond_t   cond;
 
