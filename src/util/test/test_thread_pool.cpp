@@ -79,7 +79,20 @@ static vector<int>                       s_ActionTasks;
 static vector<ECheckCancelType>          s_CancelTypes;
 static vector<int>                       s_WaitPeriods;
 static vector<int>                       s_PostTimes;
+
 static vector< CRef<CThreadPool_Task> >  s_Tasks;
+DEFINE_STATIC_FAST_MUTEX(s_TasksMutex);
+static void s_SetTask(size_t index, CThreadPool_Task* task)
+{
+    CFastMutexGuard guard(s_TasksMutex);
+    s_Tasks[index] = Ref(task);
+}
+static CRef<CThreadPool_Task> s_GetTask(size_t index)
+{
+    CFastMutexGuard guard(s_TasksMutex);
+    return s_Tasks[index];
+}
+
 static bool                              s_ZeroSleep = false;
 
 class CThreadPoolTester : public CThreadedApp
@@ -242,7 +255,10 @@ bool CThreadPoolTester::TestApp_Init(void)
     s_CancelTypes.resize(total_cnt + 1);
     s_WaitPeriods.resize(total_cnt + 1);
     s_PostTimes.resize(total_cnt + 1);
-    s_Tasks.resize(total_cnt + 1);
+    {{
+        CFastMutexGuard guard(s_TasksMutex);
+        s_Tasks.resize(total_cnt + 1);
+    }}
 
     int req_num = 0;
     for (int i = 1; i <= total_cnt; ++i) {
@@ -302,7 +318,7 @@ class CTestTask : public CThreadPool_Task
 public:
     CTestTask(int i) {
         m_Serial = i;
-        s_Tasks[i] = Ref<CThreadPool_Task>(this);
+        s_SetTask(i, this);
     }
 
 protected:
@@ -352,7 +368,7 @@ class CExclusiveTask : public CThreadPool_Task
 public:
     CExclusiveTask(int i) {
         m_Serial = i;
-        s_Tasks[i] = Ref<CThreadPool_Task>(this);
+        s_SetTask(i, this);
     }
 
 protected:
@@ -400,11 +416,11 @@ bool CThreadPoolTester::Thread_Run(int /*idx*/)
                 break;
 
             case eCancelTask:
-                while (!s_Tasks[req_num]) {
+                while (!s_GetTask(req_num)) {
                     SleepMilliSec(10);
                 }
                 MSG_POST("Task " << req_num << " to be cancelled");
-                s_Pool->CancelTask(s_Tasks[req_num]);
+                s_Pool->CancelTask(s_GetTask(req_num));
                 MSG_POST("Cancelation of task " << req_num << " requested");
                 break;
 
