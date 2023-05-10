@@ -334,9 +334,9 @@ bool CTypeInfo::IsParentClassOf(const CClassTypeInfo* /*classInfo*/) const
 
 const CSerialUserOp* CTypeInfo::AsCSerialUserOp(TConstObjectPtr obj) const
 {
-    if (IsCObject() && m_CSerialUserOp != eTriState_False) {
+    if (IsCObject() && m_CSerialUserOp.load(memory_order_relaxed) != eTriState_False) {
         const CSerialUserOp* op = dynamic_cast<const CSerialUserOp*>( static_cast<const CObject*>(obj));
-        m_CSerialUserOp = (op != nullptr) ? eTriState_True : eTriState_False;
+        m_CSerialUserOp.store((op != nullptr) ? eTriState_True : eTriState_False, memory_order_relaxed);
         return op;
     }
     return nullptr;
@@ -344,9 +344,9 @@ const CSerialUserOp* CTypeInfo::AsCSerialUserOp(TConstObjectPtr obj) const
 
 CSerialUserOp* CTypeInfo::AsCSerialUserOp(TObjectPtr obj) const
 {
-    if (IsCObject() && m_CSerialUserOp != eTriState_False) {
+    if (IsCObject() && m_CSerialUserOp.load(memory_order_relaxed) != eTriState_False) {
         CSerialUserOp* op = dynamic_cast<CSerialUserOp*>( static_cast<CObject*>(obj));
-        m_CSerialUserOp = (op != nullptr) ? eTriState_True : eTriState_False;
+        m_CSerialUserOp.store((op != nullptr) ? eTriState_True : eTriState_False, memory_order_relaxed);
         return op;
     }
     return nullptr;

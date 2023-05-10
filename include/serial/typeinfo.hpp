@@ -307,7 +307,7 @@ protected:
     CAsnBinaryDefs::ETagClass m_TagClass;
     CAsnBinaryDefs::ETagType  m_TagType;
     CAsnBinaryDefs::ETagConstructed m_TagConstructed;
-    mutable ETriState m_CSerialUserOp;
+    mutable atomic<ETriState> m_CSerialUserOp;
 
 private:
     // type specific function pointers
