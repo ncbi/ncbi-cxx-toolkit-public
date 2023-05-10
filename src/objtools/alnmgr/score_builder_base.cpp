@@ -935,6 +935,7 @@ void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
 
         default:
             {{
+                align.ResetNamedScore(score);
                 double score_value = ComputeScore(scope, align, score);
                 if (CSeq_align::IsIntegerScore(score)) {
                     align.SetNamedScore(score, (int)score_value);
