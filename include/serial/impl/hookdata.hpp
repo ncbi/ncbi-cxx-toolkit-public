@@ -122,7 +122,7 @@ public:
 
     TFunction GetCurrentFunction(void) const
         {
-            return m_CurrentFunction;
+            return m_CurrentFunction.load(memory_order_relaxed);
         }
 
     TFunction GetDefaultFunction(void) const
@@ -130,44 +130,44 @@ public:
             return m_DefaultFunction;
         }
 
-    void SetDefaultFunction(const TFunction& func)
+    void SetDefaultFunction(TFunction func)
         {
             m_DefaultFunction = func;
             if ( !HaveHooks() ) {
-                m_CurrentFunction = func;
+                x_SetCurrentFunction(func);
             }
         }
 
     void SetLocalHook(TLocalHooks& key, THook* hook)
         {
             CParent::SetLocalHook(key, hook);
-            m_CurrentFunction = m_HookFunction;
+            x_SetCurrentFunction(m_HookFunction);
         }
     void SetGlobalHook(THook* hook)
         {
             CParent::SetGlobalHook(hook);
-            m_CurrentFunction = m_HookFunction;
+            x_SetCurrentFunction(m_HookFunction);
         }
     void SetPathHook(CObjectStack* stk, const string& path, THook* hook)
         {
             CParent::SetPathHook(stk, path, hook);
-            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
+            x_SetCurrentFunction();
         }
 
     void ResetLocalHook(TLocalHooks& key)
         {
             CParent::ResetLocalHook(key);
-            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
+            x_SetCurrentFunction();
         }
     void ResetGlobalHook(void)
         {
             CParent::ResetGlobalHook();
-            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
+            x_SetCurrentFunction();
         }
     void ResetPathHook(CObjectStack* stk, const string& path)
         {
             CParent::ResetPathHook(stk, path);
-            m_CurrentFunction = HaveHooks()? m_HookFunction: m_DefaultFunction;
+            x_SetCurrentFunction();
         }
 
     THook* GetHook(const TLocalHooks& key) const
@@ -179,10 +179,138 @@ public:
             return static_cast<THook*>(CParent::GetPathHook(stk));
         }
 
+protected:
+    void x_SetCurrentFunction(TFunction func)
+        {
+            m_CurrentFunction.store(func, memory_order_relaxed);
+        }
+    void x_SetCurrentFunction()
+        {
+            x_SetCurrentFunction(HaveHooks()? m_HookFunction: m_DefaultFunction);
+        }
+
 private:
-    TFunction m_CurrentFunction;   // current function
-    TFunction m_DefaultFunction;
-    TFunction m_HookFunction;
+    atomic<TFunction> m_CurrentFunction;   // current function
+    TFunction m_DefaultFunction;   // function without hook processing
+    TFunction m_HookFunction;      // function with hook processing
+};
+
+
+template<class Hook, typename Function>
+class CHookPairData : public CHookDataBase
+{
+    typedef CHookDataBase CParent;
+public:
+    typedef Hook THook;
+    typedef Function TFunction;
+    typedef pair<TFunction, TFunction> TFunctions;
+    typedef CLocalHookSet<THook> TLocalHooks;
+
+    CHookPairData(TFunctions typeFunctions, TFunctions hookFunctions)
+        : m_CurrentFunction1st(typeFunctions.first),
+          m_CurrentFunction2nd(typeFunctions.second),
+          m_DefaultFunctions(typeFunctions),
+          m_HookFunctions(hookFunctions)
+        {
+        }
+
+    TFunction GetCurrentFunction1st(void) const
+        {
+            return m_CurrentFunction1st.load(memory_order_relaxed);
+        }
+    TFunction GetCurrentFunction2nd(void) const
+        {
+            return m_CurrentFunction2nd.load(memory_order_relaxed);
+        }
+
+    TFunction GetDefaultFunction1st(void) const
+        {
+            return m_DefaultFunctions.first;
+        }
+    TFunction GetDefaultFunction2nd(void) const
+        {
+            return m_DefaultFunctions.second;
+        }
+
+    void SetDefaultFunctions(TFunctions funcs)
+        {
+            m_DefaultFunctions = funcs;
+            if ( !HaveHooks() ) {
+                x_SetCurrentFunctions(funcs);
+            }
+        }
+    void SetDefaultFunction1st(TFunction func)
+        {
+            m_DefaultFunctions.first = func;
+            if ( !HaveHooks() ) {
+                x_SetCurrentFunctions(m_DefaultFunctions);
+            }
+        }
+    void SetDefaultFunction2nd(TFunction func)
+        {
+            m_DefaultFunctions.second = func;
+            if ( !HaveHooks() ) {
+                x_SetCurrentFunctions(m_DefaultFunctions);
+            }
+        }
+
+    void SetLocalHook(TLocalHooks& key, THook* hook)
+        {
+            CParent::SetLocalHook(key, hook);
+            x_SetCurrentFunctions(m_HookFunctions);
+        }
+    void SetGlobalHook(THook* hook)
+        {
+            CParent::SetGlobalHook(hook);
+            x_SetCurrentFunctions(m_HookFunctions);
+        }
+    void SetPathHook(CObjectStack* stk, const string& path, THook* hook)
+        {
+            CParent::SetPathHook(stk, path, hook);
+            x_SetCurrentFunctions();
+        }
+
+    void ResetLocalHook(TLocalHooks& key)
+        {
+            CParent::ResetLocalHook(key);
+            x_SetCurrentFunctions();
+        }
+    void ResetGlobalHook(void)
+        {
+            CParent::ResetGlobalHook();
+            x_SetCurrentFunctions();
+        }
+    void ResetPathHook(CObjectStack* stk, const string& path)
+        {
+            CParent::ResetPathHook(stk, path);
+            x_SetCurrentFunctions();
+        }
+
+    THook* GetHook(const TLocalHooks& key) const
+        {
+            return static_cast<THook*>(CParent::GetHook(key));
+        }
+    THook* GetPathHook(CObjectStack& stk) const
+        {
+            return static_cast<THook*>(CParent::GetPathHook(stk));
+        }
+
+protected:
+    void x_SetCurrentFunctions(TFunctions funcs)
+        {
+            m_CurrentFunction1st.store(funcs.first, memory_order_relaxed);
+            m_CurrentFunction2nd.store(funcs.second, memory_order_relaxed);
+        }
+    void x_SetCurrentFunctions()
+        {
+            x_SetCurrentFunctions(HaveHooks()? m_HookFunctions: m_DefaultFunctions);
+        }
+
+private:
+    atomic<TFunction> m_CurrentFunction1st;  // current 1st function
+    atomic<TFunction> m_CurrentFunction2nd;  // current 2nd function
+    TFunctions m_DefaultFunctions;   // functions without hook processing
+    TFunctions m_HookFunctions;      // functions with hook processing
 };
 
 

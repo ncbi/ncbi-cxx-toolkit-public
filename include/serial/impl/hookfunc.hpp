@@ -72,7 +72,7 @@ typedef void (*TMemberCopyFunction)(CObjectStreamCopier& copier,
                                     const CMemberInfo* memberInfo);
 typedef void (*TMemberSkipFunction)(CObjectIStream& in,
                                     const CMemberInfo* memberInfo);
-
+/*
 struct SMemberReadFunctions
 {
     SMemberReadFunctions(TMemberReadFunction main = 0,
@@ -102,6 +102,7 @@ struct SMemberCopyFunctions
         }
     TMemberCopyFunction m_Main, m_Missing;
 };
+*/
 
 typedef void (*TVariantReadFunction)(CObjectIStream& in,
                                      const CVariantInfo* variantInfo,

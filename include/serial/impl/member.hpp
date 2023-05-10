@@ -209,10 +209,10 @@ private:
     TMemberGetConst m_GetConstFunction;
     TMemberGet m_GetFunction;
 
-    CHookData<CReadClassMemberHook, SMemberReadFunctions> m_ReadHookData;
+    CHookPairData<CReadClassMemberHook, TMemberReadFunction> m_ReadHookData;
     CHookData<CWriteClassMemberHook, TMemberWriteFunction> m_WriteHookData;
-    CHookData<CSkipClassMemberHook, SMemberSkipFunctions> m_SkipHookData;
-    CHookData<CCopyClassMemberHook, SMemberCopyFunctions> m_CopyHookData;
+    CHookPairData<CSkipClassMemberHook, TMemberSkipFunction> m_SkipHookData;
+    CHookPairData<CCopyClassMemberHook, TMemberCopyFunction> m_CopyHookData;
 
     void SetReadFunction(TMemberReadFunction func);
     void SetReadMissingFunction(TMemberReadFunction func);

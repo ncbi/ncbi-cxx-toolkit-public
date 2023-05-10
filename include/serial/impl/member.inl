@@ -101,14 +101,14 @@ inline
 void CMemberInfo::ReadMember(CObjectIStream& stream,
                              TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetCurrentFunction().m_Main(stream, this, classPtr);
+    m_ReadHookData.GetCurrentFunction1st()(stream, this, classPtr);
 }
 
 inline
 void CMemberInfo::ReadMissingMember(CObjectIStream& stream,
                                     TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetCurrentFunction().m_Missing(stream, this, classPtr);
+    m_ReadHookData.GetCurrentFunction2nd()(stream, this, classPtr);
 }
 
 inline
@@ -121,39 +121,39 @@ void CMemberInfo::WriteMember(CObjectOStream& stream,
 inline
 void CMemberInfo::SkipMember(CObjectIStream& stream) const
 {
-    m_SkipHookData.GetCurrentFunction().m_Main(stream, this);
+    m_SkipHookData.GetCurrentFunction1st()(stream, this);
 }
 
 inline
 void CMemberInfo::SkipMissingMember(CObjectIStream& stream) const
 {
-    m_SkipHookData.GetCurrentFunction().m_Missing(stream, this);
+    m_SkipHookData.GetCurrentFunction2nd()(stream, this);
 }
 
 inline
 void CMemberInfo::CopyMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetCurrentFunction().m_Main(stream, this);
+    m_CopyHookData.GetCurrentFunction1st()(stream, this);
 }
 
 inline
 void CMemberInfo::CopyMissingMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetCurrentFunction().m_Missing(stream, this);
+    m_CopyHookData.GetCurrentFunction2nd()(stream, this);
 }
 
 inline
 void CMemberInfo::DefaultReadMember(CObjectIStream& stream,
                                     TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetDefaultFunction().m_Main(stream, this, classPtr);
+    m_ReadHookData.GetDefaultFunction1st()(stream, this, classPtr);
 }
 
 inline
 void CMemberInfo::DefaultReadMissingMember(CObjectIStream& stream,
                                            TObjectPtr classPtr) const
 {
-    m_ReadHookData.GetDefaultFunction().m_Missing(stream, this, classPtr);
+    m_ReadHookData.GetDefaultFunction2nd()(stream, this, classPtr);
 }
 
 inline
@@ -166,25 +166,25 @@ void CMemberInfo::DefaultWriteMember(CObjectOStream& stream,
 inline
 void CMemberInfo::DefaultSkipMember(CObjectIStream& stream) const
 {
-    m_SkipHookData.GetDefaultFunction().m_Main(stream, this);
+    m_SkipHookData.GetDefaultFunction1st()(stream, this);
 }
 
 inline
 void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
 {
-    m_SkipHookData.GetDefaultFunction().m_Missing(stream, this);
+    m_SkipHookData.GetDefaultFunction2nd()(stream, this);
 }
 
 inline
 void CMemberInfo::DefaultCopyMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetDefaultFunction().m_Main(stream, this);
+    m_CopyHookData.GetDefaultFunction1st()(stream, this);
 }
 
 inline
 void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
 {
-    m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
+    m_CopyHookData.GetDefaultFunction2nd()(stream, this);
 }
 
 
