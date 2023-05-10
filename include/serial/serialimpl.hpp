@@ -289,11 +289,11 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 { \
     typedef ClassName CClass; \
     typedef BaseClassName CClass_Base; \
-    static InfoType* volatile s_info = 0; \
-    InfoType* info = s_info; \
+    static std::atomic<InfoType*> s_info; \
+    InfoType* info = s_info.load(std::memory_order_acquire); \
     if ( !info ) { \
         XSERIAL_TYPEINFO_WRITELOCK; \
-        info = s_info; \
+        info = s_info.load(std::memory_order_acquire); \
         if ( !info ) { \
             DECLARE_BASE_OBJECT(CClass); \
             info = Code; \
@@ -302,7 +302,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
 #define END_TYPE_INFO \
-            s_info = info; \
+            s_info.store(info, std::memory_order_release); \
         } \
     } \
     return info; \
@@ -576,11 +576,11 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define BEGIN_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
 const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 { \
-    static NCBI_NS_NCBI::CAliasTypeInfo* volatile s_info = 0; \
-    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info; \
+    static std::atomic<NCBI_NS_NCBI::CAliasTypeInfo*> s_info;  \
+    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info.load(std::memory_order_acquire); \
     if ( !info ) { \
         XSERIAL_TYPEINFO_WRITELOCK; \
-        info = s_info; \
+        info = s_info.load(std::memory_order_acquire); \
         if ( !info ) { \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
@@ -602,11 +602,11 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 #define BEGIN_ENUM_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
 const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
 { \
-    static NCBI_NS_NCBI::CAliasTypeInfo* volatile s_info = 0; \
-    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info; \
+    static std::atomic<NCBI_NS_NCBI::CAliasTypeInfo*> s_info; \
+    NCBI_NS_NCBI::CAliasTypeInfo* info = s_info.load(std::memory_order_acquire); \
     if ( !info ) { \
         XSERIAL_TYPEINFO_WRITELOCK; \
-        info = s_info; \
+        info = s_info.load(std::memory_order_acquire); \
         if ( !info ) { \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
@@ -629,7 +629,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     info->SetDataOffset(NCBI_NS_NCBI::TPointerOffsetType(BASE_OBJECT())); \
     info->SetCreateFunction(NCBI_NS_NCBI::CClassInfoHelper<CClass>::Create)
 #define END_ALIAS_INFO \
-            s_info = info; \
+            s_info.store(info, std::memory_order_release); \
         } \
     } \
     return info; \
