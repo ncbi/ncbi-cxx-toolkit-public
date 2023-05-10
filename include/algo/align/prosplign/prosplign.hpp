@@ -304,6 +304,7 @@ public:
     CProSplign( CProSplignScoring scoring = CProSplignScoring(), bool intronless=false );
     ~CProSplign();
 
+    void SetTranslationTable(int gcode);
 
     ///for MT usage
     ///set a signal for core algirithm to interrupt calculations
