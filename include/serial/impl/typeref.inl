@@ -74,8 +74,8 @@ CTypeRef::~CTypeRef(void)
 inline
 TTypeInfo CTypeRef::Get(void) const
 {
-    TTypeInfo ret = m_ReturnData;
-    return ret? ret: m_Getter(*this);
+    TTypeInfo ret = m_ReturnData.load(memory_order_acquire);
+    return ret? ret: m_Getter.load(memory_order_acquire)(*this);
 }
 
 #endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */
