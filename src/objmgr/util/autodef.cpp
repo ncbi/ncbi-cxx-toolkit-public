@@ -1057,6 +1057,22 @@ string CAutoDef::GetKeywordPrefix(CBioseq_Handle bh)
 }
 
 
+std::string x_trim(const std::string &s)
+{
+   auto start = s.begin();
+   while (start != s.end() && std::isspace(*start)) {
+       start++;
+   }
+
+   auto end = s.end();
+   do {
+       end--;
+   } while (std::distance(start, end) > 0 && std::isspace(*end));
+
+   return std::string(start, end + 1);
+}
+
+
 string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_Handle& bh, CRef<feature::CFeatTree> featTree)
 {
     m_Feat_Tree = featTree;
@@ -1092,6 +1108,11 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_H
     string keyword = GetKeywordPrefix(bh);
 
     if (!NStr::IsBlank(feature_clauses)) {
+        string key_org = x_trim(keyword + org_desc);
+        feature_clauses = x_trim(feature_clauses);
+        if (NStr::StartsWith(feature_clauses, ",")) {
+            return keyword + org_desc + feature_clauses;
+        }
         return keyword + org_desc + " " + feature_clauses;
     }
     return keyword + org_desc;
