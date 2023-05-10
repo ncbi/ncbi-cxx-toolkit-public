@@ -69,7 +69,7 @@ CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id,
 
 CSeq_id_Info::~CSeq_id_Info(void)
 {
-    _ASSERT(m_LockCounter.Get() == 0);
+    _ASSERT(m_LockCounter == 0);
 }
 
 
