@@ -130,23 +130,27 @@ protected:
     CItemInfo* x_GetItemInfo(TMemberIndex index) const;
 
 private:
+    CItemsInfo(const CItemsInfo& ) = delete;
+    void operator=(const CItemsInfo& ) = delete;
+    
     const TItemsByName& GetItemsByName(void) const;
     const TItemsByOffset& GetItemsByOffset(void) const;
     TTagAndClass GetTagAndClass(const CIterator& i) const;
     pair<TMemberIndex, const TItemsByTag*> GetItemsByTagInfo(void) const;
+    void ClearIndexes();
 
     // items
     TItems m_Items;
 
     // items by name
-    mutable shared_ptr<TItemsByName> m_ItemsByName;
+    mutable atomic<TItemsByName*> m_ItemsByName;
 
     // items by tag
-    mutable TMemberIndex m_ZeroTagIndex;
-    mutable shared_ptr<TItemsByTag> m_ItemsByTag;
+    mutable atomic<TMemberIndex> m_ZeroTagIndex;
+    mutable atomic<TItemsByTag*> m_ItemsByTag;
 
     // items by offset
-    mutable shared_ptr<TItemsByOffset> m_ItemsByOffset;
+    mutable atomic<TItemsByOffset*> m_ItemsByOffset;
 };
 
 
