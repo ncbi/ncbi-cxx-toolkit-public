@@ -280,7 +280,7 @@ has_usr        = all_l sources_l clean_l purge_l
 has_usr_l_real = $(has_usr:%=%.real)
 has_usr_real   = $(has_usr:%_l=%.real)
 has_usr_nonusr = $(has_usr:%_l=%.nonusr)
-has_usr_usr    = $(has_usr:%_l=%.usr)
+has_usr_usr    = $(has_usr:%_l=%.usr) clean_sources.usr purge_sources.usr
 has_usr_locked = $(has_usr:%_l=%.usr.locked)
 
 ifeq ":" "$(NCBI_USING_FLAT_MAKEFILE):$(filter 0 1,$(proj_count))"
@@ -309,6 +309,10 @@ else
 
   clean.usr purge.usr: %.usr:
 	@-$(RM) -f .building .built .built_r
+	$(call make_each_usr_proj,$*)
+
+  %_sources.usr: ign = -
+  clean_sources.usr purge_sources.usr: %.usr:
 	$(call make_each_usr_proj,$*)
 
   all.usr.locked: sources.usr.locked ;
@@ -344,7 +348,7 @@ ifeq "$(OSTYPE)" "darwin"
 	$(call make_each_metal_proj,$*)
 endif
 
-clean_sources purge_sources:
+clean_sources purge_sources: %: %.usr
 	$(call make_each_spec,$@)
 
 libs_l.real: $(sources) # $(wildcard Makefile.*.libdep)
