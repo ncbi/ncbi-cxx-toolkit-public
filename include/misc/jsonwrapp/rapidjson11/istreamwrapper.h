@@ -57,7 +57,15 @@ public:
     {
         bufferLast_ = current_ = buffer.get();
         eof_ = false;
+        pos_ = stream_.tellg();
+        if (pos_ == (size_t)-1) {pos_ = 0;}
         Read();
+    }
+// NCBI: added dtor
+    ~BasicIStreamWrapper() {
+        stream_.clear();
+//        stream_.seekg(pos_ + count_, ios::beg);
+        stream_.seekg(pos_ + count_);
     }
     Ch Peek() const { 
         return *current_;
@@ -123,6 +131,7 @@ private:
     mutable Ch peekBuffer_[4];
 #if 1
 // NCBI: modified
+    size_t pos_;
     size_t bufferSize_;
     std::unique_ptr<Ch[]> buffer;
     Ch *current_;
