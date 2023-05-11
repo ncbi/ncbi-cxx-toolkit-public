@@ -47,16 +47,14 @@ size_t strnlen(const char* str, size_t maxlen)
 #endif /*HAVE_STRNLEN*/
 
 
-#ifndef HAVE_STRDUP
+#if !defined(HAVE_STRDUP)  &&  !defined(NCBI_COMPILER_MSVC)
 char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
     char*   res = (char*) malloc(size);
-    if (res)
-        memcpy(res, str, size);
-    return res;
+    return res ? (char*) memcpy(res, str, size) : 0;
 }
-#endif /*HAVE_STRDUP*/
+#endif /*!HAVE_STRDUP && !NCBI_COMPILER_MSVC*/
 
 
 #ifndef HAVE_STRNDUP
@@ -70,10 +68,10 @@ char* strndup(const char* str, size_t n)
     }
     return res;
 }
-#endif /*HAVE_STRNDUP*/
+#endif /*!HAVE_STRNDUP*/
 
 
-#ifndef HAVE_STRCASECMP
+#if !defined(HAVE_STRCASECMP)  &&  !defined(NCBI_COMPILER_MSVC)
 
 /* We assume that we're using ASCII-based charsets */
 int strcasecmp(const char* s1, const char* s2)
@@ -115,7 +113,7 @@ int strncasecmp(const char* s1, const char* s2, size_t n)
     return c1 - c2;
 }
 
-#endif /*HAVE_STRCASECMP*/
+#endif /*!HAVE_STRCASECMP && !NCBI_COMPILER_MSVC*/
 
 
 char* strupr(char* s)
