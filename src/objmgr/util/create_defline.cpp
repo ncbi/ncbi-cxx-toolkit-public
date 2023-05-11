@@ -1057,9 +1057,8 @@ void CDeflineGenerator::x_SetFlags (
 
         case CSeqdesc::e_Title:
             if ((needed_desc_choices & fTitle) != 0) {
-                // for non-PDB proteins, title must be packaged on Bioseq
-                if (m_IsNA  ||  m_IsPDB
-                    ||  desc_it.GetSeq_entry_Handle().IsSeq()) {
+                // for everything other than PDB proteins, title must be packaged on Bioseq - RW-2005
+                if ( m_IsPDB  ||  desc_it.GetSeq_entry_Handle().IsSeq() ) {
                     m_MainTitle = desc_it->GetTitle();
                 }
                 // take first, then skip remainder

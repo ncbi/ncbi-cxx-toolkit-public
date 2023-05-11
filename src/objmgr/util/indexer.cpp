@@ -1706,8 +1706,8 @@ void CBioseqIndex::x_InitDescs (void)
                 case CSeqdesc::e_Title:
                 {
                     if (m_Title.empty()) {
-                        // // for non-PDB proteins, title must be packaged on Bioseq
-                        if (m_IsNA  ||  m_IsPDB  ||  desc_it.GetSeq_entry_Handle().IsSeq()) {
+                        // for everything other than PDB proteins, title must be packaged on Bioseq - RW-2005
+                        if ( m_IsPDB  ||  desc_it.GetSeq_entry_Handle().IsSeq() ) {
                             m_Title = sd.GetTitle();
                         }
                     }
