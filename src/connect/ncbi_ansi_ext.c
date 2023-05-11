@@ -62,9 +62,8 @@ char* strdup(const char* str)
 #ifndef HAVE_STRNDUP
 char* strndup(const char* str, size_t n)
 {
-    const char* end = n   ? (const char*) memchr(str, '\0', n) : 0;
-    size_t     size = end ? (size_t)(end - str)  : n;
-    char*       res = (char*) malloc(size + 1);
+    size_t size = strnlen(str, n);
+    char*   res = (char*) malloc(size + 1);
     if (res) {
         memcpy(res, str, size);
         res[size] = '\0';
@@ -208,8 +207,7 @@ double NCBI_simple_atof(const char* s, char** t)
         s++;
     if ((*s == '-'  ||  *s == '+')
         &&  (s[1] == '.'  ||  isdigit((unsigned char) s[1]))) {
-        n = *s == '-' ? 1/*true*/ : 0/*false*/;
-        s++;
+        n = *s++ == '-' ? 1/*true*/ : 0/*false*/;
     } else
         n = 0/*false*/;
 
