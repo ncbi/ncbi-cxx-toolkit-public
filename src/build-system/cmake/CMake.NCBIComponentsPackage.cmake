@@ -519,3 +519,7 @@ NCBI_define_Pkgcomponent(NAME VDB PACKAGE ncbi-vdb FIND ncbi-vdb)
 if(NCBI_COMPONENT_VDB_FOUND)
     set(HAVE_NCBI_VDB 1)
 endif()
+
+#############################################################################
+# JAEGER
+NCBI_define_Pkgcomponent(NAME JAEGER PACKAGE jaegertracing FIND jaegertracing)
