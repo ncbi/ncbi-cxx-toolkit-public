@@ -1,6 +1,6 @@
 # $Id$
 
-NCBI_begin_app(psg_client)
+NCBI_begin_app(psg_client-app)
   NCBI_sources(psg_client_app processing)
   NCBI_uses_toolkit_libraries(psg_client seqset xcompress)
 
@@ -13,4 +13,8 @@ NCBI_begin_app(psg_client)
 
   NCBI_project_watchers(sadyrovr)
 
-NCBI_end_app()
+NCBI_end_app(_result)
+
+if(_result)
+  set_target_properties(psg_client-app PROPERTIES OUTPUT_NAME psg_client)
+endif()
