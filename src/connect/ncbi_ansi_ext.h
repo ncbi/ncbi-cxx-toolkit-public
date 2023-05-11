@@ -53,7 +53,7 @@ extern "C" {
 #  define  strnlen     NCBI_strnlen
 
 /** Return the number of characters in the string pointed to by "str" (not
- *  including the terminating '\0' character but no more than "maxlen" (if the
+ *  including the terminating '\0' character) but no more than "maxlen" (if the
  *  '\0' character hasn't been found within the first "maxlen" characters).
  */
 NCBI_XCONNECT_EXPORT
@@ -125,6 +125,9 @@ int        strcasecmp(const char* s1, const char* s2);
 NCBI_XCONNECT_EXPORT
 int        strncasecmp(const char* s1, const char* s2, size_t n);
 
+#elif defined(NCBI_COMPILER_MSVC)
+#  define  strcasecmp   _stricmp
+#  define  strncasecmp  _strnicmp
 #endif /*HAVE_STRCASECMP*/
 
 
