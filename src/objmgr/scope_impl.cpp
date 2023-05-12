@@ -2367,7 +2367,7 @@ void CScope_Impl::x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
                 cache->match.clear();
             }
             x_GetTSESetWithAnnots(lock, &cache->match, info, sel);
-            cache->m_SearchTimestamp = m_AnnotChangeCounter;
+            cache->m_SearchTimestamp = m_AnnotChangeCounter.load();
             annot_ref_info = cache;
             return;
         }

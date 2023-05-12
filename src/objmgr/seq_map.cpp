@@ -152,7 +152,7 @@ CSeqMap::CSeqMap(TSeqPos length)
 CSeqMap::CSeqMap(const CSeqMap& sm)
     : m_Bioseq(0),
       m_Segments(sm.m_Segments),
-      m_Resolved(sm.m_Resolved),
+      m_Resolved(sm.m_Resolved.load()),
       m_Delta(sm.m_Delta),
       m_Mol(sm.m_Mol),
       m_HasSegments(sm.m_HasSegments),

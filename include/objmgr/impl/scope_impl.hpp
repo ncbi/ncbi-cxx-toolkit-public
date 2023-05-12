@@ -649,8 +649,8 @@ private:
 
     IScopeTransaction_Impl* m_Transaction;
 
-    volatile int m_BioseqChangeCounter;
-    volatile int m_AnnotChangeCounter;
+    atomic<int> m_BioseqChangeCounter;
+    atomic<int> m_AnnotChangeCounter;
     bool m_KeepExternalAnnotsForEdit;
 
     friend class CScope;
