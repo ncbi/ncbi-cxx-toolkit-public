@@ -116,7 +116,7 @@ public:
             return 0;
         }
 
-        bool bTypeMLA = true;
+        bool bTypeMLA = false;
         if (args["pubmed"]) {
             string s = args["pubmed"].AsString();
             if (s == "medarch") {
