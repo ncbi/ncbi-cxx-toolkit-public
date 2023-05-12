@@ -522,7 +522,7 @@ public:
     typedef set<CSeq_id_Handle>                         TSeq_idSet;
     typedef vector< pair<TTSE_ScopeInfo, CSeq_id_Handle> > TTSE_MatchSet;
     struct SAnnotSetCache : public CObject {
-        volatile int m_SearchTimestamp;
+        atomic<int> m_SearchTimestamp;
         TTSE_MatchSet match;
     };
     struct SNASetKey {
@@ -606,7 +606,7 @@ private: // members
     TBlobStateFlags                 m_BlobState;
 
     // Cached information.
-    volatile int m_UnresolvedTimestamp;
+    atomic<int> m_UnresolvedTimestamp;
     // Cache synonyms of bioseq if any.
     // All synonyms share the same CBioseq_ScopeInfo object.
     CInitMutex<CSynonymsSet>        m_SynCache;
