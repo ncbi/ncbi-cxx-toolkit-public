@@ -88,6 +88,7 @@ try_local() {
         test -f "$d/include/gsl/gsl"       &&  : ${MSGSL_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
+        test -f "$d/include/ncbicrypt.h"   &&  : ${NCBICRYPT_PATH=$d}
         test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
         test -d "$d/include/nghttp2"       &&  : ${NGHTTP2_PATH=$d}
         test -d "$d/include/ngs-bam"       &&  : ${NGS_PATH=$d}
@@ -302,6 +303,8 @@ esac
 
 # C Toolkit (path overridden in stable components to avoid version skew)
 : ${NCBI_C_PATH=$NCBI}
+
+: ${NCBICRYPT_PATH=$NCBI/ncbicrypt-20230512}
 
 case "$ncbi_platform" in
     Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
