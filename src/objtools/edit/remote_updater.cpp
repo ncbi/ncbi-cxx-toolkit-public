@@ -473,6 +473,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
             switch (m_pm_source) {
             case EPubmedSource::eNone:
                 break;
+            default:
             case EPubmedSource::eEUtils:
                 if (m_pm_use_cache) {
                     m_pubmed.reset(new CEUtilsUpdaterWithCache(m_pm_normalize));
@@ -485,7 +486,6 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 if (m_pm_interceptor)
                     m_pubmed->SetPubInterceptor(m_pm_interceptor);
                 break;
-            default:
             case EPubmedSource::eMLA:
                 if (m_pm_use_cache) {
                     m_pubmed.reset(new CMLAUpdaterWithCache(m_pm_normalize));
