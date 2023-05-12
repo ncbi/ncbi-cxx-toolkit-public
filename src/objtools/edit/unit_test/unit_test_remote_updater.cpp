@@ -119,12 +119,12 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 {
     CRef<CMLAClient> pMLAClient(new CMLAClient_THROW<eError_val_cannot_connect_pmdb>());
     auto pDesc = s_CreateDescriptor();
-    CRemoteUpdater updater(nullptr);
+    CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
 
     BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
 
     {
-        CRemoteUpdater updater(nullptr);
+        CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
         updater.SetPubmedClient(new CMLAUpdater());
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     }
 
     {
-        CRemoteUpdater updater(nullptr);
+        CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
         CMLAUpdater* mlau = new CMLAUpdater();
         mlau->SetClient(pMLAClient);
         updater.SetPubmedClient(mlau);
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     {
         CObjtoolsListener messageListener;
-        CRemoteUpdater updater(&messageListener);
+        CRemoteUpdater updater(&messageListener, EPubmedSource::eMLA);
         updater.SetMLAClient(*pMLAClient);
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
