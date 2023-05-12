@@ -103,12 +103,19 @@ char*      strndup(const char* str, size_t n);
 
 #ifndef HAVE_STRCASECMP
 
-#  ifdef   strcasecmp
-#    undef strcasecmp
-#    undef strncasecmp
-#  endif
-#  define  strcasecmp   NCBI_strcasecmp
-#  define  strncasecmp  NCBI_strncasecmp
+#  ifdef NCBI_COMPILER_MSVC
+
+#    define  strcasecmp   _stricmp
+#    define  strncasecmp  _strnicmp
+
+#  else
+
+#    ifdef   strcasecmp
+#      undef strcasecmp
+#      undef strncasecmp
+#    endif
+#    define  strcasecmp   NCBI_strcasecmp
+#    define  strncasecmp  NCBI_strncasecmp
 
 /** Compare "s1" and "s2", ignoring case.  Return less than, equal to or
  *  greater than zero if "s1" is lexicographically less than, equal to or
@@ -125,9 +132,8 @@ int        strcasecmp(const char* s1, const char* s2);
 NCBI_XCONNECT_EXPORT
 int        strncasecmp(const char* s1, const char* s2, size_t n);
 
-#elif defined(NCBI_COMPILER_MSVC)
-#  define  strcasecmp   _stricmp
-#  define  strncasecmp  _strnicmp
+#  endif /*NCBI_COMPILER_MSVC*/
+
 #endif /*HAVE_STRCASECMP*/
 
 
