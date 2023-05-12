@@ -473,7 +473,7 @@ bool TrimNegativeTail(CNPiece& pc, const CProteinAlignText& alignment_text, cons
             //no gap, no intron
             if( islower(tran[n]) ) {
                 if( !islower(prot[n]) ) {
-                    throw runtime_error("CProteinAlignText format error");
+                    NCBI_THROW(CProSplignException, eFormat, "CProteinAlignText format error");
                 }                
                 score += matrix.ScaledScore(toupper(prot[n]), toupper(tran[n]))/3;
             } else if( isupper(prot[n]) && isupper(tran[n]) ) {
