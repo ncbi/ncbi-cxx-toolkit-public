@@ -413,7 +413,7 @@ extern char* LOG_ComposeMessage
  TLOG_FormatFlags    flags)
 {
     static const char kRawData_Beg[] =
-        "\n#################### [BEGIN] Raw Data (%lu byte%s):\n";
+        "\n#################### [BEGIN] Raw Data (%lu byte%s)%s";
     static const char kRawData_End[] =
         "\n#################### [_END_] Raw Data\n";
 
@@ -489,11 +489,12 @@ extern char* LOG_ComposeMessage
     if (mess->message  &&  *mess->message)
         message_len = strlen(mess->message);
     if (mess->raw_size) {
-        data_len = (sizeof(kRawData_Beg)
-                    + 20 + UTIL_PrintableStringSize((const char*)
-                                                    mess->raw_data,
-                                                    mess->raw_size) +
-                    sizeof(kRawData_End));
+        if (mess->raw_data) {
+            data_len = UTIL_PrintableStringSize((const char*)
+                                                mess->raw_data,
+                                                mess->raw_size);
+        }
+        data_len += sizeof(kRawData_Beg) + 20 + sizeof(kRawData_End);
     }
 
     /* Allocate memory for the resulting message */
@@ -541,13 +542,16 @@ extern char* LOG_ComposeMessage
     if (data_len) {
         s += sprintf(s, kRawData_Beg,
                      (unsigned long) mess->raw_size,
-                     &"s"[mess->raw_size == 1]);
+                     &"s"[mess->raw_size == 1],
+                     mess->raw_data ? ":\n" : " <NULL>");
 
-        s = UTIL_PrintableString((const char*)
-                                 mess->raw_data,
-                                 mess->raw_size,
-                                 s, flags & fLOG_FullOctal
-                                 ? eUTIL_PrintableFullOctal : 0);
+        if (mess->raw_data) {
+            s = UTIL_PrintableString((const char*)
+                                     mess->raw_data,
+                                     mess->raw_size,
+                                     s, flags & fLOG_FullOctal
+                                     ? eUTIL_PrintableFullOctal : 0);
+        }
 
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else

@@ -305,11 +305,13 @@ static void s_LOG_Handler(void*             /*data*/,
         if (mess->raw_size) {
             diag << "\n#################### [BEGIN] Raw Data ("
                  << mess->raw_size
-                 << " byte" << &"s"[!(mess->raw_size != 1)] << "):\n"
-                 << NStr::PrintableString
-                    (CTempString(static_cast<const char*>(mess->raw_data),
-                                 mess->raw_size),
-                     NStr::fNewLine_Passthru | NStr::fNonAscii_Quote)
+                 << " byte" << &"s"[!(mess->raw_size != 1)] << ')'
+                 << (mess->raw_data
+                     ? ":\n" + NStr::PrintableString
+                     (CTempString(static_cast<const char*>(mess->raw_data),
+                                  mess->raw_size),
+                      NStr::fNewLine_Passthru | NStr::fNonAscii_Quote)
+                     : " <NULL>")
                  << "\n#################### [_END_] Raw Data";
         }
         diag << Endm;
