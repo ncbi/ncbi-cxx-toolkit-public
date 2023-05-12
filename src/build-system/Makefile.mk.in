@@ -337,6 +337,9 @@ LIBDW_LIBS    = @LIBDW_LIBS@
 BACKWARD_CPP_INCLUDE = @BACKWARD_CPP_INCLUDE@
 BACKWARD_CPP_LIBS    = @BACKWARD_CPP_LIBS@
 
+NCBICRYPT_INCLUDE = @NCBICRYPT_INCLUDE@
+NCBICRYPT_LIBS    = @NCBICRYPT_LIBS@
+
 #################################
 # Optional variables that may be needed to build some projects
 # (see in "configure.ac" for the pre-set defaults)

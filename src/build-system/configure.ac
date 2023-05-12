@@ -89,7 +89,7 @@ case "$with_3psw" in
       else
          with_yaml_cpp=no
       fi
-      m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, libunwind,
+      m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, ncbicrypt, libunwind,
                      z, bz2, lzo, zstd, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
@@ -285,6 +285,10 @@ AC_ARG_WITH(ngs,
    [ --with-ngs=DIR          use NCBI NGS SDK installation in DIR])
 AC_ARG_WITH(ngs,
    [ --without-ngs           do not use the NCBI NGS SDK])
+AC_ARG_WITH(ncbicrypt,
+   [ --with-ncbicrypt=DIR    use ncbicrypt installation in DIR])
+AC_ARG_WITH(ncbicrypt,
+   [ --without-ncbicrypt     do not use ncbicrypt])
 
 ## Third-party and system packages
 AC_ARG_WITH(libunwind,
@@ -667,8 +671,6 @@ AC_ARG_WITH(3psw,
    [ --without-3psw          do not use any of the above packages])
 
 ## Optional projects
-AC_ARG_WITH(ncbi-crypt,
-   [ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt])
 AC_ARG_WITH(connext,
    [ --without-connext       do not build non-public CONNECT library extensions])
 dnl AC_ARG_WITH(serial,
@@ -715,7 +717,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi fastcgipp \
 sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb static-vdb ngs libunwind libdw \
+geo included-geo vdb downloaded-vdb static-vdb ngs ncbicrypt libunwind libdw \
 backward-cpp backward-cpp-sig \
 z bz2 lzo zstd pcre mbedtls \
 gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
@@ -784,6 +786,7 @@ for x_arg in "$@" ; do
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-ngs=* \
+      | --with-ncbicrypt=* \
       | --with-libunwind=* | --with-libdw=* | --with-backward-cpp=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* | --with-zstd=* \
       | --with-pcre=* | --with-mbedtls=* \
@@ -876,9 +879,9 @@ fi
 if test "$with_bin_release" = "yes" ; then
    # Default some other options accordingly
    : ${with_ncbi_public=yes}
-   : ${with_ncbi_crypt=no}
    : ${with_connext=no}
    : ${with_libdw=no}
+   : ${with_ncbicrypt=no}
    : ${with_pcre=no} # Too much variation across distributions.
    : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
@@ -6456,6 +6459,23 @@ else
    AC_DEFINE(HAVE_NCBI_C, 1, [Define to 1 if the NCBI C toolkit is available.])
 fi
 
+
+### ncbicrypt
+case "$with_ncbicrypt" in
+   yes | no | '' ) ;;
+   *             ) NCBICRYPT_PATH=$with_ncbicrypt ;;
+esac
+if test -d "$NCBICRYPT_PATH"; then
+   NCBI_FIND_ARCH_PATH(NCBICRYPT)
+   NCBICRYPT_PATH=$NCBICRYPT_ARCH_PATH
+   NCBI_FIX_DIR(NCBICRYPT_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(ncbicrypt,
+   [AC_LANG_PROGRAM([[@%:@include <ncbicrypt.h>]],
+      [[NCBICRYPT_Key k = NCBICRYPT_Init("foo");]])])
+NETWORK_LIBS="$NETWORK_LIBS $NCBICRYPT_LIBS"
+
+
 # X11
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -9099,13 +9119,6 @@ for fff in $connext ; do
    fi
 done
 
-if test "$with_connext" = "no"; then
-   if test "$with_ncbi_crypt" = "yes" ; then
-      AC_MSG_ERROR([--with-ncbi-crypt specified, but CONNECT extensions are unavailable])
-   fi
-   with_ncbi_crypt=no
-fi
-
 if test "$with_connext" = "no" ; then
    CONNEXT=
    XCONNEXT=
@@ -9115,29 +9128,6 @@ else
    XCONNEXT=xconnext
    AC_DEFINE(HAVE_LIBCONNEXT, 1,
       [Define to 1 if non-public CONNECT extensions are available.])
-fi
-
-
-## `ncbi_crypt' support
-
-ncbi_crypt="ncbi_crypt"
-
-for fff in $ncbi_crypt ; do
-   if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
-      if test "$with_ncbi_crypt" = "yes" ; then
-         AC_MSG_ERROR([--with-ncbi-crypt:  src/connect/ext/${fff}.c is missing])
-      fi
-      with_ncbi_crypt="no"
-      break
-   fi
-done
-
-if test "$with_ncbi_crypt" = "no" ; then
-   ncbi_crypt="ncbi_crypt_stub"
-else
-   NCBI_PROJECT(ncbi_crypt)
-   AC_DEFINE(HAVE_NCBI_CRYPT, 1,
-      [Define to 1 if the real version of ncbi_crypt support is available.])
 fi
 
 
@@ -9623,7 +9613,6 @@ AC_SUBST(WHOLE_ARCHIVE)
 AC_SUBST(NO_WHOLE_ARCHIVE)
 
 AC_SUBST(OPT_GROUPS)
-AC_SUBST(ncbi_crypt)
 AC_SUBST(CONNEXT)
 AC_SUBST(XCONNEXT)
 AC_SUBST(serial)
