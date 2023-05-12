@@ -100,8 +100,8 @@ public:
     // With this constructor, failure to retrieve
     // a publication for a PMID is logged with the supplied message listener.
     // If no message listener is supplied, an exception is thrown.
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource = EPubmedSource::eMLA, bool bNormalize = false);
-    CRemoteUpdater(FLogger logger, EPubmedSource = EPubmedSource::eMLA, bool bNormalize = false);
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource = EPubmedSource::eEUtils, bool bNormalize = false);
+    CRemoteUpdater(FLogger logger, EPubmedSource = EPubmedSource::eEUtils, bool bNormalize = false);
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
