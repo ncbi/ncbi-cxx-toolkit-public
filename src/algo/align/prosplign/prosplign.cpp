@@ -1235,6 +1235,9 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
 
     CProteinAlignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
     list<CNPiece> good_parts = FindGoodParts( alignment_text, output_options, m_implementation->GetScaleScoring(), m_implementation->GetSubstMatrix() );
+    if (good_parts.empty()) {
+        return CRef<CSeq_align>();
+    }
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts/*, output_options.GetCutFlankPartialCodons()*/);
 
