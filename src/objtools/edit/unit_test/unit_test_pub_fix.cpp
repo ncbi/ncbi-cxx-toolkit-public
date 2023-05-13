@@ -368,7 +368,7 @@ BOOST_AUTO_TEST_CASE(Test_MUIsJournalIndexed)
 
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Journal"), false); // None of entries found indexable
     BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Fake journal"), false);
-    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Journal (which does not exist)"), true); // Some entries are indexed
+    BOOST_CHECK_EQUAL(fix_pub::MUIsJournalIndexed("Science"), true); // Some entries are indexed; RW-1608
 }
 
 struct STestErrorText
