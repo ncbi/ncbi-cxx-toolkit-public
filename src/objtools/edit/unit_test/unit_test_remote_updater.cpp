@@ -69,12 +69,9 @@ template<EError_val MLAError_val>
 class CMLAClient_THROW : public CMLAClient
 {
 public:
-    virtual ~CMLAClient_THROW(){};
-
-    using TReply = CMla_back;
-    CRef<CPub> AskGetpubpmid
-        (const CPubMedId& req, TReply* reply=0) override;
-
+    ~CMLAClient_THROW() override {}
+private:
+    CRef<CPub> AskGetpubpmid(const CPubMedId& req, CMla_back* reply = nullptr) override;
 };
 
 
@@ -114,10 +111,18 @@ private:
     string m_Expected;
 };
 
+static
+void s_SetMLAClient(CRemoteUpdater& updater, CMLAClient& mlaClient)
+{
+    CMLAUpdater* mlau = new CMLAUpdater(true);
+    mlau->SetClient(&mlaClient);
+    updater.SetPubmedClient(mlau);
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_RW_1130)
 {
-    CRef<CMLAClient> pMLAClient(new CMLAClient_THROW<eError_val_cannot_connect_pmdb>());
+    CRef<CMLAClient> pMLAClient;
     auto pDesc = s_CreateDescriptor();
     CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
 
@@ -129,8 +134,9 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
 
+    pMLAClient.Reset(new CMLAClient_THROW<eError_val_cannot_connect_pmdb>());
     {
-        updater.SetMLAClient(*pMLAClient);
+        s_SetMLAClient(updater, *pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
             "CMLAClient : cannot-connect-pmdb";
@@ -141,9 +147,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     {
         CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
-        CMLAUpdater* mlau = new CMLAUpdater();
-        mlau->SetClient(pMLAClient);
-        updater.SetPubmedClient(mlau);
+        s_SetMLAClient(updater, *pMLAClient);
 
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
@@ -155,7 +159,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     updater.SetMaxMlaAttempts(4);
     pMLAClient.Reset(new CMLAClient_THROW<eError_val_cannot_connect_searchbackend_pmdb>());
-    updater.SetMLAClient(*pMLAClient);
+    s_SetMLAClient(updater, *pMLAClient);
     {
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
         "4 attempts made. "
@@ -168,7 +172,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     pMLAClient.Reset(new CMLAClient_THROW<eError_val_not_found>());
     {
-        updater.SetMLAClient(*pMLAClient);
+        s_SetMLAClient(updater, *pMLAClient);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "CMLAClient : not-found";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
@@ -182,7 +186,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     {
         CObjtoolsListener messageListener;
         CRemoteUpdater updater(&messageListener, EPubmedSource::eMLA);
-        updater.SetMLAClient(*pMLAClient);
+        s_SetMLAClient(updater, *pMLAClient);
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
 }
