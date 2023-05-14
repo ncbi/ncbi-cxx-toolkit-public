@@ -125,7 +125,7 @@ public:
     static void PostProcessPubs(CPubdesc& pubdesc);
 
     void SetPubmedClient(IPubmedUpdater*);
-    void SetMLAClient(CMLAClient& mlaClient);
+    NCBI_DEPRECATED void SetMLAClient(CMLAClient& mlaClient);
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
     void ReportStats(std::ostream& str);
