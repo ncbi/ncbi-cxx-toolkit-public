@@ -946,6 +946,9 @@
 /* Define to 1 if libmuparser is available. */
 #define HAVE_LIBMUPARSER 1
 
+/* Define to 1 if libncbicrypt is available. */
+#cmakedefine HAVE_LIBNCBICRYPT 1
+
 /* Define to 1 if libnghttp2 is available. */
 #cmakedefine HAVE_LIBNGHTTP2 1
 
