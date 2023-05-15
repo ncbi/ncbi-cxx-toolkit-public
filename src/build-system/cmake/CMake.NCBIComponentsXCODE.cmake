@@ -59,7 +59,8 @@ set(NCBI_ThirdParty_NGHTTP2   ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHT
 set(NCBI_ThirdParty_GL2PS     ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2PS root")
 set(NCBI_ThirdParty_GMP       ${NCBI_TOOLS_ROOT}/gmp-6.0.0a CACHE PATH "GMP root")
 set(NCBI_ThirdParty_NETTLE    ${NCBI_TOOLS_ROOT}/nettle-3.1.1 CACHE PATH "NETTLE root")
-set(NCBI_ThirdParty_GNUTLS     ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
+set(NCBI_ThirdParty_GNUTLS    ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
+set(NCBI_ThirdParty_NCBICRYPT ${NCBI_TOOLS_ROOT}/ncbicrypt-20230512 CACHE PATH "NCBICRYPT root")
 
 #############################################################################
 #############################################################################
@@ -529,3 +530,10 @@ if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
 endif()
 NCBIcomponent_report(GNUTLS)
+
+#############################################################################
+# NCBICRYPT
+if(NOT NCBI_COMPONENT_NCBICRYPT_DISABLED)
+    NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
+endif()
+NCBIcomponent_report(NCBICRYPT)

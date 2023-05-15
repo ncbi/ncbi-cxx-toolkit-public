@@ -45,6 +45,7 @@ set(NCBI_ThirdParty_NCBI_C  ${NCBI_TOOLS_ROOT}/Lib/Ncbi/C/${NCBI_ThirdPartyCompi
 set(NCBI_ThirdParty_VDBROOT //snowman/trace_software/vdb)
 
 set(NCBI_ThirdParty_GNUTLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9 CACHE PATH "GNUTLS root")
+set(NCBI_ThirdParty_NCBICRYPT  ${NCBI_ThirdPartyBasePath}/ncbicrypt/${NCBI_ThirdPartyCompiler}/20230512 CACHE PATH "NCBICRYPT root")
 set(NCBI_ThirdParty_FASTCGI    ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.1 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_Boost_VERSION "1.76.0")
 set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/${NCBI_ThirdParty_Boost_VERSION}-ncbi1 CACHE PATH "Boost root")
@@ -299,6 +300,13 @@ if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
 endif()
 NCBIcomponent_report(GNUTLS)
+
+#############################################################################
+# NCBICRYPT
+if(NOT NCBI_COMPONENT_NCBICRYPT_DISABLED)
+    NCBI_define_Wcomponent(NCBICRYPT ncbicrypt.lib)
+endif()
+NCBIcomponent_report(NCBICRYPT)
 
 #############################################################################
 # FASTCGI
