@@ -128,7 +128,7 @@ static const char* ncbi_accpref[] = {
     "KK", "KL", "KM", "KN", "KO", "KP", "KQ", "KR", "KS", "KT", "KU", "KV",
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
     "MO", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "OK", "OL", "OM", "ON",
-    "OO", "OP", "OQ", "OT", nullptr
+    "OO", "OP", "OQ", "OR", "OT", nullptr
 };
 
 static const char* refseq_accpref[] = {
@@ -473,7 +473,7 @@ int CheckSTRAND(const string& str)
 
     string compare(str);
     NStr::ToLower(compare);
-    for (int i = 0; i < strandSpecCount; ++i) {
+    for (uint i = 0; i < strandSpecCount; ++i) {
         if (NStr::StartsWith(compare, strandSpecs[i])) {
             return i;
         }
@@ -508,7 +508,7 @@ int CheckTPG(const string& str)
 
     string compare(str);
     NStr::ToLower(compare);
-    for (int i = 0; i < topologyCount; ++i) {
+    for (uint i = 0; i < topologyCount; ++i) {
         if (NStr::StartsWith(compare, topologies[i])) {
             return i;
         }
