@@ -327,11 +327,6 @@
 #endif
 
 
-#ifdef HAVE_LIBNCBICRYPT
-#  define HAVE_NCBI_CRYPT HAVE_LIBNCBICRYPT
-#endif
-
-
 #include <common/ncbi_skew_guard.h>
 
 
