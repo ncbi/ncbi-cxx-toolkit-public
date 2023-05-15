@@ -1,35 +1,35 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Justin Foley, NCBI
-*
-* File Description:
-*   Unit tests for the field handlers.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Justin Foley, NCBI
+ *
+ * File Description:
+ *   Unit tests for the field handlers.
+ *
+ * ===========================================================================
+ */
 
 #include <ncbi_pch.hpp>
 
@@ -65,28 +65,21 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
-template<EError_val MLAError_val>
-class CMLAClient_THROW : public CMLAClient
-{
-public:
-    ~CMLAClient_THROW() override {}
-private:
-    CRef<CPub> AskGetpubpmid(const CPubMedId& req, CMla_back* reply = nullptr) override;
-};
 
-
-template<EError_val MLAError_val>
-CRef<CPub> CMLAClient_THROW<MLAError_val>::AskGetpubpmid(const CPubMedId& req, CMla_back* reply)
+template <EError_val MLAError_val>
+struct CMLAClient_THROW : CMLAClient
 {
-    if (reply) {
-        reply->SetError(MLAError_val);
+    CRef<CPub> AskGetpubpmid(const CPubMedId& req, CMla_back* reply = nullptr) override
+    {
+        if (reply) {
+            reply->SetError(MLAError_val);
+        }
+
+        CNcbiOstrstream oss;
+        oss << MLAError_val;
+        NCBI_THROW(CException, eUnknown, CNcbiOstrstreamToString(oss));
     }
-
-    CNcbiOstrstream oss;
-    oss << MLAError_val;
-    NCBI_THROW(CException, eUnknown, CNcbiOstrstreamToString(oss));
-}
-
+};
 
 static CRef<CSeqdesc> s_CreateDescriptor(void)
 {
@@ -111,18 +104,17 @@ private:
     string m_Expected;
 };
 
-static
-void s_SetMLAClient(CRemoteUpdater& updater, CMLAClient& mlaClient)
+template <EError_val MLAError_val>
+static void s_SetMLAClient(CRemoteUpdater& updater)
 {
     CMLAUpdater* mlau = new CMLAUpdater(true);
-    mlau->SetClient(&mlaClient);
+    mlau->SetClient(new CMLAClient_THROW<MLAError_val>);
     updater.SetPubmedClient(mlau);
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_RW_1130)
 {
-    CRef<CMLAClient> pMLAClient;
     auto pDesc = s_CreateDescriptor();
     CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
 
@@ -134,9 +126,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
 
-    pMLAClient.Reset(new CMLAClient_THROW<eError_val_cannot_connect_pmdb>());
     {
-        s_SetMLAClient(updater, *pMLAClient);
+        s_SetMLAClient<eError_val_cannot_connect_pmdb>(updater);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
             "CMLAClient : cannot-connect-pmdb";
@@ -147,7 +138,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     {
         CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
-        s_SetMLAClient(updater, *pMLAClient);
+        s_SetMLAClient<eError_val_cannot_connect_pmdb>(updater);
 
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
@@ -158,8 +149,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     }
 
     updater.SetMaxMlaAttempts(4);
-    pMLAClient.Reset(new CMLAClient_THROW<eError_val_cannot_connect_searchbackend_pmdb>());
-    s_SetMLAClient(updater, *pMLAClient);
+    s_SetMLAClient<eError_val_cannot_connect_searchbackend_pmdb>(updater);
     {
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
         "4 attempts made. "
@@ -169,10 +159,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
                 CCheckMsg(expectedMsg));
     }
 
-
-    pMLAClient.Reset(new CMLAClient_THROW<eError_val_not_found>());
     {
-        s_SetMLAClient(updater, *pMLAClient);
+        s_SetMLAClient<eError_val_not_found>(updater);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "CMLAClient : not-found";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
@@ -182,11 +170,10 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         BOOST_CHECK_THROW(updater.UpdatePubReferences(*pDesc), CException);
     }
 
-
     {
         CObjtoolsListener messageListener;
         CRemoteUpdater updater(&messageListener, EPubmedSource::eMLA);
-        s_SetMLAClient(updater, *pMLAClient);
+        s_SetMLAClient<eError_val_not_found>(updater);
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
 }
