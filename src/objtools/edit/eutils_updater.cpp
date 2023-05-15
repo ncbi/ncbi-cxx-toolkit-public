@@ -62,6 +62,8 @@
 #include <objects/general/Date_std.hpp>
 #include <objects/general/Dbtag.hpp>
 
+#include <misc/jsonwrapp/jsonwrapp.hpp>
+
 #include <array>
 
 BEGIN_NCBI_SCOPE
@@ -565,6 +567,93 @@ void CEUtilsUpdaterWithCache::ReportStats(std::ostream& os)
 void CEUtilsUpdaterWithCache::ClearCache()
 {
     m_cache.clear();
+}
+
+
+// Hydra replacement using citmatch api; RW-1918,RW-1999
+
+static bool ParseJson(const string& json, vector<TEntrezId>& pmids, string& msg)
+{
+    CJson_Document doc(json);
+    CJson_Object   dobj(doc.SetObject());
+
+    _ASSERT(dobj["version"].GetValue().GetString() == "1.0");
+    _ASSERT(dobj["operation"].GetValue().GetString() == "citmatch");
+    if (! dobj["success"].GetValue().GetBool()) {
+        msg = "no success";
+        return false;
+    }
+
+    const auto& result = dobj.at("result");
+    if (! result.IsObject()) {
+        msg = "result is not an object";
+        return false;
+    }
+
+    const auto& result_obj = result.GetObject();
+#ifdef _DEBUG
+    const auto& count = result_obj.at("count");
+    _ASSERT(count.GetValue().IsNumber());
+    const auto& type = result_obj.at("type");
+    _ASSERT(type.GetValue().GetString() == "uids");
+#endif
+    const auto& uids = result_obj.at("uids");
+    if (! uids.IsArray()) {
+        msg = "uids is not an array";
+        return false;
+    }
+
+    const auto& uids_array = uids.GetArray();
+    for (auto it = uids_array.begin(); it != uids_array.end(); ++it) {
+        if (it->IsObject()) {
+            const auto& uid_obj = it->GetObject();
+            auto it2 = uid_obj.find("pubmed");
+            if (it2 != uid_obj.end()) {
+                const auto sPubmed = it2->value.GetValue().GetString();
+                TEntrezId  pmid    = NStr::StringToNumeric<TEntrezId>(sPubmed);
+                pmids.push_back(pmid);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool CEUtilsUpdaterBase::DoPubSearch(const string& query, vector<TEntrezId>& pmids)
+{
+    static const string hostname = "pubmed.ncbi.nlm.nih.gov";
+    static const string path     = "/api/citmatch";
+    static const string args     = "method=heuristic&raw-text=";
+    const string        params   = args + NStr::URLEncode(query);
+
+    for (unsigned attempt = 1; attempt <= 5; ++attempt) {
+        try {
+            CConn_HttpStream http(hostname, path, params);
+
+            string result;
+
+            char buf[1024];
+            while (! http.fail()) {
+                http.read(buf, sizeof(buf));
+                result.append(buf, http.gcount());
+            }
+
+            string msg;
+            if (! ParseJson(result, pmids, msg)) {
+                ERR_POST(Warning << "error parsing json: " << msg);
+                return false;
+            } else {
+                return ! pmids.empty();
+            }
+        } catch (CException& e) {
+            ERR_POST(Warning << "failed on attempt " << attempt
+                             << ": " << e);
+        }
+
+        SleepSec(attempt);
+    }
+
+    return false;
 }
 
 END_SCOPE(edit)
