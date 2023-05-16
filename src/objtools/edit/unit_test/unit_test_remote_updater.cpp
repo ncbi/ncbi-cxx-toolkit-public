@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Justin Foley, NCBI
+ * Author:  Justin Foley, Vitaly Stakhovsky, NCBI
  *
  * File Description:
  *   Unit tests for the field handlers.
@@ -55,7 +55,7 @@
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/remote_updater.hpp>
 #include <objtools/logging/listener.hpp>
-#include <objtools/edit/mla_updater.hpp>
+#include <objtools/edit/eutils_updater.hpp>
 #include <objects/seq/Seqdesc.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -66,18 +66,21 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(edit);
 
 
-template <EError_val MLAError_val>
-struct CMLAClient_THROW : CMLAClient
+template <EPubmedError error_val>
+class CPubmedUpdater_THROW : public CEUtilsUpdater
 {
-    CRef<CPub> AskGetpubpmid(const CPubMedId& req, CMla_back* reply = nullptr) override
+public:
+    CPubmedUpdater_THROW() :
+        CEUtilsUpdater(true)
     {
-        if (reply) {
-            reply->SetError(MLAError_val);
-        }
+    }
 
-        CNcbiOstrstream oss;
-        oss << MLAError_val;
-        NCBI_THROW(CException, eUnknown, CNcbiOstrstreamToString(oss));
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* perr = nullptr) override
+    {
+        if (perr) {
+            *perr = error_val;
+        }
+        return {};
     }
 };
 
@@ -104,30 +107,28 @@ private:
     string m_Expected;
 };
 
-template <EError_val MLAError_val>
-static void s_SetMLAClient(CRemoteUpdater& updater)
+template <EPubmedError error_val>
+static void s_SetPubmedClient(CRemoteUpdater& updater)
 {
-    CMLAUpdater* mlau = new CMLAUpdater(true);
-    mlau->SetClient(new CMLAClient_THROW<MLAError_val>);
-    updater.SetPubmedClient(mlau);
+    updater.SetPubmedClient(new CPubmedUpdater_THROW<error_val>());
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_RW_1130)
 {
     auto pDesc = s_CreateDescriptor();
-    CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
+    CRemoteUpdater updater(nullptr);
 
     BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
 
     {
-        CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
-        updater.SetPubmedClient(new CMLAUpdater());
+        CRemoteUpdater updater(nullptr);
+        updater.SetPubmedClient(new CEUtilsUpdater());
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
 
     {
-        s_SetMLAClient<eError_val_cannot_connect_pmdb>(updater);
+        s_SetPubmedClient<eError_val_cannot_connect_pmdb>(updater);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
             "CMLAClient : cannot-connect-pmdb";
@@ -137,8 +138,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     }
 
     {
-        CRemoteUpdater updater(nullptr, EPubmedSource::eMLA);
-        s_SetMLAClient<eError_val_cannot_connect_pmdb>(updater);
+        CRemoteUpdater updater(nullptr);
+        s_SetPubmedClient<eError_val_cannot_connect_pmdb>(updater);
 
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
@@ -149,7 +150,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     }
 
     updater.SetMaxMlaAttempts(4);
-    s_SetMLAClient<eError_val_cannot_connect_searchbackend_pmdb>(updater);
+    s_SetPubmedClient<eError_val_cannot_connect_searchbackend_pmdb>(updater);
     {
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
         "4 attempts made. "
@@ -160,7 +161,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     }
 
     {
-        s_SetMLAClient<eError_val_not_found>(updater);
+        s_SetPubmedClient<eError_val_not_found>(updater);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "CMLAClient : not-found";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
@@ -172,8 +173,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     {
         CObjtoolsListener messageListener;
-        CRemoteUpdater updater(&messageListener, EPubmedSource::eMLA);
-        s_SetMLAClient<eError_val_not_found>(updater);
+        CRemoteUpdater updater(&messageListener);
+        s_SetPubmedClient<eError_val_not_found>(updater);
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
 }
