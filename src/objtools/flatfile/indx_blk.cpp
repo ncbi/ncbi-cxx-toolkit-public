@@ -473,7 +473,7 @@ int CheckSTRAND(const string& str)
 
     string compare(str);
     NStr::ToLower(compare);
-    for (uint i = 0; i < strandSpecCount; ++i) {
+    for (int i = 0; i < strandSpecCount; ++i) {
         if (NStr::StartsWith(compare, strandSpecs[i])) {
             return i;
         }
@@ -508,7 +508,7 @@ int CheckTPG(const string& str)
 
     string compare(str);
     NStr::ToLower(compare);
-    for (uint i = 0; i < topologyCount; ++i) {
+    for (int i = 0; i < topologyCount; ++i) {
         if (NStr::StartsWith(compare, topologies[i])) {
             return i;
         }
