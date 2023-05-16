@@ -650,17 +650,19 @@ static bool CheckDate(int year, int month, int max_date_check, const CCit_jour& 
 
 static TEntrezId DoHydraSearch(const CPubData& data)
 {
+    vector<string> query;
+
     // title
-    string query = NStr::Join(data.GetTitleWords(), "+");
+    for (const string& w : data.GetTitleWords()) {
+        query.push_back(w);
+    }
 
     // authors
     for (const string& author : data.GetAuthors()) {
         list<CTempString> names;
         NStr::Split(author, " ", names, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         if (! names.empty()) {
-            if (! query.empty())
-                query += '+';
-            query += names.front();
+            query.push_back(names.front());
         }
     }
 
