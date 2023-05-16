@@ -328,7 +328,7 @@ CAutoSqlCustomField::Validate(
     if (mFormatHandlers.find(mFormat) == mFormatHandlers.end()) {
         CReaderMessage warning(
             EDiagSev::eDiag_Warning,
-            static_cast<int>(mColIndex),
+            0,
             string("AutoSql: Format \"") + mFormat +
                 "\" for \"" + mName +
                 "\" not recognized, processing as string");
@@ -355,18 +355,25 @@ CAutoSqlCustomFields::SetUserObject(
     CReaderMessageHandler& messageHandler) const
 //  ============================================================================
 {
-    CRef<CUser_object> pAutoSqlCustomData(new CUser_object);
-    pAutoSqlCustomData->SetType().SetStr( "AutoSqlCustomData" );
+    bool newUserObject {false};
+    auto pDisplayData = feat.FindExt("Display Data");
+    if (!pDisplayData) {
+        pDisplayData = Ref(new CUser_object());
+        pDisplayData->SetType().SetStr("Display Data");
+        newUserObject = true;
+    }
 
     CRef<CUser_field> pDummy(new CUser_field);
     for (const auto& fieldInfo: mFields) {
         if (! fieldInfo.SetUserField(
-                columnData, bedFlags, *pAutoSqlCustomData, messageHandler)) {
+                columnData, bedFlags, *pDisplayData, messageHandler)) {
             return false;
         }
     }
 
-    feat.SetData().SetUser(*pAutoSqlCustomData);
+    if (newUserObject) {
+        feat.SetExts().push_back(pDisplayData);
+    }
     return true;
 }
 

@@ -155,7 +155,7 @@ private:
     void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessBed(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    bool xProcessBed(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessUCSCRegion(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessBedRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGtf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -789,7 +789,7 @@ CMultiReaderApp::xProcessSingleFile(
                     xProcessBedRaw(args, istr, ostr);
                 }
                 else {
-                    xProcessBed(args, istr, ostr);
+                    retCode = xProcessBed(args, istr, ostr);
                 }
                 break;
             case CFormatGuess::eUCSCRegion:
@@ -947,7 +947,7 @@ void CMultiReaderApp::xProcessUCSCRegion(
     }
 }
 //  ----------------------------------------------------------------------------
-void CMultiReaderApp::xProcessBed(
+bool CMultiReaderApp::xProcessBed(
     const CArgs& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
@@ -957,7 +957,7 @@ void CMultiReaderApp::xProcessBed(
     CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle, &newStyleMessageListener);
     if (args["autosql"]) {
         if (!reader.SetAutoSql(args["autosql"].AsString())) {
-            return;
+            return false;
         }
     }
     if (ShowingProgress()) {
@@ -972,6 +972,7 @@ void CMultiReaderApp::xProcessBed(
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors.get());
     }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

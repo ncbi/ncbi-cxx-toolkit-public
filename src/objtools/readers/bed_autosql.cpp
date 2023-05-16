@@ -77,6 +77,65 @@ CBedAutoSql::xParseAutoSqlColumnDef(
     return true;
 }
 
+
+void 
+CBedAutoSql::xProcessLine(
+        const string& line,
+        bool& readingTable,
+        size_t& autoSqlColCounter)
+{
+    if (NStr::IsBlank(line)) {
+        return;
+    }
+
+    if (readingTable) {
+        if (NStr::StartsWith(line, ")")) {
+            readingTable = false;
+            if (line.size()>1) {
+                xProcessLine(NStr::TruncateSpaces(line.substr(1)), 
+                    readingTable,
+                    autoSqlColCounter);    
+                    return;
+            }
+            return;
+        }
+        string format, name, description;
+        xParseAutoSqlColumnDef(line, format, name, description);
+        if (!mWellKnownFields.ProcessTableRow(autoSqlColCounter, name, format)) {
+            mCustomFields.Append(
+                CAutoSqlCustomField(
+                autoSqlColCounter, format, name, description));
+        }
+        ++autoSqlColCounter;
+        return;
+    }
+            
+    if (NStr::StartsWith(line, "(")) {
+        readingTable = true;
+        if (line.size()>1) {
+            xProcessLine(NStr::TruncateSpaces(line.substr(1)), 
+                readingTable,
+                autoSqlColCounter);    
+            return;
+        }
+        return;
+    }
+            
+    if (line == "as") {
+        return;
+    }
+    
+    string key, value;
+    NStr::SplitInTwo(line, ":", key, value, NStr::fSplit_MergeDelimiters);
+    NStr::TruncateSpacesInPlace(key);
+    NStr::TruncateSpacesInPlace(value);
+    if (key == "fieldCount") {
+        mColumnCount = NStr::StringToUInt(value);
+    }
+    mParameters[key] = value;
+}
+
+
 //  ============================================================================
 bool
 CBedAutoSql::Load(
@@ -89,38 +148,9 @@ CBedAutoSql::Load(
 
     while (!istr.eof()) {
         string line = xReadLine(istr);
-        if (readingTable) {
-            if (line == ")") {
-                readingTable = false;
-                continue;
-            }
-            string format, name, description;
-            xParseAutoSqlColumnDef(line, format, name, description);
-            if (!mWellKnownFields.ProcessTableRow(autoSqlColCounter, name, format)) {
-                mCustomFields.Append(
-                    CAutoSqlCustomField(
-                        autoSqlColCounter, format, name, description));
-            }
-            ++autoSqlColCounter;
-        }
-        else {
-            if (line == "(") {
-                readingTable = true;
-                continue;
-            }
-            if (line == "as") {
-                continue;
-            }
-            string key, value;
-            NStr::SplitInTwo(line, ":", key, value, NStr::fSplit_MergeDelimiters);
-            key = NStr::TruncateSpaces(key);
-            value = NStr::TruncateSpaces(value);
-            if (key == "fieldCount") {
-                mColumnCount = NStr::StringToUInt(value);
-            }
-            mParameters[key] = value;
-        }
+        xProcessLine(line, readingTable, autoSqlColCounter);
     }
+
     if (mColumnCount == 0) {
         mColumnCount = mWellKnownFields.NumFields() + mCustomFields.NumFields();
     }
@@ -145,7 +175,7 @@ CBedAutoSql::xReadLine(
     string line;
     while (line.empty()  &&  istr.good()) {
         std::getline(istr, line);
-        line = NStr::TruncateSpaces(line);
+        NStr::TruncateSpacesInPlace(line);
     }
     return line;
 }
@@ -166,7 +196,11 @@ CBedAutoSql::ReadSeqFeat(
         mWellKnownFields.SetLocation(
             columnData, mBedFlags, feat, messageHandler)  &&
         mWellKnownFields.SetTitle(
-            columnData, mBedFlags, feat, messageHandler)  &&
+            columnData, feat, messageHandler) && 
+        mWellKnownFields.SetRegion(
+            columnData, feat, messageHandler) &&
+        mWellKnownFields.SetDisplayData(
+            columnData, mBedFlags, feat, messageHandler) &&
         mCustomFields.SetUserObject(
             columnData, mBedFlags, feat, messageHandler);
     if (!success) {
