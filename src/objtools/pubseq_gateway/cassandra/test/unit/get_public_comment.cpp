@@ -221,6 +221,39 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
     EXPECT_EQ(1UL, call_count);
 }
 
+TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo2)
+{
+    const string config_section = "TEST";
+    auto r = make_shared<CNcbiRegistry>();
+    r->Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
+    CSatInfoSchemaProvider schema_provider("sat_info3", "PSG_TEST", m_Connection, r, config_section);
+    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, schema_provider.RefreshMessages(true));
+
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 4317, false, error_function);
+    blob_wait_function(fetch_blob);
+    ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
+
+    auto blob = fetch_blob.ConsumeBlobRecord();
+    EXPECT_FALSE(blob->GetFlag(EBlobFlags::eSuppress));
+    EXPECT_TRUE(blob->GetFlag(EBlobFlags::eWithdrawn));
+
+    size_t call_count{0};
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
+    get_comment.SetMessages(schema_provider.GetMessages());
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This record was removed at the submitter's request. "
+                "Contact info@ncbi.nlm.nih.gov for further information", comment);
+        }
+    );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(1UL, call_count);
+}
+
 TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
     CPSGMessages messages;
     string suppressed_value = "BLOB_STATUS_SUPPRESSED";
@@ -313,6 +346,33 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
     size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, blob, error_function);
     get_comment.SetMessages(&messages);
+    get_comment.SetCommentCallback(
+        [&call_count]
+        (string comment, bool isFound)
+        {
+            ++call_count;
+            EXPECT_EQ(true, isFound);
+            EXPECT_EQ("This record was removed from further distribution at the submitter's request. "
+                "Contact info@ncbi.nlm.nih.gov for further information", comment);
+        }
+    );
+    comment_wait_function(get_comment);
+    EXPECT_EQ(1UL, call_count);
+}
+
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo2)
+{
+    const string config_section = "TEST";
+    auto r = make_shared<CNcbiRegistry>();
+    r->Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
+    CSatInfoSchemaProvider schema_provider("sat_info3", "PSG_TEST", m_Connection, r, config_section);
+    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, schema_provider.RefreshMessages(true));
+    CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
+    blob.SetSuppress(true);
+
+    size_t call_count{0};
+    CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, blob, error_function);
+    get_comment.SetMessages(schema_provider.GetMessages());
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
