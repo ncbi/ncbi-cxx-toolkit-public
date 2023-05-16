@@ -79,9 +79,10 @@ void CMultiApplication::Init(void)
                      "produce alignments from alignment number 'first' "
                      "to all succeeding alignments in the list",
                      CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("last", "last", 
-                     "stop after aligning index 'last' to all succeeding "
-                     "alignments in the list (ignored by default)",
+    arg_desc->AddDefaultKey("last", "index", 
+                     "Compare alignments from first to last against the rest "
+                     "in the list. Indices start from 1 "
+                     "(default indicates an all vs. all comparison).",
                      CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("g0", "penalty", 
                      "gap open penalty for initial/terminal gaps",
@@ -109,6 +110,8 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("cutoff", "distance",
                             "Maximum pairwise distance to report",
                             CArgDescriptions::eDouble, "0.75");
+    arg_desc->AddDefaultKey("out", "outfile", "Output file name",
+                            CArgDescriptions::eOutputFile, "-");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -527,10 +530,16 @@ int CMultiApplication::Run(void)
 
     int first_index = args["first"].AsInteger();
     int last_index = args["last"].AsInteger();
-    if (last_index == 0)
+    if (last_index == 0) {
         last_index = align_list.size() - 1;
-    if (first_index != 0 || last_index != (int)align_list.size() - 1) {
-        printf("error: all-against-all alignment required\n");
+    }
+    else {
+        // last_index starts from 1
+        last_index--;
+    }
+
+    if (first_index != 0) {
+        NcbiCerr << "error: all-against-all alignment required" << endl;
         return -1;
     }
 
@@ -539,6 +548,10 @@ int CMultiApplication::Run(void)
 
     for (int i = first_index; i <= last_index; i++) {
         for (size_t j = i + 1; j < align_list.size(); j++) {
+
+            if (last_index < (int)align_list.size() - 1 && (int)j <= last_index) {
+                continue;
+            }
 
             int len1 = align_list[i].align[0].GetLength();
             int len2 = align_list[j].align[0].GetLength();
@@ -612,11 +625,15 @@ int CMultiApplication::Run(void)
     }
 
     if (args["pairs"]) {
-        for (int i=0;i < num_clusters - 1; i++) {
+        for (int i=0;i <= last_index; i++) {
             for (int j=(i+1);j < num_clusters; j++) {
 
+                if (last_index < (int)align_list.size() - 1 && j <= last_index) {
+                    continue;
+                }
+
                 if (distances(i, j) < args["cutoff"].AsDouble()) {
-                    NcbiCout << align_list[i].name << "\t"
+                    args["out"].AsOutputFile() << align_list[i].name << "\t"
                              << align_list[j].name << "\t"
                              << distances(i, j) << NcbiEndl;
                 }
