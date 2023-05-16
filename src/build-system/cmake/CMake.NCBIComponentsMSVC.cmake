@@ -64,7 +64,7 @@ set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/xml/${NCBI_ThirdPartyC
 set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/xslt/${NCBI_ThirdPartyCompiler}/1.1.26 CACHE PATH "XSLT root")
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.26.0 CACHE PATH "SQLITE3 root")
-set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python38 CACHE PATH "PYTHON root")
+set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python_3.11 CACHE PATH "PYTHON root")
 set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.36.4-ncbi2 CACHE PATH "PROTOBUF root")
 set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.36.4-ncbi2 CACHE PATH "GRPC root")
 set(NCBI_ThirdParty_FTGL       ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
@@ -412,11 +412,11 @@ NCBIcomponent_report(VDB)
 
 #############################################################################
 # PYTHON
-NCBI_define_Wcomponent(PYTHON python38.lib python3.lib)
+NCBI_define_Wcomponent(PYTHON python311.lib python3.lib)
 NCBIcomponent_report(PYTHON)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
-    set(NCBI_COMPONENT_PYTHON_VERSION 38)
+    set(NCBI_COMPONENT_PYTHON_VERSION 311)
 endif()
 
 ##############################################################################
