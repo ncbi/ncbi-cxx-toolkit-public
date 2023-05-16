@@ -96,7 +96,7 @@ set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.6 CACHE PATH "H2O r
 set(NCBI_ThirdParty_GMP           ${NCBI_TOOLS_ROOT}/gmp-6.0.0a CACHE PATH "GMP root")
 set(NCBI_ThirdParty_NETTLE        ${NCBI_TOOLS_ROOT}/nettle-3.1.1 CACHE PATH "NETTLE root")
 set(NCBI_ThirdParty_GNUTLS        ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
-set(NCBI_ThirdParty_NCBICRYPT     ${NCBI_TOOLS_ROOT}/ncbicrypt-20230512 CACHE PATH "NCBICRYPT root")
+set(NCBI_ThirdParty_NCBICRYPT     ${NCBI_TOOLS_ROOT}/ncbicrypt-20230516 CACHE PATH "NCBICRYPT root")
 
 set(NCBI_ThirdParty_THRIFT        ${NCBI_TOOLS_ROOT}/thrift-0.11.0 CACHE PATH "THRIFT root")
 set(NCBI_ThirdParty_NLohmann_JSON ${NCBI_TOOLS_ROOT}/nlohmann-json-3.9.1 CACHE PATH "NLohmann_JSON root")

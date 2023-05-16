@@ -304,7 +304,7 @@ esac
 # C Toolkit (path overridden in stable components to avoid version skew)
 : ${NCBI_C_PATH=$NCBI}
 
-: ${NCBICRYPT_PATH=$NCBI/ncbicrypt-20230512}
+: ${NCBICRYPT_PATH=$NCBI/ncbicrypt-20230516}
 
 case "$ncbi_platform" in
     Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
