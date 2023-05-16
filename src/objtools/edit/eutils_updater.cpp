@@ -619,12 +619,12 @@ static bool ParseJson(const string& json, vector<TEntrezId>& pmids, string& msg)
     return true;
 }
 
-bool CEUtilsUpdaterBase::DoPubSearch(const string& query, vector<TEntrezId>& pmids)
+bool CEUtilsUpdaterBase::DoPubSearch(const vector<string>& query, vector<TEntrezId>& pmids)
 {
     static const string hostname = "pubmed.ncbi.nlm.nih.gov";
     static const string path     = "/api/citmatch";
     static const string args     = "method=heuristic&raw-text=";
-    const string        params   = args + NStr::URLEncode(query);
+    const string        params   = args + NStr::URLEncode(NStr::Join(query, "+"));
 
     for (unsigned attempt = 1; attempt <= 5; ++attempt) {
         try {

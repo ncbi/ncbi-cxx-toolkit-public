@@ -18,7 +18,7 @@ public:
     string     GetTitle(const string&) override;
 
     // Hydra replacement using citmatch api; RW-1918,RW-1999
-    static bool DoPubSearch(const string& query, std::vector<TEntrezId>& pmids);
+    static bool DoPubSearch(const std::vector<string>& query, std::vector<TEntrezId>& pmids);
 
 private:
     CRef<CEUtils_ConnContext> m_Ctx;
