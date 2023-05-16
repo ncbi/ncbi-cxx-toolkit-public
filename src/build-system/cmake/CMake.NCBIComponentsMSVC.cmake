@@ -416,7 +416,7 @@ NCBI_define_Wcomponent(PYTHON python311.lib python3.lib)
 NCBIcomponent_report(PYTHON)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
-    set(NCBI_COMPONENT_PYTHON_VERSION 311)
+    set(NCBI_COMPONENT_PYTHON_VERSION 3.11)
 endif()
 
 ##############################################################################
