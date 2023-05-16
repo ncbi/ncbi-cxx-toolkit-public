@@ -72,7 +72,9 @@ class CCassStatusHistoryTaskGetPublicComment
         TDataErrorCallback data_error_cb
     );
 
+    NCBI_STD_DEPRECATED("Use SetMessages(shared_ptr<CPSGMessages> messages)")
     void SetMessages(CPSGMessages const * messages);
+    void SetMessages(shared_ptr<CPSGMessages> messages);
     void SetCommentCallback(TCommentCallback callback);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
 
@@ -83,7 +85,7 @@ class CCassStatusHistoryTaskGetPublicComment
     void JumpToReplaced(CBlobRecord::TSatKey replaced);
 
     TCommentCallback m_CommentCallback{nullptr};
-    CPSGMessages const * m_Messages{nullptr};
+    shared_ptr<CPSGMessages> m_Messages{nullptr};
     TBlobFlagBase m_BlobFlags;
     TBlobStatusFlagsBase m_FirstHistoryFlags{-1};
     bool m_MatchingStatusRowFound{false};
