@@ -71,7 +71,7 @@ char* strndup(const char* str, size_t n)
 #endif /*!HAVE_STRNDUP*/
 
 
-#if !defined(HAVE_STRCASECMP)  &&  !defined(NCBI_COMPILER_MSVC)
+#if !defined(NCBI_COMPILER_MSVC)  &&  !defined(HAVE_STRCASECMP)
 
 /* We assume that we're using ASCII-based charsets */
 int strcasecmp(const char* s1, const char* s2)
@@ -113,7 +113,7 @@ int strncasecmp(const char* s1, const char* s2, size_t n)
     return c1 - c2;
 }
 
-#endif /*!HAVE_STRCASECMP && !NCBI_COMPILER_MSVC*/
+#endif /*!NCBI_COMPILER_MSVC && !HAVE_STRCASECMP*/
 
 
 char* strupr(char* s)
