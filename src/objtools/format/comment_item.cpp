@@ -1637,7 +1637,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                    << "\">" << data_str << "</a>";
         } else {
             result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
-                   << organism << "//"
+                   << organism << "/"
                    << snd
                    << "\">" << data_str << "</a>";
         }
