@@ -70,6 +70,11 @@ public:
         CSeq_feat& feat,
         CReaderMessageHandler&) const;
 
+private:
+    void xProcessLine(const string& line,
+            bool& readingTable,
+            size_t& autoSqlColCounter);
+
 protected:
     int mBedFlags;
     map<string, string> mParameters;

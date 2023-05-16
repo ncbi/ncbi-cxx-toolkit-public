@@ -57,9 +57,21 @@ public:
     bool
     SetTitle(
         const CBedColumnData&,
-        int bedFlags,
         CSeq_feat&,
         CReaderMessageHandler&) const;
+
+    bool 
+    SetRegion(
+        const CBedColumnData& columnData,
+        CSeq_feat& feat,
+        CReaderMessageHandler& messageHandler) const;
+
+    bool 
+    SetDisplayData(
+        const CBedColumnData& columnData,
+        int bedFlags,
+        CSeq_feat& feat,
+        CReaderMessageHandler& messageHandler) const;
 
     bool
     ProcessTableRow(
@@ -74,12 +86,12 @@ public:
     NumFields() const { return mNumFields; };
 
 private:
-    size_t mColChrom;
-    size_t mColSeqStart;
-    size_t mColSeqStop;
-    size_t mColStrand;
-    size_t mColName;
-    size_t mColScore;
+    int mColChrom;
+    int mColSeqStart;
+    int mColSeqStop;
+    int mColStrand;
+    int mColName;
+    int mColScore;
     size_t mNumFields;
 
     bool ContainsInfo() const

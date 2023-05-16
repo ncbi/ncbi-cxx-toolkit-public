@@ -37,6 +37,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include "reader_message_handler.hpp"
 #include "bed_column_data.hpp"
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -75,7 +76,7 @@ private:
         CReaderMessageHandler&) const;
 
     using FormatHandler =
-        bool (*)(const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&);
+        function<bool(const string&, const string&, unsigned int, int, CUser_object&, CReaderMessageHandler&)>;
     using FormatHandlers =  map<string, FormatHandler>;
     static FormatHandlers mFormatHandlers;
 

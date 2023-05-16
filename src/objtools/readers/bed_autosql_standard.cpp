@@ -41,14 +41,14 @@
 #include "bed_autosql_standard.hpp"
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 //  ============================================================================
 CAutoSqlStandardFields::CAutoSqlStandardFields():
 //  ============================================================================
     mColChrom(-1), mColSeqStart(-1), mColSeqStop(-1), mColStrand(-1),
     mColName(-1), mColScore(-1), mNumFields(0)
-{};
+{}
 
 //  ============================================================================
 bool
@@ -154,7 +154,6 @@ CAutoSqlStandardFields::SetLocation(
 bool
 CAutoSqlStandardFields::SetTitle(
     const CBedColumnData& columnData,
-    int bedFlags,
     CSeq_feat& feat,
     CReaderMessageHandler& messageHandler) const
 //  ============================================================================
@@ -163,6 +162,48 @@ CAutoSqlStandardFields::SetTitle(
         return true;
     }
     feat.SetTitle(columnData[mColChrom]);
+    return true;
+}
+
+
+bool 
+CAutoSqlStandardFields::SetRegion(
+    const CBedColumnData& columnData,
+    CSeq_feat& feat,
+    CReaderMessageHandler& messageHandler) const
+{
+    if (mColName >= 0) {
+        feat.SetData().SetRegion(columnData[mColName]);   
+        return true; 
+    }
+    
+    if (mColChrom >= 0) {
+        feat.SetData().SetRegion(columnData[mColName]);
+        return true;
+    }
+
+    return false;
+}
+
+
+bool 
+CAutoSqlStandardFields::SetDisplayData(
+        const CBedColumnData& columnData,
+        int bedFlags,
+        CSeq_feat& feat,
+        CReaderMessageHandler& messageHandler) const
+{
+    if (mColScore == -1) {
+        return true;
+    }
+
+    auto pDisplayData = Ref(new CUser_object());
+    pDisplayData->SetType().SetStr("Display Data");
+    pDisplayData->AddField("score",
+                NStr::StringToInt(columnData[mColScore],
+                    NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols));
+    feat.SetExts().push_back(pDisplayData);
+
     return true;
 }
 
