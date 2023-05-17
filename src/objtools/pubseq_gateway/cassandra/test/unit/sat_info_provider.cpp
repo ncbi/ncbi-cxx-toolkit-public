@@ -148,6 +148,10 @@ TEST_F(CSatInfoProviderTest, Basic) {
     ASSERT_TRUE(sat24.has_value());
     ASSERT_FALSE(sat1000.has_value());
 
+    auto ipg_keyspace = provider.GetIPGKeyspace();
+    ASSERT_TRUE(ipg_keyspace.has_value());
+
+    ASSERT_NE(nullptr, ipg_keyspace.value().connection);
     ASSERT_NE(nullptr, provider.GetResolverKeyspace().connection);
     ASSERT_NE(nullptr, sat4.value().connection);
     ASSERT_NE(nullptr, sat5.value().connection);
@@ -156,6 +160,7 @@ TEST_F(CSatInfoProviderTest, Basic) {
     ASSERT_NE(nullptr, sat52.value().connection);
 
     ASSERT_EQ("idmain2", provider.GetResolverKeyspace().keyspace);
+    ASSERT_EQ("ipg_storage", ipg_keyspace.value().keyspace);
     ASSERT_EQ("satncbi_extended", sat4.value().keyspace);
     ASSERT_EQ("satprot_v2", sat5.value().keyspace);
     ASSERT_EQ("satddbj_wgs", sat23.value().keyspace);
@@ -278,13 +283,23 @@ TEST_F(CSatInfoProviderTest, BasicMessages) {
 }
 
 TEST_F(CSatInfoProviderTest, CassException) {
-    CSatInfoSchemaProvider provider(
-        "NON_EXISTENT_KEYSPACE", "PSG_CASS_UNIT1", m_Connection,
-        m_RegistryPtr, m_ConfigSection
-    );
-    EXPECT_THROW(provider.RefreshMessages(true), CCassandraException);
-    EXPECT_THROW(provider.RefreshSchema(true), CCassandraException);
+    {
+        CSatInfoSchemaProvider provider(
+            "NON_EXISTENT_KEYSPACE", "PSG_CASS_UNIT1", m_Connection,
+            m_RegistryPtr, m_ConfigSection
+        );
+        EXPECT_THROW(provider.RefreshMessages(true), CCassandraException);
+        EXPECT_THROW(provider.RefreshSchema(true), CCassandraException);
+    }
+    {
+        EXPECT_THROW(
+            CSatInfoSchemaProvider(
+                m_KeyspaceName, "PSG_CASS_UNIT1", nullptr,
+                m_RegistryPtr, m_ConfigSection
+            ),
+            CCassandraException
+        );
+    }
 }
-
 
 }  // namespace
