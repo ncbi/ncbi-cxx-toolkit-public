@@ -81,7 +81,11 @@ class CCassBlobWaiter
       , m_Async(async)
       , m_Keyspace(keyspace)
       , m_Key(key)
-    {}
+    {
+        if (m_Conn == nullptr) {
+            NCBI_THROW(CCassandraException, eFatal, "CCassBlobWaiter() Cassandra connection should not be nullptr");
+        }
+    }
 
     CCassBlobWaiter(
         shared_ptr<CCassConnection> conn,
@@ -93,7 +97,11 @@ class CCassBlobWaiter
       , m_Conn(move(conn))
       , m_Async(async)
       , m_Keyspace(keyspace)
-    {}
+    {
+        if (m_Conn == nullptr) {
+            NCBI_THROW(CCassandraException, eFatal, "CCassBlobWaiter() Cassandra connection should not be nullptr");
+        }
+    }
 
     virtual ~CCassBlobWaiter()
     {

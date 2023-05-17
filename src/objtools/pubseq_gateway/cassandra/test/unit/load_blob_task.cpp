@@ -170,6 +170,16 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
     EXPECT_EQ(1UL, call_count);
 }
 
+TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnNoConnection)
+{
+    EXPECT_THROW(
+        CCassBlobTaskLoadBlob(
+            nullptr, m_KeyspaceName, 2155365, false, error_function
+        ),
+        CCassandraException
+    );
+}
+
 TEST_F(CBlobTaskLoadBlobTest, LoadBigBlobData) {
     CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 422992879, true, error_function);
     wait_function(fetch);
