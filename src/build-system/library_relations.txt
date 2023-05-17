@@ -794,6 +794,7 @@ ncbicn3d needs3party ddvlib
 ncbicn3d needs3party ncbiacc
 ncbicn3dOGL includes3party ncbicn3d
 ncbicn3dOGL needs3party vibrantOGL
+ncbicrypt needs3party $(ORIG_LIBS)
 ncbidesk needs3party blastapi
 ncbidesk needs3party ncbimmdb
 ncbidesk needs3party vibrant
