@@ -5901,6 +5901,7 @@ special  CATNDL000000000-CATNEF999999999  embl_tpa_wgs_nuc # 6+9
 special  CATNEJ000000000-CATNEL999999999  embl_tpa_wgs_nuc # 6+9
 special  CATNEO000000000-CATNEU999999999  embl_tpa_wgs_nuc # 6+9
 special  CATNVF000000000-CATNVZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOAL000000000-CATOAL999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
