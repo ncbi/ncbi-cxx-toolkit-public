@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_dblb)
+  NCBI_sources(test_ncbi_dblb)
+  NCBI_uses_toolkit_libraries(connext connssl)
+  NCBI_begin_test(test_ncbi_dblb)
+    NCBI_set_test_command(test_ncbi_dblb.sh)
+    NCBI_set_test_requires(in-house-resources)
+    NCBI_set_test_assets(test_ncbi_dblb.py test_ncbi_dblb.sh)
+  NCBI_end_test()
+  NCBI_project_watchers(lavr satskyse)
+NCBI_end_app()

@@ -1,0 +1,10 @@
+# $Id$
+
+include $(srcdir)/Makefile.connext.lib
+
+SRC      = $(SRC_C) ncbi_dblb_svcmapper
+
+LIB      = xconnext
+DLL_LIB  = xconnect
+
+WATCHERS = lavr

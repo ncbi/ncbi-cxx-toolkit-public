@@ -1,0 +1,2 @@
+# $Id$
+include $(srcdir)/Makefile.connext.lib.unix

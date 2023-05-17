@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(test_ncbi_localnet)
+  NCBI_sources(test_ncbi_localnet)
+  NCBI_uses_toolkit_libraries(connext connssl)
+
+  NCBI_begin_test(test_ncbi_localnet)
+    NCBI_set_test_command(test_ncbi_localnet.sh)
+    NCBI_set_test_assets(test_ncbi_localnet.sh)
+  NCBI_end_test()
+
+  NCBI_project_watchers(lavr)
+NCBI_end_app()
+
