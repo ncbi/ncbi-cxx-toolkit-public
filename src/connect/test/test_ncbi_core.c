@@ -340,13 +340,12 @@ static void TEST_UTIL_Log(void)
 
     /* data logging */
     {{
-            unsigned char data[300];
-            size_t i;
-            for (i = 0;  i < sizeof(data);  i++) {
-                data[i] = (unsigned char) (i % 256);
-            }
-            LOG_DATA(x_log, 0, 0, eLOG_Note,
-                     data, sizeof(data), "Data logging test");
+        size_t i;
+        unsigned char data[300];
+        for (i = 0;  i < sizeof(data);  ++i)
+            data[i] = (unsigned char) i;
+        LOG_DATA(x_log, 0, 0, eLOG_Note,
+                 data, sizeof(data), "Data logging test");
     }}
 
     /* delete */
@@ -359,6 +358,33 @@ static void TEST_UTIL_CRC32(void)
     unsigned int chksum = UTIL_CRC32_Update(0,
                                             "abcdefghijklmnopqrstuvwxyz", 26);
     verify(chksum == 0x3BC2A463);  /* see src/util/test/test_checksum.cpp */
+}
+
+
+#define TEST_PRINTABLE(str, flg, res)                               \
+    *UTIL_PrintableString(str, sizeof(str) - 1, buf, flg) = '\0';   \
+    assert(strcmp(buf, res) == 0)
+
+static void TEST_UTIL_Printable(void)
+{
+    char buf[256];
+    assert(!UTIL_PrintableString(0, 2, buf, 0));
+    assert(!UTIL_PrintableString(buf, 2, 0, 0));
+    /* cf. corelib/test/test_ncbistr.cpp */
+    TEST_PRINTABLE("", 0, "");
+    TEST_PRINTABLE("?AA\?\?AA?AA\?\?\?AA\?\?AA?", 0,
+                   "\?AA\\?\\?AA\?AA\\?\\?\\?AA\\?\\?AA\?");
+    TEST_PRINTABLE("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"", fUTIL_PrintableNoNewLine,
+                   "AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"");
+    TEST_PRINTABLE("A\x01\r\177\x000F\0205B\0CD", 0,
+                   "A\\1\\r\\177\\17\\0205B\\0CD");
+    TEST_PRINTABLE("A\x01\r\xC1\xF7\x07\x3A\252\336\202\x000F\0205B\0CD",
+                   fUTIL_PrintableFullOctal,
+                   "A\\001\\r\\301\\367\\a:\\252\\336\\202\\017\\0205B\\000CD");
+    TEST_PRINTABLE("A\nB\\\nC", fUTIL_PrintableNoNewLine,
+                   "A\\nB\\\\\\nC");
+    TEST_PRINTABLE("A\nB\\\nC", 0,
+                   "A\\n\\\nB\\\\\\n\\\nC");
 }
 
 
@@ -438,7 +464,6 @@ static void TEST_UTIL_MatchesMask(void)
     assert(UTIL_MatchesMaskEx("a!b", "[a-z][!][A-Z]b", 1) == 1);
     assert(UTIL_MatchesMaskEx("a-b", "[a-z][0-][A-Z]", 1) == 1);
     assert(UTIL_MatchesMaskEx("a-b", "[a-z][-9][A-Z]", 1) == 1);
-    printf("PASSED\n");
 }
 
 
@@ -452,6 +477,7 @@ static void TEST_UTIL(void)
 {
     DO_TEST(TEST_UTIL_Log);
     DO_TEST(TEST_UTIL_CRC32);
+    DO_TEST(TEST_UTIL_Printable);
     DO_TEST(TEST_CORE_GetUsername);
     DO_TEST(TEST_UTIL_MatchesMask);
     DO_TEST(TEST_CORE_GetVMPageSize);

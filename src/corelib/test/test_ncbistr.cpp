@@ -2093,6 +2093,9 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
 
     BOOST_CHECK(NStr::PrintableString(kEmptyStr).empty());
     BOOST_CHECK(NStr::PrintableString
+                ("?AA\?\?AA?AA\?\?\?AA\?\?AA?").compare
+                ("\?AA\\?\\?AA\?AA\\?\\?\\?AA\\?\\?AA\?") == 0);
+    BOOST_CHECK(NStr::PrintableString
                 ("AB\\CD\nAB\rCD\vAB?\tCD\'AB\"").compare
                 ("AB\\\\CD\\nAB\\rCD\\vAB\?\\tCD\\\'AB\\\"") == 0);
     BOOST_CHECK(NStr::PrintableString

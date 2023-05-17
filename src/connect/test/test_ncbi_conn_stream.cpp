@@ -208,18 +208,37 @@ int CNCBITestConnStreamApp::Run(void)
     srand(g_NCBI_ConnectRandomSeed);
 
 
-    LOG_POST(Info << "Test 0 of " STR(N) ": Checking error log setup");
-
+    LOG_POST(Info << "Test 0 of " STR(N) ": C/C++ compatibility check");
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
+    ERR_POST(Info << "Printable string compatibility check");
+    string str;
+    n = rand() & 63;
+    for (i = 0;  i < n;  ++i)
+        str += (char) rand();
+    char tmp[256];
+    *UTIL_PrintableString(str.c_str(), str.size(), tmp, 0) = '\0';
+    _ASSERT(NStr::Compare(tmp, NStr::PrintableString
+                          (str, (NStr::fNonAscii_Quote |
+                                 NStr::fNewLine_Passthru))) == 0);
+    *UTIL_PrintableString(str.c_str(), str.size(), tmp,
+                               fUTIL_PrintableFullOctal) = '\0';
+    _ASSERT(NStr::Compare(tmp, NStr::PrintableString
+                          (str, (NStr::fNonAscii_Quote   |
+                                 NStr::fNewLine_Passthru |
+                                 NStr::fPrintable_Full))) == 0);
+    *UTIL_PrintableString(str.c_str(), str.size(), tmp,
+                          fUTIL_PrintableNoNewLine) = '\0';
+    _ASSERT(NStr::Compare(tmp, NStr::PrintableString
+                          (str, NStr::fNonAscii_Quote)) == 0);
     LOG_POST(Info << "Test 0 passed\n");
 
 
     LOG_POST(Info << "Test 1 of " STR(N) ": Memory stream");
 
     // Testing memory stream out-of-sequence interleaving operations
-    m = (rand() & 0x00FF) + 1;
     size = 0;
+    m = (rand() & 0x00FF) + 1;
     for (n = 0;  n < m;  ++n) {
         CConn_MemoryStream* ms = 0;
         size_t sz = 0, wr = 0;
@@ -542,7 +561,8 @@ int CNCBITestConnStreamApp::Run(void)
             ERR_POST(Fatal << "FTP file time is off by " <<
                      NStr::UIntToString((unsigned int) delta) <<
                      " seconds");
-        }
+        } else
+            LOG_POST(Info << "Test 4 passed\n");
     } else
         LOG_POST(Info << "Test 4 skipped\n");
 
@@ -663,7 +683,7 @@ int CNCBITestConnStreamApp::Run(void)
         // Expecting a close error here because of unfinalized STOR
         if (ftp.Close() == eIO_Success)
             ERR_POST(Fatal << "Test 5 failed");
-        LOG_POST(Info << "Test 5 done\n");
+        LOG_POST(Info << "Test 5 passed\n");
     } else
         LOG_POST(Info << "Test 5 skipped\n");
 
