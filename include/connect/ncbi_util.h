@@ -732,9 +732,11 @@ typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
  *  last stored character (non '\0'-terminated).  Non-printable characters can
  *  be represented in a reduced octal form as long as the result is unambiguous
  *  (unless "full" passed true (non-zero), in which case all non-printable
- *  characters get represented by full octal tetrads).  NB: Hexadecimal output
- *  is not used because it is ambiguous by the standard (can contain undefined
- *  number of hex digits).
+ *  characters get represented by full octal tetrads).
+ * @note
+ *  Hexadecimal output is not used because it is ambiguous by the standard
+ *  (can contain arbitrary number of hex digits, which may be indistiguishable
+ *  from the following text[a-z][A-Z] or numerals[0-9]).
  * @note
  *  The input buffer "buf" where to store the printable representation is
  *  assumed to be of adequate size to hold the resultant string (use
@@ -751,6 +753,9 @@ typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
  *  Next position in the buffer past the last stored character
  * @warning
  *  The call *does not* '\0'-terminate its output!
+ * @warning
+ *  Successive calls of UTIL_PrintableString() that append to the same buffer
+ *  one after another may not produce a well-formed C string literal, in all.
  * @sa
  *  UTIL_PrintableStringSize, EUTIL_PrintableFlags
  */
