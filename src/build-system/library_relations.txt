@@ -2,6 +2,7 @@
 # Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
 BlastCgiUtils needs $(CONNEXT)
+BlastCgiUtils needs connect
 BlastCgiUtils needs xhtml
 BlastOptsTools needs $(BLAST_LIBS)
 BlastOptsTools needs xcgi
@@ -208,8 +209,7 @@ com_err needs3party $(ORIG_LIBS)
 composition_adjustment needs3party $(ORIG_LIBS)
 connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
-connext includes connext2
-connext2 needs connect
+connext needs connect
 connssl needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
@@ -271,7 +271,7 @@ docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
 dtd_sample_lib needs xser
 eMyNCBI_result needs xser
-eclib needs connext2
+eclib needs $(CONNEXT)
 eclib needs xmlwrapp
 eclib needs xregexp
 eclib needs xutil
@@ -313,7 +313,6 @@ eutils_client needs $(SEQ_LIBS)
 eutils_client needs pub
 eutils_client needs xmlwrapp
 eutilsapp includes eueid
-eutilsapp needs $(CONNEXT)
 eutilsapp needs gi2acc_client
 eutilsapp needs ncqhst
 event_g needs generic_db_utils
@@ -363,7 +362,7 @@ gene_info_writer needs gene_info
 gene_info_writer needs seqdb
 general needs xser
 generic_db_asn needs xser
-generic_db_core needs connext2
+generic_db_core needs $(CONNEXT)
 generic_db_core needs dbassist
 generic_db_tmpl_utils needs generic_db_utils
 generic_db_utils needs $(COMPRESS_LIBS)
@@ -477,6 +476,7 @@ grpc++ needs $(Z_LIB)
 grpc++ needs3party $(ORIG_LIBS)
 grpc++ needs3party $(Z_LIBS)
 grpc_integration needs $(CONNEXT)
+grpc_integration needs connect
 grpc_integration needs xutil
 grpc_integration needs3party $(GRPC_LIBS)
 gsoapssl++ needs $(Z_LIB)
@@ -1478,7 +1478,8 @@ xmlwrapp needs3party $(LIBXSLT_LIBS)
 xmvdatacache needs mapview
 xmyncbi needs txclient
 xmyncbi needs txxmldoc
-xmyncbi_captcha needs connext2
+xmyncbi_captcha needs $(CONNEXT)
+xmyncbi_captcha needs connect
 xmyncbi_captcha needs xncbi
 xncbi needs3party $(ORIG_LIBS)
 xnetblast needs scoremat
@@ -1513,7 +1514,8 @@ xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
 xpbacktest needs xncbi
-xportal_auth needs connext2
+xportal_auth needs $(CONNEXT)
+xportal_auth needs connect
 xportal_auth needs txxmldoc
 xportal_auth needs xcgi
 xprimer needs $(OBJMGR_LIBS)
