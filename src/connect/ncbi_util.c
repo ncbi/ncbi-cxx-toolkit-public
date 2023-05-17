@@ -203,9 +203,9 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
         size = strlen(data);
     count = size;
     for (c = (const unsigned char*) data;  count;  --count, ++c) {
-        if (*c == '\t'  ||  *c == '\v'  ||  *c == '\b'  ||
-            *c == '\r'  ||  *c == '\f'  ||  *c == '\a'  ||
-            *c == '\\'  ||  *c == '\''  ||  *c == '"') {
+        if (*c == '\a'  ||  *c == '\b'  ||  *c == '\f'  ||
+            *c == '\r'  ||  *c == '\t'  ||  *c == '\v'  ||
+            *c == '\\'  ||  *c == '\''  ||  *c == '"'   ||  *c == '?') {
             size++;
         } else if (*c == '\n'  ||  !isascii(*c)  ||  !isprint(*c))
             size += 3;
@@ -228,6 +228,22 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
     d = (unsigned char*) buf;
     for (s = (const unsigned char*) data;  size;  --size, ++s) {
         switch (*s) {
+        case '\a':
+            *d++ = '\\';
+            *d++ = 'a';
+            continue;
+        case '\b':
+            *d++ = '\\';
+            *d++ = 'b';
+            continue;
+        case '\f':
+            *d++ = '\\';
+            *d++ = 'f';
+            continue;
+        case '\r':
+            *d++ = '\\';
+            *d++ = 'r';
+            continue;
         case '\t':
             *d++ = '\\';
             *d++ = 't';
@@ -236,37 +252,23 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
             *d++ = '\\';
             *d++ = 'v';
             continue;
-        case '\b':
-            *d++ = '\\';
-            *d++ = 'b';
-            continue;
-        case '\r':
-            *d++ = '\\';
-            *d++ = 'r';
-            continue;
-        case '\f':
-            *d++ = '\\';
-            *d++ = 'f';
-            continue;
-        case '\a':
-            *d++ = '\\';
-            *d++ = 'a';
-            continue;
         case '\n':
             *d++ = '\\';
             *d++ = 'n';
-            if (flags & eUTIL_PrintableNoNewLine)
+            if (flags & fUTIL_PrintableNoNewLine)
                 continue;
             /*FALLTHRU*/
         case '\\':
         case '\'':
         case '"':
-            *d++ = '\\';
+        case '?':
+            if (*s != '?'  ||  s[1] == '?' ||  (s > data  &&  s[-1] == '?'))
+                *d++ = '\\';
             break;
         default:
             if (!isascii(*s)  ||  !isprint(*s)) {
                 unsigned char v;
-                int/*bool*/ reduce = !(flags & eUTIL_PrintableFullOctal)
+                int/*bool*/ reduce = !(flags & fUTIL_PrintableFullOctal)
                     &&  (size == 1  ||  s[1] < '0'  ||  '7' < s[1])
                     ? 1/*true*/ : 0/*false*/;
                 *d++     = '\\';
@@ -550,7 +552,7 @@ extern char* LOG_ComposeMessage
                                      mess->raw_data,
                                      mess->raw_size,
                                      s, flags & fLOG_FullOctal
-                                     ? eUTIL_PrintableFullOctal : 0);
+                                     ? fUTIL_PrintableFullOctal : 0);
         }
 
         memcpy(s, kRawData_End, sizeof(kRawData_End));
