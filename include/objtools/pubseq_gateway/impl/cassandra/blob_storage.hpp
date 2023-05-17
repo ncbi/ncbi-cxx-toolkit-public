@@ -55,7 +55,8 @@ enum ECassSchemaType {
     eBlobVer1Schema = 2,
     eBlobVer2Schema = 3,
     eNamedAnnotationsSchema = 4,
-    eMaxSchema = eNamedAnnotationsSchema
+    eIPGSchema = 5,
+    eMaxSchema = eIPGSchema
 };
 
 struct SBlobStorageConstants
@@ -137,6 +138,7 @@ class CSatInfoSchema final
     optional<SSatInfoEntry> GetBlobKeyspace(int32_t sat) const;
     vector<SSatInfoEntry> GetNAKeyspaces() const;
     SSatInfoEntry GetResolverKeyspace() const;
+    optional<SSatInfoEntry> GetIPGKeyspace() const;
 
     int32_t GetMaxBlobKeyspaceSat() const;
 
@@ -166,8 +168,11 @@ class CSatInfoSchema final
     // List of BioseqNA connections
     vector<SSatInfoEntry> m_BioseqNaKeyspaces;
 
-    // Connection to resolve keyspace
+    // Connection to resolver keyspace
     SSatInfoEntry m_ResolverKeyspace;
+
+    // Connection to IPG keyspace
+    optional<SSatInfoEntry> m_IPGKeyspace;
 
     // Host:port => ClusterConnection
     map<string, shared_ptr<CCassConnection>> m_Point2Cluster;
@@ -237,10 +242,15 @@ class CSatInfoSchemaProvider final
     /// @thread_safe
     vector<SSatInfoEntry> GetNAKeyspaces() const;
 
-    /// Get connection to resolve keyspace
+    /// Get connection to resolver keyspace
     ///
     /// @thread_safe
     SSatInfoEntry GetResolverKeyspace() const;
+
+    /// Get connection to IPG keyspace
+    ///
+    /// @thread_safe
+    optional<SSatInfoEntry> GetIPGKeyspace() const;
 
     /// Get max id value for existing blob sat
     ///

@@ -77,7 +77,7 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                 string name = query->FieldGetStrValue(1);
                 ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
 
-                if (schema_type <= eUnknownSchema || schema_type > eMaxSchema) {
+                if (schema_type <= eUnknownSchema || schema_type == eIPGSchema || schema_type > eMaxSchema) {
                     // ignoring
                 }
                 else if (schema_type == resolver_schema) {
@@ -338,6 +338,11 @@ SSatInfoEntry CSatInfoSchema::GetResolverKeyspace() const
     return m_ResolverKeyspace;
 }
 
+optional<SSatInfoEntry> CSatInfoSchema::GetIPGKeyspace() const
+{
+    return m_IPGKeyspace;
+}
+
 shared_ptr<CCassConnection> CSatInfoSchema::x_GetConnectionByService(string const& service) const
 {
     auto itr = m_Service2Cluster.find(service);
@@ -514,6 +519,12 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
             m_BlobKeyspaces.emplace(entry.sat, move(entry));
             break;
         }
+        case eIPGSchema:
+        {
+            entry.connection = move(connection);
+            m_IPGKeyspace = make_optional(move(entry));
+            break;
+        }
         case eUnknownSchema: // LCOV_EXCL_LINE
             break; // LCOV_EXCL_LINE
     }
@@ -532,7 +543,11 @@ CSatInfoSchemaProvider::CSatInfoSchemaProvider(
     , m_SatInfoConnection(move(sat_info_connection))
     , m_Registry(move(registry))
     , m_RegistrySection(registry_section)
-{}
+{
+    if (m_SatInfoConnection == nullptr) {
+        NCBI_THROW(CCassandraException, eFatal, "CSatInfoSchemaProvider() Cassandra connection should not be nullptr");
+    }
+}
 
 void CSatInfoSchemaProvider::SetSatInfoConnection(shared_ptr<CCassConnection> sat_info_connection)
 {
@@ -560,6 +575,12 @@ SSatInfoEntry CSatInfoSchemaProvider::GetResolverKeyspace() const
 {
     auto p = GetSchema();
     return p ? p->GetResolverKeyspace() : SSatInfoEntry();
+}
+
+optional<SSatInfoEntry> CSatInfoSchemaProvider::GetIPGKeyspace() const
+{
+    auto p = GetSchema();
+    return p ? p->GetIPGKeyspace() : nullopt;
 }
 
 int32_t CSatInfoSchemaProvider::GetMaxBlobKeyspaceSat() const
