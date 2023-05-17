@@ -3745,23 +3745,26 @@ static string s_PrintableString(const CTempString    str,
         bool octal = false;
         char c = str[i];
         switch (c) {
+        case '\a':
+            if (lang == eLanguage_C)
+                c = 'a';
+            else
+                octal = true;
+            break;
+        case '\b':
+            c = 'b';
+            break;
+        case '\f':
+            c = 'f';
+            break;
+        case '\r':
+            c = 'r';
+            break;
         case '\t':
             c = 't';
             break;
         case '\v':
             c = 'v';
-            break;
-        case '\b':
-            c = 'b';
-            break;
-        case '\r':
-            c = 'r';
-            break;
-        case '\f':
-            c = 'f';
-            break;
-        case '\a':
-            c = 'a';
             break;
         case '\n':
             if (!(mode & NStr::fNewLine_Passthru))
@@ -3775,6 +3778,14 @@ static string s_PrintableString(const CTempString    str,
             if (lang != eLanguage_Javascript)
                 continue;
             break;
+        case '?':
+            if (lang == eLanguage_C) {
+                if (i  &&  str[i - 1] == '?')
+                    break;
+                if (i < str.size() - 1  &&  str[i + 1] == '?')
+                    break;
+            }
+            continue;
         default:
             if (!isascii((unsigned char) c)) {
                 if (mode & NStr::fNonAscii_Quote) {

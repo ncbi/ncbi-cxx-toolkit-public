@@ -509,13 +509,13 @@ string Printable(char c)
     string s;
     switch ( c ) {
     case '\0':  s += "\\0";   break;
+    case '\a':  s += "\\a";   break;
+    case '\b':  s += "\\b";   break;
+    case '\f':  s += "\\f";   break;
+    case '\n':  s += "\\n";   break;
+    case '\r':  s += "\\r";   break;
     case '\t':  s += "\\t";   break;
     case '\v':  s += "\\v";   break;
-    case '\b':  s += "\\b";   break;
-    case '\r':  s += "\\r";   break;
-    case '\f':  s += "\\f";   break;
-    case '\a':  s += "\\a";   break;
-    case '\n':  s += "\\n";   break;
     case '\\':  s += "\\\\";  break;
     case '\'':  s += "\\'";   break;
     case '"':   s += "\\\"";  break;
@@ -533,29 +533,25 @@ string Printable(char c)
 
 
 static inline
-bool s_IsQuoted(char c)
-{
-    return (c == '\t'  ||   c == '\v'  ||  c == '\b'  ||
-            c == '\r'  ||   c == '\f'  ||  c == '\a'  ||
-            c == '\n'  ||   c == '\\'  ||  c == '\''  ||
-            c == '"'   ||  !isprint((unsigned char) c) ? true : false);
-}
-
-
-static inline
-void s_WritePrintable(CNcbiOstream& out, char c, char n)
+void s_WritePrintable(CNcbiOstream& out, char p, char c, char n)
 {
     switch ( c ) {
+    case '\a':  out.write("\\a",  2);  return;
+    case '\b':  out.write("\\b",  2);  return;
+    case '\f':  out.write("\\f",  2);  return;
+    case '\n':  out.write("\\n",  2);  return;
+    case '\r':  out.write("\\r",  2);  return;
     case '\t':  out.write("\\t",  2);  return;
     case '\v':  out.write("\\v",  2);  return;
-    case '\b':  out.write("\\b",  2);  return;
-    case '\r':  out.write("\\r",  2);  return;
-    case '\f':  out.write("\\f",  2);  return;
-    case '\a':  out.write("\\a",  2);  return;
-    case '\n':  out.write("\\n",  2);  return;
     case '\\':  out.write("\\\\", 2);  return;
     case '\'':  out.write("\\'",  2);  return;
     case '"':   out.write("\\\"", 2);  return;
+    case '?':
+        if (p == '?'  ||  n == '?')
+            out.write("\\?",  2);
+        else
+            out.put(c);
+        return;
     default:
         if ( isprint((unsigned char) c) ) {
             out.put(c);
@@ -564,13 +560,13 @@ void s_WritePrintable(CNcbiOstream& out, char c, char n)
         break;
     }
 
-    bool full = !s_IsQuoted(n)  &&  '0' <= n  &&  n <= '7' ? true : false;
+    bool full = '0' <= n  &&  n <= '7' ? true : false;
     unsigned char v;
     char octal[4];
     int k = 1;
 
     *octal = '\\';
-    v = (unsigned char)((unsigned char) c >> 6);
+    v = ((unsigned char) c >> 6);
     if (v  ||  full) {
         octal[k++] = char('0' + v);
         full = true;
@@ -589,11 +585,13 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
 {
     size_t size = s.m_String.size();
     if (size) {
+        char prev = '\0';
         const char* data = s.m_String.data();
         for (size_t i = 0;  i < size - 1;  ++i) {
-            s_WritePrintable(out, data[i], data[i + 1]);
+            s_WritePrintable(out, prev, data[i], data[i + 1]);
+            prev = data[i];
         }
-        s_WritePrintable(out, data[size - 1], '\0');
+        s_WritePrintable(out, prev, data[size - 1], '\0');
     }
     return out;
 }
@@ -601,11 +599,13 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
 {
-    const char* p = s.m_String;
-    char        c = *p;
+    const char* t = s.m_String;
+    char        p = '\0';
+    char        c = *t;
     while (c) {
-        char n = *++p;
-        s_WritePrintable(out, c, n);
+        char n = *++t;
+        s_WritePrintable(out, p, c, n);
+        p = c;
         c = n;
     }
     return out;

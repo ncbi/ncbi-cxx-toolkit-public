@@ -719,8 +719,10 @@ extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
 
 
 typedef enum {
-    eUTIL_PrintableFullOctal = 1,  /**< No contactions in octals \ooo        */
-    eUTIL_PrintableNoNewLine = 2   /**< Do not include graphical newlines    */
+    fUTIL_PrintableFullOctal = 1,  /**< No contactions in octals \ooo        */
+    eUTIL_PrintableFullOctal = fUTIL_PrintableFullOctal,  /**< deprecated    */
+    fUTIL_PrintableNoNewLine = 2,  /**< Do not include graphical newlines    */
+    eUTIL_PrintableNoNewLine = fUTIL_PrintableNoNewLine   /**< deprecated    */
 } EUTIL_PrintableFlags;
 typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
 

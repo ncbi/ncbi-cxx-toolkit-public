@@ -2723,22 +2723,23 @@ public:
 
     /// Get a printable version of the specified string. 
     ///
-    /// All non-printable characters will be represented as "\r", "\n", "\v",
-    /// "\t", "\"", "\\\\", etc, or "\\ooo" where 'ooo' is an octal code of the
-    /// character.  The resultant string is a well-formed C string literal,
-    /// which, without alterations, can be compiled by a C/C++ compiler.
+    /// All non-printable characters will be represented as "\a", "\b", "\f",
+    /// "\n", "\r", "\t", "\v", "\'", "\"", "\\\\", etc. or "\\ooo" where 'ooo'
+    /// is an octal code of the character.  The resultant string is a well-
+    /// formed C string literal, which, without alterations, can be compiled by
+    /// a C/C++ compiler.  Potential tri-graphs are taken care of, too.
     /// In many instances, octal representations of non-printable characters
-    /// can be reduced to take less than all 3 digits, if there is no
-    /// ambiguity in the interpretation.  fPrintable_Full cancels the
-    /// reduction, and forces to produce full 3-digit octal codes throughout.
+    /// can be reduced to take less than all 3 digits, if there is no ambiguity
+    /// in the interpretation.  fPrintable_Full cancels the reduction, and
+    /// forces to produce the full 3-digit octal codes throughout.
     ///
     /// @param str
     ///   The string whose printable version is wanted.
     /// @param mode
     ///   How to display the string.  The default setting of fNewLine_Quote
     ///   displays the new lines as "\n", and uses the octal code reduction.
-    ///   When set to fNewLine_Passthru, line breaks are actually
-    ///   produced on output but preceded with trailing backslashes.
+    ///   When set to fNewLine_Passthru, the line breaks are actually produced
+    ///   after each "\n" but preceded with trailing backslashes.
     /// @return
     ///   Return a printable version of "str".
     /// @sa
