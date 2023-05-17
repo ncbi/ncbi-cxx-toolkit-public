@@ -9,6 +9,6 @@ NCBI_begin_lib(sdbapi)
     ncbi_xdbapi_ftds ncbi_xdbapi_ftds100
     xutil xconnect
   )
-  NCBI_optional_components(connext)
+  NCBI_optional_components(NCBICRYPT connext)
 NCBI_end_lib()
 
