@@ -262,7 +262,7 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
         case '\'':
         case '"':
         case '?':
-            if (*s != '?'  ||  s[1] == '?' ||  (s > data  &&  s[-1] == '?'))
+            if (*s != '?'  ||  s[1] == '?' ||  (size > 1  &&  s[-1] == '?'))
                 *d++ = '\\';
             break;
         default:
