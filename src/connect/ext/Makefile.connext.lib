@@ -1,0 +1,17 @@
+# $Id$
+
+SRC_C    = ncbi_crypt ncbi_dblb ncbi_localnet
+
+SRC      = $(SRC_C)
+UNIX_SRC = ncbi_ifconf
+
+LIB      = connext
+DLL_LIB  = connect
+
+CPPFLAGS = $(NCBICRYPT_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
+LDFLAGS  = $(ORIG_LDFLAGS) $(AS_NEEDED)
+
+PROJ_TAG = mod_loadinfo mod_caf
+
+WATCHERS = lavr

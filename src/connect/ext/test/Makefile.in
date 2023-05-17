@@ -1,0 +1,15 @@
+# $Id$
+
+# Test suite for library "connext"
+#################################
+
+APP_PROJ = test_ncbi_crypt   \
+           test_ncbi_dblb    \
+           test_ncbi_ifconf  \
+           test_ncbi_localnet
+
+
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
