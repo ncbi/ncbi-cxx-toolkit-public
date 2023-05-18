@@ -31,6 +31,10 @@
 
 #include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <connect/ext/ncbi_crypt.h>
+#ifdef HAVE_LIBNCBICRYPT
+#  include <ncbi_key_lookup.h>
+#endif
 
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
@@ -44,11 +48,6 @@
 
 
 #define NCBI_USE_ERRCODE_X  Dbapi_Sdbapi
-
-
-#ifdef HAVE_LIBCONNEXT
-#  include "sdb_decryptor.cpp"
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -967,6 +966,20 @@ static impl::CDriverContext* s_GetDBContext(void)
 }
 
 
+string CSDB_Decryptor::x_Decrypt(const string& ciphertext, const string& key)
+{
+    CRYPT_Key bin_key = CRYPT_Init(key.c_str());
+    AutoPtr<char, CDeleter<char> > plaintext
+        (CRYPT_DecodeString(bin_key, ciphertext.c_str()));
+    CRYPT_Free(bin_key);
+    if (plaintext.get() == NULL) {
+        NCBI_THROW(CSDB_Exception, eWrongParams | Retriable(eRetriable_No),
+                   "Password decryption failed.");
+    }
+    return string(plaintext.get());
+}
+
+
 string CSDB_Decryptor::x_GetKey(const CTempString& key_id)
 {
     string key;
@@ -975,9 +988,9 @@ string CSDB_Decryptor::x_GetKey(const CTempString& key_id)
         key = app->GetConfig().GetString("DBAPI_key", key_id, kEmptyStr);
     }
 
-#ifdef HAVE_LIBCONNEXT
+#ifdef HAVE_LIBNCBICRYPT
     if (key.empty()) {
-        key = s_GetBuiltInKey(key_id);
+        key = NCBICRYPT_FindBuiltinKey(string(key_id).c_str());;
     }
 #endif
     if (key.empty()) {
@@ -1002,12 +1015,10 @@ void CSDB_ConnectionParam::SetGlobalDecryptor(CRef<CSDB_Decryptor> decryptor)
 CRef<CSDB_Decryptor> CSDB_ConnectionParam::GetGlobalDecryptor(void)
 {
     CFastMutexGuard GUARD(s_DecryptorMutex);
-#ifdef HAVE_LIBCONNEXT
     if ( !s_DecryptorInitialized ) {
         s_Decryptor->Reset(new CSDB_Decryptor);
         s_DecryptorInitialized = true;
     }
-#endif
     return *s_Decryptor;
 }
 
