@@ -563,11 +563,11 @@ protected:
 
     void AddInfoLock(void)
         {
-            m_LockCounter.Add(1);
+            ++m_LockCounter;
         }
     void RemoveInfoLock(void)
         {
-            if ( m_LockCounter.Add(-1) <= 0 ) {
+            if ( --m_LockCounter <= 0 ) {
                 x_ResetTSE_Lock();
             }
         }
@@ -575,7 +575,7 @@ protected:
 private: // data members
 
     CTSE_ScopeInfo*         m_TSE_ScopeInfo; // null if object is removed.
-    CAtomicCounter_WithAutoInit m_LockCounter; // counts all referencing handles.
+    atomic<Uint8>           m_LockCounter; // counts all referencing handles.
     // The following members are not null when handle is locked (counter > 0)
     // and not removed.
     CTSE_Handle             m_TSE_Handle; // locks TSE from releasing.
