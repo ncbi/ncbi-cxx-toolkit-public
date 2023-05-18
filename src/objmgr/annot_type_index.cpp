@@ -47,7 +47,7 @@ BEGIN_SCOPE(objects)
 // All ranges are in format [x, y)
 
 DEFINE_STATIC_FAST_MUTEX(sm_TablesInitializeMutex);
-bool CAnnotType_Index::sm_TablesInitialized = false;
+atomic<bool> CAnnotType_Index::sm_TablesInitialized{false};
 
 Uint1 CAnnotType_Index::sm_AnnotTypeIndexRange[CAnnotType_Index::kAnnotType_size][2];
 Uint1 CAnnotType_Index::sm_FeatTypeIndexRange[CAnnotType_Index::kFeatType_size][2];
@@ -57,7 +57,7 @@ Uint1 CAnnotType_Index::sm_IndexSubtype[CAnnotType_Index::kAnnotIndex_size];
 void CAnnotType_Index::x_InitIndexTables(void)
 {
     CFastMutexGuard guard(sm_TablesInitializeMutex);
-    if ( sm_TablesInitialized ) {
+    if ( sm_TablesInitialized.load(memory_order_acquire) ) {
         return;
     }
     // Check flag, lock tables
@@ -105,7 +105,7 @@ void CAnnotType_Index::x_InitIndexTables(void)
     fill(sm_IndexSubtype+cur_idx, sm_IndexSubtype+kAnnotIndex_size,
          CSeqFeatData::eSubtype_bad);
     
-    sm_TablesInitialized = true;
+    sm_TablesInitialized.store(true, memory_order_release);
 
 #if defined(_DEBUG)
     _TRACE("Index size: "<<cur_idx<<" of "<<kAnnotIndex_size);

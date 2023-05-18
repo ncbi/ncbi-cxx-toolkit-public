@@ -93,7 +93,7 @@ private:
     static void x_InitIndexTables(void);
 
     // Initialization flag
-    static bool sm_TablesInitialized;
+    static atomic<bool> sm_TablesInitialized;
     // Table: annot type -> index
     // (for Ftable it's just the first feature type index)
     static Uint1 sm_AnnotTypeIndexRange[kAnnotType_size][2];
@@ -109,7 +109,7 @@ private:
 inline
 void CAnnotType_Index::Initialize(void)
 {
-    if (!sm_TablesInitialized) {
+    if ( !sm_TablesInitialized.load(memory_order_acquire) ) {
         x_InitIndexTables();
     }
 }
