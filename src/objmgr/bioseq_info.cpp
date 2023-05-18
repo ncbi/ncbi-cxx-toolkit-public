@@ -158,11 +158,9 @@ void CBioseq_Info::x_DoUpdate(TNeedUpdateFlags flags)
         if ( !m_Seq_dataChunks.empty() ) {
             x_LoadChunks(m_Seq_dataChunks);
         }
+        CFastMutexGuard guard(m_SeqMap_Mtx);
         if ( m_SeqMap ) {
-            CFastMutexGuard guard(m_SeqMap_Mtx);
-            if ( m_SeqMap ) {
-                m_SeqMap->x_UpdateSeq_inst(m_Object->SetInst());
-            }
+            m_SeqMap->x_UpdateSeq_inst(m_Object->SetInst());
         }
     }
     if ( flags & fNeedUpdate_assembly ) {
@@ -321,10 +319,14 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
         x_DSMapObject(m_Object, GetDataSource());
     }
     m_Id = info.m_Id;
-    if ( info.m_SeqMap ) {
-        m_SeqMap = info.m_SeqMap->CloneFor(*m_Object);
-        m_SeqMap->m_Bioseq = this;
-    }
+    {{
+        CFastMutexGuard guard(info.m_SeqMap_Mtx);
+        if ( info.m_SeqMap ) {
+            CFastMutexGuard guard2(m_SeqMap_Mtx);
+            m_SeqMap = info.m_SeqMap->CloneFor(*m_Object);
+            m_SeqMap->m_Bioseq = this;
+        }
+    }}
     if ( info.IsSetAnnot() ) {
         x_SetAnnot(info, copy_map);
     }
@@ -1242,18 +1244,12 @@ void CBioseq_Info::x_AttachMap(CSeqMap& seq_map)
 
 const CSeqMap& CBioseq_Info::GetSeqMap(void) const
 {
-    const CSeqMap* ret = m_SeqMap.GetPointer();
-    if ( !ret ) {
-        CFastMutexGuard guard(m_SeqMap_Mtx);
-        ret = m_SeqMap.GetPointer();
-        if ( !ret ) {
-            m_SeqMap = CSeqMap::CreateSeqMapForBioseq(*m_Object);
-            m_SeqMap->m_Bioseq = const_cast<CBioseq_Info*>(this);
-            ret = m_SeqMap.GetPointer();
-            _ASSERT(ret);
-        }
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    if ( !m_SeqMap ) {
+        m_SeqMap = CSeqMap::CreateSeqMapForBioseq(*m_Object);
+        m_SeqMap->m_Bioseq = const_cast<CBioseq_Info*>(this);
     }
-    return *ret;
+    return *m_SeqMap;
 }
 
 
