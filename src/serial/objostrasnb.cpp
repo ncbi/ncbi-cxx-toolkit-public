@@ -292,11 +292,13 @@ CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::MakeUTF8StringTag(void)
 inline
 CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::GetUTF8StringTag(void)
 {
-    static TByte s_UTF8StringTag = 0;
-    if ( !s_UTF8StringTag ) {
-        s_UTF8StringTag = MakeUTF8StringTag();
+    static atomic<TByte> s_UTF8StringTag{0};
+    auto tag = s_UTF8StringTag.load(memory_order_acquire);
+    if ( !tag ) {
+        tag = MakeUTF8StringTag();
+        s_UTF8StringTag.store(tag, memory_order_release);
     }
-    return s_UTF8StringTag;
+    return tag;
 }
 
 inline
