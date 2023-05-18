@@ -165,8 +165,8 @@ private:
     // Owner TSE info
     CTSE_Info*              m_TSE_Info;
     CTSE_Info_Object*       m_Parent_Info;
-    bool                    m_DirtyAnnotIndex;
-    TNeedUpdateFlags        m_NeedUpdateFlags;
+    atomic<bool>            m_DirtyAnnotIndex;
+    atomic<TNeedUpdateFlags> m_NeedUpdateFlags;
 
     CBioObjectId            m_UniqueId;
 
