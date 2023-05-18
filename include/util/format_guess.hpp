@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/static_map.hpp>
 #include <bitset>
 
 BEGIN_NCBI_SCOPE
@@ -67,8 +68,7 @@ public:
         eNewick              = 10, ///< Newick file
         eAlignment           = 11, ///< Text alignment
         eDistanceMatrix      = 12, ///< Distance matrix file
-        eFlatFileSequence    = 13, ///< GenBank/GenPept/DDBJ/EMBL flat-file
-                                   ///< sequence portion
+        eFlatFileSequence    = 13, ///< GenBank/GenPept/DDBJ/EMBL flat-file sequence portion
         eFiveColFeatureTable = 14, ///< Five-column feature table
         eSnpMarkers          = 15, ///< SNP Marker flat file
         eFasta               = 16, ///< FASTA format sequence record, CFastaReader
@@ -132,12 +132,10 @@ public:
         // ***  Adding new format codes?  ***
         //  (1) A sanity check in the  implementation depends on the format codes being 
         //      consecutive. Hence no gaps allowed!
-        //  (2) Heed the warning above about never changing an already existing
-        //      format code!
-        //  (3) You must provide a display name for the new format. Do that in 
-        //      sm_FormatNames.
-        //  (4) You must add your new format to sm_CheckOrder (unless you don't want your 
-        //      format actually being checked and recognized.
+        //  (2) Heed the warning above about never changing an already existing format code!
+        //  (3) You must provide a display name for the new format. Do that in sm_FormatNames (see .cpp).
+        //  (4) You must add your new format to sm_CheckOrder (see .cpp) 
+        //      (unless you don't want your format actually being checked and recognized).
 
         /// Max value of EFormat
         eFormat_max
@@ -379,35 +377,25 @@ private:
     // Return true if the string is blank or a list of space-delimited numbers
     bool x_IsBlankOrNumbers(const string& testString) const;
 
-    // data:
-    using NAME_MAP = map<EFormat, const char*>;
-    static const NAME_MAP sm_FormatNames;
-
     bool x_TryProcessCLUSTALSeqData(const string& line, string& id, size_t& seg_length) const;
-
     bool x_LooksLikeCLUSTALConservedInfo(const string& line) const;
 
 protected:
-    static vector<int> sm_CheckOrder;
-    
-    static const streamsize s_iTestBufferGranularity = 8096;
+    CNcbiIstream&   m_Stream;
+    bool            m_bOwnsStream;
+    char*           m_pTestBuffer;
+    streamsize      m_iTestBufferSize;
+    streamsize      m_iTestDataSize;
 
-
-    CNcbiIstream& m_Stream;
-    bool m_bOwnsStream;
-    char* m_pTestBuffer;
-    streamsize m_iTestBufferSize;
-    streamsize m_iTestDataSize;
-
-    bool m_bStatsAreValid;
-    bool m_bSplitDone;
-    unsigned int m_iStatsCountData;
-    unsigned int m_iStatsCountAlNumChars;
-    unsigned int m_iStatsCountDnaChars;
-    unsigned int m_iStatsCountAaChars;
-    unsigned int m_iStatsCountBraces;
+    bool            m_bStatsAreValid;
+    bool            m_bSplitDone;
+    unsigned int    m_iStatsCountData;
+    unsigned int    m_iStatsCountAlNumChars;
+    unsigned int    m_iStatsCountDnaChars;
+    unsigned int    m_iStatsCountAaChars;
+    unsigned int    m_iStatsCountBraces;
     std::list<std::string> m_TestLines;
-    CFormatHints m_Hints;
+    CFormatHints    m_Hints;
 };
 
 
