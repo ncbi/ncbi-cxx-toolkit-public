@@ -3159,43 +3159,41 @@ void CScope_Impl::x_AddSynonym(const CSeq_id_Handle& idh,
 CConstRef<CSynonymsSet>
 CScope_Impl::x_GetSynonyms(CBioseq_ScopeInfo& info)
 {
-    {{
-        CInitGuard init(info.m_SynCache, m_MutexPool);
-        if ( init ) {
-            // It's OK to use CRef, at least one copy should be kept
-            // alive by the id cache (for the ID requested).
-            CRef<CSynonymsSet> syn_set(new CSynonymsSet);
-            //syn_set->AddSynonym(id);
-            if ( info.HasBioseq() ) {
-                ITERATE ( CBioseq_ScopeInfo::TIds, it, info.GetIds() ) {
-                    if ( it->HaveReverseMatch() ) {
-                        CSeq_id_Handle::TMatches hset;
-                        it->GetReverseMatchingHandles(hset);
-                        ITERATE ( CSeq_id_Handle::TMatches, mit, hset ) {
-                            x_AddSynonym(*mit, *syn_set, info);
-                        }
+    CInitGuard init(info.m_SynCache, m_MutexPool);
+    if ( init ) {
+        // It's OK to use CRef, at least one copy should be kept
+        // alive by the id cache (for the ID requested).
+        CRef<CSynonymsSet> syn_set(new CSynonymsSet);
+        //syn_set->AddSynonym(id);
+        if ( info.HasBioseq() ) {
+            ITERATE ( CBioseq_ScopeInfo::TIds, it, info.GetIds() ) {
+                if ( it->HaveReverseMatch() ) {
+                    CSeq_id_Handle::TMatches hset;
+                    it->GetReverseMatchingHandles(hset);
+                    ITERATE ( CSeq_id_Handle::TMatches, mit, hset ) {
+                        x_AddSynonym(*mit, *syn_set, info);
                     }
-                    else {
-                        x_AddSynonym(*it, *syn_set, info);
-                    }
-                    if ( it->IsAccVer() ) {
-                        // add no-name and no-release version of Seq-id explicitly
-                        auto seq_id = it->GetSeqId();
-                        auto text_id = seq_id->GetTextseq_Id();
-                        if ( text_id->IsSetAccession() &&
-                             (text_id->IsSetName() || text_id->IsSetRelease()) ) {
-                            CRef<CSeq_id> new_id(SerialClone(*seq_id));
-                            auto new_text_id = const_cast<CTextseq_id*>(new_id->GetTextseq_Id());
-                            new_text_id->ResetName();
-                            new_text_id->ResetRelease();
-                            x_AddSynonym(CSeq_id_Handle::GetHandle(*new_id), *syn_set, info);
-                        }
+                }
+                else {
+                    x_AddSynonym(*it, *syn_set, info);
+                }
+                if ( it->IsAccVer() ) {
+                    // add no-name and no-release version of Seq-id explicitly
+                    auto seq_id = it->GetSeqId();
+                    auto text_id = seq_id->GetTextseq_Id();
+                    if ( text_id->IsSetAccession() &&
+                         (text_id->IsSetName() || text_id->IsSetRelease()) ) {
+                        CRef<CSeq_id> new_id(SerialClone(*seq_id));
+                        auto new_text_id = const_cast<CTextseq_id*>(new_id->GetTextseq_Id());
+                        new_text_id->ResetName();
+                        new_text_id->ResetRelease();
+                        x_AddSynonym(CSeq_id_Handle::GetHandle(*new_id), *syn_set, info);
                     }
                 }
             }
-            info.m_SynCache = syn_set;
         }
-    }}
+        info.m_SynCache = syn_set;
+    }
     return info.m_SynCache;
 }
 
