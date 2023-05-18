@@ -418,11 +418,7 @@ string CUnitTestParams::GetServerName(void) const
     const string server_name = CDBConnParamsDelegate::GetServerName();
 
     if (NStr::CompareNocase(server_name, "MsSql") == 0) {
-#ifdef HAVE_LIBCONNEXT
         return "DBAPI_MS_TEST";
-#else
-        return "MSDEV1";
-#endif
     } else if (NStr::CompareNocase(server_name, "Sybase") == 0) {
         return "DBAPI_DEV16_2K";
     }

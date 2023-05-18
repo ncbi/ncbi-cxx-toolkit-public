@@ -35,9 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_crypt.h>
-#endif
+#include <connect/ext/ncbi_crypt.h>
 
 #include <dbapi/driver/drivers.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>

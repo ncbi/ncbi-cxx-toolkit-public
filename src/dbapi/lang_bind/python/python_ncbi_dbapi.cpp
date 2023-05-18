@@ -43,9 +43,7 @@
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include "../../ds_impl.hpp"
 
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
+#include <connect/ext/ncbi_dblb_svcmapper.hpp>
 
 #if defined(NCBI_OS_CYGWIN)
 #include <corelib/ncbicfg.h>
@@ -4603,13 +4601,11 @@ PyObject* init_common(const string& module_name)
         // need to ensure that "extra" lines actually go through.
         s_WasUsingOldPostFormat = CDiagContext::IsSetOldPostFormat();
         CDiagContext::SetOldPostFormat(false);
-#ifdef HAVE_LIBCONNEXT
         // Kludge to avoid crashes at shutdown from logging within
         // xconnect's atexit hooks, which can otherwise run before ours but
         // after it has (quietly) become unsafe to call back into Python.
         CDBLB_ServiceMapper dblb;
         dblb.GetServer("localhost");
-#endif
         atexit(s_RestoreOrigDiagHandler);
     }
     

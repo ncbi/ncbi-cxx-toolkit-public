@@ -108,7 +108,6 @@ const string& CEUtils_Request::GetBaseURL(void)
     static const char kEutilsLB[] = "eutils_lb";
 
     string host;
-#ifdef HAVE_LIBCONNEXT
     SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
     SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
                                             SERV_ANYHOST, net_info);
@@ -119,7 +118,6 @@ const string& CEUtils_Request::GetBaseURL(void)
         }
         free(info);
     }
-#endif //HAVE_LIBCONNEXT
 
     string scheme("http");
     if (host.empty()) {

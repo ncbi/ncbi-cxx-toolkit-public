@@ -2730,7 +2730,6 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                 has_ref = 1/*true*/;
             } else if (strncasecmp(s, &"\nHost:"[first], 6 - !!first) == 0) {
                 has_host = 1/*true*/;
-#ifdef HAVE_LIBCONNEXT
             } else if (strncasecmp(s, &"\nCAF"[first], 4 - !!first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - !!first] == ':')) {
                 char* caftag = strndup(s + !first, strcspn(s + !first, " \t"));
@@ -2742,7 +2741,6 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                         break;
                     continue;
                 }
-#endif /*HAVE_LIBCONNEXT*/
             } else if (!*has_sid
                        &&  strncasecmp(s, &"\n" HTTP_NCBI_SID[first],
                                        sizeof(HTTP_NCBI_SID) - !!first) == 0) {
