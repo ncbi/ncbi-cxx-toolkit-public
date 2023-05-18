@@ -243,14 +243,16 @@ protected:
         CSegment(ESegmentType seg_type = eSeqEnd,
                  TSeqPos length = kInvalidSeqPos,
                  bool unknown_len = false);
+        CSegment(const CSegment& seg);
+        CSegment& operator=(const CSegment& seg);
 
         // Check if this segment has CSeq_data object (may be gap)
         bool IsSetData(void) const;
 
         // Relative position of the segment in seqmap
-        mutable TSeqPos      m_Position;
+        mutable atomic<TSeqPos> m_Position;
         // Length of the segment (kInvalidSeqPos if unresolved)
-        mutable TSeqPos      m_Length;
+        mutable atomic<TSeqPos> m_Length;
         bool                 m_UnknownLength;
 
         // Segment type
@@ -393,13 +395,13 @@ protected:
 
     // segments' flags
     typedef Uint1 THasSegments;
-    mutable THasSegments m_HasSegments;
+    mutable atomic<THasSegments> m_HasSegments;
     // needs to update Seq-inst
     typedef bool TChanged;
     TChanged m_Changed;
 
     // Sequence length
-    mutable TSeqPos m_SeqLength;
+    mutable atomic<TSeqPos> m_SeqLength;
 
     // MT-protection
     mutable CMutex  m_SeqMap_Mtx;

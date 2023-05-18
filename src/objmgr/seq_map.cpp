@@ -82,6 +82,36 @@ CSeqMap::CSegment::CSegment(ESegmentType seg_type,
 {
 }
 
+
+inline
+CSeqMap::CSegment::CSegment(const CSegment& seg)
+    : m_Position(seg.m_Position.load()),
+      m_Length(seg.m_Length.load()),
+      m_UnknownLength(seg.m_UnknownLength),
+      m_SegType(seg.m_SegType),
+      m_ObjType(seg.m_ObjType),
+      m_RefMinusStrand(seg.m_RefMinusStrand),
+      m_RefPosition(seg.m_RefPosition),
+      m_RefObject(seg.m_RefObject)
+{
+}
+
+
+inline
+CSeqMap::CSegment& CSeqMap::CSegment::operator=(const CSegment& seg)
+{
+    m_Position = seg.m_Position.load();
+    m_Length = seg.m_Length.load();
+    m_UnknownLength = seg.m_UnknownLength;
+    m_SegType = seg.m_SegType;
+    m_ObjType = seg.m_ObjType;
+    m_RefMinusStrand = seg.m_RefMinusStrand;
+    m_RefPosition = seg.m_RefPosition;
+    m_RefObject = seg.m_RefObject;
+    return *this;
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //  CSeqMap
 
@@ -155,9 +185,9 @@ CSeqMap::CSeqMap(const CSeqMap& sm)
       m_Resolved(sm.m_Resolved.load()),
       m_Delta(sm.m_Delta),
       m_Mol(sm.m_Mol),
-      m_HasSegments(sm.m_HasSegments),
+      m_HasSegments(sm.m_HasSegments.load()),
       m_Changed(sm.m_Changed),
-      m_SeqLength(sm.m_SeqLength)
+      m_SeqLength(sm.m_SeqLength.load())
 {
     NON_CONST_ITERATE ( TSegments, it, m_Segments ) {
         if ( it->m_ObjType == eSeqChunk ) {
