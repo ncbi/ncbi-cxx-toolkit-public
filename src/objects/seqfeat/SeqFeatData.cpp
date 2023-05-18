@@ -386,11 +386,11 @@ DEFINE_STATIC_MUTEX(sx_InitTablesMutex);
 
 typedef vector<CSeqFeatData::E_Choice> TSubtypesTable;
 static CSafeStatic<TSubtypesTable> sx_SubtypesTable;
-static bool sx_SubtypesTableInitialized = false;
+static atomic<bool> sx_SubtypesTableInitialized;
 
 CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype(ESubtype subtype)
 {
-    if ( !sx_SubtypesTableInitialized ) {
+    if ( !sx_SubtypesTableInitialized.load(memory_order_acquire) ) {
         s_InitSubtypesTable();
     }
     return (*sx_SubtypesTable)[subtype];
@@ -696,11 +696,11 @@ static const size_t s_subtype_count =
 
 void CSeqFeatData::s_InitSubtypesTable(void)
 {
-    if (sx_SubtypesTableInitialized) {
+    if (sx_SubtypesTableInitialized.load(memory_order_acquire)) {
         return;
     }
     CMutexGuard guard(sx_InitTablesMutex);
-    if (sx_SubtypesTableInitialized) {
+    if (sx_SubtypesTableInitialized.load(memory_order_acquire)) {
         return;
     }
     TSubtypesTable& table = *sx_SubtypesTable;
@@ -742,7 +742,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     table[eSubtype_propeptide] = e_Imp;
     table[eSubtype_propeptide_aa] = e_Prot;
 
-    sx_SubtypesTableInitialized = true;
+    sx_SubtypesTableInitialized.store(true, memory_order_release);
 
 #ifdef _DEBUG
     if ( false ) { // print new definition of s_subtype_info[]
