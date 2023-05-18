@@ -197,6 +197,7 @@ CPubseq2Reader::CPubseq2Reader(const TPluginManagerParamTree* params,
 
 CPubseq2Reader::~CPubseq2Reader()
 {
+    delete m_Context.exchange(nullptr);
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
     s_pubseq_readers.Add(-1);
 #endif
@@ -408,10 +409,12 @@ static string s_GetCubbyUserName(const string& web_cookie)
 
 void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
 {
-    if ( !m_Context ) {
+    auto context = m_Context.load(memory_order_acquire);
+    if ( !context ) {
       DEFINE_STATIC_FAST_MUTEX(s_Mutex);
       CFastMutexGuard guard(s_Mutex);
-      if ( !m_Context ) {
+      context = m_Context.load(memory_order_acquire);
+      if ( !context ) {
         DBLB_INSTALL_DEFAULT();
         C_DriverMgr drvMgr;
         map<string,string> args;
@@ -423,16 +426,17 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
         vector<string> errmsg(driver_count);
         for ( size_t i = 0; i < driver_count; ++i ) {
             try {
-                m_Context.reset(drvMgr.GetDriverContext(driver_list[i],
-                                                    &errmsg[i], &args));
-                if ( m_Context )
+                context = drvMgr.GetDriverContext(driver_list[i],
+                                                  &errmsg[i], &args);
+                if ( context ) {
                     break;
+                }
             }
             catch ( CException& exc ) {
                 errmsg[i] = exc.what();
             }
         }
-        if ( !m_Context ) {
+        if ( !context ) {
             for ( size_t i = 0; i < driver_count; ++i ) {
                 ERR_POST_X(2, "Failed to create dbapi context with driver '"
                            <<driver_list[i]<<"': "<<errmsg[i]);
@@ -443,14 +447,15 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
         }
 
         if ( m_Timeout > 0 ) {
-            m_Context->SetTimeout(m_Timeout);
+            context->SetTimeout(m_Timeout);
         }
       }
+      m_Context.store(context, memory_order_release);
     }
 
     CPubseq2Validator validator(this, conn_, m_ExclWGSMaster);
     AutoPtr<CDB_Connection> conn
-        (m_Context->ConnectValidated(m_Server, m_User, m_Password, validator));
+        (context->ConnectValidated(m_Server, m_User, m_Password, validator));
     
     if ( !conn.get() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
