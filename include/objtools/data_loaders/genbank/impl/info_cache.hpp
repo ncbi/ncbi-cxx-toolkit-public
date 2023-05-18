@@ -98,7 +98,7 @@ protected:
     friend class CInfoRequestor;
     friend class CInfoRequestorLock;
 
-    CInfoRequestor* volatile m_LoadingRequestor;
+    atomic<CInfoRequestor*> m_LoadingRequestor;
 };
 
 
@@ -128,7 +128,7 @@ protected:
     // info usage counter for garbage collector
     TUseCounter      m_UseCounter;
     // info expiration UTC time, seconds is actual until this time
-    volatile TExpirationTime  m_ExpirationTime;
+    atomic<TExpirationTime> m_ExpirationTime;
     CRef<CLoadMutex> m_LoadMutex; // mutex for loading info
     TGCQueue::iterator m_GCQueuePos; // pos in GC queue if info is not used
 };
