@@ -243,6 +243,7 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
 
 CPubseqReader::~CPubseqReader()
 {
+    delete m_Context.exchange(nullptr);
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
     s_pubseq_readers.Add(-1);
 #endif
@@ -410,10 +411,12 @@ namespace {
 
 void CPubseqReader::x_ConnectAtSlot(TConn conn_)
 {
-    if ( !m_Context ) {
+    auto context = m_Context.load(memory_order_acquire);
+    if ( !context ) {
       DEFINE_STATIC_FAST_MUTEX(s_Mutex);
       CFastMutexGuard guard(s_Mutex);
-      if ( !m_Context ) {
+      context = m_Context.load(memory_order_acquire);
+      if ( !context ) {
         DBLB_INSTALL_DEFAULT_EX(eIfSet_KeepSilently);
         C_DriverMgr drvMgr;
         map<string,string> args;
@@ -425,16 +428,17 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
         vector<string> errmsg(driver_count);
         for ( size_t i = 0; i < driver_count; ++i ) {
             try {
-                m_Context.reset( drvMgr.GetDriverContext(driver_list[i],
-                                                    &errmsg[i], &args));
-                if ( m_Context )
+                context = drvMgr.GetDriverContext(driver_list[i],
+                                                  &errmsg[i], &args);
+                if ( context ) {
                     break;
+                }
             }
             catch ( exception& exc ) {
                 errmsg[i] = exc.what();
             }
         }
-        if ( !m_Context ) {
+        if ( !context ) {
             for ( size_t i = 0; i < driver_count; ++i ) {
                 ERR_POST_X(2, "Failed to create dbapi context with driver '"
                            <<driver_list[i]<<"': "<<errmsg[i]);
@@ -444,12 +448,13 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
                        m_DbapiDriver+"'");
         }
       }
+      m_Context.store(context, memory_order_release);
     }
 
     _TRACE("CPubseqReader::NewConnection("<<m_Server<<")");
     CPubseqValidator validator(m_AllowGzip, m_ExclWGSMaster);
     AutoPtr<CDB_Connection> conn
-        (m_Context->ConnectValidated(m_Server, m_User, m_Password, validator));
+        (context->ConnectValidated(m_Server, m_User, m_Password, validator));
     
     if ( !conn.get() ) {
         NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
