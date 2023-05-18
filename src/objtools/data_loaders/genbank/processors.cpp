@@ -416,13 +416,13 @@ NCBI_PARAM_DEF_EX(Int8, GENBANK, GI_OFFSET, 0,
 
 TIntId CProcessor::GetGiOffset(void)
 {
-    static volatile TIntId gi_offset;
-    static volatile bool initialized;
-    if ( !initialized ) {
-        gi_offset = NCBI_PARAM_TYPE(GENBANK, GI_OFFSET)::GetDefault();
-        initialized = true;
+    static atomic<TIntId> gi_offset;
+    static atomic<bool> initialized;
+    if ( !initialized.load(memory_order_acquire) ) {
+        gi_offset.store(NCBI_PARAM_TYPE(GENBANK, GI_OFFSET)::GetDefault(), memory_order_relaxed);
+        initialized.store(true, memory_order_release);
     }
-    return gi_offset;
+    return gi_offset.load(memory_order_relaxed);
 }
 
 
