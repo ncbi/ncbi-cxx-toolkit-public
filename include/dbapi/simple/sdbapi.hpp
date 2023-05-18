@@ -914,20 +914,15 @@ class CDBConnParamsBase;
 
 /// Database password decryptor.
 ///
-/// The general structure is public, but the full default
-/// implementation is only available within NCBI.
+/// The general structure is public, but the default
+/// implementation is only fully functional within NCBI.
 class CSDB_Decryptor : public CObject
 {
 public:
     string Decrypt(const string& ciphertext, const CTempString& key_id);
 
 protected:
-    virtual string x_Decrypt(const string& ciphertext, const string& key)
-#ifndef HAVE_LIBCONNEXT
-        = 0
-#endif
-        ;
-
+    virtual string x_Decrypt(const string& ciphertext, const string& key);
     virtual string x_GetKey(const CTempString& key_id);
 };
 
