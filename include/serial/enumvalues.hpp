@@ -139,6 +139,8 @@ public:
     /// Get value-to-name map
     const TValueToName& ValueToName(void) const;
 
+    void ClearIndexes(void);
+
     void SetBitset(bool bitset=true) {
         m_IsBitset = bitset;
     }
@@ -158,8 +160,8 @@ private:
     bool m_IsInternal;
     TValues m_Values;
     map<TEnumValueType, TValueFlags> m_ValueFlags;
-    mutable shared_ptr<TNameToValue> m_NameToValue;
-    mutable shared_ptr<TValueToName> m_ValueToName;
+    mutable atomic<TNameToValue*> m_NameToValue;
+    mutable atomic<TValueToName*> m_ValueToName;
 };
 
 
