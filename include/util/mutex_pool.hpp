@@ -89,7 +89,11 @@ public:
 protected:
     friend class CInitGuard;
 
+    // assign a mutex to 'init' and store it also to CRef<> 'mutex'
+    // if the 'init' was initialized already and 'force' == false then no mutex is assigned
+    // return true if the mutex was assigned
     bool AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex, bool force = false);
+    // release mutex from 'init' if it was successfully initialized
     void ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex);
 
 private:
@@ -106,17 +110,19 @@ private:
 class NCBI_XUTIL_EXPORT CInitMutex_Base
 {
 public:
-    DECLARE_OPERATOR_BOOL_REF(m_Object);
+    DECLARE_OPERATOR_BOOL(m_Initialized.load(memory_order_acquire));
 
 protected:
     CInitMutex_Base(void)
+        : m_Initialized(false)
         {
         }
     // Copy constructor to allow CInitMutex_Base placement in STL containers.
     // It doesn't copy mutex/object, just verifies that source is empty too.
     CInitMutex_Base(const CInitMutex_Base& _DEBUG_ARG(mutex))
+        : m_Initialized(false)
         {
-            _ASSERT(!mutex.m_Mutex && !mutex.m_Object);
+            _ASSERT(!mutex);
         }
     ~CInitMutex_Base(void)
         {
@@ -129,9 +135,10 @@ protected:
 
     CRef<TMutex>  m_Mutex;
     CRef<CObject> m_Object;
+    atomic<bool>  m_Initialized;
 
 private:
-    const CInitMutex_Base& operator=(const CInitMutex_Base&);
+    const CInitMutex_Base& operator=(const CInitMutex_Base&) = delete;
 };
 
 
@@ -143,13 +150,17 @@ public:
 
     using CInitMutex_Base::CInitMutex_Base;
 
-    void Reset(void)
+    void Reset()
         {
+            m_Initialized = false;
             m_Object.Reset();
+            m_Initialized = false;
         }
     void Reset(TObjectType* object)
         {
+            m_Initialized = false;
             m_Object.Reset(object);
+            m_Initialized = (object != nullptr);
         }
 
     inline
@@ -207,7 +218,7 @@ public:
 
     const CInitMutex<TObjectType>& operator=(const CRef<TObjectType>& ref)
         {
-            m_Object.Reset(ref.GetNCPointerOrNull());
+            Reset(ref.GetNCPointerOrNull());
             return *this;
         }
     operator CRef<TObjectType>(void) const
