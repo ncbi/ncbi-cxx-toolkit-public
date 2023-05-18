@@ -35,7 +35,8 @@ set(NCBI_ThirdParty_LMDB       ${NCBI_TOOLS_ROOT}/lmdb-0.9.18 CACHE PATH "LMDB r
 set(NCBI_ThirdParty_LZO        ${NCBI_TOOLS_ROOT}/lzo-2.05 CACHE PATH "LZO root")
 set(NCBI_ThirdParty_ZSTD          ${NCBI_TOOLS_ROOT}/zstd-1.5.2 CACHE PATH "ZSTD root")
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE2 root")
-set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-1.76.0-ncbi1 CACHE PATH "Boost root")
+set(NCBI_ThirdParty_Boost_VERSION "1.76.0")
+set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-${NCBI_ThirdParty_Boost_VERSION}-ncbi1 CACHE PATH "Boost root")
 set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_FASTCGI    ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
@@ -234,35 +235,50 @@ if(NCBI_COMPONENT_ZSTD_FOUND AND
 endif()
 NCBIcomponent_report(ZSTD)
 
+
+#############################################################################
+# BOOST
+if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
+#set(Boost_COMPILER "-clang-darwin100")
+#include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
+
 #############################################################################
 # Boost.Test.Included
-if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
-if (EXISTS ${NCBI_ThirdParty_Boost}/include)
-    message(STATUS "Found Boost.Test.Included: ${NCBI_ThirdParty_Boost}")
-    set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
-    set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_ThirdParty_Boost}/include)
-    set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
-else()
-    message("Component Boost.Test.Included ERROR: ${NCBI_ThirdParty_Boost}/include not found")
-    set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
+if(NOT NCBI_COMPONENT_Boost.Test.Included_FOUND)
+    if (EXISTS ${NCBI_ThirdParty_Boost}/include)
+        message(STATUS "Found Boost.Test.Included: ${NCBI_ThirdParty_Boost}")
+        set(NCBI_COMPONENT_Boost.Test.Included_FOUND YES)
+        set(NCBI_COMPONENT_Boost.Test.Included_INCLUDE ${NCBI_ThirdParty_Boost}/include)
+        set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    else()
+        message("Component Boost.Test.Included ERROR: ${NCBI_ThirdParty_Boost}/include not found")
+        set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
+    endif()
 endif()
-NCBIcomponent_report(Boost.Test.Included)
 
 #############################################################################
 # Boost.Test
-NCBI_define_Xcomponent(NAME Boost.Test LIB boost_unit_test_framework-clang-darwin)
-NCBIcomponent_report(Boost.Test)
+if(NOT NCBI_COMPONENT_Boost.Test_FOUND)
+    NCBI_define_Xcomponent(NAME Boost.Test LIB boost_unit_test_framework-clang-darwin)
+endif()
 
 #############################################################################
 # Boost.Spirit
-NCBI_define_Xcomponent(NAME Boost.Spirit LIB boost_thread-mt)
-NCBIcomponent_report(Boost.Spirit)
+if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
+    NCBI_define_Xcomponent(NAME Boost.Spirit LIB boost_thread-mt)
+endif()
 
 #############################################################################
 # Boost.Thread
-NCBI_define_Xcomponent(NAME Boost.Thread LIB boost_thread-mt)
-NCBIcomponent_report(Boost.Thread)
+if(NOT NCBI_COMPONENT_Boost.Thread_FOUND)
+    NCBI_define_Xcomponent(NAME Boost.Thread LIB boost_thread-mt)
+endif()
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
+NCBIcomponent_report(Boost.Test.Included)
+NCBIcomponent_report(Boost.Test)
+NCBIcomponent_report(Boost.Spirit)
+NCBIcomponent_report(Boost.Thread)
+NCBIcomponent_report(Boost)
 
 #############################################################################
 # JPEG
