@@ -39,11 +39,8 @@
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
 
-#if !HAVE_LIBCONNEXT // external builds do not have debug version of VDB library
-# define HAVE_DEBUG_VDB_CALL 0
-#else
-# define HAVE_DEBUG_VDB_CALL 1
-#endif
+// Historically unavailable in some external builds.
+#define HAVE_DEBUG_VDB_CALL 1
 
 bool CVDBUserAgentMonitor::SUserAgentValues::operator==(const SUserAgentValues& values) const
 {
