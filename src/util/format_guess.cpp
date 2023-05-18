@@ -36,8 +36,141 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/stream_utils.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
+
+// Must list all *supported* EFormats except eUnknown and eFormat_max. 
+// Will cause assertion if violated!
+
+static const CFormatGuess::EFormat sm_CheckOrder[] = 
+{
+    CFormatGuess::eBam, // must precede eGZip!
+    CFormatGuess::eZip,
+    CFormatGuess::eZstd,
+    CFormatGuess::eGZip,
+    CFormatGuess::eBZip2,
+    CFormatGuess::eLzo,
+    CFormatGuess::eSra,
+    CFormatGuess::ePsl, // must be checked before eRmo!
+    CFormatGuess::eRmo,
+    CFormatGuess::eVcf,
+    CFormatGuess::eGvf,
+    CFormatGuess::eGff3,
+    CFormatGuess::eGtf,
+    CFormatGuess::eGffAugustus,
+    CFormatGuess::eGff2,
+    CFormatGuess::eGlimmer3,
+    CFormatGuess::eAgp,
+    CFormatGuess::eXml,
+    CFormatGuess::eWiggle,
+    CFormatGuess::eNewick,
+    CFormatGuess::eBed,
+    CFormatGuess::eBed15,
+    CFormatGuess::eHgvs,
+    CFormatGuess::eDistanceMatrix,
+    CFormatGuess::eFlatFileSequence,
+    CFormatGuess::eFlatFileUniProt,
+    CFormatGuess::eFlatFileEna,
+    CFormatGuess::eFlatFileGenbank,
+    CFormatGuess::eFiveColFeatureTable,
+    CFormatGuess::eSnpMarkers,
+    CFormatGuess::eFasta,
+    CFormatGuess::eTextASN,
+    CFormatGuess::eAlignment,    
+    CFormatGuess::eTaxplot,
+    CFormatGuess::eTable,
+    CFormatGuess::eBinaryASN,
+    CFormatGuess::ePhrapAce,
+    CFormatGuess::eUCSCRegion,
+    CFormatGuess::eJSON,
+};
+constexpr size_t sm_CheckOrder_Size = sizeof(sm_CheckOrder) / sizeof(sm_CheckOrder[0]);
+
+
+// This array must stay in sync with enum CFormatGuess::EFormat, 
+// but that's not supposed to change in the middle anyway, 
+// so the explicit size should suffice to avoid accidental skew.
+
+typedef SStaticPair<CFormatGuess::EFormat, const char*> TFormatNamesItem;
+typedef CStaticPairArrayMap<CFormatGuess::EFormat, const char*> TFormatNamesMap;
+
+static const TFormatNamesItem s_format_to_name_table [] =
+{
+    { CFormatGuess::eUnknown,              "unknown"            },
+    { CFormatGuess::eBinaryASN,            "binary ASN.1"       },
+    { CFormatGuess::eRmo,                  "RepeatMasker"       },
+    { CFormatGuess::eGtf_POISENED,         "GFF/GTF Poisoned"   },
+    { CFormatGuess::eGlimmer3,             "Glimmer3"           },
+    { CFormatGuess::eAgp,                  "AGP"                },
+    { CFormatGuess::eXml,                  "XML"                },
+    { CFormatGuess::eWiggle,               "WIGGLE"             },
+    { CFormatGuess::eBed,                  "BED"                },
+    { CFormatGuess::eBed15,                "BED15"              },
+    { CFormatGuess::eNewick,               "Newick"             },
+    { CFormatGuess::eAlignment,            "alignment"          },
+    { CFormatGuess::eDistanceMatrix,       "distance matrix"    },
+    { CFormatGuess::eFlatFileSequence,     "flat-file sequence" },
+    { CFormatGuess::eFiveColFeatureTable,  "five-column feature table" },
+    { CFormatGuess::eSnpMarkers,           "SNP Markers"        },
+    { CFormatGuess::eFasta,                "FASTA"              },
+    { CFormatGuess::eTextASN,              "text ASN.1"         },
+    { CFormatGuess::eTaxplot,              "Taxplot"            },
+    { CFormatGuess::ePhrapAce,             "Phrap ACE"          },
+    { CFormatGuess::eTable,                "table"              },
+    { CFormatGuess::eGtf,                  "GTF"                },
+    { CFormatGuess::eGff3,                 "GFF3"               },
+    { CFormatGuess::eGff2,                 "GFF2"               },
+    { CFormatGuess::eHgvs,                 "HGVS"               },
+    { CFormatGuess::eGvf,                  "GVF"                },
+    { CFormatGuess::eZip,                  "zip"                },
+    { CFormatGuess::eGZip,                 "gzip"               },
+    { CFormatGuess::eBZip2,                "bzip2"              },
+    { CFormatGuess::eLzo,                  "lzo"                },
+    { CFormatGuess::eSra,                  "SRA"                },
+    { CFormatGuess::eBam,                  "BAM"                },
+    { CFormatGuess::eVcf,                  "VCF"                },
+    { CFormatGuess::eUCSCRegion,           "UCSC Region"        },
+    { CFormatGuess::eGffAugustus,          "GFF Augustus"       },
+    { CFormatGuess::eJSON,                 "JSON"               },
+    { CFormatGuess::ePsl,                  "PSL"                },
+    { CFormatGuess::eAltGraphX,            "altGraphX"          },
+    { CFormatGuess::eBed5FloatScore,       "BED5 float score"   },
+    { CFormatGuess::eBedGraph,             "BED graph"          },
+    { CFormatGuess::eBedRnaElements,       "BED Rna elements"   },
+    { CFormatGuess::eBigBarChart,          "bigBarChart"        },
+    { CFormatGuess::eBigBed,               "BigBED"             },
+    { CFormatGuess::eBigPsl,               "BigPSL"             },
+    { CFormatGuess::eBigChain,             "BigChain"           },
+    { CFormatGuess::eBigMaf,               "BigMaf"             },
+    { CFormatGuess::eBigWig,               "BigWig"             },
+    { CFormatGuess::eBroadPeak,            "BroadPeak"          },
+    { CFormatGuess::eChain,                "Chain"              },
+    { CFormatGuess::eClonePos,             "ClonePos"           },
+    { CFormatGuess::eColoredExon,          "ColoredExon"        },
+    { CFormatGuess::eCtgPos,               "CtgPos"             },
+    { CFormatGuess::eDownloadsOnly,        "DowloadsOnly"       },
+    { CFormatGuess::eEncodeFiveC,          "EncodeFiveC"        },
+    { CFormatGuess::eExpRatio,             "ExpRatio"           },
+    { CFormatGuess::eFactorSource,         "FactorSource"       },
+    { CFormatGuess::eGenePred,             "GenePred"           },
+    { CFormatGuess::eLd2,                  "Ld2"                },
+    { CFormatGuess::eNarrowPeak,           "NarrowPeak"         },
+    { CFormatGuess::eNetAlign,             "NetAlign"           },
+    { CFormatGuess::ePeptideMapping,       "PeptideMapping"     },
+    { CFormatGuess::eRmsk,                 "Rmsk"               },
+    { CFormatGuess::eSnake,                "Snake"              },
+    { CFormatGuess::eVcfTabix,             "VcfTabix"           },
+    { CFormatGuess::eWigMaf,               "WigMaf"             },
+    { CFormatGuess::eFlatFileGenbank,      "Genbank FlatFile"   },
+    { CFormatGuess::eFlatFileEna,          "ENA FlatFile"       },
+    { CFormatGuess::eFlatFileUniProt,      "UniProt FlatFile"   },
+    { CFormatGuess::eZstd,                 "zstd"               },
+};
+DEFINE_STATIC_ARRAY_MAP(TFormatNamesMap, sm_FormatNames, s_format_to_name_table);
+
+
+    
 enum ESymbolType {
     fDNA_Main_Alphabet  = 1<<0, ///< Just ACGTUN-.
     fDNA_Ambig_Alphabet = 1<<1, ///< Anything else representable in ncbi4na.
@@ -54,6 +187,7 @@ enum EConfidence {
     eMaybe,
     eYes
 };
+
 
 
 //  ============================================================================
@@ -151,127 +285,6 @@ static void init_symbol_type_table(void)
     }
 }
 
-
-// Must list all *supported* EFormats except eUnknown and eFormat_max. 
-// Will cause assertion if violated!
-vector<int> CFormatGuess::sm_CheckOrder =
-{
-    eBam, // must precede eGZip!
-    eZip,
-    eZstd,
-    eGZip,
-    eBZip2,
-    eLzo,
-    eSra,
-    ePsl, // must be checked before eRmo!
-    eRmo,
-    eVcf,
-    eGvf,
-    eGff3,
-    eGtf,
-    eGffAugustus,
-    eGff2,
-    eGlimmer3,
-    eAgp,
-    eXml,
-    eWiggle,
-    eNewick,
-    eBed,
-    eBed15,
-    eHgvs,
-    eDistanceMatrix,
-    eFlatFileSequence,
-    eFlatFileUniProt,
-    eFlatFileEna,
-    eFlatFileGenbank,
-    eFiveColFeatureTable,
-    eSnpMarkers,
-    eFasta,
-    eTextASN,
-    eAlignment,    
-    eTaxplot,
-    eTable,
-    eBinaryASN,
-    ePhrapAce,
-    eUCSCRegion,
-    eJSON,
-};
-
-
-// This array must stay in sync with enum EFormat, but that's not
-// supposed to change in the middle anyway, so the explicit size
-// should suffice to avoid accidental skew.
-const CFormatGuess::NAME_MAP CFormatGuess::sm_FormatNames = {
-    {eUnknown, "unknown"},
-    {eBinaryASN, "binary ASN.1"},
-    {eRmo, "RepeatMasker"},
-    {eGtf_POISENED, "GFF/GTF Poisoned"},
-    {eGlimmer3, "Glimmer3"},
-    {eAgp, "AGP"},
-    {eXml, "XML"},
-    {eWiggle, "WIGGLE"},
-    {eBed, "BED"},
-    {eBed15, "BED15"},
-    {eNewick, "Newick"},
-    {eAlignment, "alignment"},
-    {eDistanceMatrix, "distance matrix"},
-    {eFlatFileSequence, "flat-file sequence"},
-    {eFiveColFeatureTable, "five-column feature table"},
-    {eSnpMarkers, "SNP Markers"},
-    {eFasta, "FASTA"},
-    {eTextASN, "text ASN.1"},
-    {eTaxplot, "Taxplot"},
-    {ePhrapAce, "Phrap ACE"},
-    {eTable, "table"},
-    {eGtf, "GTF"},
-    {eGff3, "GFF3"},
-    {eGff2, "GFF2"},
-    {eHgvs, "HGVS"},
-    {eGvf, "GVF"},
-    {eZip, "zip"},
-    {eGZip, "gzip"},
-    {eBZip2, "bzip2"},
-    {eLzo, "lzo"},
-    {eSra, "SRA"},
-    {eBam, "BAM"},
-    {eVcf, "VCF"},
-    {eUCSCRegion, "UCSC Region"},
-    {eGffAugustus, "GFF Augustus"},
-    {eJSON, "JSON"},
-    {ePsl, "PSL"},
-    {eAltGraphX, "altGraphX"},
-    {eBed5FloatScore, "BED5 float score"},
-    {eBedGraph, "BED graph"},
-    {eBedRnaElements, "BED Rna elements"},
-    {eBigBarChart, "bigBarChart"},
-    {eBigBed, "BigBED"},
-    {eBigPsl, "BigPSL"},
-    {eBigChain, "BigChain"},
-    {eBigMaf, "BigMaf"},
-    {eBigWig, "BigWig"},
-    {eBroadPeak, "BroadPeak"},
-    {eChain, "Chain"},
-    {eClonePos, "ClonePos"},
-    {eColoredExon, "ColoredExon"},
-    {eCtgPos, "CtgPos"},
-    {eDownloadsOnly, "DowloadsOnly"},
-    {eEncodeFiveC, "EncodeFiveC"},
-    {eExpRatio, "ExpRatio"},
-    {eFactorSource, "FactorSource"},
-    {eGenePred, "GenePred"},
-    {eLd2, "Ld2"},
-    {eNarrowPeak, "NarrowPeak"},
-    {eNetAlign, "NetAlign"},
-    {ePeptideMapping, "PeptideMapping"},
-    {eRmsk, "Rmsk"},
-    {eSnake, "Snake"},
-    {eVcfTabix, "VcfTabix"},
-    {eWigMaf, "WigMaf"},
-    {eFlatFileGenbank, "Genbank FlatFile"},
-    {eFlatFileEna, "ENA FlatFile"},
-    {eFlatFileUniProt, "UniProt FlatFile"},
-    {eZstd, "zstd"},
-};
 
 const char*
 CFormatGuess::GetFormatName(EFormat format)
@@ -420,8 +433,12 @@ CFormatGuess::~CFormatGuess()
 bool 
 CFormatGuess::IsSupportedFormat(EFormat format) 
 {
-    return (std::find(sm_CheckOrder.begin(), sm_CheckOrder.end(), format) 
-        != sm_CheckOrder.end());
+    for (size_t i = 0; i < sm_CheckOrder_Size; ++i) {
+        if (sm_CheckOrder[i] == format) {
+            return true;
+        }
+    }
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
@@ -433,9 +450,7 @@ CFormatGuess::GuessFormat( EMode )
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::EFormat
-CFormatGuess::GuessFormat(
-    EOnError onerror )
-//  ----------------------------------------------------------------------------
+CFormatGuess::GuessFormat( EOnError onerror )
 {
     //sqd-4036:
     // make sure we got something to work with
@@ -454,11 +469,10 @@ CFormatGuess::GuessFormat(
     }
 
     EMode mode = eQuick;
-    size_t uFormatCount = sm_CheckOrder.size();
 
     // First, try to use hints
     if ( !m_Hints.IsEmpty() ) {
-        for (size_t f = 0; f < uFormatCount; ++f) {
+        for (size_t f = 0; f < sm_CheckOrder_Size; ++f) {
             EFormat fmt = EFormat( sm_CheckOrder[f] );
             if (m_Hints.IsPreferred(fmt)  &&  x_TestFormat(fmt, mode)) {
                 return fmt;
@@ -467,7 +481,7 @@ CFormatGuess::GuessFormat(
     }
 
     // Check other formats, skip the ones that are disabled through hints
-    for (size_t f = 0; f < uFormatCount; ++f) {
+    for (size_t f = 0; f < sm_CheckOrder_Size; ++f) {
         EFormat fmt = EFormat( sm_CheckOrder[f] );
         if ( ! m_Hints.IsDisabled(fmt)  &&  x_TestFormat(fmt, mode) ) {
             return fmt;
@@ -626,10 +640,12 @@ CFormatGuess::EnsureTestBuffer()
     // Stop when its no longer all comment, end of the stream,
     //   or Multiplier hits 1024 
 
-
+    const streamsize k_TestBufferGranularity = 8096;
+    
     int Multiplier = 1;
+
     while(true) {
-        m_iTestBufferSize = Multiplier * s_iTestBufferGranularity;
+        m_iTestBufferSize = Multiplier * k_TestBufferGranularity;
         m_pTestBuffer = new char[ m_iTestBufferSize ];
         m_Stream.read( m_pTestBuffer, m_iTestBufferSize );
         m_iTestDataSize = m_Stream.gcount();
