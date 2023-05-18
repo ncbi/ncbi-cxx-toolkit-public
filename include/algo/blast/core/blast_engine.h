@@ -58,9 +58,6 @@ NCBI_XBLAST_EXPORT
 extern const int kBlastMinorVersion; /**< Minor version */
 NCBI_XBLAST_EXPORT 
 extern const int kBlastPatchVersion; /**< Patch version */
-/** Date of the most recent BLAST release (kept for historical reasons) */
-NCBI_XBLAST_EXPORT 
-extern const char* kBlastReleaseDate;
 
 
 /** The high level function performing the BLAST search against a BLAST 
