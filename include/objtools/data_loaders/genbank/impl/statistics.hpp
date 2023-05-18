@@ -92,21 +92,29 @@ public:
     
     void AddTime(double time, size_t count = 1) {
         m_Count += count;
-        m_Time += time;
+        x_Add(m_Time, time);
     }
 
     void AddTimeSize(double time, double size) {
         m_Count += 1;
-        m_Time += time;
-        m_Size += size;
+        x_Add(m_Time, time);
+        x_Add(m_Size, size);
+    }
+
+protected:
+    static void x_Add(atomic<double>& sum, double v)
+    {
+        double old_sum = sum.load(memory_order_relaxed);
+        while ( !sum.compare_exchange_weak(old_sum, old_sum + v) ) {
+        }
     }
 
 private:
     const char* m_Action;
     const char* m_Entity;
-    size_t m_Count;
-    double m_Time;
-    double m_Size;
+    atomic<size_t> m_Count;
+    atomic<double> m_Time;
+    atomic<double> m_Size;
 };
 
 
