@@ -53,11 +53,15 @@ CInitMutexPool::~CInitMutexPool(void)
 bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex, bool force)
 {
     _ASSERT(!mutex);
-    CRef<TMutex> local(init.m_Mutex);
-    if ( !local ) {
+    if ( !force && init ) {
+        return false;
+    }
+    CRef<TMutex> local;
+    {{
         CFastMutexGuard guard(m_Pool_Mtx);
-        if ( !force && init )
+        if ( !force && init ) {
             return false;
+        }
         local = init.m_Mutex;
         if ( !local ) {
             if ( m_MutexList.empty() ) {
@@ -70,7 +74,7 @@ bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex, bo
             }
             init.m_Mutex = local;
         }
-    }
+    }}
     local.Swap(mutex);
     _ASSERT(mutex);
     return true;
