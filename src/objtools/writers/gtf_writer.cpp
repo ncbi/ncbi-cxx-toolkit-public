@@ -486,7 +486,7 @@ bool CGtfWriter::xAssignFeaturesCds(
 
     // subtract stop_codon in the end:
     unsigned int basesToLose = 3;
-    while (basesToLose > 0) {
+    while (basesToLose > 0 && !recordList.empty()) {
         auto pLastRecord = recordList.back();
         auto lastSize = pLastRecord->SeqStop() - pLastRecord->SeqStart() + 1;
         auto lastStrand = pLastRecord->SeqStrand();
@@ -560,7 +560,7 @@ bool CGtfWriter::xAssignFeaturesCds(
         list<CRef<CGtfRecord>> stopCodonParts;
         int basePairsNeeded = 3;
         auto currentIt = sublocs.rbegin();
-        while (basePairsNeeded > 0) {
+        while (basePairsNeeded > 0 && currentIt != sublocs.rend()) {
             const CSeq_interval& currentLoc = **currentIt;
             auto currentFrom = currentLoc.GetFrom();
             auto currentTo = currentLoc.GetTo();
