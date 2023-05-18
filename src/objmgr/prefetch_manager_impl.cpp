@@ -170,6 +170,7 @@ void CPrefetchRequest::SetListener(IPrefetchListener* listener)
 
 void CPrefetchRequest::OnStatusChange(EStatus /* old */)
 {
+    CMutexGuard guard(m_StateMutex->GetData());
     if (m_Listener) {
         m_Listener->PrefetchNotify(Ref(this), GetState());
     }
@@ -220,8 +221,8 @@ CPrefetchRequest::EStatus CPrefetchRequest::Execute(void)
 
 CPrefetchManager_Impl::CPrefetchManager_Impl(unsigned max_threads,
                                              CThread::TRunMode threads_mode)
-    : CThreadPool(kMax_Int, max_threads, 2, threads_mode),
-      m_StateMutex(new CObjectFor<CMutex>())
+    : m_StateMutex(new CObjectFor<CMutex>()),
+      m_ThreadPool(kMax_Int, max_threads, 2, threads_mode)
 {
 }
 
@@ -235,8 +236,8 @@ CRef<CPrefetchRequest> CPrefetchManager_Impl::AddAction(TPriority priority,
                                                         IPrefetchAction* action,
                                                         IPrefetchListener* listener)
 {
-    CMutexGuard guard0(GetMainPoolMutex());
-    if ( action && IsAborted() ) {
+    //CMutexGuard guard0(m_ThreadPool.GetMainPoolMutex());
+    if ( action && m_ThreadPool.IsAborted() ) {
         throw prefetch::CCancelRequestException();
     }
     CMutexGuard guard(m_StateMutex->GetData());
@@ -244,7 +245,7 @@ CRef<CPrefetchRequest> CPrefetchManager_Impl::AddAction(TPriority priority,
                                                     action,
                                                     listener,
                                                     priority));
-    AddTask(req);
+    m_ThreadPool.AddTask(req);
     return req;
 }
 
