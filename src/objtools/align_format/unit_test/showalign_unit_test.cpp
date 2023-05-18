@@ -188,7 +188,8 @@ bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
         BOOST_REQUIRE(output.find(">gi|1788470|gb|AE000304.1|AE000304 ") != NPOS);
     }
     BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 9 of 400 of ") != NPOS ||
-                  output.find("Escherichia coli K12 MG1655 section 9 of 400 of ") != NPOS);
+                  output.find("Escherichia coli K12 MG1655 section 9 of 400 of ") != NPOS ||
+                  output.find("Escherichia coli K12 substr. MG1655") != NPOS);
     BOOST_REQUIRE(output.find("Sbjct  259   GCCTGATGCGACGCTGGCGCGTCTTATCAGGCCTAC  294") != NPOS);
     BOOST_REQUIRE(output.find("Length=11852") != NPOS);
     BOOST_REQUIRE(output.find("Query  5636  GTAGG-CAGGATAAGGCGTTCACGCCGCATCCGGCA  5670") != NPOS);
