@@ -89,7 +89,7 @@ private:
     string                    m_Password;
     string                    m_DbapiDriver;
 
-    unique_ptr<I_DriverContext>  m_Context;
+    atomic<I_DriverContext*>  m_Context;
     int                       m_Timeout;
     int                       m_OpenTimeout;
 
