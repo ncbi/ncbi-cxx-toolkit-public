@@ -302,7 +302,7 @@ private:
         fAvoidRequest_for_Seq_id_type      = 1<<5
     };
     typedef int TAvoidRequests;
-    TAvoidRequests m_AvoidRequest;
+    atomic<TAvoidRequests> m_AvoidRequest;
 
     struct SProcessorInfo {
         CRef<CID2Processor> processor;
