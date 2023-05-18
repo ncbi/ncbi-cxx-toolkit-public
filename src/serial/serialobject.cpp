@@ -515,17 +515,17 @@ static
 long& s_SerFlags(CNcbiIos& io, size_t idx)
 {
     static int s_SerIndex[eSerIndex_Count];
-    static bool s_HaveIndex = false;
+    static atomic<bool> s_HaveIndex;
 
-    if ( !s_HaveIndex ) {
+    if ( !s_HaveIndex.load(memory_order_acquire) ) {
         // Make sure to get a unique IOS index
         DEFINE_STATIC_FAST_MUTEX(s_IndexMutex);
         CFastMutexGuard guard(s_IndexMutex);
-        if ( !s_HaveIndex ) {
+        if ( !s_HaveIndex.load(memory_order_acquire) ) {
             for (int i = 0; i < eSerIndex_Count; ++i) {
                 s_SerIndex[i] = CNcbiIos::xalloc();
             }
-            s_HaveIndex = true;
+            s_HaveIndex.store(true, memory_order_release);
         }
     }
 
