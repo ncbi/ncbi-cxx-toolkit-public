@@ -93,19 +93,25 @@ bool CPackString::s_GetEnvFlag(const char* env, bool def_val)
 
 bool CPackString::TryStringPack(void)
 {
-    static bool use_string_pack = s_GetEnvFlag(STRING_PACK_ENV, true);
-    if ( !use_string_pack ) {
-        return false;
+    static atomic<Int1> saved_use_string_pack{-1};
+    auto use_string_pack = saved_use_string_pack.load(memory_order_acquire);
+    if ( use_string_pack < 0 ) {
+        // check if string packing is enabled by environment
+        use_string_pack = s_GetEnvFlag(STRING_PACK_ENV, true);
+        if ( use_string_pack ) {
+            // check if it's available in the STL implementation
+            
+            string s1("test"), s2;
+            s2 = s1;
+            if ( s1.data() != s2.data() ) {
+                // strings don't use reference counters
+                use_string_pack = false;
+            }
+        }
+        // save the result
+        saved_use_string_pack.store(use_string_pack, memory_order_release);
     }
-
-    string s1("test"), s2;
-    s2 = s1;
-    if ( s1.data() != s2.data() ) {
-        // strings don't use reference counters
-        return (use_string_pack = false);
-    }
-
-    return true;
+    return use_string_pack != 0;
 }
 
 
