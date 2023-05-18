@@ -56,11 +56,11 @@ NCBI_PARAM_DEF_EX(int, GENBANK, TRACE_LOAD, 0,
 static
 int s_GetLoadTraceLevel(void)
 {
-    static volatile int load_trace_level;
-    static volatile bool initialized;
-    if ( !initialized ) {
+    static atomic<int> saved_load_trace_level{-1};
+    auto load_trace_level = saved_load_trace_level.load(memory_order_acquire);
+    if ( load_trace_level < 0 ) {
         load_trace_level = NCBI_PARAM_TYPE(GENBANK, TRACE_LOAD)::GetDefault();
-        initialized = true;
+        saved_load_trace_level.store(load_trace_level, memory_order_release);
     }
     return load_trace_level;
 }
