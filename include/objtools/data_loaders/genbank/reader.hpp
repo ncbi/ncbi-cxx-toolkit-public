@@ -352,7 +352,7 @@ private:
     CMutex           m_ConnectionsMutex;
     CSemaphore       m_NumFreeConnections;
     int              m_MaximumRetryCount;
-    int              m_ConnectFailCount;
+    atomic<int>      m_ConnectFailCount;
     CTime            m_LastTimeFailed;
     CTime            m_NextConnectTime;
     int              m_WaitTimeErrors;
