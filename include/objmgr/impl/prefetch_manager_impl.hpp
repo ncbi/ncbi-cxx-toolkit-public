@@ -55,7 +55,6 @@ class CPrefetchManager_Impl;
 
 class NCBI_XOBJMGR_EXPORT CPrefetchManager_Impl
     : public CObject,
-      public CThreadPool,
       public SPrefetchTypes
 {
 public:
@@ -75,10 +74,11 @@ protected:
 
 private:
     CRef<CObjectFor<CMutex> > m_StateMutex;
+    CThreadPool m_ThreadPool;
 
 private:
-    CPrefetchManager_Impl(const CPrefetchManager_Impl&);
-    void operator=(const CPrefetchManager_Impl&);
+    CPrefetchManager_Impl(const CPrefetchManager_Impl&) = delete;
+    void operator=(const CPrefetchManager_Impl&) = delete;
 };
 
 

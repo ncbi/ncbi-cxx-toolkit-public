@@ -96,14 +96,14 @@ CRef<CPrefetchRequest> CPrefetchManager::AddAction(IPrefetchAction* action,
 
 void CPrefetchManager::CancelAllTasks(void)
 {
-    m_Impl->CancelTasks(CThreadPool::fCancelExecutingTasks|
-                        CThreadPool::fCancelQueuedTasks);
+    m_Impl->m_ThreadPool.CancelTasks(CThreadPool::fCancelExecutingTasks|
+                                     CThreadPool::fCancelQueuedTasks);
 }
 
 
 void CPrefetchManager::Shutdown(void)
 {
-    m_Impl->Abort();
+    m_Impl->m_ThreadPool.Abort();
 }
 
 
