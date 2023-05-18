@@ -1368,7 +1368,6 @@ with_yaml_cpp
 with_opentracing
 with_jaeger
 with_3psw
-with_connext
 with_app
 with_ctools
 with_gui
@@ -2414,7 +2413,6 @@ Optional Packages:
  --without-jaeger        do not use Jaeger tracing
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
- --without-connext       do not build non-public CONNECT library extensions
  --without-app           do not build standalone applications like ID1_FETCH
  --without-ctools        do not build NCBI C Toolkit based projects
  --without-gui           do not build most graphical projects
@@ -6026,12 +6024,6 @@ fi
 
 ## Optional projects
 
-# Check whether --with-connext was given.
-if test "${with_connext+set}" = set; then :
-  withval=$with_connext;
-fi
-
-
 # Check whether --with-app was given.
 if test "${with_app+set}" = set; then :
   withval=$with_app;
@@ -6177,7 +6169,6 @@ fi
 if test "$with_bin_release" = "yes" ; then
    # Default some other options accordingly
    : ${with_ncbi_public=yes}
-   : ${with_connext=no}
    : ${with_libdw=no}
    : ${with_ncbicrypt=no}
    : ${with_pcre=no} # Too much variation across distributions.
@@ -36134,29 +36125,9 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 ## `connext' support
 
-connext="ncbi_dblb ncbi_ifconf ncbi_localnet"
-
-for fff in $connext ; do
-   if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
-      if test "$with_connext" = "yes" ; then
-         as_fn_error $? "--with-connext:  src/connect/ext/${fff}.c is missing" "$LINENO" 5
-      fi
-      with_connext="no"
-      break
-   fi
-done
-
-if test "$with_connext" = "no" ; then
-   CONNEXT=
-   XCONNEXT=
-else
-             WithProjects="$WithProjects${WithProjectsSep}connext"; WithProjectsSep=" "
-   CONNEXT=connext
-   XCONNEXT=xconnext
 
 $as_echo "#define HAVE_LIBCONNEXT 1" >>confdefs.h
 
-fi
 
 
 ## direct PubSeqOS data loaders
@@ -36520,7 +36491,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClan
           ;;
       esac
    done
-  for x in cgi connext serial objects bdb dbapi app ctools gui algo gbench; do
+  for x in cgi serial objects bdb dbapi app ctools gui algo gbench; do
       case " $WithProjects " in
          *" $x "*) ;;
          *) WithoutProjects="$WithoutProjects$WithoutProjectsSep$x"

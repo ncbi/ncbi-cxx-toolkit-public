@@ -345,9 +345,9 @@ NCBICRYPT_LIBS    = @NCBICRYPT_LIBS@
 # (see in "configure.ac" for the pre-set defaults)
 #
 
-# non-public (X)CONNECT extensions
-CONNEXT  = @CONNEXT@
-XCONNEXT = @XCONNEXT@
+# historically non-public (X)CONNECT extensions
+CONNEXT  = connext
+XCONNEXT = xconnext
 
 # NCBI C++ API for BerkeleyDB
 BDB_LIB       = @BDB_LIB@

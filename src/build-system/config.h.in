@@ -318,7 +318,7 @@
 /* Define to 1 if libcassandra is available. */
 #undef HAVE_LIBCASSANDRA
 
-/* Define to 1 if non-public CONNECT extensions are available. */
+/* Define to 1 if historically non-public CONNECT extensions are available. */
 #undef HAVE_LIBCONNEXT
 
 /* Define to 1 if libcppkafka is available. */

@@ -231,11 +231,7 @@ CDbapiSampleApp::Run()
 
     if (UseSvcMapper()) {
         DBLB_INSTALL_DEFAULT();
-#ifdef HAVE_LIBCONNEXT
         LOG_POST_X(1, "Using load-balancer service to server mapper ...");
-#else
-        ERR_POST_X(2, "Load balancing requested, but not available in this build");
-#endif
     }
 
     if ( m_TDSVersion.empty() ) {

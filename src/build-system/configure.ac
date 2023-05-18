@@ -671,8 +671,8 @@ AC_ARG_WITH(3psw,
    [ --without-3psw          do not use any of the above packages])
 
 ## Optional projects
-AC_ARG_WITH(connext,
-   [ --without-connext       do not build non-public CONNECT library extensions])
+dnl AC_ARG_WITH(connext,
+dnl    [ --without-connext       do not build non-public CONNECT library extensions])
 dnl AC_ARG_WITH(serial,
 dnl    [ --without-serial        do not build the serialization library and tools])
 dnl AC_ARG_WITH(objects,
@@ -879,7 +879,6 @@ fi
 if test "$with_bin_release" = "yes" ; then
    # Default some other options accordingly
    : ${with_ncbi_public=yes}
-   : ${with_connext=no}
    : ${with_libdw=no}
    : ${with_ncbicrypt=no}
    : ${with_pcre=no} # Too much variation across distributions.
@@ -9108,28 +9107,8 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 ## `connext' support
 
-connext="ncbi_dblb ncbi_ifconf ncbi_localnet"
-
-for fff in $connext ; do
-   if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
-      if test "$with_connext" = "yes" ; then
-         AC_MSG_ERROR([--with-connext:  src/connect/ext/${fff}.c is missing])
-      fi
-      with_connext="no"
-      break
-   fi
-done
-
-if test "$with_connext" = "no" ; then
-   CONNEXT=
-   XCONNEXT=
-else
-   NCBI_PROJECT(connext)
-   CONNEXT=connext
-   XCONNEXT=xconnext
-   AC_DEFINE(HAVE_LIBCONNEXT, 1,
-      [Define to 1 if non-public CONNECT extensions are available.])
-fi
+AC_DEFINE(HAVE_LIBCONNEXT, 1,
+   [Define to 1 if historically non-public CONNECT extensions are available.])
 
 
 ## direct PubSeqOS data loaders

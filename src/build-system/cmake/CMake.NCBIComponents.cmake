@@ -203,10 +203,8 @@ NCBIcomponent_report(LocalLMDB)
 
 #############################################################################
 # connext
-if (NOT NCBI_COMPONENT_connext_DISABLED AND EXISTS ${NCBITK_SRC_ROOT}/connect/ext/CMakeLists.txt)
-    set(NCBI_REQUIRE_connext_FOUND YES)
-    set(HAVE_LIBCONNEXT 1)
-endif()
+set(NCBI_REQUIRE_connext_FOUND YES)
+set(HAVE_LIBCONNEXT 1)
 NCBIcomponent_report(connext)
 
 #############################################################################

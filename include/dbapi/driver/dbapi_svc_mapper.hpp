@@ -36,9 +36,7 @@
 #include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <corelib/ncbimtx.hpp>
 
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
+#include <connect/ext/ncbi_dblb_svcmapper.hpp>
 
 #include <vector>
 #include <set>
@@ -269,7 +267,6 @@ inline
 IDBServiceMapper*
 MakeCDBUniversalMapper(const IRegistry* registry)
 {
-#ifdef HAVE_LIBCONNEXT
     return new CDBUniversalMapper(
         registry,
         CDBUniversalMapper::TMapperConf(
@@ -277,9 +274,6 @@ MakeCDBUniversalMapper(const IRegistry* registry)
             &CDBLB_ServiceMapper::Factory
             )
         );
-#else
-    return new CDBUniversalMapper(registry);
-#endif
 }
 
 

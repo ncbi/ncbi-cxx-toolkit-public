@@ -73,9 +73,7 @@
 #include <dbapi/driver/drivers.hpp>             // DBAPI_RegisterDriver_*
 #include <dbapi/driver/exception.hpp>           // CDB_UserHandler
 
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
+#include <connect/ext/ncbi_dblb_svcmapper.hpp>
 
 #ifdef _MSC_VER
 #define unsetenv(n)     _putenv_s(n,"")
@@ -468,13 +466,10 @@ static IDBServiceMapper* s_GetServiceMapper(void)
     return &(dynamic_cast<CDBConnectionFactory&>
              (*CDbapiConnMgr::Instance().GetConnectionFactory())
              .GetRuntimeData(kEmptyStr).GetDBServiceMapper());
-#elif defined(HAVE_LIBCONNEXT)
-    ERR_POST(Info << "s_GetServiceMapper() - HAVE_LIBCONNEXT");
+#else
+    ERR_POST(Info << "s_GetServiceMapper() - DBLB");
     static CDBLB_ServiceMapper mapper(&CNcbiApplication::Instance()->GetConfig());
     return &mapper;
-#else
-    ERR_POST(Info << "s_GetServiceMapper() - else");
-    return NULL;
 #endif
 }
 

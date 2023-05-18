@@ -62,11 +62,7 @@ public:
     string GetServerName(void) const
     {
         if (NStr::CompareNocase(m_ServerName, "MsSql") == 0) {
-#ifdef HAVE_LIBCONNEXT
             return "DBAPI_MS_TEST";
-#else
-            return "MSDEV1";
-#endif
         } else if (NStr::CompareNocase(m_ServerName, "Sybase") == 0) {
             return "DBAPI_DEV16_2K";
         }

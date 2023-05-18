@@ -38,14 +38,11 @@
 #include <util/xregexp/arg_regexp.hpp>
 #include <connect/ncbi_service.h>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ext/ncbi_dblb_svcmapper.hpp>
 
 #include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/simple/sdbapi.hpp>
-
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -256,7 +253,6 @@ int CDBLBClientApp::x_RunWhatIs(void)
             types_seen |= serv_info->type;
         }
         
-#ifdef HAVE_LIBCONNEXT
         if (serv_info->type == fSERV_Standalone) {
             IDBServiceMapper* mapper = x_GetServiceMapper();
             _ASSERT(mapper != NULL);
@@ -268,7 +264,6 @@ int CDBLBClientApp::x_RunWhatIs(void)
                 continue;
             }
         }
-#endif
         NcbiCout << name << " is a service (type "
                  << SERV_TypeStr(serv_info->type) << ").\n";
     }
@@ -344,9 +339,6 @@ int CDBLBClientApp::x_RunWhereIs(void)
     int           status   = 1;
 
     if (NStr::EqualNocase(type_str, "dblb")) {
-#ifndef HAVE_LIBCONNEXT
-        type = fSERV_Standalone;
-#else
         IDBServiceMapper* mapper = x_GetServiceMapper();
         _ASSERT(mapper != NULL);
         for (;;) {
@@ -360,7 +352,6 @@ int CDBLBClientApp::x_RunWhereIs(void)
             mapper->Exclude(service, ref);
         }
         return status;
-#endif
     } else if (SERV_ReadType(type_str.c_str(),
                              reinterpret_cast<ESERV_Type*>(&type)) == NULL) {
         _ASSERT(NStr::EqualNocase(type_str, "any"));
@@ -405,11 +396,9 @@ IDBServiceMapper* CDBLBClientApp::x_GetServiceMapper(void)
     return &(dynamic_cast<CDBConnectionFactory&>
              (*CDbapiConnMgr::Instance().GetConnectionFactory())
              .GetRuntimeData(kEmptyStr).GetDBServiceMapper());
-#elif defined(HAVE_LIBCONNEXT)
+#else
     static CDBLB_ServiceMapper mapper(&GetConfig());
     return &mapper;
-#else
-    return NULL;
 #endif
 }
 

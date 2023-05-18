@@ -38,9 +38,7 @@
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_crypt.h>
-#endif
+#include <connect/ext/ncbi_crypt.h>
 
 
 BEGIN_NCBI_SCOPE

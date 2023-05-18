@@ -850,8 +850,8 @@
 /* Define to 1 if libbz2 is available. */
 #cmakedefine HAVE_LIBBZ2 1
 
-/* Define to 1 if non-public CONNECT extensions are available. */
-#cmakedefine HAVE_LIBCONNEXT 1
+/* Define to 1 if historically non-public CONNECT extensions are available. */
+#define HAVE_LIBCONNEXT 1
 
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
