@@ -48,7 +48,9 @@ CEnumeratedTypeValues::CEnumeratedTypeValues(const char* name,
                                              bool isInteger)
     : m_Name(name),
       m_Integer(isInteger),
-      m_IsBitset(false), m_IsInternal(false)
+      m_IsBitset(false), m_IsInternal(false),
+      m_NameToValue(0),
+      m_ValueToName(0)
 {
 }
 
@@ -56,12 +58,22 @@ CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
                                              bool isInteger)
     : m_Name(name),
       m_Integer(isInteger),
-      m_IsBitset(false), m_IsInternal(false)
+      m_IsBitset(false), m_IsInternal(false),
+      m_NameToValue(0),
+      m_ValueToName(0)
 {
 }
 
 CEnumeratedTypeValues::~CEnumeratedTypeValues(void)
 {
+    ClearIndexes();
+}
+
+
+void CEnumeratedTypeValues::ClearIndexes(void)
+{
+    delete m_ValueToName.exchange(nullptr);
+    delete m_NameToValue.exchange(nullptr);
 }
 
 const string& CEnumeratedTypeValues::GetName(void) const
@@ -198,8 +210,7 @@ void CEnumeratedTypeValues::AddValue(const string& name,
     }
     m_Values.push_back(make_pair(name, value));
     m_ValueFlags[value] = flags;
-    m_ValueToName.reset();
-    m_NameToValue.reset();
+    ClearIndexes();
 }
 
 
@@ -215,17 +226,17 @@ DEFINE_STATIC_FAST_MUTEX(s_EnumValuesMutex);
 const CEnumeratedTypeValues::TValueToName&
 CEnumeratedTypeValues::ValueToName(void) const
 {
-    TValueToName* m = m_ValueToName.get();
+    TValueToName* m = m_ValueToName.load(memory_order_acquire);
     if ( !m ) {
         CFastMutexGuard GUARD(s_EnumValuesMutex);
-        m = m_ValueToName.get();
+        m = m_ValueToName.load(memory_order_acquire);
         if ( !m ) {
             NCBI_LSAN_DISABLE_GUARD;  
-            shared_ptr<TValueToName> keep(m = new TValueToName);
+            unique_ptr<TValueToName> keep(m = new TValueToName);
             ITERATE ( TValues, i, m_Values ) {
                 (*m)[i->second] = &i->first;
             }
-            m_ValueToName = keep;
+            m_ValueToName.store(keep.release(), memory_order_release);
         }
     }
     return *m;
@@ -234,13 +245,13 @@ CEnumeratedTypeValues::ValueToName(void) const
 const CEnumeratedTypeValues::TNameToValue&
 CEnumeratedTypeValues::NameToValue(void) const
 {
-    TNameToValue* m = m_NameToValue.get();
+    TNameToValue* m = m_NameToValue.load(memory_order_acquire);
     if ( !m ) {
         CFastMutexGuard GUARD(s_EnumValuesMutex);
-        m = m_NameToValue.get();
+        m = m_NameToValue.load(memory_order_acquire);
         if ( !m ) {
             NCBI_LSAN_DISABLE_GUARD;
-            shared_ptr<TNameToValue> keep(m = new TNameToValue);
+            unique_ptr<TNameToValue> keep(m = new TNameToValue);
             ITERATE ( TValues, i, m_Values ) {
                 const string& s = i->first;
                 pair<TNameToValue::iterator, bool> p =
@@ -250,7 +261,7 @@ CEnumeratedTypeValues::NameToValue(void) const
                                "duplicate enum value name: " + s);
                 }
             }
-            m_NameToValue = keep;
+            m_NameToValue.store(keep.release(), memory_order_release);
         }
     }
     return *m;
