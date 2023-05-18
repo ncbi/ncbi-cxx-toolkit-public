@@ -263,9 +263,6 @@ do
     --with-prebuilt=*)
       prebuilt_path=${arg#*=}
       ;; 
-    --with-conan-components)
-      CONANCOMPONENTS="ON"
-      ;;
     --with-conan)
       WITH_CONAN="ON"
       ;;
@@ -514,10 +511,6 @@ CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -DNCBI_PTBCFG_ALL
 if test "$CMAKE_GENERATOR" != "Xcode"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
-fi
-
-if test "$CONANCOMPONENTS" = "ON"; then
-  CMAKE_ARGS="$CMAKE_ARGS -DCONANCOMPONENTS=ON"
 fi
 
 cd ${tree_root}
