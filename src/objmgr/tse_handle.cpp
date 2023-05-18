@@ -433,7 +433,8 @@ A7. Reattaching in new place.
 */
 
 CScopeInfo_Base::CScopeInfo_Base(void)
-    : m_TSE_ScopeInfo(0)
+    : m_TSE_ScopeInfo(0),
+      m_LockCounter(0)
 {
 }
 
@@ -441,6 +442,7 @@ CScopeInfo_Base::CScopeInfo_Base(void)
 CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
                                  const CTSE_Info_Object& info)
     : m_TSE_ScopeInfo(tse.GetNonNullNCPointer()),
+      m_LockCounter(0),
       m_TSE_Handle(tse),
       m_ObjectInfo(&info)
 {
@@ -450,6 +452,7 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
 CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse,
                                  const CTSE_Info_Object& info)
     : m_TSE_ScopeInfo(&tse.x_GetScopeInfo()),
+      m_LockCounter(0),
       m_TSE_Handle(tse),
       m_ObjectInfo(&info)
 {
@@ -480,7 +483,7 @@ void CScopeInfo_Base::x_SetTSE_Handle(const CTSE_Handle& tse)
 {
     _ASSERT(IsAttached());
     _ASSERT(!HasObject() || GetObjectInfo_Base().BelongsToTSE_Info(tse.x_GetTSE_Info()));
-    _ASSERT(m_LockCounter.Get() > 0);
+    _ASSERT(m_LockCounter > 0);
     CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
     if ( !m_TSE_Handle.m_TSE ) {
@@ -498,7 +501,7 @@ void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
     _ASSERT(!IsDetached());
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
-    _ASSERT(m_LockCounter.Get() > 0);
+    _ASSERT(m_LockCounter > 0);
     CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
     if ( !m_TSE_Handle.m_TSE || !m_ObjectInfo ) {
@@ -513,10 +516,10 @@ void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
 
 void CScopeInfo_Base::x_ResetTSE_Lock()
 {
-    if ( m_TSE_Handle.m_TSE && m_LockCounter.Get() == 0 ) {
+    if ( m_LockCounter == 0 ) {
         CTSE_Handle save_tse; // prevent deletion of handle and scope under mutex
         CFastMutexGuard guard(s_Info_TSE_HandleMutex);
-        if ( m_TSE_Handle.m_TSE && m_LockCounter.Get() == 0 ) {
+        if ( m_TSE_Handle.m_TSE && m_LockCounter == 0 ) {
             save_tse.Swap(m_TSE_Handle);
         }
     }

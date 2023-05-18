@@ -450,20 +450,22 @@ CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
     }
     TTSE_ScopeInfo info;
     {{
-        TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
-        TTSE_ScopeInfo& slot = m_TSE_InfoMap[lock->GetBlobId()];
-        if ( !slot ) {
-            slot = info = new CTSE_ScopeInfo(*this, lock,
-                                             m_NextTSEIndex++,
-                                             m_CanBeUnloaded);
-            if ( m_CanBeUnloaded ) {
-                // add this TSE into index by SeqId
-                x_IndexTSE(*info);
+        {{
+            TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
+            TTSE_ScopeInfo& slot = m_TSE_InfoMap[lock->GetBlobId()];
+            if ( !slot ) {
+                slot = info = new CTSE_ScopeInfo(*this, lock,
+                                                 m_NextTSEIndex++,
+                                                 m_CanBeUnloaded);
+                if ( m_CanBeUnloaded ) {
+                    // add this TSE into index by SeqId
+                    x_IndexTSE(*info);
+                }
             }
-        }
-        else {
-            info = slot;
-        }
+            else {
+                info = slot;
+            }
+        }}
         _ASSERT(info->IsAttached() && &info->GetDSInfo() == this);
         info->m_TSE_LockCounter.Add(1);
         info->m_UserLockCounter.Add(1);
@@ -494,16 +496,18 @@ void CDataSource_ScopeInfo::AttachTSE(CTSE_ScopeInfo& info,
     _ASSERT(!info.m_DS_Info);
     _ASSERT(!info.m_TSE_Lock);
     _ASSERT(lock && &lock->GetDataSource() == &GetDataSource());
-    TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
-    _VERIFY(m_TSE_InfoMap.insert(TTSE_InfoMap::value_type
-                                 (lock->GetBlobId(),
-                                  //STSE_Key(*lock, m_CanBeUnloaded),
-                                  Ref(&info))).second);
-    if ( m_CanBeUnloaded ) {
-        // add this TSE into index by SeqId
-        x_IndexTSE(info);
-    }
-    info.m_DS_Info = this;
+    {{
+        TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
+        _VERIFY(m_TSE_InfoMap.insert(TTSE_InfoMap::value_type
+                                     (lock->GetBlobId(),
+                                      //STSE_Key(*lock, m_CanBeUnloaded),
+                                      Ref(&info))).second);
+        if ( m_CanBeUnloaded ) {
+            // add this TSE into index by SeqId
+            x_IndexTSE(info);
+        }
+        info.m_DS_Info = this;
+    }}
     info.SetTSE_Lock(lock);
 }
 
@@ -681,12 +685,14 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
                                               bool drop_from_ds)
 {
     tse.ReleaseUsedTSEs();
-    TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
-    if ( tse.CanBeUnloaded() ) {
-        x_UnindexTSE(tse);
-    }
-    tse.RestoreReplacedTSE();
-    _VERIFY(m_TSE_InfoMap.erase(tse.GetBlobId()));
+    {{
+        TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
+        if ( tse.CanBeUnloaded() ) {
+            x_UnindexTSE(tse);
+        }
+        tse.RestoreReplacedTSE();
+        _VERIFY(m_TSE_InfoMap.erase(tse.GetBlobId()));
+    }}
     // prevent storing into m_TSE_UnlockQueue
     _VERIFY(tse.m_UserLockCounter.Add(1) > 0);
     // remove TSE lock completely
@@ -1485,9 +1491,9 @@ pair<bool, CScopeInfo_Base*> CTSE_ScopeInfo::GetUserLockState(const CTSE_Handle*
     CMutexGuard guard(m_ScopeInfoMapMutex);
     for ( auto& s : m_ScopeInfoMap ) {
         if ( &s.second->m_TSE_Handle == tseh ) {
-            _ASSERT(s.second->m_LockCounter.Get() >= 1);
+            _ASSERT(s.second->m_LockCounter >= 1);
             ret.second = s.second.GetNCPointer();
-            ret.first = s.second->m_LockCounter.Get() > 1;
+            ret.first = s.second->m_LockCounter > 1;
             return ret;
         }
     }
@@ -1782,7 +1788,7 @@ void CTSE_ScopeInfo::x_UnindexBioseq(const CSeq_id_Handle& id,
 // Action A2.
 void CTSE_ScopeInfo::ResetEntry(CSeq_entry_ScopeInfo& info)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     _ASSERT(info.IsAttached());
     CScopeInfo_Ref<CScopeInfo_Base> child;
     if ( info.GetObjectInfo().Which() == CSeq_entry::e_Set ) {
@@ -1805,7 +1811,7 @@ void CTSE_ScopeInfo::ResetEntry(CSeq_entry_ScopeInfo& info)
 // Action A2.
 void CTSE_ScopeInfo::RemoveEntry(CSeq_entry_ScopeInfo& info)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     _ASSERT(info.IsAttached());
     CSeq_entry_Info& entry = info.GetNCObjectInfo();
     entry.GetParentBioseq_set_Info().RemoveEntry(Ref(&entry));
@@ -1816,7 +1822,7 @@ void CTSE_ScopeInfo::RemoveEntry(CSeq_entry_ScopeInfo& info)
 // Action A2.
 void CTSE_ScopeInfo::RemoveAnnot(CSeq_annot_ScopeInfo& info)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     _ASSERT(info.IsAttached());
     _ASSERT(info.GetObjectInfo().BelongsToTSE_Info(*m_TSE_Lock));
     CSeq_annot_Info& annot = info.GetNCObjectInfo();
@@ -1834,12 +1840,12 @@ void CTSE_ScopeInfo::x_CheckAdded(CScopeInfo_Base& parent,
 {
     _ASSERT(parent.IsAttached());
     _ASSERT(parent.HasObject());
-    _ASSERT(parent.m_LockCounter.Get() > 0);
+    _ASSERT(parent.m_LockCounter > 0);
     _ASSERT(child.IsDetached());
     _ASSERT(child.m_DetachedInfo);
     _ASSERT(child.HasObject());
     _ASSERT(!child.GetObjectInfo_Base().HasParent_Info());
-    _ASSERT(child.m_LockCounter.Get() > 0);
+    _ASSERT(child.m_LockCounter > 0);
     _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
 }
 #else  /* _DEBUG */
@@ -1854,7 +1860,7 @@ void CTSE_ScopeInfo::AddEntry(CBioseq_set_ScopeInfo& parent,
                               CSeq_entry_ScopeInfo& child,
                               int index)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     x_CheckAdded(parent, child);
     parent.GetNCObjectInfo().AddEntry(Ref(&child.GetNCObjectInfo()), index, true);
     x_RestoreAdded(parent, child);
@@ -1866,7 +1872,7 @@ void CTSE_ScopeInfo::AddEntry(CBioseq_set_ScopeInfo& parent,
 void CTSE_ScopeInfo::AddAnnot(CSeq_entry_ScopeInfo& parent,
                               CSeq_annot_ScopeInfo& child)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     _ASSERT(!child.GetObjectInfo().HasTSE_Info());
     x_CheckAdded(parent, child);
     parent.GetNCObjectInfo().AddAnnot(Ref(&child.GetNCObjectInfo()));
@@ -1880,7 +1886,7 @@ void CTSE_ScopeInfo::AddAnnot(CSeq_entry_ScopeInfo& parent,
 void CTSE_ScopeInfo::SelectSet(CSeq_entry_ScopeInfo& parent,
                                CBioseq_set_ScopeInfo& child)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     x_CheckAdded(parent, child);
     _ASSERT(parent.GetObjectInfo().Which() == CSeq_entry::e_not_set);
     parent.GetNCObjectInfo().SelectSet(child.GetNCObjectInfo());
@@ -1893,7 +1899,7 @@ void CTSE_ScopeInfo::SelectSet(CSeq_entry_ScopeInfo& parent,
 void CTSE_ScopeInfo::SelectSeq(CSeq_entry_ScopeInfo& parent,
                                CBioseq_ScopeInfo& child)
 {
-    CMutexGuard guard(m_TSE_LockMutex);
+    //CMutexGuard guard(m_TSE_LockMutex);
     x_CheckAdded(parent, child);
     _ASSERT(parent.GetObjectInfo().Which() == CSeq_entry::e_not_set);
     parent.GetNCObjectInfo().SelectSeq(child.GetNCObjectInfo());
@@ -1961,12 +1967,12 @@ void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
 {
     _ASSERT(parent.IsAttached()); // parent is attached
     _ASSERT(parent.m_TSE_Handle); // and locked
-    _ASSERT(parent.m_LockCounter.Get() > 0);
+    _ASSERT(parent.m_LockCounter > 0);
     _ASSERT(child.IsDetached()); // child is detached
     _ASSERT(child.m_DetachedInfo); // and contain m_DetachedInfo
     _ASSERT(child.HasObject()); // it contains pointer to removed object
     _ASSERT(child.GetObjectInfo_Base().HasParent_Info());//and is connected
-    _ASSERT(child.m_LockCounter.Get() > 0);
+    _ASSERT(child.m_LockCounter > 0);
 
     _TRACE("x_RestoreAdded("<<&child<<") TSE: "<<this);
 
@@ -1982,7 +1988,7 @@ void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
         ITERATE ( TDetachedInfo, it, infos->GetData() ) {
             _TRACE(" "<<it->second<<" " << it->first);
             CScopeInfo_Base& info = it->second.GetNCObject();
-            if ( info.m_LockCounter.Get() > 0 ) {
+            if ( info.m_LockCounter > 0 ) {
                 info.x_AttachTSE(this);
                 _VERIFY(m_ScopeInfoMap.insert
                         (TScopeInfoMap::value_type(it->first, it->second)).second);
