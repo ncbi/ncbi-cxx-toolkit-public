@@ -508,24 +508,24 @@ string Printable(char c)
 
     string s;
     switch ( c ) {
-    case '\0':  s += "\\0";   break;
-    case '\a':  s += "\\a";   break;
-    case '\b':  s += "\\b";   break;
-    case '\f':  s += "\\f";   break;
-    case '\n':  s += "\\n";   break;
-    case '\r':  s += "\\r";   break;
-    case '\t':  s += "\\t";   break;
-    case '\v':  s += "\\v";   break;
-    case '\\':  s += "\\\\";  break;
-    case '\'':  s += "\\'";   break;
-    case '"':   s += "\\\"";  break;
+    case '\0':  s = "\\0";   break;
+    case '\a':  s = "\\a";   break;
+    case '\b':  s = "\\b";   break;
+    case '\f':  s = "\\f";   break;
+    case '\n':  s = "\\n";   break;
+    case '\r':  s = "\\r";   break;
+    case '\t':  s = "\\t";   break;
+    case '\v':  s = "\\v";   break;
+    case '\\':  s = "\\\\";  break;
+    case '\'':  s = "\\'";   break;
+    case '"':   s = "\\\"";  break;
     default:
         if ( !isprint((unsigned char) c) ) {
-            s += "\\x";
+            s  = "\\x";
             s += kHex[(unsigned char) c / 16];
             s += kHex[(unsigned char) c % 16];
         } else
-            s += c;
+            s  = c;
         break;
     }
     return s;
@@ -548,7 +548,7 @@ void s_WritePrintable(CNcbiOstream& out, char p, char c, char n)
     case '"':   out.write("\\\"", 2);  return;
     case '?':
         if (p == '?'  ||  n == '?')
-            out.write("\\?",  2);
+            out.write("\\?", 2);
         else
             out.put(c);
         return;
@@ -566,7 +566,7 @@ void s_WritePrintable(CNcbiOstream& out, char p, char c, char n)
     int k = 1;
 
     *octal = '\\';
-    v = ((unsigned char) c >> 6);
+    v =  (unsigned char) c >> 6;
     if (v  ||  full) {
         octal[k++] = char('0' + v);
         full = true;
@@ -575,8 +575,8 @@ void s_WritePrintable(CNcbiOstream& out, char p, char c, char n)
     if (v  ||  full) {
         octal[k++] = char('0' + v);
     }
-    v = (unsigned char) c & 7;
-    octal[k++] = char('0' + v);
+    v =  (unsigned char) c       & 7;
+    octal[k++]     = char('0' + v);
     out.write(octal, k);
 }
 

@@ -3741,7 +3741,7 @@ static string s_PrintableString(const CTempString    str,
     unique_ptr<CNcbiOstrstream> out;
     SIZE_TYPE i, j = 0;
 
-    for (i = 0;  i < str.size();  i++) {
+    for (i = 0;  i < str.size();  ++i) {
         bool octal = false;
         char c = str[i];
         switch (c) {
@@ -3775,9 +3775,9 @@ static string s_PrintableString(const CTempString    str,
         case '"':
             break;
         case '&':
-            if (lang != eLanguage_Javascript)
-                continue;
-            break;
+            if (lang == eLanguage_Javascript)
+                break;
+            continue;
         case '?':
             if (lang == eLanguage_C) {
                 if (i  &&  str[i - 1] == '?')
@@ -3812,23 +3812,23 @@ static string s_PrintableString(const CTempString    str,
             bool reduce;
             if (!(mode & NStr::fPrintable_Full)) {
                 reduce = (i == str.size() - 1  ||
-                          str[i + 1] < '0' || str[i + 1] > '7' ? true : false);
+                          str[i + 1] < '0' || '7' < str[i + 1] ? true : false);
             } else {
                 reduce = false;
             }
             unsigned char v;
             char val[3];
             int k = 0;
-            v = (unsigned char)((unsigned char)c >> 6);
+            v =  (unsigned char) c >> 6;
             if (v  ||  !reduce) {
                 val[k++] = char('0' + v);
                 reduce = false;
             }
-            v = ((unsigned char)c >> 3) & 7;
+            v = ((unsigned char) c >> 3) & 7;
             if (v  ||  !reduce) {
                 val[k++] = char('0' + v);
             }
-            v = (unsigned char)c & 7;
+            v =  (unsigned char) c       & 7;
             val[k++] = char('0' + v);
             out->write(val, k);
         } else {
