@@ -234,44 +234,59 @@ if(NCBI_COMPONENT_ZSTD_FOUND AND
 endif()
 NCBIcomponent_report(ZSTD)
 
+#############################################################################
+# BOOST
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
+#include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
+
 #############################################################################
 # Boost.Test.Included
-NCBI_define_Wcomponent(Boost.Test.Included)
-NCBIcomponent_report(Boost.Test.Included)
-if(NCBI_COMPONENT_Boost.Test.Included_FOUND)
-    set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+if(NOT NCBI_COMPONENT_Boost.Test.Included_FOUND)
+    NCBI_define_Wcomponent(Boost.Test.Included)
+    if(NCBI_COMPONENT_Boost.Test.Included_FOUND)
+        set(NCBI_COMPONENT_Boost.Test.Included_DEFINES BOOST_TEST_NO_LIB)
+    endif()
 endif()
 
 #############################################################################
 # Boost.Test
-NCBI_define_Wcomponent(Boost.Test libboost_unit_test_framework.lib)
-NCBIcomponent_report(Boost.Test)
-if(NCBI_COMPONENT_Boost.Test_FOUND)
-    set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+if(NOT NCBI_COMPONENT_Boost.Test_FOUND)
+    NCBI_define_Wcomponent(Boost.Test libboost_unit_test_framework.lib)
+    if(NCBI_COMPONENT_Boost.Test_FOUND)
+        set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+    endif()
 endif()
 
 #############################################################################
 # Boost.Spirit
-NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
-NCBIcomponent_report(Boost.Spirit)
-if(NCBI_COMPONENT_Boost.Spirit_FOUND)
-    set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
+    NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+    if(NCBI_COMPONENT_Boost.Spirit_FOUND)
+        set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+    endif()
 endif()
 
 #############################################################################
 # Boost.Thread
-NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
-NCBIcomponent_report(Boost.Thread)
-if(NCBI_COMPONENT_Boost.Thread_FOUND)
-    set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+if(NOT NCBI_COMPONENT_Boost.Thread_FOUND)
+    NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+    if(NCBI_COMPONENT_Boost.Thread_FOUND)
+        set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+    endif()
 endif()
 
 #############################################################################
 # Boost
-NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib  boost_system.lib)
+if(NOT NCBI_COMPONENT_Boost_FOUND)
+    NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib
+        boost_regex.lib  boost_system.lib)
+endif()
 
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
+NCBIcomponent_report(Boost.Test.Included)
+NCBIcomponent_report(Boost.Test)
+NCBIcomponent_report(Boost.Spirit)
+NCBIcomponent_report(Boost.Thread)
 NCBIcomponent_report(Boost)
 
 #############################################################################
