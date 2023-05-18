@@ -709,7 +709,7 @@ private:
         eNotInCache,
         eInCache
     };
-    ELoadState              m_LoadState;
+    atomic<ELoadState>      m_LoadState;
     mutable ECacheState     m_CacheState;
     
     typedef list< CRef<CTSE_Info> > TTSE_Cache;
