@@ -96,11 +96,11 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     if (gi != -1)
         bioseq_info_request.SetGI(gi);
 
-    auto    app = CPubseqGatewayApp::GetInstance();
+    auto    sat_info_entry = CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace();
     CCassBioseqInfoTaskFetch *  fetch_task =
             new CCassBioseqInfoTaskFetch(
-                    app->GetCassandraConnection(),
-                    app->GetBioseqKeyspace(),
+                    sat_info_entry.connection,
+                    sat_info_entry.keyspace,
                     bioseq_info_request,
                     nullptr, nullptr);
     details->SetLoader(fetch_task);

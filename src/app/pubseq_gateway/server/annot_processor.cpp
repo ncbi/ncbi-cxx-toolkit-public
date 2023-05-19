@@ -237,8 +237,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 
     // Initiate annotation request
     auto *                          app = CPubseqGatewayApp::GetInstance();
-    vector<pair<string, int32_t>>   bioseq_na_keyspaces =
-                CPubseqGatewayApp::GetInstance()->GetBioseqNAKeyspaces();
+    vector<SSatInfoEntry>           bioseq_na_keyspaces = app->GetBioseqNAKeyspaces();
 
     if (kEnableAnnotFilter) {
         m_AnnotFilter = make_unique<CNAnnotFilter>();
@@ -252,8 +251,8 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
         // accession and seq_id_type
         string  accession = StripTrailingVerticalBars(bioseq_resolution.GetOriginalAccession());
         CCassNAnnotTaskFetch *  fetch_task =
-                new CCassNAnnotTaskFetch(app->GetCassandraConnection(),
-                                         bioseq_na_keyspace.first,
+                new CCassNAnnotTaskFetch(bioseq_na_keyspace.connection,
+                                         bioseq_na_keyspace.keyspace,
                                          accession,
                                          bioseq_resolution.GetBioseqInfo().GetVersion(),
                                          bioseq_resolution.GetOriginalSeqIdType(),
@@ -266,7 +265,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
                 this,
                 bind(&CPSGS_AnnotProcessor::x_OnNamedAnnotData,
                      this, _1, _2, _3, _4),
-                details.get(), bioseq_na_keyspace.second));
+                details.get(), bioseq_na_keyspace.sat));
         fetch_task->SetErrorCB(
             CNamedAnnotationErrorCallback(
                 bind(&CPSGS_AnnotProcessor::x_OnNamedAnnotError,
@@ -659,8 +658,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
 
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
-                                              m_BlobId.m_Keyspace,
+        load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->connection,
+                                              blob_id.m_Keyspace->keyspace,
                                               move(blob_record),
                                               false, nullptr);
         fetch_details->SetLoader(load_task);
@@ -684,8 +683,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
             return;
         }
 
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
-                                              blob_id.m_Keyspace,
+        load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->connection,
+                                              blob_id.m_Keyspace->keyspace,
                                               blob_id.m_SatKey,
                                               last_modified,
                                               false, nullptr);

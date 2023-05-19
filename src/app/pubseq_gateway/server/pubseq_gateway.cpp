@@ -95,7 +95,6 @@ CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
 CPubseqGatewayApp::CPubseqGatewayApp() :
-    m_MappingIndex(0),
     m_CassConnection(nullptr),
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_StartTime(GetFastLocalTime()),
@@ -142,7 +141,7 @@ void CPubseqGatewayApp::ParseArgs(void)
     const CArgs &           args = GetArgs();
     const CNcbiRegistry &   registry = GetConfig();
 
-    m_Settings.Read(GetConfig(), m_Alerts);
+    m_Settings.Read(registry, m_Alerts);
     g_Log = m_Settings.m_Log;
     g_AllowProcessorTiming = m_Settings.m_AllowProcessorTiming;
 
@@ -179,15 +178,12 @@ void CPubseqGatewayApp::OpenCache(void)
 
         // The format of the sat ids is different
         set<int>        sat_ids;
-        for (size_t  index = 0; index < m_SatNames.size(); ++index) {
-            if (!m_SatNames[index].empty()) {
-                // Need to exclude the bioseq NA keyspaces because they are not
-                // in cache. They use a different schema
-                if (find(m_BioseqNAKeyspaces.begin(),
-                         m_BioseqNAKeyspaces.end(),
-                         index) == m_BioseqNAKeyspaces.end()) {
-                    sat_ids.insert(index);
-                }
+        auto            schema_snapshot = m_CassSchemaProvider->GetSchema();
+        int32_t         max_sat = schema_snapshot->GetMaxBlobKeyspaceSat();
+
+        for (int  index = 0; index <= max_sat; ++index) {
+            if (schema_snapshot->GetBlobKeyspace(index).has_value()) {
+                sat_ids.insert(index);
             }
         }
 
@@ -229,6 +225,16 @@ bool CPubseqGatewayApp::OpenCass(void)
             m_CassConnection = m_CassConnectionFactory->CreateInstance();
         m_CassConnection->Connect();
 
+        // CSatInfoSchemaProvider does not throw exceptions
+        auto    registry = make_shared<CCompoundRegistry>();
+        registry->Add(GetConfig());
+        m_CassSchemaProvider = make_shared<CSatInfoSchemaProvider>(
+                                                m_Settings.m_RootKeyspace,
+                                                m_Settings.m_ConfigurationDomain,
+                                                m_CassConnection,
+                                                registry,
+                                                "CASSANDRA_DB");
+
         // Next step in the startup data initialization
         m_StartupDataState = ePSGS_NoValidCassMapping;
     } catch (const exception &  exc) {
@@ -259,18 +265,6 @@ void CPubseqGatewayApp::CloseCass(void)
 {
     m_CassConnection = nullptr;
     m_CassConnectionFactory = nullptr;
-}
-
-
-bool CPubseqGatewayApp::SatToKeyspace(int  sat, string &  sat_name)
-{
-    if (sat >= 0) {
-        if (sat < static_cast<int>(m_SatNames.size())) {
-            sat_name = m_SatNames[sat];
-            return !sat_name.empty();
-        }
-    }
-    return false;
 }
 
 
@@ -305,8 +299,7 @@ int CPubseqGatewayApp::Run(void)
     bool    connected = OpenCass();
     bool    populated = false;
     if (connected) {
-        PopulatePublicCommentsMapping();
-        populated = PopulateCassandraMapping();
+        populated = PopulateCassandraMapping(true); // true => initialization stage
     }
 
     if (populated)
@@ -677,24 +670,41 @@ void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
 }
 
 
-bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
+bool CPubseqGatewayApp::PopulateCassandraMapping(bool  initialization)
 {
     static bool need_logging = true;
 
-    size_t      vacant_index = m_MappingIndex + 1;
-    if (vacant_index >= 2)
-        vacant_index = 0;
-    m_CassMapping[vacant_index].clear();
-
+    string      stage;
     try {
-        string      err_msg;
-        if (!FetchSatToKeyspaceMapping(
-                    m_Settings.m_RootKeyspace, m_CassConnection,
-                    m_SatNames, eBlobVer2Schema,
-                    m_CassMapping[vacant_index].m_BioseqKeyspace, eResolverSchema,
-                    m_CassMapping[vacant_index].m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
-                    err_msg)) {
-            err_msg = "Error populating cassandra mapping: " + err_msg;
+        stage = "keyspace mapping";
+        auto     refresh_schema_result = m_CassSchemaProvider->RefreshSchema(true);
+        if (refresh_schema_result != ESatInfoRefreshSchemaResult::eSatInfoUpdated) {
+            string  err_msg = "Error populating " + stage + " from Cassandra: " +
+                              m_CassSchemaProvider->GetRefreshErrorMessage();
+            if (need_logging)
+                PSG_CRITICAL(err_msg);
+            need_logging = false;
+            m_Alerts.Register(ePSGS_NoValidCassandraMapping, err_msg);
+            return false;
+        }
+
+        if (!m_CassSchemaProvider->GetIPGKeyspace().has_value()) {
+            string  err_msg = "IPG keyspace is not provisioned. "
+                              "This essentially switches off the IPG resolve processor.";
+            PSG_WARNING(err_msg);
+            m_Alerts.Register(ePSGS_NoIPGKeyspace, err_msg);
+        } else if (m_CassSchemaProvider->GetIPGKeyspace()->keyspace.empty()) {
+            string  err_msg = "IPG keyspace is provisioned as an empty string. "
+                              "This essentially switches off the IPG resolve processor.";
+            PSG_WARNING(err_msg);
+            m_Alerts.Register(ePSGS_NoIPGKeyspace, err_msg);
+        }
+
+        stage = "public comment mapping";
+        auto    refresh_msgs_result = m_CassSchemaProvider->RefreshMessages(true);
+        if (refresh_msgs_result != ESatInfoRefreshMessagesResult::eMessagesUpdated) {
+            string  err_msg = "Error populating " + stage + " from Cassandra: " +
+                              m_CassSchemaProvider->GetRefreshErrorMessage();
             if (need_logging)
                 PSG_CRITICAL(err_msg);
             need_logging = false;
@@ -702,7 +712,7 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
             return false;
         }
     } catch (const exception &  exc) {
-        string      err_msg = "Cannot populate keyspace mapping from Cassandra.";
+        string      err_msg = "Cannot populate " + stage + " from Cassandra.";
         if (need_logging) {
             PSG_CRITICAL(exc);
             PSG_CRITICAL(err_msg);
@@ -711,8 +721,8 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
         m_Alerts.Register(ePSGS_NoValidCassandraMapping, err_msg + " " + exc.what());
         return false;
     } catch (...) {
-        string      err_msg = "Unknown error while populating "
-                              "keyspace mapping from Cassandra.";
+        string      err_msg = "Unknown error while populating " + stage +
+                              " from Cassandra.";
         if (need_logging)
             PSG_CRITICAL(err_msg);
         need_logging = false;
@@ -720,150 +730,87 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  need_accept_alert)
         return false;
     }
 
-    auto    errors = m_CassMapping[vacant_index].validate(m_Settings.m_RootKeyspace);
-    if (m_SatNames.empty())
-        errors.push_back("No sat to keyspace resolutions found in the '" +
-                         m_Settings.m_RootKeyspace + "' keyspace.");
+    // Next step in the startup data initialization
+    m_StartupDataState = ePSGS_NoCassCache;
 
-    if (errors.empty()) {
-
-        m_BioseqNAKeyspaces.clear();
-        for (auto & item : m_CassMapping[vacant_index].m_BioseqNAKeyspaces) {
-            m_BioseqNAKeyspaces.push_back(item.second);
-        }
-
-        m_MappingIndex = vacant_index;
-
-        // Next step in the startup data initialization
-        m_StartupDataState = ePSGS_NoCassCache;
-
-        if (need_accept_alert) {
-            // We are not the first time here; It means that the alert about
-            // the bad mapping has been set before. So now we accepted the
-            // configuration so a change config alert is needed for the UI
-            // visibility
-            m_Alerts.Register(ePSGS_NewCassandraMappingAccepted,
-                              "Keyspace mapping (sat names, bioseq info and named "
-                              "annotations) has been populated");
-        }
-    } else {
-        string      combined_error("Invalid Cassandra mapping:");
-        for (const auto &  err : errors) {
-            combined_error += "\n" + err;
-        }
-        if (need_logging)
-            PSG_CRITICAL(combined_error);
-
-        m_Alerts.Register(ePSGS_NoValidCassandraMapping, combined_error);
+    if (!initialization) {
+        // We are not the first time here; It means that the alert about
+        // the bad mapping has been set before. So now we accepted the
+        // configuration so a change config alert is needed for the UI
+        // visibility
+        m_Alerts.Register(ePSGS_NewCassandraMappingAccepted,
+                          "Keyspace and public comment mapping "
+                          "from Cassandra has been populated");
     }
 
     need_logging = false;
-    return errors.empty();
-}
-
-
-void CPubseqGatewayApp::PopulatePublicCommentsMapping(void)
-{
-    if (m_PublicComments.get() != nullptr)
-        return;     // We have already been here: the mapping needs to be
-                    // populated once
-
-    try {
-        string      err_msg;
-
-        m_PublicComments.reset(new CPSGMessages);
-
-        if (!FetchMessages(m_Settings.m_RootKeyspace, m_CassConnection,
-                           *m_PublicComments.get(), err_msg)) {
-            // Allow another try later
-            m_PublicComments.reset(nullptr);
-
-            err_msg = "Error populating cassandra public comments mapping: " + err_msg;
-            PSG_ERROR(err_msg);
-            m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping, err_msg);
-        }
-    } catch (const exception &  exc) {
-        // Allow another try later
-        m_PublicComments.reset(nullptr);
-
-        string      err_msg = "Cannot populate public comments mapping from Cassandra";
-        PSG_ERROR(exc);
-        PSG_ERROR(err_msg);
-        m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping,
-                          err_msg + ". " + exc.what());
-    } catch (...) {
-        // Allow another try later
-        m_PublicComments.reset(nullptr);
-
-        string      err_msg = "Unknown error while populating "
-                              "public comments mapping from Cassandra";
-        PSG_ERROR(err_msg);
-        m_Alerts.Register(ePSGS_NoCassandraPublicCommentsMapping, err_msg);
-    }
+    return true;
 }
 
 
 void CPubseqGatewayApp::CheckCassMapping(void)
 {
-    size_t      vacant_index = m_MappingIndex + 1;
-    if (vacant_index >= 2)
-        vacant_index = 0;
-    m_CassMapping[vacant_index].clear();
-
-    vector<string>      sat_names;
+    string      stage;
     try {
-        string      err_msg;
-        if (!FetchSatToKeyspaceMapping(
-                    m_Settings.m_RootKeyspace, m_CassConnection,
-                    sat_names, eBlobVer2Schema,
-                    m_CassMapping[vacant_index].m_BioseqKeyspace,
-                    eResolverSchema,
-                    m_CassMapping[vacant_index].m_BioseqNAKeyspaces,
-                    eNamedAnnotationsSchema,
-                    err_msg)) {
-            m_Alerts.Register(ePSGS_InvalidCassandraMapping,
-                              "Error checking cassandra mapping: " + err_msg);
-            return;
+        stage = "keyspace mapping";
+        auto     refresh_schema_result = m_CassSchemaProvider->RefreshSchema(true);
+
+        switch (refresh_schema_result) {
+            case ESatInfoRefreshSchemaResult::eSatInfoUpdated:
+                m_Alerts.Register(ePSGS_NewCassandraSatNamesMapping,
+                                  "New " + stage + " found in Cassandra. "
+                                  "Server accepted it for Cassandra operations "
+                                  "however the server needs to be restarted "
+                                  "to use it for LMDB cache");
+                break;
+            case ESatInfoRefreshSchemaResult::eSatInfoUnchanged:
+                break;  // No actions required, all is fine
+            default:
+                // Some kind of error
+                m_Alerts.Register(ePSGS_InvalidCassandraMapping,
+                                  "Error checking " + stage + " in Cassandra: " +
+                                  m_CassSchemaProvider->GetRefreshErrorMessage());
+                return;
         }
 
+        if (!m_CassSchemaProvider->GetIPGKeyspace().has_value()) {
+            string  err_msg = "IPG keyspace is not provisioned. "
+                              "This essentially switches off the IPG resolve processor.";
+            PSG_WARNING(err_msg);
+            m_Alerts.Register(ePSGS_NoIPGKeyspace, err_msg);
+        } else if (m_CassSchemaProvider->GetIPGKeyspace()->keyspace.empty()) {
+            string  err_msg = "IPG keyspace is provisioned as an empty string. "
+                              "This essentially switches off the IPG resolve processor.";
+            PSG_WARNING(err_msg);
+            m_Alerts.Register(ePSGS_NoIPGKeyspace, err_msg);
+        }
+
+        stage = "public comment mapping";
+        auto    refresh_msgs_result = m_CassSchemaProvider->RefreshMessages(true);
+        switch (refresh_msgs_result) {
+            case ESatInfoRefreshMessagesResult::eMessagesUpdated:
+                m_Alerts.Register(ePSGS_NewCassandraPublicCommentMapping,
+                                  "New " + stage + " found in Cassandra. "
+                                  "Server accepted it for Cassandra operations.");
+                break;
+            case ESatInfoRefreshMessagesResult::eMessagesUnchanged:
+                break;  // No actions required, all is fine
+            default:
+                // Some kind of error
+                m_Alerts.Register(ePSGS_InvalidCassandraMapping,
+                                  "Error checking " + stage + " in Cassandra: " +
+                                  m_CassSchemaProvider->GetRefreshErrorMessage());
+                return;
+        }
     } catch (const exception &  exc) {
         m_Alerts.Register(ePSGS_InvalidCassandraMapping,
-                          "Cannot check keyspace mapping from Cassandra. " +
+                          "Error checking " + stage + " in Cassandra: " +
                           string(exc.what()));
         return;
     } catch (...) {
         m_Alerts.Register(ePSGS_InvalidCassandraMapping,
-                          "Unknown error while checking "
-                          "keyspace mapping from Cassandra.");
+                          "Unknown error checking " + stage + " in Cassandra");
         return;
-    }
-
-    auto    errors = m_CassMapping[vacant_index].validate(m_Settings.m_RootKeyspace);
-    if (sat_names.empty())
-        errors.push_back("No sat to keyspace resolutions found in the " +
-                         m_Settings.m_RootKeyspace + " keyspace.");
-
-    if (errors.empty()) {
-        // No errors detected in the DB; let's compare with what we use now
-        if (sat_names != m_SatNames)
-            m_Alerts.Register(ePSGS_NewCassandraSatNamesMapping,
-                              "Cassandra has new sat names mapping in  the " +
-                              m_Settings.m_RootKeyspace + " keyspace. The server needs "
-                              "to restart to use it.");
-
-        if (m_CassMapping[0] != m_CassMapping[1]) {
-            m_MappingIndex = vacant_index;
-            m_Alerts.Register(ePSGS_NewCassandraMappingAccepted,
-                              "Keyspace mapping (bioseq info and named "
-                              "annotations) has been updated");
-        }
-    } else {
-        string      combined_error("Invalid Cassandra mapping detected "
-                                   "during the periodic check:");
-        for (const auto &  err : errors) {
-            combined_error += "\n" + err;
-        }
-        m_Alerts.Register(ePSGS_InvalidCassandraMapping, combined_error);
     }
 }
 

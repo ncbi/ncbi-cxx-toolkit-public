@@ -300,8 +300,6 @@ void
 CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
                                                 CBlobRecord const &  blob)
 {
-    auto    app = CPubseqGatewayApp::GetInstance();
-
     auto    trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
     if (m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
@@ -323,8 +321,8 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
     CCassBlobTaskLoadBlob *             load_task =
-        new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
-                                  cass_blob_id.m_Keyspace,
+        new CCassBlobTaskLoadBlob(cass_blob_id.m_Keyspace->connection,
+                                  cass_blob_id.m_Keyspace->keyspace,
                                   move(blob_record),
                                   true, nullptr);
 
@@ -366,8 +364,9 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
     // Translate sat to keyspace
     SCass_BlobId    info_blob_id(m_Id2Info->GetSat(), m_Id2Info->GetInfo());    // mandatory
+    info_blob_id.m_Keyspace = app->SatToKeyspace(m_Id2Info->GetSat());
 
-    if (!app->SatToKeyspace(m_Id2Info->GetSat(), info_blob_id.m_Keyspace)) {
+    if (!info_blob_id.m_Keyspace.has_value()) {
         // Error: send it in the context of the blob props
         string      message = "Error mapping id2 info sat (" +
                               to_string(m_Id2Info->GetSat()) +
@@ -420,8 +419,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            info_blob_id.m_Keyspace,
+                            info_blob_id.m_Keyspace->connection,
+                            info_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
         } else {
@@ -455,8 +454,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            info_blob_id.m_Keyspace,
+                            info_blob_id.m_Keyspace->connection,
+                            info_blob_id.m_Keyspace->keyspace,
                             info_blob_id.m_SatKey,
                             true, nullptr);
         }
@@ -487,7 +486,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // We may need to request ID2 chunks
     if (!info_blob_only) {
         // Sat name is the same
-        x_RequestId2SplitBlobs(fetch_details, info_blob_id.m_Keyspace);
+        x_RequestId2SplitBlobs(fetch_details);
     } else {
         // This is the case when only split INFO has been requested.
         // So may be it is necessary to request some more chunks
@@ -504,11 +503,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
 
 void
-CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
-                                           const string &  keyspace)
+CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
 {
-    auto    app = CPubseqGatewayApp::GetInstance();
-
     auto    trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
     if (m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
@@ -516,7 +512,9 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
     for (int  chunk_no = 1; chunk_no <= m_Id2Info->GetChunks(); ++chunk_no) {
         SCass_BlobId    chunks_blob_id(m_Id2Info->GetSat(),
                                        m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
-        chunks_blob_id.m_Keyspace = keyspace;
+        // Note: the mapping must be good becuse the same mapping was done
+        // before
+        chunks_blob_id.MapSatToKeyspace();
 
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
         // sending completion message, no requesting other blobs)
@@ -553,8 +551,8 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            chunks_blob_id.m_Keyspace,
+                            chunks_blob_id.m_Keyspace->connection,
+                            chunks_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
             details->SetLoader(load_task);
@@ -588,8 +586,8 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details,
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            chunks_blob_id.m_Keyspace,
+                            chunks_blob_id.m_Keyspace->connection,
+                            chunks_blob_id.m_Keyspace->keyspace,
                             chunks_blob_id.m_SatKey,
                             true, nullptr);
             details->SetLoader(load_task);
@@ -747,8 +745,6 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                                                         const vector<int> &  extra_chunks,
                                                         bool  need_wait)
 {
-    auto    app = CPubseqGatewayApp::GetInstance();
-
     auto    trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
     if (m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
@@ -795,8 +791,8 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            chunks_blob_id.m_Keyspace,
+                            chunks_blob_id.m_Keyspace->connection,
+                            chunks_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
             details->SetLoader(load_task);
@@ -828,8 +824,8 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            chunks_blob_id.m_Keyspace,
+                            chunks_blob_id.m_Keyspace->connection,
+                            chunks_blob_id.m_Keyspace->keyspace,
                             chunks_blob_id.m_SatKey,
                             true, nullptr);
             details->SetLoader(load_task);
@@ -1213,9 +1209,10 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         }
 
         CCassStatusHistoryTaskGetPublicComment *    load_task =
-            new CCassStatusHistoryTaskGetPublicComment(app->GetCassandraConnection(),
-                                                       blob_fetch_details->GetBlobId().m_Keyspace,
-                                                       blob, nullptr);
+            new CCassStatusHistoryTaskGetPublicComment(
+                    blob_fetch_details->GetBlobId().m_Keyspace->connection,
+                    blob_fetch_details->GetBlobId().m_Keyspace->keyspace,
+                    blob, nullptr);
         comment_fetch_details->SetLoader(load_task);
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(

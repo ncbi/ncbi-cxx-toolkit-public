@@ -103,7 +103,8 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_RequestTimeout                     = 336,
     ePSGS_NotFoundAndNotInstantiated         = 337,
 
-    ePSGS_IPGNotFound                        = 338
+    ePSGS_IPGNotFound                        = 338,
+    ePSGS_IPGKeyspaceNotAvailable            = 339
 };
 
 

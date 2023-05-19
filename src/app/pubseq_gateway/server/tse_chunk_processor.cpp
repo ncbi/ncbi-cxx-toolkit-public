@@ -208,7 +208,8 @@ CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
                                                  bool  need_finish)
 {
     auto *      app = CPubseqGatewayApp::GetInstance();
-    if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace))
+    blob_id.m_Keyspace = app->SatToKeyspace(blob_id.m_Sat);
+    if (blob_id.m_Keyspace.has_value())
         return true;
 
     app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
@@ -376,8 +377,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             unique_ptr<CCassBlobFetch>  fetch_details;
             fetch_details.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
             CCassBlobTaskLoadBlob *         load_task =
-                new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
-                                          chunk_blob_id.m_Keyspace,
+                new CCassBlobTaskLoadBlob(chunk_blob_id.m_Keyspace->connection,
+                                          chunk_blob_id.m_Keyspace->keyspace,
                                           move(blob_record),
                                           true, nullptr);
             fetch_details->SetLoader(load_task);
@@ -446,8 +447,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                                                    m_IdModVerId2Info->GetTSEId(),
                                                    m_IdModVerId2Info->GetSplitVersion()));
     CCassBlobTaskFetchSplitHistory *   load_task =
-        new  CCassBlobTaskFetchSplitHistory(app->GetCassandraConnection(),
-                                            m_IdModVerId2Info->GetTSEId().m_Keyspace,
+        new  CCassBlobTaskFetchSplitHistory(m_IdModVerId2Info->GetTSEId().m_Keyspace->connection,
+                                            m_IdModVerId2Info->GetTSEId().m_Keyspace->keyspace,
                                             m_IdModVerId2Info->GetTSEId().m_SatKey,
                                             m_IdModVerId2Info->GetSplitVersion(),
                                             nullptr, nullptr);
@@ -482,7 +483,6 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
 {
     // This option is when id2info came in a shape of sat.info.chunks[.ver]
 
-    auto    app = CPubseqGatewayApp::GetInstance();
     string  err_msg;
 
     // Note: the TSE id (blob id) is not used in the chunk retrieval.
@@ -541,14 +541,14 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     CCassBlobTaskLoadBlob *         load_task = nullptr;
     if (tse_blob_prop_cache_lookup_result != ePSGS_CacheHit) {
         // Cassandra should look for blob props as well
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
-                                              chunk_blob_id.m_Keyspace,
+        load_task = new CCassBlobTaskLoadBlob(chunk_blob_id.m_Keyspace->connection,
+                                              chunk_blob_id.m_Keyspace->keyspace,
                                               chunk_blob_id.m_SatKey,
                                               true, nullptr);
     } else {
         // Blob props are already here
-        load_task = new CCassBlobTaskLoadBlob(app->GetCassandraConnection(),
-                                              chunk_blob_id.m_Keyspace,
+        load_task = new CCassBlobTaskLoadBlob(chunk_blob_id.m_Keyspace->connection,
+                                              chunk_blob_id.m_Keyspace->keyspace,
                                               move(blob_record),
                                               true, nullptr);
     }
@@ -934,19 +934,18 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
 
-    auto    app = CPubseqGatewayApp::GetInstance();
     CCassBlobTaskLoadBlob *     load_task = nullptr;
 
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            chunk_blob_id.m_Keyspace,
+                            chunk_blob_id.m_Keyspace->connection,
+                            chunk_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
     } else {
         load_task = new CCassBlobTaskLoadBlob(
-                            app->GetCassandraConnection(),
-                            chunk_blob_id.m_Keyspace,
+                            chunk_blob_id.m_Keyspace->connection,
+                            chunk_blob_id.m_Keyspace->keyspace,
                             chunk_blob_id.m_SatKey,
                             true, nullptr);
     }
@@ -1052,7 +1051,8 @@ bool
 CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
 {
     auto *      app = CPubseqGatewayApp::GetInstance();
-    if (app->SatToKeyspace(blob_id.m_Sat, blob_id.m_Keyspace))
+    blob_id.m_Keyspace = app->SatToKeyspace(blob_id.m_Sat);
+    if (blob_id.m_Keyspace.has_value())
         return true;
 
     app->GetCounters().Increment(CPSGSCounters::ePSGS_ClientSatToSatNameError);

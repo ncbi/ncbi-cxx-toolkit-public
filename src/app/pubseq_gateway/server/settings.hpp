@@ -66,6 +66,7 @@ struct SPubseqGatewaySettings
     size_t                              m_SplitInfoBlobCacheSize;
     size_t                              m_ShutdownIfTooManyOpenFD;
     string                              m_RootKeyspace;
+    string                              m_ConfigurationDomain;
     size_t                              m_HttpMaxBacklog;
     size_t                              m_HttpMaxRunning;
     size_t                              m_LogSamplingRatio;
@@ -96,7 +97,6 @@ struct SPubseqGatewaySettings
     bool                                m_AllowProcessorTiming;
 
     // [IPG]
-    string                              m_IPGKeyspace;
     int                                 m_IPGPageSize;
     bool                                m_EnableHugeIPG;
 

@@ -88,7 +88,7 @@ CPSGS_IPGResolveProcessor::CanProcess(shared_ptr<CPSGS_Request> request,
         return false;
     }
 
-    if (app->GetIPGKeyspace().empty()) {
+    if (!app->GetIPGKeyspace().has_value()) {
         string      msg = kIPGResolveProcessorName + " processor cannot process "
                           "request because the ipg keyspace is not configured";
         PSG_WARNING(msg);
@@ -129,9 +129,43 @@ void CPSGS_IPGResolveProcessor::Process(void)
     unique_ptr<CCassIPGFetch>       details;
     details.reset(new CCassIPGFetch(*m_IPGResolveRequest));
 
+    auto ipg_keyspace = app->GetIPGKeyspace();
+    if (!ipg_keyspace.has_value()) {
+        CRequestContextResetter     context_resetter;
+        IPSGS_Processor::m_Request->SetRequestContext();
+
+        string  err_msg = "IPG resolve processor is not available "
+                          "because the IPG keyspace is not provisioned";
+        CountError(ePSGS_UnknownFetch, CRequestStatus::e503_ServiceUnavailable,
+                   ePSGS_IPGKeyspaceNotAvailable, eDiag_Error, err_msg);
+
+        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), kIPGResolveProcessorName,
+            err_msg, CRequestStatus::e503_ServiceUnavailable,
+            ePSGS_IPGKeyspaceNotAvailable, eDiag_Error);
+
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        return;
+    } else if (ipg_keyspace->keyspace.empty()) {
+        CRequestContextResetter     context_resetter;
+        IPSGS_Processor::m_Request->SetRequestContext();
+
+        string  err_msg = "IPG resolve processor is not available "
+                          "because the IPG keyspace is provisioned as an empty string";
+        CountError(ePSGS_UnknownFetch, CRequestStatus::e503_ServiceUnavailable,
+                   ePSGS_IPGKeyspaceNotAvailable, eDiag_Error, err_msg);
+
+        IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), kIPGResolveProcessorName,
+            err_msg, CRequestStatus::e503_ServiceUnavailable,
+            ePSGS_IPGKeyspaceNotAvailable, eDiag_Error);
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        return;
+    }
+
     CPubseqGatewayFetchIpgReport *  fetch_task =
-        new CPubseqGatewayFetchIpgReport(app->GetCassandraConnection(),
-                                         app->GetIPGKeyspace(),
+        new CPubseqGatewayFetchIpgReport(ipg_keyspace->connection,
+                                         ipg_keyspace->keyspace,
                                          request,
                                          nullptr, nullptr, true);
     details->SetLoader(fetch_task);
