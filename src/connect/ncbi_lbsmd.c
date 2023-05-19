@@ -71,7 +71,7 @@ static const SSERV_VTable kLbsmdOp = {
 #endif /*__cplusplus*/
 
 
-HEAP g_LBSM_Heap = 0;  /* make it accessible from the daemon code */
+volatile HEAP g_LBSM_Heap = 0;  /* make it accessible from the daemon code */
 
 
 static ESwitch s_LBSM_FastHeapAccess = eOff;
