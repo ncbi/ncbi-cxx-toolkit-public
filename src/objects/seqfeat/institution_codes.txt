@@ -2797,6 +2797,7 @@ HGS	s	Public Museum and Art Gallery, St. John's Place
 HGSB	s	Musee de l'Hospice du Grand-Saint-Bernard			
 HGTC	s	Huanggang Teachers College, Biology Department			
 HGU	s	Khakass State University			
+HGUP	s	Herbarium of Department of Plant Pathology of Agricultural College Guizhou University			
 HGV	s	Herbario de Glomeromycota de Venezuela			
 HH	s	Instituto de Investigaciones de la Amazonia Peruana			
 HHBG	s	Hangzhou Botanical Garden			
@@ -8723,6 +8724,7 @@ ZFSN	s	Laboratoire de Zoologie de la Faculte Des Sciences
 ZGC	s	The Zamorin's Guruvayurappan College			
 ZGLC	s	Natural History Museum, Limassol			
 ZHAN	s	Zhanjiang Teachers College, Biology Department			
+ZHKU	s	Zhongkai University of Agriculture and Engineering			
 ZHKUCC	sc	Zhongkai University of Agriculture and Engineering			
 ZhM	s	Zhejinag Museum			
 ZHR	s	Zhiguli State Nature Reserve			
