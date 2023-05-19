@@ -33,6 +33,7 @@
  */
 
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <string>
 
 USING_IDBLOB_SCOPE;
@@ -50,7 +51,7 @@ struct SCass_BlobId
 
     // Resolved sat
     // The resolved sat appears later in the process
-    string                      m_Keyspace;
+    optional<SSatInfoEntry>     m_Keyspace;
 
     SCass_BlobId() :
         m_Sat(-1), m_SatKey(-1)

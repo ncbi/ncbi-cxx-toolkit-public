@@ -62,7 +62,8 @@ const unsigned int      kListenerBacklogDefault = 256;
 const unsigned short    kTcpMaxConnDefault = 4096;
 const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 2;
-const string            kDefaultRootKeyspace = "sat_info2";
+const string            kDefaultRootKeyspace = "sat_info3";
+const string            kDefaultConfigurationDomain = "PSG";
 const size_t            kDefaultHttpMaxBacklog = 1024;
 const size_t            kDefaultHttpMaxRunning = 64;
 const size_t            kDefaultLogSamplingRatio = 0;
@@ -81,7 +82,6 @@ const double            kDefaultResendTimeoutSec = 0.2;
 const double            kDefaultRequestTimeoutSec = 30.0;
 const size_t            kDefaultProcessorMaxConcurrency = 1200;
 const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
-const string            kDefaultIPGKeyspace = "ipg_storage";
 const size_t            kDefaultIPGPageSize = 1024;
 const bool              kDefaultEnableHugeIPG = true;
 const string            kDefaultAuthToken = "";
@@ -117,6 +117,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_SplitInfoBlobCacheSize(kDefaultSplitInfoBlobCacheSize),
     m_ShutdownIfTooManyOpenFD(0),
     m_RootKeyspace(kDefaultRootKeyspace),
+    m_ConfigurationDomain(kDefaultConfigurationDomain),
     m_HttpMaxBacklog(kDefaultHttpMaxBacklog),
     m_HttpMaxRunning(kDefaultHttpMaxRunning),
     m_LogSamplingRatio(kDefaultLogSamplingRatio),
@@ -196,6 +197,8 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                    kMaxRetriesDefault);
     m_RootKeyspace = registry.GetString(kServerSection, "root_keyspace",
                                         kDefaultRootKeyspace);
+    m_ConfigurationDomain = registry.GetString(kServerSection, "configuration_domain",
+                                               kDefaultConfigurationDomain);
     m_HttpMaxBacklog = registry.GetInt(kServerSection, "http_max_backlog",
                                        kDefaultHttpMaxBacklog);
     m_HttpMaxRunning = registry.GetInt(kServerSection, "http_max_running",
@@ -288,8 +291,6 @@ void SPubseqGatewaySettings::x_ReadDebugSection(const CNcbiRegistry &   registry
 
 void SPubseqGatewaySettings::x_ReadIPGSection(const CNcbiRegistry &   registry)
 {
-    m_IPGKeyspace = registry.GetString(kIPGSection, "keyspace",
-                                       kDefaultIPGKeyspace);
     m_IPGPageSize = registry.GetInt(kIPGSection, "page_size",
                                     kDefaultIPGPageSize);
     m_EnableHugeIPG = registry.GetBool(kIPGSection, "enable_huge_ipg",
@@ -690,13 +691,6 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
         m_RequestTimeoutSec = kDefaultProcessorMaxConcurrency;
     }
 
-    if (m_IPGKeyspace.empty()) {
-        string  msg = "The [" + kIPGSection +
-                      "]/keyspace is empty which effectively "
-                      "switches off the IPG resolve processor";
-        alerts.Register(ePSGS_NoIPGKeyspace, msg);
-        PSG_WARNING(msg);
-    }
     if (m_IPGPageSize <= 0) {
         PSG_WARNING("The [" + kIPGSection + "]/page_size value must be > 0. "
                     "The [" + kIPGSection + "]/page_size is switched to the "

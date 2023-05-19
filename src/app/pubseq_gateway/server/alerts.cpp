@@ -60,6 +60,7 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_InvalidCassandraMapping,          "InvalidCassandraMapping" },
     { ePSGS_NewCassandraMappingAccepted,      "NewCassandraMappingAccepted"},
     { ePSGS_NewCassandraSatNamesMapping,      "NewCassandraSatNamesMapping" },
+    { ePSGS_NewCassandraPublicCommentMapping, "NewCassandraPublicCommentMapping" },
     { ePSGS_OpenCache,                        "OpenCache" },
     { ePSGS_NoCassandraPublicCommentsMapping, "NoCassandraPublicCommentsMapping" },
     { ePSGS_NoIPGKeyspace,                    "NoIPGKeyspace" }

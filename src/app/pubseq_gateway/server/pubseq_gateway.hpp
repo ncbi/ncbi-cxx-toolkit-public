@@ -41,6 +41,7 @@
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 
 #include "pending_operation.hpp"
 #include "http_daemon.hpp"
@@ -65,46 +66,6 @@ USING_SCOPE(objects);
 const long  kMaxTestIOSize = 1000000000;
 
 
-// Cassandra mapping needs to be switched atomically so it is first read into
-// the corresponding structure and then switched.
-struct SCassMapping
-{
-    string                              m_BioseqKeyspace;
-    vector<pair<string, int32_t>>       m_BioseqNAKeyspaces;
-
-    bool operator==(const SCassMapping &  rhs) const
-    {
-        return m_BioseqKeyspace == rhs.m_BioseqKeyspace &&
-               m_BioseqNAKeyspaces == rhs.m_BioseqNAKeyspaces;
-    }
-
-    bool operator!=(const SCassMapping &  rhs) const
-    { return !this->operator==(rhs); }
-
-    vector<string> validate(const string &  root_keyspace) const
-    {
-        vector<string>      errors;
-
-        if (m_BioseqKeyspace.empty())
-            errors.push_back("Cannot find the resolver keyspace (where SI2CSI "
-                             "and BIOSEQ_INFO tables reside) in the " +
-                             root_keyspace + ".SAT2KEYSPACE table.");
-
-        if (m_BioseqNAKeyspaces.empty())
-            errors.push_back("No bioseq named annotation keyspaces found "
-                             "in the " + root_keyspace + " keyspace.");
-
-        return errors;
-    }
-
-    void clear(void)
-    {
-        m_BioseqKeyspace.clear();
-        m_BioseqNAKeyspaces.clear();
-    }
-};
-
-
 class CPubseqGatewayApp: public CNcbiApplication
 {
 public:
@@ -115,22 +76,25 @@ public:
     void ParseArgs(void);
     void OpenCache(void);
     bool OpenCass(void);
-    bool PopulateCassandraMapping(bool  need_accept_alert=false);
-    void PopulatePublicCommentsMapping(void);
+    bool PopulateCassandraMapping(bool  initialization);
     void CheckCassMapping(void);
     void CloseCass(void);
-    bool SatToKeyspace(int  sat, string &  sat_name);
+    optional<SSatInfoEntry> SatToKeyspace(int32_t  sat)
+    { return m_CassSchemaProvider->GetBlobKeyspace(sat); }
 
     void MaintainSplitInfoBlobCache(void) {
         if (m_SplitInfoCache)
             m_SplitInfoCache->Maintain();
     }
 
-    string GetBioseqKeyspace(void) const
-    { return m_CassMapping[m_MappingIndex].m_BioseqKeyspace; }
+    SSatInfoEntry GetBioseqKeyspace(void) const
+    { return m_CassSchemaProvider->GetResolverKeyspace(); }
 
-    vector<pair<string, int32_t>> GetBioseqNAKeyspaces(void) const
-    { return m_CassMapping[m_MappingIndex].m_BioseqNAKeyspaces; }
+    optional<SSatInfoEntry> GetIPGKeyspace(void) const
+    { return m_CassSchemaProvider->GetIPGKeyspace(); }
+
+    vector<SSatInfoEntry> GetBioseqNAKeyspaces(void) const
+    { return m_CassSchemaProvider->GetNAKeyspaces(); }
 
     CPubseqGatewayCache *  GetLookupCache(void)
     { return m_LookupCache.get(); }
@@ -141,8 +105,8 @@ public:
     CSplitInfoCache *  GetSplitInfoCache(void)
     { return m_SplitInfoCache.get(); }
 
-    CPSGMessages *  GetPublicCommentsMapping(void)
-    { return m_PublicComments.get(); }
+    shared_ptr<CPSGMessages>  GetPublicCommentsMapping(void)
+    { return m_CassSchemaProvider->GetMessages(); }
 
     unsigned long GetSendBlobIfSmall(void) const
     { return m_Settings.m_SendBlobIfSmall; }
@@ -181,9 +145,6 @@ public:
 
     map<string, tuple<string, string>>  GetIdToNameAndDescriptionMap(void) const
     { return m_Settings.m_IdToNameAndDescription; }
-
-    shared_ptr<CCassConnection> GetCassandraConnection(void)
-    { return m_CassConnection; }
 
     unsigned int GetCassandraTimeout(void) const
     { return m_Settings.m_TimeoutMs; }
@@ -240,9 +201,6 @@ public:
 
     int GetPageSize(void) const
     { return m_Settings.m_IPGPageSize; }
-
-    string GetIPGKeyspace(void) const
-    { return m_Settings.m_IPGKeyspace; }
 
     size_t GetHttpMaxBacklog(void) const
     { return m_Settings.m_HttpMaxBacklog; }
@@ -467,17 +425,9 @@ private:
 private:
     SPubseqGatewaySettings              m_Settings;
 
-    // Bioseq and named annotations keyspaces can be updated dynamically.
-    // The index controls the active set.
-    // The sat names cannot be updated dynamically - they are read once.
-    size_t                              m_MappingIndex;
-    SCassMapping                        m_CassMapping[2];
-    vector<string>                      m_SatNames;
-    vector<int32_t>                     m_BioseqNAKeyspaces;
-    unique_ptr<CPSGMessages>            m_PublicComments;
-
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
+    shared_ptr<CSatInfoSchemaProvider>  m_CassSchemaProvider;
 
     CTime                               m_StartTime;
 

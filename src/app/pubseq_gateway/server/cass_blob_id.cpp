@@ -37,7 +37,6 @@
 
 USING_NCBI_SCOPE;
 
-
 SCass_BlobId::SCass_BlobId(const string &  blob_id) :
     m_Sat(-1), m_SatKey(-1)
 {
@@ -57,7 +56,7 @@ SCass_BlobId::SCass_BlobId(const string &  blob_id) :
 // Maps integer sat to a keyspace
 bool SCass_BlobId::MapSatToKeyspace(void)
 {
-    auto * app = CPubseqGatewayApp::GetInstance();
-    return app->SatToKeyspace(m_Sat, m_Keyspace);
+    m_Keyspace = CPubseqGatewayApp::GetInstance()->SatToKeyspace(m_Sat);
+    return m_Keyspace.has_value();
 }
 
