@@ -53,7 +53,7 @@ public:
 #if 1
 // NCBI: modified
     BasicIStreamWrapper(StreamType& stream) : stream_(stream), count_(), peekBuffer_(),
-        bufferSize_(16*1024), buffer(new Ch[bufferSize_])
+        bufferSize_(4*1024), buffer(new Ch[bufferSize_])
     {
         bufferLast_ = current_ = buffer.get();
         eof_ = false;
