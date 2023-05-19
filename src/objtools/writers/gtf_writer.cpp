@@ -514,7 +514,7 @@ bool CGtfWriter::xAssignFeaturesCds(
         unsigned int partNumber = 1;
         unsigned int baseCount = 0;
 
-        while (basePairsNeeded > 0) {
+        while (basePairsNeeded > 0 && currentIt != sublocs.end()) {
             const CSeq_interval& currentLoc = **currentIt;
             auto currentFrom = currentLoc.GetFrom();
             auto currentTo = currentLoc.GetTo();
