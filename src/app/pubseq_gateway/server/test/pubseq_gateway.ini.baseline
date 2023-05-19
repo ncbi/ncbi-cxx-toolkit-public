@@ -40,7 +40,8 @@ log=false
 
 ; Cassandra keyspace where BIOSEQ_INFO and SI2CSI tables are
 ; There is no default value. If not provided then the server does not start
-root_keyspace=psg_test_info
+root_keyspace=sat_info3
+configuration_domain=PSG_TEST
 
 slim_max_blob_size=10KB
 
@@ -143,7 +144,6 @@ ssl_key_file={ssl_key}
 ssl_ciphers=""
 
 [IPG]
-keyspace=psg_test_ipg_storage
 page_size=2
 enable_huge_ipg=true
 
