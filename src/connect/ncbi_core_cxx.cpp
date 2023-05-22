@@ -613,12 +613,14 @@ static void x_PostFork(void)
 } // extern "C"
 
 
-static volatile enum EConnectInit {
+enum EConnectInit {
     eConnectInit_Weak     = -1,  ///< CConn_Initer
     eConnectInit_Intact   =  0,  ///< Not yet visited
     eConnectInit_Strong   =  1,  ///< User init detected
     eConnectInit_Explicit =  2   ///< CONNECT_Init() called
-} s_ConnectInit = eConnectInit_Intact;
+};
+
+static atomic<EConnectInit> s_ConnectInit = eConnectInit_Intact;
 
 
 /***********************************************************************
@@ -667,7 +669,8 @@ static void s_Init(const IRWRegistry* reg  = 0,
            + NStr::IntToString(int(how))                    + ')');
     _ASSERT(how != eConnectInit_Intact);
 
-    if (s_ConnectInit == how  &&  how == eConnectInit_Explicit)
+    auto connect_init = s_ConnectInit.load(memory_order_acquire);
+    if (connect_init == how  &&  how == eConnectInit_Explicit)
         ERR_POST_X(11, "CONNECT_Init() called more than once");
 
     TCORE_Set x_set = 0;
@@ -696,7 +699,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
     g_CORE_Set &= ~x_set;
     s_CORE_Set |=  x_set;
 
-    if (s_ConnectInit == eConnectInit_Intact) {
+    if (connect_init == eConnectInit_Intact) {
         int err = 0;
         g_NCBI_ConnectRandomSeed
             = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -729,8 +732,8 @@ static void s_Init(const IRWRegistry* reg  = 0,
 
     if (how < eConnectInit_Strong  &&  g_CORE_Set)
         how = eConnectInit_Strong;
-    if (s_ConnectInit < how  ||  s_ConnectInit == eConnectInit_Intact)
-        s_ConnectInit = how;
+    if (connect_init < how  ||  connect_init == eConnectInit_Intact)
+        s_ConnectInit.store(how, memory_order_release);
 }
 
 
@@ -758,11 +761,13 @@ extern void CONNECT_Init(const IRWRegistry* reg,
 
 CConnIniter::CConnIniter(void)
 {
-    if (s_ConnectInit != eConnectInit_Intact)
+    auto connect_init = s_ConnectInit.load(memory_order_relaxed);
+    if (connect_init != eConnectInit_Intact)
         return;
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
-        if (s_ConnectInit == eConnectInit_Intact) {
+        connect_init = s_ConnectInit.load(memory_order_acquire);
+        if (connect_init == eConnectInit_Intact) {
             CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
             s_Init(app ? &app->GetConfig() : 0, NcbiSetupTls,
                    0, eConnectInit_OwnRegistry);
