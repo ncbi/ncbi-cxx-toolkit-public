@@ -40,17 +40,31 @@
 #include <ncbi_pch.hpp>
 #include <sstream>
 #include <memory>
-#include <map>
+#include <util/static_map.hpp>
 #include <util/xregexp/regexp.hpp>
 #include <util/xregexp/convert_dates_iso8601.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
 
-class TParse_rule;
+// Type definitions
 
 typedef string (* TFun_transform)(string const&);
 typedef pair<string, string> (* TFun_transform_other)(string const&);
+
+static const char* kTransform_code_iso8601            = "ISO-8601";
+static const char* transfrom_code_range_iso8601       = "RANGE|ISO-8601";
+static const char* kTransform_code_cast_na            = "CAST|NA";
+static const char* kTransform_code_cast_iso8601       = "CAST|ISO-8601";
+static const char* kTransform_code_range_cast_iso8601 = "RANGE|CAST|ISO-8601";
+static const char* kTransform_code_no_date            = "NODATE";
+static const char* kTransform_code_cast_ambig         = "CAST|YYYY"; // cast ambig date to YYYY
+
+
+// Forward declarations and type definitions
+
+class TParse_rule;
 
 static pair<string, string> extract_date_iso8601(string const& value, 
                                                  vector<TParse_rule> const& rules,
@@ -59,11 +73,6 @@ static pair<string, string> extract_date_iso8601(string const& value,
 
 static vector<TParse_rule> const& get_date_rule_collection();
 static vector<TFun_transform_other> const& get_date_range_rule_collection();
-static vector<TParse_rule> make_parse_rules();
-static vector<TFun_transform_other> make_parse_range_rules();
-
-static string const& GetMonth_code_by_name(string const& month_name);
-static map<string, string> s_GetMonthLookup_table();
 static TFun_transform_other get_transform_for_ambiguous_date();
 
 // Collection of functions that transform to ISO 8601
@@ -85,13 +94,6 @@ static string transform_range_before(string const& value);
 static pair<string, string> transform_ambiguous_date(string const& value);
 static pair<string, string> transform_range(string const& value);
 
-static const char* kTransform_code_iso8601 = "ISO-8601";
-static const char* transfrom_code_range_iso8601 = "RANGE|ISO-8601";
-static const char* kTransform_code_cast_na = "CAST|NA";
-static const char* kTransform_code_cast_iso8601 = "CAST|ISO-8601";
-static const char* kTransform_code_range_cast_iso8601 = "RANGE|CAST|ISO-8601";
-static const char* kTransform_code_no_date = "NODATE";
-static const char* kTransform_code_cast_ambig = "CAST|YYYY"; // cast ambig date to YYYY
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -132,7 +134,7 @@ public:
     : m_Tag(tag),
       m_Transform(transform),
       m_Regexp_s(regex),
-      m_Regexp( new CRegexp(regex) )
+      m_Regexp(new CRegexp(regex))
     {        
     }
 
@@ -171,11 +173,12 @@ private:
         rhs.m_Regexp = temp;
     }
 
-    string m_Tag;
-    TFun_transform m_Transform;    
-    string m_Regexp_s;
+    string              m_Tag;
+    TFun_transform      m_Transform;    
+    string              m_Regexp_s;
     shared_ptr<CRegexp> m_Regexp;
 };
+
 
 class CAmbiguousDateException : public CException
 {
@@ -197,6 +200,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CAmbiguousDateException, CException);
 };
 
+
 pair<string, string> extract_date_iso8601(string const& value, 
                                         vector<TParse_rule> const & rules,
                                         vector<TFun_transform_other> const& range_rules,
@@ -204,10 +208,7 @@ pair<string, string> extract_date_iso8601(string const& value,
                                    )
 {
     try {
-        for ( vector<TParse_rule>::const_iterator rule = rules.begin();
-              rule != rules.end(); 
-              ++rule ) 
-        {
+        for ( auto rule = rules.begin(); rule != rules.end(); ++rule ) {
             CRegexp& re = rule->GetRegexp();
             if ( re.IsMatch(value) ) {
                 re.GetMatch(value, 0, 0, CRegexp::fMatch_default, true);
@@ -215,11 +216,8 @@ pair<string, string> extract_date_iso8601(string const& value,
                 return make_pair(rule->GetTag(), rule->MakeTransform(match));            
             }
         }
-
         // Try to match 'range' expressions
-        for ( vector<TFun_transform_other>::const_iterator transform = range_rules.begin();
-              transform != range_rules.end();
-              ++transform ) 
+        for ( auto transform = range_rules.begin(); transform != range_rules.end();  ++transform ) 
         {
             pair<string, string> result = (* transform)(value);
             if ( !result.second.empty() ) {
@@ -236,13 +234,48 @@ pair<string, string> extract_date_iso8601(string const& value,
     return make_pair(kTransform_code_no_date, "");
 }
 
-vector<TParse_rule> const& get_date_rule_collection()
+
+const char* get_month_code_by_name(string const& month_name)
 {
-    static vector<TParse_rule> parse_rules = make_parse_rules();
-    return parse_rules;
+    static const SStaticPair<const char*, const char*> s_month_lookup_table[] =
+    {
+        { "apr",       "04" },
+        { "april",     "04" },
+        { "aug",       "08" },
+        { "august",    "08" },
+        { "dec",       "12" },
+        { "december",  "12" },
+        { "feb",       "02" },
+        { "february",  "02" },
+        { "jan",       "01" },
+        { "january",   "01" },
+        { "jul",       "07" },
+        { "july",      "07" },
+        { "jun",       "06" },
+        { "june",      "06" },
+        { "mar",       "03" },
+        { "march",     "03" },
+        { "may",       "05" },
+        { "nov",       "11" },
+        { "november",  "11" },
+        { "oct",       "10" },
+        { "october",   "10" },
+        { "sep",       "09" },
+        { "september", "09" },
+    };
+    typedef CStaticPairArrayMap<const char*, const char*, PNocase_CStr> TMonthCodeByName;
+    DEFINE_STATIC_ARRAY_MAP(TMonthCodeByName, s_MonthLookupTable, s_month_lookup_table);
+
+    auto it = s_MonthLookupTable.find(month_name.c_str());
+    if ( it == s_MonthLookupTable.end() ) {
+        NCBI_THROW(CException, eUnknown, "Bad month name value '" + month_name + "'");
+    }
+    return it->second;
+
 }
 
-vector<TParse_rule> make_parse_rules()
+
+vector<TParse_rule> const& get_date_rule_collection()
 {
     struct TRules {
         char const* annot_tag;
@@ -350,35 +383,33 @@ vector<TParse_rule> make_parse_rules()
         {0, 0, 0}
     };
 
-    vector<TParse_rule> rules_coll;
-    for (struct TRules* entry = &rules_table[0]; entry->annot_tag != 0; ++entry ) {
-        rules_coll.push_back( TParse_rule(entry->annot_tag, entry->regexp, entry->transform) );
-    }
+    static CSafeStatic< vector<TParse_rule> > parse_rules;
 
-    return rules_coll;
+    if (parse_rules->empty()) {
+        for (struct TRules* entry = &rules_table[0]; entry->annot_tag != 0; ++entry ) {
+            parse_rules->push_back( TParse_rule(entry->annot_tag, entry->regexp, entry->transform) );
+        }
+    }
+    return parse_rules.Get();
 }
+
 
 vector<TFun_transform_other> const& get_date_range_rule_collection()
-{
-    static vector<TFun_transform_other> range_rules = make_parse_range_rules();
-
-    return range_rules;
-}
-
-vector<TFun_transform_other> make_parse_range_rules()
 {
     TFun_transform_other table[] = {
         transform_range,
         0
     };
+    static CSafeStatic< vector<TFun_transform_other> > range_rules;
 
-    vector<TFun_transform_other> rules;
-    for ( TFun_transform_other *entry = &table[0]; *entry != 0; ++entry ) {
-        rules.push_back(*entry);
+    if (range_rules->empty()) {
+        for (TFun_transform_other* entry = &table[0]; *entry != 0; ++entry) {
+            range_rules->push_back(*entry);
+        }
     }
-
-    return rules;
+    return range_rules.Get();
 }
+
 
 TFun_transform_other get_transform_for_ambiguous_date()
 {
@@ -458,17 +489,21 @@ pair<string, string> transform_range(string const& value)
     return make_pair(kTransform_code_no_date, "");
 }
 
-string transform_identity(string const& value) {
+string transform_identity(string const& value)
+{
     return value;
 }
 
-string transform_missing(string const& /*value*/) {
+string transform_missing(string const& /*value*/)
+{
     return "missing";
 }
 
-string transform_YYYY_mm_DD(string const& value) {
+string transform_YYYY_mm_DD(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, "-/", tokens);
+
     ostringstream oss;
     oss << tokens[0] 
         << "-"
@@ -481,7 +516,8 @@ string transform_YYYY_mm_DD(string const& value) {
     return oss.str();
 }
 
-string transform_mm_DD_YYYY(string const& value) {
+string transform_mm_DD_YYYY(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, "-/.", tokens);
 
@@ -509,8 +545,8 @@ string transform_mm_DD_YYYY(string const& value) {
     return oss.str();
 }
 
-
-string transform_DD_mm_YYYY(string const& value) {
+string transform_DD_mm_YYYY(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, "-/.", tokens);
 
@@ -538,7 +574,8 @@ string transform_DD_mm_YYYY(string const& value) {
     return oss.str();
 }
 
-string transform_DD_month_YYYY(string const& value) {
+string transform_DD_month_YYYY(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, "- ", tokens);
 
@@ -551,14 +588,15 @@ string transform_DD_month_YYYY(string const& value) {
     ostringstream oss;
     oss << year
         << "-"
-        << GetMonth_code_by_name(tokens[1])
+        << get_month_code_by_name(tokens[1])
         << "-"
         << setfill('0') << setw(2)
         << day;
     return oss.str();
 }
 
-string transform_DD_month_comma_YYYY(string const& value) {
+string transform_DD_month_comma_YYYY(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, " ", tokens);
 
@@ -575,14 +613,16 @@ string transform_DD_month_comma_YYYY(string const& value) {
     ostringstream oss;
     oss << year
         << "-"
-        << GetMonth_code_by_name(month)
+        << get_month_code_by_name(month)
         << "-"
         << setfill('0') << setw(2)
         << day;
+
     return oss.str();
 }
 
-string transform_month_DD_YYYY(string const& value) {
+string transform_month_DD_YYYY(string const& value)
+{
 
     vector<string> tokens;
     NStr::Split(value, " ", tokens);
@@ -604,14 +644,16 @@ string transform_month_DD_YYYY(string const& value) {
     ostringstream oss;
     oss << year
         << "-"
-        << GetMonth_code_by_name(tokens[0])
+        << get_month_code_by_name(tokens[0])
         << "-"
         << setfill('0') << setw(2)
         << day;
+    
     return oss.str();
 }
 
-string transform_month_YYYY(string const& value) {
+string transform_month_YYYY(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, "-/. ", tokens);
 
@@ -619,15 +661,16 @@ string transform_month_YYYY(string const& value) {
     if ( year < 100 ) {
         year = 1900 + ( ( year > 70 ) ? year : 100 + year );
     }
-
     ostringstream oss;
     oss << year
         << "-"
-        << GetMonth_code_by_name(tokens[0]);
+        << get_month_code_by_name(tokens[0]);
+    
     return oss.str();
 }
 
-string transform_YYYY_month(string const& value) {
+string transform_YYYY_month(string const& value)
+{
     vector<string> tokens;
     NStr::Split(value, "/-. ", tokens);
 
@@ -635,15 +678,16 @@ string transform_YYYY_month(string const& value) {
     if ( year < 100 ) {
         year = 1900 + ( ( year > 70 ) ? year : 100 + year );
     }
-
     ostringstream oss;
     oss << year
         << "-"
-        << GetMonth_code_by_name(tokens[1]);
+        << get_month_code_by_name(tokens[1]);
+   
     return oss.str();
 }
 
-string transform_YYYY_MM(string const& value) {
+string transform_YYYY_MM(string const& value)
+{
 
     vector<string> tokens;
     NStr::Split(value, "/-. ", tokens);
@@ -655,10 +699,12 @@ string transform_YYYY_MM(string const& value) {
         << "-"
         << setfill('0') << setw(2)
         << month;
+    
     return oss.str();
 }
 
-string transform_MM_YYYY(string const& value) {
+string transform_MM_YYYY(string const& value)
+{
 
     vector<string> tokens;
     NStr::Split(value, "/-. ", tokens);
@@ -670,19 +716,24 @@ string transform_MM_YYYY(string const& value) {
         << "-"
         << setfill('0') << setw(2)
         << month;
+    
     return oss.str();
 }
 
-string transform_range_decade(string const& value) {
+string transform_range_decade(string const& value)
+{
     int year = NStr::StringToNumeric<int>(value);
+
     ostringstream oss;
     oss << year
         << "/"
         << year + 9;
+    
     return oss.str();
 }
 
-string transform_range_before(string const& value) {
+string transform_range_before(string const& value)
+{
     int year = NStr::StringToNumeric<int>(value);
     year -= 1;
 
@@ -690,62 +741,8 @@ string transform_range_before(string const& value) {
     oss << 1900
         << "/"
         << year;
-    return oss.str();
-}
-
-
-string const& GetMonth_code_by_name(string const& month_name)
-{
-    static map<string, string> lookup_table = s_GetMonthLookup_table();
-
-    string name(month_name); 
-    map<string, string>::const_iterator it = lookup_table.find(NStr::ToLower(name));
-
-    if ( it == lookup_table.end() ) {
-        NCBI_THROW(CException, eUnknown, "Bad month name value.");
-    }
-
-    return it->second;
-}
-
-map<string, string> s_GetMonthLookup_table()
-{
-    struct TName2Code {
-        char const* name;
-        char const* code;
-    } 
-    table[] = {
-        {"jan", "01"},
-        {"feb", "02"},
-        {"mar", "03"},
-        {"apr", "04"},
-        {"may", "05"},
-        {"jun", "06"},
-        {"jul", "07"},
-        {"aug", "08"},
-        {"sep", "09"},
-        {"oct", "10"},
-        {"nov", "11"},
-        {"dec", "12"},
-        {"january", "01"},
-        {"february", "02"},
-        {"march", "03"},
-        {"april", "04"},
-        {"june", "06"},
-        {"july", "07"},
-        {"august", "08"},
-        {"september", "09"},
-        {"october", "10"},
-        {"november", "11"},
-        {"december", "12"},
-        {0, 0}
-    };
     
-    map<string, string> lookup_table;
-    for ( struct TName2Code* entry = &table[0]; entry->name; ++entry ) {
-        lookup_table[entry->name] = entry->code;
-    }
-    return lookup_table; 
+    return oss.str();
 }
 
 
