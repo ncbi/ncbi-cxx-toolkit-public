@@ -52,8 +52,9 @@ public:
     typedef typename StreamType::char_type Ch;
 #if 1
 // NCBI: modified
-    BasicIStreamWrapper(StreamType& stream) : stream_(stream), count_(), peekBuffer_(),
-        bufferSize_(4*1024), buffer(new Ch[bufferSize_])
+    BasicIStreamWrapper(StreamType& stream, size_t bufferSize = 16*1024)
+        : stream_(stream), count_(), peekBuffer_(),
+            bufferSize_(bufferSize), buffer(new Ch[bufferSize_])
     {
         bufferLast_ = current_ = buffer.get();
         eof_ = false;

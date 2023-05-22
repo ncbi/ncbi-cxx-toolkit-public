@@ -1023,6 +1023,7 @@ private:
 ///
 /// Serializable, copyable container for JSON data.
 class CJson_Schema;
+using CJson_IStreamBuffer = rapidjson::IStreamWrapper;
 
 class CJson_Document : public CJson_Node
 {
@@ -1053,6 +1054,9 @@ public:
 
     /// Read JSON data from a stream
     bool Read(std::istream& in);
+
+    /// Read JSON data from a stream buffer
+    bool Read(CJson_IStreamBuffer& in);
 
     /// Read JSON data from a file
     bool Read(const std::string& filename) {
@@ -2363,6 +2367,11 @@ inline bool CJson_Document::ParseMutableString(CJson_ConstNode::TCharType* v) {
 inline bool CJson_Document::Read(std::istream& in) {
     rapidjson::IStreamWrapper ifs(in);
     m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(ifs);
+    return  !m_DocImpl.HasParseError();
+}
+
+inline bool CJson_Document::Read(CJson_IStreamBuffer& in) {
+    m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(in);
     return  !m_DocImpl.HasParseError();
 }
 
