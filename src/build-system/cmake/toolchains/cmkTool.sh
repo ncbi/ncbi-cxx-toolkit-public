@@ -34,11 +34,16 @@ fi
 #toolchain=`pwd`/toolchain.tmp
 toolchain=`mktemp`
 if ! which envsubst > /dev/null 2>&1; then
-    {
-        while read -r line; do
-            echo $line;
-        done < ${pfx}${template}${sfx}
-    } > ${toolchain}
+    if which python3 > /dev/null 2>&1; then
+        python3 -c 'import os,sys; sys.stdout.write(os.path.expandvars(sys.stdin.read()))' < ${pfx}${template}${sfx} > ${toolchain}
+    elif which python > /dev/null 2>&1; then
+        python -c 'import os,sys; sys.stdout.write(os.path.expandvars(sys.stdin.read()))' < ${pfx}${template}${sfx} > ${toolchain}
+    elif which perl > /dev/null 2>&1; then
+        perl -pe 's/\$(\{)?([a-zA-Z_]\w*)(?(1)\})/$ENV{$2}/g' < ${pfx}${template}${sfx} > ${toolchain}
+    else
+        echo Cannot generate toolchain from a template ${processor}-${os}-${compiler}-${version}${sfx}
+        exit 1
+    fi
 else
     envsubst < ${pfx}${template}${sfx} > ${toolchain}
 fi
