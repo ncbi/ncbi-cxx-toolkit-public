@@ -381,7 +381,7 @@ private:
 // protein    :  D  E  Q  S  F --- T  G  K  E  Y  S  K  Y y.....intron.....yy L  H  D  T  S  T  E  G 
 //
 // there are no "<skip>", "intron", or "bad part" in actual values
-class CProSplignText {
+class NCBI_XALGOALIGN_EXPORT CProSplignText {
 public:
     /// Outputs formatted text
     static void Output(const objects::CSeq_align& seqalign, objects::CScope& scope, ostream& out, int width, const string& matrix_name = "BLOSUM62");
