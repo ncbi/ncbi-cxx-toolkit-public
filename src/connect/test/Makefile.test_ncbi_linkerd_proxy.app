@@ -6,7 +6,7 @@ REQUIRES = -MSWin
 APP = test_ncbi_linkerd_proxy
 SRC = test_ncbi_linkerd_proxy
 
-LIB = xregexp $(PCRE_LIB) xconnect xncbi
+LIB = xregexp $(PCRE_LIB) xutil xconnect xncbi
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources

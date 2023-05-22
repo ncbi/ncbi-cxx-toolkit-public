@@ -5,7 +5,7 @@ LIB = xregexp
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)
 
-DLL_LIB = $(PCRE_LIB)
+DLL_LIB = $(PCRE_LIB) xutil
 LIBS    = $(PCRE_LIBS)
 
 USES_LIBRARIES =  \
