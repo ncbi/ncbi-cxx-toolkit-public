@@ -356,10 +356,11 @@ CAutoSqlCustomFields::SetUserObject(
 //  ============================================================================
 {
     bool newUserObject {false};
-    auto pDisplayData = feat.FindExt("Display Data");
+
+    auto pDisplayData = feat.FindExt("DisplaySettings");
     if (!pDisplayData) {
         pDisplayData = Ref(new CUser_object());
-        pDisplayData->SetType().SetStr("Display Data");
+        pDisplayData->SetType().SetStr("DisplaySettings");
         newUserObject = true;
     }
 

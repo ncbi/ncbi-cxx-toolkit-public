@@ -198,7 +198,7 @@ CAutoSqlStandardFields::SetDisplayData(
     }
 
     auto pDisplayData = Ref(new CUser_object());
-    pDisplayData->SetType().SetStr("Display Data");
+    pDisplayData->SetType().SetStr("DisplaySettings");
     pDisplayData->AddField("score",
                 NStr::StringToInt(columnData[mColScore],
                     NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols));
