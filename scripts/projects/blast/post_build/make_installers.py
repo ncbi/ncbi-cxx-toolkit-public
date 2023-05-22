@@ -65,7 +65,7 @@ def launch_win_installer_build(installdir, blast_version):
     '''Windows post-build: create installer'''
     if VERBOSE: 
         print("Packaging for Windows...")
-    cmd = "python " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
+    cmd = "python3 " + os.path.join(SCRIPTS_DIR, "win", "make_win.py") + " "
     cmd += blast_version + " " + installdir
     if VERBOSE: 
         cmd += " -v"
