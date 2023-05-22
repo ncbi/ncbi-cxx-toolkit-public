@@ -107,8 +107,8 @@ Author:   Philip Hazel
 License:  BSDish [src/util/regexp/LICENCE]
 
 Location: include/util/regexp/ctre/
-Authors:  Hana Dusíková
-Licnse:   Apache 2.0 [include/util/regexp/ctre/LICENCE]
+Authors:  Hana Dusikovaá
+Licnse:   Apache 2.0 [include/util/regexp/ctre/LICENSE]
           https://github.com/hanickadot/compile-time-regular-expressions/blob/main/LICENSE
 
 Location: {src,include}/util/lmdb
