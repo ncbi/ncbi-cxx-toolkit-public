@@ -1080,6 +1080,10 @@ public:
     /// Test if the most recent read was successful
     bool ReadSucceeded(void);
 
+    /// Most recent read produced empty document
+    //  No more data in input stream
+    bool EndOfData(void);
+
     /// Get most recent read error
     std::string GetReadError(void) const;
 
@@ -2403,6 +2407,10 @@ inline bool CJson_Document::ReadBuffered(const std::string& filename) {
 inline bool CJson_Document::ReadSucceeded(void) {
     return !m_DocImpl.HasParseError();
 }
+inline bool CJson_Document::EndOfData(void) {
+    return m_DocImpl.GetParseError() == rapidjson::kParseErrorDocumentEmpty;
+}
+
 inline std::string CJson_Document::GetReadError() const {
     return rapidjson::GetParseError_En(m_DocImpl.GetParseError());
 }
