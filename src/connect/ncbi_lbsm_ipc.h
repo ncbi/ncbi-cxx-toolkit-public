@@ -42,20 +42,27 @@
 #ifndef HAVE_SEMUN
 /* This sequence of defines causes 'union semun' be undefined on IRIX */
 #  ifdef _XOPEN_SOURCE
-#    define _XOPEN_SOURCE_SAVE _XOPEN_SOURCE
+#    define  XOPEN_SOURCE_SAVE _XOPEN_SOURCE
 #    undef  _XOPEN_SOURCE
 #  endif
 #  define _XOPEN_SOURCE 1
 #  define _WANT_SEMUN 1 /* helpful on FreeBSD 12 */
-#endif
+#  ifdef NCBI_OS_DARWIN
+#    ifndef _DARWIN_C_SOURCE
+#      define  DARWIN_C_SOURCE_UNDEF
+#      define _DARWIN_C_SOURCE 1 /* would cause semun to get defined */
+#    endif /*_DARWIN_C_SOURCE*/
+#  endif /*NCBI_OS_DARWIN*/
+#endif /*HAVE_SEMUN*/
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/shm.h>
-#ifndef HAVE_SEMUN
-#  undef _XOPEN_SOURCE
-#  ifdef _XOPEN_SOURCE_SAVE
-#    define _XOPEN_SOURCE _XOPEN_SOURCE_SAVE
-#  endif
+#ifdef XOPEN_SOURCE_SAVE
+#  undef  _XOPEN_SOURCE
+#  define _XOPEN_SOURCE XOPEN_SOURCE_SAVE
+#endif
+#ifdef DARWIN_C_SOURCE_UNDEF
+#  undef _DARWIN_C_SOURCE
 #endif
 
 
@@ -89,7 +96,8 @@ extern "C" {
 
 
 #if !defined(HAVE_SEMUN)  &&  !defined(__FreeBSD__)  &&  !defined(__MWERKS__) \
-    &&  (!defined(__GNU_LIBRARY__)  ||  defined(_SEM_SEMUN_UNDEFINED))
+    &&  (!defined(__GNU_LIBRARY__)  ||  defined(_SEM_SEMUN_UNDEFINED))  \
+    &&  !defined(NCBI_OS_DARWIN)
 union semun {
     int              val;
     struct semid_ds* buf;
