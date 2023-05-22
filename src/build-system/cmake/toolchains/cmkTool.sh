@@ -33,5 +33,13 @@ fi
 
 #toolchain=`pwd`/toolchain.tmp
 toolchain=`mktemp`
-envsubst < ${pfx}${template}${sfx} > ${toolchain}
+if ! which envsubst > /dev/null 2>&1; then
+    {
+        while read -r line; do
+            echo $line;
+        done < ${pfx}${template}${sfx}
+    } > ${toolchain}
+else
+    envsubst < ${pfx}${template}${sfx} > ${toolchain}
+fi
 echo ${toolchain}
