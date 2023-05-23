@@ -70,7 +70,7 @@ public:
     void SetMatch();
     bool HasMatch() const;
     void SetPseudo(bool val = true) { m_IsPseudo = val; }
-    bool OkWithoutCds() const;
+    bool OkWithoutCds(bool isGenbank = false) const;
 
 private:
     CConstRef<CSeq_feat> m_Mrna;
@@ -6710,7 +6710,7 @@ bool CMrnaMatchInfo::HasMatch() const {
 }
 
 
-bool CMrnaMatchInfo::OkWithoutCds() const
+bool CMrnaMatchInfo::OkWithoutCds(bool isGenbank) const
 {
     if (m_IsPseudo) return true;
     const CSeq_loc& loc = m_Mrna->GetLocation();
@@ -6749,6 +6749,9 @@ bool CMrnaMatchInfo::OkWithoutCds() const
                 return true;
             }
         }
+    }
+    if (m_Mrna->IsSetPartial() && m_Mrna->GetPartial() && isGenbank) {
+    	return true;
     }
     return false;
 }
@@ -7500,7 +7503,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             gene_feat->IsSetPseudo() && gene_feat->GetPseudo()) {
             it->second->SetPseudo();
         }
-        if (!it->second->OkWithoutCds()) {
+        if (!it->second->OkWithoutCds(m_Imp.IsGenbank())) {
             num_unmatched_mrna++;
         }
     }
@@ -7512,7 +7515,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                      msg, *(seq.GetCompleteBioseq()));
         } else {
             ITERATE(TmRNAList, it, mrna_map) {
-                if (!it->second->OkWithoutCds()) {
+                if (!it->second->OkWithoutCds(m_Imp.IsGenbank())) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMismatchLocation,
                         "No CDS location match for 1 mRNA", it->second->GetSeqfeat());
                 }
