@@ -45,6 +45,7 @@
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/create_defline.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -2705,6 +2706,32 @@ CBioseq_Handle GetParentForPart(const CBioseq_Handle& part)
     return seg;
 }
 
+/// GetGeneticCodeForBioseq
+/// A function to construct the appropriate CGenetic_code object to use
+/// when constructing a coding region for a given Bioseq (if the default code
+/// should not be used).
+/// @param bh         The Bioseq_Handle of the nucleotide sequence on which the
+///                   coding region is to be created.
+///
+/// @return           CRef<CGenetic_code> for new CGenetic_code (will be NULL if default should be used)
+CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
+{
+    CRef<CGenetic_code> code;
+    if (!bh) {
+        return code;
+    }
+    CSeqdesc_CI src(bh, CSeqdesc::e_Source);
+    if (src && src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetOrgname()) {
+        const CBioSource & bsrc = src->GetSource();
+        int bioseqGenCode = bsrc.GetGenCode(0);
+        if (bioseqGenCode > 0) {
+            code.Reset(new CGenetic_code());
+            code->SetId(bioseqGenCode);
+        }
+    }
+    return code;
+}
+
 
 END_SCOPE(sequence)
 
@@ -5181,7 +5208,6 @@ void ReverseComplement(CSeq_inst& inst, CScope* scope)
             break;
     }
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
