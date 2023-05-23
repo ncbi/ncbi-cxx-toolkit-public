@@ -3866,7 +3866,7 @@ static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, TSeqPos ad
 CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     CScope& scope)
 {
-    const CGenetic_code* code = NULL;
+    CConstRef<CGenetic_code> pCode;
     int frame = 0;
     if (cds.GetData().IsCdregion()) {
         const CCdregion& cdr = cds.GetData().GetCdregion();
@@ -3883,9 +3883,17 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             }
         }
         if (cdr.IsSetCode()) {
-            code = &cdr.GetCode();
+            pCode.Reset(&cdr.GetCode());
         }
     }
+
+    if (!pCode) {
+        auto bsh = scope.GetBioseqHandle(cds.GetLocation());
+        if (bsh) {
+            pCode = sequence::GetGeneticCodeForBioseq(bsh);
+        }
+    }
+
     bool is_5prime_complete = !cds.GetLocation().IsPartialStart(eExtreme_Biological);
 
     CSeqVector seq(cds.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
@@ -3904,7 +3912,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
     // get appropriate translation table
     const CTrans_table & tbl =
-        (code ? CGen_code_table::GetTransTable(*code) :
+        (pCode ? CGen_code_table::GetTransTable(*pCode) :
         CGen_code_table::GetTransTable(1));
 
     try {
