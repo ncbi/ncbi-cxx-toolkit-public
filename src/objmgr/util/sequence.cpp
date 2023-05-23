@@ -3883,7 +3883,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             }
         }
         if (cdr.IsSetCode()) {
-            pCode.Reset(&cdr.GetCode());
+            pCode = &cdr.GetCode();
         }
     }
 
