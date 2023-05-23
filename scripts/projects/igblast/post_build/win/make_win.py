@@ -57,7 +57,7 @@ def main():
             print("Copying", app, "to", cwd)
         shutil.copy(app, cwd)
     
-    dll = os.path.join('\\\\', 'snowman', 'win-coremake', 'Lib', 'ThirdParty', 'nghttp2', 'vs2017.64', '1.33.0', 'bin', 'ReleaseDLL', 'nghttp2.dll')
+    dll = '\\\\' + os.path.join('snowman', 'win-coremake', 'Lib', 'ThirdParty', 'nghttp2', 'vs2017.64', '1.33.0', 'bin', 'ReleaseDLL', 'nghttp2.dll')
     shutil.copy(dll, cwd)
     
     
