@@ -274,7 +274,6 @@ eMyNCBI_result needs xser
 eclib needs $(CONNEXT)
 eclib needs xmlwrapp
 eclib needs xregexp
-eclib needs xutil
 edirect needs eueid
 edirect needs ncqhst
 edirect needs txserv
@@ -1101,7 +1100,6 @@ test_stat_ext needs dbapi
 test_stat_ext needs ncbi_xdbapi_ftds
 test_stat_ext needs xconnect
 test_stat_ext needs xregexp
-test_stat_ext needs xutil
 thriftd needs $(Z_LIB)
 thriftd needs3party $(KRB5_LIBS)
 thriftd needs3party $(NETWORK_LIBS)
@@ -1526,7 +1524,7 @@ xprimer needs xalnmgr
 xprimer needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xqueryparse needs xncbi
 xregexp needs $(PCRE_LIB)
-xregexp needs xncbi
+xregexp needs xutil
 xregexp needs3party $(PCRE_LIBS)
 xregexp_template_tester needs xregexp
 xsd_sample_lib needs xser
