@@ -40,19 +40,17 @@
 #include <sys/types.h>
 
 #ifndef HAVE_SEMUN
-/* This sequence of defines causes 'union semun' be undefined on IRIX */
+/* The sequence of defines causes 'union semun' be undefined on IRIX */
 #  ifdef _XOPEN_SOURCE
-#    define  XOPEN_SOURCE_SAVE _XOPEN_SOURCE
-#    undef  _XOPEN_SOURCE
+#    define XOPEN_SOURCE_SAVE _XOPEN_SOURCE
+#    undef _XOPEN_SOURCE
 #  endif
 #  define _XOPEN_SOURCE 1
 #  define _WANT_SEMUN 1 /* helpful on FreeBSD 12 */
-#  ifdef NCBI_OS_DARWIN
-#    ifndef _DARWIN_C_SOURCE
-#      define  DARWIN_C_SOURCE_UNDEF
-#      define _DARWIN_C_SOURCE 1 /* would cause semun to get defined */
-#    endif /*_DARWIN_C_SOURCE*/
-#  endif /*NCBI_OS_DARWIN*/
+#  if defined(NCBI_OS_DARWIN)  &&  !defined(_DARWIN_C_SOURCE)
+#    define  DARWIN_C_SOURCE_UNDEF 1
+#    define _DARWIN_C_SOURCE 1 /* should cause semun to get defined */
+#  endif /*NCBI_OS_DARWIN && !_DARWIN_C_SOURCE*/
 #endif /*HAVE_SEMUN*/
 #include <sys/ipc.h>
 #include <sys/sem.h>
@@ -62,6 +60,7 @@
 #  define _XOPEN_SOURCE XOPEN_SOURCE_SAVE
 #endif
 #ifdef DARWIN_C_SOURCE_UNDEF
+#  undef  DARWIN_C_SOURCE_UNDEF
 #  undef _DARWIN_C_SOURCE
 #endif
 
