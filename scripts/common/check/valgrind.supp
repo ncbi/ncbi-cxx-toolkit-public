@@ -1465,6 +1465,11 @@
    ...
    fun:MT_LOCK_DoInternal
 }
+{
+   CBlockingQueue_ForServer - CQueueItem  - satskiy - CXX-11282 - false positive
+   Helgrind:Race
+   fun:_ZN4ncbi24CBlockingQueue_ForServer10CQueueItem*
+}
 
 
 #===============================================================================
