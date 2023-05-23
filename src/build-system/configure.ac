@@ -1190,8 +1190,11 @@ case "$host_os:/$CXX" in
             gccver=5.3.0
             CPPFLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 $CPPFLAGS"
             ;;
-         * )
+         *version\ ?.* | *version\ 1[[0-3]].* )
             gccver=7.3.0
+            ;;
+         * )
+            gccver=12.2.0
             ;;
       esac
       gccdir=/opt/ncbi/gcc/$gccver
@@ -2644,6 +2647,14 @@ case "$compiler" in
    *Clang ) 
       CFLAGS="-Wall -Wno-format-y2k $CFLAGS"
       CXXFLAGS="-Wall -Wno-format-y2k $CXXFLAGS"
+      case "$host_os:$compiler_version" in
+         linux*:1[[4-9]]?? | linux*:[[2-9]]??? )
+            # Normally an error, breaking some Boost.Test 1.76 usage;
+            # no obvious middle ground.
+            CXXFLAGS="-Wno-enum-constexpr-conversion $CXXFLAGS"
+            APP_LDFLAGS="-nopie $APP_LDFLAGS"            
+            ;;
+      esac
       ;;
 esac
 
