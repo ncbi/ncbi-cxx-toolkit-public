@@ -66,8 +66,8 @@ public:
 
 private:
     // prevent copying
-    INoCopying(const INoCopying&);
-    void operator=(const INoCopying&);
+    INoCopying(const INoCopying&) = delete;
+    void operator=(const INoCopying&) = delete;
 };
 
 enum EDoNotWait {
@@ -231,6 +231,7 @@ protected:
     typedef vector< CRef<CLoadMutex> > TLoadMutexPool;
 
     TMainMutex m_MainMutex;
+    mutable CFastMutex m_DeadlockMutex;
     TLoadMutexPool m_LoadMutexPool;
 };
 
