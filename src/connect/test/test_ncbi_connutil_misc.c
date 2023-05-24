@@ -427,6 +427,8 @@ static void TEST_ConnNetInfo(void)
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
+    if (str)
+        *str = '\0';
     printf("HTTP User Header after set:\n%s%s%s\n",
            &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(!net_info->http_user_header  &&  !str);
