@@ -195,19 +195,18 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 
 extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 {
-    const unsigned char* c;
     size_t count;
     if (!data)
         return 0;
     if (!size)
         size = strlen(data);
-    count = size;
-    for (c = (const unsigned char*) data;  count;  --count, ++c) {
-        if (*c == '\a'  ||  *c == '\b'  ||  *c == '\f'  ||
-            *c == '\r'  ||  *c == '\t'  ||  *c == '\v'  ||
-            *c == '\\'  ||  *c == '\''  ||  *c == '"'   ||  *c == '?') {
+    for (count = size;  count;  --count) {
+        unsigned char c = (unsigned char)(*data++);
+        if (c == '\a'  ||  c == '\b'  ||  c == '\f'  ||
+            c == '\r'  ||  c == '\t'  ||  c == '\v'  ||
+            c == '\\'  ||  c == '\''  ||  c == '"'   ||  c == '?') {
             size++;
-        } else if (*c == '\n'  ||  !isascii(*c)  ||  !isprint(*c))
+        } else if (c == '\n'  ||  !isascii(c)  ||  !isprint(c))
             size += 3;
     }
     return size;
@@ -544,11 +543,11 @@ extern char* LOG_ComposeMessage
         s += message_len;
     }
     if (data_len) {
+        assert(mess->raw_size);
         s += sprintf(s, kRawData_Beg,
                      (unsigned long) mess->raw_size,
                      &"s"[mess->raw_size == 1],
                      mess->raw_data ? ":\n" : " <NULL>");
-
         if (mess->raw_data) {
             s = UTIL_PrintableString((const char*)
                                      mess->raw_data,
@@ -556,7 +555,6 @@ extern char* LOG_ComposeMessage
                                      s, flags & fLOG_FullOctal
                                      ? fUTIL_PrintableFullOctal : 0);
         }
-
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else
         *s = '\0';
