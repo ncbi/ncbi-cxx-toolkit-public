@@ -34,7 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-
+#include <util/random_gen.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
@@ -70,15 +70,21 @@ public:
 
     virtual void Init(void);
     virtual int Run(void);
-    bool RunPass(int pass);
+    bool ProcessBlock(size_t pass,
+                      const vector<CSeq_id_Handle>& ids,
+                      const vector<string>& reference) const;
     CRef<CScope> MakeScope(void) const;
 
     typedef vector<CSeq_id_Handle> TIds;
 
+    CRandom::TValue m_Seed;
+    size_t m_RunCount;
+    size_t m_RunSize;
     TIds m_Ids;
     vector<string> m_Reference;
     IBulkTester::EBulkType m_Type;
     bool m_Verbose;
+    bool m_Sort;
     bool m_Single;
     bool m_Verify;
     CScope::TGetFlags m_GetFlags;
@@ -131,6 +137,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
     args.AddFlag("no-recalc", "Avoid data recalculation");
     args.AddFlag("verbose", "Verbose results");
+    args.AddFlag("sort", "Sort requests");
     args.AddFlag("single", "Use single id queries (non-bulk)");
     args.AddFlag("verify", "Run extra test to verify returned values");
     args.AddOptionalKey
@@ -145,6 +152,16 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
         ("count", "Count",
          "Number of iterations to run (default: 1)",
          CArgDescriptions::eInteger, "1");
+    string size_limit = "1000000";
+    // ThreadSanitizer has a limit on number of mutexes hels by a thread
+    const char* tsan_options = getenv("TSAN_OPTIONS");
+    if ( tsan_options && *tsan_options ) {
+        size_limit = "20";
+    }
+    args.AddDefaultKey
+        ("size", "Size",
+         "Limit number of Seq-ids to process in a run",
+         CArgDescriptions::eInteger, size_limit);
     args.AddOptionalKey("other_loaders", "OtherLoaders",
                         "Extra data loaders as plugins (comma separated)",
                         CArgDescriptions::eString);
@@ -260,8 +277,12 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
         m_GetFlags |= CScope::fDoNotRecalculate;
     }
     m_Verbose = args["verbose"];
+    m_Sort = args["sort"];
     m_Single = args["single"];
     m_Verify = args["verify"];
+    m_Seed = 0;
+    m_RunCount = args["count"].AsInteger();
+    m_RunSize = args["size"].AsInteger();
     if ( args["reference"] ) {
         CNcbiIstream& in = args["reference"].AsInputFile();
         m_Reference.resize(m_Ids.size());
@@ -307,10 +328,12 @@ CRef<CScope> CTestApplication::MakeScope(void) const
 }
 
 
-bool CTestApplication::RunPass(int pass)
+bool CTestApplication::ProcessBlock(size_t pass,
+                                    const vector<CSeq_id_Handle>& ids,
+                                    const vector<string>& reference) const
 {
     AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
-    data->SetParams(m_Ids, m_GetFlags);
+    data->SetParams(ids, m_GetFlags);
     {{
         CRef<CScope> scope = MakeScope();
         if ( m_Single ) {
@@ -328,14 +351,14 @@ bool CTestApplication::RunPass(int pass)
         }
         else {
             // should not be loaded
-            ITERATE ( TIds, it, m_Ids ) {
+            ITERATE ( TIds, it, ids ) {
                 _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
             }
         }
     }}
     vector<bool> errors;
-    if ( !m_Reference.empty() ) {
-        data->LoadVerify(m_Reference);
+    if ( !reference.empty() ) {
+        data->LoadVerify(reference);
         errors = data->GetErrors();
     }
     else if ( m_Verify ) {
@@ -350,13 +373,13 @@ bool CTestApplication::RunPass(int pass)
     if ( !ok ) {
         CMutexGuard guard(IBulkTester::sm_DisplayMutex);
         cerr << "Errors in "<<data->GetType()<<":\n";
-        for ( size_t i = 0; i < m_Ids.size(); ++i ) {
+        for ( size_t i = 0; i < ids.size(); ++i ) {
             if ( errors[i] ) {
                 data->Display(cerr, i, true);
             }
         }
     }
-    else if ( pass == 0 && GetArgs()["save_reference"] ) {
+    else if ( pass == 0 && ids.size() == m_Ids.size() && GetArgs()["save_reference"] ) {
         data->SaveResults(GetArgs()["save_reference"].AsOutputFile());
     }
     return ok;
@@ -365,20 +388,67 @@ bool CTestApplication::RunPass(int pass)
 
 int CTestApplication::Run(void)
 {
-    int ret = 0;
-    int run_count = GetArgs()["count"].AsInteger();
-    for ( int run_i = 0; run_i < run_count; ++run_i ) {
-        if ( !RunPass(run_i) ) {
-            ret = 1;
+    size_t error_count = 0;
+    try {
+        vector<CSeq_id_Handle> ids;
+        vector<string> reference;
+        vector<pair<CSeq_id_Handle, string> > data;
+        CRandom random(m_Seed);
+        for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
+            size_t size = min(m_RunSize, m_Ids.size());
+            data.clear();
+            data.resize(m_Ids.size());
+            for ( size_t i = 0; i < m_Ids.size(); ++i ) {
+                data[i].first = m_Ids[i];
+                if ( !m_Reference.empty() ) {
+                    data[i].second = m_Reference[i];
+                }
+            }
+            if ( run_i != 0 ) {
+                for ( size_t i = 0; i < size; ++i ) {
+                    swap(data[i], data[random.GetRandSize_t(i, data.size()-1)]);
+                }
+            }
+            data.resize(size);
+            if ( m_Sort ) {
+                sort(data.begin(), data.end());
+            }
+            ids.clear();
+            reference.clear();
+            for ( size_t i = 0; i < data.size(); ++i ) {
+                ids.push_back(data[i].first);
+                if ( !m_Reference.empty() ) {
+                    reference.push_back(data[i].second);
+                }
+            }
+            if ( !ProcessBlock(run_i, ids, reference) ) {
+                error_count += 1;
+            }
         }
     }
-    if ( ret ) {
+    catch (CException& e) {
+        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                 "EXCEPTION = "<<e<<" at "<<e.GetStackTrace());
+        error_count += 1;
+    }
+    catch (exception& e) {
+        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                 "EXCEPTION = "<<e.what());
+        error_count += 1;
+    }
+    catch (...) {
+        LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                 "EXCEPTION unknown");
+        error_count += 1;
+    }
+    if ( error_count > 0 ) {
         LOG_POST("Failed");
+        return 1;
     }
     else {
         LOG_POST("Passed");
+        return 0;
     }
-    return ret;
 }
 
 
