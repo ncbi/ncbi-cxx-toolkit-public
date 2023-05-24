@@ -214,47 +214,46 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 }
 
 
-extern char* UTIL_PrintableString(const char* data, size_t size,
-                                  char* buf, int/*bool*/ flags)
+extern char* UTIL_PrintableString(const char* src, size_t size,
+                                  char* dst, int/*bool*/ flags)
 {
-    const unsigned char* s;
-    unsigned char* d;
+    const char* s;
 
-    if (!data  ||  !buf)
+    if (!src  ||  !dst)
         return 0;
     if (!size)
-        size = strlen(data);
+        size = strlen(src);
 
-    d = (unsigned char*) buf;
-    for (s = (const unsigned char*) data;  size;  --size, ++s) {
-        switch (*s) {
+    for (s = src;  size;  --size, ++s) {
+        unsigned char c = (unsigned char)(*s);
+        switch (c) {
         case '\a':
-            *d++ = '\\';
-            *d++ = 'a';
+            *dst++ = '\\';
+            *dst++ = 'a';
             continue;
         case '\b':
-            *d++ = '\\';
-            *d++ = 'b';
+            *dst++ = '\\';
+            *dst++ = 'b';
             continue;
         case '\f':
-            *d++ = '\\';
-            *d++ = 'f';
+            *dst++ = '\\';
+            *dst++ = 'f';
             continue;
         case '\r':
-            *d++ = '\\';
-            *d++ = 'r';
+            *dst++ = '\\';
+            *dst++ = 'r';
             continue;
         case '\t':
-            *d++ = '\\';
-            *d++ = 't';
+            *dst++ = '\\';
+            *dst++ = 't';
             continue;
         case '\v':
-            *d++ = '\\';
-            *d++ = 'v';
+            *dst++ = '\\';
+            *dst++ = 'v';
             continue;
         case '\n':
-            *d++ = '\\';
-            *d++ = 'n';
+            *dst++ = '\\';
+            *dst++ = 'n';
             if (flags & fUTIL_PrintableNoNewLine)
                 continue;
             /*FALLTHRU*/
@@ -262,34 +261,37 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
         case '\'':
         case '"':
         case '?':
-            if (*s != '?'  ||  s[1] == '?' ||  (size > 1  &&  s[-1] == '?'))
-                *d++ = '\\';
+            if (c != '?'
+                ||  (size > 1  &&  s[ 1] == '?')
+                ||  (s > src   &&  s[-1] == '?')) {
+                *dst++ = '\\';
+            }
             break;
         default:
-            if (!isascii(*s)  ||  !isprint(*s)) {
+            if (!isascii(c)  ||  !isprint(c)) {
                 unsigned char v;
                 int/*bool*/ reduce = !(flags & fUTIL_PrintableFullOctal)
-                    &&  (size == 1  ||  s[1] < '0'  ||  '7' < s[1])
+                    &&  (size == 1/*last c*/  ||  s[1] < '0'  ||  '7' < s[1])
                     ? 1/*true*/ : 0/*false*/;
-                *d++     = '\\';
-                v =  *s >> 6;
+                *dst++     = '\\';
+                v =  c >> 6;
                 if (v  ||  !reduce) {
-                    *d++ = (unsigned char)('0' + v);
+                    *dst++ = (char)('0' + v);
                     reduce = 0/*false*/;
                 }
-                v = (*s >> 3) & 7;
+                v = (c >> 3) & 7;
                 if (v  ||  !reduce)
-                    *d++ = (unsigned char)('0' + v);
-                v =  *s       & 7;
-                *d++     = (unsigned char)('0' + v);
+                    *dst++ = (char)('0' + v);
+                v =  c       & 7;
+                *dst++     = (char)('0' + v);
                 continue;
             }
             break;
         }
-        *d++ = *s;
+        *dst++ = (char) c;
     }
 
-    return (char*) d;
+    return dst;
 }
 
 
