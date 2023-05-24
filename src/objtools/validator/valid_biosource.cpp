@@ -1545,8 +1545,7 @@ static bool s_IsUndefinedSpecies(const string& taxname)
             NStr::EqualNocase(taxname, "archaeon")) {
         return true;
     }
-    auto pos = NStr::Find(taxname, "sp. (in: ");
-    if (pos > 0 && NStr::EndsWith(taxname, ")")) {
+    if (NStr::Find(taxname, "sp. (in: ") != string::npos && NStr::EndsWith(taxname, ")")) {
         return true;
     }
     return false;
