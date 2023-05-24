@@ -163,7 +163,8 @@ void CPoolBalancer::x_InitFromCounts(const TCounts& counts)
                 // scaled Poisson distribution peaking around 4 and 5,
                 // using a hardcoded approximation of log(5).
                 double ranking
-                    = std::exp(1.61 * cit.second - lgamma(cit.second + 1));
+                    = (std::exp(1.61 * cit.second - lgamma(cit.second + 1))
+                       * legacy_base_ranking);
 
                 if (exp.IsEmpty()) {
                     exp.SetCurrent();
