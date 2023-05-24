@@ -45,7 +45,6 @@
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/create_defline.hpp>
-#include <objmgr/util/sequence.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -2706,32 +2705,6 @@ CBioseq_Handle GetParentForPart(const CBioseq_Handle& part)
     return seg;
 }
 
-/// GetGeneticCodeForBioseq
-/// A function to construct the appropriate CGenetic_code object to use
-/// when constructing a coding region for a given Bioseq (if the default code
-/// should not be used).
-/// @param bh         The Bioseq_Handle of the nucleotide sequence on which the
-///                   coding region is to be created.
-///
-/// @return           CRef<CGenetic_code> for new CGenetic_code (will be NULL if default should be used)
-CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
-{
-    CRef<CGenetic_code> code;
-    if (!bh) {
-        return code;
-    }
-    CSeqdesc_CI src(bh, CSeqdesc::e_Source);
-    if (src && src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetOrgname()) {
-        const CBioSource & bsrc = src->GetSource();
-        int bioseqGenCode = bsrc.GetGenCode(0);
-        if (bioseqGenCode > 0) {
-            code.Reset(new CGenetic_code());
-            code->SetId(bioseqGenCode);
-        }
-    }
-    return code;
-}
-
 
 END_SCOPE(sequence)
 
@@ -3866,7 +3839,7 @@ static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, TSeqPos ad
 CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     CScope& scope)
 {
-    CConstRef<CGenetic_code> pCode;
+    const CGenetic_code* code = NULL;
     int frame = 0;
     if (cds.GetData().IsCdregion()) {
         const CCdregion& cdr = cds.GetData().GetCdregion();
@@ -3883,17 +3856,9 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             }
         }
         if (cdr.IsSetCode()) {
-            pCode = &cdr.GetCode();
+            code = &cdr.GetCode();
         }
     }
-
-    if (!pCode) {
-        auto bsh = scope.GetBioseqHandle(cds.GetLocation());
-        if (bsh) {
-            pCode = sequence::GetGeneticCodeForBioseq(bsh);
-        }
-    }
-
     bool is_5prime_complete = !cds.GetLocation().IsPartialStart(eExtreme_Biological);
 
     CSeqVector seq(cds.GetLocation(), scope, CBioseq_Handle::eCoding_Iupac);
@@ -3912,7 +3877,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
     // get appropriate translation table
     const CTrans_table & tbl =
-        (pCode ? CGen_code_table::GetTransTable(*pCode) :
+        (code ? CGen_code_table::GetTransTable(*code) :
         CGen_code_table::GetTransTable(1));
 
     try {
@@ -5216,6 +5181,7 @@ void ReverseComplement(CSeq_inst& inst, CScope* scope)
             break;
     }
 }
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

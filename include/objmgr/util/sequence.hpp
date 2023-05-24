@@ -761,7 +761,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSeqIdFromHandleException, CException);
 };
 
-NCBI_XOBJUTIL_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh);
 
 END_SCOPE(sequence)
 
@@ -1723,8 +1722,6 @@ protected:
 /// Reverse complement a Bioseq in place.
 /// If delta sequence, will also need to reverse order of segments
 void NCBI_XOBJUTIL_EXPORT ReverseComplement(CSeq_inst& seq, CScope* scope);
-
-
 
 
 END_SCOPE(objects)

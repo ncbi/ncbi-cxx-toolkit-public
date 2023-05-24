@@ -706,7 +706,20 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
 /// @return           CRef<CGenetic_code> for new CGenetic_code (will be NULL if default should be used)
 CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
 {
-    return sequence::GetGeneticCodeForBioseq(bh);
+    CRef<CGenetic_code> code;
+    if (!bh) {
+        return code;
+    }
+    CSeqdesc_CI src(bh, CSeqdesc::e_Source);
+    if (src && src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetOrgname()) {
+        const CBioSource & bsrc = src->GetSource();
+        int bioseqGenCode = bsrc.GetGenCode(0);
+        if (bioseqGenCode > 0) {
+            code.Reset(new CGenetic_code());
+            code->SetId(bioseqGenCode);
+        }
+    }
+    return code;
 }
 
 
