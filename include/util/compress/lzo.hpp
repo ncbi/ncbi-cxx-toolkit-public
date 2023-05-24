@@ -695,7 +695,7 @@ public:
     NCBI_DEPRECATED_CTOR(CLZOCompressor(
         ELevel    level,
         size_t    blocksize,
-        TLZOFlags flags = 0
+        TLZOFlags flags
     ));
 
     /// Destructor.
@@ -746,14 +746,14 @@ class NCBI_XUTIL_EXPORT CLZODecompressor : public CLZOCompression,
 {
 public:
     /// Constructor.
-    CLZODecompressor(TLZOFlags flags = 0);
+    CLZODecompressor(TLZOFlags flags);
 
     /// @deprecated 
     ///   Use CLZODecompressor(TLZOFlags = 0) constructor
     ///   without block size parameter, that can be set separately if necessary.
     NCBI_DEPRECATED_CTOR(CLZODecompressor(
         size_t    blocksize,
-        TLZOFlags flags     = 0
+        TLZOFlags flags
     ));
 
     /// Destructor.
@@ -827,7 +827,7 @@ public:
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
         size_t                     blocksize,
-        CLZOCompression::TLZOFlags flags = 0
+        CLZOCompression::TLZOFlags flags
     ));
 
     /// Conventional constructor
@@ -886,7 +886,7 @@ public:
         streamsize                 in_bufsize,
         streamsize                 out_bufsize,
         size_t                     blocksize,
-        CLZOCompression::TLZOFlags flags = 0
+        CLZOCompression::TLZOFlags flags
     ));
 
     /// Conventional constructor
