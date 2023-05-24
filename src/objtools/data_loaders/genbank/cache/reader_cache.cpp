@@ -1148,7 +1148,7 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 
 
 struct SCacheEntryAccessCount {
-    Uint8 load_count, save_count;
+    atomic<Uint8> load_count, save_count;
 
     void GoingToLoad() {
         ++load_count;
