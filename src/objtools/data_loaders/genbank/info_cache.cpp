@@ -262,7 +262,10 @@ bool CInfoManager::x_WaitForOtherLoader(TMainMutex::TWriteLockGuard& guard,
     _ASSERT(mutex);
     _ASSERT(!lock.IsLocked());
     CInfoRequestor& requestor = lock.GetRequestor();
-    requestor.m_WaitingForInfo = &info;
+    {{
+        CFastMutexGuard guard2(m_DeadlockMutex);
+        requestor.m_WaitingForInfo = &info;
+    }}
     guard.Release();
     {{
         // wait for other loading thread
@@ -271,14 +274,18 @@ bool CInfoManager::x_WaitForOtherLoader(TMainMutex::TWriteLockGuard& guard,
     if ( lock.IsLoaded() ) {
         // no need to load, leave immediately
         _ASSERT(!lock.IsLocked());
+        CFastMutexGuard guard2(m_DeadlockMutex);
         _ASSERT(requestor.m_WaitingForInfo == &info);
         requestor.m_WaitingForInfo = null;
         return true;
     }
     guard.Guard(GetMainMutex());
     _ASSERT(!lock.IsLocked());
-    _ASSERT(requestor.m_WaitingForInfo == &info);
-    requestor.m_WaitingForInfo = null;
+    {{
+        CFastMutexGuard guard2(m_DeadlockMutex);
+        _ASSERT(requestor.m_WaitingForInfo == &info);
+        requestor.m_WaitingForInfo = null;
+    }}
     if ( mutex == info.m_LoadMutex ) {
         // still loading or needs to be loaded
         return !mutex->IsLoading();
@@ -295,6 +302,7 @@ bool CInfoManager::x_WaitForOtherLoader(TMainMutex::TWriteLockGuard& guard,
 bool CInfoManager::x_DeadLock(const CInfoRequestor& requestor,
                               const CInfo_Base& info) const
 {
+    CFastMutexGuard guard(m_DeadlockMutex);
     _ASSERT(info.m_LoadMutex);
     const CInfo_Base* info_ptr = &info;
     for ( ;; ) {
