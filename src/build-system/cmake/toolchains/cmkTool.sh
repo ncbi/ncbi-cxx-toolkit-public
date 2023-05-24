@@ -33,7 +33,7 @@ fi
 
 #toolchain=`pwd`/toolchain.tmp
 toolchain=`mktemp`
-if ! which envsubst > /dev/null 2>&1; then
+if which envsubst > /dev/null 2>&1; then
     envsubst < ${pfx}${template}${sfx} > ${toolchain}
 #elif which python3 > /dev/null 2>&1; then
 #    python3 -c 'import os,sys; sys.stdout.write(os.path.expandvars(sys.stdin.read()))' < ${pfx}${template}${sfx} > ${toolchain}
