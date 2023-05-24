@@ -248,6 +248,10 @@ if(NCBI_PTBCFG_USECONAN AND NOT COMMAND conan_define_targets)
 endif()
 
 #############################################################################
+# NCBICRYPT
+NCBI_define_Pkgcomponent(NAME NCBICRYPT PACKAGE ncbicrypt FIND ncbicrypt)
+
+#############################################################################
 # BACKWARD, UNWIND
 NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp REQUIRES libdwarf FIND Backward)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
