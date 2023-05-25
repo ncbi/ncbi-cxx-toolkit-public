@@ -32,7 +32,9 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_dispd.h"
-#include "ncbi_lbsmd.h"
+#ifdef NCBI_OS_UNIX
+#  include "ncbi_lbsmd.h"
+#endif /*NCBI_OS_UNIX*/
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
 #  include "ncbi_lbdns.h"
@@ -265,7 +267,9 @@ static SERV_ITER x_Open(const char*         service,
 {
     int/*bool*/
         do_local,
+#ifdef NCBI_OS_UNIX
         do_lbsmd   = -1/*unassigned*/,
+#endif /*NCBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
         do_lbdns   = -1/*unassigned*/,
@@ -357,8 +361,10 @@ static SERV_ITER x_Open(const char*         service,
             iter->types |= fSERV_Firewall;
         if (net_info->stateless)
             iter->types |= fSERV_Stateless;
+#ifdef NCBI_OS_UNIX
         if (net_info->lb_disable)
             do_lbsmd = 0/*false*/;
+#endif /*NCBI_OS_UNIX*/
     } else {
 #ifdef NCBI_CXX_TOOLKIT
         do_linkerd = do_namerd =
@@ -371,6 +377,7 @@ static SERV_ITER x_Open(const char*         service,
     if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
          !(op = SERV_LOCAL_Open(iter, info)))
 
+#ifdef NCBI_OS_UNIX
         &&
         (!do_lbsmd                                                           ||
          !(do_lbsmd = !s_IsMapperConfigured(svc, REG_CONN_LBSMD_DISABLE))    ||
@@ -378,12 +385,12 @@ static SERV_ITER x_Open(const char*         service,
                                 (!do_dispd                                   ||
                                  !(do_dispd = !s_IsMapperConfigured
                                    (svc, REG_CONN_DISPD_DISABLE)))
-#ifdef NCBI_CXX_TOOLKIT
-#  ifdef NCBI_OS_UNIX
+#  ifdef NCBI_CXX_TOOLKIT
+#    ifdef NCBI_OS_UNIX
                                 &&
                                 !(do_lbdns = s_IsMapperConfigured
                                   (svc, REG_CONN_LBDNS_ENABLE))
-#  endif /*NCBI_OS_UNIX*/
+#    endif /*NCBI_OS_UNIX*/
                                 &&
                                 (!do_linkerd                                 ||
                                  !(do_linkerd = s_IsMapperConfigured
@@ -392,8 +399,9 @@ static SERV_ITER x_Open(const char*         service,
                                 (!do_namerd                                  ||
                                  !(do_namerd = s_IsMapperConfigured
                                    (svc, REG_CONN_NAMERD_ENABLE)))
-#endif /*NCBI_CXX_TOOLKIT*/
+#  endif /*NCBI_CXX_TOOLKIT*/
                                 )))
+#endif /*NCBI_OS_UNIX*/
 
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
@@ -421,7 +429,10 @@ static SERV_ITER x_Open(const char*         service,
                               (svc, REG_CONN_DISPD_DISABLE)))                ||
          !(op = SERV_DISPD_Open(iter, net_info, info)))) {
         if (!s_Fast  &&  net_info
-            &&  !do_local  &&  !do_lbsmd
+            &&  !do_local
+#ifdef NCBI_OS_UNIX
+            &&  !do_lbsmd
+#endif /*NXBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
             &&  !do_lbdns
@@ -1247,6 +1258,9 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
     len = !setenv(buf, buf + len, 1/*overwrite*/);
 #else
     /* NOTE that putenv() leaks memory if the environment is later replaced */
+#  ifdef NCBI_OS_MSWIN
+#    define putenv _putenv
+#  endif /*NCBI_OS_MSWIN*/
     len = !putenv(buf);
 #endif /*HAVE_SETENV*/
     CORE_UNLOCK;
