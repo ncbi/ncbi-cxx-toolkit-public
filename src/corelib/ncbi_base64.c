@@ -75,28 +75,28 @@ extern void BASE64_Encode
         }
         _ASSERT((size_t)(temp | bits) < sizeof(kSyms) - 1);
         dst[j++] = kSyms[temp | bits];
-        len++;
+        ++len;
         if (i >= src_size) {
             break;
         }
-        shift = (unsigned char)(shift + 2);  /* shift += 2; */
+        shift += 2;
         shift &= 7;
         temp = (c << (8 - shift)) & 0x3F;
         if (shift) {
             c = ++i < src_size ? src[i] : 0;
         } else if (i + 1 == src_size) {
-            i++;
+            ++i;
         }
     }
     _ASSERT(j <= dst_size);
     *src_read = i;
-    for (i = 0; i < (3 - src_size % 3) % 3; i++) {
+    for (i = 0;  i < (3 - src_size % 3) % 3;  ++i) {
         if (max_len  &&  len >= max_len) {
             dst[j++] = '\n';
             len = 0;
         }
         dst[j++] = '=';
-        len++;
+        ++len;
     }
     _ASSERT(j <= dst_size);
     *dst_written = j;
@@ -188,7 +188,7 @@ extern int/*bool*/ BASE64_Decode
                 dst[j++] = (unsigned char)((temp & 0xFF00) >> 8);
                 /*FALLTHRU*/
             case 3:
-                dst[j++] = (unsigned char)(temp & 0xFF);
+                dst[j++] = (unsigned char) (temp & 0xFF);
                 break;
             default:
                 break;
