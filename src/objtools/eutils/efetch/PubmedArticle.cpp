@@ -867,15 +867,24 @@ string s_GetAuthorMedlineName(const CAuthor& author)
 
 string s_GetPagination(const CPagination& pagination)
 {
+    string pages;
     if (pagination.IsSEM()) {
         auto& sem = pagination.GetSEM();
-        if (sem.IsSetStartPage()) {
-            if (sem.IsSetEndPage()) return sem.GetStartPage() + "-" + sem.GetEndPage();
-            else return sem.GetStartPage();
+        if (sem.IsSetMedlinePgn()) {
+            pages = sem.GetMedlinePgn();
+        }
+        else {
+            if (sem.IsSetStartPage()) {
+                if (sem.IsSetEndPage()) return sem.GetStartPage() + "-" + sem.GetEndPage();
+                else return sem.GetStartPage();
+            }
+            if (sem.IsSetEndPage()) return "-" + sem.GetEndPage();
+            return "";
         }
     }
 
-    string pages = pagination.GetMedlinePgn();
+    if (pages.empty() && pagination.IsMedlinePgn()) pages = pagination.GetMedlinePgn();
+    if (pages.empty()) return "";
     list<string> parts;
     s_ForeachToken(pages, [](char cch) -> bool { return cch != ','; },
         [&parts](string::iterator p, string::iterator q)->string::iterator {
