@@ -1887,6 +1887,13 @@ void CValidError_imp::ValidateDbxref
         }
     }
 
+    if (flags & CValidator::eNonInteger) {
+        if (db == "GeneID") {
+            PostObjErr(eDiag_Error, eErr_SEQ_FEAT_IllegalDbXref,
+                "db_xref type " + db + " (" + dbv + ") is required to be an integer",
+                obj, ctx);
+        }
+    }
 }
 
 
