@@ -1738,9 +1738,15 @@ void CNSTDatabase::x_PreCheckConnection(void)
 {
     CFastMutexGuard     guard(m_DbLock);
 
-    if (m_Db == NULL || !m_Connected)
+    if (m_Db == NULL || !m_Connected) {
+        // To be on the safe side trigger the restore connection thread
+        // after a short delay
+        SleepMilliSec(100);
+        m_RestoreConnectionThread->Wakeup();
+
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
                    "There is no connection to metadata information database");
+    }
 
     // It is possible that a connection has been lost and restored while there
     // were no activities
