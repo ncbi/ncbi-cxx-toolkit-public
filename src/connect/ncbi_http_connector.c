@@ -202,8 +202,7 @@ static EHTTP_Auth x_Authenticate(SHttpConnector* uuu,
                                  ERetry          auth,
                                  int/*bool*/     retry)
 {
-    static const char kProxyAuthorization[] = "Proxy-Authorization: Basic ";
-    static const char kAuthorization[]      = "Authorization: Basic ";
+    static const char kAuthTagTemplate[] = "Proxy-Authorization: Basic ";
     char buf[80 + (CONN_USER_LEN + CONN_PASS_LEN)*3], *s;
     size_t taglen, userlen, passlen, len, n;
     const char *tag, *user, *pass;
@@ -212,8 +211,8 @@ static EHTTP_Auth x_Authenticate(SHttpConnector* uuu,
     case eRetry_Authenticate:
         if (uuu->auth_done)
             return eHTTP_AuthDone;
-        tag    = kAuthorization;
-        taglen = sizeof(kAuthorization) - 1;
+        tag    = kAuthTagTemplate + 6;
+        taglen = sizeof(kAuthTagTemplate) - 7;
         user   = uuu->net_info->user;
         pass   = uuu->net_info->pass;
         break;
@@ -224,8 +223,8 @@ static EHTTP_Auth x_Authenticate(SHttpConnector* uuu,
             !uuu->net_info->http_proxy_port) {
             return retry ? eHTTP_AuthError : eHTTP_AuthMissing;
         }
-        tag    = kProxyAuthorization;
-        taglen = sizeof(kProxyAuthorization) - 1;
+        tag    = kAuthTagTemplate;
+        taglen = sizeof(kAuthTagTemplate) - 1;
         user   = uuu->net_info->http_proxy_user;
         pass   = uuu->net_info->http_proxy_pass;
         break;
