@@ -284,7 +284,8 @@ public:
         eOnlyForRefSeq = 32,
         eRefSeqNotForSource = 64,
         eBadCapitalization = 128,
-        eUnrecognized = 256
+        eUnrecognized = 256,
+        eNonInteger = 512
     };
     typedef int TDbxrefValidFlags;
     static TDbxrefValidFlags IsValidDbxref(const CDbtag& xref, bool is_biosource, bool is_refseq_or_gps);

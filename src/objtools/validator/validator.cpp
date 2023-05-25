@@ -667,6 +667,9 @@ CValidator::TDbxrefValidFlags CValidator::IsValidDbxref(const CDbtag& xref, bool
         if (xref.GetTag().GetStr().find(' ') != string::npos) {
             flags |= eContainsSpace;
         }
+
+        // long-standing policy is that integer xrefs must be converted to IsId form, so flag it here
+        flags |= eNonInteger;
     }
 
     if (!xref.IsSetDb()) {
