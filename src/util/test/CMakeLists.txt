@@ -54,5 +54,5 @@ NCBI_add_app(
     test_row_reader_excel_csv
     test_limited_map
     test_compile_time
+    test_ctre
 )
-
