@@ -123,6 +123,7 @@ asnmuxdblb needs mux
 auxcomm_g needs muxex-C_g
 auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
+auxcomm_g needs xctools
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
 bamread needs $(COMPRESS_LIBS)
@@ -158,6 +159,7 @@ blast_unit_test_util needs $(OBJMGR_LIBS)
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
+blastapi needs connect
 blastapi needs3party blast
 blastapi needs3party ncbitool
 blastdb needs $(SEQ_LIBS)
@@ -356,6 +358,7 @@ gencoll_client needs3party $(SQLITE3_LIBS)
 gencoll_load needs xser
 gencoll_stats needs genome_collection
 gendefasn_g needs3party $(NCBI_C_ncbi)
+gendefasn_g needs3party $(NETWORK_LIBS)
 gene_info needs xncbi
 gene_info_writer needs gene_info
 gene_info_writer needs seqdb
@@ -568,6 +571,7 @@ ideocoord needs ncbi_xdbapi_ftds
 ideocoord needs ncbi_xdbapi_ftds100
 ideocoord needs3party $(SDBAPI_LIBS)
 idgen needs dbassist
+idload needs connect
 idload needs3party ctutils
 igblast needs $(BLAST_LIBS)
 igblast needs3party $(BLAST_THIRD_PARTY_LIBS)
@@ -645,6 +649,7 @@ mla needs pubmed
 mlacli needs mla
 mlacli needs xconnect
 mmapi needs $(Z_LIB)
+mmapi needs connect
 mmapi needs objmmail
 mmapi needs3party $(Z_LIBS)
 mmapi needs3party netcli
@@ -710,8 +715,8 @@ mysqlclient needs $(Z_LIB)
 mysqlclient needs3party $(NETWORK_LIBS)
 mysqlclient needs3party $(ORIG_LIBS)
 mysqlclient needs3party $(Z_LIBS)
-ncbi includes connect
 ncbi includes tables
+ncbi needs3party $(NETWORK_LIBS)
 ncbi needs3party $(ORIG_LIBS)
 ncbi-vdb includes $(BZ2_LIB)
 ncbi-vdb includes $(Z_LIB)
@@ -821,7 +826,9 @@ ncbimla needs3party netcli
 ncbimmdb needs3party ncbiid1
 ncbimmdb needs3party ncbitool
 ncbimsc1 needs3party $(NCBI_C_ncbi)
+ncbimsc1 needs3party $(NETWORK_LIBS)
 ncbiobj needs3party $(NCBI_C_ncbi)
+ncbiobj needs3party $(NETWORK_LIBS)
 ncbiprs needs3party ctutils
 ncbiprs needs3party ncbiindx
 ncbiprs needs3party ncbimla
@@ -859,15 +866,18 @@ ncqhst needs mongocache
 netblast needs3party ncbitool
 netblast needs3party netcli
 netcli needs3party $(NCBI_C_ncbi)
+netcli needs3party $(NETWORK_LIBS)
 netentr needs3party ncbiacc
 netentr needs3party netcli
 netstorage needs ncbi_xcache_netcache
 nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
+nlmzip needs3party $(NETWORK_LIBS)
 nsl needs3party $(ORIG_LIBS)
 objannotation needs objspdi
 objcoords needs xser
 objmmail needs3party $(NCBI_C_ncbi)
+objmmail needs3party $(NETWORK_LIBS)
 objprt needs xser
 objspdi needs xser
 objtax1 needs3party ncbiobj
@@ -921,6 +931,7 @@ psg_ipg needs psg_cassandra
 psg_protobuf needs3party $(ORIG_LIBS)
 psloader includes psloader-internal
 psloader needs $(CONNEXT)
+psloader needs connect
 psloader needs xncbi
 psloader needs3party ctutils
 psloader needs3party ncbitool
@@ -991,6 +1002,7 @@ sequtil needs xncbi
 simple_asm needs gc_load_utils
 simple_asm needs seqgapscan_utils
 smartasn_g needs submit
+smartnet needs connect
 smartnet needs3party vibrant
 snputil needs $(SOBJMGR_LIBS)
 snputil needs variation
@@ -1174,6 +1186,7 @@ vdb2blast needs3party $(VDB_LIBS)
 vdb_reader needs xncbi
 vdb_reader needs3party $(VDB_LIBS)
 vibgif needs3party $(NCBI_C_ncbi)
+vibgif needs3party $(NETWORK_LIBS)
 vibnet needs3party ncbiacc
 vibnet needs3party ncbidesk
 vibrant includes3party vibgif
@@ -1354,6 +1367,7 @@ xalnmgr needs xobjutil
 xalntool needs align_format
 xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
+xasn needs3party $(NETWORK_LIBS)
 xassembly_svc needs gc_asn_access
 xbiosample_util needs $(OBJEDIT_LIBS)
 xbiosample_util needs xmlwrapp
@@ -1400,7 +1414,8 @@ xconnext needs xconnect
 xconnserv needs xthrserv
 xcser needs xser
 xcser needs3party $(NCBI_C_ncbi)
-xctools needs xncbi
+xcser needs3party $(NETWORK_LIBS)
+xctools needs xconnect
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
@@ -1558,6 +1573,7 @@ xvalidate needs xalnmgr
 xxconnect includes connssl
 xxconnect needs xncbi
 xxconnect needs3party $(NCBI_C_ncbi)
+xxconnect needs3party $(NETWORK_LIBS)
 xxconnect2 needs xconnect
 xxconnect2 needs3party $(LIBUV_LIBS)
 xxconnect2 needs3party $(NGHTTP2_LIBS)
