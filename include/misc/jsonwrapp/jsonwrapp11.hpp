@@ -81,6 +81,7 @@
 #include "rapidjson11/prettywriter.h"
 #include "rapidjson11/filereadstream.h"
 #include "rapidjson11/istreamwrapper.h"
+#include "rapidjson11/istreamasync.h"
 #include "rapidjson11/filewritestream.h"
 #include "rapidjson11/ostreamwrapper.h"
 #include "rapidjson11/error/en.h"
@@ -1024,6 +1025,7 @@ private:
 /// Serializable, copyable container for JSON data.
 class CJson_Schema;
 using CJson_IStreamBuffer = rapidjson::IStreamWrapper;
+using CJson_IStreamAsyncBuffer = rapidjson::IStreamAsyncWrapper;
 
 class CJson_Document : public CJson_Node
 {
@@ -1057,6 +1059,7 @@ public:
 
     /// Read JSON data from a stream buffer
     bool Read(CJson_IStreamBuffer& in);
+    bool Read(CJson_IStreamAsyncBuffer& in);
 
     /// Read JSON data from a file
     bool Read(const std::string& filename) {
@@ -2375,6 +2378,10 @@ inline bool CJson_Document::Read(std::istream& in) {
 }
 
 inline bool CJson_Document::Read(CJson_IStreamBuffer& in) {
+    m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(in);
+    return  !m_DocImpl.HasParseError();
+}
+inline bool CJson_Document::Read(CJson_IStreamAsyncBuffer& in) {
     m_DocImpl.ParseStream<rapidjson::kParseStopWhenDoneFlag>(in);
     return  !m_DocImpl.HasParseError();
 }
