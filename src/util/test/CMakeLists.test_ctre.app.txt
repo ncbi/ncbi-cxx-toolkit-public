@@ -1,7 +1,7 @@
 # $Id$
 
-NCBI_begin_app(test_compile_time)
-  NCBI_sources(test_compile_time)
+NCBI_begin_app(test_ctre)
+  NCBI_sources(test_ctre)
   NCBI_uses_toolkit_libraries(xutil)
   NCBI_requires(Boost.Test.Included)
   NCBI_add_test()
