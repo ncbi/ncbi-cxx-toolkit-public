@@ -583,8 +583,11 @@ string CDbtag::GetUrl(const string & genus,
     auto prefix = it->second;
 
     string tag;
+    bool nonInteger = false;
     if (GetTag().IsStr()) {
         tag = GetTag().GetStr();
+        // integer db_xrefs are supposed to be converted to IsId, mark as not an integer
+        nonInteger = true;
     } else if (GetTag().IsId()) {
         tag = NStr::IntToString(GetTag().GetId());
     }
@@ -598,6 +601,13 @@ string CDbtag::GetUrl(const string & genus,
     case CDbtag::eDbtagType_FLYBASE:
         if (NStr::Find(tag, "FBan") != NPOS) {
             prefix = kFBan;
+        }
+        break;
+
+    case eDbtagType_GeneID:
+        if (nonInteger) {
+            // GeneID must be an integer
+            return kEmptyStr;
         }
         break;
 
