@@ -1124,6 +1124,38 @@ namespace {
         TRet& m_Ret;
     };
 
+    static const size_t kMaxErrorSeqIds = 100;
+
+    string sx_ErrorSeqIds(CReaderRequestResult& result, const vector<CBlob_id>& keys)
+    {
+        string ret = "; seq-ids: { ";
+        if (result.GetRequestedId()) {
+            ret += result.GetRequestedId().AsString();
+        }
+        else {
+            int total = 0;
+            for (auto key : keys) {
+                CTSE_LoadLock lock = result.GetTSE_LoadLock(key);
+                CTSE_Info::TSeqIds ids;
+                lock->GetBioseqsIds(ids);
+                if (!ids.empty()) {
+                    int cnt = 0;
+                    for (auto& id : ids) {
+                        if (++total > kMaxErrorSeqIds) continue;
+                        if (cnt++ > 0) ret += ", ";
+                        ret += id.AsString();
+                    }
+                }
+            }
+            if (total == 0) return "";
+            if (total > kMaxErrorSeqIds) {
+                ret += ", ... (+" + NStr::NumericToString(total - kMaxErrorSeqIds) + " more)";
+            }
+        }
+        ret += " }";
+        return ret;
+    }
+
     class CCommandLoadBlobState : public CReadDispatcherCommand
     {
     public:
@@ -1146,8 +1178,8 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadBlobVersion("+m_Key.ToString()+"): "
-                    "data not found";
+                return "LoadBlobVersion("+m_Key.ToString()+")" +
+                    sx_ErrorSeqIds(GetResult(), {m_Key}) + ": data not found";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
             {
@@ -1185,7 +1217,8 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadBlobVersion("+m_Key.ToString()+"): "
+                return "LoadBlobVersion("+m_Key.ToString()+")" +
+                    sx_ErrorSeqIds(GetResult(), {m_Key}) + ": "
                     "data not found";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
@@ -1341,7 +1374,8 @@ namespace {
             }
         string GetErrMsg(void) const
             {
-                return "LoadBlob("+m_Key.ToString()+"): "
+                return "LoadBlob("+m_Key.ToString()+")" +
+                    sx_ErrorSeqIds(GetResult(), {m_Key}) + ": "
                     "data not found";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
@@ -1386,7 +1420,8 @@ namespace {
         string GetErrMsg(void) const
             {
                 return "LoadChunk("+m_Key.ToString()+", "+
-                    NStr::IntToString(m_ChunkId)+"): "
+                    NStr::IntToString(m_ChunkId)+")" +
+                    sx_ErrorSeqIds(GetResult(), {m_Key}) + ": "
                     "data not found";
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
@@ -1438,7 +1473,7 @@ namespace {
         string GetErrMsg(void) const
             {
                 CNcbiOstrstream str;
-                str << "LoadChunks(" << m_Key.ToString() << ", {";
+                str << "LoadChunks(" << m_Key.ToString() << "; chunks: {";
                 int cnt = 0;
                 ITERATE ( TChunkIds, it, m_ChunkIds ) {
                     if ( !m_Lock.IsLoadedChunk(*it) ) {
@@ -1446,7 +1481,7 @@ namespace {
                         str << ' ' << *it;
                     }
                 }
-                str << " }): data not found";
+                str << " })" + sx_ErrorSeqIds(GetResult(), {m_Key}) + ": data not found";
                 return CNcbiOstrstreamToString(str);
             }
         CGBRequestStatistics::EStatType GetStatistics(void) const
