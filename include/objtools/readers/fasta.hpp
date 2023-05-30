@@ -275,7 +275,7 @@ protected:
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
     // inline utilities
-    void CloseGap(bool atStartOfLine=true, ILineErrorListener* pMessageListener = nullptr) {
+    void CloseGap(bool atStartOfLine=false, ILineErrorListener* pMessageListener = nullptr) {
         if (m_CurrentGapLength > 0) {
             x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
             m_CurrentGapLength = 0;
