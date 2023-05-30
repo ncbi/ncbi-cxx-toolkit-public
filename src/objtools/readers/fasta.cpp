@@ -1049,7 +1049,7 @@ void CFastaReader::x_CloseGap(
             // (do NOT treat a lone 'N' or 'X' as unknown length)
             if (len == 1 && m_CurrentGapChar == '-' ) {
                 TSeqPos l = m_SeqData.length();
-                if ((l == pos  ||  l == pos + (*GetLineReader()).length())  && atStartOfLine) {
+                if ((l == pos) || (l == pos + (*GetLineReader()).length() && atStartOfLine)) { 
                     //and it's not the first col of the line
                     len = 0;
                     eKnownSize = SGap::eKnownSize_No;
