@@ -101,20 +101,11 @@ class CAutoFCGX_Request
 public:
     ~CAutoFCGX_Request(void);
 
-#ifdef HAVE_FCGX_ACCEPT_R
-    FCGX_Request& GetRequest(void) {
-        return m_Request;
-    }
-#endif
-
     void SetErrorStream(FCGX_Stream* pferr);
 
 private:
     unique_ptr<CCgiObuffer>  m_Buffer;
     unique_ptr<CNcbiOstream> m_SavedCerr;
-#ifdef HAVE_FCGX_ACCEPT_R
-    FCGX_Request           m_Request;
-#endif
 };
 
 CAutoFCGX_Request::~CAutoFCGX_Request(void) {
@@ -129,9 +120,7 @@ CAutoFCGX_Request::~CAutoFCGX_Request(void) {
         }
         m_Buffer.reset();
     }
-#ifdef HAVE_FCGX_ACCEPT_R
-    FCGX_Finish_r(&m_Request);
-#else
+#ifndef HAVE_FCGX_ACCEPT_R
     FCGX_Finish();
 #endif
 }
@@ -246,6 +235,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Main Fast-CGI loop
     CTime mtime = GetFileModificationTime(GetArguments().GetProgramName());
 
+# ifdef HAVE_FCGX_ACCEPT_R
+    FCGX_Request request;
+    FCGX_InitRequest(&request, 0, FCGI_FAIL_ACCEPT_ON_INTR);
+# endif
+
     for (unsigned int iteration = m_Iteration.Add(1); iteration <= max_iterations;  iteration = m_Iteration.Add(1)) {
         CCgiRequestProcessor& processor = x_CreateProcessor();
         shared_ptr<CCgiContext> context;
@@ -277,8 +271,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // Formally finish the Fast-CGI request when all done
         CAutoFCGX_Request auto_request;
 # ifdef HAVE_FCGX_ACCEPT_R
-        FCGX_Request& request = auto_request.GetRequest();
-        FCGX_InitRequest(&request, 0, FCGI_FAIL_ACCEPT_ON_INTR);
 #   ifdef USE_ALARM
         struct sigaction old_sa;
         if ( watch_timeout ) {
