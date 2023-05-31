@@ -98,6 +98,8 @@ void PrintNode(CNcbiOstream& os, const TPhyTreeNode& node);
 /// Newick format input.
 ///
 /// Uses flex/bison lexer/parser.
+/// @warning This function is not thread safe. The parser stores its state in
+/// global variables.
 NCBI_XALGOPHYTREE_EXPORT
 TPhyTreeNode *ReadNewickTree(CNcbiIstream& is);
 
