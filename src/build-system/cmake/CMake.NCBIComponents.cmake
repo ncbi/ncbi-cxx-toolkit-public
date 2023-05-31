@@ -15,6 +15,7 @@
 
 
 #############################################################################
+cmake_policy(SET CMP0074 NEW)
 set(NCBI_ALL_COMPONENTS "")
 set(NCBI_ALL_REQUIRES "")
 set(NCBI_ALL_DISABLED "")
