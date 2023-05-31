@@ -560,7 +560,7 @@ int CPsgClientApp::RunRequest<CPSG_Request_Resolve>(const CArgs& args)
 template<>
 int CPsgClientApp::RunRequest<CPSG_Request_IpgResolve>(const CArgs& args)
 {
-    const auto single_request = args["protein"].HasValue() || args["ipg"].HasValue();
+    const auto single_request = args["protein"].HasValue() || args["ipg"].HasValue() || args["nucleotide"].HasValue();
 
     if (single_request) {
         auto request = SRequestBuilder::Build<CPSG_Request_IpgResolve>(args);
