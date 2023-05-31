@@ -5902,6 +5902,32 @@ special  CATNEJ000000000-CATNEL999999999  embl_tpa_wgs_nuc # 6+9
 special  CATNEO000000000-CATNEU999999999  embl_tpa_wgs_nuc # 6+9
 special  CATNVF000000000-CATNVZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CATOAL000000000-CATOAL999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOHR000000000-CATOHS999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOHU000000000-CATOHZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOIC000000000-CATOIS999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOIV000000000-CATOIX999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOIZ000000000-CATOJI999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOJK000000000-CATOKK999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOKN000000000-CATOKR999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOKT000000000-CATOKV999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOKX000000000-CATOKX999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOKZ000000000-CATOLH999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOLJ000000000-CATOLQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOLS000000000-CATOLX999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOLZ000000000-CATONG999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONI000000000-CATONJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONM000000000-CATONM999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONO000000000-CATONP999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONR000000000-CATONU999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONW000000000-CATOOB999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOD000000000-CATOOG999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOJ000000000-CATOOJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOL000000000-CATOOL999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOON000000000-CATOON999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOP000000000-CATOOT999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOW000000000-CATOPC999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOPE000000000-CATOPM999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOPO000000000-CATOPO999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.

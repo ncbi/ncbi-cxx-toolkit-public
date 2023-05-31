@@ -4474,6 +4474,38 @@ special  CATNEO000000000-CATNEU999999999  embl_tpa_wgs_nuc # 6+9
 special  CATNVF000000000-CATNVZ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CATOAL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special  CATOHR000000000-CATOHS999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOHU000000000-CATOHZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOIC000000000-CATOIS999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOIV000000000-CATOIX999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOIZ000000000-CATOJI999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOJK000000000-CATOKK999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOKN000000000-CATOKR999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOKT000000000-CATOKV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATOKX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATOKZ000000000-CATOLH999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOLJ000000000-CATOLQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOLS000000000-CATOLX999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOLZ000000000-CATONG999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONI000000000-CATONJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATONM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATONO000000000-CATONP999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONR000000000-CATONU999999999  embl_tpa_wgs_nuc # 6+9
+special  CATONW000000000-CATOOB999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOD000000000-CATOOG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATOOJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CATOOL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CATOON+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATOOP000000000-CATOOT999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOOW000000000-CATOPC999999999  embl_tpa_wgs_nuc # 6+9
+special  CATOPE000000000-CATOPM999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATOPO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HBHG+8 embl_tpa_tsa_nuc
