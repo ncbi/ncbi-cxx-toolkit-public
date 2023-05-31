@@ -1481,7 +1481,7 @@ void s_Convert_2na_to_4na(char* dst_4na, const char* src_2na, size_t base_count)
         dst_4na += 2;
     }
     if ( base_count ) {
-        char bits_2na = src_2na[0];
+        char bits_2na = src_2na[0] & (0xff00 >> base_count*2);
         {{
             char bits_4na = s_ConvertBits_2na_to_4na_1st(bits_2na);
             if ( base_count < 2 ) {
