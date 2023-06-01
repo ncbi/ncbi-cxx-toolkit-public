@@ -78,20 +78,10 @@ extern const char* IO_StatusStr(EIO_Status status)
  *  MT locking
  */
 
-/* Check the validity of an MT lock */
-#define MT_LOCK_VALID(lk)  assert((lk)->count && (lk)->magic == kMT_LOCK_magic)
-
-
-/* MT lock data and callbacks */
-struct MT_LOCK_tag {
-    volatile unsigned int count;    /* reference count                  */
-    void*                 data;     /* for "handler()" and "cleanup()"  */
-    FMT_LOCK_Handler      handler;  /* handler callback for [un]locking */
-    FMT_LOCK_Cleanup      cleanup;  /* cleanup callback for "data"      */
-    unsigned int          magic;    /* internal consistency assurance   */
-};
 #define kMT_LOCK_magic  0x7A96283F
 
+/* Check the validity of an MT lock */
+#define MT_LOCK_VALID(lk)  assert((lk)->count && (lk)->magic == kMT_LOCK_magic)
 
 #if defined(NCBI_CXX_TOOLKIT)  &&  defined(NCBI_THREADS)
 
@@ -100,6 +90,16 @@ struct MT_LOCK_tag {
 #  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
 #    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 #  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
+
+
+/* MT-lock structure */
+struct MT_LOCK_tag {
+    volatile unsigned int count;    /* reference count                  */
+    void*                 data;     /* for "handler()" and "cleanup()"  */
+    FMT_LOCK_Handler      handler;  /* handler callback for [un]locking */
+    FMT_LOCK_Cleanup      cleanup;  /* cleanup callback for "data"      */
+    unsigned int          magic;    /* internal consistency assurance   */
+};
 
 
 /*ARGSUSED*/
@@ -269,17 +269,18 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
  *  ERROR HANDLING and LOGGING
  */
 
+#define kLOG_magic  0x3FB97156
+
+/* Check the validity of a logger */
+#define LOG_VALID(lg)       assert((lg)->count  &&  (lg)->magic == kLOG_magic)
+
 /* Lock/unlock a logger */
 #define LOG_LOCK_WRITE(lg)  verify(MT_LOCK_Do((lg)->lock, eMT_Lock)     != 0)
 #define LOG_LOCK_READ(lg)   verify(MT_LOCK_Do((lg)->lock, eMT_LockRead) != 0)
 #define LOG_UNLOCK(lg)      verify(MT_LOCK_Do((lg)->lock, eMT_Unlock)   != 0)
 
 
-/* Check the validity of a logger */
-#define LOG_VALID(lg)  assert((lg)->count  &&  (lg)->magic == kLOG_magic)
-
-
-/* Logger data and callbacks */
+/* Logger structure */
 struct LOG_tag {
     unsigned int count;
     void*        data;
@@ -288,7 +289,6 @@ struct LOG_tag {
     MT_LOCK      lock;
     unsigned int magic;
 };
-#define kLOG_magic  0x3FB97156
 
 
 extern const char* LOG_LevelStr(ELOG_Level level)
@@ -457,17 +457,18 @@ extern void LOG_Write
  *  REGISTRY
  */
 
+#define kREG_magic  0xA921BC08
+
+/* Check the validity of a registry */
+#define REG_VALID(rg)       assert((rg)->count  &&  (rg)->magic == kREG_magic)
+
 /* Lock/unlock a registry  */
 #define REG_LOCK_WRITE(rg)  verify(MT_LOCK_Do((rg)->lock, eMT_Lock)     != 0)
 #define REG_LOCK_READ(rg)   verify(MT_LOCK_Do((rg)->lock, eMT_LockRead) != 0)
 #define REG_UNLOCK(rg)      verify(MT_LOCK_Do((rg)->lock, eMT_Unlock)   != 0)
 
 
-/* Check the validity of a registry */
-#define REG_VALID(rg)  assert((rg)->count  &&  (rg)->magic == kREG_magic)
-
-
-/* Registry data and callbacks */
+/* Registry structure */
 struct REG_tag {
     unsigned int count;
     void*        data;
@@ -477,7 +478,6 @@ struct REG_tag {
     MT_LOCK      lock;
     unsigned int magic;
 };
-#define kREG_magic  0xA921BC08
 
 
 extern REG REG_Create

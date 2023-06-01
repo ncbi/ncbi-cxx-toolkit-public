@@ -56,8 +56,7 @@
  *
  */
 
-
-//#define NCBI_MONKEY
+/*#define NCBI_MONKEY*/
 
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
@@ -376,7 +375,6 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
  */
 typedef const char* (*FNcbiGetRequestDtab)(void);
 extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
-
 
 
 /******************************************************************************
