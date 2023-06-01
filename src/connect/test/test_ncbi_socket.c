@@ -78,7 +78,7 @@ static const char s_S1[] = "S1";
 static void TEST__client_1(SOCK sock)
 {
     EIO_Status status;
-    size_t     n_io, n_io_done;
+    size_t     n, n_io_done;
     char       buf[TEST_BUFSIZE];
 
     CORE_LOG(eLOG_Note, "TEST__client_1(TC1)");
@@ -87,22 +87,22 @@ static void TEST__client_1(SOCK sock)
     SOCK_SetDataLoggingAPI(eOn);
     {{
         const char* x_C1 = s_C1;
-        n_io = strlen(x_C1) + 1;
-        status = SOCK_Write(sock, x_C1, n_io, &n_io_done, eIO_WritePersist);
+        n = strlen(x_C1) + 1;
+        status = SOCK_Write(sock, x_C1, n, &n_io_done, eIO_WritePersist);
     }}
-    assert(status == eIO_Success  &&  n_io == n_io_done);
+    assert(status == eIO_Success  &&  n == n_io_done);
 
     /* Read the string back (it must be bounced by the server) */
     SOCK_SetDataLoggingAPI(eOff);
     SOCK_SetDataLogging(sock, eOn);
-    n_io = strlen(s_S1) + 1;
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPeek);
+    n = strlen(s_S1) + 1;
+    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPeek);
     assert(status >= eIO_Success);
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPlain);
+    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPlain);
     if (status == eIO_Closed)
         CORE_LOG(eLOG_Fatal, "TC1:: connection closed");
 
-    assert(status == eIO_Success  &&  n_io == n_io_done);
+    assert(status == eIO_Success  &&  n == n_io_done);
     assert(strcmp(buf, s_S1) == 0);
     assert(SOCK_Pushback(sock, buf, n_io_done) == eIO_Success);
     memset(buf, '\xFF', n_io_done);
@@ -115,14 +115,13 @@ static void TEST__client_1(SOCK sock)
 
     /* Send a very big binary blob */
     {{
-        size_t i;
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, ++i)
-            continue;
-        for (i = 0;  i < N_SUB_BLOB;  ++i) {
-            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+        for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
+            blob[n] = (unsigned char) n;
+        for (n = 0;  n < N_SUB_BLOB;  ++n) {
+            status = SOCK_Write(sock, blob + n * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done, eIO_WritePersist);
-            assert(status == eIO_Success  &&  n_io_done==SUB_BLOB_SIZE);
+            assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         free(blob);
     }}
@@ -130,27 +129,27 @@ static void TEST__client_1(SOCK sock)
     /* Send a very big binary blob with read on write */
     /* (it must be bounced by the server) */
     {{
-        size_t i;
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
 
         SOCK_SetReadOnWrite(sock, eOn);
 
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, ++i)
-            continue;
-        for (i = 0;  i < N_SUB_BLOB;  ++i) {
-            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+        for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
+            blob[n] = (unsigned char)(BIG_BLOB_SIZE - n);
+        for (n = 0;  n < N_SUB_BLOB;  ++n) {
+            status = SOCK_Write(sock, blob + n * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         /* Receive back a very big binary blob, and check its content */
-        memset(blob,0,BIG_BLOB_SIZE);
-        for (i = 0;  i < N_SUB_BLOB;  ++i) {
-            status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+        memset(blob, 0, BIG_BLOB_SIZE);
+        for (n = 0;  n < N_SUB_BLOB;  ++n) {
+            status = SOCK_Read(sock, blob + n * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
-        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  ++n_io)
-            assert(blob[n_io] == (unsigned char) n_io);
+        for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
+            assert(blob[n] == (unsigned char)(BIG_BLOB_SIZE - n));
+
         free(blob);
     }}
 
@@ -198,23 +197,23 @@ static void TEST__client_1(SOCK sock)
 static void TEST__server_1(SOCK sock)
 {
     EIO_Status status;
-    size_t     n_io, n_io_done;
+    size_t     n, n_io_done;
     char       buf[TEST_BUFSIZE];
 
     CORE_LOG(eLOG_Note, "TEST__server_1(TS1)");
 
     /* Receive and send back a short string */
     SOCK_SetDataLogging(sock, eOn);
-    n_io = strlen(s_C1) + 1;
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPlain);
-    assert(status == eIO_Success  &&  n_io == n_io_done);
+    n = strlen(s_C1) + 1;
+    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPlain);
+    assert(status == eIO_Success  &&  n == n_io_done);
     assert(strcmp(buf, s_C1) == 0  ||  strcmp(buf, s_M1) == 0);
 
     SOCK_SetDataLogging(sock, eDefault);
     SOCK_SetDataLoggingAPI(eOn);
-    n_io = strlen(s_S1) + 1;
-    status = SOCK_Write(sock, s_S1, n_io, &n_io_done, eIO_WritePersist);
-    assert(status == eIO_Success  &&  n_io == n_io_done);
+    n = strlen(s_S1) + 1;
+    status = SOCK_Write(sock, s_S1, n, &n_io_done, eIO_WritePersist);
+    assert(status == eIO_Success  &&  n == n_io_done);
     SOCK_SetDataLoggingAPI(eOff);
 
     /* Receive a very big binary blob, and check its content */
@@ -232,26 +231,25 @@ static void TEST__server_1(SOCK sock)
         assert(status == eIO_Success  &&  n_io_done == DO_LOG_SIZE);
         SOCK_SetDataLogging(sock, eDefault);
 
-        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  ++n_io)
-            assert(blob[n_io] == (unsigned char) n_io);
+        for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
+            assert(blob[n] == (unsigned char) n);
         free(blob);
     }}
 
     /* Receive a very big binary blob, and write data back */
     {{
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
-        int i;
-        for (i = 0;  i < N_SUB_BLOB;  ++i) {
+        for (n = 0;  n < N_SUB_BLOB;  ++n) {
             /*            X_SLEEP(1);*/
-            status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+            status = SOCK_Read(sock, blob + n * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
-            status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
+            status = SOCK_Write(sock, blob + n * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
-        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  ++n_io)
-            assert(blob[n_io] == (unsigned char) n_io);
+        for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
+            assert(blob[n] == (unsigned char)(BIG_BLOB_SIZE - n));
         free(blob);
     }}
 
@@ -311,10 +309,10 @@ static void TEST__client_2(SOCK sock)
 
     /* send the buffer to server, then get it back */
     for (i = 0;  i < N_REPEAT;  ++i) {
+        int/*bool*/ w_timeout_on = (int)(i & 1);  /* whether to start from...*/
+        int/*bool*/ r_timeout_on = (int)(i & 1);  /* ...zero or inf. timeout */
         char        buf1[sizeof(buf)];
         STimeout    w_to, r_to;
-        int/*bool*/ w_timeout_on = (int)(i & 1);  /* if to start from     */
-        int/*bool*/ r_timeout_on = (int)(i & 1);  /* zero or inf. timeout */
         char*       x_buf;
 
         /* set timeout */
@@ -349,18 +347,18 @@ static void TEST__client_2(SOCK sock)
         n_io = sizeof(buf);
         do {
             X_SLEEP(1);
-            status = SOCK_Write(sock, x_buf, n_io,
-                                &n_io_done, eIO_WritePersist);
+            status = SOCK_Write(sock, x_buf, n_io, &n_io_done,
+                                eIO_WritePersist);
             if (status == eIO_Closed)
                 CORE_LOG(eLOG_Fatal, "TC2::write: connection closed");
 
             CORE_LOGF(eLOG_Note,
                       ("TC2::write:"
-                       " i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
+                       " [%lu] status=%7s: n_io=%5lu, n_io_done=%5lu,"
                        " timeout(%d): %5u.%06us",
-                       (int) i, IO_StatusStr(status),
+                       (unsigned long) i, IO_StatusStr(status),
                        (unsigned long) n_io, (unsigned long) n_io_done,
-                       (int) w_timeout_on, w_to.sec, w_to.usec));
+                       w_timeout_on, w_to.sec, w_to.usec));
             if ( !w_timeout_on ) {
                 assert(status == eIO_Success  &&  n_io_done == n_io);
             } else {
@@ -406,19 +404,18 @@ static void TEST__client_2(SOCK sock)
             }
             CORE_LOGF(eLOG_Note,
                       ("TC2::read: "
-                       " i=%d, status=%7s, n_io=%5lu, n_io_done=%5lu"
+                       " [%lu] status=%7s: n_io=%5lu, n_io_done=%5lu,"
                        " timeout(%d): %5u.%06us",
-                       (int) i, IO_StatusStr(status),
+                       (unsigned long) i, IO_StatusStr(status),
                        (unsigned long) n_io, (unsigned long) n_io_done,
-                       (int) r_timeout_on, r_to.sec, r_to.usec));
-            if ( !r_timeout_on ) {
-                assert(status == eIO_Success  &&  n_io_done > 0);
-            } else {
+                       r_timeout_on, r_to.sec, r_to.usec));
+            if ( r_timeout_on ) {
                 const STimeout* x_to;
                 assert(status == eIO_Success  ||  status == eIO_Timeout);
                 verify((x_to = SOCK_GetTimeout(sock, eIO_Read)) != 0);
                 assert(r_to.sec == x_to->sec  &&  r_to.usec == x_to->usec);
-            }
+            } else
+                assert(status == eIO_Success  &&  n_io_done > 0);
 
             n_io  -= n_io_done;
             x_buf += n_io_done;
@@ -469,15 +466,17 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
         switch ( status ) {
         case eIO_Success:
             CORE_LOGF(eLOG_Note,
-                      ("TS2::read:"
-                       " [%lu], status=%7s, n_io=%5lu, n_io_done=%5lu",
+                      ("TS2::read: "
+                       " [%lu] status=%7s: n_io=%5lu, n_io_done=%5lu",
                        (unsigned long) i, IO_StatusStr(status),
                        (unsigned long) n_io, (unsigned long) n_io_done));
             assert(n_io_done > 0);
             break;
 
         case eIO_Closed:
-            CORE_LOG(eLOG_Note, "TS2::read: connection closed");
+            CORE_LOGF(eLOG_Note,
+                      ("TS2::read: "
+                       " [%lu] connection closed", (unsigned long) i));
             assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
             /* close connection */
             status = SOCK_Close(sock);
@@ -495,8 +494,8 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
 
         case eIO_Timeout:
             CORE_LOGF(eLOG_Note,
-                      ("TS2::read:"
-                       " [%lu] timeout expired: %5u sec, %6u usec",
+                      ("TS2::read: "
+                       " [%lu] timeout expired: %5u.%06us",
                        (unsigned long) i, r_to.sec, r_to.usec));
             assert(n_io_done == 0);
             s_DoubleTimeout(&r_to);
@@ -507,40 +506,47 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
 
         default:
             CORE_LOGF(eLOG_Fatal,
-                      ("TS2::read: status = %d", (int) status));
+                      ("TS2::read: "
+                       " [%lu] status=%d", (unsigned long) i, status));
+            break/*NOTREACHED*/;
         } /* switch */
 
-        /* write(just the same) data back to client */
-        n_io  = n_io_done;
+        /* write(just the same) data back to the client */
         x_buf = buf;
+        n_io  = n_io_done;
         while ( n_io ) {
-            status = SOCK_Write(sock, buf, n_io, &n_io_done, eIO_WritePersist);
+            status = SOCK_Write(sock, x_buf, n_io, &n_io_done,
+                                eIO_WritePersist);
             switch ( status ) {
             case eIO_Success:
                 CORE_LOGF(eLOG_Note,
                           ("TS2::write:"
-                           " [%lu], status=%7s, n_io=%5lu, n_io_done=%5lu",
+                           " [%lu] status=%7s: n_io=%5lu, n_io_done=%5lu",
                            (unsigned long) i, IO_StatusStr(status),
                            (unsigned long) n_io, (unsigned long) n_io_done));
-                assert(n_io_done > 0);
+                assert(n_io_done == n_io);
                 break;
             case eIO_Closed:
-                CORE_LOG(eLOG_Fatal, "TS2::write: connection closed");
-                return;
+                CORE_LOGF(eLOG_Fatal,
+                          ("TS2::write:"
+                           " [%lu] connection closed", (unsigned long) i));
+                return/*NOTREACHED*/;
             case eIO_Timeout:
                 CORE_LOGF(eLOG_Note,
                           ("TS2::write:"
-                           " [%lu] timeout expired: %5u sec, %6u usec",
+                           " [%lu] timeout expired: %5u.%06us",
                            (unsigned long) i, w_to.sec, w_to.usec));
-                assert(n_io_done == 0);
+                assert(n_io_done >= 0);
                 s_DoubleTimeout(&w_to);
                 status = SOCK_SetTimeout(sock, eIO_Write, &w_to);
                 assert(status == eIO_Success);
                 break;
             default:
                 CORE_LOGF(eLOG_Fatal,
-                          ("TS2::write: status = %d", (int) status));
-            } /* switch */
+                          ("TS2::write:"
+                           " [%lu] status=%d", (unsigned long) i, status));
+                break/*NOTREACHED*/;
+            }
 
             n_io  -= n_io_done;
             x_buf += n_io_done;
@@ -821,7 +827,6 @@ static int/*bool*/ TEST_isip(const char* ip)
 
     return retval;
 }
-
 
 
 /* Try SOCK_isip()
