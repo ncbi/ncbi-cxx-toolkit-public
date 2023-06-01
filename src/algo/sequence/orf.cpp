@@ -38,6 +38,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <algorithm>
@@ -434,8 +435,7 @@ void COrf::FindStrongKozakUOrfs(
 }
 
 // build an annot representing CDSs
-CRef<CSeq_annot>
-COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)
+CRef<CSeq_annot> COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)
 {
     CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetFtable();  // in case there are zero orfs
@@ -449,6 +449,9 @@ COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code, CSeq_id* id)
         feat->SetData().SetCdregion().SetOrf(true);  // just an ORF
         // they're all frame 1 in this sense of 'frame'
         feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+        CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
+        code->SetId(genetic_code);
+        feat->SetData().SetCdregion().SetCode().Set().push_back(code);
         feat->SetTitle("Open reading frame");
 
         // set up the location
