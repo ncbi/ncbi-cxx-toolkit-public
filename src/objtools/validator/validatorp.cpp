@@ -1835,9 +1835,11 @@ void CValidError_imp::ValidateDbxref
             obj, ctx);
     }
 
+    bool isStr = false;
     string dbv;
     if (xref.IsSetTag() && xref.GetTag().IsStr()) {
         dbv = xref.GetTag().GetStr();
+        isStr = true;
     } else if (xref.IsSetTag() && xref.GetTag().IsId()) {
         dbv = NStr::NumericToString(xref.GetTag().GetId());
     }
@@ -1887,12 +1889,10 @@ void CValidError_imp::ValidateDbxref
         }
     }
 
-    if (flags & CValidator::eNonInteger) {
-        if (db == "GeneID") {
-            PostObjErr(eDiag_Error, eErr_SEQ_FEAT_IllegalDbXref,
-                "db_xref type " + db + " (" + dbv + ") is required to be an integer",
-                obj, ctx);
-        }
+    if (isStr && db == "GeneID") {
+        PostObjErr(eDiag_Error, eErr_SEQ_FEAT_IllegalDbXref,
+            "db_xref type " + db + " (" + dbv + ") is required to be an integer",
+            obj, ctx);
     }
 }
 
