@@ -22,7 +22,8 @@ done
 failed=
 
 for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
-  src/objtools/eutils/*/*.dtd src/gui/objects/*.asn src/gui/framework/*.dtd \
+  src/objtools/eutils/*/*.dtd src/objtools/eutils/*/*.xsd \
+  src/gui/objects/*.asn src/gui/framework/*.dtd \
   src/algo/gnomon/gnomon.asn src/algo/ms/formats/*/*.??d \
   src/build-system/project_tree_builder/msvc71_project.dtd \
   src/build-system/project_tree_builder/property_list.xsd \
