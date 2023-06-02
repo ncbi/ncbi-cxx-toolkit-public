@@ -136,8 +136,9 @@ typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 ///                               0 selects the default provider)
 /// @note LOG will get created out of CNcbiDiag automatically.
 /// @sa
-///  REG_cxx2c, LOG_cxx2c, MT_LOCK_cxx2c, NcbiSetupTls, SOCK_SetupSSL,
-///  CConnIniter, CNcbiApplication, CRWLock, CNcbiRegistry, CNcbiDiag
+///  EConnectInitFlag, CConnIniter, REG_cxx2c, LOG_cxx2c, MT_LOCK_cxx2c,
+///  NcbiSetupTls, SOCK_SetupSSL,
+///  CNcbiApplication, CRWLock, CNcbiRegistry, CNcbiDiag
 extern NCBI_XCONNECT_EXPORT void CONNECT_Init
 (const IRWRegistry* reg  = 0,
  CRWLock*           lock = 0,
