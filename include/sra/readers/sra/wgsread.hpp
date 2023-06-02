@@ -390,6 +390,8 @@ public:
     TProtAccRanges GetProtAccRanges(void);
 
     EFeatLocIdType GetFeatLocIdType();
+    EFeatLocIdType DetermineFeatLocIdType();
+    bool HasStandardFeatLocIdType();
 
     NCBI_gb_state GetProjectGBState() const {
         return m_ProjectGBState;
