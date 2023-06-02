@@ -304,7 +304,7 @@ static void TEST__client_2(SOCK sock)
     /* fill out a buffer to send to server */
     memset(buf, 0, sizeof(buf));
     for (i = 0;  i < N_FIELD;  ++i) {
-        sprintf(buf + i * W_FIELD, "%10lu", (unsigned long) i);
+        sprintf(buf + i * W_FIELD, "%*lu", W_FIELD, (unsigned long) i);
     }
 
     /* send the buffer to server, then get it back */
