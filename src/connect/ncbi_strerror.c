@@ -69,7 +69,7 @@ extern const char* UTIL_TcharToUtf8(const TCHAR* str)
     return s;
 }
 
-#    ifndef        UTIL_ReleaseBuffer(x)
+#    ifndef        UTIL_ReleaseBuffer
 #      define      UTIL_ReleaseBuffer(x)   UTIL_ReleaseBufferOnHeap(x)
 #    endif
 
