@@ -1256,7 +1256,7 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
             CSeq_loc loc;
             x_GetLocation(seh, args, loc);
             try {
-                context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+                context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true);
             } catch (CException& e) {
                 ERR_POST(Error << e);
                 m_Exception = true;
@@ -1268,7 +1268,7 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
             int count = args["count"].AsInteger();
             for (int i = 0; i < count; ++i) {
                 try {
-                    context.m_FFGenerator->Generate(bsh, *flatfile_os);
+                    context.m_FFGenerator->Generate(bsh, *flatfile_os, true);
                 } catch (CException& e) {
                     ERR_POST(Error << e);
                     m_Exception = true;
@@ -1572,7 +1572,7 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry) cons
     NCBI_THROW(CFlatException, eInvalidParam, "Cannot deduce target bioseq.");
 }
 
-int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& ff_context) const
+int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& /*ff_context*/) const
 {
     int rc = 0;
 
