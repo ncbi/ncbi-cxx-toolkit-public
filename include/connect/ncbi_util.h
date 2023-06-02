@@ -699,10 +699,10 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_NcbiLocalHostName
 
 
 /** Calculate size of buffer needed to store printable representation of the
- *  block of data of the specified size (or, if size is 0, strlen(data))
- *  (without the '\0' terminator).
- * @note
- *  The calculated size does not account for a terminating '\0'.
+ *  block of data of the specified size (or, if size is 0, strlen(data)) but
+ *  without the '\0' terminator.
+ * @warning
+ *  The calculated size does not account for a terminating '\0'!
  * @param data
  *  Block of data (NULL causes 0 to return regardless of "size")
  * @param size
