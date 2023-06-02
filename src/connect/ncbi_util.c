@@ -193,6 +193,9 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 }
 
 
+#define UTIL_PRINTABLE_WIDTH_MIN  80
+
+
 extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 {
     size_t count;
@@ -209,22 +212,29 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
         } else if (c == '\n'  ||  !isascii(c)  ||  !isprint(c))
             size += 3;
     }
-    return size;
+    return size + ((size / UTIL_PRINTABLE_WIDTH_MIN) << 1);
 }
 
 
-extern char* UTIL_PrintableString(const char* src, size_t size,
-                                  char* dst, int/*bool*/ flags)
+static char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
+                                    int width, int/*bool*/ flags)
 {
-    const char* s;
+    const char *s, *w;
 
     if (!src  ||  !dst)
         return 0;
     if (!size)
         size = strlen(src);
+    if (width < UTIL_PRINTABLE_WIDTH_MIN  &&  width)
+        width = UTIL_PRINTABLE_WIDTH_MIN;
 
-    for (s = src;  size;  --size, ++s) {
+    for (w = dst, s = src;  size;  --size, ++s) {
         unsigned char c = (unsigned char)(*s);
+        if (width  &&  width <= (size_t)(dst - w)) {
+            *dst++ = '\\';
+            *dst++ = '\n';
+            w = dst;
+        }
         switch (c) {
         case '\a':
             *dst++ = '\\';
@@ -255,6 +265,7 @@ extern char* UTIL_PrintableString(const char* src, size_t size,
             *dst++ = 'n';
             if (flags & fUTIL_PrintableNoNewLine)
                 continue;
+            w = dst + 1;
             /*FALLTHRU*/
         case '\\':
         case '\'':
@@ -291,6 +302,13 @@ extern char* UTIL_PrintableString(const char* src, size_t size,
     }
 
     return dst;
+}
+
+
+extern char* UTIL_PrintableString(const char* src, size_t size,
+                                  char* dst, int/*bool*/ flags)
+{
+    return UTIL_PrintableStringEx(src, size, dst, 0, flags);
 }
 
 
@@ -549,11 +567,12 @@ extern char* LOG_ComposeMessage
                      &"s"[mess->raw_size == 1],
                      mess->raw_data ? ":\n" : " <NULL>");
         if (mess->raw_data) {
-            s = UTIL_PrintableString((const char*)
-                                     mess->raw_data,
-                                     mess->raw_size,
-                                     s, flags & fLOG_FullOctal
-                                     ? fUTIL_PrintableFullOctal : 0);
+            s = UTIL_PrintableStringEx((const char*)
+                                       mess->raw_data,
+                                       mess->raw_size,
+                                       s, UTIL_PRINTABLE_WIDTH_MIN,
+                                       flags & fLOG_FullOctal
+                                       ? fUTIL_PrintableFullOctal : 0);
         }
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else
