@@ -1572,7 +1572,7 @@ CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry) cons
     NCBI_THROW(CFlatException, eInvalidParam, "Cannot deduce target bioseq.");
 }
 
-int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& /*ff_context*/) const
+int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& ff_context) const
 {
     int rc = 0;
 
