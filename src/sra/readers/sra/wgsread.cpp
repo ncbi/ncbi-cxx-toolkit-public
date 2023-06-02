@@ -3673,8 +3673,14 @@ bool CWGSDb_Impl::CanHaveGis()
 {
     bool can_have_gis = false;
     auto cur = Seq();
-    if ( cur->m_GI && *cur->GI(1) != 0 ) {
-        can_have_gis = true;
+    if (cur->m_GI) {
+        auto gi_range = cur->m_Cursor.GetRowIdRange(cur->m_GI.GetIndex());
+        if ( gi_range.second ) {
+            auto value = cur->GI(gi_range.first, CVDBValue::eMissing_Allow);
+            if (value.size() == 1 && *value != 0) {
+                can_have_gis = true;
+            }
+        }
     }
     Put(cur);
     return can_have_gis;
@@ -3691,60 +3697,92 @@ bool CWGSDb_Impl::HasFeatures()
 }
 
 
-CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
+bool CWGSDb_Impl::HasStandardFeatLocIdType()
 {
-    if ( m_FeatLocIdType == eFeatLocIdUninitialized ) {
-        try {
-            if ( CRef<SFeatTableCursor> cur = Feat() ) {
-                TVDBRowId feat_row_id = 1;
-                try {
-                    PROFILE(sw_GetFeatLocIdTypeRange);
-                    CRef<SSeqTableCursor> seq = Seq();
-                    auto row_range = seq->m_Cursor.GetRowIdRange(seq->m_FEAT_ROW_START.GetIndex());
-                    for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
-                        auto seq_row_id = row_range.first+i;
-                        auto row_start = seq->FEAT_ROW_START(seq_row_id);
-                        if ( !row_start.empty() ) {
-                            feat_row_id = *row_start;
-                            break;
-                        }
+    if (GetWGSPath().find_first_of("\\/.:") != NPOS) {
+        // non-standard path
+        return false;
+    }
+    if (IsReplaced()) {
+        // old or replaced WGS project
+        return false;
+    }
+    if (GetProjectGBState() == NCBI_gb_state_eWGSGenBankMissing) {
+        // disabled WGS project
+        return false;
+    }
+    return true;
+}
+
+
+CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::DetermineFeatLocIdType()
+{
+    // assume no feature id correction
+    EFeatLocIdType loc_id_type = eFeatLocIdGi;
+    if (HasStandardFeatLocIdType()) {
+        // shortcut for regular VDB files
+        if (!CanHaveGis()) {
+            loc_id_type = eFeatLocIdAccVer;
+        }
+        return loc_id_type;
+    }
+    try {
+        if ( CRef<SFeatTableCursor> cur = Feat() ) {
+            TVDBRowId feat_row_id = 1;
+            try {
+                PROFILE(sw_GetFeatLocIdTypeRange);
+                CRef<SSeqTableCursor> seq = Seq();
+                auto row_range = seq->m_Cursor.GetRowIdRange(seq->m_FEAT_ROW_START.GetIndex());
+                for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
+                    auto seq_row_id = row_range.first+i;
+                    auto row_start = seq->FEAT_ROW_START(seq_row_id);
+                    if ( !row_start.empty() ) {
+                        feat_row_id = *row_start;
+                        break;
                     }
-                    Put(seq);
                 }
-                catch ( exception& /*ignored*/ ) {
-                    // use first feature in the file
-                }
-                PROFILE(sw_GetFeatLocIdTypeFeat);
-                CRef<CSeq_feat> feat(new CSeq_feat);
-                CTempString bytes;
-                {{
-                    PROFILE(sw_GetFeatLocIdTypeFeatBytes);
-                    bytes = *cur->SEQ_FEAT(feat_row_id);
-                }}
-                cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
-                cur.GetNCObject().m_ObjStr >> *feat;
-                Put(cur);
-                CTypeConstIterator<CSeq_id> seq_id(Begin(feat->GetLocation()));
-                if ( const CTextseq_id* id = !seq_id? 0: seq_id->GetTextseq_Id() ) {
-                    if ( id->IsSetVersion() ) {
-                        m_FeatLocIdType = eFeatLocIdAccVer;
-                    }
-                    else {
-                        m_FeatLocIdType = eFeatLocIdAccNoVer;
-                    }
+                Put(seq);
+            }
+            catch ( exception& /*ignored*/ ) {
+                // use first feature in the file
+            }
+            PROFILE(sw_GetFeatLocIdTypeFeat);
+            CRef<CSeq_feat> feat(new CSeq_feat);
+            CTempString bytes;
+            {{
+                PROFILE(sw_GetFeatLocIdTypeFeatBytes);
+                bytes = *cur->SEQ_FEAT(feat_row_id);
+            }}
+            cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
+            cur.GetNCObject().m_ObjStr >> *feat;
+            Put(cur);
+            CTypeConstIterator<CSeq_id> seq_id(Begin(feat->GetLocation()));
+            if ( const CTextseq_id* id = !seq_id? 0: seq_id->GetTextseq_Id() ) {
+                if ( id->IsSetVersion() ) {
+                    loc_id_type = eFeatLocIdAccVer;
                 }
                 else {
-                    m_FeatLocIdType = eFeatLocIdGi;
+                    loc_id_type = eFeatLocIdAccNoVer;
                 }
-                return m_FeatLocIdType;
             }
         }
-        catch ( exception& /*ignored*/ ) {
-            // assume no feature id correction
-        }
-        m_FeatLocIdType = eFeatLocIdGi;
     }
-    return m_FeatLocIdType;
+    catch ( exception& /*ignored*/ ) {
+        // assume no feature id correction
+    }
+    return loc_id_type;
+}
+
+
+CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
+{
+    auto loc_id_type = m_FeatLocIdType;
+    if ( loc_id_type == eFeatLocIdUninitialized ) {
+        // determine and cache for the future
+        loc_id_type = DetermineFeatLocIdType();
+        m_FeatLocIdType = loc_id_type;
+    }
+    return loc_id_type;
 }
 
 
