@@ -150,7 +150,6 @@ bool CPubseqGatewayCacheBlobProp::x_CanOpenSatDatabase(int32_t sat, CLMDBReadOnl
         else {
             return true;
         }
-
     }
     catch (const lmdb::error& e) {
         if (e.code() != MDB_NOTFOUND) {
