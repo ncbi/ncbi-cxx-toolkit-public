@@ -16,7 +16,7 @@ class CcmManager:
 
     def __init__(self):
         self.__version = '3.11.11'
-        self.__cqlsh = '/panfs/pan1/id_dumps/id_software/cassandra/test/bin/cqlsh'
+        self.__cqlsh = '/netmnt/vast01/seqdb/id_dumps/id_software/cassandra/test/bin/cqlsh'
         self.__cluster_name = 'ipg_storage_test'
         self.__start_timeout = 180
         self.__datasets = {
