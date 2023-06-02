@@ -83,14 +83,6 @@ extern const char* IO_StatusStr(EIO_Status status)
 /* Check the validity of an MT lock */
 #define MT_LOCK_VALID(lk)  assert((lk)->count && (lk)->magic == kMT_LOCK_magic)
 
-#if defined(NCBI_CXX_TOOLKIT)  &&  defined(NCBI_THREADS)
-
-#  if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
-#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
-#  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
-#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
-#  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
-
 
 /* MT-lock structure */
 struct MT_LOCK_tag {
@@ -101,6 +93,14 @@ struct MT_LOCK_tag {
     unsigned int          magic;    /* internal consistency assurance   */
 };
 
+
+#if defined(NCBI_CXX_TOOLKIT)  &&  defined(NCBI_THREADS)
+
+#  if   defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER)
+#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+#  elif defined(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+#    define NCBI_RECURSIVE_MUTEX_INIT  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#  endif      /*PTHREAD_RECURSIVE_MUTEX_INITIALIZER...*/
 
 /*ARGSUSED*/
 static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
