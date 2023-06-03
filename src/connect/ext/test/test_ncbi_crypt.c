@@ -37,13 +37,13 @@
 #include <connect/ext/ncbi_crypt.h>
 #ifdef HAVE_LIBCONNEXT2
 #  include <signon3/id.h>
-#  define CRYPTKEY  WEBENV_CRYPTKEY
+#  define KEY  WEBENV_CRYPTKEY
 #else
 /* Note that in the key it is allowed to use spaces and any other
    special chars (e.g. alarm) but '\0' (which terminates the key) */
-#  define CRYPTKEY  "!\"#$%&'()*+,-./0123456789:;<=>?@" \
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`" \
-                    "abcdefghijklmnopqrstuvwxyz{|}~ \a"
+#  define KEY  "!\"#$%&'()*+,-./0123456789:;<=>?@" \
+               "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`" \
+               "abcdefghijklmnopqrstuvwxyz{|}~ \a"
 #endif /*HAVE_LIBCONNEXT2*/
 #include <errno.h>
 #include <stdio.h>
@@ -64,7 +64,6 @@
 
 
 static int/*bool*/  s_CanChangeSeed = 0/*false*/;
-static unsigned int s_Seed = ~0;
 
 
 static unsigned int s_Version(int version)
@@ -73,16 +72,33 @@ static unsigned int s_Version(int version)
 }
 
 
-static void s_PrintStr(const char* action, const char* what, const char* result)
+typedef enum {
+    eEncode = 0,
+    eDecode
+} EAction;
+
+static void s_PrintStr(EAction action, const char* what,
+                       const char* result, unsigned int seed)
 {
+    char x_seed[40];
+    const char* x_action = action == eEncode ? "Encode" : "Decode";
+    if (s_CanChangeSeed  &&  action == eEncode)
+        sprintf(x_seed, " (seed %u)", seed);
+    else
+        *x_seed = '\0';
     if (!result  ||  !*result) {
+        int/*bool*/ dynamic = 0;
+        const char* x_result = result ? "\"\"" :
+            NcbiMessagePlusError(&dynamic, "<NULL>", errno, 0);
         CORE_LOGF(eLOG_Note,
-                  ("%s%s%s%s: %s", action,
+                  ("%s%s%s%s%s: %s", x_action, x_seed,
                    what ? " \"" : "", what ? what : "", &"\""[!what],
-                   result ? "\"\"" : "<NULL>"));
+                   x_result));
+        if (dynamic)
+            free((void*) x_result);
     } else {
         CORE_DATAF(eLOG_Note, result, strlen(result),
-                   ("%s%s%s%s", action,
+                   ("%s%s%s%s%s", x_action, x_seed,
                     what ? " \"" : "", what ? what : "", &"\""[!what]));
     }
 }
@@ -117,13 +133,13 @@ __attribute__((noreturn))
 #endif /*__GNUC__*/
 static void s_ReportError(const char* where,   const char* original,
                           const char* encoded, const char* decoded,
-                          CRYPT_Key k, const char* key, unsigned int seed,
+                          const char* key, CRYPT_Key k, unsigned int seed,
                           int/*bool*/ print)
 {
     int error = errno;
     if (print) {
-        s_PrintStr("Encoded", 0, encoded);
-        s_PrintStr("Decoded", 0, decoded);
+        s_PrintStr(eEncode, 0, encoded, seed);
+        s_PrintStr(eDecode, 0, decoded, 0/*irrelevant*/);
     }
     s_PrintKey(k, key, seed);
     if (!original  ||  !*original) {
@@ -144,13 +160,13 @@ static void s_ReportError(const char* where,   const char* original,
  * Should it fail, print all the info necessary to reproduce the test.
  */
 static void s_CheckEncodeDecode(const char* where, const char* key,
-                                const char *str,   const char* arg)
+                                const char *str,   const char* arg,
+                                CRYPT_Key   k)
 {
-    CRYPT_Key k = CRYPT_Init(key);
     const char* encoded;
     const char* decoded;
-    unsigned int seed;
     int/*bool*/ print;
+    unsigned int seed;
 
     if (arg) {
         if (!*arg)
@@ -158,24 +174,16 @@ static void s_CheckEncodeDecode(const char* where, const char* key,
         print = 1/*true*/;
     } else
         print = 0/*false*/;
-    if (k  &&  k != CRYPT_BAD_KEY) {
-        if (s_CanChangeSeed) {
-            if (s_Seed != ~0) {
-                /* HACK * HACK * HACK */
-                *((unsigned int*) k) = s_Seed;
-            }
-            seed = *((unsigned int*) k);
-        } else if (s_Seed != ~0) {
-            srand(s_Seed);
-            seed = s_Seed;
-        }
+    if (k  &&  k != CRYPT_BAD_KEY  &&  s_CanChangeSeed) {
+        /* HACK * HACK * HACK */
+        seed = *((unsigned int*) k);
     } else
-        seed = 0;
+        seed = 0/*irrelevant*/;
 
     errno = 0;
     encoded = CRYPT_EncodeString(k, str);
     if (print) {
-        s_PrintStr("Encoded", str, encoded);
+        s_PrintStr(eEncode, str, encoded, seed);
         if (encoded  &&  arg) {
             free((char*) encoded);
             encoded = arg;
@@ -183,17 +191,17 @@ static void s_CheckEncodeDecode(const char* where, const char* key,
     }
     decoded = CRYPT_DecodeString(k, encoded);
     if (print)
-        s_PrintStr("Decoded", encoded, decoded);
+        s_PrintStr(eDecode, encoded, decoded, 0/*irrelevant*/);
 
     if (!encoded  ||  !decoded  ||  (!arg  &&  strcmp(str, decoded) != 0)) {
         s_ReportError(where, arg  &&  encoded ? arg : str,
-                      encoded, decoded, k, key, seed, !arg);
+                      encoded, decoded, key, k, seed, !arg);
     }
     if (encoded != arg)
          free((char*) encoded);
     free((char*) decoded);
-    CRYPT_Free(k);
 }
+
 
 /*
  * Generate random string.  "buf" must have room for "len" + 1 characters.
@@ -255,7 +263,7 @@ static void s_CompatibilityTest(int n, const char* key)
                                     " version `%u' with version `%u'",
                                     s_Version(v), s_Version(w));
                             s_ReportError(message, buf, encoded, decoded,
-                                          0, key, 0, 1/*true*/);
+                                          key, 0, 0, 1/*true*/);
                         }
                         free(decoded);
                         CRYPT_Version(++w);
@@ -274,7 +282,7 @@ static void s_CompatibilityTest(int n, const char* key)
  * Most of one-, two-, and three-character combinations,
  * with a few different seeds for each combination.
  */
-static void s_GenericEncodeDecodeTriplesTest(const char* key)
+static void s_GenericEncodeDecodeTriplesTest(const char* key, CRYPT_Key k)
 {
     int  c1, c2, c3, i, m, v;
     char buf[10];
@@ -297,7 +305,7 @@ static void s_GenericEncodeDecodeTriplesTest(const char* key)
                     buf[2] = (char) c3;
                     buf[3] = '\0';
                     s_CheckEncodeDecode("GenericEncodeDecodeTriples",
-                                        key, buf, 0);
+                                        key, buf, 0, k);
                 }
                 if (!c2)
                     break;
@@ -316,7 +324,8 @@ static void s_GenericEncodeDecodeTriplesTest(const char* key)
  * Encode random strings then decode them, checking whether the result
  * is the same as the original.
  */   
-static void s_GenericEncodeDecodeRandomTest(int n, const char* key)
+static void s_GenericEncodeDecodeRandomTest(int n,
+                                            const char* key, CRYPT_Key k)
 {
     char buf[256];
     int  i, j, v;
@@ -333,41 +342,10 @@ static void s_GenericEncodeDecodeRandomTest(int n, const char* key)
         s_RandomStr(buf, rand() % (int) sizeof(buf),
                     '\x01', (unsigned char)(v == 0 ? '\x7F' : '\xFF'));
         for (j = 0;  j < NSEEDS;  ++j)
-            s_CheckEncodeDecode("GenericEncodeDecodeRandom", key, buf, 0);
+            s_CheckEncodeDecode("GenericEncodeDecodeRandom", key, buf, 0, k);
     }
     CORE_LOGF(eLOG_Note,
               ("GenericEncodeDecodeRandom test completed for version `%u'",
-               s_Version(v)));
-}
-
-
-/*
- * Regression test.
- */
-static void s_RegressionTest(int n, const char* key)
-{
-    char buf[256];
-    int  i, v;
-
-    assert(key);
-
-    if ((v = CRYPT_Version(-1)) >= 0)
-        verify(CRYPT_Version(v) >= 0);
-
-    CORE_LOGF(eLOG_Note,
-              ("Regression test started for version `%u'",
-               s_Version(v)));
-    s_Seed = 741687673;   /* regression value that used to fail the test */
-
-    for (i = 0;  i < n;  ++i) {
-        s_RandomStr(buf, rand() % (int) sizeof(buf),
-                    '\x01', (unsigned char)(v == 0 ? '\x7F' : '\xFF'));
-        s_CheckEncodeDecode("Regression", key, buf, 0);
-    }
-
-    s_Seed = ~0;          /* restore use of random number generator      */
-    CORE_LOGF(eLOG_Note,
-              ("Regression test completed for version `%u'",
                s_Version(v)));
 }
 
@@ -389,7 +367,7 @@ static void s_Usage(const char* prog)
             "  -0 = Sets CRYPT version 0 (Only 7-bit clean)\n"
             "  -1 = Sets CRYPT version 1 (8-bit clean)\n"
             "       Default CRYPT version = %d\n\n"
-            "Without command-line parameters, regression tests start.\n\n"
+            "Without command-line parameters, randomized unit tests start.\n\n"
             "Otherwise, \"string_to_encode\" is encoded using either\n"
             "some default key (-) or \"key\" as provided;  after that\n"
             "either the result of encode operation or \"string_to_decode\"\n"
@@ -409,16 +387,12 @@ static void s_Usage(const char* prog)
 int main(int argc, char* argv[])
 {
     TLOG_FormatFlags flags = fLOG_Short | fLOG_FullOctal | fLOG_OmitNoteLevel;
-    const char* cryptkey = CRYPTKEY;
+    int/*nool*/ seed = 0/*false*/;
+    const char* key = KEY;
     const char* arg;
 
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
-
-    if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed
-            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-        srand(g_NCBI_ConnectRandomSeed);
-    }
+    CORE_SetLOGFormatFlags(fLOG_None | flags);
 
     if (CRYPT_Version(-1) != -1)
         s_CanChangeSeed = 1/*true*/;
@@ -428,13 +402,13 @@ int main(int argc, char* argv[])
         if (strcmp(argv[1], "-0") == 0) {
             if (CRYPT_Version(0) == -1)
                 CORE_LOG(eLOG_Fatal, "Crypt version 0 not supported");
-            argc--;
-            n++;
+            --argc;
+            ++n;
         } else if (strcmp(argv[1], "-1") == 0) {
             if (CRYPT_Version(1) == -1)
                 CORE_LOG(eLOG_Fatal, "Crypt version 1 not supported");
-            argc--;
-            n++;
+            --argc;
+            ++n;
         }
         if (argc > 5  ||  (n == 1  &&  UTIL_HelpRequested(argc, argv))) {
             s_Usage(argv[0]);
@@ -446,40 +420,55 @@ int main(int argc, char* argv[])
     } else
         arg = 0;
     if (argc > 2  &&  strcmp(argv[2], "-") != 0)
-        cryptkey = argv[2];
-    if (argc > 4)
-        s_Seed = (unsigned int) atol(argv[4]);
+        key = argv[2];
+
+    if (argc > 4) {
+        seed = 1/*true*/;
+        g_NCBI_ConnectRandomSeed = (unsigned int) atol(argv[4]);
+    } else if (g_NCBI_ConnectRandomSeed == 0) {
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    }
+    srand(g_NCBI_ConnectRandomSeed);
 
     if (!arg) {
-        char key[128];
+        char buf[128];
         int  i, v;
 
         CORE_SetLOGFormatFlags(flags | fLOG_DateTime);
+        CORE_LOGF(eLOG_Note, ("Random seed = %d", g_NCBI_ConnectRandomSeed));
         for (i = 0;  i < NKEYS;  ++i) {
+            CRYPT_Key k;
             if (i) {
                 CORE_LOGF(eLOG_Note, ("TEST %d:  Generating random key", i+1));
-                s_RandomStr(key, rand() % (int) sizeof(key),
+                s_RandomStr(buf, rand() % (int) sizeof(buf),
                             '\x01', (unsigned char)'\xFF');
             } else {
                 CORE_LOGF(eLOG_Note, ("TEST %d:  Using static key", i+1));
-                strncpy0(key, CRYPTKEY, sizeof(key) - 1);
+                strncpy0(buf, KEY, sizeof(buf) - 1);
             }
 
-            s_CompatibilityTest(NTESTS, key);
+            s_CompatibilityTest(NTESTS, buf);
 
+            k = CRYPT_Init(buf);
             CRYPT_Version(v = 0);
             do {
-                s_GenericEncodeDecodeTriplesTest(key);
-                s_GenericEncodeDecodeRandomTest(NTESTS, key);
-                s_RegressionTest(NTESTS * 10, key);
+                s_GenericEncodeDecodeTriplesTest(buf, k);
+                s_GenericEncodeDecodeRandomTest(NTESTS, buf, k);
                 CRYPT_Version(++v);
             } while (CRYPT_Version(v) == v);
+            CRYPT_Free(k);
         }
         CORE_LOG(eLOG_Note, "TEST completed successfully");
     } else {
-        CORE_SetLOGFormatFlags(fLOG_None | flags);
-        s_CheckEncodeDecode("main", cryptkey, arg, argc > 3 ? argv[3] : "");
-        CORE_LOG(eLOG_Note, "Done");
+        CRYPT_Key k = CRYPT_Init(key);
+        if (k  &&  k != CRYPT_BAD_KEY  &&  s_CanChangeSeed  &&  seed) {
+            /* HACK * HACK * HACK */
+            *((unsigned int*) k) = g_NCBI_ConnectRandomSeed;
+        }
+        s_CheckEncodeDecode("main", key, arg, argc > 3 ? argv[3] : "", k);
+        CRYPT_Free(k);
+        CORE_LOG(eLOG_Note, "Done.");
     }
 
     CORE_SetLOG(0);
