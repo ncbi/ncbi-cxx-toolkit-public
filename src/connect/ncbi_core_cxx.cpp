@@ -43,6 +43,7 @@
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_monkey.hpp>
+#include <connect/ncbi_util.h>
 #include <common/ncbi_sanitizers.h>
 
 #ifdef NCBI_POSIX_THREADS
@@ -303,15 +304,25 @@ static void s_LOG_Handler(void*             /*data*/,
         diag.SetErrorCode(mess->err_code, mess->err_subcode);
         diag << mess->message;
         if (mess->raw_size) {
+            typedef AutoPtr< char, ArrayDeleter<char> >  TTempCharPtr;
+            TTempCharPtr buf;
+            CTempString data;
+            if (mess->raw_data) {
+                buf.reset(new char[UTIL_PrintableStringSize
+                                   ((const char*)
+                                    mess->raw_data,
+                                    mess->raw_size)]);
+                char* end = UTIL_PrintableStringEx((const char*)
+                                                   mess->raw_data,
+                                                   mess->raw_size,
+                                                   buf.get(), 0/*flags*/,
+                                                   UTIL_PRINTABLE_WIDTH);
+                data.assign(buf.get(), (size_t)(end - buf.get()));
+            }
             diag << "\n#################### [BEGIN] Raw Data ("
                  << mess->raw_size
-                 << " byte" << &"s"[!(mess->raw_size != 1)] << ')'
-                 << (mess->raw_data
-                     ? ":\n" + NStr::PrintableString
-                     (CTempString(static_cast<const char*>(mess->raw_data),
-                                  mess->raw_size),
-                      NStr::fNewLine_Passthru | NStr::fNonAscii_Quote)
-                     : " <NULL>")
+                 << " byte" << &"s"[!(mess->raw_size != 1)] << "):"
+                 << CTempString(data.empty() ? " <NULL>" : "\n") << data
                  << "\n#################### [_END_] Raw Data";
         }
         diag << Endm;
