@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri May 19 09:16:02 EDT 2023; formally
+/* time_t value corresponding to Sat Jun  3 05:12:02 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1684502162UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1685783522UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5726,7 +5726,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NSS\ts\tUniversity of Liverpool Botanic Gardens\t\t\t",
 "NSU\ts\tNortheastern State University, Biological Collections\t\t\t",
 "NSUL\ts\tNorthwestern State University of Louisiana\t\t\t",
-"NSW\ts\tRoyal Botanic Gardens\t\t\t",
+"NSW\ts\tNational Herbarium of New South Wales\t\t\t",
 "NSWA\ts\tNew South Wales Department of Agriculture\t\t\t",
 "NSWF\ts\tState Forests of New South Wales\t\t\t",
 "NSWGS\ts\tGeological Survey of New South Wales\t\t\t",
@@ -6624,7 +6624,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SAMF\ts\tSamford University\t\t\t",
 "SAMOA\ts\tNational University of Samoa\t\t\t",
 "SAMU\ts\tSavaria Museum, Department of Natural History\t\t\t",
-"SAN\ts\tForest Research Centre, Forest Department\t\t\t",
+"SAN\ts\tSandakan Herbarium, Forest Research Centre Sepilok, Sabah Forestry Department\t\t\t",
 "SANBI\ts\tSouth African National Biodiversity Institute\t\t\t",
 "SANC\ts\tSouth African National Collection of Insects\tNCIP<ZAF>\t\t",
 "SANDC\tsc\tSouth African National Diatom Collection, North-West University\t\t\t",

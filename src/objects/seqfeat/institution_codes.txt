@@ -5690,7 +5690,7 @@ NSRF	s	Nova Scotia Research Foundation
 NSS	s	University of Liverpool Botanic Gardens			
 NSU	s	Northeastern State University, Biological Collections			
 NSUL	s	Northwestern State University of Louisiana			
-NSW	s	Royal Botanic Gardens			
+NSW	s	National Herbarium of New South Wales			
 NSWA	s	New South Wales Department of Agriculture			
 NSWF	s	State Forests of New South Wales			
 NSWGS	s	Geological Survey of New South Wales			
@@ -6588,7 +6588,7 @@ SAMES	s	Universidade Federal do Espirito Santo
 SAMF	s	Samford University			
 SAMOA	s	National University of Samoa			
 SAMU	s	Savaria Museum, Department of Natural History			
-SAN	s	Forest Research Centre, Forest Department			
+SAN	s	Sandakan Herbarium, Forest Research Centre Sepilok, Sabah Forestry Department			
 SANBI	s	South African National Biodiversity Institute			
 SANC	s	South African National Collection of Insects	NCIP<ZAF>		
 SANDC	sc	South African National Diatom Collection, North-West University			
