@@ -193,9 +193,6 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 }
 
 
-#define UTIL_PRINTABLE_WIDTH_MIN  80
-
-
 extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 {
     size_t count;
@@ -212,12 +209,13 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
         } else if (c == '\n'  ||  !isascii(c)  ||  !isprint(c))
             size += 3;
     }
-    return size + ((size / UTIL_PRINTABLE_WIDTH_MIN) << 1);
+    return size +
+        (((size + UTIL_PRINTABLE_WIDTH - 1) / UTIL_PRINTABLE_WIDTH) << 1);
 }
 
 
-static char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
-                                    int width, int/*bool*/ flags)
+extern char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
+                                    int/*bool*/ flags, int width)
 {
     const char *s, *w;
 
@@ -225,8 +223,8 @@ static char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
         return 0;
     if (!size)
         size = strlen(src);
-    if (width < UTIL_PRINTABLE_WIDTH_MIN  &&  width)
-        width = UTIL_PRINTABLE_WIDTH_MIN;
+    if (width < UTIL_PRINTABLE_WIDTH  &&  width)
+        width = UTIL_PRINTABLE_WIDTH;
 
     for (w = dst, s = src;  size;  --size, ++s) {
         unsigned char c = (unsigned char)(*s);
@@ -265,7 +263,7 @@ static char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
             *dst++ = 'n';
             if (flags & fUTIL_PrintableNoNewLine)
                 continue;
-            w = dst + 1;
+            w = dst + 2;
             /*FALLTHRU*/
         case '\\':
         case '\'':
@@ -300,15 +298,9 @@ static char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
         }
         *dst++ = (char) c;
     }
-
+    if (width  &&  w != dst)
+        *dst++ = '\\';
     return dst;
-}
-
-
-extern char* UTIL_PrintableString(const char* src, size_t size,
-                                  char* dst, int/*bool*/ flags)
-{
-    return UTIL_PrintableStringEx(src, size, dst, 0, flags);
 }
 
 
@@ -434,7 +426,7 @@ extern char* LOG_ComposeMessage
  TLOG_FormatFlags    flags)
 {
     static const char kRawData_Beg[] =
-        "\n#################### [BEGIN] Raw Data (%lu byte%s)%s";
+        "\n#################### [BEGIN] Raw Data (%lu byte%s):%s";
     static const char kRawData_End[] =
         "\n#################### [_END_] Raw Data\n";
 
@@ -565,14 +557,14 @@ extern char* LOG_ComposeMessage
         s += sprintf(s, kRawData_Beg,
                      (unsigned long) mess->raw_size,
                      &"s"[mess->raw_size == 1],
-                     mess->raw_data ? ":\n" : " <NULL>");
+                     mess->raw_data ? "\n" : " <NULL>");
         if (mess->raw_data) {
             s = UTIL_PrintableStringEx((const char*)
                                        mess->raw_data,
                                        mess->raw_size,
-                                       s, UTIL_PRINTABLE_WIDTH_MIN,
-                                       flags & fLOG_FullOctal
-                                       ? fUTIL_PrintableFullOctal : 0);
+                                       s, flags & fLOG_FullOctal
+                                       ? fUTIL_PrintableFullOctal : 0,
+                                       UTIL_PRINTABLE_WIDTH);
         }
         memcpy(s, kRawData_End, sizeof(kRawData_End));
     } else

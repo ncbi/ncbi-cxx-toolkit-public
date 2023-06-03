@@ -59,7 +59,7 @@
  * 4. Miscellaneous:
  *       UTIL_MatchesMask[Ex]()
  *       UTIL_NcbiLocalHostName()
- *       UTIL_PrintableString[Size]()
+ *       UTIL_PrintableString[Ex|Size]()
  *
  * 5. Internal MSWIN support for Unicode (mostly in error messages)
  *
@@ -710,12 +710,15 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_NcbiLocalHostName
  * @return
  *  The buffer size needed (0 for NULL or empty data)
  * @sa
- *  UTIL_PrintableString
+ *  UTIL_PrintableStringEx, UTIL_PrintableString
  */
 extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
 (const char* data,
  size_t      size
  );
+
+
+#define UTIL_PRINTABLE_WIDTH  80   /** Default minimum printable width */
 
 
 typedef enum {
@@ -727,7 +730,7 @@ typedef enum {
 typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
 
 
-/** Create printable representation of the block of data of the specified size
+/** Create a printable representation of a block of data of the specified size
  *  (or, if size is 0, strlen(data)), and return the buffer pointer past the
  *  last stored character (non '\0'-terminated).  Non-printable characters can
  *  be represented in a reduced octal form as long as the result is unambiguous
@@ -749,6 +752,8 @@ typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
  *  Buffer to store the result (NULL always causes NULL to return)
  * @param flags
  *  How to print representations of certain non-printable characters
+ * @param width
+ *  Insert escaped line breaks when output line exceeds "width"; no-op if 0
  * @return
  *  Next position in the buffer past the last stored character
  * @warning
@@ -759,12 +764,20 @@ typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
  * @sa
  *  UTIL_PrintableStringSize, EUTIL_PrintableFlags
  */
-extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
+extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableStringEx
 (const char*          data,
  size_t               size,
  char*                buf,
- TUTIL_PrintableFlags flags
+ TUTIL_PrintableFlags flags,
+ int                  width
  );
+
+
+/** Same as UTIL_PrintableStringEx(..., 0) -- i.e. w/o width restrictions.
+ * @sa
+ *  UTIL_PrintableStringEx
+ */
+#define UTIL_PrintableString(d,s,b,f) UTIL_PrintableStringEx((d),(s),(b),(f),0)
 
 
 /** Given the main()'s argc and argv return non-zero (true) if the arguments
