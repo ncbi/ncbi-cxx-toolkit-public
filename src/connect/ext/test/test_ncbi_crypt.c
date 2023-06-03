@@ -87,7 +87,7 @@ static void s_PrintStr(EAction action, const char* what,
     else
         *x_seed = '\0';
     if (!result  ||  !*result) {
-        int/*bool*/ dynamic = 0;
+        int/*bool*/ dynamic = 0/*false*/;
         const char* x_result = result ? "\"\"" :
             NcbiMessagePlusError(&dynamic, "<NULL>", errno, 0);
         CORE_LOGF(eLOG_Note,
