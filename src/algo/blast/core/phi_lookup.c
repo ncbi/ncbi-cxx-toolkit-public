@@ -602,6 +602,7 @@ SPHIPatternSearchBlkNew(char* pattern_in, Boolean is_dna, BlastScoreBlk* sbp,
         if (posIndex >= PHI_MAX_PATTERN_LENGTH) {
             Blast_MessageWrite(error_msg, eBlastSevWarning, kBlastMessageNoContext, 
                                "Pattern is too long");
+            return (-1);
         }
     }
     
