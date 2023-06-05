@@ -86,11 +86,13 @@ protected:
     void Report(const string& name, const exception& exc);
     void Report(const string& name, const CException& exc);
     void Report(const string& name, const pair<string, bool>& result);
+    string IsExcluded(CWGSDb& wgs);
     
 protected:
     CVDBMgr m_Mgr;
     size_t m_ErrorCount = 0;
     bool m_IgnoreAbsent = false;
+    bool m_ScanExcluded = false;
     CNcbiOstream* m_Out = nullptr;
     unique_ptr<IWGSCheck> m_Check;
     map<string, size_t> m_Results;
@@ -171,6 +173,7 @@ void CWGSScanApp::Init(void)
                               "feat_loc_id_type"));
 
     arg_desc->AddFlag("ignore_absent", "IgnoreAbsent");
+    arg_desc->AddFlag("scan_excluded", "ScanExcluded");
     
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -221,6 +224,16 @@ void CWGSScanApp::Report(const string& name, const pair<string, bool>& result)
 }
 
 
+string CWGSScanApp::IsExcluded(CWGSDb& wgs)
+{
+    CWGSSeqIterator iter(wgs, 1, CWGSSeqIterator::fIncludeDefault);
+    if ( !iter ) {
+        return " ";
+    }
+    return string();
+}
+
+
 void CWGSScanApp::CheckOne(const string& name)
 {
     CWGSDb wgs;
@@ -246,6 +259,13 @@ void CWGSScanApp::CheckOne(const string& name)
         return;
     }
     try {
+        if ( !m_ScanExcluded ) {
+            string excluded = IsExcluded(wgs);
+            if ( !excluded.empty() ) {
+                Report(name, "excluded: "+excluded);
+                return;
+            }
+        }
         auto ret = m_Check->Check(wgs);
         Report(name, ret);
         return;
@@ -342,6 +362,7 @@ int CWGSScanApp::Run(void)
     }
 
     m_IgnoreAbsent = args["ignore_absent"];
+    m_ScanExcluded = args["scan_excluded"];
     if ( args["type"] ) {
         auto type = args["type"].AsString();
         if ( type == "feat_loc_id_type" ) {
