@@ -2850,6 +2850,20 @@ BOOST_AUTO_TEST_CASE(TestReplacedProtein6)
 }
 
 
+BOOST_AUTO_TEST_CASE(TestReplacedNoGI)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("JACYIV010000036.1"));
+    BOOST_CHECK(bh);
+}
+
+
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
     LOG_POST("Checking WGS master sequence descriptors");
