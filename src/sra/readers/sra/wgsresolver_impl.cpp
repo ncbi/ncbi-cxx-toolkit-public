@@ -608,6 +608,8 @@ void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
 
 
 CWGSResolver_VDB::SImpl::SImpl(const CVDBMgr& mgr, const string& acc_or_path)
+    : m_FailedGiRequestCount(0),
+      m_FailedAccRequestCount(0)
 {
     string path = s_ResolveAccOrPath(mgr, acc_or_path);
     try {
@@ -705,11 +707,11 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::x_GetGiPrefixes(TGi gi)
             }
             ret.push_back(*value);
         }
-        m_Impl->m_FailedAccRequestCount.Set(0);
+        m_Impl->m_FailedAccRequestCount = 0;
         Put(cur);
     }
     catch ( ... ) {
-        m_Impl->m_FailedAccRequestCount.Add(1);
+        m_Impl->m_FailedAccRequestCount += 1;
         throw;
     }
     return ret;
@@ -791,10 +793,10 @@ CWGSResolver::TWGSPrefixes CWGSResolver_VDB::x_GetAccPrefixes(const string& acc)
             }
             Put(cur);
         }
-        m_Impl->m_FailedGiRequestCount.Set(0);
+        m_Impl->m_FailedGiRequestCount = 0;
     }
     catch ( ... ) {
-        m_Impl->m_FailedGiRequestCount.Add(1);
+        m_Impl->m_FailedGiRequestCount += 1;
         throw;
     }
     return ret;
