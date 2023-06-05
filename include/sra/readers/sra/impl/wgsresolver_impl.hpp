@@ -150,8 +150,8 @@ private:
         bool m_AccIndexIsPrefix;
         CVDBObjectCache<SGiIdxTableCursor> m_GiIdxCursorCache;
         CVDBObjectCache<SAccIdxTableCursor> m_AccIdxCursorCache;
-        CAtomicCounter_WithAutoInit m_FailedGiRequestCount;
-        CAtomicCounter_WithAutoInit m_FailedAccRequestCount;
+        atomic<Uint8> m_FailedGiRequestCount;
+        atomic<Uint8> m_FailedAccRequestCount;
     };
     string m_WGSIndexPath;
     unique_ptr<SImpl> m_Impl;
