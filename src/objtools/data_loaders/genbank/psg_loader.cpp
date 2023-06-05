@@ -372,6 +372,12 @@ TTaxId CPSGDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+void CPSGDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    m_Impl->GetTaxIds(ids, loaded, ret);
+}
+
+
 TSeqPos CPSGDataLoader::GetSequenceLength(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetSequenceLength(idh);

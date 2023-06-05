@@ -367,14 +367,14 @@ public:
     typedef TV TValue;
     typedef CPSGCache_Base<TKey, TValue> TParent;
 
-    CPSGCache_Base(int lifespan, size_t max_size)
-        : m_Lifespan(lifespan), m_MaxSize(max_size) {}
+    CPSGCache_Base(int lifespan, size_t max_size, TValue def_val = TValue(nullptr))
+        : m_Default(def_val), m_Lifespan(lifespan), m_MaxSize(max_size) {}
 
     TValue Find(const TKey& key) {
         CFastMutexGuard guard(m_Mutex);
         x_Expire();
         auto found = m_Values.find(key);
-        return found != m_Values.end() ? found->second.value : TValue(nullptr);
+        return found != m_Values.end() ? found->second.value : m_Default;
     }
     
     void Add(const TKey& key, const TValue& value) {
@@ -432,7 +432,8 @@ protected:
         m_Values.erase(m_RemoveList.front());
         m_RemoveList.pop_front();
     }
-    
+
+    TValue m_Default;
     CFastMutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
@@ -449,7 +450,7 @@ class CPSGCDDInfoCache : public CPSGCache_Base<string, bool>
 {
 public:
     CPSGCDDInfoCache(int lifespan, size_t max_size)
-        : TParent(lifespan, max_size) {}
+        : TParent(lifespan, max_size, false) {}
 };
 
 
@@ -588,6 +589,14 @@ SPsgBlobInfo::SPsgBlobInfo(const CTSE_Info& tse)
     blob_id_main = blob_id.ToPsgId();
     id2_info = blob_id.GetId2Info();
 }
+
+
+class CPSGIpgTaxIdMap : public CPSGCache_Base<CSeq_id_Handle, TTaxId>
+{
+public:
+    CPSGIpgTaxIdMap(int lifespan, size_t max_size)
+        : TParent(lifespan, max_size, INVALID_TAX_ID) {}
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -972,6 +981,10 @@ NCBI_PARAM_DEF_EX(unsigned int, PSG_LOADER, BULK_RETRY_COUNT, kDefaultBulkRetryC
     eParam_NoThread, PSG_LOADER_BULK_RETRY_COUNT);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, BULK_RETRY_COUNT) TPSG_BulkRetryCount;
 
+NCBI_PARAM_DECL(bool, PSG_LOADER, IPG_TAX_ID);
+NCBI_PARAM_DEF_EX(bool, PSG_LOADER, IPG_TAX_ID, false, eParam_NoThread, PSG_LOADER_IPG_TAX_ID);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, IPG_TAX_ID) TPSG_IpgTaxIdEnabled;
+
 
 template<class TParamType>
 static void s_ConvertParamValue(TParamType& value, const string& str)
@@ -1119,6 +1132,10 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         m_CDDInfoCache.reset(new CPSGCDDInfoCache(m_CacheLifespan, cache_max_size));
         m_CDDPrefetchTask.Reset(new CPSG_PrefetchCDD_Task(*this));
         m_ThreadPool->AddTask(m_CDDPrefetchTask);
+    }
+
+    if (TPSG_IpgTaxIdEnabled::GetDefault()) {
+        m_IpgTaxIdMap.reset(new CPSGIpgTaxIdMap(m_CacheLifespan, cache_max_size));
     }
 }
 
@@ -1291,8 +1308,31 @@ TTaxId CPSGDataLoader_Impl::GetTaxIdOnce(const CSeq_id_Handle& idh)
     if ( CannotProcess(idh) ) {
         return INVALID_TAX_ID;
     }
+    auto tax_id = x_GetIpgTaxId(idh);
+    if (tax_id != INVALID_TAX_ID) return tax_id;
     auto seq_info = x_GetBioseqInfo(idh);
     return seq_info ? seq_info->tax_id : INVALID_TAX_ID;
+}
+
+
+void CPSGDataLoader_Impl::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    return CallWithRetry(bind(&CPSGDataLoader_Impl::GetTaxIdsOnce, this,
+                              cref(ids), ref(loaded), ref(ret)), "GetTaxId");
+}
+
+
+void CPSGDataLoader_Impl::GetTaxIdsOnce(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    x_GetIpgTaxIds(ids, loaded, ret);
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (loaded[i]) continue;
+        TTaxId taxid = GetTaxId(ids[i]);
+        if ( taxid != INVALID_TAX_ID ) {
+            ret[i] = taxid;
+            loaded[i] = true;
+        }
+    }
 }
 
 
@@ -3548,6 +3588,141 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     }
 
     return m_BioseqCache->Add(*task->m_BioseqInfo, idh);
+}
+
+
+class CPSG_IpgTaxId_Task : public CPSG_Task
+{
+public:
+    CPSG_IpgTaxId_Task(size_t idx, bool is_wp_acc, TReply reply, CPSG_TaskGroup& group)
+        : CPSG_Task(reply, group), m_Idx(idx), m_IsWPAcc(is_wp_acc) {}
+
+    ~CPSG_IpgTaxId_Task(void) override {}
+
+    size_t m_Idx = 0;
+    bool m_IsWPAcc = false;
+    TTaxId m_TaxId = INVALID_TAX_ID;
+
+    void Finish(void) override {
+        m_TaxId = INVALID_TAX_ID;
+    }
+
+protected:
+    void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) override {
+        if (m_TaxId != INVALID_TAX_ID) return;
+        if (item->GetType() == CPSG_ReplyItem::eIpgInfo) {
+            auto ipg_info = static_pointer_cast<CPSG_IpgInfo>(item);
+            if (!m_IsWPAcc) {
+                m_TaxId = ipg_info->GetTaxId();
+            }
+            else if (ipg_info->GetNucleotide().empty()) {
+                m_TaxId = ipg_info->GetTaxId();
+            }
+        }
+    }
+};
+
+
+static bool s_IsIpgAccession(const CSeq_id_Handle& idh, string& acc_ver, bool& is_wp_acc)
+{
+    if (!idh) return false;
+    auto seq_id = idh.GetSeqId();
+    auto text_id = seq_id->GetTextseq_Id();
+    if (!text_id) return false;
+    CSeq_id::EAccessionInfo acc_info = idh.IdentifyAccession();
+    const int kAccFlags = CSeq_id::fAcc_prot | CSeq_id::fAcc_vdb_only;
+    if ((acc_info & kAccFlags) != kAccFlags) return false;
+    if ( !text_id->IsSetAccession() || !text_id->IsSetVersion() ) return false;
+    acc_ver = text_id->GetAccession()+'.'+NStr::NumericToString(text_id->GetVersion());
+    is_wp_acc = (acc_info & (CSeq_id::eAcc_division_mask | CSeq_id::eAcc_flag_mask)) == CSeq_id::eAcc_refseq_unique_prot;
+    return true;
+}
+
+
+TTaxId CPSGDataLoader_Impl::x_GetIpgTaxId(const CSeq_id_Handle& idh)
+{
+    if (!m_IpgTaxIdMap) return INVALID_TAX_ID;
+
+    TTaxId cached = m_IpgTaxIdMap->Find(idh);
+    if (cached != INVALID_TAX_ID) return cached;
+
+    string acc_ver;
+    bool is_wp_acc = false;
+    if (!s_IsIpgAccession(idh, acc_ver, is_wp_acc)) return INVALID_TAX_ID;
+
+    shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver);
+    auto reply = x_SendRequest(request);
+    if (!reply) {
+        _TRACE("Request failed: null reply");
+        NCBI_THROW(CLoaderException, eLoaderFailed, "null reply for "+idh.AsString());
+        return INVALID_TAX_ID;
+    }
+
+    CPSG_TaskGroup group(*m_ThreadPool);
+    CRef<CPSG_IpgTaxId_Task> task(new CPSG_IpgTaxId_Task(0, is_wp_acc, reply, group));
+    CPSG_Task_Guard guard(*task);
+    group.AddTask(task);
+    group.WaitAll();
+
+    if (task->GetStatus() != CThreadPool_Task::eCompleted) {
+        _TRACE("Failed to get ipg info for " << idh.AsString() << " @ "<<CStackTrace());
+        NCBI_THROW(CLoaderException, eLoaderFailed, "failed to get ipg info for "+idh.AsString());
+    }
+    m_IpgTaxIdMap->Add(idh, task->m_TaxId);
+    return task->m_TaxId;
+}
+
+
+void CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    if (!m_IpgTaxIdMap) return;
+
+    CPSG_TaskGroup group(*m_ThreadPool);
+    for (size_t i = 0; i < ids.size(); ++i) {
+        TTaxId cached = m_IpgTaxIdMap->Find(ids[i]);
+        if (cached != INVALID_TAX_ID) {
+            ret[i] = cached;
+            loaded[i] = true;
+            continue;
+        }
+
+        string acc_ver;
+        bool is_wp_acc = false;
+        if (!s_IsIpgAccession(ids[i], acc_ver, is_wp_acc)) continue;
+
+        shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver);
+        auto reply = x_SendRequest(request);
+        if (!reply) {
+            _TRACE("Request failed: null reply");
+            NCBI_THROW(CLoaderException, eLoaderFailed, "null reply for "+ids[i].AsString());
+            continue;
+        }
+
+        CRef<CPSG_IpgTaxId_Task> task(new CPSG_IpgTaxId_Task(i, is_wp_acc, reply, group));
+        group.AddTask(task);
+    }
+
+    list<shared_ptr<CPSG_Task_Guard>> guards;
+    int failed_count = 0;
+    while (group.HasTasks()) {
+        CRef<CPSG_IpgTaxId_Task> task(group.GetTask<CPSG_IpgTaxId_Task>().GetNCPointerOrNull());
+        _ASSERT(task);
+        guards.push_back(make_shared<CPSG_Task_Guard>(*task));
+
+        if (task->GetStatus() == CThreadPool_Task::eFailed) {
+            ++failed_count;
+            continue;
+        }
+        if (task->m_TaxId != INVALID_TAX_ID) {
+            m_IpgTaxIdMap->Add(ids[task->m_Idx], task->m_TaxId);
+            ret[task->m_Idx] = task->m_TaxId;
+            loaded[task->m_Idx] = true;
+        }
+    }
+    if ( failed_count ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<failed_count<<" tax-ids");
+    }
 }
 
 

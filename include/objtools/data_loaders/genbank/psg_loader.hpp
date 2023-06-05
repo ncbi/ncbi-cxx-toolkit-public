@@ -148,9 +148,9 @@ public:
 
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret) override;
     virtual void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret) override;
+    void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret) override;
     /*
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret) override;
-    void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret) override;
     void GetSequenceStates(const TIds& ids, TLoaded& loaded, TSequenceStates& ret) override;
     void GetSequenceHashes(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known) override;
     */

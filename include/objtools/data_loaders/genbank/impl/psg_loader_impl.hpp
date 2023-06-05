@@ -103,6 +103,7 @@ class CPSGBioseqCache;
 class CPSGAnnotCache;
 class CPSGCDDInfoCache;
 class CPSGBlobMap;
+class CPSGIpgTaxIdMap;
 class CPSG_Blob_Task;
 class CPSG_PrefetchCDD_Task;
 
@@ -115,6 +116,7 @@ public:
 
     typedef CDataLoader::TIds TIds;
     typedef CDataLoader::TGis TGis;
+    typedef CDataLoader::TTaxIds TTaxIds;
     typedef CDataLoader::TSequenceLengths TSequenceLengths;
     typedef CDataLoader::TSequenceTypes TSequenceTypes;
     typedef CDataLoader::TLoaded TLoaded;
@@ -128,6 +130,8 @@ public:
     CDataLoader::SAccVerFound GetAccVerOnce(const CSeq_id_Handle& idh);
     TTaxId GetTaxId(const CSeq_id_Handle& idh);
     TTaxId GetTaxIdOnce(const CSeq_id_Handle& idh);
+    void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    void GetTaxIdsOnce(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLengthOnce(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
@@ -255,12 +259,15 @@ private:
                            CDataSource* data_source,
                            CDataLoader::TProcessedNAs* processed_nas,
                            CDataLoader::TTSE_LockSet& locks);
+    TTaxId x_GetIpgTaxId(const CSeq_id_Handle& idh);
+    void x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
     bool m_AddWGSMasterDescr = true;
     shared_ptr<CPSG_Queue> m_Queue;
     unique_ptr<CPSGBlobMap> m_BlobMap;
+    unique_ptr<CPSGIpgTaxIdMap> m_IpgTaxIdMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
     unique_ptr<CPSGAnnotCache> m_AnnotCache;
     unique_ptr<CPSGCDDInfoCache> m_CDDInfoCache;
