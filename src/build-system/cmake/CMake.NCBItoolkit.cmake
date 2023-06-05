@@ -40,8 +40,6 @@ endif()
 #set(NCBI_PTBCFG_COLLECT_REQUIRES_FILE ncbi-cpp_requires)
 
 ###############################################################################
-set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
-
 set(_listdir "${CMAKE_CURRENT_LIST_DIR}")
 
 include(${_listdir}/CMake.NCBIptb.definitions.cmake)
