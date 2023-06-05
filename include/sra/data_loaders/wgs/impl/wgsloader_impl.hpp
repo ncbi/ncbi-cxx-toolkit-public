@@ -211,6 +211,7 @@ private:
     bool m_AddWGSMasterDescr;
     bool m_ResolveGIs;
     bool m_ResolveProtAccs;
+    atomic<bool> m_ResolverCreated;
 };
 
 

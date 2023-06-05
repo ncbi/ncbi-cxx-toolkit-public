@@ -373,7 +373,8 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
       m_FoundFiles(GetGCSize()),
       m_AddWGSMasterDescr(GetMasterDescrParam()),
       m_ResolveGIs(GetResolveGIsParam()),
-      m_ResolveProtAccs(GetResolveProtAccsParam())
+      m_ResolveProtAccs(GetResolveProtAccsParam()),
+      m_ResolverCreated(false)
 {
     if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
         m_WGSVolPath = GetWGSVolPath();
@@ -474,19 +475,22 @@ END_LOCAL_NAMESPACE;
 
 CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
 {
-    if ( !m_Resolver ) {
+    if ( !m_ResolverCreated.load(memory_order_acquire) ) {
         CMutexGuard guard(m_Mutex);
-        if ( !m_Resolver ) {
-            m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
-        }
-        if ( !m_Resolver ) {
-            m_Resolver = CWGSResolver_DL::CreateResolver();
-        }
-        if ( m_Resolver && !m_UpdateThread ) {
+        if ( !m_ResolverCreated.load(memory_order_acquire) ) {
+            if ( !m_Resolver ) {
+                m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
+            }
+            if ( !m_Resolver ) {
+                m_Resolver = CWGSResolver_DL::CreateResolver();
+            }
+            if ( m_Resolver && !m_UpdateThread ) {
 #ifdef NCBI_THREADS
-            m_UpdateThread = new CIndexUpdateThread(GetUpdateTime(), m_Resolver);
-            m_UpdateThread->Run();
+                m_UpdateThread = new CIndexUpdateThread(GetUpdateTime(), m_Resolver);
+                m_UpdateThread->Run();
 #endif
+            }
+            m_ResolverCreated.store(true, memory_order_release);
         }
     }
     return *m_Resolver;
