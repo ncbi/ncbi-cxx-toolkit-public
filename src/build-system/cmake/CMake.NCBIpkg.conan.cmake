@@ -22,8 +22,6 @@ set(NCBI_PTBCFG_ENABLE_COLLECTOR       ON)
 #set(NCBI_PTBCFG_ADDTEST                OFF)
 
 ###############################################################################
-set(NCBI_PTBCFG_INSTALL_EXPORT ncbi-cpp-toolkit)
-
 set(_listdir "${CMAKE_CURRENT_LIST_DIR}")
 include(${_listdir}/CMake.NCBIptb.definitions.cmake)
 include(${_listdir}/CMakeMacros.cmake)
