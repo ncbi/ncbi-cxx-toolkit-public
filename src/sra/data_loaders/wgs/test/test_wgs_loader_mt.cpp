@@ -117,8 +117,8 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type)
 
 
 #ifdef USE_BOOST_THREAD
-typedef boost::thread thread;
-typedef thread::attributes thread_extra;
+typedef boost::thread thread_type;
+typedef thread_type::attributes thread_extra;
 thread_extra get_thread_extra()
 {
     static const size_t kStackSize = 2<<20;
@@ -127,21 +127,21 @@ thread_extra get_thread_extra()
     return attrs;
 }
 template<class Func>
-thread get_thread(const thread_extra& extra, const Func& func)
+thread_type get_thread(const thread_extra& extra, const Func& func)
 {
-    return thread(extra, func);
+    return thread_type(extra, func);
 }
 #else
-typedef std::thread thread;
+typedef std::thread thread_type;
 typedef int thread_extra;
 thread_extra get_thread_extra()
 {
     return 0;
 }
 template<class Func>
-thread get_thread(const thread_extra&, const Func& func)
+thread_type get_thread(const thread_extra&, const Func& func)
 {
-    return thread(func);
+    return thread_type(func);
 }
 #endif
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
         }
     }
     thread_extra extra = get_thread_extra();
-    vector<thread> tt(NQ);
+    vector<thread_type> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
             get_thread(extra, bind([&](const vector<string>& ids)
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
         }
     }}
     thread_extra extra = get_thread_extra();
-    vector<thread> tt(NQ);
+    vector<thread_type> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
             get_thread(extra, bind([&](const vector<string>& ids)
@@ -430,7 +430,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
         }
     }
     thread_extra extra = get_thread_extra();
-    vector<thread> tt(NQ);
+    vector<thread_type> tt(NQ);
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
             get_thread(extra, bind([&](size_t index, const vector<string>& ids)
