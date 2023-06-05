@@ -2386,13 +2386,13 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
 
 inline
 void CWGSDb_Impl::OpenTable(CVDBTable& table,
-                            volatile bool& table_is_opened,
+                            atomic<bool>& table_is_opened,
                             const char* table_name)
 {
     CFastMutexGuard guard(m_TableMutex);
-    if ( !table_is_opened ) {
+    if ( !table_is_opened.load(memory_order_acquire) ) {
         table = CVDBTable(m_Db, table_name, CVDBTable::eMissing_Allow);
-        table_is_opened = true;
+        table_is_opened.store(true, memory_order_release);
     }
 }
 
@@ -2400,13 +2400,13 @@ void CWGSDb_Impl::OpenTable(CVDBTable& table,
 inline
 void CWGSDb_Impl::OpenIndex(const CVDBTable& table,
                             CVDBTableIndex& index,
-                            volatile Int1& index_is_opened,
+                            atomic<Int1>& index_is_opened,
                             const char* index_name,
                             const char* backup_index_name)
 {
     if ( table ) {
         CFastMutexGuard guard(m_TableMutex);
-        if ( !index_is_opened ) {
+        if ( !index_is_opened.load(memory_order_acquire) ) {
             Int1 type = -1;
             index = CVDBTableIndex(table, index_name,
                                    CVDBTableIndex::eMissing_Allow);
@@ -2420,11 +2420,11 @@ void CWGSDb_Impl::OpenIndex(const CVDBTable& table,
                     type = 2;
                 }
             }
-            index_is_opened = type;
+            index_is_opened.store(type, memory_order_release);
         }
     }
     else {
-        index_is_opened = -1;
+        index_is_opened.store(-1, memory_order_release);
     }
 }
 
@@ -3592,28 +3592,28 @@ TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
         Put(seq);
     }
     const CVDBTableIndex& index = ContigNameIndex();
-    return Lookup(name, index, m_ContigNameIndexIsOpened == 2);
+    return Lookup(name, index, m_ContigNameIndexIsOpened.load(memory_order_relaxed) == 2);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetScaffoldNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ScaffoldNameIndex();
-    return Lookup(name, index, m_ScaffoldNameIndexIsOpened == 2);
+    return Lookup(name, index, m_ScaffoldNameIndexIsOpened.load(memory_order_relaxed) == 2);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetProteinNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ProteinNameIndex();
-    return Lookup(name, index, m_ProteinNameIndexIsOpened == 2);
+    return Lookup(name, index, m_ProteinNameIndexIsOpened.load(memory_order_relaxed) == 2);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetProductNameRowId(const string& name)
 {
     const CVDBTableIndex& index = ProductNameIndex();
-    return Lookup(name, index, m_ProductNameIndexIsOpened == 2);
+    return Lookup(name, index, m_ProductNameIndexIsOpened.load(memory_order_relaxed) == 2);
 }
 
 
@@ -3687,13 +3687,20 @@ bool CWGSDb_Impl::CanHaveGis()
 }
 
 
+TVDBRowCount CWGSDb_Impl::GetTotalFeatureCount()
+{
+    TVDBRowCount feature_count = 0;
+    if ( auto cur = Feat() ) {
+        feature_count = cur->m_Cursor.GetRowIdRange().second;
+        Put(cur);
+    }
+    return feature_count;
+}
+
+
 bool CWGSDb_Impl::HasFeatures()
 {
-    bool has_features = false;
-    auto cur = Feat();
-    has_features = cur && cur->m_Cursor.GetRowIdRange().second > 0;
-    Put(cur);
-    return has_features;
+    return GetTotalFeatureCount() > 0;
 }
 
 
@@ -3776,11 +3783,11 @@ CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::DetermineFeatLocIdType()
 
 CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
 {
-    auto loc_id_type = m_FeatLocIdType;
+    auto loc_id_type = m_FeatLocIdType.load(memory_order_relaxed);
     if ( loc_id_type == eFeatLocIdUninitialized ) {
         // determine and cache for the future
         loc_id_type = DetermineFeatLocIdType();
-        m_FeatLocIdType = loc_id_type;
+        m_FeatLocIdType.store(loc_id_type, memory_order_relaxed);
     }
     return loc_id_type;
 }

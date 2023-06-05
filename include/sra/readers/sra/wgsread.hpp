@@ -412,6 +412,7 @@ public:
         return m_CommonTaxId;
     }
     bool CanHaveGis();
+    TVDBRowCount GetTotalFeatureCount();
     bool HasFeatures();
     
     struct SAmbiguityInfo;
@@ -446,61 +447,61 @@ protected:
         return m_SeqTable;
     }
     const CVDBTable& ScfTable(void) {
-        if ( !m_ScfTableIsOpened ) {
+        if ( !m_ScfTableIsOpened.load(memory_order_acquire) ) {
             OpenScfTable();
         }
         return m_ScfTable;
     }
     const CVDBTable& ProtTable(void) {
-        if ( !m_ProtTableIsOpened ) {
+        if ( !m_ProtTableIsOpened.load(memory_order_acquire) ) {
             OpenProtTable();
         }
         return m_ProtTable;
     }
     const CVDBTable& FeatTable(void) {
-        if ( !m_FeatTableIsOpened ) {
+        if ( !m_FeatTableIsOpened.load(memory_order_acquire) ) {
             OpenFeatTable();
         }
         return m_FeatTable;
     }
     const CVDBTable& GiIdxTable(void) {
-        if ( !m_GiIdxTableIsOpened ) {
+        if ( !m_GiIdxTableIsOpened.load(memory_order_acquire) ) {
             OpenGiIdxTable();
         }
         return m_GiIdxTable;
     }
     const CVDBTable& ProtIdxTable(void) {
-        if ( !m_ProtIdxTableIsOpened ) {
+        if ( !m_ProtIdxTableIsOpened.load(memory_order_acquire) ) {
             OpenProtIdxTable();
         }
         return m_ProtIdxTable;
     }
     const CVDBTableIndex& ProtAccIndex(void) {
-        if ( !m_ProtAccIndexIsOpened ) {
+        if ( !m_ProtAccIndexIsOpened.load(memory_order_acquire) ) {
             OpenProtAccIndex();
         }
         return m_ProtAccIndex;
     }
     const CVDBTableIndex& ContigNameIndex(void) {
-        if ( !m_ContigNameIndexIsOpened ) {
+        if ( !m_ContigNameIndexIsOpened.load(memory_order_acquire) ) {
             OpenContigNameIndex();
         }
         return m_ContigNameIndex;
     }
     const CVDBTableIndex& ScaffoldNameIndex(void) {
-        if ( !m_ScaffoldNameIndexIsOpened ) {
+        if ( !m_ScaffoldNameIndexIsOpened.load(memory_order_acquire) ) {
             OpenScaffoldNameIndex();
         }
         return m_ScaffoldNameIndex;
     }
     const CVDBTableIndex& ProteinNameIndex(void) {
-        if ( !m_ProteinNameIndexIsOpened ) {
+        if ( !m_ProteinNameIndexIsOpened.load(memory_order_acquire) ) {
             OpenProteinNameIndex();
         }
         return m_ProteinNameIndex;
     }
     const CVDBTableIndex& ProductNameIndex(void) {
-        if ( !m_ProductNameIndexIsOpened ) {
+        if ( !m_ProductNameIndexIsOpened.load(memory_order_acquire) ) {
             OpenProductNameIndex();
         }
         return m_ProductNameIndex;
@@ -544,11 +545,11 @@ protected:
 protected:
     // open tables
     void OpenTable(CVDBTable& table,
-                   volatile bool& table_is_opened,
+                   atomic<bool>& table_is_opened,
                    const char* table_name);
     void OpenIndex(const CVDBTable& table,
                    CVDBTableIndex& index,
-                   volatile Int1& index_is_opened,
+                   atomic<Int1>& index_is_opened,
                    const char* index_name,
                    const char* backup_index_name = 0);
 
@@ -585,16 +586,16 @@ private:
     SIZE_TYPE m_IdRowDigits;
 
     CFastMutex m_TableMutex;
-    volatile bool m_ScfTableIsOpened;
-    volatile bool m_ProtTableIsOpened;
-    volatile bool m_FeatTableIsOpened;
-    volatile bool m_GiIdxTableIsOpened;
-    volatile bool m_ProtIdxTableIsOpened;
-    volatile Int1 m_ProtAccIndexIsOpened;
-    volatile Int1 m_ContigNameIndexIsOpened;
-    volatile Int1 m_ScaffoldNameIndexIsOpened;
-    volatile Int1 m_ProteinNameIndexIsOpened;
-    volatile Int1 m_ProductNameIndexIsOpened;
+    atomic<bool> m_ScfTableIsOpened;
+    atomic<bool> m_ProtTableIsOpened;
+    atomic<bool> m_FeatTableIsOpened;
+    atomic<bool> m_GiIdxTableIsOpened;
+    atomic<bool> m_ProtIdxTableIsOpened;
+    atomic<Int1> m_ProtAccIndexIsOpened;
+    atomic<Int1> m_ContigNameIndexIsOpened;
+    atomic<Int1> m_ScaffoldNameIndexIsOpened;
+    atomic<Int1> m_ProteinNameIndexIsOpened;
+    atomic<Int1> m_ProductNameIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_FeatTable;
@@ -623,7 +624,7 @@ private:
     bool m_IsSetMasterDescr;
     bool m_HasNoDefaultGnlId;
     bool m_HasCommonTaxId;
-    EFeatLocIdType m_FeatLocIdType;
+    atomic<EFeatLocIdType> m_FeatLocIdType;
     CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
     CRef<CSeq_id> m_PatentId;
