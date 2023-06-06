@@ -12,6 +12,7 @@
 ##############################################################################
 # Find datatool app
 
+if(NOT DEFINED NCBI_DATATOOL)
 if(NCBI_PTBCFG_PACKAGED)
     set(NCBI_DATATOOL "${NCBITK_TREE_ROOT}/bin/datatool${CMAKE_EXECUTABLE_SUFFIX}")
 else()
@@ -51,6 +52,7 @@ else()
         message(STATUS "Datatool location: <locally compiled>")
     endif()
 endif()
+endif(NOT DEFINED NCBI_DATATOOL)
 
 ##############################################################################
 function(NCBI_internal_process_dataspec _variable _access _value)
