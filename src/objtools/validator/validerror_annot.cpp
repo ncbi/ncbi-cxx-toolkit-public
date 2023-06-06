@@ -69,14 +69,13 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 {
     if (annot.IsAlign()) {
         if (annot.Seq_annot_IsSetDesc()) {
-            ITERATE(list<CRef<CAnnotdesc>>, iter, annot.Seq_annot_GetDesc().Get()) {
-                if ((*iter)->IsUser()) {
-                    const CObject_id& oid = (*iter)->GetUser().GetType();
+            for (const CRef<CAnnotdesc>& iter : annot.Seq_annot_GetDesc().Get()) {
+                if (iter->IsUser()) {
+                    const CObject_id& oid = iter->GetUser().GetType();
                     if (oid.IsStr()) {
                         if (oid.GetStr() == "Blast Type") {
                             PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
                                 "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
-
                             break;
                         }
                     }
@@ -97,10 +96,10 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
 {
     if (annot.IsAlign()) {
         if (annot.IsSetDesc()) {
-            ITERATE(list<CRef<CAnnotdesc>>, iter, annot.GetDesc().Get()) {
-                if ((*iter)->IsUser()) {
-                    const CObject_id& oid = (*iter)->GetUser().GetType();
-                    if ( oid.IsStr() ) {
+            for (const CRef<CAnnotdesc>& iter : annot.GetDesc().Get()) {
+                if (iter->IsUser()) {
+                    const CObject_id& oid = iter->GetUser().GetType();
+                    if (oid.IsStr()) {
                         if (oid.GetStr() == "Blast Type") {
                             PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
                                 "Record contains BLAST alignments", annot); // !!!
@@ -112,8 +111,8 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
         }
         if (m_Imp.IsValidateAlignments()) {
             int order = 1;
-            FOR_EACH_ALIGN_ON_ANNOT (align, annot) {
-                m_AlignValidator.ValidateSeqAlign(**align, order++);
+            for (const auto& align : annot.GetData().GetAlign()) {
+                m_AlignValidator.ValidateSeqAlign(*align, order++);
             }
         }
     } else if (annot.IsIds()) {
@@ -123,8 +122,8 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
         PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotLOCs,
                 "Record contains Seq-annot.data.locs", annot);
     } else if (annot.IsGraph()) {
-        FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
-            m_GraphValidator.ValidateSeqGraph(**graph);
+        for (const auto& graph : annot.GetData().GetGraph()) {
+            m_GraphValidator.ValidateSeqGraph(*graph);
         }
     } else if (annot.IsFtable()) {
         CSeq_entry_Handle appropriate_parent;
@@ -143,16 +142,16 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
             CSeq_entry_Handle this_seh = tmp_scope->AddTopLevelSeqEntry(*(appropriate_parent.GetCompleteSeq_entry()));
             m_FeatValidator.SetScope(*tmp_scope);
             m_FeatValidator.SetTSE(this_seh);
-            FOR_EACH_FEATURE_ON_ANNOT(feat, annot) {
-                m_FeatValidator.ValidateSeqFeat(**feat);
+            for (const auto& feat : annot.GetData().GetFtable()) {
+                m_FeatValidator.ValidateSeqFeat(*feat);
             }
             m_FeatValidator.SetScope(*m_Scope);
             m_FeatValidator.SetTSE(m_Imp.GetTSEH());
         } else {
             m_FeatValidator.SetScope(*m_Scope);
             m_FeatValidator.SetTSE(m_Imp.GetTSEH());
-            FOR_EACH_FEATURE_ON_ANNOT(feat, annot) {
-                m_FeatValidator.ValidateSeqFeat(**feat);
+            for (const auto& feat : annot.GetData().GetFtable()) {
+                m_FeatValidator.ValidateSeqFeat(*feat);
             }
         }
     }
@@ -162,26 +161,28 @@ void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
 void CValidError_annot::ValidateSeqAnnotContext(const CSeq_annot& annot, const CBioseq& seq)
 {
     if (annot.IsGraph()) {
-        FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
-            m_GraphValidator.ValidateSeqGraphContext(**graph, seq);
+        for (const auto& graph : annot.GetData().GetGraph()) {
+            m_GraphValidator.ValidateSeqGraphContext(*graph, seq);
         }
     } else if (annot.IsFtable()) {
-        FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, annot) {
+        for (const auto& feat_it : annot.GetData().GetFtable()) {
             string label = seq.GetId().front()->AsFastaString();
-            ReportLocationGI0(**feat_it, label);
-            if (!(*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
+            ReportLocationGI0(*feat_it, label);
+            if (! feat_it->IsSetLocation() || IsLocationUnindexed(feat_it->GetLocation())) {
                 m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
-                    "Feature is not indexed on Bioseq " + label, **feat_it);
+                    "Feature is not indexed on Bioseq " + label, *feat_it);
             } else {
                 // check feature packaging
                 // a feature packaged on a bioseq should have at least one location on the bioseq
                 bool found = false;
-                for (CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it) {
+                for (CSeq_loc_CI loc_it(feat_it->GetLocation()); loc_it; ++loc_it) {
                     const CSeq_id& id = loc_it.GetSeq_id();
-                    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
-                        if (id.Compare(**id_it) == CSeq_id::e_YES) {
-                            found = true;
-                            break;
+                    if (seq.IsSetId()) {
+                        for (const auto& id_it : seq.GetId()) {
+                            if (id.Compare(*id_it) == CSeq_id::e_YES) {
+                                found = true;
+                                break;
+                            }
                         }
                     }
                     if (! found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
@@ -236,21 +237,24 @@ void CValidError_annot::ValidateSeqAnnotContext(const CSeq_annot& annot, const C
     }
 }
 
-static bool x_IsEmblOrDdbjOnSet(const CBioseq_set_Handle & set)
+static bool x_IsEmblOrDdbjOnSet(const CBioseq_set_Handle& set)
 {
     bool answer = false;
     for (CBioseq_CI b_ci(set); b_ci && ! answer; ++b_ci) {
         // actually looks only at the first seq-id
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(b_ci->GetCompleteBioseq())) {
-            switch ((*id_it)->Which()) {
-            case CSeq_id::e_Embl:
-            case CSeq_id::e_Ddbj:
-            case CSeq_id::e_Tpe:
-            case CSeq_id::e_Tpd:
-                answer = true;
-                break;
-            default:
-                break;
+        const CBioseq* bioseq = b_ci->GetCompleteBioseq();
+        if (bioseq->IsSetId()) {
+            for (const auto& id_it : bioseq->GetId()) {
+                switch (id_it->Which()) {
+                case CSeq_id::e_Embl:
+                case CSeq_id::e_Ddbj:
+                case CSeq_id::e_Tpe:
+                case CSeq_id::e_Tpd:
+                    answer = true;
+                    break;
+                default:
+                    break;
+                }
             }
         }
     }
@@ -275,7 +279,7 @@ bool s_IsBioseqInSet(CBioseq_Handle bsh, const CBioseq_set& set)
 bool s_HasOneIntervalInSet(const CSeq_loc& loc, const CBioseq_set& set, CScope& scope, const CSeq_entry& tse)
 {
     for (CSeq_loc_CI loc_it(loc); loc_it; ++loc_it) {
-        const CSeq_id& id = loc_it.GetSeq_id();
+        const CSeq_id& id        = loc_it.GetSeq_id();
         CBioseq_Handle in_record = scope.GetBioseqHandleFromTSE(id, tse);
         if (! in_record)
             continue;
@@ -290,26 +294,26 @@ bool s_HasOneIntervalInSet(const CSeq_loc& loc, const CBioseq_set& set, CScope& 
 void CValidError_annot::ValidateSeqAnnotContext(const CSeq_annot& annot, const CBioseq_set& set)
 {
     if (annot.IsGraph()) {
-        FOR_EACH_GRAPH_ON_ANNOT (graph, annot) {
-            m_GraphValidator.ValidateSeqGraphContext(**graph, set);
+        for (const auto& graph : annot.GetData().GetGraph()) {
+            m_GraphValidator.ValidateSeqGraphContext(*graph, set);
         }
     } else if (annot.IsFtable()) {
         // if a feature is packaged on a set, the bioseqs in the locations should be in the set
-        CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle(set);
-        const bool is_embl_or_ddbj_on_set = x_IsEmblOrDdbjOnSet(bssh);
+        CBioseq_set_Handle bssh     = m_Scope->GetBioseq_setHandle(set);
+        bool is_embl_or_ddbj_on_set = x_IsEmblOrDdbjOnSet(bssh);
 
-        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
-            ReportLocationGI0(**feat_it, "?");
-            if (! (*feat_it)->IsSetLocation() || IsLocationUnindexed((*feat_it)->GetLocation())) {
+        for (const auto& feat_it : annot.GetData().GetFtable()) {
+            ReportLocationGI0(*feat_it, "?");
+            if (! feat_it->IsSetLocation() || IsLocationUnindexed(feat_it->GetLocation())) {
                 m_Imp.PostErr(eDiag_Error, eErr_SEQ_FEAT_UnindexedFeature,
-                    "Feature is not indexed on Bioseq ?", **feat_it);
+                    "Feature is not indexed on Bioseq ?", *feat_it);
             } else if (is_embl_or_ddbj_on_set) {
                 // don't check packaging
             } else if (! set.IsSetClass() ||
                        (set.GetClass() != CBioseq_set::eClass_nuc_prot && set.GetClass() != CBioseq_set::eClass_gen_prod_set)) {
                 m_Imp.IncrementMisplacedFeatureCount();
-            } else if ((*feat_it)->IsSetLocation() &&
-                       ! s_HasOneIntervalInSet((*feat_it)->GetLocation(), set, *m_Scope, m_Imp.GetTSE())) {
+            } else if (feat_it->IsSetLocation() &&
+                       ! s_HasOneIntervalInSet(feat_it->GetLocation(), set, *m_Scope, m_Imp.GetTSE())) {
                 if (m_Imp.IsSmallGenomeSet()) {
                     m_Imp.IncrementSmallGenomeSetMisplacedCount();
                 } else {
@@ -367,9 +371,7 @@ void CValidError_annot::ReportLocationGI0(const CSeq_feat& f, const string& labe
 
     if (zero_gi > 0) {
         PostErr(eDiag_Critical, eErr_SEQ_FEAT_FeatureLocationIsGi0,
-            "Feature has " + NStr::UIntToString(zero_gi)
-            + " gi|0 location" + (zero_gi > 1 ? "s" : "")
-            + " on Bioseq " + label,
+            "Feature has " + NStr::UIntToString(zero_gi) + " gi|0 location" + (zero_gi > 1 ? "s" : "") + " on Bioseq " + label,
             f);
     }
 }
