@@ -155,7 +155,7 @@ function(NCBI_internal_generate_cpp GEN_SOURCES GEN_HEADERS)
                     DEPENDS ${_depends}
                     VERBATIM
                 )
-                list(APPEND __ncbi_add_dotinc ${_path})
+                list(APPEND __ncbi_add_dotinc ${_hdr_abspath})
             endif()
         elseif("${_ext}" IN_LIST _protoc_specs)
             if(NOT "-proto" IN_LIST GEN_GEN_OPTIONS)
