@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/atomic_util.hpp>
 #include <util/range.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -95,7 +96,7 @@ public:
     // SRefInfo holds cached refseq information - ids, len, rows
     struct SRefInfo {
         string m_Name, m_SeqId;
-        mutable volatile TSeqPos m_SeqLength; // actual len will be updated
+        mutable copyable_relaxed_atomic<TSeqPos> m_SeqLength; // actual len will be updated
         CBioseq::TId m_Seq_ids;
         CSeq_id_Handle m_Seq_id_Handle;
         CRef<CSeq_id>& GetMainSeq_id(void) {
