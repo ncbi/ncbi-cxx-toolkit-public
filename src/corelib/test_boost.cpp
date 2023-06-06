@@ -1165,6 +1165,7 @@ static const char* s_NcbiFeatures[] = {
     "WorkShop",
     "XCODE",
     "in_house_resources",  // in-house-resources
+    "full_in_house_resources",  // full-in-house-resources
     "unix",
 
     // Packages

@@ -16147,6 +16147,10 @@ if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
     -a \( -d /am/ncbiapdata/test_data -o -d /Volumes/ncbiapdata/test_data \)
 then
              WithFeatures="$WithFeatures${WithFeaturesSep}in-house-resources"; WithFeaturesSep=" "
+   if test -d /am/ncbiapdata/test_data/traces04 \
+      -o -d /Volumes/ncbiapdata/test_data/traces04; then
+                 WithFeatures="$WithFeatures${WithFeaturesSep}full-in-house-resources"; WithFeaturesSep=" "
+   fi
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
@@ -36484,7 +36488,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources JDK Ncbi-JNI PubSeqOS PSGLoader check Valgrind LimitedLinker; do
+for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources full-in-house-resources JDK Ncbi-JNI PubSeqOS PSGLoader check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

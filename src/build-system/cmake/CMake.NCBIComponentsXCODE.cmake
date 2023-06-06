@@ -70,7 +70,7 @@ set(FOUNDATION_LIBS "-framework foundation")
 set(COREFOUNDATION_LIBS "-framework CoreFoundation")
 
 #############################################################################
-# in-house-resources
+# (full-)in-house-resources
 set(NCBI_REQUIRE_in-house-resources_FOUND NO)
 if (NOT NCBI_COMPONENT_in-house-resources_DISABLED)
     if (EXISTS "${NCBI_TOOLS_ROOT}/.ncbirc")
@@ -81,9 +81,13 @@ if (NOT NCBI_COMPONENT_in-house-resources_DISABLED)
         set(NCBITEST_TESTDATA_PATH "/Volumes/ncbiapdata/test_data")
         set(NCBI_REQUIRE_in-house-resources_FOUND YES)
       endif()
+      if(EXISTS "${NCBITEST_TESTDATA_PATH}/traces04")
+        set(NCBI_REQUIRE_full-in-house-resources_FOUND YES)
+      endif()
     endif()
 endif()
 NCBIcomponent_report(in-house-resources)
+NCBIcomponent_report(full-in-house-resources)
 
 #############################################################################
 # NCBI_C

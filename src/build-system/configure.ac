@@ -4486,6 +4486,10 @@ if test -n "$orig_NCBI" -a -f "$orig_NCBI/.ncbirc" \
     -a \( -d /am/ncbiapdata/test_data -o -d /Volumes/ncbiapdata/test_data \)
 then
    NCBI_FEATURE(in-house-resources)
+   if test -d /am/ncbiapdata/test_data/traces04 \
+      -o -d /Volumes/ncbiapdata/test_data/traces04; then
+       NCBI_FEATURE(full-in-house-resources)
+   fi
    AC_MSG_RESULT(yes)
 else
    AC_MSG_RESULT(no)
