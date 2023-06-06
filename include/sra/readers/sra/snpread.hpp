@@ -271,11 +271,6 @@ protected:
     // SExtraTableCursor is helper accessor structure for extra info (alleles)
     struct SExtraTableCursor;
 
-    // open tables
-    void OpenTable(CVDBTable& table,
-                   const char* table_name,
-                   volatile bool& table_is_opened);
-
     const CVDBTable& SeqTable(void) {
         return m_SeqTable;
     }
