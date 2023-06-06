@@ -8716,7 +8716,7 @@ ZDEU	s	Zoological collection of the Department of Biology
 ZDKU	s	Kharkiv National University			
 ZDM	s	Zigong dinosaur Museum			
 ZEA	s	Universidad de Guadalajara, Centro Universitario de la Costa Sur, Departamento de Ecologia y Recursos Naturales			
-ZFMK	sb	Zoologisches Forschungsmuseum Alexander Koenig			
+ZFMK	sb	Museum Koenig Bonn			
 ZFMK:COL	s	Zoologisches Forschungsmuseum Alexander Koenig, Coleoptera collection			
 ZFMK:FSJF	s	Zoologisches Forschungsmuseum Alexander Koenig, fish collection of Jeorg Freyhof			
 ZFMK:ICH	s	Zoologisches Forschungsmuseum Alexander Koenig, Ichthyological Collection			
