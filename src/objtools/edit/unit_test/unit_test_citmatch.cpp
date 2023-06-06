@@ -41,7 +41,6 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/pub/Pub.hpp>
 
-#include <objtools/edit/mla_updater.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 
 #include <array>
@@ -52,10 +51,9 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(edit);
 
-static CMLAUpdater    upd_mla;
 static CEUtilsUpdater upd_eutils;
 
-static array<IPubmedUpdater*, 2> updaters = { &upd_mla, &upd_eutils };
+static array<IPubmedUpdater*, 1> updaters = { &upd_eutils };
 
 BOOST_AUTO_TEST_CASE(Test_EmptyASN)
 {
