@@ -189,9 +189,7 @@ static FCreateConnector s_CreateConnector = s_CreateConnectorHttp;
 static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
-
     CORE_TRACEF(("NAMERD::s_CreateConnectorHttp(\"%s\")", iter->name));
-
     return HTTP_CreateConnector(data->net_info, 0/*user-headers*/, 0/*flags*/);
 }
 
@@ -199,9 +197,14 @@ static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
 {
     BUF buf = 0;
+    CONNECTOR m;
     CORE_TRACEF(("NAMERD::s_CreateConnectorMemory(\"%s\")", iter->name));
-    BUF_Append(&buf, s_mock_body, strlen(s_mock_body));
-    return MEMORY_CreateConnectorEx(buf, 1/*own it!*/);
+    if (!BUF_Append(&buf, s_mock_body, strlen(s_mock_body))  ||
+        !(m = MEMORY_CreateConnectorEx(buf, 1/*own it!*/))) {
+        BUF_Destroy(buf);
+        return 0/*failure*/;
+    }
+    return m;
 }
 
 
@@ -225,9 +228,9 @@ static void s_RemoveServerInfo(struct SNAMERD_Data* data, size_t n, int del
 static void s_ProcessForStandby(struct SNAMERD_Data* data
                                 DEBUG_PARAM(const char* name))
 {
-    double  max_rate = 0.0;
-    int     all_standby = 1;
-    size_t  i;
+    int/*bool*/ all_standby = 1/*true*/;
+    double      max_rate = 0.0;
+    size_t      i;
 
     /*  basic logic:
         if any endpoints have rate >= LBSM_STANDBY_THRESHOLD
@@ -237,12 +240,10 @@ static void s_ProcessForStandby(struct SNAMERD_Data* data
     */
 
     for (i = 0;  i < data->n_cand;  ++i) {
-
         if (max_rate < data->cand[i].info->rate)
             max_rate = data->cand[i].info->rate;
-
         if (data->cand[i].info->rate >= LBSM_STANDBY_THRESHOLD)
-            all_standby = 0;
+            all_standby = 0/*false*/;
     }
 
     /* Loop from highest index to lowest to ensure well-defined behavior when
@@ -1220,6 +1221,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     FSvcCpy svccpy = iter->exact ? memcpy : x_memlwrcpy;
     char   buf[CONN_PATH_LEN + 1];
     size_t len, argslen, namelen;
+    int/*bool*/ skiparg;
     char*  dtab;
     int    n;
 
@@ -1351,11 +1353,15 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                     ("[%s] Unable to get NAMERD args", iter->name));
         return 0/*failed*/;
     }
+    skiparg = 0/*false*/;
     argslen = strlen(buf);
     namelen = strlen(iter->name);
     len = argslen + namelen;
     if (iter->arglen) {
-        len += 1 + iter->arglen;
+        if (strcasecmp(iter->arg, "dbaf") == 0  &&  iter->val  &&  *iter->val)
+            skiparg = 1/*true: ad-hoc CXX-13087*/;
+        else
+            len += 1 + iter->arglen;
         if (iter->val)
             len += 1 + iter->vallen;
     }
@@ -1363,11 +1369,13 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
         len = argslen;
         svccpy(buf + len, iter->name, namelen);
         len += namelen;
-        if (iter->vallen) {
-            buf[len++] = '/';
-            svccpy(buf + len, iter->arg, iter->arglen);
-            len += iter->arglen;
-            if (iter->val) {
+        if (iter->arglen) {
+            if (!skiparg) {
+                buf[len++] = '/';
+                svccpy(buf + len, iter->arg, iter->arglen);
+                len += iter->arglen;
+            }
+            if (iter->vallen  ||  iter->val) {
                 buf[len++] = '/';
                 svccpy(buf + len, iter->val, iter->vallen);
                 len += iter->vallen;
@@ -1559,6 +1567,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 }
 
 
+/* This API is for debugging purposes ONLY! */
 extern int SERV_NAMERD_SetConnectorSource(const char* mock_body)
 {
     if ( ! mock_body  ||  ! *mock_body) {
