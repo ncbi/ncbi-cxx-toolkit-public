@@ -122,7 +122,7 @@ void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
     if ( !m_DataLoader && ds.GetDataLoader() ) {
         m_DataLoader = &ds;
         _ASSERT(m_DataLoader);
-        if ( ds.x_IsTrackingSplitSeq() && m_ContainsBioseqs ) {
+        if ( ds.x_IsTrackingSplitSeq() && ContainsBioseqs() ) {
             vector<CSeq_id_Handle> ids;
             {{
                 CMutexGuard guard(m_ChunksMutex);
@@ -139,7 +139,7 @@ void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
 void CTSE_Split_Info::x_DSDetach(CDataSource& ds)
 {
     if ( m_DataLoader == &ds ) {
-        if ( ds.x_IsTrackingSplitSeq() && m_ContainsBioseqs ) {
+        if ( ds.x_IsTrackingSplitSeq() && ContainsBioseqs() ) {
             vector<CSeq_id_Handle> ids;
             {{
                 CMutexGuard guard(m_ChunksMutex);
@@ -353,8 +353,8 @@ void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
 {
     CMutexGuard guard(m_SeqIdToChunksMutex);
     m_SeqIdToChunksSorted = false;
-    if ( bioseq && !m_ContainsBioseqs ) {
-        m_ContainsBioseqs = true;
+    if ( bioseq && !ContainsBioseqs() ) {
+        m_ContainsBioseqs.store(true, memory_order_relaxed);
     }
     m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
     if ( bioseq && m_DataLoader ) {
@@ -372,8 +372,8 @@ void CTSE_Split_Info::x_SetContainedSeqIds(const vector<TBioseqId>& seq_ids,
     }
     CMutexGuard guard(m_SeqIdToChunksMutex);
     m_SeqIdToChunksSorted = false;
-    if ( !seq_ids.empty() && !m_ContainsBioseqs ) {
-        m_ContainsBioseqs = true;
+    if ( !seq_ids.empty() && !ContainsBioseqs() ) {
+        m_ContainsBioseqs.store(true, memory_order_relaxed);
     }
     for ( auto& id : seq_ids ) {
         m_SeqIdToChunks.push_back(pair<CSeq_id_Handle, TChunkId>(id, chunk_id));
@@ -440,7 +440,7 @@ CTSE_Split_Info::x_FindChunk(const CSeq_id_Handle& id) const
 // load requests
 void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
-    if ( bioseq && !m_ContainsBioseqs ) {
+    if ( bioseq && !ContainsBioseqs() ) {
         // shortcut - this TSE doesn't contain any Bioseqs
         return;
     }
@@ -465,7 +465,7 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 void CTSE_Split_Info::x_AddChunksForGetRecords(vector<CConstRef<CTSE_Chunk_Info>>& chunks,
                                                const CSeq_id_Handle& id) const
 {
-    if ( !m_ContainsBioseqs ) {
+    if ( !ContainsBioseqs() ) {
         // shortcut - this TSE doesn't contain any Bioseqs
         return;
     }
@@ -493,7 +493,7 @@ void CTSE_Split_Info::GetBioseqsIds(TSeqIds& ids) const
 
 bool CTSE_Split_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 {
-    if ( !m_ContainsBioseqs ) {
+    if ( !ContainsBioseqs() ) {
         // shortcut - this TSE doesn't contain any Bioseqs
         return false;
     }
