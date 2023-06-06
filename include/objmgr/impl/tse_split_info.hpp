@@ -141,7 +141,7 @@ public:
     void GetBioseqsIds(TSeqIds& ids) const;
 
     // bioseq lookup
-    bool ContainsBioseqs() const { return m_ContainsBioseqs; }
+    bool ContainsBioseqs() const { return m_ContainsBioseqs.load(memory_order_relaxed); }
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
 
     // loading requests
@@ -193,7 +193,7 @@ private:
     CInitMutexPool         m_MutexPool;
     mutable CMutex         m_SeqIdToChunksMutex;
     mutable bool           m_SeqIdToChunksSorted;
-    bool                   m_ContainsBioseqs;
+    atomic<bool>           m_ContainsBioseqs;
     mutable TSeqIdToChunks m_SeqIdToChunks;
 
 private:
