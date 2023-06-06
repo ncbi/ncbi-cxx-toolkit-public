@@ -57,7 +57,7 @@ public:
     
     TFilePos GetFilePos() const
     {
-        return m_FilePos;
+        return m_FilePos.load(memory_order_acquire);
     }
     size_t GetPageSize() const
     {
@@ -77,8 +77,8 @@ protected:
     friend class CPagedFile;
     
 private:
-    volatile TFilePos m_FilePos;
-    volatile size_t m_Size;
+    atomic<TFilePos> m_FilePos;
+    size_t m_Size;
     const char* m_Ptr;
     CSimpleBufferT<char> m_Buffer;
     CMemoryFileMap* m_MemFile;
@@ -125,8 +125,9 @@ private:
     // cache for loaded pages
     CRef<TPageCache> m_PageCache;
 
-    volatile Uint8 m_TotalReadBytes;
-    volatile double m_TotalReadSeconds;
+    mutable CFastMutex m_StatMutex;
+    Uint8 m_TotalReadBytes;
+    double m_TotalReadSeconds;
     Uint8 m_PreviousReadBytes;
     double m_PreviousReadSeconds;
 };
@@ -286,7 +287,7 @@ public:
 
     TFileBlockPos GetFileBlockPos() const
         {
-            return m_FileBlockPos;
+            return m_FileBlockPos.load(memory_order_acquire);
         }
     TFileBlockSize GetFileBlockSize() const
         {
@@ -309,7 +310,7 @@ protected:
     friend class CBGZFStream;
 
 private:
-    volatile TFileBlockPos m_FileBlockPos;
+    atomic<TFileBlockPos> m_FileBlockPos;
     TFileBlockSize m_FileBlockSize;
     TDataSize m_DataSize;
     AutoArray<char> m_Data;
@@ -356,10 +357,9 @@ private:
     CRef<CPagedFile> m_File;
     CRef<TBlockCache> m_BlockCache;
 
-    CFastMutex m_Mutex;
-    
-    volatile Uint8 m_TotalUncompressBytes;
-    volatile double m_TotalUncompressSeconds;
+    mutable CFastMutex m_StatMutex;
+    Uint8 m_TotalUncompressBytes;
+    double m_TotalUncompressSeconds;
 };
 
 

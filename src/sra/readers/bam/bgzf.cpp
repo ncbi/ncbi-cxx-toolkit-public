@@ -134,10 +134,13 @@ CPagedFile::CPagedFile(const string& file_name)
 
 CPagedFile::~CPagedFile()
 {
-    if ( s_GetDebug() >= 1 && m_TotalReadBytes ) {
-        LOG_POST("BGZF: Total read "<<m_TotalReadBytes/double(1<<20)<<" MB"
-                 " speed: "<<m_TotalReadBytes/(m_TotalReadSeconds*(1<<20))<<" MB/s"
-                 " time: "<<m_TotalReadSeconds);
+    if ( s_GetDebug() >= 1 ) {
+        auto stat = GetReadStatistics();
+        if ( stat.first ) {
+            LOG_POST("BGZF: Total read "<<stat.first/double(1<<20)<<" MB"
+                     " speed: "<<stat.first/(stat.second*(1<<20))<<" MB/s"
+                     " time: "<<stat.second);
+        }
     }
 }
 
@@ -170,13 +173,8 @@ CPagedFile::TPage CPagedFile::GetPage(TFilePos file_pos)
 
 pair<Uint8, double> CPagedFile::GetReadStatistics() const
 {
-    Uint8 bytes;
-    double seconds;
-    do {
-        bytes = m_TotalReadBytes;
-        seconds = m_TotalReadSeconds;
-    } while ( bytes != m_TotalReadBytes );
-    return make_pair(bytes, seconds);
+    CFastMutexGuard guard(m_StatMutex);
+    return make_pair(m_TotalReadBytes, m_TotalReadSeconds);
 }
 
 
@@ -213,7 +211,7 @@ size_t CPagedFile::GetNextPageSizePow2() const
 
 void CPagedFile::x_AddReadStatistics(Uint8 bytes, double seconds)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(m_StatMutex);
     m_TotalReadBytes += bytes;
     m_TotalReadSeconds += seconds;
 }
@@ -265,7 +263,7 @@ void CPagedFile::x_ReadPage(CPagedFilePage& page, TFilePos file_pos, size_t size
         page.m_Ptr = page.m_Buffer.data();
     }
     page.m_Size = size;
-    page.m_FilePos = file_pos;
+    page.m_FilePos.store(file_pos, memory_order_release);
 }
 
 /*
@@ -373,10 +371,13 @@ CBGZFFile::CBGZFFile(const string& file_name)
 
 CBGZFFile::~CBGZFFile()
 {
-    if ( s_GetDebug() >= 1 && m_TotalUncompressBytes ) {
-        LOG_POST("BGZF: Total decompressed "<<m_TotalUncompressBytes/double(1<<20)<<" MB"
-                 " speed: "<<m_TotalUncompressBytes/(m_TotalUncompressSeconds*(1<<20))<<" MB/s"
-                 " time: "<<m_TotalUncompressSeconds);
+    if ( s_GetDebug() >= 1 ) {
+        auto stat = GetReadStatistics();
+        if ( stat.first ) {
+            LOG_POST("BGZF: Total decompressed "<<stat.first/double(1<<20)<<" MB"
+                     " speed: "<<stat.first/(stat.second*(1<<20))<<" MB/s"
+                     " time: "<<stat.second);
+        }
     }
 }
 
@@ -400,19 +401,14 @@ CBGZFFile::TBlock CBGZFFile::GetBlock(TFileBlockPos file_pos,
 
 pair<Uint8, double> CBGZFFile::GetUncompressStatistics() const
 {
-    Uint8 bytes;
-    double seconds;
-    do {
-        bytes = m_TotalUncompressBytes;
-        seconds = m_TotalUncompressSeconds;
-    } while ( bytes != m_TotalUncompressBytes );
-    return make_pair(bytes, seconds);
+    CFastMutexGuard guard(m_StatMutex);
+    return make_pair(m_TotalUncompressBytes, m_TotalUncompressSeconds);
 }
 
 
 void CBGZFFile::x_AddUncompressStatistics(Uint8 bytes, double seconds)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(m_StatMutex);
     m_TotalUncompressBytes += bytes;
     m_TotalUncompressSeconds += seconds;
 }
@@ -649,7 +645,7 @@ bool CBGZFFile::x_ReadBlock(CBGZFBlock& block,
     // save block parameters
     block.m_FileBlockSize = block_size;
     block.m_DataSize = data_size;
-    block.m_FileBlockPos = file_pos0;
+    block.m_FileBlockPos.store(file_pos0, memory_order_release);
     return true;
 }
 
