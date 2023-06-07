@@ -4488,7 +4488,11 @@ then
    NCBI_FEATURE(in-house-resources)
    if test -d /am/ncbiapdata/test_data/traces04 \
       -o -d /Volumes/ncbiapdata/test_data/traces04; then
-       NCBI_FEATURE(full-in-house-resources)
+       NCBI_FEATURE(full-test-data)
+   fi
+   if test -d "`sed -ne 's/^[[Bb][Ll][Aa][Ss][Tt][Dd][Bb]] *= *//p' \
+                $orig_NCBI/.ncbirc 2>/dev/null`"; then
+       NCBI_FEATURE(full-blastdb)
    fi
    AC_MSG_RESULT(yes)
 else
