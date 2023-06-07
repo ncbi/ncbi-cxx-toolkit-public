@@ -106,18 +106,26 @@ set(NCBI_ThirdParty_SQLServer   "C:/Program Files/Microsoft SQL Server/Client SD
 
 
 #############################################################################
-# (full-)in-house-resources
+# in-house-resources et al.
 if (NOT NCBI_COMPONENT_in-house-resources_DISABLED
         AND EXISTS "${NCBI_TOOLS_ROOT}/ncbi.ini"
         AND EXISTS "${NCBI_TOOLS_ROOT}/Scripts/test_data")
     set(NCBITEST_TESTDATA_PATH "${NCBI_TOOLS_ROOT}/Scripts/test_data")
     set(NCBI_REQUIRE_in-house-resources_FOUND YES)
     if(EXISTS "${NCBITEST_TESTDATA_PATH}/traces04")
-        set(NCBI_REQUIRE_full-in-house-resources_FOUND YES)
+        set(NCBI_REQUIRE_full-test-data_FOUND YES)
+    endif()
+    file(STRINGS "${NCBI_TOOLS_ROOT}/ncbi.ini" blastdb_line
+         REGEX "^[Bb][Ll][Aa][Ss][Tt][Dd][Bb] *=")
+    string(REGEX REPLACE "^[Bb][Ll][Aa][Ss][Tt][Dd][Bb] *= *" ""
+           blastdb_path "${blastdb_line}")
+    if(EXISTS "${blastdb_path}")
+        set(NCBI_REQUIRE_full-blastdb_FOUND YES)
     endif()
 endif()
 NCBIcomponent_report(in-house-resources)
-NCBIcomponent_report(full-in-house-resources)
+NCBIcomponent_report(full-test-data)
+NCBIcomponent_report(full-blastdb)
 
 #############################################################################
 # NCBI_C
