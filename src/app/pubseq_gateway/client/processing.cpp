@@ -721,6 +721,7 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
         queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     }
 
+    CJsonResponse::SetReplyType(true);
     _VERIFY(queue.SendRequest(request, CDeadline::eInfinite));
     queue.Stop();
     _VERIFY(queue.Run(CDeadline::eInfinite));
@@ -736,12 +737,6 @@ struct SBatchResolveContext : string
 template <class TParams>
 void CParallelProcessing<TParams>::SImpl::Init()
 {
-        auto& ctx = CDiagContext::GetRequestContext();
-
-        ctx.SetRequestID();
-        ctx.SetSessionID();
-        ctx.SetHitID();
-
         CJsonResponse::SetReplyType(false);
 }
 

@@ -80,7 +80,7 @@ struct SBase : TParams
     template <class... TInitArgs>
     SBase(const SPsgCgiEntries& entries, TInitArgs&&... init_args) :
         TParams{
-            GetService(entries),
+            GetService(),
             SPSG_UserArgs(),
             forward<TInitArgs>(init_args)...
         }
@@ -88,10 +88,9 @@ struct SBase : TParams
         TParams::verbose = entries.Has("verbose");
     }
 
-    static auto GetService(const SPsgCgiEntries& entries)
+    static auto GetService()
     {
-        const auto& service = entries.GetString("service");
-        return service.empty() ? "psg2" : service;
+        return CNcbiApplication::Instance()->GetConfig().GetString("PSG", "service", "PSG2");
     }
 };
 
@@ -312,7 +311,7 @@ class CPsgCgiApp : public CCgiApplication
     int ProcessRequest(CCgiContext& ctx) override;
     int Help(const string& request, bool json, CCgiResponse& response);
 
-    static void SetPsgDefaults(const SPsgCgiEntries& entries);
+    void SetPsgDefaults();
     static int GetStatus(int rv);
     static void AddParamsTable(CHTML_body* body, const string& name, const CJson_ConstObject_pair& params);
 
@@ -324,11 +323,17 @@ class CPsgCgiApp : public CCgiApplication
         parent->AppendChild(child);
         return child;
     }
+
+private:
+    CPSG_Queue::TApiLock m_ApiLock;
 };
 
 void CPsgCgiApp::Init()
 {
     SetRequestFlags(CCgiRequest::fDoNotParseContent | CCgiRequest::fDisableParsingAsIndex);
+    SetPsgDefaults();
+
+    m_ApiLock = CPSG_Queue::GetApiLock();
 }
 
 int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
@@ -340,8 +345,6 @@ int CPsgCgiApp::ProcessRequest(CCgiContext& ctx)
     if (type.empty() || entries.Has("help")) {
         return Help(type, entries.Has("json"), ctx.GetResponse());
     }
-
-    SetPsgDefaults(entries);
 
     int rv;
     SResponse response = ctx.GetResponse();
@@ -450,21 +453,22 @@ int CPsgCgiApp::Help(const string& request, bool json, CCgiResponse& response)
     return 0;
 }
 
-void CPsgCgiApp::SetPsgDefaults(const SPsgCgiEntries& entries)
+void CPsgCgiApp::SetPsgDefaults()
 {
     TPSG_UserRequestIds::SetDefault(true);
 
-    const auto& use_cache = entries.GetString("use-cache");
+    const auto& config = GetConfig();
+    const auto& use_cache = config.Get("PSG", "use_cache");
 
     if (!use_cache.empty()) {
         TPSG_UseCache::SetDefault(use_cache);
     }
 
-    if (auto timeout = entries.GetNumeric<unsigned>("timeout")) {
+    if (auto timeout = config.GetDouble("PSG", "timeout", 0.0)) {
         TPSG_RequestTimeout::SetDefault(timeout);
     }
 
-    if (entries.Has("https")) {
+    if (config.HasEntry("PSG", "https")) {
         TPSG_Https::SetDefault(true);
     }
 }
