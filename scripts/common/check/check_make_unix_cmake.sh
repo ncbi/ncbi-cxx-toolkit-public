@@ -322,7 +322,6 @@ esac
 
 trap "touch \${checkdir}/check.failed; exit 1"  1 2 15
 rm \${checkdir}/check.failed \${checkdir}/check.success > /dev/null 2>&1 
-rm \${checkdir}/~* > /dev/null 2>&1
 
 # Set log_site for tests
 NCBI_APPLOG_SITE=testcxx
@@ -571,6 +570,10 @@ RunTest()
     x_log="$x_tmp/\$\$.~\$x_name.out"
     x_info="$x_tmp/\$\$.~\$x_name.info"
 
+    if test -e "\$checkdir/~ABORT"; then
+        touch "\$checkdir/~RUN_CHECKS.next"
+        return 0
+    fi
     if test -f "/etc/nologin"; then
         echo "Nologin detected, probably host going to reboot. Skipping test:" \$x_name
         touch "\$checkdir/~RUN_CHECKS.next"
@@ -1112,6 +1115,7 @@ ProcessDone()
             fi
         fi
     done
+    rm "\$checkdir/~ABORT" 2>/dev/null
     rm "\$checkdir/~DONE"
 }
 
@@ -1122,7 +1126,11 @@ AddJob()
     a_id="\$3"
 
     if test "\${a_pid}" -gt 0; then
-        echo "        Start \$a_id: \${a_name} (\$a_pid)" > "\$checkdir/~\$a_name.started"
+        if test ! -e "\$checkdir/~ABORT"; then
+            echo "        Start \$a_id: \${a_name} (\$a_pid)" > "\$checkdir/~\$a_name.started"
+        else
+            echo "        Drop: \${a_name}"
+        fi
         while test ! -e "\$checkdir/~RUN_CHECKS.next"; do
             if test -e "\$checkdir/~SERIAL.lock"; then
                 sleep 2
@@ -1202,6 +1210,7 @@ fi
 x_test=""
 x_TestsTotal=\`cat "\$res_list" | wc -l | sed -e 's/ //g'\`
 x_START=\$SECONDS
+trap "echo Stopping tests, please wait...; touch \${checkdir}/~ABORT"  INT
 RunJobs "\$res_list" &
 ProcessDone
 x_DURATION=\`expr \$SECONDS - \$x_START\`
