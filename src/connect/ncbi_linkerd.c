@@ -414,26 +414,26 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
               (*do_namerd < 0  &&  !(*do_namerd
                                      = SERV_IsMapperConfiguredInternal
                                      (iter->name, REG_CONN_NAMERD_ENABLE))))) {
-            namerd  = x_SetupFromNamerd(iter, do_namerd);
+            namerd = x_SetupFromNamerd(iter, do_namerd);
             if (!namerd)
                 return 0/*failed*/;
         } else
-            namerd  = 0;
-        if (namerd <= 0) {
-            if (!namerd  &&  iter->arglen) {
-                assert(iter->arg);
-                CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
-                            ("[%s]  LINKERD does not support argument affinity"
-                             ": %s%s%s%s%s, use at your own risk!", iter->name,
-                             iter->arg, &"="[!iter->val], &"\""[!iter->val],
-                             iter->val ? iter->val : "",  &"\""[!iter->val]));
-            }
-            net_info->scheme = eURL_Http;
             namerd = 0;
-        } else
-            assert(net_info->scheme);
     } else
-        namerd = 0;
+        namerd  = 0;
+    if (namerd <= 0) {
+        if ((!namerd  ||  !*do_namerd)  &&  iter->arglen) {
+            assert(iter->arg);
+            CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
+                        ("[%s]  LINKERD does not support argument affinity"
+                         ": %s%s%s%s%s, use at your own risk!", iter->name,
+                         iter->arg, &"="[!iter->val], &"\""[!iter->val],
+                         iter->val ? iter->val : "",  &"\""[!iter->val]));
+        }
+        net_info->scheme = eURL_Http;
+        namerd  = 0;
+    } else
+        assert(net_info->scheme);
 
     /* N.B. Proxy configuration (including 'http_proxy' env. var. detected and
        parsed by the toolkit) may be used to override the default host:port for
@@ -513,7 +513,6 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
             return 0/*failed*/;
         }
     }
-
     return 1/*succeeded*/;
 }
 
