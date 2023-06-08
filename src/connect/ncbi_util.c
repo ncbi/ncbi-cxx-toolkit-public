@@ -210,7 +210,7 @@ extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
             size += 3;
     }
     return size +
-        (((size + UTIL_PRINTABLE_WIDTH - 1) / UTIL_PRINTABLE_WIDTH) << 1);
+        (((size + UTIL_PRINTABLE_WIDTH_MIN - 1) / UTIL_PRINTABLE_WIDTH_MIN)*2);
 }
 
 
@@ -223,8 +223,8 @@ extern char* UTIL_PrintableStringEx(const char* src, size_t size, char* dst,
         return 0;
     if (!size)
         size = strlen(src);
-    if (width < UTIL_PRINTABLE_WIDTH  &&  width)
-        width = UTIL_PRINTABLE_WIDTH;
+    if (width < UTIL_PRINTABLE_WIDTH_MIN  &&  width)
+        width = UTIL_PRINTABLE_WIDTH_MIN;
 
     for (w = dst, s = src;  size;  --size, ++s) {
         unsigned char c = (unsigned char)(*s);
