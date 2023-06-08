@@ -322,6 +322,7 @@ esac
 
 trap "touch \${checkdir}/check.failed; exit 1"  1 2 15
 rm \${checkdir}/check.failed \${checkdir}/check.success > /dev/null 2>&1 
+rm \${checkdir}/~* > /dev/null 2>&1
 
 # Set log_site for tests
 NCBI_APPLOG_SITE=testcxx
