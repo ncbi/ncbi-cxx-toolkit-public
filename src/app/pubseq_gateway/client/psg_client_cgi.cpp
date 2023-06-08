@@ -311,7 +311,6 @@ class CPsgCgiApp : public CCgiApplication
     int ProcessRequest(CCgiContext& ctx) override;
     int Help(const string& request, bool json, CCgiResponse& response);
 
-    void SetPsgDefaults();
     static int GetStatus(int rv);
     static void AddParamsTable(CHTML_body* body, const string& name, const CJson_ConstObject_pair& params);
 
@@ -331,7 +330,7 @@ private:
 void CPsgCgiApp::Init()
 {
     SetRequestFlags(CCgiRequest::fDoNotParseContent | CCgiRequest::fDisableParsingAsIndex);
-    SetPsgDefaults();
+    TPSG_UserRequestIds::SetDefault(true);
 
     m_ApiLock = CPSG_Queue::GetApiLock();
 }
@@ -451,26 +450,6 @@ int CPsgCgiApp::Help(const string& request, bool json, CCgiResponse& response)
     html->Print(response.WriteHeader());
     response.Flush();
     return 0;
-}
-
-void CPsgCgiApp::SetPsgDefaults()
-{
-    TPSG_UserRequestIds::SetDefault(true);
-
-    const auto& config = GetConfig();
-    const auto& use_cache = config.Get("PSG", "use_cache");
-
-    if (!use_cache.empty()) {
-        TPSG_UseCache::SetDefault(use_cache);
-    }
-
-    if (auto timeout = config.GetDouble("PSG", "timeout", 0.0)) {
-        TPSG_RequestTimeout::SetDefault(timeout);
-    }
-
-    if (config.HasEntry("PSG", "https")) {
-        TPSG_Https::SetDefault(true);
-    }
 }
 
 int CPsgCgiApp::GetStatus(int rv)
