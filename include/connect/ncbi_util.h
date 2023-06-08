@@ -718,7 +718,8 @@ extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
  );
 
 
-#define UTIL_PRINTABLE_WIDTH  80   /** Default minimum printable width */
+#define UTIL_PRINTABLE_WIDTH_MIN  80  /** Default minimum printable width  */
+#define UTIL_PRINTABLE_WIDTH     130  /** Default printable width for data */
 
 
 typedef enum {
