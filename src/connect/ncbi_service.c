@@ -543,6 +543,9 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         }
     }
     if (info->time) {
+        /* allow up to 10% of "excessive expiration" */
+        static const TNCBI_Time delta
+            = (LBSM_DEFAULT_TIME * 10 + LBSM_DEFAULT_TIME % 10) / 10;
         if (info->time < iter->time) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Expired entry (%u < %u) @%p:\n%s", iter->name,
@@ -552,7 +555,7 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         }
         /* for the case of n/w delay */
         iter->time = (TNCBI_Time) time(0);
-        if (info->time > iter->time + LBSM_DEFAULT_TIME) {
+        if (info->time > iter->time + delta) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  Excessive expiration (%u) @%p:\n%s", iter->name,
                        info->time - iter->time,
