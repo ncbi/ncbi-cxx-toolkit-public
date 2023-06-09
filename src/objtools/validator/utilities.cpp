@@ -2505,7 +2505,7 @@ bool HasBadProteinStart(const CSeq_feat& feat, CScope& scope)
         return false;
     }
 }
-//LCOV_STOP
+//LCOV_EXCL_STOP
 
 
 size_t CountProteinStops(const CSeqVector& sv)
