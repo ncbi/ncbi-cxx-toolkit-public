@@ -423,6 +423,18 @@ CRef<CReportItem> CReportItem::CreateReportItem(const string& name, const CRepor
     return CRef<CReportItem>(item);
 }
 
+CRef<CReportItem> CReportItem::CreateReportItem(const string& name, const CReportObj& main_obj, const TReportObjectList& report_objs, const string& msg, bool autofix)
+{
+    auto item = CReportItem::CreateReportItem(name, main_obj, msg, autofix);
+    CDiscrepancyItem* disc_item = dynamic_cast<CDiscrepancyItem*>(item.GetNCPointerOrNull());
+    if (disc_item) {
+        for (auto& it : report_objs) {
+            disc_item->m_Objs.push_back(it);
+        }
+    }
+    return CRef<CReportItem>(item);
+}
+
 
 // need to rewrite as a DiscrepancyContext method
 CReportObj* CDiscrepancyObject::Clone(bool fix, CConstRef<CObject> data) const

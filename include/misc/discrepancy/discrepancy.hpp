@@ -139,6 +139,7 @@ public:
     virtual bool IsSummary() const = 0;
     virtual bool IsReal() const = 0;
     static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix = false);
+    static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& main_obj, const TReportObjectList& report_objs, const string& msg, bool autofix);
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 
