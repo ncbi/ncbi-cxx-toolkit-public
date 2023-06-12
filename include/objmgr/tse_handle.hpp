@@ -410,7 +410,11 @@ public:
         }
     bool HasObject(void) const
         {
-            return m_ObjectInfo.NotNull();
+            return m_ObjectInfoAssigned;
+        }
+    bool HasObject(const CTSE_Info_Object& info) const
+        {
+            return HasObject() && &GetObjectInfo_Base() == &info;
         }
 
     typedef CSeq_id_Handle TIndexId;
@@ -447,6 +451,7 @@ public:
 
     const CTSE_Info_Object& GetObjectInfo_Base(void) const
         {
+            _ASSERT(HasObject());
             return reinterpret_cast<const CTSE_Info_Object&>(*m_ObjectInfo);
         }
 
@@ -580,6 +585,8 @@ private: // data members
     // and not removed.
     CTSE_Handle             m_TSE_Handle; // locks TSE from releasing.
     CConstRef<CObject>      m_ObjectInfo; // current object info.
+    atomic<bool>            m_TSE_HandleAssigned;
+    atomic<bool>            m_ObjectInfoAssigned;
     CRef<CObject>           m_DetachedInfo;
 
 private: // to prevent copying
