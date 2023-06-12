@@ -47,6 +47,7 @@
 #include <connect/ncbi_server_info.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -389,20 +390,22 @@ static const char* s_ReadFullResponse(CONN conn, const char* name)
         if (!len)
             assert(status != eIO_Success);
         else if (!BUF_Write(&buf, block, len)) {
-            CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                        ("[%s]  Failed to store response", name));
+            CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                              ("[%s]  Failed to store response", name));
             status = eIO_Unknown;
             break;
         }
     } while (status == eIO_Success);
-    if ((len = BUF_Size(buf)) > 0  &&  (response = (char*) malloc(len + 1))) {
-        /* read all in */
-        verify(BUF_Read(buf, response, len) == len  &&  !BUF_Size(buf));
-        response[len] = '\0';
-        CORE_TRACEF(("[%s]  Got response:\n%s", name, response));
-    } else if (len) {
-        CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to retrieve response", name));
+    if (status == eIO_Closed  &&  (len = BUF_Size(buf)) > 0) {
+        if (!(response = (char*) malloc(len + 1))) {
+            CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                              ("[%s]  Failed to retrieve response", name));
+        } else {
+            /* read all in */
+            verify(BUF_Read(buf, response, len) == len  &&  !BUF_Size(buf));
+            response[len] = '\0';
+            /*CORE_TRACEF(("[%s]  Got response:\n%s", name, response));*/
+        }
     }
     BUF_Destroy(buf);
 
@@ -758,9 +761,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             + strlen(local) + strlen(privat) + 10/*rate*/
             + strlen(stateful) + 10/*time*/ + 40/*slack room*/;
         if (!(infostr = (char*) malloc(size))) {
-            CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                        ("[%s]  Failed to allocate for server descriptor",
-                         iter->name));
+            CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                              ("[%s]  Failed to allocate for server"
+                               " descriptor", iter->name));
             goto out;
         }
         verify((size_t)
@@ -792,8 +795,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         /* Add new info to collection */
         if (!s_AddServerInfo(data, info
                              DEBUG_PARAM(iter->name))) {
-            CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                        ("[%s]  Failed to add server info", iter->name));
+            CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                              ("[%s]  Failed to add server info", iter->name));
             CORE_TRACEF(("[%s]  Freeing server info: %p", iter->name, info));
             free(info); /* not freed by failed s_AddServerInfo() */
             goto out;
@@ -999,10 +1002,10 @@ static int/*bool*/ x_UpdateDtabInArgs(SConnNetInfo* net_info,
     /* Prepare new argument value, appending the new dtab, if necessary */
     bufsize = (arglen ? arglen + 3/*"%3B"*/ : 0) + dtablen * 3 + 1/*'\0'*/;
     if (!(buf = (char*) malloc(bufsize))) {
-        CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to %s service dtab %s\"%s\"", name,
-                     arglen ? "extend" : "allocate for",
-                     arglen ? "with "  : "", dtab));
+        CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Failed to %s service dtab %s\"%s\"", name,
+                           arglen ? "extend" : "allocate for",
+                           arglen ? "with "  : "", dtab));
         return 0/*failure*/;
     }
     if (arglen) {
@@ -1442,9 +1445,9 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     /* 1: service DTAB (either service-specific or global) */
     if (!(dtab = x_GetDtabFromHeader(net_info->http_user_header
                                      DEBUG_PARAM(iter->name)))) {
-        CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Unable to get service dtab from HTTP header",
-                     iter->name));
+        CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Unable to get service dtab from HTTP header",
+                           iter->name));
         return 0/*failed*/;
     }
     if (dtab  &&  dtab != (const char*)(-1L)) {
@@ -1466,9 +1469,9 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     memcpy(buf, DTAB_HTTP_HEADER_TAG " ", sizeof(DTAB_HTTP_HEADER_TAG));
     /* note that it also clears remnants of a service DTAB if "buf" is empty */
     if (!ConnNetInfo_OverrideUserHeader(net_info, buf)) {
-        CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to set NAMERD dtab in HTTP header",
-                     iter->name));
+        CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Failed to set NAMERD dtab in HTTP header",
+                           iter->name));
         return 0/*failed*/;
     }
 
@@ -1509,8 +1512,9 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
 
     if ( ! (data = (struct SNAMERD_Data*) calloc(1, sizeof(*data)))) {
-        CORE_LOGF_X(eNSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to allocate for SNAMERD_Data", iter->name));
+        CORE_LOGF_ERRNO_X(eNSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Failed to allocate for SNAMERD_Data",
+                           iter->name));
         return 0;
     }
     iter->data = data;
@@ -1518,9 +1522,10 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 
     data->net_info = ConnNetInfo_Clone(net_info);
     if ( ! ConnNetInfo_SetupStandardArgs(data->net_info, iter->name)) {
-        CORE_LOGF_X(data->net_info ? eNSub_TooLong : eNSub_Alloc,
-                    data->net_info ? eLOG_Error    : eLOG_Critical,
-                    ("[%s]  Failed to set up net_info", iter->name));
+        CORE_LOGF_ERRNO_X(data->net_info ? eNSub_TooLong : eNSub_Alloc,
+                          data->net_info ? eLOG_Error    : eLOG_Critical,
+                          data->net_info ? 0             : errno,
+                          ("[%s]  Failed to set up net_info", iter->name));
         s_Close(iter);
         return 0;
     }
