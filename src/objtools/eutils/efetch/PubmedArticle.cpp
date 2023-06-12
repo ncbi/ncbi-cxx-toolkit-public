@@ -885,6 +885,7 @@ string s_GetPagination(const CPagination& pagination)
 
     if (pages.empty() && pagination.IsMedlinePgn()) pages = pagination.GetMedlinePgn();
     if (pages.empty()) return "";
+    pages = utf8_to_string(pages);
     list<string> parts;
     s_ForeachToken(pages, [](char cch) -> bool { return cch != ','; },
         [&parts](string::iterator p, string::iterator q)->string::iterator {
