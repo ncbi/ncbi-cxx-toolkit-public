@@ -172,6 +172,7 @@ do_help="no"
 cxx_name=""
 cxx_version=""
 unknown=""
+have_toolchain=""
 for arg in ${script_args}
 do
   case "$arg" in 
@@ -272,6 +273,10 @@ do
     [1-9]*)
       cxx_version=$arg
       ;; 
+    -DCMAKE_TOOLCHAIN_FILE* )
+      CMAKE_ARGS="$CMAKE_ARGS $arg"
+      have_toolchain="yes"
+      ;; 
     -D* | --debug-* | --log-* | --trace* )
       CMAKE_ARGS="$CMAKE_ARGS $arg"
       ;; 
@@ -280,6 +285,12 @@ do
       ;; 
   esac 
 done 
+if [ -n "${CMAKE_TOOLCHAIN_FILE}" ]; then
+    have_toolchain="yes"
+fi
+if [ -n "$have_toolchain" -a -z "$BUILD_ROOT" ]; then
+  Error "When supplying toolchain, please also specify build root (--with-build-root=...)" 
+fi
 
 tmp=`ls ${script_root}`
 if [ -n "$tmp" ]; then
@@ -315,7 +326,7 @@ if [ $do_help = "yes" ]; then
   fi
 fi
 
-if [ -z "$CMAKECFGRECURSIONGUARD" -a -n "$cxx_name" ]; then
+if [ -z "$CMAKECFGRECURSIONGUARD" -a -n "$cxx_name" -a -z "$have_toolchain" ]; then
   if [ "$cxx_name" = "Xcode" ]; then
     exec $script_dir/cmake-cfg-xcode.sh  "$@"
     exit $?
@@ -354,6 +365,7 @@ if [ -n "$prebuilt_dir" ]; then
 fi
 
 ############################################################################# 
+if [ -z "$have_toolchain" ]; then
 if test "$CMAKE_GENERATOR" = "Xcode"; then
   XC=`which xcodebuild 2>/dev/null`
   if test $? -ne 0; then
@@ -437,6 +449,7 @@ else
   CC_NAME="CXX"
   CC_VERSION=""
 fi
+fi
 
 ############################################################################# 
 if [ -z "$BUILD_ROOT" ]; then
@@ -462,6 +475,7 @@ if [ ! -d ${BUILD_ROOT}/build ]; then
 fi
 
 ############################################################################# 
+if [ -z "$have_toolchain" ]; then
 if [ -z "$NCBI_TOOLCHAIN" ]; then
   export CC CXX
   NCBI_TOOLCHAIN=`exec ${script_dir}/toolchains/cmkTool.sh "${CC_NAME}" "${CC_VERSION}"  "$@"`
@@ -489,6 +503,7 @@ else
   if [ -n "$NCBI_COMPILER_EXE_LINKER_FLAGS" ]; then
     CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${NCBI_COMPILER_EXE_LINKER_FLAGS}")"
   fi
+fi
 fi
 if [ -n "$CMAKE_GENERATOR" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$CMAKE_GENERATOR")"
