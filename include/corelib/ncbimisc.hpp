@@ -635,9 +635,17 @@ private:
 
 
 /// Define "null" pointer value.
+#ifdef __cpp_using_enum
+enum class ENull {
+    null = 0
+};
+
+using enum ENull;
+#else
 enum ENull {
     null = 0
 };
+#endif
 
 
 // Default callback for null value - throws CCoreException.
