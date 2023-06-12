@@ -43,6 +43,7 @@
 #include <connect/ncbi_http_connector.h>
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -196,9 +197,9 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     size += sizeof(kDescrFmt) + sizeof(LINKERD_VHOST_DOMAIN) + 40/*L,R,T,$*/
         + strlen(type) + strlen(net_info->path) + strlen(hostport);
     if ( ! (infostr = (char*) malloc(size))) {
-        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to allocate for server descriptor",
-                     iter->name));
+        CORE_LOGF_ERRNO_X(eLSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Failed to allocate for server descriptor",
+                           iter->name));
         return 0/*failure*/;
     }
     verify((size_t)
@@ -558,16 +559,17 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     }
 
     if ( ! (data = (struct SLINKERD_Data*) calloc(1, sizeof(*data)))) {
-        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to allocate for SLINKERD_Data",iter->name));
+        CORE_LOGF_ERRNO_X(eLSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Failed to allocate for SLINKERD_Data",
+                           iter->name));
         return 0;
     }
     iter->data = data;
     data->types = types;
 
     if ( ! (data->net_info = ConnNetInfo_Clone(net_info))) {
-        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
-                    ("[%s]  Failed to clone net_info", iter->name));
+        CORE_LOGF_ERRNO_X(eLSub_Alloc, eLOG_Critical, errno,
+                          ("[%s]  Failed to clone net_info", iter->name));
         s_Close(iter);
         return 0;
     }
