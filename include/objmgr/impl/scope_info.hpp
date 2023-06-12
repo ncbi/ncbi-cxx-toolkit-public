@@ -497,8 +497,9 @@ private: // members
     TBioseqById                 m_BioseqById;
     // TSE locking support
     mutable CMutex              m_TSE_LockMutex;
-    mutable CAtomicCounter_WithAutoInit m_TSE_LockCounter;
-    mutable CAtomicCounter_WithAutoInit m_UserLockCounter;
+    mutable atomic<Int8>        m_TSE_LockCounter;
+    mutable atomic<Int8>        m_UserLockCounter;
+    mutable atomic<bool>        m_TSE_LockAssigned;
     mutable CTSE_Lock           m_TSE_Lock;
     // Used by TSE support
     mutable const CTSE_ScopeInfo*   m_UsedByTSE;
@@ -761,7 +762,7 @@ const CTSE_Lock& CTSE_ScopeInfo::GetTSE_Lock(void) const
 inline
 bool CTSE_ScopeInfo::IsUserLocked(void) const
 {
-    return int(m_UserLockCounter.Get()) > 0;
+    return m_UserLockCounter > 0;
 }
 
 
