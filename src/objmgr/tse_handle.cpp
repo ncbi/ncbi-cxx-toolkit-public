@@ -434,7 +434,9 @@ A7. Reattaching in new place.
 
 CScopeInfo_Base::CScopeInfo_Base(void)
     : m_TSE_ScopeInfo(0),
-      m_LockCounter(0)
+      m_LockCounter(0),
+      m_TSE_HandleAssigned(false),
+      m_ObjectInfoAssigned(false)
 {
 }
 
@@ -444,8 +446,12 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
     : m_TSE_ScopeInfo(tse.GetNonNullNCPointer()),
       m_LockCounter(0),
       m_TSE_Handle(tse),
-      m_ObjectInfo(&info)
+      m_ObjectInfo(&info),
+      m_TSE_HandleAssigned(true),
+      m_ObjectInfoAssigned(true)
 {
+    _ASSERT(tse);
+    _ASSERT(HasObject(info));
 }
 
 
@@ -454,8 +460,12 @@ CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse,
     : m_TSE_ScopeInfo(&tse.x_GetScopeInfo()),
       m_LockCounter(0),
       m_TSE_Handle(tse),
-      m_ObjectInfo(&info)
+      m_ObjectInfo(&info),
+      m_TSE_HandleAssigned(true),
+      m_ObjectInfoAssigned(true)
 {
+    _ASSERT(tse);
+    _ASSERT(HasObject(info));
 }
 
 
@@ -481,15 +491,20 @@ DEFINE_STATIC_FAST_MUTEX(s_Info_TSE_HandleMutex);
 
 void CScopeInfo_Base::x_SetTSE_Handle(const CTSE_Handle& tse)
 {
+    _ASSERT(tse);
     _ASSERT(IsAttached());
     _ASSERT(!HasObject() || GetObjectInfo_Base().BelongsToTSE_Info(tse.x_GetTSE_Info()));
     _ASSERT(m_LockCounter > 0);
+    if ( m_TSE_HandleAssigned ) {
+        _ASSERT(m_TSE_Handle == tse);
+        return;
+    }
     CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
-    if ( !m_TSE_Handle.m_TSE ) {
-        _ASSERT(tse);
+    if ( !m_TSE_HandleAssigned ) {
         save_tse.Swap(m_TSE_Handle);
         m_TSE_Handle = tse;
+        m_TSE_HandleAssigned = true;
     }
     _ASSERT(m_TSE_Handle == tse);
 }
@@ -502,15 +517,22 @@ void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
     _ASSERT(m_LockCounter > 0);
+    if ( m_TSE_HandleAssigned && HasObject() ) {
+        _ASSERT(m_TSE_Handle == tse);
+        _ASSERT(HasObject(info));
+        return;
+    }
     CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
-    if ( !m_TSE_Handle.m_TSE || !m_ObjectInfo ) {
+    if ( !m_TSE_HandleAssigned || !HasObject() ) {
         save_tse.Swap(m_TSE_Handle);
         m_TSE_Handle = tse;
+        m_TSE_HandleAssigned = true;
         m_ObjectInfo = &info;
+        m_ObjectInfoAssigned = true;
     }
     _ASSERT(&m_TSE_Handle.x_GetScopeInfo() == &*tse);
-    _ASSERT(!m_ObjectInfo || &GetObjectInfo_Base() == &info);
+    _ASSERT(HasObject(info));
 }
 
 
@@ -519,8 +541,11 @@ void CScopeInfo_Base::x_ResetTSE_Lock()
     if ( m_LockCounter == 0 ) {
         CTSE_Handle save_tse; // prevent deletion of handle and scope under mutex
         CFastMutexGuard guard(s_Info_TSE_HandleMutex);
-        if ( m_TSE_Handle.m_TSE && m_LockCounter == 0 ) {
-            save_tse.Swap(m_TSE_Handle);
+        if ( m_TSE_HandleAssigned && m_LockCounter == 0 ) {
+            m_TSE_HandleAssigned = false;
+            if ( m_LockCounter == 0 ) {
+                save_tse.Swap(m_TSE_Handle);
+            }
         }
     }
 }
