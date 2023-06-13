@@ -275,12 +275,7 @@ public:
     CMultiAlignerFixture(void)
     {
         m_Options.Reset(new CMultiAlignerOptions);
-
-#if defined(WORDS_BIGENDIAN) || defined(IS_BIG_ENDIAN)
-        m_Options->SetRpsDb("data/cddtest_be");
-#else
-        m_Options->SetRpsDb("data/cddtest_le");
-#endif
+        m_Options->SetRpsDb("data/cddtest");
 
         m_Aligner.Reset(new CMultiAligner(m_Options));
     }
