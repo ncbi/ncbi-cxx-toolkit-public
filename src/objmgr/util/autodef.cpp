@@ -1072,6 +1072,25 @@ std::string x_trim(const std::string &s)
    return std::string(start, end + 1);
 }
 
+static bool s_IsBioseqGenomic(CBioseq_Handle bsh)
+{
+    for (CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo); desc; ++desc) {
+        if (desc->GetMolinfo().CanGetBiomol() && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool s_IsRefSeq(CBioseq_Handle bsh)
+{
+    for (CSeq_id_Handle sid : bsh.GetId()) {
+        if (sid.Which() == NCBI_SEQID(Other)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_Handle& bh, CRef<feature::CFeatTree> featTree)
 {
@@ -1112,6 +1131,11 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_H
         feature_clauses = x_trim(feature_clauses);
         if (NStr::StartsWith(feature_clauses, ",")) {
             return keyword + org_desc + feature_clauses;
+        }
+        if (genome_val == CBioSource::eGenome_chromosome &&
+            s_IsBioseqGenomic(bh) && s_IsRefSeq(bh) &&
+            !NStr::IsBlank(m_Options.GetCustomFeatureClause())) {
+            return keyword + org_desc + ", " + feature_clauses;
         }
         return keyword + org_desc + " " + feature_clauses;
     }
