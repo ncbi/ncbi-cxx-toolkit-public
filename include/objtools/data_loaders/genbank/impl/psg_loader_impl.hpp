@@ -54,10 +54,10 @@ struct SPsgBioseqInfo
 {
     SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan);
 
-    typedef CPSG_Request_Resolve::TIncludeInfo TIncludedInfo;
+    typedef underlying_type_t<CPSG_Request_Resolve::EIncludeInfo> TIncludedInfo;
     typedef CDataLoader::TIds TIds;
 
-    TIncludedInfo included_info;
+    atomic<TIncludedInfo> included_info;
     CSeq_inst::TMol molecule_type;
     Uint8 length;
     CPSG_BioseqInfo::TState state;

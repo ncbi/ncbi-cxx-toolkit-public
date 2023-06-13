@@ -496,35 +496,47 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan)
 
 SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bioseq_info)
 {
-    TIncludedInfo inc_info = bioseq_info.IncludedInfo() & ~included_info;
-    if (inc_info & CPSG_Request_Resolve::fMoleculeType)
+#ifdef NCBI_ENABLE_SAFE_FLAGS
+    TIncludedInfo got_info = bioseq_info.IncludedInfo().get();
+#else
+    TIncludedInfo got_info = bioseq_info.IncludedInfo();
+#endif
+    TIncludedInfo new_info = got_info & ~included_info;
+    if ( !new_info ) {
+        return new_info;
+    }
+
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard guard(s_Mutex);
+    new_info = got_info & ~included_info;
+    if (new_info & CPSG_Request_Resolve::fMoleculeType)
         molecule_type = bioseq_info.GetMoleculeType();
 
-    if (inc_info & CPSG_Request_Resolve::fLength)
+    if (new_info & CPSG_Request_Resolve::fLength)
         length = bioseq_info.GetLength();
 
-    if (inc_info & CPSG_Request_Resolve::fState)
+    if (new_info & CPSG_Request_Resolve::fState)
         state = bioseq_info.GetState();
 
-    if (inc_info & CPSG_Request_Resolve::fTaxId)
+    if (new_info & CPSG_Request_Resolve::fTaxId)
         tax_id = bioseq_info.GetTaxId();
 
-    if (inc_info & CPSG_Request_Resolve::fHash)
+    if (new_info & CPSG_Request_Resolve::fHash)
         hash = bioseq_info.GetHash();
 
-    if (inc_info & CPSG_Request_Resolve::fCanonicalId) {
+    if (new_info & CPSG_Request_Resolve::fCanonicalId) {
         canonical = PsgIdToHandle(bioseq_info.GetCanonicalId());
         _ASSERT(canonical);
         ids.push_back(canonical);
     }
-    if (inc_info & CPSG_Request_Resolve::fGi) {
+    if (new_info & CPSG_Request_Resolve::fGi) {
         gi = bioseq_info.GetGi();
         if ( gi == INVALID_GI ) {
             gi = ZERO_GI;
         }
     }
 
-    if (inc_info & CPSG_Request_Resolve::fOtherIds) {
+    if (new_info & CPSG_Request_Resolve::fOtherIds) {
         vector<CPSG_BioId> other_ids = bioseq_info.GetOtherIds();
         ITERATE(vector<CPSG_BioId>, other_id, other_ids) {
             // NOTE: Bioseq-info may contain unparseable ids which should be ignored (e.g "gnl|FPAA000046" for GI 132).
@@ -532,11 +544,11 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
             if (other_idh) ids.push_back(other_idh);
         }
     }
-    if (inc_info & CPSG_Request_Resolve::fBlobId)
+    if (new_info & CPSG_Request_Resolve::fBlobId)
         blob_id = bioseq_info.GetBlobId().GetId();
 
-    included_info |= inc_info;
-    return inc_info;
+    included_info |= new_info;
+    return new_info;
 }
 
 
