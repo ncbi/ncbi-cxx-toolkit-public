@@ -153,11 +153,10 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          "Number of iterations to run (default: 1)",
          CArgDescriptions::eInteger, "1");
     string size_limit = "1000000";
-    // ThreadSanitizer has a limit on number of mutexes hels by a thread
-    const char* tsan_options = getenv("TSAN_OPTIONS");
-    if ( tsan_options && *tsan_options ) {
-        size_limit = "20";
-    }
+    // ThreadSanitizer has a limit on number of mutexes held by a thread
+#ifdef __SANITIZE_THREAD__
+    size_limit = "20";
+#endif
     args.AddDefaultKey
         ("size", "Size",
          "Limit number of Seq-ids to process in a run",
