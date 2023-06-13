@@ -96,8 +96,8 @@ CProfileData::Load(EMapChoice choice,
         m_PssmMmap = 0;
 
         m_ResFreqMmap = new CMemoryFile(resfreq_file);
-        m_ResFreqRows = new double * [num_rows];
-        double *resfreq_start = (double *)(m_ResFreqMmap->GetPtr());
+        m_ResFreqRows = new Int4 * [num_rows];
+        Int4* resfreq_start = (Int4*)(m_ResFreqMmap->GetPtr());
 
         for (int i = 0; i < num_rows; i++) {
             m_ResFreqRows[i] = resfreq_start + kAlphabetSize * i;
