@@ -1948,6 +1948,27 @@ void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_
 }
 
 
+static void s_GetBlobs(CDataLoader* loader,
+                       CDataLoader::TTSE_LockSets& all_tse_sets,
+                       CDataLoader::TTSE_LockSets& current_tse_sets)
+{
+    try {
+        loader->GetBlobs(current_tse_sets);
+    }
+    catch ( CLoaderException& exc ) {
+        exc.SetFailedCall(s_FormatCall("GetBlobs", current_tse_sets));
+        throw;
+    }
+    if ( all_tse_sets.empty() ) {
+        swap(all_tse_sets, current_tse_sets);
+    }
+    else {
+        all_tse_sets.insert(current_tse_sets.begin(), current_tse_sets.end());
+        current_tse_sets.clear();
+    }
+}
+
+
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
     if ( match_map.empty() ) {
@@ -1955,18 +1976,25 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
     }
     if ( m_Loader ) {
         CDataLoader::TTSE_LockSets tse_sets;
+        CDataLoader::TTSE_LockSets current_tse_sets;
+        size_t current_tse_sets_size = 0;
+#ifdef __SANITIZE_THREAD__
+        const size_t limit_blobs_request = 15;
+#else
+        const size_t limit_blobs_request = 200;
+#endif
         ITERATE(TSeqMatchMap, match, match_map) {
             _ASSERT( !match->second );
-            tse_sets.insert(tse_sets.end(),
+            current_tse_sets.insert(
                 CDataLoader::TTSE_LockSets::value_type(
                 match->first, CDataLoader::TTSE_LockSet()));
+            if ( ++current_tse_sets_size >= limit_blobs_request ) {
+                s_GetBlobs(m_Loader, tse_sets, current_tse_sets);
+                current_tse_sets_size = 0;
+            }
         }
-        try {
-            m_Loader->GetBlobs(tse_sets);
-        }
-        catch ( CLoaderException& exc ) {
-            exc.SetFailedCall(s_FormatCall("GetBlobs", tse_sets));
-            throw;
+        if ( !current_tse_sets.empty() ) {
+            s_GetBlobs(m_Loader, tse_sets, current_tse_sets);
         }
         if ( s_GetBulkChunks() ) {
             // bulk chunk loading
