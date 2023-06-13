@@ -41,6 +41,7 @@ Contents: Use RPS blast to find domain hits
 #include <algo/blast/api/blast_rps_options.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
+#include <algo/blast/core/blast_rps.h>
 #include <algo/cobalt/cobalt.hpp>
 
 #include <objects/blast/Blast4_request.hpp>
@@ -554,7 +555,7 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
         _ASSERT(hit->m_SeqIndex1 < (int)m_RPSLocs.size());
         m_RPSLocs[hit->m_SeqIndex1].clear();
 
-        double **ref_freqs = profile_data.GetResFreqs() + 
+        Int4** ref_freqs = profile_data.GetResFreqs() + 
                              (profile_data.GetSeqOffsets())[hit->m_SeqIndex2];
 
         double domain_res_freq_boost = m_Options->GetDomainResFreqBoost();
@@ -579,7 +580,8 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                 for (int k = 0; k < stop_pair.first - start_pair.first; k++) {
                     for (int m = 0; m < kAlphabetSize; m++) {
                         matrix(q+k, m) = 
-                              (1 - domain_res_freq_boost) * ref_freqs[s+k][m];
+                            (1 - domain_res_freq_boost) * 
+                            ((double)ref_freqs[s+k][m] / FREQ_RATIO_SCALE);
 
                     }
                     matrix(q+k, query.GetLetter(q+k)) += domain_res_freq_boost;
