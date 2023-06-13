@@ -86,7 +86,7 @@ public:
     /// returned matrix is (db length) x kAlphabetSize
     /// @return Pointer to profile data
     ///
-    double ** GetResFreqs() const { return m_ResFreqRows; }
+    Int4 ** GetResFreqs() const { return m_ResFreqRows; }
 
     /// Load information from a given database
     /// @param choice Specifies whether PSSMs or profiles are loaded [in]
@@ -108,7 +108,7 @@ private:
     Int4 *m_SeqOffsets;         ///< List of the first offset of each
                                 ///  database sequence
     Int4 **m_PssmRows;          ///< List of pointers to PSSM columns
-    double **m_ResFreqRows;     ///< List of pointers to profile columns
+    Int4 **m_ResFreqRows;       ///< List of pointers to profile columns
 };
 
 END_SCOPE(cobalt)
