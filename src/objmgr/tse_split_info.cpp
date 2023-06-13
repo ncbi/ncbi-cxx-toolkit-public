@@ -531,10 +531,16 @@ void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
     sort(sorted_ids.begin(), sorted_ids.end());
     sorted_ids.erase(unique(sorted_ids.begin(), sorted_ids.end()),
         sorted_ids.end());
+#ifdef __SANITIZE_THREAD__
+    const size_t limit_chunks_request = 15;
+#else
+    const size_t limit_chunks_request = 200;
+#endif
+    size_t reserve_size = min(sorted_ids.size(), limit_chunks_request);
     TChunkRefs chunks;
-    chunks.reserve(sorted_ids.size());
+    chunks.reserve(reserve_size);
     TInitGuards guards;
-    guards.reserve(sorted_ids.size());
+    guards.reserve(reserve_size);
     // Collect and lock all chunks to be loaded
     ITERATE(TChunkIds, id, sorted_ids) {
         CRef<CTSE_Chunk_Info> chunk(&info_nc.GetChunk(*id));
@@ -545,9 +551,19 @@ void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
         }
         chunks.push_back(chunk);
         guards.push_back(guard);
+        if ( guards.size() >= limit_chunks_request ) {
+            // Load chunks
+            info_nc.GetDataLoader().GetChunks(chunks);
+            guards.clear();
+            chunks.clear();
+        }
     }
-    // Load chunks
-    info_nc.GetDataLoader().GetChunks(chunks);
+    if ( !guards.empty() ) {
+        // Load chunks
+        info_nc.GetDataLoader().GetChunks(chunks);
+        guards.clear();
+        chunks.clear();
+    }
 }
 
 
@@ -577,10 +593,16 @@ void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
                                                (a->GetChunkId() == b->GetChunkId()));
                                    }),
                         sorted_chunks.end());
+#ifdef __SANITIZE_THREAD__
+    const size_t limit_chunks_request = 15;
+#else
+    const size_t limit_chunks_request = 200;
+#endif
+    size_t reserve_size = min(sorted_chunks.size(), limit_chunks_request);
     CDataLoader::TChunkSet chunks;
-    chunks.reserve(sorted_chunks.size());
+    chunks.reserve(reserve_size);
     vector< AutoPtr<CInitGuard> > guards;
-    guards.reserve(sorted_chunks.size());
+    guards.reserve(reserve_size);
     // Collect and lock all chunks to be loaded
     for ( auto& chunk : sorted_chunks ) {
         AutoPtr<CInitGuard> guard = chunk->GetLoadInitGuard();
@@ -589,9 +611,19 @@ void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
         }
         chunks.push_back(chunk);
         guards.push_back(guard);
+        if ( guards.size() >= limit_chunks_request ) {
+            // Load chunks
+            loader->GetChunks(chunks);
+            guards.clear();
+            chunks.clear();
+        }
     }
-    // Load chunks
-    loader->GetChunks(chunks);
+    if ( !guards.empty() ) {
+        // Load chunks
+        loader->GetChunks(chunks);
+        guards.clear();
+        chunks.clear();
+    }
 }
 
 
