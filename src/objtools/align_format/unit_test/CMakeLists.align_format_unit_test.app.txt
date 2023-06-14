@@ -7,7 +7,6 @@ NCBI_begin_app(align_format_unit_test)
   )
   NCBI_uses_toolkit_libraries(align_format ncbi_xloader_blastdb_rmt)
 
-  NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_assets(data align_format_unit_test.ini)
   NCBI_add_test()
 

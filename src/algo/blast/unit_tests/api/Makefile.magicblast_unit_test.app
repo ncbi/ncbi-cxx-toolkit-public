@@ -10,7 +10,7 @@ LIB = test_boost $(BLAST_INPUT_LIBS) \
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = magicblast_unit_test
 CHECK_COPY = data magicblast_unit_test.ini
 

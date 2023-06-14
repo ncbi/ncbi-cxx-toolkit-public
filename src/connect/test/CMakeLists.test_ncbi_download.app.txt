@@ -8,7 +8,6 @@ NCBI_begin_app(test_ncbi_download)
   NCBI_begin_test(test_ncbi_download)
     NCBI_set_test_command(test_ncbi_download.sh)
     NCBI_set_test_assets(test_ncbi_download.sh)
-    NCBI_set_test_requires(in-house-resources)
   NCBI_end_test()
 
   NCBI_project_watchers(lavr)

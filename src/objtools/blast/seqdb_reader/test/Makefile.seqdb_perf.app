@@ -13,7 +13,7 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG
 
 WATCHERS = madden camacho
 
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = full-blastdb
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 4 /CHECK_NAME=scan_blastdb_mt
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 1 /CHECK_NAME=scan_blastdb_st
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -get_metadata /CHECK_NAME=get_blastdb_metadata

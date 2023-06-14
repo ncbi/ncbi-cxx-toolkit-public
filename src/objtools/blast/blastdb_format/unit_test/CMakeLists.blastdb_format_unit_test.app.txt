@@ -4,8 +4,7 @@ NCBI_begin_app(blastdb_format_unit_test)
   NCBI_sources(seq_writer_unit_test seq_formatter_unit_test)
   NCBI_uses_toolkit_libraries(blastdb_format)
 
-  NCBI_set_test_requires(in-house-resources)
-  NCBI_set_test_assets(data)
+  NCBI_set_test_assets(blastdb_format_unit_test.ini data)
   NCBI_add_test()
 
   NCBI_project_watchers(zaretska jianye madden camacho fongah2)

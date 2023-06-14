@@ -17,6 +17,4 @@ REQUIRES = objects MT
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = in-house-resources
-
 WATCHERS = vasilche ucko

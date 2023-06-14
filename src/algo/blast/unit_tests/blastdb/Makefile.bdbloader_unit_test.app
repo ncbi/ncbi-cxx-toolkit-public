@@ -14,9 +14,9 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects Boost.Test.Included
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = bdbloader_unit_test
-CHECK_COPY = data
+CHECK_COPY = bdbloader_unit_test.ini data
 CHECK_TIMEOUT = 600
 
 

@@ -6,7 +6,7 @@ NCBI_begin_app(test_bam_loader)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_bam ncbi_xloader_genbank)
 
-  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_requires(full-test-data)
   NCBI_set_test_assets(mapfile)
   NCBI_set_test_timeout(500)
   NCBI_add_test()

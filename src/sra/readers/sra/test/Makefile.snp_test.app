@@ -17,7 +17,6 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = in-house-resources
 #CHECK_CMD = snp_test
 
 WATCHERS = vasilche

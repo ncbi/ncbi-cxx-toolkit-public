@@ -13,9 +13,8 @@ LIB_ = test_boost $(BLAST_FORMATTER_LIBS) \
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blast_format_unit_test
-CHECK_COPY = data
+CHECK_COPY = blast_format_unit_test.ini data
 
 REQUIRES = Boost.Test.Included
 

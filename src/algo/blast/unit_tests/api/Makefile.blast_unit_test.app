@@ -9,7 +9,7 @@ LIB = blast_unit_test_util test_boost $(BLAST_INPUT_LIBS) \
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = blast_unit_test
 CHECK_COPY = blast_unit_test.ini
 

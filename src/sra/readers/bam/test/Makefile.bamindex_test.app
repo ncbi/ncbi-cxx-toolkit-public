@@ -18,7 +18,7 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = full-test-data
 
 CHECK_CMD = bamindex_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -index_type bai -q 20 -overlap -limit_count 1 /CHECK_NAME=bamindex_test_bai1
 CHECK_CMD = bamindex_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -index_type csi -q 20 -overlap -limit_count 1 /CHECK_NAME=bamindex_test_csi1

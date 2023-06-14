@@ -17,7 +17,6 @@ REQUIRES = objects VDB
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = in-house-resources
 CHECK_COPY = wgs_test.sh
 CHECK_CMD = wgs_test.sh
 
