@@ -376,7 +376,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCore& test, bool unique) const
             unit = str.substr(0, n);
         }
     }
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, m_Name, msg, xml, unit, count));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test.GetSName(), m_Name, msg, xml, unit, count));
     item->m_Autofix = autofix;
     item->m_Severity = severity;
     item->m_Ext = m_Ext;
@@ -411,18 +411,53 @@ CRef<CReportItem> CReportItem::CreateReportItem(const string& name, const CRepor
     string s = msg;
     NStr::ReplaceInPlace(s, "[(]", "");
     NStr::ReplaceInPlace(s, "[)]", "");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*test, msg, s, s, kEmptyCStr, 0));
-    item->m_Autofix = autofix;
-    auto dobj = static_cast<const CDiscrepancyObject&>(obj);
-    auto x = CRef<CDiscrepancyObject>(new CDiscrepancyObject(dobj.m_Ref));
-    x->m_Case = test;
-    if (autofix) {
-        x->m_Fix = dobj.m_Ref;
-    }
-    item->m_Objs.push_back(CRef<CReportObj>(x));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test->GetSName(), msg, s, s, kEmptyCStr, 0));
+    item->SetAutofix(autofix);
+
+    CRef<CReportObj> new_obj = CReportObjFactory::Create(test, obj, autofix);
+    item->SetDetails().push_back(new_obj);
+
     return CRef<CReportItem>(item);
 }
 
+CRef<CReportItem> CReportItemFactory::Create(const string& test_name, const string& name, const CReportObj& main_obj, const TReportObjectList& report_objs, bool autofix)
+{
+    auto test = CCaseRegistry::GetProps(GetDiscrepancyCaseName(test_name)).Constructor();
+    string msg = name;
+    NStr::ReplaceInPlace(msg, "[(]", "");
+    NStr::ReplaceInPlace(msg, "[)]", "");
+
+    CDiscrepancyItem* disc_item = new CDiscrepancyItem(test->GetSName(), name, msg, msg, kEmptyStr, 0);
+    disc_item->SetAutofix(autofix);
+
+    CRef<CReportObj> new_obj = CReportObjFactory::Create(test, main_obj, autofix);
+    disc_item->SetDetails().push_back(new_obj);
+    for (const auto& it : report_objs) {
+        disc_item->SetDetails().push_back(it);
+    }
+    
+    return CRef<CReportItem>(disc_item);
+}
+
+CRef<CReportObj> CReportObjFactory::Create(CRef<CDiscrepancyCore> disc_core, const CReportObj& obj, bool autofix)
+{
+    auto disc_obj = dynamic_cast<const CDiscrepancyObject&>(obj);
+    auto ref = disc_obj.RefNode();
+
+    CDiscrepancyObject* new_obj = CDiscrepancyObject::CreateInternal(ref.GetNCPointerOrNull(), disc_core, autofix);
+    return CRef<CReportObj>(new_obj);
+}
+
+
+CDiscrepancyObject* CDiscrepancyObject::CreateInternal(CDiscrepancyContext::CRefNode* ref, CRef<CDiscrepancyCore> disc_core, bool autofix)
+{
+    CDiscrepancyObject* disc_obj = new CDiscrepancyObject(ref);
+    disc_obj->m_Case = disc_core;
+    if (autofix) {
+        disc_obj->m_Fix = ref;
+    }
+    return disc_obj;
+}
 
 // need to rewrite as a DiscrepancyContext method
 CReportObj* CDiscrepancyObject::Clone(bool fix, CConstRef<CObject> data) const
@@ -842,14 +877,13 @@ bool CDiscrepancyContext::CompareRefs(CRef<CReportObj> a, CRef<CReportObj> b) {
     return A.size() == B.size() ? &*a < &*b : A.size() < B.size();
 }
 
-CDiscrepancyItem::CDiscrepancyItem(const std::string& m)
-    : m_Msg(m)
-{}
 
 CDiscrepancyItem::CDiscrepancyItem(CDiscrepancyCore& t, const string& s, const string& m, const string& x, const string& o, size_t n)
     : m_Title(t.GetSName()), m_Str(s), m_Msg(m), m_Xml(x), m_Unit(o), m_Count(n)
 {}
 
+
+// CDiscrepancyContext
 map<string, size_t> CDiscrepancyContext::Autofix()
 {
     TReportObjectList tofix;

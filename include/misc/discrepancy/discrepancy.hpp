@@ -83,6 +83,7 @@ public:
         eType_string
     };
     virtual ~CReportObj(){}
+
     virtual string GetBioseqLabel() const = 0;
     virtual string GetText() const = 0;
     virtual string GetPath() const = 0;
@@ -123,6 +124,7 @@ public:
         eSeverity_error   = 2
     };
     virtual ~CReportItem(){}
+
     virtual string_view GetTitle() const = 0;
     virtual string GetStr() const = 0;
     virtual string GetMsg() const = 0;
@@ -139,10 +141,19 @@ public:
     virtual bool IsSummary() const = 0;
     virtual bool IsReal() const = 0;
 
+    /// @deprecated
+    /// use CReportItemFactory::Create() function
+    NCBI_DEPRECATED 
     static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix = false);
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 
+
+class NCBI_DISCREPANCY_EXPORT CReportItemFactory
+{
+public:
+    static CRef<CReportItem> Create(const string& test_name, const string& name, const CReportObj& main_obj, const TReportObjectList& report_objs, bool autofix = false);
+};
 
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
@@ -166,6 +177,7 @@ public:
 };
 
 typedef map<eTestNames, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
+
 
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet: public CObject
 {
@@ -232,6 +244,7 @@ protected:
     static std::atomic<bool> m_Gui;
     void* m_UserData = nullptr;
 };
+
 
 // This is GUI structure, consider moving to it to appropriate location
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyGroup : public CObject
