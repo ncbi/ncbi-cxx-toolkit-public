@@ -6,7 +6,7 @@
 backward-cpp/1.6
 libunwind/1.6.2
 libdb/5.3.28
-boost/1.80.0
+boost/1.82.0
 bzip2/1.0.8
 cassandra-cpp-driver/2.15.3
 giflib/5.2.1
