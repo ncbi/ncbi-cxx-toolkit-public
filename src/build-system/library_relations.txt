@@ -720,7 +720,6 @@ ncbi-vdb includes $(BZ2_LIB)
 ncbi-vdb includes $(Z_LIB)
 ncbi-vdb includes3party $(BZ2_LIBS)
 ncbi-vdb includes3party $(Z_LIBS)
-ncbi-vdb needs3party $(LIBXML_LIBS)
 ncbi-vdb needs3party $(ORIG_LIBS)
 ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
@@ -941,10 +940,9 @@ psloader-internal needs3party ncbiobj
 pstub needs3party $(ORIG_LIBS)
 pub needs medline
 pubmed needs medline
-python3.8 needs3party $(ORIG_LIBS)
+python3.9 needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs dbapi
-python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 rcobaltasn_g needs xser
 re2 needs3party $(ORIG_LIBS)
 refseq_aln_source needs $(COMPRESS_LIBS)
