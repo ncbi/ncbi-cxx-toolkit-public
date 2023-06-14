@@ -48,41 +48,37 @@ class ILineErrorListener : public CObject, public IObjtoolsListener
 //  ============================================================================
 {
 public:
-    virtual ~ILineErrorListener() {}
+    ~ILineErrorListener() override {}
 
     /// Store error in the container, and
     /// return true if error was stored fine, and
     /// return false if the caller should terminate all further processing.
     ///
-    virtual bool
-    PutError(
-        const ILineError& ) = 0;
+    virtual bool PutError(const ILineError&) = 0;
 
-    virtual bool
-    PutMessage(const IObjtoolsMessage& message) {
+    bool PutMessage(const IObjtoolsMessage& message) override {
         const ILineError* le = dynamic_cast<const ILineError*>(&message);
-        if (!le) return true;
+        if (! le)
+            return true;
         return PutError(*le);
     }
 
     // IListener::Get() implementation
     virtual const ILineError& Get(size_t index) const
-    { return this->GetError(index); }
+    {
+        return this->GetError(index);
+    }
 
     /// 0-based error retrieval.
-    virtual const ILineError&
-    GetError(size_t ) const =0;
+    virtual const ILineError& GetError(size_t) const = 0;
 
-    virtual size_t Count(void) const = 0;
+    virtual size_t Count() const = 0;
 
     /// Returns the number of errors seen so far at the given severity.
-    virtual size_t
-    LevelCount(
-        EDiagSev )=0;
+    virtual size_t LevelCount(EDiagSev) = 0;
 
     /// Clear all accumulated messages.
-    virtual void
-    ClearAll() =0;
+    virtual void ClearAll() = 0;
 
     // IListener::Progress() implementation
     virtual void Progress(const string& message,
@@ -90,17 +86,20 @@ public:
                           Uint8         total) { PutProgress(message, current, total); }
 
     /// This is used for processing progress messages.
-    virtual void
-    PutProgress(
-        const string & sMessage,
-        const Uint8 iNumDone = 0,
-        const Uint8 iNumTotal = 0 ) = 0;
+    virtual void PutProgress(
+        const string& sMessage,
+        const Uint8   iNumDone  = 0,
+        const Uint8   iNumTotal = 0) = 0;
 
     virtual const ILineError& GetMessage(size_t index) const
-    { return Get(index); }
+    {
+        return Get(index);
+    }
 
-    virtual void Clear(void)
-    { ClearAll(); }
+    virtual void Clear()
+    {
+        ClearAll();
+    }
 };
 
 
@@ -109,7 +108,7 @@ public:
 class IMessageListener : public ILineErrorListener
 {
 public:
-    virtual ~IMessageListener(void) {}
+    ~IMessageListener() override {}
 };
 
 
@@ -119,29 +118,27 @@ class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public objects::IMessageListen
 {
 public:
     CMessageListenerBase() : m_pProgressOstrm(nullptr) {}
-    virtual ~CMessageListenerBase() {};
+    ~CMessageListenerBase() override {}
 
 public:
-    size_t
-    Count() const { return m_Errors.size(); };
+    size_t Count() const override { return m_Errors.size(); }
 
-    virtual size_t
-    LevelCount(
-        EDiagSev eSev ) {
-        size_t uCount( 0 );
-        for ( size_t u=0; u < Count(); ++u ) {
-            if ( m_Errors[u]->GetSeverity() == eSev ) ++uCount;
+    size_t LevelCount(EDiagSev eSev) override
+    {
+        size_t uCount(0);
+        for (size_t u = 0; u < Count(); ++u) {
+            if (m_Errors[u]->GetSeverity() == eSev)
+                ++uCount;
         }
         return uCount;
-    };
+    }
 
-    void
-    ClearAll() { m_Errors.clear(); };
+    void ClearAll() override { m_Errors.clear(); }
 
-    const ILineError&
-    GetError(
-        size_t uPos ) const {
-            return *dynamic_cast<ILineError*>(m_Errors[ uPos ].get()); }
+    const ILineError& GetError(size_t uPos) const override
+    {
+        return *dynamic_cast<ILineError*>(m_Errors[uPos].get());
+    }
 
     virtual void Dump()
     {
@@ -149,42 +146,36 @@ public:
             Dump(*m_pProgressOstrm);
     }
 
-    virtual void Dump(
-        std::ostream& out )
+    virtual void Dump(std::ostream& out)
     {
-        if ( m_Errors.size() ) {
+        if (m_Errors.size()) {
             TLineErrVec::iterator it;
-            for ( it = m_Errors.begin(); it != m_Errors.end(); ++it ) {
-                (*it)->Dump( out );
+            for (it = m_Errors.begin(); it != m_Errors.end(); ++it) {
+                (*it)->Dump(out);
                 out << endl;
             }
-        }
-        else {
+        } else {
             out << "(( no errors ))" << endl;
         }
-    };
+    }
 
-    virtual void DumpAsXML(
-        std::ostream& out )
+    virtual void DumpAsXML(std::ostream& out)
     {
-        if ( m_Errors.size() ) {
+        if (m_Errors.size()) {
             TLineErrVec::iterator it;
-            for ( it = m_Errors.begin(); it != m_Errors.end(); ++it ) {
-                (*it)->DumpAsXML( out );
+            for (it = m_Errors.begin(); it != m_Errors.end(); ++it) {
+                (*it)->DumpAsXML(out);
                 out << endl;
             }
-        }
-        else {
+        } else {
             out << "(( no errors ))" << endl;
         }
-    };
+    }
 
-
-    virtual void
-    PutProgress(
-        const string & sMessage,
-        const Uint8 iNumDone,
-        const Uint8 iNumTotal );
+    void PutProgress(
+        const string& sMessage,
+        const Uint8   iNumDone,
+        const Uint8   iNumTotal) override;
 
     /// This sets the stream to which progress messages are written.
     ///
@@ -194,14 +185,13 @@ public:
     /// @param eNcbiOwnership
     ///   Indicates whether this CMessageListenerBase should own
     ///   pProgressOstrm.
-    virtual void
-    SetProgressOstream(
-        CNcbiOstream * pProgressOstrm,
-        ENcbiOwnership eNcbiOwnership = eNoOwnership )
+    virtual void SetProgressOstream(
+        CNcbiOstream*  pProgressOstrm,
+        ENcbiOwnership eNcbiOwnership = eNoOwnership)
     {
         m_pProgressOstrm = pProgressOstrm;
-        if( eNcbiOwnership == eTakeOwnership && pProgressOstrm ) {
-            m_progressOstrmDestroyer.reset( pProgressOstrm );
+        if (eNcbiOwnership == eTakeOwnership && pProgressOstrm) {
+            m_progressOstrmDestroyer.reset(pProgressOstrm);
         } else {
             m_progressOstrmDestroyer.reset();
         }
@@ -219,14 +209,13 @@ private:
 
     // The stream to which progress messages are written.
     // If NULL, progress messages are not written.
-    CNcbiOstream * m_pProgressOstrm;
+    CNcbiOstream* m_pProgressOstrm;
 
     // do not read this pointer.  It's just used to make
     // sure m_pProgressOstrm is destroyed if we own it.
     AutoPtr<CNcbiOstream> m_progressOstrmDestroyer;
 
 protected:
-
     // Child classes should use this to store errors
     // into m_Errors
     void StoreError(const ILineError& err)
@@ -241,61 +230,53 @@ protected:
 };
 
 //  ============================================================================
-class CMessageListenerLenient:
+class CMessageListenerLenient :
 //
 //  Accept everything.
 //  ============================================================================
     public CMessageListenerBase
 {
 public:
-    CMessageListenerLenient() {};
-    ~CMessageListenerLenient() {};
+    CMessageListenerLenient() {}
+    ~CMessageListenerLenient() override {}
 
-    bool
-    PutMessage(
-        const IObjtoolsMessage& message)
+    bool PutMessage(const IObjtoolsMessage& message) override
     {
         StoreMessage(message);
         return true;
     }
 
-    bool
-    PutError(
-        const ILineError& err )
+    bool PutError(const ILineError& err) override
     {
         return PutMessage(err);
-    };
+    }
 };
 
 //  ============================================================================
-class CMessageListenerStrict:
+class CMessageListenerStrict :
 //
 //  Don't accept any errors, at all.
 //  ============================================================================
     public CMessageListenerBase
 {
 public:
-    CMessageListenerStrict() {};
-    ~CMessageListenerStrict() {};
+    CMessageListenerStrict() {}
+    ~CMessageListenerStrict() override {}
 
-    bool
-    PutMessage(
-        const IObjtoolsMessage& message)
+    bool PutMessage(const IObjtoolsMessage& message) override
     {
         StoreMessage(message);
         return false;
     }
 
-    bool
-    PutError(
-        const ILineError& err )
+    bool PutError(const ILineError& err) override
     {
         return PutMessage(err);
-    };
+    }
 };
 
 //  ===========================================================================
-class CMessageListenerCount:
+class CMessageListenerCount :
 //
 //  Accept up to <<count>> errors, any level.
 //  ===========================================================================
@@ -303,80 +284,72 @@ class CMessageListenerCount:
 {
 public:
     CMessageListenerCount(
-        size_t uMaxCount ): m_uMaxCount( uMaxCount ) {};
-    ~CMessageListenerCount() {};
+        size_t uMaxCount) :
+        m_uMaxCount(uMaxCount) {}
+    ~CMessageListenerCount() override {}
 
-    bool PutMessage(
-        const IObjtoolsMessage& message)
+    bool PutMessage(const IObjtoolsMessage& message) override
     {
         StoreMessage(message);
         return (Count() < m_uMaxCount);
     }
 
-
-    bool
-    PutError(
-        const ILineError& err )
+    bool PutError(const ILineError& err) override
     {
         return PutMessage(err);
-    };
+    }
+
 protected:
     size_t m_uMaxCount;
 };
 
 //  ===========================================================================
-class CMessageListenerLevel:
+class CMessageListenerLevel :
 //
 //  Accept evrything up to a certain level.
 //  ===========================================================================
     public CMessageListenerBase
 {
 public:
-    CMessageListenerLevel(
-        int iLevel ): m_iAcceptLevel( iLevel ) {};
-    ~CMessageListenerLevel() {};
+    CMessageListenerLevel(int iLevel) :
+        m_iAcceptLevel(iLevel) {}
+    ~CMessageListenerLevel() override {}
 
-    bool
-    PutMessage(
-        const IObjtoolsMessage& message)
+    bool PutMessage(const IObjtoolsMessage& message) override
     {
         StoreMessage(message);
         return (message.GetSeverity() <= m_iAcceptLevel);
     }
 
-    bool
-    PutError(
-        const ILineError& err )
+    bool PutError(const ILineError& err) override
     {
         return PutMessage(err);
-    };
-    protected:
-        int m_iAcceptLevel;
-    };
+    }
 
-    //  ===========================================================================
-    class CMessageListenerWithLog:
-    //
-    //  Accept everything, and besides storing all errors, post them.
+protected:
+    int m_iAcceptLevel;
+};
+
+//  ===========================================================================
+class CMessageListenerWithLog :
+//
+//  Accept everything, and besides storing all errors, post them.
 //  ===========================================================================
     public CMessageListenerBase
 {
 public:
-    CMessageListenerWithLog(const CDiagCompileInfo& info)
-        : m_Info(info) {};
-    ~CMessageListenerWithLog() {};
+    CMessageListenerWithLog(const CDiagCompileInfo& info) :
+        m_Info(info) {}
+    ~CMessageListenerWithLog() override {}
 
-    bool
-    PutError(
-        const ILineError& err )
+    bool PutError(const ILineError& err) override
     {
-        CNcbiDiag(m_Info, err.Severity(),
-                  eDPF_Log | eDPF_IsMessage).GetRef()
-           << err.Message() << Endm;
+        CNcbiDiag(m_Info, err.Severity(), eDPF_Log | eDPF_IsMessage).GetRef()
+            << err.Message() << Endm;
 
         StoreError(err);
         return true;
-    };
+    }
 
 private:
     const CDiagCompileInfo m_Info;
@@ -401,4 +374,3 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___MESSAGELISTENER__HPP
-
