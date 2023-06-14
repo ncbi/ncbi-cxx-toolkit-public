@@ -663,7 +663,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
         }
     }
     if (new_schema->m_ResolverKeyspace.keyspace.empty() || !new_schema->m_ResolverKeyspace.connection) {
-        x_SetRefreshErrorMessage("mapping_keyspace is not specified");
+        x_SetRefreshErrorMessage("resolver schema is not found in sat2keyspace");
         return ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined;
     }
     if (new_schema->GetMaxBlobKeyspaceSat() == -1) {
