@@ -40,9 +40,6 @@
 #else
 #  include <boost/test/../config/stdlib/libstdcpp3.hpp>
 #endif
-#undef BOOST_COMPILER_CONFIG
-#define BOOST_NO_COMPILER_CONFIG 1
-#undef BOOST_CONFIG_HPP
 #include <common/boost_skew_guard.hpp>
 
 #endif  /* NCBI_BOOST_CONFIG_STDLIB___LIBSTDCPP3__HPP */

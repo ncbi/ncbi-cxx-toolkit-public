@@ -36,30 +36,11 @@
 #include <ncbiconf.h>
 
 #ifdef NCBI_EXPECTED_BOOST_VERSION
-#  if defined(BOOST_STATIC_ASSERT_HPP) && !defined(BOOST_STATIC_ASSERT_MSG)
-// Evidently pulled in by <boost/static_assert.hpp> itself (by way of our
-// <boost/config.hpp> wrapper); break the cycle as cleanly as possible
-// without losing the ability to call BOOST_STATIC_ASSERT_MSG here.
-#    undef BOOST_STATIC_ASSERT_HPP
-#    define STATIC_ASSERTION_FAILURE STATIC_ASSERTION_FAILURE_
-#    define static_assert_test       static_assert_test_
-#  endif
-#  include <corelib/ncbistl.hpp>
-#  include <boost/static_assert.hpp>
 #  include <boost/version.hpp>
-#  ifndef BOOST_STATIC_ASSERT_MSG
-#    define BOOST_STATIC_ASSERT_MSG(a, m) BOOST_STATIC_ASSERT(a)
-#  endif
-BEGIN_LOCAL_NAMESPACE;
-BOOST_STATIC_ASSERT_MSG(BOOST_VERSION == NCBI_EXPECTED_BOOST_VERSION,
+static_assert(BOOST_VERSION == NCBI_EXPECTED_BOOST_VERSION,
     "Boost version skew detected; please remember to use $(BOOST_INCLUDE)!"
     " (Expected " NCBI_AS_STRING(NCBI_EXPECTED_BOOST_VERSION)
     ", but got " NCBI_AS_STRING(BOOST_VERSION) ".)");
-END_LOCAL_NAMESPACE;
-#  ifdef STATIC_ASSERTION_FAILURE
-#    undef STATIC_ASSERTION_FAILURE
-#    undef static_assert_test
-#  endif
 #endif
 
 #endif  /* COMMON___BOOST_SKEW_GUARD__HPP */
