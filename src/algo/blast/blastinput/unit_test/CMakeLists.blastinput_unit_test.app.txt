@@ -6,7 +6,6 @@ NCBI_begin_app(blastinput_unit_test)
 
   NCBI_set_test_assets(data blastinput_unit_test.ini)
   NCBI_set_test_timeout(900)
-  NCBI_set_test_requires(in-house-resources)
   NCBI_add_test()
 
   NCBI_project_watchers(madden camacho fongah2)

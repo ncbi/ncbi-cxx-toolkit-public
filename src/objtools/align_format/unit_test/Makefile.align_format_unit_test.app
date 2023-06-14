@@ -17,7 +17,6 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NET
 
 CHECK_CMD = align_format_unit_test
 CHECK_COPY = data align_format_unit_test.ini
-CHECK_REQUIRES = in-house-resources
 
 REQUIRES = Boost.Test.Included
 

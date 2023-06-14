@@ -10,7 +10,7 @@ LIB = blast_unit_test_util test_boost \
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = blasthits_unit_test
 CHECK_COPY = blasthits_unit_test.ini
 

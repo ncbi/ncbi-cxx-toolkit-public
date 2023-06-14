@@ -11,8 +11,7 @@ LIB = test_boost ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb blast_services \
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blast_dataloader_unit_test
-CHECK_COPY = data
+CHECK_COPY = blast_dataloader_unit_test.ini data
 
 WATCHERS = madden camacho fongah2

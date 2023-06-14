@@ -31,6 +31,6 @@ CHECK_CMD = bam_test -file header-only.bam -check_count 0 /CHECK_NAME=bam_test_n
 CHECK_CMD = bam_test -file 1k.unaligned.bam -refseq GL000207.1 -refwindow 1 -check_count 0 /CHECK_NAME=bam_test_q_none
 CHECK_CMD = bam_test -file header-only.bam -refseq GL000207.1 -refwindow 1 -check_count 0 /CHECK_NAME=bam_test_q_none2
 
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = full-test-data
 
 WATCHERS = vasilche ucko

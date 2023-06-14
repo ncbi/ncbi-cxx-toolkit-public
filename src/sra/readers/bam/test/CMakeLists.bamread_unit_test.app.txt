@@ -8,7 +8,7 @@ NCBI_begin_app(bamread_unit_test)
   NCBI_uses_toolkit_libraries(bamread)
   NCBI_project_watchers(vasilche)
 
-  NCBI_set_test_requires(in-house-resources)
+  NCBI_set_test_requires(full-test-data)
   NCBI_add_test()
 NCBI_end_app()
 

@@ -9,7 +9,7 @@ LIB = test_boost $(BLAST_LIBS) xconnect xncbi
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = gapinfo_unit_test
 CHECK_COPY = gapinfo_unit_test.ini
 

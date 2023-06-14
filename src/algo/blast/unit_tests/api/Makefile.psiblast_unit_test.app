@@ -9,7 +9,7 @@ LIB = seqalign_util test_boost $(BLAST_INPUT_LIBS) \
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = psiblast_unit_test
 CHECK_COPY = psiblast_unit_test.ini data
 

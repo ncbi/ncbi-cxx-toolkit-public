@@ -5,8 +5,6 @@ NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/../../api)
 NCBI_add_definitions(NCBI_MODULE=BLAST)
 NCBI_add_library(blast_unit_test_util seqalign_util)
 
-NCBI_set_test_requires(in-house-resources)
-
 NCBI_add_app(
   blast_unit_test
   aalookup_unit_test

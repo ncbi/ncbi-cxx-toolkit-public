@@ -9,7 +9,6 @@ LDFLAGS  = $(FAST_LDFLAGS)
 LIB = test_boost seqdb writedb xobjutil blastdb $(OBJREAD_LIBS) $(SOBJMGR_LIBS) $(LMDB_LIB)
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_REQUIRES = in-house-resources
 CHECK_CMD  = seqdb_lmdb_unit_test
 CHECK_COPY = data
 

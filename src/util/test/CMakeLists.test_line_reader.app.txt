@@ -8,7 +8,6 @@ NCBI_begin_app(test_line_reader)
 
   NCBI_begin_test(test_line_reader)
     NCBI_set_test_command(test_line_reader -selftest)
-    NCBI_set_test_requires(in-house-resources)
   NCBI_end_test()
 
   NCBI_project_watchers(ucko)

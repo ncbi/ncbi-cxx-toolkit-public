@@ -17,7 +17,7 @@ REQUIRES = objects
 
 CHECK_CMD  = test_agpconvert.sh
 CHECK_COPY = test_agpconvert.sh test_data
-CHECK_REQUIRES = unix in-house-resources -Cygwin
+CHECK_REQUIRES = unix -Cygwin
 
 WATCHERS = xiangcha drozdov
 

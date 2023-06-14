@@ -12,6 +12,5 @@ LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 
 CHECK_CMD = test_sra_loader
-CHECK_REQUIRES = in-house-resources -MSWin
 
 WATCHERS = vasilche ucko

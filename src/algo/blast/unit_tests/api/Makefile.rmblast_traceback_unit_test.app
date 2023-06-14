@@ -9,7 +9,7 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(C
 LDFLAGS = $(FAST_LDFLAGS)
 
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = rmblast_traceback_unit_test
 CHECK_COPY = data
 

@@ -13,7 +13,7 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(VDB_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(D
 
 POST_LINK = $(VDB_POST_LINK)
 
-CHECK_REQUIRES = MT in-house-resources
+CHECK_REQUIRES = MT
 CHECK_CMD = blastsrainput_unit_test
 
 REQUIRES = VDB Boost.Test.Included

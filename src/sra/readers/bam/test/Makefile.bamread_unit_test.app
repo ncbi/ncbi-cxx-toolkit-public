@@ -14,6 +14,6 @@ LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 POST_LINK = $(VDB_POST_LINK)
 
 CHECK_CMD = bamread_unit_test
-CHECK_REQUIRES = in-house-resources
+CHECK_REQUIRES = full-test-data
 
 WATCHERS = vasilche

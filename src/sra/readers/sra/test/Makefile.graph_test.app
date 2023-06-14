@@ -17,7 +17,6 @@ REQUIRES = objects
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
-CHECK_REQUIRES = in-house-resources
 CHECK_CMD = graph_test -q .
 
 WATCHERS = vasilche ucko

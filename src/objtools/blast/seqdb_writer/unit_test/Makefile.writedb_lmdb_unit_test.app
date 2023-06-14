@@ -13,7 +13,6 @@ LIB_ = test_boost writedb seqdb $(OBJREAD_LIBS) xobjutil blastdb \
 LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_REQUIRES = in-house-resources
 CHECK_CMD = writedb_lmdb_unit_test
 CHECK_COPY = data
 
