@@ -13,7 +13,7 @@ LIB = $(LIB_:%=%$(STATIC)) $(LMDB_LIB)
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD  = gene_info_writer_unit_test
-CHECK_COPY = data
+CHECK_COPY = data gene_info_writer_unit_test.ini
 
 
 WATCHERS = madden camacho
