@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed May 31 13:00:53 EDT 2023; formally
+/* time_t value corresponding to Thu Jun 15 11:25:32 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1685552453UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1686842732UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -4507,41 +4507,12 @@ static const char* const kBuiltInGuide[] = {
     "special  CATNDL000000000-CATNEF999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CATNEJ000000000-CATNEL999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CATNEO000000000-CATNEU999999999  embl_tpa_wgs_nuc # 6+9",
+    "special2 CATNUW+9 embl_tpa_wgs_nuc",
+    ": 000000000-999999999",
     "special  CATNVF000000000-CATNVZ999999999  embl_tpa_wgs_nuc # 6+9",
     "special2 CATOAL+9 embl_tpa_wgs_nuc",
     ": 000000000-999999999",
-    "special  CATOHR000000000-CATOHS999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOHU000000000-CATOHZ999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOIC000000000-CATOIS999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOIV000000000-CATOIX999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOIZ000000000-CATOJI999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOJK000000000-CATOKK999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOKN000000000-CATOKR999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOKT000000000-CATOKV999999999  embl_tpa_wgs_nuc # 6+9",
-    "special2 CATOKX+9 embl_tpa_wgs_nuc",
-    ": 000000000-999999999",
-    "special  CATOKZ000000000-CATOLH999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOLJ000000000-CATOLQ999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOLS000000000-CATOLX999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOLZ000000000-CATONG999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATONI000000000-CATONJ999999999  embl_tpa_wgs_nuc # 6+9",
-    "special2 CATONM+9 embl_tpa_wgs_nuc",
-    ": 000000000-999999999",
-    "special  CATONO000000000-CATONP999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATONR000000000-CATONU999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATONW000000000-CATOOB999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOOD000000000-CATOOG999999999  embl_tpa_wgs_nuc # 6+9",
-    "special2 CATOOJ+9 embl_tpa_wgs_nuc",
-    ": 000000000-999999999",
-    "special2 CATOOL+9 embl_tpa_wgs_nuc",
-    ": 000000000-999999999",
-    "special2 CATOON+9 embl_tpa_wgs_nuc",
-    ": 000000000-999999999",
-    "special  CATOOP000000000-CATOOT999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOOW000000000-CATOPC999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CATOPE000000000-CATOPM999999999  embl_tpa_wgs_nuc # 6+9",
-    "special2 CATOPO+9 embl_tpa_wgs_nuc",
-    ": 000000000-999999999",
+    "special  CATOHR000000000-CATOPO999999999  embl_tpa_wgs_nuc",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special2 HBHG+8 embl_tpa_tsa_nuc",
@@ -25135,7 +25106,9 @@ static const char* const kBuiltInGuide[] = {
     ": 8-9 101-9 11-2 6-7 9 22 4 6-33 7 42-6 8 51-3 6 62 4-7 9-71 3 8 82-3 5-8 96-8",
     ": 200-2 5-14 6-7 9 21-6 8-32 4 6-7 40-1 3-6 9 51 3 6-7 9-61 3-71 4-5 8 80 2 4-6",
     ": 8-9 91-2 5-8 300 2-3 5-6 10-2",
+    "special2 CAI+7 embl_tpa_wgs_prot",
+    ": 9426052-774 6-800 2-903 5-87 9-8023 5-66 8-535 7-77",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CAI5341238-CZZ9999999  unreserved_prot"
+    "#special CAI9794946-CZZ9999999  unreserved_prot"
 };
