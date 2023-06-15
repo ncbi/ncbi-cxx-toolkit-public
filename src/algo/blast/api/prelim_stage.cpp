@@ -151,7 +151,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     // -RMH- This appears to be a problem right now.  When used...this
     // can cause all the work to go to a single thread!  (-MN- This is fixed in SB-768)
     BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(),
-                                  GetNumberOfThreads());
+                                  static_cast<int>(GetNumberOfThreads()));
 
     // Create the threads ...
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
@@ -436,7 +436,7 @@ bool CBlastPrelimSearch::x_BuildStdSegList( vector<list<CRef<CStd_seg> > >  & l 
 	for(int i=0; i < num_queries; i++)
 	{
 		CConstRef<CSeq_loc> query_loc = local_query_data->GetSeq_loc(i);
-		TSeqPos	query_length = local_query_data->GetSeqLength(i);
+		TSeqPos	query_length = static_cast<TSeqPos>(local_query_data->GetSeqLength(i));
 		BlastHitList * hit_list = q_list_ptr[i];
 		if(NULL != hit_list)
 		{

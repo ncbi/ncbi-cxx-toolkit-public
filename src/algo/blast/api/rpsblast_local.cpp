@@ -52,13 +52,13 @@ static const size_t delimiter_len = sizeof(delimiter) - 1; // exclude \0
 
 static void s_ConvertConcatStringToVectorOfString(const string & s, vector<string> & v)
 {
-	int pos_start = 0;
+	size_t pos_start = 0;
 	while(1)
 	{
 		size_t pos_find = s.find(delimiter, pos_start);
 		if(pos_find == string::npos)
 			break;
-		TSeqPos length = pos_find - pos_start;
+		size_t length = pos_find - pos_start;
 		v.push_back(s.substr(pos_start, length));
 		pos_start = pos_find + delimiter_len;
 	}
@@ -206,7 +206,7 @@ static bool s_SortDbSize(const pair<string, Int8> & a, const pair<string, Int8> 
 
 static void s_MapDbToThread(vector<string> & db, unsigned int num_of_threads)
 {
-	unsigned int db_size = db.size();
+	unsigned int db_size = static_cast<unsigned int>(db.size());
 	vector <pair <string, Int8> > 	 p;
 
 	for(unsigned int i=0; i < db_size; i++)
@@ -314,7 +314,7 @@ void* CRPSThread::Main(void)
 
 CRef<CSearchResultSet> CRPSThread::RunTandemSearches(void)
 {
-	unsigned int num_of_db = m_db.size();
+	unsigned int num_of_db = static_cast<unsigned int>(m_db.size());
 	vector<CRef<CSearchResultSet> > results;
 
 	for(unsigned int i=0; i < num_of_db; i++)
@@ -339,7 +339,7 @@ CLocalRPSBlast::CLocalRPSBlast(CRef<CBlastQueryVector> query_vector,
               	  	  	  	   m_num_of_dbs(0)
 {
 	CSeqDB::FindVolumePaths(db, CSeqDB::eProtein, m_rps_databases, NULL, true, true);
-	m_num_of_dbs = m_rps_databases.size();
+	m_num_of_dbs = static_cast<unsigned int>(m_rps_databases.size());
 	if( 1 == m_num_of_dbs)
 	{
 		m_num_of_threads = kDisableThreadedSearch;
@@ -415,7 +415,7 @@ CRef<CSearchResultSet> CLocalRPSBlast::RunThreadedSearch(void)
    	  (m_num_of_threads > m_rps_databases.size()))
    	{
    		//Default num of thread : a thread for each db
-   		m_num_of_threads = m_rps_databases.size();
+   		m_num_of_threads = static_cast<unsigned int>(m_rps_databases.size());
    	}
    	else if(m_num_of_threads < m_rps_databases.size())
    	{

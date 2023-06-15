@@ -93,7 +93,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
 {
     if (user_list) {
         m_UserGiList.Reset(user_list);
-        m_OidMaskType = m_UserGiList->GetMaskOpts();
+        m_OidMaskType = static_cast<int>(m_UserGiList->GetMaskOpts());
     }
     if (neg_list) {
         m_NegativeList.Reset(neg_list);
@@ -1538,7 +1538,7 @@ int CSeqDBVol::GetAmbigPartialSeq(int                oid,
 	}
 
 
-    int num_ranges = partial_ranges->size();
+    int num_ranges = static_cast<int>(partial_ranges->size());
     if ((*partial_ranges)[num_ranges - 1].second > base_length) {
         NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
     }
@@ -1713,7 +1713,7 @@ void SeqDB_UnpackAmbiguities(const CTempString & sequence,
 
     const char * seq_buffer = sequence.data();
 
-    int whole_bytes = sequence.length() - 1;
+    int whole_bytes = static_cast<int>(sequence.length()) - 1;
     int remainder = sequence[whole_bytes] & 3;
     int base_length = (whole_bytes * 4) + remainder;
 
@@ -3384,7 +3384,7 @@ int CSeqDBVol::GetColumnId(const string   & title,
 
     for(size_t i = 0; i < m_Columns.size(); i++) {
         if (m_Columns[i]->GetTitle() == title) {
-            return i;
+            return static_cast<int>(i);
         }
     }
 

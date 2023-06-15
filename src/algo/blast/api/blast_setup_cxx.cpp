@@ -192,7 +192,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
         if (translate) {
             for (unsigned int i = 0; i < kNumContexts; i++) {
                 unsigned int prot_length = 
-                    BLAST_GetTranslatedProteinLength(length, i);
+                    static_cast<unsigned int>(BLAST_GetTranslatedProteinLength(length, i));
                 max_length = MAX(max_length, prot_length);
                 min_length = MIN(min_length, prot_length);
                 
@@ -405,8 +405,8 @@ s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
     const TFrameSet& frames = frame_to_bsl.ListFrames();
     const size_t kNumFrames = frame_to_bsl.GetNumFrames();
     _ASSERT(kNumFrames != 0);
-    const int first_ctx = kNumFrames * query_index;
-    const int last_ctx = kNumFrames * (query_index + 1);
+    const int first_ctx = static_cast<int>(kNumFrames) * query_index;
+    const int last_ctx = static_cast<int>(kNumFrames) * (query_index + 1);
     
     ITERATE(TFrameSet, iter, frames) {
         int seqloc_frame = *iter;
@@ -823,7 +823,7 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
                 /// TODO bl2seq only use soft masking?
             	subj->length = length;
                 BlastSeqBlkSetSeqRanges(subj, (SSeqRange*) masked_ranges.get_data(),
-                                    masked_ranges.size() + 1, true, eSoftSubjMasking);
+                                    static_cast<Uint4>(masked_ranges.size()) + 1, true, eSoftSubjMasking);
             } else {
                 subj->num_seq_ranges = 0;
             }

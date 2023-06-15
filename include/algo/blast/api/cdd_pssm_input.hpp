@@ -141,7 +141,7 @@ public:
     /// Get query length
     /// @return Query length
     ///
-    unsigned int  GetQueryLength(void) {return m_QueryData.size();}
+    unsigned int  GetQueryLength(void) {return static_cast<unsigned int>(m_QueryData.size());}
 
     /// Get scoring matrix name
     /// @return Scoring matrix name

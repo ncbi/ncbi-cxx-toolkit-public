@@ -1304,7 +1304,7 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         bool is_version = false;
 
         if (pos != string::npos) {
-            int ver_len = acc.size() - pos - 1;
+            int ver_len = static_cast<int>(acc.size() - pos) - 1;
 
             is_version = (ver_len <= 3 && ver_len >= 1);
 

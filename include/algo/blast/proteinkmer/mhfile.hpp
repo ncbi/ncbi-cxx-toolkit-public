@@ -161,7 +161,7 @@ public:
     void GetMinHits(int oid, int& subjectOid, vector<uint32_t>& hits) const;
 
     /// Returns the number of hash arrays.
-    int GetNumSignatures() const {return (m_DataFileSize/(GetDataWidth()*GetNumHashes()+4));}
+    int GetNumSignatures() const {return static_cast<int>(m_DataFileSize/(GetDataWidth()*GetNumHashes()+4));}
 
 private:
 

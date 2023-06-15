@@ -106,7 +106,7 @@ CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory,
 CQueryFactoryInfo::CQueryFactoryInfo(const TSeqLocVector& subj_seqs,
                                      EBlastProgramType program)
 : m_IsProt(Blast_SubjectIsProtein(program) ? true : false), m_MaxLength(0),
-      m_MinLength(1), m_AvgLength(0), m_QuerySource(0), m_NumSeqs(subj_seqs.size())
+      m_MinLength(1), m_AvgLength(0), m_QuerySource(0), m_NumSeqs(static_cast<Uint4>(subj_seqs.size()))
 {
     // Fix subject location for tblast[nx].  
     if (Blast_SubjectIsTranslated(program))

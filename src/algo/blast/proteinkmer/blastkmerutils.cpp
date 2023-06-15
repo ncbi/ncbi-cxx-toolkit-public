@@ -137,7 +137,7 @@ set<uint32_t> BlastKmerGetKmerSetStats(const string& query_sequence, int kmerNum
         vector<Uint1> trans_table;
         BlastKmerGetCompressedTranslationTable(trans_table, alphabetChoice);
 	
-	int seq_length = query_sequence.length();
+	int seq_length = static_cast<int>(query_sequence.length());
 	const char* query = query_sequence.c_str();
 
 	// bail out if the sequence is too short
@@ -211,7 +211,7 @@ set<uint32_t> BlastKmerGetKmerSet(const string& query_sequence, bool do_seg, TSe
         vector<Uint1> trans_table;
         BlastKmerGetCompressedTranslationTable(trans_table, alphabetChoice);
 	
-	int seq_length = query_sequence.length();
+	int seq_length = static_cast<int>(query_sequence.length());
 	const char* query = query_sequence.c_str();
 
 	// bail out if the sequence is too short
@@ -275,7 +275,7 @@ set<uint32_t> BlastKmerGetKmerSet2(const string& query_sequence, TSeqRange& rang
         vector<Uint1> trans_table;
         BlastKmerGetCompressedTranslationTable(trans_table, alphabetChoice);
 	
-	int seq_length = query_sequence.length();
+	int seq_length = static_cast<int>(query_sequence.length());
 	const char* query = query_sequence.c_str();
 
 	// bail out if the sequence is too short
@@ -400,7 +400,7 @@ int BlastKmerGetDistance(const vector<uint32_t>& minhash1, const vector<uint32_t
 {
 
         int distance=0;
-	int num_hashes = minhash1.size();
+	int num_hashes = static_cast<int>(minhash1.size());
 
         for (int index=0; index<num_hashes; index++)
         {
@@ -423,7 +423,7 @@ bool minhash_query(const string& query,
                      int chunkSize)
 {
 	bool kmersFound=false; // return value;
-	int seq_length = query.length();
+	int seq_length = static_cast<int>(query.length());
 	vector<TSeqRange> range_v;
 	int chunk_num = BlastKmerBreakUpSequence(seq_length, range_v, chunkSize);
 	seq_hash.resize(chunk_num);
@@ -485,7 +485,7 @@ bool minhash_query2(const string& query,
                      int chunkSize)
 {
 	bool kmersFound=false; // return value;
-	int seq_length = query.length();
+	int seq_length = static_cast<int>(query.length());
 	vector<TSeqRange> range_v;
 	int chunk_num = BlastKmerBreakUpSequence(seq_length, range_v, chunkSize);
 	seq_hash.resize(chunk_num);
@@ -514,7 +514,7 @@ bool minhash_query2(const string& query,
 		
 		if (hash_values.size() < static_cast<size_t>(numHashes))
         {
-            int rem = 1 + numHashes - hash_values.size();
+            int rem = 1 + numHashes - static_cast<int>(hash_values.size());
             uint32_t hashval = 0xffffffff;  // Fill in empties
             for (int i=0; i<rem; i++)
                     hash_values.push_back(hashval);
@@ -534,7 +534,7 @@ void get_LSH_hashes(vector < vector <uint32_t> >& query_hash,
                       int num_bands,
                       int rows_per_band)
 {
-	int num_chunks=query_hash.size();
+	int num_chunks=static_cast<int>(query_hash.size());
 	uint32_t temp_hash=0;
 	for (int n=0; n<num_chunks; n++)
 	{
@@ -568,7 +568,7 @@ void get_LSH_hashes5(vector < vector <uint32_t> >& query_hash,
                       int numHashes,
                       int numRows)
 {
-	int num_chunks=query_hash.size();
+	int num_chunks=static_cast<int>(query_hash.size());
 	uint32_t temp_hash=0;
 	int numHashMax = numHashes - numRows + 1;
 	for (int n=0; n<num_chunks; n++)
@@ -656,7 +656,7 @@ void get_LSH_hashes2(vector < vector <uint32_t> >& query_hash,
 {
 	int max=4*num_k+1;
 	vector<unsigned char> key(max);
-	int num_chunks=query_hash.size();
+	int num_chunks=static_cast<int>(query_hash.size());
 	uint32_t temp_hash=0;
 	int temp_index=0;
 	for (int n=0; n<num_chunks; n++)
@@ -688,7 +688,7 @@ void get_LSH_match_from_hash(const vector< vector <uint32_t> >& query_LSH_hash,
 		     vector< set<uint32_t > >& candidates)
 {
 
-	int num=query_LSH_hash.size();
+	int num=static_cast<int>(query_LSH_hash.size());
 	for (int i=0; i<num; i++)
 	{
         	for(vector<uint32_t>::const_iterator iter=query_LSH_hash[i].begin(); iter != query_LSH_hash[i].end(); ++iter)
@@ -706,7 +706,7 @@ void
 s_HashHashQuery(const vector < vector <uint32_t> > & query_hash, vector < vector <uint32_t> >& query_hash_hash, int compress, int version)
 {
     int hash_value=0;
-    int num_chunks=query_hash.size();
+    int num_chunks=static_cast<int>(query_hash.size());
     const uint32_t kBig=0xffffffff;
     for (int n=0; n<num_chunks; n++)
     {
@@ -752,7 +752,7 @@ void neighbor_query(const vector < vector <uint32_t> >& query_hash,
 		      BlastKmerStats& kmer_stats,
 		      int kmerVer)
 {
-	int num_chunks=query_hash.size();
+	int num_chunks=static_cast<int>(query_hash.size());
 
 	vector< vector<uint32_t> > candidate_oids;
 	candidate_oids.resize(num_chunks);
@@ -925,7 +925,7 @@ BlastKmerVerifyIndex(CRef<CSeqDB> seqdb, string &error_msg)
 	int status=0;
 	vector<string> kmerFiles;
 	seqdb->FindVolumePaths(kmerFiles, false);
-	int numFiles = kmerFiles.size();
+	int numFiles = static_cast<int>(kmerFiles.size());
 	for (int i=0; i<numFiles; i++)
 	{
 		try {

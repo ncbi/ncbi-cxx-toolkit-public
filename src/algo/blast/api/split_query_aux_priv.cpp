@@ -259,7 +259,7 @@ CContextTranslator::GetContextInChunk(size_t chunk_num,
     if (itr == context_indices.end()) {
         return kInvalidContext;
     }
-    return itr - context_indices.begin();
+    return static_cast<int>(itr - context_indices.begin());  // FIXED
 }
 
 int
@@ -347,7 +347,7 @@ CQueryDataPerChunk::GetQueryLength(size_t chunk_num, int context_in_chunk) const
     _ASSERT(chunk_num < m_QueryIndicesPerChunk.size());
     size_t pos = x_ContextInChunkToQueryIndex(context_in_chunk);
     _ASSERT(pos < m_QueryIndicesPerChunk[chunk_num].size());
-    return GetQueryLength(m_QueryIndicesPerChunk[chunk_num][pos]);
+    return GetQueryLength(static_cast<int>(m_QueryIndicesPerChunk[chunk_num][pos]));
 }
 
 size_t
@@ -364,7 +364,7 @@ CQueryDataPerChunk::GetLastChunk(size_t chunk_num, int context_in_chunk)
     _ASSERT(chunk_num < m_QueryIndicesPerChunk.size());
     size_t pos = x_ContextInChunkToQueryIndex(context_in_chunk);
     _ASSERT(pos < m_QueryIndicesPerChunk[chunk_num].size());
-    return GetLastChunk(m_QueryIndicesPerChunk[chunk_num][pos]);
+    return GetLastChunk(static_cast<int>(m_QueryIndicesPerChunk[chunk_num][pos]));
 }
 
 int

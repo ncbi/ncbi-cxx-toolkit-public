@@ -291,7 +291,7 @@ BuildBlastAncillaryData(EBlastProgramType program,
             }
         } else {
             for(size_t i = 0; i < alignments.size(); i++) {
-                CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, i,
+                CRef<CBlastAncillaryData> s(new CBlastAncillaryData(program, static_cast<int>(i),
                                                                     sbp,
                                                                     qinfo));
                 retval.push_back(s);

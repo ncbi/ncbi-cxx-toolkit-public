@@ -103,7 +103,7 @@ Int8 CBlastDbBlob::x_ReadVarInt(int * offsetp) const
         } else {
             // end
             rv = (rv << 6) | (ch & 0x3F);
-            *offsetp = i+1;
+            *offsetp = static_cast<int>(i+1);
             
             return (ch & 0x40) ? -rv : rv;
         }
@@ -173,7 +173,7 @@ CTempString CBlastDbBlob::x_ReadString(EStringFormat fmt, int * offsetp) const
     if (fmt == eSize4) {
         sz = x_ReadIntFixed<int,4>(offsetp);
     } else if (fmt == eSizeVar) {
-        sz = x_ReadVarInt(offsetp);
+        sz = static_cast<int>( x_ReadVarInt(offsetp));
     }
     
     const char * datap = "";
@@ -184,7 +184,7 @@ CTempString CBlastDbBlob::x_ReadString(EStringFormat fmt, int * offsetp) const
         
         for(size_t i = *offsetp; i < ts.size(); i++) {
             if (ts[i] == (char)0) {
-                zoffset = i;
+                zoffset = static_cast<int>(i);
                 break;
             }
         }
@@ -395,12 +395,12 @@ int CBlastDbBlob::x_WriteString(CTempString str, EStringFormat fmt, int * offset
     int start_off = offsetp ? *offsetp : m_WriteOffset;
     
     if (fmt == eSize4) {
-        x_WriteIntFixed<int,4>(str.size(), offsetp);
+        x_WriteIntFixed<int,4>(static_cast<int>(str.size()), offsetp);
     } else if (fmt == eSizeVar) {
         x_WriteVarInt(str.size(), offsetp);
     }
     
-    x_WriteRaw(str.data(), str.size(), offsetp);
+    x_WriteRaw(str.data(),static_cast<int>( str.size()), offsetp);
     
     if (fmt == eNUL) {
         char buf = 0;
@@ -481,7 +481,7 @@ void CBlastDbBlob::x_Copy(int total)
     _ASSERT(! m_DataHere.size());
     
     if (total < (int)m_DataRef.size()) {
-        total = m_DataRef.size();
+        total = static_cast<int>(m_DataRef.size());
     }
     
     m_Owner = true;
@@ -499,7 +499,7 @@ void CBlastDbBlob::x_Reserve(int need)
     if (! m_Owner) {
         x_Copy(need);
     } else {
-        int cur_cap = m_DataHere.capacity();
+        int cur_cap = static_cast<int>(m_DataHere.capacity());
         
         if (cur_cap < need) {
             // Skip the first few reallocations.
@@ -518,9 +518,9 @@ void CBlastDbBlob::x_Reserve(int need)
 int CBlastDbBlob::Size() const
 {
     if (m_Owner) {
-        return m_DataHere.size();
+        return static_cast<int>(m_DataHere.size());
     }
-    return m_DataRef.size();
+    return static_cast<int>(m_DataRef.size());
 }
 
 CTempString CBlastDbBlob::Str() const

@@ -115,7 +115,7 @@ CRef<CSearchResultSet> CDeltaBlast::Run(void)
     
         CRef<CCddInputData> pssm_input(
                                new CCddInputData(query_seq[i],
-                                          query_lens[i],
+                                          static_cast<unsigned int>(query_lens[i]),
                                          (*m_DomainResults)[i].GetSeqAlign(),
                                          *opts.Get(),
                                          m_DomainDb->GetDatabaseName(),

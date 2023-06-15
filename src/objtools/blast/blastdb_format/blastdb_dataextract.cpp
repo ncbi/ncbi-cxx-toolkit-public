@@ -578,7 +578,7 @@ string CBlastDBExtractor::ExtractSeqData() {
         }
         if (m_Strand == eNa_strand_minus) {
             CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna,
-                                         0, seq.size());
+                                         0, static_cast<ncbi::TSeqPos>(seq.size()));
         }
     } catch (CSeqDBException& e) {
         //FIXME: change the enumeration when it's availble
@@ -598,7 +598,7 @@ string CBlastDBExtractor::ExtractSeqLen() {
 string CBlastDBExtractor::ExtractHash() {
     string seq;
     m_BlastDb.GetSequenceAsString(m_Oid, seq);
-    return NStr::IntToString(CBlastSeqUtil::GetSeqHash(seq.c_str(), seq.size()));
+    return NStr::IntToString(CBlastSeqUtil::GetSeqHash(seq.c_str(), static_cast<ncbi::TSeqPos>(seq.size())));
 }
 
 #define CTRL_A "\001"
@@ -1071,7 +1071,7 @@ void CBlastSeqUtil::ApplySeqMask(string & seq, const CSeqDB::TSequenceRanges & m
 
 void CBlastSeqUtil::GetReverseStrandSeq(string & seq)
 {
-	CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, seq.size());
+	CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, static_cast<ncbi::TSeqPos>(seq.size()));
 }
 
 string CBlastSeqUtil::GetMasksString(const CSeqDB::TSequenceRanges & masks)

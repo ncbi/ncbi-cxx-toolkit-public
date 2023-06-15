@@ -1679,7 +1679,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                     BlastHitList2SeqAlign_OMF(hit_list,
                                               prog,
                                               *query.GetSeq_loc(0),
-                                              query.GetSeqLength(0),
+                                              static_cast<TSeqPos>(query.GetSeqLength(0)),
                                               seqinfo_src,
                                               true,
                                               false,
@@ -1694,7 +1694,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                     BlastHitList2SeqAlign_OMF(NULL,
                                               prog,
                                               *query.GetSeq_loc(0),
-                                              query.GetSeqLength(0),
+                                              static_cast<TSeqPos>(query.GetSeqLength(0)),
                                               seqinfo_src,
                                               true,
                                               false,
@@ -1801,7 +1801,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             CConstRef<CSeq_loc> seqloc = query_data.GetSeq_loc(qindex);
             CRef<CSeq_id> query_id(new CSeq_id);
             SerialAssign(*query_id, *seqloc->GetId());
-            TSeqPos query_length = query_data.GetSeqLength(qindex); 
+            TSeqPos query_length = static_cast<TSeqPos>(query_data.GetSeqLength(qindex)); 
             s_AdjustNegativeSubjFrameInBlastn(kSubjStrand, prog, hsp_list);
             
 	    vector<string> seqid_list;
@@ -1964,7 +1964,7 @@ s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
            seq_aligns(BlastHitList2SeqAlign_OMF(hit_list,
                                                 prog,
                                                 *query.GetSeq_loc(index),
-                                                query.GetSeqLength(index),
+                                                static_cast<TSeqPos>(query.GetSeqLength(index)),
                                                 seqinfo_src,
                                                 is_gapped,
                                                 is_ooframe,

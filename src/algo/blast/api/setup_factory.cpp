@@ -94,7 +94,7 @@ CSetupFactory::CreateRpsStructures(const string& rps_dbname,
 static
 CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
 {
-    const int kNumQueries = query_data.GetNumQueries();
+    const int kNumQueries = static_cast<int>(query_data.GetNumQueries());
     if (kNumQueries == 0) {
         return CRef<CPacked_seqint>();
     }
@@ -106,7 +106,7 @@ CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
             retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
         } else if (id.NotEmpty()) {
             TSeqPos len = 0;
-            try { len = query_data.GetSeqLength(i); }
+            try { len = static_cast<TSeqPos>(query_data.GetSeqLength(i)); }
             catch (...) { 
                 /* exception means that it's an invalid seqid, so we do
                  * nothing, the error message should be captured elsewhere */
@@ -220,7 +220,7 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
                                          rps_info ? (*rps_info)() : 0,
                                          &blast_msg,
                                          seqsrc,
-                                         num_threads);
+                                         static_cast<Uint4>(num_threads));
     if (status != 0) {
          TSearchMessages search_messages;
          Blast_Message2TSearchMessages(blast_msg.Get(), 
@@ -290,7 +290,7 @@ CSetupFactory::CreateHspStream(const CBlastOptionsMemento* opts_memento,
     _ASSERT(opts_memento);
     return BlastHSPStreamNew(opts_memento->m_ProgramType, 
                              opts_memento->m_ExtnOpts, TRUE,
-                             number_of_queries, writer);
+                             static_cast<Int4>(number_of_queries), writer);
 }
 
 BlastHSPWriter*
