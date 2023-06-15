@@ -202,6 +202,14 @@ void CModHandler::SetExcludedMods(const vector<string>& excluded_mods)
             [](const string& mod_name) { return GetCanonicalName(mod_name); });
 }
 
+void CModHandler::SetIgnoredMods(const list<string>& ignored_mods) 
+{
+    m_IgnoredModifiers.clear();
+    transform(ignored_mods.begin(), ignored_mods.end(),
+            inserter(m_IgnoredModifiers, m_IgnoredModifiers.end()),
+            [](const string& mod_name) { return GetCanonicalName(mod_name); });
+}
+
 
 void CModHandler::SetMods(const TMods& mods)
 {
@@ -230,6 +238,12 @@ void CModHandler::AddMods(const TModList& mods,
             if (m_Mods.find(canonical_name) != m_Mods.end()) {
                 continue;
             }
+        }
+
+        if (m_IgnoredModifiers.find(canonical_name) !=
+            m_IgnoredModifiers.end()) {
+                rejected_mods.push_back(mod);
+                continue;
         }
 
         if (m_ExcludedModifiers.find(canonical_name) !=

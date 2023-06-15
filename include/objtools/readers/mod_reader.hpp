@@ -106,6 +106,7 @@ public:
 
     CModHandler();
     void SetExcludedMods(const vector<string>& excluded_mods);
+    void SetIgnoredMods(const list<string>& ignored_mods);
 
     void AddMods(const TModList& mods,
                  EHandleExisting handle_existing,
@@ -136,6 +137,7 @@ private:
     static const TNameSet sm_MultipleValuesForbidden;
     static const TNameSet sm_DeprecatedModifiers;
     TNameSet m_ExcludedModifiers;
+    TNameSet m_IgnoredModifiers;
 };
 
 
