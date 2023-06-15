@@ -1254,7 +1254,7 @@ CRef<CSeq_feat> AddProteinFeatureToProtein (CRef<CSeq_entry> nuc, CConstRef<CSeq
         }
         else {
             for (auto pEntry : nuc->SetSet().SetSeq_set()) {
-                if (pEntry->IsSeq() and pEntry->GetSeq().IsNa()) {
+                if (pEntry->IsSeq() && pEntry->GetSeq().IsNa()) {
                     smp.ApplyAllMods(pEntry->SetSeq(), "", cds_loc);
                     break;
                 }
