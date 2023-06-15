@@ -2661,6 +2661,7 @@ void CSeq_id_General_Tree::x_Unindex(const CSeq_id_Info* info)
 bool CSeq_id_General_Tree::HaveMatch(const CSeq_id_Handle& id) const
 {
     // match id <-> str(number)
+    TReadLockGuard guard(m_TreeLock);
     if ( !m_PackedStrMap.empty() ) {
         const CSeq_id_General_Str_Info* sinfo =
             dynamic_cast<const CSeq_id_General_Str_Info*>(id.x_GetInfo());
@@ -2682,18 +2683,21 @@ void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
 {
     id_list.insert(id);
     // match id <-> str(number)
-    if ( !m_PackedStrMap.empty() ) {
-        const CSeq_id_General_Str_Info* sinfo =
-            dynamic_cast<const CSeq_id_General_Str_Info*>(id.x_GetInfo());
-        if ( sinfo ) {
-            // string with non-digital prefix or suffix
-            // cannot be converted to numeric id
-            if ( !sinfo->GetStrSuffix().empty() ||
-                 !sx_AllDigits(sinfo->GetStrPrefix()) ) {
-                return;
+    {{
+        TReadLockGuard guard(m_TreeLock);
+        if ( !m_PackedStrMap.empty() ) {
+            const CSeq_id_General_Str_Info* sinfo =
+                dynamic_cast<const CSeq_id_General_Str_Info*>(id.x_GetInfo());
+            if ( sinfo ) {
+                // string with non-digital prefix or suffix
+                // cannot be converted to numeric id
+                if ( !sinfo->GetStrSuffix().empty() ||
+                     !sx_AllDigits(sinfo->GetStrPrefix()) ) {
+                    return;
+                }
             }
         }
-    }
+    }}
     CConstRef<CSeq_id> seq_id = id.GetSeqId();
     const CDbtag& dbtag = seq_id->GetGeneral();
     const CObject_id& obj_id = dbtag.GetTag();
