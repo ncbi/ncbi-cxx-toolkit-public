@@ -610,7 +610,7 @@ void CDataSource_ScopeInfo::ForgetTSELock(CTSE_ScopeInfo& tse)
         // relocked already
         return;
     }
-    if ( !tse.GetTSE_Lock() ) {
+    if ( !tse.m_TSE_LockAssigned ) {
         // already unlocked
         return;
     }
