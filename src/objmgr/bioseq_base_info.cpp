@@ -318,6 +318,18 @@ CRef<CSeqdesc> CBioseq_Base_Info::ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqd
 
 void CBioseq_Base_Info::AddSeq_descr(const TDescr& v)
 {
+    x_Update(fNeedUpdate_descr);
+    TDescr::Tdata& s = x_SetDescr().Set();
+    const TDescr::Tdata& src = v.Get();
+    ITERATE ( TDescr::Tdata, it, src ) {
+        s.push_back(*it);
+    }
+}
+
+
+void CBioseq_Base_Info::x_RealLoadDescr(const TDescr& v)
+{
+    TDescrMutexGuard guard(m_DescrMutex);
     TDescr::Tdata& s = x_SetDescr().Set();
     const TDescr::Tdata& src = v.Get();
     ITERATE ( TDescr::Tdata, it, src ) {
@@ -349,24 +361,26 @@ bool CBioseq_Base_Info::x_IsEndNextDesc(TDesc_CI iter) const
 CBioseq_Base_Info::TDesc_CI
 CBioseq_Base_Info::x_GetFirstDesc(TDescTypeMask types) const
 {
-    x_PrefetchDesc(x_GetDescList().begin(), types);
-    return x_FindDesc(x_GetDescList().begin(), types);
+    TDescrMutexGuard guard(m_DescrMutex);
+    x_PrefetchDesc(guard, x_GetDescList().begin(), types);
+    return x_FindDesc(guard, x_GetDescList().begin(), types);
 }
 
 
 CBioseq_Base_Info::TDesc_CI
 CBioseq_Base_Info::x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const
 {
+    TDescrMutexGuard guard(m_DescrMutex);
     _ASSERT(!x_IsEndDesc(iter));
     if ( x_IsEndNextDesc(iter) ) {
-        x_PrefetchDesc(iter, types);
+        x_PrefetchDesc(guard, iter, types);
     }
-    return x_FindDesc(++iter, types);
+    return x_FindDesc(guard, ++iter, types);
 }
 
 
 CBioseq_Base_Info::TDesc_CI
-CBioseq_Base_Info::x_FindDesc(TDesc_CI iter, TDescTypeMask types) const
+CBioseq_Base_Info::x_FindDesc(TDescrMutexGuard& guard, TDesc_CI iter, TDescTypeMask types) const
 {
     _ASSERT(CSeqdesc::e_MaxChoice < 32);
     while ( !x_IsEndDesc(iter) ) {
@@ -374,7 +388,7 @@ CBioseq_Base_Info::x_FindDesc(TDesc_CI iter, TDescTypeMask types) const
             break;
         }
         if ( x_IsEndNextDesc(iter) ) {
-            x_PrefetchDesc(iter, types);
+            x_PrefetchDesc(guard, iter, types);
         }
         ++iter;
     }
@@ -382,13 +396,16 @@ CBioseq_Base_Info::x_FindDesc(TDesc_CI iter, TDescTypeMask types) const
 }
 
 
-void CBioseq_Base_Info::x_PrefetchDesc(TDesc_CI last,
+void CBioseq_Base_Info::x_PrefetchDesc(TDescrMutexGuard& guard,
+                                       TDesc_CI last,
                                        TDescTypeMask types) const
 {
     // there might be a chunk with this descriptors
     for ( size_t i = 0, count = m_DescrTypeMasks.size(); i < count; ++i ) {
         if ( m_DescrTypeMasks[i] & types ) {
+            guard.Release();
             x_LoadChunk(m_DescrChunks[i]);
+            guard.Guard(m_DescrMutex);
             // check if new data appeared
             if ( x_IsEndDesc(last) ) {
                 // first one
