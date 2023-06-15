@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <objmgr/impl/tse_info_object.hpp>
 
 #include <objects/seq/seq_id_handle.hpp>
@@ -100,7 +101,6 @@ public:
     virtual void x_SetDescr(TDescr& v) = 0;
     virtual void x_ResetDescr(void) = 0;
 
-
     // low level access for CSeqdesc_CI in case sequence is split
     typedef TDescr::Tdata TDescList;
     typedef TDescList::const_iterator TDesc_CI;
@@ -110,8 +110,6 @@ public:
     TDesc_CI x_GetFirstDesc(TDescTypeMask types) const;
     TDesc_CI x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const;
     bool x_IsEndDesc(TDesc_CI iter) const;
-    TDesc_CI x_FindDesc(TDesc_CI iter, TDescTypeMask types) const;
-    void x_PrefetchDesc(TDesc_CI last, TDescTypeMask types) const;
 
     const CSeqdesc* x_SearchFirstDesc(TDescTypeMask type) const;
 
@@ -162,8 +160,14 @@ public:
     void x_DoUpdate(TNeedUpdateFlags flags);
     void x_SetNeedUpdateParent(TNeedUpdateFlags flags);
 
+    void x_RealLoadDescr(const TDescr& v);
+    
 protected:
+    typedef CFastMutex TDescrMutex;
+    typedef CFastMutexGuard TDescrMutexGuard;
     bool x_IsEndNextDesc(TDesc_CI iter) const; // internal inlined method
+    TDesc_CI x_FindDesc(TDescrMutexGuard& guard, TDesc_CI iter, TDescTypeMask types) const;
+    void x_PrefetchDesc(TDescrMutexGuard& guard, TDesc_CI last, TDescTypeMask types) const;
 
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_CI;
@@ -176,7 +180,7 @@ protected:
     typedef vector<TDescTypeMask> TDescTypeMasks;
     TDescTypeMasks      m_DescrTypeMasks;
     TChunkIds           m_AnnotChunks;
-
+    mutable TDescrMutex m_DescrMutex;
 };
 
 

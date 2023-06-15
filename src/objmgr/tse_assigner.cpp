@@ -180,7 +180,7 @@ void CTSE_Default_Assigner::LoadDescr(CTSE_Info& tse,
                                       const TPlace& place, 
                                       const CSeq_descr& descr)
 {
-    x_GetBase(tse, place).AddSeq_descr(descr);
+    x_GetBase(tse, place).x_RealLoadDescr(descr);
 }
 
 void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
