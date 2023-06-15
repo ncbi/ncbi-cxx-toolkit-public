@@ -138,7 +138,7 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
     // Step 1: Compute the bitmap representing the filtering done by
     // all subnodes.  This is a "union".
     
-    int vols = ft->GetVolumes().size();
+    int vols = static_cast<int>(ft->GetVolumes().size());
     
     _ASSERT(vols || ft->GetNodes().size());
     

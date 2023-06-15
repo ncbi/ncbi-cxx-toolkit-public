@@ -310,8 +310,8 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
         // because of a bug, one of the sequence strings may be truncated, hence 
         // it is necessary to take a minimum here.
         // FIXME: Should an exception be thrown instead? 
-        const unsigned int kMaxOffset = min(query_seq.size(),
-                                            subject_seq.size());
+        const unsigned int kMaxOffset = static_cast<unsigned int>(min(query_seq.size(),
+                                            subject_seq.size()));
         for (unsigned int i = 0; i < kMaxOffset; ++i) {
             if (query_seq[i] == subject_seq[i]) {
                 ++num_ident;

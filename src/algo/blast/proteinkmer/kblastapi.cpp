@@ -62,7 +62,7 @@ USING_SCOPE(blast);
 static void 
 s_GetSequencesIntoScope(CRef<CBlastKmerResultsSet> resultSet, CRef<CScope> scope, CRef<CSeqDB> seqdb)
 {
-        int numSearches=resultSet->GetNumQueries();
+        int numSearches=static_cast<int>(resultSet->GetNumQueries());
         vector<int> oid_v;
         for (int index=0; index<numSearches; index++)
         {
@@ -115,7 +115,7 @@ CRef<CLocalDbAdapter> dbAdapter, TSearchMessages& msg_vec)
         	 res_type = eSequenceComparison;
              IBlastSeqInfoSrc *  subject_infosrc = dbAdapter->MakeSeqInfoSrc();
              if(subject_infosrc != NULL) {
-            	 num_subjects = subject_infosrc->Size();
+            	 num_subjects = static_cast<unsigned int>(subject_infosrc->Size());
              }
          }
          for (index=0; index<local_query_data->GetNumQueries(); index++)
@@ -184,7 +184,7 @@ CRef<CSearchResultSet> CBlastKmerSearch::Run(void)
 	vector< CRef<CScope> > scope_v = objmgr_qf->ExtractScopes();
 	s_GetSequencesIntoScope(resultSet, scope_v[0], seqdb);
 
-	int numSearches=resultSet->GetNumQueries();
+	int numSearches=static_cast<int>(resultSet->GetNumQueries());
 	CRef<CSearchResultSet> search_results(new CSearchResultSet());
 	for (int index=0; index<numSearches; index++)
 	{

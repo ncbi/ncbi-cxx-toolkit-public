@@ -111,7 +111,7 @@ public:
             if (((end-begin) % kRmtSequenceSliceSize) == 0) {
                 idx = ilog2( (end-begin)/kRmtSequenceSliceSize );
             } else {
-                idx = m_SeqDataVector.size() - 1;
+                idx = static_cast<unsigned int>(m_SeqDataVector.size() - 1);
             }
             _ASSERT((end == (begin + (int)(0x1<<idx)*kRmtSequenceSliceSize)) || 
                     ((idx+1) == m_SeqDataVector.size()));

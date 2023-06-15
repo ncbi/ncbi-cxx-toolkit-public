@@ -242,13 +242,13 @@ CObjMgr_LocalQueryData::GetNumQueries()
 CConstRef<CSeq_loc> 
 CObjMgr_LocalQueryData::GetSeq_loc(size_t index)
 {
-    return m_QuerySource->GetSeqLoc(index);
+    return m_QuerySource->GetSeqLoc(static_cast<int>(index));
 }
 
 size_t 
 CObjMgr_LocalQueryData::GetSeqLength(size_t index)
 {
-    return m_QuerySource->GetLength(index);
+    return m_QuerySource->GetLength(static_cast<int>(index));
 }
 
 

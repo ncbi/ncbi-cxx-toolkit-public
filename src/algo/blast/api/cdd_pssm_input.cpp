@@ -127,8 +127,8 @@ void CCddInputData::Process(void)
     x_RemoveMultipleCdHits();
 
     // this is required by PSSM engine code
-    m_MsaDimensions.query_length = m_QueryData.size();
-    m_MsaDimensions.num_seqs = m_Hits.size();
+    m_MsaDimensions.query_length = static_cast<Uint4>(m_QueryData.size());
+    m_MsaDimensions.num_seqs = static_cast<Uint4>(m_Hits.size());
     m_CddData.dimensions = &m_MsaDimensions;
 
     x_FillHitsData();
@@ -187,7 +187,7 @@ void CCddInputData::x_RemoveMultipleCdHits(void)
 
         // for each kept hit with the same subject accession as it and better
         // e-value
-        for (int i=new_hits.size() - 1;i >= 0
+        for (int i=static_cast<int>(new_hits.size()) - 1;i >= 0
                  && (*it)->m_SubjectId->Match(*new_hits[i]->m_SubjectId);i--) {
                 
             const CHit* kept_hit = new_hits[i];
@@ -239,8 +239,8 @@ void CCddInputData::x_FillHitsData(void)
 
 void CCddInputData::x_CreateMsa(void)
 {
-    const int kQueryLength = m_QueryData.size();
-    const int kNumCds = m_Hits.size();
+    const int kQueryLength = static_cast<int>(m_QueryData.size());
+    const int kNumCds = static_cast<int>(m_Hits.size());
 
     // initialize msa map
     PSICdMsaCell cell;
@@ -276,7 +276,7 @@ void CCddInputData::x_CreateMsa(void)
                 m_Msa[hit_idx][q_from + i].data = &(*it)->m_MsaData[i];
             }
         }
-        m_Hits[hit_idx]->m_MsaIdx = hit_idx;
+        m_Hits[hit_idx]->m_MsaIdx = static_cast<int>(hit_idx);
     }
 
     m_CddData.msa = m_Msa;
@@ -286,8 +286,8 @@ void CCddInputData::x_CreateMsa(void)
 bool CCddInputData::x_ValidateMsa(void) const
 {
     _ASSERT(m_Msa);
-    const int kQueryLength = m_QueryData.size();
-    const int kNumCds = m_Hits.size();
+    const int kQueryLength = static_cast<int>(m_QueryData.size());
+    const int kNumCds = static_cast<int>(m_Hits.size());
     const Uint1 kGapChar = AMINOACID_TO_NCBISTDAA[(int)'-'];
     for (int i=0;i < kNumCds;i++) {
         _ASSERT(m_Msa[i]);

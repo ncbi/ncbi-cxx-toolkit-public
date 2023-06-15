@@ -3097,7 +3097,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
     const int kMaxValue = static_cast<int>(CSystemInfo::GetCpuCount());
     const int kDfltValue = m_NumThreads != CThreadable::kMinNumThreads
-        ? std::min<int>(m_NumThreads, kMaxValue) : kMinValue;
+        ? std::min<int>(static_cast<int>(m_NumThreads), kMaxValue) : kMinValue;
 
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads (CPUs) to use in the BLAST search",

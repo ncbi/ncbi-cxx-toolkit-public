@@ -148,7 +148,7 @@ CObjMgrFree_LocalQueryData::GetSeq_loc(size_t index)
 size_t 
 CObjMgrFree_LocalQueryData::GetSeqLength(size_t index)
 {
-    return m_QuerySource->GetLength(index);
+    return m_QuerySource->GetLength(static_cast<int>(index));
 }
 
 /** 

@@ -323,7 +323,7 @@ class CSubjectMap_Factory_TBase : public CSubjectMap_Factory_Base
         /** Get the total memory usage by the subject map in bytes.
             @return memory usage by this instance
         */
-        TWord total() const { return seq_store_.size(); }
+        TWord total() const { return static_cast<TWord>(seq_store_.size()); }
 
         /** Append the next chunk of the input sequence currently being
             processed to the subject map.
@@ -656,7 +656,7 @@ string CSubjectMap_Factory_Base::extractSeqVector( TSeqData & sd )
     objects::CBioseq_Handle bsh = seh.GetSeq();
     c_seq_ = bsh.GetSeqVector( objects::CBioseq_Handle::eCoding_Iupac );
     string idstr = objects::sequence::GetTitle( bsh );
-    Uint4 pos = idstr.find_first_of( " \t" );
+    Uint4 pos = static_cast<Uint4>(idstr.find_first_of( " \t" ));
     idstr = idstr.substr( 0, pos );
     return idstr;
 }
@@ -688,10 +688,10 @@ string CSubjectMap_Factory_Base::NewSequenceInit(
 //-------------------------------------------------------------------------
 void CSubjectMap_Factory_TBase::Save( CNcbiOstream & os ) const
 {
-    TWord tmp = subjects_.size();
-    TWord subject_map_size = 
+    TWord tmp = static_cast<TWord>(subjects_.size());
+    TWord subject_map_size = static_cast<TWord>(  
         tmp*sizeof( TWord ) +
-        chunks_.size()*sizeof( TWord );
+        chunks_.size()*sizeof( TWord ));
     WriteWord( os, subject_map_size );
 
     for( TSubjects::const_iterator cit = subjects_.begin();
@@ -714,7 +714,7 @@ void CSubjectMap_Factory_TBase::Save( CNcbiOstream & os ) const
 bool CSubjectMap_Factory_TBase::AddSequenceChunk( 
         TSeqStore::size_type seq_off )
 {
-    TSeqPos chunk_start = (chunk_size_ - chunk_overlap_)*(c_chunk_++);
+    TSeqPos chunk_start = static_cast<TSeqPos>((chunk_size_ - chunk_overlap_)*(c_chunk_++));
 
     if( chunk_start >= c_seq_.size() ) {
         --c_chunk_;
@@ -767,13 +767,13 @@ bool CSubjectMap_Factory_TBase::AddSequenceChunk(
     }
 
     chunks_.push_back( 
-            TSeqInfo( seq_off, c_seq_.size(), segs ) );
+            TSeqInfo( static_cast<TWord>(seq_off), c_seq_.size(), segs ) );
     
     if( *subjects_.rbegin() == 0 ) {
-        *subjects_.rbegin() = chunks_.size();
+        *subjects_.rbegin() = static_cast<unsigned int>(chunks_.size());
     }
 
-    last_chunk_ = chunks_.size();
+    last_chunk_ = static_cast<TSeqNum>(chunks_.size());
     return true;
 }
 
@@ -815,8 +815,8 @@ bool CSubjectMap_Factory::AddSequenceChunk( bool & overflow )
 {
     overflow = false;
     bool starting = (this->c_chunk_ == 0);
-    TSeqPos chunk_start = 
-        (this->chunk_size_ - this->chunk_overlap_)*this->c_chunk_;
+    TSeqPos chunk_start =static_cast<TSeqPos>( 
+        (this->chunk_size_ - this->chunk_overlap_)*this->c_chunk_);
     TBase::TSeqStore::size_type seq_off = 
         starting ? this->seq_store_.size() :
                    this->chunks_.rbegin()->seq_start_
@@ -833,7 +833,7 @@ bool CSubjectMap_Factory::AddSequenceChunk( bool & overflow )
     
     if( lid_map_.empty() || cur_lid_len_ + chunk_len > length_limit ) {
         Uint1 lid_bits = 8*sizeof( TWord ) - offset_bits_;
-        TSeqNum lid_limit = (1UL<<lid_bits);
+        TSeqNum lid_limit = static_cast<TSeqNum>((1UL<<lid_bits));
 
         if( lid_map_.size() >= lid_limit ) {
             overflow = true;
@@ -846,7 +846,7 @@ bool CSubjectMap_Factory::AddSequenceChunk( bool & overflow )
         cur_lid_len_ = 0;
     }
 
-    lid_map_.rbegin()->end_ = this->chunks_.size();
+    lid_map_.rbegin()->end_ = static_cast<TSeqNum>(this->chunks_.size());
     cur_lid_len_ += chunk_len;
     lid_map_.rbegin()->seq_end_ = 
         lid_map_.rbegin()->seq_start_ + cur_lid_len_;
@@ -879,7 +879,7 @@ bool CSubjectMap_Factory::AddSequenceChunk( bool & overflow )
 inline bool CSubjectMap_Factory::CheckOffset( 
         const Uint1 * seq, TSeqPos off ) const
 {
-    TSeqPos soff = seq - &(this->seq_store_[0]);
+    TSeqPos soff = static_cast<TSeqPos>(seq - &(this->seq_store_[0]));
     TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
     while( iter != lid_map_.rend() && iter->seq_start_ > soff ) ++iter;
     ASSERT( iter->seq_start_ <= soff );
@@ -891,14 +891,14 @@ inline bool CSubjectMap_Factory::CheckOffset(
 inline TWord CSubjectMap_Factory::MakeOffset(
         const Uint1 * seq, TSeqPos off ) const
 {
-    TSeqPos soff = seq - &(this->seq_store_[0]);
+    TSeqPos soff = static_cast<TSeqPos>(seq - &(this->seq_store_[0]));
     TLIdMap::const_reverse_iterator iter = lid_map_.rbegin();
     while( iter != lid_map_.rend() && iter->seq_start_ > soff ) ++iter;
     ASSERT( iter->seq_start_ <= soff );
     off += (soff - iter->seq_start_)*CR;
     off /= stride_;
     off += min_offset_;
-    TWord result = ((lid_map_.rend() - iter - 1)<<offset_bits_) + off;
+    TWord result = static_cast<TWord>( ((lid_map_.rend() - iter - 1)<<offset_bits_) + off);
     return result;
 }
 
@@ -914,7 +914,7 @@ inline TWord CSubjectMap_Factory::MakeOffset(
 //-------------------------------------------------------------------------
 void CSubjectMap_Factory::Save( CNcbiOstream & os ) const
 {
-    TWord sz = sizeof( TWord )*lengths_.size();
+    TWord sz = static_cast<TWord>(sizeof( TWord )*lengths_.size());
     WriteWord( os, sz );
     WriteWord( os, (TWord)offset_bits_ );
 
@@ -923,7 +923,7 @@ void CSubjectMap_Factory::Save( CNcbiOstream & os ) const
         WriteWord( os, (TWord)(*it) );
     }
 
-    sz = 4*sizeof( TWord )*lid_map_.size();
+    sz = static_cast<TWord>(4*sizeof( TWord )*lid_map_.size());
     WriteWord( os, sz );
 
     for( TLIdMap::const_iterator it = lid_map_.begin();
@@ -1451,7 +1451,7 @@ void COffsetData_Factory::EncodeAndAddOffset(
         TWord nmer, TSeqPos start, TSeqPos stop, 
         TSeqPos curr, TWord offset )
 {
-    TSeqPos start_diff = curr + 2 - hkey_width_ - start;
+    TSeqPos start_diff = curr + 2 - static_cast<TSeqPos>(hkey_width_) - start;
     TSeqPos end_diff = stop - curr;
 
     if( start_diff <= options_.stride || end_diff <= options_.stride ) {

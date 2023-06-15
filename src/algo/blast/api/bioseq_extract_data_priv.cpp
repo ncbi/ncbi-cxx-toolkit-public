@@ -141,10 +141,10 @@ CBlastSeqVectorFromCSeq_data::SetCoding(objects::CSeq_data::E_Choice c)
         // FIXME: are ambiguities randomized if the encoding requested is 
         // ncbi2na?
         vector<char> tmp;
-        TSeqPos nconv = CSeqConvert::Convert(m_SequenceData, m_Encoding,
+        TSeqPos nconv = static_cast<TSeqPos>(CSeqConvert::Convert(m_SequenceData, m_Encoding,
                                              0, size(),
                                              tmp,
-                                             x_Encoding_CSeq_data2CSeqUtil(c));
+                                             x_Encoding_CSeq_data2CSeqUtil(c)));
         _ASSERT(nconv == tmp.size());
         nconv += 0; // to eliminate compiler warning
         m_Encoding = x_Encoding_CSeq_data2CSeqUtil(c);
@@ -155,7 +155,7 @@ CBlastSeqVectorFromCSeq_data::SetCoding(objects::CSeq_data::E_Choice c)
 inline TSeqPos
 CBlastSeqVectorFromCSeq_data::x_Size() const
 {
-    return m_SequenceData.size();
+    return static_cast<TSeqPos>(m_SequenceData.size());
 }
 
 inline Uint1 
@@ -200,8 +200,8 @@ CBlastSeqVectorFromCSeq_data::x_SetMinusStrand()
 void 
 CBlastSeqVectorFromCSeq_data::x_ComplementData()
 {
-    TSeqPos nconv = CSeqManip::ReverseComplement(m_SequenceData,
-                                                 m_Encoding, 0, size());
+    TSeqPos nconv = static_cast<TSeqPos>(CSeqManip::ReverseComplement(m_SequenceData,
+                                                 m_Encoding, 0, size()));
     _ASSERT(nconv == size());
     nconv += 0; // eliminate compiler warning
 }
@@ -259,7 +259,7 @@ CBlastQuerySourceBioseqSet::GetStrand(int /*index*/) const
 TSeqPos 
 CBlastQuerySourceBioseqSet::Size() const 
 { 
-    return m_Bioseqs.size(); 
+    return static_cast<TSeqPos>(m_Bioseqs.size()); 
 }
 
 CConstRef<objects::CSeq_loc> 

@@ -73,7 +73,7 @@ public:
 		return rv;
 	}
 	void UnreadMsg(CRef<CBlastNodeMsg> msg) { CFastMutexGuard guard(m_Mutex); m_MsgQueue.push_front(msg);}
-	int GetNumMsgs () { CFastMutexGuard guard(m_Mutex); return m_MsgQueue.size(); }
+	int GetNumMsgs () { CFastMutexGuard guard(m_Mutex); return static_cast<int>(m_MsgQueue.size()); }
 	int GetNodeNum() { return m_NodeNum; }
 	~CBlastNodeMailbox() { m_MsgQueue.resize(0); }
 private:
@@ -138,7 +138,7 @@ public:
 	typedef map<int, double> TActiveNodes;
 	typedef map<int, CRef<CBlastNodeMsg> > TFormatQueue;
 	void RegisterNode(CBlastNode * node, CBlastNodeMailbox * mailbox);
-	int GetNumNodes() { return m_RegisteredNodes.size();}
+	int GetNumNodes() { return static_cast<int>(m_RegisteredNodes.size());}
 	int IsFull();
 	void Shutdown() { m_MaxNumNodes = -1; }
 	bool Processing();
