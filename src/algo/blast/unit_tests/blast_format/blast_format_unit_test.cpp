@@ -117,9 +117,9 @@ BOOST_AUTO_TEST_CASE(BlastFormatTest)
     BOOST_REQUIRE(myReport.find("Query=") != std::string::npos);
 }
 
-#ifdef NCBI_THREADS
 BOOST_AUTO_TEST_CASE(BlastAsyncFormatTest)
 {
+#ifdef NCBI_THREADS
     // First read in the data to use.
     const char* fname = "data/archive.asn";
     ifstream in(fname);
@@ -167,8 +167,10 @@ BOOST_AUTO_TEST_CASE(BlastAsyncFormatTest)
 
     BOOST_REQUIRE(myReport.length() > 0);
     BOOST_REQUIRE(myReport.find("Query=") != std::string::npos);
+#endif
 }
 
+#ifdef NCBI_THREADS
 // Insert results after call to Finalize.
 BOOST_AUTO_TEST_CASE(BlastAsyncFormatFinalizeThrow)
 {
