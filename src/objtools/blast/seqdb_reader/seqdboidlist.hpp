@@ -123,7 +123,7 @@ public:
         size_t bit = next_oid;
         bool found = m_AllBits->CheckOrFindBit(bit);
         
-        next_oid = bit;
+        next_oid = static_cast<int>(bit);
         _ASSERT(size_t(next_oid) == bit);
         
         return found;

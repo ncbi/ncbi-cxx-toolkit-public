@@ -577,7 +577,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
 
                     TSeqNum start = MapSubject( subj, 0 );
                     TSeqNum end   = MapSubject( subj + 1, 0 );
-                    if( end == 0 ) end = start_ + results_.size() + 1;
+                    if( end == 0 ) end = start_ + static_cast<TSeqNum>(results_.size()) + 1;
                     
                     for( TSeqNum chunk = start; chunk < end; ++chunk ) {
                         if( GetResults( chunk ) != 0 ) {
@@ -615,7 +615,7 @@ class NCBI_XBLAST_EXPORT CDbIndex : public CObject
                 /** Get the number of logical sequences in the results set.
                     @return number of sequences in the result set
                 */
-                TSeqNum NumSeq() const { return results_.size(); }
+                TSeqNum NumSeq() const { return static_cast<TSeqNum>(results_.size()); }
 
             private:
 
@@ -1219,7 +1219,7 @@ class CSubjectMap
             @return number of chunks in the map
         */
         TSeqNum NumSubjects() const
-        { return 1 + (lid_map_.size()>>2); }
+        { return static_cast<TSeqNum>(1 + (lid_map_.size()>>2)); }
 
         /** Get the length of the subject sequence.
             
@@ -1275,15 +1275,15 @@ class CSubjectMap
                 
                 if( t.first < subjects_.size() - 1 ) {
                     TSeqNum nc = subjects_[t.first + 1] - subjects_[t.first];
-                    return (t.second == nc - 1) ?  max_chunk_size_ : 
+                    return (t.second == nc - 1) ?  static_cast<TWord>(max_chunk_size_) : 
                         getSubjectLength( t.first )%(
-                                max_chunk_size_ - chunk_overlap_ );
+                                static_cast<TWord>(max_chunk_size_ - chunk_overlap_ ));
                 }
-                else return max_chunk_size_;
+                else return static_cast<TWord>(max_chunk_size_);
             }
             else {
-                return getSubjectLength( subjects_.size() - 2 )%(
-                        max_chunk_size_ - chunk_overlap_ );
+                return static_cast<TWord>( getSubjectLength( static_cast<TSeqNum>(subjects_.size() - 2) )%(
+                        max_chunk_size_ - chunk_overlap_ ) );
             }
         }
 
@@ -1328,13 +1328,13 @@ class CSubjectMap
         {
             ASSERT( sid < subjects_.size() - 1 );
             ASSERT( subjects_[sid] - 1 + rcid < chunks_.size() );
-            TSeqPos res = rcid*(max_chunk_size_ - chunk_overlap_) + coff;
+            TSeqPos res = static_cast<TSeqPos>(rcid*(max_chunk_size_ - chunk_overlap_) + coff);
             ASSERT( res < lengths_[sid] );
             return res;
         }
 
-        TSeqNum getNumSubjects() const { return subjects_.size() - 1; }
-        TSeqNum getNumChunks() const { return chunks_.size(); }
+        TSeqNum getNumSubjects() const { return static_cast<TSeqNum>(subjects_.size() - 1); }
+        TSeqNum getNumChunks() const { return static_cast<TSeqNum>(chunks_.size()); }
 
         TSeqNum getNumChunks( TSeqNum sid ) const
         {
@@ -1342,7 +1342,7 @@ class CSubjectMap
             if( sid < subjects_.size() - 2 ) {
                 return subjects_[sid + 1] - subjects_[sid];
             }
-            else return chunks_.size() + 1 - subjects_[sid];
+            else return static_cast<TSeqNum>( chunks_.size() + 1 - subjects_[sid]);
         }
 
         const Uint1 * getSeqData( TSeqNum sid ) const

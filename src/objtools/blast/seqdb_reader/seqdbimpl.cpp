@@ -340,7 +340,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     if (m_NumThreads) {
         SSeqResBuffer * buffer = m_CachedSeqs[cacheID];
         x_FillSeqBuffer(buffer, begin_chunk);
-        end_chunk = begin_chunk + buffer->results.size();
+        end_chunk = begin_chunk + static_cast<int>(buffer->results.size());
     } else {
         end_chunk = begin_chunk + oid_size;
     }
@@ -2009,7 +2009,7 @@ int CSeqDBImpl::x_GetColumnId(const string   & title,
         if (found) {
             CRef<CSeqDB_ColumnEntry> obj(new CSeqDB_ColumnEntry(vol_ids));
 
-            col_id = m_ColumnInfo.size();
+            col_id = static_cast<int>(m_ColumnInfo.size());
             m_ColumnInfo.push_back(obj);
         } else {
             col_id = kColumnNotFound;

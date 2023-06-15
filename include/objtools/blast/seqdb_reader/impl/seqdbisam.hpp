@@ -505,7 +505,7 @@ private:
         
 
         for (int index=0; index < m_NumSamples; ++index) {
-            keys.push_back(x_GetNumericKey(keydatap));
+            keys.push_back(static_cast<T>(x_GetNumericKey(keydatap)));
             // vals.push_back(x_GetNumericData(keydatap));
             offs.push_back(index * m_PageSize * m_TermSize);
             keydatap += m_TermSize;
@@ -527,7 +527,7 @@ private:
         
 
         for (int index=0; index < num_keys; ++index) {
-            keys.push_back(x_GetNumericKey(keydatap));
+            keys.push_back(static_cast<T>(x_GetNumericKey(keydatap)));
             vals.push_back(x_GetNumericData(keydatap));
             keydatap += m_TermSize;
         }

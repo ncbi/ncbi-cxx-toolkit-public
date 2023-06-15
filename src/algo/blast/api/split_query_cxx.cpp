@@ -159,7 +159,7 @@ CQuerySplitter::x_ComputeChunkRanges()
         }
 
         m_SplitBlk->SetChunkBounds(chunk_num, 
-                                   TChunkRange(chunk_start, chunk_end));
+                                   TChunkRange(static_cast<unsigned int>(chunk_start), static_cast<unsigned int>(chunk_end)));
         _TRACE("Chunk " << chunk_num << ": ranges from " << chunk_start
                << " to " << chunk_end);
 
@@ -213,19 +213,19 @@ s_SetSplitQuerySeqInterval(const TChunkRange& chunk,
 void
 CQuerySplitter::x_ComputeQueryIndicesForChunks()
 {
-    const int kNumQueries = m_LocalQueryData->GetNumQueries();
+    const int kNumQueries = static_cast<int>(m_LocalQueryData->GetNumQueries());
     const EBlastProgramType kProgram = m_Options->GetProgramType();
     const ENa_strand kStrandOption = m_Options->GetStrandOption();
 
     // Build vector of query ranges along the concatenated query
     vector<TChunkRange> query_ranges;
     query_ranges.reserve(kNumQueries);
-    query_ranges.push_back(TChunkRange(0, m_LocalQueryData->GetSeqLength(0)));
+    query_ranges.push_back(TChunkRange(0, static_cast<unsigned int>(m_LocalQueryData->GetSeqLength(0)))); // FIXED
     _TRACE("Query 0: " << query_ranges.back().GetFrom() << "-" <<
            query_ranges.back().GetToOpen());
     for (int i = 1; i < kNumQueries; i++) {
         TSeqPos query_start = query_ranges[i-1].GetTo() + 1;
-        TSeqPos query_end = query_start + m_LocalQueryData->GetSeqLength(i);
+        TSeqPos query_end = query_start + static_cast<TSeqPos>(m_LocalQueryData->GetSeqLength(i));
         query_ranges.push_back(TChunkRange(query_start, query_end));
         _TRACE("Query " << i << ": " << query_ranges.back().GetFrom() 
                << "-" << query_ranges.back().GetToOpen());
@@ -244,7 +244,7 @@ CQuerySplitter::x_ComputeQueryIndicesForChunks()
             if ( !chunk.IntersectingWith(query_range) ) {
                 continue;
             }
-            m_SplitBlk->AddQueryToChunk(chunk_num, qindex);
+            m_SplitBlk->AddQueryToChunk(chunk_num, static_cast<Int4>(qindex));
             if (m_SplitQueriesInChunk[chunk_num].Empty()) {
                 m_SplitQueriesInChunk[chunk_num].Reset(new CBlastQueryVector);
             }
@@ -357,8 +357,8 @@ CQuerySplitter::x_ComputeQueryContextsForChunks()
                 BlastSetup_GetStrand(*sl, kProgram, kStrandOption);
 
             if (Blast_QueryIsTranslated(kProgram)) {
-                size_t qlength = qdpc->GetQueryLength(queries[i]);
-                int last_query_chunk = qdpc->GetLastChunk(queries[i]);
+                size_t qlength = qdpc->GetQueryLength(static_cast<int>(queries[i]));   
+                int last_query_chunk = qdpc->GetLastChunk(static_cast<int>(queries[i]));
                 _ASSERT(last_query_chunk != -1);
                 int shift = s_GetShiftForTranslatedNegStrand(qlength);
 
@@ -370,7 +370,7 @@ CQuerySplitter::x_ComputeQueryContextsForChunks()
                                                           kInvalidContext);
                         } else {
                             m_SplitBlk->AddContextToChunk(chunk_num, 
-                                              kNumContexts*queries[i]+ctx);
+                                              static_cast<Int4>(kNumContexts*queries[i]+ctx));
                         }
                     } else { // handle the negative strand
                         if (kStrand == eNa_strand_plus) {
@@ -380,11 +380,11 @@ CQuerySplitter::x_ComputeQueryContextsForChunks()
                             if (chunk_num == (size_t)last_query_chunk) {
                                 // last chunk doesn't have shift
                                 m_SplitBlk->AddContextToChunk(chunk_num,
-                                          kNumContexts*queries[i]+ctx);
+                                          static_cast<Int4>(kNumContexts*queries[i]+ctx));
                             } else {
                                 m_SplitBlk->AddContextToChunk(chunk_num,
-                                          kNumContexts*queries[i]+
-                                          s_AddShift(ctx, shift));
+                                          static_cast<Int4>(kNumContexts*queries[i]+
+                                          s_AddShift(ctx, shift)));
                             }
                         }
                     }
@@ -399,7 +399,7 @@ CQuerySplitter::x_ComputeQueryContextsForChunks()
                                                           kInvalidContext);
                         } else {
                             m_SplitBlk->AddContextToChunk(chunk_num, 
-                                              kNumContexts*queries[i]+ctx);
+                                              static_cast<Int4>(kNumContexts*queries[i]+ctx));
                         }
                     } else { // handle the negative strand
                         if (kStrand == eNa_strand_plus) {
@@ -407,14 +407,14 @@ CQuerySplitter::x_ComputeQueryContextsForChunks()
                                                           kInvalidContext);
                         } else {
                             m_SplitBlk->AddContextToChunk(chunk_num, 
-                                              kNumContexts*queries[i]+ctx);
+                                              static_cast<Int4>(kNumContexts*queries[i]+ctx));
                         }
                     }
                 }
 
             } else if (Blast_QueryIsProtein(kProgram)) {
                 m_SplitBlk->AddContextToChunk(chunk_num, 
-                                              kNumContexts*queries[i]);
+                                              static_cast<Int4>(kNumContexts*queries[i]));
             } else {
                 abort();
             }
@@ -629,7 +629,7 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
 
             if (s_IsPlusStrand(chunk_qinfo[chunk_num], ctx)) {
 
-                for (int c = chunk_num; c != starting_chunk; c--) {
+                for (int c = static_cast<int>(chunk_num); c != starting_chunk; c--) {
                     size_t prev_len = s_GetAbsoluteContextLength(chunk_qinfo, 
                                                          c - 1,
                                                          ctx_translator,
@@ -645,7 +645,7 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
 
                 size_t subtrahend = 0;
 
-                for (int c = chunk_num; c >= starting_chunk && c >= 0; c--) {
+                for (int c = static_cast<int>(chunk_num); c >= starting_chunk && c >= 0; c--) {
                     size_t prev_len = s_GetAbsoluteContextLength(chunk_qinfo, 
                                                          c - 1,
                                                          ctx_translator,
@@ -663,7 +663,7 @@ CQuerySplitter::x_ComputeContextOffsets_NonTranslatedQueries()
 
             }
             _ASSERT((chunk_qinfo[chunk_num]->contexts[ctx].is_valid));
-            m_SplitBlk->AddContextOffsetToChunk(chunk_num, correction);
+            m_SplitBlk->AddContextOffsetToChunk(chunk_num, static_cast<int>(correction));
 #ifdef DEBUG_COMPARE_SEQUENCES
 {
     int global_offset = global_qinfo->contexts[absolute_context].query_offset +
@@ -798,7 +798,7 @@ CQuerySplitter::x_ComputeContextOffsets_TranslatedQueries()
 
             if (s_IsPlusStrand(chunk_qinfo[chunk_num], ctx)) {
 
-                for (int c = chunk_num; c != starting_chunk; c--) {
+                for (int c = static_cast<int>(chunk_num); c != starting_chunk; c--) {
                     size_t prev_len = s_GetAbsoluteContextLength(chunk_qinfo, 
                                                          c - 1,
                                                          ctx_translator,
@@ -814,7 +814,7 @@ CQuerySplitter::x_ComputeContextOffsets_TranslatedQueries()
 
                 size_t subtrahend = 0;
 
-                for (int c = chunk_num; c >= starting_chunk && c >= 0; c--) {
+                for (int c = static_cast<int>(chunk_num); c >= starting_chunk && c >= 0; c--) {
                     size_t prev_len = s_GetAbsoluteContextLength(chunk_qinfo, 
                                                          c - 1,
                                                          ctx_translator,
@@ -833,7 +833,7 @@ CQuerySplitter::x_ComputeContextOffsets_TranslatedQueries()
 
 error_check:
             _ASSERT((chunk_qinfo[chunk_num]->contexts[ctx].is_valid));
-            m_SplitBlk->AddContextOffsetToChunk(chunk_num, correction);
+            m_SplitBlk->AddContextOffsetToChunk(chunk_num, static_cast<Int4>(correction));
 #ifdef DEBUG_COMPARE_SEQUENCES
 {
     int global_offset = global_qinfo->contexts[absolute_context].query_offset +

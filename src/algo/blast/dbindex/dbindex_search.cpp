@@ -1009,7 +1009,7 @@ void CSearch_Base< LEGACY, NHITS, derived_t >::ExtendLeft(
 
     qstart += qstart_;
     nmax = nmax < options_.word_size - hkey_width ?
-        nmax : options_.word_size - hkey_width;
+        nmax : static_cast<TSeqPos>(options_.word_size - hkey_width);
 
     while( nmax > 0 && incomplete > 0 && qpos > qstart ) {
         Uint1 sbyte = (((*spos)>>(2*(CR - incomplete--)))&0x3);
@@ -1019,9 +1019,9 @@ void CSearch_Base< LEGACY, NHITS, derived_t >::ExtendLeft(
     }
 
     nmax = (nmax < (TSeqPos)(qpos - qstart)) 
-        ? nmax : qpos - qstart;
+        ? nmax : (TSeqPos)(qpos - qstart);
     nmax = (nmax < (TSeqPos)(CR*(spos - sstart))) 
-        ? nmax : CR*(spos - sstart);
+        ? nmax : (TSeqPos)(CR*(spos - sstart));
     --spos;
 
     while( nmax >= CR ) {
@@ -1091,7 +1091,7 @@ void CSearch_Base< LEGACY, NHITS, derived_t >::ExtendRight(
     nmax = (nmax < (TSeqPos)(qend - qpos)) ? 
         nmax : (TSeqPos)(qend - qpos);
     nmax = (nmax <= (send - spos)*CR) ?
-        nmax : (send - spos)*CR;
+        nmax : (TSeqPos)((send - spos)*CR);
 
     while( nmax >= CR ) {
         Uint1 sbyte = *spos++;
@@ -1145,7 +1145,7 @@ void CSearch_Base< LEGACY, NHITS, derived_t >::ProcessBoundaryOffset(
     TSeqPos nmaxleft  = (TSeqPos)(bounds>>code_bits_);
     TSeqPos nmaxright = (TSeqPos)(bounds&((1<<code_bits_) - 1));
     TTrackedSeed seed( 
-            qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ );
+            qoff_, (TSeqPos)offset, (TSeqPos)index_impl_.hkey_width(), qoff_ );
     TTrackedSeeds & subj_seeds = seeds_[subject_];
     subj_seeds.EvalAndUpdate( seed );
 
@@ -1177,7 +1177,7 @@ INLINE
 void CSearch_Base< LEGACY, NHITS, derived_t >::ProcessOffset( TWord offset )
 {
     TTrackedSeed seed(
-        qoff_, (TSeqPos)offset, index_impl_.hkey_width(), qoff_ );
+        qoff_, (TSeqPos)offset, (TSeqPos)index_impl_.hkey_width(), qoff_ );
     TTrackedSeeds & subj_seeds = seeds_[subject_];
 
     if( subj_seeds.EvalAndUpdate( seed ) ) {
@@ -1207,12 +1207,12 @@ unsigned long CSearch_Base< LEGACY, NHITS, derived_t >::ProcessRoot(
 
     if( root->soff_ < min_offset_ ) {
         TSeqPos boundary = (root++)->soff_;
-        ProcessBoundaryOffset( root->soff_ - min_offset_, boundary );
+        ProcessBoundaryOffset( root->soff_ - static_cast<unsigned int>(min_offset_), boundary );
                 // root->soff_ - CDbIndex::MIN_OFFSET, boundary );
         soff_ = root->soff_;
         return 2;
     }else {
-        ProcessOffset( root->soff_ - min_offset_ );
+        ProcessOffset( root->soff_ - static_cast<unsigned int>(min_offset_) );
         soff_ = root->soff_;
         return 1;
     }

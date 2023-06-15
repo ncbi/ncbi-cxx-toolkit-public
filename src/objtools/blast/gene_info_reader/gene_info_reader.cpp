@@ -240,7 +240,7 @@ static bool s_GetMemFilePtrAndLength(CMemoryFile* pMemFile,
 {
     if (pMemFile != 0)
     {
-        nRecs = pMemFile->GetSize() / (sizeof(TRecordType));
+        nRecs = static_cast<int>(pMemFile->GetSize() / (sizeof(TRecordType)));
         if (nRecs > 0)
         {
             pRecs = (TRecordType*)(pMemFile->GetPtr());

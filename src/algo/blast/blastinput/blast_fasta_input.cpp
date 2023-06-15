@@ -764,7 +764,7 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
             }
             bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
             bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            bioseq.SetInst().SetLength(first_len);
+            bioseq.SetInst().SetLength(static_cast<CSeq_inst_Base::TLength>(first_len));
             first[first_len] = 0;
             bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(first));
             bioseq.SetDescr().Set().push_back(seqdesc_first);
@@ -790,7 +790,7 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
             }
             bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
             bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
-            bioseq.SetInst().SetLength(second_len);
+            bioseq.SetInst().SetLength(static_cast<CSeq_inst_Base::TLength>(second_len));
             second[second_len] = 0;
             bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(second));
             bioseq.SetDescr().Set().push_back(seqdesc_last);
@@ -825,7 +825,7 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
         // increase the sequence buffer if necessary
         if (start + line.length() + 1 > m_SeqBuffLen) {
             string tmp;
-            m_SeqBuffLen = 2 * (start + line.length() + 1);
+            m_SeqBuffLen = static_cast<TSeqPos>(2 * (start + line.length() + 1));
             tmp.resize(m_SeqBuffLen);
             memcpy(&tmp[0], &m_Sequence[0], start);
             m_Sequence.swap(tmp);
@@ -935,7 +935,7 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
             empty_sequence = true;
         }
         else {
-            bioseq.SetInst().SetLength(line.length());
+            bioseq.SetInst().SetLength(static_cast<CSeq_inst_Base::TLength>(line.length()));
             bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(line.data()));
             m_BasesAdded += line.length();
         }

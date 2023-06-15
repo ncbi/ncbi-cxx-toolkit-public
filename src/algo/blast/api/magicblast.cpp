@@ -346,7 +346,7 @@ static CRef<CSeq_align> s_CreateSeqAlign(const HSPChain* chain,
     CRef<CSeq_id> query_id(new CSeq_id);
     SerialAssign(*query_id, CSeq_loc_CI(*query_loc).GetSeq_id());
     _ASSERT(query_id);
-    TSeqPos query_length = qdata->GetSeqLength(query_index);
+    TSeqPos query_length = static_cast<TSeqPos>(qdata->GetSeqLength(query_index));
 
     CRef<CSeq_id> subject_id;
     TSeqPos subj_length;

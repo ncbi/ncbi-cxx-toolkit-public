@@ -181,7 +181,7 @@ CBlastKmer::x_SearchMultipleQueries(int firstQuery, int numQuery, const SBlastKm
 {
 	TQueryMessages errs;
 	int numThreads = (int) GetNumberOfThreads();
-	int numFiles = m_KmerFiles.size();
+	int numFiles = static_cast<int>( m_KmerFiles.size());
 	if (numThreads > numQuery)
 		numThreads = numFiles;
 
@@ -277,7 +277,7 @@ for(int index=0; index<numFiles; index++)
 	        sort(final_results.begin(), final_results.end(), s_SortFinalResults);
 	        if (m_Opts->GetNumTargetSeqs() > 0)
 	        {
-		        int vec_size = final_results.size();
+		        int vec_size = static_cast<int>( final_results.size() );
 		        int num_matches = m_Opts->GetNumTargetSeqs();
 		        if (vec_size > num_matches)
 		         final_results.erase(final_results.begin()+num_matches, final_results.end());
@@ -370,7 +370,7 @@ CBlastKmer::Run() {
 	if (kmerVer > 2)
 		kmerParams.chunkSize = mhfile.GetChunkSize();
 
-	int numQueries = m_QueryVector.size();
+	int numQueries = static_cast<int>(m_QueryVector.size());
 
 	CRef<CBlastKmerResultsSet> kmerResultsSet = x_SearchMultipleQueries(0, numQueries, kmerParams, a.data(), b.data(), kValues, badMers);
 	

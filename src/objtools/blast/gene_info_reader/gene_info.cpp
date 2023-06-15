@@ -156,9 +156,9 @@ void CGeneInfo::ToString(string& strGeneInfo,
             strGeneIdSection += "</a>";
         }
 
-        unsigned int nGeneIdSectionLength = k_strGeneIdBegin.length() +
+        unsigned int nGeneIdSectionLength = static_cast<unsigned int>(k_strGeneIdBegin.length() +
                                             strGeneId.length() + 1 +
-                                            strGeneSymbol.length();
+                                            strGeneSymbol.length());
         x_Append(strGeneInfo, nCurLineEffLength,
                  strGeneIdSection, nGeneIdSectionLength,
                  nMaxLineLength);
@@ -167,7 +167,7 @@ void CGeneInfo::ToString(string& strGeneInfo,
 
         string strSeparator = "|";
         x_Append(strGeneInfo, nCurLineEffLength,
-                 strSeparator, strSeparator.length(),
+                 strSeparator, static_cast<unsigned int>(strSeparator.length()),
                  nMaxLineLength);
 
         // Append Gene description. It can be pretty long, split it into
@@ -179,7 +179,7 @@ void CGeneInfo::ToString(string& strGeneInfo,
         {
             string strCurWord = strDescrWords[iWord];
             x_Append(strGeneInfo, nCurLineEffLength,
-                     strCurWord, strCurWord.length(),
+                     strCurWord, static_cast<unsigned int>(strCurWord.length()),
                      nMaxLineLength);
         }
 
@@ -187,7 +187,7 @@ void CGeneInfo::ToString(string& strGeneInfo,
 
         string strOrgName = "[" + GetOrganismName() + "]";
         x_Append(strGeneInfo, nCurLineEffLength,
-                 strOrgName, strOrgName.length(),
+                 strOrgName, static_cast<unsigned int>(strOrgName.length()),
                  nMaxLineLength);
 
         // Append the estimated number of pubmed links (if requested)
@@ -233,7 +233,7 @@ void CGeneInfo::ToString(string& strGeneInfo,
                 }
             }
 
-            int nPMEffLength = strNumPubMedLinks.length();
+            int nPMEffLength = static_cast<int>(strNumPubMedLinks.length());
             if (nPMEffLength > 0)
             {
                 if (bFormatAsHTML)

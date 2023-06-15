@@ -2507,7 +2507,7 @@ CRemoteBlast::x_GetSearchResultsHTTP(void)
 
     unique_ptr<fstream> tmp_stream( CDirEntry::CreateTmpFile() );
     do{
-		n_read = CStreamUtils::Readsome(ios,incoming_buffer, read_max);
+		n_read = static_cast<int>( CStreamUtils::Readsome(ios,incoming_buffer, read_max) );
 		if( n_read > 0 ){
 			l_total_bytes += n_read;
 			try{

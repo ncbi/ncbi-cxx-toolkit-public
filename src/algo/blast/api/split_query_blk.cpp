@@ -67,7 +67,7 @@ CSplitQueryBlk::GetNumQueriesForChunk(size_t chunk_num) const
 {
     size_t retval = 0;
     Int2 rv = SplitQueryBlk_GetNumQueriesForChunk(m_SplitQueryBlk,
-                                                  chunk_num,
+                                                  static_cast<Uint4>(chunk_num),
                                                   &retval);
     if (rv != 0) {
         throw runtime_error("SplitQueryBlk_GetNumQueriesForChunk");
@@ -81,7 +81,7 @@ CSplitQueryBlk::GetQueryIndices(size_t chunk_num) const
     vector<size_t> retval;
     Uint4* query_indices = NULL;
     Int2 rv = SplitQueryBlk_GetQueryIndicesForChunk(m_SplitQueryBlk,
-                                                    chunk_num,
+                                                    static_cast<Uint4>(chunk_num),
                                                     &query_indices);
     if (rv != 0) {
         throw runtime_error("SplitQueryBlk_GetQueryIndicesForChunk");
@@ -100,7 +100,7 @@ CSplitQueryBlk::GetQueryContexts(size_t chunk_num) const
     Int4* query_contexts = NULL;
     Uint4 num_contexts = 0;
     Int2 rv = SplitQueryBlk_GetQueryContextsForChunk(m_SplitQueryBlk,
-                                                     chunk_num,
+                                                     static_cast<Uint4>(chunk_num),
                                                      &query_contexts,
                                                      &num_contexts);
     if (rv != 0) {
@@ -119,7 +119,7 @@ CSplitQueryBlk::GetContextOffsets(size_t chunk_num) const
     vector<size_t> retval;
     Uint4* context_offsets = NULL;
     Int2 rv = SplitQueryBlk_GetContextOffsetsForChunk(m_SplitQueryBlk,
-                                                      chunk_num,
+                                                      static_cast<Uint4>(chunk_num),
                                                       &context_offsets);
     if (rv != 0) {
         throw runtime_error("SplitQueryBlk_GetContextOffsetsForChunk");
@@ -136,13 +136,13 @@ CSplitQueryBlk::GetChunkBounds(size_t chunk_num) const
 {
     TChunkRange retval;
     pair<size_t, size_t> chunk_bounds(0, 0);
-    Int2 rv = SplitQueryBlk_GetChunkBounds(m_SplitQueryBlk, chunk_num, 
+    Int2 rv = SplitQueryBlk_GetChunkBounds(m_SplitQueryBlk, static_cast<Uint4>(chunk_num), 
                                            &chunk_bounds.first, 
                                            &chunk_bounds.second);
     if (rv != 0) {
         throw runtime_error("SplitQueryBlk_GetChunkBounds");
     }
-    retval.SetOpen(chunk_bounds.first, chunk_bounds.second);
+    retval.SetOpen(static_cast<unsigned int>(chunk_bounds.first), static_cast<unsigned int>(chunk_bounds.second)); // FIXED
     return retval;
 }
 
@@ -151,7 +151,7 @@ CSplitQueryBlk::SetChunkBounds(size_t chunk_num,
                                const TChunkRange& chunk_range) 
 {
     Int2 rv = SplitQueryBlk_SetChunkBounds(m_SplitQueryBlk,
-                                           chunk_num,
+                                           static_cast<int>(chunk_num),
                                            chunk_range.GetFrom(),
                                            chunk_range.GetToOpen());
     if (rv != 0) {
@@ -163,7 +163,7 @@ void
 CSplitQueryBlk::AddQueryToChunk(size_t chunk_num, Int4 query_index) 
 {
     Int2 rv = SplitQueryBlk_AddQueryToChunk(m_SplitQueryBlk, query_index, 
-                                            chunk_num);
+                                            static_cast<Uint4>(chunk_num));
     if (rv != 0) {
         throw runtime_error("Failed to add query to SplitQueryBlk");
     }
@@ -173,7 +173,7 @@ void
 CSplitQueryBlk::AddContextToChunk(size_t chunk_num, Int4 context_index) 
 {
     Int2 rv = SplitQueryBlk_AddContextToChunk(m_SplitQueryBlk, 
-                                              context_index, chunk_num);
+                                              context_index, static_cast<Uint4>(chunk_num));
     if (rv != 0) {
         throw runtime_error("Failed to add context to SplitQueryBlk");
     }
@@ -183,7 +183,7 @@ void
 CSplitQueryBlk::AddContextOffsetToChunk(size_t chunk_num, Int4 context_offset) 
 {
     Int2 rv = SplitQueryBlk_AddContextOffsetToChunk(m_SplitQueryBlk, 
-                                              context_offset, chunk_num);
+                                              context_offset, static_cast<Uint4>(chunk_num));
     if (rv != 0) {
         throw runtime_error("Failed to add context offset to "
                             "SplitQueryBlk");

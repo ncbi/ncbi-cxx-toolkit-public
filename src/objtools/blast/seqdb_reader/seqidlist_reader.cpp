@@ -125,7 +125,7 @@ int CBlastSeqidlistFile::GetSeqidlistInfo(const string & filename, SBlastSeqIdLi
 	CMemoryFile in(file);
 	CSeqidlistRead list(in);
 	list.GetListInfo(list_info);
-	return list_info.num_ids;
+	return static_cast<int>(list_info.num_ids);
 
 }
 

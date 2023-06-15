@@ -190,7 +190,7 @@ CLocalBlast::Run()
         	 res_type = eSequenceComparison;
              IBlastSeqInfoSrc *  subject_infosrc = m_LocalDbAdapter->MakeSeqInfoSrc();
              if(subject_infosrc != NULL) {
-            	 num_subjects = subject_infosrc->Size();
+            	 num_subjects = static_cast<unsigned int>(subject_infosrc->Size());
              }
          }
          TSearchMessages msg_vec;

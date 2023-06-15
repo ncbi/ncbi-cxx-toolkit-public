@@ -307,7 +307,7 @@ void s_MinhashSequences2(uint32_t q_oid,
 		} // end each kmer
 		if (hash_values.size() < static_cast<size_t>(num_hashes))
 		{
-			int rem = 1 + num_hashes - hash_values.size();
+			int rem = 1 + num_hashes - static_cast<int>(hash_values.size());
 			uint32_t hashval = 0xffffffff;  // Fill in empties
 			for (int i=0; i<rem; i++)
 				hash_values.push_back(hashval);
@@ -354,7 +354,7 @@ static void s_Get_LSH_index_hashes(vector < vector < vector <uint32_t> > >& seq_
 		int q_oid, int numBands, int numRows, int& total_chunks, uint8_t* uniqueHash)
 {
 
-	int num_chunks = seq_hash[q_oid].size();
+	int num_chunks = static_cast<int>(seq_hash[q_oid].size());
 	for (int n=0; n<num_chunks; n++)
 	{
 	  for(int b=0;b<numBands;b++)
@@ -385,7 +385,7 @@ static void s_Get_LSH_index_hashes2(vector < vector < vector <uint32_t> > >& seq
 
 	int max=4*num_k+1;
         vector<unsigned char> key(max);
-	int num_chunks=seq_hash[q_oid].size();
+	int num_chunks=static_cast<int>(seq_hash[q_oid].size());
 	int temp_index=0;
 	int temp_hash=0;
 	for (int n=0; n<num_chunks; n++)
@@ -416,7 +416,7 @@ static void s_Get_LSH_index_hashes5(vector < vector < vector <uint32_t> > >& seq
 		int q_oid, int numHashes, int numRows, int& total_chunks, uint8_t* uniqueHash)
 {
 
-	int num_chunks = seq_hash[q_oid].size();
+	int num_chunks = static_cast<int>(seq_hash[q_oid].size());
 	int numHashMax = numHashes - numRows + 1;
 	uint32_t temp_hash = 0;
 	for (int n=0; n<num_chunks; n++)
@@ -484,7 +484,7 @@ CBlastKmerBuildIndex::Build(int numThreads)
 		last=oid_offset;
 	}
 
-	int numVols = paths.size();
+	int numVols = static_cast<int>(paths.size());
 #pragma omp parallel for num_threads(numThreads)
 	for(int index=0; index<numVols; index++)
 	{
@@ -690,7 +690,7 @@ CBlastKmerBuildIndex::x_BuildIndex(string& name, int start, int stop)
 	else
 	{
 		int i=1; // i must be lower than 2*m_NumHashFct
-		int num=badMers.size();
+		int num=static_cast<int>(badMers.size());
 		if (num > (2*m_NumHashFct-1))
 			num = 2*m_NumHashFct-1;
 		index_file.write((char *) &(num), 4);
@@ -766,7 +766,7 @@ CBlastKmerBuildIndex::x_WriteDataFile(vector < vector < vector < uint32_t > > > 
 		width = 4;
 	for(int q_oid=0;q_oid<num_seqs;q_oid++)
 	{
-		int num_chunks = seq_hash[q_oid].size();
+		int num_chunks = static_cast<int>(seq_hash[q_oid].size());
 		for (int n=0; n<num_chunks; n++)
 		{
 		    vector<uint32_t> tmp_hash;

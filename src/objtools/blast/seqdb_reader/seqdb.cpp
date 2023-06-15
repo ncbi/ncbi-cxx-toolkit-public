@@ -1712,8 +1712,8 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 	vector<string> dblist;
     NStr::Split(GetDBNameList(), " ", dblist, NStr::fSplit_Tokenize);
     NON_CONST_ITERATE(vector<string>, itr, dblist) {
-        int off = (*itr).find_last_of(CFile::GetPathSeparator());
-        if (off != -1) {
+        size_t off = (*itr).find_last_of(CFile::GetPathSeparator());
+        if (off != string::npos ) {
         	(*itr).erase(0, off+1);
         }
     }
@@ -1743,7 +1743,7 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 		set<TTaxId> tax_ids;
 		GetDBTaxIds(tax_ids);
 		if((tax_ids.size() > 1) || ((tax_ids.size() == 1) && (0 != *tax_ids.begin()))){
-			m->SetNumber_of_taxids(tax_ids.size());
+			m->SetNumber_of_taxids(static_cast<int>(tax_ids.size()));
 		}
 	}
 	return m;

@@ -133,7 +133,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
         {
                 BlastSeqSrc* seqsrc = db_adapter.MakeSeqSrc();
                 num_seqs=BlastSeqSrcGetNumSeqs(seqsrc);
-                total_length=BlastSeqSrcGetTotLen(seqsrc);
+                total_length=static_cast<int>(BlastSeqSrcGetTotLen(seqsrc));
         }
 	CBlastFormatUtil::FillScanModeBlastDbInfo(m_DbInfo, m_DbIsAA,
                 num_seqs, total_length, m_SubjectTag);
@@ -2488,7 +2488,7 @@ void CBlastFormat::LogBlastSearchInfo(CBlastUsageReport & report)
 				report.AddParam(CBlastUsageReport::eNumSubjects, (int) m_SeqInfoSrc->Size());
 				int total_subj_length = 0;
 				for (size_t i = 0; i < m_SeqInfoSrc->Size(); i++) {
-				       total_subj_length += m_SeqInfoSrc->GetLength(i);
+				       total_subj_length += (int)m_SeqInfoSrc->GetLength(static_cast<Uint4>(i));
 				}
 				report.AddParam(CBlastUsageReport::eSubjectsLength, total_subj_length);
 			}

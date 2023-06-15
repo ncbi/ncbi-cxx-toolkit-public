@@ -457,7 +457,7 @@ s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
     }
 
     vector<CRange<int> > masks_v;
-    int aln_stop = query_seq.size() - 1;
+    int aln_stop = static_cast<int>(query_seq.size()) - 1;
     ITERATE(ncbi::TMaskedQueryRegions, mask_iter, mask_info) {
         if ((*mask_iter)->GetFrame() != query_frame)
             continue;

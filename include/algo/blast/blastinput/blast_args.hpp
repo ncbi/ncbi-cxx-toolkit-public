@@ -1105,7 +1105,7 @@ public:
             m_DfltNumAlignments = m_DfltNumDescriptions = 10;
         } else {
             m_DfltNumAlignments = static_cast<ncbi::TSeqPos>(align_format::kDfltArgNumAlignments) ;
-            m_DfltNumDescriptions = align_format::kDfltArgNumDescriptions;
+            m_DfltNumDescriptions = static_cast<TSeqPos>(align_format::kDfltArgNumDescriptions);
         }        
     };
 

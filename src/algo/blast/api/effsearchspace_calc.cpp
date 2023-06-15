@@ -133,7 +133,7 @@ Int8
 CEffectiveSearchSpaceCalculator::GetEffSearchSpace(size_t query_index) const
 {
     _ASSERT((Int4)query_index < m_QueryInfo->num_queries);
-    return BlastQueryInfoGetEffSearchSpace(m_QueryInfo, m_Program, query_index);
+    return BlastQueryInfoGetEffSearchSpace(m_QueryInfo, m_Program, static_cast<Int4>(query_index));
 }
 
 Int8

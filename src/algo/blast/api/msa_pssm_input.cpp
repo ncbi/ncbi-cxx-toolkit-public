@@ -95,7 +95,7 @@ CPsiBlastInputClustalW::CPsiBlastInputClustalW
     _ASSERT(m_Query);
     _ASSERT(m_MsaDimensions.query_length);
     // query is included in m_AsciiMsa, so decrement it by 1
-    m_MsaDimensions.num_seqs = m_AsciiMsa.size() - 1; 
+    m_MsaDimensions.num_seqs = static_cast<Uint4>(m_AsciiMsa.size() - 1); 
 
     m_Msa = NULL;
 
@@ -287,7 +287,7 @@ CPsiBlastInputClustalW::x_ExtractQueryFromMsa(unsigned int msa_master_idx/*=0*/)
             kNumGaps++;
         }
     } 
-    const unsigned int kQueryLength = kQuery.size() - kNumGaps;
+    const unsigned int kQueryLength = static_cast<unsigned int>(kQuery.size() - kNumGaps);
 
     m_MsaDimensions.query_length = kQueryLength;
     m_Query.reset(new Uint1[kQueryLength]);
@@ -372,14 +372,14 @@ CPsiBlastInputClustalW::x_ExtractAlignmentData()
                 i++;
             }
 
-            int k = i + 1;
+            int k = static_cast<int>(i) + 1;
             while (k < m_Msa->dimensions->query_length &&
                    m_Msa->data[seq_index][k].letter == kGapResidue) {
                 k++;
             }
 
             if (k - i >= kLongGapLen) {
-                for (int j=i;j < k;j++) {
+                for (int j=static_cast<int>(i);j < k;j++) {
                     m_Msa->data[seq_index][j].is_aligned = false;
                 }
             }

@@ -166,7 +166,7 @@ public:
     CBlastFormattingMatrix* GetMatrix(void) const;
 
     /// @inheritDoc
-    unsigned int GetNumQueries(void) const { return m_Queries->Size(); }
+    unsigned int GetNumQueries(void) const { return static_cast<unsigned int>(m_Queries->Size()); }
 
     /// @inheritDoc
     const TMaskedQueryRegions* 

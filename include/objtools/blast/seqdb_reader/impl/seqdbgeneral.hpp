@@ -1279,7 +1279,7 @@ int SeqDB_VectorAssign(const T & data, vector<U> & v)
         i++;
     }
     
-    return i;
+    return static_cast<int>(i);
 }
 
 END_NCBI_SCOPE
