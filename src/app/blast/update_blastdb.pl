@@ -603,7 +603,7 @@ download_file:
             print "\nRMT $file Digest $rmt_digest" if (DEBUG);
             print "\nLCL $file Digest $lcl_digest\n" if (DEBUG);
             if ($lcl_digest ne $rmt_digest) {
-                unlink &rm_protocol($file), &trim_ftp_prefix($checksum_file);
+                unlink &rm_protocol($file), &rm_protocol($checksum_file);
                 if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
                     print STDERR "too many failures, aborting download!\n";
                     return EXIT_FAILURE;
