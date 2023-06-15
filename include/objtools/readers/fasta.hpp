@@ -178,6 +178,7 @@ public:
     void ResetIDTracker(void) { m_IDHandler->ClearIdCache(); }
 
     void SetExcludedMods(const vector<string>& excluded_mods);
+    void SetIgnoredMods(const list<string>& ignored_mods);
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length. Overrides the id lengths specified in class CSeq_id.

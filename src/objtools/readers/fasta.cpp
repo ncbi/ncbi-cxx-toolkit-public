@@ -1994,6 +1994,12 @@ void CFastaReader::SetExcludedMods(const vector<string>& excluded_mods)
 }
 
 
+void CFastaReader::SetIgnoredMods(const list<string>& ignored_mods)
+{
+    m_ModHandler.SetIgnoredMods(ignored_mods);
+}
+
+
 void CFastaReader::x_ApplyMods(
      const string& title,
      TSeqPos line_number,
