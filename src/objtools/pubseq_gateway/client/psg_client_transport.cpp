@@ -1481,10 +1481,11 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
     };
 
     auto ignore_server = [&]() {
-        d = uniform_real_distribution<>(0.0, d.max() - i->current_rate);
-        i->current_rate = 0.0;
-        --available_servers;
-        next_server();
+        if (--available_servers) {
+            d = uniform_real_distribution<>(0.0, d.max() - i->current_rate);
+            i->current_rate = 0.0;
+            next_server();
+        }
     };
 
     auto find_session = [&]() {
