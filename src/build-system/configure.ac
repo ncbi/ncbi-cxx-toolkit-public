@@ -9009,7 +9009,7 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(thrift, THRIFT, [thrift$THRIFT_SFX],
   [AC_LANG_PROGRAM([[@%:@include <thrift/TApplicationException.h>]],
       [[apache::thrift::TApplicationException().read(nullptr);]])],
-  [], [$OPENSSL_LIBS])
+  [], [$OPENSSL_LIBS], [$BOOST_INCLUDE])
 if test "$with_thrift" != no -a \
    \( -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a" \
    -o -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a" \); then
