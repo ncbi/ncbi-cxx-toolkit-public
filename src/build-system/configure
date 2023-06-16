@@ -35509,7 +35509,7 @@ $as_echo_n "checking for libthrift$THRIFT_SFX$in_path... " >&6; }
 if ${ncbi_cv_lib_thrift+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  CPPFLAGS=" $THRIFT_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$BOOST_INCLUDE $THRIFT_INCLUDE $orig_CPPFLAGS"
        LIBS="$THRIFT_LIBS $OPENSSL_LIBS $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -35544,7 +35544,7 @@ $as_echo "$ncbi_cv_lib_thrift" >&6; }
     THRIFT_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}THRIFT"; WithPackagesSep=" "
-    THRIFT_INCLUDE=" $THRIFT_INCLUDE"
+    THRIFT_INCLUDE="$BOOST_INCLUDE $THRIFT_INCLUDE"
 
 $as_echo "#define HAVE_LIBTHRIFT 1" >>confdefs.h
 
