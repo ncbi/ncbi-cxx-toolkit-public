@@ -739,9 +739,11 @@ NCBIcomponent_report(NCBICRYPT)
 #############################################################################
 # THRIFT
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    NCBI_define_Xcomponent(NAME THRIFT LIB thriftd)
+    NCBI_define_Xcomponent(NAME THRIFT LIB thriftd
+                           ADD_COMPONENT Boost.Test.Included)
 else()
-    NCBI_define_Xcomponent(NAME THRIFT LIB thrift)
+    NCBI_define_Xcomponent(NAME THRIFT LIB thrift
+                           ADD_COMPONENT Boost.Test.Included)
 endif()
 NCBIcomponent_report(THRIFT)
 
