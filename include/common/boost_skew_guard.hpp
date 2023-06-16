@@ -36,6 +36,7 @@
 #include <ncbiconf.h>
 
 #ifdef NCBI_EXPECTED_BOOST_VERSION
+#  include <corelib/ncbistl.hpp>
 #  include <boost/version.hpp>
 static_assert(BOOST_VERSION == NCBI_EXPECTED_BOOST_VERSION,
     "Boost version skew detected; please remember to use $(BOOST_INCLUDE)!"
