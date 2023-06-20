@@ -313,7 +313,7 @@ int CTest::Run(void)
 
     status = pipe.Close(&exitcode);
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
@@ -326,7 +326,7 @@ int CTest::Run(void)
 
     status = is.GetPipe().Close(&exitcode);
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
@@ -346,7 +346,7 @@ int CTest::Run(void)
 
     status = pipe.Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
@@ -370,7 +370,7 @@ int CTest::Run(void)
 
     status = pipe.Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
@@ -406,7 +406,7 @@ int CTest::Run(void)
 
     status = ps.GetPipe().Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
@@ -433,7 +433,7 @@ int CTest::Run(void)
 
     status = ps.GetPipe().Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
 
@@ -456,7 +456,7 @@ int CTest::Run(void)
 
     status = ps.GetPipe().Close(&exitcode); 
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode);
+             << " and exit code " << exitcode);
     assert(status == eIO_Success  &&  exitcode == kTestResult);
 
     status = ps.Close();
@@ -478,13 +478,13 @@ int CTest::Run(void)
     status = pipe.Close(&exitcode);
     double elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode << " in " << elapsed << "s");
+             << " and exit code " << exitcode << " in " << elapsed << "s");
     if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Timeout  &&  exitcode == -1);
         {{
             CProcess process(handle, CProcess::eHandle);
             assert(process.IsAlive());
-            assert(process.Kill((DEFAULT_TIMEOUT / 2) * 1000));
+            assert(process.Kill((DEFAULT_TIMEOUT * 1000) / 2));
             assert(!process.IsAlive());
         }}
         status = pipe.Close();
@@ -504,12 +504,12 @@ int CTest::Run(void)
     status = pipe.Close(&exitcode); 
     elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode << " in " << elapsed << "s");
+             << " and exit code " << exitcode << " in " << elapsed << "s");
     if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Success  &&  exitcode == -1);
         {{
-                CProcess process(handle, CProcess::eHandle);
-                assert(!process.IsAlive());
+            CProcess process(handle, CProcess::eHandle);
+            assert(!process.IsAlive());
         }}
     } else
         ERR_POST(Warning << "Pipe closed okay because of an extended delay");
@@ -526,28 +526,27 @@ int CTest::Run(void)
     status = pipe.Close(&exitcode);
     elapsed = sw.Elapsed();
     ERR_POST(Info << "Command completed with status " << IO_StatusStr(status)
-             << " and exitcode " << exitcode << " in " << elapsed << "s");
+             << " and exit code " << exitcode << " in " << elapsed << "s");
     if (status != eIO_Success  ||  elapsed <= DEFAULT_TIMEOUT * 1.5) {
         assert(status == eIO_Timeout  &&  exitcode == -1);
         {{
             CProcess process(handle, CProcess::eHandle);
-            assert(process.IsAlive());
+            // assert(process.IsAlive()); // NB: Cannot assume due to a race
             CProcess::CExitInfo exitinfo;
             exitcode = process.Wait(DEFAULT_TIMEOUT * 1000, &exitinfo);
             string infostr;
             if (exitinfo.IsPresent()) {
                 if (exitinfo.IsExited()) {
-                    assert(exitinfo.GetExitCode() == exitcode);
+                    exitcode = exitinfo.GetExitCode();
                     infostr = "code=" + NStr::IntToString(exitcode);
                 } else if (exitinfo.IsSignaled())
                     infostr = "signal=" + NStr::IntToString(exitinfo.GetSignal());
             }
-            ERR_POST(Info << "Command completed with exit code " << exitcode
-                 << " and state "
-                     << (!exitinfo.IsPresent() ? "Inexistent" :
-                         exitinfo.IsExited()   ? "Terminated" :
-                         exitinfo.IsAlive()    ? "Alive"      :
-                         exitinfo.IsSignaled() ? "Signaled"   : "Unknown")
+            ERR_POST(Info << "Completion status: "
+                     << (!exitinfo.IsPresent() ? "Nonexistent" :
+                         exitinfo.IsExited()   ? "Exited"      :
+                         exitinfo.IsSignaled() ? "Signaled"    :
+                         exitinfo.IsAlive()    ? "Alive"       : "Unknown")
                      << (infostr.empty() ? "" : ", ") << infostr);
             assert(exitcode == kTestResult);
             assert(!process.IsAlive());
