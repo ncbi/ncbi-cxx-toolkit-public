@@ -359,6 +359,7 @@ may be implemented in the future; RW-1253
 
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("logxml", "LogFile", "XML Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
     arg_desc->AddFlag("verbose", "Be verbose on reporting");
     arg_desc->AddFlag("huge", "Try opening files in huge mode");
@@ -964,7 +965,12 @@ int CTbl2AsnApp::Run()
         return 0;
     } else {
         m_logger->Dump();
-        //m_logger->DumpAsXML(NcbiCout);
+        if (args["logxml"]) {
+            CNcbiOstream& log_xml = args["logxml"].AsOutputFile();
+            log_xml << "<logmessages>" << endl;
+            m_logger->DumpAsXML(log_xml);
+            log_xml << "</logmessages>" << endl;
+        }
 
         size_t errors = m_logger->LevelCount(eDiag_Critical) +
             m_logger->LevelCount(eDiag_Error) +
