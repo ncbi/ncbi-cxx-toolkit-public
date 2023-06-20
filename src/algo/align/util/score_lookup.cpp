@@ -55,6 +55,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/taxon1/taxon1.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -1253,8 +1254,9 @@ private:
 class CScore_Taxid : public CScoreLookup::IScore
 {
 public:
-    CScore_Taxid(int row)
+    CScore_Taxid(int row, const string &rank = "")
         : m_Row(row)
+        , m_Rank(rank)
     {
     }
 
@@ -1274,16 +1276,18 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
-        return TAX_ID_TO(double, scope->GetTaxId(align.GetSeq_id(m_Row)));
-
-        /**
-        return sequence::GetTaxId
-            (scope->GetBioseqHandle(align.GetSeq_id(m_Row)));
-            **/
+        TTaxId taxid = scope->GetTaxId(align.GetSeq_id(m_Row));
+        if (!m_Rank.empty()) {
+            m_Taxon.Init();
+            taxid = m_Taxon.GetAncestorByRank(taxid, m_Rank.c_str());
+        }
+        return TAX_ID_TO(double, taxid);
     }
 
 private:
     int m_Row;
+    string m_Rank;
+    mutable CTaxon1 m_Taxon;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -2083,6 +2087,14 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("subject_taxid",
           CIRef<IScore>(new CScore_Taxid(1))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_species",
+          CIRef<IScore>(new CScore_Taxid(0, "species"))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_species",
+          CIRef<IScore>(new CScore_Taxid(1, "species"))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
