@@ -843,6 +843,7 @@ struct SInvertVDB_CDD {
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD)
 {
+    if (!s_HaveID2() || CId2Reader::GetVDB_CDD_Enabled()) return;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -853,6 +854,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
+    if (!s_HaveID2() || !CId2Reader::GetVDB_CDD_Enabled()) return;
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -864,6 +866,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 {
+    if (!s_HaveID2() || CId2Reader::GetVDB_CDD_Enabled()) return;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -874,6 +877,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
+    if (!s_HaveID2() || !CId2Reader::GetVDB_CDD_Enabled()) return;
     SInvertVDB_CDD invert;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
@@ -914,7 +918,7 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 
 
 BOOST_AUTO_TEST_CASE(CheckExtSTS)
-{ 	 
+{
     LOG_POST("Checking ExtAnnot STS"); 	 
     SAnnotSelector sel(CSeqFeatData::eSubtype_STS); 	 
     sel.SetResolveAll().SetAdaptiveDepth(); 	 
