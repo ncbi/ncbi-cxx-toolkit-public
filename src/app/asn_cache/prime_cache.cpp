@@ -37,6 +37,7 @@
 #include <corelib/ncbi_signal.hpp>
 
 #include <util/static_map.hpp>
+#include <util/stream_source.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
 
@@ -221,6 +222,11 @@ private:
     friend class CCacheBioseq;
     
 private: // data 
+    struct SOrgData {
+        CRef<CSeqdesc> biosource;
+        CRef<COrg_ref> orgref;
+    };
+
     string m_CachePath;
     CChunkFile m_MainChunk;
     CSeqIdChunkFile m_SeqIdChunk;
@@ -228,8 +234,8 @@ private: // data
     CAsnIndex  m_SeqIdIndex;
     CSeq_inst::EMol m_InstMol;
     CRef<CSeqdesc> m_MolInfo;
-    CRef<CSeqdesc> m_Biosource;
-    CRef<COrg_ref> m_Orgref;
+    map<TTaxId, SOrgData> m_Orgs;
+    map<string, TTaxId> m_SequenceTaxids;
     CBioSource::EGenome m_Genome ;
     list< CRef<CSeqdesc> > m_other_descs;
     sequence::EGetIdType m_id_type;
@@ -310,6 +316,16 @@ void CPrimeCacheApplication::Init(void)
     arg_desc->AddOptionalKey("taxid", "Taxid",
                              "Taxid of input FASTA sequences",
                              CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("taxid-table", "TaxidTable",
+                             "Table of taxids specified for individual sequences",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("taxid-table-manifest", "TaxidTableManifest",
+                             "Manifest of taxid tables",
+                             CArgDescriptions::eInputFile);
+    arg_desc->SetDependency("taxid-table-manifest",
+                            CArgDescriptions::eExcludes, "taxid-table");
+
     CLocalTaxon::AddArguments(*arg_desc);
 
     arg_desc->AddOptionalKey("molinfo", "Molinfo",
@@ -325,6 +341,16 @@ void CPrimeCacheApplication::Init(void)
     arg_desc->AddOptionalKey("biosource", "Biosource",
                              "genome source of sequences",
                              CArgDescriptions::eString);
+
+    arg_desc->SetDependency("biosource", CArgDescriptions::eExcludes,
+                            "taxid-table");
+    arg_desc->SetDependency("biosource", CArgDescriptions::eExcludes,
+                            "taxid-table-manifest");
+    arg_desc->SetDependency("submit-block-template", CArgDescriptions::eExcludes,
+                            "taxid-table");
+    arg_desc->SetDependency("submit-block-template", CArgDescriptions::eExcludes,
+                            "taxid-table-manifest");
+
 
     CArgAllow_Strings *biosource_options = new CArgAllow_Strings;
     ITERATE (TGenomeTypeMap, it, sm_GenomeTypes) {
@@ -521,6 +547,12 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
             continue;
         }
 
+        TTaxId taxid = m_SequenceTaxids.count(idh.AsString())
+                    ? m_SequenceTaxids[idh.AsString()]
+                    : (m_SequenceTaxids.count("")
+                    ? m_SequenceTaxids[""] : ZERO_TAX_ID);
+        SOrgData &org_data = m_Orgs[taxid];
+
         entry->SetSeq().SetInst().SetMol(m_InstMol);
         auto& descs  = entry->SetSeq().SetDescr().Set();
         bool molinfo_found=false;
@@ -549,12 +581,12 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
                       ) {
                             desc->SetSource().SetGenome(m_Genome );
                     }
-                    if(m_Orgref &&
+                    if(org_data.orgref &&
                         ( 
                             ! desc->GetSource().IsSetOrg() || ! desc->GetSource().GetOrg().IsSetOrgname()
                         )
                        ) {
-                        desc->SetSource().SetOrg().Assign(*m_Orgref);
+                        desc->SetSource().SetOrg().Assign(*org_data.orgref);
                     }
                     break;
                 default:
@@ -564,8 +596,8 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         if(!molinfo_found && m_MolInfo) {
             descs.push_back(m_MolInfo);
         }
-        if(!source_found && m_Biosource) {
-            descs.push_back(m_Biosource);
+        if(!source_found && org_data.biosource) {
+            descs.push_back(org_data.biosource);
         }
             
         if (m_other_descs.size()>0) {
@@ -649,8 +681,9 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
             if (m_MolInfo) {
                 entry->SetSeq().SetDescr().Set().push_back(m_MolInfo);
             }
-            if (m_Biosource) {
-                entry->SetSeq().SetDescr().Set().push_back(m_Biosource);
+            if (m_Orgs.begin()->second.biosource) {
+                entry->SetSeq().SetDescr().Set().push_back(
+                    m_Orgs.begin()->second.biosource);
             }
             if (m_other_descs.size()>0) {
                 NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
@@ -862,7 +895,7 @@ void CPrimeCacheApplication::x_Process_Ids(const set<CSeq_id_Handle> &ids,
 
         // extract canonical IDs
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
-            CSeq_id_Handle idh = sequence::GetId(*bioseq_it, m_id_type);
+            idh = sequence::GetId(*bioseq_it, m_id_type);
             if ( trimmed_bioseqs.empty() || !trimmed_bioseqs.count(idh) ) {
                 if (delta_level == 0) {
                     ostr_seqids << idh << '\n';
@@ -995,7 +1028,8 @@ int CPrimeCacheApplication::Run(void)
 
     string ifmt = args["ifmt"].AsString();
 
-    if ((args["taxid"] || args["molinfo"] || args["biosource"]  || args["submit-block-template"])
+    if ((args["taxid"] || args["taxid-table"] || args["taxid-table-manifest"] ||
+         args["molinfo"] || args["biosource"]  || args["submit-block-template"])
         && ifmt != "fasta" && ifmt != "csra")
     {
         NCBI_THROW(CException, eUnknown,
@@ -1007,30 +1041,63 @@ int CPrimeCacheApplication::Run(void)
                    "Resume only supported with fasta or SRA input");
     }
 
-    if (args["taxid"]) {
-        CLocalTaxon taxon(args);
-        TTaxId taxid = TAX_ID_FROM(TIntId, args["taxid"].AsIntId());
-        CConstRef<COrg_ref> ref =
-            taxon.GetOrgRef(taxid);
-        if ( !ref ) {
-            NCBI_THROW(CException, eUnknown,
-                        "failed to find Org-ref for taxid " +
-                        NStr::NumericToString(taxid));
+    if (args["taxid"] || args["taxid-table"] || args["taxid-table-manifest"]) {
+        if (args["taxid"]) {
+            m_SequenceTaxids[""] = TAX_ID_FROM(TIntId, args["taxid"].AsIntId());
+        }
+        CInputStreamSource taxids_source;
+        if (args["taxid-table"]) {
+            taxids_source.InitStream(args["taxid-table"].AsInputFile());
+        } else if (args["taxid-table-manifest"]) {
+            taxids_source.InitManifest(args["taxid-table-manifest"].AsString());
+        }
+        for (; taxids_source; ++taxids_source) {
+            string line;
+            while (NcbiGetlineEOL(*taxids_source, line)) {
+                if (line.empty() || line[0] == '#') {
+                    continue;
+                }
+                vector<string> tokens;
+                NStr::Split(line, "\t", tokens);
+                m_SequenceTaxids[CSeq_id_Handle::GetHandle(tokens[0]).AsString()]
+                    = TAX_ID_FROM(int, NStr::StringToNumeric<TIntId>(tokens[1]));
+            }
         }
 
-        m_Biosource.Reset(new CSeqdesc);
-        m_Biosource->SetSource().SetOrg().Assign(*ref);
-        m_Orgref.Reset(new COrg_ref);
-        m_Orgref->Assign(*ref);
+        CLocalTaxon taxon(args);
+        for (const pair<const string, TTaxId> &seq_taxid : m_SequenceTaxids)
+        {
+            TTaxId taxid = seq_taxid.second;
+            if (m_Orgs.count(taxid)) {
+                continue;
+            }
+
+            CConstRef<COrg_ref> ref = taxon.GetOrgRef(taxid);
+            if ( !ref ) {
+                NCBI_THROW(CException, eUnknown,
+                            "failed to find Org-ref for taxid " +
+                            NStr::NumericToString(taxid));
+            }
+
+            m_Orgs[taxid].biosource.Reset(new CSeqdesc);
+            m_Orgs[taxid].biosource->SetSource().SetOrg().Assign(*ref);
+            m_Orgs[taxid].orgref.Reset(new COrg_ref);
+            m_Orgs[taxid].orgref->Assign(*ref);
+        }
+    }
+
+    if (m_Orgs.empty()) {
+        /// No taxid specified in arguments; create catch-all organism entry
+        m_Orgs[ZERO_TAX_ID];
     }
 
     m_InstMol = sm_InstMolTypes.find(args["inst-mol"].AsString().c_str())->second;
 
     if (args["biosource"]) {
-        if (!m_Biosource) {
-            m_Biosource.Reset(new CSeqdesc);
+        if (!m_Orgs.begin()->second.biosource) {
+            m_Orgs.begin()->second.biosource.Reset(new CSeqdesc);
         }
-        m_Biosource->SetSource().SetGenome(
+        m_Orgs.begin()->second.biosource->SetSource().SetGenome(
             sm_GenomeTypes.find(args["biosource"].AsString().c_str())->second);
         m_Genome = sm_GenomeTypes.find(args["biosource"].AsString().c_str())->second;
         
@@ -1057,12 +1124,15 @@ int CPrimeCacheApplication::Run(void)
 
                 switch (desc->Which()) {
                 case CSeqdesc::e_Source:
-                    m_Biosource = desc;
-                    if(!m_Orgref) {
-                        m_Orgref.Reset(new COrg_ref);
+                    {{
+                    SOrgData &org_data = m_Orgs.begin()->second;
+                    org_data.biosource = desc;
+                    if(!org_data.orgref) {
+                        org_data.orgref.Reset(new COrg_ref);
                     }
-                    m_Orgref->Assign(desc->GetSource().GetOrg() );
+                    org_data.orgref->Assign(desc->GetSource().GetOrg() );
                     break;
+                    }}
 
                 case CSeqdesc::e_Molinfo:
                     m_MolInfo = desc;
