@@ -83,6 +83,9 @@ CProfileData::Load(EMapChoice choice,
 
     case eGetResFreqs:
 
+        // FIXME: The header for frequency ratios file is now the same as
+        // for the PSSM file. We do not have to open both for the header.
+
         // to avoid exhausting virtual memory, do not keep
         // the residue frequency file and the PSSM file 
         // simultaneously open. Instead, copy the list of
@@ -97,7 +100,10 @@ CProfileData::Load(EMapChoice choice,
 
         m_ResFreqMmap = new CMemoryFile(resfreq_file);
         m_ResFreqRows = new Int4 * [num_rows];
-        Int4* resfreq_start = (Int4*)(m_ResFreqMmap->GetPtr());
+        // The resfreqs file has the same header as the Pssm file
+        // (see BlastRPSProfileHeader), we are skipping the header here
+        // because it was copied from the Pssm file.
+        Int4* resfreq_start = (Int4*)(m_ResFreqMmap->GetPtr()) + num_db_seqs + 1 + 2;
 
         for (int i = 0; i < num_rows; i++) {
             m_ResFreqRows[i] = resfreq_start + kAlphabetSize * i;
