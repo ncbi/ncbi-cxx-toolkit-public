@@ -36,6 +36,7 @@
  */
 
 #include <type_traits>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
 #include <array>
