@@ -764,10 +764,10 @@ template <class TImpl>
 struct SPSG_Thread : public TImpl
 {
     template <class... TArgs>
-    SPSG_Thread(SUv_Barrier& barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
+    SPSG_Thread(SUv_Barrier& start_barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
         TImpl(forward<TArgs>(args)...),
         m_Timer(this, s_OnTimer, timeout, repeat),
-        m_Thread(s_Execute, this, ref(barrier))
+        m_Thread(s_Execute, this, ref(start_barrier))
     {}
 
     ~SPSG_Thread()
@@ -793,7 +793,7 @@ private:
         io->TImpl::OnTimer(handle);
     }
 
-    static void s_Execute(SPSG_Thread* io, SUv_Barrier& barrier)
+    static void s_Execute(SPSG_Thread* io, SUv_Barrier& start_barrier)
     {
         SUv_Loop loop;
 
@@ -802,7 +802,7 @@ private:
         io->m_Timer.Init(&loop);
         io->m_Timer.Start();
 
-        barrier.Wait();
+        start_barrier.Wait();
 
         loop.Run();
 
@@ -1080,7 +1080,7 @@ public:
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
-    SUv_Barrier m_Barrier;
+    SUv_Barrier m_StartBarrier;
     TPSG_AsyncQueues m_Queues;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;

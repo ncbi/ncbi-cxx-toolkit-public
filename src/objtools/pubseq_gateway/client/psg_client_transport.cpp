@@ -1828,8 +1828,8 @@ uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     stats(s_GetStats(m_Servers)),
-    m_Barrier(TPSG_NumIo::GetDefault() + 2),
-    m_Discovery(m_Barrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, m_Queues),
+    m_StartBarrier(TPSG_NumIo::GetDefault() + 2),
+    m_Discovery(m_StartBarrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, m_Queues),
     m_RequestCounter(0),
     m_RequestId(1)
 {
@@ -1837,10 +1837,10 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
 
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_Barrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back(m_Queues)));
+        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_StartBarrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back(m_Queues)));
     }
 
-    m_Barrier.Wait();
+    m_StartBarrier.Wait();
 }
 
 bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool&, const CDeadline&)
