@@ -764,18 +764,22 @@ template <class TImpl>
 struct SPSG_Thread : public TImpl
 {
     template <class... TArgs>
-    SPSG_Thread(SUv_Barrier& start_barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
+    SPSG_Thread(SUv_Barrier& start_barrier, SUv_Barrier& stop_barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
         TImpl(forward<TArgs>(args)...),
         m_Timer(this, s_OnTimer, timeout, repeat),
-        m_Thread(s_Execute, this, ref(start_barrier))
+        m_Thread(s_Execute, this, ref(start_barrier), ref(stop_barrier))
     {}
 
     ~SPSG_Thread()
     {
         if (m_Thread.joinable()) {
-            m_Shutdown.Signal();
             m_Thread.join();
         }
+    }
+
+    void Shutdown()
+    {
+        m_Shutdown.Signal();
     }
 
 private:
@@ -793,7 +797,7 @@ private:
         io->TImpl::OnTimer(handle);
     }
 
-    static void s_Execute(SPSG_Thread* io, SUv_Barrier& start_barrier)
+    static void s_Execute(SPSG_Thread* io, SUv_Barrier& start_barrier, SUv_Barrier& stop_barrier)
     {
         SUv_Loop loop;
 
@@ -807,6 +811,8 @@ private:
         loop.Run();
 
         io->TImpl::AfterExecute();
+
+        stop_barrier.Wait();
     }
 
     SUv_Async m_Shutdown;
@@ -1075,12 +1081,14 @@ public:
     shared_ptr<SPSG_Stats> stats;
 
     SPSG_IoCoordinator(CServiceDiscovery service);
+    ~SPSG_IoCoordinator();
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     string GetNewRequestId() { return to_string(m_RequestId++); }
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
     SUv_Barrier m_StartBarrier;
+    SUv_Barrier m_StopBarrier;
     TPSG_AsyncQueues m_Queues;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
