@@ -41,6 +41,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #include "bulkinfo_tester.hpp"
 
@@ -154,7 +155,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eInteger, "1");
     string size_limit = "1000000";
     // ThreadSanitizer has a limit on number of mutexes held by a thread
-#ifdef __SANITIZE_THREAD__
+#ifdef NCBI_USE_TSAN
     size_limit = "20";
 #endif
     args.AddDefaultKey
