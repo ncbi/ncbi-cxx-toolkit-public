@@ -2322,7 +2322,7 @@ BOOST_AUTO_TEST_CASE(ResolveDbPath)
     typedef vector< TStringBool > TStringBoolVec;
 
     TStringBoolVec paths;
-    paths.push_back(TStringBool(true, "nt.00.nin"));
+    paths.push_back(TStringBool(true, "nt.000.nin"));
     paths.push_back(TStringBool(true, "Test/ITS_RefSeq_Fungi.nal"));
     paths.push_back(TStringBool(true, "taxdb.bti"));
     paths.push_back(TStringBool(true, "data/seqp.pin"));
