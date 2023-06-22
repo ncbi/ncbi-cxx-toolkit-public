@@ -167,7 +167,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         // Nothing was found
         app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                   eOpStatusNotFound, m_BioseqRequestStart);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
+        app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
         if (IsINSDCSeqIdType(m_BioseqResolution.GetBioseqInfo().GetSeqIdType())) {
             // Second try without seq_id_type
@@ -199,7 +199,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
         app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                   m_BioseqRequestStart);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
+        app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
         m_BioseqResolution.SetBioseqInfo(records[0]);
         m_FinishedCB(move(m_BioseqResolution));
         return;
@@ -211,7 +211,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         // More than one and it was impossible to make a choice
         app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                   eOpStatusNotFound, m_BioseqRequestStart);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
+        app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
         if (m_NeedTrace)
             m_Reply->SendTrace(
@@ -242,7 +242,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
     app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                               m_BioseqRequestStart);
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
+    app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
     m_BioseqResolution.SetBioseqInfo(records[index]);
     m_FinishedCB(move(m_BioseqResolution));
 }
@@ -278,7 +278,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                       eOpStatusFound, m_BioseqRequestStart);
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundOne);
+            app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
             m_BioseqResolution.SetBioseqInfo(records[decision.index]);
 
             // Data callback
@@ -293,7 +293,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                       eOpStatusNotFound, m_BioseqRequestStart);
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
+            app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoNotFound);
 
             // Data Callback
             // An empty message means for the upper level that this is a
@@ -310,7 +310,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                       eOpStatusFound, m_BioseqRequestStart);
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoFoundMany);
+            app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundMany);
 
             // Error callback
             m_ErrorCB(CRequestStatus::e500_InternalServerError,
@@ -343,7 +343,9 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoError(CRequestStatus::ECode  status,
         m_NoSeqIdTypeFetch->SetReadFinished();
     }
 
-    CPubseqGatewayApp::GetInstance()->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoError);
+    CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                        this,
+                                        CPSGSCounters::ePSGS_BioseqInfoError);
 
     m_ErrorCB(status, code, severity, message, ePSGS_NeedLogging);
 }

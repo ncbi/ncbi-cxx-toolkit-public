@@ -55,7 +55,8 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
 
     if (parts.size() < 3) {
         if (count_errors)
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_InvalidId2InfoError);
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_InvalidId2InfoError);
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    "Invalid id2 info '" + id2_info +
                    "'. Expected 3 or more parts, found " +
@@ -73,7 +74,8 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
         }
     } catch (...) {
         if (count_errors)
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_InvalidId2InfoError);
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_InvalidId2InfoError);
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    "Invalid id2 info '" + id2_info +
                    "'. Cannot convert parts into integers.");
@@ -104,7 +106,8 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
 
     if (!validate_message.empty()) {
         if (count_errors)
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_InvalidId2InfoError);
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_InvalidId2InfoError);
         NCBI_THROW(CPubseqGatewayException, eInvalidId2Info,
                    validate_message);
     }

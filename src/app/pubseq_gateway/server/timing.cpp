@@ -314,10 +314,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    const string &  stat_type,
                                    unsigned long  small_blob_size,
                                    const string &  only_for_processor,
-                                   size_t  log_timing_threshold) :
+                                   size_t  log_timing_threshold,
+                                   const map<string, size_t> &  proc_group_to_index) :
     m_OnlyForProcessor(only_for_processor),
     m_LogTimingThresholdMks(log_timing_threshold * 1000),
-    m_HugeBlobByteCounter(0)
+    m_ProcGroupToIndex(proc_group_to_index)
 {
     auto        scale_type = TOnePSGTiming::eLog2;
     if (NStr::CompareNocase(stat_type, "linear") == 0)
@@ -359,11 +360,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 new CCassResolutionTiming(min_stat_value, max_stat_value,
                                           n_bins, scale_type, reset_to_default)));
 
-        m_NARetrieveTiming.push_back(
-            unique_ptr<CNARetrieveTiming>(
-                new CNARetrieveTiming(min_stat_value, max_stat_value,
-                                      n_bins, scale_type, reset_to_default)));
-
         m_SplitHistoryRetrieveTiming.push_back(
             unique_ptr<CSplitHistoryRetrieveTiming>(
                 new CSplitHistoryRetrieveTiming(min_stat_value, max_stat_value,
@@ -384,16 +380,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 new CIPGResolveRetrieveTiming(min_stat_value, max_stat_value,
                                               n_bins, scale_type, reset_to_default)));
 
-        m_TSEChunkRetrieveTiming.push_back(
-            unique_ptr<CTSEChunkRetrieveTiming>(
-                new CTSEChunkRetrieveTiming(min_stat_value, max_stat_value,
-                                            n_bins, scale_type, reset_to_default)));
-
-        m_NAResolveTiming.push_back(
-            unique_ptr<CNAResolveTiming>(
-                new CNAResolveTiming(min_stat_value, max_stat_value,
-                                     n_bins, scale_type, reset_to_default)));
-
         m_VDBOpenTiming.push_back(
             unique_ptr<CVDBOpenTiming>(
                 new CVDBOpenTiming(min_stat_value, max_stat_value,
@@ -411,24 +397,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
 
     }
 
-    m_HugeBlobRetrievalTiming.reset(
-        new CHugeBlobRetrieveTiming(min_stat_value, max_stat_value,
-                                    n_bins, scale_type, reset_to_default));
-    m_NotFoundBlobRetrievalTiming.reset(
-        new CNotFoundBlobRetrieveTiming(min_stat_value, max_stat_value,
-                                        n_bins, scale_type, reset_to_default));
-
-    // Resolution timing
-    m_ResolutionErrorTiming.reset(
-        new CResolutionTiming(min_stat_value, max_stat_value,
-                              n_bins, scale_type, reset_to_default));
-    m_ResolutionNotFoundTiming.reset(
-        new CResolutionTiming(min_stat_value, max_stat_value,
-                              n_bins, scale_type, reset_to_default));
-    m_ResolutionFoundTiming.reset(
-        new CResolutionTiming(min_stat_value, max_stat_value,
-                              n_bins, scale_type, reset_to_default));
-
     m_BacklogTiming.reset(
         new CBacklogTiming(min_stat_value, max_stat_value,
                            n_bins, scale_type, reset_to_default));
@@ -443,6 +411,11 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     }
 
 
+    for (size_t  k=0; k < m_ProcGroupToIndex.size(); ++k) {
+        m_BlobRetrieveTiming.push_back(vector<unique_ptr<CBlobRetrieveTiming>>());
+        m_HugeBlobByteCounter.push_back(0);
+        m_BlobByteCounters.push_back(vector<uint64_t>());
+    }
     reset_to_default |= x_SetupBlobSizeBins(min_stat_value, max_stat_value,
                                             n_bins, scale_type, small_blob_size);
 
@@ -568,19 +541,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "start: first Cassandra query)"
                )
         },
-        { "NARetrieveFound",
-          SInfo(m_NARetrieveTiming[0].get(),
-                "Named annotations found",
-                "The timing of named annotations successful retrieval"
-               )
-        },
-        { "NARetrieveNotFound",
-          SInfo(m_NARetrieveTiming[1].get(),
-                "Named annotations not found",
-                "The timing of named annotations retrieval "
-                "when nothing was found"
-               )
-        },
         { "SplitHistoryRetrieveFound",
           SInfo(m_SplitHistoryRetrieveTiming[0].get(),
                 "Split history found",
@@ -633,32 +593,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "when nothing was found"
                )
         },
-        { "TSEChunkRetrieveFound",
-          SInfo(m_TSEChunkRetrieveTiming[0].get(),
-                "TSE chunk found",
-                "The timing of a TSE chunk retrieval"
-               )
-        },
-        { "TSEChunkRetrieveNotFound",
-          SInfo(m_TSEChunkRetrieveTiming[1].get(),
-                "TSE chunk not found",
-                "The timing of a TSE chunk retrieval "
-                "when nothing was found"
-               )
-        },
-        { "NAResolveFound",
-          SInfo(m_NAResolveTiming[0].get(),
-                "NA resolution found (non-cassandra)",
-                "The timing of the NA resolution for non-cassandra processors"
-               )
-        },
-        { "NAResolveNotFound",
-          SInfo(m_NAResolveTiming[1].get(),
-                "NA resolution not found (non-cassandra)",
-                "The timing of the NA resolution for non-cassandra processors "
-                "when nothing was found"
-               )
-        },
         { "VDBOpenSuccess",
           SInfo(m_VDBOpenTiming[0].get(),
                 "VDB opening success",
@@ -693,46 +627,6 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
           SInfo(m_WGSVDBLookupTiming[1].get(),
                 "WGS VDB lookup not found",
                 "The timing of the WGS VDB lookup when nothing was found"
-               )
-        },
-        { "HugeBlobRetrieval",
-          SInfo(m_HugeBlobRetrievalTiming.get(),
-                "Huge blob retrieval",
-                "The timing of the very large blob retrieval",
-                &m_HugeBlobByteCounter,
-                "HugeBlobByteCounter",
-                "Huge blob bytes counter",
-                "The number of bytes transferred to the user as very large blobs"
-               )
-        },
-        { "BlobRetrievalNotFound",
-          SInfo(m_NotFoundBlobRetrievalTiming.get(),
-                "Blob retrieval not found",
-                "The timing of blob retrieval when a blob was not found"
-               )
-        },
-        { "ResolutionError",
-          SInfo(m_ResolutionErrorTiming.get(),
-                "Resolution error",
-                "The timing of a case when an error was detected while "
-                "resolving seq id regardless it was cache, Cassandra or both "
-                "(start: request is received)"
-               )
-        },
-        { "ResolutionNotFound",
-          SInfo(m_ResolutionNotFoundTiming.get(),
-                "Resolution not found",
-                "The timing of a case when resolution of a seq id did not succeed "
-                "regardless it was cache, Cassandra or both "
-                "(start: request is received)"
-               )
-        },
-        { "ResolutionFound",
-          SInfo(m_ResolutionFoundTiming.get(),
-                "Resolution succeeded",
-                "The timing of a seq id successful resolution regardless it "
-                "was cache, Cassandra or both "
-                "(start: request is received)"
                )
         },
         { "Backlog",
@@ -778,30 +672,167 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         }
     };
 
-    size_t      index = 0;
-    for (auto & retieve_timing : m_BlobRetrieveTiming) {
-        string      min_size_str = to_string(retieve_timing->GetMinBlobSize());
-        string      max_size_str = to_string(retieve_timing->GetMaxBlobSize());
-        string      id = "BlobRetrievalFrom" + min_size_str + "To" + max_size_str;
-        string      name = "Blob retrieval (size: " +
-                        min_size_str + " to " + max_size_str + ")";
-        string      description = "The timing of a blob retrieval when "
-                        "the blob size is between " + min_size_str +
-                        " and " + max_size_str + " bytes";
 
-        string      counter_id = "BlobByteCounterFrom" + min_size_str +
-                                 "To" + max_size_str;
-        string      counter_name = "Blob byte counter (blob size: " +
-                                   min_size_str + " to " + max_size_str + ")";
-        string      counter_description = "The number of bytes transferred to "
-                                          "the user as blobs size between " +
-                                          min_size_str + " and " +
-                                          max_size_str;
-        m_NamesMap[id] = SInfo(retieve_timing.get(), name, description,
-                               &m_BlobByteCounters[index],
-                               counter_id, counter_name, counter_description);
-        ++index;
+    // Per processor timing
+    string      proc_group_names[m_ProcGroupToIndex.size()];
+    for (const auto &  item : m_ProcGroupToIndex) {
+        proc_group_names[item.second] = item.first;
     }
+
+    for (const auto &  proc_group : proc_group_names) {
+        string      id = proc_group + "ResolutionError";
+        m_ResolutionErrorTiming.push_back(
+            unique_ptr<CResolutionTiming>(
+                new CResolutionTiming(min_stat_value, max_stat_value,
+                                      n_bins, scale_type, reset_to_default)));
+
+        m_NamesMap[id] = SInfo(m_ResolutionErrorTiming.back().get(),
+                               proc_group + " resolution error",
+                               "The timing of a case when an error was detected while "
+                               "resolving seq id (by " + proc_group +
+                               ") regardless of the resolution path "
+                               "(start: request is received)");
+
+        id = proc_group + "ResolutionNotFound";
+        m_ResolutionNotFoundTiming.push_back(
+            unique_ptr<CResolutionTiming>(
+                new CResolutionTiming(min_stat_value, max_stat_value,
+                                      n_bins, scale_type, reset_to_default)));
+        m_NamesMap[id] = SInfo(m_ResolutionNotFoundTiming.back().get(),
+                               proc_group + " resolution not found",
+                               "The timing of a case when resolution of a seq id did not succeed "
+                               "(by " + proc_group + ") regardless of the resolution path "
+                               "(start: request is received)");
+
+        id = proc_group + "ResolutionFound";
+        m_ResolutionFoundTiming.push_back(
+            unique_ptr<CResolutionTiming>(
+                new CResolutionTiming(min_stat_value, max_stat_value,
+                                      n_bins, scale_type, reset_to_default)));
+        m_NamesMap[id] = SInfo(m_ResolutionFoundTiming.back().get(),
+                               proc_group + " resolution succeeded",
+                               "The timing of a seq id successful resolution (by " +
+                               proc_group + ") regardless of the resolution path "
+                               "(start: request is received)");
+
+        m_NARetrieveTiming.push_back(vector<unique_ptr<CNARetrieveTiming>>());
+        m_NARetrieveTiming.back().push_back(
+            unique_ptr<CNARetrieveTiming>(
+                new CNARetrieveTiming(min_stat_value, max_stat_value,
+                                      n_bins, scale_type, reset_to_default)));
+        id = proc_group + "NARetrieveFound";
+        m_NamesMap[id] = SInfo(m_NARetrieveTiming.back().back().get(),
+                               proc_group + " named annotations found",
+                               "The timing of named annotations successful retrieval (by " +
+                               proc_group + ")");
+
+        id = proc_group + "NARetrieveNotFound";
+        m_NARetrieveTiming.back().push_back(
+            unique_ptr<CNARetrieveTiming>(
+                new CNARetrieveTiming(min_stat_value, max_stat_value,
+                                      n_bins, scale_type, reset_to_default)));
+        m_NamesMap[id] = SInfo(m_NARetrieveTiming.back().back().get(),
+                               proc_group + " named annotations not found",
+                               "The timing of named annotations retrieval "
+                               "when nothing was found (by " + proc_group + ")");
+
+        m_TSEChunkRetrieveTiming.push_back(vector<unique_ptr<CTSEChunkRetrieveTiming>>());
+        m_TSEChunkRetrieveTiming.back().push_back(
+            unique_ptr<CTSEChunkRetrieveTiming>(
+                new CTSEChunkRetrieveTiming(min_stat_value, max_stat_value,
+                                            n_bins, scale_type, reset_to_default)));
+        id = proc_group + "TSEChunkRetrieveFound";
+        m_NamesMap[id] = SInfo(m_TSEChunkRetrieveTiming.back().back().get(),
+                               proc_group + " TSE chunk found",
+                               "The timing of a TSE chunk retrieval (by " + proc_group + ")");
+
+        m_TSEChunkRetrieveTiming.back().push_back(
+            unique_ptr<CTSEChunkRetrieveTiming>(
+                new CTSEChunkRetrieveTiming(min_stat_value, max_stat_value,
+                                            n_bins, scale_type, reset_to_default)));
+        id = proc_group + "TSEChunkRetrieveNotFound";
+        m_NamesMap[id] = SInfo(m_TSEChunkRetrieveTiming.back().back().get(),
+                               proc_group + " TSE chunk not found",
+                               "The timing of a TSE chunk retrieval "
+                               "when nothing was found (by " + proc_group + ")");
+
+        m_NAResolveTiming.push_back(vector<unique_ptr<CNAResolveTiming>>());
+        m_NAResolveTiming.back().push_back(
+            unique_ptr<CNAResolveTiming>(
+                new CNAResolveTiming(min_stat_value, max_stat_value,
+                                     n_bins, scale_type, reset_to_default)));
+        id = proc_group + "NAResolveFound";
+        m_NamesMap[id] = SInfo(m_NAResolveTiming.back().back().get(),
+                               proc_group + " NA resolution found",
+                               "The timing of the NA resolution (by " + proc_group + ")");
+
+        m_NAResolveTiming.back().push_back(
+            unique_ptr<CNAResolveTiming>(
+                new CNAResolveTiming(min_stat_value, max_stat_value,
+                                     n_bins, scale_type, reset_to_default)));
+        id = proc_group + "NAResolveNotFound";
+        m_NamesMap[id] = SInfo(m_NAResolveTiming.back().back().get(),
+                               proc_group + " NA resolution not found",
+                               "The timing of the NA resolution "
+                               "when nothing was found (by " + proc_group + ")");
+
+
+        m_HugeBlobRetrievalTiming.push_back(
+            unique_ptr<CHugeBlobRetrieveTiming>(
+                new CHugeBlobRetrieveTiming(min_stat_value, max_stat_value,
+                                            n_bins, scale_type, reset_to_default)));
+        id = proc_group + "HugeBlobRetrieval";
+        m_NamesMap[id] = SInfo(m_HugeBlobRetrievalTiming.back().get(),
+                               proc_group + " huge blob retrieval",
+                               "The timing of the very large blob retrieval",
+                               &m_HugeBlobByteCounter[m_ProcGroupToIndex[proc_group]],
+                               proc_group + "HugeBlobByteCounter",
+                               proc_group + " huge blob bytes counter",
+                               "The number of bytes transferred to the user as very large blobs by " + proc_group
+                              );
+
+        m_NotFoundBlobRetrievalTiming.push_back(
+            unique_ptr<CNotFoundBlobRetrieveTiming>(
+                new CNotFoundBlobRetrieveTiming(min_stat_value, max_stat_value,
+                                                n_bins, scale_type, reset_to_default)));
+        id = proc_group + "BlobRetrievalNotFound";
+        m_NamesMap[id] = SInfo(m_NotFoundBlobRetrievalTiming.back().get(),
+                               proc_group + " blob retrieval not found",
+                               "The timing of blob retrieval when a blob was not found by " + proc_group);
+
+        size_t      index = 0;
+        for (auto & retieve_timing : m_BlobRetrieveTiming[m_ProcGroupToIndex[proc_group]]) {
+            string      min_size_str = to_string(retieve_timing->GetMinBlobSize());
+            string      max_size_str = to_string(retieve_timing->GetMaxBlobSize());
+            string      id = proc_group + "BlobRetrievalFrom" + min_size_str + "To" + max_size_str;
+            string      name = proc_group + " Blob retrieval (size: " +
+                            min_size_str + " to " + max_size_str + ")";
+            string      description = "The timing of a blob retrieval when "
+                            "the blob size is between " + min_size_str +
+                            " and " + max_size_str + " bytes";
+
+            string      counter_id = proc_group + "BlobByteCounterFrom" + min_size_str +
+                                     "To" + max_size_str;
+            string      counter_name = "Blob byte counter (blob size: " +
+                                       min_size_str + " to " + max_size_str + ") by " + proc_group;
+            string      counter_description = "The number of bytes transferred to "
+                                              "the user as blobs size between " +
+                                              min_size_str + " and " +
+                                              max_size_str + " by " + proc_group;
+            m_NamesMap[id] = SInfo(retieve_timing.get(), name, description,
+                                   &m_BlobByteCounters[m_ProcGroupToIndex[proc_group]][index],
+                                   counter_id, counter_name, counter_description);
+            ++index;
+        }
+
+        // time series by processor
+        m_IdGetDoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
+        m_IdGetblobDoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
+        m_IdResolveDoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
+        m_IdGetTSEChunkDoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
+        m_IdGetNADoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
+    }
+
 
     // Overwrite the default names and descriptions with what came from
     // the configuration
@@ -862,41 +893,47 @@ bool COperationTiming::x_SetupBlobSizeBins(unsigned long  min_stat_value,
 {
     bool    reset_to_default = false;
 
-    m_BlobRetrieveTiming.push_back(
-            unique_ptr<CBlobRetrieveTiming>(
-                new CBlobRetrieveTiming(0, small_blob_size,
-                                        min_stat_value, max_stat_value,
-                                        n_bins, stat_type,
-                                        reset_to_default)));
-    m_BlobByteCounters.push_back(0);
-    m_Ends.push_back(small_blob_size);
-
-    unsigned long   range_end = small_blob_size;
-    unsigned long   range_start = range_end + 1;
-    size_t          k = 0;
-
-    for (;;) {
-        range_end = (size_t(1) << k) - 1;
-        if (range_end <= small_blob_size) {
-            ++k;
-            continue;
-        }
-
-        m_BlobRetrieveTiming.push_back(
+    for (size_t  j = 0; j < m_ProcGroupToIndex.size(); ++j) {
+        m_BlobRetrieveTiming[j].push_back(
                 unique_ptr<CBlobRetrieveTiming>(
-                    new CBlobRetrieveTiming(range_start, range_end,
+                    new CBlobRetrieveTiming(0, small_blob_size,
                                             min_stat_value, max_stat_value,
                                             n_bins, stat_type,
                                             reset_to_default)));
-        m_BlobByteCounters.push_back(0);
-        m_Ends.push_back(range_end);
+        m_BlobByteCounters[j].push_back(0);
 
-        range_start = range_end + 1;
-        if (range_start >= kMaxBlobSize)
-            break;
-        ++k;
+        if (j == 0)
+            m_Ends.push_back(small_blob_size);
+
+        unsigned long   range_end = small_blob_size;
+        unsigned long   range_start = range_end + 1;
+        size_t          k = 0;
+
+        for (;;) {
+            range_end = (size_t(1) << k) - 1;
+            if (range_end <= small_blob_size) {
+                ++k;
+                continue;
+            }
+
+            m_BlobRetrieveTiming[j].push_back(
+                    unique_ptr<CBlobRetrieveTiming>(
+                        new CBlobRetrieveTiming(range_start, range_end,
+                                                min_stat_value, max_stat_value,
+                                                n_bins, stat_type,
+                                                reset_to_default)));
+            m_BlobByteCounters[j].push_back(0);
+
+            if (j == 0)
+                m_Ends.push_back(range_end);
+
+            range_start = range_end + 1;
+            if (range_start >= kMaxBlobSize)
+                break;
+            ++k;
+        }
+
     }
-
     return reset_to_default;
 }
 
@@ -964,21 +1001,31 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
             m_ResolutionCassTiming[index]->Add(mks);
             break;
         case eBlobRetrieve:
-            if (status == eOpStatusNotFound)
-                m_NotFoundBlobRetrievalTiming->Add(mks);
-            else {
-                ssize_t     bin_index = x_GetBlobRetrievalBinIndex(blob_size);
-                if (bin_index < 0) {
-                    m_HugeBlobByteCounter += blob_size;
-                    m_HugeBlobRetrievalTiming->Add(mks);
-                } else {
-                    m_BlobByteCounters[bin_index] += blob_size;
-                    m_BlobRetrieveTiming[bin_index]->Add(mks);
+            if (processor) {
+                size_t      proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
+                if (status == eOpStatusNotFound)
+                    m_NotFoundBlobRetrievalTiming[proc_index]->Add(mks);
+                else {
+                    ssize_t     bin_index = x_GetBlobRetrievalBinIndex(blob_size);
+                    if (bin_index < 0) {
+                        m_HugeBlobByteCounter[proc_index] += blob_size;
+                        m_HugeBlobRetrievalTiming[proc_index]->Add(mks);
+                    } else {
+                        m_BlobByteCounters[proc_index][bin_index] += blob_size;
+                        m_BlobRetrieveTiming[proc_index][bin_index]->Add(mks);
+                    }
                 }
+            } else {
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eBlobRetrieve) + "). Ignore and continue.");
             }
             break;
         case eNARetrieve:
-            m_NARetrieveTiming[index]->Add(mks);
+            if (processor)
+                m_NARetrieveTiming[m_ProcGroupToIndex[processor->GetGroupName()]][index]->Add(mks);
+            else
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eNARetrieve) + "). Ignore and continue.");
             break;
         case eSplitHistoryRetrieve:
             m_SplitHistoryRetrieveTiming[index]->Add(mks);
@@ -993,13 +1040,25 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
             m_IPGResolveRetrieveTiming[index]->Add(mks);
             break;
         case eResolutionError:
-            m_ResolutionErrorTiming->Add(mks);
+            if (processor)
+                m_ResolutionErrorTiming[m_ProcGroupToIndex[processor->GetGroupName()]]->Add(mks);
+            else
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eResolutionError) + "). Ignore and continue.");
             break;
         case eResolutionNotFound:
-            m_ResolutionNotFoundTiming->Add(mks);
+            if (processor)
+                m_ResolutionNotFoundTiming[m_ProcGroupToIndex[processor->GetGroupName()]]->Add(mks);
+            else
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eResolutionNotFound) + "). Ignore and continue.");
             break;
         case eResolutionFound:
-            m_ResolutionFoundTiming->Add(mks);
+            if (processor)
+                m_ResolutionFoundTiming[m_ProcGroupToIndex[processor->GetGroupName()]]->Add(mks);
+            else
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eResolutionFound) + "). Ignore and continue.");
             break;
         case eBacklog:
             m_BacklogTiming->Add(mks);
@@ -1012,10 +1071,18 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
             m_ResolutionFoundCassandraTiming[index]->Add(mks);
             break;
         case eTseChunkRetrieve:
-            m_TSEChunkRetrieveTiming[index]->Add(mks);
+            if (processor)
+                m_TSEChunkRetrieveTiming[m_ProcGroupToIndex[processor->GetGroupName()]][index]->Add(mks);
+            else
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eTseChunkRetrieve) + "). Ignore and continue.");
             break;
         case eNAResolve:
-            m_NAResolveTiming[index]->Add(mks);
+            if (processor)
+                m_NAResolveTiming[m_ProcGroupToIndex[processor->GetGroupName()]][index]->Add(mks);
+            else
+                PSG_ERROR("No processor for per processor timing (" +
+                          to_string(eNAResolve) + "). Ignore and continue.");
             break;
         case eVDBOpen:
             m_VDBOpenTiming[index]->Add(mks);
@@ -1039,7 +1106,8 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
         if (mks > m_LogTimingThresholdMks) {
             if (processor != nullptr) {
                 auto        app = CPubseqGatewayApp::GetInstance();
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_OpTooLong);
+                app->GetCounters().Increment(processor,
+                                             CPSGSCounters::ePSGS_OpTooLong);
 
                 auto    request = processor->GetRequest();
                 if (request->GetRequestContext().NotNull()) {
@@ -1048,6 +1116,7 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
 
                     GetDiagContext().Extra().Print("op_too_long", mks);
                     GetDiagContext().Extra().Print(m_TooLongIDs[operation], mks);
+                    GetDiagContext().Extra().Print("processor", processor->GetGroupName());
                 }
             }
         }
@@ -1094,6 +1163,36 @@ void COperationTiming::RegisterForTimeSeries(
 }
 
 
+void COperationTiming::RegisterProcessorDone(CPSGS_Request::EPSGS_Type  request_type,
+                                             IPSGS_Processor *  processor)
+{
+    switch (request_type) {
+        case CPSGS_Request::ePSGS_ResolveRequest:
+            m_IdResolveDoneByProc[m_ProcGroupToIndex[processor->GetGroupName()]]->Add();
+            break;
+        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+            m_IdGetDoneByProc[m_ProcGroupToIndex[processor->GetGroupName()]]->Add();
+            break;
+        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+            m_IdGetblobDoneByProc[m_ProcGroupToIndex[processor->GetGroupName()]]->Add();
+            break;
+        case CPSGS_Request::ePSGS_AnnotationRequest:
+            m_IdGetNADoneByProc[m_ProcGroupToIndex[processor->GetGroupName()]]->Add();
+            break;
+        case CPSGS_Request::ePSGS_TSEChunkRequest:
+            m_IdGetTSEChunkDoneByProc[m_ProcGroupToIndex[processor->GetGroupName()]]->Add();
+            break;
+
+        // The requests below are specific for cassandra so there is no
+        // separate collection
+        case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
+        case CPSGS_Request::ePSGS_IPGResolveRequest:
+        default:
+            break;
+    }
+}
+
+
 void COperationTiming::Rotate(void)
 {
     lock_guard<mutex>   guard(m_Lock);
@@ -1107,30 +1206,57 @@ void COperationTiming::Rotate(void)
         m_LookupCassBlobPropTiming[k]->Rotate();
         m_ResolutionLmdbTiming[k]->Rotate();
         m_ResolutionCassTiming[k]->Rotate();
-        m_NARetrieveTiming[k]->Rotate();
         m_SplitHistoryRetrieveTiming[k]->Rotate();
         m_PublicCommentRetrieveTiming[k]->Rotate();
         m_AccVerHistoryRetrieveTiming[k]->Rotate();
         m_IPGResolveRetrieveTiming[k]->Rotate();
-        m_TSEChunkRetrieveTiming[k]->Rotate();
-        m_NAResolveTiming[k]->Rotate();
         m_VDBOpenTiming[k]->Rotate();
         m_SNPPTISLookupTiming[k]->Rotate();
         m_WGSVDBLookupTiming[k]->Rotate();
     }
 
-    m_HugeBlobRetrievalTiming->Rotate();
-    m_NotFoundBlobRetrievalTiming->Rotate();
+    for (size_t  k = 0; k < m_NARetrieveTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_NARetrieveTiming[k].size(); ++m) {
+            m_NARetrieveTiming[k][m]->Rotate();
+        }
+    }
 
-    m_ResolutionErrorTiming->Rotate();
-    m_ResolutionNotFoundTiming->Rotate();
-    m_ResolutionFoundTiming->Rotate();
+    for (size_t  k = 0; k < m_TSEChunkRetrieveTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_TSEChunkRetrieveTiming[k].size(); ++m) {
+            m_TSEChunkRetrieveTiming[k][m]->Rotate();
+        }
+    }
+
+    for (size_t  k = 0; k < m_NAResolveTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_NAResolveTiming[k].size(); ++m) {
+            m_NAResolveTiming[k][m]->Rotate();
+        }
+    }
+
+    for (auto &  item : m_HugeBlobRetrievalTiming)
+        item->Rotate();
+
+    for (auto &  item : m_NotFoundBlobRetrievalTiming)
+        item->Rotate();
+
+    for (auto &  item : m_ResolutionErrorTiming)
+        item->Rotate();
+
+    for (auto &  item : m_ResolutionNotFoundTiming)
+        item->Rotate();
+
+    for (auto &  item : m_ResolutionFoundTiming)
+        item->Rotate();
+
     m_BacklogTiming->Rotate();
     for (auto &  item : m_ResolutionFoundCassandraTiming)
         item->Rotate();
 
-    for (auto &  item : m_BlobRetrieveTiming)
-        item->Rotate();
+    for (size_t  k=0; k < m_BlobRetrieveTiming.size(); ++k) {
+        for (auto &  item : m_BlobRetrieveTiming[k]) {
+            item->Rotate();
+        }
+    }
 }
 
 
@@ -1143,6 +1269,17 @@ void COperationTiming::RotateRequestStat(void)
     m_IdGetTSEChunkStat.Rotate();
     m_IdGetNAStat.Rotate();
     m_IpgResolveStat.Rotate();
+
+    for (auto &  item : m_IdGetDoneByProc)
+        item->Rotate();
+    for (auto &  item : m_IdGetblobDoneByProc)
+        item->Rotate();
+    for (auto &  item : m_IdResolveDoneByProc)
+        item->Rotate();
+    for (auto &  item : m_IdGetTSEChunkDoneByProc)
+        item->Rotate();
+    for (auto &  item : m_IdGetNADoneByProc)
+        item->Rotate();
 }
 
 
@@ -1161,34 +1298,66 @@ void COperationTiming::Reset(void)
             m_LookupCassBlobPropTiming[k]->Reset();
             m_ResolutionLmdbTiming[k]->Reset();
             m_ResolutionCassTiming[k]->Reset();
-            m_NARetrieveTiming[k]->Reset();
             m_SplitHistoryRetrieveTiming[k]->Reset();
             m_PublicCommentRetrieveTiming[k]->Reset();
             m_AccVerHistoryRetrieveTiming[k]->Reset();
             m_IPGResolveRetrieveTiming[k]->Reset();
-            m_TSEChunkRetrieveTiming[k]->Reset();
-            m_NAResolveTiming[k]->Reset();
             m_VDBOpenTiming[k]->Reset();
             m_SNPPTISLookupTiming[k]->Reset();
             m_WGSVDBLookupTiming[k]->Reset();
         }
 
-        m_HugeBlobRetrievalTiming->Reset();
-        m_NotFoundBlobRetrievalTiming->Reset();
+        for (size_t  k = 0; k < m_NARetrieveTiming.size(); ++k) {
+            for (size_t  m = 0; m < m_NARetrieveTiming[k].size(); ++ m) {
+                m_NARetrieveTiming[k][m]->Reset();
+            }
+        }
 
-        m_ResolutionErrorTiming->Reset();
-        m_ResolutionNotFoundTiming->Reset();
-        m_ResolutionFoundTiming->Reset();
+        for (size_t  k = 0; k < m_TSEChunkRetrieveTiming.size(); ++k) {
+            for (size_t  m = 0; m < m_TSEChunkRetrieveTiming[k].size(); ++m) {
+                m_TSEChunkRetrieveTiming[k][m]->Reset();
+            }
+        }
+
+        for (size_t  k = 0; k < m_NAResolveTiming.size(); ++k) {
+            for (size_t  m = 0; m < m_NAResolveTiming[k].size(); ++m) {
+                m_NAResolveTiming[k][m]->Reset();
+            }
+        }
+
+        for (auto &  item : m_HugeBlobRetrievalTiming)
+            item->Reset();
+
+        for (auto &  item : m_NotFoundBlobRetrievalTiming)
+            item->Reset();
+
+        for (auto &  item : m_ResolutionErrorTiming)
+            item->Reset();
+
+        for (auto &  item : m_ResolutionNotFoundTiming)
+            item->Reset();
+
+        for (auto &  item : m_ResolutionFoundTiming)
+            item->Reset();
+
         m_BacklogTiming->Reset();
         for (auto &  item : m_ResolutionFoundCassandraTiming)
             item->Reset();
 
-        for (auto &  item : m_BlobRetrieveTiming)
-            item->Reset();
+        for (size_t  k=0; k < m_BlobRetrieveTiming.size(); ++k) {
+            for (auto &  item : m_BlobRetrieveTiming[k]) {
+                item->Reset();
+            }
+        }
 
-        for (auto &  item : m_BlobByteCounters)
-            item = 0;
-        m_HugeBlobByteCounter = 0;
+        for (size_t  k=0; k < m_BlobByteCounters.size(); ++k) {
+            for (auto &  item : m_BlobByteCounters[k]) {
+                item = 0;
+            }
+        }
+
+        for (size_t  k=0; k < m_HugeBlobByteCounter.size(); ++k)
+            m_HugeBlobByteCounter[k] = 0;
     }
 
     m_IdGetStat.Reset();
@@ -1198,6 +1367,17 @@ void COperationTiming::Reset(void)
     m_IdGetTSEChunkStat.Reset();
     m_IdGetNAStat.Reset();
     m_IpgResolveStat.Reset();
+
+    for (auto &  item : m_IdGetDoneByProc)
+        item->Reset();
+    for (auto &  item : m_IdGetblobDoneByProc)
+        item->Reset();
+    for (auto &  item : m_IdResolveDoneByProc)
+        item->Reset();
+    for (auto &  item : m_IdGetTSEChunkDoneByProc)
+        item->Reset();
+    for (auto &  item : m_IdGetNADoneByProc)
+        item->Reset();
 }
 
 
@@ -1214,7 +1394,7 @@ COperationTiming::Serialize(int  most_ancient_time,
 
     // All the histograms have the same number of covered ticks
     ret.SetInteger(kSecondsCovered,
-                   tick_span * m_ResolutionFoundTiming->GetNumberOfCoveredTicks());
+                   tick_span * m_BacklogTiming->GetNumberOfCoveredTicks());
 
     if (histogram_names.empty()) {
         {
@@ -1275,7 +1455,7 @@ COperationTiming::Serialize(int  most_ancient_time,
             // serialization above
             size_t      raw_index;
             if (current_index == 0) {
-                raw_index = CRequestTimeSeries::kSeriesIntervals - 1;
+                raw_index = kSeriesIntervals - 1;
                 loop = false;   // to avoid going the second time over
             } else {
                 raw_index = current_index - 1;
@@ -1294,7 +1474,7 @@ COperationTiming::Serialize(int  most_ancient_time,
             }
 
             if (loop) {
-                raw_index = CRequestTimeSeries::kSeriesIntervals - 1;
+                raw_index = kSeriesIntervals - 1;
                 while (raw_index > current_index + 1) {
                     x_UpdateMaxReqsStat(raw_index, max_requests, max_errors,
                                         max_warnings, max_not_found);
@@ -1308,6 +1488,27 @@ COperationTiming::Serialize(int  most_ancient_time,
             ret.SetDouble("MaxPerSec_Errors", max_errors / 60.0);
             ret.SetDouble("MaxPerSec_Warnings", max_warnings / 60.0);
             ret.SetDouble("MaxPerSec_NotFound", max_not_found / 60.0);
+
+
+            // Serialize per processor handled requests
+            for (auto & item : m_ProcGroupToIndex) {
+                ret.SetByKey(item.first + "_ID_get_time_series",
+                             m_IdGetDoneByProc[item.second]->Serialize(time_series,
+                                                                       loop, current_index));
+                ret.SetByKey(item.first + "_ID_getblob_time_series",
+                             m_IdGetblobDoneByProc[item.second]->Serialize(time_series,
+                                                                           loop, current_index));
+                ret.SetByKey(item.first + "_ID_resolve_time_series",
+                             m_IdResolveDoneByProc[item.second]->Serialize(time_series,
+                                                                           loop, current_index));
+                ret.SetByKey(item.first + "_ID_get_tse_chunk_time_series",
+                             m_IdGetTSEChunkDoneByProc[item.second]->Serialize(time_series,
+                                                                               loop, current_index));
+                ret.SetByKey(item.first + "_ID_get_na_time_series",
+                             m_IdGetNADoneByProc[item.second]->Serialize(time_series,
+                                                                         loop, current_index));
+            }
+
         }
     } else {
         lock_guard<mutex>       guard(m_Lock);

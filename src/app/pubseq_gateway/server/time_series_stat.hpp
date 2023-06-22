@@ -38,34 +38,26 @@
 USING_NCBI_SCOPE;
 
 
-class CRequestTimeSeries
+// Request time series for:
+// - number of requests
+// - number of errors
+// - number of warnings
+// - number of not found
+// All the values are collected for 30 days with a granularity of a minute
+static constexpr size_t    kSeriesIntervals = 60*24*30;
+
+
+// The class collects only information when a processor did something for a
+// request
+class CProcessorRequestTimeSeries
 {
     public:
-        // Request time series for:
-        // - number of requests
-        // - number of errors
-        // - number of warnings
-        // - number of not found
-        // All the values are collected for 30 days with a granularity of a minute
-        static constexpr size_t    kSeriesIntervals = 60*24*30;
-
-    public:
-        enum EPSGSCounter
-        {
-            eRequest,
-            eError,
-            eWarning,
-            eNotFound
-        };
-
-    public:
-        CRequestTimeSeries();
-        void Add(EPSGSCounter  counter);
+        CProcessorRequestTimeSeries();
+        void Add(void);
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
                              bool  loop, size_t  current_index) const;
-        static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
 
     public:
         // This is to be able to sum values from different requests.
@@ -77,34 +69,24 @@ class CRequestTimeSeries
             loop = m_Loop;
             current_index = m_CurrentIndex.load();
         }
+/*
         void AppendData(size_t      index,
-                        uint64_t &  requests,
-                        uint64_t &  errors,
-                        uint64_t &  warnings,
-                        uint64_t &  not_found) const
+                        uint64_t &  requests) const
         {
             requests += m_Requests[index];
-            errors += m_Errors[index];
-            warnings += m_Warnings[index];
-            not_found += m_NotFound[index];
         }
+*/
 
-    private:
+    protected:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,
                                        uint64_t  grand_total,
                                        const vector<pair<int, int>> &  time_series,
                                        bool  loop,
                                        size_t  current_index) const;
 
-    private:
+    protected:
         uint64_t    m_Requests[kSeriesIntervals];
         uint64_t    m_TotalRequests;
-        uint64_t    m_Errors[kSeriesIntervals];
-        uint64_t    m_TotalErrors;
-        uint64_t    m_Warnings[kSeriesIntervals];
-        uint64_t    m_TotalWarnings;
-        uint64_t    m_NotFound[kSeriesIntervals];
-        uint64_t    m_TotalNotFound;
 
         // Tells if the current index made a loop
         bool        m_Loop;
@@ -127,6 +109,51 @@ class CRequestTimeSeries
         // almost harmless since the client is interested in a trend but not in
         // absolutely precise data).
         atomic_uint_fast64_t    m_CurrentIndex;
+};
+
+
+// Extends the CProcessorRequestTimeSeries so that 4 items are collected:
+// requests (as in the base class), errors, warnings and not found
+class CRequestTimeSeries : public CProcessorRequestTimeSeries
+{
+    public:
+        enum EPSGSCounter
+        {
+            eRequest,
+            eError,
+            eWarning,
+            eNotFound
+        };
+
+    public:
+        CRequestTimeSeries();
+        void Add(EPSGSCounter  counter);
+        void Rotate(void);
+        void Reset(void);
+        CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             bool  loop, size_t  current_index) const;
+        static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
+
+    public:
+        void AppendData(size_t      index,
+                        uint64_t &  requests,
+                        uint64_t &  errors,
+                        uint64_t &  warnings,
+                        uint64_t &  not_found) const
+        {
+            requests += m_Requests[index];
+            errors += m_Errors[index];
+            warnings += m_Warnings[index];
+            not_found += m_NotFound[index];
+        }
+
+    private:
+        uint64_t    m_Errors[kSeriesIntervals];
+        uint64_t    m_TotalErrors;
+        uint64_t    m_Warnings[kSeriesIntervals];
+        uint64_t    m_TotalWarnings;
+        uint64_t    m_NotFound[kSeriesIntervals];
+        uint64_t    m_TotalNotFound;
 };
 
 

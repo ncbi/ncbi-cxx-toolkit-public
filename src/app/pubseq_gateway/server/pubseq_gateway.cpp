@@ -308,11 +308,6 @@ int CPubseqGatewayApp::Run(void)
     m_RequestDispatcher.reset(new CPSGS_Dispatcher(m_Settings.m_RequestTimeoutSec));
     x_RegisterProcessors();
 
-
-    // m_IdToNameAndDescription was populated at the time of
-    // dealing with arguments
-    m_Counters.UpdateConfiguredNameDescription(m_Settings.m_IdToNameAndDescription);
-
     auto purge_size = round(float(m_Settings.m_ExcludeCacheMaxSize) *
                             float(m_Settings.m_ExcludeCachePurgePercentage) / 100.0);
     m_ExcludeBlobCache.reset(
@@ -329,7 +324,13 @@ int CPubseqGatewayApp::Run(void)
                                         m_Settings.m_StatScaleType,
                                         m_Settings.m_SmallBlobSize,
                                         m_Settings.m_OnlyForProcessor,
-                                        m_Settings.m_LogTimingThreshold));
+                                        m_Settings.m_LogTimingThreshold,
+                                        m_RequestDispatcher->GetProcessorGroupToIndexMap()));
+    m_Counters.reset(new CPSGSCounters(m_RequestDispatcher->GetProcessorGroupToIndexMap()));
+    // m_IdToNameAndDescription was populated at the time of
+    // dealing with arguments
+    m_Counters->UpdateConfiguredNameDescription(m_Settings.m_IdToNameAndDescription);
+
 
     // Setup IPG huge report
     ipg::CPubseqGatewayHugeIpgReportHelper::SetHugeIpgDisabled(

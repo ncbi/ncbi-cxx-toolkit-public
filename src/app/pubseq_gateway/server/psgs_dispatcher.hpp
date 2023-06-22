@@ -84,6 +84,10 @@ public:
     /// Register processor (one to serve as a processor factory)
     void AddProcessor(unique_ptr<IPSGS_Processor> processor);
 
+    /// Provides a map between a processor group name and a unique zero-based
+    /// index of the group
+    map<string, size_t> GetProcessorGroupToIndexMap(void) const;
+
     /// Return list of processor names which reported that they can process the
     /// request.
     list<string>
@@ -168,13 +172,15 @@ private:
         shared_ptr<IPSGS_Processor>     m_Processor;
         EPSGS_ProcessorStatus           m_DispatchStatus;
         IPSGS_Processor::EPSGS_Status   m_FinishStatus;
+        bool                            m_DoneStatusRegistered;
 
         SProcessorData(shared_ptr<IPSGS_Processor>  processor,
                        EPSGS_ProcessorStatus  dispatch_status,
                        IPSGS_Processor::EPSGS_Status  finish_status) :
             m_Processor(processor),
             m_DispatchStatus(dispatch_status),
-            m_FinishStatus(finish_status)
+            m_FinishStatus(finish_status),
+            m_DoneStatusRegistered(false)
         {}
     };
 

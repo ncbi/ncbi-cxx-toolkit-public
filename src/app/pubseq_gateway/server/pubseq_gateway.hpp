@@ -212,7 +212,7 @@ public:
     { return m_Alerts; }
 
     CPSGSCounters &  GetCounters(void)
-    { return m_Counters; }
+    { return * m_Counters.get(); }
 
     void RegisterUVLoop(uv_thread_t  uv_thread, uv_loop_t *  uv_loop)
     {
@@ -441,7 +441,7 @@ private:
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;
-    CPSGSCounters                       m_Counters;
+    unique_ptr<CPSGSCounters>           m_Counters;
 
     EPSGS_StartupDataState              m_StartupDataState;
     CNcbiLogFields                      m_LogFields;

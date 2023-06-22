@@ -73,25 +73,29 @@ enum EPSGOperation {
     eResolutionLmdb,                // (2) From request start
     eResolutionCass,                // (2) From cassandra start
 
-    eResolutionError,               // (1) From request start
-    eResolutionNotFound,            // (1) From request start
-    eResolutionFound,               // (1) From request start
     eResolutionFoundInCassandra,    // (5) From cassandra start
-
-    eBlobRetrieve,
-    eNARetrieve,
 
     eSplitHistoryRetrieve,
     ePublicCommentRetrieve,
     eAccVerHistRetrieve,
     eIPGResolveRetrieve,
 
-    eTseChunkRetrieve,
-    eNAResolve,
     eVDBOpen,
     eBacklog,
     eSNP_PTISLookup,
     eWGS_VDBLookup,
+
+    // The timings below are collected per processor
+
+    eResolutionError,               // (1) From request start
+    eResolutionNotFound,            // (1) From request start
+    eResolutionFound,               // (1) From request start
+
+    eBlobRetrieve,
+    eNARetrieve,
+
+    eTseChunkRetrieve,
+    eNAResolve,
 
     eOperationLast  // Not for using in the processors' code.
                     // It is for allocating an array with an applog identifiers
@@ -287,7 +291,8 @@ class COperationTiming
                          const string &  stat_type,
                          unsigned long  small_blob_size,
                          const string &  only_for_processor,
-                         size_t  log_timing_threshold);
+                         size_t  log_timing_threshold,
+                         const map<string, size_t> &  proc_group_to_index);
         ~COperationTiming() {}
 
     public:
@@ -300,6 +305,8 @@ class COperationTiming
                           size_t  blob_size=0);
         void RegisterForTimeSeries(CPSGS_Request::EPSGS_Type  request_type,
                                    CRequestStatus::ECode  status);
+        void RegisterProcessorDone(CPSGS_Request::EPSGS_Type  request_type,
+                                   IPSGS_Processor *  processor);
 
     public:
         void Rotate(void);
@@ -340,29 +347,31 @@ class COperationTiming
         vector<unique_ptr<CLmdbResolutionTiming>>           m_ResolutionLmdbTiming;
         vector<unique_ptr<CCassResolutionTiming>>           m_ResolutionCassTiming;
 
-        vector<unique_ptr<CNARetrieveTiming>>               m_NARetrieveTiming;
+        vector<vector<unique_ptr<CNARetrieveTiming>>>       m_NARetrieveTiming;
+        vector<vector<unique_ptr<CTSEChunkRetrieveTiming>>> m_TSEChunkRetrieveTiming;
+        vector<vector<unique_ptr<CNAResolveTiming>>>        m_NAResolveTiming;
+
         vector<unique_ptr<CSplitHistoryRetrieveTiming>>     m_SplitHistoryRetrieveTiming;
         vector<unique_ptr<CPublicCommentRetrieveTiming>>    m_PublicCommentRetrieveTiming;
         vector<unique_ptr<CAccVerHistoryRetrieveTiming>>    m_AccVerHistoryRetrieveTiming;
         vector<unique_ptr<CIPGResolveRetrieveTiming>>       m_IPGResolveRetrieveTiming;
-        vector<unique_ptr<CTSEChunkRetrieveTiming>>         m_TSEChunkRetrieveTiming;
-        vector<unique_ptr<CNAResolveTiming>>                m_NAResolveTiming;
         vector<unique_ptr<CVDBOpenTiming>>                  m_VDBOpenTiming;
         vector<unique_ptr<CSNPPTISLookupTiming>>            m_SNPPTISLookupTiming;
         vector<unique_ptr<CWGSVDBLookupTiming>>             m_WGSVDBLookupTiming;
 
         // The index is calculated basing on the blob size
-        vector<unique_ptr<CBlobRetrieveTiming>>             m_BlobRetrieveTiming;
+        vector<vector<unique_ptr<CBlobRetrieveTiming>>>     m_BlobRetrieveTiming;
         vector<unsigned long>                               m_Ends;
-        unique_ptr<CHugeBlobRetrieveTiming>                 m_HugeBlobRetrievalTiming;
-        unique_ptr<CNotFoundBlobRetrieveTiming>             m_NotFoundBlobRetrievalTiming;
-        vector<uint64_t>                                    m_BlobByteCounters;
-        uint64_t                                            m_HugeBlobByteCounter;
+        vector<unique_ptr<CHugeBlobRetrieveTiming>>         m_HugeBlobRetrievalTiming;
+        vector<unique_ptr<CNotFoundBlobRetrieveTiming>>     m_NotFoundBlobRetrievalTiming;
+        vector<vector<uint64_t>>                            m_BlobByteCounters;
+        vector<uint64_t>                                    m_HugeBlobByteCounter;
 
         // Resolution timing
-        unique_ptr<CResolutionTiming>                       m_ResolutionErrorTiming;
-        unique_ptr<CResolutionTiming>                       m_ResolutionNotFoundTiming;
-        unique_ptr<CResolutionTiming>                       m_ResolutionFoundTiming;
+        vector<unique_ptr<CResolutionTiming>>               m_ResolutionErrorTiming;
+        vector<unique_ptr<CResolutionTiming>>               m_ResolutionNotFoundTiming;
+        vector<unique_ptr<CResolutionTiming>>               m_ResolutionFoundTiming;
+
         unique_ptr<CBacklogTiming>                          m_BacklogTiming;
 
         // 1, 2, 3, 4, 5+ trips to cassandra
@@ -409,10 +418,11 @@ class COperationTiming
             SInfo(SInfo &&) = default;
             SInfo & operator=(SInfo &&) = default;
         };
-        map<string, SInfo>                                  m_NamesMap;
+        map<string, SInfo>          m_NamesMap;
 
+        map<string, size_t>         m_ProcGroupToIndex;
 
-        mutable mutex                                       m_Lock; // reset-rotate-serialize lock
+        mutable mutex               m_Lock; // reset-rotate-serialize lock
 
         CRequestTimeSeries          m_IdGetStat;
         CRequestTimeSeries          m_IdGetblobStat;
@@ -421,6 +431,15 @@ class COperationTiming
         CRequestTimeSeries          m_IdGetTSEChunkStat;
         CRequestTimeSeries          m_IdGetNAStat;
         CRequestTimeSeries          m_IpgResolveStat;
+
+        // The items below collect only the fact (per processor) that the
+        // processor did something for the request i.e. finished with status
+        // 'Done'
+        vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetDoneByProc;
+        vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetblobDoneByProc;
+        vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdResolveDoneByProc;
+        vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetTSEChunkDoneByProc;
+        vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetNADoneByProc;
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

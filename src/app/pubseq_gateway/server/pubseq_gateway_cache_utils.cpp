@@ -95,7 +95,9 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
             case 0:
                 if (IsINSDCSeqIdType(seq_id_type)) {
                     timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
-                    app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
+                    app->GetCounters().Increment(
+                            processor,
+                            CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
                     return CPSGCache::x_LookupINSDCBioseqInfo(processor, bioseq_resolution);
                 }
                 cache_hit = false;
@@ -142,14 +144,14 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Exception while bioseq info cache lookup: "
                           << exc.what());
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch exception. Report failure.",
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while bioseq info cache lookup");
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     }
 
@@ -158,7 +160,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
             m_Reply->SendTrace("Report cache hit",
                                m_Request->GetStartTimestamp());
         timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoCacheHit);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheHit);
         return ePSGS_CacheHit;
     }
 
@@ -166,7 +168,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
         m_Reply->SendTrace("Report cache no hit",
                            m_Request->GetStartTimestamp());
     timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
+    app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
     return ePSGS_CacheNotHit;
 }
 
@@ -240,7 +242,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
 
         ERR_POST(Critical << "Exception while INSDC bioseq info cache lookup: "
                           << exc.what());
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
@@ -249,7 +251,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
                                m_Request->GetStartTimestamp());
 
         ERR_POST(Critical << "Unknown exception while INSDC bioseq info cache lookup");
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     }
 
@@ -258,7 +260,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
             m_Reply->SendTrace("Report cache for INSDC types hit",
                                m_Request->GetStartTimestamp());
         timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusFound, start);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoCacheHit);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheHit);
         return ePSGS_CacheHit;
     }
 
@@ -266,7 +268,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
         m_Reply->SendTrace("Report cache for INSDC types no hit",
                            m_Request->GetStartTimestamp());
     timing.Register(processor, eLookupLmdbBioseqInfo, eOpStatusNotFound, start);
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
+    app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BioseqInfoCacheMiss);
     return ePSGS_CacheNotHit;
 }
 
@@ -345,14 +347,14 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Exception while csi cache lookup: "
                           << exc.what());
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch exception. Report failure.",
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while csi cache lookup");
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     }
 
@@ -362,7 +364,7 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
             m_Reply->SendTrace("Report cache hit",
                                m_Request->GetStartTimestamp());
         timing.Register(processor, eLookupLmdbSi2csi, eOpStatusFound, start);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiCacheHit);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_Si2csiCacheHit);
         return ePSGS_CacheHit;
     }
 
@@ -370,7 +372,7 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
         m_Reply->SendTrace("Report cache no hit",
                            m_Request->GetStartTimestamp());
     timing.Register(processor, eLookupLmdbSi2csi, eOpStatusNotFound, start);
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiCacheMiss);
+    app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_Si2csiCacheMiss);
     return ePSGS_CacheNotHit;
 }
 
@@ -451,14 +453,14 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Exception while blob prop cache lookup: "
                           << exc.what());
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     } catch (...) {
         if (m_NeedTrace)
             m_Reply->SendTrace("Cache fetch exception. Report failure.",
                                m_Request->GetStartTimestamp());
         ERR_POST(Critical << "Unknown exception while blob prop cache lookup");
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_LMDBError);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_LMDBError);
         return ePSGS_CacheFailure;
     }
 
@@ -468,7 +470,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
             m_Reply->SendTrace("Report cache hit",
                                m_Request->GetStartTimestamp());
         timing.Register(processor, eLookupLmdbBlobProp, eOpStatusFound, start);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropCacheHit);
+        app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BlobPropCacheHit);
         return ePSGS_CacheHit;
     }
 
@@ -476,7 +478,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
         m_Reply->SendTrace("Report cache no hit",
                            m_Request->GetStartTimestamp());
     timing.Register(processor, eLookupLmdbBlobProp, eOpStatusNotFound, start);
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropCacheMiss);
+    app->GetCounters().Increment(processor, CPSGSCounters::ePSGS_BlobPropCacheMiss);
     return ePSGS_CacheNotHit;
 }
 

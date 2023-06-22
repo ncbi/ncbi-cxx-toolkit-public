@@ -282,7 +282,8 @@ CPSGS_CassProcessorBase::TranslateSatToKeyspace(CBioseqInfoRecord::TSat  sat,
     string      msg = "Unknown satellite number " + to_string(blob_id.m_Sat) +
                       " for bioseq info with seq_id '" +
                       seq_id + "'";
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_ServerSatToSatNameError);
 
     IPSGS_Processor::m_Reply->PrepareBlobPropMessage(
         item_id, GetName(), msg, CRequestStatus::e500_InternalServerError,
@@ -349,7 +350,8 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
 
     auto *  app = CPubseqGatewayApp::GetInstance();
     if (IsTimeoutError(code)) {
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
+        app->GetCounters().Increment(this,
+                                     CPSGSCounters::ePSGS_CassQueryTimeoutError);
         UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
         return true;
     }
@@ -357,37 +359,48 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
     if (status == CRequestStatus::e404_NotFound) {
         switch (fetch_type) {
             case ePSGS_BlobBySeqIdFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_GetBlobNotFound);
                 break;
             case ePSGS_BlobBySatSatKeyFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_GetBlobNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_GetBlobNotFound);
                 break;
             case ePSGS_AnnotationFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_AnnotationNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_AnnotationNotFound);
                 break;
             case ePSGS_AnnotationBlobFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_AnnotationBlobNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_AnnotationBlobNotFound);
                 break;
             case ePSGS_TSEChunkFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_TSEChunkNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_TSEChunkNotFound);
                 break;
             case ePSGS_BioseqInfoFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_BioseqInfoNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_BioseqInfoNotFound);
                 break;
             case ePSGS_Si2csiFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_Si2csiNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_Si2csiNotFound);
                 break;
             case ePSGS_SplitHistoryFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_SplitHistoryNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_SplitHistoryNotFound);
                 break;
             case ePSGS_PublicCommentFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_PublicCommentNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_PublicCommentNotFound);
                 break;
             case ePSGS_AccVerHistoryFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_AccVerHistoryNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_AccVerHistoryNotFound);
                 break;
             case ePSGS_IPGResolveFetch:
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_IPGResolveNotFound);
+                app->GetCounters().Increment(this,
+                                             CPSGSCounters::ePSGS_IPGResolveNotFound);
                 break;
             case ePSGS_UnknownFetch:
                 break;
@@ -399,7 +412,8 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
 
     if (is_error) {
         if (fetch_type != ePSGS_UnknownFetch) {
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+            app->GetCounters().Increment(this,
+                                         CPSGSCounters::ePSGS_ProcUnknownError);
         }
         UpdateOverallStatus(status);
     }

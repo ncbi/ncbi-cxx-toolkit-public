@@ -36,10 +36,12 @@
 #include <connect/services/json_over_uttp.hpp>
 USING_NCBI_SCOPE;
 
+class IPSGS_Processor;
+
 class CPSGSCounters
 {
     public:
-        CPSGSCounters();
+        CPSGSCounters(const map<string, size_t> &  proc_group_to_index);
         ~CPSGSCounters();
 
     public:
@@ -47,8 +49,6 @@ class CPSGSCounters
             ePSGS_BadUrlPath = 0,
             ePSGS_InsufficientArgs,
             ePSGS_MalformedArgs,
-            ePSGS_GetBlobNotFound,
-            ePSGS_UnknownError,
             ePSGS_ClientSatToSatNameError,
             ePSGS_ServerSatToSatNameError,
             ePSGS_BlobPropsNotFound,
@@ -56,14 +56,10 @@ class CPSGSCounters
             ePSGS_CassQueryTimeoutError,
             ePSGS_InvalidId2InfoError,
             ePSGS_SplitHistoryNotFound,
-            ePSGS_AnnotationNotFound,
-            ePSGS_AnnotationBlobNotFound,
-            ePSGS_TSEChunkNotFound,
             ePSGS_PublicCommentNotFound,
             ePSGS_AccVerHistoryNotFound,
             ePSGS_IPGResolveNotFound,
             ePSGS_MaxHopsExceededError,
-            ePSGS_InputSeqIdNotResolved,
             ePSGS_TSEChunkSplitVersionCacheMatched,
             ePSGS_TSEChunkSplitVersionCacheNotMatched,
             ePSGS_AdminRequest,
@@ -96,7 +92,7 @@ class CPSGSCounters
             ePSGS_NonProtocolRequests,
             ePSGS_NoProcessorInstantiated,
             ePSGS_AcceptFailure,
-            ePSGS_OpTooLong,
+            ePSGS_FrameworkUnknownError,
 
             // Request stop statuses
             ePSGS_100,
@@ -154,13 +150,31 @@ class CPSGSCounters
             ePSGS_GracefulShutdownExpiredInSec,
             ePSGS_SplitInfoCacheSize,
 
-            // Used to reserve an array
-            ePSGS_MaxCounter
+            // Used to reserve an array for individual counters
+            ePSGS_MaxIndividualCounter,
+
+            // Counters which are per processor
+            ePSGS_InputSeqIdNotResolved,
+            ePSGS_AnnotationBlobNotFound,
+            ePSGS_AnnotationNotFound,
+            ePSGS_GetBlobNotFound,
+            ePSGS_TSEChunkNotFound,
+            ePSGS_ProcUnknownError,
+            ePSGS_OpTooLong,
+
+            // Used to calculate the number of counters per processor
+            ePSGS_LastCounter
+
         };
 
     static EPSGS_CounterType StatusToCounterType(int  status);
+    static bool IsPerProcessorCounter(EPSGS_CounterType  counter)
+    {
+        return counter > ePSGS_MaxIndividualCounter;
+    }
 
-    void Increment(EPSGS_CounterType  counter);
+    void Increment(IPSGS_Processor *  processor,
+                   EPSGS_CounterType  counter);
     void IncrementRequestStopCounter(int  status);
     void UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf);
@@ -214,7 +228,9 @@ class CPSGSCounters
         };
 
     private:
-        SCounterInfo *      m_Counters[ePSGS_MaxCounter];
+        map<string, size_t>             m_ProcGroupToIndex;
+        SCounterInfo *                  m_Counters[ePSGS_MaxIndividualCounter];
+        vector<vector<SCounterInfo *>>  m_PerProcessorCounters;
 };
 
 

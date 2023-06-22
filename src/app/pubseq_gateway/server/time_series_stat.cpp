@@ -34,25 +34,8 @@
 
 #include "time_series_stat.hpp"
 
-// Converts a request status to the counter in the time series
-// The logic matches the logic in GRID dashboard
-CRequestTimeSeries::EPSGSCounter
-CRequestTimeSeries::RequestStatusToCounter(CRequestStatus::ECode  status)
-{
-    if (status == CRequestStatus::e404_NotFound)
-        return eNotFound;
 
-    if (status >= CRequestStatus::e500_InternalServerError)
-        return eError;
-
-    if (status >= CRequestStatus::e400_BadRequest)
-        return eWarning;
-
-    return eRequest;
-}
-
-
-CRequestTimeSeries::CRequestTimeSeries() :
+CProcessorRequestTimeSeries::CProcessorRequestTimeSeries() :
     m_Loop(false),
     m_TotalMinutesCollected(1),
     m_CurrentIndex(0)
@@ -61,33 +44,15 @@ CRequestTimeSeries::CRequestTimeSeries() :
 }
 
 
-void CRequestTimeSeries::Add(EPSGSCounter  counter)
+void CProcessorRequestTimeSeries::Add(void)
 {
     size_t      current_index = m_CurrentIndex.load();
-    switch (counter) {
-        case eRequest:
-            ++m_Requests[current_index];
-            ++m_TotalRequests;
-            break;
-        case eError:
-            ++m_Errors[current_index];
-            ++m_TotalErrors;
-            break;
-        case eWarning:
-            ++m_Warnings[current_index];
-            ++m_TotalWarnings;
-            break;
-        case eNotFound:
-            ++m_NotFound[current_index];
-            ++m_TotalNotFound;
-            break;
-        default:
-            break;
-    }
+    ++m_Requests[current_index];
+    ++m_TotalRequests;
 }
 
 
-void CRequestTimeSeries::Rotate(void)
+void CProcessorRequestTimeSeries::Rotate(void)
 {
     size_t      new_current_index = m_CurrentIndex.load();
     if (new_current_index == kSeriesIntervals - 1) {
@@ -97,9 +62,6 @@ void CRequestTimeSeries::Rotate(void)
     }
 
     m_Requests[new_current_index] = 0;
-    m_Errors[new_current_index] = 0;
-    m_Warnings[new_current_index] = 0;
-    m_NotFound[new_current_index] = 0;
 
     m_CurrentIndex.store(new_current_index);
     ++m_TotalMinutesCollected;
@@ -109,16 +71,10 @@ void CRequestTimeSeries::Rotate(void)
 }
 
 
-void CRequestTimeSeries::Reset(void)
+void CProcessorRequestTimeSeries::Reset(void)
 {
     memset(m_Requests, 0, sizeof(m_Requests));
     m_TotalRequests = 0;
-    memset(m_Errors, 0, sizeof(m_Errors));
-    m_TotalErrors = 0;
-    memset(m_Warnings, 0, sizeof(m_Warnings));
-    m_TotalWarnings = 0;
-    memset(m_NotFound, 0, sizeof(m_NotFound));
-    m_TotalNotFound = 0;
 
     m_CurrentIndex.store(0);
     m_TotalMinutesCollected.store(1);
@@ -126,32 +82,23 @@ void CRequestTimeSeries::Reset(void)
 }
 
 
-CJsonNode  CRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_series,
-                                         bool  loop, size_t  current_index) const
+CJsonNode  CProcessorRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_series,
+                                                  bool  loop, size_t  current_index) const
 {
     CJsonNode   ret(CJsonNode::NewObjectNode());
 
     ret.SetByKey("Requests",
                  x_SerializeOneSeries(m_Requests, m_TotalRequests,
                                       time_series, loop, current_index));
-    ret.SetByKey("Errors",
-                 x_SerializeOneSeries(m_Errors, m_TotalErrors,
-                                      time_series, loop, current_index));
-    ret.SetByKey("Warnings",
-                 x_SerializeOneSeries(m_Warnings, m_TotalWarnings,
-                                      time_series, loop, current_index));
-    ret.SetByKey("NotFound",
-                 x_SerializeOneSeries(m_NotFound, m_TotalNotFound,
-                                      time_series, loop, current_index));
     return ret;
 }
 
 
-CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
-                                                    uint64_t  grand_total,
-                                                    const vector<pair<int, int>> &  time_series,
-                                                    bool  loop,
-                                                    size_t  current_index) const
+CJsonNode  CProcessorRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
+                                                             uint64_t  grand_total,
+                                                             const vector<pair<int, int>> &  time_series,
+                                                             bool  loop,
+                                                             size_t  current_index) const
 {
     CJsonNode   ret(CJsonNode::NewObjectNode());
 
@@ -273,6 +220,118 @@ CJsonNode  CRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  values,
     // Just in case: grand total includes everything - sent minutes, not sent
     // minutes in case of the loops and the rest
     ret.SetInteger("GrandTotalRequests", grand_total);
+    return ret;
+}
+
+
+
+
+// Converts a request status to the counter in the time series
+// The logic matches the logic in GRID dashboard
+CRequestTimeSeries::EPSGSCounter
+CRequestTimeSeries::RequestStatusToCounter(CRequestStatus::ECode  status)
+{
+    if (status == CRequestStatus::e404_NotFound)
+        return eNotFound;
+
+    if (status >= CRequestStatus::e500_InternalServerError)
+        return eError;
+
+    if (status >= CRequestStatus::e400_BadRequest)
+        return eWarning;
+
+    return eRequest;
+}
+
+
+CRequestTimeSeries::CRequestTimeSeries()
+{
+    Reset();
+}
+
+
+void CRequestTimeSeries::Add(EPSGSCounter  counter)
+{
+    size_t      current_index = m_CurrentIndex.load();
+    switch (counter) {
+        case eRequest:
+            ++m_Requests[current_index];
+            ++m_TotalRequests;
+            break;
+        case eError:
+            ++m_Errors[current_index];
+            ++m_TotalErrors;
+            break;
+        case eWarning:
+            ++m_Warnings[current_index];
+            ++m_TotalWarnings;
+            break;
+        case eNotFound:
+            ++m_NotFound[current_index];
+            ++m_TotalNotFound;
+            break;
+        default:
+            break;
+    }
+}
+
+
+void CRequestTimeSeries::Rotate(void)
+{
+    size_t      new_current_index = m_CurrentIndex.load();
+    if (new_current_index == kSeriesIntervals - 1) {
+        new_current_index = 0;
+    } else {
+        ++new_current_index;
+    }
+
+    m_Requests[new_current_index] = 0;
+    m_Errors[new_current_index] = 0;
+    m_Warnings[new_current_index] = 0;
+    m_NotFound[new_current_index] = 0;
+
+    m_CurrentIndex.store(new_current_index);
+    ++m_TotalMinutesCollected;
+    if (new_current_index == 0) {
+        m_Loop = true;
+    }
+}
+
+
+void CRequestTimeSeries::Reset(void)
+{
+    memset(m_Requests, 0, sizeof(m_Requests));
+    m_TotalRequests = 0;
+    memset(m_Errors, 0, sizeof(m_Errors));
+    m_TotalErrors = 0;
+    memset(m_Warnings, 0, sizeof(m_Warnings));
+    m_TotalWarnings = 0;
+    memset(m_NotFound, 0, sizeof(m_NotFound));
+    m_TotalNotFound = 0;
+
+    m_CurrentIndex.store(0);
+    m_TotalMinutesCollected.store(1);
+    m_Loop = false;
+}
+
+
+CJsonNode  CRequestTimeSeries::Serialize(const vector<pair<int, int>> &  time_series,
+                                         bool  loop, size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    ret.SetByKey("Requests",
+                 x_SerializeOneSeries(m_Requests, m_TotalRequests,
+                                      time_series, loop, current_index));
+    ret.SetByKey("Errors",
+                 x_SerializeOneSeries(m_Errors, m_TotalErrors,
+                                      time_series, loop, current_index));
+    ret.SetByKey("Warnings",
+                 x_SerializeOneSeries(m_Warnings, m_TotalWarnings,
+                                      time_series, loop, current_index));
+    ret.SetByKey("NotFound",
+                 x_SerializeOneSeries(m_NotFound, m_TotalNotFound,
+                                      time_series, loop, current_index));
     return ret;
 }
 

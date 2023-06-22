@@ -104,6 +104,19 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 }
 
 
+map<string, size_t>
+CPSGS_Dispatcher::GetProcessorGroupToIndexMap(void) const
+{
+    map<string, size_t>     ret;
+    size_t                  index = 0;
+    for (auto const &  proc : m_RegisteredProcessors) {
+        ret[proc->GetGroupName()] = index;
+        ++index;
+    }
+    return ret;
+}
+
+
 list<string>
 CPSGS_Dispatcher::PreliminaryDispatchRequest(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply)
@@ -474,6 +487,16 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
         if (proc.m_Processor.get() == processor) {
 
+            if (source == ePSGS_Processor && processor_status == IPSGS_Processor::ePSGS_Done) {
+                // It needs to add time series for that processor (once)
+                if (proc.m_DoneStatusRegistered == false) {
+                    auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
+                    timing.RegisterProcessorDone(request->GetRequestType(),
+                                                 processor);
+                    proc.m_DoneStatusRegistered = true;
+                }
+            }
+
             if (source == ePSGS_Fromework) {
                 // This call is when the framework notices that the processor
                 // reports something not InProgress (like error, cancel,
@@ -728,25 +751,32 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
 
     switch (request_type) {
         case CPSGS_Request::ePSGS_ResolveRequest:
-            counters.Increment(CPSGSCounters::ePSGS_ResolveRequest);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_ResolveRequest);
             break;
         case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
-            counters.Increment(CPSGSCounters::ePSGS_GetBlobBySeqIdRequest);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_GetBlobBySeqIdRequest);
             break;
         case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-            counters.Increment(CPSGSCounters::ePSGS_GetBlobBySatSatKeyRequest);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_GetBlobBySatSatKeyRequest);
             break;
         case CPSGS_Request::ePSGS_AnnotationRequest:
-            counters.Increment(CPSGSCounters::ePSGS_GetNamedAnnotations);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_GetNamedAnnotations);
             break;
         case CPSGS_Request::ePSGS_TSEChunkRequest:
-            counters.Increment(CPSGSCounters::ePSGS_GetTSEChunk);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_GetTSEChunk);
             break;
         case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
-            counters.Increment(CPSGSCounters::ePSGS_AccessionVersionHistory);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_AccessionVersionHistory);
             break;
         case CPSGS_Request::ePSGS_IPGResolveRequest:
-            counters.Increment(CPSGSCounters::ePSGS_IPGResolve);
+            counters.Increment(nullptr,
+                               CPSGSCounters::ePSGS_IPGResolve);
             break;
         default:
             break;
