@@ -46,6 +46,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/prefetch_manager.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #include <algorithm>
 
@@ -531,7 +532,7 @@ void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
     sort(sorted_ids.begin(), sorted_ids.end());
     sorted_ids.erase(unique(sorted_ids.begin(), sorted_ids.end()),
         sorted_ids.end());
-#ifdef __SANITIZE_THREAD__
+#ifdef NCBI_USE_TSAN
     const size_t limit_chunks_request = 15;
 #else
     const size_t limit_chunks_request = 200;
@@ -593,7 +594,7 @@ void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
                                                (a->GetChunkId() == b->GetChunkId()));
                                    }),
                         sorted_chunks.end());
-#ifdef __SANITIZE_THREAD__
+#ifdef NCBI_USE_TSAN
     const size_t limit_chunks_request = 15;
 #else
     const size_t limit_chunks_request = 200;
