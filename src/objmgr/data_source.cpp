@@ -69,6 +69,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <objmgr/scope.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #include <algorithm>
 
@@ -1978,7 +1979,7 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
         CDataLoader::TTSE_LockSets tse_sets;
         CDataLoader::TTSE_LockSets current_tse_sets;
         size_t current_tse_sets_size = 0;
-#ifdef __SANITIZE_THREAD__
+#ifdef NCBI_USE_TSAN
         const size_t limit_blobs_request = 15;
 #else
         const size_t limit_blobs_request = 200;
