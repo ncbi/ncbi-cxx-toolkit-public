@@ -8720,6 +8720,7 @@ ZFMK	sb	Museum Koenig Bonn
 ZFMK:COL	s	Zoologisches Forschungsmuseum Alexander Koenig, Coleoptera collection			
 ZFMK:FSJF	s	Zoologisches Forschungsmuseum Alexander Koenig, fish collection of Jeorg Freyhof			
 ZFMK:ICH	s	Zoologisches Forschungsmuseum Alexander Koenig, Ichthyological Collection			
+ZFMK:LIB	s	LIB Biobank			
 ZFSN	s	Laboratoire de Zoologie de la Faculte Des Sciences			
 ZGC	s	The Zamorin's Guruvayurappan College			
 ZGLC	s	Natural History Museum, Limassol			
