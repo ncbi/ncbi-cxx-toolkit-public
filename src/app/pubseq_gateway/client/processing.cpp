@@ -670,6 +670,46 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
     }
 }
 
+struct SNonVerbose
+{
+    SNonVerbose(SJsonOut& json_out) : m_JsonOut(json_out) {}
+
+    void ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+    void ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
+
+private:
+    SJsonOut& m_JsonOut;
+    map<CPSG_ReplyItem::EType, shared_ptr<CPSG_ReplyItem>> m_Items;
+};
+
+void SNonVerbose::ItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+{
+    const auto type = item->GetType();
+
+    if (status == EPSG_Status::eNotFound) {
+        m_Items.try_emplace(type, item);
+    } else {
+        m_JsonOut << CJsonResponse(status, item);
+
+        if (auto [it, result] = m_Items.try_emplace(type, nullptr); !result && it->second) {
+            it->second.reset();
+        }
+    }
+}
+
+void SNonVerbose::ReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    for (const auto& p : m_Items) {
+        if (auto& item = p.second) {
+            m_JsonOut << CJsonResponse(EPSG_Status::eNotFound, item);
+        }
+    }
+
+    if (status != EPSG_Status::eSuccess) {
+        m_JsonOut << CJsonResponse(status, reply);
+    }
+}
+
 template <class... TArgs>
 void s_ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
@@ -708,12 +748,17 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
 
     CPSG_EventLoop queue;
     SJsonOut json_out;
+    SNonVerbose non_verbose(json_out);
 
     using namespace placeholders;
 
     if (params.data_only.enabled) {
         auto item_complete = bind(&SDataOnlyCopy::ItemComplete, &data_only_copy, _1, _2);
         auto reply_complete = bind(&SDataOnlyCopy::ReplyComplete, &data_only_copy, _1, _2);
+        queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
+    } else if (!params.verbose) {
+        auto item_complete = bind(&SNonVerbose::ItemComplete, &non_verbose, _1, _2);
+        auto reply_complete = bind(&SNonVerbose::ReplyComplete, &non_verbose, _1, _2);
         queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
     } else {
         auto item_complete = bind(&s_ItemComplete<SOneRequestParams>, ref(json_out), _1, _2);
