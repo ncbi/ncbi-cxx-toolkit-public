@@ -142,6 +142,9 @@ static void PrintHandler(ELimitsExitCode code, size_t limit,
 
 static void Test_MemLimit(void)
 {
+#ifdef __SANITIZE_THREAD__
+    LOG_POST("\nSkipping memory limit test under ThreadSanitizer\n");
+#else
     LOG_POST("\nMemory limit test\n");
 
     const size_t kMemLimit = 500*1024;
@@ -153,6 +156,7 @@ static void Test_MemLimit(void)
         assert(pi);
     }
     _ASSERT(0);
+#endif
 }
 
 
