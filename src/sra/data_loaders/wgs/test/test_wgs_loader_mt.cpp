@@ -51,13 +51,14 @@
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <util/random_gen.hpp>
+#include <common/ncbi_sanitizers.h>
 
 // The std::thread doesn't allow to increase stack size and default thread stack
 // may overflow on some platforms when VDB library parses some schemas.
 // So we need to use boost::thread that allow to specify bigger stack size.
 // Unfortunately, for some reason boost::thread crashes under ThreadSanitizer,
 // so we have to heep it optional.
-#ifndef __SANITIZE_THREAD__
+#ifndef NCBI_USE_TSAN
 # define USE_BOOST_THREAD
 #endif
 #ifdef USE_BOOST_THREAD
