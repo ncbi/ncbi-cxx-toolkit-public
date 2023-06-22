@@ -73,7 +73,8 @@ class CAccVerHistCallback
                 if (m_Count == 0) {
                     app->GetTiming().Register(m_Processor, eAccVerHistRetrieve,
                                               eOpStatusNotFound, m_RetrieveTiming);
-                    app->GetCounters().Increment(CPSGSCounters::ePSGS_AccVerHistoryNotFound);
+                    app->GetCounters().Increment(m_Processor,
+                                                 CPSGSCounters::ePSGS_AccVerHistoryNotFound);
                 } else {
                     app->GetTiming().Register(m_Processor, eAccVerHistRetrieve,
                                               eOpStatusFound, m_RetrieveTiming);

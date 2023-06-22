@@ -33,6 +33,7 @@
 
 #include "pubseq_gateway_stat.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "ipsgs_processor.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -41,7 +42,8 @@ static const string     kName("name");
 static const string     kDescription("description");
 
 
-CPSGSCounters::CPSGSCounters()
+CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
+    m_ProcGroupToIndex(proc_group_to_index)
 {
     // Monotonic counters
     m_Counters[ePSGS_BadUrlPath] =
@@ -61,10 +63,10 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "AcceptFailure", "TCP socket accept failure",
             "The number of times a TCP accept failed");
-    m_Counters[ePSGS_OpTooLong] =
+    m_Counters[ePSGS_FrameworkUnknownError] =
         new SCounterInfo(
-            "OperationTooLong", "Operation took too long",
-            "The number of times an operation (like a backend retrieval) took longer tnah a configurable time");
+            "FrameworkUnknownError", "Framework unknown error counter",
+            "Number of times a framework unknown error has been detected");
     m_Counters[ePSGS_InsufficientArgs] =
         new SCounterInfo(
             "InsufficientArgumentsCount", "Insufficient arguments counter",
@@ -73,14 +75,6 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "MalformedArgumentsCount", "Malformed arguments counter",
             "Number of times clients supplied malformed arguments");
-    m_Counters[ePSGS_GetBlobNotFound] =
-        new SCounterInfo(
-            "GetBlobNotFoundCount", "Blob not found counter",
-            "Number of times clients requested a blob which was not found");
-    m_Counters[ePSGS_UnknownError] =
-        new SCounterInfo(
-            "UnknownErrorCount", "Unknown error counter",
-            "Number of times an unknown error has been detected");
     m_Counters[ePSGS_ClientSatToSatNameError] =
         new SCounterInfo(
             "ClientSatToSatNameErrorCount",
@@ -111,18 +105,6 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "SplitHistoryNotFoundCount", "Split history not found counter",
             "Number of times a split history was not found");
-    m_Counters[ePSGS_AnnotationNotFound] =
-        new SCounterInfo(
-            "AnnotationNotFoundCount", "Annotation not found counter",
-            "Number of times an annotation was not found");
-    m_Counters[ePSGS_AnnotationBlobNotFound] =
-        new SCounterInfo(
-            "AnnotationBlobNotFoundCount", "Annotation blob not found counter",
-            "Number of times an annotation blob was not found");
-    m_Counters[ePSGS_TSEChunkNotFound] =
-        new SCounterInfo(
-            "TSEChunkNotFoundCount", "TSE chunk not found counter",
-            "Number of times a TSE chunk was not found");
     m_Counters[ePSGS_PublicCommentNotFound] =
         new SCounterInfo(
             "PublicCommentNotFoundCount", "Public comment not found counter",
@@ -139,10 +121,6 @@ CPSGSCounters::CPSGSCounters()
         new SCounterInfo(
             "MaxHopsExceededErrorCount", "Max hops exceeded error count",
             "Number of times the max number of hops was exceeded");
-    m_Counters[ePSGS_InputSeqIdNotResolved] =
-        new SCounterInfo(
-            "InputSeqIdNotResolved", "Seq id not resolved counter",
-            "Number of times a client provided seq id could not be resolved");
     m_Counters[ePSGS_TSEChunkSplitVersionCacheMatched] =
         new SCounterInfo(
             "TSEChunkSplitVersionCacheMatched",
@@ -474,21 +452,136 @@ CPSGSCounters::CPSGSCounters()
             "GracefulShutdownExpiredInSec", "Graceful shutdown expiration",
             "Graceful shutdown expiration in seconds from now",
             SCounterInfo::ePSGS_Arbitrary);
+
+
+    // Counters below must be per processor
+    size_t  counter = static_cast<size_t>(ePSGS_LastCounter) - 1;
+    while (counter > static_cast<size_t>(ePSGS_MaxIndividualCounter)) {
+        m_PerProcessorCounters.push_back(vector<SCounterInfo *>());
+        --counter;
+    }
+
+    string      proc_group_names[m_ProcGroupToIndex.size()];
+    for (const auto &  item : m_ProcGroupToIndex) {
+        proc_group_names[item.second] = item.first;
+    }
+
+    size_t      index;
+    for (const auto &  proc_group : proc_group_names) {
+        index = static_cast<size_t>(ePSGS_InputSeqIdNotResolved) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_InputSeqIdNotResolved",
+                "Seq id not resolved counter (" + proc_group + ")",
+                "Number of times a client provided seq id could not be resolved by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_AnnotationBlobNotFound) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_AnnotationBlobNotFoundCount",
+                "Annotation blob not found counter (" + proc_group + ")",
+                "Number of times an annotation blob was not found by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_AnnotationNotFound) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_AnnotationNotFoundCount",
+                "Annotation not found counter (" + proc_group + ")",
+                "Number of times an annotation was not found by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_GetBlobNotFound) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_GetBlobNotFoundCount",
+                "Blob not found counter (" + proc_group + ")",
+                "Number of times clients requested a blob which was not found by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_TSEChunkNotFound) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_TSEChunkNotFoundCount",
+                "TSE chunk not found counter (" + proc_group + ")",
+                "Number of times a TSE chunk was not found by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_ProcUnknownError) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_ProcUnknownErrorCount",
+                "Processor unknown error counter (" + proc_group + ")",
+                "Number of times an unknown error has been detected by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_OpTooLong) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_OperationTooLong",
+                "Operation took too long (" + proc_group + ")",
+                "The number of times an operation (like a backend retrieval) "
+                "took longer than a configurable time by " + proc_group));
+    }
 }
 
 
 CPSGSCounters::~CPSGSCounters()
 {
-    for (size_t  k=0; k < ePSGS_MaxCounter; ++k)
+    for (size_t  k=0; k < ePSGS_MaxIndividualCounter; ++k) {
         delete m_Counters[k];
+    }
+
+    for (size_t  k=0; k < m_PerProcessorCounters.size(); ++k) {
+        for (size_t  m=0; m < m_PerProcessorCounters[k].size(); ++m) {
+            delete m_PerProcessorCounters[k][m];
+        }
+    }
 }
 
 
-void CPSGSCounters::Increment(EPSGS_CounterType  counter)
+void CPSGSCounters::Increment(IPSGS_Processor *  processor,
+                              EPSGS_CounterType  counter)
 {
-    if (counter >= ePSGS_MaxCounter) {
-        PSG_ERROR("There is no information about the counter with id " +
-                  to_string(counter) + ". Nothing was incremented.");
+    if (counter >= ePSGS_LastCounter) {
+        PSG_ERROR("Invalid counter id " + to_string(counter) +
+                  ". Ignore and continue.");
+        return;
+    }
+
+    if (IsPerProcessorCounter(counter)) {
+        if (processor == nullptr) {
+            PSG_ERROR("Invalid nullptr processor for the per processor counter id " +
+                      to_string(counter) + ". Ignore and continue.");
+            return;
+        }
+
+        size_t  cnt_index = static_cast<size_t>(counter) -
+                            static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+        size_t  proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
+
+        ++(m_PerProcessorCounters[cnt_index][proc_index]->m_Value);
+        return;
+    }
+
+    if (counter >= ePSGS_MaxIndividualCounter) {
+        PSG_ERROR("Invalid counter id " + to_string(counter) +
+                  " (non per-processor). Ignore and continue.");
         return;
     }
 
@@ -550,7 +643,7 @@ CPSGSCounters::StatusToCounterType(int  status)
 
 void CPSGSCounters::IncrementRequestStopCounter(int  status)
 {
-    Increment(StatusToCounterType(status));
+    Increment(nullptr, StatusToCounterType(status));
 }
 
 
@@ -558,11 +651,21 @@ void CPSGSCounters::UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf)
 {
     for (auto const & conf_item : conf) {
-        for (size_t  k=0; k < ePSGS_MaxCounter; ++k) {
+        for (size_t  k=0; k < ePSGS_MaxIndividualCounter; ++k) {
             if (m_Counters[k]->m_Identifier == conf_item.first) {
                 m_Counters[k]->m_Name = get<0>(conf_item.second);
                 m_Counters[k]->m_Description = get<1>(conf_item.second);
                 break;
+            }
+        }
+
+        for (size_t  k=0; k < m_PerProcessorCounters.size(); ++k) {
+            for (size_t  m=0; m < m_PerProcessorCounters[k].size(); ++m) {
+                if (m_PerProcessorCounters[k][m]->m_Identifier == conf_item.first) {
+                    m_PerProcessorCounters[k][m]->m_Name = get<0>(conf_item.second);
+                    m_PerProcessorCounters[k][m]->m_Description = get<1>(conf_item.second);
+                    break;
+                }
             }
         }
     }
@@ -573,11 +676,21 @@ void CPSGSCounters::PopulateDictionary(CJsonNode &  dict)
 {
     uint64_t    value(0);
 
-    for (size_t  k=0; k < ePSGS_MaxCounter; ++k) {
+    for (size_t  k=0; k < ePSGS_MaxIndividualCounter; ++k) {
         if (m_Counters[k]->m_Type == SCounterInfo::ePSGS_Monotonic) {
             value = m_Counters[k]->m_Value;
             AppendValueNode(dict, m_Counters[k]->m_Identifier,
                             m_Counters[k]->m_Name, m_Counters[k]->m_Description,
+                            value);
+        }
+    }
+
+    for (size_t  k=0; k < m_PerProcessorCounters.size(); ++k) {
+        for (size_t  m=0; m < m_PerProcessorCounters[k].size(); ++m) {
+            value = m_PerProcessorCounters[k][m]->m_Value;
+            AppendValueNode(dict, m_PerProcessorCounters[k][m]->m_Identifier,
+                            m_PerProcessorCounters[k][m]->m_Name,
+                            m_PerProcessorCounters[k][m]->m_Description,
                             value);
         }
     }
@@ -586,9 +699,15 @@ void CPSGSCounters::PopulateDictionary(CJsonNode &  dict)
 
 void CPSGSCounters::Reset(void)
 {
-    for (size_t  k=0; k < ePSGS_MaxCounter; ++k) {
+    for (size_t  k=0; k < ePSGS_MaxIndividualCounter; ++k) {
         if (m_Counters[k]->m_Type == SCounterInfo::ePSGS_Monotonic) {
             m_Counters[k]->m_Value = 0;
+        }
+    }
+
+    for (size_t  k=0; k < m_PerProcessorCounters.size(); ++k) {
+        for (size_t  m=0; m < m_PerProcessorCounters[k].size(); ++m) {
+            m_PerProcessorCounters[k][m]->m_Value = 0;
         }
     }
 }

@@ -551,7 +551,7 @@ bool CPSGS_GetProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+        app->GetCounters().Increment(this, CPSGSCounters::ePSGS_ProcUnknownError);
         PSG_ERROR(error);
 
         CCassBlobFetch *  blob_fetch = static_cast<CCassBlobFetch *>(fetch_details.get());

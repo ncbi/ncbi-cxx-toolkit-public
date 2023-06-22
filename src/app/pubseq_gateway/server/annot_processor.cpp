@@ -373,7 +373,8 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     }
     if (IPSGS_Processor::m_Reply->IsFinished()) {
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                        CPSGSCounters::ePSGS_UnknownError);
+                                        this,
+                                        CPSGSCounters::ePSGS_ProcUnknownError);
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
 
@@ -563,7 +564,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
     auto    app = CPubseqGatewayApp::GetInstance();
     if (!blob_id.MapSatToKeyspace()) {
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
+        app->GetCounters().Increment(this,
+                                     CPSGSCounters::ePSGS_ServerSatToSatNameError);
 
         string  err_msg = kAnnotProcessorName + " processor failed to map sat " +
                           to_string(blob_id.m_Sat) +
@@ -942,7 +944,7 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+        app->GetCounters().Increment(this, CPSGSCounters::ePSGS_ProcUnknownError);
         PSG_ERROR(error);
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(

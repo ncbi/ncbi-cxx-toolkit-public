@@ -424,7 +424,8 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
     // - not found
     // - parsing error
     // - LMDB error
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_InputSeqIdNotResolved);
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_InputSeqIdNotResolved);
 
     if (bioseq_resolution.m_Error.HasError()) {
         m_ResolveErrors.AppendError(bioseq_resolution.m_Error.m_ErrorMessage,

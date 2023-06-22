@@ -375,7 +375,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
         x_PrepareBlobPropMessage(fetch_details, message,
                                  CRequestStatus::e502_BadGateway,
                                  ePSGS_BadID2Info, eDiag_Error);
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_ServerSatToSatNameError);
+        app->GetCounters().Increment(this,
+                                     CPSGSCounters::ePSGS_ServerSatToSatNameError);
         UpdateOverallStatus(CRequestStatus::e502_BadGateway);
         PSG_ERROR(message);
         return;
@@ -1007,7 +1008,8 @@ CPSGS_CassBlobBase::OnGetBlobChunk(bool  cancelled,
     }
     if (m_Reply->IsFinished()) {
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                            CPSGSCounters::ePSGS_UnknownError);
+                                            this,
+                                            CPSGSCounters::ePSGS_ProcUnknownError);
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
         return;
@@ -1065,7 +1067,8 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
     // Not found, report 502 because it is data inconsistency
     // or 404 if it was requested via sat.sat_key
     auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BlobPropsNotFound);
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_BlobPropsNotFound);
 
     auto    blob_id = fetch_details->GetBlobId();
     string  message = "Blob " + blob_id.ToString() +
@@ -1111,6 +1114,7 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
     }
 
     CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                                    this,
                                     CPSGSCounters::ePSGS_InvalidId2InfoError);
     x_PrepareBlobPropMessage(fetch_details, err_msg,
                              CRequestStatus::e500_InternalServerError,

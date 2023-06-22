@@ -531,7 +531,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
         PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
@@ -551,7 +551,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
         PSG_ERROR("TCP connection accept failed; uv_accept() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
@@ -571,7 +571,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
                   "too many connections (maximum: " <<
                   m_daemon->GetMaxConnections() << ")");
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,

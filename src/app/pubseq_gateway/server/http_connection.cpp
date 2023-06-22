@@ -40,14 +40,14 @@
 static void IncrementBackloggedCounter(void)
 {
     auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_BackloggedRequests);
+    app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_BackloggedRequests);
 }
 
 
 static void IncrementTooManyRequestsCounter(void)
 {
     auto *  app = CPubseqGatewayApp::GetInstance();
-    app->GetCounters().Increment(CPSGSCounters::ePSGS_TooManyRequests);
+    app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_TooManyRequests);
 }
 
 

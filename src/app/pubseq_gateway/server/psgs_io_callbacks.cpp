@@ -226,7 +226,8 @@ void CPSGS_SocketIOCallback::x_UvOnTimer(void)
     auto *      app = CPubseqGatewayApp::GetInstance();
     if (!app->GetProcessorDispatcher()->IsGroupAlive(m_RequestId)) {
         // Callback happened after a group was deleted
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
+        app->GetCounters().Increment(nullptr,
+                                     CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
         StopPolling();
 
         // Need to inform the loop binder that the callback is scheduled for
@@ -250,7 +251,8 @@ void CPSGS_SocketIOCallback::x_UvOnSocketEvent(int  status)
     auto *      app = CPubseqGatewayApp::GetInstance();
     if (!app->GetProcessorDispatcher()->IsGroupAlive(m_RequestId)) {
         // Callback happened after a group was deleted
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
+        app->GetCounters().Increment(nullptr,
+                                     CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
         StopPolling();
 
         // Need to inform the loop binder that the callback is scheduled for

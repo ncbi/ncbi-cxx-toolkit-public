@@ -187,7 +187,9 @@ void CPSGS_UvLoopBinder::x_UvOnCallback(void)
             if (app->GetProcessorDispatcher()->IsGroupAlive(cb.m_RequestId)) {
                 cb.m_ProcCallback(cb.m_UserData);
             } else {
-                app->GetCounters().Increment(CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
+                app->GetCounters().Increment(
+                        nullptr,
+                        CPSGSCounters::ePSGS_DestroyedProcessorCallbacks);
             }
         } else {
             cb.m_ProcCallback(cb.m_UserData);

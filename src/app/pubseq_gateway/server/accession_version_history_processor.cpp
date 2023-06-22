@@ -274,7 +274,8 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistData(
 
     if (IPSGS_Processor::m_Reply->IsFinished()) {
         CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                        CPSGSCounters::ePSGS_UnknownError);
+                                        this,
+                                        CPSGSCounters::ePSGS_ProcUnknownError);
         PSG_ERROR("Unexpected data received "
                   "while the output has finished, ignoring");
 
@@ -430,10 +431,12 @@ bool CPSGS_AccessionVersionHistoryProcessor::x_Peek(unique_ptr<CCassFetch> &  fe
         CRequestStatus::ECode       status;
         if (IsTimeoutError(error)) {
             status = CRequestStatus::e500_InternalServerError;
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+            app->GetCounters().Increment(this,
+                                         CPSGSCounters::ePSGS_ProcUnknownError);
         } else {
             status = CRequestStatus::e504_GatewayTimeout;
-            app->GetCounters().Increment(CPSGSCounters::ePSGS_CassQueryTimeoutError);
+            app->GetCounters().Increment(this,
+                                         CPSGSCounters::ePSGS_CassQueryTimeoutError);
         }
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(

@@ -74,7 +74,9 @@ class CIPGResolveCallback
                     app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
                                               eOpStatusNotFound,
                                               m_RetrieveTiming);
-                    app->GetCounters().Increment(CPSGSCounters::ePSGS_IPGResolveNotFound);
+                    app->GetCounters().Increment(
+                                    m_Processor,
+                                    CPSGSCounters::ePSGS_IPGResolveNotFound);
                 } else {
                     app->GetTiming().Register(m_Processor, eIPGResolveRetrieve,
                                               eOpStatusFound,

@@ -295,7 +295,8 @@ bool CPSGS_ResolveProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         string      error = fetch_details->GetLoader()->LastError();
         auto *      app = CPubseqGatewayApp::GetInstance();
 
-        app->GetCounters().Increment(CPSGSCounters::ePSGS_UnknownError);
+        app->GetCounters().Increment(this,
+                                     CPSGSCounters::ePSGS_ProcUnknownError);
         PSG_ERROR(error);
 
         IPSGS_Processor::m_Reply->PrepareProcessorMessage(
