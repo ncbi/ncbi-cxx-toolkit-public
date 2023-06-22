@@ -40,6 +40,7 @@
 #include <math.h>
 #include <memory>
 #include <stdlib.h>
+#include <common/ncbi_sanitizers.h>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -142,7 +143,7 @@ static void PrintHandler(ELimitsExitCode code, size_t limit,
 
 static void Test_MemLimit(void)
 {
-#ifdef __SANITIZE_THREAD__
+#ifdef NCBI_USE_TSAN
     LOG_POST("\nSkipping memory limit test under ThreadSanitizer\n");
 #else
     LOG_POST("\nMemory limit test\n");
