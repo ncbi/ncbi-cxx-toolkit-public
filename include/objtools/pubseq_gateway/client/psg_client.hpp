@@ -401,6 +401,9 @@ public:
     EPSG_BioIdResolution GetBioIdResolution() const { return m_BioIdResolution; }
 
     /// Specify which info and data is needed
+    /// Some processors may provide more than the flags prescribe
+    /// Always check if corresponding data is actually available using CPSG_BioseqInfo::IncludedInfo()
+    /// @sa CPSG_BioseqInfo::IncludedInfo()
     enum EIncludeInfo : unsigned {
         // These flags correspond exactly to the CPSG_BioseqInfo's getters
         fCanonicalId      = (1 << 1),
