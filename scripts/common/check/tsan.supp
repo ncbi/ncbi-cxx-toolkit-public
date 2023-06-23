@@ -1,44 +1,3 @@
-# False positive: CXX-10523
-race:^ncbi::ncbi_namespace_mutex_mt::SSystemMutex::Lock(
-race:^ncbi::CSafeStatic<ncbi::CParam
-
-
-################################################################
-# grichenk
-
-# false positive CXX-10544
-race:^ncbi::CSafeStatic<ncbi::CTls
-race:^ncbi::CTlsBase::x_SetValue
-race:^ncbi::CTlsBase::x_GetValue
-
-# error, just not important - ignore (whole test) CXX-10544
-race:corelib/test/test_ncbidiag_mt.cpp
-
-# This one is actually a race, the only possible consequence is 
-# an additional message about temporary suspending log output. 
-# So suppress this and leave the code as-is.
-# CXX-10544
-race:^ncbi::CDiagContext::ApproveMessage(ncbi::SDiagMessage&,
-
-# The only danger here is to calculate and cache the same value several times. CXX-10544
-race:^ncbi::objects::CSeq_loc::x_UpdateTotalRange()
-
-# ncbi_url.cpp default encoder. Leave as is. CXX-10543
-race:^ncbi::CSafeStatic<ncbi::CDefaultUrlEncoder, ncbi::CSafeStatic_Callbacks<ncbi::CDefaultUrlEncoder> >::x_Init()$
-
-# There's no actual race, the variable is read while executing ~CSeq_id_Mapper when no other threads are using it. CXX-10543
-race:^ncbi::objects::CSeq_id_Textseq_Tree::Empty()
-
-# This is actually a race, but harmless. CXX-10546
-race:^s_ResetInstance$
-race:^ncbi::objects::CSeq_id_Which_Tree::DropInfo
-
-#  write protected, read without any protection. CXX-11270
-race:^ncbi::CHookData<ncbi::CWriteClassMemberHook
-race:^ncbi::CHookData<ncbi::CWriteObjectHook
-
-
-
 ################################################################
 # ivanov
 
@@ -51,105 +10,33 @@ signal:corelib/test/test_ncbi_system.cpp
 # False positive deadlock detection in util/test/test_histogram_mt. CXX-12217
 deadlock:^CTest::ThreadHandler(int)
 
-
-
 ################################################################
 # vasilche CXX-10546
 
-# error, just not important - ignore (whole test)
-race:corelib/test/test_tls_object.cpp
-
-# false positive -- last CRef release
-race:^ncbi::CPoolOfThreads_ForServer::AcceptRequest
-
 # false positive -- loading locks come in any order, deadlocks are tracked and avoided
 deadlock:^ncbi::objects::GBL::CInfoManager::x_LockInfoMutex
+deadlock:^ncbi::objects::GBL::CInfoManager::ReleaseLoadLock
 
-# false positive -- double-check initialization
-race:^ncbi::objects::CCSRADataLoader_Impl::GetSRRFile
-
-# false positive -- one-time initialization, order doesn't matter
-race:^CCSRATestApp::GetMaxSpotId
-
-# false positive -- CSeq_id_Handle uses lock-less access to generated CSeq_id
-race:^ncbi::objects::CSeq_id_General_Str_Info::Restore
-
-# false positive -- CSeq_id_Handle uses lock-less access to generated CSeq_id
-race:^ncbi::objects::CSeq_id_Gi_Info::GetPackedSeqId
-
-# false positive -- deletion and removal from indexes are controlled by atomic counters
-race:^ncbi::objects::CSeq_id_InfoLocker::Unlock
-
-# false positive -- double-check initialization
-race:^ncbi::objects::CDataSource::SetLoaded
-
-# false positive -- one-time initialization, order doesn't matter
-race:^ncbi::objects::CCSraRefSeqIterator::GetSeqLength
-
-# false positive -- CInitMutexPool doesn't delete its mutexes
+# false deadlock -- CInitMutexPool doesn't delete its mutexes
+# the mutexes are reused after initialization, so new mutex order may be reversed
 deadlock:^ncbi::CInitGuard::CInitGuard
 
-# false positive -- CInitMutexPool doesn't delete its mutexes
-race:^ncbi::CInitMutexPool::AcquireMutex
+# BerkeleyDB 4.6.21.1 mutex implementation uses 'volatile' internally,
+# so it's not strictly correct and ThreadSanitizer complains about that.
+# The library is opaque so we cannot suppress exact place in it,
+# so unfortunately we have to suppress our BDB wrappers code that call BerkeleyDB
+race:^ncbi::CBDB_File::x_Fetch
+race:^ncbi::CBDB_File::ReadCursor
+race:^ncbi::CBDB_RawFile::x_DB_CPut
+race:^ncbi::CBDB_RawFile::CreateCursor
+race:^ncbi::CBDB_FileCursor::Close
+race:^ncbi::CBDB_Transaction::Commit
+race:^ncbi::CBDB_Cache::x_Store
+race:^__os_gettime
+race:^__lock_getobj
 
-# false positive -- CInitMutexPool doesn't delete its mutexes
-race:^ncbi::CInitMutexPool::ReleaseMutex
-
-# false positive -- double-check initialization
-race:^ncbi::CInitMutex_Base::operator void
-
-# false positive -- double-check initialization
-race:^ncbi::CInitMutex*::GetPointer
-
-# false positive -- doubke-check initialization
-race:^ncbi::objects::CSynonymsSet::ContainsSynonym
-
-# false positive -- double-check initialization
-race:^ncbi::objects::CSeq_id_Mapper::GetInstance
-
-# false positive -- double-check initialization
-race:^ncbi::CSafeStatic*::x_Init
-
-# false positive -- one-time initialization, order doesn't matter
-race:^ncbi::objects::CSeq_loc::GetTotalRange
-
-# false positive -- values are read in a MT-safe manner
-race:^ncbi::objects::CPagedFile::GetReadStatistics
-
-# false positive -- page read is guarded, check page position is safely unguarded
-race:^ncbi::objects::CBGZFFile::x_ReadBlock
-
-# false positive -- double-check
-race:^ncbi::objects::CTSE_Info_Object::x_ResetDirtyAnnotIndex
-
-# false positive -- double-check
-race:^ncbi::objects::CTSE_Info_Object::x_DirtyAnnotIndex
-
-# false positive -- double-check
-race:^ncbi::objects::CScopeInfo_Base::x_ResetTSE_Lock
-
-# false positive -- double-check one-time initialization
-race:^ncbi::CTypeRef::Get
-
-# false positive -- double-check one-time initialization
-race:^ncbi::*_Base::GetTypeInfo()
-
-# false positive -- double-check one-time initialization
-race:^ncbi::objects::CTSE_Chunk_Info::SetLoaded
-
-# false positive -- double-check one-time initialization
-race:^ncbi::objects::CBioseq_Info::GetSeqMap
-
-# false positive -- double-check one-time initialization
-race:^ncbi::objects::CSeqMap::x_FindSegment
-
-# false positive -- double-check one-time initialization
-race:^ncbi::objects::CSeqMap::GetLength
-
-# false positive -- double-check one-time initialization
-race:^ncbi::objects::CProcessor::GetGiOffset()
-
-
+# Formally suppress complains on grpc
+race:^pollable_epoll$
 
 ################################################################
 # lavr CXX-11285
@@ -184,7 +71,9 @@ race:^MT_LOCK_DoInternal
 # false positive (static value initialization)
 race:^s_getlocalhostaddress
 
-
+# ???
+race:^s_LBSMD
+race:^SERV_LBSMD_Open
 
 ################################################################
 # ucko CXX-11303
@@ -192,60 +81,6 @@ race:^s_getlocalhostaddress
 # the race is real, but AFAICT harmless in this context
 race:^tds_socket_write$
 race:^tds_socket_read$
-
-# False positives -- the writes in question cannot occur until the
-# worker thread responsible for previous reads has finished with them
-# and released its CRef.
-race:>::CQueueItem::~CQueueItem()$
-race:^ncbi::CRef<ncbi::CStdRequest, ncbi::CObjectCounterLocker>::Reset()$
-
-
-
-################################################################
-# satskyse CXX-11282
-
-# It has already been checked by the original developer long ago,
-# see the SVN revision 347572 (false positive) CSyncQueue<...>
-race:>::x_GuardedUnlock() const$
-race:>::x_IsGuarded() const$
-
-# It has already been checked by the original developer long ago,
-# see the SVN revision 347572 (false positives) CThreadPool...
-race:^ncbi::CThreadPool_Task::x_SetStatus(ncbi::CThreadPool_Task::EStatus)$
-
-# this is rather timing (CSyncQueue<...>)
-race:>::GetSize() const$
-
-# this is rather timing
-race:^ncbi::CThreadPool_Task::GetStatus() const$
-race:^ncbi::CThreadPool_Task::IsCancelRequested() const$
-race:^ncbi::CThreadPool_Task::IsFinished() const$
-race:^ncbi::CThreadPool_Task::x_RequestToCancel()$
-race:^ncbi::CThreadPool_ThreadImpl::RequestToFinish()$
-race:^ncbi::CThreadPool_ThreadImpl::CancelCurrentTask()$
-race:^ncbi::CThreadPool_ServiceThread::IsFinished()$
-race:^ncbi::CThreadPool_ServiceThread::RequestToFinish()$
-race:^ncbi::CThreadPool_Impl::x_NoNewTaskAllowed() const$
-race:^ncbi::CThreadPool_Impl::RequestSuspend(unsigned int)$
-race:^ncbi::CThreadPool_Impl::ResumeWork()$
-
-# The complain is for the case when a task is cancelled. The cancelling is done
-# via CThreadPool_Impl::CancelTask(), i.e. the pool exists and m_Pool is set.
-race:^ncbi::CThreadPool_Task::GetPool() const$
-
-# False positive: a CRef<> task is used from different threads and the
-# destruction logic in CRef<> does not use anything like mutex but an atomic
-# counter.
-race:^CTerminator_Task::~CTerminator_Task()$
-race:^CSentinelThreadPool_Task::~CSentinelThreadPool_Task()$
-
-# CRefs are set to NULL so GCC thread sanitizer does not like it
-race:^ncbi::CThreadPool_Impl::DestroyReference()$
-
-# The test works with tasks consequently moving from one state to another so
-# the CRef to the task are good and may not be in conflict
-race:^CThreadPoolTester::Thread_Run(int)$
-
 
 
 ################################################################
@@ -265,11 +100,4 @@ race:^datastax::internal::core::Buffer::copy(unsigned long, char const*, unsigne
 race:^datastax::internal::Memory::free(void*)$
 race:^std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> >::compare(std::__cxx11::basic_string<char, std::char_traits<char>, datastax::internal::Allocator<char> > const&) const$
 
-
-
-################################################################
-# sadyrov CXX-12552
-
-# False positive
-race:^ncbi::CServer_Request::~CServer_Request()
 
