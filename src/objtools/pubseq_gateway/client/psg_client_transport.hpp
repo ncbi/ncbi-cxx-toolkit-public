@@ -642,6 +642,7 @@ struct SPSG_Throttling
     bool AddSuccess() { return AddResult(true); }
     bool AddFailure() { return AddResult(false); }
     void StartClose();
+    void FinishClose();
 
     void Discovered()
     {
@@ -810,9 +811,11 @@ private:
 
         loop.Run();
 
+        stop_barrier.Wait();
+
         io->TImpl::AfterExecute();
 
-        stop_barrier.Wait();
+        loop.Run();
     }
 
     SUv_Async m_Shutdown;
@@ -1046,7 +1049,7 @@ protected:
     void OnShutdown(uv_async_t*);
     void OnTimer(uv_timer_t* handle);
     void OnExecute(uv_loop_t& loop) { if (m_Stats) m_Stats->Init(&loop); }
-    void AfterExecute() {}
+    void AfterExecute();
 
 private:
     struct SNoServers
