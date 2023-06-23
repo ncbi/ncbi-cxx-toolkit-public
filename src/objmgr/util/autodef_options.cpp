@@ -421,43 +421,46 @@ const string kOrgMods = "OrgMods";
 
 void CAutoDefOptions::x_MakeModifierList(CUser_object& user) const
 {
+    try {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(GetFieldType(eOptionFieldType_ModifierList));
 
-    if (!m_SubSources.empty()) {
-        CRef<CUser_field> subsources(new CUser_field());
-        subsources->SetLabel().SetStr(kSubSources);
-        vector<string> vals;
-        ITERATE(TSubSources, it, m_SubSources) {
-            vals.push_back(CSubSource::GetSubtypeName(*it));
+        if (!m_SubSources.empty()) {
+            CRef<CUser_field> subsources(new CUser_field());
+            subsources->SetLabel().SetStr(kSubSources);
+            vector<string> vals;
+            ITERATE(TSubSources, it, m_SubSources) {
+                vals.push_back(CSubSource::GetSubtypeName(*it));
+            }
+            sort(vals.begin(), vals.end());
+            vector<string>::iterator sort_it = std::unique(vals.begin(), vals.end());
+            vals.resize(distance(vals.begin(), sort_it));
+            ITERATE(vector<string>, it, vals) {
+                subsources->SetData().SetStrs().push_back(*it);
+            }
+            field->SetData().SetFields().push_back(subsources);
         }
-        sort(vals.begin(), vals.end());
-        vector<string>::iterator sort_it = std::unique(vals.begin(), vals.end());
-        vals.resize(distance(vals.begin(), sort_it));
-        ITERATE(vector<string>, it, vals) {
-            subsources->SetData().SetStrs().push_back(*it);
-        }
-        field->SetData().SetFields().push_back(subsources);
-    }
 
-    if (!m_OrgMods.empty()) {
-        CRef<CUser_field> orgmods(new CUser_field());
-        orgmods->SetLabel().SetStr(kOrgMods);
-        vector<string> vals;
-        ITERATE(TOrgMods, it, m_OrgMods) {
-            vals.push_back(COrgMod::GetSubtypeName(*it));
+        if (!m_OrgMods.empty()) {
+            CRef<CUser_field> orgmods(new CUser_field());
+            orgmods->SetLabel().SetStr(kOrgMods);
+            vector<string> vals;
+            ITERATE(TOrgMods, it, m_OrgMods) {
+                vals.push_back(COrgMod::GetSubtypeName(*it));
+            }
+            sort(vals.begin(), vals.end());
+            vector<string>::iterator sort_it = std::unique(vals.begin(), vals.end());
+            vals.resize(distance(vals.begin(), sort_it));
+            ITERATE(vector<string>, it, vals) {
+                orgmods->SetData().SetStrs().push_back(*it);
+            }
+            field->SetData().SetFields().push_back(orgmods);
         }
-        sort(vals.begin(), vals.end());
-        vector<string>::iterator sort_it = std::unique(vals.begin(), vals.end());
-        vals.resize(distance(vals.begin(), sort_it));
-        ITERATE(vector<string>, it, vals) {
-            orgmods->SetData().SetStrs().push_back(*it);
-        }
-        field->SetData().SetFields().push_back(orgmods);
-    }
 
     if (field->IsSetData() && field->GetData().IsFields() && field->GetData().GetFields().size() > 0) {
         user.SetData().push_back(field);
+    }
+    } catch ( ... ) {
     }
 }
 
@@ -466,6 +469,7 @@ void CAutoDefOptions::x_SetModifierList(const CUser_field& field)
 {
     ClearModifierList();
 
+    try {
     if (!field.IsSetData() || !field.GetData().IsFields()) {
         return;
     }
@@ -485,6 +489,8 @@ void CAutoDefOptions::x_SetModifierList(const CUser_field& field)
                 }
             }
         }
+    }
+    } catch ( ... ) {
     }
 }
 
