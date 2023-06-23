@@ -49,8 +49,8 @@ USING_SCOPE(objects);
 static void
 s_UnregisterDataLoader(const string & dbloader_prefix)
 {
+    static CRef<CObjectManager> om = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
-    CRef<CObjectManager> om = CObjectManager::GetInstance();
     om->GetRegisteredNames(loader_names);
     ITERATE(CObjectManager::TRegisteredNames, loader_name, loader_names) {
         if (NStr::Find(*loader_name, dbloader_prefix) != NPOS) {
