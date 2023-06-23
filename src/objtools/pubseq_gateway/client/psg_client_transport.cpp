@@ -1334,8 +1334,14 @@ SPSG_Throttling::SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottlePar
 
 void SPSG_Throttling::StartClose()
 {
-    m_Signal.Close();
+    m_Signal.Unref();
     m_Timer.Close();
+}
+
+void SPSG_Throttling::FinishClose()
+{
+    m_Signal.Ref();
+    m_Signal.Close();
 }
 
 bool SPSG_Throttling::Adjust(bool result)
@@ -1418,6 +1424,16 @@ void SPSG_DiscoveryImpl::OnShutdown(uv_async_t*)
     }
 
     if (m_Stats) m_Stats->Stop();
+}
+
+void SPSG_DiscoveryImpl::AfterExecute()
+{
+    auto servers_locked = m_Servers.GetLock();
+    auto& servers = *servers_locked;
+
+    for (auto& server : servers) {
+        server.throttling.FinishClose();
+    }
 }
 
 void SPSG_IoImpl::AddNewServers(uv_async_t* handle)

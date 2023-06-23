@@ -106,6 +106,16 @@ struct SUv_Handle : protected THandle
         uv_close(reinterpret_cast<uv_handle_t*>(this), m_Cb);
     }
 
+    void Ref()
+    {
+        uv_ref(reinterpret_cast<uv_handle_t*>(this));
+    }
+
+    void Unref()
+    {
+        uv_unref(reinterpret_cast<uv_handle_t*>(this));
+    }
+
     template <typename TDerived>
     static auto GetThat(THandle* handle)
     {
