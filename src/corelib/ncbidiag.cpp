@@ -1511,8 +1511,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
             m_AppLogSuspended = false;
         }
         else {
-            *show_warning = !m_AppLogSuspended;
-            m_AppLogSuspended = true;
+            *show_warning = !m_AppLogSuspended.exchange(true);
         }
     }
     else {
@@ -1527,8 +1526,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
                 m_TraceLogSuspended = false;
             }
             else {
-                *show_warning = !m_TraceLogSuspended;
-                m_TraceLogSuspended = true;
+                *show_warning = !m_TraceLogSuspended.exchange(true);
             }
             break;
         default:
@@ -1540,8 +1538,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
                 m_ErrLogSuspended = false;
             }
             else {
-                *show_warning = !m_ErrLogSuspended;
-                m_ErrLogSuspended = true;
+                *show_warning = !m_ErrLogSuspended.exchange(true);
             }
         }
     }
