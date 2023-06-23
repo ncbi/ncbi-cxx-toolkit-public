@@ -1525,6 +1525,26 @@ void CBDB_Cache::Open(const string& cache_path,
 
 
     if (m_RunPurgeThread) {
+        StartPurgeThread();
+    }
+
+    LOG_POST_X(9, Info <<
+               "LC: '" << cache_name <<
+               "' Cache mount at: " << cache_path);
+
+}
+
+
+void CBDB_Cache::RunPurgeThread(unsigned purge_delay)
+{
+    m_RunPurgeThread = true;
+    m_PurgeThreadDelay = purge_delay;
+}
+
+
+void CBDB_Cache::StartPurgeThread()
+{
+    if (m_RunPurgeThread) {
 # ifdef NCBI_THREADS
        LOG_POST_X(7, Info << "Starting cache cleaning thread.");
        CBDB_Cache_OnAppExit::AddOnExitCallback(*this);
@@ -1549,19 +1569,8 @@ void CBDB_Cache::Open(const string& cache_path,
        m_Env->TransactionCheckpoint();
 # endif
     }
-
-    LOG_POST_X(9, Info <<
-               "LC: '" << cache_name <<
-               "' Cache mount at: " << cache_path);
-
 }
 
-
-void CBDB_Cache::RunPurgeThread(unsigned purge_delay)
-{
-    m_RunPurgeThread = true;
-    m_PurgeThreadDelay = purge_delay;
-}
 
 void CBDB_Cache::StopPurgeThread()
 {
@@ -5344,10 +5353,6 @@ ICache* CBDB_CacheReaderCF::x_CreateInstance(
     unsigned purge_thread_delay =
         GetParamInt(params, kCFParam_purge_thread_delay, false, 30);
 
-    if (purge_thread) {
-        drv->RunPurgeThread(purge_thread_delay);
-    }
-
     unsigned tas_spins =
         GetParamInt(params, kCFParam_TAS_spins, false, 200);
 
@@ -5374,6 +5379,11 @@ ICache* CBDB_CacheReaderCF::x_CreateInstance(
         }
         env->SetLkDetect(CBDB_Env::eDeadLock_Default);
         env->SetMpMaxWrite(0, 0);
+    }
+
+    if (purge_thread) {
+        drv->RunPurgeThread(purge_thread_delay);
+        drv->StartPurgeThread();
     }
 
     return drv.release();

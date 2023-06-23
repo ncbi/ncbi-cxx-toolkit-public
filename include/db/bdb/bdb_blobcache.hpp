@@ -330,9 +330,12 @@ public:
     /// @sa SetPurgeBatchSize, SetBatchSleep
     void RunPurgeThread(unsigned purge_delay =  30);
 
+    /// Start background thread
+    void StartPurgeThread();
+
     /// Stop background thread
     void StopPurgeThread();
-
+    
     /// Underlying BDB database can be configured using transactional
     /// or non-transactional API. Transactional provides better protection
     /// from failures, non-transactional offers better performance.
