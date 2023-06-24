@@ -117,16 +117,12 @@ public:
         }
 
         bool bTypeMLA = false;
-        if (args["pubmed"]) {
-            string s = args["pubmed"].AsString();
-            if (s == "medarch") {
-                bTypeMLA = true;
-            } else if (s == "eutils") {
-                bTypeMLA = false;
-                if (args["url"]) {
-                    string url = args["url"].AsString();
-                    CEUtils_Request::SetBaseURL(url);
-                }
+        if (args["pubmed"] && args["pubmed"].AsString() == "medarch") {
+            bTypeMLA = true;
+        } else {
+            if (args["url"]) {
+                string url = args["url"].AsString();
+                CEUtils_Request::SetBaseURL(url);
             }
         }
 
