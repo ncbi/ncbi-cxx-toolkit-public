@@ -1392,17 +1392,23 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
     if (alignment && alignment->IsSetSegs() && alignment->GetSegs().IsSpliced()) {
         CRef<CSeq_id> seq_id (new CSeq_id());
         seq_id->Assign(*(genomicLoc.GetId()));
-        for (auto pExon : alignment->GetSegs().GetSpliced().GetExons()) {
+        const auto& splicedSegs = alignment->GetSegs().GetSpliced();
+        const bool isMinusStrand = (splicedSegs.IsSetGenomic_strand() && 
+                                    splicedSegs.GetGenomic_strand() == eNa_strand_minus);
+         
+        for (auto pExon : splicedSegs.GetExons()) {
             auto pExonLoc = Ref(new CSeq_loc(*seq_id,
                                             pExon->GetGenomic_start(),
                                             pExon->GetGenomic_end()));
-            if (pExon->IsSetGenomic_strand()) {
+            if (isMinusStrand) {
+                pExonLoc->SetStrand(eNa_strand_minus);
+            } else if (pExon->IsSetGenomic_strand()) {
                 pExonLoc->SetStrand(pExon->GetGenomic_strand());
             }
             exonLocs.push_back(pExonLoc);
         }
 
-        for (auto pModifier : alignment->GetSegs().GetSpliced().GetModifiers()) {
+        for (auto pModifier : splicedSegs.GetModifiers()) {
             if (pModifier->IsStart_codon_found()) {
                 found_start_codon = pModifier->GetStart_codon_found();
             }
