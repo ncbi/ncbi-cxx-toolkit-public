@@ -248,7 +248,7 @@ void CFlat2AsnApp::Init()
             &(*new CArgAllow_Strings, "embl", "ddbj", "lanl", "ncbi", "sprot", "flybase", "refseq", "uspto"));
 
     arg_descrs->AddDefaultKey("u", "AvoidMuidLookup", "Avoid MUID lookup", ncbi::CArgDescriptions::eBoolean, "F");
-    arg_descrs->AddDefaultKey("pubmed", "pubmed", "Source of pubmed data", CArgDescriptions::eString, "medarch");
+    arg_descrs->AddDefaultKey("pubmed", "pubmed", "Source of pubmed data", CArgDescriptions::eString, "eutils");
     arg_descrs->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
     arg_descrs->AddFlag("normalize", "Normalize output deterministically for tests", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_descrs->AddDefaultKey("h", "AvoidReferencesLookup", "Avoid lookup of references which already have muids", ncbi::CArgDescriptions::eBoolean, "F");
