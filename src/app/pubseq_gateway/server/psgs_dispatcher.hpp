@@ -205,6 +205,9 @@ private:
         // final flush.
         bool                        m_LowLevelClose;
 
+        // To control that the request stop is issued for this group
+        bool                        m_RequestStopPrinted;
+
         // A processor which has started to supply data
         IPSGS_Processor *           m_StartedProcessing;
 
@@ -213,6 +216,7 @@ private:
             m_TimerActive(false), m_TimerClosed(true), m_FinallyFlushed(false),
             m_AllProcessorsFinished(false), m_Libh2oFinished(false),
             m_LowLevelClose(false),
+            m_RequestStopPrinted(false),
             m_StartedProcessing(nullptr)
         {
             m_Processors.reserve(MAX_PROCESSOR_GROUPS);
