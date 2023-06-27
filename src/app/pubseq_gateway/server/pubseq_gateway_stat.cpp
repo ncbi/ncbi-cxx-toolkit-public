@@ -67,6 +67,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "FrameworkUnknownError", "Framework unknown error counter",
             "Number of times a framework unknown error has been detected");
+    m_Counters[ePSGS_NoRequestStop] =
+        new SCounterInfo(
+            "NoRequestStop", "Missed request stop error counter",
+            "Number of times a processor group was erased when there was no request stop for that request");
     m_Counters[ePSGS_InsufficientArgs] =
         new SCounterInfo(
             "InsufficientArgumentsCount", "Insufficient arguments counter",

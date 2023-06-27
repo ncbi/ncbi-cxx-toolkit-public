@@ -93,6 +93,7 @@ class CPSGSCounters
             ePSGS_NoProcessorInstantiated,
             ePSGS_AcceptFailure,
             ePSGS_FrameworkUnknownError,
+            ePSGS_NoRequestStop,
 
             // Request stop statuses
             ePSGS_100,

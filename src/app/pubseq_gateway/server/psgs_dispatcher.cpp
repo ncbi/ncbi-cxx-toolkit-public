@@ -679,6 +679,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             // IsFinished() will return true
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             reply->SetCompleted();
+
+            procs->second->m_RequestStopPrinted = true;
             x_PrintRequestStop(request, request_status, reply->GetBytesSent());
         }
     }
@@ -1186,6 +1188,43 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
         if (!procs->second->IsSafeToDelete()) {
             m_GroupsLock[bucket_index].unlock();
             return;
+        }
+
+        if (!procs->second->m_RequestStopPrinted) {
+            // That means the request stop has not been really issued before
+            // the group is removed
+            auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
+            counters.Increment(nullptr, CPSGSCounters::ePSGS_NoRequestStop);
+
+            string      per_proc;
+            for (const auto &  proc_data : procs->second->m_Processors) {
+                if (!per_proc.empty())
+                    per_proc += "; ";
+                per_proc += "processor: " + proc_data.m_Processor->GetName() +
+                            " [dispatch status: " + to_string(proc_data.m_DispatchStatus) +
+                            "; finish status: " + to_string(proc_data.m_FinishStatus) +
+                            "; done status registered: " + to_string(proc_data.m_DoneStatusRegistered) +
+                            "]";
+            }
+
+            string      started_proc = "started processor: ";
+            if (procs->second->m_StartedProcessing)
+                started_proc += procs->second->m_StartedProcessing->GetName();
+            else
+                started_proc += "none";
+
+            PSG_ERROR("Removing a processor group for which "
+                      "request stop has not been issued "
+                      "(request id: " + to_string(request_id) +
+                      "; timer active: " + to_string(procs->second->m_TimerActive) +
+                      "; timer closed: " + to_string(procs->second->m_TimerClosed) +
+                      "; request final flush: " + to_string(procs->second->m_FinallyFlushed) +
+                      "; all processors finished: " + to_string(procs->second->m_AllProcessorsFinished) +
+                      "; lib h2o finished: " + to_string(procs->second->m_Libh2oFinished) +
+                      "; low level close: " + to_string(procs->second->m_LowLevelClose) +
+                      "; number of processors: " + to_string(procs->second->m_Processors.size()) +
+                      "; " + per_proc +
+                      "; " + started_proc + ")");
         }
 
         group = procs->second.release();
