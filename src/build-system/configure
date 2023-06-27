@@ -29395,7 +29395,7 @@ extern "C" {
 int
 main ()
 {
-GifFileType* fp = DGifOpenFileName("foo");
+GifFileType* fp; return DGifSlurp(fp);
   ;
   return 0;
 }
@@ -29527,7 +29527,7 @@ extern "C" {
 int
 main ()
 {
-GifFileType* fp = DGifOpenFileName("foo");
+GifFileType* fp; return DGifSlurp(fp);
   ;
   return 0;
 }

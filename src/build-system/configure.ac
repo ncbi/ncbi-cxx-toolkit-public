@@ -8024,13 +8024,13 @@ NCBI_CHECK_THIRD_PARTY_LIB(gif,
  [AC_LANG_PROGRAM([extern "C" {
                   @%:@include <gif_lib.h>
                   }],
-    [GifFileType* fp = DGifOpenFileName("foo");])], $X_LIBS -lX11)
+    [GifFileType* fp; return DGifSlurp(fp);])], $X_LIBS -lX11)
 if test "$with_gif" = "no"; then
    NCBI_CHECK_THIRD_PARTY_LIB(ungif,
     [AC_LANG_PROGRAM([extern "C" {
                      @%:@include <gif_lib.h>
                      }],
-       [GifFileType* fp = DGifOpenFileName("foo");])], $X_LIBS -lX11)
+       [GifFileType* fp; return DGifSlurp(fp);])], $X_LIBS -lX11)
 else
    AC_DEFINE(HAVE_LIBUNGIF, 1, [Define to 1 if libungif is available.])
    UNGIF_INCLUDE=$GIF_INCLUDE
