@@ -1381,7 +1381,9 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
                                   const CSeq_loc& genomicLoc,
                                   TSeqPos bioseqLength)
 {
-    CProSplign prosplign(CProSplignScoring(), false, true, false, false);
+    CProSplignScoring scoring;
+    scoring.SetAltStarts(true);
+    CProSplign prosplign(scoring, false, true, false, false);
     CRef<CSeq_align> alignment = prosplign.FindAlignment(scope, proteinId, genomicLoc,
                                                      CProSplignOutputOptions(CProSplignOutputOptions::ePassThrough));
     
