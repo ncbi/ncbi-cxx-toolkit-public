@@ -425,6 +425,7 @@ private:
     void x_OrgModBC( COrgMod & orgmod );
 
     void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
+    void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq& bioseq);
 
     void x_AddPartialToProteinTitle( CBioseq &bioseq );
 
