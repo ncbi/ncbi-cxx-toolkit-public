@@ -50,4 +50,5 @@ IntelMAC                 : plain          : GCC.sh           --without-debug --w
 IntelMAC                 : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 XCode                    : plain          : Xcode.sh 30
 
+USE_COMPONENTS
 
