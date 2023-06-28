@@ -135,7 +135,7 @@ void ValidateRecord(const TestDBF1 &  dbf1, unsigned int  id)
 void ValidateRecord(const TestDBF1L &  dbf1, unsigned int  id)
 {
     char buf[256];
-    sprintf(buf, s_TestStrTempl, id);
+    snprintf(buf, sizeof(buf), s_TestStrTempl, id);
 
     int idata1 = dbf1.idata;
     unsigned int id_key = dbf1.IdKey;
