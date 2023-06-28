@@ -239,7 +239,7 @@ public:
     void CommitConfig() const;
 
     // Update VDB request context from Corelib's one
-    class CRequestContextUpdater {
+    class NCBI_SRAREAD_EXPORT CRequestContextUpdater {
     public:
         CRequestContextUpdater();
         ~CRequestContextUpdater();
