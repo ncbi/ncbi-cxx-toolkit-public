@@ -5673,62 +5673,69 @@ void CNewCleanup_imp::x_OrgModBC(COrgMod & orgmod)
 
 void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq )
 {
-    if( FIELD_IS_SET(molinfo, Biomol) )
+    if(!molinfo.IsSetBiomol())
     {
-        const TMOLINFO_BIOMOL biomol = GET_FIELD(molinfo, Biomol);
-        if( biomol == NCBI_BIOMOL(unknown) ) {
-            RESET_FIELD( molinfo, Biomol );
-            ChangeMade(CCleanupChange::eChangeMolInfo);
-            return;
-        }
+        return;
+    }
 
-        if( FIELD_IS_SET(bioseq, Inst) )
-        {
-            const TSEQ_MOL mol = ( FIELD_IS_SET(bioseq.GetInst(), Mol) ?
-                GET_FIELD(bioseq.GetInst(), Mol) :
-                NCBI_SEQMOL(not_set) );
+    const auto biomol = molinfo.GetBiomol();
+    if( biomol == CMolInfo::eBiomol_unknown) {
+        molinfo.ResetBiomol();
+        ChangeMade(CCleanupChange::eChangeMolInfo);
+        return;
+    }
+    FixUnsetMolFromBiomol(biomol, bioseq);
+}
 
-            if( mol == NCBI_SEQMOL(not_set) ) {
-                switch( biomol ) {
-                case NCBI_BIOMOL(genomic):
-                    SET_FIELD( bioseq.SetInst(), Mol, NCBI_SEQMOL(na) );
-                    ChangeMade(CCleanupChange::eChangeBiomol);
-                    break;
-                case NCBI_BIOMOL(pre_RNA):
-                case NCBI_BIOMOL(mRNA):
-                case NCBI_BIOMOL(rRNA):
-                case NCBI_BIOMOL(tRNA):
-                case NCBI_BIOMOL(snRNA):
-                case NCBI_BIOMOL(scRNA):
-                case NCBI_BIOMOL(cRNA):
-                case NCBI_BIOMOL(snoRNA):
-                case NCBI_BIOMOL(transcribed_RNA):
-                case NCBI_BIOMOL(ncRNA):
-                case NCBI_BIOMOL(tmRNA):
-                    SET_FIELD( bioseq.SetInst(), Mol, NCBI_SEQMOL(rna) );
-                    ChangeMade(CCleanupChange::eChangeBiomol);
-                    break;
-                case NCBI_BIOMOL(peptide):
-                    SET_FIELD( bioseq.SetInst(), Mol, NCBI_SEQMOL(aa) );
-                    ChangeMade(CCleanupChange::eChangeBiomol);
-                    break;
-                case NCBI_BIOMOL(other_genetic):
-                    SET_FIELD( bioseq.SetInst(), Mol, NCBI_SEQMOL(other) );
-                    ChangeMade(CCleanupChange::eChangeBiomol);
-                    break;
-                case NCBI_BIOMOL(genomic_mRNA):
-                    SET_FIELD( bioseq.SetInst(), Mol, NCBI_SEQMOL(na) );
-                    ChangeMade(CCleanupChange::eChangeBiomol);
-                    break;
-                default:
-                    break;
-                }
-            } else if( mol != NCBI_SEQMOL(rna) &&
-                ( biomol == NCBI_BIOMOL(cRNA) || biomol == NCBI_BIOMOL(mRNA) ) )
-            {
-                SET_FIELD( bioseq.SetInst(), Mol, NCBI_SEQMOL(rna) );
+void CNewCleanup_imp::FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq &bioseq)
+{      
+    if (bioseq.IsSetInst())
+    {
+        auto& inst = bioseq.SetInst();
+        const auto mol = inst.IsSetMol() ?
+            inst.GetMol() :
+            CSeq_inst::eMol_not_set;
+        
+        if( mol == CSeq_inst::eMol_not_set) {
+            switch( biomol ) {
+            case CMolInfo::eBiomol_genomic:
+                inst.SetMol(CSeq_inst::eMol_na);
                 ChangeMade(CCleanupChange::eChangeBiomol);
+                break;
+            case CMolInfo::eBiomol_pre_RNA:
+            case CMolInfo::eBiomol_mRNA:
+            case CMolInfo::eBiomol_rRNA:
+            case CMolInfo::eBiomol_tRNA:
+            case CMolInfo::eBiomol_snRNA:
+            case CMolInfo::eBiomol_scRNA:
+            case CMolInfo::eBiomol_cRNA:
+            case CMolInfo::eBiomol_snoRNA:
+            case CMolInfo::eBiomol_transcribed_RNA:
+            case CMolInfo::eBiomol_ncRNA:
+            case CMolInfo::eBiomol_tmRNA:
+                inst.SetMol(CSeq_inst::eMol_rna);
+                ChangeMade(CCleanupChange::eChangeBiomol);
+                break;
+            case CMolInfo::eBiomol_peptide:
+                inst.SetMol(CSeq_inst::eMol_aa);
+                ChangeMade(CCleanupChange::eChangeBiomol);
+                break;
+            case CMolInfo::eBiomol_other_genetic:
+                inst.SetMol(CSeq_inst::eMol_other);
+                ChangeMade(CCleanupChange::eChangeBiomol);
+                break;
+            case CMolInfo::eBiomol_genomic_mRNA:
+                inst.SetMol(CSeq_inst::eMol_na);
+                ChangeMade(CCleanupChange::eChangeBiomol);
+                break;
+            default:
+                break;
             }
+        } else if(( mol != CSeq_inst::eMol_rna) &&
+            ( biomol == CMolInfo::eBiomol_cRNA || biomol == CMolInfo::eBiomol_mRNA ) )
+        {
+            inst.SetMol(CSeq_inst::eMol_rna);
+            ChangeMade(CCleanupChange::eChangeBiomol);
         }
     }
 }
@@ -10989,17 +10996,28 @@ void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set)
     bool firstMolInfo{true};
     while (d != dset.end()) {
         if ((*d)->IsMolinfo()) {
+            auto& molInfo = (*d)->SetMolinfo();
             // propagate the first molinfo descriptor down
+            // erase subsequent molinfo descriptors
             if (firstMolInfo) {
+                if (molInfo.IsSetBiomol() &&
+                    molInfo.GetBiomol() == CMolInfo::eBiomol_unknown) {
+                        molInfo.ResetBiomol();
+                        ChangeMade(CCleanupChange::eChangeMolInfo);
+                }
+
                 for (auto& pSubEntry : set.SetSeq_set()) {
                     if (pSubEntry->IsSet()) {
-                        AddMolInfo(pSubEntry->SetSet(), (*d)->GetMolinfo());
+                        AddMolInfo(pSubEntry->SetSet(), molInfo);
                     } else if (pSubEntry->IsSeq()) {
-                        AddMolInfo(pSubEntry->SetSeq(), (*d)->GetMolinfo());
+                        AddMolInfo(pSubEntry->SetSeq(), molInfo);
+                        if (molInfo.IsSetBiomol()) {
+                            FixUnsetMolFromBiomol(molInfo.GetBiomol(), pSubEntry->SetSeq());
+                        }
                     }
                 }
                 firstMolInfo = false;
-            }
+            } 
             d = dset.erase(d);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
         } else {
