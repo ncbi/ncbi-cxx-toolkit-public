@@ -497,7 +497,7 @@ CCSRADataLoader_Impl::TFileLock CCSRADataLoader_Impl::GetSRRFile(const string& a
         return TFileLock();
     }
     TSRRFiles::CLock lock = m_SRRFiles->get_lock(acc);
-    if ( !*lock ) {
+    {{
         CFastMutexGuard guard(lock.GetValueMutex());
         if ( !*lock ) {
             try {
@@ -513,7 +513,7 @@ CCSRADataLoader_Impl::TFileLock CCSRADataLoader_Impl::GetSRRFile(const string& a
                 return TFileLock();
             }
         }
-    }
+    }}
     return TFileLock(*lock, lock);
 }
 
@@ -616,6 +616,7 @@ CCSRADataLoader_Impl::GetFileInfo(const CCSRABlobId& blob_id)
 
 CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     // return blob-id of blob with sequence
     // annots may be different
     {{
@@ -774,6 +775,7 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
 void CCSRADataLoader_Impl::LoadBlob(const CCSRABlobId& blob_id,
                                     CTSE_LoadLock& load_lock)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     TFileLock file_info = GetFileInfo(blob_id);
     switch ( blob_id.m_BlobType ) {
     case CCSRABlobId::eBlobType_annot:
@@ -792,6 +794,7 @@ void CCSRADataLoader_Impl::LoadBlob(const CCSRABlobId& blob_id,
 void CCSRADataLoader_Impl::LoadChunk(const CCSRABlobId& blob_id,
                                     CTSE_Chunk_Info& chunk_info)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     _TRACE("Loading chunk "<<blob_id.ToString()<<"."<<chunk_info.GetChunkId());
     TFileLock file_info = GetFileInfo(blob_id);
     switch ( blob_id.m_BlobType ) {
@@ -846,6 +849,7 @@ CCSRADataLoader_Impl::GetShortReadIterator(const CSeq_id_Handle& idh)
 
 void CCSRADataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
         ITERATE ( CBioseq::TId, it, iter.GetRefSeq_ids() ) {
             ids.push_back(CSeq_id_Handle::GetHandle(**it));
@@ -860,6 +864,7 @@ void CCSRADataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 CDataSource::SAccVerFound
 CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CDataSource::SAccVerFound ret;
     // the only possible acc.ver is for reference sequence
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
@@ -881,6 +886,7 @@ CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 CDataSource::SGiFound
 CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CDataSource::SGiFound ret;
     // the only possible gi is for reference sequence
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
@@ -919,6 +925,7 @@ TTaxId CCSRADataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 
 TSeqPos CCSRADataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     // the only possible acc.ver is for reference sequence
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
         return iter.GetSeqLength();
@@ -1135,6 +1142,7 @@ CRef<CCSRABlobId> CCSRADataLoader_Impl::GetReadsBlobId(const TFileLock& lock,
 void CCSRAFileInfo::LoadReadsBlob(const CCSRABlobId& blob_id,
                                   CTSE_LoadLock& load_lock)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetSeq_set();
     TVDBRowId first_spot_id = blob_id.m_FirstSpotId;
@@ -1724,12 +1732,14 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
 
 void CCSRARefSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     LoadAnnotMainSplit(load_lock);
 }
 
 
 void CCSRARefSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( chunk_info.GetChunkId() == kMainChunkId ) {
         LoadAnnotMainChunk(chunk_info);
     }
@@ -1748,12 +1758,14 @@ void CCSRARefSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
 
 void CCSRARefSeqInfo::LoadRefSeqBlob(CTSE_LoadLock& load_lock)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     LoadRefSeqMainEntry(load_lock);
 }
 
 
 void CCSRARefSeqInfo::LoadRefSeqMainEntry(CTSE_LoadLock& load_lock)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     CRef<CSeq_entry> entry(new CSeq_entry);
 
     CCSraRefSeqIterator it(*m_File, GetRefSeqId());
@@ -1782,6 +1794,7 @@ void CCSRARefSeqInfo::LoadRefSeqMainEntry(CTSE_LoadLock& load_lock)
 
 void CCSRARefSeqInfo::LoadRefSeqChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     int range_id = chunk_info.GetChunkId();
     CTSE_Chunk_Info::TPlace place(GetRefSeqId(), 0);
     CRange<TSeqPos> range;
@@ -2017,6 +2030,7 @@ END_LOCAL_NAMESPACE;
 
 void CCSRARefSeqInfo::LoadAnnotAlignChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( GetDebugLevel() >= 5 ) {
         LOG_POST_X(15, Info<<
                    "CCSRADataLoader:LoadAlignChunk("<<
@@ -2068,6 +2082,7 @@ void CCSRARefSeqInfo::LoadAnnotAlignChunk(CTSE_Chunk_Info& chunk_info)
 
 void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( GetDebugLevel() >= 5 ) {
         LOG_POST_X(16, Info<<
                    "CCSRADataLoader:LoadPileupChunk("<<
