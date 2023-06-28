@@ -35,6 +35,15 @@ race:^ncbi::CBDB_Cache::x_Store
 race:^__os_gettime
 race:^__lock_getobj
 
+# VDB *Release() functions have different reference counting code depending on processor.
+# They use simple volatile keyword on i386 architecture.
+# It's not sufficient by C++ Standard but it's guaranteed to work on i386.
+race:^ncbi::objects::CSraRef<*>::Release
+
+# There are reports of thread leaks inside VDB library.
+# It's probably background loading threads, but needs to be checked.
+thread:^KThreadMakeStackSize
+
 # Formally suppress complains on grpc
 race:^pollable_epoll$
 
