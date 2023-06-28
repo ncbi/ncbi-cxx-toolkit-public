@@ -195,15 +195,15 @@ s_ParseDustOptions(const char *ptr, int* level, int* window, int* linker)
 			switch(arg) {
 				case 0:
 					sscanf(buffer, "%ld", &tmplong);
-					level_pri = tmplong;
+					level_pri = (int)tmplong;
 					break;
 				case 1:
 					sscanf(buffer, "%ld", &tmplong);
-					window_pri = tmplong;
+					window_pri = (int)tmplong;
 					break;
 				case 2:
 					sscanf(buffer, "%ld", &tmplong);
-					linker_pri = tmplong;
+					linker_pri = (int)tmplong;
 					break;
 				default:
 					break;
@@ -307,7 +307,7 @@ s_SafeStrCat(char** dest, unsigned int* dest_size, const char* string2append)
         size_t target_size = MAX(string2append_length, dest_length) * 2;
         *dest = (char*)realloc((void*)*dest, target_size);
         if (*dest) {
-            (*dest_size) = target_size;
+            (*dest_size) = (unsigned int)target_size;
         } else {
             sfree(*dest);
             return 0;

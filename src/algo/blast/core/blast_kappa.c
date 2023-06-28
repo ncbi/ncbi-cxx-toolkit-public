@@ -108,7 +108,7 @@ s_HSPListNormalizeScores(BlastHSPList * hsp_list,
     for(hsp_index = 0; hsp_index < hsp_list->hspcnt; hsp_index++) {
         BlastHSP * hsp = hsp_list->hsp_array[hsp_index];
 
-        hsp->score = BLAST_Nint(((double) hsp->score) / scoreDivisor);
+        hsp->score = (Int4)BLAST_Nint(((double) hsp->score) / scoreDivisor);
         /* Compute the bit score using the newly computed scaled score. */
         hsp->bit_score = (hsp->score*lambda*scoreDivisor - logK)/NCBIMATH_LN2;
     }
@@ -2128,8 +2128,8 @@ s_RescaleSearch(BlastScoreBlk* sbp,
         }
     }
 
-    sp->gap_open = BLAST_Nint(sp->gap_open  * scale_factor);
-    sp->gap_extend = BLAST_Nint(sp->gap_extend * scale_factor);
+    sp->gap_open = (Int4)BLAST_Nint(sp->gap_open  * scale_factor);
+    sp->gap_extend = (Int4)BLAST_Nint(sp->gap_extend * scale_factor);
     sp->scale_factor = scale_factor;
 }
 
@@ -2203,7 +2203,7 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
                  const char * matrixName)
 {
     int status = 0;    /* return status */
-    int lenName;       /* length of matrixName as a string */
+    size_t lenName;       /* length of matrixName as a string */
 
     /* copy the matrix name (strdup is not standard C) */
     lenName = strlen(matrixName);

@@ -865,7 +865,7 @@ next_jp:
         
         /* save the length of the ungapped extension */
         if (is_ungapped && jp->dcp != jp->dcq) {
-            *ungapped_ext_len = cp - query - 1;
+            *ungapped_ext_len = (Int4)(cp - query - 1);
             is_ungapped = FALSE;
         }
 
@@ -900,7 +900,7 @@ next_jp:
         }        
     }
 
-    *query_ext_len = cpstop - query;
+    *query_ext_len = (Int4)(cpstop - query);
     *subject_ext_len = cqstop;
 
     if (is_ungapped) {
@@ -1075,7 +1075,7 @@ next_jp:
         
         /* save the length of the ungapped extension */
         if (is_ungapped && jp->dcp != jp->dcq) {
-            *ungapped_ext_len = cp - query - 1;
+            *ungapped_ext_len = (Int4)(cp - query - 1);
             is_ungapped = FALSE;
         }
 
@@ -1108,7 +1108,7 @@ next_jp:
     s_TrimExtension(edit_script, -mismatch_score, &cp, &cq, num_identical,
                     TRUE);
 
-    *query_ext_len = cp - query;
+    *query_ext_len = (Int4)(cp - query);
     *subject_ext_len = cq;
 
     if (is_ungapped) {
@@ -1321,7 +1321,7 @@ next_jp:
         
         /* save the length of the ungapped extension */
         if (is_ungapped && jp->dcp != jp->dcq) {
-            *ungapped_ext_len = cp - query - 1;
+            *ungapped_ext_len = (Int4)(cp - query - 1);
             is_ungapped = FALSE;
         }
 
@@ -1368,7 +1368,7 @@ next_jp:
         *best_num_identical = num_identical;
     }
 
-    *query_ext_len = cpstop - query;
+    *query_ext_len = (Int4)(cpstop - query);
     *subject_ext_len = cqstop;
     edit_script->num_ops = num_ops;
 
@@ -1542,7 +1542,7 @@ next_jp:
         GapPrelimEditBlockAdd(edit_script, eGapAlignSub, new_matches);
     }
 
-    *query_ext_len = cp - query;
+    *query_ext_len = (Int4)(cp - query);
     *subject_ext_len = cq;
 
     return score;
@@ -1699,7 +1699,7 @@ next_jp:
         
         /* save the length of the ungapped extension */
         if (is_ungapped && jp->dcp != jp->dcq) {
-            *ungapped_ext_len = cp - query - 1;
+            *ungapped_ext_len = (Int4)(cp - query - 1);
             is_ungapped = FALSE;
         }
 
@@ -1732,7 +1732,7 @@ next_jp:
     s_TrimExtension(edit_script, -mismatch_score, &cp, &cq, num_identical,
                     TRUE);
 
-    *query_ext_len = cp - query;
+    *query_ext_len = (Int4)(cp - query);
     *subject_ext_len = cq;
 
     if (is_ungapped) {
@@ -1907,7 +1907,7 @@ next_jp:
         }
     }
 
-    *query_ext_len = query + query_offset - cpstop;
+    *query_ext_len = (Int4)(query + query_offset - cpstop);
     *subject_ext_len = subject_offset - cqstop;
 
     return best_score;
@@ -2098,7 +2098,7 @@ next_jp:
     s_TrimExtension(edit_script, -mismatch_score, &cp, &cq, num_identical,
                     FALSE); 
 
-    *query_ext_len = query + query_offset - cp;
+    *query_ext_len = (Int4)(query + query_offset - cp);
     *subject_ext_len = subject_offset - cq;
 
     /* return extension score */
@@ -2342,7 +2342,7 @@ next_jp:
         *best_num_identical = num_identical;
     }
 
-    *query_ext_len = query + query_offset - cpstop;
+    *query_ext_len = (Int4)(query + query_offset - cpstop);
     *subject_ext_len = subject_offset - cqstop;
     edit_script->num_ops = num_ops;
 
@@ -2502,7 +2502,7 @@ next_jp:
         GapPrelimEditBlockAdd(edit_script, eGapAlignSub, new_matches);
     }
 
-    *query_ext_len = query + query_offset - cp;
+    *query_ext_len = (int)(query + query_offset - cp);
     *subject_ext_len = subject_offset - cq;
 
     return score;

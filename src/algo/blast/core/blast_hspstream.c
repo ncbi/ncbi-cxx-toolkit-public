@@ -519,7 +519,7 @@ fprintf(stderr, "No hits to query %d\n", global_query);
        Blast_HitListMerge(results1->hitlist_array + i,
                           results2->hitlist_array + global_query,
                           contexts_per_query, split_points,
-                          SplitQueryBlk_GetChunkOverlapSize(squery_blk),
+                          (Int4)SplitQueryBlk_GetChunkOverlapSize(squery_blk),
                           SplitQueryBlk_AllowGap(squery_blk));
    }
 

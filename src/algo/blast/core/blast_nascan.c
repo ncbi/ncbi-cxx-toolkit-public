@@ -125,10 +125,10 @@ static Int4 s_BlastNaScanSubject_8_4(const LookupTableWrap * lookup_wrap,
         s_BlastLookupRetrieve(lookup,
                               index,
                               offset_pairs + total_hits,
-                              (s - abs_start) * COMPRESSION_RATIO);
+                              (Int4)((s - abs_start) * COMPRESSION_RATIO));
         total_hits += num_hits;
     }
-    scan_range[0] = (s - abs_start) * COMPRESSION_RATIO;
+    scan_range[0] = (Int4)((s - abs_start) * COMPRESSION_RATIO);
 
     return total_hits;
 }
@@ -203,10 +203,10 @@ static Int4 s_BlastNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                 s_BlastLookupRetrieve(lookup,
                                       index,
                                       offset_pairs + total_hits,
-                                      (s - abs_start) * COMPRESSION_RATIO);
+                                      (Int4)((s - abs_start) * COMPRESSION_RATIO));
                 total_hits += num_hits;
             }
-            scan_range[0] = (s - abs_start) * COMPRESSION_RATIO;
+            scan_range[0] = (Int4)((s - abs_start) * COMPRESSION_RATIO);
         } else {
             /* when the stride is not a multiple of 4, extra bases may occur
                both before and after every word read from the subject
@@ -485,14 +485,14 @@ static Int4 s_BlastSmallNaScanSubject_Any(const LookupTableWrap * lookup_wrap,
                     if (total_hits > max_hits)
                         break;
             
-                    s_off = (s - abs_start) * COMPRESSION_RATIO;
+                    s_off = (Int4)((s - abs_start) * COMPRESSION_RATIO);
                     total_hits += s_BlastSmallNaRetrieveHits(offset_pairs, 
                                                              index, s_off, 
                                                              total_hits, 
                                                              overflow);
                 }
             }
-            scan_range[0] = (s - abs_start) * COMPRESSION_RATIO;
+            scan_range[0] = (Int4)((s - abs_start) * COMPRESSION_RATIO);
         } else {
             /* when the stride is not a multiple of 4, extra bases may occur
                both before and after every word read from the subject
@@ -1528,14 +1528,14 @@ static Int4 s_MBScanSubject_Any(const LookupTableWrap* lookup_wrap,
          if (s_BlastMBLookupHasHits(mb_lt, index)) {
              if (total_hits >= max_hits)
                  break;
-             s_off = (s - abs_start)*COMPRESSION_RATIO;
+             s_off = (Int4)((s - abs_start)*COMPRESSION_RATIO);
              total_hits += s_BlastMBLookupRetrieve(mb_lt,
                  index,
                  offset_pairs + total_hits,
                  s_off);
          }
       }
-      scan_range[0] = (s - abs_start)*COMPRESSION_RATIO;
+      scan_range[0] = (Int4)((s - abs_start)*COMPRESSION_RATIO);
 
    } else if (lut_word_length == 16 && scan_step == 1) {
        /* scan for lookup table width 16 and stride 1 */
