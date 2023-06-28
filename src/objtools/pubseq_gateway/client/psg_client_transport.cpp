@@ -1405,7 +1405,7 @@ void SPSG_Throttling::SStats::Reset()
 
 void SPSG_IoImpl::OnShutdown(uv_async_t*)
 {
-    m_Queue.Close();
+    m_Queue.Unref();
 
     for (auto& server : m_Sessions) {
         for (auto& session : server.sessions) {
@@ -1788,6 +1788,8 @@ void SPSG_IoImpl::OnExecute(uv_loop_t& loop)
 
 void SPSG_IoImpl::AfterExecute()
 {
+    m_Queue.Ref();
+    m_Queue.Close();
     m_Sessions.clear();
 }
 
