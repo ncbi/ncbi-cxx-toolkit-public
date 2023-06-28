@@ -1818,7 +1818,7 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
                                       TInterruptFnPtr interrupt_search,  SBlastProgress* progress_info,
                                       size_t num_threads)
 {
-    const int N_T = ((num_threads == 0) ? 1 : num_threads);
+    const int N_T = ((num_threads == 0) ? 1 : (int)num_threads);
     Int2 status = 0;
     SThreadLocalDataArray* thread_data = SThreadLocalDataArrayNew(N_T);
     char * ADAPTIVE_CBS_ENV = getenv("ADAPTIVE_CBS");

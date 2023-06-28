@@ -452,10 +452,10 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
 
     if (hsp->score >= cutoff_score) {
         /* Update all HSP offsets. */
-        hsp->query.offset = best_q_start - query_start;
-        hsp->query.end = hsp->query.offset + best_q_end - best_q_start;
-        hsp->subject.offset = best_s_start - subject_start;
-        hsp->subject.end = hsp->subject.offset + best_s_end - best_s_start;
+        hsp->query.offset = (Int4)(best_q_start - query_start);
+        hsp->query.end = (Int4)(hsp->query.offset + best_q_end - best_q_start);
+        hsp->subject.offset = (Int4)(best_s_start - subject_start);
+        hsp->subject.end = (Int4)(hsp->subject.offset + best_s_end - best_s_start);
 
         if (gapped) {
             int last_num=hsp->gap_info->size - 1;
@@ -616,8 +616,8 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
       ASSERT(esp->op_type[best_start_esp_index] == eGapAlignSub);
       ASSERT(esp->op_type[best_end_esp_index] == eGapAlignSub);
 
-      qp = best_q_start - q;
-      sp = best_s_start - s;
+      qp = (Int4)(best_q_start - q);
+      sp = (Int4)(best_s_start - s);
       ext = 0;
       while(qp > 0 && sp > 0 && (q[--qp] == s[--sp]) && q[qp]<4) ext++;
       best_q_start -= ext;
@@ -626,8 +626,8 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
       if (best_end_esp_index == best_start_esp_index) best_end_esp_num += ext;
       score += ext * score_params->reward;
 
-      qp = best_q_end - q;
-      sp = best_s_end - s;
+      qp = (Int4)(best_q_end - q);
+      sp = (Int4)(best_s_end - s);
       ext = 0;
       while(qp < qlen && sp < slen && q[qp]<4 && (q[qp++] == s[sp++])) ext++;
       best_q_end += ext;

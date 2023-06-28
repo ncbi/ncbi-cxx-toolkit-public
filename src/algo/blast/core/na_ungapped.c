@@ -203,7 +203,7 @@ s_NuclUngappedExtendExact(BLAST_SequenceBlk * query,
         }
     }
 
-    ungapped_data->q_start = q_beg - query->sequence;
+    ungapped_data->q_start = (Int4)(q_beg - query->sequence);
     ungapped_data->s_start = s_off - (q_off - ungapped_data->q_start);
 
     if (q_avail < s_avail) {
@@ -238,7 +238,7 @@ s_NuclUngappedExtendExact(BLAST_SequenceBlk * query,
             base--;
     }
 
-    ungapped_data->length = q_end - q_beg;
+    ungapped_data->length = (Int4)(q_end - q_beg);
     ungapped_data->score = score;
 }
 
@@ -306,7 +306,7 @@ s_NuclUngappedExtend(BLAST_SequenceBlk * query,
 
     /* record the start point of the extension */
 
-    ungapped_data->q_start = new_q - q_start;
+    ungapped_data->q_start = (Int4)(new_q - q_start);
     ungapped_data->s_start = s_ext - (q_ext - ungapped_data->q_start);
 
     /* the right extension begins at the first bases not examined by the
@@ -343,9 +343,9 @@ s_NuclUngappedExtend(BLAST_SequenceBlk * query,
         /* record the length and score of the extension. Make sure the
            alignment extends at least to s_match_end */
         ungapped_data->score = score;
-        ungapped_data->length = MAX(s_match_end - ungapped_data->s_start,
+        ungapped_data->length = (Int4)( MAX(s_match_end - ungapped_data->s_start,
                                     (new_q - q_start) -
-                                    ungapped_data->q_start + 1);
+                                    ungapped_data->q_start + 1) );
     }
 }
 
@@ -1735,7 +1735,7 @@ Int2 MB_IndexedWordFinder(
     }
 
     ASSERT(get_results);
-    word_size = get_results(/*lookup_wrap->lut, */oid, chunk, init_hitlist);
+    word_size = (Uint4) get_results(/*lookup_wrap->lut, */oid, chunk, init_hitlist);
 
     if( word_size > 0 && word_params->ungapped_extension ) {
         hash = ir_hash_create();
@@ -1778,7 +1778,7 @@ Int2 MB_IndexedWordFinder(
             }
         }
 
-        init_hitlist->total = new_hsp - init_hitlist->init_hsp_array;
+        init_hitlist->total = (Int4)(new_hsp - init_hitlist->init_hsp_array);
         hash = ir_hash_destroy( hash );
     }
 
@@ -2202,7 +2202,7 @@ Int2 ShortRead_IndexedWordFinder(
     }
 
     ASSERT(get_results);
-    word_size = get_results(oid, chunk, init_hitlist);
+    word_size = (Uint4)get_results(oid, chunk, init_hitlist);
 
     if (*hsp_list == NULL) {
         *hsp_list = Blast_HSPListNew(BlastHspNumMax(TRUE,

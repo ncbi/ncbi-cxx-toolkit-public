@@ -2457,7 +2457,7 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
                         kPSIScaleFactor * freq_ratios->bit_scale_factor *
                         log(freq_ratios->data[kResidue][j])/NCBIMATH_LN2;
 
-                    internal_pssm->scaled_pssm[i][j] = BLAST_Nint(tmp);
+                    internal_pssm->scaled_pssm[i][j] = (int)BLAST_Nint(tmp);
                 } else {
                     internal_pssm->scaled_pssm[i][j] = BLAST_SCORE_MIN;
                 }
@@ -2518,7 +2518,7 @@ _PSIScaleMatrix(const Uint1* query,
             for (j = 0; j < internal_pssm->nrows; j++) {
                 if (scaled_pssm[i][j] != BLAST_SCORE_MIN) {
                     pssm[i][j] = 
-                        BLAST_Nint(factor*scaled_pssm[i][j]/kPSIScaleFactor);
+                        (int)BLAST_Nint(factor*scaled_pssm[i][j]/kPSIScaleFactor);
                 } else {
                     pssm[i][j] = BLAST_SCORE_MIN;
                 }
@@ -2573,7 +2573,7 @@ _PSIScaleMatrix(const Uint1* query,
             for (j = 0; j < internal_pssm->nrows; j++) {
                 if (scaled_pssm[i][j] != BLAST_SCORE_MIN) {
                     pssm[i][j] = 
-                        BLAST_Nint(factor*scaled_pssm[i][j]/kPSIScaleFactor);
+                        (int)BLAST_Nint(factor*scaled_pssm[i][j]/kPSIScaleFactor);
                 } else {
                     pssm[i][j] = BLAST_SCORE_MIN;
                 }

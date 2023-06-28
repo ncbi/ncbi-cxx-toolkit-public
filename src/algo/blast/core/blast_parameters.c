@@ -1031,7 +1031,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 
     
     /* Subtract off the expected score. */
-   expected_length = BLAST_Nint(log(kbp->K*((double) query_length)*
+   expected_length = (Int4)BLAST_Nint(log(kbp->K*((double) query_length)*
                                     ((double) subject_length))/(kbp->H));
    query_length = query_length - expected_length;
 

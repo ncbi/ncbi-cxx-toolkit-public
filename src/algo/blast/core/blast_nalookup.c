@@ -1273,7 +1273,7 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
    if (mb_lt->lut_word_length <= 12) {
        if (mb_lt->hashsize <= 8 * kTargetPVSize)
-           pv_size = mb_lt->hashsize >> PV_ARRAY_BTS;
+           pv_size = (Int4)(mb_lt->hashsize >> PV_ARRAY_BTS);
        else
            pv_size = kTargetPVSize / PV_ARRAY_BYTES;
    }
@@ -1516,7 +1516,7 @@ BlastSparseUint1ArrayNew(Uint4* bitfield, Int8 len)
     }
 
     retval->bitfield = bitfield;
-    retval->length = len >> PV_ARRAY_BTS;
+    retval->length = (Uint4)(len >> PV_ARRAY_BTS);
     retval->counts = calloc(retval->length, sizeof(Int4));
     if (!retval->counts) {
         BlastSparseUint1ArrayFree(retval);
@@ -1545,7 +1545,7 @@ static Int4
 BlastSparseUint1ArrayGetIndex(BlastSparseUint1Array* array, Int8 index)
 {
     /* index into bitfield */
-    Int4 idx = index >> PV_ARRAY_BTS;
+    Int4 idx = (Int4)(index >> PV_ARRAY_BTS);
 
     /* bit number within a bitfield cell (mod 32) */
     Int4 bit_number = index & PV_ARRAY_MASK;

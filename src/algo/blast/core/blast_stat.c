@@ -737,7 +737,7 @@ SBlastScoreMatrixFree(SBlastScoreMatrix* matrix)
 
     if (matrix->data) {
         matrix->data = (int**) _PSIDeallocateMatrix((void**) matrix->data,
-                                                    matrix->ncols);
+                                                    (unsigned int)matrix->ncols);
     }
 
     /* Deallocate the matrix frequencies which is used by the
@@ -766,7 +766,7 @@ SBlastScoreMatrixNew(size_t ncols, size_t nrows)
         return SBlastScoreMatrixFree(retval);
     }
 
-    retval->data = (int**) _PSIAllocateMatrix(ncols, nrows, sizeof(int));
+    retval->data = (int**) _PSIAllocateMatrix((unsigned int)ncols, (unsigned int)nrows, sizeof(int));
     if ( !retval->data ) {
         return SBlastScoreMatrixFree(retval);
     }
@@ -792,7 +792,7 @@ SPsiBlastScoreMatrixFree(SPsiBlastScoreMatrix* matrix)
     if (matrix->freq_ratios) {
         matrix->freq_ratios = (double**) _PSIDeallocateMatrix((void**)
                                                    matrix->freq_ratios,
-                                                   matrix->pssm->ncols);
+                                                   (unsigned int)matrix->pssm->ncols);
     }
 
     matrix->pssm = SBlastScoreMatrixFree(matrix->pssm);
@@ -817,7 +817,7 @@ SPsiBlastScoreMatrixNew(size_t ncols)
         return SPsiBlastScoreMatrixFree(retval);
     }
 
-    retval->freq_ratios = (double**) _PSIAllocateMatrix(ncols, BLASTAA_SIZE,
+    retval->freq_ratios = (double**) _PSIAllocateMatrix((unsigned int)ncols, BLASTAA_SIZE,
                                                         sizeof(double));
     if ( !retval->freq_ratios ) {
         return SPsiBlastScoreMatrixFree(retval);
@@ -1104,7 +1104,7 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
             if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2]) {
                 /* round up for positive scores, down for negatives. */
                 matrix[index1][index2] =
-                    BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty +
+                    (Int4)BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty +
                                           reward)/ (double) degeneracy[index2]);
                 if (index1 != index2)
                 {
@@ -1635,8 +1635,8 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
 
                 FILE *fp = NULL;
                 char* full_matrix_path = NULL;
-                int path_len = strlen(matrix_path);
-                int buflen = path_len + strlen(sbp->name);
+                size_t path_len = strlen(matrix_path);
+                size_t buflen = path_len + strlen(sbp->name);
 
                 full_matrix_path = (char*) malloc((buflen + 1) * sizeof(char));
                 if (!full_matrix_path) {
@@ -3899,7 +3899,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
             } else if (error_return) {
                 char buffer[8192];
                 int i=0;
-                int len=0;
+                size_t len=0;
                 /* Unsupported gap costs combination. */
                 sprintf(buffer, "Gap existence and extension values %ld and %ld "
                         "are not supported for substitution scores %ld and %ld\n",
@@ -4695,7 +4695,7 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
 
     Blast_FillResidueProbability(rps_query_seq, rps_query_length, resProb);
 
-    alphabet_size = sbp->psi_matrix->pssm->nrows;
+    alphabet_size = (Int4)sbp->psi_matrix->pssm->nrows;
     RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray,
                  return_sfp, BLAST_SCORE_RANGE_MAX, alphabet_size);
 
@@ -4728,7 +4728,7 @@ RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
             }
             else {
                temp = ((double)(posMatrix[index][inner_index])) * finalLambda;
-               returnMatrix[index][inner_index] = BLAST_Nint(temp);
+               returnMatrix[index][inner_index] = (Int4)BLAST_Nint(temp);
            }
         }
         for (; inner_index < BLASTAA_SIZE; inner_index++) {
@@ -4914,7 +4914,7 @@ static Int2 s_BuildCompressedScoreMatrix(BlastScoreBlk *sbp,
                 }
 
                 val = (val < 1e-8) ? min_freq : log(val);
-                scores[q][s] = BLAST_Nint(val * matrix_scale_factor);
+                scores[q][s] = (Int4)BLAST_Nint(val * matrix_scale_factor);
             }
         }
     }
