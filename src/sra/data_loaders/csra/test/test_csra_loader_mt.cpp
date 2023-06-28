@@ -36,6 +36,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/test_mt.hpp>
+#include <corelib/atomic_util.hpp>
 #include <util/random_gen.hpp>
 #include <sra/data_loaders/csra/csraloader.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
@@ -88,7 +89,7 @@ private:
     int m_IterCount, m_IterSize;
     int m_ErrorCount;
     vector<string> m_Accession;
-    vector<Int8> m_MaxSpotId;
+    vector<copyable_atomic<Int8>> m_MaxSpotId;
     map<string, vector<CSeq_id_Handle> > m_RefIds;
     
     CRef<CObjectManager> m_OM;
