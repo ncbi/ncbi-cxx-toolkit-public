@@ -691,7 +691,7 @@ void CShowBlastDefline::x_InitDefline(void)
         }
         subid = &((*iter)->GetSeq_id(1));
         if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))) {
-            SScoreInfo* sci = x_GetScoreInfo(**iter, num_align);            
+            SScoreInfo* sci = x_GetScoreInfo(**iter, static_cast<int>(num_align));            
             if(sci){
                 m_ScoreList.push_back(sci);
                 if(m_MaxScoreLen < sci->bit_string.size()){

@@ -799,7 +799,7 @@ BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
 
    *prot_seq = NULLB;
    
-   return (prot_seq - prot_seq_start);
+   return (Int4)(prot_seq - prot_seq_start);
 } /* BlastTranslateUnambiguousSequence */
 
 

@@ -1400,7 +1400,7 @@ double CAlignFormatUtil::GetPercentIdentity(const CSeq_align& aln,
     alnvec.GetWholeAlnSeqString(1, subject);
 
     int num_ident = 0;
-    int length = min(query.size(), subject.size());
+    int length = (int)min(query.size(), subject.size());
 
     for (int i = 0; i < length; ++i) {
         if (query[i] == subject[i]) {
@@ -3442,18 +3442,16 @@ string CAlignFormatUtil::MapSpaceTemplate(string inpString,string tmplParamName,
 }
 
 
-string CAlignFormatUtil::AddSpaces(string paramVal, unsigned int maxParamValLength, int spacesFormatFlag)
+string CAlignFormatUtil::AddSpaces(string paramVal, size_t maxParamValLength, int spacesFormatFlag)
 {
     //if(!spacePos.empty()) {
         string spaceString;        
         if(maxParamValLength >= paramVal.size()) {
-            unsigned int numSpaces = maxParamValLength - paramVal.size() + 1;
+            size_t numSpaces = maxParamValLength - paramVal.size() + 1;
             if(spacesFormatFlag & eSpacePosToCenter) {
                 numSpaces = numSpaces/2;
             }
-            for(size_t i=0; i < numSpaces ; i++){
-                spaceString += " ";
-            }
+	    spaceString.assign(numSpaces,' ');
         }
         else {
             paramVal = paramVal.substr(0, maxParamValLength - 3) + "...";
@@ -4163,7 +4161,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     seqSetInfo->total_bit_score = total_bits;
     seqSetInfo->bit_score = highest_bits;    
     seqSetInfo->evalue = lowest_evalue;    
-    seqSetInfo->hspNum = aln.Size();	
+    seqSetInfo->hspNum = static_cast<int>(aln.Size());	
     seqSetInfo->totalLen = (Int8)totalLen;
 
     return seqSetInfo;

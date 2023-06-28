@@ -851,7 +851,7 @@ public:
     ///@return actual number of subject sequences
     static void PruneSeqalign(const objects::CSeq_align_set& source_aln, 
                               objects::CSeq_align_set& new_aln,
-                              unsigned int num = kDfltArgNumAlignments);
+                              unsigned int num = static_cast<unsigned int>(kDfltArgNumAlignments));
 
     ///Calculate number of subject sequnces in alignment limitted by num
     ///@param source_aln: the original alnset    
@@ -1375,11 +1375,11 @@ public:
 
     ///Calculate the number of spaces and add them to paramVal
     ///@param string: input parameter value
-    ///@param string: max length for the string that holds parameter
+    ///@param size_t: max length for the string that holds parameter
     ///@param int: additional fomatting after adding spaces
     ///@param  string: the position of spaces and additional formatting
     ///@return:string containing paramVal and spaces place appropriately
-    static string AddSpaces(string paramVal, unsigned int maxParamLength, int spacesFormatFlag = eSpacePosToCenter);
+    static string AddSpaces(string paramVal, size_t maxParamLength, int spacesFormatFlag = eSpacePosToCenter);
 
 
     static string GetProtocol(void);

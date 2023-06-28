@@ -107,7 +107,7 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
                 /* copy the hits. */
                 {
                     Int4 i;
-                    Int4 s_off = s - subject->sequence;
+                    Int4 s_off = (Int4)(s - subject->sequence);
                     for (i = 0; i < numhits; i++) {
                         offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
                         offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
@@ -118,12 +118,12 @@ static Int4 s_BlastAaScanSubject(const LookupTableWrap * lookup_wrap,
             } else
                 /* not enough space in the destination array; return early */
             {
-                s_range[1] = s - subject->sequence;
+                s_range[1] = (Int4)(s - subject->sequence);
                 return totalhits;
             }
         }
     } /* end for */
-    s_range[1] = s - subject->sequence;
+    s_range[1] = (Int4)(s - subject->sequence);
     } /* end while */
 
     /* if we get here, we fell off the end of the sequence */
@@ -193,7 +193,7 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
                 /* copy the hits. */
                 {
                     Int4 i;
-                    Int4 s_off = s - subject->sequence;
+                    Int4 s_off = (Int4)(s - subject->sequence);
                     for (i = 0; i < numhits; i++) {
                         offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
                         offset_pairs[i + totalhits].qs_offsets.s_off = s_off;
@@ -204,12 +204,12 @@ static Int4 s_BlastSmallAaScanSubject(const LookupTableWrap * lookup_wrap,
             } else
                 /* not enough space in the destination array; return early */
             {
-                s_range[1] = s - subject->sequence;
+                s_range[1] = (Int4)(s - subject->sequence);
                 return totalhits;
             }
         }
     } /* end for */
-    s_range[1] = s - subject->sequence;
+    s_range[1] = (Int4)(s - subject->sequence);
 
     } /* end while */
     /* if we get here, we fell off the end of the sequence */
@@ -329,7 +329,7 @@ static Int4 s_BlastCompressedAaScanSubject(
 
        /* if there are hits */
        if (PV_TEST(pv, index, pv_array_bts)) {
-          Int4 s_off = s - subject->sequence;
+          Int4 s_off = (Int4)(s - subject->sequence);
 
           CompressedLookupBackboneCell* backbone_cell = 
                                         lookup->backbone + index;
@@ -400,13 +400,13 @@ static Int4 s_BlastCompressedAaScanSubject(
           else
               /* not enough space in the destination array */
           {
-              s_range[1] = s - subject->sequence;
+              s_range[1] = (Int4)(s - subject->sequence);
               return totalhits;
           }
           }
        }
     } /* end for */
-    s_range[1] = s - subject->sequence;
+    s_range[1] = (Int4)(s - subject->sequence);
     } /* end while */
 
     /* if we get here, we fell off the end of the sequence */
@@ -512,7 +512,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap * lookup_wrap,
                 Int4 *src;
                 Int4 i;
                 Uint4 q_off;
-                Uint4 s_off = s - abs_start;
+                Uint4 s_off = (Uint4)(s - abs_start);
                 if (numhits <= RPS_HITS_PER_CELL) {
                     for (i = 0; i < numhits; i++) {
                         q_off = cell->entries[i] - table_correction;
@@ -545,7 +545,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap * lookup_wrap,
     }
 
     /* if we get here, we fell off the end of the sequence */
-    *offset = s - abs_start;
+    *offset = (Int4)(s - abs_start);
 
     return totalhits;
 }

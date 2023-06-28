@@ -436,7 +436,7 @@ SPHIPatternSearchBlkNew(char* pattern_in, Boolean is_dna, BlastScoreBlk* sbp,
     currentWildcardProduct = 1;
     currentSetMask = 0;
 
-    pattern_length = strlen(pattern_in);
+    pattern_length = (int)strlen(pattern_in);
     if (pattern_length >= PHI_MAX_PATTERN_LENGTH) {
       if (error_msg)
       {

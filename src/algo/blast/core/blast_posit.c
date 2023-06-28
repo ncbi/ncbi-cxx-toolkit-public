@@ -361,7 +361,7 @@ impalaScaleMatrix(Kappa_compactSearchItems* compactSearch,
     for (c = 0; c < dim1; c++) {
         for (a = 0; a < dim2; a++) {
             if (BLAST_SCORE_MIN != private_matrix[c][a]) {
-                matrix[c][a] = BLAST_Nint((double) private_matrix[c][a] *
+                matrix[c][a] = (int)BLAST_Nint((double) private_matrix[c][a] *
                                         factor / kPSIScaleFactor);
             }
         }
@@ -378,7 +378,7 @@ impalaScaleMatrix(Kappa_compactSearchItems* compactSearch,
         for (a = 0; a < dim2; a++) {
             if (BLAST_SCORE_MIN != private_matrix[c][a]) {
                 private_matrix[c][a] =
-                    BLAST_Nint((double) private_matrix[c][a] * factor *
+                    (int)BLAST_Nint((double) private_matrix[c][a] * factor *
                              scalefactor);
             }
         }
