@@ -683,7 +683,7 @@ CDBConnectionFactory::MakeValidConnection(
             if (ctx.conn_status != IConnValidator::eValidConn) {
                 if (conn->IsReusable()) {
                     static_cast<impl::CConnection&>(conn->GetExtraFeatures())
-                        .m_Reusable = false;
+                        .x_DisableReuse();
                 }
                 CDB_Exception ex(DIAG_COMPILE_INFO, NULL,
                                  CDB_Exception::EErrCode(0),
@@ -703,7 +703,7 @@ CDBConnectionFactory::MakeValidConnection(
             if (ctx.conn_status != IConnValidator::eValidConn) {
                 if (conn->IsReusable()) {
                     static_cast<impl::CConnection&>(conn->GetExtraFeatures())
-                        .m_Reusable = false;
+                        .x_DisableReuse();
                 }
                 // ctx.errors.push_back(ex.Clone());
                 ctx.handlers.PostMsg(&ex);
