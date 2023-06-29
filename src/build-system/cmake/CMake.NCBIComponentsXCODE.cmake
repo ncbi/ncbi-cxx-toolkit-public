@@ -40,9 +40,10 @@ set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-${NCBI_ThirdParty_Boost_
 set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_FASTCGI    ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
-set(NCBI_ThirdParty_PYTHON_VERSION  3.9)
+set(NCBI_ThirdParty_PYTHON_VERSION  3.9 CACHE STRING "PYTHON version")
 #set(NCBI_ThirdParty_PYTHON     "/System/Library/Frameworks/Python.framework/Versions/${NCBI_ThirdParty_PYTHON_VERSION}" CACHE PATH "PYTHON root")
-set(NCBI_ThirdParty_PYTHON     "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/${NCBI_ThirdParty_PYTHON_VERSION}" CACHE PATH "PYTHON root")
+set(NCBI_ThirdParty_XCODE_FRAMEWORKS "/Applications/Xcode.app/Contents/Developer/Library/Frameworks")
+set(NCBI_ThirdParty_PYTHON     "${NCBI_ThirdParty_XCODE_FRAMEWORKS}/Python3.framework/Versions/${NCBI_ThirdParty_PYTHON_VERSION}" CACHE PATH "PYTHON root")
 #set(NCBI_ThirdParty_VDB        "/Volumes/trace_software/vdb/vdb-versions/3.0.0")
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/3.0.0" CACHE PATH "VDB root")
 set(NCBI_ThirdParty_VDB_ARCH x86_64)
@@ -359,6 +360,9 @@ set(NCBI_COMPONENT_Sybase_FOUND NO)
 #############################################################################
 # PYTHON
 NCBI_define_Xcomponent(NAME PYTHON LIB python${NCBI_ThirdParty_PYTHON_VERSION} INCLUDE python${NCBI_ThirdParty_PYTHON_VERSION})
+if(NCBI_COMPONENT_PYTHON_FOUND AND EXISTS ${NCBI_ThirdParty_XCODE_FRAMEWORKS})
+    set(NCBI_COMPONENT_PYTHON_LIBS -Wl,-rpath,${NCBI_ThirdParty_XCODE_FRAMEWORKS} ${NCBI_COMPONENT_PYTHON_LIBS})
+endif()
 NCBIcomponent_report(PYTHON)
 
 #############################################################################
