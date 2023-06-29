@@ -324,6 +324,8 @@ protected:
 
     void x_RecordServer(const CDBServer& server);
 
+    void x_DisableReuse(void);
+
 private:
     typedef deque<impl::CCommand*>  TCommandList;
 

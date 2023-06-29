@@ -455,6 +455,14 @@ void CConnection::x_RecordServer(const CDBServer& server)
     }
 }
 
+void CConnection::x_DisableReuse(void)
+{
+    if (m_Reusable) {
+        m_DriverContext->x_AdjustCounts(this, -1);
+        m_Reusable = false;
+    }    
+}
+
 } // namespace impl
 
 END_NCBI_SCOPE
