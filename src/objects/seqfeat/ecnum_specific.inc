@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu May  4 12:31:06 EDT 2023; formally
+/* time_t value corresponding to Fri Jun 30 14:50:52 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1683217866UL;
+static const unsigned long kECNum_specific_Timestamp = 1688151052UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -897,6 +897,7 @@ static const char* const kECNum_specific[] = {
     "1.4.1.25\tL-arginine dehydrogenase",
     "1.4.1.26\t2,4-diaminopentanoate dehydrogenase (NAD(+))",
     "1.4.1.27\tglycine cleavage system",
+    "1.4.1.28\tsecondary-alkyl amine dehydrogenase [NAD(P)(+)]",
     "1.4.2.1\tglycine dehydrogenase (cytochrome)",
     "1.4.2.2\tnicotine dehydrogenase",
     "1.4.2.3\tTEMPLATE: pseudooxynicotine oxidase",
@@ -6033,6 +6034,7 @@ static const char* const kECNum_specific[] = {
     "4.3.2.8\tgamma-glutamylamine cyclotransferase",
     "4.3.2.9\tgamma-glutamylcyclotransferase",
     "4.3.2.10\timidazole glycerol-phosphate synthase",
+    "4.3.2.11\t(3R)-3-[(carboxylmethyl)amino]fatty acid synthase",
     "4.3.3.1\t3-ketovalidoxylamine C-N-lyase",
     "4.3.3.2\tstrictosidine synthase",
     "4.3.3.3\tdeacetylisoipecoside synthase",
@@ -6080,6 +6082,7 @@ static const char* const kECNum_specific[] = {
     "4.4.1.40\tC-phycoerythrin beta-cysteine-48/59 phycoerythrobilin lyase",
     "4.4.1.41\t(2S)-3-sulfopropanediol sulfolyase",
     "4.4.1.42\tS-adenosyl-L-methionine lyase",
+    "4.4.1.43\tcanavanine-gamma-lyase",
     "4.5.1.1\tDDT-dehydrochlorinase",
     "4.5.1.2\t3-chloro-D-alanine dehydrochlorinase",
     "4.5.1.3\tdichloromethane dehalogenase",
