@@ -55,6 +55,23 @@ class CBioseq_Handle;
 class CSeq_id;
 
 
+struct NCBI_FORMAT_EXPORT multiout
+{
+    CNcbiOstream* m_Os; // all sequence output stream
+    CNcbiOstream* m_On; // nucleotide output stream
+    CNcbiOstream* m_Og; // genomic output stream
+    CNcbiOstream* m_Or; // RNA output stream
+    CNcbiOstream* m_Op; // protein output stream
+    CNcbiOstream* m_Ou; // unknown output stream
+
+    multiout(CNcbiOstream* os = nullptr, CNcbiOstream* on = nullptr, CNcbiOstream* og = nullptr,
+             CNcbiOstream* or_ = nullptr, CNcbiOstream* op = nullptr, CNcbiOstream* ou = nullptr) :
+        m_Os(os), m_On(on), m_Og(og), m_Or(or_), m_Op(op), m_Ou(ou)
+    {
+    }
+    operator bool() const { return m_Os || m_On || m_Og || m_Or || m_Op || m_Ou; }
+};
+
 class NCBI_FORMAT_EXPORT CFlatFileGenerator : public CObject
 {
 public:
@@ -101,29 +118,21 @@ public:
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
     // Versions that loop through Bioseq components
-   void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
+    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, bool useSeqEntryIndexing,
+                  const multiout& = {});
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
+                  const multiout& = {});
     void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
-
-     void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
-     void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
-     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
-     void Generate(const CSeq_id& id, const TRange& range, ENa_strand strand,
+                  const multiout& = {});
+    void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
+                  const multiout& = {});
+    void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
+                  const multiout& = {});
+    void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
+                  const multiout& = {});
+    void Generate(const CSeq_id& id, const TRange& range, ENa_strand strand,
                   CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  CNcbiOstream* m_Os = nullptr, CNcbiOstream* m_On = nullptr, CNcbiOstream* m_Og = nullptr,
-                  CNcbiOstream* m_Or = nullptr, CNcbiOstream* m_Op = nullptr, CNcbiOstream* m_Ou = nullptr);
+                  const multiout& = {});
 
     // for use when generating a range of a Seq-submit
     void SetSubmit(const CSubmit_block& sub) { m_Ctx->SetSubmit(sub); }
