@@ -607,17 +607,11 @@ void CFlatFileGenerator::Generate
 
 
 // This version iterates Bioseqs within the Bioseq_set
-void CFlatFileGenerator::Generate
-(const CSeq_entry_Handle& entry,
- CFlatItemOStream& item_os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CSeq_entry_Handle& entry,
+    CFlatItemOStream& item_os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     // useSeqEntryIndexing now turned ON by default
     useSeqEntryIndexing = true;
@@ -922,33 +916,33 @@ void CFlatFileGenerator::Generate
             }
         }
 
-        if ( m_Os ) {
-            flatfile_os = m_Os;
+        if (mo.m_Os) {
+            flatfile_os = mo.m_Os;
             if ( bsh.IsNa() && ! doNuc ) continue;
             if ( bsh.IsAa() && ! doProt ) continue;
         } else if ( bsh.IsNa() ) {
-            if ( m_On ) {
-                flatfile_os = m_On;
-            } else if ( (is_genomic || ! closest_molinfo) && m_Og ) {
-                flatfile_os = m_Og;
-            } else if ( is_RNA && m_Or ) {
-                flatfile_os = m_Or;
+            if (mo.m_On) {
+                flatfile_os = mo.m_On;
+            } else if ((is_genomic || ! closest_molinfo) && mo.m_Og) {
+                flatfile_os = mo.m_Og;
+            } else if (is_RNA && mo.m_Or) {
+                flatfile_os = mo.m_Or;
             }
         } else if ( bsh.IsAa() ) {
-            if ( m_Op ) {
-                flatfile_os = m_Op;
+            if (mo.m_Op) {
+                flatfile_os = mo.m_Op;
             }
         } else {
-            if ( m_Ou ) {
-                flatfile_os = m_Ou;
-            } else if ( m_On ) {
-                flatfile_os = m_On;
+            if (mo.m_Ou) {
+                flatfile_os = mo.m_Ou;
+            } else if (mo.m_On) {
+                flatfile_os = mo.m_On;
             }
         }
 
         CRef<CFlatItemOStream> newitem_os;
-        if (flatfile_os == nullptr) {
-            if (!m_Os && !m_On && !m_Og && !m_Or && !m_Op && !m_Ou) {
+        if (! flatfile_os) {
+            if (! mo) {
                 if ( bsh.IsNa() && ! doNuc ) continue;
                 if ( bsh.IsAa() && ! doProt ) continue;
                 newitem_os.Reset(&item_os);
@@ -963,7 +957,7 @@ void CFlatFileGenerator::Generate
 
         CRef<CFlatItemOStream> pItemOS( newitem_os );
         if( pCanceled ) {
-            pItemOS.Reset( 
+            pItemOS.Reset(
                 new CCancelableFlatItemOStreamWrapper(
                 *newitem_os, pCanceled) );
         }
@@ -1073,57 +1067,39 @@ void CFlatFileGenerator::Generate
 }
 
 
-void CFlatFileGenerator::Generate
-(const CSeq_entry_Handle& entry,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CSeq_entry_Handle& entry,
+    CNcbiOstream& os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+    Generate(entry, *item_os, useSeqEntryIndexing, mo);
 }
 
 
-void CFlatFileGenerator::Generate
-(const CBioseq_Handle& bsh,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CBioseq_Handle& bsh,
+    CNcbiOstream& os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+    Generate(entry, *item_os, useSeqEntryIndexing, mo);
 }
 
 
-void CFlatFileGenerator::Generate
-(const CSeq_submit& submit,
- CScope& scope,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CSeq_submit& submit,
+    CScope& scope,
+    CNcbiOstream& os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     _ASSERT(submit.CanGetData());
     _ASSERT(submit.CanGetSub());
@@ -1150,45 +1126,33 @@ void CFlatFileGenerator::Generate
         CRef<CFlatItemOStream>
             item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-        Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+        Generate(entry, *item_os, useSeqEntryIndexing, mo);
     }
 }
 
 
-void CFlatFileGenerator::Generate
-(const CBioseq& bioseq,
- CScope& scope,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CBioseq& bioseq,
+    CScope& scope,
+    CNcbiOstream& os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
     const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+    Generate(entry, *item_os, useSeqEntryIndexing, mo);
 }
 
 
-void CFlatFileGenerator::Generate
-(const CSeq_loc& loc,
- CScope& scope,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CSeq_loc& loc,
+    CScope& scope,
+    CNcbiOstream& os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
     if (!bsh) {
@@ -1207,24 +1171,18 @@ void CFlatFileGenerator::Generate
         cfg.SetStyleMaster();
     }
 
-    Generate(entry, os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+    Generate(entry, os, useSeqEntryIndexing, mo);
 }
 
 
-void CFlatFileGenerator::Generate
-(const CSeq_id& id,
- const TRange& range,
- ENa_strand strand,
- CScope& scope,
- CNcbiOstream& os,
- bool useSeqEntryIndexing,
- CNcbiOstream* m_Os,
- CNcbiOstream* m_On,
- CNcbiOstream* m_Og,
- CNcbiOstream* m_Or,
- CNcbiOstream* m_Op,
- CNcbiOstream* m_Ou
- )
+void CFlatFileGenerator::Generate(
+    const CSeq_id& id,
+    const TRange& range,
+    ENa_strand strand,
+    CScope& scope,
+    CNcbiOstream& os,
+    bool useSeqEntryIndexing,
+    const multiout& mo)
 {
     CRef<CSeq_id> id2(new CSeq_id);
     id2->Assign(id);
@@ -1236,7 +1194,7 @@ void CFlatFileGenerator::Generate
         loc.Reset(new CSeq_loc(*id2, range.GetFrom(), range.GetTo(), strand));
     }
     if ( loc ) {
-        Generate(*loc, scope, os, useSeqEntryIndexing, m_Os, m_On, m_Og, m_Or, m_Op, m_Ou);
+        Generate(*loc, scope, os, useSeqEntryIndexing, mo);
     }
 }
 
