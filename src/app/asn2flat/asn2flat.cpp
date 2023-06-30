@@ -1629,17 +1629,16 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
     if (args["from"] || args["to"] || args["strand"]) {
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
-        auto flatfile_os = context.m_streams[eFlatFileCodes::all].get();
-        context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, flatfile_os);
+        auto* flatfile_os = context.m_streams[eFlatFileCodes::all].get();
+        context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, { flatfile_os });
     } else {
-        auto all  = context.m_streams[eFlatFileCodes::all].get();
-        auto nuc  = context.m_streams[eFlatFileCodes::nuc].get();
-        auto gen  = context.m_streams[eFlatFileCodes::gen].get();
-        auto rna  = context.m_streams[eFlatFileCodes::rna].get();
-        auto prot = context.m_streams[eFlatFileCodes::prot].get();
-        auto unk  = context.m_streams[eFlatFileCodes::unk].get();
-
-        context.m_FFGenerator->Generate(seh, *all, true, all, nuc, gen, rna, prot, unk);
+        auto* all  = context.m_streams[eFlatFileCodes::all].get();
+        auto* nuc  = context.m_streams[eFlatFileCodes::nuc].get();
+        auto* gen  = context.m_streams[eFlatFileCodes::gen].get();
+        auto* rna  = context.m_streams[eFlatFileCodes::rna].get();
+        auto* prot = context.m_streams[eFlatFileCodes::prot].get();
+        auto* unk  = context.m_streams[eFlatFileCodes::unk].get();
+        context.m_FFGenerator->Generate(seh, *all, true, { all, nuc, gen, rna, prot, unk });
     }
 }
 
