@@ -10,7 +10,7 @@ LIBS = $(FTDS100_CTLIB_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 CPPFLAGS = -DFTDS_IN_USE -I$(includedir)/dbapi/driver/ftds100 \
            $(FTDS100_INCLUDE) $(ORIG_CPPFLAGS)
 
-CHECK_REQUIRES = connext in-house-resources
+CHECK_REQUIRES = in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100 -S DBAPI_MS2019_TEST_LB /CHECK_NAME=ctl_lang_ftds100-MS2019
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100 -S DBAPI_DEV16_2K -v 50 /CHECK_NAME=ctl_lang_ftds100-SYB16-2K
