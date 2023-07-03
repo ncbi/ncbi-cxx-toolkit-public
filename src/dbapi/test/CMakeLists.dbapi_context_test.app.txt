@@ -13,7 +13,7 @@ NCBI_begin_app(dbapi_context_test)
   )
   NCBI_project_watchers(ucko satskyse)
 
-  NCBI_set_test_requires(connext in-house-resources)
+  NCBI_set_test_requires(in-house-resources)
   NCBI_set_test_timeout(60)
   NCBI_set_test_assets(dbapi_context_test.ini)
   NCBI_add_test(dbapi_context_test -dr ftds100    -S MsSql)

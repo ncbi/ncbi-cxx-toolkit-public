@@ -18,7 +18,7 @@ LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(ODBC_LIBS) \
 
 REQUIRES = Boost.Test.Included
 
-CHECK_REQUIRES = connext in-house-resources
+CHECK_REQUIRES = in-house-resources
 
 CHECK_COPY = dbapi_unit_test.ini namerd.ini
 
