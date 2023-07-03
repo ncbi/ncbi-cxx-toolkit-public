@@ -385,6 +385,9 @@ CDBConnectionFactory::MakeDBConnection(
         }
     }
 
+    if (t_con.get() == nullptr) {
+        service_info.ClearOptions();
+    }
     x_LogConnection(opening_ctx, t_con.get(), params);
     handler->Flush((t_con.get() == NULL) ? eDiagSevMax : eDiag_Warning);
 
