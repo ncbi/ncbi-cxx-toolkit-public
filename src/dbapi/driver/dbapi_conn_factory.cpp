@@ -923,6 +923,22 @@ CDBConnectionFactory::CServiceInfo::GetOptions(void)
         // do take responsibility for temporarily remembering negative
         // results if checking from scratch is slow, and higher-level logic
         // on this end falls back on GetServer as needed.
+    } else {
+        auto now = CurrentTime().GetTimeT();
+        bool refresh = false;
+        for (const auto &it : m_Options) {
+            if (it->GetExpireTime() < now) {
+                refresh = true;
+                break;
+            }
+        }
+        if (refresh) {
+            IDBServiceMapper::TOptions options;
+            m_Mapper->GetServerOptions(m_ServiceName, &options);
+            if ( !options.empty() ) {
+                swap(options, m_Options);
+            }
+        }
     }
     return m_Options;
 }
