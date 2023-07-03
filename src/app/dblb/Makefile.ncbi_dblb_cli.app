@@ -8,4 +8,4 @@ LIBS = $(SDBAPI_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD      = test_ncbi_dblb_cli.sh
 CHECK_COPY     = test_ncbi_dblb_cli.sh test_ncbi_dblb_cli.py
-CHECK_REQUIRES = connext in-house-resources
+CHECK_REQUIRES = in-house-resources
