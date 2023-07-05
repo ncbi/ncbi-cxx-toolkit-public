@@ -81,6 +81,7 @@ my $opt_source;
 my $opt_legacy_exit_code = 0;
 my $opt_nt = &get_num_cores();
 my $opt_gcp_prj = undef;
+my $opt_use_ftp_protocol = 0;
 my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "quiet"             =>  \$opt_quiet,
                         "force"             =>  \$opt_force_download,
@@ -94,6 +95,7 @@ my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "gcp-project=s"     =>  \$opt_gcp_prj,
                         "num_threads=i"     =>  \$opt_nt,
                         "legacy_exit_code"  =>  \$opt_legacy_exit_code,
+                        "force_ftp"         =>  \$opt_use_ftp_protocol,
                         "help"              =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
@@ -385,6 +387,10 @@ exit($exit_code);
 sub connect_to_ftp
 {
     return undef if ($^O =~ /darwin/);  # Net::FTP appears unreliable on Mac
+
+    # HTTPS access to NCBI FTP site works better than using the FTP protocol
+    return undef unless ($opt_use_ftp_protocol);
+
     my %ftp_opts;
     $ftp_opts{'Passive'} = 1 if $opt_passive;
     $ftp_opts{'Timeout'} = $opt_timeout if ($opt_timeout >= 0);
@@ -905,13 +911,14 @@ update_blastdb.pl [options] blastdb ...
 =item B<--source>
 
 Location to download BLAST databases from (default: auto-detect closest location).
-Supported values: ncbi, aws, or gcp.
+Supported values: C<ncbi>, C<aws>, or C<gcp>.
 
 =item B<--decompress>
 
 Downloads, decompresses the archives in the current working directory, and
 deletes the downloaded archive to save disk space, while preserving the
 archive checksum files (default: false).
+This is only applicable when the download source is C<ncbi>.
 
 =item B<--showall>
 
@@ -919,7 +926,7 @@ Show all available pre-formatted BLAST databases (default: false). The output
 of this option lists the database names which should be used when
 requesting downloads or updates using this script.
 
-It accepts the optional arguments: 'tsv' and 'pretty' to produce tab-separated values
+It accepts the optional arguments: C<tsv> and C<pretty> to produce tab-separated values
 and a human-readable format respectively. These parameters elicit the display of
 additional metadata if this is available to the program.
 This metadata is displayed in columnar format; the columns represent:
@@ -930,11 +937,6 @@ name, description, size in gigabytes, date of last update (YYYY-MM-DD format).
 
 Specify which BLAST database version to download (default: 5).
 Supported values: 4, 5
-
-=item B<--passive>
-
-Use passive FTP, useful when behind a firewall or working in the cloud (default: true).
-To disable passive FTP, configure this option as follows: --passive no
 
 =item B<--timeout>
 
@@ -970,6 +972,17 @@ downloads from NCBI only. This option is meant to be used by legacy applications
 on this exit codes:
 0 for successful operations that result in no downloads, 1 for successful
 downloads, and 2 for errors.
+
+=item B<--force_ftp>
+
+Forces downloads using the FTP protocol from the NCBI (Linux and Windows only).
+If the location from which to download is not NCBI, this option is ignored.
+
+=item B<--passive>
+
+When using the <force_ftp> option, this flag enables passive FTP, useful when
+behind a firewall or working in the cloud (default: true).
+To disable passive FTP, configure this option as follows: --passive no
 
 =back
 
