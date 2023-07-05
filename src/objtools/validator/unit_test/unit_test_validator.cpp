@@ -1653,6 +1653,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, "lcl|nuc");
 
     eval = validator.Validate(seh, options);
@@ -12795,6 +12797,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 
     INTERNAL_STOP_ERR
     EXCEPTION_PROBLEM_ERR
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
     expected_errors[0]->SetSeverity(eDiag_Warning);
@@ -12835,6 +12839,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     cds->SetExcept(true);
     cds->SetExcept_text("unclassified translation discrepancy");
     EXCEPTION_PROBLEM_ERR
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
@@ -13025,6 +13031,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
     cds->SetExcept_text("annotated by transcript or proteomic data");
     // inference is required for exception
     cds->AddQualifier("inference", "similar to DNA sequence:INSD:AY123456.1");
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -18956,8 +18964,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnqualifiedException)
     genomic->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGGGGAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
 
     STANDARD_SETUP
-    expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "UnnecessaryException",
+    /*
+     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "UnnecessaryException",
                               "CDS has unnecessary translated product replaced exception"));
+    */
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "mRNAUnnecessaryException",
                               "mRNA has transcribed product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -21641,32 +21651,55 @@ BOOST_AUTO_TEST_CASE(Test_GP_9919)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     // now suppress an error
     CRef<CSeqdesc> suppress(new CSeqdesc());
     suppress->SetUser().SetObjectType(CUser_object::eObjectType_ValidationSuppression);
     CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_FEAT_InternalStop);
     entry->SetSet().SetDescr().Set().push_back(suppress);
-    delete(expected_errors[2]);
-    expected_errors[2] = nullptr;
+
+    // list of expected errors
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
+    // AddChromosomeNoLocation(expected_errors, entry);
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     // suppress two errors
     CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_FEAT_ExceptionProblem);
-    delete(expected_errors[1]);
-    expected_errors[1] = nullptr;
+
+    // list of expected errors
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
+    // AddChromosomeNoLocation(expected_errors, entry);
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     // suppress three errors
     CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_INST_StopInProtein);
-    CLEAR_ERRORS
+
+    // list of expected errors
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+                              "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
