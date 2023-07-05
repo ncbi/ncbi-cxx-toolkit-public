@@ -6136,7 +6136,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    else
        boost_chrono_static_lib=$boost_chrono_lib
    fi
-   BOOST_CHRONO_LIBS="$boost_chrono_lib $BOOST_CHRONO_LIBS"
+   BOOST_CHRONO_LIBS="$boost_chrono_lib $BOOST_SYSTEM_LIBS"
    BOOST_CHRONO_STATIC_LIBS="$boost_chrono_static_lib $BOOST_SYSTEM_STATIC_LIBS"
 
    AC_CACHE_CHECK([for Boost.Chrono$in_path], ncbi_cv_lib_boost_chrono,
