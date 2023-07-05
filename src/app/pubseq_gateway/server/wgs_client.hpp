@@ -92,6 +92,7 @@ struct SWGSData
     TBioseqInfoFlags                m_BioseqInfoFlags = 0;
     shared_ptr<CBioseqInfoRecord>   m_BioseqInfo;
     CRef<objects::CAsnBinData>      m_Data;
+    int                             m_SplitVersion;
     bool                            m_Excluded = false;
     bool                            m_Compress = false;
     psg_time_point_t                m_Start = psg_clock_t::now();

@@ -395,14 +395,15 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
     if ( seq.IsContig() ) {
         CWGSSeqIterator& it = GetContigIterator(seq);
         // master descr shouldn't be added to proteins in chunks
-        CWGSSeqIterator::TFlags flags = it.fDefaultFlags & ~it.fMasterDescr;
+        //CWGSSeqIterator::TFlags flags = it.fDefaultFlags & ~it.fMasterDescr;
         ret = make_shared<SWGSData>();
         ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
         ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
+        ret->m_SplitVersion = parsed_id2info.split_version;
         ret->m_Id2BlobState = id2_blob_state;
-        ret->m_Data = it.GetChunkData(chunk_id, flags);
+        ret->m_Data = it.GetChunkDataForVersion(chunk_id, parsed_id2info.split_version);
         if ( !ret->m_Data ) {
-            ret->m_Data = new CAsnBinData(*it.GetChunk(chunk_id, flags));
+            ret->m_Data = new CAsnBinData(*it.GetChunkDataForVersion(chunk_id, parsed_id2info.split_version));
         }
         ret->m_Compress = GetCompress(m_Config.m_CompressData, seq, *ret->m_Data);
     }
@@ -1561,14 +1562,17 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         if ( !s_SplitFeatures() ) {
             flags &= ~it.fSplitFeatures;
         }
-        CRef<CAsnBinData> asn_data = it.GetSplitInfoData(flags);
-        if ( !asn_data ) {
-            asn_data = it.GetSeq_entryData(flags);
+        auto asn_data = it.GetSplitInfoDataAndVersion(flags);
+        if ( asn_data.first ) {
+            data->m_SplitVersion = asn_data.second;
         }
-        if ( !asn_data ) {
-            asn_data = new CAsnBinData(*it.GetSeq_entry(flags));
+        if ( !asn_data.first ) {
+            asn_data.first = it.GetSeq_entryData(flags);
         }
-        data->m_Data = asn_data;
+        if ( !asn_data.first ) {
+            asn_data.first = new CAsnBinData(*it.GetSeq_entry(flags));
+        }
+        data->m_Data = asn_data.first;
     }
     else if ( seq.IsScaffold() ) {
         CWGSScaffoldIterator& it = GetScaffoldIterator(seq);

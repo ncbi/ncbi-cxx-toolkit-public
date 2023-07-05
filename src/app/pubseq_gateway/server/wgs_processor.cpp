@@ -834,8 +834,9 @@ void CPSGS_WGSProcessor::x_SendSplitInfo(void)
     if (!m_WGSData->m_Id2BlobId) return;
     CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
     string blob_id = m_WGSData->m_BlobId;
+    auto split_version = m_WGSData->m_SplitVersion;
 
-    string id2_info = osg::CPSGS_OSGGetBlobBase::GetPSGId2Info(id2_blob_id, 0);
+    string id2_info = osg::CPSGS_OSGGetBlobBase::GetPSGId2Info(id2_blob_id, split_version);
     
     CBlobRecord main_blob_props;
     s_SetBlobVersion(main_blob_props, id2_blob_id);
@@ -916,7 +917,8 @@ void CPSGS_WGSProcessor::x_SendChunk(void)
 {
     _ASSERT(m_WGSData  &&  m_WGSData->m_Data);
     CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
-    string id2_info = osg::CPSGS_OSGGetBlobBase::GetPSGId2Info(id2_blob_id, 0);
+    auto split_version = m_WGSData->m_SplitVersion;
+    string id2_info = osg::CPSGS_OSGGetBlobBase::GetPSGId2Info(id2_blob_id, split_version);
     
     CID2_Reply_Data data;
     x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
