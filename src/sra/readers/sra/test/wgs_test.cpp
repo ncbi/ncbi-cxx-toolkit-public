@@ -798,7 +798,14 @@ int CWGSTestApp::Run(void)
                 out << MSerial_AsnText << *it.GetSeq_entry();
             }
             if ( print_split ) {
-                out << MSerial_AsnText << *it.GetSplitInfo();
+                auto split_and_version = it.GetSplitInfoAndVersion();
+                if ( split_and_version.first ) {
+                    out << "Split version: "<<split_and_version.second<<'\n';
+                    out << MSerial_AsnText << *split_and_version.first;
+                }
+                else {
+                    out << "No split info"<<endl;
+                }
             }
             string data1 = sx_GetSeqData(*seq1);
             string data2 = sx_GetSeqData(*seq2);
