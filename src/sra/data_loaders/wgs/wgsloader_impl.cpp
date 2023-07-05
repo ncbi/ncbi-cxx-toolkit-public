@@ -1471,7 +1471,7 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         CBioseq_Handle::TBioseqStateFlags project_state = s_GBStateToOM(GetDb()->GetProjectGBState());
         CBioseq_Handle::TBioseqStateFlags state = project_state;
         CRef<CSeq_entry> entry;
-        CRef<CID2S_Split_Info> split;
+        pair<CRef<CID2S_Split_Info>, CWGSSeqIterator::TSplitVersion> split;
         if ( blob_id.m_SeqType == 'S' ) {
             if ( CWGSScaffoldIterator it = GetScaffoldIterator(blob_id) ) {
                 state = s_GBStateToOM(it.GetGBState());
@@ -1500,14 +1500,14 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                     if ( !GetSplitFeaturesParam() ) {
                         flags &= ~it.fSplitFeatures;
                     }
-                    split = it.GetSplitInfo(flags);
-                    if ( !split ) {
+                    split = it.GetSplitInfoAndVersion(flags);
+                    if ( !split.first ) {
                         entry = it.GetSeq_entry(flags);
                     }
                 }
             }
         }
-        if ( !entry && !split ) {
+        if ( !entry && !split.first ) {
             if ( GetDebugLevel() >= 2 ) {
                 ERR_POST_X(12, "CWGSDataLoader: blob "<<blob_id.ToString()<<
                            " not loaded");
@@ -1523,10 +1523,11 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                 LOG_POST_X(13, Info<<"CWGSDataLoader: blob "<<blob_id.ToString());
             }
         }
-        if ( split ) {
+        if ( split.first ) {
             if ( GetDebugLevel() >=8 ) {
                 LOG_POST_X(14, Info<<"CWGSDataLoader: split blob "<<blob_id.ToString()<<
-                           " "<<MSerial_AsnText<<*split);
+                           " split-version="<<split.second<<
+                           " "<<MSerial_AsnText<<*split.first);
             }
             else if ( GetDebugLevel() >= 7 ) {
                 LOG_POST_X(14, Info<<"CWGSDataLoader: split blob "<<blob_id.ToString());
@@ -1535,9 +1536,10 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         if ( state ) {
             load_lock->SetBlobState(state);
         }
-        if ( split ) {
+        if ( split.first ) {
             _ASSERT(!entry);
-            CSplitParser::Attach(*load_lock, *split);
+            load_lock->GetSplitInfo().SetSplitVersion(split.second);
+            CSplitParser::Attach(*load_lock, *split.first);
         }
         else if ( entry ) {
             load_lock->SetSeq_entry(*entry);
@@ -1551,7 +1553,7 @@ void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
 {
     if ( blob_id.m_SeqType == '\0' ) {
         CWGSSeqIterator it = GetContigIterator(blob_id);
-        CRef<CID2S_Chunk> chunk = it.GetChunk(chunk_info.GetChunkId());
+        CRef<CID2S_Chunk> chunk = it.GetChunkForVersion(chunk_info.GetChunkId(), chunk_info.GetSplitInfo().GetSplitVersion());
         if ( GetDebugLevel() >=8 ) {
             LOG_POST_X(15, Info<<"CWGSDataLoader: chunk "<<blob_id.ToString()<<
                        "."<<chunk_info.GetChunkId()<<
