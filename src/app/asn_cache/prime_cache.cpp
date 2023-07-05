@@ -517,6 +517,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
     while ( !reader.AtEOF() ) {
 
         if (CSignal::IsSignaled()) {
+            ostr_seqids << "#Clean wrapup\n";
             NCBI_THROW(CException, eUnknown,
                        "trapped signal, exiting");
         }
@@ -692,6 +693,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
             }
 
             if (CSignal::IsSignaled()) {
+                ostr_seqids << "#Clean wrapup\n";
                 NCBI_THROW(CException, eUnknown,
                            "trapped signal, exiting");
             }
@@ -1162,6 +1164,7 @@ int CPrimeCacheApplication::Run(void)
          m_SeqIdIndex.Open(NASNCacheFileName::GetBDBIndex(m_CachePath, CAsnIndex::e_seq_id), CBDB_RawFile::eReadWriteCreate);
      }}
 
+    bool resuming_from_clean_wrapup = false;
     if (args["resume"]) {
         CFile output_file(args["oseq-ids"].AsString());
         if (!output_file.Exists()) {
@@ -1170,17 +1173,47 @@ int CPrimeCacheApplication::Run(void)
         }
         CNcbiIfstream istr(output_file.GetPath());
         string line;
+        set<CSeq_id_Handle> previous_execution_ids;
+        set<string> previous_execution_runs;
         while (NcbiGetlineEOL(istr, line)) {
             if (!line.empty() && line[0] != '#') {
-                m_PreviousExecutionIds.insert(CSeq_id_Handle::GetHandle(line));
+                previous_execution_ids.insert(CSeq_id_Handle::GetHandle(line));
             } else if (NStr::StartsWith(line, "#Completed run ")) {
-                m_PreviousExecutionRuns.insert(line.substr(15));
+                previous_execution_runs.insert(line.substr(15));
+            }
+            if (resuming_from_clean_wrapup = (line == "#Clean wrapup")) {
+                /// Execution ended in a clean wrapup, so the ids and runs that
+                /// it completed have been successfully cached
+                m_PreviousExecutionIds = previous_execution_ids;
+                m_PreviousExecutionRuns = previous_execution_runs;
             }
         }
     }
 
-    CNcbiOstream& ostr = args["oseq-ids"].AsOutputFile(
-                             args["resume"] ? CArgValue::fAppend : 0);
+    CNcbiOstream &ostr = args["oseq-ids"].AsOutputFile(
+         resuming_from_clean_wrapup ? CArgValue::fAppend : 0);
+    if (!resuming_from_clean_wrapup && !m_PreviousExecutionIds.empty()) {
+        /// Had a clean wrapup at some point, but last execution ended
+        /// uncleanly; need to re-write output file with those ids that were
+        /// cached cleanly, then we'll redo the rest
+        ostr << "#interrupted-execution\n";
+        for (const string &run : m_PreviousExecutionRuns) {
+            ostr << "#Completed run " << run << '\n';
+        }
+        for (const CSeq_id_Handle &id : m_PreviousExecutionIds) {
+            if (id.Which() == CSeq_id::e_General &&
+                id.GetSeqId()->GetGeneral().GetTag().IsStr())
+            {
+                string tag = id.GetSeqId()->GetGeneral().GetTag().GetStr();
+                if (m_PreviousExecutionRuns.count(tag.substr(0, tag.find('.'))))
+                {
+                    continue;
+                }
+            }
+            ostr << id << '\n';
+        }
+        ostr << "#Clean wrapup\n";
+    }
     ostr << "#" << args["seq-id-type"].AsString() << "-id" << endl;
     m_id_type = args["seq-id-type"].AsString() == "canonical"
               ? sequence::eGetId_Canonical : sequence::eGetId_Best;
