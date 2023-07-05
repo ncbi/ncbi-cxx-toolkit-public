@@ -273,7 +273,7 @@ CScope* scope)
             if (m_Mismatches.size() * 50 <= m_ProtLen) {
                 m_ProblemFlags |= eCDSTranslationProblem_ErroneousException;
             }
-        } else if (product_replaced) {
+        } else if (!product_replaced) {
             m_ProblemFlags |= eCDSTranslationProblem_UnqualifiedException;
         }
     }
