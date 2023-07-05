@@ -22781,7 +22781,7 @@ $as_echo "$ncbi_cv_lib_boost_system" >&6; }
    else
        boost_chrono_static_lib=$boost_chrono_lib
    fi
-   BOOST_CHRONO_LIBS="$boost_chrono_lib $BOOST_CHRONO_LIBS"
+   BOOST_CHRONO_LIBS="$boost_chrono_lib $BOOST_SYSTEM_LIBS"
    BOOST_CHRONO_STATIC_LIBS="$boost_chrono_static_lib $BOOST_SYSTEM_STATIC_LIBS"
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boost.Chrono$in_path" >&5
