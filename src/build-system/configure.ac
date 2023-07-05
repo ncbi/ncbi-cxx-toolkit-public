@@ -6076,6 +6076,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_REGEX_LIBS=-lboost_regex${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_regex$BOOST_STATIC_TAG.a"; then
        BOOST_REGEX_STATIC_LIBS=-lboost_regex$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           BOOST_REGEX_LIBS=$BOOST_REGEX_STATIC_LIBS
+       fi
    else
        BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
    fi
@@ -6115,6 +6118,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_SYSTEM_LIBS=-lboost_system${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_system$BOOST_STATIC_TAG.a"; then
        BOOST_SYSTEM_STATIC_LIBS=-lboost_system$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           BOOST_SYSTEM_LIBS=$BOOST_SYSTEM_STATIC_LIBS
+       fi
    else
        BOOST_SYSTEM_STATIC_LIBS=$BOOST_SYSTEM_LIBS
    fi
@@ -6133,6 +6139,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    boost_chrono_lib=-lboost_chrono${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_chrono$BOOST_STATIC_TAG.a"; then
        boost_chrono_static_lib=-lboost_chrono$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           boost_chrono_lib=$boost_chrono_static_lib
+       fi
    else
        boost_chrono_static_lib=$boost_chrono_lib
    fi
@@ -6151,6 +6160,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    boost_fs_lib=-lboost_filesystem${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_filesystem$BOOST_STATIC_TAG.a"; then
        boost_fs_static_lib=-lboost_filesystem$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           boost_fs_lib=$boost_fs_static_lib
+       fi
    else
        boost_fs_static_lib=$boost_fs_lib
    fi
@@ -6169,6 +6181,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_IOSTREAMS_LIBS=-lboost_iostreams${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_iostreams$BOOST_STATIC_TAG.a"; then
        BOOST_IOSTREAMS_STATIC_LIBS=-lboost_iostreams$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           BOOST_IOSTREAMS_LIBS=$BOOST_IOSTREAMS_STATIC_LIBS
+       fi
    else
        BOOST_IOSTREAMS_STATIC_LIBS=$BOOST_IOSTREAMS_LIBS
    fi
@@ -6185,6 +6200,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_PROGRAM_OPTIONS_LIBS=-lboost_program_options${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_program_options$BOOST_STATIC_TAG.a"; then
        BOOST_PROGRAM_OPTIONS_STATIC_LIBS=-lboost_program_options$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           BOOST_PROGRAM_OPTIONS_LIBS=$BOOST_PROGRAM_OPTIONS_STATIC_LIBS
+       fi
    else
        BOOST_PROGRAM_OPTIONS_STATIC_LIBS=$BOOST_PROGRAM_OPTIONS_LIBS
    fi
@@ -6202,6 +6220,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_SERIALIZATION_LIBS=-lboost_serialization${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_serialization$BOOST_STATIC_TAG.a"; then
        BOOST_SERIALIZATION_STATIC_LIBS=-lboost_serialization$BOOST_STATIC_TAG
+       if test "x$with_bin_release" = "xyes"; then
+           BOOST_SERIALIZATION_LIBS=$BOOST_SERIALIZATION_STATIC_LIBS
+       fi
    else
        BOOST_SERIALIZATION_STATIC_LIBS=$BOOST_SERIALIZATION_LIBS
    fi
@@ -6281,6 +6302,9 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    BOOST_THREAD_LIBS="-lboost_thread${BOOST_TAG} $BOOST_SYSTEM_LIBS"
    if test -f "$BOOST_LIBPATH_/libboost_thread$BOOST_STATIC_TAG.a"; then
        BOOST_THREAD_STATIC_LIBS="-lboost_thread$BOOST_STATIC_TAG $BOOST_SYSTEM_STATIC_LIBS"
+       if test "x$with_bin_release" = "xyes"; then
+           BOOST_THREAD_LIBS=$BOOST_THREAD_STATIC_LIBS
+       fi
    else
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
