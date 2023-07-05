@@ -185,6 +185,7 @@ static bool kEnableSplitProd = true;
 static bool kEnableSplitFeat = true;
 
 // split info fixed parameters
+static int kAssignedDefaultSplitVersion = 1;
 static int kMainEntryId = 1;
 enum EChunkType {
     eChunk_prod,
@@ -3807,17 +3808,49 @@ void CWGSSeqIterator::TWGSContigGapInfo::SetPos(TSeqPos pos)
 }
 
 
+enum EFromFlags {
+    eFromFlags
+};
+enum EFromSplitVersion {
+    eFromSplitVersion
+};
+
+
 struct SWGSCreateInfo : SWGSDb_Defs
 {
-    SWGSCreateInfo(const CWGSDb& db, TFlags flags)
+    explicit
+    SWGSCreateInfo(const CWGSDb& db)
         : db(db),
-          flags(flags),
+          flags(fDefaultFlags),
           split_prod(false),
           split_data(false),
           split_feat(false),
-          split_qual(false)
+          split_qual(false),
+          split_version(kAssignedDefaultSplitVersion)
         {
         }
+        
+    SWGSCreateInfo(const CWGSDb& db, EFromFlags, TFlags flags)
+        : SWGSCreateInfo(db)
+        {
+            if ( flags != fDefaultFlags ) {
+                x_SetFlags(flags);
+            }
+        }
+
+    SWGSCreateInfo(const CWGSDb& db, EFromSplitVersion, TSplitVersion split_version)
+        : SWGSCreateInfo(db)
+        {
+            if ( split_version != kDefaultSplitVersion ) {
+                x_SetSplitVersion(split_version);
+            }
+        }
+
+    // set flags and corresponding split_version
+    void x_SetFlags(TFlags flags);
+    
+    // set split_version and corresponding flags
+    void x_SetSplitVersion(TSplitVersion split_version);
 
     CWGSDb db;
     TFlags flags;
@@ -3827,6 +3860,7 @@ struct SWGSCreateInfo : SWGSDb_Defs
     CRef<CBioseq> main_seq;
     CRef<CSeq_entry> entry;
     CRef<CID2S_Split_Info> split;
+    TSplitVersion split_version;
     CRef<CID2S_Chunk> chunk;
     CRef<CWGSAsnBinData> data;
 
@@ -4727,7 +4761,7 @@ static inline void s_GetMinMax(const Uint1* arr, size_t size,
 void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
                                       TFlags flags) const
 {
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     info.x_SetId(*this);
     x_GetQualityAnnot(annot_set, info);
 }
@@ -5385,8 +5419,32 @@ CRef<CSeq_inst> CWGSSeqIterator::x_GetSeq_inst(SWGSCreateInfo& info) const
 
 CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
 {
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     return x_GetSeq_inst(info);
+}
+
+
+void SWGSCreateInfo::x_SetFlags(TFlags flags)
+{
+    this->flags = flags;
+    split_version = kAssignedDefaultSplitVersion;
+}
+    
+
+void SWGSCreateInfo::x_SetSplitVersion(TSplitVersion split_version)
+{
+    if ( split_version == kDefaultSplitVersion ) {
+        flags = fDefaultFlags;
+    }
+    else if ( split_version == kAssignedDefaultSplitVersion ) {
+        flags = fDefaultFlags;
+    }
+    else {
+        NCBI_THROW_FMT(CSraException, eInvalidArg,
+                       "SWGSCreateInfo::SetSplitVersion("<<split_version<<"): "
+                       "unknown split version");
+    }
+    this->split_version = split_version;
 }
 
 
@@ -6005,6 +6063,8 @@ bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
 {
     // split data if...
     PROFILE(sw_InitSplit);
+    info.split = null;
+    info.data = null;
     if ( kEnableSplitData && (info.flags & fSplitSeqData) &&
          ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
          HasGapInfo() && // we have explicit gap info
@@ -6184,7 +6244,7 @@ CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 {
     PROFILE(sw_GetBioseq);
     x_CheckValid("CWGSSeqIterator::GetBioseq");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     x_CreateBioseq(info);
     return info.main_seq;
 }
@@ -6194,7 +6254,7 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 {
     PROFILE(sw_GetSeq_entry);
     x_CheckValid("CWGSSeqIterator::GetSeq_entry");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     info.entry = new CSeq_entry;
     x_CreateEntry(info);
     return info.entry;
@@ -6205,7 +6265,7 @@ CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 {
     PROFILE(sw_GetSeq_entryData);
     x_CheckValid("CWGSSeqIterator::GetSeq_entryData");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     info.entry = new CSeq_entry;
     info.data = new CWGSAsnBinData(*info.entry);
     x_CreateEntry(info);
@@ -6215,30 +6275,42 @@ CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 
 CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 {
+    return GetSplitInfoAndVersion(flags).first;
+}
+
+
+pair<CRef<CID2S_Split_Info>, CWGSSeqIterator::TSplitVersion>
+CWGSSeqIterator::GetSplitInfoAndVersion(TFlags flags) const
+{
     CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetSplitInfo);
     x_CheckValid("CWGSSeqIterator::GetSplitInfo");
-    SWGSCreateInfo info(m_Db, flags);
-    if ( !x_InitSplit(info) ) {
-        return null;
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
+    if ( x_InitSplit(info) ) {
+        x_CreateSplit(info);
     }
-    x_CreateSplit(info);
-    return info.split;
+    return make_pair(info.split, info.split_version);
 }
 
 
 CRef<CAsnBinData> CWGSSeqIterator::GetSplitInfoData(TFlags flags) const
 {
+    return GetSplitInfoDataAndVersion(flags).first;
+}
+
+
+pair<CRef<CAsnBinData>, CWGSSeqIterator::TSplitVersion>
+CWGSSeqIterator::GetSplitInfoDataAndVersion(TFlags flags) const
+{
     CVDBMgr::CRequestContextUpdater ctx_updater;
     PROFILE(sw_GetSplitInfoData);
     x_CheckValid("CWGSSeqIterator::GetSplitInfoData");
-    SWGSCreateInfo info(m_Db, flags);
-    if ( !x_InitSplit(info) ) {
-        return null;
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
+    if ( x_InitSplit(info) ) {
+        info.data = new CWGSAsnBinData(*info.split);
+        x_CreateSplit(info);
     }
-    info.data = new CWGSAsnBinData(*info.split);
-    x_CreateSplit(info);
-    return CRef<CAsnBinData>(info.data);
+    return make_pair(CRef<CAsnBinData>(info.data), info.split_version);
 }
 
 
@@ -6246,7 +6318,18 @@ CRef<CID2S_Chunk> CWGSSeqIterator::GetChunk(TChunkId chunk_id,
                                             TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetChunk");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
+    info.chunk = new CID2S_Chunk;
+    x_CreateChunk(info, chunk_id);
+    return info.chunk;
+}
+
+
+CRef<CID2S_Chunk> CWGSSeqIterator::GetChunkForVersion(TChunkId chunk_id,
+                                                      TSplitVersion split_version) const
+{
+    x_CheckValid("CWGSSeqIterator::GetChunk");
+    SWGSCreateInfo info(m_Db, eFromSplitVersion, split_version);
     info.chunk = new CID2S_Chunk;
     x_CreateChunk(info, chunk_id);
     return info.chunk;
@@ -6257,7 +6340,19 @@ CRef<CAsnBinData> CWGSSeqIterator::GetChunkData(TChunkId chunk_id,
                                                 TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetChunkData");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
+    info.chunk = new CID2S_Chunk;
+    info.data = new CWGSAsnBinData(*info.chunk);
+    x_CreateChunk(info, chunk_id);
+    return CRef<CAsnBinData>(info.data);
+}
+
+
+CRef<CAsnBinData> CWGSSeqIterator::GetChunkDataForVersion(TChunkId chunk_id,
+                                                          TSplitVersion split_version) const
+{
+    x_CheckValid("CWGSSeqIterator::GetChunkData");
+    SWGSCreateInfo info(m_Db, eFromSplitVersion, split_version);
     info.chunk = new CID2S_Chunk;
     info.data = new CWGSAsnBinData(*info.chunk);
     x_CreateChunk(info, chunk_id);
@@ -6723,7 +6818,7 @@ void CWGSScaffoldIterator::x_CreateEntry(SWGSCreateInfo& info) const
 CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetBioseq");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     x_CreateBioseq(info);
     return info.main_seq;
 }
@@ -6732,7 +6827,7 @@ CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
 CRef<CSeq_entry> CWGSScaffoldIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetSeq_entry");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     info.entry = new CSeq_entry;
     x_CreateEntry(info);
     return info.entry;
@@ -7538,7 +7633,7 @@ void CWGSProteinIterator::x_CreateEntry(SWGSCreateInfo& info) const
 CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetBioseq");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     x_CreateBioseq(info);
     return info.main_seq;
 }
@@ -7547,7 +7642,7 @@ CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 CRef<CSeq_entry> CWGSProteinIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetSeq_entry");
-    SWGSCreateInfo info(m_Db, flags);
+    SWGSCreateInfo info(m_Db, eFromFlags, flags);
     info.entry = new CSeq_entry;
     x_CreateEntry(info);
     return info.entry;

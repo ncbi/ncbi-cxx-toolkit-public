@@ -182,6 +182,11 @@ struct SWGSDb_Defs
         eFeatLocIdAccVer,
         eFeatLocIdAccNoVer
     };
+    
+    typedef int TSplitVersion;
+    static const TSplitVersion kDefaultSplitVersion = 0;
+
+    typedef int TChunkId;
 };
 DECLARE_SAFE_FLAGS(SWGSDb_Defs::EFlags);
 
@@ -1084,14 +1089,25 @@ public:
     CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
     CRef<CAsnBinData> GetSeq_entryData(TFlags flags = fDefaultFlags) const;
     // GetSplitInfo may create Seq-entry as a skeleton w/o actual splitting
+    NCBI_DEPRECATED
     CRef<CID2S_Split_Info> GetSplitInfo(TFlags flags = fDefaultFlags) const;
+    NCBI_DEPRECATED
     CRef<CAsnBinData> GetSplitInfoData(TFlags flags = fDefaultFlags) const;
+    pair<CRef<CID2S_Split_Info>, TSplitVersion>
+        GetSplitInfoAndVersion(TFlags flags = fDefaultFlags) const;
+    pair<CRef<CAsnBinData>, TSplitVersion>
+        GetSplitInfoDataAndVersion(TFlags flags = fDefaultFlags) const;
     // Make chunk for the above split-info, flags must be the same
-    typedef int TChunkId;
+    NCBI_DEPRECATED
     CRef<CID2S_Chunk> GetChunk(TChunkId chunk_id,
                                TFlags flags = fDefaultFlags) const;
+    NCBI_DEPRECATED
     CRef<CAsnBinData> GetChunkData(TChunkId chunk_id,
                                    TFlags flags = fDefaultFlags) const;
+    CRef<CID2S_Chunk> GetChunkForVersion(TChunkId chunk_id,
+                                         TSplitVersion split_version) const;
+    CRef<CAsnBinData> GetChunkDataForVersion(TChunkId chunk_id,
+                                             TSplitVersion split_version) const;
 
     enum EInstSegmentFlags {
         fInst_MakeData  = 1<<0, // generate Seq-data in data segments
