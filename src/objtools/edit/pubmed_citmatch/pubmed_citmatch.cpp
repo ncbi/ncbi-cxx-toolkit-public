@@ -210,7 +210,9 @@ public:
                     results.push_back(to_string(ENTREZ_ID_TO(TIntId, pmid)));
                     ++ngood;
                 } else {
-                    results.push_back("Error: " + to_string(err));
+                    ostringstream oss;
+                    oss << "Error: " << err;
+                    results.push_back(oss.str());
                 }
             } catch (const CException& e) {
                 results.push_back(e.what());
