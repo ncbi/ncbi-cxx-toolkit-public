@@ -1,6 +1,6 @@
 # $Id$
 
-NCBI_begin_lib(grpc_integration)
+NCBI_begin_lib(grpc_integration STATIC)
   NCBI_sources(grpc_integration)
   NCBI_uses_toolkit_libraries(xutil)
   NCBI_optional_components(connext)
