@@ -74,7 +74,7 @@ class CCachedTaxon3_impl;
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterMessage: public CObjEditMessage
 {
 public:
-    CRemoteUpdaterMessage(const std::string& msg, EError_val error)
+    CRemoteUpdaterMessage(const string& msg, EPubmedError error)
     : CObjEditMessage(msg, eDiag_Warning), m_error(error)
     {
     }
@@ -82,7 +82,7 @@ public:
         return new CRemoteUpdaterMessage(GetText(), m_error);
     }
 
-    EError_val m_error;
+    EPubmedError m_error;
 };
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterException: public CException
