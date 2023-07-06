@@ -80,9 +80,9 @@ TEntrezId FindPMID(const list<CRef<CPub>>& arr)
     return ZERO_ENTREZ_ID;
 }
 
-static bool s_IsConnectionFailure(EError_val mlaErrorVal)
+static bool s_IsConnectionFailure(EPubmedError errorVal)
 {
-    switch (mlaErrorVal) {
+    switch (errorVal) {
     case eError_val_cannot_connect_pmdb:
     case eError_val_cannot_connect_searchbackend_pmdb:
         return true;
@@ -116,8 +116,7 @@ CRef<CPub> s_GetPubFrompmid(IPubmedUpdater* upd, TEntrezId id, int maxAttempts, 
         if (isConnectionError) {
             oss << count + 1 << " attempts made. ";
         }
-        oss << "CMLAClient : "
-            << errorVal;
+        oss << "Pubmed error: " << errorVal;
         string msg = oss.str();
         if (pMessageListener) {
             pMessageListener->PutMessage(CRemoteUpdaterMessage(msg, errorVal));
