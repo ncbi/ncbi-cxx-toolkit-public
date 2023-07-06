@@ -7765,6 +7765,7 @@ UEGQ	s	Universidade Estadual de Goias
 UENF	s	Universidade Estadual do Norte Fluminense			
 UESC	s	Universidade Estadual de Santa Cruz			
 UESS	s	Universidad de El Salvador			
+UESTCC	sc	University of Electronic Science and Technology Culture Collection			
 UEVH	s	Universidade de Evora, Departamento de Biologia			
 UF	sb	University of Florida Museum of Natural History	FLMNH		
 UF/FGS	s	Florida Geological Survey			
