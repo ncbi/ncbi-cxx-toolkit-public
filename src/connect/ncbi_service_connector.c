@@ -370,7 +370,7 @@ static const char* s_AdjustNetParams(const char*    service,
 
     if (!ConnNetInfo_SetupStandardArgs(net_info, svcname)) {
         if (retval  &&  *retval)
-            free(retval);
+            free((void*) retval);
         retval = 0;
     }
     return retval;
