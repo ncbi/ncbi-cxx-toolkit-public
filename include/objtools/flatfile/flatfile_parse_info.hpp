@@ -146,7 +146,6 @@ struct Parser {
                                          protein sequence */
     Uint1       medserver    = 0;                /* == 1, if MedArchInit() call
                                          succeeded */
-    bool        use_eutils   = true;
     bool        normalize    = false;
 
     struct SFindPubOptions {
