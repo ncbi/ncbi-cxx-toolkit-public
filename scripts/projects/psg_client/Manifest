@@ -14,6 +14,7 @@ ETC: src/app/pubseq_gateway/client/psg_client.ini
 
 APP: pubseq_gateway.cgi$exe
 ETC: src/app/pubseq_gateway/client/pubseq_gateway.json
+ETC: src/app/pubseq_gateway/client/pubseq_gateway.ini
 
 # Each line describes a single configuration
 # The format is as follows:
