@@ -56,7 +56,6 @@
 #include <objects/general/Name_std.hpp>
 
 #include <objtools/edit/remote_updater.hpp>
-#include <objtools/edit/mla_updater.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/logging/listener.hpp>
@@ -283,9 +282,7 @@ bool CRemoteUpdater::xSetFromConfig()
             const string sect = "RemotePubmedUpdate";
             string s = cfg.Get(sect, "Source");
             NStr::ToLower(s);
-            if (s == "medarch") {
-                m_pm_source = EPubmedSource::eMLA;
-            } else if (s == "eutils") {
+            if (s == "eutils") {
                 m_pm_source = EPubmedSource::eEUtils;
             } else if (s == "none") {
                 m_pm_source = EPubmedSource::eNone;
@@ -396,13 +393,7 @@ void CRemoteUpdater::ClearCache()
 
     if (m_pm_use_cache && m_pubmed) {
         switch (m_pm_source) {
-        case EPubmedSource::eMLA: {
-            auto* upd = dynamic_cast<CMLAUpdaterWithCache*>(m_pubmed.get());
-            if (upd) {
-                upd->ClearCache();
-            }
-            break;
-        }
+        case EPubmedSource::eMLA:
         case EPubmedSource::eEUtils: {
             auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
             if (upd) {
@@ -481,15 +472,6 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 }
                 if (! m_pm_url.empty()) {
                     CEUtils_Request::SetBaseURL(m_pm_url);
-                }
-                if (m_pm_interceptor)
-                    m_pubmed->SetPubInterceptor(m_pm_interceptor);
-                break;
-            case EPubmedSource::eMLA:
-                if (m_pm_use_cache) {
-                    m_pubmed.reset(new CMLAUpdaterWithCache(m_pm_normalize));
-                } else {
-                    m_pubmed.reset(new CMLAUpdater(m_pm_normalize));
                 }
                 if (m_pm_interceptor)
                     m_pubmed->SetPubInterceptor(m_pm_interceptor);
@@ -684,13 +666,6 @@ void CRemoteUpdater::SetPubmedClient(IPubmedUpdater* pubmedUpdater)
     m_pubmed.reset(pubmedUpdater);
 }
 
-void CRemoteUpdater::SetMLAClient(CMLAClient& mlaClient)
-{
-    CMLAUpdater* mlau = new CMLAUpdater(m_pm_normalize);
-    mlau->SetClient(&mlaClient);
-    m_pubmed.reset(mlau);
-}
-
 CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
@@ -711,13 +686,7 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
 
     if (m_pm_use_cache && m_pubmed) {
         switch (m_pm_source) {
-        case EPubmedSource::eMLA: {
-            auto* upd = dynamic_cast<CMLAUpdaterWithCache*>(m_pubmed.get());
-            if (upd && ! dynamic_cast<CMLAUpdater*>(m_pubmed.get())) {
-                upd->ReportStats(os);
-            }
-            break;
-        }
+        case EPubmedSource::eMLA:
         case EPubmedSource::eEUtils: {
             auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
             if (upd && ! dynamic_cast<CEUtilsUpdater*>(m_pubmed.get())) {

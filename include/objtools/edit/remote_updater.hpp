@@ -53,7 +53,6 @@ class CSeq_entry;
 class CSeqdesc;
 class CSeq_descr;
 class COrg_ref;
-class CMLAClient;
 class CAuth_list;
 class IObjtoolsListener;
 class CPub;
@@ -66,7 +65,7 @@ enum class EPubmedSource
 {
     eNone,
     eEUtils,
-    eMLA,
+    eMLA, // deprecated; same as eEUtils
 };
 
 class CCachedTaxon3_impl;
@@ -125,7 +124,6 @@ public:
     static void PostProcessPubs(CPubdesc& pubdesc);
 
     void SetPubmedClient(IPubmedUpdater*);
-    NCBI_DEPRECATED void SetMLAClient(CMLAClient& mlaClient);
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
     void ReportStats(std::ostream& str);

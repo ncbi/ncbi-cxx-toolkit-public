@@ -108,14 +108,6 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.entrez_fetch = args["z"].AsBoolean() ? 1 : 0;
     config.taxserver = args["O"].AsBoolean() ? 0 : 1;
     config.medserver = args["u"].AsBoolean() ? 0 : 1;
-    if (args["pubmed"]) {
-        string s = args["pubmed"].AsString();
-        if (s == "medarch") {
-            config.use_eutils = false;
-        } else if (s == "eutils") {
-            config.use_eutils = true;
-        }
-    }
     config.normalize = args["normalize"].AsBoolean();
     config.ign_bad_qs = false;
     config.cleanup = args["C"].AsInteger();
