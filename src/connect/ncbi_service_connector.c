@@ -315,6 +315,7 @@ static int/*bool*/ s_IsContentTypeDefined(const char*         service,
 
 
 static const char* s_AdjustNetParams(const char*    service,
+                                     const char*    svcname,
                                      SConnNetInfo*  net_info,
                                      EReqMethod     req_method,
                                      const char*    cgi_path,
@@ -367,6 +368,11 @@ static const char* s_AdjustNetParams(const char*    service,
             retval = "";
     }
 
+    if (!ConnNetInfo_SetupStandardArgs(net_info, svcname)) {
+        if (retval  &&  *retval)
+            free(retval);
+        retval = 0;
+    }
     return retval;
 }
 
@@ -594,8 +600,9 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             unsigned int  n)
 {
     SServiceConnector* uuu = (SServiceConnector*) data;
-    const char*        user_header;
+    SERV_ITER          iter = uuu->iter;
     char*              iter_header;
+    const char*        user_header;
     SSERV_InfoCPtr     info;
 
     assert(n  ||  uuu->extra.adjust);
@@ -615,11 +622,11 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     if (!(info = s_GetNextInfo(uuu, 1/*http*/)))
         return 0/*failure - not adjusted*/;
 
-    iter_header = SERV_Print(uuu->iter, 0/*net_info*/, 0);
+    iter_header = SERV_Print(iter, 0/*net_info*/, 0);
     switch (info->type) {
     case fSERV_Ncbid:
         user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
-        user_header = s_AdjustNetParams(uuu->name, net_info,
+        user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                         eReqMethod_Post,
                                         NCBID_WEBPATH,
                                         SERV_NCBID_ARGS(&info->u.ncbid),
@@ -632,7 +639,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     case fSERV_HttpGet:
     case fSERV_HttpPost:
         user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
-        user_header = s_AdjustNetParams(uuu->name, net_info,
+        user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                         info->type == fSERV_HttpPost
                                         ?  eReqMethod_Post
                                         : (info->type == fSERV_HttpGet
@@ -648,9 +655,8 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     case fSERV_Firewall:
     case fSERV_Standalone:
         user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
-        user_header = s_AdjustNetParams(uuu->name, net_info,
-                                        eReqMethod_Any,
-                                        uuu->net_info->path, 0,
+        user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
+                                        eReqMethod_Any, uuu->net_info->path, 0,
                                         ConnNetInfo_GetArgs(uuu->net_info),
                                         user_header, info->mime_t,
                                         info->mime_s, info->mime_e,
@@ -760,15 +766,16 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         EIO_Status*        status)
 {
     int/*bool*/ but_last = 0/*false*/;
-    const char* user_header; /* either static "" or non-empty dynamic string */
+    SERV_ITER   iter = uuu->iter;
     char*       iter_header;
+    const char* user_header; /* either static "" or non-empty dynamic string */
     EReqMethod  req_method;
 
     *status = eIO_Success;
     assert(net_info->firewall  ||  info);
     ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
     if (!net_info->http_referer)
-        x_SetDefaultReferer(net_info, uuu->iter);
+        x_SetDefaultReferer(net_info, iter);
     if ((!net_info->firewall  &&  info->type != fSERV_Firewall)
         || (info  &&  ((info->type  & fSERV_Http)  ||
                        (info->type == fSERV_Ncbid  &&  net_info->stateless)))){
@@ -790,7 +797,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 ? "Connection-Mode: STATELESS\r\n" /*default*/
                 /* We will be waiting for conn-info back */
                 : "Connection-Mode: STATEFUL\r\n";
-            user_header = s_AdjustNetParams(uuu->name, net_info, req_method,
+            user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
+                                            req_method,
                                             NCBID_WEBPATH,
                                             SERV_NCBID_ARGS(&info->u.ncbid),
                                             0, user_header, info->mime_t,
@@ -805,7 +813,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 ? eReqMethod_Get : (info->type == fSERV_HttpPost
                                     ? eReqMethod_Post : eReqMethod_Any);
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
-            user_header = s_AdjustNetParams(uuu->name, net_info, req_method,
+            user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
+                                            req_method,
                                             SERV_HTTP_PATH(&info->u.http),
                                             SERV_HTTP_ARGS(&info->u.http),
                                             0, user_header, info->mime_t,
@@ -823,7 +832,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             if (!net_info->scheme)
                 net_info->scheme = eURL_Https;
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
-            user_header = s_AdjustNetParams(uuu->name, net_info,
+            user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                             eReqMethod_Any, 0, 0,
                                             0, user_header, info->mime_t,
                                             info->mime_s, info->mime_e, 0);
@@ -870,7 +879,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         user_header = (net_info->stateless
                        ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
                        : "Client-Mode: STATEFUL_CAPABLE\r\n");
-        user_header = s_AdjustNetParams(uuu->name, net_info,
+        user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                         req_method, 0, 0,
                                         0, user_header, mime_t,
                                         mime_s, mime_e, 0);
@@ -878,7 +887,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     if (!user_header)
         return 0;
 
-    if ((iter_header = SERV_Print(uuu->iter, net_info, but_last)) != 0) {
+    if ((iter_header = SERV_Print(iter, net_info, but_last)) != 0) {
         size_t uh_len;
         if ((uh_len = strlen(user_header)) > 0) {
             char*  ih;
@@ -901,9 +910,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     /* then set a new one */
     uuu->user_header = user_header;
     if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
-        return 0;
-
-    if (!ConnNetInfo_SetupStandardArgs(net_info, uuu->iter->name))
         return 0;
 
     ConnNetInfo_ExtendUserHeader
