@@ -36,7 +36,6 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/seq/Pubdesc.hpp>
 
-#include <objtools/edit/mla_updater.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 
 USING_NCBI_SCOPE;
@@ -116,14 +115,9 @@ public:
             return 0;
         }
 
-        bool bTypeMLA = false;
-        if (args["pubmed"] && args["pubmed"].AsString() == "medarch") {
-            bTypeMLA = true;
-        } else {
-            if (args["url"]) {
-                string url = args["url"].AsString();
-                CEUtils_Request::SetBaseURL(url);
-            }
+        if (args["url"]) {
+            string url = args["url"].AsString();
+            CEUtils_Request::SetBaseURL(url);
         }
 
         bool bNormalize = args["normalize"].AsBoolean();
@@ -135,12 +129,7 @@ public:
             output = &NcbiCout;
         }
 
-        unique_ptr<IPubmedUpdater> upd;
-        if (bTypeMLA) {
-            upd.reset(new CMLAUpdater(bNormalize));
-        } else {
-            upd.reset(new CEUtilsUpdater(bNormalize));
-        }
+        unique_ptr<IPubmedUpdater> upd(new CEUtilsUpdater(bNormalize));
 
         bool       bstats = args["stats"];
         unsigned   nruns  = 0;

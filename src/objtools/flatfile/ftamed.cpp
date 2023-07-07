@@ -34,7 +34,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/edit/mla_updater.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Auth_list.hpp>
@@ -75,14 +74,10 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
 static unique_ptr<edit::IPubmedUpdater> s_updater;
 
 /**********************************************************/
-void InitPubmedClient(bool use_eutils, bool normalize)
+void InitPubmedClient(bool normalize)
 {
     if (! s_updater) {
-        if (use_eutils) {
-            s_updater.reset(new edit::CEUtilsUpdater(normalize));
-        } else {
-            s_updater.reset(new edit::CMLAUpdater(normalize));
-        }
+        s_updater.reset(new edit::CEUtilsUpdater(normalize));
     }
 }
 

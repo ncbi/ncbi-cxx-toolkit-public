@@ -6,7 +6,6 @@
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
 
-#include <objtools/edit/mla_updater.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 #include <objtools/edit/remote_updater.hpp>
 
@@ -48,14 +47,9 @@ public:
             return 1;
         }
 
-        bool bTypeMLA = false;
-        if (args["pubmed"] && args["pubmed"].AsString() == "medarch") {
-            bTypeMLA = true;
-        } else {
-            if (args["url"]) {
-                string url = args["url"].AsString();
-                CEUtils_Request::SetBaseURL(url);
-            }
+        if (args["url"]) {
+            string url = args["url"].AsString();
+            CEUtils_Request::SetBaseURL(url);
         }
 
         bool bNormalize = args["normalize"].AsBoolean();
@@ -67,7 +61,7 @@ public:
             output = &NcbiCout;
         }
 
-        CRemoteUpdater upd(nullptr, bTypeMLA ? EPubmedSource::eMLA : EPubmedSource::eEUtils, bNormalize);
+        CRemoteUpdater upd(nullptr, EPubmedSource::eEUtils, bNormalize);
         CRef<CPub>     pub(new CPub);
         pub->SetPmid().Set(pmid);
         CRef<CSeqdesc> desc(new CSeqdesc);
