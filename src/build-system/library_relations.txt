@@ -1502,7 +1502,7 @@ xngalign needs xmergetree
 xobjedit needs $(EUTILS_LIBS)
 xobjedit needs $(OBJREAD_LIBS)
 xobjedit needs efetch
-xobjedit needs mlacli
+xobjedit needs mla
 xobjedit needs taxon3
 xobjedit needs valid
 xobjedit needs xobjutil
