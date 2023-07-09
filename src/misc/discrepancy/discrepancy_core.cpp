@@ -56,7 +56,14 @@ protected:
     template<size_t i>
     static constexpr auto xGetProps()
     {
+#ifdef NCBI_COMPILER_ANY_CLANG
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wundefined-var-template"
+#endif
         return &CDiscrepancyCasePropsRef<static_cast<eTestNames>(i)>::props;
+#ifdef NCBI_COMPILER_ANY_CLANG
+#  pragma GCC diagnostic pop
+#endif
     }
 
     template<std::size_t... I>
@@ -435,7 +442,7 @@ CRef<CReportItem> CReportItemFactory::Create(const string& test_name, const stri
     for (const auto& it : report_objs) {
         disc_item->SetDetails().push_back(it);
     }
-    
+
     return CRef<CReportItem>(disc_item);
 }
 
@@ -568,23 +575,23 @@ void CDiscrepancyContext::Push(const CSerialObject& root, const string& fname)
         ParseObject(*CTypeConverter<CBioseq>::SafeCast(&root));
         return;
     }
-    
+
     if (pTypeInfo == CBioseq_set::GetTypeInfo()) {
         ParseObject(*CTypeConverter<CBioseq_set>::SafeCast(&root));
         return;
     }
-    
+
     if (pTypeInfo == CSeq_entry::GetTypeInfo()) {
         ParseObject(*CTypeConverter<CSeq_entry>::SafeCast(&root));
         return;
     }
-    
+
     if (pTypeInfo == CSeq_submit::GetTypeInfo()) {
         ParseObject(*CTypeConverter<CSeq_submit>::SafeCast(&root));
         return;
     }
 
-    NCBI_THROW(CException, eUnknown, 
+    NCBI_THROW(CException, eUnknown,
             "Unsupported type - " + pTypeInfo->GetName());
 }
 
@@ -787,7 +794,7 @@ void CDiscrepancyContext::RunTests()
                  << " are not yet implemented...");
     }
     else if (m_CurrentNode->m_Parent &&
-             (m_CurrentNode->m_Parent->m_Type != eFile)) { 
+             (m_CurrentNode->m_Parent->m_Type != eFile)) {
         _ASSERT(m_CurrentNode->m_Type == eNone);
         // Only the root node or a child node of a file
         // are permitted to have type None
