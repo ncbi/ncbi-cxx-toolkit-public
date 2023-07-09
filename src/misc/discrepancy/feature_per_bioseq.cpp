@@ -61,7 +61,7 @@ DISCREPANCY_CASE1(COUNT_RRNAS, SEQUENCE, eDisc, "Count rRNAs", "FIND_DUP_RRNAS")
             auto bsref = context.BioseqObjRef();
             string item = " [n] sequence[s] [has] [(]" + to_string(total) + "[)] rRNA feature" + (total == 1 ? kEmptyStr : "s");
             m_Objs[item].Add(*bsref).Incr();
-            string short_name = bsref->GetShort();
+            string short_name = bsref->GetBioseqLabel();
             string subitem = "[n] rRNA feature[s] found on [(]" + short_name;
             for (auto& it : tmp.GetMap()) {
                 m_Objs[item][subitem].Ext().Add(it.second->GetObjects());
@@ -138,7 +138,7 @@ DISCREPANCY_CASE1(COUNT_TRNAS, SEQUENCE, eDisc, "Count tRNAs", "FIND_DUP_TRNAS")
             auto bsref = context.BioseqObjRef();
             string item = " [n] sequence[s] [has] [(]" + to_string(total) + "[)] tRNA feature" + (total == 1 ? kEmptyStr : "s");
             m_Objs[item].NoRec().Add(*bsref);
-            string short_name = bsref->GetShort();
+            string short_name = bsref->GetBioseqLabel();
             string subitem = "[n] tRNA feature[s] found on [(]" + short_name;
             for (auto& it : tmp.GetMap()) {
                 m_Objs[item][subitem].Ext().Add(it.second->GetObjects());

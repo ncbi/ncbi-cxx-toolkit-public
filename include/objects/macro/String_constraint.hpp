@@ -56,21 +56,21 @@ public:
     {
     }
     CAutoLowerCase(CAutoLowerCase&& v): 
-        m_original(move(v.m_original)),
-        m_lowercase(move(v.m_lowercase)),
-        m_uppercase(move(v.m_uppercase))
+        m_original(std::move(v.m_original)),
+        m_lowercase(std::move(v.m_lowercase)),
+        m_uppercase(std::move(v.m_uppercase))
     {
     }
     CAutoLowerCase& operator=(CAutoLowerCase&& v)
     {
-        m_original = move(v.m_original);
-        m_lowercase = move(v.m_lowercase);
-        m_uppercase = move(v.m_uppercase);
+        m_original = std::move(v.m_original);
+        m_lowercase = std::move(v.m_lowercase);
+        m_uppercase = std::move(v.m_uppercase);
         return *this;
     }
     CAutoLowerCase& operator=(string&& v)
     {
-        m_original = move(v);
+        m_original = std::move(v);
         m_lowercase.clear();
         m_uppercase.clear();
         return *this;
