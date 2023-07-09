@@ -320,8 +320,8 @@ string FixProductName(const CSuspect_rule* rule, CScope&, string& prot_name, Get
         newtext = ReplaceNoCase(prot_name, "haem", "hem");
     }
     if (!newtext.empty() && newtext != prot_name) {
-        orig_prot_name = move(prot_name);
-        prot_name = move(newtext);
+        orig_prot_name = std::move(prot_name);
+        prot_name = std::move(newtext);
         auto mrna = get_mrna();
         if (mrna) {
             mrna->SetData().SetRna().SetExt().SetName() = prot_name;
