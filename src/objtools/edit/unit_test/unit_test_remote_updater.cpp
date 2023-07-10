@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
         s_SetPubmedClient<eError_val_cannot_connect_pmdb>(updater);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
-            "CMLAClient : cannot-connect-pmdb";
+            "Pubmed error: cannot-connect-pmdb";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
                 CException,
                 CCheckMsg(expectedMsg));
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
             "3 attempts made. "
-            "CMLAClient : cannot-connect-pmdb";
+            "Pubmed error: cannot-connect-pmdb";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
                 CException,
                 CCheckMsg(expectedMsg));
@@ -153,8 +153,8 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     s_SetPubmedClient<eError_val_cannot_connect_searchbackend_pmdb>(updater);
     {
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
-        "4 attempts made. "
-         "CMLAClient : cannot-connect-searchbackend-pmdb";
+            "4 attempts made. "
+            "Pubmed error: cannot-connect-searchbackend-pmdb";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
                 CException,
                 CCheckMsg(expectedMsg));
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     {
         s_SetPubmedClient<eError_val_not_found>(updater);
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
-            "CMLAClient : not-found";
+            "Pubmed error: not-found";
         BOOST_CHECK_EXCEPTION(updater.UpdatePubReferences(*pDesc),
                 CException,
                 CCheckMsg(expectedMsg));
