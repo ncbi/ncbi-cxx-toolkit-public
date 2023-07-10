@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(compact_sam)
+  NCBI_sources(compact_sam)
+  NCBI_uses_toolkit_libraries(xalgoalignsplign)
+NCBI_end_app()
+
