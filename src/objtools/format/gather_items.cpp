@@ -3536,10 +3536,10 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     CRef<CSeq_loc_Mapper> slice_mapper = s_MakeSliceMapper(loc, ctx);
 
     // Gaps of length zero are only shown for SwissProt Genpept records
-    // const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
+    const bool showGapsOfSizeZero = ( ctx.IsProt() && ctx.GetPrimaryId()->Which() == CSeq_id_Base::e_Swissprot );
 
     // cache to avoid repeated calculations
-    // const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
+    const int loc_len = sequence::GetLength(*loc.GetId(), &ctx.GetScope() ) ;
 
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
@@ -3550,21 +3550,10 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     CRef<CBioseqIndex> bsx = idx->GetBioseqIndex ();
     if (! bsx) return;
 
-    const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
-
-    SGapIdxData gap_data{};
-
-    gap_data.num_gaps = gaps.size();
-    gap_data.next_gap = 0;
-
-    if (gap_data.num_gaps > 0) {
-        s_SetGapIdxData (gap_data, gaps);
-    }
-
     CSeq_loc slp;
     slp.Assign(loc);
-    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &item, &out, &slice_mapper,
-                          gaps, bsx](CFeatureIndex& sfx) {
+    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &loc_len, &item, &out, &slice_mapper,
+                          &gap_it, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
@@ -3586,7 +3575,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
                 // unless they're a plain feature.
                 // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
-                return;
+//                return;
             }
 
             /// we may need to assert proper product resolution
@@ -3641,7 +3630,40 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
             // HANDLE GAPS SECTION GOES HERE
 
+            // handle gaps
+            const int feat_end = feat_loc->GetStop(eExtreme_Positional);
+            int feat_start = feat_loc->GetStart(eExtreme_Positional);
+            if( feat_start > feat_end ) {
+                feat_start -= loc_len;
+            }
 
+// cout << "Feat start: " << NStr::IntToString(feat_start) << ", feat end: " << NStr::IntToString(feat_end) << endl;
+
+            while (gap_it) {
+                const int gap_start = gap_it.GetPosition();
+                const int gap_end   = (gap_it.GetEndPosition() - 1);
+
+// cout << "Gap start: " << NStr::IntToString(gap_start) << ", gap end: " << NStr::IntToString(gap_end) << endl;
+
+                // if feature after gap first output the gap
+                if ( feat_start >= gap_start ) {
+                    // - Don't output gaps of size zero (except: see showGapsOfSizeZero's definition)
+                    // - Don't output if there's an explicit gap that overlaps this one
+                    const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start <= gap_end) );
+                    if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
+                        item.Reset( s_NewGapItem(gap_it, ctx) );
+                        out << item;
+                    }
+                    ++gap_it;
+                } else {
+                    break;
+                }
+            }
+
+            item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
+            out << item;
+
+            /*
             const CSeq_loc& loc = original_feat.GetLocation();
             CRef<CSeq_loc> loc2(new CSeq_loc);
             loc2->Assign(*feat_loc);
@@ -3653,6 +3675,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
             item.Reset( x_NewFeatureItem(mf, ctx, loc2, m_Feat_Tree, CFeatureItem::eMapped_not_mapped, true) );
             out << item;
+            */
 
             // Add more features depending on user preferences
 
@@ -3702,6 +3725,16 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                                 << " [" << e << "]");
         }
     });  //  end of for loop
+
+    // when all features are done, output remaining gaps
+    while (gap_it) {
+        // we don't output gaps of size zero (except: see showGapsOfSizeZero)
+        if( showGapsOfSizeZero || (gap_it.GetPosition() < gap_it.GetEndPosition()) ) {
+            item.Reset( s_NewGapItem(gap_it, ctx) );
+            out << item;
+        }
+        ++gap_it;
+    }
 }
 
 void CFlatGatherer::x_GatherFeaturesOnRange
