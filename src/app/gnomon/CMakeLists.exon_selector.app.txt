@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(exon_selector)
+  NCBI_sources(exon_selector)
+  NCBI_uses_toolkit_libraries(xncbi seqset  seq)
+NCBI_end_app()
+
