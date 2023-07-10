@@ -24,6 +24,7 @@ NCBI_add_subdirectory(
   formatguess
   gap_stats
   gi2taxid
+  gnomon
   grid
   hfilter
   id1_fetch
