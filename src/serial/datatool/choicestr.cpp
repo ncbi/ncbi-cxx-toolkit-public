@@ -228,6 +228,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         // convert string member to pointer member
         havePointers = true;
     }
+    bool haveUnionData = false;
+    if ( haveUnion ) {
+        ITERATE ( TVariants, i, m_Variants ) {
+            if ( !x_IsNullType(i)) {
+                haveUnionData = true;
+                break;
+            }
+        }
+    }
 
     string stdNamespace = 
         code.GetNamespace().GetNamespaceRef(CNamespace::KSTDNamespace);
@@ -764,7 +773,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
         }
         methods << ")\n{\n";
-        if ( haveUnion || haveObjectPointer ) {
+        if ( ( (haveUnion && haveUnionData) || haveObjectPointer) ) {
             methods <<
                 "    switch ( index ) {\n";
             ITERATE ( TVariants, i, m_Variants ) {
@@ -1297,7 +1306,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
             }
         }
-        if ( haveUnion ) {
+        if ( haveUnion  && haveUnionData) {
             code.ClassPrivate() << "    union {\n";
             ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eSimpleMember ) {
