@@ -374,7 +374,6 @@ private:
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(TFFContext& context, CObjectIStream& is, bool report) const;
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(TFFContext& context, CObjectIStream& is, bool report) const;
 
-    CNcbiOstream* x_GetFlatOstream(TFFContext& context, CBioseq_Handle& bsh) const;
     [[nodiscard]] unique_ptr<CObjectIStream> x_OpenIStream(const CArgs& args) const;
 
     void             x_CreateFlatFileGenerator(TFFContext& context, const CArgs& args) const;
@@ -1073,134 +1072,6 @@ void CAsn2FlatApp::HandleTextId(TFFContext& context, const string& strId) const
     HandleSeqEntryHandle(context, seh);
 }
 
-// ============================================================================
-CNcbiOstream*
-CAsn2FlatApp::x_GetFlatOstream(TFFContext& context, CBioseq_Handle& bsh) const
-{
-    CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
-
-    if (! m_AccessionFilter.empty() && bsr && ! m_HugeFileMode) {
-        bool okay = false;
-        for (auto& sid : bsr->GetId()) {
-            switch (sid->Which()) {
-            case NCBI_SEQID(Genbank):
-            case NCBI_SEQID(Embl):
-            case NCBI_SEQID(Ddbj):
-            case NCBI_SEQID(Tpg):
-            case NCBI_SEQID(Tpe):
-            case NCBI_SEQID(Tpd):
-            case NCBI_SEQID(Local):
-            case NCBI_SEQID(General):
-            case NCBI_SEQID(Other):
-            case NCBI_SEQID(Gpipe): {
-                const string accn_string = sid->GetSeqIdString();
-                if (m_AccessionFilter == accn_string) {
-                    okay = true;
-                }
-                const string fasta_str = sid->AsFastaString();
-                if (m_AccessionFilter == fasta_str) {
-                    okay = true;
-                }
-                break;
-            }
-            default:
-                break;
-            }
-        }
-        if (! okay) {
-            return nullptr;
-        }
-    }
-
-    bool is_genomic = false;
-    bool is_RNA     = false;
-
-    CConstRef<CSeqdesc> closest_molinfo = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
-    if (closest_molinfo) {
-        const CMolInfo&   molinf = closest_molinfo->GetMolinfo();
-        CMolInfo::TBiomol biomol = molinf.GetBiomol();
-        switch (biomol) {
-        case NCBI_BIOMOL(genomic):
-        case NCBI_BIOMOL(other_genetic):
-        case NCBI_BIOMOL(genomic_mRNA):
-        case NCBI_BIOMOL(cRNA):
-            is_genomic = true;
-            break;
-        case NCBI_BIOMOL(pre_RNA):
-        case NCBI_BIOMOL(mRNA):
-        case NCBI_BIOMOL(rRNA):
-        case NCBI_BIOMOL(tRNA):
-        case NCBI_BIOMOL(snRNA):
-        case NCBI_BIOMOL(scRNA):
-        case NCBI_BIOMOL(snoRNA):
-        case NCBI_BIOMOL(transcribed_RNA):
-        case NCBI_BIOMOL(ncRNA):
-        case NCBI_BIOMOL(tmRNA):
-            is_RNA = true;
-            break;
-        case NCBI_BIOMOL(other): {
-            CBioseq_Handle::TMol mol = bsh.GetSequenceType();
-            switch (mol) {
-            case CSeq_inst::eMol_dna:
-                is_genomic = true;
-                break;
-            case CSeq_inst::eMol_rna:
-                is_RNA = true;
-                break;
-            case CSeq_inst::eMol_na:
-                is_genomic = true;
-                break;
-            default:
-                break;
-            }
-        } break;
-        default:
-            break;
-        }
-    }
-
-    CNcbiOstream* flatfile_os = nullptr;
-
-    auto* _Os = context.m_streams[eFlatFileCodes::all].get();
-    auto* _On = context.m_streams[eFlatFileCodes::nuc].get();
-    auto* _Og = context.m_streams[eFlatFileCodes::gen].get();
-    auto* _Or = context.m_streams[eFlatFileCodes::rna].get();
-    auto* _Op = context.m_streams[eFlatFileCodes::prot].get();
-    auto* _Ou = context.m_streams[eFlatFileCodes::unk].get();
-
-    if (_Os) {
-        if (m_OnlyNucs && ! bsh.IsNa())
-            return nullptr;
-        if (m_OnlyProts && ! bsh.IsAa())
-            return nullptr;
-        flatfile_os = _Os;
-    } else if (bsh.IsNa()) {
-        if (_On) {
-            flatfile_os = _On;
-        } else if ((is_genomic || ! closest_molinfo) && _Og) {
-            flatfile_os = _Og;
-        } else if (is_RNA && _Or) {
-            flatfile_os = _Or;
-        } else {
-            return nullptr;
-        }
-    } else if (bsh.IsAa()) {
-        if (_Op) {
-            flatfile_os = _Op;
-        }
-    } else {
-        if (_Ou) {
-            flatfile_os = _Ou;
-        } else if (_On) {
-            flatfile_os = _On;
-        } else {
-            return nullptr;
-        }
-    }
-    
-    return flatfile_os;
-}
-
 //  ============================================================================
 bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle seh) const
 //  ============================================================================
@@ -1233,59 +1104,13 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
         }
     }
 
-    bool useFaster = true;
-    if (args["slower"]) {
-    	useFaster = false;
-    }
-    if (useFaster || args["policy"].AsString() == "ftp" || args["policy"].AsString() == "web") {
-
-        try {
-            x_FFGenerate(seh, context);
-        } catch (CException& e) {
-            ERR_POST(Error << e);
-            m_Exception = true;
-        }
-
-        return true;
+    try {
+        x_FFGenerate(seh, context);
+    } catch (CException& e) {
+        ERR_POST(Error << e);
+        m_Exception = true;
     }
 
-    context.m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
-
-    for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
-        CBioseq_Handle bsh = *bioseq_it;
-
-        CNcbiOstream* flatfile_os = x_GetFlatOstream(context, bsh);
-        if (! flatfile_os)
-            continue;
-
-        if (m_PSGMode && (args["enable-external"] || args["policy"].AsString() == "external"))
-            x_AddSNPAnnots(bsh, context);
-
-        // generate flat file
-        if (args["from"] || args["to"] || args["strand"]) {
-            CSeq_loc loc;
-            x_GetLocation(seh, args, loc);
-            try {
-                context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true);
-            } catch (CException& e) {
-                ERR_POST(Error << e);
-                m_Exception = true;
-            }
-            // emulate the C Toolkit: only produce flatfile for first sequence
-            // when range is specified
-            return true;
-        } else {
-            int count = args["count"].AsInteger();
-            for (int i = 0; i < count; ++i) {
-                try {
-                    context.m_FFGenerator->Generate(bsh, *flatfile_os, true);
-                } catch (CException& e) {
-                    ERR_POST(Error << e);
-                    m_Exception = true;
-                }
-            }
-        }
-    }
     return true;
 }
 
