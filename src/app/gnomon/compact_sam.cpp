@@ -582,7 +582,7 @@ void CCompactSAMApplication::Init()
 {
     SetDiagPostLevel(eDiag_Info);
 
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramBasename(),
                               "compact_sam expects SAM alignments at stdin collated by query, e.g. with 'sort -k 1,1'");
 
