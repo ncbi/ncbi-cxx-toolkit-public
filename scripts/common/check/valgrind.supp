@@ -273,6 +273,13 @@
 }
 
 {
+   NCBI VDB ver 3.0.6 -- lacks https://github.com/Mbed-TLS/mbedtls/pull/6942
+   Memcheck:Overlap
+   fun:__GI_memcpy
+   fun:mbedtls_mpi_sub_abs
+}
+
+{
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack
    Memcheck:Param
    pwrite64(buf)
