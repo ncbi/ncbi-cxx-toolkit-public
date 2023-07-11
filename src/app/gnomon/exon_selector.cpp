@@ -35,6 +35,8 @@
 #include <corelib/ncbiargs.hpp>
 #include <math.h>
 
+#include <array>
+
 USING_NCBI_SCOPE;
 
 class CExonSelectorApplication : public CNcbiApplication
@@ -860,7 +862,7 @@ void CExonSelectorApplication::Init()
 {
     SetDiagPostLevel(eDiag_Info);
 
-    auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramBasename(), "exon_selector expects SAM alignments at stdin collated by query, e.g. with 'sort -k 1,1'");
     argdescr->AddDefaultKey("penalty", "penalty", "Per-compartment penalty", CArgDescriptions::eDouble, "0.35");
     argdescr->AddDefaultKey ("max_intron", "max_intron", "Maximum intron length (in base pairs)", CArgDescriptions::eInteger, "1200000");
