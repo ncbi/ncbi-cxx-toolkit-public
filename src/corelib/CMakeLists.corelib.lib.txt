@@ -1,5 +1,10 @@
 # $Id$
 
+if (NCBI_REQUIRE_FreeBSD_FOUND)
+    # For environ, defined in crt1.o.
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_ALLOW_UNDEFINED}")
+endif()
+
 NCBI_begin_lib(xncbi)
 
 if (UNIX)
