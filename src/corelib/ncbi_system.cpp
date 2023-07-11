@@ -30,6 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#ifdef NCBI_OS_MSWIN
+#  include <windows.h>
+#  include <crtdbg.h>
+#  include <stdlib.h>
+#endif //NCBI_OS_MSWIN
+
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -89,9 +96,6 @@ extern "C" {
 
 #ifdef NCBI_OS_MSWIN
 #  include <corelib/ncbidll.hpp>
-#  include <crtdbg.h>
-#  include <stdlib.h>
-#  include <windows.h>
 #  include "ncbi_os_mswin_p.hpp"
 #  include <dbghelp.h>
 #  include <intrin.h>
