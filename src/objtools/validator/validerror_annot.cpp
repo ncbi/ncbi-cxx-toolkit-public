@@ -67,28 +67,7 @@ CValidError_annot::~CValidError_annot()
 
 void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 {
-    if (annot.IsAlign()) {
-        if (annot.Seq_annot_IsSetDesc()) {
-            for (const CRef<CAnnotdesc>& iter : annot.Seq_annot_GetDesc().Get()) {
-                if (iter->IsUser()) {
-                    const CObject_id& oid = iter->GetUser().GetType();
-                    if (oid.IsStr()) {
-                        if (oid.GetStr() == "Blast Type") {
-                            PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
-                                "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    } else if (annot.IsIds()) {
-        PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotIDs,
-                "Record should not contain Seq-annot.data.ids", *annot.GetCompleteSeq_annot());
-    } else if (annot.IsLocs()) {
-        PostErr(eDiag_Error, eErr_SEQ_ANNOT_AnnotLOCs,
-                "Record contains Seq-annot.data.locs", *annot.GetCompleteSeq_annot());
-    }
+    ValidateSeqAnnot(*annot.GetCompleteSeq_annot());
 }
 
 
