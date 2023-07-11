@@ -54,6 +54,8 @@ class CSeq_feat;
 class CUser_object;
 class CUser_field;
 class CBioseq;
+class CID2S_Split_Info;
+class CID2S_Chunk;
 
 class CSNPDbTrackIterator;
 class CSNPDbSeqIterator;
@@ -169,6 +171,9 @@ struct SSNPDb_Defs
         ESearchMode m_SearchMode;
         SFilter m_Filter;
     };
+
+    typedef int TSplitVersion;
+    typedef int TChunkId;
 };
 
 
@@ -538,6 +543,14 @@ public:
     enum EFlags {
         fZoomPage       = 1<<0,
         fNoGaps         = 1<<1,
+        fNoSNPFeat              = 1<<2, // exclude features from generated entry
+        fNoCoverageGraph        = 1<<3, // exclude coverage graphs from generated entry
+        fNoOverviewGraph        = 1<<4, // exclude overview graph from generated entry
+        fOnlySNPFeat            = fNoCoverageGraph | fNoOverviewGraph,
+        // control naming of overview graph
+        // by default if base name is "SNP" than no zoom level, otherwise with zoom level
+        fOverviewWithZoomAlways = 1<<5, // name overview graph with zoom level
+        fOverviewWithZoomNever  = 1<<6, // name overview graph without zoom level
         fDefaultFlags   = 0
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
@@ -577,6 +590,15 @@ public:
     TAnnotSet GetTableFeatAnnots(CRange<TSeqPos> range,
                                  const string& annot_name,
                                  TFlags flags = fDefaultFlags) const;
+
+    // Generate split-info with split-version
+    pair<CRef<CID2S_Split_Info>, TSplitVersion>
+        GetSplitInfoAndVersion(const string& base_name,
+                               TFlags flags = fDefaultFlags) const;
+    CRef<CID2S_Chunk>
+        GetChunkForVersion(const string& base_name,
+                           TChunkId chunk_id,
+                           TSplitVersion split_version) const;
 
     CSNPDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();

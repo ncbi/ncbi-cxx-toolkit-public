@@ -41,7 +41,10 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqtable/seqtable__.hpp>
+#include <objects/seqsplit/seqsplit__.hpp>
 #include <sra/error_codes.hpp>
 #include <unordered_map>
 
@@ -2720,6 +2723,263 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+// Generation of split-info and chunks
+
+BEGIN_LOCAL_NAMESPACE;
+
+// splitter parameters for SNPs and graphs
+static const int kTSEId = 1;
+static const int kChunkIdFeat = 0;
+static const int kChunkIdGraph = 1;
+static const int kChunkIdMul = 2;
+
+// split_version=0 : feat_chunk_pages = kDefaultFeatChunkPages
+// 0 < split_version < kDefaultFeatChunkPages : feat_chunk_pages = split_version
+// graph_chunk_pages = feat_chunk_pages*kFeatChunksPerGraphChunk
+static const TSeqPos kDefaultFeatChunkPages = 200;
+static const TSeqPos kFeatChunksPerGraphChunk = 10;
+static const TSeqPos kTargetFeatsPerChunk = 20000;
+
+template<class Values>
+bool sx_HasNonZero(const Values& values, TSeqPos index, TSeqPos count)
+{
+    TSeqPos end = min(index+count, TSeqPos(values.size()));
+    for ( TSeqPos i = index; i < end; ++i ) {
+        if ( values[i] ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+template<class TValues>
+void sx_AddBits2(vector<char>& bits,
+                 TSeqPos bit_values,
+                 TSeqPos pos_index,
+                 const TValues& values)
+{
+    TSeqPos dst_ind = pos_index / bit_values;
+    TSeqPos src_ind = 0;
+    if ( TSeqPos first_offset = pos_index % bit_values ) {
+        TSeqPos first_count = bit_values - first_offset;
+        if ( !bits[dst_ind] ) {
+            bits[dst_ind] = sx_HasNonZero(values, 0, first_count);
+        }
+        dst_ind += 1;
+        src_ind += first_count;
+    }
+    while ( src_ind < values.size() ) {
+        if ( !bits[dst_ind] ) {
+            bits[dst_ind] = sx_HasNonZero(values, src_ind, bit_values);
+        }
+        ++dst_ind;
+        src_ind += bit_values;
+    }
+}
+
+
+static
+void sx_AddBits(vector<char>& bits,
+                TSeqPos kChunkSize,
+                const CSeq_graph& graph)
+{
+    TSeqPos comp = graph.GetComp();
+    _ASSERT(kChunkSize % comp == 0);
+    TSeqPos bit_values = kChunkSize / comp;
+    const CSeq_interval& loc = graph.GetLoc().GetInt();
+    TSeqPos pos = loc.GetFrom();
+    _ASSERT(pos % comp == 0);
+    _ASSERT(graph.GetNumval()*comp == loc.GetLength());
+    TSeqPos pos_index = pos/comp;
+    if ( graph.GetGraph().IsByte() ) {
+        auto& values = graph.GetGraph().GetByte().GetValues();
+        _ASSERT(values.size() == graph.GetNumval());
+        sx_AddBits2(bits, bit_values, pos_index, values);
+    }
+    else {
+        auto& values = graph.GetGraph().GetInt().GetValues();
+        _ASSERT(values.size() == graph.GetNumval());
+        sx_AddBits2(bits, bit_values, pos_index, values);
+    }
+}
+
+
+TSeqPos sx_CalcFeatChunkPages(const CSNPDbSeqIterator& it)
+{
+    // get statistics
+    Uint8 total_feat_count = it.GetSNPCount();
+    const TSeqPos page_size = it.GetPageSize();
+    CRange<TSeqPos> total_range = it.GetSNPRange();
+    
+    // all calculations are approximate, 1 is added to avoid zero division
+    TSeqPos page_count = total_range.GetLength()/page_size+1;
+    Uint8 feat_per_page = total_feat_count/page_count+1;
+    TSeqPos chunk_pages = kTargetFeatsPerChunk/feat_per_page+1;
+
+    // final formula with only one division is
+    // chunk_pages = (kTargetFeatsPerChunk*total_range.GetLength())/(total_feat_count*page_size)
+    return min(kDefaultFeatChunkPages, chunk_pages);
+}
+
+
+inline string sx_CombineWithZoomLevel(const string& acc, int zoom_level)
+{
+    return CSeq_annot::CombineWithZoomLevel(acc, zoom_level);
+}
+
+
+template<class Cont>
+typename Cont::value_type::TObjectType& sx_AddNew(Cont& cont)
+{
+    typename Cont::value_type obj(new typename Cont::value_type::TObjectType);
+    cont.push_back(obj);
+    return *obj;
+}
+
+
+void sx_SetZoomLevel(CSeq_annot& annot, int zoom_level)
+{
+    CUser_object& obj = sx_AddNew(annot.SetDesc().Set()).SetUser();
+    obj.SetType().SetStr("AnnotationTrack");
+    obj.AddField("ZoomLevel", zoom_level);
+}
+
+
+void sx_SetOverviewName(CSeq_annot& annot,
+                        CSNPDbSeqIterator::TFlags flags,
+                        const string& annot_name,
+                        int overview_zoom)
+{
+    annot.SetNameDesc(annot_name);
+    if ( (flags & CSNPDbSeqIterator::fOverviewWithZoomAlways) ||
+         (!(flags & CSNPDbSeqIterator::fOverviewWithZoomNever) &&
+          (annot_name != kDefaultAnnotName)) ) {
+        sx_SetZoomLevel(annot, overview_zoom);
+    }
+}
+
+END_LOCAL_NAMESPACE;
+
+
+pair<CRef<CID2S_Split_Info>, CSNPDbSeqIterator::TSplitVersion>
+CSNPDbSeqIterator::GetSplitInfoAndVersion(const string& base_name,
+                                          TFlags flags) const
+{
+    CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
+    split_info->SetChunks();
+    CBioseq_set& skeleton = split_info->SetSkeleton().SetSet();
+    skeleton.SetId().SetId(kTSEId);
+    skeleton.SetSeq_set();
+
+                
+    CRange<TSeqPos> total_range = GetSNPRange();
+    TSeqPos kFeatChunkPages = sx_CalcFeatChunkPages(*this);
+    _ASSERT(kFeatChunkPages <= kDefaultFeatChunkPages);
+    TSplitVersion split_version = kFeatChunkPages == kDefaultFeatChunkPages? 0: kFeatChunkPages;
+    TSeqPos kFeatChunkSize = kFeatChunkPages*GetPageSize();
+    TSeqPos kGraphChunkSize = kFeatChunkSize*kFeatChunksPerGraphChunk;
+    
+    vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
+
+    if ( true ) { // overview graphs is necessary for feature chunk distribution
+        // overview graph
+        CRef<CSeq_annot> annot = GetOverviewAnnot(total_range);
+        if ( annot ) {
+            for ( auto& g : annot->GetData().GetGraph() ) {
+                sx_AddBits(feat_chunks, kFeatChunkSize, *g);
+            }
+            if ( !(flags & fNoOverviewGraph) ) {
+                sx_SetOverviewName(*annot, flags, base_name, GetOverviewZoom());
+                skeleton.SetAnnot().push_back(annot);
+            }
+        }
+    }
+    if ( !(flags & fNoCoverageGraph) ) {
+        // coverage graphs
+        string graph_annot_name = sx_CombineWithZoomLevel(base_name, GetCoverageZoom());
+        _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
+        const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
+        for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
+                continue;
+            }
+            int chunk_id = i*kChunkIdMul+kChunkIdGraph;
+            CID2S_Chunk_Info& chunk = sx_AddNew(split_info->SetChunks());
+            chunk.SetId().Set(chunk_id);
+            CID2S_Seq_annot_Info& annot_info = sx_AddNew(chunk.SetContent()).SetSeq_annot();
+            annot_info.SetName(graph_annot_name);
+            annot_info.SetGraph();
+            CID2S_Seq_id_Interval& interval = annot_info.SetSeq_loc().SetSeq_id_interval();
+            interval.SetSeq_id(*GetSeqId());
+            interval.SetStart(i*kGraphChunkSize);
+            interval.SetLength(kGraphChunkSize);
+        }
+    }
+    if ( !(flags & fNoSNPFeat) ) {
+        // features
+        TSeqPos overflow = GetMaxSNPLength()-1;
+        for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !feat_chunks[i] ) {
+                continue;
+            }
+            int chunk_id = i*kChunkIdMul+kChunkIdFeat;
+            CID2S_Chunk_Info& chunk = sx_AddNew(split_info->SetChunks());
+            chunk.SetId().Set(chunk_id);
+            CID2S_Seq_annot_Info& annot_info = sx_AddNew(chunk.SetContent()).SetSeq_annot();
+            annot_info.SetName(base_name);
+            CID2S_Feat_type_Info& feat_type = sx_AddNew(annot_info.SetFeat());
+            feat_type.SetType(CSeqFeatData::e_Imp);
+            feat_type.SetSubtypes().push_back(CSeqFeatData::eSubtype_variation);
+            CID2S_Seq_id_Interval& interval = annot_info.SetSeq_loc().SetSeq_id_interval();
+            interval.SetSeq_id(*GetSeqId());
+            interval.SetStart(i*kFeatChunkSize);
+            interval.SetLength(kFeatChunkSize+overflow);
+        }
+    }
+    return make_pair(split_info, split_version);
+}
+
+
+CRef<CID2S_Chunk> CSNPDbSeqIterator::GetChunkForVersion(const string& base_name,
+                                                        TChunkId chunk_id,
+                                                        TSplitVersion split_version) const
+{
+    if ( TSeqPos(split_version) >= kDefaultFeatChunkPages ) {
+        NCBI_THROW_FMT(CSraException, eInvalidArg,
+                       "CSNPDbSeqIterator::GetChunkForVersion("<<chunk_id<<", "<<split_version<<")"
+                       ": unknown split version");
+    }
+    
+    CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
+    CID2S_Chunk_Data& data = sx_AddNew(chunk->SetData());
+    int chunk_type = chunk_id%kChunkIdMul;
+    int i = chunk_id/kChunkIdMul;
+    data.SetId().SetBioseq_set(kTSEId);
+
+    TSeqPos kFeatChunkPages = split_version? split_version: kDefaultFeatChunkPages;
+    TSeqPos kFeatChunkSize = kFeatChunkPages*GetPageSize();
+    if ( chunk_type == kChunkIdFeat ) {
+        CRange<TSeqPos> range;
+        range.SetFrom(i*kFeatChunkSize);
+        range.SetToOpen((i+1)*kFeatChunkSize);
+        for ( auto annot : GetTableFeatAnnots(range, base_name) ) {
+            data.SetAnnots().push_back(annot);
+        }
+    }
+    else if ( chunk_type == kChunkIdGraph ) {
+        TSeqPos kGraphChunkSize = kFeatChunkSize*kFeatChunksPerGraphChunk;
+        CRange<TSeqPos> range;
+        range.SetFrom(i*kGraphChunkSize);
+        range.SetToOpen((i+1)*kGraphChunkSize);
+        if ( auto annot = GetCoverageAnnot(range, base_name) ) {
+            sx_SetZoomLevel(*annot, GetCoverageZoom());
+            data.SetAnnots().push_back(annot);
+        }
+    }
+    return chunk;
+}
 
 
 END_NAMESPACE(objects);
