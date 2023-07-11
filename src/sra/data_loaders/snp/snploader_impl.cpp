@@ -37,12 +37,15 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqres/seqres__.hpp>
+#include <objects/seqsplit/ID2S_Split_Info.hpp>
+#include <objects/seqsplit/ID2S_Chunk.hpp>
 
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
+#include <objmgr/impl/split_parser.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -70,20 +73,6 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
-// magic chunk ids
-static const int kTSEId = 1;
-static const int kChunkIdFeat = 0;
-static const int kChunkIdGraph = 1;
-static const int kChunkIdMul = 2;
-
-// algirithm options
-
-// splitter parameters for SNPs and graphs
-static const TSeqPos kFeatChunkSize = 1000000;
-static const TSeqPos kGraphChunkSize = 10000000;
-static const char kGraphNameSuffix[] = "@@100";
-static const char kOverviewNameSuffix[] = "@@5000";
-
 NCBI_PARAM_DECL(int, SNP_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, SNP_LOADER, DEBUG, 0,
                   eParam_NoThread, SNP_LOADER_DEBUG);
@@ -93,7 +82,8 @@ enum {
     eDebug_open_time = 2,
     eDebug_load = 3,
     eDebug_load_time = 4,
-    eDebug_resolve = 5
+    eDebug_resolve = 5,
+    eDebug_data = 9
 };
 
 static int GetDebugLevel(void)
@@ -699,6 +689,7 @@ CRef<CSNPSeqInfo>
 CSNPDataLoader_Impl::GetSeqInfo(const CSNPBlobId& blob_id)
 {
     CRef<CSNPSeqInfo> info = GetFileInfo(blob_id)->GetSeqInfo(blob_id);
+    _ASSERT(*info->GetBlobId() == blob_id);
     return info;
 }
 
@@ -1011,11 +1002,23 @@ CSNPSeqInfo::CSNPSeqInfo(CSNPFileInfo* file,
 
 CRef<CSNPBlobId> CSNPSeqInfo::GetBlobId(void) const
 {
+    CRef<CSNPBlobId> blob_id;
     _ASSERT(m_File);
     if ( !m_SeqId ) {
-        return Ref(new CSNPBlobId(*m_File, m_SeqIndex, m_FilterIndex));
+        blob_id = new CSNPBlobId(*m_File, m_SeqIndex, m_FilterIndex);
     }
-    return Ref(new CSNPBlobId(*m_File, m_SeqId, m_FilterIndex));
+    else {
+        blob_id = new CSNPBlobId(*m_File, m_SeqId, m_FilterIndex);
+    }
+    if ( m_IsPrimaryTrack ) {
+        if ( m_IsPrimaryTrackGraph ) {
+            blob_id->SetPrimaryTrackGraph();
+        }
+        else {
+            blob_id->SetPrimaryTrackFeat();
+        }
+    }
+    return blob_id;
 }
 
 
@@ -1053,71 +1056,6 @@ CSNPSeqInfo::GetSeqIterator(void) const
 }
 
 
-template<class Values>
-bool sx_HasNonZero(const Values& values, TSeqPos index, TSeqPos count)
-{
-    TSeqPos end = min(index+count, TSeqPos(values.size()));
-    for ( TSeqPos i = index; i < end; ++i ) {
-        if ( values[i] ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-template<class TValues>
-void sx_AddBits2(vector<char>& bits,
-                 TSeqPos bit_values,
-                 TSeqPos pos_index,
-                 const TValues& values)
-{
-    TSeqPos dst_ind = pos_index / bit_values;
-    TSeqPos src_ind = 0;
-    if ( TSeqPos first_offset = pos_index % bit_values ) {
-        TSeqPos first_count = bit_values - first_offset;
-        if ( !bits[dst_ind] ) {
-            bits[dst_ind] = sx_HasNonZero(values, 0, first_count);
-        }
-        dst_ind += 1;
-        src_ind += first_count;
-    }
-    while ( src_ind < values.size() ) {
-        if ( !bits[dst_ind] ) {
-            bits[dst_ind] = sx_HasNonZero(values, src_ind, bit_values);
-        }
-        ++dst_ind;
-        src_ind += bit_values;
-    }
-}
-
-
-static
-void sx_AddBits(vector<char>& bits,
-                TSeqPos kChunkSize,
-                const CSeq_graph& graph)
-{
-    TSeqPos comp = graph.GetComp();
-    _ASSERT(kChunkSize % comp == 0);
-    TSeqPos bit_values = kChunkSize / comp;
-    const CSeq_interval& loc = graph.GetLoc().GetInt();
-    TSeqPos pos = loc.GetFrom();
-    _ASSERT(pos % comp == 0);
-    _ASSERT(graph.GetNumval()*comp == loc.GetLength());
-    TSeqPos pos_index = pos/comp;
-    if ( graph.GetGraph().IsByte() ) {
-        auto& values = graph.GetGraph().GetByte().GetValues();
-        _ASSERT(values.size() == graph.GetNumval());
-        sx_AddBits2(bits, bit_values, pos_index, values);
-    }
-    else {
-        auto& values = graph.GetGraph().GetInt().GetValues();
-        _ASSERT(values.size() == graph.GetNumval());
-        sx_AddBits2(bits, bit_values, pos_index, values);
-    }
-}
-
-
 string CSNPSeqInfo::GetAnnotName(void) const
 {
     // primary SNP track features have hard-coded name from EADB
@@ -1133,73 +1071,36 @@ string CSNPSeqInfo::GetAnnotName(void) const
 void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 {
     CSNPDbSeqIterator it = GetSeqIterator();
-    CRange<TSeqPos> total_range = it.GetSNPRange();
     string base_name = GetAnnotName();
     if ( IsSplitEnabled() ) {
-        // split
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        entry->SetSet().SetId().SetId(kTSEId);
-        entry->SetSet().SetSeq_set();
-        string overvew_name = base_name;
-        if ( !m_IsPrimaryTrack ) {
-            overvew_name += kOverviewNameSuffix;
-        }
-        CRef<CSeq_annot> overvew_annot =
-            it.GetOverviewAnnot(total_range, overvew_name);
-        vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
-        if ( overvew_annot ) {
-            for ( auto& g : overvew_annot->GetData().GetGraph() ) {
-                sx_AddBits(feat_chunks, kFeatChunkSize, *g);
+        CSNPDbSeqIterator::TFlags flags = CSNPDbSeqIterator::fDefaultFlags;
+        if ( m_IsPrimaryTrack ) {
+            // primary track has overvew graph in a separate TSE
+            if ( m_IsPrimaryTrackGraph ) {
+                flags |= CSNPDbSeqIterator::fNoSNPFeat;
             }
-            if ( !m_IsPrimaryTrack || m_IsPrimaryTrackGraph ) {
-                entry->SetSet().SetAnnot().push_back(overvew_annot);
+            else {
+                flags |= CSNPDbSeqIterator::fOnlySNPFeat;
             }
         }
-        load_lock->SetSeq_entry(*entry);
-        CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
-        CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-        if ( !m_IsPrimaryTrack || m_IsPrimaryTrackGraph ) {
-            string graph_name = base_name + +kGraphNameSuffix;
-            _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
-            SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
-            const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
-            for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
-                if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
-                    continue;
-                }
-                CRange<TSeqPos> range;
-                range.SetFrom(i*kGraphChunkSize);
-                range.SetToOpen((i+1)*kGraphChunkSize);
-                int chunk_id = i*kChunkIdMul+kChunkIdGraph;
-                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-                chunk->x_AddAnnotType(graph_name, type, it.GetSeqIdHandle(), range);
-                chunk->x_AddAnnotPlace(place);
-                split_info.AddChunk(*chunk);
-            }
+        auto split = it.GetSplitInfoAndVersion(base_name, flags);
+        load_lock->GetSplitInfo().SetSplitVersion(split.second);
+        if ( GetDebugLevel() >= eDebug_data ) {
+            LOG_POST_X(6, Info<<"CSNPDataLoader::LoadAnnotBlob("<<*GetBlobId()<<"):"
+                       << " SV=" << split.second
+                       << " " << MSerial_AsnText << *split.first);
         }
-        if ( !m_IsPrimaryTrack || !m_IsPrimaryTrackGraph ) {
-            string feat_name = base_name;
-            SAnnotTypeSelector type(CSeqFeatData::eSubtype_variation);
-            TSeqPos overflow = it.GetMaxSNPLength()-1;
-            for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
-                if ( !feat_chunks[i] ) {
-                    continue;
-                }
-                CRange<TSeqPos> range;
-                range.SetFrom(i*kFeatChunkSize);
-                range.SetToOpen((i+1)*kFeatChunkSize+overflow);
-                int chunk_id = i*kChunkIdMul+kChunkIdFeat;
-                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-                chunk->x_AddAnnotType(feat_name, type, it.GetSeqIdHandle(), range);
-                chunk->x_AddAnnotPlace(place);
-                split_info.AddChunk(*chunk);
-            }
-        }
+        CSplitParser::Attach(*load_lock, *split.first);
     }
     else {
+        CRange<TSeqPos> total_range = it.GetSNPRange();
         CRef<CSeq_entry> entry(new CSeq_entry);
         for ( auto& annot : it.GetTableFeatAnnots(total_range, base_name) ) {
             entry->SetSet().SetAnnot().push_back(annot);
+        }
+        if ( GetDebugLevel() >= eDebug_data ) {
+            LOG_POST_X(6, Info<<"CSNPDataLoader::LoadAnnotBlob("<<*GetBlobId()<<"): "
+                       << MSerial_AsnText << *entry);
         }
         load_lock->SetSeq_entry(*entry);
     }
@@ -1209,29 +1110,16 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 void CSNPSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
 {
     int chunk_id = chunk_info.GetChunkId();
-    int chunk_type = chunk_id%kChunkIdMul;
-    int i = chunk_id/kChunkIdMul;
-    CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     string base_name = GetAnnotName();
     CSNPDbSeqIterator it = GetSeqIterator();
-    if ( chunk_type == kChunkIdFeat ) {
-        CRange<TSeqPos> range;
-        range.SetFrom(i*kFeatChunkSize);
-        range.SetToOpen((i+1)*kFeatChunkSize);
-        string feat_name = base_name;
-        for ( auto& annot : it.GetTableFeatAnnots(range, base_name) ) {
-            chunk_info.x_LoadAnnot(place, *annot);
-        }
+    auto split_version = chunk_info.GetSplitInfo().GetSplitVersion();
+    auto chunk = it.GetChunkForVersion(base_name, chunk_id, split_version);
+    if ( GetDebugLevel() >= eDebug_data ) {
+        LOG_POST_X(6, Info<<"CSNPDataLoader::LoadAnnotChunk("<<*GetBlobId()<<", "<<chunk_id<<"):"
+                   << " SV=" << split_version
+                   << " " << MSerial_AsnText << *chunk);
     }
-    else if ( chunk_type == kChunkIdGraph ) {
-        CRange<TSeqPos> range;
-        range.SetFrom(i*kGraphChunkSize);
-        range.SetToOpen((i+1)*kGraphChunkSize);
-        string graph_name = base_name + kGraphNameSuffix;
-        if ( auto annot = it.GetCoverageAnnot(range, graph_name) ) {
-            chunk_info.x_LoadAnnot(place, *annot);
-        }
-    }
+    CSplitParser::Load(chunk_info, *chunk);
     chunk_info.SetLoaded();
 }
 
