@@ -3544,20 +3544,18 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
 
-    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
-    if (! idx) return;
-    // CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (loc);
-    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex ();
-    if (! bsx) return;
+    SAnnotSelector sel_cpy = sel;
+    sel_cpy.SetIgnoreStrand();
+    if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+        sel_cpy.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);
+    }
+    CFeat_CI it(scope, loc, sel_cpy);
 
-    CSeq_loc slp;
-    slp.Assign(loc);
-    bsx->IterateFeatures(slp, [this, &ctx, &scope, &prev_feat, &loc_len, &item, &out, &slice_mapper,
-                          &gap_it, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+    ctx.GetFeatTree().AddFeatures(it);
+    for ( ;  it;  ++it) {
         try {
-            CMappedFeat mf = sfx.GetMappedFeat();
-            CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
-            const CSeq_feat& original_feat = sfx.GetMappedFeat().GetOriginalFeature(); // it->GetOriginalFeature();
+            CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
+            const CSeq_feat& original_feat = it->GetOriginalFeature();
 
             /// we need to cleanse CDD features
 
@@ -3568,28 +3566,29 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
             if (cfg.HideCDDFeatures()  &&
                 (subtype == CSeqFeatData::eSubtype_region || subtype == CSeqFeatData::eSubtype_site)  &&
                 s_IsCDD(feat)) {
-                return;
+                continue;
             }
 
+            /*
             if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
                 // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
                 // unless they're a plain feature.
                 // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
-//                return;
+                continue;
             }
+            */
 
             /// we may need to assert proper product resolution
 
-            /*
-            if (original_feat.GetData().IsRna()  &&  original_feat.IsSetProduct()) {
+            if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
                 vector<CMappedFeat> children =
-                    ctx.GetFeatTree().GetChildren(mf);
+                    ctx.GetFeatTree().GetChildren(*it);
                 if (children.size() == 1  &&
                     children.front().IsSetProduct()) {
 
                     /// resolve sequences
                     CSeq_id_Handle rna =
-                        sequence::GetIdHandle(original_feat.GetProduct(), &scope);
+                        sequence::GetIdHandle(it->GetProduct(), &scope);
                     CSeq_id_Handle prot =
                         sequence::GetIdHandle(children.front().GetProduct(),
                                               &scope);
@@ -3601,32 +3600,35 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                                     rna_bsh, prot_bsh);
                 }
             }
-            */
 
             // supress duplicate features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
-                return;
+                continue;
             }
             prev_feat = feat;
 
-            CConstRef<CSeq_loc> feat_loc( sfx.GetMappedLocation()); // &it->GetLocation());
+            CConstRef<CSeq_loc> feat_loc(&it->GetLocation());
+
+            // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
+            CRange<TSeqPos> range = loc.GetTotalRange();
+            const CSeq_feat& ft = it->GetMappedFeature();
+            CMappedFeat mapped_feat = s_GetTrimmedMappedFeat(ft, range, scope);
+            feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
 
             feat_loc = s_NormalizeNullsBetween( feat_loc );
 
-            /*
             // make sure location ends on the current bioseq
             if ( !s_SeqLocEndsOnBioseq(*feat_loc, ctx, eEndsOnBioseqOpt_LastPartOfSeqLoc, feat.GetData().Which() ) ) {
                 // may need to map sig_peptide on a different segment
                 if (feat.GetData().IsCdregion()) {
                     if (( !ctx.Config().IsFormatFTable()  ||  ctx.Config().ShowFtablePeptides() )) {
-                        x_GetFeatsOnCdsProductIdx(original_feat, ctx, slice_mapper);
+                        x_GetFeatsOnCdsProduct(original_feat, ctx, slice_mapper);
                     }
                 }
-                return;
+                continue;
             }
-            */
 
-            feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
+            // feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
 
             // HANDLE GAPS SECTION GOES HERE
 
@@ -3660,7 +3662,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 }
             }
 
-            item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
+            item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
             /*
@@ -3704,12 +3706,11 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
         } catch (CException& e) {
             // special case: Job cancellation exceptions make us stop
             // generating features.
-            CMappedFeat mf = sfx.GetMappedFeat();
             if( NStr::EqualNocase(e.what(), "job cancelled") ||
                 NStr::EqualNocase(e.what(), "job canceled") )
             {
                 ERR_POST_X(2, Error << "Job canceled while processing feature "
-                                << s_GetFeatDesc(mf.GetSeq_feat_Handle())
+                                << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]; flatfile may be truncated");
                 return;
             }
@@ -3721,10 +3722,10 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 
             // post to log, go on to next feature
             ERR_POST_X(2, Error << "Error processing feature "
-                                << s_GetFeatDesc(mf.GetSeq_feat_Handle())
+                                << s_GetFeatDesc(it->GetSeq_feat_Handle())
                                 << " [" << e << "]");
         }
-    });  //  end of for loop
+    }  //  end of for loop
 
     // when all features are done, output remaining gaps
     while (gap_it) {
