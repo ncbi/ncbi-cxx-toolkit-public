@@ -591,6 +591,9 @@ public:
                                  const string& annot_name,
                                  TFlags flags = fDefaultFlags) const;
 
+    // Generate Seq-entry
+    CRef<CSeq_entry> GetEntry(const string& base_name,
+                              TFlags flags = fDefaultFlags) const;
     // Generate split-info with split-version
     pair<CRef<CID2S_Split_Info>, TSplitVersion>
         GetSplitInfoAndVersion(const string& base_name,
