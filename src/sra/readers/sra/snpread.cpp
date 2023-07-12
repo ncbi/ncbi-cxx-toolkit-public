@@ -2816,11 +2816,11 @@ TSeqPos sx_CalcFeatChunkPages(const CSNPDbSeqIterator& it)
     // all calculations are approximate, 1 is added to avoid zero division
     TSeqPos page_count = total_range.GetLength()/page_size+1;
     Uint8 feat_per_page = total_feat_count/page_count+1;
-    TSeqPos chunk_pages = kTargetFeatsPerChunk/feat_per_page+1;
+    Uint8 chunk_pages = kTargetFeatsPerChunk/feat_per_page+1;
 
     // final formula with only one division is
     // chunk_pages = (kTargetFeatsPerChunk*total_range.GetLength())/(total_feat_count*page_size)
-    return min(kDefaultFeatChunkPages, chunk_pages);
+    return TSeqPos(min(Uint8(kDefaultFeatChunkPages), chunk_pages));
 }
 
 
