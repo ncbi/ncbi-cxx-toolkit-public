@@ -2863,6 +2863,61 @@ void sx_SetOverviewName(CSeq_annot& annot,
 END_LOCAL_NAMESPACE;
 
 
+CRef<CSeq_entry>
+CSNPDbSeqIterator::GetEntry(const string& base_name,
+                            TFlags flags) const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set();
+    auto& annots = entry->SetSet().SetAnnot();
+    
+    CRange<TSeqPos> total_range = GetSNPRange();
+    TSeqPos kFeatChunkPages = sx_CalcFeatChunkPages(*this);
+    _ASSERT(kFeatChunkPages <= kDefaultFeatChunkPages);
+    TSeqPos kFeatChunkSize = kFeatChunkPages*GetPageSize();
+    TSeqPos kGraphChunkSize = kFeatChunkSize*kFeatChunksPerGraphChunk;
+    
+    vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
+
+    // overview graphs is necessary for feature chunk distribution
+    if ( CRef<CSeq_annot> annot = GetOverviewAnnot(total_range) ) {
+        for ( auto& g : annot->GetData().GetGraph() ) {
+            sx_AddBits(feat_chunks, kFeatChunkSize, *g);
+        }
+        if ( !(flags & fNoOverviewGraph) ) {
+            sx_SetOverviewName(*annot, flags, base_name, GetOverviewZoom());
+            annots.push_back(annot);
+        }
+    }
+    if ( !(flags & fNoCoverageGraph) ) {
+        // coverage graphs
+        for ( TSeqPos i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !sx_HasNonZero(feat_chunks, i*kFeatChunksPerGraphChunk, kFeatChunksPerGraphChunk) ) {
+                continue;
+            }
+            CRange<TSeqPos> range;
+            range.SetFrom(i*kGraphChunkSize);
+            range.SetToOpen(min(total_range.GetToOpen(), (i+1)*kGraphChunkSize));
+            if ( auto annot = GetCoverageAnnot(range, base_name) ) {
+                sx_SetZoomLevel(*annot, GetCoverageZoom());
+                annots.push_back(annot);
+            }
+        }
+    }
+    if ( !(flags & fNoSNPFeat) ) {
+        for ( TSeqPos i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
+            CRange<TSeqPos> range;
+            range.SetFrom(i*kFeatChunkSize);
+            range.SetToOpen(min(total_range.GetToOpen(), (i+1)*kFeatChunkSize));
+            for ( auto& annot : GetTableFeatAnnots(range, base_name) ) {
+                annots.push_back(annot);
+            }
+        }
+    }
+    return entry;
+}
+
+
 pair<CRef<CID2S_Split_Info>, CSNPDbSeqIterator::TSplitVersion>
 CSNPDbSeqIterator::GetSplitInfoAndVersion(const string& base_name,
                                           TFlags flags) const
@@ -2873,7 +2928,6 @@ CSNPDbSeqIterator::GetSplitInfoAndVersion(const string& base_name,
     skeleton.SetId().SetId(kTSEId);
     skeleton.SetSeq_set();
 
-                
     CRange<TSeqPos> total_range = GetSNPRange();
     TSeqPos kFeatChunkPages = sx_CalcFeatChunkPages(*this);
     _ASSERT(kFeatChunkPages <= kDefaultFeatChunkPages);
@@ -2883,28 +2937,24 @@ CSNPDbSeqIterator::GetSplitInfoAndVersion(const string& base_name,
     
     vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
 
-    if ( true ) { // overview graphs is necessary for feature chunk distribution
-        // overview graph
-        CRef<CSeq_annot> annot = GetOverviewAnnot(total_range);
-        if ( annot ) {
-            for ( auto& g : annot->GetData().GetGraph() ) {
-                sx_AddBits(feat_chunks, kFeatChunkSize, *g);
-            }
-            if ( !(flags & fNoOverviewGraph) ) {
-                sx_SetOverviewName(*annot, flags, base_name, GetOverviewZoom());
-                skeleton.SetAnnot().push_back(annot);
-            }
+    // overview graphs is necessary for feature chunk distribution
+    if ( CRef<CSeq_annot> annot = GetOverviewAnnot(total_range) ) {
+        for ( auto& g : annot->GetData().GetGraph() ) {
+            sx_AddBits(feat_chunks, kFeatChunkSize, *g);
+        }
+        if ( !(flags & fNoOverviewGraph) ) {
+            sx_SetOverviewName(*annot, flags, base_name, GetOverviewZoom());
+            skeleton.SetAnnot().push_back(annot);
         }
     }
     if ( !(flags & fNoCoverageGraph) ) {
         // coverage graphs
         string graph_annot_name = sx_CombineWithZoomLevel(base_name, GetCoverageZoom());
-        _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
-        const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
         for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
-            if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
+            if ( !sx_HasNonZero(feat_chunks, i*kFeatChunksPerGraphChunk, kFeatChunksPerGraphChunk) ) {
                 continue;
             }
+            
             int chunk_id = i*kChunkIdMul+kChunkIdGraph;
             CID2S_Chunk_Info& chunk = sx_AddNew(split_info->SetChunks());
             chunk.SetId().Set(chunk_id);
@@ -2949,7 +2999,7 @@ CRef<CID2S_Chunk> CSNPDbSeqIterator::GetChunkForVersion(const string& base_name,
     if ( TSeqPos(split_version) >= kDefaultFeatChunkPages ) {
         NCBI_THROW_FMT(CSraException, eInvalidArg,
                        "CSNPDbSeqIterator::GetChunkForVersion("<<chunk_id<<", "<<split_version<<")"
-                       ": unknown split version");
+                       ": invalid split version");
     }
     
     CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
