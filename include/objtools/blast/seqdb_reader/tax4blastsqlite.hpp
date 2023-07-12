@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Clas to retrieve taxonomic information for filtering BLASTDBs
-class CTaxonomy4BlastSQLite : public ITaxonomy4Blast
+class NCBI_XOBJREAD_EXPORT CTaxonomy4BlastSQLite : public ITaxonomy4Blast
 {
 public:
 
