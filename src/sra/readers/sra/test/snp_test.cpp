@@ -41,6 +41,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqtable/seqtable__.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
 
@@ -142,9 +143,13 @@ void CSNPTestApp::Init(void)
     arg_desc->AddFlag("make_cov_annot", "Make coverage annot");
     arg_desc->AddFlag("make_overview_graph", "Make overview graph");
     arg_desc->AddFlag("make_overview_annot", "Make overview annot");
+    arg_desc->AddFlag("make_entry", "Make Seq-entry");
     arg_desc->AddFlag("make_split_info", "Make ID2S-Split-Info");
     arg_desc->AddOptionalKey("make_chunk", "ChunkId",
                              "Make ID2S-Chunk",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("split_version", "SplitVersion",
+                             "Use split-version to make chunk",
                              CArgDescriptions::eInteger);
     arg_desc->AddFlag("no_shared_objects", "Do not share created objects");
     arg_desc->AddFlag("print_objects", "Print generated objects");
@@ -553,6 +558,14 @@ int CSNPTestApp::Run(void)
                 }
             }
         }
+        if ( args["make_entry"] ) {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            it.SetTrack(track);
+            auto entry = it.GetEntry("SNP");
+            if ( entry && print ) {
+                *out << *entry;
+            }
+        }
         CSNPDbSeqIterator::TSplitVersion split_version = 0;
         if ( args["make_split_info"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
@@ -562,6 +575,9 @@ int CSNPTestApp::Run(void)
             if ( split_info.first && print ) {
                 *out << *split_info.first;
             }
+        }
+        else if ( args["split_version"] ) {
+            split_version = args["split_version"].AsInteger();
         }
         if ( args["make_chunk"] ) {
             CSNPDbSeqIterator it(snp_db, query_idh);
