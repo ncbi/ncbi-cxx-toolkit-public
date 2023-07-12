@@ -6,5 +6,7 @@
 LIB_PROJ = seqdb
 SUB_PROJ = demo test
 
+REQUIRES = SQLITE3
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

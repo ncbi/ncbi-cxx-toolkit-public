@@ -28,10 +28,11 @@ NCBI_begin_lib(seqdb)
     ${lmdbsrc}
     seqdblmdbset
     seqidlist_reader
+    tax4blastsqlite
   )
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
-  NCBI_requires(LMDB)
+  NCBI_requires(LMDB SQLITE3)
   NCBI_uses_toolkit_libraries(blastdb xobjmgr)
-  NCBI_project_watchers(camacho fongah2 rackerst)
+  NCBI_project_watchers(camacho fongah2)
 NCBI_end_lib()
 
