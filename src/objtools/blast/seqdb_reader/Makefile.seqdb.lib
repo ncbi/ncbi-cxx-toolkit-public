@@ -23,14 +23,15 @@ seqdbgimask \
 seqdbobj \
 seqdb_lmdb \
 seqdblmdbset \
-seqidlist_reader
+seqidlist_reader \
+tax4blastsqlite
 
 LIB = seqdb
-DLL_LIB = blastdb $(SOBJMGR_LIBS) $(LMDB_LIB)
+DLL_LIB = blastdb $(SOBJMGR_LIBS) $(LMDB_LIB) $(SQLITE3_LIB)
 LIBS = $(BLAST_THIRD_PARTY_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
-CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(BLAST_THIRD_PARTY_INCLUDE) 
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(SQLITE3_INCLUDE) $(ORIG_CPPFLAGS) $(BLAST_THIRD_PARTY_INCLUDE) 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
@@ -38,4 +39,4 @@ WATCHERS = camacho fongah2
 
 
 USES_LIBRARIES =  \
-    $(DL_LIBS) $(SOBJMGR_LIBS) blastdb
+    $(DL_LIBS) $(SOBJMGR_LIBS) blastdb sqlitewrapp
