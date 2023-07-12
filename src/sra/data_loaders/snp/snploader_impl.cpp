@@ -1072,17 +1072,17 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 {
     CSNPDbSeqIterator it = GetSeqIterator();
     string base_name = GetAnnotName();
-    if ( IsSplitEnabled() ) {
-        CSNPDbSeqIterator::TFlags flags = CSNPDbSeqIterator::fDefaultFlags;
-        if ( m_IsPrimaryTrack ) {
-            // primary track has overvew graph in a separate TSE
-            if ( m_IsPrimaryTrackGraph ) {
-                flags |= CSNPDbSeqIterator::fNoSNPFeat;
-            }
-            else {
-                flags |= CSNPDbSeqIterator::fOnlySNPFeat;
-            }
+    CSNPDbSeqIterator::TFlags flags = CSNPDbSeqIterator::fDefaultFlags;
+    if ( m_IsPrimaryTrack ) {
+        // primary track has overvew graph in a separate TSE
+        if ( m_IsPrimaryTrackGraph ) {
+            flags |= CSNPDbSeqIterator::fNoSNPFeat;
         }
+        else {
+            flags |= CSNPDbSeqIterator::fOnlySNPFeat;
+        }
+    }
+    if ( IsSplitEnabled() ) {
         auto split = it.GetSplitInfoAndVersion(base_name, flags);
         load_lock->GetSplitInfo().SetSplitVersion(split.second);
         if ( GetDebugLevel() >= eDebug_data ) {
@@ -1093,11 +1093,7 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         CSplitParser::Attach(*load_lock, *split.first);
     }
     else {
-        CRange<TSeqPos> total_range = it.GetSNPRange();
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        for ( auto& annot : it.GetTableFeatAnnots(total_range, base_name) ) {
-            entry->SetSet().SetAnnot().push_back(annot);
-        }
+        auto entry = it.GetEntry(base_name, flags);
         if ( GetDebugLevel() >= eDebug_data ) {
             LOG_POST_X(6, Info<<"CSNPDataLoader::LoadAnnotBlob("<<*GetBlobId()<<"): "
                        << MSerial_AsnText << *entry);
