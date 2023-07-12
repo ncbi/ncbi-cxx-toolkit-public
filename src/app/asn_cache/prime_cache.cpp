@@ -236,6 +236,7 @@ private: // data
     CRef<CSeqdesc> m_MolInfo;
     map<TTaxId, SOrgData> m_Orgs;
     map<string, TTaxId> m_SequenceTaxids;
+    map<string, string> m_SequenceUniprotSources;
     CBioSource::EGenome m_Genome ;
     list< CRef<CSeqdesc> > m_other_descs;
     sequence::EGetIdType m_id_type;
@@ -318,13 +319,16 @@ void CPrimeCacheApplication::Init(void)
                              CArgDescriptions::eInteger);
 
     arg_desc->AddOptionalKey("taxid-table", "TaxidTable",
-                             "Table of taxids specified for individual sequences",
+                             "Table of taxids for individual sequences",
                              CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("taxid-table-manifest", "TaxidTableManifest",
                              "Manifest of taxid tables",
                              CArgDescriptions::eInputFile);
     arg_desc->SetDependency("taxid-table-manifest",
                             CArgDescriptions::eExcludes, "taxid-table");
+    arg_desc->AddDefaultKey("taxid-column", "TaxidColumn",
+                            "column in taxid table with taxid",
+                            CArgDescriptions::eInteger, "1");
 
     CLocalTaxon::AddArguments(*arg_desc);
 
@@ -367,6 +371,19 @@ void CPrimeCacheApplication::Init(void)
         inst_mol_options->Allow(it->first);
     }
     arg_desc->SetConstraint("inst-mol", inst_mol_options);
+
+    arg_desc->AddOptionalKey("uniprot-source-table", "UniprotSourceTable",
+                             "Table of uniprot source for individual sequences",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("uniprot-source-table-manifest",
+                             "UniprotSourceTableManifest",
+                             "Manifest of uniprot source tables",
+                             CArgDescriptions::eInputFile);
+    arg_desc->SetDependency("uniprot-source-table-manifest",
+                          CArgDescriptions::eExcludes, "uniprot-source-table");
+    arg_desc->AddDefaultKey("uniprot-source-column", "UniprotSourceColumn",
+                          "column in uniprot source table with uniprot source",
+                          CArgDescriptions::eInteger, "1");
 
     arg_desc->AddKey("cache", "OutputFile",
                      "Path to the cache directory",
@@ -555,10 +572,10 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
         SOrgData &org_data = m_Orgs[taxid];
 
         entry->SetSeq().SetInst().SetMol(m_InstMol);
-        auto& descs  = entry->SetSeq().SetDescr().Set();
+        CSeq_descr::Tdata& descs  = entry->SetSeq().SetDescr().Set();
         bool molinfo_found=false;
         bool source_found=false;
-        for(auto& desc: descs) {
+        for(CRef<CSeqdesc>& desc: descs) {
             switch ( desc->Which() ) {
                 case CSeqdesc::e_Molinfo:
                     molinfo_found=true;
@@ -603,19 +620,24 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
             
         if (m_other_descs.size()>0) {
             NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
-                x_UpsertDescriptor(entry->SetSeq().SetDescr().Set(), *desc);
+                x_UpsertDescriptor(descs, *desc);
             }
         }
 
         if (GetArgs()["no-title"]) {
-            NON_CONST_ITERATE (list<CRef<CSeqdesc> >, desc,
-                               entry->SetSeq().SetDescr().Set())
-            {
+            NON_CONST_ITERATE (list<CRef<CSeqdesc> >, desc, descs) {
                 if ((*desc)->IsTitle()) {
-                    entry->SetSeq().SetDescr().Set().erase(desc);
+                    descs.erase(desc);
                     break;
                 }
             }
+        }
+
+        if (m_SequenceUniprotSources.count(idh.AsString())) {
+            CRef<CSeqdesc> uniprot_source_comment(new CSeqdesc);
+            uniprot_source_comment->SetComment("Uniprot Source: "
+                    + m_SequenceUniprotSources[idh.AsString()]);
+            descs.push_back(uniprot_source_comment);
         }
 
         if (entry->IsSetDescr() && entry->GetDescr().Get().empty()) {
@@ -1037,6 +1059,12 @@ int CPrimeCacheApplication::Run(void)
         NCBI_THROW(CException, eUnknown,
                    "metadata parameters only allowed with fasta or SRA input");
     }
+    if ((args["uniprot-source-table"] || args["uniprot-source-table-manifest"])
+        && ifmt != "fasta")
+    {
+        NCBI_THROW(CException, eUnknown,
+                   "uniprot source parameters only allowed with fasta input");
+    }
     if (args["resume"] && ifmt != "fasta" && ifmt != "csra")
     {
         NCBI_THROW(CException, eUnknown,
@@ -1053,6 +1081,7 @@ int CPrimeCacheApplication::Run(void)
         } else if (args["taxid-table-manifest"]) {
             taxids_source.InitManifest(args["taxid-table-manifest"].AsString());
         }
+        unsigned col = args["taxid-column"].AsInteger();
         for (; taxids_source; ++taxids_source) {
             string line;
             while (NcbiGetlineEOL(*taxids_source, line)) {
@@ -1062,7 +1091,7 @@ int CPrimeCacheApplication::Run(void)
                 vector<string> tokens;
                 NStr::Split(line, "\t", tokens);
                 m_SequenceTaxids[CSeq_id_Handle::GetHandle(tokens[0]).AsString()]
-                    = TAX_ID_FROM(int, NStr::StringToNumeric<TIntId>(tokens[1]));
+                    = TAX_ID_FROM(int, NStr::StringToInt(tokens[col]));
             }
         }
 
@@ -1085,6 +1114,28 @@ int CPrimeCacheApplication::Run(void)
             m_Orgs[taxid].biosource->SetSource().SetOrg().Assign(*ref);
             m_Orgs[taxid].orgref.Reset(new COrg_ref);
             m_Orgs[taxid].orgref->Assign(*ref);
+        }
+    }
+
+    if (args["uniprot-source-table"] || args["uniprot-source-table-manifest"]) {
+        unsigned col = args["uniprot-source-column"].AsInteger();
+        CInputStreamSource uniprot_sources_source;
+        if (args["uniprot-source-table"]) {
+            uniprot_sources_source.InitStream(args["uniprot-source-table"].AsInputFile());
+        } else if (args["uniprot-source-table-manifest"]) {
+            uniprot_sources_source.InitManifest(args["uniprot-source-table-manifest"].AsString());
+        }
+        for (; uniprot_sources_source; ++uniprot_sources_source) {
+            string line;
+            while (NcbiGetlineEOL(*uniprot_sources_source, line)) {
+                if (line.empty() || line[0] == '#') {
+                    continue;
+                }
+                vector<string> tokens;
+                NStr::Split(line, "\t", tokens);
+                m_SequenceUniprotSources[CSeq_id_Handle::GetHandle(tokens[0])
+                    . AsString()] = tokens[col];
+            }
         }
     }
 
