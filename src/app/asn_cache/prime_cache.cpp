@@ -1081,7 +1081,7 @@ int CPrimeCacheApplication::Run(void)
         } else if (args["taxid-table-manifest"]) {
             taxids_source.InitManifest(args["taxid-table-manifest"].AsString());
         }
-        unsigned col = args["taxid-column"].AsInteger();
+        unsigned col = args["taxid-column"].AsInteger() - 1;
         for (; taxids_source; ++taxids_source) {
             string line;
             while (NcbiGetlineEOL(*taxids_source, line)) {
@@ -1118,7 +1118,7 @@ int CPrimeCacheApplication::Run(void)
     }
 
     if (args["uniprot-source-table"] || args["uniprot-source-table-manifest"]) {
-        unsigned col = args["uniprot-source-column"].AsInteger();
+        unsigned col = args["uniprot-source-column"].AsInteger() - 1;
         CInputStreamSource uniprot_sources_source;
         if (args["uniprot-source-table"]) {
             uniprot_sources_source.InitStream(args["uniprot-source-table"].AsInputFile());
