@@ -35,6 +35,7 @@
 #include <util/xregexp/regexp.hpp>
 #include <util/range_coll.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
@@ -1533,6 +1534,71 @@ void CTabularFormatter_TaxId::Print(CNcbiOstream& ostr,
 
 /////////////////////////////////////////////////////////////////////////////
 
+CTabularFormatter_Comment::CTabularFormatter_Comment(int row, const string &prefix)
+    : m_Row(row)
+    , m_Prefix(prefix)
+{
+}
+
+
+void CTabularFormatter_Comment::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << m_Prefix << " of the ";
+    if (m_Row == 0) {
+        ostr << "query";
+    } else if (m_Row == 1) {
+        ostr << "subject";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+    ostr << " sequence";
+}
+
+void CTabularFormatter_Comment::PrintHeader(CNcbiOstream& ostr) const
+{
+    if (m_Row == 0) {
+        ostr << "query ";
+    } else if (m_Row == 1) {
+        ostr << "subject ";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+    ostr << m_Prefix;
+}
+
+void CTabularFormatter_Comment::Print(CNcbiOstream& ostr,
+                                    const CSeq_align& align)
+{
+    if (m_Row >= align.CheckNumRows()) {
+        NCBI_THROW(CException, eUnknown,
+                   "indexing past the end of available "
+                   "sequences in an alignment");
+    }
+
+    CBioseq_Handle bsh = m_Scores->GetScope().GetBioseqHandle(
+                             align.GetSeq_id(m_Row));
+    if (!bsh) {
+        ostr << "NA";
+        return;
+    }
+    for (CSeqdesc_CI desc_iter(bsh, CSeqdesc::e_Comment);
+         desc_iter; ++desc_iter)
+    {
+        if (NStr::StartsWith(desc_iter->GetComment(),
+                             m_Prefix + ": ", NStr::eNocase))
+        {
+            ostr << desc_iter->GetComment().substr(m_Prefix.size() + 2);
+            return;
+        }
+    } 
+    ostr << "NA";
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CTabularFormatter_OrgName::CTabularFormatter_OrgName(int row, EField field)
     : m_Row(row)
     , m_Field(field)
@@ -2821,6 +2887,10 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_TaxId(0));
     formatter.RegisterField("staxid",
             new CTabularFormatter_TaxId(1));
+    formatter.RegisterField("quniprot_source",
+            new CTabularFormatter_Comment(0, "uniprot source"));
+    formatter.RegisterField("suniprot_source",
+            new CTabularFormatter_Comment(1, "uniprot source"));
 
     formatter.RegisterField("qtaxname",
             new CTabularFormatter_OrgName

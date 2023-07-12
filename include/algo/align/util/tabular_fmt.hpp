@@ -485,6 +485,23 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// formatter for dumping content of sequence comment descriptors
+class CTabularFormatter_Comment : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_Comment(int row, const string &prefix);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+
+private:
+    int m_Row;
+    string m_Prefix;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// formatter for dumping organism names
 class CTabularFormatter_OrgName : public CTabularFormatter::IFormatter
 {
