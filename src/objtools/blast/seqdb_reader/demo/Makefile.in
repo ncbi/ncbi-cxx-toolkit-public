@@ -3,7 +3,7 @@
 # Meta-makefile("seqdb/demo" project)
 #################################
 
-EXPENDABLE_APP_PROJ = seqdb_demo
+EXPENDABLE_APP_PROJ = seqdb_demo tax4blast
 PROJ_TAG = demo
 
 srcdir = @srcdir@

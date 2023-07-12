@@ -1,0 +1,15 @@
+# $Id$
+
+NCBI_begin_app(seqdb_tax4blast_unit_test)
+  NCBI_sources(seqdb_tax4blast_unit_test)
+  NCBI_requires(SQLITE3)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(seqdb sqlitewrap)
+
+  NCBI_set_test_assets(data)
+  NCBI_set_test_timeout(600)
+  NCBI_add_test()
+
+  NCBI_project_watchers(madden camacho fongah2)
+
+NCBI_end_app()
