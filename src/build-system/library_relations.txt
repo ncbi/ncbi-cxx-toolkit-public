@@ -620,9 +620,7 @@ lds2 needs $(SQLITE3_WRAPPER)
 lds2 needs3party $(SQLITE3_LIBS)
 linkos_utils needs xid_utils
 linkout needs xser
-linkoutdb needs $(SQLITE3_WRAPPER)
 linkoutdb needs seqdb
-linkoutdb needs3party $(SQLITE3_LIBS)
 lmdb needs3party $(ORIG_LIBS)
 local_taxon needs $(SQLITE3_WRAPPER)
 local_taxon needs taxon1
@@ -960,8 +958,10 @@ seqalign_util needs pub
 seqcode needs xser
 seqdb needs $(LMDB_LIB)
 seqdb needs $(SOBJMGR_LIBS)
+seqdb needs $(SQLITE3_WRAPPER)
 seqdb needs blastdb
 seqdb needs3party $(LMDB_LIBS)
+seqdb needs3party $(SQLITE3_LIBS)
 seqdb_maintenance_cassandra needs psg_cassandra
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
