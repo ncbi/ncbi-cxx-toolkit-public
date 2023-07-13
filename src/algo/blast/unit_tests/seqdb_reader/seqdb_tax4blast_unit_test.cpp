@@ -80,6 +80,17 @@ BOOST_AUTO_TEST_CASE(RetrieveHumanTaxids)
     }
 }
 
+BOOST_AUTO_TEST_CASE(RetrieveLeafNodeTaxid_Neanderthal)
+{
+    unique_ptr<ITaxonomy4Blast> tb;
+    BOOST_REQUIRE_NO_THROW(tb.reset((new CTaxonomy4BlastSQLite("data/t4b.sqlite3"))));
+    // Right now this is a leaf node taxid, therefore it has no descendant taxIDs
+    const int kTaxID(63221);
+    vector<int> desc;
+    BOOST_REQUIRE_NO_THROW(tb->GetLeafNodeTaxids(kTaxID, desc));
+    BOOST_REQUIRE(desc.empty());
+}
+
 BOOST_AUTO_TEST_CASE(DatabaseNotFound)
 {
     BOOST_REQUIRE_THROW(
