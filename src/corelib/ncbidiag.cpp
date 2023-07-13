@@ -1885,6 +1885,9 @@ const string& CDiagContext::GetAppName(void) const
         CMutexGuard guard(s_AppNameMutex);
         if ( !m_AppNameSet ) {
             m_AppName->SetString(CNcbiApplication::GetAppName());
+            // Cache appname if CNcbiApplication instance exists only,
+            // the Diag API can be used before instance initialization and appname
+            //  could be set to a binary name, and changes later (CXX-5076).
             if (CNcbiApplication::Instance()  &&  !m_AppName->IsEmpty()) {
                 m_AppNameSet = true;
             }
