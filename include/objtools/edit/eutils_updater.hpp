@@ -15,7 +15,6 @@ public:
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
     TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
     CRef<CPub> x_GetPub(TEntrezId pmid, EPubmedError*);
-    string     GetTitle(const string&) override;
 
     // Hydra replacement using citmatch api; RW-1918,RW-1999
     static bool DoPubSearch(const std::vector<string>& query, std::vector<TEntrezId>& pmids);
