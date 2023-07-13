@@ -67,9 +67,18 @@ class CPubseqGatewayFetchIpgReportRequest
         return *this;
     }
 
+    CPubseqGatewayFetchIpgReportRequest& SetResolvedIpg(TIpg value)
+    {
+        m_ResolvedIpg = value;
+        return *this;
+    }
+
     TIpg GetIpg() const
     {
-        return m_Ipg;
+        if (m_Ipg) {
+            return m_Ipg.value();
+        }
+        return TIpg();
     }
 
     string GetProtein() const
@@ -88,9 +97,28 @@ class CPubseqGatewayFetchIpgReportRequest
         return {};
     }
 
+    TIpg GetResolvedIpg() const
+    {
+        if (m_ResolvedIpg) {
+            return m_ResolvedIpg.value();
+        }
+        return TIpg();
+    }
+
+    TIpg GetIpgToFetchData() const
+    {
+        if (m_Ipg) {
+            return m_Ipg.value();
+        }
+        if (m_ResolvedIpg) {
+            return m_ResolvedIpg.value();
+        }
+        return TIpg();
+    }
+
     bool HasIpg() const
     {
-        return m_Ipg > 0;
+        return m_Ipg.has_value();
     }
 
     bool HasProtein() const
@@ -103,10 +131,21 @@ class CPubseqGatewayFetchIpgReportRequest
         return m_NucAccession.has_value();
     }
 
+    bool HasResolvedIpg() const
+    {
+        return m_ResolvedIpg.has_value();
+    }
+
+    TIpg HasIpgToFetchData() const
+    {
+        return m_Ipg.has_value() || m_ResolvedIpg.has_value();
+    }
+
  private:
-    TIpg m_Ipg{TIpg()};
+    optional<TIpg> m_Ipg;
     optional<string> m_ProteinAccession;
     optional<string> m_NucAccession;
+    optional<TIpg> m_ResolvedIpg;
 };
 
 class CPubseqGatewayFetchIpgReport
