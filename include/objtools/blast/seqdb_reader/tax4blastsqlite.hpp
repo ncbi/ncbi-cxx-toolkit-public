@@ -29,7 +29,7 @@
 
 /// @file tax4blastsqlite.hpp
 /// @author Christiam Camacho
-/// FIXME Defines a class to retrieve taxonomic information useful in BLAST
+/// Defines a class to retrieve taxonomic information useful in BLAST
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
