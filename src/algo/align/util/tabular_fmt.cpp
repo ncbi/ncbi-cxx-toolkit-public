@@ -159,6 +159,9 @@ void CTabularFormatter_SeqId::PrintHeader(CNcbiOstream& ostr) const
         NCBI_THROW(CException, eUnknown,
                    "only pairwise alignments are supported");
     }
+    if (m_TagOnly && m_GetIdType == sequence::eGetId_ForceGi) {
+        ostr << " gi";
+    }
 }
 
 void CTabularFormatter_SeqId::Print(CNcbiOstream& ostr,
@@ -184,12 +187,14 @@ void CTabularFormatter_SeqId::Print(CNcbiOstream& ostr,
     if ( !best ) {
         best = idh;
     }
-    if (m_TagOnly && best.GetSeqId()->IsGeneral()) {
-        best.GetSeqId()->GetGeneral().GetTag().AsString(ostr);
-    } else if (m_GetIdType == sequence::eGetId_Best) {
-        string acc;
-        best.GetSeqId()->GetLabel(&acc, CSeq_id::eContent);
-        ostr << acc;
+    if (m_TagOnly) {
+        if (best.GetSeqId()->IsGeneral()) {
+            best.GetSeqId()->GetGeneral().GetTag().AsString(ostr);
+        } else {
+            string acc;
+            best.GetSeqId()->GetLabel(&acc, CSeq_id::eContent);
+            ostr << acc;
+        }
     } else {
         ostr << best;
     }
@@ -2791,20 +2796,21 @@ CTabularFormatter::CTabularFormatter(CNcbiOstream& ostr, CScoreLookup &scores,
 void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
 {
     IFormatter *qseqid =
-        new CTabularFormatter_SeqId(0, sequence::eGetId_Best);
+        new CTabularFormatter_SeqId(0, sequence::eGetId_Best, true);
     formatter.RegisterField("qseqid", qseqid);
     formatter.RegisterField("qacc", qseqid);
     formatter.RegisterField("qaccver", qseqid);
+    formatter.RegisterField("qtag", qseqid);
 
     IFormatter *qallseqid =
         new CTabularFormatter_AllSeqIds(0);
     formatter.RegisterField("qallseqid", qallseqid);
     formatter.RegisterField("qallacc", qallseqid);
 
-    formatter.RegisterField("qtag",
-        new CTabularFormatter_SeqId(0, sequence::eGetId_Best, true));
     formatter.RegisterField("qgi",
         new CTabularFormatter_SeqId(0, sequence::eGetId_ForceGi));
+    formatter.RegisterField("qbaregi",
+        new CTabularFormatter_SeqId(0, sequence::eGetId_ForceGi, true));
     formatter.RegisterField("qexactseqid",
         new CTabularFormatter_SeqId(0, sequence::eGetId_HandleDefault));
     
@@ -2817,13 +2823,14 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
 
 
     IFormatter *sseqid =
-        new CTabularFormatter_SeqId(1, sequence::eGetId_Best);
+        new CTabularFormatter_SeqId(1, sequence::eGetId_Best, true);
     formatter.RegisterField("sseqid", sseqid);
     formatter.RegisterField("sacc", sseqid);
     formatter.RegisterField("saccver", sseqid);
+    formatter.RegisterField("stag", sseqid);
 
     IFormatter *prot_seqid =
-        new CTabularFormatter_SeqId(0, sequence::eGetId_Best, false, true);
+        new CTabularFormatter_SeqId(0, sequence::eGetId_Best, true, true);
     formatter.RegisterField("prot_seqid", prot_seqid);
     formatter.RegisterField("prot_acc", prot_seqid);
     formatter.RegisterField("prot_accver", prot_seqid);
@@ -2833,10 +2840,10 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
     formatter.RegisterField("sallseqid", sallseqid);
     formatter.RegisterField("sallacc", sallseqid);
 
-    formatter.RegisterField("stag",
-        new CTabularFormatter_SeqId(1, sequence::eGetId_Best, true));
     formatter.RegisterField("sgi",
         new CTabularFormatter_SeqId(1, sequence::eGetId_ForceGi));
+    formatter.RegisterField("sbaregi",
+        new CTabularFormatter_SeqId(1, sequence::eGetId_ForceGi, true));
     formatter.RegisterField("sexactseqid",
         new CTabularFormatter_SeqId(1, sequence::eGetId_HandleDefault));
     
