@@ -1353,8 +1353,7 @@ void CNcbiApplicationAPI::SetProgramDisplayName(const string& app_name)
 }
 
 
-string CNcbiApplicationAPI::GetAppName(EAppNameType name_type, int argc,
-                                    const char* const* argv)
+string CNcbiApplicationAPI::GetAppName(EAppNameType name_type, int argc, const char* const* argv)
 {
     CNcbiApplicationGuard instance = InstanceGuard();
     string app_name;
@@ -1390,13 +1389,30 @@ string CNcbiApplicationAPI::GetAppName(EAppNameType name_type, int argc,
 }
 
 
-string CNcbiApplicationAPI::FindProgramExecutablePath
-(int                           argc,
- const char* const*            argv,
- string*                       real_path)
+string CNcbiApplicationAPI::FindProgramExecutablePath(
+    int                argc,
+    const char* const* argv,
+    string*            real_path
+)
 {
+    // Cache program executable path, it doesn't change during execution
+
+    static CSafeStatic<string> s_Path;
+    static CSafeStatic<string> s_RealPath;
+    static bool s_Init = false;
+
+    if (s_Init) {
+        // Return cached value
+        if (real_path) {
+            *real_path = *s_RealPath;
+        }
+        return *s_Path;
+    }
+    s_Init = true;
+
     CNcbiApplicationGuard instance = InstanceGuard();
     string ret_val;
+
     _ASSERT(argc >= 0); // formally signed for historical reasons
     _ASSERT(argv != NULL  ||  argc == 0);
     if (argc > 0  &&  argv[0] != NULL  &&  argv[0][0] != '\0') {
@@ -1408,8 +1424,8 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
 #  ifdef NCBI_OS_MSWIN
-    // MS Windows: Try more accurate method of detection
-    // XXX - use this only for real_path?
+
+    // MS Windows: Try more accurate method of detection.
     try {
         // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
         CDll dll_psapi("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
@@ -1422,9 +1438,7 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
                  LPDWORD lpcbNeeded    // number of bytes required
                  ) = NULL;
 
-        dllEnumProcessModules =
-            dll_psapi.GetEntryPoint_Func("EnumProcessModules",
-                                         &dllEnumProcessModules);
+        dllEnumProcessModules = dll_psapi.GetEntryPoint_Func("EnumProcessModules", &dllEnumProcessModules);
         if ( !dllEnumProcessModules ) {
             NCBI_THROW(CException, eUnknown, kEmptyStr);
         }
@@ -1435,18 +1449,18 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
         DWORD   needed  = 0;
 
         // Get first module of current process (it should be .exe file)
-        if ( dllEnumProcessModules(process,
-                                   &module, sizeof(HMODULE), &needed) ) {
+        if ( dllEnumProcessModules(process, &module, sizeof(HMODULE), &needed) ) {
             if ( needed  &&  module ) {
                 TXChar buf[MAX_PATH + 1];
                 DWORD ncount = GetModuleFileName(module, buf, MAX_PATH);
                 if (ncount > 0) {
-                    ret_val = _T_STDSTRING(buf);
+                    // Save to cache and return
+                    *s_Path = _T_STDSTRING(buf);
+                    *s_RealPath = CDirEntry::NormalizePath(*s_Path, eFollowLinks);
                     if (real_path) {
-                        *real_path = CDirEntry::NormalizePath(ret_val,
-                                                              eFollowLinks);
+                        *real_path = *s_RealPath;
                     }
-                    return ret_val;
+                    return *s_Path;
                 }
             }
         }
@@ -1463,13 +1477,15 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
         real_path = &ret_val;
     }
     if (real_path) {
-        char   buf[PATH_MAX + 1];
+        char buf[PATH_MAX + 1];
         string procfile = "/proc/" + NStr::IntToString(getpid()) + "/exe";
         int    ncount   = (int)readlink((procfile).c_str(), buf, PATH_MAX);
         if (ncount > 0) {
             real_path->assign(buf, ncount);
             if (real_path == &ret_val  ||  ret_val.empty()) {
-                // XXX - could also parse /proc/self/cmdline.
+                // Save to cache and return
+                *s_Path = *real_path;
+                *s_RealPath = *real_path;
                 return *real_path;
             }
             real_path = 0;
@@ -1479,11 +1495,15 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
 
     if (ret_val.empty()) {
         // nothing to go on :-/
+        // don't need to update cached values, they are empty
         if (real_path) {
             real_path->erase();
         }
         return kEmptyStr;
     }
+
+    // Default approach (using value from arguments):
+
     string app_path = ret_val;
 
     if ( !CDirEntry::IsAbsolutePath(app_path) ) {
@@ -1498,7 +1518,7 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
 #  endif
         if ( CFile(app_path).Exists() ) {
             // Relative path from the the current directory
-            app_path = CDir::GetCwd() + CDirEntry::GetPathSeparator()+app_path;
+            app_path = CDir::GetCwd() + CDirEntry::GetPathSeparator() + app_path;
             if ( !CFile(app_path).Exists() ) {
                 app_path = kEmptyStr;
             }
@@ -1529,22 +1549,26 @@ string CNcbiApplicationAPI::FindProgramExecutablePath
             }
         }
     }
-    ret_val = CDirEntry::NormalizePath
-        ((app_path.empty() && argv != NULL && argv[0] != NULL) ? argv[0]
-         : app_path);
+    ret_val = CDirEntry::NormalizePath(
+        (app_path.empty() && argv != NULL && argv[0] != NULL) ? argv[0] : app_path);
 
 #else  // defined (NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
 #  error "Unsupported platform, sorry -- please contact NCBI"
+
 #endif
+
+    // Save to cache and return
+    *s_Path = ret_val;
+    *s_RealPath = CDirEntry::NormalizePath(ret_val, eFollowLinks);
     if (real_path) {
-        *real_path = CDirEntry::NormalizePath(ret_val, eFollowLinks);
+        *real_path = *s_RealPath;
     }
-    return ret_val;
+    return *s_Path;
 }
 
 
-void CNcbiApplicationAPI::x_HonorStandardSettings( IRegistry* reg)
+void CNcbiApplicationAPI::x_HonorStandardSettings(IRegistry* reg)
 {
     if (reg == 0) {
         reg = m_Config.GetPointer();
