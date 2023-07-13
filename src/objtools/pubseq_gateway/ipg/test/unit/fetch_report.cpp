@@ -209,12 +209,21 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, NormalWithFilterByAccession) {
     CPubseqGatewayFetchIpgReportRequest request;
     request.SetProtein("EGB0709986.1");
     request.SetNucleotide("AAVJDV010000007.1");
+    EXPECT_FALSE(request.HasIpg());
+    EXPECT_FALSE(request.HasResolvedIpg());
+    EXPECT_FALSE(request.HasIpgToFetchData());
     CPubseqGatewayFetchIpgReport task(
         m_Connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     wait_function(task);
     EXPECT_EQ(2, count);
+    EXPECT_FALSE(task.GetRequest().HasIpg());
+    EXPECT_TRUE(task.GetRequest().HasResolvedIpg());
+    EXPECT_TRUE(task.GetRequest().HasIpgToFetchData());
+    EXPECT_EQ(0, task.GetRequest().GetIpg());
+    EXPECT_EQ(216356, task.GetRequest().GetResolvedIpg());
+    EXPECT_EQ(216356, task.GetRequest().GetIpgToFetchData());
 }
 
 TEST_F(CPubseqGatewayFetchIpgReportTest, HugeEmpty) {

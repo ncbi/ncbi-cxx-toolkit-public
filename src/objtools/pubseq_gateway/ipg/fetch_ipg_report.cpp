@@ -217,7 +217,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                 m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                 // If accession is provided instead of IPG, resolve IPG, then return
                 // to the 'new task' state.
-                if (!m_Request.HasIpg() && m_Request.HasProtein()) {
+                if (!m_Request.HasIpgToFetchData() && m_Request.HasProtein()) {
                     m_QueryArr[0].query->SetSQL("SELECT ipg FROM " + GetKeySpace() + ".accession_to_ipg WHERE accession = ?", 1);
                     m_QueryArr[0].query->BindStr(0, m_Request.GetProtein());
                     SetupQueryCB3(m_QueryArr[0].query);
@@ -225,7 +225,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                     m_State = eTaskAccessionResolutionStarted;
                 } else if (THugeHelper::HugeIpgEnabled()) {
                     SetupQueryCB3(m_QueryArr[0].query);
-                    THugeHelper::PrepareHugeIpgConfigQuery(m_Request.GetIpg(), GetKeySpace(), m_QueryArr[0].query.get(), m_Consistency, m_Async);
+                    THugeHelper::PrepareHugeIpgConfigQuery(m_Request.GetIpgToFetchData(), GetKeySpace(), m_QueryArr[0].query.get(), m_Consistency, m_Async);
                     m_State = eTaskCheckHugeIpgStarted;
                 }
                 else {
@@ -238,9 +238,9 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                 if (CheckReady(m_QueryArr[0])) {
                     m_QueryArr[0].query->NextRow();
                     if (!m_QueryArr[0].query->IsEOF()) {
-                        m_Request.SetIpg(m_QueryArr[0].query->FieldGetInt64Value(0));
+                        m_Request.SetResolvedIpg(m_QueryArr[0].query->FieldGetInt64Value(0));
                     }
-                    if (m_Request.HasIpg()) {
+                    if (m_Request.HasIpgToFetchData()) {
                         restarted = true;
                         m_State = eInit;
                     }
@@ -282,7 +282,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                 }
                 m_QueryArr[0].query->SetSQL("SELECT " + GetSelectFieldList()
                     + " FROM " + GetKeySpace() + ".ipg_report WHERE ipg = ?" + protein_suffix, args);
-                m_QueryArr[0].query->BindInt64(0, m_Request.GetIpg());
+                m_QueryArr[0].query->BindInt64(0, m_Request.GetIpgToFetchData());
                 if (m_Request.HasProtein()) {
                     m_QueryArr[0].query->BindStr(1, m_Request.GetProtein());
                     if (m_Request.HasNucleotide()) {
@@ -316,7 +316,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                     m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                     m_QueryArr[0].query->SetSQL("SELECT " + GetSelectFieldList()
                         + " FROM " + GetKeySpace() + ".ipg_report_huge WHERE ipg = ? and subgroup = ?" + protein_suffix, args);
-                    m_QueryArr[0].query->BindInt64(0, m_Request.GetIpg());
+                    m_QueryArr[0].query->BindInt64(0, m_Request.GetIpgToFetchData());
                     m_QueryArr[0].query->BindInt32(1, *m_SubgroupItr);
                     if (m_Request.HasProtein()) {
                         m_QueryArr[0].query->BindStr(2, m_Request.GetProtein());
