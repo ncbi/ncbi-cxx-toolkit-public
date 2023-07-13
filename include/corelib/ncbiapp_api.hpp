@@ -361,9 +361,7 @@ public:
     ///
     /// The path to executable file of this application. 
     /// Return empty string if not possible to determine this path.
-    const string& GetProgramExecutablePath(EFollowLinks follow_links
-                                           = eIgnoreLinks)
-        const;
+    const string& GetProgramExecutablePath(EFollowLinks follow_links = eIgnoreLinks) const;
 
     enum EAppNameType {
         eBaseName, ///< per GetProgramDisplayName
@@ -577,8 +575,8 @@ protected:
 
     /// Find the application's executable file.
     ///
-    /// Find the path and name of the executable file that this application is
-    /// running from. Will be accessible by GetArguments().GetProgramName().
+    /// Find the path and name of the executable file that this application
+    /// is running from. Will be accessible by GetArguments().GetProgramName().
     /// @param argc
     ///   Standard argument count "argc".
     /// @param argv
@@ -587,6 +585,8 @@ protected:
     ///   If non-NULL, will get the fully resolved path to the executable.
     /// @return
     ///   Name of application's executable file (may involve symlinks).
+    /// @sa 
+    ///   GetArguments().GetProgramName(),  GetProgramExecutablePath
     static string FindProgramExecutablePath(int argc, const char* const* argv,
                                             string* real_path = 0);
 
