@@ -328,7 +328,7 @@ void CPrimeCacheApplication::Init(void)
                             CArgDescriptions::eExcludes, "taxid-table");
     arg_desc->AddDefaultKey("taxid-column", "TaxidColumn",
                             "column in taxid table with taxid",
-                            CArgDescriptions::eInteger, "1");
+                            CArgDescriptions::eInteger, "2");
 
     CLocalTaxon::AddArguments(*arg_desc);
 
@@ -383,7 +383,7 @@ void CPrimeCacheApplication::Init(void)
                           CArgDescriptions::eExcludes, "uniprot-source-table");
     arg_desc->AddDefaultKey("uniprot-source-column", "UniprotSourceColumn",
                           "column in uniprot source table with uniprot source",
-                          CArgDescriptions::eInteger, "1");
+                          CArgDescriptions::eInteger, "2");
 
     arg_desc->AddKey("cache", "OutputFile",
                      "Path to the cache directory",
