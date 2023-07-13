@@ -70,13 +70,12 @@ public:
     virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr)      = 0;
     virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) = 0;
     virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr)     = 0;
-    virtual string     GetTitle(const string&)                             = 0;
 
     void SetPubInterceptor(TPubInterceptor f)
     {
         m_pub_interceptor = f;
     }
-    void Normalize(CPub&);
+    static void Normalize(CPub&);
 
 protected:
     TPubInterceptor m_pub_interceptor = nullptr;

@@ -162,10 +162,9 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
     // from a journal - get iso_jta
     CCit_jour& journal = cit_art.SetFrom().SetJournal();
 
+#if 0
     if (journal.IsSetTitle() && journal.GetTitle().IsSet() && upd) {
-
         auto& titles = journal.SetTitle().Set();
-
         auto is_jta = [](const CRef<CTitle::C_E>& title) -> bool { return title->IsIso_jta(); };
         if (find_if(titles.begin(), titles.end(), is_jta) == titles.end()) {
             // no iso_jta
@@ -177,6 +176,7 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
             }
         }
     }
+#endif
 
     if (journal.IsSetImp()) {
         // remove Eng language
