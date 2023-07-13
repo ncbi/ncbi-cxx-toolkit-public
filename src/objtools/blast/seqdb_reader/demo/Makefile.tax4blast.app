@@ -15,5 +15,5 @@ LIBS = $(SQLITE3_STATIC_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_
 WATCHERS = madden camacho
 REQUIRES = SQLITE3
 
-CHECK_CMD = tax4blast -taxid 9606
+CHECK_CMD = tax4blast -taxids 9606
 CHECK_REQUIRES = in-house-resources
