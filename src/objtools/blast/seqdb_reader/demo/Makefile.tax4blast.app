@@ -16,4 +16,13 @@ WATCHERS = madden camacho
 REQUIRES = SQLITE3
 
 CHECK_CMD = tax4blast -taxids 9606
+CHECK_CMD = tax4blast -taxids 2
+CHECK_CMD = tax4blast -taxids 40674
+CHECK_CMD = tax4blast -taxids 9443
+CHECK_CMD = tax4blast -taxids 2759
+CHECK_CMD = tax4blast -taxids 2157
+CHECK_CMD = tax4blast -taxids 4751
+CHECK_CMD = tax4blast -taxids 562
+
 CHECK_REQUIRES = in-house-resources
+CHECK_TIMEOUT = 120
