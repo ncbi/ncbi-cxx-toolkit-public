@@ -69,9 +69,9 @@ class NCBI_COBALT_EXPORT CMultiAligner : public CObject
 {
 public:
     /// Version information
-    static const int kMajorVersion = 2;
+    static const int kMajorVersion = 3;
     static const int kMinorVersion = 0;
-    static const int kPatchVersion = 2;
+    static const int kPatchVersion = 0;
 
     /// Return status
     enum EStatus {
