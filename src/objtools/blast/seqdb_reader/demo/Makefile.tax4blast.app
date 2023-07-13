@@ -23,6 +23,9 @@ CHECK_CMD = tax4blast -taxids 2759
 CHECK_CMD = tax4blast -taxids 2157
 CHECK_CMD = tax4blast -taxids 4751
 CHECK_CMD = tax4blast -taxids 562
+# Right now 63221 is a leaf node taxid, therefore it has no descendant taxIDs
+# (i.e.: the program's output is expected to be empty)
+CHECK_CMD = tax4blast -taxids 63221
 
 CHECK_REQUIRES = in-house-resources
 CHECK_TIMEOUT = 120
