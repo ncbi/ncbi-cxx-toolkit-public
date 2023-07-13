@@ -285,7 +285,7 @@ void CClusterer::ComputeClusters(double max_diam,
     }
 
     m_Clusters.clear();
-    m_Trees.clear();
+    s_PurgeTrees(m_Trees);
 
     size_t num_elements = m_DistMatrix->GetRows();
 

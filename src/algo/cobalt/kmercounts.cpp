@@ -197,7 +197,14 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
     }
     const int kNumBits = num;
 
-    TCount* counts = sm_Buffer ? sm_Buffer : ReserveCountsMem(kNumBits); 
+    TCount * counts;
+    AutoArray<TCount> tmp_counts;
+    if (sm_Buffer == NULL) {
+        tmp_counts.reset(ReserveCountsMem(kNumBits));
+        counts = tmp_counts.get();
+    } else {
+        counts = sm_Buffer;
+    }
 
     // Vecotr of counts is first computed using regular vector that is later
     // converted to the sparse vector (list of position-value pairs).
@@ -357,10 +364,6 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
         }
     }
 
-    if (!sm_Buffer && counts) {
-        delete [] counts;
-    }
-    
 }
 
 double CSparseKmerCounts::FractionCommonKmersDist(
