@@ -525,13 +525,6 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 }
 
 
-string CEUtilsUpdaterBase::GetTitle(const string&)
-{
-    // Not yet implemented
-    return {};
-}
-
-
 CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     return x_GetPub(pmid, perr);
