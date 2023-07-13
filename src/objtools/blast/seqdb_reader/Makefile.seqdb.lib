@@ -27,7 +27,7 @@ seqidlist_reader \
 tax4blastsqlite
 
 LIB = seqdb
-DLL_LIB = blastdb $(SOBJMGR_LIBS) $(LMDB_LIB) $(SQLITE3_LIB)
+DLL_LIB = blastdb $(SOBJMGR_LIBS) $(LMDB_LIB) sqlitewrapp
 LIBS = $(BLAST_THIRD_PARTY_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
