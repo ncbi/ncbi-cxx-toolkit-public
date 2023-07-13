@@ -1275,6 +1275,21 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
         if (subject_end > j_cdr3end) {
             annot->m_JDomain[1] = annot->m_JDomain[1] - (subject_start - j_cdr3end);
         }
+    } else if (j_cdr3end > 0 && subject_start - j_cdr3end <= 4) {
+        //allow up to 3 missing fwr4 starting nucleotides.  Too many might introduce inaccuracy
+        //this code should be integrated with the above one
+        CAlnMap j_map(align->GetSegs().GetDenseg());
+      
+        annot->m_JDomain[1] = j_map.GetSeqPosFromSeqPos(0, 1, subject_start, IAlnExplorer::eRight);
+        
+        if (align->GetSeqStrand(0) == eNa_strand_minus) {
+            annot->m_JDomain[1] = m_Scope->GetBioseqHandle(align->GetSeq_id(0)).GetBioseqLength() - annot->m_JDomain[1] - 1;
+        } 
+           
+        //deduct diff back to be in CDR3
+        if (subject_end > j_cdr3end) {
+            annot->m_JDomain[1] = annot->m_JDomain[1] - (subject_start - j_cdr3end);
+        }
     }
    
     //fwr4
