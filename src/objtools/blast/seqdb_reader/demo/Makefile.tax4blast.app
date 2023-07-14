@@ -15,15 +15,24 @@ LIBS = $(SQLITE3_STATIC_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_
 WATCHERS = madden camacho
 REQUIRES = SQLITE3
 
+# Human
 CHECK_CMD = tax4blast -taxids 9606
+# Bacteria
 CHECK_CMD = tax4blast -taxids 2
+# mammals
 CHECK_CMD = tax4blast -taxids 40674
+# primates
 CHECK_CMD = tax4blast -taxids 9443
+# Eukaryota
 CHECK_CMD = tax4blast -taxids 2759
+# Archaea
 CHECK_CMD = tax4blast -taxids 2157
+# Fungi
 CHECK_CMD = tax4blast -taxids 4751
+# Escherichia coli
 CHECK_CMD = tax4blast -taxids 562
-# Right now 63221 is a leaf node taxid, therefore it has no descendant taxIDs
+
+# Neandertal: right now 63221 is a leaf node taxid, therefore it has no descendant taxIDs
 # (i.e.: the program's output is expected to be empty)
 CHECK_CMD = tax4blast -taxids 63221
 
