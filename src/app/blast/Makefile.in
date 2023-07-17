@@ -17,7 +17,6 @@ psiblast \
 rpsblast \
 rpstblastn \
 blast_formatter \
-blast_report \
 deltablast \
 seedtop 
 
@@ -52,8 +51,6 @@ igblastp: lib
 	${MAKE} ${MFLAGS} -f Makefile.igblastp_app
 blast_formatter: lib
 	${MAKE} ${MFLAGS} -f Makefile.blast_formatter_app
-blast_report: lib
-	${MAKE} ${MFLAGS} -f Makefile.blast_report_app
 seedtop: lib
 	${MAKE} ${MFLAGS} -f Makefile.seedtop_app
 deltablast: lib

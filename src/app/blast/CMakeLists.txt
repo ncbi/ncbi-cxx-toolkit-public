@@ -11,7 +11,6 @@ NCBI_add_app(
   rpsblast
   rpstblastn
   blast_formatter
-  blast_report
   deltablast
   seedtop
 )
