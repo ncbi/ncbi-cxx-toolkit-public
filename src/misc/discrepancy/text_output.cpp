@@ -36,6 +36,7 @@ USING_SCOPE(objects);
 
 static constexpr std::initializer_list<eTestNames> g_ReportOrder0 = {
         eTestNames::COUNT_NUCLEOTIDES,
+        eTestNames::VERY_LONG_NO_ANNOTATION,
         eTestNames::LONG_NO_ANNOTATION,
         eTestNames::NO_ANNOTATION,
         };
