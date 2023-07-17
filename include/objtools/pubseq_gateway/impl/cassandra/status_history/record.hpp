@@ -30,6 +30,7 @@
 #define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__STATUS_HISTORY__RECORD_HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <sstream>
 #include <string>
@@ -73,6 +74,16 @@ class CBlobStatusHistoryRecord {
         return *this;
     }
 
+    CBlobStatusHistoryRecord& SetReplacesIds(vector<int32_t> value) {
+        swap(m_ReplacesIds, value);
+        return *this;
+    }
+
+    CBlobStatusHistoryRecord& SetReplacedByIds(vector<int32_t> value) {
+        swap(m_ReplacedByIds, value);
+        return *this;
+    }
+
     CBlobStatusHistoryRecord& SetDoneWhen(int64_t value) {
         m_DoneWhen = value;
         return *this;
@@ -111,8 +122,19 @@ class CBlobStatusHistoryRecord {
         return m_SatKey;
     }
 
+    // Blob "replaces"/"replaced_by" replation is many-to-many for some blobs
+    //   so single sat_key cannot properly represent such relation
+    NCBI_STD_DEPRECATED("Use GetReplacesIds() instead (deprecated from 2023-07-11)")
     int32_t GetReplaces() const {
         return m_Replaces;
+    }
+
+    vector<int32_t> const& GetReplacesIds() const {
+        return m_ReplacesIds;
+    }
+
+    vector<int32_t> const& GetReplacedByIds() const {
+        return m_ReplacedByIds;
     }
 
     int64_t GetDoneWhen() const {
@@ -141,14 +163,14 @@ class CBlobStatusHistoryRecord {
 
     string ToString() const {
         stringstream ss;
-        ss << "SatKey: " << m_SatKey << endl
-           << "DoneWhen:" << m_DoneWhen << endl
-           << "Flags: " << m_Flags << endl
-           << "User: " << m_UserName << endl
-           << "Comment: " << m_Comment << endl
-           << "Public comment: " << m_PublicComment << endl
-           << "Replaces: " << m_Replaces << endl;
-
+        CTime done_time(m_DoneWhen / 1000);
+        done_time.SetMilliSecond(m_DoneWhen % 1000);
+        ss << "{sat_key: " << m_SatKey << ", done_when: '" << done_time.ToLocalTime().AsString(CTimeFormat("Y-M-D h:m:s.r")) << "', flags: " << m_Flags
+           << ", user: '" << m_UserName
+           << "', comment: '" << m_Comment
+           << "', public comment: '" << m_PublicComment
+           << "', replaces_ids: [" << NStr::Join(m_ReplacesIds, ",") << "], replaces: " << to_string(m_Replaces)
+           << ", replaced_by_ids: [" << NStr::Join(m_ReplacedByIds, ",") << "]}";
         return ss.str();
     }
 
@@ -160,6 +182,8 @@ class CBlobStatusHistoryRecord {
      string m_UserName;
      string m_Comment;
      string m_PublicComment;
+     vector<int32_t> m_ReplacesIds;
+     vector<int32_t> m_ReplacedByIds;
 };
 
 END_IDBLOB_SCOPE

@@ -70,7 +70,7 @@ void CCassStatusHistoryTaskFetch::Wait1()
                     m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                     auto query = m_QueryArr[0].query;
                     string sql =
-                        "SELECT comment, public_comment, flags, replaces, username "
+                        "SELECT comment, public_comment, flags, replaces, username, replaces_ids, replaced_by_ids "
                         "FROM " + GetKeySpace() + ".blob_status_history "
                         "WHERE sat_key = ? and done_when = ?";
                     query->SetSQL(sql, 2);
@@ -96,6 +96,11 @@ void CCassStatusHistoryTaskFetch::Wait1()
                                 .SetFlags(query->FieldGetInt64Value(2, 0))
                                 .SetReplaces(query->FieldGetInt32Value(3, 0))
                                 .SetUserName(query->FieldGetStrValueDef(4, ""));
+                            vector<int32_t> replaces_ids, replaced_by_ids;
+                            query->FieldGetContainerValue(5, back_inserter(replaces_ids));
+                            query->FieldGetContainerValue(6, back_inserter(replaced_by_ids));
+                            m_Record->SetReplacesIds(move(replaces_ids));
+                            m_Record->SetReplacedByIds(move(replaced_by_ids));
                             m_State = eDone;
                             CloseAll();
                             need_repeat = true;

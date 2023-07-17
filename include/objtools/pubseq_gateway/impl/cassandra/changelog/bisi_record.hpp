@@ -57,9 +57,7 @@ class CBiSiPartitionMaker
  public:
     int64_t GetCurrentPartition() const
     {
-        CTime time;
-        time.SetCurrent();
-        int64_t update_time = CTimeToTimeTms(time);
+        int64_t update_time = CTimeToTimeTms(CTime(CTime::eCurrent));
         int64_t granularity_ms = kChangelogGranularitySec * 1000;
         return (update_time / granularity_ms) * granularity_ms;
     }
