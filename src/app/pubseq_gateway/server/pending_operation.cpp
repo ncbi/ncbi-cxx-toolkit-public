@@ -113,18 +113,22 @@ void CPendingOperation::Start(void)
     } catch (const exception &  exc) {
         string  msg = "Failure to start processor " + m_Processor->GetName() +
                       ". The processor generated an exception: " +
-                      string(exc.what());
+                      string(exc.what()) +
+                      "\nThe processor will be cancelled.";
         if (m_UserRequest->NeedTrace()) {
             m_Reply->SendTrace(msg, m_UserRequest->GetStartTimestamp());
         }
         PSG_ERROR(msg);
+        m_Processor->Cancel();
     } catch (...) {
         string  msg = "Failure to start processor " + m_Processor->GetName() +
-                      ". The processor generated an unknown exception.";
+                      ". The processor generated an unknown exception. "
+                      "The processor will be cancelled.";
         if (m_UserRequest->NeedTrace()) {
             m_Reply->SendTrace(msg, m_UserRequest->GetStartTimestamp());
         }
         PSG_ERROR(msg);
+        m_Processor->Cancel();
     }
 }
 
