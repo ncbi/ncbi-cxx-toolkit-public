@@ -386,10 +386,8 @@ protected:
     CGBDataLoader(const string&     loader_name,
                   const CGBLoaderParams& params);
 
-    // Find GB loader params in the tree or return the original tree.
-    const TParamTree* x_GetLoaderParams(const TParamTree* params) const;
-    // Get reader name from the GB loader params.
-    string x_GetReaderName(const TParamTree* params) const;
+    static void SetLoaderMethod(const CGBLoaderParams& params);
+    static const string& GetLoaderMethod(void) { return sm_LoaderMethod; }
 
     TExpirationTimeout      m_IdExpirationTimeout;
 
@@ -399,6 +397,7 @@ protected:
     bool                    m_HasHUPIncluded;
     EGBErrorAction          m_PTISErrorAction;
     string                  m_WebCookie;
+    static string           sm_LoaderMethod;
 
 private:
     CGBDataLoader(const CGBDataLoader&);

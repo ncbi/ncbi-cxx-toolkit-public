@@ -200,6 +200,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    CGBLoaderParams params(reader_ptr);
+    SetLoaderMethod(params);
+
     if (TGenbankLoaderPsg::GetDefault()) {
 #if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
@@ -226,6 +229,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    CGBLoaderParams params(reader_name);
+    SetLoaderMethod(params);
+
     if (TGenbankLoaderPsg::GetDefault()) {
 #if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
@@ -264,6 +270,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    CGBLoaderParams params("PUBSEQOS2:PUBSEQOS");
+    SetLoaderMethod(params);
+
     if (TGenbankLoaderPsg::GetDefault()) {
 #if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
@@ -302,6 +311,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    CGBLoaderParams params(reader_name);
+    SetLoaderMethod(params);
+
     if (TGenbankLoaderPsg::GetDefault()) {
 #if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, is_default, priority);
@@ -329,6 +341,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    CGBLoaderParams params(&param_tree);
+    SetLoaderMethod(params);
+
     if (TGenbankLoaderPsg::GetDefault()) {
 #if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, param_tree, is_default, priority);
@@ -355,6 +370,8 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
+    SetLoaderMethod(params);
+
     if (TGenbankLoaderPsg::GetDefault()) {
 #if defined(HAVE_PSG_LOADER)
         return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
@@ -580,6 +597,53 @@ CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
             "not mine TSE");
     }
     return GetRealBlobId(tse_info.GetBlobId());
+}
+
+
+NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, "",
+                  eParam_NoThread, GENBANK_LOADER_METHOD);
+typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
+
+string CGBDataLoader::sm_LoaderMethod;
+
+void CGBDataLoader::SetLoaderMethod(const CGBLoaderParams& params)
+{
+    unique_ptr<TParamTree> app_params;
+    const TParamTree* gb_params = 0;
+    if ( params.GetParamTree() ) {
+        gb_params = GetLoaderParams(params.GetParamTree());
+    }
+    else {
+        CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+        if ( app ) {
+            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+            gb_params = GetLoaderParams(app_params.get());
+        }
+    }
+
+    if ( !gb_params ) {
+        app_params.reset(new TParamTree);
+        gb_params = GetLoaderParams(app_params.get());
+    }
+
+    sm_LoaderMethod = GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+    if ( sm_LoaderMethod.empty() ) {
+        // try config first
+        sm_LoaderMethod = TGenbankLoaderMethod::GetDefault();
+    }
+
+    vector<string> str_list;
+    NStr::Split(sm_LoaderMethod, ";", str_list);
+    for (auto s : str_list) {
+        if (!NStr::EqualNocase(s, "psg")) continue;
+        if (str_list.size() == 1) {
+            TGenbankLoaderPsg::SetDefault(true);
+            break;
+        }
+        // PSG method can not be combined with any other methods.
+        NCBI_THROW(CLoaderException, eBadConfig,
+            "'PSG' loader method can not be combined with other methods: '" + sm_LoaderMethod + "'");
+    }
 }
 
 
