@@ -3669,7 +3669,9 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                         const string& subname = sub.GetName();
                         switch (sub.GetSubtype()) {
                         case CSubSource::eSubtype_chromosome:
-                            joiner.Add("chromosome", subname);
+                            if (! m_IsChromosome && m_Chromosome.empty()) {
+                                joiner.Add("chromosome", subname);
+                            }
                             break;
                         case CSubSource::eSubtype_map:
                             joiner.Add("map", subname);
@@ -3717,7 +3719,9 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                             joiner.Add("tissue_lib", subname);
                             break;
                         case CSubSource::eSubtype_plasmid_name:
-                            joiner.Add("plasmid_name", subname);
+                            if (! m_IsPlasmid && m_Plasmid.empty()) {
+                                joiner.Add("plasmid_name", subname);
+                            }
                             break;
                         case CSubSource::eSubtype_transposon_name:
                             joiner.Add("transposon_name", subname);
