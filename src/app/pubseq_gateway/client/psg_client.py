@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import xml.etree.ElementTree as ET
 
 print = functools.partial(print, flush=True)
@@ -24,20 +25,15 @@ class RequestGenerator:
     def __call__(self, method, **params):
         self._request_no += 1
         request_id = f'{method}_{self._request_no}'
-        return request_id, json.dumps({ 'jsonrpc': '2.0', 'method': method, 'params': params, 'id': request_id })
+        return { 'jsonrpc': '2.0', 'method': method, 'params': params, 'id': request_id }, request_id 
 
 class PsgClient:
     VerboseLevel = enum.IntEnum('VerboseLevel', 'REQUEST RESPONSE DEBUG')
 
-    @classmethod
-    def from_args(cls, args):
-        return cls(args.binary, verbose=args.verbose, testing=args.testing)
-
-    def __init__(self, binary, /, timeout=10, verbose=0, testing=True):
-        self._cmd = [binary, 'interactive', '-server-mode']
-        self._timeout = timeout
-        self._verbose = verbose
-        self._request_generator = RequestGenerator()
+    def __init__(self, args):
+        self._cmd = [args.binary, 'interactive', '-server-mode']
+        self._deadline = 30 + time.monotonic()
+        self._verbose = args.verbose
         self._sent = {}
 
         args_dict = vars(args)
@@ -45,7 +41,7 @@ class PsgClient:
         if service := args_dict.get('service'):
             self._cmd += ['-service', service]
 
-        if testing:
+        if testing := args_dict.get('testing'):
             self._cmd += ['-testing']
 
         if self._verbose >= PsgClient.VerboseLevel.DEBUG:
@@ -73,25 +69,42 @@ class PsgClient:
         self._pipe.wait()
         self._thread.join()
 
-    def send(self, method, **params):
-        (id, request) = self._request_generator(method, **params)
-        print(request, file=self._pipe.stdin)
+    def send(self, request, id=None):
+        print(json.dumps(request), file=self._pipe.stdin)
 
         if self._verbose >= PsgClient.VerboseLevel.REQUEST:
             print(request)
 
-        self._sent[id] = request
+        self._sent[id or request['id']] = request
         return request
 
-    def receive(self, /, errors_only=False):
+    def receive(self, /, deadline=None):
+        deadline = min(deadline, self._deadline) if deadline else self._deadline
+
         while True:
-            line = self._queue.get(timeout=self._timeout).rstrip()
+            line = self._queue.get(timeout=deadline - time.monotonic()).rstrip()
 
             if self._verbose >= PsgClient.VerboseLevel.RESPONSE:
                 print(line)
 
             data = json.loads(line)
+            yield data
 
+            result = data.get('result')
+
+            if not result or not result.get('reply'):
+                return
+
+class SynthPsgClient(PsgClient):
+    def __init__(self, args):
+        self._request_generator = RequestGenerator()
+        super().__init__(args)
+
+    def send(self, method, **params):
+        return super().send(*self._request_generator(method, **params))
+
+    def receive(self, /, deadline=None, errors_only=False):
+        for data in super().receive(deadline):
             if result := data.get('result'):
                 status = result.get('status')
 
@@ -115,8 +128,6 @@ class PsgClient:
                 # An item
                 if reply_type:
                     continue
-
-                return
 
             # A JSON-RPC error?
             result = data.get('error', {})
@@ -379,7 +390,7 @@ def syntest_cmd(args):
     else:
         ipgs = [[None, 7093]]
 
-    with PsgClient.from_args(args) as psg_client:
+    with SynthPsgClient(args) as psg_client:
         bio_ids = prepare_bio_ids(bio_ids)
         blob_ids, chunk_ids = get_ids(psg_client, bio_ids)
         named_annots = get_all_named_annots(psg_client, named_annots)
@@ -390,20 +401,19 @@ def syntest_cmd(args):
         sys.exit(0 if result else -1)
 
 def generate_cmd(args):
-    args.testing = False
     request_generator = RequestGenerator()
 
     if args.TYPE == 'named_annot':
         named_annots = read_named_annots(args.INPUT_FILE)
 
-        with PsgClient.from_args(args) as psg_client:
+        with SynthPsgClient(args) as psg_client:
             named_annots = get_all_named_annots(psg_client, named_annots, max_ids=args.NUMBER)
 
         ids = prepare_named_annots(named_annots)
     elif args.TYPE == 'ipg_resolve':
         ipgs = read_ipgs(args.INPUT_FILE)
 
-        with PsgClient.from_args(args) as psg_client:
+        with SynthPsgClient(args) as psg_client:
             ipgs = get_all_ipgs(psg_client, ipgs, max_ids=args.NUMBER)
 
         ids = prepare_ipgs(ipgs)
@@ -418,7 +428,7 @@ def generate_cmd(args):
             max_blob_ids = args.NUMBER if args.TYPE == 'blob' else 0
             max_chunk_ids = args.NUMBER if args.TYPE != 'blob' else 0
 
-            with PsgClient.from_args(args) as psg_client:
+            with SynthPsgClient(args) as psg_client:
                 blob_ids, chunk_ids = get_ids(psg_client, bio_ids, max_blob_ids=max_blob_ids, max_chunk_ids=max_chunk_ids)
 
             ids = blob_ids if args.TYPE == 'blob' else chunk_ids
