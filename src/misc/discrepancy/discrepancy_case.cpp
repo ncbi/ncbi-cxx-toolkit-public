@@ -611,6 +611,19 @@ DISCREPANCY_CASE(LONG_NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | 
 }
 
 
+DISCREPANCY_CASE(VERY_LONG_NO_ANNOTATION, SEQUENCE, eDisc | eOncaller | eSubmitter | eSmart | eBig, "No annotation for LONG sequence")
+{
+    const int kSeqLength = 50000;
+    const CBioseq& bioseq = context.CurrentBioseq();
+    if (bioseq.IsNa() && bioseq.IsSetLength() && bioseq.GetLength() > kSeqLength) {
+        auto all_feat = context.GetAllFeat();
+        if (all_feat.begin() == all_feat.end()) {
+            m_Objs["[n] bioseq[s] [is] longer than 50000nt and [has] no features"].Add(*context.BioseqObjRef());
+        }
+    }
+}
+
+
 // POSSIBLE_LINKER
 
 DISCREPANCY_CASE(POSSIBLE_LINKER, SEQUENCE, eOncaller, "Detect linker sequence after poly-A tail")
