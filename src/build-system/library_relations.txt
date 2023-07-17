@@ -101,8 +101,6 @@ align_format needs3party $(GENBANK_THIRD_PARTY_LIBS)
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
-aligndb_reader needs ncbi_xdbapi_ftds
-aligndb_reader needs ncbi_xdbapi_ftds100
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
 aligndb_reader needs3party $(SDBAPI_LIBS)
@@ -138,8 +136,6 @@ bdbasncli needs xconnect
 biblio needs general
 biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
-biosample needs ncbi_xdbapi_ftds
-biosample needs ncbi_xdbapi_ftds100
 biosample needs xmlwrapp
 biosample needs xregexp
 biosample needs3party $(SDBAPI_LIBS)
@@ -392,8 +388,6 @@ gpinit needs gpinit_access
 gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
-gpinit_access needs ncbi_xdbapi_ftds
-gpinit_access needs ncbi_xdbapi_ftds100
 gpinit_access needs xconnect
 gpinit_access needs3party $(SDBAPI_LIBS)
 gpinit_obj needs general
@@ -407,8 +401,6 @@ gpipe_attr needs gpipe_property
 gpipe_attr needs taxon1
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs eutils_client
-gpipe_common needs ncbi_xdbapi_ftds
-gpipe_common needs ncbi_xdbapi_ftds100
 gpipe_common needs vdb_reader
 gpipe_common needs xcgi
 gpipe_common needs xregexp
@@ -444,8 +436,6 @@ gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
 gpipe_sqlite needs $(SQLITE3_WRAPPER)
-gpipe_sqlite needs ncbi_xdbapi_ftds
-gpipe_sqlite needs ncbi_xdbapi_ftds100
 gpipe_sqlite needs pub
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
@@ -566,8 +556,6 @@ ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideo_gridcli
-ideocoord needs ncbi_xdbapi_ftds
-ideocoord needs ncbi_xdbapi_ftds100
 ideocoord needs3party $(SDBAPI_LIBS)
 idgen needs dbassist
 idload needs3party ctutils
@@ -966,8 +954,6 @@ seqdb_maintenance_cassandra needs psg_cassandra
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan_utils needs $(SDBAPI_LIB)
-seqgapscan_utils needs ncbi_xdbapi_ftds
-seqgapscan_utils needs ncbi_xdbapi_ftds100
 seqgapscan_utils needs xconnect
 seqgapscan_utils needs xobjutil
 seqgapscan_utils needs3party $(SDBAPI_LIBS)
