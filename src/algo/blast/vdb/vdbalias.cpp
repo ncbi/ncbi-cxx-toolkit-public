@@ -319,17 +319,17 @@ void CVDBAliasNode::x_ResolveDBList(vector<string> & dblist, char prot_nucl, vec
 		string resolved_path = kEmptyStr;
 
 		{
+			const CSeqDB_Path path_db ( m_DBPath, (CSeqDB_BaseName(dblist[i])), prot_nucl, 's', 'q');
+			resolved_path= SeqDB_ResolveDbPath(path_db.GetPathS());
+			if (resolved_path != kEmptyStr) {
+				_TRACE("Local db path db :" + resolved_path);
+				continue;
+			}
 			const CSeqDB_Path path_alias ( m_DBPath, (CSeqDB_BaseName(dblist[i])), prot_nucl, 'a', 'l' );
 			resolved_path= SeqDB_ResolveDbPath(path_alias.GetPathS());
 			if (resolved_path != kEmptyStr) {
 				_TRACE("Local alias db :" + resolved_path);
 				m_DBList.push_back(resolved_path);
-				continue;
-			}
-			const CSeqDB_Path path_db ( m_DBPath, (CSeqDB_BaseName(dblist[i])), prot_nucl, 's', 'q');
-			resolved_path= SeqDB_ResolveDbPath(path_db.GetPathS());
-			if (resolved_path != kEmptyStr) {
-				_TRACE("Local path db :" + resolved_path);
 				continue;
 			}
 		}
