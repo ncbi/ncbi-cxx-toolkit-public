@@ -82,6 +82,11 @@ public:
                     request->GetRequest<SPSGS_TSEChunkRequest>().m_UseCache !=
                         SPSGS_RequestBase::ePSGS_DbOnly;
                 break;
+            case CPSGS_Request::ePSGS_IPGResolveRequest:
+                m_Allowed =
+                    request->GetRequest<SPSGS_IPGResolveRequest>().m_UseCache !=
+                        SPSGS_RequestBase::ePSGS_DbOnly;
+                break;
             default:
                 ;
         }

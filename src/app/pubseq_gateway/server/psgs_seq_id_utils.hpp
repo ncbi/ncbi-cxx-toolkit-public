@@ -37,6 +37,10 @@
 #include <list>
 using namespace std;
 
+#include <objects/seqloc/Seq_id.hpp>
+USING_NCBI_SCOPE;
+using namespace ncbi::objects;
+
 class IPSGS_Processor;
 
 
@@ -47,6 +51,7 @@ struct SPSGSeqId {
 
 void PSGSortSeqIds(list<SPSGSeqId>& seq_ids, IPSGS_Processor *  processor);
 string StripTrailingVerticalBars(const string &  seq_id);
+CSeq_id_Base::E_Choice   DetectSeqIdTypeForIPG(const string &  seq_id);
 
 #endif /* PSGS_SEQ_ID_UTILS__HPP */
 

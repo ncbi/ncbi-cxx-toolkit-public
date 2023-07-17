@@ -473,6 +473,8 @@ CJsonNode SPSGS_IPGResolveRequest::Serialize(void) const
         json.SetString("nucleotide", m_Nucleotide.value());
     else
         json.SetString("nucleotide", "<null>");
+    json.SetString("use cache", CacheAndDbUseToString(m_UseCache));
+    json.SetBoolean("seq id resolve", m_SeqIdResolve);
 
     SPSGS_RequestBase::AppendCommonParameters(json);
     return json;
