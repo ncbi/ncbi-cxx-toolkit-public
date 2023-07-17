@@ -40,6 +40,11 @@ class PsgClient:
         self._request_generator = RequestGenerator()
         self._sent = {}
 
+        args_dict = vars(args)
+
+        if service := args_dict.get('service'):
+            self._cmd += ['-service', service]
+
         if testing:
             self._cmd += ['-testing']
 
@@ -604,6 +609,7 @@ if __name__ == '__main__':
 
     parser_test = subparsers.add_parser('test', help='Perform psg_client tests', description='Perform psg_client tests')
     parser_test.set_defaults(func=test_cmd)
+    parser_test.add_argument('-service', help='PSG service/server to use')
     parser_test.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
     parser_test.add_argument('-bio-file', help='CSV file with bio IDs "BioID[,Type]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_test.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
