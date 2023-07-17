@@ -136,7 +136,7 @@ def powerset(iterable):
     s = list(iterable)
     return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
 
-def test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
+def syntest_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
     blob_ids_only = list(blob_id[0] for v in blob_ids for blob_id in v.values())
     param_values = {
             'include_info': [None] + list(powerset((
@@ -349,7 +349,7 @@ def prepare_ipgs(ipgs):
     ids = {v for id in ipgs for v in itertools.compress(itertools.product(*zip(id, (None, None, None))), [1, 1, 1, 1, 0, 1])}
     return [{k: v for k, v in zip(('protein', 'ipg', 'nucleotide'), id) if v is not None} for id in ids]
 
-def test_cmd(args):
+def syntest_cmd(args):
     check_binary(args)
 
     if args.bio_file:
@@ -386,7 +386,7 @@ def test_cmd(args):
         named_annots = prepare_named_annots(named_annots)
         ipgs = get_all_ipgs(psg_client, ipgs)
         ipgs = prepare_ipgs(ipgs)
-        result = test_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs)
+        result = syntest_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs)
         sys.exit(0 if result else -1)
 
 def generate_cmd(args):
@@ -607,15 +607,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='available commands', metavar='COMMAND', required=True, dest='command')
 
-    parser_test = subparsers.add_parser('test', help='Perform psg_client tests', description='Perform psg_client tests')
-    parser_test.set_defaults(func=test_cmd)
-    parser_test.add_argument('-service', help='PSG service/server to use')
-    parser_test.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
-    parser_test.add_argument('-bio-file', help='CSV file with bio IDs "BioID[,Type]" (default: some hard-coded IDs)', type=argparse.FileType())
-    parser_test.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
-    parser_test.add_argument('-ipg-file', help='CSV file with IPG IDs "Protein,[IPG][,Nucleotide]" (default: some hard-coded IDs)', type=argparse.FileType())
-    parser_test.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
-    parser_test.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
+    parser_syntest = subparsers.add_parser('syntest', help='Perform synthetic psg_client tests', description='Perform synthetic psg_client tests', aliases=['test'])
+    parser_syntest.set_defaults(func=syntest_cmd)
+    parser_syntest.add_argument('-service', help='PSG service/server to use')
+    parser_syntest.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_syntest.add_argument('-bio-file', help='CSV file with bio IDs "BioID[,Type]" (default: some hard-coded IDs)', type=argparse.FileType())
+    parser_syntest.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
+    parser_syntest.add_argument('-ipg-file', help='CSV file with IPG IDs "Protein,[IPG][,Nucleotide]" (default: some hard-coded IDs)', type=argparse.FileType())
+    parser_syntest.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
+    parser_syntest.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
     parser_generate.set_defaults(func=generate_cmd)
