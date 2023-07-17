@@ -197,11 +197,6 @@ public:
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         EIncludeHUP     include_hup,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        EIncludeHUP     include_hup,
         const string& web_cookie,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
@@ -209,12 +204,6 @@ public:
     // GBLoader with HUP data included.
     // The reader can be either pubseqos or pubseqos2.
     // The default loader priority will be slightly lower than for main data.
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        const string&   reader_name, // pubseqos or pubseqos2
-        EIncludeHUP     include_hup,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string&   reader_name, // pubseqos or pubseqos2
@@ -294,11 +283,6 @@ private:
 
     CGBDataLoader_Native(const string&     loader_name,
                          const CGBLoaderParams& params);
-
-    // Find GB loader params in the tree or return the original tree.
-    const TParamTree* x_GetLoaderParams(const TParamTree* params) const;
-    // Get reader name from the GB loader params.
-    string x_GetReaderName(const TParamTree* params) const;
 
     CInitMutexPool          m_MutexPool;
 
