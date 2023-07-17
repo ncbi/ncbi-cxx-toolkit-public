@@ -83,10 +83,6 @@ BEGIN_SCOPE(objects)
 //
 
 
-NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, "",
-                  eParam_NoThread, GENBANK_LOADER_METHOD);
-typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
-
 NCBI_PARAM_DECL(string, GENBANK, READER_NAME);
 NCBI_PARAM_DEF_EX(string, GENBANK, READER_NAME, "",
                   eParam_NoThread, GENBANK_READER_NAME);
@@ -183,17 +179,6 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
     CObjectManager& om,
-    EIncludeHUP     include_hup,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    return RegisterInObjectManager(om, include_hup, NcbiEmptyString, is_default,
-                                   priority);
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
     EIncludeHUP     /*include_hup*/,
     const string& web_cookie,
     CObjectManager::EIsDefault is_default,
@@ -206,17 +191,6 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager
     return ConvertRegInfo(maker.GetRegisterInfo());
 }
 
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
-    const string&   reader_name,
-    EIncludeHUP     include_hup,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    return RegisterInObjectManager(om, reader_name, include_hup, NcbiEmptyString,
-                                   is_default, priority);
-}
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
     CObjectManager& om,
@@ -467,11 +441,7 @@ CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params) const
         ret.first = TGenbankWriterName::GetDefault();
     }
     if ( ret.first.empty() || ret.second.empty() ) {
-        string method = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
-        if ( method.empty() ) {
-            // try config first
-            method = TGenbankLoaderMethod::GetDefault();
-        }
+        string method = GetLoaderMethod();
         if ( method.empty() ) {
             // fall back default reader list
             method = DEFAULT_DRV_ORDER;
