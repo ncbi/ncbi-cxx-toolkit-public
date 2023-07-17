@@ -122,3 +122,15 @@ string StripTrailingVerticalBars(const string &  seq_id)
     return stripped_v_bars;
 }
 
+
+CSeq_id_Base::E_Choice   DetectSeqIdTypeForIPG(const string &  seq_id)
+{
+    try {
+        CSeq_id     parsed_seq_id(seq_id, CSeq_id::fParse_RawGI|CSeq_id::fParse_RawText);
+        return parsed_seq_id.Which();
+    } catch (...) {
+        return CSeq_id_Base::e_not_set;
+    }
+    return CSeq_id_Base::e_not_set;
+}
+

@@ -92,6 +92,7 @@ private:
                              EDiagSev  severity,
                              const string &  message);
     void x_SendAnnotDataToClient(CNAnnotRecord &&  annot_record, int32_t  sat);
+
 private:
     bool x_NeedToRequestBlobProp(void);
     void x_RequestBlobProp(int32_t  sat, int32_t  sat_key, int64_t  last_modified);

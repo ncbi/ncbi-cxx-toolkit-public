@@ -910,6 +910,8 @@ CJsonNode  GetIpgResolveRequestNode(void)
     AppendProteinParameter(ipg_resolve_params);
     AppendNucleotideParameter(ipg_resolve_params);
     AppendIpgParameter(ipg_resolve_params);
+    AppendUseCacheParameter(ipg_resolve_params);
+    AppendSeqIdResolveParameter(ipg_resolve_params);
     AppendTraceParameter(ipg_resolve_params);
     AppendEnableProcessorParameter(ipg_resolve_params);
     AppendDisableProcessorParameter(ipg_resolve_params);

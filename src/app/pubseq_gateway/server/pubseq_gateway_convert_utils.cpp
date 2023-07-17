@@ -912,7 +912,6 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"IPG resolve request\"")
-
         .append(kSep)
         .append(kProteinItem)
         .append(1, '"');
@@ -923,9 +922,7 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
         json.append("<null>");
 
     json.append(1, '"')
-
         .append(kSep)
-
         .append(kNucleotideItem)
         .append(1, '"');
 
@@ -934,14 +931,18 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
     else
         json.append("<null>");
 
-    json.append(1, '"');
+    json.append(1, '"')
+        .append(kSep)
+        .append(kIPGItem);
 
-    len = PSGToString(request.GetIpg(), buf);
-    json.append(kSep)
-        .append(kIPGItem)
-        .append(buf, len)
+    if (request.HasIpg()) {
+        len = PSGToString(request.GetIpg(), buf);
+        json.append(buf, len);
+    } else {
+        json.append("<null>");
+    }
+    json.append(1, '}');
 
-        .append(1, '}');
     return json;
 }
 

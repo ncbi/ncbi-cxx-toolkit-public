@@ -916,13 +916,17 @@ struct SPSGS_AccessionVersionHistoryRequest : public SPSGS_RequestBase
 
 struct SPSGS_IPGResolveRequest : public SPSGS_RequestBase
 {
-    optional<string>    m_Protein;
-    int64_t             m_IPG;
-    optional<string>    m_Nucleotide;
+    optional<string>        m_Protein;
+    int64_t                 m_IPG;
+    optional<string>        m_Nucleotide;
+    EPSGS_CacheAndDbUse     m_UseCache;
+    bool                    m_SeqIdResolve;
 
     SPSGS_IPGResolveRequest(const optional<string> &  protein,
                             int64_t  ipg,
                             const optional<string> &  nucleotide,
+                            EPSGS_CacheAndDbUse  use_cache,
+                            bool seq_id_resolve,
                             EPSGS_Trace  trace,
                             bool  processor_events,
                             const vector<string> &  enabled_processors,
@@ -931,11 +935,14 @@ struct SPSGS_IPGResolveRequest : public SPSGS_RequestBase
         SPSGS_RequestBase(trace, processor_events,
                           enabled_processors, disabled_processors,
                           start_timestamp),
-        m_Protein(protein), m_IPG(ipg), m_Nucleotide(nucleotide)
+        m_Protein(protein), m_IPG(ipg), m_Nucleotide(nucleotide),
+        m_UseCache(use_cache), m_SeqIdResolve(seq_id_resolve)
     {}
 
     SPSGS_IPGResolveRequest() :
-        m_IPG(-1)
+        m_IPG(-1),
+        m_UseCache(ePSGS_UnknownUseCache),
+        m_SeqIdResolve(true)    // default
     {}
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const

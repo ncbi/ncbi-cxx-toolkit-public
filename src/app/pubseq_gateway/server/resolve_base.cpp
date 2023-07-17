@@ -98,6 +98,8 @@ CPSGS_ResolveBase::x_GetRequestUseCache(void)
             return m_Request->GetRequest<SPSGS_AnnotRequest>().m_UseCache;
         case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
             return m_Request->GetRequest<SPSGS_AccessionVersionHistoryRequest>().m_UseCache;
+        case CPSGS_Request::ePSGS_IPGResolveRequest:
+            return m_Request->GetRequest<SPSGS_IPGResolveRequest>().m_UseCache;
         default:
             break;
     }

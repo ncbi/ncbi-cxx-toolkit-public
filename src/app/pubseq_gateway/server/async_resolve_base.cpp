@@ -348,6 +348,8 @@ CPSGS_AsyncResolveBase::GetAccessionSubstitutionOption(void)
             return SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
         case CPSGS_Request::ePSGS_AccessionVersionHistoryRequest:
             return SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
+        case CPSGS_Request::ePSGS_IPGResolveRequest:
+            return SPSGS_RequestBase::ePSGS_NeverAccSubstitute;
         default:
             break;
     }

@@ -1018,6 +1018,24 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
             return 0;
         }
 
+        SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
+        if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
+            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        bool    seq_id_resolve = true;  // default
+        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+            return 0;
+        }
+
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         if (!x_GetTraceParameter(req, reply, now, trace)) {
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
@@ -1033,6 +1051,8 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
                         protein,
                         ipg,
                         nucleotide,
+                        use_cache,
+                        seq_id_resolve,
                         trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));
