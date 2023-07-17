@@ -1,0 +1,62 @@
+{
+    "resolve": {
+        "description": "Testing a 'resolve' request",
+        "timeout": 1,
+        "requests": [
+            {
+                "jsonrpc": "2.0",
+                "method": "resolve",
+                "params": {
+                    "bio_id": [
+                        "2"
+                    ],
+                    "include_info": [
+                        "all-info-except"
+                    ]
+                },
+                "id": "resolve_1"
+            }
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "emb|A00002.1|",
+                        "type": 6
+                    },
+                    "other_ids": [
+                        {
+                            "id": "pat|EP|0238993|1",
+                            "type": 9
+                        },
+                        {
+                            "id": "gi|2",
+                            "type": 12
+                        }
+                    ],
+                    "molecule_type": "dna",
+                    "length": 194,
+                    "seq_state": 10,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "2.27846539"
+                    },
+                    "tax_id": 9913,
+                    "hash": 299248614,
+                    "date_changed": "09/05/2020 06:37:30",
+                    "gi": 2
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    }
+}

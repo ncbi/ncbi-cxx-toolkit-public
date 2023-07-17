@@ -3,6 +3,7 @@
 import argparse
 import ast
 import csv
+from difflib import unified_diff
 import enum
 import functools
 import itertools
@@ -400,6 +401,53 @@ def syntest_cmd(args):
         result = syntest_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs)
         sys.exit(0 if result else -1)
 
+def report_diff(expected, actual):
+    def sort_replies(values):
+        values = sorted(json.dumps(value) for value in values)
+        values = (json.loads(value) for value in values)
+        return list(itertools.chain.from_iterable('\n'.join((json.dumps(value, indent=2), '')).splitlines(keepends=True) for value in values))
+
+    return list(unified_diff(sort_replies(expected), sort_replies(actual), fromfile='Expected', tofile='Actual', n=3))
+
+def testcases_cmd(args):
+    result = False
+    check_binary(args)
+
+    with PsgClient(args) as psg_client:
+        updated_testcases = {}
+
+        for (name, testcase) in json.load(args.input_file).items():
+            if not args.testcase or args.testcase == name:
+                for i, request in enumerate(testcase['requests']):
+                    psg_client.send(request)
+
+                if deadline := testcase.get('timeout'):
+                    deadline += time.monotonic()
+
+                expected = testcase['response']
+                actual = []
+
+                for i in range(i + 1):
+                    try:
+                        actual.extend(psg_client.receive(deadline=deadline))
+                    except queue.Empty:
+                        sys.exit(f'Testcase timed out:\n\t{name}\n\t{testcase["description"]}\n\t\n\tExpected:\n\t\t{expected}')
+
+                if args.output_file:
+                    expected[:] = actual
+                    updated_testcases[name] = testcase
+
+                elif diff := report_diff(expected, actual):
+                    print('Testcase failed:', name, testcase['description'], '', sep='\n\t', end='')
+                    print(*diff, sep='\t')
+                    result = True
+    if result:
+        sys.exit(result)
+
+    if args.output_file:
+        with open(args.output_file, 'w') as of:
+            json.dump(updated_testcases, of, indent=4)
+
 def generate_cmd(args):
     request_generator = RequestGenerator()
 
@@ -626,6 +674,16 @@ if __name__ == '__main__':
     parser_syntest.add_argument('-ipg-file', help='CSV file with IPG IDs "Protein,[IPG][,Nucleotide]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_syntest.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_syntest.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
+
+    parser_testcases = subparsers.add_parser('testcases', help='Perform JSON-specified psg_client tests', description='Perform JSON-specified psg_client tests')
+    parser_testcases.set_defaults(func=testcases_cmd)
+    parser_testcases.add_argument('-service', help='PSG service/server to use')
+    parser_testcases.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_testcases.add_argument('-input-file', help='JSON file with testcases" (default: ./testcases.json)', metavar='FILE', type=argparse.FileType(), default='./testcases.json')
+    parser_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
+    parser_testcases.add_argument('-testcase', help='A specific testcase to run')
+    parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
+    parser_testcases.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
     parser_generate.set_defaults(func=generate_cmd)
