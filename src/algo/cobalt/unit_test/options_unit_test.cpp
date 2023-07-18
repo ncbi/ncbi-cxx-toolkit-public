@@ -152,6 +152,7 @@ BOOST_AUTO_TEST_CASE(TestOptionsValidation)
 
     // Too large kmer length does not pass validation
     opts.Reset(new CMultiAlignerOptions());
+    opts->SetUseQueryClusters(true);
     opts->SetKmerLength(10);
     BOOST_CHECK_THROW(opts->Validate(), CMultiAlignerException);
 

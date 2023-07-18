@@ -47,7 +47,8 @@ BEGIN_SCOPE(cobalt)
 
 CMultiAlignerOptions::CMultiAlignerOptions(void)
 {
-    x_InitParams(CMultiAlignerOptions::fNoRpsBlast);
+    x_InitParams(CMultiAlignerOptions::fNoQueryClusters |
+                 CMultiAlignerOptions::fNoRpsBlast);
 }
 
 CMultiAlignerOptions::CMultiAlignerOptions(TMode mode)
@@ -68,6 +69,17 @@ void CMultiAlignerOptions::SetDefaultCddPatterns(void)
     m_Patterns.clear();
     AssignDefaultPatterns(m_Patterns);
     m_Mode = fNonStandard;
+}
+
+
+void CMultiAlignerOptions::SetUseQueryClusters(bool use)
+{
+    m_UseQueryClusters = use;
+    m_Mode = fNonStandard;
+
+    if (m_UseQueryClusters) {
+        m_InClustAlnMethod = eMulti;
+    }
 }
 
 
