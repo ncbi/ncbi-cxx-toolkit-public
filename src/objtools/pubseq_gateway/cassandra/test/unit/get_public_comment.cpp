@@ -47,6 +47,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/status_history/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
@@ -90,7 +91,8 @@ const char* CGetPublicCommentTest::m_TestClusterName = "ID_CASS_TEST";
 shared_ptr<CCassConnectionFactory> CGetPublicCommentTest::m_Factory(nullptr);
 shared_ptr<CCassConnection> CGetPublicCommentTest::m_Connection(nullptr);
 
-static auto comment_wait_function = [](CCassStatusHistoryTaskGetPublicComment& task){
+static auto wait_function = [](auto& task)
+{
     bool done = task.Wait();
     while (!done) {
         usleep(100);
@@ -99,23 +101,28 @@ static auto comment_wait_function = [](CCassStatusHistoryTaskGetPublicComment& t
     return done;
 };
 
-static auto blob_wait_function = [](CCassBlobTaskLoadBlob& task){
-    bool done = task.Wait();
-    while (!done) {
-        usleep(100);
-        done = task.Wait();
-    }
-    return done;
+static auto get_messages_fn =
+[] (string const& cluster_name, shared_ptr<CCassConnection> connection) -> auto
+{
+    const string config_section = "TEST";
+    auto r = make_shared<CNcbiRegistry>();
+    r->Set(config_section, "service", string(cluster_name), IRegistry::fPersistent);
+    CSatInfoSchemaProvider schema_provider("sat_info3", "PSG_TEST", move(connection), r, config_section);
+    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, schema_provider.RefreshMessages(true));
+    return schema_provider.GetMessages();
 };
 
-static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+static auto error_function =
+[](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+{
     EXPECT_TRUE(false) << "Error callback called during the test (status - "
         << status << ", code - " << code << ", message - '" << message << "')";
 };
 
-TEST_F(CGetPublicCommentTest, BasicSuppressed) {
+TEST_F(CGetPublicCommentTest, BasicSuppressed)
+{
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 130921029, false, error_function);
-    blob_wait_function(fetch_blob);
+    wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
     auto blob = fetch_blob.ConsumeBlobRecord();
@@ -135,13 +142,14 @@ TEST_F(CGetPublicCommentTest, BasicSuppressed) {
                 comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
-TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
+TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask)
+{
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 130921029, false, error_function);
-    blob_wait_function(fetch_blob);
+    wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
     auto blob = fetch_blob.ConsumeBlobRecord();
@@ -160,13 +168,14 @@ TEST_F(CGetPublicCommentTest, BasicSuppressedFromDifferencesTask) {
                 " criteria identified problems with the assembly or annotation.", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
-TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
+TEST_F(CGetPublicCommentTest, BasicWithdrawn)
+{
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 1888383, false, error_function);
-    blob_wait_function(fetch_blob);
+    wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
     auto blob = fetch_blob.ConsumeBlobRecord();
@@ -185,19 +194,14 @@ TEST_F(CGetPublicCommentTest, BasicWithdrawn) {
                 "Please contact info@ncbi.nlm.nih.gov for further details.", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
-TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
-
-    CPSGMessages messages;
-    string messages_error;
-    EXPECT_TRUE(FetchMessages("sat_info2", m_Connection, messages, messages_error));
-    EXPECT_EQ("", messages_error);
-
+TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo)
+{
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 4317, false, error_function);
-    blob_wait_function(fetch_blob);
+    wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
     auto blob = fetch_blob.ConsumeBlobRecord();
@@ -206,7 +210,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
 
     size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
-    get_comment.SetMessages(&messages);
+    get_comment.SetMessages(get_messages_fn("PSG_TEST", m_Connection));
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -217,20 +221,14 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo) {
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo2)
 {
-    const string config_section = "TEST";
-    auto r = make_shared<CNcbiRegistry>();
-    r->Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-    CSatInfoSchemaProvider schema_provider("sat_info3", "PSG_TEST", m_Connection, r, config_section);
-    EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, schema_provider.RefreshMessages(true));
-
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 4317, false, error_function);
-    blob_wait_function(fetch_blob);
+    wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
     auto blob = fetch_blob.ConsumeBlobRecord();
@@ -239,7 +237,7 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo2)
 
     size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, *blob, error_function);
-    get_comment.SetMessages(schema_provider.GetMessages());
+    get_comment.SetMessages(get_messages_fn("PSG_TEST", m_Connection));
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -250,20 +248,21 @@ TEST_F(CGetPublicCommentTest, WithdrawnWithDefaultCommentFromSatInfo2)
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
-TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
-    CPSGMessages messages;
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment)
+{
+    auto messages = make_shared<CPSGMessages>();
     string suppressed_value = "BLOB_STATUS_SUPPRESSED";
-    messages.Set(suppressed_value, suppressed_value);
+    messages->Set(suppressed_value, suppressed_value);
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
 
     size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, blob, error_function);
-    get_comment.SetMessages(&messages);
+    get_comment.SetMessages(messages);
     get_comment.SetCommentCallback(
         [&call_count, suppressed_value]
         (string comment, bool isFound)
@@ -273,11 +272,12 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultComment) {
             EXPECT_EQ(suppressed_value, comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
-TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured) {
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured)
+{
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
 
@@ -300,13 +300,14 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentNotConfigured) {
             ++call_count;
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(0UL, call_count);
     EXPECT_EQ(1UL, error_call_count);
 }
 
-TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage) {
-    CPSGMessages messages;
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage)
+{
+    auto messages = make_shared<CPSGMessages>();
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
 
@@ -322,7 +323,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage) {
             EXPECT_EQ(eDiag_Error, severity);
         }
     );
-    get_comment.SetMessages(&messages);
+    get_comment.SetMessages(messages);
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -330,22 +331,18 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentWrongMessage) {
             ++call_count;
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(0UL, call_count);
     EXPECT_EQ(1UL, error_call_count);
 }
 
-TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
-    CPSGMessages messages;
-    string messages_error;
-    EXPECT_TRUE(FetchMessages("sat_info2", m_Connection, messages, messages_error));
-    EXPECT_EQ("", messages_error);
+TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo)
+{
     CBlobRecord blob(numeric_limits<CBlobRecord::TSatKey>::max());
     blob.SetSuppress(true);
-
     size_t call_count{0};
     CCassStatusHistoryTaskGetPublicComment get_comment(m_Connection, m_KeyspaceName, blob, error_function);
-    get_comment.SetMessages(&messages);
+    get_comment.SetMessages(get_messages_fn("PSG_TEST", m_Connection));
     get_comment.SetCommentCallback(
         [&call_count]
         (string comment, bool isFound)
@@ -356,7 +353,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo) {
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
@@ -383,13 +380,14 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo2)
                 "Contact info@ncbi.nlm.nih.gov for further information", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
 }
 
-TEST_F(CGetPublicCommentTest, AliveBlob) {
+TEST_F(CGetPublicCommentTest, AliveBlob)
+{
     CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 358006939, false, error_function);
-    blob_wait_function(fetch_blob);
+    wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
     auto blob = fetch_blob.ConsumeBlobRecord();
@@ -407,8 +405,26 @@ TEST_F(CGetPublicCommentTest, AliveBlob) {
             EXPECT_EQ("", comment);
         }
     );
-    comment_wait_function(get_comment);
+    wait_function(get_comment);
     EXPECT_EQ(1UL, call_count);
+}
+
+TEST_F(CGetPublicCommentTest, FetchBlobStatusHistory)
+{
+    CCassStatusHistoryTaskFetch fetch_status_history(m_Connection, m_KeyspaceName, 4317, error_function);
+    wait_function(fetch_status_history);
+    auto status_history_ptr = fetch_status_history.Consume();
+    ASSERT_NE(nullptr, status_history_ptr);
+    EXPECT_EQ(4317, status_history_ptr->GetSatKey());
+    EXPECT_EQ(773965176963, status_history_ptr->GetDoneWhen());
+    EXPECT_EQ(
+        "{sat_key: 4317, done_when: '1994-07-11 18:19:36.963000', flags: 2, user: 'cavanaug', "
+        "comment: 'Suppress: L15527 : submittor Ron Swanstrom reports that this sequence erroneously"
+        " attributed to wrong patient in HIV study : sequences will be resubmitted in the future"
+        " : per D. Airozo (GenBank)', public comment: '',"
+        " replaces_ids: [], replaces: 0, replaced_by_ids: []}",
+        status_history_ptr->ToString()
+    );
 }
 
 }  // namespace

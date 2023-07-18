@@ -55,6 +55,15 @@ CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
     , m_DoneWhen(done_when)
 {}
 
+CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
+    shared_ptr<CCassConnection> connection,
+    const string &keyspace,
+    int32_t sat_key,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(move(connection), keyspace, sat_key, true, move(data_error_cb))
+{}
+
 void CCassStatusHistoryTaskFetch::Wait1()
 {
     bool need_repeat{false};
@@ -70,13 +79,17 @@ void CCassStatusHistoryTaskFetch::Wait1()
                     m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                     auto query = m_QueryArr[0].query;
                     string sql =
-                        "SELECT comment, public_comment, flags, replaces, username, replaces_ids, replaced_by_ids "
+                        "SELECT done_when, comment, public_comment, flags, replaces, username, replaces_ids, replaced_by_ids "
                         "FROM " + GetKeySpace() + ".blob_status_history "
-                        "WHERE sat_key = ? and done_when = ?";
-                    query->SetSQL(sql, 2);
+                        "WHERE sat_key = ? " + (m_DoneWhen.has_value() ? "and done_when = ?" : "limit 1");
+                    if (m_DoneWhen.has_value()) {
+                        query->SetSQL(sql, 2);
+                        query->BindInt64(1, m_DoneWhen.value());
+                    }
+                    else {
+                        query->SetSQL(sql, 1);
+                    }
                     query->BindInt32(0, GetKey());
-                    query->BindInt64(1, m_DoneWhen);
-
                     SetupQueryCB3(m_QueryArr[0].query);
                     m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true);
                     m_State = eFetchStarted;
@@ -90,15 +103,15 @@ void CCassStatusHistoryTaskFetch::Wait1()
                             m_Record = make_unique<CBlobStatusHistoryRecord>();
                             (*m_Record)
                                 .SetKey(GetKey())
-                                .SetDoneWhen(m_DoneWhen)
-                                .SetComment(query->FieldGetStrValueDef(0, ""))
-                                .SetPublicComment(query->FieldGetStrValueDef(1, ""))
-                                .SetFlags(query->FieldGetInt64Value(2, 0))
-                                .SetReplaces(query->FieldGetInt32Value(3, 0))
-                                .SetUserName(query->FieldGetStrValueDef(4, ""));
+                                .SetDoneWhen(query->FieldGetInt64Value(0, 0))
+                                .SetComment(query->FieldGetStrValueDef(1, ""))
+                                .SetPublicComment(query->FieldGetStrValueDef(2, ""))
+                                .SetFlags(query->FieldGetInt64Value(3, 0))
+                                .SetReplaces(query->FieldGetInt32Value(4, 0))
+                                .SetUserName(query->FieldGetStrValueDef(5, ""));
                             vector<int32_t> replaces_ids, replaced_by_ids;
-                            query->FieldGetContainerValue(5, back_inserter(replaces_ids));
-                            query->FieldGetContainerValue(6, back_inserter(replaced_by_ids));
+                            query->FieldGetContainerValue(6, back_inserter(replaces_ids));
+                            query->FieldGetContainerValue(7, back_inserter(replaced_by_ids));
                             m_Record->SetReplacesIds(move(replaces_ids));
                             m_Record->SetReplacedByIds(move(replaced_by_ids));
                             m_State = eDone;
@@ -117,7 +130,7 @@ void CCassStatusHistoryTaskFetch::Wait1()
                 default: {
                     char msg[1024];
                     snprintf(msg, sizeof(msg), "Failed to fetch blob status history (key=%i.%ld) unexpected state (%d)",
-                        GetKey(), m_DoneWhen, static_cast<int>(m_State));
+                        GetKey(), m_DoneWhen.has_value() ? m_DoneWhen.value() : -1, static_cast<int>(m_State));
                     Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
                 }
             }
