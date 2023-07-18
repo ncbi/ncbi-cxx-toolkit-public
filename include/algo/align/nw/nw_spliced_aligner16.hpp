@@ -81,8 +81,8 @@ protected:
 
     void x_DoBackTrace(const Uint2* backtrace_matrix,
                        CNWAligner::SAlignInOut* data,
-                       int i_global_max,
-                       int j_global_max);
+                       size_t i_global_max,
+                       size_t j_global_max);
 };
 
 

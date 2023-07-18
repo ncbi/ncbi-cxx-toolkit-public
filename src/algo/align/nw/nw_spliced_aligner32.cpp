@@ -160,7 +160,7 @@ CNWAligner::TScore CSplicedAligner32::GetDefaultWi(unsigned char splice_type)
 CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
 {
     // use the banded version if there is no space for introns
-    const int len_dif (data->m_len2 - data->m_len1);
+    const Int8 len_dif (data->m_len2 - data->m_len1);
     if(len_dif < 2 * int (m_IntronMinSize) / 3) {
         const Uint1 where  (len_dif < 0? 0: 1);
         const size_t shift (abs(len_dif) / 2);
@@ -210,7 +210,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
     TScore V  = 0;
     TScore V0 = 0;
     TScore E, G, n0;
-    Uint4 type;
+    Uint8 type;
 
     // store candidate donors
     size_t* jAllDonors [splice_type_count_32];
@@ -360,7 +360,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
             }
                 
             // check splice signal
-            Uint4 dnr_pos = kMax_UI4;
+            Uint8 dnr_pos = kMax_UI4;
             unsigned char c1 = seq2[j-1], c2 = seq2[j];
             Uint1 acc_mask = 0x0F & dnr_acc_matrix[(size_t(c1)<<8)|c2];
             for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
@@ -483,14 +483,14 @@ void CSplicedAligner32::x_DoBackTrace (const Uint4* backtrace_matrix,
             }
             
             ETranscriptSymbol ts;
-            Uint4 decr;
+            Uint8 decr;
             if(type == kTypeIntron) {
                 ts = eTS_Intron;
                 decr = 1;
             }
             else {
-                Uint4 kdel = k / N2, k2del = k2 / N2;
-                Uint4 kmod = k % N2, k2mod = k2 % N2;
+                Uint8 kdel = k / N2, k2del = k2 / N2;
+                Uint8 kmod = k % N2, k2mod = k2 % N2;
                 if(kdel == k2del) {
                     ts = eTS_Insert;
                     decr = 1;
@@ -645,7 +645,7 @@ CNWAligner::TScore CSplicedAligner32::ScoreFromTranscript(
 
     if(m_esf_R1) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
+        for(Int8 i = dim - 1; i >= 0; --i) {
             if(transcript[i] == eTS_Insert) ++g; else break;
         }
         if(g > 0) {
@@ -655,7 +655,7 @@ CNWAligner::TScore CSplicedAligner32::ScoreFromTranscript(
 
     if(m_esf_R2) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
+        for(Int8 i = dim - 1; i >= 0; --i) {
             if(transcript[i] == eTS_Delete) ++g; else break;
         }
         if(g > 0) {

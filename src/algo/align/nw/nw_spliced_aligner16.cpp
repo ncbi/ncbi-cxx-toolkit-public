@@ -465,9 +465,9 @@ NW_SIG_EVAL(2)
                 const size_t ilen (j - jBestDonor[st_idx]); \
                 const TScore x (ilen >> ibs); \
                 if(V + x > vBestDonor[st_idx]) {  \
-                    const size_t tl (jTail[st_idx]++); \
-                    jAllDonors[st_idx][tl] = j; \
-                    vAllDonors[st_idx][tl] = V; \
+                    const size_t tl_ (jTail[st_idx]++); \
+                    jAllDonors[st_idx][tl_] = j; \
+                    vAllDonors[st_idx][tl_] = V; \
                 } \
             }
 
@@ -518,7 +518,7 @@ NW_DON_EVAL(2)
 
 void CSplicedAligner16::x_DoBackTrace (
     const Uint2* backtrace_matrix, CNWAligner::SAlignInOut* data,
-    int i_global_max, int j_global_max)
+    size_t i_global_max, size_t j_global_max)
 {
     const size_t N1 (data->m_len1 + 1);
     const size_t N2 (data->m_len2 + 1);
@@ -710,12 +710,12 @@ CNWAligner::TScore CSplicedAligner16::ScoreFromTranscript(
                     score += m_Wi[0]; // all introns assumed consensus
                 }
                 else {
-                    for(unsigned char i = 0; i < splice_type_count_16; ++i) {
+                    for(unsigned char i_ = 0; i_ < splice_type_count_16; ++i_) {
 
-                        if( (*p2 == g_nwspl_donor[i][0] &&
-                             *(p2 + 1) == g_nwspl_donor[i][1]) || i == g_topidx) {
+                        if( (*p2 == g_nwspl_donor[i_][0] &&
+                             *(p2 + 1) == g_nwspl_donor[i_][1]) || i_ == g_topidx) {
                             
-                            score += m_Wi[i];
+                            score += m_Wi[i_];
                             break;
                         }
                     }
@@ -733,8 +733,8 @@ CNWAligner::TScore CSplicedAligner16::ScoreFromTranscript(
 
     if(m_esf_R1) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
-            if(transcript[i] == eTS_Insert) ++g; else break;
+        for(Int8 i_ = dim - 1; i_ >= 0; --i_) {
+            if(transcript[i_] == eTS_Insert) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -743,8 +743,8 @@ CNWAligner::TScore CSplicedAligner16::ScoreFromTranscript(
 
     if(m_esf_R2) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
-            if(transcript[i] == eTS_Delete) ++g; else break;
+        for(Int8 i_ = dim - 1; i_ >= 0; --i_) {
+            if(transcript[i_] == eTS_Delete) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -753,8 +753,8 @@ CNWAligner::TScore CSplicedAligner16::ScoreFromTranscript(
 
     if(m_esf_L1) {
         size_t g = 0;
-        for(size_t i = 0; i < dim; ++i) {
-            if(transcript[i] == eTS_Insert) ++g; else break;
+        for(size_t i_ = 0; i_ < dim; ++i_) {
+            if(transcript[i_] == eTS_Insert) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);
@@ -763,8 +763,8 @@ CNWAligner::TScore CSplicedAligner16::ScoreFromTranscript(
 
     if(m_esf_L2) {
         size_t g = 0;
-        for(size_t i = 0; i < dim; ++i) {
-            if(transcript[i] == eTS_Delete) ++g; else break;
+        for(size_t i_ = 0; i_ < dim; ++i_) {
+            if(transcript[i_] == eTS_Delete) ++g; else break;
         }
         if(g > 0) {
             score -= (m_Wg + g*m_Ws);

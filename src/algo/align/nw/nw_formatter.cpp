@@ -103,13 +103,13 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
             }
         }
 
-        TSeqPos length=0; 
+        size_t length=0; 
         if(trim_end_gaps) {
 
-            int endi = transcript.size() - 1;
+            Int8 endi = transcript.size() - 1;
             while( endi>=0 && ( transcript[endi] != CNWAligner::eTS_Match &&  transcript[endi] != CNWAligner::eTS_Replace ) ) --endi;
 
-            int ind = 0;
+            Int8 ind = 0;
             for( ;ind < endi; ++ind) {
                 if(transcript[ind] == CNWAligner::eTS_Match ||  transcript[ind] == CNWAligner::eTS_Replace ) break;
         }
@@ -739,9 +739,9 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
 //check if 100% extension is possible, returns the length of possible extension
 int CNWFormatter::SSegment::CanExtendRight(const vector<char>& mrna, const vector<char>& genomic) const
 {
-    int mind0 = m_box[1] + 1;
-    int mind = mind0;
-    int gind = m_box[3] + 1;
+    Int8 mind0 = m_box[1] + 1;
+    Int8 mind = mind0;
+    Int8 gind = m_box[3] + 1;
     for(; mind < (int)mrna.size() && gind < (int)genomic.size(); ++gind, ++mind) {
         if( toupper(mrna[mind]) == 'N' || mrna[mind] != genomic[gind] ) break;
     }
@@ -886,8 +886,8 @@ void CNWFormatter::MakeSegments(vector<SSegment>* psegments) const
     const char* start2 (m_aligner->GetSeq2());
     const char* p1     (start1);
     const char* p2     (start2);
-    int tr_idx_hi0 (transcript.size() - 1), tr_idx_hi (tr_idx_hi0);
-    int tr_idx_lo0 (0), tr_idx_lo (tr_idx_lo0);
+    Int8 tr_idx_hi0 (transcript.size() - 1), tr_idx_hi (tr_idx_hi0);
+    Int8 tr_idx_lo0 (0), tr_idx_lo (tr_idx_lo0);
 
     while(transcript[tr_idx_hi] == CNWAligner::eTS_SlackInsert
           || transcript[tr_idx_hi] == CNWAligner::eTS_SlackDelete)
@@ -1092,7 +1092,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
         for (size_t i = 0;  i < aln_size; ) {
 
             ss << i << '\t' << i1 << ':' << i2 << endl;
-            int i0 = i;
+            Int8 i0 = i;
             for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width; ++i, ++jPos) {
                 char c1 (v1[i0 + jPos]);
                 ss << c1;
@@ -1125,7 +1125,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
         size_t aln_size (x_ApplyTranscript(&v1, &v2));
         for (size_t i = 0;  i < aln_size; ) {
             ss << i << '\t' << i1 << ':' << i2 << endl;
-            int i0 = i;
+            Int8 i0 = i;
             for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width; ++i, ++jPos) {
                 char c (v1[i0 + jPos]);
                 ss << c;

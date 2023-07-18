@@ -41,7 +41,7 @@ unsigned int g_nwmm_thread_count = 1;
 
 DEFINE_STATIC_FAST_MUTEX(thread_count_mutex);
 
-bool MM_RequestNewThread(const unsigned int max_threads)
+bool MM_RequestNewThread(const size_t max_threads)
 {
     CFastMutexGuard guard(thread_count_mutex);
     if(g_nwmm_thread_count < max_threads) {

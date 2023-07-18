@@ -14,7 +14,7 @@ LIB = xalgoalignnw
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = kiryutin
+WATCHERS = kiryutin mozese2
 
 
 USES_LIBRARIES =  \

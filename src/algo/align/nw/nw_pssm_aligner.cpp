@@ -237,7 +237,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
-        if(m_terminate = m_prg_callback(&m_prg_info)) {
+        if((m_terminate = m_prg_callback(&m_prg_info))) {
 	  return 0;
 	}
     }
@@ -392,7 +392,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
 
         if(m_prg_callback) {
             m_prg_info.m_iter_done = k;
-            if(m_terminate = m_prg_callback(&m_prg_info)) {
+            if((m_terminate = m_prg_callback(&m_prg_info))) {
                 break;
             }
         }  
@@ -426,7 +426,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
-        if(m_terminate = m_prg_callback(&m_prg_info)) {
+        if((m_terminate = m_prg_callback(&m_prg_info))) {
 	  return 0;
 	}
     }
@@ -672,7 +672,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
 
         if(m_prg_callback) {
             m_prg_info.m_iter_done = k;
-            if(m_terminate = m_prg_callback(&m_prg_info)) {
+            if((m_terminate = m_prg_callback(&m_prg_info))) {
                 break;
             }
         }

@@ -119,8 +119,8 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
         return;
     }
 
-    const int dimI = submatr.i2 - submatr.i1 + 1;
-    const int dimJ = submatr.j2 - submatr.j1 + 1;
+    const Int8 dimI = submatr.i2 - submatr.i1 + 1;
+    const Int8 dimJ = submatr.j2 - submatr.j1 + 1;
     if(dimI < 1 || dimJ < 1) return;
 
     bool top_level = submatr.i1 == 0 && submatr.j1 == 0 &&
@@ -199,7 +199,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
 
     // check if we reached left or top line
     bool bNoLT = false;
-    int nc0 = trans_pos - steps_left;
+    Int8 nc0 = trans_pos - steps_left;
     if(nc0 < 0) {
         NCBI_THROW(CAlgoAlignException, eInternal,
                    "Assertion: LT underflow");
@@ -207,7 +207,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool bLeft = nc0 == 0;
     bool bTop  = I == submatr.i1;
     if(bLeft && !bTop) {
-        int jump = I - submatr.i1;
+        Int8 jump = I - submatr.i1;
         subpath_left.insert(subpath_left.begin(), jump, eTS_Delete);
     }
     if(!bLeft && bTop) {
@@ -219,7 +219,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
 
     // check if we reached right or bottom line
     bool bNoRB = false;
-    int nc1 = trans_pos + steps_right;
+    Int8 nc1 = trans_pos + steps_right;
     if(nc1 > dimJ) {
         NCBI_THROW(CAlgoAlignException, eInternal,
                    "Assertion: RB overflow");
@@ -227,11 +227,11 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool bRight = nc1 == dimJ;
     bool bBottom  = I == submatr.i2 - 1;
     if(bRight && !bBottom) {
-        int jump = submatr.i2 - I - 1;
+        Int8 jump = submatr.i2 - I - 1;
         subpath_right.insert(subpath_right.end(), jump, eTS_Delete);
     }
     if(!bRight && bBottom) {
-        int jump = dimJ - nc1;
+        Int8 jump = dimJ - nc1;
         subpath_right.insert(subpath_right.end(), jump, eTS_Insert);
     }
     if(bRight || bBottom) {
@@ -648,7 +648,7 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
     TScore ws = bFreeGapRight1? 0: m_Ws;
 
     rowV[N2 - 1] = wg;
-    int i, j;
+    Int8 i, j;
     for (j = N2 - 2; j >= 0; --j) {
         rowV[j] = pV[j] + ws;
         rowF[j] = kInfMinus;
