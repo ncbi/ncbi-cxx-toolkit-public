@@ -261,7 +261,7 @@ void CMultiApplication::Init(void)
     arg_desc->SetCurrentGroup("Query clustering options");
     arg_desc->AddDefaultKey("clusters", "clusters", 
                     "Use query clustering for faster alignment",
-                     CArgDescriptions::eBoolean, "T");
+                     CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("k", "length", 
                       "K-mer length for query clustering",
                      CArgDescriptions::eInteger,

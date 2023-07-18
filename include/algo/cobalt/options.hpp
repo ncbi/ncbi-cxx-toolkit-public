@@ -47,7 +47,7 @@ Contents: Interface for CMultiAlignerOptions
 
 /// Default values for cobalt parameters
 /// Rps-Blast e-value cutoff for creating contraints
-#define COBALT_RPS_EVALUE 0.003
+#define COBALT_RPS_EVALUE 0.01
 /// Weight for domain residue frequecies when creating MSA profiles 
 #define COBALT_DOMAIN_BOOST 0.5
 /// Hitlist size for Rps-Blast searches
@@ -297,11 +297,10 @@ public:
     /// Will be aligned independently without searching for conserved domains
     /// (RPS Blast) and local hist (Blastp). Multiple alignment will be
     /// performed on cluster profiles. Parameters of clustering procedure are
-    /// set base on EMode value and can be chanded with expert functions.
+    /// set based on EMode value and can be chanded with expert functions.
     /// @param use Option used if true [in]
     ///
-    void SetUseQueryClusters(bool use)
-    {m_UseQueryClusters = use; m_Mode = fNonStandard;}
+    void SetUseQueryClusters(bool use);
 
 
     /// Check if query clustering option is on
