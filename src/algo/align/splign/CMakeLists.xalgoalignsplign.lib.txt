@@ -6,6 +6,6 @@ NCBI_begin_lib(xalgoalignsplign)
     splign_cmdargs compart_matching
   )
   NCBI_uses_toolkit_libraries(xalgoalignnw xalgoalignutil)
-  NCBI_project_watchers(kiryutin kapustin)
+  NCBI_project_watchers(kiryutin kapustin mozese2)
 NCBI_end_lib()
 
