@@ -38,6 +38,7 @@
 #include <corelib/ncbidiag.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
@@ -51,13 +52,12 @@ USING_NCBI_SCOPE;
 class CCassStatusHistoryTaskFetch
     : public CCassBlobWaiter
 {
-    enum EBlobInserterState {
+    enum EStatusHistoryFetchState {
         eInit = 0,
         eFetchStarted,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
-
  public:
     CCassStatusHistoryTaskFetch(
         shared_ptr<CCassConnection> conn,
@@ -67,13 +67,17 @@ class CCassStatusHistoryTaskFetch
         TDataErrorCallback data_error_cb
     );
 
+    CCassStatusHistoryTaskFetch(
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        int32_t sat_key,
+        TDataErrorCallback data_error_cb
+    );
     unique_ptr<CBlobStatusHistoryRecord> Consume();
-
  protected:
     void Wait1() override;
-
  private:
-    int64_t m_DoneWhen{-1};
+    optional<int64_t> m_DoneWhen;
     unique_ptr<CBlobStatusHistoryRecord> m_Record;
 };
 
