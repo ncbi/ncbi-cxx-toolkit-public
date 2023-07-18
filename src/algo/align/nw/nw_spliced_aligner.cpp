@@ -213,7 +213,7 @@ void CSplicedAligner::CheckPreferences(void)
     }
     
     const char * p1 (GetSeq1()), * p2 (GetSeq2());
-    for(int t (m_Transcript.size() - 1), csq_matches(0); t >= 0; --t) {
+    for(Int8 t (m_Transcript.size() - 1), csq_matches(0); t >= 0; --t) {
         
         switch(m_Transcript[t]) {
             

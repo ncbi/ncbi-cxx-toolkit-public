@@ -7,6 +7,6 @@ NCBI_begin_lib(xalgoalignnw)
     nw_spliced_aligner32 nw_formatter
   )
   NCBI_uses_toolkit_libraries(tables xobjmgr seq)
-  NCBI_project_watchers(kiryutin)
+  NCBI_project_watchers(kiryutin mozese2)
 NCBI_end_lib()
 

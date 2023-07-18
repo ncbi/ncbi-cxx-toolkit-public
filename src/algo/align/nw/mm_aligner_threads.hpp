@@ -87,7 +87,7 @@ protected:
 };
 
 
-bool MM_RequestNewThread(const unsigned int max_threads);
+bool MM_RequestNewThread(const size_t max_threads);
 
 
 END_NCBI_SCOPE

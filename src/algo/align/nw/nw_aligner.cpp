@@ -930,12 +930,12 @@ void CNWAligner::SetTranscript(const TTranscript& transcript)
 // Return transcript as a readable string
 string CNWAligner::GetTranscriptString(void) const
 {
-    const int dim (m_Transcript.size());
+    const Int8 dim (m_Transcript.size());
     string s;
     s.resize(dim);
     size_t i1 (0), i2 (0), i (0);
 
-    for (int k (dim - 1); k >= 0; --k) {
+    for (Int8 k (dim - 1); k >= 0; --k) {
 
         ETranscriptSymbol c0 (m_Transcript[k]);
         char c (0);
@@ -1271,7 +1271,7 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
 
     if(m_esf_R1) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
+        for(Int8 i = dim - 1; i >= 0; --i) {
             if(transcript[i] == eTS_Insert) ++g; else break;
         }
         if(g > 0) {
@@ -1281,7 +1281,7 @@ CNWAligner::TScore CNWAligner::ScoreFromTranscript(
 
     if(m_esf_R2) {
         size_t g = 0;
-        for(int i = dim - 1; i >= 0; --i) {
+        for(Int8 i = dim - 1; i >= 0; --i) {
             if(transcript[i] == eTS_Delete) ++g; else break;
         }
         if(g > 0) {
@@ -1303,7 +1303,7 @@ size_t CNWAligner::GetLeftSeg(size_t* q0, size_t* q1,
     const char* p2 = m_Seq2;
     size_t i0 = 0, j0 = 0, imax = i0, jmax = j0;
 
-    for(int k = trdim - 1; k >= 0; --k) {
+    for(Int8 k = trdim - 1; k >= 0; --k) {
 
         switch(m_Transcript[k]) {
 
@@ -1649,7 +1649,7 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
     const char* p2 = m_Seq2;
     size_t i0 = 0, j0 = 0, imax = i0, jmax = j0;
 
-    for(int k = trdim-1; k >= 0; --k) {
+    for(Int8 k = trdim-1; k >= 0; --k) {
 
         switch(m_Transcript[k]) {
 
