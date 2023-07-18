@@ -9,6 +9,6 @@ NCBI_begin_lib(xalgoseq)
 	micro_introns
   )
   NCBI_uses_toolkit_libraries(taxon1 xalnmgr xregexp)
-  NCBI_project_watchers(dicuccio)
+  NCBI_project_watchers(dicuccio mozese2)
 NCBI_end_lib()
 

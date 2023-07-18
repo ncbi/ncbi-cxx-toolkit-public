@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = kiryutin kapustin
+WATCHERS = kiryutin kapustin mozese2
 
 ASN_DEP = seq xnetblast
 
