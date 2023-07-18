@@ -3068,7 +3068,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
 
     SGapIdxData gap_data{};
 
-    gap_data.num_gaps = gaps.size();
+    gap_data.num_gaps = (int) gaps.size();
     gap_data.next_gap = 0;
 
     if (gap_data.num_gaps > 0 && ! ctx.Config().HideGapFeatures()) {
