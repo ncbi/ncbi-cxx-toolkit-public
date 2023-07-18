@@ -257,7 +257,7 @@ bool CGff2Record::AssignFromGff(
         throw error;
     }
 
-    if ( columns[5] != "." ) {
+    if ( columns[5] != "." && columns[5] != "NA" ) {
         m_pdScore = new double( NStr::StringToDouble( columns[5], NStr::fAllowLeadingSpaces ) );
     }
 
