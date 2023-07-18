@@ -65,6 +65,63 @@ namespace xslt {
     }
 
 
+/// A helper class to add a syntactic sugar when single quoted parameters need
+/// to added for xslt transfolmation.
+class stylesheet_param : public std::map<std::string, std::string> {
+public:
+    stylesheet_param()
+    {}
+
+    stylesheet_param(const std::map<std::string, std::string> &  param) :
+        std::map<std::string, std::string>(param)
+    {}
+
+    /// Non-XPath parameters must be enclosed in quotes. This method does it.
+    ///
+    /// @param name Name of the parameter.
+    /// @param value Value of the parameter (will be single quoted)
+    /// @author Denis Vakatov
+    void add_simple (const std::string &  name, const std::string &  value) {
+        insert(std::pair{name, "'" + value + "'"});
+    }
+
+    /// Non-XPath parameters must be enclosed in quotes. This method does it.
+    ///
+    /// @param name Name of the parameter.
+    /// @param value Value of the parameter (will be single quoted)
+    /// @author Denis Vakatov
+    template <typename numeric_type,
+              typename std::enable_if_t<std::is_arithmetic<numeric_type>::value>* = nullptr>
+    void add_simple(const std::string &  name, numeric_type  value) {
+        static_assert(std::is_arithmetic<numeric_type>::value,
+                      "numeric_type must be numeric");
+        insert(std::pair{name, "'" + std::to_string(value) + "'"});
+    }
+
+    /// Parameters for XPath must be passed on as is.
+    ///
+    /// @param name Name of the parameter.
+    /// @param value Value of the parameter
+    /// @author Denis Vakatov
+    void add_for_xpath (const std::string &  name, const std::string & value) {
+        insert(std::pair{name, value});
+    }
+
+    /// Parameters for XPath must be passed on as is.
+    ///
+    /// @param name Name of the parameter.
+    /// @param value Value of the parameter
+    /// @author Denis Vakatov
+    template <typename numeric_type,
+              typename std::enable_if_t<std::is_arithmetic<numeric_type>::value>* = nullptr>
+    void add_for_xpath (const std::string &  name, numeric_type  value) {
+        static_assert(std::is_arithmetic<numeric_type>::value,
+                      "numeric_type must be numeric");
+        insert(std::pair{name, std::to_string(value)});
+    }
+};
+
+
 /**
  * The xslt::stylesheet class is used to hold information about an XSLT
  * stylesheet. You can use it to load in a stylesheet and then use that
@@ -73,7 +130,7 @@ namespace xslt {
 class stylesheet {
 public:
     /// Type for passing parameters to the stylesheet
-    typedef std::map<std::string, std::string> param_type;
+    typedef stylesheet_param param_type;
 
     //####################################################################
     /**
