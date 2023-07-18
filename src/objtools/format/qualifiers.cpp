@@ -873,7 +873,7 @@ void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, const CTempString& name,
             }
             int num_letters = 0;
             int num_digits = 0;
-            int len = dbname.length();
+            int len = (int) dbname.length();
             if ( len != 6 && len != 8 ) continue;
             bool bail = false;
             for ( int i = 0; i < len; i++ ) {

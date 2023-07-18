@@ -1862,7 +1862,7 @@ s_FormatRegularSequencePiece
                     kSpan += accn;
                     kSpan += '_';
                     copy( kSpan.begin(), kSpan.end(), line + kSeqPosWidth );
-                    length_of_span_before_base_count = kSpan.length();
+                    length_of_span_before_base_count = (int) kSpan.length();
                 }
 
                 // if base-count is offset, we indent the initial line

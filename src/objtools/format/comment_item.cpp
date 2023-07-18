@@ -1245,7 +1245,7 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
          << "a genomic sequence (" << me_name << ")";
 
     if ( !me.assembly.empty() ) {
-        int num_assm = me.assembly.size();
+        int num_assm = (int) me.assembly.size();
         text << " and transcript sequence";
         if (num_assm > 1) {
             text << "s";
@@ -1502,7 +1502,7 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
     const bool bHtml = ctx.Config().DoHTML();
 
     const vector< string > & sBasemodURLs = ctx.GetBasemodURLs();
-    int numBases = sBasemodURLs.size();
+    int numBases = (int) sBasemodURLs.size();
 
     CNcbiOstrstream str;
 

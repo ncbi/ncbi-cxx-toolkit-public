@@ -220,7 +220,7 @@ public:
 
         const vector<CRef<CGapIndex>>& gaps = bsx.GetGapIndices();
         string gap_type = "";
-        int num_gaps = gaps.size();
+        int num_gaps = (int) gaps.size();
         int next_gap = 0;
         TSeqPos gap_start = 0;
         TSeqPos gap_end = 0;
@@ -235,7 +235,7 @@ public:
         }
 
         // IterateFeatures causes feature vector to be initialized by CFeat_CI, locations mapped to master
-        int num_feats = bsx.IterateFeatures([this, &bsx, gaps, num_gaps, &next_gap, &has_gap, &gap_start, &gap_end, &gap_type](CFeatureIndex& sfx) {
+        int num_feats = (int) bsx.IterateFeatures([this, &bsx, gaps, num_gaps, &next_gap, &has_gap, &gap_start, &gap_end, &gap_type](CFeatureIndex& sfx) {
 
             // Alternative to passing &bsx reference in closure
             // CBioseqIndex& bsx = sfx.GetBioseqIndex();

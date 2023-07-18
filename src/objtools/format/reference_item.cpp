@@ -878,7 +878,7 @@ static bool PiiOk(const string& str)
 {
     if (NStr::IsBlank(str)) return false;
 
-    int max = str.length();
+    int max = (int) str.length();
     int i = 0;
 
     char ch = str[i];
