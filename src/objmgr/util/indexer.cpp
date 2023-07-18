@@ -3589,7 +3589,7 @@ string CWordPairIndexer::TrimPunctuation (const string& str)
 {
     string dst = str;
 
-    int max = dst.length();
+    int max = (int) dst.length();
 
     for (; max > 0; max--) {
         char ch = dst[0];

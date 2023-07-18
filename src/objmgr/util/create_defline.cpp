@@ -2157,7 +2157,7 @@ static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
     if (str.empty()) return str;
     if (taxname.empty()) return str;
     SIZE_TYPE taxlen = taxname.length();
-    int len = str.length();
+    int len = (int) str.length();
     if (len < 5) return str;
     if (str [len - 1] != ']') return str;
     SIZE_TYPE cp = NStr::Find(str, "[", NStr::eNocase, NStr::eReverseSearch);
@@ -3081,8 +3081,8 @@ static size_t s_TitleEndsInOrganism (
     size_t  pos;
     int     len1, len2, idx;
 
-    len1 = title.length();
-    len2 = taxname.length();
+    len1 = (int) title.length();
+    len2 = (int) taxname.length();
 
     idx = len1 - len2 - 3;
     if (len1 > len2 + 4 && title [idx] == ' ' && title [idx + 1] == '[' && title [len1 - 1] == ']') {
@@ -3124,8 +3124,8 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
 
     s_TrimMainTitle (m_MainTitle);
 
-    len1 = m_MainTitle.length();
-    len2 = m_Taxname.length();
+    len1 = (int) m_MainTitle.length();
+    len2 = (int) m_Taxname.length();
 
     // find [taxname]
 
@@ -3158,7 +3158,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
 
     m_MainTitle.erase (tpos);
     s_TrimMainTitle (m_MainTitle);
-    len1 = m_MainTitle.length();
+    len1 = (int) m_MainTitle.length();
 
     // find (organelle)
 
@@ -3177,13 +3177,13 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
             }
         }
         s_TrimMainTitle (m_MainTitle);
-        len1 = m_MainTitle.length();
+        len1 = (int) m_MainTitle.length();
     }
 
     if (opos != NPOS) {
         m_MainTitle.erase (opos);
         s_TrimMainTitle (m_MainTitle);
-        len1 = m_MainTitle.length();
+        len1 = (int) m_MainTitle.length();
     }
 
     if ( NStr::EndsWith (m_MainTitle, ", partial")) {
@@ -3281,8 +3281,8 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
     s_TrimMainTitle (m_MainTitle);
 
-    len1 = m_MainTitle.length();
-    len2 = m_Taxname.length();
+    len1 = (int) m_MainTitle.length();
+    len2 = (int) m_Taxname.length();
 
     // find [taxname]
 
@@ -3311,7 +3311,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
     m_MainTitle.erase (tpos);
     s_TrimMainTitle (m_MainTitle);
-    len1 = m_MainTitle.length();
+    len1 = (int) m_MainTitle.length();
 
     // find (organelle)
 
@@ -3330,13 +3330,13 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
             }
         }
         s_TrimMainTitle (m_MainTitle);
-        len1 = m_MainTitle.length();
+        len1 = (int) m_MainTitle.length();
     }
 
     if (opos != NPOS) {
         m_MainTitle.erase (opos);
         s_TrimMainTitle (m_MainTitle);
-        len1 = m_MainTitle.length();
+        len1 = (int) m_MainTitle.length();
     }
 
     if ( NStr::EndsWith (m_MainTitle, ", partial")) {

@@ -3518,8 +3518,8 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
         errPt++;
 
-        int remaininig_gaps = gapPositions.size() / 2;
-        int remaining_feats = featPositions.size() / 2;
+        int remaininig_gaps = (int) gapPositions.size() / 2;
+        int remaining_feats = (int) featPositions.size() / 2;
 
         if (remaininig_gaps < 1 || remaining_feats < 1) {
             return;
@@ -8380,7 +8380,7 @@ void CValidError_bioseq::ValidateTwintrons(
 
             vector<int> intervalpoints = s_LocationToStartStopPairs(loc);
 
-            int len = intervalpoints.size();
+            int len = (int) intervalpoints.size();
             if (len < 4) {
               continue;
             }

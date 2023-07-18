@@ -6238,8 +6238,8 @@ static string s_GetSpecimenVoucherText(
             }
         }
         if (voucher_info_ref->m_PadTo > 0 && voucher_info_ref->m_PadWith) {
-            int len_id = id.length();
-            int len_pad = voucher_info_ref->m_PadWith->length();
+            int len_id = (int) id.length();
+            int len_pad = (int) voucher_info_ref->m_PadWith->length();
             while (len_id < voucher_info_ref->m_PadTo) {
                 text << *voucher_info_ref->m_PadWith;
                 len_id += len_pad;

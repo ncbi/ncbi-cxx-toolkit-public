@@ -424,7 +424,7 @@ void CGBSeqFormatter::FormatLocus
 
     str.append( s_CombineStrings("    ", "GBSeq_locus", locus.GetName()));
 
-    str.append( s_CombineStrings("    ", "GBSeq_length", locus.GetLength()));
+    str.append( s_CombineStrings("    ", "GBSeq_length", (int) locus.GetLength()));
 
    CGBSeq::TStrandedness sStrandedness =
         s_GBSeqStrandedness(locus.GetStrand(), locus.GetBiomol());
