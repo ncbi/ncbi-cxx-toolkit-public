@@ -330,10 +330,7 @@ case "$ncbi_platform" in
     *MAC       ) : ${PCRE_PATH=/usr} ;;
 esac
 
-case "$ncbi_platform" in
-    Linux*     ) : ${PERL=/usr/bin/perl5.16} ;;
-    *          ) : ${PERL_PATH=/usr} ;;
-esac
+: ${PERL_PATH=/usr}
 
 case "$ncbi_platform" in
     *MAC       ) : ${PNG_PATH=/opt/X11} ;;
