@@ -190,6 +190,9 @@ void CTbl2AsnApp::Init()
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     HideStdArgs(fHideDryRun );
 
+    // Print -h document if no arguments supplied
+    arg_desc->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
+
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
     arg_desc->AddOptionalKey
@@ -337,8 +340,8 @@ may be implemented in the future; RW-1253
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
-    //arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
-  //  arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
+    // arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
+    // arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("ft-url-mod", "String", "FileTrack URL for the XML file base modifications", CArgDescriptions::eString);
 
