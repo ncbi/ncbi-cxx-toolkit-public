@@ -3,6 +3,7 @@
 import argparse
 import ast
 import csv
+import collections
 from difflib import unified_diff
 import enum
 import functools
@@ -401,13 +402,47 @@ def syntest_cmd(args):
         result = syntest_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs)
         sys.exit(0 if result else -1)
 
-def report_diff(expected, actual):
-    def sort_replies(values):
-        values = sorted(json.dumps(value) for value in values)
-        values = (json.loads(value) for value in values)
-        return list(itertools.chain.from_iterable('\n'.join((json.dumps(value, indent=2), '')).splitlines(keepends=True) for value in values))
+class Response(collections.UserList):
+    """PSG replies sorted by their JSON representations."""
 
-    return list(unified_diff(sort_replies(expected), sort_replies(actual), fromfile='Expected', tofile='Actual', n=3))
+    def __init__(self, iterable):
+        super().__init__(sorted(iterable, key=json.dumps))
+
+    def diff(self, other):
+        """Produce a unified diff between two responses."""
+
+        def _to_lines(iterable):
+            """Transform a response into JSON and split it into list of strings."""
+            return list(itertools.chain.from_iterable((json.dumps(value, indent=2) + '\n').splitlines(keepends=True) for value in iterable))
+
+        return list(unified_diff(_to_lines(self), _to_lines(other), fromfile='Expected', tofile='Actual', n=3))
+
+    def find_any(self):
+        """Find 'any' (None) values in the response."""
+
+        def _impl(prefix, value):
+            if isinstance(value, list):
+                for i, v in enumerate(value):
+                    yield from _impl(prefix + (i,), v)
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    yield from _impl(prefix + (k,), v)
+            elif value is None:
+                yield prefix
+
+        yield from _impl((), self.data)
+
+    def apply_any(self, found):
+        """Apply found 'any' (None) values to the response."""
+
+        def _impl(value, prefix):
+            if len(prefix) > 1:
+                _impl(value[prefix[0]], prefix[1:])
+            else:
+                value[prefix[0]] = None
+
+        for prefix in found:
+            _impl(self, prefix)
 
 def testcases_cmd(args):
     result = False
@@ -418,35 +453,44 @@ def testcases_cmd(args):
 
         for (name, testcase) in json.load(args.input_file).items():
             if not args.testcase or args.testcase == name:
-                for i, request in enumerate(testcase['requests']):
-                    psg_client.send(request)
-
                 if deadline := testcase.get('timeout'):
                     deadline += time.monotonic()
 
-                expected = testcase['response']
                 actual = []
 
-                for i in range(i + 1):
-                    try:
-                        actual.extend(psg_client.receive(deadline=deadline))
-                    except queue.Empty:
-                        sys.exit(f'Testcase timed out:\n\t{name}\n\t{testcase["description"]}\n\t\n\tExpected:\n\t\t{expected}')
+                for request_batch in testcase['requests']:
+                    for i, request in enumerate(request_batch):
+                        psg_client.send(request)
+
+                    for i in range(i + 1):
+                        try:
+                            actual.extend(psg_client.receive(deadline=deadline))
+                        except queue.Empty:
+                            sys.exit(f'Testcase timed out:\n\t{name}\n\t{testcase["description"]}\n\t\n\tExpected:\n\t\t{expected}')
+
+                expected = Response(testcase['response'])
+                actual = Response(actual)
+                actual.apply_any(expected.find_any())
 
                 if args.output_file:
-                    expected[:] = actual
+                    testcase['response'] = actual.data
                     updated_testcases[name] = testcase
 
-                elif diff := report_diff(expected, actual):
+                elif diff := expected.diff(actual):
                     print('Testcase failed:', name, testcase['description'], '', sep='\n\t', end='')
                     print(*diff, sep='\t')
                     result = True
+
+                elif args.report:
+                    print('Testcase succeeded:', name, testcase['description'], '', sep='\n\t')
+
     if result:
         sys.exit(result)
 
     if args.output_file:
         with open(args.output_file, 'w') as of:
             json.dump(updated_testcases, of, indent=4)
+            of.write('\n')
 
 def generate_cmd(args):
     request_generator = RequestGenerator()
@@ -682,8 +726,9 @@ if __name__ == '__main__':
     parser_testcases.add_argument('-input-file', help='JSON file with testcases" (default: ./testcases.json)', metavar='FILE', type=argparse.FileType(), default='./testcases.json')
     parser_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
     parser_testcases.add_argument('-testcase', help='A specific testcase to run')
+    parser_testcases.add_argument('-report', help='Report successful testcases', action='store_true')
     parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
-    parser_testcases.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
+    parser_testcases.add_argument('-no-testing-opt', help=argparse.SUPPRESS, dest='testing', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
     parser_generate.set_defaults(func=generate_cmd)
