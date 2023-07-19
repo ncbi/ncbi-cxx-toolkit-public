@@ -63,7 +63,12 @@ class CPubseqGatewayFetchIpgReportRequest
 
     CPubseqGatewayFetchIpgReportRequest& SetIpg(TIpg value)
     {
-        m_Ipg = value;
+        if (value > 0) {
+            m_Ipg = value;
+        }
+        else {
+            m_Ipg = nullopt;
+        }
         return *this;
     }
 
