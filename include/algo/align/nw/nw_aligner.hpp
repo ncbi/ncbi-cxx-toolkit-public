@@ -69,7 +69,7 @@ END_SCOPE(objects)
 class NCBI_XALGOALIGN_EXPORT CNWAligner: public CObject
 {
 public:
-    typedef Int8 TScore;
+    typedef int TScore;
 
     enum EGapPreference { eEarlier, eLater };
 
