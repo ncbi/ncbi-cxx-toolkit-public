@@ -42,6 +42,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/feature_context.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -302,6 +303,73 @@ bool CWriteUtil::GetCodeBreak(
     return true;
 }
 
+static void s_ReplaceUforT(string& codon)
+{
+    NON_CONST_ITERATE (string, base, codon) {
+        if (*base == 'T') {
+            *base = 'U';
+        }
+    }
+}
+
+
+static char s_MakeDegenerateBase(const string &str1, const string& str2)
+{
+    static const char kIdxToSymbol[] = "?ACMGRSVUWYHKDBN";
+
+    vector<char> symbol_to_idx(256, '\0');
+    for (size_t i = 0; i < sizeof(kIdxToSymbol) - 1; ++i) {
+        symbol_to_idx[kIdxToSymbol[i]] = i;
+    }
+
+    size_t idx = symbol_to_idx[str1[2]] | symbol_to_idx[str2[2]];
+    return kIdxToSymbol[idx];
+}
+
+
+static size_t s_ComposeCodonRecognizedStr(const CTrna_ext& trna, string& recognized)
+{
+    recognized.erase();
+
+    if (!trna.IsSetCodon()) {
+        return 0;
+    }
+
+    list<string> codons;
+
+    ITERATE (CTrna_ext::TCodon, it, trna.GetCodon()) {
+        string codon = CGen_code_table::IndexToCodon(*it);
+        s_ReplaceUforT(codon);
+        if (!codon.empty()) {
+            codons.push_back(codon);
+        }
+    }
+    if (codons.empty()) {
+        return 0;
+    }
+    size_t size = codons.size();
+    if (size > 1) {
+        codons.sort();
+
+        list<string>::iterator it = codons.begin();
+        list<string>::iterator prev = it++;
+        while (it != codons.end()) {
+            string& codon1 = *prev;
+            string& codon2 = *it;
+            if (codon1[0] == codon2[0]  &&  codon1[1] == codon2[1]) {
+                codon1[2] = s_MakeDegenerateBase(codon1, codon2);
+                it = codons.erase(it);
+            } else {
+                prev = it;
+                ++it;
+            }
+        }
+    }
+
+    recognized = NStr::Join(codons, ",");
+    return size;
+}
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetTrnaCodons(
     const CTrna_ext& trna,
@@ -311,6 +379,12 @@ bool CWriteUtil::GetTrnaCodons(
     if (!trna.IsSetCodon()) {
         return false;
     }
+    string codons;
+    size_t num = s_ComposeCodonRecognizedStr(trna, codons);
+    if ( 0 == num ) {
+        return false;
+    }
+    /*
     const list<int>& values = trna.GetCodon();
     if (values.empty()) {
         return false;
@@ -321,6 +395,7 @@ bool CWriteUtil::GetTrnaCodons(
         codons += ",";
         codons += NStr::IntToString(*cit);
     }
+    */
     codonStr = codons;
     return true;
 }
