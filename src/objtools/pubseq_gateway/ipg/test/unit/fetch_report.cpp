@@ -207,6 +207,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, NormalWithFilterByAccession) {
         return true;
     };
     CPubseqGatewayFetchIpgReportRequest request;
+    request.SetIpg(0);
     request.SetProtein("EGB0709986.1");
     request.SetNucleotide("AAVJDV010000007.1");
     EXPECT_FALSE(request.HasIpg());
