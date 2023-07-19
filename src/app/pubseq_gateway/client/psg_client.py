@@ -486,7 +486,7 @@ def generate_cmd(args):
 
     try:
         for i in range(args.NUMBER):
-            print(request_generator(args.TYPE, **next(ids), **params))
+            print(json.dumps(request_generator(args.TYPE, **next(ids), **params)[0]))
     except StopIteration:
         sys.exit(f'"{args.INPUT_FILE.name}" has no [appropriate] IDs to generate {args.TYPE} requests')
 
