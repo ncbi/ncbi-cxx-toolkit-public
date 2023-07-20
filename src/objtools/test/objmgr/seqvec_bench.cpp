@@ -249,7 +249,7 @@ int CSeqVecBench::Run(void)
     for (i = 0;  i < iters;  ++i) {
         start_iter();
         CSeqVector vec = handle.GetSeqVector(coding, strand);
-        for (size_t j = 0;  j < vec.size();  ++j, ++counter) {
+        for (TSeqPos j = 0;  j < vec.size();  ++j, ++counter) {
             mask ^= vec[j];
         }
         end_iter();
@@ -263,7 +263,7 @@ int CSeqVecBench::Run(void)
     for (i = 0;  i < iters;  ++i) {
         start_iter();
         CSeqVector vec = handle.GetSeqVector(coding, strand);
-        for (size_t j = 0;  j < vec.size();  ++j, ++counter) {
+        for (TSeqPos j = 0;  j < vec.size();  ++j, ++counter) {
             mask ^= vec[j];
             mask ^= vec[j];
         }
