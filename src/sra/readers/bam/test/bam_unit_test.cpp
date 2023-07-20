@@ -62,11 +62,12 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
         size_t error_len;
         RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
         char buffer2[8192];
-        unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
-                             file, line, code, rc, buffer1);
+        int len = snprintf(buffer2, sizeof(buffer2), "%s:%d: %s failed: %#x: %s\n",
+                           file, line, code, rc, buffer1);
+        len = min(len, int(sizeof(buffer2)));
         const char* ptr = buffer2;
         while ( len ) {
-            int written = NcbiSys_write(2, ptr, len);
+            int written = int(NcbiSys_write(2, ptr, len));
             if ( written == -1 ) {
                 perror("stderr write failed");
                 exit(1);
