@@ -129,7 +129,7 @@ CID2Processor::ProcessPacket(CID2ProcessorContext* /*context*/,
                              TReplies& replies)
 {
     // redirect to old interface by default
-    replies = move(ProcessSomeRequests(packet));
+    replies = ProcessSomeRequests(packet);
     return null;
 }
 
