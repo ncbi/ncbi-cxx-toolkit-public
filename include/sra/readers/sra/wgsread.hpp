@@ -257,7 +257,7 @@ public:
     TVDBRowId ParseProteinRow(CTempString acc) {
         return ParseRowType(acc, fAllowRowType_protein).first;
     }
-    SIZE_TYPE GetIdRowDigits(void) const {
+    Uint4 GetIdRowDigits(void) const {
         return m_IdRowDigits;
     }
 
@@ -588,7 +588,7 @@ private:
     string m_IdPrefixDbWithVersion;
     string m_IdPrefixDb;
     int m_IdVersion;
-    SIZE_TYPE m_IdRowDigits;
+    Uint4 m_IdRowDigits;
 
     CFastMutex m_TableMutex;
     atomic<bool> m_ScfTableIsOpened;
