@@ -1490,7 +1490,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     }
     
     CPSG_BioId bio_id(idh);
-    auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
+    auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
     if (data_source) {
         CDataSource::TLoadedBlob_ids loaded_blob_ids;
         data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
@@ -1544,7 +1544,7 @@ CRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& idh)
     string blob_id = x_GetCachedBlobId(idh);
     if ( blob_id.empty() ) {
         CPSG_BioId bio_id(idh);
-        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
+        auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         auto reply = x_SendRequest(request);
         blob_id = x_ProcessBlobReply(reply, nullptr, idh, true).blob_id;
@@ -2200,7 +2200,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& 
             continue;
         }
         CPSG_BioId bio_id(idh);
-        auto request = make_shared<CPSG_Request_Biodata>(move(bio_id));
+        auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
         CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
         if (data_source) {
             inc_data = m_TSERequestModeBulk;
@@ -2826,7 +2826,8 @@ s_CreateNAChunk(const CPSG_NamedAnnotInfo& psg_annot_info)
     set<string> names;
     for ( auto& annot_info_ref : psg_annot_info.GetId2AnnotInfoList() ) {
         if ( s_GetDebugLevel() >= 8 ) {
-            LOG_POST(Info<<"PSG loader: NA info "<<MSerial_AsnText<<*annot_info_ref);
+            LOG_POST(Info<<"PSG loader: "<<psg_annot_info.GetBlobId().GetId()<<" NA info "
+                     <<MSerial_AsnText<<*annot_info_ref);
         }
         const CID2S_Seq_annot_Info& annot_info = *annot_info_ref;
         // create special external annotations blob
@@ -2976,7 +2977,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
         }
 
         if ( !annot_names.empty() ) {
-            auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_ids), annot_names);
+            auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names);
             request->SetSNPScaleLimit(snp_scale_limit);
             auto reply = x_SendRequest(request);
             CPSG_TaskGroup group(*m_ThreadPool);
@@ -3058,7 +3059,7 @@ void CPSGDataLoader_Impl::PrefetchCDD(const TIds& ids)
         bio_ids.push_back(CPSG_BioId(id));
     }
     CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names({kCDDAnnotName});
-    auto request = make_shared<CPSG_Request_NamedAnnotInfo>(move(bio_ids), annot_names);
+    auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names);
     auto reply = x_SendRequest(request);
     for (;;) {
         if (m_CDDPrefetchTask->IsCancelRequested()) return;
@@ -3185,7 +3186,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             bio_ids.push_back(CPSG_BioId(id));
         }
         auto request = make_shared<CPSG_Request_NamedAnnotInfo>(
-            move(bio_ids), annot_names, make_shared<size_t>(i));
+            std::move(bio_ids), annot_names, make_shared<size_t>(i));
         request->IncludeData(CPSG_Request_Biodata::eWholeTSE);
         auto reply = x_SendRequest(request);
         tasks.push_back(Ref(new CPSG_CDDAnnotBulk_Task(reply, group, i)));
@@ -3575,7 +3576,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
     }
 
     CPSG_BioId bio_id(idh);
-    shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id));
+    shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
     request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
     auto reply = x_SendRequest(request);
     if (!reply) {
@@ -3752,7 +3753,7 @@ CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(CDataSource* data_source,
         CPSG_BioId bio_id(idh);
         auto request1 = make_shared<CPSG_Request_Resolve>(bio_id);
         request1->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
-        auto request2 = make_shared<CPSG_Request_Biodata>(move(bio_id));
+        auto request2 = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
         request2->IncludeData(CPSG_Request_Biodata::eNoTSE);
         
         auto reply1 = x_SendRequest(request1);
@@ -3946,7 +3947,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
             continue;
         }
         CPSG_BioId bio_id(ids[i]);
-        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(move(bio_id));
+        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
         request->IncludeInfo(info|CPSG_Request_Resolve::fAllInfo);
         auto reply = x_SendRequest(request);
         CRef<CPSG_BioseqInfo_Task> task(new CPSG_BioseqInfo_Task(reply, group));
