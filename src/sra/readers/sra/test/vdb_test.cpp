@@ -313,8 +313,9 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
         size_t error_len;
         RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
         char buffer2[8192];
-        unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
-                             file, line, code, rc, buffer1);
+        int len = snprintf(buffer2, sizeof(buffer2), "%s:%d: %s failed: %#x: %s\n",
+                           file, line, code, rc, buffer1);
+        len = min(len, int(sizeof(buffer2)));
         int exit_code = 1;
         if ( NcbiSys_write(2, buffer2, len) != len ) {
             ++exit_code;
@@ -944,7 +945,6 @@ int CCSRATestApp::Run(void)
                         }
                         NcbiCout << "With local:"
                                  << MSerial_AsnText << *seq << endl;
-                        char buf[1024];
                         for ( int t = 0; t < 10; ++t ) {
                             CCurrentProcess::SMemoryUsage mem0;
                             CCurrentProcess::GetMemoryUsage(mem0);
@@ -952,8 +952,8 @@ int CCSRATestApp::Run(void)
                             vector<CSeq_id_Handle> hh;
                             for ( int i = 0; i < 100000; ++i ) {
                                 bb.push_back(Ref(SerialClone(*seq)));
-                                sprintf(buf, "lcl|%d", 136780466+i);
-                                hh.push_back(CSeq_id_Handle::GetHandle(buf));
+                                string id = "lcl|"+NStr::NumericToString(136780466+i);
+                                hh.push_back(CSeq_id_Handle::GetHandle(id));
                             }
                             CCurrentProcess::SMemoryUsage mem1;
                             CCurrentProcess::GetMemoryUsage(mem1);
@@ -973,8 +973,8 @@ int CCSRATestApp::Run(void)
                             vector<CSeq_id_Handle> hh;
                             for ( int i = 0; i < 100000; ++i ) {
                                 bb.push_back(Ref(SerialClone(*seq2)));
-                                sprintf(buf, "gnl|SRA|SRR389414.%d.1", 136780466+i);
-                                hh.push_back(CSeq_id_Handle::GetHandle(buf));
+                                string id = "gnl|SRA|SRR389414."+NStr::NumericToString(136780466+i)+".1";
+                                hh.push_back(CSeq_id_Handle::GetHandle(id));
                             }
                             CCurrentProcess::SMemoryUsage mem1;
                             CCurrentProcess::GetMemoryUsage(mem1);
