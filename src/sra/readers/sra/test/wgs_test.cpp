@@ -231,7 +231,7 @@ void sx_Analyze_4na(CTempString seq, const CWGSSeqIterator& it)
     size_t ambig_bases_counts[16] = {};
     size_t cur_ambig_count = 0;
     size_t gap_bases = 0;
-    for ( size_t i = 0; i < seq.size(); ++i ) {
+    for ( TSeqPos i = 0; i < seq.size(); ++i ) {
         Uint1 c = seq[i];
         if ( gap_info.IsInGap(i) ) {
             ++gap_bases;
