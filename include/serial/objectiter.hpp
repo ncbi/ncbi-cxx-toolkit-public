@@ -575,7 +575,6 @@ private:
     pair<TConstObjectPtr, TTypeInfo> GetVariantPair(void) const;
 
     CConstObjectInfo m_Object;
-    TMemberIndex m_VariantIndex;
 };
 
 /////////////////////////////////////////////////////////////////////////////
