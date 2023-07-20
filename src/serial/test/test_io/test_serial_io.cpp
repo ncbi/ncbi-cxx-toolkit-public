@@ -807,7 +807,7 @@ void CTestWriter::x_WriteSocketError(void)
     }
     unsigned long ms = GetTimeout();
     if (m_Case.m_Err == eErr_Delay) {
-        ms *= 0.4;
+        ms = (unsigned long)(ms*0.4);
     }
     else {
         // NOTE: Need delay of more than two timeouts. The reader socket
