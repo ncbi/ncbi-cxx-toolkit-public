@@ -77,7 +77,7 @@ static CRef<CSeq_id> s_GetId(size_t i)
 static CRef<CSeq_id> s_GetId2(size_t i)
 {
     CRef<CSeq_id> id(new CSeq_id());
-    id->SetLocal().SetId(TIntId(i+1));
+    id->SetLocal().SetId(int(i+1));
     return id;
 }
 
@@ -124,10 +124,10 @@ static CRef<CSeq_annot> s_GetAnnot(CSeq_id& id, size_t count = 1)
 }
 
 
-static CRef<CSeq_annot> s_GetAnnotAlign(CSeq_id& id1, CSeq_id& id2, size_t count = 1)
+static CRef<CSeq_annot> s_GetAnnotAlign(CSeq_id& id1, CSeq_id& id2, int count = 1)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    for ( size_t i = 0; i < count; ++i ) {
+    for ( int i = 0; i < count; ++i ) {
         CRef<CSeq_align> align(new CSeq_align);
         align->SetType(CSeq_align::eType_not_set);
         auto& segs = align->SetSegs().SetDenseg();
@@ -143,10 +143,10 @@ static CRef<CSeq_annot> s_GetAnnotAlign(CSeq_id& id1, CSeq_id& id2, size_t count
 }
 
 
-static CRef<CSeq_annot> s_GetAnnotGraph(CSeq_id& id, size_t count = 1)
+static CRef<CSeq_annot> s_GetAnnotGraph(CSeq_id& id, int count = 1)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    for ( size_t i = 0; i < count; ++i ) {
+    for ( int i = 0; i < count; ++i ) {
         CRef<CSeq_graph> graph(new CSeq_graph);
         graph->SetLoc().SetInt().SetId(id);
         graph->SetLoc().SetInt().SetFrom(0);
