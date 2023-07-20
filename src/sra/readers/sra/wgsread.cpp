@@ -1422,20 +1422,6 @@ bool sx_HasAmbiguity(const Uint1* ptr, TSeqPos count,
 }
 
 
-// convert 4na base to 2na base
-static inline
-Uint1 sx_To2na(Uint1 b)
-{
-    static const char s_4na_to_2na_table[16] = {
-        0, 0, 1, 0,
-        2, 0, 0, 0,
-        3, 0, 0, 0,
-        0, 0, 0, 0
-    };
-    return s_4na_to_2na_table[b];
-}
-
-
 // convert 2 bases of packed 2na byte into packed 4na byte
 static
 inline
