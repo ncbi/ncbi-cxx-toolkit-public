@@ -657,8 +657,8 @@ BOOST_AUTO_TEST_CASE(GetLineNumberAfterConstructor__0)
 
         /* 1. Constructor
            2. GetLineNumber returns 0 */
-        int line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 0);
+        Uint8 line_number = rdr->GetLineNumber();
+        NCBITEST_CHECK_EQUAL(line_number, 0u);
     }    
     CFile(filename).Remove();
 }
@@ -682,20 +682,20 @@ BOOST_AUTO_TEST_CASE(GetLineNumberAfterPlusPlus__1)
            2. Operator++
            3. GetLineNumber returns 1 */
         ++*rdr;
-        int line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 1);
+        Uint8 line_number = rdr->GetLineNumber();
+        NCBITEST_CHECK_EQUAL(line_number, 1u);
         /* 1. Constructor
            2. Operator++
            3. GetLineNumber returns 1 */
         ++*rdr;
         line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 2);
+        NCBITEST_CHECK_EQUAL(line_number, 2u);
         /* 1. Constructor
            2. Operator++
            3. GetLineNumber returns 1 */
         ++*rdr;
         line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 3);
+        NCBITEST_CHECK_EQUAL(line_number, 3u);
     }    
     CFile(filename).Remove();
 }
@@ -720,8 +720,8 @@ BOOST_AUTO_TEST_CASE(GetLineNumberAfterTwicePlusPlus__2)
            3. GetLineNumber returns 2 */
         ++*rdr;
         ++*rdr;
-        int line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 2);
+        Uint8 line_number = rdr->GetLineNumber();
+        NCBITEST_CHECK_EQUAL(line_number, 2u);
     }    
     CFile(filename).Remove();
 }
@@ -748,8 +748,8 @@ BOOST_AUTO_TEST_CASE(GetLineNumberAtEOF__LastNumber)
         ++*rdr; //on the second line
         ++*rdr; //on the third line
         ++*rdr; //EOF
-        int line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 3);
+        Uint8 line_number = rdr->GetLineNumber();
+        NCBITEST_CHECK_EQUAL(line_number, 3u);
     }    
     CFile(filename).Remove();
 }
@@ -777,8 +777,8 @@ BOOST_AUTO_TEST_CASE(GetLineNumberAfterPlusPlusAtEOF__LastNumber)
         ++*rdr; //on the third line
         ++*rdr; //EOF
         ++*rdr; //EOF
-        int line_number = rdr->GetLineNumber();
-        NCBITEST_CHECK_EQUAL(line_number, 3);
+        Uint8 line_number = rdr->GetLineNumber();
+        NCBITEST_CHECK_EQUAL(line_number, 3u);
     }    
     CFile(filename).Remove();
 }
