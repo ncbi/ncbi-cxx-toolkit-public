@@ -100,7 +100,7 @@ static void s_SetBSFromOS(CBitString& bs, const TUFDOs& os)
 static void s_SetFieldsFromAnyContent(CUser_field& parent,
                                       const CAnyContentObject& obj)
 {
-    parent.SetNum(obj.GetAttributes().size() + 4);
+    parent.SetNumFromSize(obj.GetAttributes().size() + 4);
 
     parent.AddField("name",      obj.GetName());
     parent.AddField("value",     obj.GetValue());
@@ -210,10 +210,9 @@ static void s_SetPrimitiveData(CUser_field& field, CConstObjectInfo obj)
     }
 }
 
-static CUser_field::TNum s_SetContainerData(TUFData& data,
-                                            CConstObjectInfo obj)
+static size_t s_SetContainerData(TUFData& data, CConstObjectInfo obj)
 {
-    CUser_field::TNum count;
+    size_t count;
     try {
         count = obj.GetContainerTypeInfo()
             ->GetElementCount(obj.GetObjectPtr());
@@ -250,8 +249,10 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                            " ignoring ePrimitiveValueOther");
                 break;
             }
+            break;
         default:
             data.SetFields().reserve(count);
+            break;
         }
     }
 
@@ -360,7 +361,7 @@ CRef<CUser_field> s_PackAsUserField(CConstObjectInfo obj, const string* label)
         break;
 
     case eTypeFamilyContainer:
-        field->SetNum(s_SetContainerData(data, obj));
+        field->SetNumFromSize(s_SetContainerData(data, obj));
         break;
 
     case eTypeFamilyClass:
@@ -377,7 +378,7 @@ CRef<CUser_field> s_PackAsUserField(CConstObjectInfo obj, const string* label)
                 }
             }
         }
-        field->SetNum(data.GetFields().size());
+        field->SetNumFromSize(data.GetFields().size());
         break;
 
     case eTypeFamilyChoice:
