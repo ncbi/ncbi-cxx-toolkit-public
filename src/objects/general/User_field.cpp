@@ -489,9 +489,19 @@ CUser_field& CUser_field::SetInt8(Int8 value)
 }
 
 
+void CUser_field::SetNumFromSize(size_t value)
+{
+    if (value > numeric_limits<TNum>::max()) {
+        NCBI_THROW_FMT(CSerialException, eOverflow,
+            "array size is too big to fit into User-field.num: " << value);
+    }
+    SetNum(TNum(value));
+}
+
+
 CUser_field& CUser_field::SetValue(const vector<int>&    value)
 {
-    SetNum(value.size());
+    SetNumFromSize(value.size());
     SetData().SetInts() = value;
     return *this;
 }
@@ -499,7 +509,7 @@ CUser_field& CUser_field::SetValue(const vector<int>&    value)
 
 CUser_field& CUser_field::SetValue(const vector<double>& value)
 {
-    SetNum(value.size());
+    SetNumFromSize(value.size());
     SetData().SetReals() = value;
     return *this;
 }
@@ -507,7 +517,7 @@ CUser_field& CUser_field::SetValue(const vector<double>& value)
 
 CUser_field& CUser_field::SetValue(const vector<string>& value)
 {
-    SetNum(value.size());
+    SetNumFromSize(value.size());
     SetData().SetStrs() = value;
     return *this;
 }
@@ -522,7 +532,7 @@ CUser_field& CUser_field::SetValue(CUser_object& value)
 
 CUser_field& CUser_field::SetValue(const vector< CRef<CUser_object> >& value)
 {
-    SetNum(value.size());
+    SetNumFromSize(value.size());
     SetData().SetObjects() = value;
     return *this;
 }
@@ -530,7 +540,7 @@ CUser_field& CUser_field::SetValue(const vector< CRef<CUser_object> >& value)
 
 CUser_field& CUser_field::SetValue(const vector< CRef<CUser_field> >& value)
 {
-    SetNum(value.size());
+    SetNumFromSize(value.size());
     SetData().SetFields() = value;
     return *this;
 }

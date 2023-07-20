@@ -127,6 +127,11 @@ public:
     CUser_field& AddField(const string& label,
                           const vector< CRef<CUser_field> >& value);
 
+    /// Set num field from a container size
+    /// Check for overflow and throw CSerialException::eOverflow
+    /// if the size doesn't fit into the field
+    void SetNumFromSize(size_t value);
+
     /// Access a named field in this user field.  This will tokenize the
     /// string 'str' on the delimiters; if the field doesn't exist, an
     /// exception will be thrown.
