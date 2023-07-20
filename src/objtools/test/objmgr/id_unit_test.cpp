@@ -351,7 +351,7 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
         ITERATE ( vector<string>, it, req_ids_str ) {
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
             if ( gi_offset && idh.IsGi() ) {
-                idh = CSeq_id_Handle::GetGiHandle(idh.GetGi() + gi_offset);
+                idh = CSeq_id_Handle::GetGiHandle(idh.GetGi() + GI_FROM(TIntId, gi_offset));
             }
             req_ids.push_back(idh);
         }
@@ -404,12 +404,14 @@ SAnnotSelector s_GetSelector(CSeqFeatData::ESubtype subtype,
 }
 
 
-size_t s_CheckFeat(CRef<CScope> scope,
-                   const SAnnotSelector& sel,
-                   const string& str_id,
-                   CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+pair<size_t, size_t>
+s_CheckFeat(CRef<CScope> scope,
+            const SAnnotSelector& sel,
+            const string& str_id,
+            CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
 {
-    size_t ret = 0;
+    pair<size_t, size_t> ret;
+    set<CTSE_Handle> tses;
     CRef<CSeq_id> seq_id(new CSeq_id(str_id));
     CRef<CSeq_loc> loc(new CSeq_loc);
     if ( range == CRange<TSeqPos>::GetWhole() ) {
@@ -423,17 +425,24 @@ size_t s_CheckFeat(CRef<CScope> scope,
     }
     {
         CFeat_CI it(*scope, *loc, sel);
-        ret += it.GetSize();
+        ret.second += it.GetSize();
         BOOST_CHECK(it);
+        for ( ; it; ++it ) {
+            tses.insert(it->GetAnnot().GetTSE_Handle());
+        }
     }
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
     BOOST_REQUIRE(bh);
     {
         CFeat_CI it(bh, range, sel);
-        ret += it.GetSize();
+        ret.second += it.GetSize();
         BOOST_CHECK(it);
+        for ( ; it; ++it ) {
+            tses.insert(it->GetAnnot().GetTSE_Handle());
+        }
     }
+    ret.first = tses.size();
     return ret;
 }
 
@@ -468,18 +477,75 @@ void s_CheckNoFeat(CRef<CScope> scope,
 }
 
 
-void s_CheckFeat(const SAnnotSelector& sel,
-                 const string& str_id,
-                 CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+pair<size_t, size_t>
+s_CheckFeat(const SAnnotSelector& sel,
+            const string& str_id,
+            CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
 {
-    s_CheckFeat(s_InitScope(), sel, str_id, range);
+    return s_CheckFeat(s_InitScope(), sel, str_id, range);
 }
 
 
-void s_CheckGraph(const SAnnotSelector& sel,
-                  const string& str_id,
-                  CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+// number of TSEs, number of graphs
+pair<size_t, size_t>
+s_CheckGraph(CRef<CScope> scope,
+             const SAnnotSelector& sel,
+             const string& str_id,
+             CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
 {
+    pair<size_t, size_t> ret;
+    set<CTSE_Handle> tses;
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( range == CRange<TSeqPos>::GetWhole() ) {
+        loc->SetWhole(*seq_id);
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*seq_id);
+        interval.SetFrom(range.GetFrom());
+        interval.SetTo(range.GetTo());
+    }
+    {
+        CGraph_CI it(*scope, *loc, sel);
+        ret.second += it.GetSize();
+        BOOST_CHECK(it);
+        for ( ; it; ++it ) {
+            tses.insert(it->GetAnnot().GetTSE_Handle());
+        }
+    }
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+    {
+        CGraph_CI it(bh, range, sel);
+        BOOST_CHECK(it);
+        ret.second += it.GetSize();
+        for ( ; it; ++it ) {
+            tses.insert(it->GetAnnot().GetTSE_Handle());
+        }
+    }
+    ret.first = tses.size();
+    return ret;
+}
+
+
+pair<size_t, size_t>
+s_CheckGraph(const SAnnotSelector& sel,
+             const string& str_id,
+             CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    return s_CheckGraph(s_InitScope(), sel, str_id, range);
+}
+
+
+pair<size_t, size_t>
+s_CheckTable(const SAnnotSelector& sel,
+             const string& str_id,
+             CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    pair<size_t, size_t> ret;
+    set<CTSE_Handle> tses;
     CRef<CScope> scope = s_InitScope();
     CRef<CSeq_id> seq_id(new CSeq_id(str_id));
     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -492,35 +558,27 @@ void s_CheckGraph(const SAnnotSelector& sel,
         interval.SetFrom(range.GetFrom());
         interval.SetTo(range.GetTo());
     }
-    BOOST_CHECK(CGraph_CI(*scope, *loc, sel));
+    {
+        CSeq_table_CI it(*scope, *loc, sel);
+        BOOST_CHECK(it);
+        ret.second += it.GetSize();
+        for ( ; it; ++it ) {
+            tses.insert(it->GetTSE_Handle());
+        }
+    }
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
     BOOST_REQUIRE(bh);
-    BOOST_CHECK(CGraph_CI(bh, range, sel));
-}
-
-
-void s_CheckTable(const SAnnotSelector& sel,
-                  const string& str_id,
-                  CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
-{
-    CRef<CScope> scope = s_InitScope();
-    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    if ( range == CRange<TSeqPos>::GetWhole() ) {
-        loc->SetWhole(*seq_id);
+    {
+        CSeq_table_CI it(bh, range, sel);
+        BOOST_CHECK(it);
+        ret.second += it.GetSize();
+        for ( ; it; ++it ) {
+            tses.insert(it->GetTSE_Handle());
+        }
     }
-    else {
-        CSeq_interval& interval = loc->SetInt();
-        interval.SetId(*seq_id);
-        interval.SetFrom(range.GetFrom());
-        interval.SetTo(range.GetTo());
-    }
-    BOOST_CHECK(CSeq_table_CI(*scope, *loc, sel));
-
-    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
-    BOOST_REQUIRE(bh);
-    BOOST_CHECK(CSeq_table_CI(bh, range, sel));
+    ret.first = tses.size();
+    return ret;
 }
 
 
@@ -558,7 +616,8 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
-    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+    auto counts = s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+    BOOST_CHECK_EQUAL(counts.first, 1u);
 }
 
 
@@ -578,7 +637,8 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPEdit)
     CBioseq_EditHandle bhe = bh.GetEditHandle();
     BOOST_REQUIRE(bh);
     BOOST_REQUIRE(bhe);
-    s_CheckFeat(scope, sel, id);
+    auto counts = s_CheckFeat(scope, sel, id);
+    BOOST_CHECK_EQUAL(counts.first, 1u);
 }
 
 
@@ -599,7 +659,8 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPEditChangeId)
     CBioseq_EditHandle bhe = bh.GetEditHandle();
     BOOST_REQUIRE(bh);
     BOOST_REQUIRE(bhe);
-    size_t count = s_CheckFeat(scope, sel, id);
+    auto counts1 = s_CheckFeat(scope, sel, id);
+    BOOST_CHECK_EQUAL(counts1.first, 1u);
     vector<CSeq_id_Handle> ids = bhe.GetId();
     bhe.ResetId();
     bhe.AddId(CSeq_id_Handle::GetHandle(dummy_id));
@@ -607,7 +668,9 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPEditChangeId)
     for ( auto idh : ids ) {
         bhe.AddId(idh);
     }
-    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, dummy_id), count);
+    auto counts2 = s_CheckFeat(scope, sel, dummy_id);
+    BOOST_CHECK_EQUAL(counts2.first, 1u);
+    BOOST_CHECK_EQUAL(counts2.second, counts1.second);
 }
 
 
@@ -803,11 +866,37 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_User_field)
 BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
 {
     LOG_POST("Checking ExtAnnot SNP graph");
-    SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
-    sel.SetResolveAll().SetAdaptiveDepth();
-    sel.IncludeNamedAnnotAccession("SNP");
-    sel.AddNamedAnnots("SNP");
-    s_CheckGraph(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
+    string id = "NC_000001.10";
+    CRange<TSeqPos> range(249200000, 249210000);
+
+    auto scope = s_InitScope();
+    const int kCoverageZoom = 100;
+    for ( int t = 0; t < 2; ++t ) {
+        {
+            SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
+            sel.SetResolveAll().SetAdaptiveDepth();
+            sel.IncludeNamedAnnotAccession("SNP");
+            sel.AddNamedAnnots("SNP");
+            auto counts = s_CheckGraph(scope, sel, id, range);
+            BOOST_CHECK_EQUAL(counts.first, 1u);
+        }
+        if ( s_HaveVDBSNP() ) {
+            SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
+            sel.SetResolveAll().SetAdaptiveDepth();
+            sel.IncludeNamedAnnotAccession("SNP", kCoverageZoom);
+            sel.AddNamedAnnots(CombineWithZoomLevel("SNP", kCoverageZoom));
+            auto counts = s_CheckGraph(scope, sel, id, range);
+            BOOST_CHECK_EQUAL(counts.first, 1u);
+        }
+        {
+            SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+            sel.SetResolveAll().SetAdaptiveDepth();
+            sel.IncludeNamedAnnotAccession("SNP");
+            sel.AddNamedAnnots("SNP");
+            auto counts = s_CheckFeat(scope, sel, id, range);
+            BOOST_CHECK_EQUAL(counts.first, 1u);
+        }
+    }
 }
 
 
@@ -1036,7 +1125,8 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom10)
         else {
             sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 10));
         }
-        s_CheckGraph(sel, id);
+        auto counts = s_CheckGraph(sel, id);
+        BOOST_CHECK_EQUAL(counts.first, 1u);
     }
 }
 
@@ -1049,7 +1139,8 @@ BOOST_AUTO_TEST_CASE(CheckNATable)
 
     SAnnotSelector sel;
     sel.IncludeNamedAnnotAccession(na_acc);
-    s_CheckTable(sel, id);
+    auto counts = s_CheckTable(sel, id);
+    BOOST_CHECK_EQUAL(counts.first, 1u);
 }
 
 
@@ -1059,9 +1150,17 @@ BOOST_AUTO_TEST_CASE(CheckSuppressedGene)
     SAnnotSelector sel;
     sel.SetResolveAll().SetAdaptiveDepth();
     auto scope = s_InitScope();
-    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354)), 8u);
+    {
+        auto counts = s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354));
+        BOOST_CHECK_EQUAL(counts.first, 1u);
+        BOOST_CHECK_EQUAL(counts.second, 8u);
+    }
     sel.SetExcludeIfGeneIsSuppressed();
-    BOOST_CHECK_EQUAL(s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354)), 6u);
+    {
+        auto counts = s_CheckFeat(scope, sel, "33347893", CRange<TSeqPos>(49354, 49354));
+        BOOST_CHECK_EQUAL(counts.first, 1u);
+        BOOST_CHECK_EQUAL(counts.second, 6u);
+    }
 }
 
 
@@ -1132,7 +1231,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
         }
         ++it;
     }
- 
+    BOOST_CHECK_EQUAL(num_feat, 0u);
 }
 
 
@@ -1320,6 +1419,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 3);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
@@ -1485,6 +1586,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 1u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
@@ -1738,6 +1841,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr9)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 4);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -1786,6 +1890,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr10)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -1833,6 +1938,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr11)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -1937,6 +2043,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr13)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -1987,6 +2095,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr14)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
