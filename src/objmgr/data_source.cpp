@@ -993,7 +993,7 @@ CDataSource::x_GetRecords(const CSeq_id_Handle& idh,
     if ( m_Loader ) {
         CDataLoader::TTSE_LockSet tse_set2;
         try {
-            tse_set2 = move(m_Loader->GetRecords(idh, choice));
+            tse_set2 = m_Loader->GetRecords(idh, choice);
         }
         catch ( CLoaderException& exc ) {
             exc.SetFailedCall(s_FormatCall("GetRecords", idh, choice));
@@ -1091,7 +1091,7 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
         // collect set of TSEs with orphan annotations
         CDataLoader::TTSE_LockSet tse_set;
         try {
-            tse_set = move(m_Loader->GetOrphanAnnotRecordsNA(ids, sel, processed_nas));
+            tse_set = m_Loader->GetOrphanAnnotRecordsNA(ids, sel, processed_nas);
         }
         catch ( CLoaderException& exc ) {
             exc.SetFailedCall(s_FormatCall("GetOrphanAnnotRecordsNA(", ids, sel, processed_nas));
@@ -1149,7 +1149,7 @@ void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
         // external annotations
         CDataLoader::TTSE_LockSet tse_set2;
         try {
-            tse_set2 = move(m_Loader->GetExternalAnnotRecordsNA(bioseq, sel, processed_nas));
+            tse_set2 = m_Loader->GetExternalAnnotRecordsNA(bioseq, sel, processed_nas);
         }
         catch ( CLoaderException& exc ) {
             exc.SetFailedCall(s_FormatCall("GetExternalAnnotRecordsNA", bioseq, sel, processed_nas));
