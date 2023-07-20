@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Jun 15 11:25:32 EDT 2023; formally
+/* time_t value corresponding to Thu Jul 20 11:19:50 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1686842732UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1689866390UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -4512,7 +4512,22 @@ static const char* const kBuiltInGuide[] = {
     "special  CATNVF000000000-CATNVZ999999999  embl_tpa_wgs_nuc # 6+9",
     "special2 CATOAL+9 embl_tpa_wgs_nuc",
     ": 000000000-999999999",
-    "special  CATOHR000000000-CATOPO999999999  embl_tpa_wgs_nuc",
+    "special  CATOHR000000000-CATOPO999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATVPU000000000-CATVWV999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATVWX000000000-CATVXD999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATVXF000000000-CATVYY999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATVZA000000000-CATVZS999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATVZU000000000-CATWAE999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWAG000000000-CATWAQ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWAS000000000-CATWDN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWDP000000000-CATWDQ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWDS000000000-CATWEG999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWEI000000000-CATWFS999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWFU000000000-CATWGA999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWGC000000000-CATWGF999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWGH000000000-CATWHB999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWHD000000000-CATWHH999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CATWHJ000000000-CATWMY999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special2 HBHG+8 embl_tpa_tsa_nuc",
