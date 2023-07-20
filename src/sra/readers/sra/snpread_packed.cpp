@@ -64,21 +64,8 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(SNPDbPacked);
 
 
-/*
-static const TSeqPos kPageSize = 5000;
-static const TSeqPos kMaxSNPLength = 256;
-static const TSeqPos kOverviewZoom = kPageSize;
-static const TSeqPos kCoverageZoom = 100;
-*/
 static const size_t kMax_AlleleLength  = 32;
 static const char kDefaultAnnotName[] = "SNP";
-/*
-
-static const char kFeatSubtypesToChars[] = "U-VSMLDIR";
-
-static const bool kPreloadSeqList = false;
-static const bool kPage2FeatErrorWorkaround = true;
-*/
 
 
 BEGIN_LOCAL_NAMESPACE;
