@@ -930,7 +930,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     TSeqPos len = 0;
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<") - depth-restricted");
     // Iterate seq-map except the last element
-    len = 0;
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
                                 .SetResolveCount(2));
     vector<CSeqMap::const_iterator> itrs;
@@ -969,6 +968,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     --seg;
     _ASSERT(!seg);
+    _ALWAYS_TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
     CHECK_END("get restricted sequence map");
 
     CHECK_WRAP();
@@ -976,7 +976,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     TSeqPos len = 0;
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<") - TSE-restricted");
     // Iterate seq-map except the last element
-    len = 0;
     CSeqMap::const_iterator seg(seq_map, &scope, SSeqMapSelector()
                                 .SetLimitTSE(handle.GetTopLevelEntry())
                                 .SetResolveCount(kInvalidSeqPos)
@@ -1017,6 +1016,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     --seg;
     _ASSERT(!seg);
+    _ALWAYS_TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
     CHECK_END("get restricted sequence map");
 
     CHECK_WRAP();
@@ -1025,7 +1025,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<
            ") seq_len="<<seq_len<<") resolved:");
     // Iterate seq-map except the last element
-    len = 0;
     CSeqMap::const_iterator seg = seq_map->BeginResolved(&scope);
     vector<CSeqMap::const_iterator> itrs;
     for ( ; seg != seq_map->EndResolved(&scope); ++seg ) {
@@ -1065,7 +1064,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     --seg;
     _ASSERT(!seg);
 
-    _TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
+    _ALWAYS_TRACE("ProcessBioseq("<<id.AsFastaString()<<") len="<<len<<")");
     _ASSERT(len == seq_len);
     CHECK_END("get resolved sequence map");
 
