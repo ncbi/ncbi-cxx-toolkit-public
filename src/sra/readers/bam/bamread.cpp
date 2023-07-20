@@ -339,8 +339,9 @@ string CSrzPath::FindAccPath(const string& acc, EMissing missing)
 
     unsigned level1 = num/1000;
     char sub_dir[128];
-    sprintf(sub_dir, "%s/%06u/%s%s/provisional",
+    snprintf(sub_dir, sizeof(sub_dir), "%s/%06u/%s%s/provisional",
             prefix.c_str(), level1, prefix.c_str(), acc.c_str()+3);
+    sub_dir[sizeof(sub_dir)-1] = '\0';
 
     ITERATE ( vector<string>, rep_it, m_RepPath ) {
         ITERATE ( vector<string>, vol_it, m_VolPath ) {
