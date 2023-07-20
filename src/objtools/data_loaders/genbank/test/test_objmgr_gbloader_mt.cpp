@@ -239,7 +239,7 @@ const char* const kGlobalScopeTags[]
 
 int CTestApplication::Run()
 {
-    unsigned timing[4/*threads*/][2/*om*/][3/*scope*/];
+    Uint8 timing[4/*threads*/][2/*om*/][3/*scope*/];
     unsigned tc = sizeof(timing)/sizeof(*timing);
 
     memset(timing,0,sizeof(timing));
