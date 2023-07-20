@@ -31,7 +31,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <common/test_data_path.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -269,6 +268,7 @@ private:
 
 #if 0 // LowLevelTest
 
+#include <common/test_data_path.h>
 #ifdef _MSC_VER
 # include <io.h>
 CRITICAL_SECTION sdk_mutex;
