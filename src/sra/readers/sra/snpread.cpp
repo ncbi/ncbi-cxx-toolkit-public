@@ -83,7 +83,6 @@ static const TSeqPos kPageSize = 5000;
 static const TSeqPos kMaxSNPLength = 256;
 static const TSeqPos kOverviewZoom = kPageSize;
 static const TSeqPos kCoverageZoom = 100;
-static const size_t kMax_AlleleLength  = 32;
 
 static const char kDefaultAnnotName[] = "SNP";
 
