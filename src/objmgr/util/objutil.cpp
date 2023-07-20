@@ -1109,7 +1109,7 @@ string JoinString(const list<string>& l, const string& delim, bool noRedundancy)
     return result;
 }
 
-
+/*
 // Validate the correct format of an accession string.
 static bool s_IsValidAccession(const string& acc)
 {
@@ -1203,7 +1203,7 @@ static bool s_IsValidAccession(const string& acc)
 
     return false;
 }
-
+*/
 
 static bool s_IsValidDotVersion(const string& accn)
 {
