@@ -1971,6 +1971,12 @@ void CPSG_Blob_Task::DoExecute(void)
                                 load_lock,
                                 CPSGDataLoader_Impl::eNoSplitInfo);
     }
+    else if ( GotForbidden() ) {
+        _TRACE("Got forbidden for tse_id="<<m_ReplyResult.blob_id);
+        load_lock.Reset();
+        m_Status = eCompleted;
+        return;
+    }
     else {
         _TRACE("No data for tse_id="<<m_ReplyResult.blob_id);
         load_lock.Reset();
@@ -3531,6 +3537,15 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
         _TRACE("Failed to load blob for " << req_idh.AsString()<<" @ "<<CStackTrace());
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "CPSGDataLoader::GetRecords("+req_idh.AsString()+") failed");
+    }
+    if ( !ret.lock && task->GotForbidden() ) {
+        CBioseq_Handle::TBioseqStateFlags state =
+            CBioseq_Handle::fState_no_data|CBioseq_Handle::fState_withdrawn;
+        if ( task->m_ReplyResult.blob_info ) {
+            state |= task->m_ReplyResult.blob_info->blob_state_flags;
+        }
+        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error for "+req_idh.AsString(), state);
     }
     return ret;
 }
