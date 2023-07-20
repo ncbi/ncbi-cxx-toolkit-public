@@ -144,7 +144,7 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType l
         ERR_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
         for ( TVDBRowId row = 1; row <= last_row; ++row ) {
             // read range and names
-            TSeqPos start = *curs->START(row);
+            TSeqPos start = TSeqPos(*curs->START(row));
             TSeqPos len = *curs->LEN(row);
             CVDBStringValue seq_id = curs->SID(row);
             if ( *seq_id == info.m_SeqId ) {
@@ -173,7 +173,7 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType l
             info.m_SeqId = *seq_id;
             info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(info.m_SeqId);
             info.m_RowSize = *curs->LEN(row);
-            info.m_SeqLength = *curs->START(row) + info.m_RowSize;
+            info.m_SeqLength = TSeqPos(*curs->START(row)) + info.m_RowSize;
             info.m_RowLast = info.m_RowFirst = row;
             TVDBRowIdRange range = idx.Find(info.m_SeqId);
             _ASSERT(row == range.first);
@@ -181,7 +181,7 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path, ELookupType l
             if ( range.second > 1 ) {
                 row += range.second-1;
                 info.m_RowLast = row;
-                info.m_SeqLength = *curs->START(row)+*curs->LEN(row);
+                info.m_SeqLength = TSeqPos(*curs->START(row))+*curs->LEN(row);
             }
             m_SeqList.push_back(info);
         }
@@ -254,14 +254,14 @@ CVDBGraphDb_Impl::SSeqInfo CVDBGraphDb_Impl::GetSeqInfoAtRow(TVDBRowId first_row
             // multi page
             TVDBRowId last_row = first_row + range.second - 1;
             info.m_RowLast = last_row;
-            TSeqPos last_start = *curs->START(last_row);
+            TSeqPos last_start = TSeqPos(*curs->START(last_row));
             TSeqPos last_len = *curs->LEN(last_row);
             info.m_SeqLength = last_start + last_len;
         }
         else {
             // single page
             info.m_RowLast = first_row;
-            TSeqPos first_start = *curs->START(first_row);
+            TSeqPos first_start = TSeqPos(*curs->START(first_row));
             info.m_SeqLength = first_start + first_len;
         }
         Put(curs);
@@ -306,14 +306,14 @@ CVDBGraphDb_Impl::SSeqInfo CVDBGraphDb_Impl::GetSeqInfo(const CSeq_id_Handle& id
             // multi page
             TVDBRowId last_row = first_row + range.second - 1;
             info.m_RowLast = last_row;
-            TSeqPos last_start = *curs->START(last_row);
+            TSeqPos last_start = TSeqPos(*curs->START(last_row));
             TSeqPos last_len = *curs->LEN(last_row);
             info.m_SeqLength = last_start + last_len;
         }
         else {
             // single page
             info.m_RowLast = first_row;
-            TSeqPos first_start = *curs->START(first_row);
+            TSeqPos first_start = TSeqPos(*curs->START(first_row));
             info.m_SeqLength = first_start + first_len;
         }
         Put(curs);
