@@ -1058,6 +1058,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
@@ -1104,6 +1106,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
@@ -1151,6 +1155,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSScaffold)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Comment));
+    BOOST_CHECK_EQUAL(comment_count, 1);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 3u);
@@ -1204,6 +1210,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
@@ -1255,6 +1263,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
