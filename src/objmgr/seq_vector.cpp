@@ -832,7 +832,7 @@ void CSeqVector::x_GetPacked8SeqData(string& dst_str,
 
     dst_str.reserve(src_end-src_pos);
     TCoding dst_coding = GetCoding();
-    TSeqPos dst_pos = 0;
+    _DEBUG_ARG(TSeqPos dst_pos = 0);
     while ( src_pos < src_end ) {
         _ASSERT(dst_str.size() == dst_pos);
         TSeqPos count = min(src_end-src_pos, seg.GetEndPosition()-src_pos);
@@ -903,9 +903,8 @@ void CSeqVector::x_GetPacked8SeqData(string& dst_str,
             }
         }
         ++seg;
-        dst_pos += count;
         src_pos += count;
-        _ASSERT(dst_str.size() == dst_pos);
+        _ASSERT(dst_str.size() == (dst_pos+=count));
     }
 }
 
