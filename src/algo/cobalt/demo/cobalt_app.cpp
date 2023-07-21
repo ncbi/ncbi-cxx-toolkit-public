@@ -38,6 +38,7 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbitime.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/create_defline.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
@@ -49,6 +50,7 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 
 #include <objects/blast/Blast4_archive.hpp>
 
+#include <algo/blast/api/blast_usage_report.hpp>
 #include <algo/cobalt/cobalt.hpp>
 #include <algo/cobalt/version.hpp>
 
@@ -66,6 +68,18 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CMultiAlignerVersion());
         SetFullVersion(version);
+
+        m_StopWatch.Start();
+        if (m_UsageReport.IsEnabled()) {
+            m_UsageReport.AddParam(blast::CBlastUsageReport::eVersion,
+                                   GetVersion().Print());
+            m_UsageReport.AddParam(blast::CBlastUsageReport::eProgram,
+                                   (string)"cobalt");
+        }
+    }
+
+    ~CMultiApplication() {
+        m_UsageReport.AddParam(blast::CBlastUsageReport::eRunTime, m_StopWatch.Elapsed());
     }
 
 private:
@@ -74,6 +88,8 @@ private:
     virtual void Exit(void);
 
     CRef<CObjectManager> m_ObjMgr;
+    blast::CBlastUsageReport m_UsageReport;
+    CStopWatch m_StopWatch;
 };
 
 // Get tree computation method as string that can be used to initialize
@@ -514,6 +530,9 @@ int CMultiApplication::Run(void)
 
         _ASSERT(!scope.Empty());
         aligner.SetQueries(queries, scope);
+
+        m_UsageReport.AddParam(blast::CBlastUsageReport::eNumQueries,
+                               (int)queries.size());
     }
     else {
 
@@ -662,6 +681,7 @@ int CMultiApplication::Run(void)
         out << MSerial_AsnText << *sa;
     }
 
+    m_UsageReport.AddParam(blast::CBlastUsageReport::eExitStatus, 0);
     return 0;
 }
 
