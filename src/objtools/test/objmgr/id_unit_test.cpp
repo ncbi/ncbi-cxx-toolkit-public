@@ -2411,6 +2411,49 @@ BOOST_AUTO_TEST_CASE(TestGetBlobByIdSatMT)
 #endif
 
 
+BOOST_AUTO_TEST_CASE(TestStateDead)
+{
+    LOG_POST("Checking WGS state dead");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
+    BOOST_CHECK(bh.GetState() & bh.fState_dead);
+    BOOST_CHECK(!(bh.GetState() & bh.fState_withdrawn));
+    BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestStateWithdrawnDead)
+{
+    if ( s_HaveCache() ) {
+        LOG_POST("Skipping test for withdrawn blob with GenBank loader cache enabled");
+        return;
+    }
+    LOG_POST("Checking WGS state withdrawn");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000012.1"));
+    BOOST_CHECK(bh.GetState() & bh.fState_withdrawn);
+    if ( !s_HaveID1() ) { // ID1 cannot report 'dead' together with 'withdrawn'
+        BOOST_CHECK(bh.GetState() & bh.fState_dead);
+    }
+    BOOST_CHECK(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestStateWithdrawn)
+{
+    if ( s_HaveCache() ) {
+        LOG_POST("Skipping test for withdrawn blob with GenBank loader cache enabled");
+        return;
+    }
+    LOG_POST("Checking WGS state withdrawn");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JAPEOG000000000.1"));
+    BOOST_CHECK(bh.GetState() & bh.fState_withdrawn);
+    BOOST_CHECK(!(bh.GetState() & bh.fState_dead));
+    BOOST_CHECK(!bh);
+}
+
+
 NCBITEST_INIT_CMDLINE(arg_descrs)
 {
     arg_descrs->AddFlag("psg",
