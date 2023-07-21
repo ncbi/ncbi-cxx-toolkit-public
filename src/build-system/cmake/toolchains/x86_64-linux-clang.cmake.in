@@ -12,7 +12,7 @@ include_guard(GLOBAL)
 set(CMAKE_C_COMPILER "${CC}")
 set(CMAKE_CXX_COMPILER "${CXX}")
 
-set(CMAKE_C_FLAGS
+set(CMAKE_C_FLAGS_INIT
     "-isystem /opt/ncbi/gcc/${GCCVER}/include/c++/${GCCVER} \
     -isystem /opt/ncbi/gcc/${GCCVER}/include/c++/${GCCVER}/x86_64-redhat-linux-gnu  \
     -isystem /opt/ncbi/gcc/${GCCVER}/include/c++/${GCCVER}/backward \
@@ -22,7 +22,7 @@ set(CMAKE_C_FLAGS_DEBUG   "-ggdb3 -O0")
 set(CMAKE_C_FLAGS_RELEASE "-ggdb1 -O3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO  "-ggdb3 -O3")
 
-set(CMAKE_CXX_FLAGS
+set(CMAKE_CXX_FLAGS_INIT
     "-isystem /opt/ncbi/gcc/${GCCVER}/include/c++/${GCCVER} \
     -isystem /opt/ncbi/gcc/${GCCVER}/include/c++/${GCCVER}/x86_64-redhat-linux-gnu \
     -isystem /opt/ncbi/gcc/${GCCVER}/include/c++/${GCCVER}/backward \
@@ -32,7 +32,7 @@ set(CMAKE_CXX_FLAGS_DEBUG   "-ggdb3 -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-ggdb1 -O3")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-ggdb3 -O3")
 
-set(CMAKE_EXE_LINKER_FLAGS
+set(CMAKE_EXE_LINKER_FLAGS_INIT
     "-L/opt/ncbi/gcc/${GCCVER}/lib/gcc/x86_64-redhat-linux-gnu/${GCCVER} \
     -B/opt/ncbi/gcc/${GCCVER}/lib/gcc/x86_64-redhat-linux-gnu/${GCCVER} \
     -L/opt/ncbi/gcc/${GCCVER}/lib64 \
@@ -40,7 +40,7 @@ set(CMAKE_EXE_LINKER_FLAGS
     -Wl,--enable-new-dtags"
 )
 
-set(CMAKE_SHARED_LINKER_FLAGS
+set(CMAKE_SHARED_LINKER_FLAGS_INIT
     "-L/opt/ncbi/gcc/${GCCVER}/lib/gcc/x86_64-redhat-linux-gnu/${GCCVER} \
     -B/opt/ncbi/gcc/${GCCVER}/lib/gcc/x86_64-redhat-linux-gnu/${GCCVER} \
     -L/opt/ncbi/gcc/${GCCVER}/lib64 \
