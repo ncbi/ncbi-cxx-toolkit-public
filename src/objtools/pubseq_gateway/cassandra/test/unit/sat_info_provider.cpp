@@ -242,6 +242,9 @@ TEST_F(CSatInfoProviderTest, ResolverKeyspaceUndefined) {
         m_RegistryPtr, m_ConfigSection
     );
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined, provider.RefreshSchema(true));
+
+    provider.SetResolverKeyspaceRequired(false);
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
 }
 
 TEST_F(CSatInfoProviderTest, BlobKeyspacesUndefined) {

@@ -218,6 +218,19 @@ class CSatInfoSchemaProvider final
         m_Domain = domain;
     }
 
+    /// Should existence of {resolver} keyspace be checked?
+    ///
+    /// @param value
+    ///   true - Resolver keyspace is required to be present in configuration domain
+    ///   false - Resolver keyspace is optional (e.g. for blob daemon or ASN.1 dumpers)
+    ///   {default} - true
+    ///
+    /// @not_thread_safe
+    void SetResolverKeyspaceRequired(bool value)
+    {
+        m_ResolverKeyspaceRequired = value;
+    }
+
     /// Changes Cassandra connection used to communicate with sat_info3
     ///
     /// @used in genbank-blobdaemon project
@@ -326,6 +339,7 @@ class CSatInfoSchemaProvider final
     size_t m_SatInfoHash{0};
 
     shared_ptr<string> m_RefreshErrorMessage;
+    bool m_ResolverKeyspaceRequired{true};
 };
 
 END_IDBLOB_SCOPE
