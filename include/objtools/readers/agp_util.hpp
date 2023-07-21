@@ -836,7 +836,7 @@ public:
     // 0: reading from STDIN or from a single file
     int GetFileNum()
     {
-        return m_InputFiles.size();
+        return static_cast<int>(m_InputFiles.size());
     }
 
     const string& GetFile(int num)
