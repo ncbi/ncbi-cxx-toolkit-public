@@ -662,7 +662,10 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
             return result.value();
         }
     }
-    if (new_schema->m_ResolverKeyspace.keyspace.empty() || !new_schema->m_ResolverKeyspace.connection) {
+    if (
+        m_ResolverKeyspaceRequired &&
+        (new_schema->m_ResolverKeyspace.keyspace.empty() || !new_schema->m_ResolverKeyspace.connection)
+    ) {
         x_SetRefreshErrorMessage("resolver schema is not found in sat2keyspace");
         return ESatInfoRefreshSchemaResult::eResolverKeyspaceUndefined;
     }
