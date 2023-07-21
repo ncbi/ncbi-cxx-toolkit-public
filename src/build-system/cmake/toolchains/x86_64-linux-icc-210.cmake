@@ -12,7 +12,7 @@ include_guard(GLOBAL)
 set(CMAKE_C_COMPILER "/usr/local/intel/Compiler/21.0/compiler/latest/linux/bin/icx")
 set(CMAKE_CXX_COMPILER "/usr/local/intel/Compiler/21.0/compiler/latest/linux/bin/icpx")
 
-set(CMAKE_C_FLAGS
+set(CMAKE_C_FLAGS_INIT
     "-isystem /opt/ncbi/gcc/12.2.0/include/c++/12.2.0 \
     -isystem /opt/ncbi/gcc/12.2.0/include/c++/12.2.0/x86_64-redhat-linux-gnu  \
     -isystem /opt/ncbi/gcc/12.2.0/include/c++/12.2.0/backward \
@@ -22,7 +22,7 @@ set(CMAKE_C_FLAGS_DEBUG   "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO  "-g -O3")
 
-set(CMAKE_CXX_FLAGS
+set(CMAKE_CXX_FLAGS_INIT
     "-isystem /opt/ncbi/gcc/12.2.0/include/c++/12.2.0 \
     -isystem /opt/ncbi/gcc/12.2.0/include/c++/12.2.0/x86_64-redhat-linux-gnu \
     -isystem /opt/ncbi/gcc/12.2.0/include/c++/12.2.0/backward \
@@ -32,7 +32,7 @@ set(CMAKE_CXX_FLAGS_DEBUG   "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g -O3")
 
-set(CMAKE_EXE_LINKER_FLAGS
+set(CMAKE_EXE_LINKER_FLAGS_INIT
     "-L/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
     -Wl,-rpath,/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
     -lintlc \
@@ -43,7 +43,7 @@ set(CMAKE_EXE_LINKER_FLAGS
     -Wl,--enable-new-dtags"
 )
 
-set(CMAKE_SHARED_LINKER_FLAGS
+set(CMAKE_SHARED_LINKER_FLAGS_INIT
     "-L/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
     -Wl,-rpath,/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
     -lintlc \
