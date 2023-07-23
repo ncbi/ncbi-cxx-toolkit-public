@@ -61,6 +61,9 @@ enum EAgpVersion {
 class CAgpErr; // full definition below
 class CAgpReader; // full definition below
 
+typedef TSeqPos TAgpPos;
+typedef TSeqPos TAgpLen;
+
 /// A container for both the original string column values (Get*() methods)
 /// and the values converted to int, char, bool types (member variables).
 /// Detects formatting errors within a single line, checks that
@@ -147,12 +150,12 @@ public:
     }
 
     //// Parsed columns
-    TSeqPos object_beg, object_end, part_number;
+    TAgpPos object_beg, object_end, part_number;
     char component_type;
 
     bool is_gap;
 
-    TSeqPos component_beg, component_end;
+    TAgpPos component_beg, component_end;
     enum EOrientation {
         // numeric values of the enum are equal to ASCII values of
         // AGP 1.1's values for
@@ -167,7 +170,7 @@ public:
     };
     EOrientation orientation;
 
-    TSeqPos gap_length;
+    TAgpLen gap_length;
     // if you update this enum, make sure to update CAgpRow::gap_types
     enum EGap{
         eGapClone          , // AGP 1.1 only
@@ -254,9 +257,9 @@ public:
     }
 
 
-    static bool CheckComponentEnd(const string& comp_id, TSeqPos comp_end, TSeqPos comp_len,
+    static bool CheckComponentEnd(const string& comp_id, TAgpPos comp_end, TAgpLen comp_len,
         CAgpErr& agp_err);
-    bool CheckComponentEnd(TSeqPos comp_len) {
+    bool CheckComponentEnd(TAgpLen comp_len) {
         return CheckComponentEnd(GetComponentId(), component_end, comp_len, *m_AgpErr);
     }
 
@@ -280,7 +283,7 @@ public:
     virtual void SetVersion(EAgpVersion ver);
 
 protected:
-    TSeqPos ReadSeqPos(const CTempString seq_pos_str, const string& details,
+    TAgpPos ReadSeqPos(const CTempString seq_pos_str, const string& details,
         int *perror_code, bool log_errors = true);
     int ParseComponentCols(bool log_errors=true);
     int ParseGapCols(bool log_errors=true);
