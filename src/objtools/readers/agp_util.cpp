@@ -395,15 +395,15 @@ CAgpRow::~CAgpRow()
 {
 }
 
-TSeqPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details,
+TAgpPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details,
     int *perror_code, bool log_errors)
 {
     Int8 pos = NStr::StringToInt8( seq_pos_str, NStr::fConvErr_NoThrow );
-    TSeqPos ret_value = 0;
+    TAgpPos ret_value = 0;
     int error_code = 0;
     if(pos<=0) {
         error_code = CAgpErr::E_MustBePositive;
-    } else if (pos > std::numeric_limits<TSeqPos>::max()) {
+    } else if (pos > std::numeric_limits<TAgpPos>::max()) {
         error_code = CAgpErr::E_MustFitSeqPosType;
     }
     if (error_code) {
@@ -415,7 +415,7 @@ TSeqPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details
         }
     }
     else {
-        ret_value = static_cast<TSeqPos>(pos);
+        ret_value = static_cast<TAgpPos>(pos);
     }
     return ret_value;
 }
@@ -529,7 +529,7 @@ int CAgpRow::FromString(const string& line)
 
             int code=ParseComponentCols();
             if(code==0) {
-                TSeqPos component_range_len=component_end-component_beg+1;
+                TAgpPos component_range_len=component_end-component_beg+1;
                 if(component_range_len != object_range_len) {
                     m_AgpErr->Msg( CAgpErr::E_ObjRangeNeComp, string(": ") +
                         i2s(object_range_len   ) + " != " +
@@ -843,7 +843,7 @@ void CAgpRow::SetErrorHandler(CAgpErr* arg)
     m_AgpErr=arg;
 }
 
-bool CAgpRow::CheckComponentEnd( const string& comp_id, TSeqPos comp_end, TSeqPos comp_len,
+bool CAgpRow::CheckComponentEnd( const string& comp_id, TAgpPos comp_end, TAgpLen comp_len,
   CAgpErr& agp_err)
 {
     if( comp_end > comp_len) {
