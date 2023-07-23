@@ -503,7 +503,7 @@ void CAgpValidateReader::OnScaffoldEnd()
 
       TMapStrInt::iterator it = m_comp2len->find( m_prev_row->GetComponentId() );
       if( it!=m_comp2len->end() ) {
-        int len = it->second;
+        TAgpLen len = it->second;
         if(m_prev_component_beg!=1 || m_prev_component_end<len ) {
           m_AgpErr->Msg( CAgpErrEx::W_UnSingleCompNotInFull,
             " (" + i2s(m_prev_component_end-m_prev_component_beg+1) + " out of " + i2s(len)+ " bp)",
@@ -1641,7 +1641,7 @@ int CValuesCount::x_byCount( value_type* a, value_type* b )
 }
 
 //// class CCompSpans - stores data for all preceding components
-CCompSpans::TCheckSpan CCompSpans::CheckSpan(int span_beg, int span_end, bool isPlus)
+CCompSpans::TCheckSpan CCompSpans::CheckSpan(TAgpPos span_beg, TAgpPos span_end, bool isPlus)
 {
   // The lowest priority warning (to be ignored for draft seqs)
   TCheckSpan res( begin(), CAgpErrEx::W_DuplicateComp );
@@ -1670,7 +1670,7 @@ void CCompSpans::AddSpan(const CCompVal& span)
 }
 
 //// class CMapCompLen
-int CMapCompLen::AddCompLen(const string& acc, int len, bool increment_count)
+TAgpLen CMapCompLen::AddCompLen(const string& acc, TAgpLen len, bool increment_count)
 {
   TMapStrInt::value_type acc_len(acc, len);
   TMapStrIntResult insert_result = insert(acc_len);

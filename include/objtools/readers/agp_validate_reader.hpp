@@ -44,7 +44,7 @@
 BEGIN_NCBI_SCOPE
 
 // Map of string->int populated by sequence ids->lengths from a FASTA file.
-typedef map<string, int> TMapStrInt ;
+typedef map<string, TAgpLen> TMapStrInt;
 class NCBI_XOBJREAD_EXPORT CMapCompLen : public TMapStrInt
 {
 public:
@@ -53,7 +53,7 @@ public:
 
   typedef pair<TMapStrInt::iterator, bool> TMapStrIntResult;
   // returns 0 on success, or a previous length not equal to the new one
-  int AddCompLen(const string& acc, int len, bool increment_count=true);
+  TAgpLen AddCompLen(const string& acc, TAgpLen len, bool increment_count=true);
   CMapCompLen()
   {
     m_count=0;
@@ -87,7 +87,7 @@ private:
 class NCBI_XOBJREAD_EXPORT CCompVal
 {
 public:
-  int beg, end;
+  TAgpPos beg, end;
   char ori;
   int file_num, line_num;
 
@@ -102,7 +102,7 @@ public:
     line_num=line_num_arg;
     file_num = ((CAgpErrEx*)(row.GetErrorHandler()))->GetFileNum();
   }
-  int getLen() const { return end - beg + 1; }
+  TAgpLen getLen() const { return end - beg + 1; }
 
   string ToString(CAgpErrEx* agpErrEx) const
   {
@@ -138,8 +138,8 @@ public:
   // or the first span out of order and CAgpErr::W_SpansOrder,
   // or begin() and CAgpErr::W_DuplicateComp.
   // The caller can ignore the last 2 warnings for draft seqs.
-  typedef pair<iterator, int> TCheckSpan;
-  TCheckSpan CheckSpan(int span_beg, int span_end, bool isPlus);
+  typedef pair<iterator, TAgpPos> TCheckSpan;
+  TCheckSpan CheckSpan(TAgpPos span_beg, TAgpPos span_end, bool isPlus);
   void AddSpan(const CCompVal& span); // CCompSpans::iterator it,
 
 };
@@ -207,7 +207,7 @@ protected:
   CMapCompLen* m_comp2len; // for optional check of component lengths (or maybe object lengths)
   CMapCompLen m_scaf2len;  // for: -scaf Scaf_AGP_file(s) -chr Chr_AGP_file(s)
   TMapStrRangeColl* m_comp2range_coll;
-  int m_expected_obj_len;
+  TAgpLen m_expected_obj_len;
   int m_comp_name_matches;
   int m_obj_name_matches;
 
@@ -217,7 +217,7 @@ protected:
   int m_gapsInLastObject;
   //bool m_prev_orientation_unknown;
   char m_prev_orientation; // 0 when we need not warn about it (not in singleton, etc)
-  int m_prev_component_beg, m_prev_component_end;
+  TAgpPos m_prev_component_beg, m_prev_component_end;
 
   string m_prev_component_id; // for W_BreakingGapSameCompId: only set when encountering a breaking gap
 
@@ -253,7 +253,7 @@ protected:
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
-  typedef pair<int,int> TPairIntInt;
+  typedef pair<TAgpPos,int> TPairIntInt;
   TMapIntInt m_ln_ev_flags2count;
 
   typedef pair<TMapIntInt::iterator, bool> TMapIntIntResult;
@@ -275,8 +275,8 @@ protected:
   int m_last_scaf_start_line;
   bool m_last_scaf_start_is_obj;
 
-  int m_max_comp_beg;
-  int m_max_obj_beg;
+  TAgpPos m_max_comp_beg;
+  TAgpPos m_max_obj_beg;
   bool m_has_partial_comp, m_has_comp_of_unknown_len;
 
   // Former CAgpValidateReader::x_PrintIdsNotInAgp(), split into member functions for the purpose of
