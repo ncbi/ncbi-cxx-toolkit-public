@@ -56,6 +56,8 @@ Author: Jason Papadopoulos
 #include <algo/blast/api/msa_pssm_input.hpp>    // for CPsiBlastInputClustalW
 #include <algo/blast/api/pssm_engine.hpp>       // for CPssmEngine
 
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_reader/tax4blastsqlite.hpp> // for taxid to their descendant taxids lookup
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
@@ -2211,6 +2213,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgTaxIdListFile);
     database_args.push_back(kArgNegativeTaxIdList);
     database_args.push_back(kArgNegativeTaxIdListFile);
+    database_args.push_back(kArgTaxIdTargetOnly);
     if (m_SupportIPGFiltering) {
     	database_args.push_back(kArgIpgList);
     	database_args.push_back(kArgNegativeIpgList);
@@ -2270,6 +2273,8 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "Restrict search of database to everything "
                                 "except the specified taxonomy IDs",
                                 CArgDescriptions::eString);
+	// Disable Tax ID resoution to the descendants
+        arg_desc.AddFlag(kArgTaxIdTargetOnly, "Disable TaxId resolution to the descendants ", true);
 
         if (m_SupportIPGFiltering) {
             arg_desc.AddOptionalKey(kArgIpgList, "filename",
@@ -2293,7 +2298,6 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             kArgNegativeSeqidList,
             kArgNegativeTaxIdList,
             kArgNegativeTaxIdListFile,
-
         };
         for (size_t i = 0; i < kBlastDBFilteringOptions.size(); i++) {
             for (size_t j = i+1; j < kBlastDBFilteringOptions.size(); j++) {
@@ -2374,8 +2378,17 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
 
 
-
-static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, CRef<CSearchDatabase> & sdb)
+//
+// Get taid(s) from user provided string or file, optionally resolve taxid to it's descendant if isTargetOnly == false
+// logic to add/resolve is next:
+// --------------------------------------------------------------------------------------
+// isTargetOnly  |   decsendant(s) found |  
+// --------------------------------------------------------------------------------------
+// TRUE          |    N/A                |  add user's taxids, no lookup for decsendant
+// FALSE         |    TRUE               |  add user's taxid AND add only found descendant(s)                 
+// --------------------------------------------------------------------------------------
+//
+static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, CRef<CSearchDatabase> & sdb, bool isTargetOnly )
 {
 	vector<string> ids;
 	if (isFile) {
@@ -2386,6 +2399,7 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
         }
         CNcbiIfstream instream(filename.c_str());
         CStreamLineReader reader(instream);        
+
         while (!reader.AtEOF()) {
             reader.ReadLine();
             ids.push_back(reader.GetCurrentLine());
@@ -2394,6 +2408,15 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
 	else {
         NStr::Split(in, ",", ids, NStr::fSplit_Tokenize);
     }
+    // JIRA SB-3780
+    //auto dbpath =  kEmptyStr;
+    unique_ptr<ITaxonomy4Blast> tb;
+    try{
+      tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
+    }
+    catch(CException &){
+	NCBI_THROW(CBlastException, eInvalidArgument, "Missing taxonomy4blast.sqlite3");
+    }
 
 	set<TTaxId> tax_ids;
     for(unsigned int i=0; i < ids.size(); i++) {
@@ -2401,7 +2424,24 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
     		if(NStr::IsBlank(ids[i])){
     			continue;
     		}
-    		tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+		if( isTargetOnly ) {
+    		   tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+		}
+		else {
+		    //FIRST:  ADD user's taxid
+		    tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+		// JIRA SB-3780
+		// resolve given taxid to their descendant taxids 
+		    vector<int> desc;
+		    auto taxid = NStr::StringToInt( ids[i] );
+		    tb->GetLeafNodeTaxids(taxid, desc);
+		    if( desc.size() ) {
+		       //SECOND:  descendant taxids  
+		       for (auto i: desc){
+			  tax_ids.insert( static_cast<TTaxId>(i) );
+		       }
+		    }
+		}
     	}
     	catch(CException &){
     		NCBI_THROW(CInputException, eInvalidInput, "Invalid taxidlist file ");
@@ -2451,16 +2491,16 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
             string fn(SeqDB_ResolveDbPath(args[kArgNegativeSeqidList].AsString()));
             m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,CSeqDBFileGiList::eSiList)));
         } else if (args.Exist(kArgTaxIdList) && args[kArgTaxIdList]) {
-        	s_GetTaxIDList(args[kArgTaxIdList].AsString(), false, false, m_SearchDb);
+        	s_GetTaxIDList(args[kArgTaxIdList].AsString(), false, false, m_SearchDb,args[kArgTaxIdTargetOnly].AsBoolean());
 
         } else if (args.Exist(kArgTaxIdListFile) && args[kArgTaxIdListFile]) {
-        	s_GetTaxIDList(args[kArgTaxIdListFile].AsString(), true, false, m_SearchDb);
+        	s_GetTaxIDList(args[kArgTaxIdListFile].AsString(), true, false, m_SearchDb, args[kArgTaxIdTargetOnly].AsBoolean());
 
         } else if (args.Exist(kArgNegativeTaxIdList) && args[kArgNegativeTaxIdList]) {
-        	s_GetTaxIDList(args[kArgNegativeTaxIdList].AsString(), false, true, m_SearchDb);
+        	s_GetTaxIDList(args[kArgNegativeTaxIdList].AsString(), false, true, m_SearchDb, args[kArgTaxIdTargetOnly].AsBoolean());
 
         } else if (args.Exist(kArgNegativeTaxIdListFile) && args[kArgNegativeTaxIdListFile]) {
-        	s_GetTaxIDList(args[kArgNegativeTaxIdListFile].AsString(), true, true, m_SearchDb);
+        	s_GetTaxIDList(args[kArgNegativeTaxIdListFile].AsString(), true, true, m_SearchDb,args[kArgTaxIdTargetOnly].AsBoolean());
 
         } else if (args.Exist(kArgIpgList) && args[kArgIpgList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgIpgList].AsString()));

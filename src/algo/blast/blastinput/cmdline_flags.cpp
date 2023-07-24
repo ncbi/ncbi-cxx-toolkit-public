@@ -250,6 +250,7 @@ const string kArgTaxIdList("taxids");
 const string kArgTaxIdListFile("taxidlist");
 const string kArgNegativeTaxIdList("negative_taxids");
 const string kArgNegativeTaxIdListFile("negative_taxidlist");
+const string kArgTaxIdTargetOnly("target_only");
 
 const string kArgPaired("paired");
 const string kArgScore("score");
