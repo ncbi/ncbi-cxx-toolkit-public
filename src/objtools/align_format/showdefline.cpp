@@ -130,11 +130,11 @@ if\" WIDTH=15 HEIGHT=15 ALT=\"Checked mark\">";
 static const string kPsiblastEvalueLink = "<a name = Evalue></a>";
 
 static const string  kPsiblastCheckboxChecked = "<INPUT TYPE=\"checkbox\" NAME\
-=\"checked_GI\" VALUE=\"%d\" CHECKED>  <INPUT TYPE=\"hidden\" NAME =\"good_G\
-I\" VALUE = \"%d\">";
+=\"checked_GI\" VALUE=\"%" NCBI_INT8_FORMAT_SPEC "\" CHECKED>  <INPUT TYPE=\"hidden\" NAME =\"good_G\
+I\" VALUE = \"%" NCBI_INT8_FORMAT_SPEC "\">";
 
 static const string  kPsiblastCheckbox =  "<INPUT TYPE=\"checkbox\" NAME=\"ch\
-ecked_GI\" VALUE=\"%d\">  ";
+ecked_GI\" VALUE=\"%" NCBI_INT8_FORMAT_SPEC "\">  ";
 
 //Max length of title string for the the link
 static const int kMaxDescrLength = 4096;
@@ -726,6 +726,23 @@ void CShowBlastDefline::x_InitDefline(void)
 }
 
 
+static void s_DisplayCheckboxChecked(CNcbiOstream& out, TGi gi)
+{
+    char buf[256];
+    snprintf(buf, sizeof(buf), kPsiblastCheckboxChecked.c_str(), GI_TO(Int8, gi), GI_TO(Int8, gi));
+    buf[sizeof(buf)-1] = '\0';
+    out << buf;
+}
+
+
+static void s_DisplayCheckbox(CNcbiOstream& out, TGi gi)
+{
+    char buf[256];
+    snprintf(buf, sizeof(buf), kPsiblastCheckbox.c_str(), GI_TO(Int8, gi));
+    buf[sizeof(buf)-1] = '\0';
+    out << buf;
+}
+
 
 void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 {
@@ -849,14 +866,10 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                     out << kPsiblastCheckedBackgroundGif;
                 }
             }
-            char buf[256];
             if((m_Option & eCheckboxChecked)){
-                sprintf(buf, kPsiblastCheckboxChecked.c_str(), sdl->gi,
-                        sdl->gi);
-                out << buf;
+                s_DisplayCheckboxChecked(out, sdl->gi);
             } else if (m_Option & eCheckbox) {
-                sprintf(buf, kPsiblastCheckbox.c_str(), sdl->gi);
-                out << buf;
+                s_DisplayCheckbox(out, sdl->gi);
             }
         }
 
@@ -968,17 +981,25 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
     }
 }
 
+static void s_DisplayStructureOverview(CNcbiOstream& out,
+                                       const string& rid,
+                                       const string& param,
+                                       const string& entrez_term)
+{
+    char buf[512];
+    snprintf(buf, sizeof(buf), kStructure_Overview, rid.c_str(),
+             0, 0, param.c_str(), "overview",
+             (entrez_term.empty()? "none": entrez_term.c_str()));
+    buf[sizeof(buf)-1] = '\0';
+    out << ' ' << buf <<"\n\n";
+}
+
 void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
 {
     x_InitDeflineTable();
     if(m_StructureLinkout){
-        char buf[512];
         string  mapCDDParams = (NStr::Find(m_CddRid,"data_cache") != NPOS) ? "" : "blast_CD_RID=" + m_CddRid;
-        sprintf(buf, kStructure_Overview, m_Rid.c_str(),
-                        0, 0, mapCDDParams.c_str(), "overview",
-                        m_EntrezTerm == NcbiEmptyString ?
-                        "none": m_EntrezTerm.c_str());
-        out << buf <<"\n\n";
+        s_DisplayStructureOverview(out, m_Rid, mapCDDParams, m_EntrezTerm);
     }
     x_DisplayDefline(out);    
 }
@@ -1236,7 +1257,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
     }
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);
-        size_t line_length = 0;
+        //size_t line_length = 0;
         string line_component;
         cur_database_type = (sdl->linkout & eGenomicSeq);
         if (is_mixed_database) {
@@ -1309,14 +1330,10 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
                     out << kPsiblastCheckedBackgroundGif;
                 }
             }
-            char buf[256];
             if((m_Option & eCheckboxChecked)){
-                sprintf(buf, kPsiblastCheckboxChecked.c_str(), sdl->gi,
-                        sdl->gi);
-                out << buf;
+                s_DisplayCheckboxChecked(out, sdl->gi);
             } else if (m_Option & eCheckbox) {
-                sprintf(buf, kPsiblastCheckbox.c_str(), sdl->gi);
-                out << buf;
+                s_DisplayCheckbox(out, sdl->gi);
             }
         }
 
@@ -1328,7 +1345,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
             if(sdl->gi > ZERO_GI){
                 line_component = "gi|" + NStr::NumericToString(sdl->gi) + "|";
                 out << line_component;
-                line_length += line_component.size();
+                //line_length += line_component.size();
             }
         }
         if(!sdl->id.Empty()){
@@ -1337,7 +1354,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
                 string id_str;
                 sdl->id->GetLabel(&id_str, CSeq_id::eContent);
                 out << id_str;
-                line_length += id_str.size();
+                //line_length += id_str.size();
             }
         }
         if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
@@ -1449,12 +1466,7 @@ void CShowBlastDefline::DisplayBlastDeflineTable(CNcbiOstream & out)
 {
     x_InitDeflineTable();
     if(m_StructureLinkout){
-        char buf[512];
-        sprintf(buf, kStructure_Overview, m_Rid.c_str(),
-                        0, 0, m_CddRid.c_str(), "overview",
-                        m_EntrezTerm == NcbiEmptyString ?
-                        "none": m_EntrezTerm.c_str());
-        out << buf <<"\n\n";
+        s_DisplayStructureOverview(out, m_Rid, m_CddRid, m_EntrezTerm);
     }
     x_DisplayDeflineTable(out);
 }
