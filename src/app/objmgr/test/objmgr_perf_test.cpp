@@ -617,7 +617,7 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
             << ",min,max,avg,med,p75,count" << endl;
     }
     else {
-        cout << left << setw(name_len + 2) << SPerfKey::GetTitleRow(csv)
+        cout << left << setw((int)name_len + 2) << SPerfKey::GetTitleRow(csv)
             << right
             << setw(8) << "min"
             << setw(10) << "max"
@@ -688,7 +688,7 @@ void CPerfTestApp::x_ParseResults(istream& istr, bool csv)
                 << endl;
         }
         else {
-            cout << left << setw(name_len + 2) << test_it->first.AsString(csv)
+            cout << left << setw((int)name_len + 2) << test_it->first.AsString(csv)
                 << right << fixed << setprecision(3)
                 << setw(8) << st[0] << "  "
                 << setw(8) << st[count - 1] << "  "
