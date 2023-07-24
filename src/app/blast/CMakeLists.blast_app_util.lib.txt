@@ -4,5 +4,6 @@ NCBI_begin_lib(blast_app_util)
   NCBI_sources(blast_app_util)
   NCBI_uses_toolkit_libraries(blastdb xnetblast blastinput xblastformat)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
+  NCBI_requires(SQLITE3)
 NCBI_end_lib()
 

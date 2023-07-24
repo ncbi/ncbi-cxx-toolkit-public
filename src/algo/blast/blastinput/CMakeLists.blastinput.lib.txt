@@ -8,10 +8,12 @@ NCBI_begin_lib(blastinput)
     igblastn_args igblastp_args deltablast_args magicblast_args kblastp_args
     blast_asn1_input
   )
+  NCBI_requires(SQLITE3)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
   NCBI_uses_toolkit_libraries(
     seqset xnetblast
     align_format ncbi_xloader_blastdb_rmt xblast
+    sqlitewrapp
   )
   NCBI_project_watchers(madden camacho fongah2 boratyng)
 NCBI_end_lib()
