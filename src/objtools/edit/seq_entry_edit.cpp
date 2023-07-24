@@ -2182,7 +2182,6 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         // Modify the copy of the feature
         bool isPartialStart = false;
         bool isPartialStop = false;
-        auto cds_range = copy_feat->GetLocation().GetTotalRange();
         TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed, isPartialStart, isPartialStop);
 
         if (bFeatureDeleted) {
@@ -3225,11 +3224,9 @@ void AdjustCdregionFrame(TSeqPos original_nuc_len,
     // Get partialness and strand of location before cutting
     bool bIsPartialStart = false;
     CSeq_loc::TStrand eStrand = eNa_strand_unknown;
-    TRange cds_range;
     if (cds->CanGetLocation()) {
         bIsPartialStart = cds->GetLocation().IsPartialStart(eExtreme_Biological);
         eStrand = cds->GetLocation().GetStrand();
-        cds_range = cds->GetLocation().GetTotalRange();
     }
 
     for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
