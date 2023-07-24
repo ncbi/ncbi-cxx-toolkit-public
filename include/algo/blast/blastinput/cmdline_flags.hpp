@@ -431,7 +431,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeTaxIdList;
 NCBI_BLASTINPUT_EXPORT extern const string kArgTaxIdListFile;
 /// Argument to specify file with taxonomy ids for Negative filtering
 NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeTaxIdListFile;
-
+/// Argument to not to resolve TaxId to descendant 
+NCBI_BLASTINPUT_EXPORT extern const string kArgTaxIdTargetOnly;
 
 // Magic-BLAST arguments
 /// Argument to specify whether mapped reads are paired

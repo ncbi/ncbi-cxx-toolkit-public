@@ -6,6 +6,8 @@
 
 LIB_PROJ = blastinput
 SUB_PROJ = unit_test demo
+
+REQUIRES = SQLITE3
 #EXPENDABLE_SUB_PROJ = demo
 
 srcdir = @srcdir@
