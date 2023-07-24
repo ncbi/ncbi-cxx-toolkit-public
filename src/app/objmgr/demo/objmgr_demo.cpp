@@ -3105,25 +3105,25 @@ int CDemoApp::Run(void)
                     total_length += seg.GetLength();
                     NcbiCout << NcbiEndl;
                 }
-                _ASSERT(level || total_length == actual_length);
-                _ASSERT(seg.GetPosition() == actual_end);
-                _ASSERT(seg.GetLength() == 0);
+                _VERIFY(level || total_length == actual_length);
+                _VERIFY(seg.GetPosition() == actual_end);
+                _VERIFY(seg.GetLength() == 0);
                 TSeqPos new_length = 0;
                 for ( --seg; seg; --seg ) {
                     _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
                     new_length += seg.GetLength();
                 }
-                _ASSERT(total_length == new_length);
-                _ASSERT(level || seg.GetPosition() == range_from);
-                _ASSERT(seg.GetLength() == 0);
+                _VERIFY(total_length == new_length);
+                _VERIFY(level || seg.GetPosition() == range_from);
+                _VERIFY(seg.GetLength() == 0);
                 new_length = 0;
                 for ( ++seg; seg; ++seg ) {
                     _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
                     new_length += seg.GetLength();
                 }
-                _ASSERT(total_length == new_length);
-                _ASSERT(seg.GetPosition() == actual_end);
-                _ASSERT(seg.GetLength() == 0);
+                _VERIFY(total_length == new_length);
+                _VERIFY(seg.GetPosition() == actual_end);
+                _VERIFY(seg.GetLength() == 0);
             }
             CSeqMap::const_iterator begin = seq_map.begin(0);
             _ASSERT(begin.GetPosition() == 0);
@@ -3135,14 +3135,14 @@ int CDemoApp::Run(void)
                 _ASSERT(iter.GetType() != CSeqMap::eSeqEnd);
                 total_length += iter.GetLength();
             }
-            _ASSERT(total_length == handle.GetBioseqLength());
+            _VERIFY(total_length == handle.GetBioseqLength());
             total_length = 0;
             for ( CSeqMap::const_iterator iter = end; iter != begin; ) {
                 --iter;
                 _ASSERT(iter.GetType() != CSeqMap::eSeqEnd);
                 total_length += iter.GetLength();
             }
-            _ASSERT(total_length == handle.GetBioseqLength());
+            _VERIFY(total_length == handle.GetBioseqLength());
         }
 
         ITERATE ( vector<CRef<CPrefetchRequest> >, it, prefetch_snp ) {
