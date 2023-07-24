@@ -27,13 +27,13 @@ SRC  = $(SRC_CXX)
 
 LIB = blastinput
 
-DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqdb $(OBJREAD_LIBS) $(OBJMGR_LIBS) xutil
+DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqdb $(OBJREAD_LIBS) $(OBJMGR_LIBS) xutil sqlitewrapp
 
 # should be redundant, given the above :-/
 ASN_DEP = seqset xnetblast
 
 CFLAGS   = $(FAST_CFLAGS)
-CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLAST $(SQLITE3_INCLUDE)  $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
@@ -43,4 +43,4 @@ WATCHERS = madden camacho fongah2 boratyng
 
 
 USES_LIBRARIES =  \
-    $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) align_format
+    $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) align_format sqlitewrapp
