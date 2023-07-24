@@ -282,16 +282,6 @@ string s_GetAccessionWithoutPeriod(
     return accn;
 }
 
-static string s_get_anchor_html(const string & sAnchorName, TGi iGi )
-{
-    CNcbiOstrstream result;
-
-    result << "<a name=\"" << sAnchorName << "_"
-        << iGi << "\"></a>";
-
-    return (string)CNcbiOstrstreamToString(result);
-}
-
 static string s_get_anchor_html(const string & sAnchorName, CBioseqContext *ctx )
 {
     CNcbiOstrstream result;
