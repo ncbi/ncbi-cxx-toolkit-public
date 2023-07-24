@@ -1025,7 +1025,7 @@ void CTestApp::RunPrecisionBenchmark(void)
         call_type = kCallstrtod;
     }
 
-    char str[200];
+    char str[200] = {};
     char* errptr = 0;
     const int MAX_DIGITS = 24;
 
@@ -1043,7 +1043,7 @@ void CTestApp::RunPrecisionBenchmark(void)
             for ( int i = 0; i < digits; ++i ) {
                 *ptr++ = char('0' + rand()%10);
             }
-            sprintf(ptr, "e%d", exp);
+            snprintf(ptr, sizeof(str)-1, "e%d", exp);
         }
 
         double v_ref = PreciseStringToDouble(str);
