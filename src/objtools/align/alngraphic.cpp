@@ -661,9 +661,9 @@ void CAlnGraphic::x_DisplayMaster(int master_len, CNCBINode* center, CHTML_table
                                        m_MasterRange->GetFrom() : 0)); 
 
         spacer_length = (int)(pixel_factor*round_number) 
-            - kDigitWidth*(previous_digitstr.size() 
+            - int(kDigitWidth*(previous_digitstr.size() 
                            - previous_digitstr.size()/2) 
-            - kDigitWidth*(digit_str.size()/2);
+            - kDigitWidth*(digit_str.size()/2));
         previous_digitstr = digit_str;
 
         image = new CHTML_img(m_ImagePath + kGifWhite, spacer_length, m_BarHeight);
@@ -1033,9 +1033,9 @@ string CAlnGraphic::x_FormatScale(void)
                                        m_MasterRange->GetFrom() : 0)); 
 
         int spacer_length = (int)(m_Pixel_factor*m_Round_number) 
-            - kDigitWidth*(previous_digitstr.size() 
+            - int(kDigitWidth*(previous_digitstr.size() 
                            - previous_digitstr.size()/2) 
-            - kDigitWidth*(digit_str.size()/2);
+            - kDigitWidth*(digit_str.size()/2));
         previous_digitstr = digit_str;
 
         grScaleDigits += x_FormatScaleDigit(digit_str,spacer_length);        
