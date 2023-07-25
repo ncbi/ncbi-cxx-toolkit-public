@@ -5789,7 +5789,7 @@ if test "$with_perl" != "no" ; then
       PERL_ARCHLIB=`$PERL -MConfig -e 'print \$Config{archlibexp};'`
       PERL_FLAGS=`$PERL -MConfig -e 'print join " ", grep /^-[[DI]]/, split /\\s+/, \$Config{cppflags};'`
       PERL_INCLUDE="-I$PERL_ARCHLIB/CORE $PERL_FLAGS"
-      PERL_DEPS=`$PERL -MConfig -e 'print \$Config{libs};'`
+      PERL_DEPS=`$PERL -MConfig -e '$_ = " \$Config{libs} "; s/ -l\S*db\S*(?= )/ /g; print;'`
       NCBI_RPATHIFY(PERL_LIBS, $PERL_ARCHLIB/CORE, [ -lperl $PERL_DEPS])
       CPPFLAGS="$PERL_INCLUDE $orig_CPPFLAGS"
       LIBS="$PERL_LIBS $orig_LIBS"
