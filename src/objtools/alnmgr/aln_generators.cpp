@@ -317,7 +317,7 @@ CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
             ++row;
         }
         if (diag.GetStarts().size() < 2) continue;
-        diag.SetDim(starts.size());
+        diag.SetDim(CDense_diag::TDim(starts.size()));
 #if _DEBUG
         diag.Validate();
 #endif
@@ -345,7 +345,7 @@ CreateDensegFromAnchoredAln(const CAnchoredAln& anchored_aln,
 
     // Determine dimensions
     CDense_seg::TNumseg& numseg = ds->SetNumseg();
-    numseg = anchor_segments.size();
+    numseg = CDense_seg::TNumseg(anchor_segments.size());
     CDense_seg::TDim& dim = ds->SetDim();
     dim = anchored_aln.GetDim();
 
@@ -446,7 +446,7 @@ CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 
     // Determine dimensions
     CDense_seg::TNumseg& numseg = ds->SetNumseg();
-    numseg = pairwise_aln.size();
+    numseg = CDense_seg::TNumseg(pairwise_aln.size());
     ds->SetDim(2);
     int matrix_size = 2 * numseg;
 
@@ -843,7 +843,7 @@ CreateAlignSetFromAnchoredAln(const CAnchoredAln& anchored_aln,
     CDense_seg::TNumseg seg;
 
     // Determine dimensions
-    CDense_seg::TNumseg numseg = anchor_segments.size();
+    CDense_seg::TNumseg numseg = CDense_seg::TNumseg(anchor_segments.size());
     CDense_seg::TDim dim = anchored_aln.GetDim();
 
     vector< CRef<CDense_seg> > dsegs;
@@ -937,7 +937,7 @@ CreateAlignSetFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 {
     CRef<CSeq_align_set> disc(new CSeq_align_set);
 
-    CDense_seg::TNumseg numseg = pairwise_aln.size();
+    CDense_seg::TNumseg numseg = CDense_seg::TNumseg(pairwise_aln.size());
 
     vector< CRef<CDense_seg> > dsegs;
     dsegs.resize(numseg);
@@ -1002,7 +1002,7 @@ CreatePackedsegFromAnchoredAln(const CAnchoredAln& anchored_aln,
 
     // Determine dimensions
     CPacked_seg::TNumseg& numseg = ps->SetNumseg();
-    numseg = anchor_segments.size();
+    numseg = CDense_seg::TNumseg(anchor_segments.size());
     CPacked_seg::TDim& dim = ps->SetDim();
     dim = anchored_aln.GetDim();
 
@@ -1106,7 +1106,7 @@ CreatePackedsegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 
     // Determine dimensions
     CPacked_seg::TNumseg& numseg = ps->SetNumseg();
-    numseg = pairwise_aln.size();
+    numseg = CDense_seg::TNumseg(pairwise_aln.size());
     ps->SetDim(2);
     int matrix_size = 2 * numseg;
 
