@@ -281,7 +281,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 
                 // add regular sequence to buffer
                 GetSeqString(buff, row, start, stop);
-                TSeqPos buf_len = min<TSeqPos>(buff.size(), seg_len);
+                TSeqPos buf_len = min<TSeqPos>(TSeqPos(buff.size()), seg_len);
                 buffer += buff;
                 if (buf_len < seg_len) {
                     // Not enough chars in the sequence, add gap
@@ -457,7 +457,7 @@ CAlnVec::CreateConsensus(int& consensus_row,
     for (i = 0;  i < consens->size();  ++i) {
         // copy the old entries
         for (j = 0;  j < (size_t)m_NumRows;  ++j) {
-            int idx = i * m_NumRows + j;
+            size_t idx = i * m_NumRows + j;
             new_ds->SetStarts().push_back(m_Starts[idx]);
             if ( !m_Strands.empty() ) {
                 new_ds->SetStrands().push_back(m_Strands[idx]);
@@ -479,7 +479,7 @@ CAlnVec::CreateConsensus(int& consensus_row,
             new_ds->SetStrands().push_back(eNa_strand_unknown);
         }
 
-        total_bases += (*consens)[i].length();
+        total_bases += TSignedSeqPos((*consens)[i].length());
         data += (*consens)[i];
     }
 
@@ -508,7 +508,7 @@ CAlnVec::CreateConsensus(int& consensus_row,
          CSeq_inst& inst = consensus_seq.SetInst();
          inst.SetRepr(CSeq_inst::eRepr_raw);
          inst.SetMol(isNucleotide ? CSeq_inst::eMol_na : CSeq_inst::eMol_aa);
-         inst.SetLength(data.length());
+         inst.SetLength(CSeq_inst::TLength(data.length()));
 
          CSeq_data& seq_data = inst.SetSeq_data();
          if (isNucleotide) {
@@ -520,7 +520,7 @@ CAlnVec::CreateConsensus(int& consensus_row,
          }
     }}
 
-    consensus_row = new_ds->GetIds().size() - 1;
+    consensus_row = int(new_ds->GetIds().size()) - 1;
     return new_ds;
 }
 
@@ -776,7 +776,7 @@ void CAlnVec::CreateConsensus(vector<string>& consens) const
 
 void CAlnVec::RetrieveSegmentSequences(size_t segment, vector<string>& segs) const
 {
-    int segment_row_index = segment*m_NumRows;
+    size_t segment_row_index = segment*m_NumRows;
     for (size_t i = 0;  i < (size_t)m_NumRows;  ++i, ++segment_row_index) {
         TSignedSeqPos start = m_Starts[ segment_row_index ];
         if (start != -1) {
@@ -784,10 +784,10 @@ void CAlnVec::RetrieveSegmentSequences(size_t segment, vector<string>& segs) con
             
             string& s = segs[i];
 
-            if (IsPositiveStrand(i)) {
-                x_GetSeqVector(i).GetSeqData(start, stop, s);
+            if (IsPositiveStrand(TNumrow(i))) {
+                x_GetSeqVector(TNumrow(i)).GetSeqData(start, stop, s);
             } else {
-                CSeqVector &  seq_vec = x_GetSeqVector(i);
+                CSeqVector &  seq_vec = x_GetSeqVector(TNumrow(i));
                 TSeqPos size = seq_vec.size();
                 seq_vec.GetSeqData(size - stop, size - start, s);
             }

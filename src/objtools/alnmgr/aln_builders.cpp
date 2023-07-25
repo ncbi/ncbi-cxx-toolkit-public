@@ -694,7 +694,7 @@ BuildAln(TAnchoredAlnVec& in_alns,
         }
         break;
     }
-    out_aln.SetAnchorRow(anchor_first ? 0 : out_aln.GetPairwiseAlns().size() - 1);
+    out_aln.SetAnchorRow(anchor_first ? 0 : CAnchoredAln::TDim(out_aln.GetPairwiseAlns().size() - 1));
     if ( !(options.m_MergeFlags & CAlnUserOptions::fUseAnchorAsAlnSeq) ) {
         if ( !pseudo_seqid ) {
             CRef<CSeq_id> seq_id (new CSeq_id("lcl|pseudo [timestamp " +
