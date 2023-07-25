@@ -4491,7 +4491,57 @@ special  CATWFU000000000-CATWGA999999999  embl_tpa_wgs_nuc # 6+9
 special  CATWGC000000000-CATWGF999999999  embl_tpa_wgs_nuc # 6+9
 special  CATWGH000000000-CATWHB999999999  embl_tpa_wgs_nuc # 6+9
 special  CATWHD000000000-CATWHH999999999  embl_tpa_wgs_nuc # 6+9
-special  CATWHJ000000000-CATWMY999999999  embl_tpa_wgs_nuc # 6+9
+special  CATWHJ000000000-CATXER999999999  embl_tpa_wgs_nuc # 6+9
+special  CATXFC000000000-CATXGK999999999  embl_tpa_wgs_nuc # 6+9
+special  CATXGM000000000-CATXOD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATXOU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATXOW000000000-CATXOY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATXPD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATXRH000000000-CATYKS999999999  embl_tpa_wgs_nuc # 6+9
+special  CATYKU000000000-CATYSV999999999  embl_tpa_wgs_nuc # 6+9
+special  CATYSX000000000-CATYWN999999999  embl_tpa_wgs_nuc # 6+9
+special  CATYWP000000000-CATYYN999999999  embl_tpa_wgs_nuc # 6+9
+special  CATYYP000000000-CATYYZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATYZB000000000-CATZAQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATZAS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATZAU000000000-CATZAY999999999  embl_tpa_wgs_nuc # 6+9
+special  CATZBA000000000-CATZBT999999999  embl_tpa_wgs_nuc # 6+9
+special  CATZBV000000000-CATZCD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CATZCI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CATZCL000000000-CATZCO999999999  embl_tpa_wgs_nuc # 6+9
+special  CATZCR000000000-CATZKT999999999  embl_tpa_wgs_nuc # 6+9
+special  CATZKV000000000-CATZLJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CATZLM000000000-CATZVN999999999  embl_tpa_wgs_nuc # 6+9
+special  CATZVP000000000-CAUACO999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUACQ000000000-CAUAJN999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUAJP000000000-CAUAJR999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUAJV000000000-CAUAKB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAUART+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CAUARW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CAUASA000000000-CAUASF999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUASH000000000-CAUATU999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUAVB000000000-CAUAVD999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUAVF000000000-CAUAVL999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUAVN000000000-CAUAVW999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUAVY000000000-CAUBOM999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUBOO000000000-CAUBUH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUBUJ000000000-CAUBUT999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUBUV000000000-CAUDIX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAUDLZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CAUDMB000000000-CAUDMF999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUDMH000000000-CAUDNQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUDNS000000000-CAUEEO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CAUEER+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CAUEET000000000-CAUEGG999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUEII000000000-CAUFVH999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HBHG+8 embl_tpa_tsa_nuc
