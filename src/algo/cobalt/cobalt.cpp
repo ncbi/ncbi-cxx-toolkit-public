@@ -1,5 +1,3 @@
-static char const rcsid[] = "$Id$";
-
 /*
 * ===========================================================================
 *
@@ -786,7 +784,7 @@ CMultiAligner::x_FindQueryClusters()
     }
 
     // find a set of graph edges between sequences (will be used for clustering)
-    CRef<CLinks> links(new CLinks(kmer_counts.size()));
+    CRef<CLinks> links(new CLinks((Uint4)kmer_counts.size()));
     for (int i=0;i < (int)dmat->GetCols() - 1;i++) {
 
         // do no create links for sequences with user constraints as
@@ -916,7 +914,7 @@ CMultiAligner::x_FindQueryClusters()
             ? m_AllQueryData : m_QueryData;
         printf("Query clusters:\n");
         int cluster_idx = 0;
-        int num_in_clusters = 0;
+        size_t num_in_clusters = 0;
         ITERATE(CClusterer::TClusters, it_cl, clusters) {
             printf("Cluster %3d: ", cluster_idx++);
             printf("(prototype: %3d) ", it_cl->GetPrototype());
@@ -930,11 +928,11 @@ CMultiAligner::x_FindQueryClusters()
             }
         }
      
-        int gain = m_QueryData.size() - clusters.size();
-        printf("\nNumber of queries in clusters: %d (%.0f%%)\n", 
+        size_t gain = m_QueryData.size() - clusters.size();
+        printf("\nNumber of queries in clusters: %lu (%.0f%%)\n", 
                num_in_clusters,
                (double)num_in_clusters / m_QueryData.size() * 100.0);
-        printf("Number of domain searches reduced by: %d (%.0f%%)\n\n", gain, 
+        printf("Number of domain searches reduced by: %lu (%.0f%%)\n\n", gain, 
                (double) gain / m_QueryData.size() * 100.0);
 
         const CClusterer::TDistMatrix& d = m_Clusterer.GetDistMatrix();
@@ -1211,7 +1209,7 @@ void CMultiAligner::x_MultiAlignClusters(void)
     }
 
     // Insert in-cluster ranges to columns
-    size_t new_length = seq_length;
+    int new_length = seq_length;
 
     // for each cluster
     for (size_t cluster_idx=0;cluster_idx < clusters.size();cluster_idx++) {
@@ -1220,8 +1218,8 @@ void CMultiAligner::x_MultiAlignClusters(void)
         for (size_t i=0;i < m_ClusterGapPositions[cluster_idx].size();i++) {
 
             // get letter before which the gap needs to be placed
-            size_t letter = m_ClusterGapPositions[cluster_idx][i];
-            size_t offset = i;
+            Uint4 letter = m_ClusterGapPositions[cluster_idx][i];
+            Uint4 offset = i;
             int num = 1;
 
             // combine all gaps before the same letter as one range
@@ -1241,7 +1239,7 @@ void CMultiAligner::x_MultiAlignClusters(void)
 
             // insert the range in all cluster sequences
             it = columns.insert(it, SColumn());
-            x_InitInsertColumn(it, num_seqs, num, cluster_idx);
+            x_InitInsertColumn(it, num_seqs, num, (int)cluster_idx);
             ITERATE(CClusterer::TSingleCluster, elem, clusters[cluster_idx]) {
 
                 // for insert ranges leter index is absolute index in 
@@ -1453,7 +1451,7 @@ void CMultiAligner::x_CreateBlastQueries(blast::TSeqLocVector& queries,
 
             blast::SSeqLoc sl(*m_tQueries[m_InMSA1.size() + *it], *m_Scope);
             queries.push_back(sl);
-            indices.push_back(m_InMSA1.size() + *it);
+            indices.push_back((int)m_InMSA1.size() + *it);
         }
 
         return;
@@ -1504,7 +1502,7 @@ void CMultiAligner::x_CreatePatternQueries(vector<const CSequence*>& queries,
         indices.resize(m_QueryData.size());
         for (size_t i=0;i < m_QueryData.size();i++) {
             queries[i] = &m_QueryData[i];
-            indices[i] = i;
+            indices[i] = (int)i;
         }
         break;
 
