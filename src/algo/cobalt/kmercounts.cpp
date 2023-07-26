@@ -264,7 +264,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
         // Convert to sparse vector
         m_Counts.reserve(m_SeqLength - kmer_len + 1);
-        size_t ind = 0;
+        Uint4 ind = 0;
         Uint4 num_bit_chunks = num_elements / kBitChunk + 1;
         while (ind < num_elements / kBitChunk + 1) {
 
@@ -334,7 +334,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
         // Convert to sparse vector
         m_Counts.reserve(m_SeqLength - kmer_len + 1);
-        size_t ind = 0;
+        Uint4 ind = 0;
         Uint4 num_bit_chunks = num_elements / kBitChunk + 1;
         while (ind < num_elements / kBitChunk + 1) {
 
@@ -662,9 +662,9 @@ unsigned int CBinaryKmerCounts::CountCommonKmers(
     unsigned int result = 0;
     const Uint4* counts1 = &vect1.m_Counts[0];
     const Uint4* counts2 = &vect2.m_Counts[0];
-    int size = vect1.m_Counts.size();
+    size_t size = vect1.m_Counts.size();
 
-    for (int i=0;i < size;i++) {
+    for (size_t i=0;i < size;i++) {
         result += x_Popcount(counts1[i] & counts2[i]);
     }
 
