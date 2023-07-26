@@ -76,10 +76,7 @@ public:
     {
         m_vRanges.push_back(r);
     }
-    CRangeCollection(const CRangeCollection &c)
-    {
-        m_vRanges = c.m_vRanges;
-    }
+    CRangeCollection(const CRangeCollection &c) = default;
     
     // immitating vector, but providing only "const" access to elements
     const_iterator  begin() const   
