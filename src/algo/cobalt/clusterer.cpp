@@ -385,7 +385,7 @@ void CClusterer::ComputeClusters(double max_diam,
     vector<TPhyTreeNode*> nodes(num_elements);
     if (do_trees) {
         for (size_t i=0;i < nodes.size();i++) {
-            nodes[i] = s_CreateTreeLeaf(i);
+            nodes[i] = s_CreateTreeLeaf((int)i);
         }
     }
     vector< vector<double> > dists_to_root(num_elements);
@@ -393,7 +393,7 @@ void CClusterer::ComputeClusters(double max_diam,
     // Computing clusters
     // Exits the loop once minimum distance is larger than max_diam
     // It was checked above that such distance exists
-    int num_clusters = num_elements;
+    size_t num_clusters = num_elements;
     while (num_clusters > 1) {
 
         // Find first used dist matrix entries
@@ -494,8 +494,8 @@ void CClusterer::ComputeClusters(double max_diam,
             _ASSERT(nodes[min_j]);
 
             // left and right are meaningless, only to make code readble
-            const int left = min_i;
-            const int right = min_j;
+            const size_t left = min_i;
+            const size_t right = min_j;
 
             new_root->AddNode(nodes[left]);
             new_root->AddNode(nodes[right]);
@@ -637,7 +637,7 @@ void CClusterer::ComputeClustersFromLinks(void)
                                "Element index in pre-set cluster larger than "
                                "number of elements provided with links");
                 }
-                m_ClusterId[*elem] = i;
+                m_ClusterId[*elem] = (int)i;
             }
         }
     }
@@ -843,7 +843,7 @@ void CClusterer::x_JoinElements(const CLinks::SLink& link)
 
 void CClusterer::x_CreateCluster(int elem)
 {
-    int cluster_id;
+    size_t cluster_id;
 
     // if the list of unused entries in the cluster list is empty
     if (m_UnusedEntries.empty()) {
@@ -867,7 +867,7 @@ void CClusterer::x_CreateCluster(int elem)
     }
 
     // set cluster id for the element
-    m_ClusterId[elem] = cluster_id;
+    m_ClusterId[elem] = (int)cluster_id;
 
     if (m_MakeTrees) {
         _ASSERT(!m_Clusters[cluster_id].m_Tree);
