@@ -380,7 +380,6 @@ public:
         exclusiveMinimum_(false),
         exclusiveMaximum_(false)
     {
-        typedef typename SchemaDocumentType::ValueType ValueType;
         typedef typename ValueType::ConstValueIterator ConstValueIterator;
         typedef typename ValueType::ConstMemberIterator ConstMemberIterator;
 
