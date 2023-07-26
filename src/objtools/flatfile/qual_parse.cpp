@@ -148,7 +148,7 @@ bool CQualParser::xParseQualifierStart(
     }
     if (! sIsLegalQual(maybeQualKey)) {
         if (! silent) {
-            CFlatParseReport::UnknownQualifierKey(mFeatKey, mFeatLocation, qualKey);
+            CFlatParseReport::UnknownQualifierKey(mFeatKey, mFeatLocation, maybeQualKey);
         }
         return false;
     }
