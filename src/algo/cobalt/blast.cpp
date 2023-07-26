@@ -1,5 +1,3 @@
-static char const rcsid[] = "$Id$";
-
 /*
 * ===========================================================================
 *
@@ -174,7 +172,7 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
                                    vector<SSegmentLoc>& filler_segs)
 {
     const int kBlastBatchSize = 10000;
-    int num_full_queries = indices.size();
+    size_t num_full_queries = indices.size();
 
     if (filler_locs.empty())
         return;
@@ -224,7 +222,7 @@ CMultiAligner::x_AlignFillerBlocks(const TSeqLocVector& queries,
 
             int list1_oid = filler_segs[batch_start + i].seq_index;
 
-            for (int j = 0; j < num_full_queries; j++) {
+            for (size_t j = 0; j < num_full_queries; j++) {
 
                 // skip hits that map to the same query sequence
 
