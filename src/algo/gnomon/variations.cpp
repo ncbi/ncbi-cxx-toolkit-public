@@ -33,7 +33,7 @@ TLiteInDels GroupInDels(const TLiteInDels& sam_indels) {
             if(insertlen > 0)
                 indels.push_back(CLiteIndel(loc, insertlen));
             if(!deletion.empty())
-                indels.push_back(CLiteIndel(loc+insertlen,deletion.size(),deletion));
+                indels.push_back(CLiteIndel(loc+insertlen,(int)deletion.size(),deletion));
 
             loc = indl->Loc();
             if(indl->GetInDelV().empty()) {
@@ -49,7 +49,7 @@ TLiteInDels GroupInDels(const TLiteInDels& sam_indels) {
         if(insertlen > 0)
             indels.push_back(CLiteIndel(loc, insertlen));
         if(!deletion.empty())
-            indels.push_back(CLiteIndel(loc+insertlen,deletion.size(),deletion));
+            indels.push_back(CLiteIndel(loc+insertlen,(int)deletion.size(),deletion));
     }
 
     return indels;
@@ -278,7 +278,7 @@ TAlignModelList CMultAlign::GetVariationAlignList(bool correctionsonly) {
                 int count = j->second;
                 string acc = "Variant:"+contig_acc+":"+NStr::IntToString(range.GetFrom()+1)+":"+NStr::IntToString(range.GetTo()+1)+":"+NStr::IntToString(++num)+":"+NStr::IntToString(count);
 
-                CCigar cigar = GlbAlign(seq.c_str()+m_word, seq.size()-2*m_word, m_contigt.c_str()+range.GetFrom()+m_word, range.GetLength()-2*m_word, 1, 1, delta.matrix); // don't align anchors
+                CCigar cigar = GlbAlign(seq.c_str()+m_word, (int)seq.size()-2*m_word, m_contigt.c_str()+range.GetFrom()+m_word, range.GetLength()-2*m_word, 1, 1, delta.matrix); // don't align anchors
                 CGeneModel a(ePlus, 0, CGeneModel::eSR);
                 a.AddExon(range);
                 a.FrameShifts() = cigar.GetInDels(range.GetFrom()+m_word, seq.c_str()+m_word, m_contigt.c_str()+range.GetFrom()+m_word);
@@ -295,7 +295,7 @@ TAlignModelList CMultAlign::GetVariationAlignList(bool correctionsonly) {
             ITERATE(TSIMap, j, seq_counts) {
                 const string& seq = j->first;
                 int count = j->second;
-                CCigar cigar = GlbAlign(seq.c_str()+m_word, seq.size()-2*m_word, m_contigt.c_str()+range.GetFrom()+m_word, range.GetLength()-2*m_word, 1, 1, delta.matrix); // don't align anchors
+                CCigar cigar = GlbAlign(seq.c_str()+m_word, (int)seq.size()-2*m_word, m_contigt.c_str()+range.GetFrom()+m_word, range.GetLength()-2*m_word, 1, 1, delta.matrix); // don't align anchors
                 int dist = cigar.Distance(seq.c_str()+m_word, m_contigt.c_str()+range.GetFrom()+m_word);
                 if(dist < selected_dist || (dist == selected_dist && count > selected_weight)) {
                     selected_cigar = cigar;
@@ -346,8 +346,8 @@ void CMultAlign::PrepareReads(const vector<const CLiteAlign*>& all_alignsp) {
 }
 
 void CMultAlign::InsertDashesInBase() {
-    int reads_num = m_reads.size();
-    int contig_len = m_contigt.size();
+    int reads_num = (int)m_reads.size();
+    TSignedSeqPos contig_len = (TSignedSeqPos)m_contigt.size();
 
     TIntMap deletion_len;
     for(int ir = 0; ir < reads_num; ++ir) {
@@ -398,7 +398,7 @@ void CMultAlign::InsertDashesInBase() {
 }
 
 void CMultAlign::InsertDashesInReads() {
-    int reads_num = m_reads.size();
+    int reads_num = (int)m_reads.size();
 
     int dashes = 0;
     int r = 0;
@@ -411,7 +411,7 @@ void CMultAlign::InsertDashesInReads() {
         }
     }
     
-    int base_length = m_base.length();
+    int base_length = (int)m_base.length();
     for(int ir = 0; ir < reads_num; ++ir) {
         string& read = m_reads[ir];
         int start = m_starts[ir];
@@ -468,7 +468,7 @@ void CMultAlign::InsertDashesInReads() {
 }
 
 void CMultAlign::GetCounts() {
-    int reads_num = m_reads.size();
+    int reads_num = (int)m_reads.size();
     //    m_counts.resize(m_base.size());
     for(int ir = 0; ir < reads_num; ++ir) {
         int w = m_alignsp[ir]->Weight()+0.5;
@@ -487,7 +487,7 @@ void CMultAlign::PrepareStats() {
     vector<const CLiteAlign*> all_alignsp;
     SelectAligns(all_alignsp);
 
-    int aligns_size = all_alignsp.size();
+    int aligns_size = (int)all_alignsp.size();
     m_reads.reserve(aligns_size);
     m_starts.reserve(aligns_size);
     m_alignsp.reserve(aligns_size);
@@ -504,10 +504,10 @@ void CMultAlign::SeqCountsBetweenTwoStrongWords(const TSignedSeqRange& prev_stro
     accepted_cross = 0;
     TSignedSeqRange two_word_range(prev_strong_word_range.GetFrom(),strong_word_range.GetTo());
     TSignedSeqRange weak_range(prev_strong_word_range.GetTo()+1,strong_word_range.GetFrom()-1);
-    int ir_first = lower_bound(m_starts.begin(),m_starts.end(),two_word_range.GetFrom()-m_max_len)-m_starts.begin();
+    int ir_first = (int)(lower_bound(m_starts.begin(),m_starts.end(),two_word_range.GetFrom()-m_max_len)-m_starts.begin());
     for(int ir = ir_first; ir < (int)m_alignsp.size() && m_starts[ir] <= two_word_range.GetFrom(); ++ir) {
         int w = m_alignsp[ir]->Weight()+0.5;
-        TSignedSeqRange read_range(m_starts[ir],m_starts[ir]+m_reads[ir].size()-1);
+        TSignedSeqRange read_range(m_starts[ir],m_starts[ir]+(int)m_reads[ir].size()-1);
         if(Include(read_range,two_word_range)) {
             total_cross += w;
             if(prev_strong_word == EmitSequenceFromRead(ir, prev_strong_word_range)
@@ -523,7 +523,7 @@ void CMultAlign::SeqCountsBetweenTwoStrongWords(const TSignedSeqRange& prev_stro
 TSignedSeqRange CMultAlign::LegitRange(int ir) {
     const string& read = m_reads[ir];
     int start = m_starts[ir];
-    int end = start+read.size()-1;
+    int end = start+(int)read.size()-1;
 
     int first_legit_match = start;
     int shift = 0;
@@ -669,7 +669,7 @@ void CMultAlign::Variations(map<TSignedSeqRange,TSIMap>& variations, list<TSigne
 string CMultAlign::EmitSequenceFromRead(int ir, const TSignedSeqRange& word_range) {
     const string& read = m_reads[ir];
     int start = m_starts[ir];
-    int stop = start+read.size()-1;
+    int stop = start+(int)read.size()-1;
     string read_word;
     for(int r = max(start,word_range.GetFrom()); r <= min(stop,word_range.GetTo()); ++r) {
         if(read[r-start] != '-')
@@ -690,7 +690,7 @@ string CMultAlign::EmitSequenceFromBase(const TSignedSeqRange& word_range) {
 bool CMultAlign::CheckWord(const TSignedSeqRange& word_range, const string& word) {
     int total = 0;
     int match = 0;
-    int ir_first = lower_bound(m_starts.begin(),m_starts.end(),word_range.GetFrom()-m_max_len)-m_starts.begin();
+    int ir_first = (int)(lower_bound(m_starts.begin(),m_starts.end(),word_range.GetFrom()-m_max_len)-m_starts.begin());
     for(int ir = ir_first; ir < (int)m_alignsp.size() && m_starts[ir] <= word_range.GetFrom(); ++ir) {
         int w = m_alignsp[ir]->Weight()+0.5;
         TSignedSeqRange legit_range = LegitRange(ir);

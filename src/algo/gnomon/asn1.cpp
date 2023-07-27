@@ -456,7 +456,7 @@ int CollectUserField(const CUser_field& field, const string& name, vector<string
         if(fn.CanGetNum())
             count = fn.GetNum();
         else
-            count = strs.size();
+            count = (int)strs.size();
     }
 
     return count;
@@ -572,24 +572,24 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
 
         if (!chains.empty()) {
             support_field->AddField("Chains",chains);
-            support_field->SetData().SetFields().back()->SetNum(chains.size());
+            support_field->SetData().SetFields().back()->SetNum((CUser_field_Base::TNum)chains.size());
             have_something = true;
         }
         if (!cores.empty()) {
             support_field->AddField("Core",cores);
-            support_field->SetData().SetFields().back()->SetNum(cores.size());
+            support_field->SetData().SetFields().back()->SetNum((CUser_field_Base::TNum)cores.size());
             have_something = true;
         }
         if (!proteins.empty()) {
             sort(proteins.begin(),proteins.end());
             support_field->AddField("Proteins",proteins);
-            support_field->SetData().SetFields().back()->SetNum(proteins.size());
+            support_field->SetData().SetFields().back()->SetNum((CUser_field_Base::TNum)proteins.size());
             have_something = true;
         }
         if (!mrnas.empty()) {
             sort(mrnas.begin(),mrnas.end());
             support_field->AddField("mRNAs",mrnas);
-            support_field->SetData().SetFields().back()->SetNum(mrnas.size());
+            support_field->SetData().SetFields().back()->SetNum((CUser_field_Base::TNum)mrnas.size());
             have_something = true;
         }
         if (!ests.empty()) {
@@ -601,7 +601,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
         if (!short_reads.empty()) {
             sort(short_reads.begin(),short_reads.end());
             support_field->AddField("RNASeq",short_reads);
-            support_field->SetData().SetFields().back()->SetNum(short_reads.size());
+            support_field->SetData().SetFields().back()->SetNum((CUser_field_Base::TNum)short_reads.size());
             have_something = true;
         }
         if (!long_sras.empty()) {
@@ -618,7 +618,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
         }
         if (!unknown.empty()) {
             support_field->AddField("unknown",unknown);
-            support_field->SetData().SetFields().back()->SetNum(unknown.size());
+            support_field->SetData().SetFields().back()->SetNum((CUser_field_Base::TNum)unknown.size());
             have_something = true;
         }
 
@@ -785,7 +785,7 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
 
     TInDels indels = (is_protalign ? model.GetInDels(false) : model.FrameShifts());
     TInDels::const_iterator indel_i = indels.begin();
-    for (size_t i=0; i < model.Exons().size(); ++i) {
+    for (int i = 0; i < (int)model.Exons().size(); ++i) {
         const CModelExon *e = &model.Exons()[i]; 
 
         CRef<CSpliced_exon> se = spliced_exon(*e,model.Strand());

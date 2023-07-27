@@ -578,7 +578,7 @@ public:
 
 
 #ifdef _DEBUG
-    int oid;
+    Int8 oid;
 #endif
 
 private:
@@ -722,7 +722,8 @@ private:
     };
     static int FindLowerRange(const vector<CAlignMap::SMapRange>& a,  TSignedSeqPos p);
 
-    void InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const string& mism, int left_orige, int left_edite, int right_orige, int right_edite, EEdgeType left_type, EEdgeType right_type, const string& left_edit_extra_seq, const string& right_edit_extra_seq);
+    void InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, TSignedSeqPos len, const string& mism, TSignedSeqPos left_orige, TSignedSeqPos left_edite, TSignedSeqPos right_orige, TSignedSeqPos right_edite, 
+                             EEdgeType left_type, EEdgeType right_type, const string& left_edit_extra_seq, const string& right_edit_extra_seq);
     TSignedSeqPos InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSignedSeqPos orig_b, TSignedSeqPos edit_a, TInDels::const_iterator fsi_begin, TInDels::const_iterator fsi_end, EEdgeType type_a, EEdgeType type_b, const string& gseq_a, const string& gseq_b);
 
     vector<SMapRange> m_orig_ranges, m_edited_ranges;
