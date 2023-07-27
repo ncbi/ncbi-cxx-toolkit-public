@@ -36,7 +36,6 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbisys.hpp>
 #include <cgi/ncbires.hpp>
-#include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_util.hpp>
 #include <cgi/cgi_exception.hpp>
 
@@ -458,7 +457,7 @@ static void TestCgi(const CNcbiArguments& args)
         CNcbiIstrstream istr(inp_str);
         char len[64];
         assert(::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
-        assert( !NcbiSysChar_putenv(len) );
+        assert( !X_PUTENV(len) );
 
         assert( !X_PUTENV("SERVER_PORT=") );
         assert( !X_PUTENV("REMOTE_ADDRESS=") );
@@ -473,7 +472,7 @@ static void TestCgi(const CNcbiArguments& args)
         CNcbiIstrstream istr(inp_str);
         char len[64];
         assert(::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
-        assert( !NcbiSysChar_putenv(len) );
+        assert( !X_PUTENV(len) );
 
         assert( !X_PUTENV("SERVER_PORT=") );
         assert( !X_PUTENV("REMOTE_ADDRESS=") );
@@ -488,7 +487,7 @@ static void TestCgi(const CNcbiArguments& args)
         CNcbiIstrstream istr(inp_str);
         char len[64];
         assert(::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()));
-        assert( !NcbiSysChar_putenv(len) );
+        assert( !X_PUTENV(len) );
 
         assert( !X_PUTENV("SERVER_PORT=9999") );
         assert( !X_PUTENV("HTTP_USER_AGENT=MyUserAgent") );
@@ -501,7 +500,7 @@ static void TestCgi(const CNcbiArguments& args)
     string inp_str = "postXXX=valXXX";
     char len[64];
     assert( ::snprintf(len, 64, "CONTENT_LENGTH=%ld", (long)inp_str.size()) );
-    assert( !NcbiSysChar_putenv(len) );
+    assert( !X_PUTENV(len) );
 
     try { // POST + ISINDEX(action)
         CNcbiIstrstream istr(inp_str);
