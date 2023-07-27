@@ -42,10 +42,10 @@ const char *const k_aa_table = "KNKNXTTTTTRSRSXIIMIXXXXXXQHQHXPPPPPRRRRRLLLLLXXX
 
 void Convert(const CResidueVec& src, CEResidueVec& dst)
 {
-    int len = src.size();
+    size_t len = src.size();
     dst.clear();
     dst.reserve(len);
-    for(int i = 0; i < len; ++i)
+    for(size_t i = 0; i < len; ++i)
 	dst.push_back( fromACGT(src[i]) );
 }
 
@@ -57,19 +57,19 @@ void Convert(const CResidueVec& src, CDoubleStrandSeq& dst)
 
 void Convert(const CEResidueVec& src, CResidueVec& dst)
 {
-    int len = src.size();
+    size_t len = src.size();
     dst.clear();
     dst.reserve(len);
-    for(int i = 0; i < len; ++i)
+    for(size_t i = 0; i < len; ++i)
 	dst.push_back( toACGT(src[i]) );
 }
 
 void ReverseComplement(const CEResidueVec& src, CEResidueVec& dst)
 {
-    int len = src.size();
+    size_t len = src.size();
     dst.clear();
     dst.reserve(len);
-    for(int i = len-1; i >= 0; --i)
+    for(size_t i = len-1; i >= 0; --i)
 	dst.push_back(k_toMinus[(int)src[i]]);
 }
 
@@ -148,7 +148,7 @@ template bool IsStopCodon<TResidue>(const TResidue * seq, int strand);
 void FindAllCodonInstances(TIVec positions[], const EResidue codon[], const CEResidueVec& mrna, TSignedSeqRange search_region, int fixed_frame)
 {
     for (CEResidueVec::const_iterator pos = mrna.begin()+search_region.GetFrom(); (pos = search(pos,mrna.end(),codon,codon+3)) < mrna.begin()+search_region.GetTo(); ++pos) {
-        int l = pos-mrna.begin();
+        int l = (int)(pos-mrna.begin());
         int frame = l%3;
         if (fixed_frame==-1 || fixed_frame==frame)
             positions[frame].push_back(l);
@@ -183,9 +183,9 @@ bool Partial5pCodonIsStop(const CEResidueVec& seq_strand, int start, int frame) 
 void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& frame, bool obeystart)
 {
     int left_cds_limit = -1;
-    int reading_frame_start = mrna.size();
-    int reading_frame_stop = mrna.size();
-    int right_cds_limit = mrna.size();
+    int reading_frame_start = (int)mrna.size();
+    int reading_frame_stop = (int)mrna.size();
+    int right_cds_limit = (int)mrna.size();
     frame = -1;
     EStrand strand = model.Strand();
 
@@ -234,13 +234,13 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
     }
 
     if (left_cds_limit<0) {                                                             // don't know frame or no upstream stop
-        int model_start = mrnamap.MapEditedToOrig(0);
+        TSignedSeqPos model_start = mrnamap.MapEditedToOrig(0);
 
         if(Include(model.GetCdsInfo().ProtReadingFrame(),model_start) && reading_frame_start < 3) {
             starts[0].push_back(-3);            // proteins are scored no matter what
         } else {
             if(strand == eMinus)
-                model_start = contig_seq.size()-1-model_start; 
+                model_start = (TSignedSeqPos)contig_seq.size()-1-model_start; 
             for (int i = 0; i<3; ++i) {
                 if (frame == -1 || frame == i) {
 
@@ -271,15 +271,15 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
     }
 
     if (frame==-1) {
-        FindAllStops(stops,mrna,TSignedSeqRange(0,mrna.size()-1),frame);                        // all stops
+        FindAllStops(stops,mrna,TSignedSeqRange(0,(TSignedSeqPos)mrna.size()-1),frame);         // all stops
     } else if (right_cds_limit - reading_frame_stop >= 3) {
         FindAllStops(stops,mrna,TSignedSeqRange(reading_frame_stop+1,right_cds_limit),frame);   // inframe 3' stops
     }
 
     if (int(mrna.size()) <= right_cds_limit) {                                                  // fake stops for partials
-        stops[mrna.size()%3].push_back(mrna.size());
-        stops[(mrna.size()-1)%3].push_back(mrna.size()-1);
-        stops[(mrna.size()-2)%3].push_back(mrna.size()-2);
+        stops[mrna.size()%3].push_back((int)mrna.size());
+        stops[(mrna.size()-1)%3].push_back((int)mrna.size()-1);
+        stops[(mrna.size()-2)%3].push_back((int)mrna.size()-2);
     }
 
 }
@@ -393,7 +393,8 @@ TInDels CAlignMap::GetInDels(bool fs_only) const {
 }
 */
 
-void CAlignMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, int len, const string& mism, int left_orige, int left_edite, int right_orige, int right_edite,  EEdgeType left_type, EEdgeType right_type, const string& left_edit_extra_seq, const string& right_edit_extra_seq)
+void CAlignMap::InsertOneToOneRange(TSignedSeqPos orig_start, TSignedSeqPos edited_start, TSignedSeqPos len, const string& mism, TSignedSeqPos left_orige, TSignedSeqPos left_edite, TSignedSeqPos right_orige, TSignedSeqPos right_edite,  
+                                    EEdgeType left_type, EEdgeType right_type, const string& left_edit_extra_seq, const string& right_edit_extra_seq)
 {
     _ASSERT(len > 0);
     _ASSERT(m_orig_ranges.empty() || (orig_start > m_orig_ranges.back().GetTo() && edited_start > m_edited_ranges.back().GetTo()));
@@ -417,8 +418,8 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
         _ASSERT( !fsi->IntersectingWith(orig_a,orig_b) );
     }
 
-    int left_orige = 0;
-    int left_edite = gseq_a.length();
+    TSignedSeqPos left_orige = 0;
+    TSignedSeqPos left_edite = (TSignedSeqPos)gseq_a.length();
     string left_edit_extra_seq = gseq_a;
     string mism;
     
@@ -437,12 +438,12 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
         mism += fsi->GetInDelV();
 
     while(fsi != fsi_end && fsi->InDelEnd() <= orig_b+1) {
-        int len = (mism.empty() ? fsi->Loc()-orig_a : mism.size());
+        TSignedSeqPos len = (mism.empty() ? fsi->Loc()-orig_a : (TSignedSeqPos)mism.size());
         _ASSERT(len > 0 && orig_a+len-1 <= orig_b);
 
-        int bb = orig_a+len;
-        int right_orige = 0;
-        int right_edite = 0;
+        TSignedSeqPos bb = orig_a+len;
+        TSignedSeqPos right_orige = 0;
+        TSignedSeqPos right_edite = 0;
         string right_edit_extra_seq;
         for( ;fsi != fsi_end && fsi->Loc() == bb && !fsi->IsMismatch(); ++fsi ) {      // right end
             if (fsi->IsInsertion()) {
@@ -454,7 +455,7 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
             }
         }
 
-        int next_orig_a = orig_a+len+right_orige;
+        TSignedSeqPos next_orig_a = orig_a+len+right_orige;
         EEdgeType tb = eInDel;
         if(next_orig_a > orig_b) {
             right_edit_extra_seq += gseq_b;
@@ -475,14 +476,14 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
     }
 
     if(!mism.empty()) {
-        int len = mism.size();
+        TSignedSeqPos len = (TSignedSeqPos)mism.size();
         string right_edit_extra_seq;
         EEdgeType tb = eInDel;
         if(orig_a+len > orig_b) {
             right_edit_extra_seq = gseq_b;
             tb = type_b;
         }
-        InsertOneToOneRange(orig_a, edit_a, len, mism, left_orige, left_edite, 0, gseq_b.length(), type_a, tb, left_edit_extra_seq, right_edit_extra_seq);
+        InsertOneToOneRange(orig_a, edit_a, len, mism, left_orige, left_edite, 0, (TSignedSeqPos)gseq_b.length(), type_a, tb, left_edit_extra_seq, right_edit_extra_seq);
         orig_a += len;
         edit_a += len;
         type_a = eInDel;
@@ -495,7 +496,7 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
     if(orig_a <= orig_b) {
         int len = orig_b-orig_a+1;
         _ASSERT(len > 0);
-        InsertOneToOneRange(orig_a, edit_a, len, mism, left_orige, left_edite, 0, gseq_b.length(), type_a, type_b, left_edit_extra_seq, gseq_b);
+        InsertOneToOneRange(orig_a, edit_a, len, mism, left_orige, left_edite, 0, (TSignedSeqPos)gseq_b.length(), type_a, type_b, left_edit_extra_seq, gseq_b);
         edit_a += len;
     }
 
@@ -508,9 +509,9 @@ CAlignMap::CAlignMap(const CGeneModel::TExons& exons, const vector<TSignedSeqRan
     _ASSERT(transcript_exons.size() == exons.size());
     _ASSERT(transcript_exons.size() == 1 || (orientation == ePlus && transcript_exons.front().GetFrom() < transcript_exons.back().GetFrom()) ||
            (orientation == eMinus && transcript_exons.front().GetFrom() > transcript_exons.back().GetFrom()));
-    int diff = 0;
+    TSignedSeqPos diff = 0;
     for(unsigned int i = 0; i < exons.size(); ++i) {
-        int exonlen = (exons[i].Limits().Empty()) ? exons[i].m_seq.length() : exons[i].Limits().GetLength();
+        TSignedSeqPos exonlen = (exons[i].Limits().Empty()) ? (TSignedSeqPos)exons[i].m_seq.length() : exons[i].Limits().GetLength();
         diff += exonlen-(transcript_exons[i].GetTo()-transcript_exons[i].GetFrom()+1);
     }
     ITERATE(TInDels, f, indels) {
@@ -671,7 +672,7 @@ void CAlignMap::EditedSequence(const In& original_sequence, Out& edited_sequence
 }
 
 int CAlignMap::FindLowerRange(const vector<CAlignMap::SMapRange>& a,  TSignedSeqPos p) {
-    int num = lower_bound(a.begin(), a.end(), CAlignMap::SMapRange(p+1, p+1, kEmptyStr))-a.begin()-1;
+    int num = (int)(lower_bound(a.begin(), a.end(), CAlignMap::SMapRange(p+1, p+1, kEmptyStr))-a.begin()-1);
     return num;
 }
 

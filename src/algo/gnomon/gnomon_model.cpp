@@ -98,56 +98,56 @@ TSignedSeqRange CGeneModel::TranscriptExon(int i) const {
     if(Exons()[i].Limits().NotEmpty()) {
         return amap.MapRangeOrigToEdited(Exons()[i].Limits(), true); 
     } else if(i > 0) {  // there is real exon on the left
-        int p = amap.MapOrigToEdited(Exons()[i-1].GetTo());
+        TSignedSeqPos p = amap.MapOrigToEdited(Exons()[i-1].GetTo());
         if(Orientation() == ePlus)
-            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());
+            return TSignedSeqRange(p+1,p+(TSignedSeqPos)Exons()[i].m_seq.size());
         else
-            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
+            return TSignedSeqRange(p-(TSignedSeqPos)Exons()[i].m_seq.size(),p-1);
     } else {  // there is a real exon on the right
         _ASSERT(i < (int)Exons().size()-1);
-        int p = amap.MapOrigToEdited(Exons()[i+1].GetFrom());
+        TSignedSeqPos p = amap.MapOrigToEdited(Exons()[i+1].GetFrom());
         if(Orientation() == ePlus)
-            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
+            return TSignedSeqRange(p-(TSignedSeqPos)Exons()[i].m_seq.size(),p-1);
         else
-            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());        
+            return TSignedSeqRange(p+1,p+(TSignedSeqPos)Exons()[i].m_seq.size());        
     }
 }
 
 TSignedSeqRange CGeneModel::TranscriptLimits() const {
     CAlignMap amap = GetAlignMap();
 
-    int l,r;
+    TSignedSeqPos l,r;
 
     if(Orientation() == ePlus) {
         if(Exons().front().Limits().NotEmpty()) {
             l = amap.MapRangeOrigToEdited(Exons().front().Limits(),true).GetFrom();
         } else {
             _ASSERT(Exons().size() > 1 && Exons()[1].Limits().NotEmpty());
-            l = amap.MapOrigToEdited(Exons()[1].GetFrom())-Exons().front().m_seq.length();
+            l = amap.MapOrigToEdited(Exons()[1].GetFrom())-(TSignedSeqPos)Exons().front().m_seq.length();
         }
         if(Exons().back().Limits().NotEmpty()) {
             r = amap.MapRangeOrigToEdited(Exons().back().Limits(),true).GetTo();
         } else {
             _ASSERT(Exons().size() > 1 && Exons()[Exons().size()-2].Limits().NotEmpty());
-            r = amap.MapOrigToEdited(Exons()[Exons().size()-2].GetTo()) + Exons().back().m_seq.length();
+            r = amap.MapOrigToEdited(Exons()[Exons().size()-2].GetTo()) + (TSignedSeqPos)Exons().back().m_seq.length();
         }
     } else {
         if(Exons().front().Limits().NotEmpty()) {
             r = amap.MapRangeOrigToEdited(Exons().front().Limits(),true).GetTo();
         } else {
             _ASSERT(Exons().size() > 1 && Exons()[1].Limits().NotEmpty());
-            r = amap.MapOrigToEdited(Exons()[1].GetFrom())+Exons().front().m_seq.length();
+            r = amap.MapOrigToEdited(Exons()[1].GetFrom())+(TSignedSeqPos)Exons().front().m_seq.length();
         }
         if(Exons().back().Limits().NotEmpty()) {
             l = amap.MapRangeOrigToEdited(Exons().back().Limits(),true).GetFrom();
         } else {
             _ASSERT(Exons().size() > 1 && Exons()[Exons().size()-2].Limits().NotEmpty());
-            l = amap.MapOrigToEdited(Exons()[Exons().size()-2].GetTo()) - Exons().back().m_seq.length();
+            l = amap.MapOrigToEdited(Exons()[Exons().size()-2].GetTo()) - (TSignedSeqPos)Exons().back().m_seq.length();
         }
     }
         
     return TSignedSeqRange(l,r);
-    }
+}
 
 bool CGeneModel::isNMD(int limit) const
 {
@@ -977,12 +977,12 @@ int CGeneModel::isCompatible(const CGeneModel& a) const
     TSignedSeqRange intersect(a.Limits() & b.Limits());
     if(intersect.GetLength() <= 1) return 0;     // intersection with 1 base is not legit
     
-    int anum = a.Exons().size()-1;   // exon containing left point or first exon on the left 
+    int anum = (int)a.Exons().size()-1;   // exon containing left point or first exon on the left 
     for(; intersect.GetFrom() < a.Exons()[anum].GetFrom() ; --anum);
     bool aexon = intersect.GetFrom() <= a.Exons()[anum].GetTo();
     if(!aexon && intersect.GetTo() < a.Exons()[anum+1].GetFrom()) return 0;    // b is in intron
     
-    int bnum = b.Exons().size()-1;   // exon containing left point or first exon on the left 
+    int bnum = (int)b.Exons().size()-1;   // exon containing left point or first exon on the left 
     for(; intersect.GetFrom() < b.Exons()[bnum].GetFrom(); --bnum);
     bool bexon = intersect.GetFrom() <= b.Exons()[bnum].GetTo();
     if(!bexon && intersect.GetTo() < b.Exons()[bnum+1].GetFrom()) return 0;    // a is in intron
@@ -1285,7 +1285,7 @@ void CGeneModel::RecalculateLimits()
     if (Exons().empty()) {
         m_range = TSignedSeqRange::GetEmpty(); 
     } else {
-        int num = Exons().size();
+        int num = (int)Exons().size();
         if(Exons()[0].Limits().NotEmpty()) {
             m_range.SetFrom(Exons()[0].GetFrom());
         } else {
@@ -1628,7 +1628,7 @@ string BuildGFF3Gap(int start, int end, const TInDels& indels)
     return gap;
 }
 
-void readGFF3Gap(const string& gap, int start, int end, TInDels& indels)
+void readGFF3Gap(const string& gap, TSignedSeqPos start, TSignedSeqPos end, TInDels& indels)
 {
     if (gap.empty())
         return;
@@ -1653,14 +1653,14 @@ void readGFF3Gap(const string& gap, int start, int end, TInDels& indels)
             loc += len;
         } else if ((*o)[0] == 'I') {
             string seq;
-            len = o->length()-1;
+            len = (int)o->length()-1;
             seq = o->substr(1);
             indels.push_back(CInDelInfo(loc,len,CInDelInfo::eDel,seq));
             indels.back().SetStatus(status);
         } else {
             _ASSERT((*o)[0] == 'R');
             string seq;
-            len = o->length()-1;
+            len = (int)o->length()-1;
             seq = o->substr(1);
             indels.push_back(CInDelInfo(loc,len,CInDelInfo::eMism,seq));
             indels.back().SetStatus(status);

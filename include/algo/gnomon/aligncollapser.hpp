@@ -42,7 +42,7 @@ BEGIN_SCOPE(gnomon)
 struct SAlignIndividual {
     SAlignIndividual() : m_weight(0) {};
     SAlignIndividual(const CAlignModel& align, deque<char>& target_id_pool) : m_range(align.Limits()), m_align_id(align.ID()), m_weight(align.Weight()) {
-        m_target_id = target_id_pool.size();
+        m_target_id = (TSignedSeqPos)target_id_pool.size();
         string acc = align.TargetAccession();
         copy(acc.begin(),acc.end(),back_inserter(target_id_pool));
         target_id_pool.push_back(0);
@@ -53,7 +53,7 @@ struct SAlignIndividual {
     TSignedSeqRange m_range;
     Int8 m_align_id;   // < 0 used for eChangedByFilter
     float m_weight;    // < 0 used for deleting
-    int m_target_id;   // shift in deque<char> for 0 terminated string; deque is maintained by CAlignCollapser
+    TSignedSeqPos m_target_id;   // shift in deque<char> for 0 terminated string; deque is maintained by CAlignCollapser
 };
 
 
@@ -165,22 +165,22 @@ public:
 
     class CPartialString {
     public:
-        void Init(const CSeqVector& sv, int from, int to) {
+        void Init(const CSeqVector& sv, TSignedSeqPos from, TSignedSeqPos to) {
             m_string.reserve(to-from+1);
             sv.GetSeqData(from, to+1, m_string);
             m_shift = from;
         }        
-        char& operator[](int p) { return m_string[p-m_shift]; }
-        const char& operator[](int p) const { return m_string[p-m_shift]; }
-        int FullLength() const { return m_shift+m_string.size(); }
-        string substr(int p, int l) const { return m_string.substr(p-m_shift, l); }
+        char& operator[](TSignedSeqPos p) { return m_string[p-m_shift]; }
+        const char& operator[](TSignedSeqPos p) const { return m_string[p-m_shift]; }
+        TSignedSeqPos FullLength() const { return m_shift+(TSignedSeqPos)m_string.size(); }
+        string substr(TSignedSeqPos p, TSignedSeqPos l) const { return m_string.substr(p-m_shift, l); }
         void ToUpper() {
             for(char& c : m_string)
                 c = toupper(c);
         }
     private:
         string m_string;
-        int m_shift = 0;
+        TSignedSeqPos m_shift = 0;
     };
 
 

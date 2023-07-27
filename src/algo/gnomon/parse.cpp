@@ -235,7 +235,7 @@ inline void s_MakeStep(const CSeqScores& seqscr, vector<L>& lvec, vector<CInterg
 {
     if(lvec.empty()) return;
     CIntergenic& right = rvec.back();
-    int i = lvec.size()-1;
+    TSignedSeqPos i = (TSignedSeqPos)lvec.size()-1;
     int rlimit = right.Stop();
     if(lvec[i].Stop() == rlimit) --i;
     while(i >= 0 && lvec[i].Stop() >= seqscr.LeftAlignmentBoundary(right.Stop())) --i;  // no intergenics in alignment

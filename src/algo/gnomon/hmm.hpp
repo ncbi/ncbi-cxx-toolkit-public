@@ -258,7 +258,7 @@ class CLorentz
     
     private:
         int m_minl, m_maxl, m_step;
-        double m_A, m_L, m_avlen, m_lnthrough;
+        double m_A, m_L, m_avlen;
         TDVec m_score, m_clscore;
 };
 

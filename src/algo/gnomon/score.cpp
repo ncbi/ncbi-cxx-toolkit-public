@@ -247,7 +247,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
                     TSignedSeqRange pstop(align.Exons()[i-1].GetTo(),align.Exons()[i].GetFrom());     // to make sure GetScore doesn't complain about "new" pstops
                     cds_info.AddPStop(pstop, CCDSInfo::eUnknown);
                     if(hole_len%3 != 0) {
-                        Int8 p = align.Exons()[i-1].GetTo();
+                        TSignedSeqPos p = align.Exons()[i-1].GetTo();
                         p = (p+align.Exons()[i].GetFrom())/2;
                         align.FrameShifts().push_back(CInDelInfo(p, hole_len%3, CInDelInfo::eIns));
                     }
@@ -274,7 +274,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
-    TSignedSeqPos len = sequence.size();
+    TSignedSeqPos len = (TSignedSeqPos)sequence.size();
     
     try {
         m_notining.resize(len,-1);
@@ -375,7 +375,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
     {
         for(; it != m_seq[ePlus].end() && *it == enN; ++it) 
         {
-            int j = it-m_seq[ePlus].begin();
+            TSignedSeqPos j = (TSignedSeqPos)(it-m_seq[ePlus].begin());
             m_laststop[ePlus][0][j] = j;
             m_laststop[ePlus][1][j] = j;
             m_laststop[ePlus][2][j] = j;
@@ -1184,7 +1184,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
     }
 }
 
-double CGnomonEngine::DonorScore(int l, EStrand strand) const {  // l - exon end
+double CGnomonEngine::DonorScore(TSignedSeqPos l, EStrand strand) const {  // l - exon end
     const CTerminal& donor = *m_data->m_donor;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
     const CDoubleStrandSeq& ds = m_data->m_ds;
@@ -1201,13 +1201,13 @@ double CGnomonEngine::DonorScore(int l, EStrand strand) const {  // l - exon end
         }
         return scr;
     } else {
-        int contig_len = m_data->m_seq.size();
+        TSignedSeqPos contig_len = (TSignedSeqPos)m_data->m_seq.size();
         l = contig_len-1-l;
         double scr = donor.Score(ds[eMinus],l);
         if(scr == BadScore()) {
             scr = 0;
         } else {
-            for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
+            for(TSignedSeqPos k = l-donor.Left()+1; k <= l+donor.Right(); ++k) {
                 double s = ncdr.Score(ds[eMinus],k);
                 if(s == BadScore()) s = 0;
                 scr -= s;
@@ -1217,7 +1217,7 @@ double CGnomonEngine::DonorScore(int l, EStrand strand) const {  // l - exon end
     }
 }
 
-double CGnomonEngine::AcceptorScore(int l, EStrand strand) const { // l - exon end
+double CGnomonEngine::AcceptorScore(TSignedSeqPos l, EStrand strand) const { // l - exon end
     const CTerminal& acceptor = *m_data->m_acceptor;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
     const CDoubleStrandSeq& ds = m_data->m_ds;
@@ -1235,13 +1235,13 @@ double CGnomonEngine::AcceptorScore(int l, EStrand strand) const { // l - exon e
         }
         return scr;
     } else {
-        int contig_len = m_data->m_seq.size();
+        TSignedSeqPos contig_len = (TSignedSeqPos)m_data->m_seq.size();
         l = contig_len-2-l;
         double scr = acceptor.Score(ds[eMinus],l);
         if(scr == BadScore()) {
             scr = 0;
         } else {
-            for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
+            for(TSignedSeqPos k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k) {
                 double s = ncdr.Score(ds[eMinus],k);
                 if(s == BadScore()) s = 0;
                 scr -= s;
@@ -1251,7 +1251,7 @@ double CGnomonEngine::AcceptorScore(int l, EStrand strand) const { // l - exon e
     }
 }
 
-double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop, bool extend5p) const
+double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, TSignedSeqPos& best_start, TSignedSeqPos& best_stop, bool extend5p) const
 {
     const CTerminal& acceptor    = *m_data->m_acceptor;
     const CTerminal& donor       = *m_data->m_donor;
@@ -1259,10 +1259,10 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
     const CTerminal& stp         = *m_data->m_stop;
     const CCodingRegion& cdr     = *m_data->m_cdr;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
-    int contig_len = m_data->m_seq.size();
+    TSignedSeqPos contig_len = (TSignedSeqPos)m_data->m_seq.size();
     EStrand strand = model.Strand();
     const vector<CModelExon>& exons = model.Exons();
-    int num_exons = model.Exons().size();
+    int num_exons = (int)model.Exons().size();
 
     const CDoubleStrandSeq& ds = m_data->m_ds;
     TDVec splicescr(mrna.size(),0);
@@ -1303,7 +1303,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
             }
         }
     } else {
-        int shift = mrna.size()-1;
+        int shift = (int)mrna.size()-1;
         for(int i = 1; i < num_exons; ++i) {
             shift -= mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
             

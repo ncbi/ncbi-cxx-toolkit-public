@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
-(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range) : m_seq(move(sequence)), m_range(range), m_gccontent(0), m_hmm_params(hmm_params) {}
+(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range) : m_seq(std::move(sequence)), m_range(range), m_gccontent(0), m_hmm_params(hmm_params) {}
 //for consistency with old code
 CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
 (CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range) : m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params) {}
@@ -53,7 +53,7 @@ CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
 CGnomonEngine::SGnomonEngineImplData::~SGnomonEngineImplData() {}
 
 CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range)
-    : m_data(new SGnomonEngineImplData(hmm_params,move(sequence),range))
+    : m_data(new SGnomonEngineImplData(hmm_params,std::move(sequence),range))
 {
     CheckRange();
     Convert(m_data->m_seq,m_data->m_ds);
@@ -95,7 +95,7 @@ double CGnomonEngine::GetChanceOfIntronLongerThan(int l) const
 
 void CGnomonEngine::CheckRange()
 {
-    m_data->m_range.IntersectWith(TSignedSeqRange(0,m_data->m_seq.size()-1));
+    m_data->m_range.IntersectWith(TSignedSeqRange(0,(TSignedSeqPos)m_data->m_seq.size()-1));
     if (m_data->m_range.Empty() )
         NCBI_THROW(CGnomonException, eGenericError, "range out of sequence");
 }
@@ -111,7 +111,7 @@ void CGnomonEngine::ResetRange(TSignedSeqRange range)
     TSignedSeqPos middle = (m_data->m_range.GetFrom()+m_data->m_range.GetTo())/2;
     const int GC_RANGE_SIZE = 200000;
     TSignedSeqRange gc_range(middle-GC_RANGE_SIZE/2, middle+GC_RANGE_SIZE/2);
-    gc_range &= TSignedSeqRange(0,m_data->m_seq.size()-1);
+    gc_range &= TSignedSeqRange(0,(TSignedSeqPos)m_data->m_seq.size()-1);
     gc_range += m_data->m_range;
 
     int length = 0;
