@@ -285,7 +285,7 @@ platform=`xcodebuild -version 2>/dev/null | grep 'Xcode [0-9][0-9]*' | sed -e 's
 if test -n "$use_arch"; then
   :
 elif test "$use_64" == "yes"; then
-  case "$USER:`uname -m`" in
+  case "`uname -m`" in
     arm* ) use_arch=arm64  ;;
     *86* ) use_arch=x86_64 ;;
   esac
