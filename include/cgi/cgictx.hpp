@@ -164,7 +164,7 @@ public:
     const CCgiApplication& GetApp(void) const;
 
     const CNcbiRegistry& GetConfig(void) const;
-    CNcbiRegistry& GetConfig(void);
+    CNcbiRegistry&       GetConfig(void);
     
     // these methods will throw exception if no server context is set
     const CNcbiResource& GetResource(void) const;

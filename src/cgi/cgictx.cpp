@@ -36,6 +36,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbi_url.hpp>
+#include <corelib/tempstr.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_util.hpp>
@@ -340,13 +342,6 @@ const string& CCgiContext::GetSelfURL(void) const
     if ( !m_SelfURL.empty() )
         return m_SelfURL;
 
-    // First check forwarded URLs
-    const string& caf_url = GetRequest().GetRandomProperty("CAF_URL");
-    if ( !caf_url.empty() ) {
-        m_SelfURL = caf_url;
-        return m_SelfURL;
-    }
-
     bool secure
         = AStrEquiv
         (GetRequest().GetRandomProperty("HTTPS", false), "on",
@@ -355,51 +350,69 @@ const string& CCgiContext::GetSelfURL(void) const
         (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https",
             PNocase());
 
-    string host_port;
+    // Compose self URL
+    CUrl url;
+
     // Check HTTP_X_FORWARDED_HOST for host:port
-    const string& x_fwd_host = GetRequest().GetRandomProperty("X_FORWARDED_HOST");
-    if (!x_fwd_host.empty()) {
-        host_port = x_fwd_host;
-    }
-    else {
-        string server(GetRequest().GetProperty(eCgi_ServerName));
-        if (server.empty()) {
+    const string& x_fwd_host
+        = GetRequest().GetRandomProperty("X_FORWARDED_HOST");
+
+    const string& caf_url = GetRequest().GetRandomProperty("CAF_URL");
+    if ( !caf_url.empty() ) { 
+        // Forwarded URL
+        url.SetUrl(caf_url);
+        url.GetArgs().clear();
+        url.SetFragment(kEmptyStr);
+    } else if ( x_fwd_host.empty() ) {
+        const string& server = GetRequest().GetProperty(eCgi_ServerName);
+        if ( server.empty() ) {
             return kEmptyStr;
         }
-
-        host_port = server;
-        string port = GetRequest().GetProperty(eCgi_ServerPort);
+        CTempString port(GetRequest().GetProperty(eCgi_ServerPort));
         // Skip port if it's default for the selected scheme
-        if ((secure  &&  port == "443") || (!secure  &&  port == "80")
-            || (server.size() >= port.size() + 2 && NStr::EndsWith(server, port)
-                && server[server.size() - port.size() - 1] == ':')) {
-            port.erase();
+        if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")  ||
+            (server.size() >= port.size() + 2  &&  NStr::EndsWith(server, port)
+             &&  server[server.size() - port.size() - 1] == ':')) {
+            port.clear();
         }
-        if (!port.empty()) {
-            host_port += ':';
-            host_port += port;
+        url.SetHost(server);
+        url.SetPort(port);
+    }
+    if ( !x_fwd_host.empty() ) {
+        size_t pos = x_fwd_host.find(':');
+        CTempString host(x_fwd_host, 0, pos != NPOS ? pos : x_fwd_host.size());
+        CTempString port(x_fwd_host, pos != NPOS? pos + 1 : x_fwd_host.size(),
+                         x_fwd_host.size());
+        if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")) {
+            port.clear();
         }
+        url.SetHost(host);
+        url.SetPort(port);
     }
 
-    // Compose self URL
-    m_SecureMode = secure ? eSecure_On : eSecure_Off;
-    m_SelfURL    = secure ? "https://" : "http://";
-    m_SelfURL += host_port;
-
-    string script_uri;
-    script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
-    if ( script_uri.empty() ) {
-        script_uri = GetRequest().GetProperty(eCgi_ScriptName);
-    }
-    // Remove args if any
-    size_t arg_pos = script_uri.find('?');
-    if (arg_pos != NPOS) {
-        script_uri.resize(arg_pos);
+    string path;
+    if ( !caf_url.empty() ) {
+        path = url.GetPath();
+    } else {
+        path = GetRequest().GetRandomProperty("SCRIPT_URL", false);
+        if ( path.empty() ) {
+            path = GetRequest().GetProperty(eCgi_ScriptName);
+        }
+        // Remove args if any
+        size_t pos = path.find_first_of("?#");
+        if (pos != NPOS) {
+            path.resize(pos);
+        }
     }
     // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
     //  it should not hurt, and may help with similar proxies outside NCBI)
-    m_SelfURL += NStr::ReplaceInPlace(script_uri, "//", "/");
+    url.SetPath(NStr::ReplaceInPlace(path, "//", "/"));
 
+    m_SecureMode = secure ? eSecure_On : eSecure_Off;
+    url.SetScheme (secure ? "https"    : "http");
+
+    url.SetIsGeneric(true);
+    m_SelfURL = url.ComposeUrl(CUrlArgs::eAmp_Char/*no args, anyways*/);
     return m_SelfURL;
 }
 
