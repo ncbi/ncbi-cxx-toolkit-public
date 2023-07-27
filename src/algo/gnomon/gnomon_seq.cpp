@@ -66,10 +66,10 @@ void Convert(const CEResidueVec& src, CResidueVec& dst)
 
 void ReverseComplement(const CEResidueVec& src, CEResidueVec& dst)
 {
-    size_t len = src.size();
+    TSignedSeqPos len = src.size();
     dst.clear();
     dst.reserve(len);
-    for(size_t i = len-1; i >= 0; --i)
+    for(TSignedSeqPos i = len-1; i >= 0; --i)
 	dst.push_back(k_toMinus[(int)src[i]]);
 }
 
