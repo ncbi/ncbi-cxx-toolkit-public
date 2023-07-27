@@ -21,7 +21,8 @@ LIB = xstruct_util \
       mmdb \
       $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) \
+       $(ORIG_LIBS)
 
 # These are necessary to avoid build errors in some configurations
 # (notably 32-bit SPARC WorkShop Release).
