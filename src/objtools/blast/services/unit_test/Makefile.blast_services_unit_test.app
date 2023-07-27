@@ -9,7 +9,8 @@ LDFLAGS  = $(FAST_LDFLAGS)
 LIB = test_boost blast_services xnetblastcli xnetblast seqdb blastdb scoremat \
       xconnect $(SOBJMGR_LIBS) $(LMDB_LIB)
 
-LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) \
+       $(ORIG_LIBS)
 
 CHECK_CMD = blast_services_unit_test
 

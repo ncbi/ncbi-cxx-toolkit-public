@@ -14,7 +14,8 @@ SRC = blast_sample
 ### BEGIN COPIED SETTINGS
 LIB_ = xobjsimple $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
-LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) \
+       $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 # These settings are necessary for optimized WorkShop builds, due to
 # BLAST's own use of them.
