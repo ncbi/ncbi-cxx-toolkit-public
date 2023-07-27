@@ -382,7 +382,7 @@ void CAlignCollapser::ClipESTorSR(CAlignModel& align, double clip_threshold, dou
         }
     }
     int right_lim = align.Limits().GetTo();
-    int exnr = align.Exons().size()-1; 
+    int exnr = (int)align.Exons().size()-1; 
     while(m_coverage[right_lim-m_left_end] < threshold) {
         --right_lim;
         if(align.Exons()[exnr].GetFrom()+EXON_TO_SKIP-1 >= right_lim) {
@@ -446,7 +446,7 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
 
         if(not_aligned_right > 30) {
             int r = align.Limits().GetTo();
-            int ie = align.Exons().size()-1;
+            int ie = (int)align.Exons().size()-1;
             while(r > align.Limits().GetFrom() && m_coverage[r-m_left_end] < lim) {
                 if(r > align.Exons()[ie].GetFrom())
                     --r;
@@ -753,7 +753,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
         }
         if(!exons[ie].m_ssplice) {
             int glim = (ie+1 < (int)exons.size()) ? exons[ie+1].GetFrom() : m_contig.FullLength();
-            int tlim = (ie+1 < (int)exons.size()) ? transcript_exons[ie+1].GetFrom() : transcript.size();
+            int tlim = (ie+1 < (int)exons.size()) ? transcript_exons[ie+1].GetFrom() : (int)transcript.size();
             int g = exons[ie].GetTo();
             int t = transcript_exons[ie].GetTo();
             while(g < glim-1 && t < tlim-1 && transcript[t+1] == m_contig[g+1]) {
@@ -787,7 +787,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
         TIVec exons_to_align;
         int tp = transcript_exons[piece_begin].GetFrom();
         for(int ie = piece_begin; ie <= piece_end; ++ie) {
-            int gp = exons[ie].GetFrom();
+            TSignedSeqPos gp = exons[ie].GetFrom();
             while(gp <= exons[ie].GetTo()) {
                 if(indl == indels.end() || indl->Loc() != gp) {
                     tseq.push_back(transcript[tp++]);
@@ -811,7 +811,7 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
                 tp += indl->Len();
                 ++indl;
             }
-            exons_to_align.push_back(gseq.size()-1);
+            exons_to_align.push_back((int)gseq.size()-1);
         }
         _ASSERT(tseq.size() == gseq.size() && indl == indels.end());
 
@@ -828,15 +828,15 @@ void CAlignCollapser::CleanSelfTranscript(CAlignModel& align, const string& tran
             score[i] = max(0,score[i]);
         }
 
-        int align_right = max_element(score.begin(),score.end())-score.begin();
+        int align_right = (int)(max_element(score.begin(),score.end())-score.begin());
 
         if(score[align_right] > 0) {  // there is at least one match
             int align_left = align_right;
             while(align_left > 0 && score[align_left-1] > 0)
                 --align_left;
 
-            int agaps = count(tseq.begin(), tseq.begin()+align_left, '-');
-            int bgaps = count(tseq.begin(), tseq.begin()+align_right, '-');
+            int agaps = (int)count(tseq.begin(), tseq.begin()+align_left, '-');
+            int bgaps = (int)count(tseq.begin(), tseq.begin()+align_right, '-');
             TSignedSeqRange trange(transcript_exons[piece_begin].GetFrom()+align_left-agaps, transcript_exons[piece_begin].GetFrom()+align_right-bgaps);
 
             TSignedSeqRange grange = amap.MapRangeEditedToOrig(trange, false);
@@ -1374,7 +1374,7 @@ void CAlignCollapser::FilterAlignments() {
         NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
             CAlignModel align(alc.GetAlignment(*i, id_pool));
             TSignedSeqRange lim = align.Limits();
-            unsigned exnum = align.Exons().size();
+            auto exnum = align.Exons().size();
             //            ClipESTorSR(align, clip_threshold, 2);
             ClipESTorSR(align, 0, 2);
             if(align.Limits() == lim)
@@ -1922,7 +1922,7 @@ void CAlignCollapser::FilterAlignments() {
                         }
                         //check if undertrimmed
                         if(end_status[new_r-m_left_end]&endp) {
-                            for(int i = pindels.size()-1; i >= 0 && pindels[i].Loc() >= new_r-FS_FUZZ; --i) 
+                            for(int i = (int)pindels.size()-1; i >= 0 && pindels[i].Loc() >= new_r-FS_FUZZ; --i) 
                                 new_r = min(new_r,pindels[i].Loc()-1);
                         }
                     }
@@ -2324,7 +2324,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                 ReverseComplement(left_seq.begin(),left_seq.end());
                 left_src.m_strand = eMinus;
             }
-            m_correction_data.m_correction_indels.push_back(CInDelInfo(max(0,ig->first+2*ig->second/3), left_seq.length(), CInDelInfo::eDel, left_seq, left_src));   // 1/3 of gap length will separate genes abatting the same gap
+            m_correction_data.m_correction_indels.push_back(CInDelInfo(max(0,ig->first+2*ig->second/3), (int)left_seq.length(), CInDelInfo::eDel, left_seq, left_src));   // 1/3 of gap length will separate genes abatting the same gap
         }
     }
 
@@ -2352,7 +2352,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                         ReverseComplement(seq.begin(),seq.end());
                         src.m_strand = eMinus;
                     }
-                    m_correction_data.m_correction_indels.push_back(CInDelInfo(ig->first+ig->second/2, seq.length(), CInDelInfo::eDel, seq, src));
+                    m_correction_data.m_correction_indels.push_back(CInDelInfo(ig->first+ig->second/2, (int)seq.length(), CInDelInfo::eDel, seq, src));
                 } else {
                     editedmodel.AddHole();
                 }
@@ -2372,7 +2372,7 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                 ReverseComplement(right_seq.begin(),right_seq.end());
                 right_src.m_strand = eMinus;
             }
-            m_correction_data.m_correction_indels.push_back(CInDelInfo(ig->first+ig->second/3, right_seq.length(), CInDelInfo::eDel, right_seq, right_src));   // 1/3 of gap length will separate genes abatting the same gap
+            m_correction_data.m_correction_indels.push_back(CInDelInfo(ig->first+ig->second/3, (int)right_seq.length(), CInDelInfo::eDel, right_seq, right_src));   // 1/3 of gap length will separate genes abatting the same gap
         }
     }
 

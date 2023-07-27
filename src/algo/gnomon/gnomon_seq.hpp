@@ -47,7 +47,7 @@ class CDoubleStrandSeq {
 public:
     const CEResidueVec& operator[](EStrand s) const { return m_seq[s]; }
     CEResidueVec& operator[](EStrand s) { return m_seq[s]; }
-    int size() const { return m_seq[0].size(); }
+    TSignedSeqPos size() const { return (TSignedSeqPos)m_seq[0].size(); }
 private:
     CEResidueVec m_seq[2];
 };

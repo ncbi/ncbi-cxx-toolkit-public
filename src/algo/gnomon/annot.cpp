@@ -188,11 +188,11 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 {
     TGeneModelList aligns(il, ir);
 
-    Int8 left = llimit;
+    TSignedSeqPos left = llimit;
     bool leftwall = leftmostwall;
     bool leftanchor = leftmostanchor;
 
-    Int8 right = llimit+window;
+    TSignedSeqPos right = llimit+window;
     bool rightwall = false;
     bool rightanchor = false;
 
@@ -338,7 +338,7 @@ bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
             );
 }
 
-typedef map<int,CGeneModel> TNestedGenes;
+typedef map<Int8,CGeneModel> TNestedGenes; //TODO get rid of gene id
 
 void SaveWallModel(unique_ptr<CGeneModel>& wall_model, TNestedGenes& nested_genes, TGeneModelList& aligns)
 {
@@ -380,7 +380,7 @@ void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand
                 new_nested_wall.AddExon(limits);
                 nested_genes[ir->GeneID()] = new_nested_wall;
             } else if (limits.GetTo() - nested_wall->second.Limits().GetTo() > 0) {
-                    nested_wall->second.ExtendRight(limits.GetTo()- nested_wall->second.Limits().GetTo());
+                nested_wall->second.ExtendRight(limits.GetTo()- nested_wall->second.Limits().GetTo());
             }
             continue;
         }
@@ -696,21 +696,6 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         }
         it->SetCdsInfo(cds_info);
 
-#ifdef _DEBUG
-        {
-            string protein = it->GetProtein(m_gnomon->GetSeq());
-            int nstar = 0;
-            ITERATE(string, is, protein) {
-                if(*is == '*')
-                    ++nstar;
-            }
-            int nstop = it->HasStop() ? 1 : 0;
-            ITERATE(CCDSInfo::TPStops, stp, it->GetCdsInfo().PStops()) {
-                if(stp->m_status != CCDSInfo::eSelenocysteine)
-                    ++nstop;
-            }
-        }
-#endif
         if (it->PStop(false) || !it->FrameShifts().empty()) {
             it->Status() |= CGeneModel::ePseudo;
         }

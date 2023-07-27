@@ -66,7 +66,7 @@ CCigar::CCigar(string& cigar_string, int qfrom, int sfrom) {
         } else {
             PushBack(SElement(len, c));
         }
-        clip_pos = istr.tellg();
+        clip_pos = (int)istr.tellg();
     }
     cigar_string.clear();
 }
@@ -482,7 +482,7 @@ CCigar LclAlign(const  char* a, int na, const  char*  b, int nb, int rho, int si
 		swap(sm,s);
 	}
 
-    int ia = (max_ptr-mtrx)/(nb+1)-1;
+    int ia = (int)(max_ptr-mtrx)/(nb+1)-1;
     int ib = (max_ptr-mtrx)%(nb+1)-1;
     CCigar track(ia, ib);
     m = max_ptr;
@@ -627,7 +627,7 @@ CCigar LclAlign(const  char* a, int na, const  char*  b, int nb, int rho, int si
         maxb = nb-1;
         max_score = sm[nb];
     } else {
-        maxa = (max_ptr-mtrx)/(nb+1)-1;
+        maxa = (int)(max_ptr-mtrx)/(nb+1)-1;
         maxb = (max_ptr-mtrx)%(nb+1)-1;
         m = max_ptr;
     }
@@ -762,7 +762,7 @@ CCigar VariBandAlign(const  char* a, int na, const  char*  b, int nb, int rho, i
         m += nb-bright-1;
 	}
   
-    int ia = (max_ptr-mtrx)/(nb+1)-1;
+    int ia = (int)(max_ptr-mtrx)/(nb+1)-1;
     int ib = (max_ptr-mtrx)%(nb+1)-1;
     CCigar track(ia, ib);
     m = max_ptr;
@@ -849,7 +849,7 @@ SMatrix::SMatrix() { // matrix for proteins
         }
     }
 
-    int num = aa.size();
+    int num = (int)aa.size();
     for(int i = 0; i < num; ++i) {
         char c = aa[i];
         for(int j = 0; j < num; ++j) {
@@ -864,7 +864,7 @@ SMatrix::SMatrix() { // matrix for proteins
 }
 
 double Entropy(const string& seq) {
-    int length = seq.size();
+    int length = (int)seq.size();
     if(length == 0)
         return 0;
     double tA = 1.e-8;

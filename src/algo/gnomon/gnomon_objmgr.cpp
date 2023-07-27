@@ -333,7 +333,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
             if(indl->InDelEnd() == indl_next->Loc()) {  // tandem
                 string new_seq = indl->GetInDelV()+indl_next->GetInDelV();
-                int new_seq_len =  new_seq.size();
+                TSignedSeqPos new_seq_len =  (TSignedSeqPos)new_seq.size();
                 if(indl->GetType() == indl_next->GetType()) {  // combine same
                     *indl = CInDelInfo(indl->Loc(), indl->Len()+indl_next->Len(), indl->GetType(), new_seq);
                     indels.erase(indl_next);
