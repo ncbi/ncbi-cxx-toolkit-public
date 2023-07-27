@@ -195,7 +195,7 @@ OPTIONS:
   --with-debug               -- build debug versions of libs and apps
   --without-dll              -- build all toolkit libraries as static ones
   --with-dll                 -- assemble toolkit libraries into DLLs where requested
-  --without-64               -- compile to 32-bit code
+  --with-arch=ARCH           -- explicitly target the specified architecture
   --with-static-exe          -- use static C++ standard libraries
   --with-projects=FILE       -- build projects listed in $srcroot/FILE
            FILE can also be a name of a subdirectory
@@ -219,6 +219,7 @@ Error()
 # parse arguments
 unknown=""
 ignore_unknown="no"
+use_arch=
 for cmd_arg in "$@"; do
   case "$cmd_arg" in
     --help                )  Usage; exit 0 ;;
@@ -233,6 +234,7 @@ for cmd_arg in "$@"; do
     --with-static-exe     )  use_staticstd="yes" ;;
     --with-projects=*     )  use_projectlst="$cmd_arg" ;;
     --with-extra-action=* )  use_action="$cmd_arg" ;;
+    --with-arch=*         )  use_arch="${cmd_arg#*=}" ;;
     --ignore-unsupported-options ) ignore_unknown="yes" ;;
     *  ) unknown="$unknown $cmd_arg" ;;
   esac
@@ -280,8 +282,13 @@ arch=`arch`
 platform=`xcodebuild -version 2>/dev/null | grep 'Xcode [0-9][0-9]*' | sed -e 's/[ .]//g'`
 
 # ------- target architecture
-if test "$use_64" == "yes"; then
-  use_arch=x86_64
+if test -n "$use_arch"; then
+  :
+elif test "$use_64" == "yes"; then
+  case "$USER:`uname -m`" in
+    arm* ) use_arch=arm64  ;;
+    *86* ) use_arch=x86_64 ;;
+  esac
 else
   use_arch="i386"
 fi 
