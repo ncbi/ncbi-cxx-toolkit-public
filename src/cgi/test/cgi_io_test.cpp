@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbistre.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgictx.hpp>
@@ -122,6 +123,7 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
 #  define X_TRACE _TRACE
 #endif
 
+    NcbiCerr << "Self-URL: \"" << ctx.GetSelfURL() << '"' << NcbiEndl;
 
     GetDiagContext().Extra().Print("ReqID", s_Arg("id").AsString());
 
