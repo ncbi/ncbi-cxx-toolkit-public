@@ -57,7 +57,7 @@ CFlatParseReport::ErrMessageLookup CFlatParseReport::mMessageTemplates = {
       "Qualifier /%s value has unbalanced quotes. Qualifier has been dropped." },
     { ErrCode(ERR_FORMAT_UnexpectedData),
       "Encountered unexpected data while looking for qualifier key. Data has been dropped." },
-    { ErrCode(ERR_QUALIFIER_UnknownKey),
+    { ErrCode(ERR_QUALIFIER_UnknownQualifier),
       "Qualifier key /%s is not recognized. Qualifier has been dropped. "
       "Feature \"%s\", location \"%s\"." },
 };
@@ -139,8 +139,8 @@ void CFlatParseReport::UnknownQualifierKey(
 {
     ErrPostEx(
         SEV_ERROR,
-        ERR_QUALIFIER_UnknownKey,
-        sMessageTemplateFor(ERR_QUALIFIER_UnknownKey),
+        ERR_QUALIFIER_UnknownQualifier,
+        sMessageTemplateFor(ERR_QUALIFIER_UnknownQualifier),
         qualKey.c_str(),
         featKey.empty() ? "Unknown" : featKey.c_str(),
         featLocation.empty() ? "Empty" : featLocation.c_str());
