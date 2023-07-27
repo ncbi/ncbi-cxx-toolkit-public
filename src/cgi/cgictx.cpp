@@ -411,7 +411,7 @@ const string& CCgiContext::GetSelfURL(void) const
     url.SetScheme (secure ? "https"    : "http");
 
     url.SetIsGeneric(true);
-    m_SelfURL = url.ComposeUrl(CUrlArgs::eAmp_Char/*no args, anyways*/);
+    url.ComposeUrl(CUrlArgs::eAmp_Char/*no args, anyways*/).swap(m_SelfURL);
     return m_SelfURL;
 }
 
@@ -421,7 +421,7 @@ bool CCgiContext::IsSecure(void) const
     if (m_SecureMode == eSecure_NotSet) {
         m_SecureMode
             =   NStr::EqualNocase
-            (CTempStringEx(GetSelfURL(), 0, 8), "https://")
+            (CTempString(GetSelfURL(), 0, 8), "https://")
             ||  NStr::EqualNocase
             (GetRequest().GetRandomProperty("HTTPS", false), "on")
             ||  NStr::EqualNocase
