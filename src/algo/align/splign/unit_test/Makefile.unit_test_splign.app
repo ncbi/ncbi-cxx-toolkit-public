@@ -11,7 +11,8 @@ LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
     $(BLAST_LIBS) \
     test_boost $(OBJMGR_LIBS)
 
-LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(CMPRS_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(GRPC_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) \
+       $(DL_LIBS) $(CMPRS_LIBS) $(GRPC_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included $(GRPC_OPT)
 

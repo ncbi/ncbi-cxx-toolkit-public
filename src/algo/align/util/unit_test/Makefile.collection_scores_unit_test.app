@@ -8,7 +8,8 @@ LIB = xalgoalignutil xalgoseq \
 	  xqueryparse tables xregexp $(PCRE_LIB) $(BLAST_LIBS) \
 	  test_boost $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
+LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS) $(CMPRS_LIBS) \
+       $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included objects
 

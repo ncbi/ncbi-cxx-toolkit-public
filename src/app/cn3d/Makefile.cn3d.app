@@ -85,10 +85,10 @@ LIB =   wx_tools xcd_utils xstruct_util xstruct_dp xstruct_thread \
 	utrtprof taxon1 blastdb xregexp entrez2cli entrez2 \
 	xconnect $(SOBJMGR_LIBS) $(Z_LIB) $(PCRE_LIB) $(LMDB_LIB)
 
-LIBS = \
+LIBS =  $(BLAST_THIRD_PARTY_LIBS) \
 	$(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(OPENGL_LIBS)\
 	$(Z_LIBS) $(PNG_LIBS) $(PCRE_LIBS) \
-	$(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) \
+	$(NETWORK_LIBS) \
 	$(ORIG_LIBS)
 
 ####
