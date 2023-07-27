@@ -34,10 +34,9 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
-#include <corelib/ncbistre.hpp>
 #include <cgi/cgiapp.hpp>
-#include <cgi/cgi_exception.hpp>
 #include <cgi/cgictx.hpp>
+#include <cgi/cgi_exception.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <signal.h>
@@ -82,11 +81,10 @@ void CCgiIOTestApplication::Init()
     x_SetupArgs();
 
 #if defined(NCBI_OS_UNIX)
-    struct sigaction sa_old;
-    struct sigaction sa_new;
-    memset(&sa_new, 0, sizeof(sa_new));
-    sa_new.sa_handler = s_SIGPIPE_Handler;
-    _VERIFY(sigaction(SIGPIPE, &sa_new, &sa_old) == 0);
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = s_SIGPIPE_Handler;
+    _VERIFY(sigaction(SIGPIPE, &sa, 0) == 0);
 #endif
 }
 
@@ -95,6 +93,7 @@ static const CArgValue& s_Arg(const char* arg_name)
 {
     return CNcbiApplication::Instance()->GetArgs()[arg_name];
 }
+
 
 static void s_Sleep(const char* wait_time)
 {
@@ -123,7 +122,10 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
 #  define X_TRACE _TRACE
 #endif
 
-    NcbiCerr << "Self-URL: \"" << ctx.GetSelfURL() << '"' << NcbiEndl;
+    X_TRACE("Enter ProcessRequest()");
+
+    CCgiResponse& response = ctx.GetResponse();
+    response.out() << "Self-URL: " << ctx.GetSelfURL() << HTTP_EOL;
 
     GetDiagContext().Extra().Print("ReqID", s_Arg("id").AsString());
 
@@ -134,10 +136,6 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
         printed_args = true;
     }
 
-
-    X_TRACE("Enter ProcessRequest()");
-
-    CCgiResponse& response = ctx.GetResponse();
     response.SetContentType("text/plain");
 
     size_t buf_size = (size_t) s_Arg("chunk_size").AsInteger();
@@ -175,7 +173,6 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
     X_TRACE("Exit ProcessRequest()");
     return 0;
 }
-
 
 
 void CCgiIOTestApplication::x_SetupArgs()
