@@ -246,6 +246,9 @@ public:
     /// Parse the query string, store the arguments.
     CUrlArgs(const string& query, const IUrlEncoder* encoder = 0, TFlags flags = 0);
 
+    /// Clear the list.
+    void clear(void) { m_IsIndex = false; m_Args.clear(); }
+
     /// Ampersand encoding for composed URLs
     enum EAmpEncoding {
         eAmp_Char,   ///< Use & to separate arguments
@@ -356,16 +359,19 @@ public:
     ///
     /// @param url
     ///   String to parse as URL:
-    ///   Generic: [scheme://[[user]:[password]@]]host[:port][/path][?args]
-    ///   Special: scheme:[path]
-    ///   The leading '/', if any, is included in path value.
+    ///   Generic:
+    ///      [scheme://[[user]:[password]@]]host[:port][/path][?args][#frag]
+    ///   Special:
+    ///      scheme:[path]
+    ///   The leading '/', if any, is included in the path value.
     /// @param encoder
     ///   URL encoder object. If not set, the default encoder will be used.
     ///   @sa CDefaultUrlEncoder
     CUrl(const string& url, const IUrlEncoder* encoder = 0);
 
     CUrl(const char* url, const IUrlEncoder* encoder = 0)
-        : CUrl(string(url), encoder) {}
+        : CUrl(string(url), encoder)
+    { }
 
     /// Parse the URL.
     ///
@@ -389,38 +395,37 @@ public:
 
     // Access parts of the URL
 
-    string GetScheme(void) const            { return m_Scheme; }
-    void   SetScheme(const string& value);
+    const string& GetScheme(void) const             { return m_Scheme; }
+    void          SetScheme(const string& value);
 
     /// Generic schemes use '//' prefix (after optional scheme).
-    bool GetIsGeneric(void) const           { return m_IsGeneric; }
-    void SetIsGeneric(bool value)           { m_IsGeneric = value; }
+    bool          GetIsGeneric(void) const          { return m_IsGeneric; }
+    void          SetIsGeneric(bool value)          { m_IsGeneric = value; }
 
-    string GetUser(void) const              { return m_User; }
-    void   SetUser(const string& value)     { m_User = value; }
+    const string& GetUser(void) const               { return m_User; }
+    void          SetUser(const string& value)      { m_User = value; }
 
-    string GetPassword(void) const          { return m_Password; }
-    void   SetPassword(const string& value) { m_Password = value; }
+    const string& GetPassword(void) const           { return m_Password; }
+    void          SetPassword(const string& value)  { m_Password = value; }
 
-    string GetHost(void) const              { return m_Host; }
-    void   SetHost(const string& value);
+    const string& GetHost(void) const               { return m_Host; }
+    void          SetHost(const string& value);
 
-    bool IsService(void) const              { return !m_Service.empty(); }
-    string GetService(void) const           { return m_Service; }
-    void SetService(const string& value);
+    bool          IsService(void) const             {return!m_Service.empty();}
+    const string& GetService(void) const            { return m_Service; }
+    void          SetService(const string& value);
     
-    string GetPort(void) const              { return m_Port; }
-    void   SetPort(const string& value)     { m_Port = value; }
+    const string& GetPort(void) const               { return m_Port; }
+    void          SetPort(const string& value)      { m_Port = value; }
 
-    string GetPath(void) const              { return m_Path; }
-    void   SetPath(const string& value)     { m_Path = value; }
+    const string& GetPath(void) const               { return m_Path; }
+    void          SetPath(const string& value)      { m_Path = value; }
 
-    string GetFragment(void) const          { return m_Fragment; }
-    void   SetFragment(const string& value) { m_Fragment = value; }
+    const string& GetFragment(void) const           { return m_Fragment; }
+    void          SetFragment(const string& value)  { m_Fragment = value; }
 
     /// Get the original (unparsed and undecoded) query string
-    string GetOriginalArgsString(void) const
-        { return m_OrigArgs; }
+    const string& GetOriginalArgsString(void) const { return m_OrigArgs; }
 
     /// Check if the URL contains any arguments
     bool HaveArgs(void) const
