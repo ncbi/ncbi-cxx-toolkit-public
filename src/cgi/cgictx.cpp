@@ -37,7 +37,6 @@
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_url.hpp>
-#include <corelib/tempstr.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_util.hpp>
