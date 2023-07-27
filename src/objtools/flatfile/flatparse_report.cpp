@@ -32,10 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <objtools/flatfile/flatdefn.h>
+
 #include "flatparse_report.hpp"
 #include "ftaerr.hpp"
-
-#include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 
