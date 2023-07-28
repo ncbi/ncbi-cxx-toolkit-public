@@ -11,7 +11,6 @@ root=`pwd`
 ptb_ini=../src/build-system/project_tree_builder.ini
 tag=`sed -ne 's,.*/vdb-versions/,,p' $ptb_ini`
 name=ncbi-vdb${tag:+"-$tag"}
-platform=`COMMON_DetectPlatform 2>/dev/null`
 
 mkdir -p src
 cd src
@@ -20,11 +19,6 @@ if [ -d ncbi-vdb/.git ]; then
 else
     git clone https://github.com/ncbi/ncbi-vdb.git
 fi
-if [ -d ngs/.git ]; then
-    (cd ngs  &&  git pull)
-else
-    git clone https://github.com/ncbi/ngs.git
-fi
 cd ncbi-vdb
 git checkout "${tag:-master}" || git checkout master
 if [ ! -d interfaces ]; then
@@ -32,27 +26,22 @@ if [ ! -d interfaces ]; then
     name=ncbi-vdb
     git checkout master
 fi
-if [ "$platform" = IntelMAC ]; then
-    # archflag=--arch=fat86
-    if [ ! -d $root/tmp/force-clang ]; then
-        mkdir -p $root/tmp/force-clang
-        ln -s /usr/bin/clang $root/tmp/force-clang/gcc
-    fi
-    PATH=$root/tmp/force-clang:$PATH
-else
-    archflag=
-fi
 unset CFLAGS CPPFLAGS LDFLAGS
-./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag \
-    ${LIBXML_LIBPATH:+"LDFLAGS=$LIBXML_LIBPATH"}
-make NO_VDB3=1
+if [ -n $LIBXML_LIBPATH ]; then
+    LDFLAGS=$LIBXML_LIBPATH
+    export LDFLAGS
+fi
+mkdir -p ../../build/$name
+cd ../../build/$name
+cmake ../../src/ncbi-vdb -DCMAKE_INSTALL_PREFIX=$root/$name
+make
 
 for x in lib lib64; do
     if [ -L $root/$name/$x ]; then
         rm $root/$name/$x
     fi
 done
-make install NO_VDB3=1
+make install
 if [ -f $root/$name/include/klib/rc.h ]; then
     :
 else
