@@ -89,19 +89,19 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(unit_test_util)
 
 
-void SetDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id)
+void SetDbxref(CBioSource& src, string db, CObject_id::TId id)
 {
-    CRef<objects::CDbtag> dbtag(new objects::CDbtag());
+    CRef<CDbtag> dbtag(new CDbtag());
     dbtag->SetDb(db);
     dbtag->SetTag().SetId(id);
     src.SetOrg().SetDb().push_back(dbtag);
 }
 
 
-void RemoveDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId id)
+void RemoveDbxref(CBioSource& src, string db, CObject_id::TId id)
 {
     if (src.IsSetOrg() && src.GetOrg().IsSetDb()) {
-        objects::COrg_ref::TDb::iterator it = src.SetOrg().SetDb().begin();
+        COrg_ref::TDb::iterator it = src.SetOrg().SetDb().begin();
         while (it != src.SetOrg().SetDb().end()) {
             if ((NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db)))
                 && (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id))) {
@@ -114,7 +114,7 @@ void RemoveDbxref (objects::CBioSource& src, string db, objects::CObject_id::TId
 }
 
 
-void SetTaxon (objects::CBioSource& src, size_t taxon)
+void SetTaxon(CBioSource& src, size_t taxon)
 {
     if (taxon == 0) {
         RemoveDbxref (src, "taxon", 0);
@@ -124,20 +124,20 @@ void SetTaxon (objects::CBioSource& src, size_t taxon)
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodSeq(void)
+CRef<CSeq_entry> BuildGoodSeq()
 {
-    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
-    entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
-    entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
     entry->SetSeq().SetInst().SetLength(60);
 
-    CRef<objects::CSeq_id> id(new objects::CSeq_id());
+    CRef<CSeq_id> id(new CSeq_id());
     id->SetLocal().SetStr ("good");
     entry->SetSeq().SetId().push_back(id);
 
-    CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
-    mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_genomic);    
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
     entry->SetSeq().SetDescr().Set().push_back(mdesc);
 
     AddGoodSource (entry);
@@ -147,10 +147,10 @@ CRef<objects::CSeq_entry> BuildGoodSeq(void)
 }
 
 
-CRef<objects::CSeqdesc> BuildGoodPubSeqdesc()
+CRef<CSeqdesc> BuildGoodPubSeqdesc()
 {
-    CRef<objects::CSeqdesc> pdesc(new objects::CSeqdesc());
-    CRef<objects::CPub> pub(new objects::CPub());
+    CRef<CSeqdesc> pdesc(new CSeqdesc());
+    CRef<CPub> pub(new CPub());
     pub->SetPmid(CPub::TPmid(ENTREZ_ID_CONST(1)));
     pdesc->SetPub().SetPub().Set().push_back(pub);
 
@@ -158,9 +158,9 @@ CRef<objects::CSeqdesc> BuildGoodPubSeqdesc()
 }
 
 
-void AddGoodPub (CRef<objects::CSeq_entry> entry)
+void AddGoodPub(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeqdesc> pdesc = BuildGoodPubSeqdesc();
+    CRef<CSeqdesc> pdesc = BuildGoodPubSeqdesc();
 
     if (entry->IsSeq()) {
         entry->SetSeq().SetDescr().Set().push_back(pdesc);
@@ -168,7 +168,7 @@ void AddGoodPub (CRef<objects::CSeq_entry> entry)
         entry->SetSet().SetDescr().Set().push_back(pdesc);
     }
 
-    CRef<objects::CSeqdesc> pdesc2 = BuildGoodPubSeqdesc();
+    CRef<CSeqdesc> pdesc2 = BuildGoodPubSeqdesc();
     pdesc2->SetPub().SetPub().Set().front()->Assign(*BuildGoodCitSubPub());
     if (entry->IsSeq()) {
         entry->SetSeq().SetDescr().Set().push_back(pdesc2);
@@ -179,14 +179,14 @@ void AddGoodPub (CRef<objects::CSeq_entry> entry)
 }
 
 
-void AddGoodSource (CRef<objects::CSeq_entry> entry)
+void AddGoodSource(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeqdesc> odesc(new objects::CSeqdesc());
+    CRef<CSeqdesc> odesc(new CSeqdesc());
     odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
     odesc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
     SetTaxon(odesc->SetSource(), 592768);
-    CRef<objects::CSubSource> subsrc(new objects::CSubSource());
-    subsrc->SetSubtype(objects::CSubSource::eSubtype_chromosome);
+    CRef<CSubSource> subsrc(new CSubSource());
+    subsrc->SetSubtype(CSubSource::eSubtype_chromosome);
     subsrc->SetName("1");
     odesc->SetSource().SetSubtype().push_back(subsrc);
 
@@ -198,28 +198,28 @@ void AddGoodSource (CRef<objects::CSeq_entry> entry)
 }
 
 
-void SetDbxref (objects::CBioSource& src, string db, string id)
+void SetDbxref(CBioSource& src, string db, string id)
 {
-    CRef<objects::CDbtag> dbtag(new objects::CDbtag());
+    CRef<CDbtag> dbtag(new CDbtag());
     dbtag->SetDb(db);
     dbtag->SetTag().SetStr(id);
     src.SetOrg().SetDb().push_back(dbtag);
 }
 
 
-void SetDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id::TId id)
+void SetDbxref(CRef<CSeq_entry> entry, string db, CObject_id::TId id)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetDbxref((*it)->SetSource(), db, id);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetDbxref((*it)->SetSource(), db, id);
             }
@@ -228,19 +228,19 @@ void SetDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id:
 }
 
 
-void SetDbxref (CRef<objects::CSeq_entry> entry, string db, string id)
+void SetDbxref(CRef<CSeq_entry> entry, string db, string id)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetDbxref((*it)->SetSource(), db, id);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetDbxref((*it)->SetSource(), db, id);
             }
@@ -249,24 +249,24 @@ void SetDbxref (CRef<objects::CSeq_entry> entry, string db, string id)
 }
 
 
-void SetDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id::TId id)
+void SetDbxref(CRef<CSeq_feat> feat, string db, CObject_id::TId id)
 {
     if (!feat) {
         return;
     }
-    CRef<objects::CDbtag> dbtag(new objects::CDbtag());
+    CRef<CDbtag> dbtag(new CDbtag());
     dbtag->SetDb(db);
     dbtag->SetTag().SetId(id);
     feat->SetDbxref().push_back(dbtag);
 }
 
 
-void SetDbxref (CRef<objects::CSeq_feat> feat, string db, string id)
+void SetDbxref(CRef<CSeq_feat> feat, string db, string id)
 {
     if (!feat) {
         return;
     }
-    CRef<objects::CDbtag> dbtag(new objects::CDbtag());
+    CRef<CDbtag> dbtag(new CDbtag());
     dbtag->SetDb(db);
     dbtag->SetTag().SetStr(id);
     feat->SetDbxref().push_back(dbtag);
@@ -274,19 +274,19 @@ void SetDbxref (CRef<objects::CSeq_feat> feat, string db, string id)
 
 
 
-void RemoveDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_id::TId id)
+void RemoveDbxref(CRef<CSeq_entry> entry, string db, CObject_id::TId id)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 RemoveDbxref((*it)->SetSource(), db, id);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 RemoveDbxref((*it)->SetSource(), db, id);
             }
@@ -295,13 +295,13 @@ void RemoveDbxref (CRef<objects::CSeq_entry> entry, string db, objects::CObject_
 }
 
 
-void RemoveDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id::TId id)
+void RemoveDbxref (CRef<CSeq_feat> feat, string db, CObject_id::TId id)
 {
     if (!feat) {
         return;
     }
     if (feat->IsSetDbxref()) {
-        objects::CSeq_feat::TDbxref::iterator it = feat->SetDbxref().begin();
+        CSeq_feat::TDbxref::iterator it = feat->SetDbxref().begin();
         while (it != feat->SetDbxref().end()) {
             if ((NStr::IsBlank(db) || ((*it)->IsSetDb() && NStr::Equal((*it)->GetDb(), db))) 
                 && (id == 0 || ((*it)->IsSetTag() && (*it)->GetTag().IsId() && (*it)->GetTag().GetId() == id))) {
@@ -314,19 +314,19 @@ void RemoveDbxref (CRef<objects::CSeq_feat> feat, string db, objects::CObject_id
 }
 
 
-void SetTaxon (CRef<objects::CSeq_entry> entry, size_t taxon)
+void SetTaxon(CRef<CSeq_entry> entry, size_t taxon)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetTaxon((*it)->SetSource(), taxon);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetTaxon((*it)->SetSource(), taxon);
             }
@@ -335,7 +335,7 @@ void SetTaxon (CRef<objects::CSeq_entry> entry, size_t taxon)
 }
 
 
-void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_entry> entry)
+void AddFeatAnnotToSeqEntry(CRef<CSeq_annot> annot, CRef<CSeq_entry> entry)
 {
     if (!entry || !annot) {
         return;
@@ -350,14 +350,14 @@ void AddFeatAnnotToSeqEntry (CRef<objects::CSeq_annot> annot, CRef<objects::CSeq
 }
 
 
-CRef<objects::CSeq_annot> AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::CSeq_entry> entry)
+CRef<CSeq_annot> AddFeat (CRef<CSeq_feat> feat, CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_annot> annot;
+    CRef<CSeq_annot> annot;
 
     if (entry->IsSeq()) {
         if (!entry->GetSeq().IsSetAnnot() 
             || !entry->GetSeq().GetAnnot().front()->IsFtable()) {
-            CRef<objects::CSeq_annot> new_annot(new objects::CSeq_annot());
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
             entry->SetSeq().SetAnnot().push_back(new_annot);
             annot = new_annot;
         } else {
@@ -366,7 +366,7 @@ CRef<objects::CSeq_annot> AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::
     } else if (entry->IsSet()) {
         if (!entry->GetSet().IsSetAnnot() 
             || !entry->GetSet().GetAnnot().front()->IsFtable()) {
-            CRef<objects::CSeq_annot> new_annot(new objects::CSeq_annot());
+            CRef<CSeq_annot> new_annot(new CSeq_annot());
             entry->SetSet().SetAnnot().push_back(new_annot);
             annot = new_annot;
         } else {
@@ -377,9 +377,9 @@ CRef<objects::CSeq_annot> AddFeat (CRef<objects::CSeq_feat> feat, CRef<objects::
     return annot;
 }
 
-CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CSeq_entry> entry) 
+CRef<CSeq_feat> AddProtFeat(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_feat> feat (new objects::CSeq_feat());
+    CRef<CSeq_feat> feat (new CSeq_feat());
     feat->SetData().SetProt().SetName().push_back("fake protein name");
     feat->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
     feat->SetLocation().SetInt().SetFrom(0);
@@ -389,25 +389,25 @@ CRef<objects::CSeq_feat> AddProtFeat(CRef<objects::CSeq_entry> entry)
 }
 
 
-CRef<objects::CSeq_feat> AddGoodSourceFeature(CRef<objects::CSeq_entry> entry)
+CRef<CSeq_feat> AddGoodSourceFeature(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
+    CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
     SetTaxon (feat->SetData().SetBiosrc(), 9778);
     feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
     feat->SetLocation().SetInt().SetFrom(0);
     feat->SetLocation().SetInt().SetTo(5);
-    CRef<objects::CSeq_annot> annot(new objects::CSeq_annot());
+    CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetFtable().push_back(feat);
     AddFeatAnnotToSeqEntry (annot, entry);
     return feat;
 }
 
 
-CRef<objects::CSeq_feat> MakeMiscFeature(CRef<objects::CSeq_id> id, size_t right_end, size_t left_end)
+CRef<CSeq_feat> MakeMiscFeature(CRef<CSeq_id> id, size_t right_end, size_t left_end)
 {
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
+    CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetLocation().SetInt().SetId().Assign(*id);
     feat->SetLocation().SetInt().SetFrom(left_end);
     feat->SetLocation().SetInt().SetTo(right_end);
@@ -428,41 +428,41 @@ CRef<CSeq_feat> BuildGoodFeat ()
 }
 
 
-CRef<objects::CSeq_id> IdFromEntry(CRef<objects::CSeq_entry> entry)
+CRef<CSeq_id> IdFromEntry(CRef<CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
         return entry->SetSeq().SetId().front();
     } else if (entry->IsSet()) {
         return IdFromEntry (entry->SetSet().SetSeq_set().front());
     } else {
-        CRef<objects::CSeq_id> empty;
+        CRef<CSeq_id> empty;
         return empty;
     }
 }
 
 
-CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry, size_t right_end)
+CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry, size_t right_end)
 {
-    CRef<objects::CSeq_feat> feat = MakeMiscFeature(IdFromEntry(entry), right_end);
+    CRef<CSeq_feat> feat = MakeMiscFeature(IdFromEntry(entry), right_end);
     feat->SetComment("misc_feature needs a comment");
     AddFeat (feat, entry);
     return feat;
 }
 
 
-CRef<objects::CSeq_feat> AddMiscFeature(CRef<objects::CSeq_entry> entry)
+CRef<CSeq_feat> AddMiscFeature(CRef<CSeq_entry> entry)
 {
     return AddMiscFeature (entry, 10);
 }
 
 
-void SetTaxname (CRef<objects::CSeq_entry> entry, string taxname)
+void SetTaxname(CRef<CSeq_entry> entry, string taxname)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(taxname)) {
                     (*it)->SetSource().SetOrg().ResetTaxname();
@@ -472,7 +472,7 @@ void SetTaxname (CRef<objects::CSeq_entry> entry, string taxname)
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(taxname)) {
                     (*it)->SetSource().SetOrg().ResetTaxname();
@@ -485,7 +485,7 @@ void SetTaxname (CRef<objects::CSeq_entry> entry, string taxname)
 }
 
 
-void SetSebaea_microphylla(CRef<objects::CSeq_entry> entry)
+void SetSebaea_microphylla(CRef<CSeq_entry> entry)
 {
     SetTaxname(entry, "Sebaea microphylla");
     SetTaxon(entry, 0);
@@ -493,7 +493,7 @@ void SetSebaea_microphylla(CRef<objects::CSeq_entry> entry)
 }
 
 
-void SetSynthetic_construct(CRef<objects::CSeq_entry> entry)
+void SetSynthetic_construct(CRef<CSeq_entry> entry)
 {
     SetTaxname(entry, "synthetic construct");
     SetTaxon(entry, 0);
@@ -501,20 +501,20 @@ void SetSynthetic_construct(CRef<objects::CSeq_entry> entry)
 }
 
 
-void SetDrosophila_melanogaster(CRef<objects::CSeq_entry> entry)
+void SetDrosophila_melanogaster(CRef<CSeq_entry> entry)
 {
     SetTaxname(entry, "Drosophila melanogaster");
     SetTaxon(entry, 0);
     SetTaxon(entry, 7227);
 }
 
-void SetCommon (CRef<objects::CSeq_entry> entry, string common)
+void SetCommon(CRef<CSeq_entry> entry, string common)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(common)) {
                     (*it)->SetSource().SetOrg().ResetCommon();
@@ -524,7 +524,7 @@ void SetCommon (CRef<objects::CSeq_entry> entry, string common)
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(common)) {
                     (*it)->SetSource().SetOrg().ResetCommon();
@@ -537,13 +537,13 @@ void SetCommon (CRef<objects::CSeq_entry> entry, string common)
 }
 
 
-void SetLineage (CRef<objects::CSeq_entry> entry, string lineage)
+void SetLineage(CRef<CSeq_entry> entry, string lineage)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(lineage)) {
                     (*it)->SetSource().SetOrg().SetOrgname().ResetLineage();
@@ -553,7 +553,7 @@ void SetLineage (CRef<objects::CSeq_entry> entry, string lineage)
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(lineage)) {
                     (*it)->SetSource().SetOrg().SetOrgname().ResetLineage();
@@ -566,13 +566,13 @@ void SetLineage (CRef<objects::CSeq_entry> entry, string lineage)
 }
 
 
-void SetDiv (CRef<objects::CSeq_entry> entry, string div)
+void SetDiv(CRef<CSeq_entry> entry, string div)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(div)) {
                     (*it)->SetSource().SetOrg().SetOrgname().ResetDiv();
@@ -582,7 +582,7 @@ void SetDiv (CRef<objects::CSeq_entry> entry, string div)
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 if (NStr::IsBlank(div)) {
                     (*it)->SetSource().SetOrg().SetOrgname().ResetDiv();
@@ -595,19 +595,19 @@ void SetDiv (CRef<objects::CSeq_entry> entry, string div)
 }
 
 
-void SetOrigin (CRef<objects::CSeq_entry> entry, objects::CBioSource::TOrigin origin)
+void SetOrigin(CRef<CSeq_entry> entry, CBioSource::TOrigin origin)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrigin(origin);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrigin(origin);
             }
@@ -616,19 +616,19 @@ void SetOrigin (CRef<objects::CSeq_entry> entry, objects::CBioSource::TOrigin or
 }
 
 
-void SetGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode gcode)
+void SetGcode(CRef<CSeq_entry> entry, COrgName::TGcode gcode)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().SetOrgname().SetGcode(gcode);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().SetOrgname().SetGcode(gcode);
             }
@@ -637,19 +637,19 @@ void SetGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode gcode)
 }
 
 
-void SetMGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode mgcode)
+void SetMGcode(CRef<CSeq_entry> entry, COrgName::TGcode mgcode)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().SetOrgname().SetMgcode(mgcode);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().SetOrgname().SetMgcode(mgcode);
             }
@@ -658,19 +658,19 @@ void SetMGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode mgcod
 }
 
 
-void SetPGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode pgcode)
+void SetPGcode(CRef<CSeq_entry> entry, COrgName::TGcode pgcode)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().SetOrgname().SetPgcode(pgcode);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().SetOrgname().SetPgcode(pgcode);
             }
@@ -679,19 +679,19 @@ void SetPGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode pgcod
 }
 
 
-void ResetOrgname (CRef<objects::CSeq_entry> entry)
+void ResetOrgname(CRef<CSeq_entry> entry)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().ResetOrgname();
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetOrg().ResetOrgname();
             }
@@ -700,19 +700,19 @@ void ResetOrgname (CRef<objects::CSeq_entry> entry)
 }
 
 
-void SetFocus (CRef<objects::CSeq_entry> entry)
+void SetFocus (CRef<CSeq_entry> entry)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetIs_focus();
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetIs_focus();
             }
@@ -721,19 +721,19 @@ void SetFocus (CRef<objects::CSeq_entry> entry)
 }
 
 
-void ClearFocus (CRef<objects::CSeq_entry> entry)
+void ClearFocus(CRef<CSeq_entry> entry)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().ResetIs_focus();
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().ResetIs_focus();
             }
@@ -742,19 +742,19 @@ void ClearFocus (CRef<objects::CSeq_entry> entry)
 }
 
 
-void SetGenome (CRef<objects::CSeq_entry> entry, objects::CBioSource::TGenome genome)
+void SetGenome(CRef<CSeq_entry> entry, CBioSource::TGenome genome)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetGenome(genome);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 (*it)->SetSource().SetGenome(genome);
             }
@@ -763,11 +763,11 @@ void SetGenome (CRef<objects::CSeq_entry> entry, objects::CBioSource::TGenome ge
 }
 
 
-void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtype subtype, string val)
+void SetSubSource(CBioSource& src, CSubSource::TSubtype subtype, string val)
 {
     if (NStr::IsBlank(val)) {
         if (src.IsSetSubtype()) {
-            objects::CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
+            CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
             while (it != src.SetSubtype().end()) {
                 if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
                     it = src.SetSubtype().erase(it);
@@ -777,7 +777,7 @@ void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtype subty
             }
         }
     } else {
-        CRef<objects::CSubSource> sub(new objects::CSubSource(subtype, val));
+        CRef<CSubSource> sub(new CSubSource(subtype, val));
         if (NStr::EqualNocase(val, "true")) {
             sub->SetName("");
         }
@@ -786,19 +786,19 @@ void SetSubSource (objects::CBioSource& src, objects::CSubSource::TSubtype subty
 }
 
 
-void SetSubSource (CRef<objects::CSeq_entry> entry, objects::CSubSource::TSubtype subtype, string val)
+void SetSubSource(CRef<CSeq_entry> entry, CSubSource::TSubtype subtype, string val)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetSubSource((*it)->SetSource(), subtype, val);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetSubSource((*it)->SetSource(), subtype, val);
             }
@@ -807,13 +807,13 @@ void SetSubSource (CRef<objects::CSeq_entry> entry, objects::CSubSource::TSubtyp
 }
 
 
-void SetChromosome (objects::CBioSource& src, string chromosome) 
+void SetChromosome(CBioSource& src, string chromosome)
 {
     if (NStr::IsBlank(chromosome)) {
         if (src.IsSetSubtype()) {
-            objects::CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
+            CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
             while (it != src.SetSubtype().end()) {
-                if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == objects::CSubSource::eSubtype_chromosome) {
+                if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_chromosome) {
                     it = src.SetSubtype().erase(it);
                 } else {
                     ++it;
@@ -821,25 +821,25 @@ void SetChromosome (objects::CBioSource& src, string chromosome)
             }
         }
     } else {
-        CRef<objects::CSubSource> sub(new objects::CSubSource(objects::CSubSource::eSubtype_chromosome, chromosome));
+        CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_chromosome, chromosome));
         src.SetSubtype().push_back(sub);
     }
 }
 
 
-void SetChromosome (CRef<objects::CSeq_entry> entry, string chromosome)
+void SetChromosome(CRef<CSeq_entry> entry, string chromosome)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetChromosome((*it)->SetSource(), chromosome);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetChromosome((*it)->SetSource(), chromosome);
             }
@@ -848,15 +848,15 @@ void SetChromosome (CRef<objects::CSeq_entry> entry, string chromosome)
 }
 
 
-void SetTransgenic (objects::CBioSource& src, bool do_set) 
+void SetTransgenic(CBioSource& src, bool do_set)
 {
     if (do_set) {
-        CRef<objects::CSubSource> sub(new objects::CSubSource(objects::CSubSource::eSubtype_transgenic, ""));
+        CRef<CSubSource> sub(new CSubSource(CSubSource::eSubtype_transgenic, ""));
         src.SetSubtype().push_back(sub);
     } else if (src.IsSetSubtype()) {
-        objects::CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
+        CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
         while (it != src.SetSubtype().end()) {
-            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == objects::CSubSource::eSubtype_transgenic) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_transgenic) {
                 it = src.SetSubtype().erase(it);
             } else {
                 ++it;
@@ -866,19 +866,19 @@ void SetTransgenic (objects::CBioSource& src, bool do_set)
 }
 
 
-void SetTransgenic (CRef<objects::CSeq_entry> entry, bool do_set)
+void SetTransgenic(CRef<CSeq_entry> entry, bool do_set)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetTransgenic((*it)->SetSource(), do_set);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetTransgenic((*it)->SetSource(), do_set);
             }
@@ -887,11 +887,11 @@ void SetTransgenic (CRef<objects::CSeq_entry> entry, bool do_set)
 }
 
 
-void SetOrgMod (objects::CBioSource& src, objects::COrgMod::TSubtype subtype, string val)
+void SetOrgMod(CBioSource& src, COrgMod::TSubtype subtype, string val)
 {
     if (NStr::IsBlank(val)) {
         if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
-            objects::COrgName::TMod::iterator it = src.SetOrg().SetOrgname().SetMod().begin();
+            COrgName::TMod::iterator it = src.SetOrg().SetOrgname().SetMod().begin();
             while (it != src.SetOrg().SetOrgname().SetMod().end()) {
                 if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
                     it = src.SetOrg().SetOrgname().SetMod().erase(it);
@@ -901,25 +901,25 @@ void SetOrgMod (objects::CBioSource& src, objects::COrgMod::TSubtype subtype, st
             }
         }
     } else {
-        CRef<objects::COrgMod> sub(new objects::COrgMod(subtype, val));
+        CRef<COrgMod> sub(new COrgMod(subtype, val));
         src.SetOrg().SetOrgname().SetMod().push_back(sub);
     }
 }
 
 
-void SetOrgMod (CRef<objects::CSeq_entry> entry, objects::COrgMod::TSubtype subtype, string val)
+void SetOrgMod(CRef<CSeq_entry> entry, COrgMod::TSubtype subtype, string val)
 {
     if (!entry) {
         return;
     }
     if (entry->IsSeq()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetOrgMod((*it)->SetSource(), subtype, val);
             }
         }
     } else if (entry->IsSet()) {
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
             if ((*it)->IsSource()) {
                 SetOrgMod((*it)->SetSource(), subtype, val);
             }
@@ -928,9 +928,9 @@ void SetOrgMod (CRef<objects::CSeq_entry> entry, objects::COrgMod::TSubtype subt
 }
 
 
-CRef<objects::CAuthor> BuildGoodAuthor()
+CRef<CAuthor> BuildGoodAuthor()
 {
-    CRef<objects::CAuthor> author(new objects::CAuthor());
+    CRef<CAuthor> author(new CAuthor());
     author->SetName().SetName().SetLast("Last");
     author->SetName().SetName().SetFirst("First");
     author->SetName().SetName().SetMiddle("M");
@@ -938,17 +938,17 @@ CRef<objects::CAuthor> BuildGoodAuthor()
 }
 
 
-CRef<objects::CPub> BuildGoodArticlePub()
+CRef<CPub> BuildGoodArticlePub()
 {
-    CRef<objects::CPub> pub(new objects::CPub());
+    CRef<CPub> pub(new CPub());
 
-    CRef<objects::CCit_art::TTitle::C_E> art_title(new objects::CCit_art::TTitle::C_E());
+    CRef<CCit_art::TTitle::C_E> art_title(new CCit_art::TTitle::C_E());
     art_title->SetName("article title");
     pub->SetArticle().SetTitle().Set().push_back(art_title);
-    CRef<objects::CCit_jour::TTitle::C_E> journal_title(new objects::CCit_jour::TTitle::C_E());
+    CRef<CCit_jour::TTitle::C_E> journal_title(new CCit_jour::TTitle::C_E());
     journal_title->SetName("journal_title");
     pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(journal_title);
-    CRef<objects::CCit_jour::TTitle::C_E> iso_jta(new objects::CCit_jour::TTitle::C_E());   
+    CRef<CCit_jour::TTitle::C_E> iso_jta(new CCit_jour::TTitle::C_E());
     iso_jta->SetIso_jta("abbr");
     pub->SetArticle().SetFrom().SetJournal().SetTitle().Set().push_back(iso_jta);
     pub->SetArticle().SetAuthors().SetNames().SetStd().push_back(BuildGoodAuthor());
@@ -959,9 +959,9 @@ CRef<objects::CPub> BuildGoodArticlePub()
 }
 
 
-CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::CAuthor> author, int serial_number)
+CRef<CPub> BuildGoodCitGenPub(CRef<CAuthor> author, int serial_number)
 {
-    CRef<objects::CPub> pub(new objects::CPub());
+    CRef<CPub> pub(new CPub());
     if (!author) {
         author = BuildGoodAuthor();
     }
@@ -975,10 +975,10 @@ CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::CAuthor> author, int serial
 }
 
 
-CRef<objects::CPub> BuildGoodCitSubPub()
+CRef<CPub> BuildGoodCitSubPub()
 {
-    CRef<objects::CPub> pub(new objects::CPub());
-    CRef<objects::CAuthor> author = BuildGoodAuthor();
+    CRef<CPub> pub(new CPub());
+    CRef<CAuthor> author = BuildGoodAuthor();
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
     pub->SetSub().SetAuthors().SetAffil().SetStd().SetAffil("A Major University");
     pub->SetSub().SetAuthors().SetAffil().SetStd().SetSub("Maryland");
@@ -988,7 +988,7 @@ CRef<objects::CPub> BuildGoodCitSubPub()
 }
 
 
-void MakeSeqLong(objects::CBioseq& seq)
+void MakeSeqLong(CBioseq& seq)
 {
     if (seq.SetInst().IsSetSeq_data()) {
         if (seq.GetInst().GetSeq_data().IsIupacna()) {
@@ -1010,58 +1010,58 @@ void MakeSeqLong(objects::CBioseq& seq)
 }
 
 
-void SetBiomol (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TBiomol biomol)
+void SetBiomol(CRef<CSeq_entry> entry, CMolInfo::TBiomol biomol)
 {
     bool found = false;
 
-    NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsMolinfo()) {
             (*it)->SetMolinfo().SetBiomol(biomol);
             found = true;
         }
     }
     if (!found) {
-        CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
+        CRef<CSeqdesc> mdesc(new CSeqdesc());
         mdesc->SetMolinfo().SetBiomol(biomol);
         entry->SetSeq().SetDescr().Set().push_back(mdesc);
     }
 }
 
 
-void SetTech (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TTech tech)
+void SetTech(CRef<CSeq_entry> entry, CMolInfo::TTech tech)
 {
     bool found = false;
 
-    NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsMolinfo()) {
             (*it)->SetMolinfo().SetTech(tech);
             found = true;
         }
     }
     if (!found) {
-        CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
+        CRef<CSeqdesc> mdesc(new CSeqdesc());
         mdesc->SetMolinfo().SetTech(tech);
         entry->SetSeq().SetDescr().Set().push_back(mdesc);
     }
 }
 
 
-void SetCompleteness(CRef<objects::CSeq_entry> entry, objects::CMolInfo::TCompleteness completeness)
+void SetCompleteness(CRef<CSeq_entry> entry, CMolInfo::TCompleteness completeness)
 {
     if (entry->IsSeq()) {
         bool found = false;
-        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
             if ((*it)->IsMolinfo()) {
                 (*it)->SetMolinfo().SetCompleteness (completeness);
                 found = true;
             }
         }
         if (!found) {
-            CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
+            CRef<CSeqdesc> mdesc(new CSeqdesc());
             if (entry->GetSeq().IsAa()) {
-                mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide);
+                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
             } else {
-                mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_genomic);
+                mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
             }
             mdesc->SetMolinfo().SetCompleteness (completeness);
             entry->SetSeq().SetDescr().Set().push_back(mdesc);
@@ -1070,16 +1070,16 @@ void SetCompleteness(CRef<objects::CSeq_entry> entry, objects::CMolInfo::TComple
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodProtSeq(void)
+CRef<CSeq_entry> BuildGoodProtSeq()
 {
-    CRef<objects::CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_entry> entry = BuildGoodSeq();
 
-    entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("PRKTEIN");
     entry->SetSeq().SetInst().SetLength(7);
-    NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
         if ((*it)->IsMolinfo()) {
-            (*it)->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide);
+            (*it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
         }
     }
 
@@ -1089,28 +1089,28 @@ CRef<objects::CSeq_entry> BuildGoodProtSeq(void)
 }
 
 
-CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id)
+CRef<CSeq_entry> MakeProteinForGoodNucProtSet(string id)
 {
     // make protein
-    CRef<objects::CBioseq> pseq(new objects::CBioseq());
-    pseq->SetInst().SetMol(objects::CSeq_inst::eMol_aa);
-    pseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    CRef<CBioseq> pseq(new CBioseq());
+    pseq->SetInst().SetMol(CSeq_inst::eMol_aa);
+    pseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     pseq->SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
     pseq->SetInst().SetLength(8);
 
-    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    CRef<CSeq_id> pid(new CSeq_id());
     pid->SetLocal().SetStr (id);
     pseq->SetId().push_back(pid);
 
-    CRef<objects::CSeqdesc> mpdesc(new objects::CSeqdesc());
-    mpdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide); 
-    mpdesc->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_complete);
+    CRef<CSeqdesc> mpdesc(new CSeqdesc());
+    mpdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    mpdesc->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_complete);
     pseq->SetDescr().Set().push_back(mpdesc);
 
-    CRef<objects::CSeq_entry> pentry(new objects::CSeq_entry());
+    CRef<CSeq_entry> pentry(new CSeq_entry());
     pentry->SetSeq(*pseq);
 
-    CRef<objects::CSeq_feat> feat (new objects::CSeq_feat());
+    CRef<CSeq_feat> feat (new CSeq_feat());
     feat->SetData().SetProt().SetName().push_back("fake protein name");
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr(id);
     feat->SetLocation().SetInt().SetFrom(0);
@@ -1121,9 +1121,9 @@ CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id)
 }
 
 
-CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (const string& nuc_id, const string& prot_id)
+CRef<CSeq_feat> MakeCDSForGoodNucProtSet(const string& nuc_id, const string& prot_id)
 {
-    CRef<objects::CSeq_feat> cds (new objects::CSeq_feat());
+    CRef<CSeq_feat> cds (new CSeq_feat());
     cds->SetData().SetCdregion();
     cds->SetProduct().SetWhole().SetLocal().SetStr(prot_id);
     cds->SetLocation().SetInt().SetId().SetLocal().SetStr(nuc_id);
@@ -1133,40 +1133,40 @@ CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (const string& nuc_id, const s
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodNucProtSet(void)
+CRef<CSeq_entry> BuildGoodNucProtSet()
 {
-    CRef<objects::CBioseq_set> set(new objects::CBioseq_set());
-    set->SetClass(objects::CBioseq_set::eClass_nuc_prot);
+    CRef<CBioseq_set> set(new CBioseq_set());
+    set->SetClass(CBioseq_set::eClass_nuc_prot);
 
     // make nucleotide
-    CRef<objects::CBioseq> nseq(new objects::CBioseq());
-    nseq->SetInst().SetMol(objects::CSeq_inst::eMol_dna);
-    nseq->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    CRef<CBioseq> nseq(new CBioseq());
+    nseq->SetInst().SetMol(CSeq_inst::eMol_dna);
+    nseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
     nseq->SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     nseq->SetInst().SetLength(60);
 
-    CRef<objects::CSeq_id> id(new objects::CSeq_id());
+    CRef<CSeq_id> id(new CSeq_id());
     id->SetLocal().SetStr ("nuc");
     nseq->SetId().push_back(id);
 
-    CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
-    mdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_genomic);    
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
     nseq->SetDescr().Set().push_back(mdesc);
 
-    CRef<objects::CSeq_entry> nentry(new objects::CSeq_entry());
+    CRef<CSeq_entry> nentry(new CSeq_entry());
     nentry->SetSeq(*nseq);
 
     set->SetSeq_set().push_back(nentry);
 
     // make protein
-    CRef<objects::CSeq_entry> pentry = MakeProteinForGoodNucProtSet("prot");
+    CRef<CSeq_entry> pentry = MakeProteinForGoodNucProtSet("prot");
 
     set->SetSeq_set().push_back(pentry);
 
-    CRef<objects::CSeq_entry> set_entry(new objects::CSeq_entry());
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
     set_entry->SetSet(*set);
 
-    CRef<objects::CSeq_feat> cds = MakeCDSForGoodNucProtSet("nuc", "prot");
+    CRef<CSeq_feat> cds = MakeCDSForGoodNucProtSet("nuc", "prot");
     AddFeat (cds, set_entry);
 
     AddGoodSource (set_entry);
@@ -1175,10 +1175,10 @@ CRef<objects::CSeq_entry> BuildGoodNucProtSet(void)
 }
 
 
-void AdjustProtFeatForNucProtSet(CRef<objects::CSeq_entry> entry)
+void AdjustProtFeatForNucProtSet(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_feat> prot;
-    CRef<objects::CSeq_entry> prot_seq;
+    CRef<CSeq_feat> prot;
+    CRef<CSeq_entry> prot_seq;
 
     if (!entry) {
         return;
@@ -1196,10 +1196,10 @@ void AdjustProtFeatForNucProtSet(CRef<objects::CSeq_entry> entry)
 }
 
 
-void SetNucProtSetProductName (CRef<objects::CSeq_entry> entry, string new_name)
+void SetNucProtSetProductName(CRef<CSeq_entry> entry, string new_name)
 {
-    CRef<objects::CSeq_feat> prot;
-    CRef<objects::CSeq_entry> prot_seq;
+    CRef<CSeq_feat> prot;
+    CRef<CSeq_entry> prot_seq;
 
     if (!entry) {
         return;
@@ -1220,36 +1220,36 @@ void SetNucProtSetProductName (CRef<objects::CSeq_entry> entry, string new_name)
 }
 
 
-CRef<objects::CSeq_feat> GetCDSFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<CSeq_feat> GetCDSFromGoodNucProtSet(CRef<CSeq_entry> entry)
 {
     return entry->SetSet().SetAnnot().front()->SetData().SetFtable().front();
 }
 
 
-CRef<objects::CSeq_entry> GetNucleotideSequenceFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<CSeq_entry> GetNucleotideSequenceFromGoodNucProtSet(CRef<CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().front();
 }
 
 
-CRef<objects::CSeq_entry> GetProteinSequenceFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<CSeq_entry> GetProteinSequenceFromGoodNucProtSet(CRef<CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().back();
 }
 
 
-CRef<objects::CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<objects::CSeq_entry> entry)
+CRef<CSeq_feat> GetProtFeatFromGoodNucProtSet (CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
     return pentry->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
 }
 
 
-void RetranslateCdsForNucProtSet (CRef<objects::CSeq_entry> entry, objects::CScope &scope)
+void RetranslateCdsForNucProtSet(CRef<CSeq_entry> entry, CScope &scope)
 {
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
-    CRef<objects::CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*cds, scope);
-    CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CBioseq> bioseq = CSeqTranslator::TranslateToProtein(*cds, scope);
+    CRef<CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
     pentry->SetSeq().SetInst().Assign(bioseq->GetInst());
     AdjustProtFeatForNucProtSet (entry);
 }
@@ -1259,54 +1259,54 @@ void SetProteinPartial(CRef<CSeq_entry> pentry, bool partial5, bool partial3)
 {
     CRef<CSeq_feat> prot = pentry->SetAnnot().front()->SetData().SetFtable().front();
     prot->SetPartial(partial5 || partial3);
-    prot->SetLocation().SetPartialStart(partial5, objects::eExtreme_Biological);
-    prot->SetLocation().SetPartialStop(partial3, objects::eExtreme_Biological);
+    prot->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+    prot->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
 
     // molinfo completeness
     if (partial5 && partial3) {
-        SetCompleteness (pentry, objects::CMolInfo::eCompleteness_no_ends);
+        SetCompleteness (pentry, CMolInfo::eCompleteness_no_ends);
     } else if (partial5) {
-        SetCompleteness (pentry, objects::CMolInfo::eCompleteness_no_left);
+        SetCompleteness (pentry, CMolInfo::eCompleteness_no_left);
     } else if (partial3) {
-        SetCompleteness (pentry, objects::CMolInfo::eCompleteness_no_right);
+        SetCompleteness (pentry, CMolInfo::eCompleteness_no_right);
     } else {
-        SetCompleteness (pentry, objects::CMolInfo::eCompleteness_complete);
+        SetCompleteness (pentry, CMolInfo::eCompleteness_complete);
     }
 }
 
 
-void SetNucProtSetPartials (CRef<objects::CSeq_entry> entry, bool partial5, bool partial3)
+void SetNucProtSetPartials(CRef<CSeq_entry> entry, bool partial5, bool partial3)
 {
     // partials for CDS
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetPartial(partial5 || partial3);
-    cds->SetLocation().SetPartialStart(partial5, objects::eExtreme_Biological);
-    cds->SetLocation().SetPartialStop(partial3, objects::eExtreme_Biological);
+    cds->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
 
-    CRef<objects::CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> pentry = GetProteinSequenceFromGoodNucProtSet(entry);
     SetProteinPartial(pentry, partial5, partial3);
 }
 
 
-void ChangeNucProtSetProteinId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
+void ChangeNucProtSetProteinId(CRef<CSeq_entry> entry, CRef<CSeq_id> id)
 {
-    CRef<objects::CSeq_entry> pseq = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> pseq = GetProteinSequenceFromGoodNucProtSet(entry);
     pseq->SetSeq().SetId().front()->Assign(*id);
 
-    CRef<objects::CSeq_feat> pfeat = GetProtFeatFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> pfeat = GetProtFeatFromGoodNucProtSet(entry);
     pfeat->SetLocation().SetInt().SetId().Assign(*id);
 
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetProduct().SetWhole().Assign(*id);
 }
 
 
-void ChangeNucProtSetNucId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
+void ChangeNucProtSetNucId(CRef<CSeq_entry> entry, CRef<CSeq_id> id)
 {
-    CRef<objects::CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nseq = GetNucleotideSequenceFromGoodNucProtSet(entry);
     nseq->SetSeq().SetId().front()->Assign(*id);
 
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     if(cds->GetLocation().IsInt()) {
         cds->SetLocation().SetInt().SetId().Assign(*id);
     } else if (cds->GetLocation().IsMix()) {
@@ -1316,30 +1316,29 @@ void ChangeNucProtSetNucId (CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_
 }
 
 
-void MakeNucProtSet3Partial (CRef<objects::CSeq_entry> entry)
+void MakeNucProtSet3Partial(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
     cds->SetLocation().SetInt().SetTo(59);
-    cds->SetLocation().SetPartialStop(true, objects::eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     cds->SetPartial(true);
-    CRef<objects::CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> nuc_seq = entry->SetSet().SetSeq_set().front();
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACAAAGGGATGCCCAGAAAAACAGAGATAAACAAAGGG");
-    CRef<objects::CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
+    CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
     prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEINKGMPRKTEINKG");
     prot_seq->SetSeq().SetInst().SetLength(20);
-    SetCompleteness (prot_seq, objects::CMolInfo::eCompleteness_no_right);
-    CRef<objects::CSeq_feat> prot = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    SetCompleteness (prot_seq, CMolInfo::eCompleteness_no_right);
+    CRef<CSeq_feat> prot = prot_seq->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
     prot->SetLocation().SetInt().SetTo(19);
-    prot->SetLocation().SetPartialStop(true, objects::eExtreme_Biological);
+    prot->SetLocation().SetPartialStop(true, eExtreme_Biological);
     prot->SetPartial(true);
-    
 }
 
 
-void ChangeId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
+void ChangeId(CRef<CSeq_annot> annot, CRef<CSeq_id> id)
 {
     if (annot && annot->IsFtable()) {
-        objects::CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
+        CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
         while (it != annot->SetData().SetFtable().end()) {
             (*it)->SetLocation().SetInt().SetId().Assign(*id);
             ++it;
@@ -1348,10 +1347,10 @@ void ChangeId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
 }
 
 
-void ChangeProductId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
+void ChangeProductId(CRef<CSeq_annot> annot, CRef<CSeq_id> id)
 {
     if (annot && annot->IsFtable()) {
-        objects::CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
+        CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
         while (it != annot->SetData().SetFtable().end()) {
             if ((*it)->IsSetProduct()) {
                 (*it)->SetProduct().SetWhole().Assign(*id);
@@ -1362,36 +1361,36 @@ void ChangeProductId(CRef<objects::CSeq_annot> annot, CRef<objects::CSeq_id> id)
 }
 
 
-void ChangeNucId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
+void ChangeNucId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
 {
     if (!np_set || !np_set->IsSet()) {
         return;
     }
 
-    CRef<objects::CSeq_entry> nuc_entry = np_set->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> nuc_entry = np_set->SetSet().SetSeq_set().front();
 
     nuc_entry->SetSeq().SetId().front()->Assign(*id);
     if (nuc_entry->SetSeq().IsSetAnnot()) {
-        NON_CONST_ITERATE(objects::CSeq_entry::TAnnot, annot_it, nuc_entry->SetSeq().SetAnnot()) {
+        NON_CONST_ITERATE(CSeq_entry::TAnnot, annot_it, nuc_entry->SetSeq().SetAnnot()) {
             ChangeId (*annot_it, id);
         }
     }
     if (np_set->SetSet().IsSetAnnot()) {
-        NON_CONST_ITERATE(objects::CSeq_entry::TAnnot, annot_it, np_set->SetSet().SetAnnot()) {
+        NON_CONST_ITERATE(CSeq_entry::TAnnot, annot_it, np_set->SetSet().SetAnnot()) {
             ChangeId (*annot_it, id);
         }
     }
 }
 
 
-void ChangeProtId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
+void ChangeProtId(CRef<CSeq_entry> np_set, CRef<CSeq_id> id)
 {
     if (!np_set || !np_set->IsSet()) {
         return;
     }
 
-    CRef<objects::CSeq_entry> prot_entry = np_set->SetSet().SetSeq_set().back();
-    CRef<objects::CSeq_feat> cds = GetCDSFromGoodNucProtSet(np_set);
+    CRef<CSeq_entry> prot_entry = np_set->SetSet().SetSeq_set().back();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(np_set);
 
     prot_entry->SetSeq().SetId().front()->Assign(*id);
     EDIT_EACH_SEQANNOT_ON_BIOSEQ (annot_it, prot_entry->SetSeq()) {
@@ -1404,23 +1403,23 @@ void ChangeProtId(CRef<objects::CSeq_entry> np_set, CRef<objects::CSeq_id> id)
 }
 
 
-CRef<objects::CSeq_id> BuildRefSeqId(void)
+CRef<CSeq_id> BuildRefSeqId()
 {
-    CRef<objects::CSeq_id> id(new objects::CSeq_id());
+    CRef<CSeq_id> id(new CSeq_id());
     id->SetOther().SetAccession("NC_123456");
     return id;
 }
 
 
-void ChangeId(CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
+void ChangeId(CRef<CSeq_entry> entry, CRef<CSeq_id> id)
 {
     if (entry->IsSeq()) {
         entry->SetSeq().SetId().front()->Assign(*id);
         if (entry->SetSeq().IsSetAnnot()) {
-            objects::CBioseq::TAnnot::iterator annot_it = entry->SetSeq().SetAnnot().begin();
+            CBioseq::TAnnot::iterator annot_it = entry->SetSeq().SetAnnot().begin();
             while (annot_it != entry->SetSeq().SetAnnot().end()) {
                 if ((*annot_it)->IsFtable()) {
-                    objects::CSeq_annot::C_Data::TFtable::iterator it = (*annot_it)->SetData().SetFtable().begin();
+                    CSeq_annot::C_Data::TFtable::iterator it = (*annot_it)->SetData().SetFtable().begin();
                     while (it != (*annot_it)->SetData().SetFtable().end()) {
                         (*it)->SetLocation().SetId(*id);
                         ++it;
@@ -1433,10 +1432,10 @@ void ChangeId(CRef<objects::CSeq_entry> entry, CRef<objects::CSeq_id> id)
 }
 
 
-void ChangeId(CRef<objects::CSeq_annot> annot, string suffix)
+void ChangeId(CRef<CSeq_annot> annot, string suffix)
 {
     if (annot && annot->IsFtable()) {
-        objects::CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
+        CSeq_annot::C_Data::TFtable::iterator it = annot->SetData().SetFtable().begin();
         while (it != annot->SetData().SetFtable().end()) {
             (*it)->SetLocation().SetInt().SetId().SetLocal().SetStr().append(suffix);
             if ((*it)->IsSetProduct()) {
@@ -1448,25 +1447,25 @@ void ChangeId(CRef<objects::CSeq_annot> annot, string suffix)
 }
 
 
-void ChangeId(CRef<objects::CSeq_entry> entry, string suffix)
+void ChangeId(CRef<CSeq_entry> entry, string suffix)
 {
     if (entry->IsSeq()) {
         entry->SetSeq().SetId().front()->SetLocal().SetStr().append(suffix);
         if (entry->SetSeq().IsSetAnnot()) {
-            objects::CBioseq::TAnnot::iterator annot_it = entry->SetSeq().SetAnnot().begin();
+            CBioseq::TAnnot::iterator annot_it = entry->SetSeq().SetAnnot().begin();
             while (annot_it != entry->SetSeq().SetAnnot().end()) {
                 ChangeId(*annot_it, suffix);
                 ++annot_it;
             }
         }
     } else if (entry->IsSet()) {
-        objects::CBioseq_set::TSeq_set::iterator it = entry->SetSet().SetSeq_set().begin();
+        CBioseq_set::TSeq_set::iterator it = entry->SetSet().SetSeq_set().begin();
         while (it != entry->SetSet().SetSeq_set().end()) {
             ChangeId(*it, suffix);
             ++it;
         }
         if (entry->SetSet().IsSetAnnot()) {
-            objects::CBioseq_set::TAnnot::iterator annot_it = entry->SetSet().SetAnnot().begin();
+            CBioseq_set::TAnnot::iterator annot_it = entry->SetSet().SetAnnot().begin();
             while (annot_it != entry->SetSet().SetAnnot().end()) {
                 ChangeId(*annot_it, suffix);
                 ++annot_it;
@@ -1476,14 +1475,14 @@ void ChangeId(CRef<objects::CSeq_entry> entry, string suffix)
 }
 
 
-CRef<objects::CSeq_entry> BuildGenProdSetNucProtSet (CRef<objects::CSeq_id> nuc_id, CRef<objects::CSeq_id> prot_id)
+CRef<CSeq_entry> BuildGenProdSetNucProtSet(CRef<CSeq_id> nuc_id, CRef<CSeq_id> prot_id)
 {
-    CRef<objects::CSeq_entry> np = BuildGoodNucProtSet();
-    CRef<objects::CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(np);
+    CRef<CSeq_entry> np = BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(np);
     nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAA");
     nuc->SetSeq().SetInst().SetLength(27);
-    nuc->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_rna);
-    SetBiomol(nuc, objects::CMolInfo::eBiomol_mRNA);
+    nuc->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    SetBiomol(nuc, CMolInfo::eBiomol_mRNA);
     if (nuc_id) {
         ChangeNucProtSetNucId(np, nuc_id);
     }
@@ -1494,35 +1493,35 @@ CRef<objects::CSeq_entry> BuildGenProdSetNucProtSet (CRef<objects::CSeq_id> nuc_
 }
 
 
-CRef<objects::CSeq_feat> MakemRNAForCDS (CRef<objects::CSeq_feat> feat)
+CRef<CSeq_feat> MakemRNAForCDS(CRef<CSeq_feat> feat)
 {
-    CRef<objects::CSeq_feat> mrna(new objects::CSeq_feat);
-    mrna->SetData().SetRna().SetType(objects::CRNA_ref::eType_mRNA);
+    CRef<CSeq_feat> mrna(new CSeq_feat);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
     mrna->SetLocation().Assign(feat->GetLocation());
     return mrna;
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodGenProdSet()
+CRef<CSeq_entry> BuildGoodGenProdSet()
 {
-    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
-    entry->SetSet().SetClass(objects::CBioseq_set::eClass_gen_prod_set);
-    CRef<objects::CSeq_entry> contig = BuildGoodSeq();
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_gen_prod_set);
+    CRef<CSeq_entry> contig = BuildGoodSeq();
     contig->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
     contig->SetSeq().SetInst().SetLength(60);
     entry->SetSet().SetSeq_set().push_back (contig);
-    CRef<objects::CSeq_id> nuc_id(new objects::CSeq_id());
+    CRef<CSeq_id> nuc_id(new CSeq_id());
     nuc_id->SetLocal().SetStr("nuc");
-    CRef<objects::CSeq_id> prot_id(new objects::CSeq_id());
+    CRef<CSeq_id> prot_id(new CSeq_id());
     prot_id->SetLocal().SetStr("prot");
-    CRef<objects::CSeq_entry> np = BuildGenProdSetNucProtSet(nuc_id, prot_id);
+    CRef<CSeq_entry> np = BuildGenProdSetNucProtSet(nuc_id, prot_id);
     entry->SetSet().SetSeq_set().push_back (np);
 
-    CRef<objects::CSeq_feat> cds(new objects::CSeq_feat());
+    CRef<CSeq_feat> cds(new CSeq_feat());
     cds->Assign (*(GetCDSFromGoodNucProtSet(np)));
     cds->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
     AddFeat (cds, contig);
-    CRef<objects::CSeq_feat> mrna = MakemRNAForCDS(cds);
+    CRef<CSeq_feat> mrna = MakemRNAForCDS(cds);
     mrna->SetProduct().SetWhole().Assign(*nuc_id);
     AddFeat (mrna, contig);
 
@@ -1530,35 +1529,35 @@ CRef<objects::CSeq_entry> BuildGoodGenProdSet()
 }
 
 
-CRef<objects::CSeq_entry> GetGenomicFromGenProdSet (CRef<objects::CSeq_entry> entry)
+CRef<CSeq_entry> GetGenomicFromGenProdSet(CRef<CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().front();
 }
 
 
-CRef<objects::CSeq_feat> GetmRNAFromGenProdSet(CRef<objects::CSeq_entry> entry)
+CRef<CSeq_feat> GetmRNAFromGenProdSet(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
-    CRef<objects::CSeq_feat> mrna = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    CRef<CSeq_feat> mrna = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
     return mrna;
 }
 
 
-CRef<objects::CSeq_entry> GetNucProtSetFromGenProdSet(CRef<objects::CSeq_entry> entry)
+CRef<CSeq_entry> GetNucProtSetFromGenProdSet(CRef<CSeq_entry> entry)
 {
     return entry->SetSet().SetSeq_set().back();
 }
 
 
-CRef<objects::CSeq_feat> GetCDSFromGenProdSet (CRef<objects::CSeq_entry> entry)
+CRef<CSeq_feat> GetCDSFromGenProdSet(CRef<CSeq_entry> entry)
 {
-    CRef<objects::CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
-    CRef<objects::CSeq_feat> cds = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_entry> genomic = GetGenomicFromGenProdSet(entry);
+    CRef<CSeq_feat> cds = genomic->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
     return cds;
 }
 
 
-void RevComp (objects::CBioseq& bioseq)
+void RevComp(CBioseq& bioseq)
 {
     if (!bioseq.IsNa() || !bioseq.IsSetInst()
         || !bioseq.GetInst().IsSetSeq_data()
@@ -1593,17 +1592,17 @@ void RevComp (objects::CBioseq& bioseq)
             (*feat_it)->SetLocation().SetInt().SetFrom(new_from);
             (*feat_it)->SetLocation().SetInt().SetTo(new_to);
             if ((*feat_it)->GetLocation().GetInt().IsSetStrand()
-                && (*feat_it)->GetLocation().GetInt().GetStrand() == objects::eNa_strand_minus) {
-                (*feat_it)->SetLocation().SetInt().SetStrand(objects::eNa_strand_plus);
+                && (*feat_it)->GetLocation().GetInt().GetStrand() == eNa_strand_minus) {
+                (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_plus);
             } else {
-                (*feat_it)->SetLocation().SetInt().SetStrand(objects::eNa_strand_minus);
+                (*feat_it)->SetLocation().SetInt().SetStrand(eNa_strand_minus);
             }
         }
     }
 }
 
 
-void RevComp (objects::CSeq_loc& loc, size_t len)
+void RevComp(CSeq_loc& loc, size_t len)
 {
     if (loc.IsInt()) {
         TSeqPos new_from = len - loc.GetInt().GetTo() - 1;
@@ -1617,20 +1616,20 @@ void RevComp (objects::CSeq_loc& loc, size_t len)
             loc.SetInt().SetStrand(eNa_strand_minus);
         }
     } else if (loc.IsMix()) {
-        NON_CONST_ITERATE (objects::CSeq_loc_mix::Tdata, it, loc.SetMix().Set()) {
+        NON_CONST_ITERATE (CSeq_loc_mix::Tdata, it, loc.SetMix().Set()) {
             RevComp (**it, len);
         }
     }
 }
 
 
-void RevComp (CRef<objects::CSeq_entry> entry)
+void RevComp(CRef<CSeq_entry> entry)
 {
     if (entry->IsSeq()) {
         RevComp(entry->SetSeq());
     } else if (entry->IsSet()) {
         if (entry->GetSet().IsSetClass()
-            && entry->GetSet().GetClass() == objects::CBioseq_set::eClass_nuc_prot) {
+            && entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
             RevComp(entry->SetSet().SetSeq_set().front());
             size_t len = entry->GetSet().GetSeq_set().front()->GetSeq().GetLength();
             EDIT_EACH_SEQFEAT_ON_SEQANNOT (feat_it, *(entry->SetSet().SetAnnot().front())) {
@@ -1641,27 +1640,27 @@ void RevComp (CRef<objects::CSeq_entry> entry)
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodDeltaSeq(void)
+CRef<CSeq_entry> BuildGoodDeltaSeq()
 {
-    CRef<objects::CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_entry> entry = BuildGoodSeq();
 
     entry->SetSeq().SetInst().ResetSeq_data();
-    entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", objects::CSeq_inst::eMol_dna);
-    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_delta);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", CSeq_inst::eMol_dna);
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
     gap_seg->SetLiteral().SetSeq_data().SetGap();
     gap_seg->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATG", objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATG", CSeq_inst::eMol_dna);
     entry->SetSeq().SetInst().SetLength(34);
 
     return entry;
 }
 
 
-void RemoveDeltaSeqGaps(CRef<objects::CSeq_entry> entry) 
+void RemoveDeltaSeqGaps(CRef<CSeq_entry> entry)
 {
-    objects::CDelta_ext::Tdata::iterator seg_it = entry->SetSeq().SetInst().SetExt().SetDelta().Set().begin();
+    CDelta_ext::Tdata::iterator seg_it = entry->SetSeq().SetInst().SetExt().SetDelta().Set().begin();
     while (seg_it != entry->SetSeq().SetInst().SetExt().SetDelta().Set().end()) {
         if ((*seg_it)->IsLiteral() 
             && (!(*seg_it)->GetLiteral().IsSetSeq_data() 
@@ -1677,48 +1676,48 @@ void RemoveDeltaSeqGaps(CRef<objects::CSeq_entry> entry)
 }
 
 
-void AddToDeltaSeq(CRef<objects::CSeq_entry> entry, string seq)
+void AddToDeltaSeq(CRef<CSeq_entry> entry, string seq)
 {
     size_t orig_len = entry->GetSeq().GetLength();
     size_t add_len = seq.length();
 
-    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    CRef<CDelta_seq> gap_seg(new CDelta_seq());
     gap_seg->SetLiteral().SetSeq_data().SetGap();
     gap_seg->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
-    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral(seq, objects::CSeq_inst::eMol_dna);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral(seq, CSeq_inst::eMol_dna);
     entry->SetSeq().SetInst().SetLength(orig_len + 10 + add_len);
 }
 
 
-CRef<objects::CSeq_entry> BuildSegSetPart(string id_str)
+CRef<CSeq_entry> BuildSegSetPart(string id_str)
 {
-    CRef<objects::CSeq_entry> part(new objects::CSeq_entry());
-    part->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
-    part->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    CRef<CSeq_entry> part(new CSeq_entry());
+    part->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    part->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     part->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
     part->SetSeq().SetInst().SetLength(60);
-    CRef<objects::CSeq_id> id(new objects::CSeq_id(id_str));
+    CRef<CSeq_id> id(new CSeq_id(id_str));
     part->SetSeq().SetId().push_back(id);
-    SetBiomol(part, objects::CMolInfo::eBiomol_genomic);
+    SetBiomol(part, CMolInfo::eBiomol_genomic);
     return part;
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodSegSet(void)
+CRef<CSeq_entry> BuildGoodSegSet()
 {
-    CRef<objects::CSeq_entry> segset(new objects::CSeq_entry());
-    segset->SetSet().SetClass(objects::CBioseq_set::eClass_segset);
+    CRef<CSeq_entry> segset(new CSeq_entry());
+    segset->SetSet().SetClass(CBioseq_set::eClass_segset);
 
-    CRef<objects::CSeq_entry> seg_seq(new objects::CSeq_entry());
-    seg_seq->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_dna);
-    seg_seq->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_seg);
+    CRef<CSeq_entry> seg_seq(new CSeq_entry());
+    seg_seq->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+    seg_seq->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_seg);
 
-    CRef<objects::CSeq_loc> loc1(new objects::CSeq_loc());
+    CRef<CSeq_loc> loc1(new CSeq_loc());
     loc1->SetWhole().SetLocal().SetStr("part1");
-    CRef<objects::CSeq_loc> loc2(new objects::CSeq_loc());
+    CRef<CSeq_loc> loc2(new CSeq_loc());
     loc2->SetWhole().SetLocal().SetStr("part2");
-    CRef<objects::CSeq_loc> loc3(new objects::CSeq_loc());
+    CRef<CSeq_loc> loc3(new CSeq_loc());
     loc3->SetWhole().SetLocal().SetStr("part3");
 
     seg_seq->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc1);
@@ -1726,38 +1725,38 @@ CRef<objects::CSeq_entry> BuildGoodSegSet(void)
     seg_seq->SetSeq().SetInst().SetExt().SetSeg().Set().push_back(loc3);
     seg_seq->SetSeq().SetInst().SetLength(180);
 
-    CRef<objects::CSeq_id> id(new objects::CSeq_id());
+    CRef<CSeq_id> id(new CSeq_id());
     id->SetLocal().SetStr ("master");
     seg_seq->SetSeq().SetId().push_back(id);
     seg_seq->SetSeq().SetInst().SetLength(180);
-    SetBiomol(seg_seq, objects::CMolInfo::eBiomol_genomic);
+    SetBiomol(seg_seq, CMolInfo::eBiomol_genomic);
 
     segset->SetSet().SetSeq_set().push_back(seg_seq);
 
     // create parts set
-    CRef<objects::CSeq_entry> parts_set(new objects::CSeq_entry());
-    parts_set->SetSet().SetClass(objects::CBioseq_set::eClass_parts);
+    CRef<CSeq_entry> parts_set(new CSeq_entry());
+    parts_set->SetSet().SetClass(CBioseq_set::eClass_parts);
     parts_set->SetSet().SetSeq_set().push_back(BuildSegSetPart("lcl|part1"));
     parts_set->SetSet().SetSeq_set().push_back(BuildSegSetPart("lcl|part2"));
     parts_set->SetSet().SetSeq_set().push_back(BuildSegSetPart("lcl|part3"));
 
     segset->SetSet().SetSeq_set().push_back(parts_set);
 
-//    CRef<objects::CSeqdesc> pdesc(new objects::CSeqdesc());
-//    CRef<objects::CPub> pub(new objects::CPub());
-//    pub->SetPmid((objects::CPub::TPmid)1);
+//    CRef<CSeqdesc> pdesc(new CSeqdesc());
+//    CRef<CPub> pub(new CPub());
+//    pub->SetPmid((CPub::TPmid)1);
 //    pdesc->SetPub().SetPub().Set().push_back(pub);
 //    segset->SetDescr().Set().push_back(pdesc);
     AddGoodPub(segset);
-    CRef<objects::CSeqdesc> odesc(new objects::CSeqdesc());
+    CRef<CSeqdesc> odesc(new CSeqdesc());
     odesc->SetSource().SetOrg().SetTaxname("Sebaea microphylla");
     odesc->SetSource().SetOrg().SetOrgname().SetLineage("some lineage");
-    CRef<objects::CDbtag> taxon_id(new objects::CDbtag());
+    CRef<CDbtag> taxon_id(new CDbtag());
     taxon_id->SetDb("taxon");
     taxon_id->SetTag().SetId(592768);
     odesc->SetSource().SetOrg().SetDb().push_back(taxon_id);
-    CRef<objects::CSubSource> subsrc(new objects::CSubSource());
-    subsrc->SetSubtype(objects::CSubSource::eSubtype_chromosome);
+    CRef<CSubSource> subsrc(new CSubSource());
+    subsrc->SetSubtype(CSubSource::eSubtype_chromosome);
     subsrc->SetName("1");
     odesc->SetSource().SetSubtype().push_back(subsrc);
     segset->SetDescr().Set().push_back(odesc);
@@ -1766,21 +1765,21 @@ CRef<objects::CSeq_entry> BuildGoodSegSet(void)
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodEcoSet()
+CRef<CSeq_entry> BuildGoodEcoSet()
 {
-    CRef<objects::CSeq_entry> entry(new objects::CSeq_entry());
-    entry->SetSet().SetClass(objects::CBioseq_set::eClass_eco_set);
-    CRef<objects::CSeq_entry> seq1 = BuildGoodSeq();
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetClass(CBioseq_set::eClass_eco_set);
+    CRef<CSeq_entry> seq1 = BuildGoodSeq();
     ChangeId(seq1, "1");
-    CRef<objects::CSeq_entry> seq2 = BuildGoodSeq();
+    CRef<CSeq_entry> seq2 = BuildGoodSeq();
     ChangeId(seq2, "2");
-    CRef<objects::CSeq_entry> seq3 = BuildGoodSeq();
+    CRef<CSeq_entry> seq3 = BuildGoodSeq();
     ChangeId(seq3, "3");
     entry->SetSet().SetSeq_set().push_back(seq1);
     entry->SetSet().SetSeq_set().push_back(seq2);
     entry->SetSet().SetSeq_set().push_back(seq3);
 
-    CRef<objects::CSeqdesc> desc(new objects::CSeqdesc());
+    CRef<CSeqdesc> desc(new CSeqdesc());
     desc->SetTitle("popset title");
     entry->SetSet().SetDescr().Set().push_back(desc);
 
@@ -1788,12 +1787,12 @@ CRef<objects::CSeq_entry> BuildGoodEcoSet()
 }
 
 
-CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
+CRef<CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
 {
     CRef<CSeq_entry> entry = BuildGoodEcoSet();
 
-    CRef<objects::CSeq_align> align(new CSeq_align());
-    align->SetType(objects::CSeq_align::eType_global);
+    CRef<CSeq_align> align(new CSeq_align());
+    align->SetType(CSeq_align::eType_global);
     align->SetDim(entry->GetSet().GetSeq_set().size());
     size_t offset = 0;
     for (auto& s : entry->SetSet().SetSeq_set()) {
@@ -1853,17 +1852,17 @@ void ReverseAlignmentStrand(CDense_seg& denseg, size_t pos, size_t seq_len)
 }
 
 
-CRef<objects::CSeq_align> BuildGoodAlign()
+CRef<CSeq_align> BuildGoodAlign()
 {
-    CRef<objects::CSeq_align> align(new objects::CSeq_align());
-    CRef<objects::CSeq_id> id1(new objects::CSeq_id());
+    CRef<CSeq_align> align(new CSeq_align());
+    CRef<CSeq_id> id1(new CSeq_id());
     id1->SetGenbank().SetAccession("FJ375734.2");
     id1->SetGenbank().SetVersion(2);
-    CRef<objects::CSeq_id> id2(new objects::CSeq_id());
+    CRef<CSeq_id> id2(new CSeq_id());
     id2->SetGenbank().SetAccession("FJ375735.2");
     id2->SetGenbank().SetVersion(2);
     align->SetDim(2);
-    align->SetType(objects::CSeq_align::eType_global);
+    align->SetType(CSeq_align::eType_global);
     align->SetSegs().SetDenseg().SetIds().push_back(id1);
     align->SetSegs().SetDenseg().SetIds().push_back(id2);
     align->SetSegs().SetDenseg().SetDim(2);
@@ -1876,21 +1875,21 @@ CRef<objects::CSeq_align> BuildGoodAlign()
 }
 
 
-CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string id)
+CRef<CSeq_annot> BuildGoodGraphAnnot(string id)
 {
-    CRef<objects::CSeq_graph> graph(new objects::CSeq_graph());
+    CRef<CSeq_graph> graph(new CSeq_graph());
     graph->SetLoc().SetInt().SetFrom(0);
     graph->SetLoc().SetInt().SetTo(10);
     graph->SetLoc().SetInt().SetId().SetLocal().SetStr(id);
 
-    CRef<objects::CSeq_annot> annot(new objects::CSeq_annot());
+    CRef<CSeq_annot> annot(new CSeq_annot());
     annot->SetData().SetGraph().push_back(graph);
 
     return annot;
 }
 
 
-void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E_Choice desc_choice)
+void RemoveDescriptorType(CRef<CSeq_entry> entry, CSeqdesc::E_Choice desc_choice)
 {
     EDIT_EACH_DESCRIPTOR_ON_SEQENTRY (dit, *entry) {
         if ((*dit)->Which() == desc_choice) {
@@ -1900,9 +1899,9 @@ void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E
 }
 
 
-CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq_id> id)
+CRef<CSeq_feat> BuildtRNA(CRef<CSeq_id> id)
 {
-    CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
+    CRef<CSeq_feat> feat(new CSeq_feat());
     feat->SetLocation().SetInt().SetId().Assign(*id);
     feat->SetLocation().SetInt().SetFrom(0);
     feat->SetLocation().SetInt().SetTo(10);
@@ -1917,9 +1916,9 @@ CRef<objects::CSeq_feat> BuildtRNA(CRef<objects::CSeq_id> id)
 }
 
 
-CRef<objects::CSeq_feat> BuildGoodtRNA(CRef<objects::CSeq_id> id)
+CRef<CSeq_feat> BuildGoodtRNA(CRef<CSeq_id> id)
 {
-    CRef<objects::CSeq_feat> trna = BuildtRNA(id);
+    CRef<CSeq_feat> trna = BuildtRNA(id);
     trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetFrom(8);
     trna->SetData().SetRna().SetExt().SetTRNA().SetAnticodon().SetInt().SetTo(10);
     trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetIupacaa('F');
@@ -1927,26 +1926,26 @@ CRef<objects::CSeq_feat> BuildGoodtRNA(CRef<objects::CSeq_id> id)
 }
 
 
-CRef<objects::CSeq_loc> MakeMixLoc (CRef<objects::CSeq_id> id)
+CRef<CSeq_loc> MakeMixLoc(CRef<CSeq_id> id)
 {
-    CRef<objects::CSeq_loc> loc1(new objects::CSeq_loc());
+    CRef<CSeq_loc> loc1(new CSeq_loc());
     loc1->SetInt().SetFrom(0);
     loc1->SetInt().SetTo(15);
     loc1->SetInt().SetId().Assign(*id);
-    CRef<objects::CSeq_loc> loc2(new objects::CSeq_loc());
+    CRef<CSeq_loc> loc2(new CSeq_loc());
     loc2->SetInt().SetFrom(46);
     loc2->SetInt().SetTo(56);
     loc2->SetInt().SetId().Assign(*id);
-    CRef<objects::CSeq_loc> mixloc(new objects::CSeq_loc());
+    CRef<CSeq_loc> mixloc(new CSeq_loc());
     mixloc->SetMix().Set().push_back(loc1);
     mixloc->SetMix().Set().push_back(loc2);
     return mixloc;
 }
 
 
-CRef<objects::CSeq_feat> MakeIntronForMixLoc (CRef<objects::CSeq_id> id)
+CRef<CSeq_feat> MakeIntronForMixLoc(CRef<CSeq_id> id)
 {
-    CRef<objects::CSeq_feat> intron (new objects::CSeq_feat());
+    CRef<CSeq_feat> intron(new CSeq_feat());
     intron->SetData().SetImp().SetKey("intron");
     intron->SetLocation().SetInt().SetFrom(16);
     intron->SetLocation().SetInt().SetTo(45);
@@ -1955,7 +1954,7 @@ CRef<objects::CSeq_feat> MakeIntronForMixLoc (CRef<objects::CSeq_id> id)
 }
 
 
-void SetSpliceForMixLoc (objects::CBioseq& seq)
+void SetSpliceForMixLoc(CBioseq& seq)
 {
     seq.SetInst().SetSeq_data().SetIupacna().Set()[16] = 'G';
     seq.SetInst().SetSeq_data().SetIupacna().Set()[17] = 'T';
@@ -1964,16 +1963,16 @@ void SetSpliceForMixLoc (objects::CBioseq& seq)
 }
 
 
-CRef<objects::CSeq_feat> MakeGeneForFeature (CRef<objects::CSeq_feat> feat)
+CRef<CSeq_feat> MakeGeneForFeature(CRef<CSeq_feat> feat)
 {
-    CRef<objects::CSeq_feat> gene(new objects::CSeq_feat());
+    CRef<CSeq_feat> gene(new CSeq_feat());
     gene->SetData().SetGene().SetLocus("gene locus");
     gene->SetLocation().SetInt().SetId().Assign(*(feat->GetLocation().GetId()));
     gene->SetLocation().SetInt().SetStrand(feat->GetLocation().GetStrand());
-    gene->SetLocation().SetInt().SetFrom(feat->GetLocation().GetStart(objects::eExtreme_Positional));
-    gene->SetLocation().SetInt().SetTo(feat->GetLocation().GetStop(objects::eExtreme_Positional));
-    gene->SetLocation().SetPartialStart(feat->GetLocation().IsPartialStart(objects::eExtreme_Positional), objects::eExtreme_Positional);
-    gene->SetLocation().SetPartialStop(feat->GetLocation().IsPartialStop(objects::eExtreme_Positional), objects::eExtreme_Positional);
+    gene->SetLocation().SetInt().SetFrom(feat->GetLocation().GetStart(eExtreme_Positional));
+    gene->SetLocation().SetInt().SetTo(feat->GetLocation().GetStop(eExtreme_Positional));
+    gene->SetLocation().SetPartialStart(feat->GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional);
+    gene->SetLocation().SetPartialStop(feat->GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional);
     if (feat->IsSetPartial() && feat->GetPartial()) {
         gene->SetPartial(true);
     }
@@ -1981,9 +1980,9 @@ CRef<objects::CSeq_feat> MakeGeneForFeature (CRef<objects::CSeq_feat> feat)
 }
 
 
-CRef<objects::CSeq_feat> AddGoodImpFeat (CRef<objects::CSeq_entry> entry, string key)
+CRef<CSeq_feat> AddGoodImpFeat(CRef<CSeq_entry> entry, string key)
 {
-    CRef<objects::CSeq_feat> imp_feat = AddMiscFeature (entry, 10);
+    CRef<CSeq_feat> imp_feat = AddMiscFeature (entry, 10);
     imp_feat->SetData().SetImp().SetKey(key);
     if (NStr::Equal(key, "conflict")) {
         imp_feat->AddQualifier("citation", "1");
