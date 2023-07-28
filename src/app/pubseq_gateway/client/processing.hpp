@@ -344,6 +344,22 @@ inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
     return 0;
 }
 
+class CRawRequest : public CPSG_Request
+{
+public:
+    CRawRequest(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
+        : CPSG_Request(move(user_context), move(request_context)),
+          m_AbsPathRef(move(abs_path_ref))
+    {}
+
+private:
+    EType x_GetType() const override { return eBlob; }
+    string x_GetId() const override { return m_AbsPathRef; }
+    void x_GetAbsPathRef(ostream& os) const override { os << m_AbsPathRef; }
+
+    string m_AbsPathRef;
+};
+
 struct SRequestBuilder
 {
     template <class TRequest, class TInput, class... TArgs>
@@ -393,6 +409,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     auto GetIpg() const { return input.has("ipg") ? input["ipg"].GetValue().GetInt8() : 0; }
     auto GetNucleotide() const { return input.has("nucleotide") ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].GetValue().GetString()) : null; }
     auto GetSNPScaleLimit() const { return input.has("snp_scale_limit") ? objects::CSeq_id::GetSNPScaleLimit_Value(input["snp_scale_limit"].GetValue().GetString()) : CPSG_Request_NamedAnnotInfo::ESNPScaleLimit::eSNPScaleLimit_Default; }
+    auto GetAbsPathRef() const { return input["abs_path_ref"].GetValue().GetString(); }
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
 
 private:
@@ -480,6 +497,8 @@ shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const TInput
         return Build<CPSG_Request_Chunk>(input, forward<TArgs>(args)...);
     } else if (name == "ipg_resolve") {
         return Build<CPSG_Request_IpgResolve>(input, forward<TArgs>(args)...);
+    } else if (name == "raw") {
+        return Build<CRawRequest>(input, forward<TArgs>(args)...);
     } else {
         return {};
     }
@@ -562,6 +581,13 @@ shared_ptr<CPSG_Request_IpgResolve> SRequestBuilder::SImpl<CPSG_Request_IpgResol
     auto ipg = reader.GetIpg();
     auto nucleotide = reader.GetNucleotide();
     return Create(move(protein), ipg, move(nucleotide));
+}
+
+template <>
+template <class TReader>
+shared_ptr<CRawRequest> SRequestBuilder::SImpl<CRawRequest>::Build(const TReader& reader)
+{
+    return Create(reader.GetAbsPathRef());
 }
 
 template <class TRequest>
