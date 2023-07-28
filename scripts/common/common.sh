@@ -424,6 +424,7 @@ COMMON_DetectPlatform()
     case "$raw_platform" in
 	*CYGWIN_NT*86   ) echo Win32      ;;
 	*CYGWIN_NT*64   ) echo Win64      ;; # unverified
+	Darwin\ arm*    ) echo SiliconMAC ;;
 	Darwin\ i386    ) echo IntelMAC   ;;
 	Darwin\ x86_64  ) echo IntelMAC   ;; # split into IntelMac64?
 	Darwin\ powerpc ) echo PowerMAC   ;;
