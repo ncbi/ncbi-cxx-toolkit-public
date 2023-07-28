@@ -2627,6 +2627,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -2675,6 +2677,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -2723,6 +2727,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -2771,6 +2777,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -4545,6 +4553,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -4593,6 +4603,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -4641,6 +4653,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -4689,6 +4703,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
@@ -9456,6 +9472,8 @@
           <string>$(OBJROOT)/$(CONFIGURATION)</string>
           <key>INSTALL_PATH</key>
           <string>$(PROJECT_DIR)/bin/$(CONFIGURATION)</string>
+          <key>CODE_SIGNING_ALLOWED</key>
+          <string>NO</string>
           <key>OBJROOT</key>
           <string>build</string>
           <key>LIBRARY_SEARCH_PATHS</key>
