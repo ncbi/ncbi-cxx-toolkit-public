@@ -431,7 +431,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
 
 struct SItemTypeAndReason : pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>
 {
-    static SItemTypeAndReason Get(const SPSG_Args& args);
+    static SItemTypeAndReason Get(SPSG_Args& args, bool raw);
 
 private:
     using TBase = pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>;
@@ -462,7 +462,7 @@ SItemTypeAndReason SItemTypeAndReason::GetIfBlob(const SPSG_Args& args)
     }
 }
 
-SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
+SItemTypeAndReason SItemTypeAndReason::Get(SPSG_Args& args, bool raw)
 {
     const auto item_type = args.GetValue<SPSG_Args::eItemType>();
 
@@ -476,7 +476,11 @@ SItemTypeAndReason SItemTypeAndReason::Get(const SPSG_Args& args)
         case SPSG_Args::ePublicComment:  return CPSG_ReplyItem::ePublicComment;
         case SPSG_Args::eProcessor:      return CPSG_ReplyItem::eProcessor;
         case SPSG_Args::eIpgInfo:        return CPSG_ReplyItem::eIpgInfo;
-        case SPSG_Args::eUnknownItem:    break;
+        case SPSG_Args::eUnknownItem:
+            if (!raw) break;
+            args.SetValue("blob_id", args.GetValue("item_type"));
+            args.SetValue("last_modified", to_string(numeric_limits<Int8>::min()));
+            return CPSG_ReplyItem::eBlobData;
     }
 
     if (TPSG_FailOnUnknownItems::GetDefault()) {
@@ -496,8 +500,8 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS& ite
 {
     auto item_locked = item_ts.GetLock();
 
-    const auto& args = item_locked->args;
-    const auto itar = SItemTypeAndReason::Get(args);
+    auto& args = item_locked->args;
+    const auto itar = SItemTypeAndReason::Get(args, reply->raw);
 
     shared_ptr<CPSG_ReplyItem> rv(CreateImpl(item_ts, *item_locked, itar.first, itar.second));
 
@@ -716,7 +720,7 @@ string s_GetOtherArgs()
     return os.str();
 }
 
-string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request)
+string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request, bool raw)
 {
     static const string other_args(s_GetOtherArgs());
 
@@ -724,8 +728,11 @@ string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_re
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
 
-    os << other_args;
-    m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
+    if (!raw) {
+        os << other_args;
+        m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
+    }
+
     return os.str();
 }
 
@@ -929,8 +936,10 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
 
     auto user_context = params.user_request_ids ? user_request->GetUserContext<string>() : nullptr;
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
-    auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue, stats);
-    auto abs_path_ref = x_GetAbsPathRef(user_request);
+    const auto type = user_request->GetType();
+    const auto raw = (type == CPSG_Request::eBlob) && !dynamic_pointer_cast<const CPSG_Request_Blob>(user_request);
+    auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue, stats, raw);
+    auto abs_path_ref = x_GetAbsPathRef(user_request, raw);
     const auto& request_context = user_request->m_RequestContext;
 
     _ASSERT(request_context);
@@ -938,7 +947,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, request_context->Clone(), params);
 
     if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
-        if (stats) stats->IncCounter(SPSG_Stats::eRequest, user_request->GetType());
+        if (stats) stats->IncCounter(SPSG_Stats::eRequest, type);
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
         user_reply->m_Impl->reply = move(reply);
         user_reply->m_Impl->user_reply = user_reply;

@@ -147,7 +147,7 @@ private:
         static shared_ptr<TMap> GetMap();
     };
 
-    string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request);
+    string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request, bool raw);
 
     CService m_Service;
     SThreadSafe<SPSG_UserArgsBuilder> m_UserArgsBuilder;
