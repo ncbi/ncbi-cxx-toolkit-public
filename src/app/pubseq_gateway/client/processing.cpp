@@ -293,8 +293,32 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
     throw logic_error("Received unknown item: " + to_string(reply_item_type));
 }
 
+auto s_IsRawRequest(shared_ptr<const CPSG_Request>& request)
+{
+    return (request->GetType() == CPSG_Request::eBlob) && dynamic_pointer_cast<const CRawRequest>(request);
+}
+
+auto s_IsRawResponse(const CPSG_BlobId* blob_id)
+{
+    return blob_id && (blob_id->GetLastModified() == CPSG_BlobId::TLastModified(numeric_limits<Int8>::min()));
+}
+
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
 {
+    if (auto request = blob_data->GetReply()->GetRequest(); s_IsRawRequest(request)) {
+        if (auto blob_id = blob_data->GetId<CPSG_BlobId>(); s_IsRawResponse(blob_id)) {
+            if (CJson_Document json_doc; json_doc.Read(blob_data->GetStream())) {
+                m_JsonObj.insert("reply",  blob_id->GetId());
+
+                for (const auto& p : json_doc.GetObject()) {
+                    m_JsonObj.insert(p.name,  p.value);
+                }
+
+                return;
+            }
+        }
+    }
+
     Set("id", blob_data);
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
@@ -1790,6 +1814,22 @@ CJson_Document CProcessing::RequestSchema()
                     },
                     "dependencies": { "nucleotide": [ "protein" ] },
                     "anyOf": [ { "required": [ "protein" ] }, { "required": [ "ipg" ] } ]
+                },
+                "id": { "$ref": "#/definitions/id" }
+            },
+            "required": [ "jsonrpc", "method", "params", "id" ]
+        },
+        {
+            "properties": {
+                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
+                "method": { "enum": [ "raw" ] },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "abs_path_ref": { "type": "string" }
+                        "context": { "$ref": "#/definitions/context" }
+                    },
+                    "required": [ "abs_path_ref" ]
                 },
                 "id": { "$ref": "#/definitions/id" }
             },
