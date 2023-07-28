@@ -84,6 +84,7 @@ set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current/drmaa" CACHE PATH 
 set(NCBI_ThirdParty_MONGOCXX      ${NCBI_TOOLS_ROOT}/mongodb-3.7.0 CACHE PATH "MONGOCXX root")
 set(NCBI_ThirdParty_MONGOC        ${NCBI_TOOLS_ROOT}/mongo-c-driver-1.23.2 CACHE PATH "MONGOC root")
 set(NCBI_ThirdParty_LEVELDB       ${NCBI_TOOLS_ROOT}/leveldb-1.21 CACHE PATH "LEVELDB root")
+set(NCBI_ThirdParty_ROCKSDB       ${NCBI_TOOLS_ROOT}/rocksdb-8.3.2 CACHE PATH "ROCKSDB root")
 set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.2.1-ncbi1 CACHE PATH "wxWidgets root")
 set(NCBI_ThirdParty_GLPK          "/usr/local/glpk/4.45" CACHE PATH "GLPK root")
 set(NCBI_ThirdParty_UV            ${NCBI_TOOLS_ROOT}/libuv-1.35.0 CACHE PATH "UV root")
@@ -656,6 +657,11 @@ NCBIcomponent_add(MONGOCXX MONGOC)
 # only has cmake cfg
 NCBI_define_Xcomponent(NAME LEVELDB LIB leveldb)
 NCBIcomponent_report(LEVELDB)
+
+#############################################################################
+# ROCKSDB
+NCBI_define_Xcomponent(NAME ROCKSDB LIB rocksdb)
+NCBIcomponent_report(ROCKSDB)
 
 #############################################################################
 # WGMLST
