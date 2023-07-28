@@ -100,7 +100,8 @@ case "$with_3psw" in
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
                      curl, gsoap, avro, cereal, sasl2,
-                     mongodb, mongodb3, leveldb, gmock, lapack,
+                     mongodb, mongodb3, leveldb, liburing, rocksdb,
+                     gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, crc32c, hiredis,
                      librdkafka, cppkafka, thrift, opentracing, jaeger],
@@ -565,6 +566,14 @@ AC_ARG_WITH(leveldb,
    [ --with-leveldb=DIR      use LevelDB installation in DIR])
 AC_ARG_WITH(leveldb,
    [ --without-leveldb       do not use LevelDB])
+AC_ARG_WITH(liburing,
+   [ --with-liburing=DIR     use liburing installation in DIR])
+AC_ARG_WITH(liburing,
+   [ --without-liburing      do not use liburing])
+AC_ARG_WITH(rocksdb,
+   [ --with-rocksdb=DIR      use RocksDB installation in DIR])
+AC_ARG_WITH(rocksdb,
+   [ --without-rocksdb       do not use RocksDB])
 AC_ARG_WITH(gmock,
    [ --with-gmock=DIR        use Google Mock installation in DIR])
 AC_ARG_WITH(gmock,
@@ -728,7 +737,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge drmaa2 muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
-mongodb mongodb3 leveldb gmock lapack lmdb \
+mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
@@ -808,6 +817,7 @@ for x_arg in "$@" ; do
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
       | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
+      | --with-liburing=* | --with-rocksdb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
@@ -8440,6 +8450,51 @@ NCBI_CHECK_THIRD_PARTY_LIB(leveldb,
   [AC_LANG_PROGRAM([[@%:@include <leveldb/db.h>
                      using namespace leveldb;]],
      [[DB* db; Status status = DB::Open(Options(), "foo", &db);]])])
+
+
+# liburing
+if test "$with_liburing" != no; then
+   case "$with_liburing" in
+      yes | '' ) ;;
+      *        ) LIBURING_PATH=$with_liburing ;;
+   esac
+   NCBI_FIND_ARCH_PATH(LIBURING)
+   LIBURING_PATH=$LIBURING_ARCH_PATH
+   if test -d "$LIBURING_PATH"; then
+      NCBI_FIX_DIR(LIBURING_PATH)
+   fi
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(liburing, LIBURING, uring,
+  [AC_LANG_PROGRAM([[@%:@include <liburing.h>]],
+     [[io_uring_free_probe(io_uring_get_probe());]])])
+
+
+
+# RocksDB
+if test "$with_rocksdb" != no; then
+   case "$with_rocksdb" in
+      yes | '' ) ;;
+      *        ) ROCKSDB_PATH=$with_rocksdb ;;
+   esac
+   NCBI_FIND_ARCH_PATH(ROCKSDB)
+   ROCKSDB_PATH=$ROCKSDB_ARCH_PATH
+   if test -d "$ROCKSDB_PATH$asan_sfx"; then
+      ROCKSDB_PATH="$ROCKSDB_PATH$asan_sfx"
+   fi
+   if test -d "$ROCKSDB_PATH"; then
+      NCBI_FIX_DIR(ROCKSDB_PATH)
+   fi
+fi
+if test -d $ROCKSDB_PATH/lib${bit64_sfx}; then
+   ROCKSDB_LIBDIR=$ROCKSDB_PATH/lib${bit64_sfx}
+else
+   ROCKSDB_LIBDIR=$ROCKSDB_PATH/lib
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(rocksdb,
+  [AC_LANG_PROGRAM([[@%:@include <rocksdb/db.h>
+                     using namespace rocksdb;]],
+     [[DB* db; Status status = DB::Open(Options(), "foo", &db);]])],
+  [$LIBURING_LIBS $BZ2_LIBS $Z_LIBS $ZSTD_LIBS])
 
 
 # Google Mock
