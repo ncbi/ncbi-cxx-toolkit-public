@@ -747,6 +747,12 @@ SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& 
         if (!len) return eContinue;
     }
 
+    if (reply->raw && !index) {
+        m_State = &SPSG_Request::StateData;
+        m_Buffer.data_to_read = numeric_limits<size_t>::max();
+        return eContinue;
+    }
+
     // Check failed
     const auto message = "Protocol error: prefix mismatch";
 
@@ -1089,6 +1095,16 @@ bool SPSG_Request::Fail(SPSG_Processor::TId processor_id, const SUvNgHttp2_Error
     return true;
 }
 
+void SPSG_Request::ConvertRaw()
+{
+    if (m_Buffer.args_buffer.empty() && !m_Buffer.chunk.empty()) {
+        m_Buffer.args = "item_id=1&item_type=unknown&chunk_type=data_and_meta&n_chunks=1"s;
+        Add();
+        m_Buffer.args = "item_id=0&item_type=reply&chunk_type=meta&n_chunks=2"s;
+        Add();
+    }
+}
+
 bool SPSG_IoSession::Fail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream)
 {
     auto context_guard = req->context.Set();
@@ -1127,6 +1143,10 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
                     ERR_POST("Request for " << GetId() << " failed with " << error);
                 }
             } else {
+                if (req->reply->raw) {
+                    req->ConvertRaw();
+                }
+
                 req->OnReplyDone(processor_id)->SetComplete();
                 server.throttling.AddSuccess();
                 PSG_THROTTLING_TRACE("Server '" << GetId() << "' processed request '" <<

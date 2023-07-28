@@ -399,6 +399,7 @@ struct SPSG_Reply
         void Reset();
     };
 
+    const bool raw;
     SThreadSafe<list<SItem::TTS>> items;
     SThreadSafe<list<SItem::TTS*>> new_items;
     SItem::TTS reply_item;
@@ -406,7 +407,8 @@ struct SPSG_Reply
     shared_ptr<TPSG_Queue> queue;
     weak_ptr<SPSG_Stats> stats;
 
-    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q, weak_ptr<SPSG_Stats> s = weak_ptr<SPSG_Stats>()) :
+    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q, weak_ptr<SPSG_Stats> s = weak_ptr<SPSG_Stats>(), bool r = false) :
+        raw(r),
         debug_printout(move(id), params),
         queue(move(q)),
         stats(move(s))
@@ -517,6 +519,8 @@ struct SPSG_Request
     bool Retry(const SUvNgHttp2_Error& error, bool refused_stream = false);
     bool Fail(SPSG_Processor::TId processor_id, const SUvNgHttp2_Error& error, bool refused_stream = false);
     void Reset();
+
+    void ConvertRaw();
 
 private:
     EStateResult StatePrefix(const char*& data, size_t& len);
