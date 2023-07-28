@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <optional>
 #include <condition_variable>
 
 #include "pubseq_gateway_exception.hpp"
