@@ -969,6 +969,10 @@ LAPACK_LIBS
 LAPACK_INCLUDE
 GMOCK_LIBS
 GMOCK_INCLUDE
+ROCKSDB_LIBS
+ROCKSDB_INCLUDE
+LIBURING_LIBS
+LIBURING_INCLUDE
 LEVELDB_LIBS
 LEVELDB_INCLUDE
 MONGODB3_LIBS
@@ -1342,6 +1346,8 @@ with_sasl2
 with_mongodb
 with_mongodb3
 with_leveldb
+with_liburing
+with_rocksdb
 with_gmock
 with_lapack
 with_lmdb
@@ -1941,7 +1947,7 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge drmaa2 muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
-mongodb mongodb3 leveldb gmock lapack lmdb \
+mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
@@ -2019,6 +2025,7 @@ for x_arg in "$@" ; do
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* \
       | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
+      | --with-liburing=* | --with-rocksdb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
@@ -2361,6 +2368,10 @@ Optional Packages:
  --without-mongodb3      do not use MongoDB 3
  --with-leveldb=DIR      use LevelDB installation in DIR
  --without-leveldb       do not use LevelDB
+ --with-liburing=DIR     use liburing installation in DIR
+ --without-liburing      do not use liburing
+ --with-rocksdb=DIR      use RocksDB installation in DIR
+ --without-rocksdb       do not use RocksDB
  --with-gmock=DIR        use Google Mock installation in DIR
  --without-gmock         do not use Google Mock
  --with-lapack=DIR       use LAPACK installation in DIR
@@ -4001,6 +4012,16 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-leveldb but --without-3psw"
          else
             with_leveldb=no
+         fi
+        if test "${with_liburing-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-liburing but --without-3psw"
+         else
+            with_liburing=no
+         fi
+        if test "${with_rocksdb-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-rocksdb but --without-3psw"
+         else
+            with_rocksdb=no
          fi
         if test "${with_gmock-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-gmock but --without-3psw"
@@ -5707,6 +5728,30 @@ fi
 # Check whether --with-leveldb was given.
 if test "${with_leveldb+set}" = set; then :
   withval=$with_leveldb;
+fi
+
+
+# Check whether --with-liburing was given.
+if test "${with_liburing+set}" = set; then :
+  withval=$with_liburing;
+fi
+
+
+# Check whether --with-liburing was given.
+if test "${with_liburing+set}" = set; then :
+  withval=$with_liburing;
+fi
+
+
+# Check whether --with-rocksdb was given.
+if test "${with_rocksdb+set}" = set; then :
+  withval=$with_rocksdb;
+fi
+
+
+# Check whether --with-rocksdb was given.
+if test "${with_rocksdb+set}" = set; then :
+  withval=$with_rocksdb;
 fi
 
 
@@ -31907,6 +31952,346 @@ $as_echo "#define HAVE_LIBLEVELDB 1" >>confdefs.h
 
 
 
+# liburing
+if test "$with_liburing" != no; then
+   case "$with_liburing" in
+      yes | '' ) ;;
+      *        ) LIBURING_PATH=$with_liburing ;;
+   esac
+   LIBURING_ARCH_PATH=$LIBURING_PATH
+for d in "$LIBURING_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$LIBURING_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$LIBURING_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$LIBURING_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      LIBURING_ARCH_PATH=$d
+      break
+   fi
+done
+   LIBURING_PATH=$LIBURING_ARCH_PATH
+   if test -d "$LIBURING_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $LIBURING_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $LIBURING_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            LIBURING_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$LIBURING_PATH" in
+               /*) ;;
+               * ) LIBURING_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) LIBURING_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+fi
+if test "$with_liburing" != "no"; then
+    case "$LIBURING_PATH:$with_liburing" in
+       *:yes | *: | $with_liburing* ) ;;
+       * ) LIBURING_PATH=$with_liburing ;;
+    esac
+    if test "$LIBURING_PATH" != /usr -a -d "$LIBURING_PATH"; then
+       in_path=" in $LIBURING_PATH"
+       if test -z "$LIBURING_INCLUDE" -a -d "$LIBURING_PATH/include"; then
+          LIBURING_INCLUDE="-I$LIBURING_PATH/include"
+       fi
+       if test -n "$LIBURING_LIBPATH"; then
+          :
+       elif test -d "$LIBURING_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBURING_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBURING_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBURING_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBURING_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LIBURING_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBURING_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBURING_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBURING_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBURING_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LIBURING_LIBS="$LIBURING_LIBPATH -luring "
+    else
+       LIBURING_INCLUDE=""
+       LIBURING_LIBS="-luring "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for liburing$in_path" >&5
+$as_echo_n "checking for liburing$in_path... " >&6; }
+if ${ncbi_cv_lib_liburing+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $LIBURING_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LIBURING_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <liburing.h>
+int
+main ()
+{
+io_uring_free_probe(io_uring_get_probe());
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_liburing=yes
+else
+  ncbi_cv_lib_liburing=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_liburing" >&5
+$as_echo "$ncbi_cv_lib_liburing" >&6; }
+    if test "$ncbi_cv_lib_liburing" = "no"; then
+       if test "${with_liburing:=no}" != no; then
+       as_fn_error $? "--with-liburing explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_liburing" = "no"; then
+    LIBURING_PATH="No_LIBURING"
+    LIBURING_INCLUDE=
+    LIBURING_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LIBURING"; WithPackagesSep=" "
+    LIBURING_INCLUDE=" $LIBURING_INCLUDE"
+
+$as_echo "#define HAVE_LIBURING 1" >>confdefs.h
+
+ fi
+
+
+
+
+
+
+# RocksDB
+if test "$with_rocksdb" != no; then
+   case "$with_rocksdb" in
+      yes | '' ) ;;
+      *        ) ROCKSDB_PATH=$with_rocksdb ;;
+   esac
+   ROCKSDB_ARCH_PATH=$ROCKSDB_PATH
+for d in "$ROCKSDB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$ROCKSDB_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$ROCKSDB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$ROCKSDB_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      ROCKSDB_ARCH_PATH=$d
+      break
+   fi
+done
+   ROCKSDB_PATH=$ROCKSDB_ARCH_PATH
+   if test -d "$ROCKSDB_PATH$asan_sfx"; then
+      ROCKSDB_PATH="$ROCKSDB_PATH$asan_sfx"
+   fi
+   if test -d "$ROCKSDB_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $ROCKSDB_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $ROCKSDB_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            ROCKSDB_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$ROCKSDB_PATH" in
+               /*) ;;
+               * ) ROCKSDB_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) ROCKSDB_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+fi
+if test -d $ROCKSDB_PATH/lib${bit64_sfx}; then
+   ROCKSDB_LIBDIR=$ROCKSDB_PATH/lib${bit64_sfx}
+else
+   ROCKSDB_LIBDIR=$ROCKSDB_PATH/lib
+fi
+if test "$with_rocksdb" != "no"; then
+    case "$ROCKSDB_PATH:$with_rocksdb" in
+       *:yes | *: | $with_rocksdb* ) ;;
+       * ) ROCKSDB_PATH=$with_rocksdb ;;
+    esac
+    if test "$ROCKSDB_PATH" != /usr -a -d "$ROCKSDB_PATH"; then
+       in_path=" in $ROCKSDB_PATH"
+       if test -z "$ROCKSDB_INCLUDE" -a -d "$ROCKSDB_PATH/include"; then
+          ROCKSDB_INCLUDE="-I$ROCKSDB_PATH/include"
+       fi
+       if test -n "$ROCKSDB_LIBPATH"; then
+          :
+       elif test -d "$ROCKSDB_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $ROCKSDB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ROCKSDB_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $ROCKSDB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ROCKSDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$ROCKSDB_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $ROCKSDB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    ROCKSDB_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $ROCKSDB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    ROCKSDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       ROCKSDB_LIBS="$ROCKSDB_LIBPATH -lrocksdb $LIBURING_LIBS $BZ2_LIBS $Z_LIBS $ZSTD_LIBS"
+    else
+       ROCKSDB_INCLUDE=""
+       ROCKSDB_LIBS="-lrocksdb $LIBURING_LIBS $BZ2_LIBS $Z_LIBS $ZSTD_LIBS"
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for librocksdb$in_path" >&5
+$as_echo_n "checking for librocksdb$in_path... " >&6; }
+if ${ncbi_cv_lib_rocksdb+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $ROCKSDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$ROCKSDB_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <rocksdb/db.h>
+                     using namespace rocksdb;
+int
+main ()
+{
+DB* db; Status status = DB::Open(Options(), "foo", &db);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_rocksdb=yes
+else
+  ncbi_cv_lib_rocksdb=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_rocksdb" >&5
+$as_echo "$ncbi_cv_lib_rocksdb" >&6; }
+    if test "$ncbi_cv_lib_rocksdb" = "no"; then
+       if test "${with_rocksdb:=no}" != no; then
+       as_fn_error $? "--with-rocksdb explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_rocksdb" = "no"; then
+    ROCKSDB_PATH="No_ROCKSDB"
+    ROCKSDB_INCLUDE=
+    ROCKSDB_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}ROCKSDB"; WithPackagesSep=" "
+    ROCKSDB_INCLUDE=" $ROCKSDB_INCLUDE"
+
+$as_echo "#define HAVE_LIBROCKSDB 1" >>confdefs.h
+
+ fi
+
+
+
+
+
 # Google Mock
 case "$with_gmock" in
    yes | no | '' ) ;;
@@ -36525,7 +36910,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClan
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"

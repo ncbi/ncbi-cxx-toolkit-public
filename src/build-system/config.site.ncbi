@@ -76,6 +76,7 @@ try_local() {
         test -d "$d/include/librdkafka"    &&  : ${LIBRDKAFKA_PATH=$d}
         test -f "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
         test -f "$d/include/unwind.h"      &&  : ${LIBUNWIND_PATH=$d}
+        test -f "$d/include/liburing.h"    &&  : ${LIBURING_PATH=$d}
         test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
         test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/xlsxwriter.h"  &&  : ${LIBXLSXWRITER_PATH=$d}
@@ -97,6 +98,7 @@ try_local() {
         test -d "$d/include/opentracing"   &&  : ${OPENTRACING_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
+        test -d "$d/include/rocksdb"       &&  : ${ROCKSDB_PATH=$d}
         test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
         test -f "$d/include/SgmlParser.h"  &&  : ${SP_PATH=$d}
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
@@ -262,6 +264,8 @@ esac
 
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
+: ${LIBURING_PATH=$NCBI/liburing-2.4}
+
 case "$ncbi_platform" in
     *MAC       ) : ${LIBUV_PATH=$NCBI/libuv-1.44.2} ;;
     *          ) : ${LIBUV_PATH=$NCBI/libuv-1.35.0} ;;
@@ -350,6 +354,8 @@ case "$ncbi_platform" in
         : ${PYTHON27=/opt/python-2.7env/bin/python}
         ;;
 esac
+
+: ${ROCKSDB_PATH=$NCBI/rocksdb-8.3.2}
 
 : ${SABLOT_PATH=$NCBI/Sablot-1.0.2}
 

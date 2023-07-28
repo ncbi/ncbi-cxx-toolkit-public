@@ -495,6 +495,9 @@
 /* Define to 1 if librdkafka is available. */
 #undef HAVE_LIBRDKAFKA
 
+/* Define to 1 if librocksdb is available. */
+#undef HAVE_LIBROCKSDB
+
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBRPCSVC
@@ -544,6 +547,9 @@
 
 /* Define to 1 if libunwind is available. */
 #undef HAVE_LIBUNWIND
+
+/* Define to 1 if liburing is available. */
+#undef HAVE_LIBURING
 
 /* Define to 1 if libuv is available. */
 #undef HAVE_LIBUV
