@@ -5,6 +5,7 @@ algo/align$
 algo/align/nw
 algo/cobalt
 -app/blast
+-app/blastvdb
 -app/blastdb
 -app/winmasker
 -app/dustmasker
