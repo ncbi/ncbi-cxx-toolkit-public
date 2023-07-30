@@ -12,6 +12,9 @@
 APP: psg_client
 ETC: src/app/pubseq_gateway/client/psg_client.ini
 
+APP: $srcdir/src/app/pubseq_gateway/client/psg_client.py
+ETC: src/app/pubseq_gateway/client/testcases.json
+
 APP: pubseq_gateway.cgi$exe
 ETC: src/app/pubseq_gateway/client/pubseq_gateway.json
 ETC: src/app/pubseq_gateway/client/pubseq_gateway.ini
