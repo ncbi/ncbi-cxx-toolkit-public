@@ -109,6 +109,9 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
         "\n\n\n<!DOCTYPE html>\n"
         #include "introspection_html.hpp"
         ;
+
+    x_FixIntrospectionVersion();
+    x_FixIntrospectionBuildDate();
 }
 
 
@@ -889,6 +892,55 @@ CPubseqGatewayApp::GetUvLoopBinder(uv_thread_t  uv_thread_id)
     return *(it->second.get());
 }
 
+
+// The HTML help is generated at the time of development when neither version
+// nor build date are available. So at the start the version and build date
+// should be updated in the already generated html.
+// See x_FixIntrospectionVersion() and x_FixIntrospectionBuildDate()
+
+
+void CPubseqGatewayApp::x_FixIntrospectionVersion(void)
+{
+    NStr::ReplaceInPlace(m_HelpMessageHtml,
+                         "<td>0.0.0</td>",
+                         "<td>" PUBSEQ_GATEWAY_VERSION "</td>");
+}
+
+
+void CPubseqGatewayApp::x_FixIntrospectionBuildDate(void)
+{
+    // The generated build date at the time of the development looks like that:
+    // <td>build-date</td>
+    // <td>Jul 14 2023 10:44:41</td>
+
+    const string    td_begin = "<td>";
+    const string    td_end = "</td>";
+    const string    pattern = td_begin + "build-date" + td_end;
+
+    auto            label_pos = m_HelpMessageHtml.find(pattern);
+    if (label_pos == string::npos) {
+        PSG_WARNING("Cannot find build date label pattern in the generated htlm help");
+        return;
+    }
+
+    auto            build_date_begin_pos = label_pos + pattern.size();
+    build_date_begin_pos = m_HelpMessageHtml.find(td_begin, build_date_begin_pos);
+    if (build_date_begin_pos == string::npos) {
+        PSG_WARNING("Cannot find build date begin in the generated htlm help");
+        return;
+    }
+
+    build_date_begin_pos += td_begin.size();
+    auto            build_date_end_pos = m_HelpMessageHtml.find(td_end, build_date_begin_pos);
+    if (build_date_end_pos == string::npos) {
+        PSG_WARNING("Cannot find build date end in the generated htlm help");
+        return;
+    }
+
+    m_HelpMessageHtml.replace(build_date_begin_pos,
+                              build_date_end_pos - build_date_begin_pos,
+                              PUBSEQ_GATEWAY_BUILD_DATE);
+}
 
 
 int main(int argc, const char* argv[])
