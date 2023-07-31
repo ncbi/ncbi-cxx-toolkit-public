@@ -72,8 +72,6 @@ class CCassStatusHistoryTaskGetPublicComment
         TDataErrorCallback data_error_cb
     );
 
-    NCBI_STD_DEPRECATED("Use SetMessages(shared_ptr<CPSGMessages> messages)")
-    void SetMessages(CPSGMessages const * messages);
     void SetMessages(shared_ptr<CPSGMessages> messages);
     void SetCommentCallback(TCommentCallback callback);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
