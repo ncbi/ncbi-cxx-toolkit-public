@@ -1679,7 +1679,7 @@ bool SetTextId(Uint1 seqtype, CSeq_id& seqId, CTextseq_id& textId)
     case CSeq_id::e_Pdb: {
         // TODO: test this branch
         CPDB_seq_id pdbId;
-        pdbId.SetChain_id(0);
+        pdbId.SetChain_id();
         seqId.SetPdb(pdbId);
     } break;
     case CSeq_id::e_Tpg:
