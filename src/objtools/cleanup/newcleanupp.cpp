@@ -348,87 +348,14 @@ void CNewCleanup_imp::BasicCleanupBioseqHandle (
     CBioseq_Handle& bsh
 )
 {
-    // clean a copy, and then update via the edit handle
-
-    CRef<CBioseq> new_bioseq( new CBioseq );
-    new_bioseq->Assign( *bsh.GetCompleteBioseq() );
-
-    CBioseq_EditHandle edit_handle = bsh.GetEditHandle();
-
-    BasicCleanupBioseq( *new_bioseq );
-
-    // get each part from the copy
-
-    edit_handle.ResetId();
-    FOR_EACH_SEQID_ON_BIOSEQ( seq_id_iter, *new_bioseq ) {
-        edit_handle.AddId( CSeq_id_Handle::GetHandle(**seq_id_iter) );
-    }
-
-    edit_handle.ResetDescr();
-    if( new_bioseq->IsSetDescr() ) {
-        edit_handle.SetDescr( new_bioseq->SetDescr() );
-    }
-
-    edit_handle.SetInst( new_bioseq->SetInst() );
-    while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bsh.GetCompleteBioseq(), Annot ) )  {
-        CSeq_annot_CI annot_ci( bsh );
-        CSeq_annot_EditHandle a = annot_ci->GetEditHandle();
-        a.Remove();
-    }
-    EDIT_EACH_SEQANNOT_ON_BIOSEQ( annot_iter, *new_bioseq ) {
-        edit_handle.AttachAnnot( **annot_iter );
-    }
+    BasicCleanupBioseq(*const_cast<CBioseq*>(bsh.GetCompleteBioseq().GetPointer()));
 }
 
 void CNewCleanup_imp::BasicCleanupBioseqSetHandle (
     CBioseq_set_Handle& bssh
 )
 {
-    // clean a copy, and then update via the edit handle
-
-    CRef<CBioseq_set> new_bioseq_set( new CBioseq_set );
-    new_bioseq_set->Assign( *bssh.GetCompleteBioseq_set() );
-
-    CBioseq_set_EditHandle edit_handle = bssh.GetEditHandle();
-
-    BasicCleanupBioseqSet( *new_bioseq_set );
-
-    // get each part from the copy
-
-#define BC_COPY_FIELD(Fld) \
-    edit_handle.Reset##Fld(); \
-    if( new_bioseq_set->IsSet##Fld() ) { \
-        edit_handle.Set##Fld( new_bioseq_set->Set##Fld() ); \
-    }
-
-    BC_COPY_FIELD(Id);
-    BC_COPY_FIELD(Coll);
-    BC_COPY_FIELD(Level);
-    BC_COPY_FIELD(Class);
-    BC_COPY_FIELD(Release);
-    BC_COPY_FIELD(Date);
-    BC_COPY_FIELD(Descr);
-
-#undef BC_COPY_FIELD
-
-    while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bssh.GetCompleteBioseq_set(), Seq_set ) )  {
-        CSeq_entry_CI entry_ci( bssh );
-        CSeq_entry_EditHandle edit = entry_ci->GetEditHandle();
-        edit.Remove();
-    }
-    EDIT_EACH_SEQENTRY_ON_SEQSET( entry_iter, *new_bioseq_set ) {
-        edit_handle.AttachEntry( **entry_iter );
-    }
-
-    // copy annot field
-    while( ! RAW_FIELD_IS_EMPTY_OR_UNSET( *bssh.GetCompleteBioseq_set(), Annot ) )  {
-        CSeq_annot_CI annot_ci( bssh );
-        CSeq_annot_EditHandle edit = annot_ci->GetEditHandle();
-        edit.Remove();
-    }
-    EDIT_EACH_SEQANNOT_ON_SEQSET( annot_iter, *new_bioseq_set ) {
-        edit_handle.AttachAnnot( **annot_iter );
-    }
+    BasicCleanupBioseqSet(*const_cast<CBioseq_set*>(bssh.GetCompleteBioseq_set().GetPointer()));
 }
 
 void CNewCleanup_imp::BasicCleanupSeqAnnotHandle (

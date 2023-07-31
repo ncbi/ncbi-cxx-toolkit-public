@@ -91,6 +91,20 @@ void throw_exception( std::exception const & e ) {
 
 extern const string sc_TestEntryCleanRptUnitSeq;
 
+static void s_CheckRptUnitSeq(const CBioseq_Handle& bsh)
+{
+    CFeat_CI f(bsh);
+    while (f) {
+        FOR_EACH_GBQUAL_ON_SEQFEAT (q, *f) {
+            if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "rpt_unit_seq") && (*q)->IsSetVal()) {
+                string val = (*q)->GetVal();
+                BOOST_CHECK(NStr::IsLower(val));
+            }
+        }
+        ++f;
+    }
+}
+
 BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
 {
     CSeq_entry entry;
@@ -101,12 +115,10 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
-    entry.Parentize();
 
     CCleanup cleanup;
-
     cleanup.SetScope (scope);
-    auto changes = cleanup.BasicCleanup (entry);
+    auto changes = cleanup.BasicCleanup(entry.SetSeq());
     // look for expected change flags
     auto changes_str = changes->GetDescriptions();
     if (changes_str.size() < 1) {
@@ -118,16 +130,36 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
         }
     }
     // make sure change was actually made
-    CFeat_CI f(scope->GetBioseqHandle(entry.GetSeq()));
-    while (f) {
-        FOR_EACH_GBQUAL_ON_SEQFEAT (q, *f) {
-            if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "rpt_unit_seq") && (*q)->IsSetVal()) {
-                string val = (*q)->GetVal();
-                BOOST_CHECK(NStr::IsLower(val));
-            }
+    s_CheckRptUnitSeq(scope->GetBioseqHandle(entry.GetSeq()));
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_BioseqHandle)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanRptUnitSeq);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    scope->AddTopLevelSeqEntry(entry);
+    auto bsh = scope->GetBioseqHandle(entry.GetSeq());
+
+    CCleanup cleanup;
+    auto changes = cleanup.BasicCleanup(bsh);
+    // look for expected change flags
+    auto changes_str = changes->GetDescriptions();
+    if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
+        for (size_t i = 2; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
         }
-        ++f;
     }
+    // make sure change was actually made 
+    s_CheckRptUnitSeq(bsh);
 }
 
 
@@ -2178,16 +2210,30 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4508)
     prot->SetData().SetProt().SetName().front() = "a\tb";
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    scope->AddTopLevelSeqEntry(*entry);
 
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
-    auto changes = cleanup.BasicCleanup(*entry);
+    auto changes = cleanup.BasicCleanup(entry->SetSet());
 
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
-
 }
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4508_BioseqSetHandle)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetName().front() = "a\tb";
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    scope->AddTopLevelSeqEntry(*entry);
+    auto bssh = scope->GetBioseq_setHandle(entry->GetSet());
+    CCleanup cleanup;
+    auto changes = cleanup.BasicCleanup(bssh);
+    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
+}
+
 
 
 BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC)
@@ -2207,7 +2253,23 @@ BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC)
     CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
     BOOST_CHECK_EQUAL(prot->GetComment(), "xyz");
     BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
+}
 
+BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC_BioseqSetHandle)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = GetCDSFromGoodNucProtSet(entry);
+    cds->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("prot_note", "xyz")));
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    scope->AddTopLevelSeqEntry(*entry);
+    auto bssh = scope->GetBioseq_setHandle(entry->GetSet());
+    CCleanup cleanup;
+    auto changes = cleanup.BasicCleanup(bssh);
+
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    BOOST_CHECK_EQUAL(prot->GetComment(), "xyz");
+    BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
 }
 
 
