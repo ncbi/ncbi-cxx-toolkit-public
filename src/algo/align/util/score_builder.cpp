@@ -702,7 +702,7 @@ static pair<string,string> s_ComputeTraceback(CScope& scope,
         vec.GetSegSeqString(query, 0, i);
         vec.GetSegSeqString(subject, 1, i);
         if (query.empty()) {
-            for (size_t idx = 0; idx < subject.size(); ++idx) {
+            for (unsigned idx = 0; idx < subject.size(); ++idx) {
                 string complement;
                 CSeqManip::Complement(subject, CSeqUtil::e_Iupacna,
                                       idx, 1, complement);
@@ -712,7 +712,7 @@ static pair<string,string> s_ComputeTraceback(CScope& scope,
                 flipped_BTOP.insert(flipped_BTOP.begin(), '-');
             }
         } else if (subject.empty()) {
-            for (size_t idx = 0; idx < query.size(); ++idx) {
+            for (unsigned idx = 0; idx < query.size(); ++idx) {
                 string complement;
                 CSeqManip::Complement(query, CSeqUtil::e_Iupacna,
                                       idx, 1, complement);
@@ -723,7 +723,7 @@ static pair<string,string> s_ComputeTraceback(CScope& scope,
             }
         } else {
             size_t match = 0;
-            for (size_t idx = 0; idx < query.size(); ++idx) {
+            for (unsigned idx = 0; idx < query.size(); ++idx) {
                 NCBI_ASSERT(query.size() == subject.size(),
                             "inconsistent aligned segment length");
                 if (query[idx] == subject[idx]) {

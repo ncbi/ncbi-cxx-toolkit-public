@@ -61,6 +61,8 @@
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <algo/align/util/tabular_fmt.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <limits>
 
 BEGIN_NCBI_SCOPE
@@ -755,7 +757,7 @@ void CTabularFormatter_MismatchPositions::Print(CNcbiOstream& ostr,
         }}
 
         // find locations
-        for(size_t Loop = 0; Loop < QuerySeg.GetLength(); Loop++) {
+        for(unsigned Loop = 0; Loop < QuerySeg.GetLength(); Loop++) {
             size_t QLoop = QOffset+Loop;
             size_t SLoop = SOffset+Loop;
           
@@ -2770,9 +2772,10 @@ void CTabularFormatter_StopCodonChanges::Print(CNcbiOstream& ostr,
             internal_stop_pos = trans.size() - 1;
             missing_stop = false;
         }
+        TSeqPos isp = Convert(internal_stop_pos);
         string variation = s_CodonVariation(align,
                             cds->GetLocation().GetStart(eExtreme_Positional)
-                                       + internal_stop_pos*3,
+                                       + isp*3,
                             m_Scores->GetScope(), m_CoordinateRow);
         if (!variation.empty()) {
             if (changed_codons_count++) {
