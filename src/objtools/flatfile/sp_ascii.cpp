@@ -3738,15 +3738,9 @@ static void CkGeneNameSP(char* gname)
  **********************************************************/
 static void ParseGeneNameSP(char* str, CSeq_feat& feat)
 {
-    char* gname;
     char* p;
     char* q;
-    char* r;
-
-    Int2 count;
-
-    count = 0;
-    gname = nullptr;
+    Int2  count = 0;
 
     CGene_ref& gene = feat.SetData().SetGene();
 
@@ -3759,19 +3753,16 @@ static void ParseGeneNameSP(char* str, CSeq_feat& feat)
             *p++ = '\0';
         if (StringEqu(q, "AND") || StringEqu(q, "OR"))
             continue;
-        r = StringSave(q);
-        CkGeneNameSP(r);
+        char* gname = StringSave(q);
+        CkGeneNameSP(gname);
         if (count == 0) {
             count++;
-            gname = r;
+            gene.SetLocus(gname);
         } else {
-            gene.SetSyn().push_back(r);
-            MemFree(r);
+            gene.SetSyn().push_back(gname);
         }
+        MemFree(gname);
     }
-
-    gene.SetLocus(gname);
-    MemFree(gname);
 }
 
 /**********************************************************
