@@ -104,18 +104,6 @@ void CCassStatusHistoryTaskGetPublicComment::JumpToReplaced(CBlobRecord::TSatKey
     m_PublicComment.clear();
 }
 
-void CCassStatusHistoryTaskGetPublicComment::SetMessages(CPSGMessages const * messages)
-{
-    if (messages) {
-        m_Messages = make_shared<CPSGMessages>();
-        m_Messages->Set(kDefaultSuppressedMessage, messages->Get(kDefaultSuppressedMessage));
-        m_Messages->Set(kDefaultWithdrawnMessage, messages->Get(kDefaultWithdrawnMessage));
-    }
-    else {
-        m_Messages.reset();
-    }
-}
-
 void CCassStatusHistoryTaskGetPublicComment::SetMessages(shared_ptr<CPSGMessages> messages)
 {
     m_Messages = move(messages);

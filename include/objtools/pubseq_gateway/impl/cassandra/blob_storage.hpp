@@ -47,8 +47,7 @@ BEGIN_IDBLOB_SCOPE
 
 USING_NCBI_SCOPE;
 
-// Note: must be in sync with the Cassandra SAT_INFO.SAT2KEYSPACE schema type
-//       values
+// Note: must be in sync with the Cassandra SAT_INFO.SAT2KEYSPACE schema type values
 enum ECassSchemaType {
     eUnknownSchema = 0,
     eResolverSchema = 1,
@@ -65,33 +64,6 @@ struct SBlobStorageConstants
     static const char* const kChunkTableDefault;
     static const char* const kChunkTableBig;
 };
-
-// Reads the sat2keyspace table from the given keyspace and builds the
-// mapping between the sat and the keyspace name selecting only suitable
-// records. Also picks the resolver (idmain usually) keyspace and checks that
-// it appears once.
-bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
-                               shared_ptr<CCassConnection>  conn,
-                               vector<tuple<string, ECassSchemaType>> &  mapping,
-                               string &  resolver_keyspace,
-                               ECassSchemaType  resolver_schema,
-                               string &  err_msg);
-
-bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
-                               shared_ptr<CCassConnection>  conn,
-                               vector<string> &  mapping,
-                               ECassSchemaType  mapping_schema,
-                               string &  resolver_keyspace,
-                               ECassSchemaType  resolver_schema,
-                               vector<pair<string, int32_t>> &  bioseq_na_keyspaces,
-                               ECassSchemaType  bioseq_na_schema,
-                               string &  err_msg);
-
-bool FetchMessages(const string &  mapping_keyspace,
-                   shared_ptr<CCassConnection>  conn,
-                   CPSGMessages &  messages,
-                   string &  err_msg);
-//------------------------------------------------------------------------------
 
 struct SSatInfoEntry final
 {

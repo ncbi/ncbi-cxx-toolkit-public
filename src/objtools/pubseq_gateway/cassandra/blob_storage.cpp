@@ -40,158 +40,15 @@
 #include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
-#define KEYSPACE_MAPPING_CONSISTENCY    CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM
-#define KEYSPACE_MAPPING_RETRY          5
-
 BEGIN_IDBLOB_SCOPE
 
 const char* const SBlobStorageConstants::kChunkTableDefault = "blob_chunk";
 const char* const SBlobStorageConstants::kChunkTableBig = "big_blob_chunk";
 
-bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
-                               shared_ptr<CCassConnection>  conn,
-                               vector<tuple<string, ECassSchemaType>> &  mapping,
-                               string &  resolver_keyspace,
-                               ECassSchemaType  resolver_schema,
-                               string &  err_msg)
-{
-    resolver_keyspace.clear();
-    mapping.clear();
-
-    if (mapping_keyspace.empty()) {
-        err_msg = "mapping_keyspace is not specified";
-        return false;
-    }
-
-    bool rv = false;
-    err_msg = "sat2keyspace info is empty";
-    for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
-        try {
-            auto query = conn->NewQuery();
-            query->SetSQL("SELECT sat, keyspace_name, schema_type FROM "
-                + mapping_keyspace + ".sat2keyspace", 0);
-            query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
-            rv = true;
-            while (query->NextRow() == ar_dataready) {
-                int32_t sat = query->FieldGetInt32Value(0);
-                string name = query->FieldGetStrValue(1);
-                ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
-
-                if (schema_type <= eUnknownSchema || schema_type == eIPGSchema || schema_type > eMaxSchema) {
-                    // ignoring
-                }
-                else if (schema_type == resolver_schema) {
-                    if (resolver_keyspace.empty()) {
-                        resolver_keyspace = name;
-                    }
-                    else {
-                        // More than one resolver keyspace
-                        err_msg = "More than one resolver keyspace in the " +
-                            mapping_keyspace + ".sat2keyspace table";
-                        rv = false;
-                        break;
-                    }
-                }
-                else if (sat >= 0) {
-                    while (static_cast<int32_t>(mapping.size()) <= sat)
-                        mapping.push_back(make_tuple("", eUnknownSchema));
-                    mapping[sat] = make_tuple(name, schema_type);
-                }
-            }
-        }
-        catch (const CCassandraException& e) {
-            if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && i > 0) {
-                continue;
-            }
-            throw;
-
-        }
-        break;
-    }
-
-    if (rv && mapping.empty()) {
-        err_msg = "sat2keyspace is incomplete";
-        rv = false;
-    }
-    if (rv && resolver_keyspace.empty() && resolver_schema != eUnknownSchema) {
-        err_msg = "resolver schema is not found in sat2keyspace";
-        rv = false;
-    }
-
-    return rv;
-}
-
-
-bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
-                               shared_ptr<CCassConnection>  conn,
-                               vector<string> &  mapping,
-                               ECassSchemaType  mapping_schema,
-                               string &  resolver_keyspace,
-                               ECassSchemaType  resolver_schema,
-                               vector<pair<string, int32_t>> &  bioseq_na_keyspaces,
-                               ECassSchemaType  bioseq_na_schema,
-                               string &  err_msg)
-{
-    vector<tuple<string, ECassSchemaType>> lmapping;
-    if (FetchSatToKeyspaceMapping(mapping_keyspace, conn, lmapping, resolver_keyspace, resolver_schema, err_msg)) {
-        for (size_t sat_id = 0; sat_id < lmapping.size(); ++sat_id) {
-            ECassSchemaType  schema = get<1>(lmapping[sat_id]);
-            mapping.push_back((schema == mapping_schema ||
-                               schema == bioseq_na_schema)? get<0>(lmapping[sat_id]) : "");
-
-            if (schema == bioseq_na_schema)
-                bioseq_na_keyspaces.push_back(
-                        pair<string, int32_t>(get<0>(lmapping[sat_id]), sat_id));
-        }
-        return true;
-    }
-    return false;
-}
-
-bool FetchMessages(const string &  mapping_keyspace,
-                   shared_ptr<CCassConnection>  conn,
-                   CPSGMessages &  messages,
-                   string &  err_msg)
-{
-    if (mapping_keyspace.empty()) {
-        err_msg = "mapping_keyspace is not specified";
-        return false;
-    }
-
-    bool rv = false;
-    err_msg = mapping_keyspace + ".messages info is empty";
-    for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
-        try {
-            shared_ptr<CCassQuery>  query = conn->NewQuery();
-            query->SetSQL("SELECT name, value FROM " + mapping_keyspace + ".messages", 0);
-            query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
-            while (query->NextRow() == ar_dataready) {
-                messages.Set(
-                    query->FieldGetStrValue(0),
-                    query->FieldGetStrValueDef(1, "")
-                );
-                err_msg.clear();
-            }
-            rv = true;
-            break;
-        }
-        catch (const CCassandraException& e) {
-            if (
-                (e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable)
-                && i > 0
-            ) {
-                continue;
-            }
-            throw;
-        }
-    }
-
-    return rv;
-}
-
-//------------------------------------------------------------------------------
-
 BEGIN_SCOPE()
+
+constexpr TCassConsistency kSatInfoReadConsistency{CCassConsistency::kLocalQuorum};
+constexpr int kSatInfoReadRetry{5};
 
 bool CanRetry(CCassandraException const& e, int retries)
 {
@@ -207,14 +64,14 @@ vector<SSatInfoEntry>
 ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CCassConnection> connection)
 {
     vector<SSatInfoEntry> result;
-    for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
+    for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
             auto query = connection->NewQuery();
             query->SetSQL(
                 "SELECT sat, keyspace_name, schema_type, service FROM "
                 + keyspace + ".sat2keyspace WHERE domain = ?", 1);
             query->BindStr(0, domain);
-            query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
+            query->Query(kSatInfoReadConsistency, false, false);
             while (query->NextRow() == ar_dataready) {
                 SSatInfoEntry row;
                 row.sat = query->FieldGetInt32Value(0);
@@ -251,12 +108,12 @@ shared_ptr<CPSGMessages>
 ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<CCassConnection> connection)
 {
     auto result = make_shared<CPSGMessages>();
-    for (int i = KEYSPACE_MAPPING_RETRY; i >= 0; --i) {
+    for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
             auto query = connection->NewQuery();
             query->SetSQL("SELECT name, value FROM " + keyspace + ".messages WHERE domain = ?", 1);
             query->BindStr(0, domain);
-            query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
+            query->Query(kSatInfoReadConsistency, false, false);
             while (query->NextRow() == ar_dataready) {
                 result->Set(
                     query->FieldGetStrValue(0),
