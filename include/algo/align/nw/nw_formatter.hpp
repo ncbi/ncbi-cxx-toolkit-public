@@ -138,8 +138,8 @@ public:
         int CanExtendLeft(const vector<char>& mrna, const vector<char>& genomic) const;
 
         //do extend, 100% identity in extension is implied
-        void ExtendRight(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner);
-        void ExtendLeft(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner);
+        void ExtendRight(const vector<char>& mrna, const vector<char>& genomic, Int8 ext_len, const CNWAligner* aligner);
+        void ExtendLeft(const vector<char>& mrna, const vector<char>& genomic, Int8 ext_len, const CNWAligner* aligner);
 
         void Update(const CNWAligner* aligner); // recompute members
         const char* GetDonor(void) const;       // raw pointers to parts of annot

@@ -40,6 +40,8 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <algo/align/splign/compart_matching.hpp>
 
+#include <util/value_convert.hpp>
+
 BEGIN_NCBI_SCOPE
 
 vector<CSeq_id_Handle> CBlastSequenceSource::s_ids;
@@ -72,7 +74,6 @@ namespace {
 
     const Uint8  kUI8_LoWord              (0xFFFFFFFF);
     const Uint8  kUI8_LoByte              (kUI8_LoWord >> 24);
-    const Uint8  kUI8_MidWord             (kUI8_LoWord << 16);
     const Uint8  kUI8_HiWord              (kUI8_LoWord << 32);
     const Uint8  kUI8_LoFive              (kUI8_LoWord | (kUI8_LoWord << 8));
 
@@ -85,7 +86,6 @@ namespace {
 
     const Int8   kDiagMax                 (numeric_limits<Int8>::max());
 
-    const Uint8  kSeqDbMemBound           (512 * 1024 * 1024);
     const size_t kMapGran                 (512 * 1024 * 1024);
 }
 
@@ -218,7 +218,7 @@ namespace {
 }
 
 
-bool CElementaryMatching::s_IsLowComplexity(Uint4 key)
+bool CElementaryMatching::s_IsLowComplexity(size_t key)
 {
     // evaluate the lower 28 bits (14 residues) only
 
@@ -370,7 +370,7 @@ void CElementaryMatching::x_InitFilteringVector(const string& sdb, bool strand)
             uintptr_t npcb (reinterpret_cast<uintptr_t>(pcb)), npcb0 (npcb);
             npcb -= npcb % 8;
             if(npcb < npcb0) npcb += 8;
-            const size_t gcbase (4*(npcb - npcb0));
+            const Uint8 gcbase (4*(npcb - npcb0));
             const Uint8 * pui8 (reinterpret_cast<const Uint8*>(npcb));
             const Uint8 * pui8_e (reinterpret_cast<const Uint8*>(pcbe));
 
@@ -624,7 +624,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
         uintptr_t npcb (reinterpret_cast<uintptr_t>(pcb)), npcb0 (npcb);
         npcb -= npcb % 8;
         if(npcb < npcb0) npcb += 8;
-        const Uint4  gcbase (4*(npcb - npcb0));
+        const Uint8  gcbase (4*(npcb - npcb0));
         const Uint8* pui8_start (reinterpret_cast<const Uint8*>(npcb));
         const Uint8* pui8 (pui8_start);
 
@@ -738,7 +738,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
                             const Uint4 mer (fivebytes & kUI8_LoWord);
                             if(m_Mers.get_at(strand? (mer >> 4): (mer & kUI4_Lo28))) {
                                 const Uint8 ui8   (mer);
-                                const Uint4 coord (current_offset + 
+                                const Uint8 coord (current_offset + 
                                                    4*(p - pcb - 5) + k);
                                 MersAndCoords[mcidx++] = (ui8 << 32) | coord;
                             }
@@ -755,12 +755,12 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
             
                 // body
                 Uint8 ui8 (0);
-                Uint4 gccur (current_offset + gcbase);
+                Uint8 gccur (current_offset + gcbase);
                 for(; gccur + 32 < current_offset + bases; ++pui8)
                 {
                     ui8 = *pui8;
 
-                    for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
+                    for(Uint8 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
                         const Uint8 loword = ui8 & kUI8_LoWord;
                         if(m_Mers.get_at(strand? (loword >> 4):
@@ -785,7 +785,7 @@ void CElementaryMatching::x_CreateIndex(const string& db, EIndexMode mode, bool 
                         Uint8 ui8_4 (ui4);
                         ui8 |= (ui8_4 << 32);
 
-                        for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
+                        for(Uint8 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
                             const Uint8 loword = ui8 & kUI8_LoWord;
                             if(m_Mers.get_at(strand? (loword >> 4):
@@ -909,7 +909,7 @@ void CElementaryMatching::x_CreateIndex(ISequenceSource *m_qsrc, EIndexMode mode
         uintptr_t npcb (reinterpret_cast<uintptr_t>(pcb)), npcb0 (npcb);
         npcb -= npcb % 8;
         if(npcb < npcb0) npcb += 8;
-        const Uint4  gcbase (4*(npcb - npcb0));
+        const Uint8  gcbase (4*(npcb - npcb0));
         const Uint8* pui8_start (reinterpret_cast<const Uint8*>(npcb));
         const Uint8* pui8 (pui8_start);
 
@@ -1023,7 +1023,7 @@ void CElementaryMatching::x_CreateIndex(ISequenceSource *m_qsrc, EIndexMode mode
                             const Uint4 mer (fivebytes & kUI8_LoWord);
                             if(m_Mers.get_at(strand? (mer >> 4): (mer & kUI4_Lo28))) {
                                 const Uint8 ui8   (mer);
-                                const Uint4 coord (current_offset + 
+                                const Uint8 coord (current_offset + 
                                                    4*(p - pcb - 5) + k);
                                 MersAndCoords[mcidx++] = (ui8 << 32) | coord;
                             }
@@ -1040,12 +1040,12 @@ void CElementaryMatching::x_CreateIndex(ISequenceSource *m_qsrc, EIndexMode mode
             
                 // body
                 Uint8 ui8 (0);
-                Uint4 gccur (current_offset + gcbase);
+                Uint8 gccur (current_offset + gcbase);
                 for(; gccur + 32 < current_offset + bases; ++pui8)
                 {
                     ui8 = *pui8;
 
-                    for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
+                    for(Uint8 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
                         const Uint8 loword = ui8 & kUI8_LoWord;
                         if(m_Mers.get_at(strand? (loword >> 4):
@@ -1070,7 +1070,7 @@ void CElementaryMatching::x_CreateIndex(ISequenceSource *m_qsrc, EIndexMode mode
                         Uint8 ui8_4 (ui4);
                         ui8 |= (ui8_4 << 32);
 
-                        for(Uint4 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
+                        for(Uint8 gccur_hi (gccur + 16); gccur < gccur_hi; ++gccur) {
 
                             const Uint8 loword = ui8 & kUI8_LoWord;
                             if(m_Mers.get_at(strand? (loword >> 4):
@@ -1600,7 +1600,7 @@ void CElementaryMatching::x_CompartVolume(vector<Uint8>* phits)
 }
 
 
-bool CElementaryMatching::x_IsMatch(Uint4 q, Uint4 s) const
+bool CElementaryMatching::x_IsMatch(Uint8 q, Uint8 s) const
 {
     const Uint1 cq (((m_CurSeq_cDNA[q / 4]) >> ((3 - (q % 4))*2)) & 0x03);
     const Uint1 cs (((m_CurSeq_Genomic[s / 4]) >> ((3 - (s % 4))*2)) & 0x03);
@@ -1624,10 +1624,10 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
                             kDiagMax: right_limit0 + overrun);
 
     // extend left
-    Int8 q0 (hitref->GetQueryStart()), s0 (hitref->GetSubjStart());
-    size_t mm (0), mm0 (0);
+    Int4 q0 (hitref->GetQueryStart()), s0 (hitref->GetSubjStart());
+    Uint4 mm (0), mm0 (0);
     bool no_overrun_yet (true);
-    for(Int8 q (q0 - 1), s (s0 - 1);
+    for(Int4 q (q0 - 1), s (s0 - 1);
         (q + s > left_limit && score + m_XDropOff >= score_max 
          && q >= m_ii_cdna->m_Start && s >= m_ii_genomic->m_Start);
         --q, --s)
@@ -1638,8 +1638,8 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
             mm0 += mm;
         }
 
-        Uint4 qq (q - m_ii_cdna->m_Start);
-        Uint4 ss (s - m_ii_genomic->m_Start);
+        Uint8 qq (q - m_ii_cdna->m_Start);
+        Uint8 ss (s - m_ii_genomic->m_Start);
         if(m_CurGenomicStrand == false) {
             ss = m_ii_genomic->m_Length - ss - 1;
         }
@@ -1680,7 +1680,7 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
 
     no_overrun_yet = true;
 
-    for(Int8 q (q0 + 1), s (s0 + 1);
+    for(Int4 q (q0 + 1), s (s0 + 1);
         (q + s < right_limit && score + m_XDropOff >= score_max
          && q < m_ii_cdna->m_Start + m_ii_cdna->m_Length 
          && s < m_ii_genomic->m_Start + m_ii_genomic->m_Length);
@@ -1691,8 +1691,8 @@ Int8 CElementaryMatching::x_ExtendHit(const Int8 & left_limit0,
             mm0 += mm;
         }
 
-        Uint4 qq (q - m_ii_cdna->m_Start);
-        Uint4 ss (s - m_ii_genomic->m_Start);
+        Uint8 qq (q - m_ii_cdna->m_Start);
+        Uint8 ss (s - m_ii_genomic->m_Start);
         if(m_CurGenomicStrand == false) {
             ss = m_ii_genomic->m_Length - ss - 1;
         }
@@ -1819,8 +1819,8 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
     Int8 right_limit (kDiagMax); // diag ext right limit
     Int8 s_prime_cur (0);
 
-    const int kn (hitrefs.size());
-    for(int k(0); k < kn; ++k) {
+    const size_t kn (hitrefs.size());
+    for(size_t k(0); k < kn; ++k) {
         
         // diag coords: q_prime = q + s; s_prime = s - q;
         const THit::TCoord * box (hitrefs[k]->GetBox());
@@ -1844,7 +1844,7 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
     // merge adjacent hits
     int d (-1);
     Int8 rlimit (0), spc (0);
-    for(int k (0); k < kn; ++k) {
+    for(size_t k (0); k < kn; ++k) {
 
         const THit::TCoord cur_diag_stop (hitrefs[k]->GetQueryStop() 
                                           + hitrefs[k]->GetSubjStop());
@@ -1888,7 +1888,7 @@ void CElementaryMatching::x_CompartPair(vector<Uint8>* pvol,
             }
         }
     }
-    hitrefs.resize(min(d + 1, kn));
+    hitrefs.resize(min(size_t(d + 1), kn));
 
 #undef EXTEND_USING_SEQUENCE_CHARS
 #endif
@@ -2023,7 +2023,8 @@ CRandom::TValue GenerateSeed(const string & str)
     ITERATE(string, ii, str) {
         rv = (rv * 3 + (*ii)) % 3571;
     }
-    return time(0) - 5000 + rv;
+    CRandom::TValue t = Convert(time(0));
+    return t - 5000 + rv;
 }
 
 

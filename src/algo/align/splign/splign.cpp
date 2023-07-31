@@ -66,6 +66,8 @@
 #include <objects/seqalign/Score_set.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <math.h>
 #include <algorithm>
 #include <iostream>
@@ -198,7 +200,7 @@ CSplign::~CSplign()
 static CVersionAPI* s_CreateVersion(void)
 {
     return new CVersion(CVersionInfo(2, 1, 0));
-};
+}
 
 
 CVersionAPI& CSplign::s_GetVersion(void)
@@ -601,10 +603,12 @@ double CSplign::GetCompartmentPenalty( void ) const
     return m_CompartmentPenalty;
 }
 
-bool CSplign::x_IsInGap(THit::TCoord pos)
+bool CSplign::x_IsInGap(size_t pos)
 {
     if( pos+1 == 0 || pos >= m_genomic.size()  ) return true;//outside genome boundaries
-    if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  pos, 1, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) {//gap
+    TSeqPos pos1 = Convert(pos);
+    if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),
+        pos1, 1, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) {//gap
         return true;
     }
     return false;
@@ -1191,15 +1195,15 @@ void CSplign::Run(THitRefs* phitrefs)
     }
     
     // iterate through compartments
-    const THit::TCoord min_singleton_idty_final (
+    const THit::TCoord min_singleton_idty_final (Convert(
                        min(size_t(m_MinSingletonIdty * mrna_size),
-                           m_MinSingletonIdtyBps));
+                           m_MinSingletonIdtyBps)));
 
     CCompartmentAccessor<THit> comps (THit::TCoord(m_CompartmentPenalty * mrna_size),
                                       THit::TCoord(m_MinCompartmentIdty * mrna_size),
                                       min_singleton_idty_final,
                                       true);
-    comps.SetMaxIntron(m_MaxIntron);
+    comps.SetMaxIntron(Convert(m_MaxIntron));
      if( GetTestType() == kTestType_20_28 ||  GetTestType() == kTestType_20_28_plus ) {
          comps.Run(hitrefs.begin(), hitrefs.end(), GetScope());
      } else {
@@ -1234,7 +1238,7 @@ void CSplign::Run(THitRefs* phitrefs)
         }
 
         // compartments share the space between them
-        size_t smin (0), smax (kMax_UInt);
+        THit::TCoord smin (0), smax (kMax_UInt);
         bool same_strand (false);
 
         const THit::TCoord* box (comps.GetBox(0));
@@ -1302,8 +1306,8 @@ bool CSplign::AlignSingleCompartment(CRef<objects::CSeq_align> compartment,
                                      SAlignedCompartment* result)
 {
     const CRef<CSeq_loc> seqloc (compartment->GetBounds().front());
-    const size_t subj_min (seqloc->GetStart(eExtreme_Positional));
-    const size_t subj_max (seqloc->GetStop(eExtreme_Positional));
+    const THit::TCoord subj_min (seqloc->GetStart(eExtreme_Positional));
+    const THit::TCoord subj_max (seqloc->GetStop(eExtreme_Positional));
 
     THitRefs hitrefs;
     ITERATE(CSeq_align_set::Tdata, ii, compartment->GetSegs().GetDisc().Get()) {
@@ -1314,7 +1318,8 @@ bool CSplign::AlignSingleCompartment(CRef<objects::CSeq_align> compartment,
 
 
 bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
-                                     size_t subj_min, size_t subj_max,
+                                     THit::TCoord  subj_min,
+                                     THit::TCoord  subj_max,
                                      SAlignedCompartment* result)
 {
     m_mrna.resize(0);
@@ -1380,14 +1385,14 @@ bool CSplign::IsPolyA(const char * seq, size_t polya_start, size_t dim) {
         if(seq[i] == 'A') ++cnt;
     }
     if(cnt >= (dim - polya_start)*kMinPercAInPolya) return true;
-    return false;
+     return false;
 }
 
 // naive polya detection; sense direction assumed
 size_t CSplign::s_TestPolyA(const char * seq, size_t dim, size_t cds_stop)
 {
     const size_t kMaxNonA (3), kMinAstreak (5);
-    int i (dim - 1), i0 (dim);
+    Int8 i (dim - 1), i0 (dim);
     for(size_t count_non_a (0), astreak (0); i >= 0 && count_non_a < kMaxNonA; --i) {
 
         if(seq[i] != 'A') {
@@ -1439,7 +1444,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eNoHits, g_msg_NoHitsAfterFiltering);
         }
     
-        const size_t mrna_size (m_mrna.size());
+        const TSeqPos mrna_size (Convert(m_mrna.size()));
     
         if(m_strand == false) {
         
@@ -1456,9 +1461,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             }
         }
         
-        m_polya_start = m_nopolya?
+        m_polya_start = Convert(m_nopolya?
             kMax_UInt:
-            s_TestPolyA(&m_mrna_polya.front(), m_mrna_polya.size(), m_cds_stop);
+            s_TestPolyA(&m_mrna_polya.front(), m_mrna_polya.size(), m_cds_stop));
     
         // cleave off hits beyond polya
         if(m_polya_start < kMax_UInt) {
@@ -1522,10 +1527,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         const bool ctg_strand (phitrefs->front()->GetSubjStrand());
 
         // m1: estimate terminal genomic extents based on uncovered end sizes
-        const THit::TCoord extent_left_m1 (x_GetGenomicExtent(qmin));
+        const THit::TCoord extent_left_m1 (Convert(x_GetGenomicExtent(qmin)));
         const THit::TCoord rspace   ((m_polya_start < kMax_UInt?
                                       m_polya_start: mrna_size) - qmax - 1 );
-        const THit::TCoord extent_right_m1 (x_GetGenomicExtent(rspace));
+        const THit::TCoord extent_right_m1 (Convert(x_GetGenomicExtent(rspace)));
         
         // m2: estimate genomic extents using compartment hits
         THit::TCoord fixed_left (kMaxCoord / 2), fixed_right(fixed_left);
@@ -1614,7 +1619,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                     for(;smit; ++smit) {
                         if(smit.GetType() == CSeqMap::eSeqGap) {
                             CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                            if(slit && slit->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
+                            if(slit && slit->GetBridgeability() == CSeq_literal::e_NotBridgeable) {
                                 TSeqPos pos = smit.GetEndPosition();//exclusive 
                                 _ASSERT( smin + pos <= hitmin );
                                 smin += pos;
@@ -1633,7 +1638,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                     for(;smit; ++smit) {
                         if(smit.GetType() == CSeqMap::eSeqGap) {
                             CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                            if(slit && slit->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
+                            if(slit && slit->GetBridgeability() == CSeq_literal::e_NotBridgeable) {
                                 TSeqPos pos = smit.GetPosition();
                                 _ASSERT( hitmax + pos < smax );
                                 smax = hitmax + pos;
@@ -1651,7 +1656,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                        smin, smax, true, true, ctg_strand);
 
         // adjust smax if beyond the end
-        const THit::TCoord ctg_end (smin + m_genomic.size());
+        THit::TCoord genomic_size = Convert(m_genomic.size());
+        const THit::TCoord ctg_end (smin + genomic_size);
         if(smax >= ctg_end) {
             smax = ctg_end > 0? ctg_end - 1: 0;
         }
@@ -1709,12 +1715,12 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         //trim holes to codons
         if( GetTrimToCodons() ) {
             CSplignTrim trim(&m_genomic.front(), (int)m_genomic.size(), m_aligner, m_MaxPartExonIdentDrop);
-            trim.TrimHolesToCodons(m_segments, m_mrna_bio_handle, m_strand, m_mrna.size());
+            trim.TrimHolesToCodons(m_segments, m_mrna_bio_handle, m_strand, mrna_size);
         }
 
 		//look for the last exon
-        int last_exon = -1;
-        for(int i = m_segments.size(); i > 0;  ) {
+        Int8 last_exon = -1;
+        for(Int8 i = m_segments.size(); i > 0;  ) {
 			--i;
             if(m_segments[i].m_exon) {
                 last_exon = i;
@@ -1792,7 +1798,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         m_segments.resize(last_exon + 1);
 
         //check if the rest is polya or a gap
-        THit::TCoord coord = s.m_box[1] + 1;
+        THit::TCoord coord = Convert(s.m_box[1]);
+        ++coord;
         m_polya_start = kMax_UInt;
         if(coord < mrna_size ) {//there is unaligned flanking part of mRNA 
             if(!m_nopolya && IsPolyA(&m_mrna_polya.front(), coord, m_mrna_polya.size())) {//polya
@@ -1803,13 +1810,13 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                          ! x_IsInGap( s.m_box[3] + 1) ) {//a sequence gap, but not a genomic gap, cut to splice 
                         int seq1_pos = (int)s.m_box[1];
                         int seq2_pos = (int)s.m_box[3];
-                        int det_pos = s.m_details.size() - 1;
-                        int min_det_pos = det_pos - kMaxCutToSplice;
+                        size_t det_pos = s.m_details.size() - 1;
+                        size_t min_det_pos = det_pos - kMaxCutToSplice;
                         int min_pos = (int)s.m_box[0] + 8;//exon should not be too short
                         while(seq1_pos >= min_pos && det_pos >= min_det_pos) {
                             if( (size_t)(seq2_pos + 2) < m_genomic.size() && s.m_details[det_pos] == 'M' && 
                                    toupper(m_genomic[seq2_pos+1]) == 'G' &&  toupper(m_genomic[seq2_pos+2]) == 'T'  ) {//GT point
-                                if( (size_t)det_pos + 1 < s.m_details.size() ) {//resize
+                                if( det_pos + 1 < s.m_details.size() ) {//resize
                                     s.m_box[1] = seq1_pos;
                                     s.m_box[3] = seq2_pos;
                                     s.m_details.resize(det_pos + 1);
@@ -1865,7 +1872,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             }
         }
 
-        const THit::TCoord min_singleton_idty_final (
+        const size_t min_singleton_idty_final (
                  min(size_t(m_MinSingletonIdty * qmax), m_MinSingletonIdtyBps));
 
         if(mcount < min_singleton_idty_final) {
@@ -2170,8 +2177,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             TSegment *last_exon = NULL;
             for(size_t k0 = 0; k0 < segments.size(); ++k0) {                
                 TSegment& s = segments[k0];
-                int ext_len = 0;
-                int ext_max = 0;
+                Int8 ext_len = 0;
+                Int8 ext_max = 0;
                 if(s.m_exon) {
                     if(first_exon) {
                         first_exon = false;
@@ -2273,8 +2280,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 ++k0;
             }
 
-            int k1 (segments.size() - 1);
-            while(k1 >= int(k0)) {
+            size_t k1 (segments.size() - 1);
+            while(k1 >= k0) {
 
                 TSegment& s (segments[k1]);
                 if(s.m_exon) {
@@ -2317,7 +2324,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         //partial trimming, exons near <GAP>s, terminal exons are trimmed already
-        for(size_t k0 = 0; k0 < segments.size(); ++k0) {
+        for(unsigned int k0 = 0; k0 < segments.size(); ++k0) {
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
                     if(is_test) {
@@ -2624,7 +2631,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             // find the two rightmost exons
             size_t exon_count (0);
             TSegment* term_segs[] = {0, 0};
-            for(int i = segments.size() - 1; i >= 0; --i) {
+            for(Int8 i = segments.size() - 1; i >= 0; --i) {
                 TSegment& s = segments[i];
                 if(s.m_exon) {
                     term_segs[exon_count] = &s;
@@ -2727,7 +2734,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     last_exon_index = (int)k0;
                 }
             }
-            for(size_t k0 = 0; k0 < sdim; ++k0) {                
+            for(unsigned int k0 = 0; k0 < sdim; ++k0) {                
                 TSegment& s = m_segments[k0];
                 bool cut_from_left = false;
                 bool cut_from_right = false;
@@ -2814,13 +2821,13 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     if(cut_from_right) {
                         int seq1_pos = (int)s.m_box[1];
                         int seq2_pos = (int)s.m_box[3];
-                        int det_pos = s.m_details.size() - 1;
-                        int min_det_pos = det_pos - kMaxCutToSplice;
+                        size_t det_pos = s.m_details.size() - 1;
+                        size_t min_det_pos = det_pos - kMaxCutToSplice;
                         int min_pos = (int)s.m_box[0] + 8;//exon should not be too short
                         while(seq1_pos >= min_pos && det_pos >= min_det_pos) {
                             if( (size_t)(seq2_pos + 2) < m_genomic.size() && s.m_details[det_pos] == 'M' && 
                                    toupper(Seq2[seq2_pos+1]) == 'G' &&  toupper(Seq2[seq2_pos+2]) == 'T'  ) {//GT point
-                                if( (size_t)det_pos + 1 < s.m_details.size() ) {//resize
+                                if( det_pos + 1 < s.m_details.size() ) {//resize
                                     s.m_box[1] = seq1_pos;
                                     s.m_box[3] = seq2_pos;
                                     s.m_details.resize(det_pos + 1);
@@ -2895,7 +2902,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         size_t min_hole_len = GetMinHoleLen();
         if( min_hole_len > 0) { //find small holes and stich
             trim.AdjustGaps(m_segments);//make sure there is no adjacent gaps
-            size_t pos1 = 0, pos2 = 2;
+            TSeqPos pos1 = 0, pos2 = 2;
             for(; pos2 < m_segments.size(); ++pos1, ++pos2) {
                 if( m_segments[pos1].m_exon && !m_segments[pos1+1].m_exon && m_segments[pos2].m_exon &&
                     m_segments[pos1].m_box[1] + min_hole_len >= m_segments[pos2].m_box[0] &&
@@ -2967,7 +2974,7 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
         const TSegment& s (*ii);
         if(s.m_exon) {
             
-            Uint4 a, b;
+            size_t a, b;
             if(s.m_box[0] <= s.m_box[1]) {
                 a = s.m_box[0];
                 b = s.m_box[1];
@@ -3071,20 +3078,20 @@ bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
 }
 
 
-Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len, Uint4 max_ext) const 
+size_t CSplign::x_GetGenomicExtent(const size_t query_len, size_t max_ext) const 
 {
     if(max_ext == 0) {
         max_ext = m_max_genomic_ext;
     }
 
-    Uint4 rv (0);
+    size_t rv (0);
     if(query_len >= kNonCoveredEndThreshold) {
         rv = m_max_genomic_ext;
     }
     else {
         const double k (pow(kNonCoveredEndThreshold, - 1. / kPower) * max_ext);
         const double drv (k * pow(query_len, 1. / kPower));
-        rv = Uint4(drv);
+        rv = size_t(drv);
     }
 
     return rv;
@@ -3437,8 +3444,8 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
         int qinc (qstrand? +1: -1);
         int frame (kFrame_not_set);
         size_t aln_length_cds (0);
-        size_t matches_frame[] = {0, 0, 0, 0, 0};
-        const int cds_start (cds.first), cds_stop (cds.second);
+        int matches_frame[] = {0, 0, 0, 0, 0};
+        const Int8 cds_start (cds.first), cds_stop (cds.second);
         for(string::const_iterator ie (xcript.end()), ii(xcript.begin());
             ii != ie && frame != kFrame_end; ++ii)
         {

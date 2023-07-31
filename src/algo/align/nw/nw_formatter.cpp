@@ -762,7 +762,7 @@ int CNWFormatter::SSegment::CanExtendLeft(const vector<char>& mrna, const vector
 }
 
 //do extend, 100% identity in extension is implied
-void CNWFormatter::SSegment::ExtendRight(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner)
+void CNWFormatter::SSegment::ExtendRight(const vector<char>& mrna, const vector<char>& genomic, Int8 ext_len, const CNWAligner* aligner)
 {
     if(ext_len > 0) {
         m_box[1] += ext_len;
@@ -779,7 +779,7 @@ void CNWFormatter::SSegment::ExtendRight(const vector<char>& mrna, const vector<
 }
 
 //do extend, 100% identity in extension is implied
-void CNWFormatter::SSegment::ExtendLeft(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner)
+void CNWFormatter::SSegment::ExtendLeft(const vector<char>& mrna, const vector<char>& genomic, Int8 ext_len, const CNWAligner* aligner)
 {
     if(ext_len > 0) {
         m_box[0] -= ext_len;
