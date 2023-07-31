@@ -107,9 +107,10 @@ CCleanup::~CCleanup(void)
 
 void CCleanup::SetScope(CScope* scope)
 {
-    m_Scope.Reset(new CScope(*(CObjectManager::GetInstance())));
     if (scope) {
-        m_Scope->AddScope(*scope);
+        m_Scope.Reset(scope);
+    } else {
+        m_Scope.Reset(new CScope(*(CObjectManager::GetInstance())));
     }
 }
 
