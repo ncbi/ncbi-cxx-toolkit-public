@@ -35744,7 +35744,7 @@ $as_echo_n "checking for libcppkafka$in_path... " >&6; }
 if ${ncbi_cv_lib_cppkafka+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  CPPFLAGS="$LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$BOOST_INCLUDE $LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE $orig_CPPFLAGS"
        LIBS="$CPPKAFKA_LIBS  $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -35779,7 +35779,7 @@ $as_echo "$ncbi_cv_lib_cppkafka" >&6; }
     CPPKAFKA_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}CPPKAFKA"; WithPackagesSep=" "
-    CPPKAFKA_INCLUDE="$LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE"
+    CPPKAFKA_INCLUDE="$BOOST_INCLUDE $LIBRDKAFKA_INCLUDE $CPPKAFKA_INCLUDE"
 
 $as_echo "#define HAVE_LIBCPPKAFKA 1" >>confdefs.h
 
