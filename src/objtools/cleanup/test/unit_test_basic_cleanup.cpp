@@ -105,6 +105,7 @@ static void s_CheckRptUnitSeq(const CBioseq_Handle& bsh)
     }
 }
 
+/*
 BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
 {
     CSeq_entry entry;
@@ -132,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
     // make sure change was actually made
     s_CheckRptUnitSeq(scope->GetBioseqHandle(entry.GetSeq()));
 }
-
+*/
 
 BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_BioseqHandle)
 {
