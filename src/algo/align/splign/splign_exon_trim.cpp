@@ -45,7 +45,7 @@ USING_SCOPE(objects);
 //check if the exon segments[p] abuts another exon in genomic coordinates, right side
 bool CSplignTrim::HasAbuttingExonOnRight(TSegs segments, TSeqPos p)
 {
-    TSeqPos len = segments.size();
+    size_t len = segments.size();
     TSeqPos np = p+1;
     for( ; np < len; ++np) {
         if( segments[np].m_exon ) break;
@@ -144,7 +144,7 @@ void CSplignTrim::JoinExons(TSegs& segments, TSeqPos p1, TSeqPos p2)
 
 //trims exons around internal alignment gaps to complete codons
 //if CDS can be retrieved from bioseq
-void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_handle, bool mrna_strand, size_t mrna_len)
+void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_handle, bool mrna_strand, TSeqPos mrna_len)
 {
 
     if( mrna_bio_handle ) {
@@ -173,10 +173,10 @@ void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_ha
             if( segments[pos1].m_exon && !segments[pos1+1].m_exon && segments[pos2].m_exon ) {//candidate for trimming
                 
                 //trim left exon    
-                TSeqPos p1 = segments[pos1].m_box[1];
+                size_t p1 = segments[pos1].m_box[1];
                 ITERATE(vector<TSeqRange>, it, tr) {
                     if( p1 >= it->GetFrom() && p1 <= it->GetTo() ) {
-                        TSeqPos cut_mrna_len = (p1 + 1 - it->GetFrom()) % 3, cnt = 0;
+                        size_t cut_mrna_len = (p1 + 1 - it->GetFrom()) % 3, cnt = 0;
                         string transcript = segments[pos1].m_details;
                         int i = (int)transcript.size() - 1;
                         for(; i>=0; --i) {
@@ -194,10 +194,10 @@ void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_ha
                 }
                 
                 //trim right exon   
-                TSeqPos p2 =  segments[pos2].m_box[0];
+                size_t p2 =  segments[pos2].m_box[0];
                 ITERATE(vector<TSeqRange>, it, tr) {
                     if( p2 >= it->GetFrom() && p2 <= it->GetTo() ) {
-                        TSeqPos cut_mrna_len = ( 3 - ( p2 - it->GetFrom()) % 3  ) %3, cnt = 0;
+                        size_t cut_mrna_len = ( 3 - ( p2 - it->GetFrom()) % 3  ) %3, cnt = 0;
                         string transcript = segments[pos2].m_details;
                         int i = 0;
                         for( ; i < (int)transcript.size(); ++i) {
@@ -452,7 +452,7 @@ void CSplignTrim::Cut50FromLeft(TSeg& s)
             rirs_max = rirs;
         }
     }
-    int len = rirs1 - rirs_max - 1;
+    size_t len = rirs1 - rirs_max - 1;
     if(len > 0) {
         CutFromLeft(len, s);
     }    
@@ -476,7 +476,7 @@ void CSplignTrim::Cut50FromRight(TSeg& s)
             irs_max = irs;
         }
     }
-    int len = irs1 - irs_max - 1;
+    size_t len = irs1 - irs_max - 1;
     if(len > 0) {
         CutFromRight(len, s);
     }

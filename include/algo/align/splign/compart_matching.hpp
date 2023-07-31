@@ -175,8 +175,8 @@ public:
     void   SetMinSingletonIdty(const double & idty) { m_MinSingletonIdty = idty; }
     double GetMinSingletonIdty(void) const { return m_MinSingletonIdty; }
 
-    void SetMaxIntron(const size_t max_intron) { m_MaxIntron = max_intron; }
-    size_t GetMaxIntron(void) const { return m_MaxIntron; }
+    void SetMaxIntron(const TSeqPos max_intron) { m_MaxIntron = max_intron; }
+    TSeqPos GetMaxIntron(void) const { return m_MaxIntron; }
 
     /// Set or clear the "hits only" mode.
     /// @param hits_only
@@ -354,7 +354,7 @@ private:
 
     double                    m_MinCompartmentIdty, m_Penalty, m_MinSingletonIdty;
 
-    size_t                    m_MaxIntron;
+    TSeqPos                   m_MaxIntron;
 
     string                    m_lbn_q;
     string                    m_lbn_s;
@@ -426,13 +426,13 @@ private:
                             size_t  idx_stop,
                             size_t* pidx_compacted);
 
-    bool   x_IsMatch(Uint4 q, Uint4 s) const;
+    bool   x_IsMatch(Uint8 q, Uint8 s) const;
 
     Int8   x_ExtendHit(const Int8 & left_limit,
                        const Int8 & right_limit,
                        THitRef hitref);
     
-    static bool s_IsLowComplexity(Uint4 key);
+    static bool s_IsLowComplexity(size_t key);
 };
 
 

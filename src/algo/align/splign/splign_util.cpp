@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-void CleaveOffByTail(CSplign::THitRefs* phitrefs, size_t polya_start)
+void CleaveOffByTail(CSplign::THitRefs* phitrefs, TSeqPos polya_start)
 {
     const size_t hit_dim = phitrefs->size();
 

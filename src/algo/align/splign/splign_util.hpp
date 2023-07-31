@@ -39,7 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-void   CleaveOffByTail(CSplign::THitRefs* hitrefs, size_t polya_start);
+void   CleaveOffByTail(CSplign::THitRefs* hitrefs, TSeqPos polya_start);
 
 struct SCompliment
 {

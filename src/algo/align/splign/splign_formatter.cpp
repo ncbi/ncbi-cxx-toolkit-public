@@ -54,6 +54,8 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include <util/value_convert.hpp>
+
 #include <algorithm>
 
 #include "splign_util.hpp"
@@ -565,10 +567,10 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       CDense_seg& ds = sa->SetSegs().SetDenseg();
 
       const size_t* box = &(*(boxes.begin() + i*4));
-      const size_t query_start = box[0];
+      const TSeqPos query_start = Convert(box[0]);
       ENa_strand query_strand = box[0] <= box[1]? eNa_strand_plus:
           eNa_strand_minus;
-      const size_t subj_start = box[2];
+      const TSeqPos subj_start = Convert(box[2]);
       ENa_strand subj_strand = box[2] <= box[3]? eNa_strand_plus:
           eNa_strand_minus;
       ds.FromTranscript(query_start, query_strand, subj_start, subj_strand,
@@ -660,12 +662,14 @@ const
             sseg.SetGenomic_strand((*ii).m_SubjStrand? eNa_strand_plus:
                                    eNa_strand_minus);
 
-            if((*ii).m_QueryLen > 0) {
-                sseg.SetProduct_length((*ii).m_QueryLen);
+            TSeqPos query_len = Convert((*ii).m_QueryLen);
+            TSeqPos polya = Convert((*ii).m_PolyA);
+            if(query_len > 0) {
+                sseg.SetProduct_length(query_len);
             }
 
-            if((*ii).m_PolyA > 0 && (*ii).m_PolyA < (*ii).m_QueryLen) {
-                sseg.SetPoly_a((*ii).m_PolyA);
+            if(polya > 0 && polya < query_len) {
+                sseg.SetPoly_a(polya);
             }
 
             CSpliced_seg::TExons & exons (sseg.SetExons());
@@ -678,21 +682,21 @@ const
 
                     TSeqPos qmin, qmax, smin, smax;
                     if(seg.m_box[0] <= seg.m_box[1]) {
-                        qmin = seg.m_box[0];
-                        qmax = seg.m_box[1];
+                        qmin = Convert(seg.m_box[0]);
+                        qmax = Convert(seg.m_box[1]);
                     }
                     else {
-                        qmax = seg.m_box[0];
-                        qmin = seg.m_box[1];
+                        qmax = Convert(seg.m_box[0]);
+                        qmin = Convert(seg.m_box[1]);
                     }
 
                     if(seg.m_box[2] <= seg.m_box[3]) {
-                        smin = seg.m_box[2];
-                        smax = seg.m_box[3];
+                        smin = Convert(seg.m_box[2]);
+                        smax = Convert(seg.m_box[3]);
                     }
                     else {
-                        smax = seg.m_box[2];
-                        smin = seg.m_box[3];
+                        smax = Convert(seg.m_box[2]);
+                        smin = Convert(seg.m_box[3]);
                     }
 
                     exon->SetProduct_start().SetNucpos(qmin);
@@ -759,7 +763,7 @@ const
                         }
 
                         char cur (seg.m_details[0]);
-                        size_t count (0);
+                        unsigned count (0);
                         ITERATE(string, ii, seg.m_details) {
                             
                             if(cur != *ii) {

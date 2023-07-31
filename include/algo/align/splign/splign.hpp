@@ -305,7 +305,7 @@ public:
 
     // align single compartment within given genomic bounds
     bool AlignSingleCompartment(THitRefs* hitrefs,
-                                size_t range_left, size_t range_right,
+                                THit::TCoord range_left, THit::TCoord range_right,
                                 SAlignedCompartment* result);
 
     // align single ASN.1 compartment
@@ -447,7 +447,7 @@ protected:
     // alignment map
     struct SAlnMapElem {
         size_t m_box [4];
-        int    m_pattern_start, m_pattern_end;
+        Int8   m_pattern_start, m_pattern_end;
     };
     vector<SAlnMapElem>   m_alnmap;
 
@@ -458,7 +458,7 @@ protected:
     objects::CBioseq_Handle        m_mrna_bio_handle;
     vector<char>          m_mrna;
     bool                  m_strand;
-    size_t                m_polya_start;
+    TSeqPos               m_polya_start;
     bool                  m_nopolya;
     vector<char>          m_mrna_polya; // unmasked version used only for polya calcs
 
@@ -506,7 +506,7 @@ protected:
     void   x_SplitQualifyingHits(THitRefs* phitrefs);
     void   x_SetPattern(THitRefs* hitrefs);
     bool   x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const;
-    Uint4  x_GetGenomicExtent(const Uint4 query_extent, Uint4 max_ext = 0) const;
+    size_t x_GetGenomicExtent(const size_t query_extent, size_t max_ext = 0) const;
     void   x_FinalizeAlignedCompartment(SAlignedCompartment & ac);
 
     void   x_LoadSequence(vector<char>* seq, 
@@ -523,7 +523,7 @@ protected:
     //gap information comes from ASN (CSeqMap).
     // fasta of LDS does not support gap info. If sequence comes from FASTA file ir LDS, the method will always return 'false'
     //coordinates are resolved, meaning that 'm_genomic' coordinates should be used.
-    bool x_IsInGap(THit::TCoord pos);
+    bool x_IsInGap(size_t pos);
 
     static THitRef sx_NewHit(THit::TCoord q0, THit::TCoord q,
                              THit::TCoord s0, THit::TCoord s);
