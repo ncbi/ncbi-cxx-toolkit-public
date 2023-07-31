@@ -668,6 +668,12 @@ string CDbtag::GetUrl(const string & genus,
         tag += "%20%5BUniSTS%20ID%5D";
         break;
 
+    case eDbtagType_dbSNP:
+        if (NStr::StartsWith(tag, "rs", NStr::eNocase)) {
+            tag = tag.substr(2);
+        }
+        break;
+
     case eDbtagType_dbSTS:
         break;
 
