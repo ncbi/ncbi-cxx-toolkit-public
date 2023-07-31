@@ -1180,6 +1180,19 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
     } else {
         AddString( *settings, "STANDARD_C_PLUS_PLUS_LIBRARY_TYPE", "static");
     }
+
+    const CMsvcMetaMakefile& metamake( GetApp().GetMetaMakefile());
+    string extra = metamake.GetCompilerOpt("PtbExtensions", cfg);
+    if (!extra.empty()) {
+        list<string> ex_list;
+        NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+        for (const string& key : ex_list) {
+            string value = metamake.GetCompilerOpt(key,cfg);
+            if (!value.empty()) {
+                AddString( *settings, key, value);
+            }
+        }
+    }
 }
 
 void CMacProjectGenerator::CreateProjectBuildSettings(
@@ -1227,6 +1240,18 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "INSTALL_PATH", proj_dir + libs_out_install);
         AddString( *settings, "OBJROOT", objroot);
 
+        string extra = metamake.GetLibrarianOpt("PtbExtensions", cfg);
+        if (!extra.empty()) {
+            list<string> ex_list;
+            NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+            for (const string& key : ex_list) {
+                string value = metamake.GetLibrarianOpt(key,cfg);
+                if (!value.empty()) {
+                    AddString( *settings, key, value);
+                }
+            }
+        }
+
     } else if (prj.m_ProjType == CProjKey::eDll) {
 
         string bld_out(libs_out);
@@ -1246,6 +1271,18 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
         AddString( *settings, "EXECUTABLE_PREFIX", "lib");
 
+        string extra = metamake.GetLinkerOpt("PtbExtensions_dylib", cfg);
+        if (!extra.empty()) {
+            list<string> ex_list;
+            NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+            for (const string& key : ex_list) {
+                string value = metamake.GetLinkerOpt(key,cfg);
+                if (!value.empty()) {
+                    AddString( *settings, key, value);
+                }
+            }
+        }
+
     } else if (prj.m_ProjType == CProjKey::eApp) {
 
         AddLinkerSetting( *settings, cfg, "GCC_INLINES_ARE_PRIVATE_EXTERN");
@@ -1257,6 +1294,18 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "OBJROOT", objroot);
 
         AddArray( *settings, "LIBRARY_SEARCH_PATHS", lib_paths);
+
+        string extra = metamake.GetLinkerOpt("PtbExtensions_exe", cfg);
+        if (!extra.empty()) {
+            list<string> ex_list;
+            NStr::Split(extra, LIST_SEPARATOR, ex_list, NStr::fSplit_Tokenize);
+            for (const string& key : ex_list) {
+                string value = metamake.GetLinkerOpt(key,cfg);
+                if (!value.empty()) {
+                    AddString( *settings, key, value);
+                }
+            }
+        }
     }
     if (prj.m_ProjType != CProjKey::eDataSpec && prj.m_ProjType != CProjKey::eMsvc) {
         AddString( *settings, "MACH_O_TYPE", GetMachOType(prj));
