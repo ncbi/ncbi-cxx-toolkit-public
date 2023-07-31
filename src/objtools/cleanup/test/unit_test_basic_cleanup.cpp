@@ -163,6 +163,65 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_BioseqHandle)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_SeqAnnot)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanRptUnitSeq);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    scope->AddTopLevelSeqEntry(entry);
+
+    CCleanup cleanup;
+    cleanup.SetScope (scope);
+    auto& annot = *(entry.SetSeq().SetAnnot().front());
+    auto changes = cleanup.BasicCleanup(annot);
+    // look for expected change flags
+    auto changes_str = changes->GetDescriptions();
+    if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
+        for (size_t i = 2; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+    }
+    // make sure change was actually made
+    s_CheckRptUnitSeq(scope->GetBioseqHandle(entry.GetSeq()));
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_SeqAnnotHandle)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanRptUnitSeq);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    scope->AddTopLevelSeqEntry(entry);
+
+    CCleanup cleanup;
+    auto& annot = *(entry.SetSeq().SetAnnot().front());
+    auto sah = scope->GetSeq_annotHandle(annot);
+    auto changes = cleanup.BasicCleanup(sah);
+    // look for expected change flags
+    auto changes_str = changes->GetDescriptions();
+    if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
+        for (size_t i = 2; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+    }
+    // make sure change was actually made
+    s_CheckRptUnitSeq(scope->GetBioseqHandle(entry.GetSeq()));
+}
+
 const string sc_TestEntryCleanRptUnitSeq = "\
 Seq-entry ::= seq {\
           id {\
