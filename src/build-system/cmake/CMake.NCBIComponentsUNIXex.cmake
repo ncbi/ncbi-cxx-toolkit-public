@@ -312,9 +312,9 @@ NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
 NCBIcomponent_report(PNG)
 
 #############################################################################
-# GIF
-NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
-NCBIcomponent_report(GIF)
+# GIF (temporarily disabled)
+# NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
+# NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
