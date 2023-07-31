@@ -404,6 +404,9 @@ private:
                             optional<CSeq_id::ESNPScaleLimit> &  snp_scale_limit);
 
 private:
+    void x_FixIntrospectionVersion(void);
+    void x_FixIntrospectionBuildDate(void);
+
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
                                  const psg_time_point_t &  now,
                                  const string &  err_msg);
