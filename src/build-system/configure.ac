@@ -9050,7 +9050,7 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(cppkafka,
   [AC_LANG_PROGRAM([[@%:@include <cppkafka/configuration.h>]],
       [[cppkafka::Configuration cfg; cfg.set("foo", "bar");]])],
-  [$LIBRDKAFKA_LIBS], [], [$LIBRDKAFKA_INCLUDE])
+  [$LIBRDKAFKA_LIBS], [], [$BOOST_INCLUDE $LIBRDKAFKA_INCLUDE])
 if test "$with_cppkafka" != no -a \
      -f "$CPPKAFKA_PATH/lib$bit64_sfx/libcppkafka-static.a"; then
    CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static $LIBRDKAFKA_STATIC_LIBS"
