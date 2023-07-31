@@ -1286,9 +1286,9 @@ void CTbl2AsnApp::MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, 
             CFlatFileConfig::eMode_Entrez);
 
     if (submit.Empty())
-        ffgenerator.Generate(seh, ostream);
+        ffgenerator.Generate(seh, ostream, false);
     else
-        ffgenerator.Generate(*submit, seh.GetScope(), ostream);
+        ffgenerator.Generate(*submit, seh.GetScope(), ostream, false);
 }
 
 void CTbl2AsnApp::SetupAndOpenDiagnosticStreams()
@@ -1479,7 +1479,7 @@ void CTbl2AsnApp::xProcessOneFile(
 
     if (!annotMap.empty()) {
         for (auto entry : annotMap) {
-            auto it = m_secret_files->m_AnnotMap.find(entry.first);    
+            auto it = m_secret_files->m_AnnotMap.find(entry.first);
             if (it == m_secret_files->m_AnnotMap.end()) {
                 m_secret_files->m_AnnotMap.emplace(entry.first, entry.second);
             }
@@ -1487,7 +1487,7 @@ void CTbl2AsnApp::xProcessOneFile(
                 it->second.splice(it->second.end(), entry.second);
             }
         }
-        annotMap.clear(); 
+        annotMap.clear();
     }
     do
     {
@@ -1752,24 +1752,24 @@ void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
         m_reader->AddAnnots(m_global_files.m_AnnotMap, m_global_files.m_MatchedAnnots, entry.SetSeq());
         if (m_secret_files) {
             m_reader->AddAnnots(m_secret_files->m_AnnotMap, m_secret_files->m_MatchedAnnots, entry.SetSeq());
-        }    
+        }
         return;
     }
-    
+
     if (!entry.GetSet().IsSetSeq_set()) {
         return;
     }
 
     // If this is a nuc-prot set, only add annotations to the nucleotide sequence
-    if (entry.GetSet().IsSetClass() && 
+    if (entry.GetSet().IsSetClass() &&
         entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
-    { // We expect the nucleotide sequence to appear first, but this will work even if it doesn't.  
+    { // We expect the nucleotide sequence to appear first, but this will work even if it doesn't.
         for (auto pSubEntry : entry.SetSet().SetSeq_set()) {
             if (pSubEntry && pSubEntry->IsSeq() && pSubEntry->GetSeq().IsNa()) {
                 AddAnnots(*pSubEntry);
                 return;
             }
-        }   
+        }
     }
 
     for (auto pSubEntry : entry.SetSet().SetSeq_set()) {
