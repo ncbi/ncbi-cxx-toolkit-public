@@ -27,3 +27,18 @@ Improvements:
 * No longer prints warning message about all sequences in one cluster
 Bug fixes:
 * Fixed clustering results for sequences with ambiguous amino acids
+
+August 4, 2023
+3.0.0 release
+New features:
+* Usage reporting - Help improve COBALT by sharing limited information about your executions. Details on the information collected, how it is used, and how to opt-out can be found here: https://www.ncbi.nlm.nih.gov/books/NBK563686/. To opt out set the environment variable BLAST_USAGE_REPORT=false.
+Improvements:
+* More accurate alignments
+* Updated Conserved Domain Database (CDD), based on CDD release version 3.20
+* New CDD with adaptive word threshold, which results in faster RPSBLAST searches and multiple alignment computation.
+* Reads CDD in version 5 format (BLASTDBv5), more about BLAST database version 5 in https://ftp.ncbi.nlm.nih.gov/blast/db/v5/blastdbv5.pdf
+* Query clustering (the -cluster option) is turned off by default
+* The default CDD search E-value cutoff (the -rps_evalue option) is now 0.01
+Bug fixes:
+* Fixed memory leaks
+* COBALT now shows available scoring matrices when an incorrect one is requested
