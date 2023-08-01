@@ -4016,6 +4016,7 @@ KZNSB	s	KwaZulu-Natal Sharks Board
 L	sb	National Herbarium of the Netherlands (NHN)			
 LA	s	University of California			
 LABCC	c	Lactic acid bacteria culture collection			
+LABIOPAR	s	Laboratorio de Biologia de Parasitos e de Doenca de Chagas			
 LAC	s	Xian Institute of Lacquer			
 LACM	s	Natural History Museum of Los Angeles County			
 LACM:Crustacea	s	Natural History Museum of Los Angeles County, Crustacea Department			
