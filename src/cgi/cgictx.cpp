@@ -350,33 +350,34 @@ const string& CCgiContext::GetSelfURL(void) const
         url.SetUrl(caf_url);
         url.GetArgs().clear();
         url.SetFragment(kEmptyStr);
-        m_IsSecure = x_IsSecure(caf_url);
+        m_IsSecure
+            = NStr::EqualNocase(caf_url, 0, 8, "https://")  ||  x_IsSecure();
     } else {
-        m_IsSecure = x_IsSecure(kEmptyStr);
+        m_IsSecure = x_IsSecure();
     }
 
     // Check HTTP_X_FORWARDED_HOST for host:port
     const string& x_fwd_host =
         GetRequest().GetRandomProperty("X_FORWARDED_HOST");
     // Fallback to HTTP_HOST if no HTTP_X_FORWARDED_HOST
-    const string& host_port = x_fwd_host.empty() ? 
-        GetRequest().GetRandomProperty("HOST") : x_fwd_host;
+    const string& host_port = !x_fwd_host.empty() ? x_fwd_host
+        : caf_url.empty() ? GetRequest().GetRandomProperty("HOST") : kEmptyStr;
 
     CTempString host, port;
-    if ( host_port.empty() ) {
-        host = GetRequest().GetProperty(eCgi_ServerName);
-        if ( host.empty() ) {
-            return kEmptyStr;
-        }
-        port = GetRequest().GetProperty(eCgi_ServerPort);
-    } else {
+    if ( !host_port.empty() ) {
         size_t pos = host_port.find(':');
         host = CTempString(host_port, 0, pos != NPOS ? pos : host_port.size());
         port = CTempString(host_port, pos != NPOS? pos + 1 : host_port.size(),
                            host_port.size());
+    } else if ( !caf_url.empty() ) {
+        host = url.GetHost();
+        port = url.GetPort();
+    } else {
+        host = GetRequest().GetProperty(eCgi_ServerName);
+        port = GetRequest().GetProperty(eCgi_ServerPort);
     }
     // Skip port if it's default for the selected scheme
-    if ((m_IsSecure  &&  port == "443")  ||  (!m_IsSecure  &&  port == "80")) {
+    if ((!m_IsSecure  &&  port == "80")  ||  (m_IsSecure  &&  port == "443")) {
         port.clear();
     }
     url.SetHost(host);
@@ -407,14 +408,12 @@ const string& CCgiContext::GetSelfURL(void) const
 }
 
 
-bool CCgiContext::x_IsSecure(const string& url) const
+bool CCgiContext::x_IsSecure(void) const
 {
     return  NStr::EqualNocase
-        (url, 0, 8, "https://")
+        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https")
         ||  NStr::EqualNocase
-        (GetRequest().GetRandomProperty("HTTPS", false), "on")
-        ||  NStr::EqualNocase
-        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https");
+        (GetRequest().GetRandomProperty("HTTPS", false), "on");
 }
 
 
