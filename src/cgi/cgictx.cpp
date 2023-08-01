@@ -417,8 +417,7 @@ bool CCgiContext::x_IsSecure(const string& url) const
         ||  NStr::EqualNocase
         (GetRequest().GetRandomProperty("HTTPS", false), "on")
         ||  NStr::EqualNocase
-        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https")
-        ? eSecure_On : eSecure_Off;
+        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https");
 }
 
 
