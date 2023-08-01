@@ -273,7 +273,7 @@ CScope* scope)
             if (m_Mismatches.size() * 50 <= m_ProtLen) {
                 m_ProblemFlags |= eCDSTranslationProblem_ErroneousException;
             }
-        } else if (!product_replaced) {
+        } else if (!product_replaced && !transcript_or_proteomic) {
             m_ProblemFlags |= eCDSTranslationProblem_UnqualifiedException;
         }
     }
@@ -489,6 +489,9 @@ void CCDSTranslationProblems::x_GetExceptionFlags
     }
     if (NStr::FindNoCase (except_text, "RNA editing") != NPOS) {
         rna_editing = true;
+    }
+    if (NStr::FindNoCase(except_text, "annotated by transcript or proteomic data") != NPOS) {
+        transcript_or_proteomic = true;
     }
 }
 
