@@ -2754,6 +2754,7 @@ CQueryImpl::SetParameter(CTempString   name,
                          ESP_ParamType param_type)
 {
     x_CheckCanWork();
+    m_Context->extra_msg.clear();
 
     EDB_Type var_type = s_ConvertType(type);
     TParamsMap::iterator it = m_Params.find(name);
@@ -2780,6 +2781,7 @@ CQueryImpl::SetNullParameter(CTempString   name,
                              ESP_ParamType param_type)
 {
     x_CheckCanWork();
+    m_Context->extra_msg.clear();
 
     EDB_Type var_type = s_ConvertType(type);
     TParamsMap::iterator it = m_Params.find(name);
@@ -2803,6 +2805,7 @@ CQueryImpl::SetNullParameter(CTempString   name,
 inline void
 CQueryImpl::x_SetOutParameter(const string& name, const CVariant& value)
 {
+    m_Context->extra_msg.clear();
     TParamsMap::iterator it = m_Params.find(name);
     if (it == m_Params.end()) {
         CQuery::CField field(this, new CVariant(value), eSP_InOut);
@@ -2851,6 +2854,7 @@ inline void
 CQueryImpl::ClearParameter(CTempString name)
 {
     x_CheckCanWork();
+    m_Context->extra_msg.clear();
 
     TParamsMap::iterator it = m_Params.find(name);
     if (it != m_Params.end()) {
@@ -2862,6 +2866,7 @@ CQueryImpl::ClearParameter(CTempString name)
 void
 CQueryImpl::x_ClearAllParams(void)
 {
+    m_Context->extra_msg.clear();
     for (auto& p : m_Params) {
         p.second.x_Detach();
     }
@@ -2881,6 +2886,7 @@ CQueryImpl::SetSql(CTempString sql)
 {
     x_CheckCanWork();
 
+    m_Context->extra_msg.clear();
     m_Sql = sql.empty() ? CTempString(" ") : sql;
     m_Executed = false;
     m_IsSP = false;
@@ -2978,6 +2984,7 @@ CQueryImpl::ExecuteSP(CTempString sp, const CTimeout& timeout)
 {
     x_CheckCanWork();
 
+    m_Context->extra_msg.clear();
     m_Sql  = sp;
     m_IsSP = true;
 
