@@ -122,7 +122,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                                 env  ? env  : &app.GetEnvironment(),
                                 inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd),
-      m_SecureMode(eSecure_NotSet),
+      m_IsSecure(false),
       m_StatusCode(CCgiException::eStatusNotSet)
 {
     m_Response.SetRequestMethod(m_Request->GetRequestMethod());
@@ -143,7 +143,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
     : m_App(&app),
       m_Request(new CCgiRequest()),
       m_Response(os, -1),
-      m_SecureMode(eSecure_NotSet),
+      m_IsSecure(false),
       m_StatusCode(CCgiException::eStatusNotSet)
 {
     m_Request->Deserialize(*is,flags);
@@ -164,7 +164,7 @@ CCgiContext::CCgiContext(ICgiSessionStorage*     session_storage,
     : m_App(nullptr),
       m_Request(new CCgiRequest(args, env, inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd),
-      m_SecureMode(eSecure_NotSet),
+      m_IsSecure(false),
       m_StatusCode(CCgiException::eStatusNotSet)
 {
     m_Response.SetRequestMethod(m_Request->GetRequestMethod());
@@ -343,7 +343,6 @@ const string& CCgiContext::GetSelfURL(void) const
 
     // Compose self URL
     CUrl url;
-    bool secure;
 
     // Forwarded URL
     const string& caf_url = GetRequest().GetRandomProperty("CAF_URL");
@@ -351,9 +350,9 @@ const string& CCgiContext::GetSelfURL(void) const
         url.SetUrl(caf_url);
         url.GetArgs().clear();
         url.SetFragment(kEmptyStr);
-        secure = x_IsSecure(caf_url);
+        m_IsSecure = x_IsSecure(caf_url);
     } else {
-        secure = x_IsSecure(kEmptyStr);
+        m_IsSecure = x_IsSecure(kEmptyStr);
     }
 
     // Check HTTP_X_FORWARDED_HOST for host:port
@@ -377,7 +376,7 @@ const string& CCgiContext::GetSelfURL(void) const
                            host_port.size());
     }
     // Skip port if it's default for the selected scheme
-    if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")) {
+    if ((m_IsSecure  &&  port == "443")  ||  (!m_IsSecure  &&  port == "80")) {
         port.clear();
     }
     url.SetHost(host);
@@ -401,10 +400,8 @@ const string& CCgiContext::GetSelfURL(void) const
     //  it should not hurt, and may help with similar proxies outside NCBI)
     url.SetPath(NStr::ReplaceInPlace(path, "//", "/"));
 
-    m_SecureMode = secure ? eSecure_On : eSecure_Off;
-    url.SetScheme (secure ? "https"    : "http");
-
     url.SetIsGeneric(true);
+    url.SetScheme(m_IsSecure ? "https" : "http");
     url.ComposeUrl(CUrlArgs::eAmp_Char/*no args, anyways*/).swap(m_SelfURL);
     return m_SelfURL;
 }
@@ -418,15 +415,6 @@ bool CCgiContext::x_IsSecure(const string& url) const
         (GetRequest().GetRandomProperty("HTTPS", false), "on")
         ||  NStr::EqualNocase
         (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https");
-}
-
-
-bool CCgiContext::IsSecure(void) const
-{
-    if (m_SecureMode == eSecure_NotSet) {
-        m_SecureMode  = x_IsSecure(GetSelfURL()) ? eSecure_On : eSecure_Off;
-    }
-    return m_SecureMode == eSecure_On;
 }
 
 
@@ -548,11 +536,6 @@ static inline bool s_IsTID(const string& tid)
 
 string CCgiContext::RetrieveTrackingId() const
 {
-    if ( !m_TrackingId.empty() ) {
-        // Use cached value
-        return m_TrackingId;
-    }
-
     static const char* cookie_or_entry_name_1 = "WebCubbyUser";
     static const char* cookie_or_entry_name_2 = "WebEnv";
 

@@ -224,7 +224,7 @@ public:
     const string& GetSelfURL(void) const;
 
     /// Check if the current scheme is secure (https) or not (http).
-    bool IsSecure(void) const;
+    bool IsSecure(void) const { return m_IsSecure; }
 
     // Which streams are ready?
     enum EStreamStatus {
@@ -259,13 +259,6 @@ private:
 
     bool x_IsSecure(const string& url) const;
 
-    // Secure protocol flag.
-    enum ESecureMode {
-        eSecure_NotSet,
-        eSecure_Off,
-        eSecure_On
-    };
-
     CCgiApplication*        m_App;
     unique_ptr<CCgiRequest> m_Request;  // CGI request  information
     CCgiResponse            m_Response; // CGI response information
@@ -279,8 +272,7 @@ private:
     unique_ptr<CCgiServerContext> m_ServerContext; // application defined context
 
     mutable string m_SelfURL;
-    mutable string m_TrackingId; // cached tracking id
-    mutable ESecureMode m_SecureMode;
+    mutable bool   m_IsSecure;
 
     // Request status code and message. The status is non-zero if there
     // is an error to report.
