@@ -257,6 +257,8 @@ private:
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
+    bool x_IsSecure(const string& url) const;
+
     // Secure protocol flag.
     enum ESecureMode {
         eSecure_NotSet,

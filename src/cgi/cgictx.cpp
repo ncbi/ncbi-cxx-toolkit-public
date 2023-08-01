@@ -341,53 +341,47 @@ const string& CCgiContext::GetSelfURL(void) const
     if ( !m_SelfURL.empty() )
         return m_SelfURL;
 
-    bool secure
-        = AStrEquiv
-        (GetRequest().GetRandomProperty("HTTPS", false), "on",
-            PNocase())
-        || AStrEquiv
-        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https",
-            PNocase());
-
     // Compose self URL
     CUrl url;
+    bool secure;
 
-    // Check HTTP_X_FORWARDED_HOST for host:port
-    const string& x_fwd_host
-        = GetRequest().GetRandomProperty("X_FORWARDED_HOST");
-
+    // Forwarded URL
     const string& caf_url = GetRequest().GetRandomProperty("CAF_URL");
     if ( !caf_url.empty() ) { 
-        // Forwarded URL
         url.SetUrl(caf_url);
         url.GetArgs().clear();
         url.SetFragment(kEmptyStr);
-    } else if ( x_fwd_host.empty() ) {
-        const string& server = GetRequest().GetProperty(eCgi_ServerName);
-        if ( server.empty() ) {
+        secure = x_IsSecure(caf_url);
+    } else {
+        secure = x_IsSecure(kEmptyStr);
+    }
+
+    // Check HTTP_X_FORWARDED_HOST for host:port
+    const string& x_fwd_host =
+        GetRequest().GetRandomProperty("X_FORWARDED_HOST");
+    // Fallback to HTTP_HOST if no HTTP_X_FORWARDED_HOST
+    const string& host_port = x_fwd_host.empty() ? 
+        GetRequest().GetRandomProperty("HOST") : x_fwd_host;
+
+    CTempString host, port;
+    if ( host_port.empty() ) {
+        host = GetRequest().GetProperty(eCgi_ServerName);
+        if ( host.empty() ) {
             return kEmptyStr;
         }
-        CTempString port(GetRequest().GetProperty(eCgi_ServerPort));
-        // Skip port if it's default for the selected scheme
-        if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")  ||
-            (server.size() >= port.size() + 2  &&  NStr::EndsWith(server, port)
-             &&  server[server.size() - port.size() - 1] == ':')) {
-            port.clear();
-        }
-        url.SetHost(server);
-        url.SetPort(port);
+        port = GetRequest().GetProperty(eCgi_ServerPort);
+    } else {
+        size_t pos = host_port.find(':');
+        host = CTempString(host_port, 0, pos != NPOS ? pos : host_port.size());
+        port = CTempString(host_port, pos != NPOS? pos + 1 : host_port.size(),
+                           host_port.size());
     }
-    if ( !x_fwd_host.empty() ) {
-        size_t pos = x_fwd_host.find(':');
-        CTempString host(x_fwd_host, 0, pos != NPOS ? pos : x_fwd_host.size());
-        CTempString port(x_fwd_host, pos != NPOS? pos + 1 : x_fwd_host.size(),
-                         x_fwd_host.size());
-        if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")) {
-            port.clear();
-        }
-        url.SetHost(host);
-        url.SetPort(port);
+    // Skip port if it's default for the selected scheme
+    if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")) {
+        port.clear();
     }
+    url.SetHost(host);
+    url.SetPort(port);
 
     string path;
     if ( !caf_url.empty() ) {
@@ -416,17 +410,22 @@ const string& CCgiContext::GetSelfURL(void) const
 }
 
 
+bool CCgiContext::x_IsSecure(const string& url) const
+{
+    return  NStr::EqualNocase
+        (url, 0, 8, "https://")
+        ||  NStr::EqualNocase
+        (GetRequest().GetRandomProperty("HTTPS", false), "on")
+        ||  NStr::EqualNocase
+        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https")
+        ? eSecure_On : eSecure_Off;
+}
+
+
 bool CCgiContext::IsSecure(void) const
 {
     if (m_SecureMode == eSecure_NotSet) {
-        m_SecureMode
-            =   NStr::EqualNocase
-            (CTempString(GetSelfURL(), 0, 8), "https://")
-            ||  NStr::EqualNocase
-            (GetRequest().GetRandomProperty("HTTPS", false), "on")
-            ||  NStr::EqualNocase
-            (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https")
-            ? eSecure_On : eSecure_Off;
+        m_SecureMode  = x_IsSecure(GetSelfURL()) ? eSecure_On : eSecure_Off;
     }
     return m_SecureMode == eSecure_On;
 }
