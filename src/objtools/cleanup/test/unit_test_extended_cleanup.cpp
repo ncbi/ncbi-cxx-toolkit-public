@@ -1132,6 +1132,30 @@ BOOST_AUTO_TEST_CASE(Test_ConvertMiscSignalToRegulatory)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_ConvertMiscSignalToRegulatory_SeqAnnot)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = BuildGoodFeat();
+    misc->SetData().SetImp().SetKey("misc_signal");
+    misc->SetComment("boxB antiterminator");
+    AddFeat(misc, entry);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    auto& annot = *(entry->SetSeq().SetAnnot().front());
+
+    CCleanup cleanup;
+    cleanup.SetScope(scope);
+    cleanup.ExtendedCleanup(annot);
+
+    // make sure change was actually made
+    CFeat_CI feat(seh);
+    BOOST_CHECK_EQUAL(feat->GetData().GetImp().GetKey(), "regulatory");
+    BOOST_CHECK_EQUAL(feat->GetQual().front()->GetQual(), "regulatory_class");
+    BOOST_CHECK_EQUAL(feat->GetQual().front()->GetVal(), "other");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_MatPeptidePartial)
 {
     CRef<CSeq_entry> entry = BuildGoodNucProtSet();
