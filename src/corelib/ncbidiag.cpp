@@ -455,14 +455,6 @@ public:
     /// to its default request context.
     void SetRequestContext(CRequestContext* ctx);
 
-    /// CDiagContext properties
-    typedef map<string, string> TProperties;
-    enum EGetProperties {
-        eProp_Get,    ///< Do not create properties if not exist yet
-        eProp_Create  ///< Auto-create properties if not exist
-    };
-    NCBI_DEPRECATED TProperties* GetProperties(EGetProperties flag);
-
     typedef SDiagMessage::TCount TCount;
 
     /// Request id
@@ -509,7 +501,6 @@ private:
     // Collected diag messages
     typedef list<SDiagMessage>       TDiagCollection;
 
-    unique_ptr<TProperties> m_Properties;       // Per-thread properties
     unique_ptr<CDiagBuffer> m_DiagBuffer;       // Thread's diag buffer
     TTID                  m_TID;              // Cached thread ID
     TCount                m_ThreadPostNumber; // Number of posted messages
@@ -952,12 +943,6 @@ void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
     if ( CThread::IsMain() ) {
         // Copy properties from the main thread's TLS to the global properties.
         CDiagLock lock(CDiagLock::eWrite);
-        CDiagContextThreadData::TProperties* props =
-            value->GetProperties(CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
-        if ( props ) {
-            GetDiagContext().m_Properties.insert(props->begin(),
-                                                 props->end());
-        }
         // Print stop message.
         if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
             GetDiagContext().PrintStop();
@@ -1089,16 +1074,6 @@ void CDiagContextThreadData::SetRequestContext(CRequestContext* ctx)
         // Read-only contexts should not remember owner thread.
         m_RequestCtx->m_OwnerTID = kOwnerTID_None;
     }
-}
-
-
-CDiagContextThreadData::TProperties*
-CDiagContextThreadData::GetProperties(EGetProperties flag)
-{
-    if ( !m_Properties.get()  &&  flag == eProp_Create ) {
-        m_Properties.reset(new TProperties);
-    }
-    return m_Properties.get();
 }
 
 
@@ -2033,13 +2008,6 @@ void CDiagContext::SetProperty(const string& name,
         CDiagLock lock(CDiagLock::eWrite);
         m_Properties[name] = value;
     }
-    else {
-        TProperties* props =
-            CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Create); /* NCBI_FAKE_WARNING */
-        _ASSERT(props);
-        (*props)[name] = value;
-    }
     if ( sm_Instance  &&  s_AutoWrite_Context->Get() ) {
         CDiagLock lock(CDiagLock::eRead);
         x_PrintMessage(SDiagMessage::eEvent_Extra, name + "=" + value);
@@ -2095,21 +2063,6 @@ string CDiagContext::GetProperty(const string& name,
         return GetRequestContext().GetRequestTimer().AsString();
     }
 
-    if (mode == eProp_Thread  ||
-        (mode == eProp_Default  &&  !IsGlobalProperty(name))) {
-        TProperties* props =
-            CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
-        if ( props ) {
-            TProperties::const_iterator tprop = props->find(name);
-            if ( tprop != props->end() ) {
-                return tprop->second;
-            }
-        }
-        if (mode == eProp_Thread) {
-            return kEmptyStr;
-        }
-    }
     // Check global properties
     CDiagLock lock(CDiagLock::eRead);
     TProperties::const_iterator gprop = m_Properties.find(name);
@@ -2120,22 +2073,6 @@ string CDiagContext::GetProperty(const string& name,
 void CDiagContext::DeleteProperty(const string& name,
                                     EPropertyMode mode)
 {
-    if (mode == eProp_Thread  ||
-        (mode ==  eProp_Default  &&  !IsGlobalProperty(name))) {
-        TProperties* props =
-            CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
-        if ( props ) {
-            TProperties::iterator tprop = props->find(name);
-            if ( tprop != props->end() ) {
-                props->erase(tprop);
-                return;
-            }
-        }
-        if (mode == eProp_Thread) {
-            return;
-        }
-    }
     // Check global properties
     CDiagLock lock(CDiagLock::eRead);
     TProperties::iterator gprop = m_Properties.find(name);
@@ -2147,22 +2084,10 @@ void CDiagContext::DeleteProperty(const string& name,
 
 void CDiagContext::PrintProperties(void)
 {
-    {{
-        CDiagLock lock(CDiagLock::eRead);
-        ITERATE(TProperties, gprop, m_Properties) {
-            x_PrintMessage(SDiagMessage::eEvent_Extra,
-                gprop->first + "=" + gprop->second);
-        }
-    }}
-    TProperties* props =
-            CDiagContextThreadData::GetThreadData().GetProperties(
-            CDiagContextThreadData::eProp_Get); /* NCBI_FAKE_WARNING */
-    if ( !props ) {
-        return;
-    }
-    ITERATE(TProperties, tprop, *props) {
+    CDiagLock lock(CDiagLock::eRead);
+    ITERATE(TProperties, gprop, m_Properties) {
         x_PrintMessage(SDiagMessage::eEvent_Extra,
-            tprop->first + "=" + tprop->second);
+            gprop->first + "=" + gprop->second);
     }
 }
 
