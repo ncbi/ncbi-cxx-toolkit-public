@@ -257,7 +257,7 @@ private:
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
-    bool x_IsSecure(const string& url) const;
+    bool x_IsSecure(void) const;
 
     CCgiApplication*        m_App;
     unique_ptr<CCgiRequest> m_Request;  // CGI request  information
