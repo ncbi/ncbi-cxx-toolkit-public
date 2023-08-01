@@ -111,13 +111,6 @@ void CCleanup::SetScope(CScope* scope)
     if (scope) {
         m_Scope->AddScope(*scope);
     }
-/*
-    if (scope) {
-        m_Scope.Reset(scope);
-    } else {
-        m_Scope.Reset(new CScope(*(CObjectManager::GetInstance())));
-    }
-    */
 }
 
 
