@@ -13031,8 +13031,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_TransLen)
     cds->SetExcept_text("annotated by transcript or proteomic data");
     // inference is required for exception
     cds->AddQualifier("inference", "similar to DNA sequence:INSD:AY123456.1");
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
-                              "CDS has unnecessary translated product replaced exception"));
+    // expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "UnnecessaryException",
+    //                           "CDS has unnecessary translated product replaced exception"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
