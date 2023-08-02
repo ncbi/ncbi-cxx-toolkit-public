@@ -350,10 +350,11 @@ const string& CCgiContext::GetSelfURL(void) const
         url.SetUrl(caf_url);
         url.GetArgs().clear();
         url.SetFragment(kEmptyStr);
-        m_IsSecure
-            = NStr::EqualNocase(caf_url, 0, 8, "https://")  ||  x_IsSecure();
+        ESecureMode secure = x_IsSecure();
+        m_IsSecure = secure != eSecure_NotSet ? secure == eSecure_On
+            : NStr::EqualNocase(caf_url, 0, 8, "https://");
     } else {
-        m_IsSecure = x_IsSecure();
+        m_IsSecure = x_IsSecure() == eSecure_On;
     }
 
     // Check HTTP_X_FORWARDED_HOST for host:port
@@ -408,12 +409,23 @@ const string& CCgiContext::GetSelfURL(void) const
 }
 
 
-bool CCgiContext::x_IsSecure(void) const
+CCgiContext::ESecureMode CCgiContext::x_IsSecure(void) const
 {
-    return  NStr::EqualNocase
-        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https")
-        ||  NStr::EqualNocase
-        (GetRequest().GetRandomProperty("HTTPS", false), "on");
+    ESecureMode secure;
+    const string& x_fwd_proto
+        = GetRequest().GetRandomProperty("X_FORWARDED_PROTO");
+    if ( !x_fwd_proto.empty() ) {
+        if ( NStr::EqualNocase(x_fwd_proto, "https") )
+            return eSecure_On;
+        if ( NStr::EqualNocase(x_fwd_proto, "http") )
+            return eSecure_Off;
+        secure = eSecure_Off;
+    } else {
+        secure = eSecure_NotSet;
+    }
+    return NStr::EqualNocase
+        (GetRequest().GetRandomProperty("HTTPS", false), "on")
+        ? eSecure_On : secure;
 }
 
 

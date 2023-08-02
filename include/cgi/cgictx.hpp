@@ -257,7 +257,13 @@ private:
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
 
-    bool x_IsSecure(void) const;
+    // Secure protocol flag.
+    enum ESecureMode {
+        eSecure_NotSet,
+        eSecure_Off,
+        eSecure_On
+    };
+    ESecureMode x_IsSecure(void) const;
 
     CCgiApplication*        m_App;
     unique_ptr<CCgiRequest> m_Request;  // CGI request  information
