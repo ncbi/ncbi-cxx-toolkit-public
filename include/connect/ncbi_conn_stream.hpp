@@ -137,7 +137,7 @@ public:
     /// Polling timeout (non-NULL), with 0.0 time in it
     static const STimeout* kZeroTimeout;
 
-    /// The values below must be compatible with TCONN_Flags.
+    /// The values below must be compatible with TCONN_Flags
     enum {
         fConn_Untie           = fCONN_Untie,///< do not flush before reading
         fConn_DelayOpen       = 2,          ///< do not force CONN open in ctor
@@ -244,6 +244,8 @@ public:
     /// @param
     ///   Can accept a pointer to a finite timeout, or either of the special
     ///   values: kInfiniteTimeout, kDefaultTimeout
+    /// @return
+    ///   eIO_Success if succeeded;  other error code if failed
     /// @sa
     ///   CONN_SetTimeout, SetReadTimeout, SetWriteTimeout
     EIO_Status         SetTimeout(EIO_Event       direction,
@@ -251,6 +253,8 @@ public:
 
     /// @return
     ///   Connection timeout for "direction"
+    /// @return
+    ///   eIO_Success if succeeded;  other error code if failed
     /// @sa
     ///   CONN_GetTimeout
     const STimeout*    GetTimeout(EIO_Event direction) const;
@@ -259,28 +263,34 @@ public:
     ///   Status of the last I/O performed by the underlying CONN in the
     ///   specified "direction" (either eIO_Open, IO_Read, or eIO_Write);
     ///   if "direction" is not specified (eIO_Close), return status of the
-    ///   last CONN I/O performed by the stream.
+    ///   last CONN I/O performed by the stream -- the intended use for the
+    ///   latter is to obtain more detailed information in cases what a stream
+    ///   operation or I/O has just failed.
+    /// @warning
+    ///   This method is not a status of iostream!  Neither this is the last
+    ///   EIO_Status value returned by the other stream methods.
     /// @sa
     ///   CONN_Status
     EIO_Status         Status(EIO_Event direction = eIO_Close) const;
 
-    /// Flush the stream and fetch the response (w/o extracting any user data).
+    /// Flush the stream and fetch the response (w/o extracting any user data)
     /// @return
     ///   eIO_Success if the operation was successful, and some input
-    ///   (including none in case of EOF) will be available upon read.
+    ///   (including none in case of EOF) will be available upon read
     EIO_Status         Fetch(const STimeout* timeout = kDefaultTimeout);
 
-    /// Push the specified data "data" of size "size" into back the underlying
-    /// connection CONN.
+    /// Push the specified data "data" of size "size" back into the underlying
+    /// connection CONN (making it look like received yet unread data).
     /// If there is any non-empty pending input sequence (internal read buffer)
-    /// it will first be attempted to return to CONN.  Note that it may include
+    /// it will be attempted to return to CONN first.  Note that it can include
     /// any initial read area ("ptr"), which could have been specified in the
-    /// ctor yet still unread, so potentially unwanted data copying can result.
-    /// Any status different from eIO_Success means that nothing from "data"
-    /// has been pushed back to the connection.
+    /// ctor yet still unread, so potentially unwanted data copying may result.
+    /// @return
+    ///   Any status other than eIO_Success means that nothing from "data" has
+    ///   been returned to the connection
     /// @note
     ///   Can be used to push just the pending internal input alone back into
-    ///   the CONN if used with a "size" of 0 ("data" is ignored then).
+    ///   CONN if used with a "size" of 0 ("data" is ignored then).
     /// @sa
     ///   CONN_Pushback
     virtual EIO_Status Pushback(const CT_CHAR_TYPE* data, streamsize size)
@@ -291,18 +301,26 @@ public:
 
     /// Get CSocket, if available (else empty).  The returned CSocket doesn't
     /// own the underlying SOCK, and is valid for as long as the stream exists.
+    /// @sa
+    ///   CSocket, SOCK
     CSocket&           GetSocket(void);
 
     /// Close CONNection, free all internal buffers and underlying structures,
-    /// and render the stream unusable for further I/O.
+    /// and render the stream unusable for further I/O
+    /// @return
+    ///   eIO_Success when closed without errors;  eIO_Closed if it was already
+    ///   closed;  other error code if failed to close in an orderly fashion
+    /// @warning
+    ///   Regardless of the return code, this method makes the stream unable to
+    ///   accept any further actions and / or I/O (they all would fail).
     /// @note
-    ///   Can be used at places where reaching end-of-scope for the stream
-    ///   would be impractical.
+    ///   Can be used at places where reaching end-of-scope for the stream.
+    ///   would be impractical
     /// @sa
     ///   CONN_Close
     virtual EIO_Status Close(void);
 
-    /// Cancellation support.
+    /// Cancellation support
     /// @note
     ///   The ICanceled implementation must be derived from CObject as its
     ///   first superclass.
@@ -312,23 +330,22 @@ public:
 
     /// @return
     ///   Internal CONNection handle, which is still owned and used by the
-    ///   stream (or NULL if no such handle exists).
+    ///   stream (or NULL if no such handle exists)
     /// @note
-    ///   Connection can have additional flags set for I/O processing.
+    ///   Connection can have additional flags set for I/O processing
     /// @sa
     ///   CONN, ncbi_connection.h, CONN_GetFlags
     CONN               GetCONN(void) const;
-
 
     /// Equivalent to CONN_Wait(GetCONN(), event, timeout)
     /// @param event
     ///   eIO_Read or eIO_Write
     /// @param timeout
     ///   Time to wait for the event (poll if zero time specified, and return
-    ///   immediately).
+    ///   immediately)
     /// @return
-    ///   eIO_Success if the event is available, eIO_Timeout if the time has
-    ///   expired;  other code to signal other error condition.
+    ///   eIO_Success if the event is available; eIO_Timeout if the time has
+    ///   expired;  other code to signify some error condition
     /// @sa
     ///   CONN_Wait
     EIO_Status         Wait(EIO_Event event,
@@ -892,8 +909,9 @@ public:
     void    ToString(string*);      ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
 
-    /// Get the underlying BUF handle (it still remains managed by the stream).
-    /// @note Causes the stream to flush()
+    /// Get the underlying BUF handle (it still remains managed by the stream)
+    /// @note
+    ///   Causes the stream to flush().
     BUF     GetBUF(void);
 
 protected:
@@ -1009,7 +1027,7 @@ public:
     virtual ~CConn_FtpStream();
 
     /// Abort any command in progress, read and discard all input data, and
-    /// clear stream error state when successful (eIO_Success returns).
+    /// clear stream error state when successful (eIO_Success returns)
     /// @note
     ///   The call empties out both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
@@ -1028,7 +1046,7 @@ private:
 
 /// CConn_FtpStream specialization (ctor) for download
 ///
-/// @attention
+/// @warning
 ///   Pay attention to the order of parameters vs generic CConn_FtpStream ctor.
 ///
 class NCBI_XCONNECT_EXPORT CConn_FTPDownloadStream : public CConn_FtpStream
