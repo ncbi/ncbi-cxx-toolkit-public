@@ -519,6 +519,14 @@ bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
     if (a.Strand() != front()->Strand())
         return false;
 
+    bool gene_has_trusted = false;
+    ITERATE(CGene, it, *this) {
+        if((*it)->HasTrustedEvidence(orig_aligns)) {
+            gene_has_trusted = true;
+            break;
+        }
+    }
+
     bool has_common_splice = false;
 
     ITERATE(CGene, it, *this) {
@@ -527,6 +535,9 @@ bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
             break;
         }
     }
+
+    if(has_common_splice && (!gene_has_trusted || !a.HasTrustedEvidence(orig_aligns))) // separate trusted genes with similar splices if they don't have common cds
+        return true;
 
     if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) { 
         CAlignMap amap(a.Exons(), a.FrameShifts(), a.Strand(), a.GetCdsInfo().Cds());
@@ -544,6 +555,9 @@ bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
         bool has_common_cds = false;
 
         ITERATE(CGene, it, *this) {
+            if(!a.GetCdsInfo().Cds().IntersectingWith((*it)->GetCdsInfo().Cds()))
+                continue;
+
             CAlignMap gmap((*it)->Exons(), (*it)->FrameShifts(), (*it)->Strand(), (*it)->GetCdsInfo().Cds());
             TIVec cds_map(gmap.FShiftedLen((*it)->GetCdsInfo().Cds()),0);
             for(unsigned int j = 0; j < (*it)->Exons().size(); ++j) {
@@ -571,20 +585,12 @@ bool CGene::IsAlternative(const CChain& a, TOrigAligns& orig_aligns) const
                     break;
                 }
             }
-        }
 
-        bool gene_has_trusted = false;
-        ITERATE(CGene, it, *this) {
-            if((*it)->HasTrustedEvidence(orig_aligns)) {
-                gene_has_trusted = true;
+            if(has_common_cds)
                 break;
-            }
         }
 
-        if(has_common_cds || (has_common_splice && (!gene_has_trusted || !a.HasTrustedEvidence(orig_aligns)))) // separate trusted genes with similar splices if they don't have common cds
-            return true;
-        else
-            return false;
+        return has_common_cds;
     }
 
     return has_common_splice;
@@ -2200,7 +2206,6 @@ void CChainer::CChainerImpl::ScoreCdnas(CChainMembers& pointers)
     }
 }
 
-
 void CChainer::CChainerImpl::Duplicate5pendsAndShortCDSes(CChainMembers& pointers)
 {
     size_t initial_size = pointers.size();
@@ -2945,7 +2950,6 @@ struct GModelOrder
             return *orig_aligns[a.ID()]->GetTargetId() < *orig_aligns[ b.ID()]->GetTargetId(); // to make sort deterministic
     }
 };
-
 
 TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust, bool coding_estimates_only)
 {
@@ -6098,8 +6102,9 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
     if(trusted_aligns[ePlus].size() < 2 && trusted_aligns[eMinus].size() < 2)
         return;
 
+    typedef set<string> TAccessions;
     typedef set<int> TSplices;
-    typedef list<TSplices> TSplicesList;
+    typedef list<pair<TSplices, TAccessions>> TSplicesList;
     typedef map<int,TSplicesList> TSplicesByStrand;
     TSplicesByStrand trusted_splices;
     
@@ -6108,8 +6113,9 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
         const TGeneModelClusterSet& clset = it->second;
         ITERATE(TGeneModelClusterSet, jt, clset) {
             const TGeneModelCluster& cls = *jt;
-            trusted_splices[strand].push_back(set<int>());
-            TSplices& splices = trusted_splices[strand].back();
+            trusted_splices[strand].emplace_back();
+            TSplices& splices = trusted_splices[strand].back().first;
+            TAccessions& accessions = trusted_splices[strand].back().second;
             ITERATE(TGeneModelCluster, lt, cls) {
                 const CGeneModel& align = *lt;
                 ITERATE(CGeneModel::TExons, e, align.Exons()) {
@@ -6118,7 +6124,11 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
                     if(e->m_ssplice)
                         splices.insert(e->GetTo());                       
                 }
-            }
+                for(auto& cref : align.TrustedProt())
+                    accessions.insert(CIdHandler::ToString(*cref));
+                for(auto& cref : align.TrustedmRNA())
+                    accessions.insert(CIdHandler::ToString(*cref));
+             }
         }
     }
 
@@ -6132,19 +6142,35 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
         const TSplicesList& spl = trusted_splices[strand];
 
         int count = 0;
+        bool paralogs = false;
+        TAccessions prev_accessions;
         ITERATE(TSplicesList, jt, spl) {
-            const TSplices& splices = *jt;
+            const TSplices& splices = jt->first;
+            const TAccessions& accessions = jt->second;
             for(unsigned int i = 0; i < align.Exons().size(); ++i) {
                 const CModelExon& e = align.Exons()[i];
                 if(splices.find(e.GetFrom()) != splices.end() || splices.find(e.GetTo()) != splices.end()) {
+                    auto num = prev_accessions.size();
+                    prev_accessions.insert(accessions.begin(), accessions.end());
+                    if(num+accessions.size() != prev_accessions.size()) // overlapping ids
+                        paralogs = true;
                     ++count;
                     break;
                 }
-            }        
+            }
         }
 
         if(count > 1) {
-            cerr << "Chimeric alignment " << align.ID() << endl;
+            string flag = "-";
+            if(align.Type()&CGeneModel::eSR)
+                flag = "SR";
+            else if(align.Type()&CGeneModel::eEST)
+                flag = "EST";
+            else if(align.Type()&CGeneModel::emRNA)
+                flag = "mRNA";
+            else if(align.Type()&CGeneModel::eProt)
+                flag = "Prot";
+            cerr << "Chimeric alignment " << align.ID() << " " << (paralogs ? "paralogs" : "unrelated") << " " << flag << endl;
             SkipReason(orig_aligns[align.ID()],"Chimera");
             clust.erase(it);
         }
@@ -7096,6 +7122,9 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
                      "Organism specific parameters",
                      CArgDescriptions::eInputFile);
 
+    arg_desc->AddOptionalKey("pcsf","pcsf","phyloPCSF scores",CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey("pcsf_factor","pcsf_factor","Normalisation factor for phyloPCSF scores",CArgDescriptions::eDouble,"0.03");
+
     arg_desc->SetCurrentGroup("Alignment modification");
     arg_desc->AddDefaultKey("trim", "trim",
                             "If aligned sequence is partial and includes a small portion of an exon the alignment program "
@@ -7300,6 +7329,10 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     chainer->SetMinPolyA(args["minpolya"].AsInteger());
     chainer->m_data->use_confirmed_ends = args["use_confirmed_ends"];
 
+    if(args["pcsf"]) {
+        chainer->m_pcsf_source = &args["pcsf"].AsInputFile(CArgValue::fBinary);
+        chainer->m_pcsf_factor = args["pcsf_factor"].AsDouble();
+    }
 
     
     CIdHandler cidh(scope);
@@ -7903,7 +7936,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CResidueVec& seq)
     m_inserted_seqs.clear();
     m_notbridgeable_gaps_len.clear();
     m_contig_acc.clear();
-    m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));
+    m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole(), m_pcsf.get()));
 }
 
 // SetGenomic for annot - models could be 0
@@ -8019,11 +8052,13 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
 
     CResidueVec seq;
     int length;
+    int contig_length;
 
     CBioseq_Handle bh(scope.GetBioseqHandle(contig));
     {
         CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
         length = sv.size(); 
+        contig_length = sv.size(); 
         if(limits == TSignedSeqRange::GetWhole()) {
             limits.SetFrom(0);
             limits.SetTo(length-1);
@@ -8097,6 +8132,13 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         m_edited_contig_map.EditedSequence(seq,editedseq);
         swap(seq, editedseq);
     }
+
+    // init phyloCSF scores
+    if(m_pcsf_source != nullptr && (!m_pcsf || m_pcsf->ContigAcc() != m_contig_acc)) {
+        m_pcsf_source->clear();
+        m_pcsf_source->seekg(0);
+        m_pcsf.reset(new CPhyloCSFData(*m_pcsf_source, m_contig_acc, contig_length, &m_edited_contig_map, m_limits.GetFrom(), m_pcsf_factor));
+    }
            
     ITERATE(TInDels, ig, m_editing_indels) {
         TInDels::const_iterator nexti = next(ig);
@@ -8163,7 +8205,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
     m_notbridgeable_gaps_len = notbridgeable_gaps_len;
 
     
-    m_gnomon.reset(new CGnomonEngine(m_hmm_params, std::move(seq), TSignedSeqRange::GetWhole()));
+    m_gnomon.reset(new CGnomonEngine(m_hmm_params, std::move(seq), TSignedSeqRange::GetWhole(), m_pcsf.get()));
 }
 
 CGnomonEngine& CGnomonAnnotator_Base::GetGnomon()
