@@ -39,8 +39,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-typedef vector<double> TDVec;
-
 class CEResidueVec : public vector<EResidue> {};
 
 class CDoubleStrandSeq {
