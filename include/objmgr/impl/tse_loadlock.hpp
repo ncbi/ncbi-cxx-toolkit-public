@@ -47,7 +47,7 @@ class CTSE_LoadLockGuard;
 class NCBI_XOBJMGR_EXPORT CTSE_LoadLock
 {
 public:
-    CTSE_LoadLock(void)
+    CTSE_LoadLock(void) : m_LoadLockOwner{}
         {
         }
     ~CTSE_LoadLock(void)
