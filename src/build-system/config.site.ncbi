@@ -384,7 +384,7 @@ case "$ncbi_platform" in
         fi
         : ${with_downloaded_vdb=no}
         ;;
-    *MAC )
+    IntelMAC )
         if [ "x$with_vdb" = 'xrc' ]; then
             with_vdb=$net_vdb_base/cxx_toolkit/3-rc
         else
