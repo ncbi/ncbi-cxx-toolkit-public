@@ -39,7 +39,7 @@ BEGIN_SCOPE(gnomon)
 
 class CPhyloCSFData {
 public:
-    CPhyloCSFData(istream& from, const string& acc, int len, CAlignMap* map = nullptr, int shift = 0, double factor = 1) : m_contig_acc(acc), m_map(map), m_factor(factor), m_shift(shift) {
+    CPhyloCSFData(istream& from, const string& acc, int len, CAlignMap* map = nullptr, int shft = 0, double factor = 1) : m_contig_acc(acc), m_map(map), m_factor(factor), m_shift(shft) {
         m_scores[0].resize(len);
         m_scores[1].resize(len);
 
