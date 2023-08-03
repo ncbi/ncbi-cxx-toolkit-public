@@ -68,8 +68,9 @@ inline EStrand OtherStrand(EStrand s) { return (s == ePlus ? eMinus : ePlus); }
 typedef objects::CSeqVectorTypes::TResidue TResidue; // unsigned char
 
 typedef vector<TResidue> CResidueVec;
-
 typedef vector<int> TIVec;
+typedef vector<double> TDVec;
+
 
 inline bool Precede(TSignedSeqRange l, TSignedSeqRange r) { return l.GetTo() < r.GetFrom(); }
 inline bool Include(TSignedSeqRange big, TSignedSeqRange small) { return (big.GetFrom()<=small.GetFrom() && small.GetTo()<=big.GetTo()); }

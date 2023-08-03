@@ -93,6 +93,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         is_product_reversed = true;
     }
 
+    /* for not gpipe alignments
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CIdHandler idh(scope);
+    SetTargetId(*idh.ToCanonical(sps.GetProduct_id()));
+    */
     SetTargetId(sps.GetProduct_id());
 
     int product_len = sps.CanGetProduct_length()?sps.GetProduct_length():0;

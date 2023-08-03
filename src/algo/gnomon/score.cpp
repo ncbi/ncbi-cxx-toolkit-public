@@ -132,6 +132,7 @@ double CSeqScores::CodingScore(int a, int b, int strand, int frame) const
     if(a > b) return 0; // for splitted start/stop
     double score = m_cdrscr[strand][frame][b];
     if(a > 0) score -= m_cdrscr[strand][frame][a-1];
+
     return score;
 }
 
@@ -270,7 +271,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
 
 //void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, 
 void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool rightwall, double consensuspenalty, 
-         const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
+                       const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo, CPhyloCSFData* pcsf)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
@@ -291,7 +292,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             m_ingscr[strand].resize(len,BadScore());
             m_notinintron[strand].resize(len,-1);
             for(int frame = 0; frame < 3; ++frame) {
-                m_cdrscr[strand][frame].resize(len,BadScore());
+                m_cdrscr[strand][frame].resize(len,0);
                 m_laststop[strand][frame].resize(len,-1);
                 m_notinexon[strand][frame].resize(len,-1);
             }
@@ -832,7 +833,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         }
     }
 
-
     for(int strand = 0; strand < 2; ++strand)
     {
         CEResidueVec& s = m_seq[strand];
@@ -854,15 +854,33 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
 
         for(int frame = 0; frame < 3; ++frame)
         {
+            if(pcsf != nullptr) {
+                int codon_left;
+                if(strand == ePlus)
+                    codon_left = (-frame+3)%3;   // first codon overlapping origin is shifted -frame
+                else
+                    codon_left = (frame+1)%3;    // first codon overlapping origin is shifted +frame
+                for( ; codon_left <= len-3; codon_left += 3) {
+                    int orig_codon_left = m_map.MapEditedToOrig(codon_left);  // account for frameshifts in alignments
+                    double pcsf_score = 0;
+                    if(orig_codon_left >= 0)
+                        pcsf_score = pcsf->Factor()*pcsf->Score(strand, orig_codon_left);
+                    if(pcsf_score > 0) {
+                        for(int step = 0; step < 3; ++step)
+                            m_cdrscr[strand][frame][codon_left+step] = pcsf_score;
+                    }
+                }
+            }
+
             for(TSignedSeqPos i = 0; i < len; ++i)
             {
-                int codonshift,ii;
+                int codonshift, ii;
                 if(strand == ePlus)     // left end of codon is shifted by frame bases to left
                 {
                     codonshift = (frame+i)%3;
                     ii = i;
                 }
-                else                  // right end of codone is shifted by frame bases to right
+                else                    // right end of codone is shifted by frame bases to right
                 {
                     codonshift = (frame-(int)i)%3;
                     if(codonshift < 0) codonshift += 3;
@@ -872,7 +890,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 double score = m_cdr.Score(s,ii,codonshift);
                 if(score == BadScore()) score = 0;
 
-                m_cdrscr[strand][frame][i] = score;
+                m_cdrscr[strand][frame][i] += score;
+                //                m_cdrscr[strand][frame][i] = score;
                 if(i > 0) 
                 {
                     m_cdrscr[strand][frame][i] += m_cdrscr[strand][frame][i-1];
@@ -889,9 +908,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         for(int frame = 0; frame < 3; ++frame)
         {
             for(TSignedSeqPos i = 0; i < len; ++i)
-            {
-                m_cdrscr[strand][frame][i] -= m_ncdrscr[strand][i];
-            }
+                 m_cdrscr[strand][frame][i] -= m_ncdrscr[strand][i];            
+            //                 m_cdrscr[strand][frame][i] -= cp_weight*m_ncdrscr[strand][i];            
         }
         for(TSignedSeqPos i = 0; i < len; ++i)
         {
@@ -1251,6 +1269,32 @@ double CGnomonEngine::AcceptorScore(TSignedSeqPos l, EStrand strand) const { // 
     }
 }
 
+
+double CGnomonEngine::PointCodingScore(int l, EStrand strand, int frame) const { // frame = left_codon_end%3 regardless of the strand 
+    const CNonCodingRegion& ncdr = *m_data->m_ncdr;
+    const CCodingRegion& cdr = *m_data->m_cdr;
+    const CDoubleStrandSeq& ds = m_data->m_ds;
+    int len = ds[ePlus].size();
+
+    int codonshift = (l+3-frame)%3; // distance to the left codon end in correct strand
+    int pos = l;
+    if(strand == eMinus) {
+        codonshift = (2-codonshift)%3;
+        pos = len-1-l;
+    }
+
+    double scr = cdr.Score(ds[strand], pos, codonshift);
+    if(scr == BadScore())  {
+        scr = 0;
+    } else {
+        double s = ncdr.Score(ds[strand], pos);
+        if(s == BadScore()) s = 0;
+        scr -= s;
+    }
+    
+    return scr;
+}
+
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, TSignedSeqPos& best_start, TSignedSeqPos& best_stop, bool extend5p) const
 {
     const CTerminal& acceptor    = *m_data->m_acceptor;
@@ -1259,6 +1303,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
     const CTerminal& stp         = *m_data->m_stop;
     const CCodingRegion& cdr     = *m_data->m_cdr;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
+    const CPhyloCSFData* pcsf    =  m_data->m_pcsf;
     TSignedSeqPos contig_len = (TSignedSeqPos)m_data->m_seq.size();
     EStrand strand = model.Strand();
     const vector<CModelExon>& exons = model.Exons();
@@ -1341,8 +1386,30 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
 
     TDVec cdrscr[3];
     for(int frame = 0; frame < 3; ++frame) {
+        if (frame==best_frame || best_frame==-1)
+            cdrscr[frame].resize(mrna.size(), 0);
+    }
+
+    if(pcsf != nullptr) {
+        CAlignMap amap = model.GetAlignMap();
+        for(int frame = 0; frame < 3; ++frame) {
+            if(frame==best_frame || best_frame==-1) {
+                for(int codon_left = frame; codon_left <= (int)mrna.size()-3; codon_left += 3) {
+                    TSignedSeqRange codon_on_genome = amap.MapRangeEditedToOrig(TSignedSeqRange(codon_left, codon_left+2), false);
+                    if(codon_on_genome.GetLength() != 3)
+                        continue;
+                    double pcsf_score = pcsf->Factor()*pcsf->Score(model.Strand(), codon_on_genome.GetFrom());
+                    if(pcsf_score > 0) {
+                        for(int step = 0; step < 3; ++step)
+                            cdrscr[frame][codon_left+step] = pcsf_score;
+                    }
+                }
+            }
+        }
+    }
+
+    for(int frame = 0; frame < 3; ++frame) {
         if (frame==best_frame || best_frame==-1) {
-            cdrscr[frame].resize(mrna.size(),BadScore());
             for(int i = 0; i < (int)mrna.size(); ++i) {
                 int codonshift = (i-frame)%3;
                 if(codonshift < 0)
@@ -1353,11 +1420,12 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
                     scr = 0;
                 } else {
                     double s = ncdr.Score(mrna,i);
-                    if(s == BadScore()) s = 0;
+                    if(s == BadScore())
+                        s = 0;
                     scr -= s;
                 }
 
-                cdrscr[frame][i] = scr+splicescr[i];
+                cdrscr[frame][i] += scr+splicescr[i];
                 if(i > 0)
                     cdrscr[frame][i] += cdrscr[frame][i-1];
             }
