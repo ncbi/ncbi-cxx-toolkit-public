@@ -400,7 +400,11 @@ bool CGff3Reader::xUpdateAnnotFeature(
          return xUpdateAnnotGene(gffRecord, pFeature, annot, pEC);
     }
     if (NStr::EndsWith(recType, "rna")) {
-            return xUpdateAnnotRna(gffRecord, pFeature, annot, pEC);
+        return xUpdateAnnotRna(gffRecord, pFeature, annot, pEC);
+    }
+    // allow exon before VDJC gene segment to not crash as data error
+    if (NStr::EndsWith(recType, "_gene_segment")) {
+        return xUpdateAnnotRna(gffRecord, pFeature, annot, pEC);
     }
     if (recType == "region") {
         return xUpdateAnnotRegion(gffRecord, pFeature, annot, pEC);

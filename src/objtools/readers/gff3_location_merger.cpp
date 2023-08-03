@@ -298,6 +298,10 @@ bool CGff3LocationMerger::xGetLocationIds(
     if (NStr::EndsWith(recordType, "transcript")) {
         return false;
     }
+    // prevent extra interval from getting into VDJC gene segment
+    if (NStr::EndsWith(recordType, "_gene_segment")) {
+        return false;
+    }
     if (recordType == "exon") {
         return record.GetAttribute("Parent", ids);
     }
