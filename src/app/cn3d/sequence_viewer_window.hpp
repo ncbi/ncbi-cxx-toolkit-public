@@ -90,8 +90,6 @@ private:
             MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
             MID_SORT_LOOPS,
-        MID_SQ_REFINER_OPTIONS,
-        MID_SQ_REFINER_RUN,
         // mouse mode
         MID_MOVE_ROW,
         // update menu
@@ -115,7 +113,6 @@ private:
     void OnSelfHit(wxCommandEvent& event);
     void OnTaxonomy(wxCommandEvent& event);
     void OnHighlight(wxCommandEvent& event);
-    void OnRefineAlignment(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation

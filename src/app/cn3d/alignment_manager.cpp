@@ -63,9 +63,6 @@
 #include "cn3d_pssm.hpp"
 #include "progress_meter.hpp"
 
-//#include <algo/structure/bma_refine/Interface.hpp>
-//#include <algo/structure/bma_refine/InterfaceGUI.hpp>
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -85,7 +82,6 @@ void AlignmentManager::Init(void)
     threader = new Threader(this);
     blaster = new BLASTer();
     blockAligner = new BlockAligner();
-//    bmaRefiner = new BMARefiner();
 
     originalMultiple = NULL;
 }
@@ -162,7 +158,6 @@ AlignmentManager::~AlignmentManager(void)
     delete threader;
     delete blaster;
     delete blockAligner;
-//    delete bmaRefiner;
     if (originalMultiple) delete originalMultiple;
 }
 
@@ -1169,149 +1164,6 @@ void AlignmentManager::ExtendUpdate(BlockMultipleAlignment *single)
             ERRORMSG("AlignmentManager::ExtendUpdate() - changed alignment not found in update viewer!");
         updateViewer->ReplaceAlignments(replacedList);
     }
-}
-
-ProgressMeter *g_refinerProgressMeter = NULL;
-#define PROGRESS_MAX 1000
-
-void RefinementProgress(double progress)
-{
-    if (g_refinerProgressMeter)
-        g_refinerProgressMeter->SetValue((int) (progress * PROGRESS_MAX));
-}
-
-void AlignmentManager::RefineAlignment(bool setUpOptionsOnly)
-{
-#if 0
-    // TODO:  selection dialog for realigning specific rows
-    // <can add this afterwards; refiner supports this sort of thing but need to improve api>
-
-    // get info on current multiple alignment
-    const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
-    if (!multiple || multiple->NRows() < 2 || multiple->HasNoAlignedBlocks()) {
-        ERRORMSG("AlignmentManager::RefineAlignment() - can't refine alignments with < 2 rows or zero aligned blocks");
-        return;
-    }
-
-    // construct CDD from inputs
-    CRef < CCdd > cdd(new CCdd);
-    cdd->SetName("CDD input to refiner from Cn3D");
-    CRef < CCdd_id > uid(new CCdd_id);
-    uid->SetUid(0);
-    cdd->SetId().Set().push_back(uid);
-
-    // construct Seq-entry from sequences in current alignment, starting with master
-    CRef < CSeq_entry > seq(new CSeq_entry);
-    seq->SetSeq().Assign(multiple->GetMaster()->bioseqASN.GetObject());
-    cdd->SetSequences().SetSet().SetSeq_set().push_back(seq);
-
-    // construct Seq-annot from rows in the alignment
-    CRef < CSeq_annot > seqAnnot(new CSeq_annot);
-    cdd->SetSeqannot().push_back(seqAnnot);
-    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
-    multiple->GetUngappedAlignedBlocks(&blocks);
-    vector < unsigned int > rowOrder;
-    sequenceViewer->GetCurrentDisplay()->GetRowOrder(multiple, &rowOrder);
-
-    // other info used by the refiner
-    vector < string > rowTitles(multiple->NRows());
-    vector < bool > rowIsStructured(multiple->NRows());
-    vector < bool > blocksToRealign;
-
-    // fill out Seq-entry and Seq-annot based on current row ordering of the display (which may be different from BMA)
-    for (unsigned int i=1; i<multiple->NRows(); ++i) {
-        seq.Reset(new CSeq_entry);
-        seq->SetSeq().Assign(multiple->GetSequenceOfRow(rowOrder[i])->bioseqASN.GetObject());
-        cdd->SetSequences().SetSet().SetSeq_set().push_back(seq);
-        CRef < CSeq_align > seqAlign(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, rowOrder[i]));
-        seqAnnot->SetData().SetAlign().push_back(seqAlign);
-        rowTitles[i] = multiple->GetSequenceOfRow(rowOrder[i])->identifier->ToString();
-        rowIsStructured[i] = (multiple->GetSequenceOfRow(rowOrder[i])->identifier->pdbID.size() > 0);
-    }
-
-    // set blocks to realign, using marked blocks, if any; no marks -> realign all blocks
-    vector < unsigned int > marks;
-    multiple->GetMarkedBlockNumbers(&marks);
-    blocksToRealign.resize(blocks.size(), (marks.size() == 0));
-    for (unsigned int i=0; i<marks.size(); ++i) {
-        TRACEMSG("refining block " << (marks[i]+1));
-        blocksToRealign[marks[i]] = true;
-    }
-
-    // set up refiner
-
-    align_refine::BMARefinerInterface interface;
-    static unique_ptr < align_refine::BMARefinerOptions > options;
-    if ((options.get() && !interface.SetOptions(*options)) ||   // set these first since some are overridden by alignment inputs
-        !interface.SetInitialAlignment(*cdd, blocks.size(), multiple->NRows()) ||
-        !interface.SetRowTitles(rowTitles) ||
-        !interface.SetRowsWithStructure(rowIsStructured) ||
-        !interface.SetBlocksToRealign(blocksToRealign))
-    {
-        ERRORMSG("AlignmentManager::RefineAlignment() - failed to set up BMARefinerInterface");
-        return;
-    }
-    if (!options.get() || setUpOptionsOnly) {
-        if (!align_refine::BMARefinerOptionsDialog::SetRefinerOptionsViaDialog(NULL, interface))
-        {
-            WARNINGMSG("AlignmentManager::RefineAlignment() - failed to set refiner options via dialog, probably cancelled");
-            return;
-        }
-        options.reset(interface.GetOptions());
-    }
-
-    if (setUpOptionsOnly)
-        return;
-
-    // set up a progress meter
-    g_refinerProgressMeter = new ProgressMeter(NULL, "Refinement in progress...", "Wait", PROGRESS_MAX);
-    g_refinerProgressMeter->SetValue(0);
-
-    // actually run the refiner algorithm
-    CCdd::TSeqannot results;
-    SetDialogSevereErrors(false);
-    wxSetCursor(*wxHOURGLASS_CURSOR);
-    bool okay = interface.Run(results, RefinementProgress);
-    wxSetCursor(wxNullCursor);
-    SetDialogSevereErrors(true);
-    SetDiagPostLevel(eDiag_Info);   // may be changed by refiner
-
-    // delete progress meter
-    g_refinerProgressMeter->Close(true);
-    g_refinerProgressMeter->Destroy();
-    g_refinerProgressMeter = NULL;
-
-    if (okay) {
-
-        // unpack results
-        if (results.size() > 0 && results.front().NotEmpty()) {
-
-            // just use first returned alignment for now; convert asn data into BlockMultipleAlignment
-            PairwiseAlignmentList pairs;
-            if (!results.front()->IsSetData() || !results.front()->GetData().IsAlign()) {
-                WARNINGMSG("AlignmentManager::RefineAlignment() - got result Seq-annot in unexpected format");
-            } else {
-                CSeq_annot::C_Data::TAlign::const_iterator l, le = results.front()->GetData().GetAlign().end();
-                for (l=results.front()->GetData().GetAlign().begin(); l!=le; ++l)
-                    pairs.push_back(new MasterDependentAlignment(NULL, multiple->GetMaster(), **l));
-            }
-            unique_ptr < BlockMultipleAlignment > refined(CreateMultipleFromPairwiseWithIBM(pairs));
-            DELETE_ALL_AND_CLEAR(pairs, PairwiseAlignmentList);
-
-            // feed result back into alignment window
-            if (refined.get() && refined->NRows() == multiple->NRows())
-                sequenceViewer->ReplaceAlignment(multiple, refined.release());
-            else
-                ERRORMSG("AlignmentManager::RefineAlignment() - problem converting refinement result");
-
-        } else {
-            WARNINGMSG("AlignmentManager::RefineAlignment() - failed to make a refined alignment. Alignment unchanged.");
-        }
-
-    } else {
-        ERRORMSG("AlignmentManager::RefineAlignment() - refinement failed. Alignment unchanged.");
-    }
-#endif
 }
 
 END_SCOPE(Cn3D)

@@ -4,7 +4,7 @@
 # Build application "cn3d"
 #################################
 
-WATCHERS = lanczyck
+WATCHERS = lanczyck,dzhang
 
 REQUIRES = objects wxWidgets OpenGL PNG
 
@@ -76,8 +76,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 CXXFLAGS = $(FAST_CXXFLAGS)
 
 LDFLAGS = $(FAST_LDFLAGS)
-
-##LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp xstruct_thread 
 
 LIB =   wx_tools xcd_utils xstruct_util xstruct_dp xstruct_thread \
         xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqmasks_io seqdb $(OBJREAD_LIBS) \

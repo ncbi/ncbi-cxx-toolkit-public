@@ -69,7 +69,7 @@ SRC =	aaa_dummy_pch \
 	viewer_base \
 	viewer_window_base
 
-LIB =   xbma_refiner_gui wx_tools xbma_refiner xcd_utils xstruct_util xstruct_dp xstruct_thread \
+LIB =   wx_tools xcd_utils xstruct_util xstruct_dp xstruct_thread \
         xblast xalgowinmask xalgodustmask xalgoblastdbindex composition_adjustment seqmasks_io seqdb $(OBJREAD_LIBS) \
   	entrez2 entrez2cli xconnserv xcgi xhtml xcompress xconnect xconnext xser xutil xncbi \
 	xalnmgr tables xobjutil id1cli id1 ncbimime cdd cn3d mmdb blast_services xnetblastcli xnetblast scoremat \
