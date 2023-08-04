@@ -91,6 +91,7 @@ void throw_exception( std::exception const & e ) {
 
 extern const string sc_TestEntryCleanRptUnitSeq;
 
+
 static void s_CheckRptUnitSeq(const CBioseq_Handle& bsh)
 {
     CFeat_CI f(bsh);
@@ -104,6 +105,8 @@ static void s_CheckRptUnitSeq(const CBioseq_Handle& bsh)
         ++f;
     }
 }
+
+
 
 /*
 BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq)
@@ -206,9 +209,40 @@ BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_SeqAnnotHandle)
     scope->AddTopLevelSeqEntry(entry);
 
     CCleanup cleanup;
-    auto& annot = *(entry.SetSeq().SetAnnot().front());
+    const auto& annot = *(entry.GetSeq().GetAnnot().front());
     auto sah = scope->GetSeq_annotHandle(annot);
     auto changes = cleanup.BasicCleanup(sah);
+    // look for expected change flags
+    auto changes_str = changes->GetDescriptions();
+    if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Change Qualifiers");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Change Qualifiers");
+        for (size_t i = 2; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+    }
+    // make sure change was actually made
+    s_CheckRptUnitSeq(scope->GetBioseqHandle(entry.GetSeq()));
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanRptUnitSeq_SeqFeatHandle)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanRptUnitSeq);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    scope->AddTopLevelSeqEntry(entry);
+
+    CCleanup cleanup;
+    auto pAnnot = entry.GetSeq().GetAnnot().front();
+    auto pFeat = pAnnot->GetData().GetFtable().front();
+    auto sfh = scope->GetSeq_featHandle(*pFeat);
+    auto changes = cleanup.BasicCleanup(sfh);
     // look for expected change flags
     auto changes_str = changes->GetDescriptions();
     if (changes_str.size() < 1) {
