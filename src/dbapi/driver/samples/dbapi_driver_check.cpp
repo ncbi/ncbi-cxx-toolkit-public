@@ -35,6 +35,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/impl/ncbi_dbsvcmapper.hpp>
+#include <corelib/plugin_manager_store.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -45,6 +47,10 @@ int main(int argc, char* argv[])
 {
     // Disable system popup boxes messages
     SuppressSystemMessageBox();
+
+    // Avoid underlinkage under Apple Developer Tools 15
+    CEndpointKey fake_endpoint("1.2.3.4:5", 0);
+    CPluginManagerGetterImpl::GetMutex();
 
     // Self-check, return magic error code
     if (argc != 2) {
