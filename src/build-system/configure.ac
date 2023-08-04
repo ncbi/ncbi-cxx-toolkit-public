@@ -1612,7 +1612,7 @@ if test "$with_mt" != "no" ; then
         ;;
      *:GCC | *:ICC | *Clang | linux*:KCC )
         case "$host_cpu" in
-           i?86 | powerpc* | ppc* | x86_64 | sparc* | aarch64 )
+           i?86 | powerpc* | ppc* | x86_64 | sparc* | aarch64 | arm* )
               NCBIATOMIC_LIB=
               ;;
            * ) NCBIATOMIC_LIB=xncbi ;;
@@ -6015,7 +6015,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          test "$bit64_sfx"  = "64"   &&  BOOST_64=-64
          case "$host_cpu" in
             i?86 | x86_64 ) BOOST_ARCH=-x$NCBI_PLATFORM_BITS ;;
-            arm*          ) BOOST_ARCH=-a$NCBI_PLATFORM_BITS ;;
+            aarch64 | arm*) BOOST_ARCH=-a$NCBI_PLATFORM_BITS ;;
             ia64          ) BOOST_ARCH=-i$NCBI_PLATFORM_BITS ;;
             sparc*        ) BOOST_ARCH=-s$NCBI_PLATFORM_BITS ;;
             mips*         ) BOOST_ARCH=-m$NCBI_PLATFORM_BITS ;;
@@ -7738,7 +7738,7 @@ if test "$with_vdb" != "no" ; then
          done
          vdb_inc_subdirs=cc/gcc
          case "$host_cpu:$bit64_sfx" in
-            a*r*64:* ) vdb_inc_subdirs="cc/gcc/arm64 $vdb_inc_subdirs" ;;
+            a*r*:*  ) vdb_inc_subdirs="cc/gcc/arm64 $vdb_inc_subdirs" ;;
             *86*:64 ) vdb_inc_subdirs="cc/gcc/x86_64 $vdb_inc_subdirs" ;;
             *86*:*  ) vdb_inc_subdirs="cc/gcc/fat86 $vdb_inc_subdirs" ;;
          esac
