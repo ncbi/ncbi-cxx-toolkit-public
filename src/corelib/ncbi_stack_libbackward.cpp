@@ -31,7 +31,9 @@
 #include <ncbiconf.h>
 
 #if defined(HAVE_LIBDW)
-#  define BACKWARD_HAS_DW 1
+#  ifndef BACKWARD_HAS_DW
+#    define BACKWARD_HAS_DW 1
+#  endif
 #elif defined(HAVE_LIBUNWIND)
 #  define BACKWARD_HAS_UNWIND 1
 #endif
@@ -115,7 +117,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
             info2.file = inliner_loc.filename;
             info2.line = inliner_loc.line;
             info2.func = inliner_loc.function;
-            stack.push_back(move(info2));
+            stack.push_back(std::move(info2));
         }
 
         if (trace.source.filename.size()) {
@@ -125,7 +127,7 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
             info.func = trace.object_function;
             info.addr = trace.addr;
         }
-        stack.push_back(move(info));
+        stack.push_back(std::move(info));
     }
 }
 
