@@ -948,6 +948,26 @@ extern const char* NcbiLogP_GetHitID_Env(void)
 }
 
 
+/** Get value from numeric-based environment variables.
+ */
+extern int NcbiLogP_GetEnv_UInt(const char* env_var_name, unsigned int* value)
+{
+    const char* p;
+    if ( (p = getenv(env_var_name)) != NULL  &&  *p ) {
+        char* e;
+        unsigned long v = strtoul(p, &e, 10);
+        if (v <= UINT_MAX  &&  !*e) {
+            if (value) {
+                *value = (unsigned int)v;
+            }
+            return 0;
+        }
+    }
+    return -1;
+}
+
+
+
 /* The URL-encoding table
  */
 static const unsigned char sx_EncodeTable[256][4] = {
@@ -2422,6 +2442,17 @@ static void s_Init(const char* appname)
     sx_Info->message = (char*) malloc(NCBILOG_ENTRY_MAX_ALLOC);
     assert(sx_Info->message);
 
+    /* Try to get LOG_ISSUED_SUBHIT_LIMIT value, see docs for it */
+    {{
+        unsigned int v; /* necessary to avoid compilation warnings */
+        if (NcbiLogP_GetEnv_UInt("LOG_ISSUED_SUBHIT_LIMIT", &v) == 0) {
+            sx_Info->phid_sub_id_limit = v;
+        } else {
+            /* Not defined, use default, same as for C++ toolkit */
+            sx_Info->phid_sub_id_limit = 200; 
+        }
+     }}
+
     /* Logging is initialized now and can be used */
     sx_IsEnabled = 1 /*true*/;
 }
@@ -3098,13 +3129,16 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     /* Generate sub hit ID */
     if (need_increment) {
         ++(*sub_id);
+
+        /* Print issued sub hit ID number */
+        if (*sub_id <= sx_Info->phid_sub_id_limit) {
+            n = sprintf(buf, "%d", *sub_id);
+            if (n <= 0) {
+                return NULL;  /* error */
+            }
+            s_LogSubHitID(ctx, buf);
+        }
     }
-    /* Print issued sub hit ID number */
-    n = sprintf(buf, "%d", *sub_id);
-    if (n <= 0) {
-        return NULL;  /* error */
-    }
-    s_LogSubHitID(ctx, buf);
 
     /* Generate sub hit ID string representation */
     n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
