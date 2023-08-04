@@ -2127,24 +2127,26 @@ CRef<CSeq_entry> CCleanup::AddProtein(const CSeq_feat& cds, CScope& scope)
         CConstRef<CBioseq_set> set = eh.GetSet().GetCompleteBioseq_set();
         if (set && set->IsSetSeq_set()) {
             CConstRef<CSeq_entry> nuc = set->GetSeq_set().front();
-            CSeq_entry_EditHandle neh = eh.GetScope().GetSeq_entryEditHandle(*nuc);
-            CBioseq_set::TDescr::Tdata::const_iterator it = nuc->GetDescr().Get().begin();
-            while (it != nuc->GetDescr().Get().end()) {
-                if (!(*it)->IsMolinfo() && !(*it)->IsTitle() && !(*it)->IsCreate_date()) {
-                    CRef<CSeqdesc> copy(new CSeqdesc());
-                    copy->Assign(**it);
-                    eh.AddSeqdesc(*copy);
-                    neh.RemoveSeqdesc(**it);
-                    if (nuc->IsSetDescr()) {
-                        it = nuc->GetDescr().Get().begin();
-                    }
-                    else {
+            if (nuc->IsSetDescr()) {
+               auto neh = eh.GetScope().GetSeq_entryEditHandle(*nuc);
+               auto it = nuc->GetDescr().Get().begin();
+               while (it != nuc->GetDescr().Get().end()) {
+                  if (!(*it)->IsMolinfo() && !(*it)->IsTitle() && !(*it)->IsCreate_date()) {
+                     CRef<CSeqdesc> copy(new CSeqdesc());
+                     copy->Assign(**it);
+                     eh.AddSeqdesc(*copy);
+                     neh.RemoveSeqdesc(**it);
+                     if (nuc->IsSetDescr()) {
+                       it = nuc->GetDescr().Get().begin();
+                     }
+                     else {
                         break;
-                    }
-                }
-                else {
+                     } 
+                  }   
+                  else {
                     ++it;
-                }
+                  }
+               }
             }
         }
     }
