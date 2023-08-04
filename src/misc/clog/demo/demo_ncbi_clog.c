@@ -174,7 +174,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
         /* Next call to NcbiLog_ReqRun() can be skipped, but still recommended 
            if you want to use full functionality
         */
-        NcbiLog_ReqRun(); 
+        NcbiLog_ReqRun();
         /* 
            ... 
            request specific logging going here 
