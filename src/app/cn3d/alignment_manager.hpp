@@ -63,7 +63,6 @@ class BLASTer;
 class StructureSet;
 class MoleculeIdentifier;
 class BlockAligner;
-class BMARefiner;
 
 class AlignmentManager : public ShowHideCallbackObject
 {
@@ -76,7 +75,6 @@ public:
     Threader *threader; // made public so viewers have access to it
     BLASTer *blaster;
     BlockAligner *blockAligner;
-//    BMARefiner *bmaRefiner;
 
     void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
 
@@ -139,9 +137,6 @@ public:
 
     // remove sequence from both multiple alignment and updates
     void PurgeSequence(const MoleculeIdentifier *identifier);
-
-    // run the alignment refiner
-    void RefineAlignment(bool setUpOptionsOnly);
 
     // show sequence/alignment/update viewer
     void ShowSequenceViewer(bool showNow) const;
