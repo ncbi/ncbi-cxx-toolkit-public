@@ -1219,7 +1219,7 @@ void CMultiAligner::x_MultiAlignClusters(void)
 
             // get letter before which the gap needs to be placed
             Uint4 letter = m_ClusterGapPositions[cluster_idx][i];
-            Uint4 offset = i;
+            Uint4 offset = (Uint4)i;
             int num = 1;
 
             // combine all gaps before the same letter as one range

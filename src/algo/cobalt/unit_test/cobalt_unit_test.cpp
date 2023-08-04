@@ -181,7 +181,7 @@ public:
              i++) {
 
             string header = "Hit " + NStr::UIntToString((unsigned)i) + ": ";
-            const CHit* hit = hitlist.GetHit(i);
+            const CHit* hit = hitlist.GetHit((int)i);
 
             // compare query ids
             CSeq_id expected_query_id(expected_hits[i].query);
@@ -850,7 +850,7 @@ static void s_TestResultAlignment(const vector< CRef<CSeq_loc> >& queries,
 static void s_TestResults(CMultiAligner& aligner,
                           const string& ref_aln = "")
 {
-    const int kNumQueries = aligner.GetQueries().size();
+    const int kNumQueries = (int)aligner.GetQueries().size();
 
     s_TestResultClusters(kNumQueries, aligner.GetQueryClusters(),
                          aligner.GetOptions()->GetUserConstraints());
