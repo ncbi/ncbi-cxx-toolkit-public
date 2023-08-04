@@ -153,6 +153,7 @@ struct SInfo_tag {
     char              phid[3*NCBILOG_HITID_MAX+1];    
                                                 /**< App-wide hit ID (empty string if unknown)           */
     unsigned int      phid_sub_id;              /**< App-wide sub-hit ID counter                         */
+    unsigned int      phid_sub_id_limit;        /**< Initializes from LOG_ISSUED_SUBHIT_LIMIT env variable */
     int/*bool*/       phid_inherit;             /**< 1 if PHID set explicitly and should be inherited (by requests) */
     const char*       host_role;                /**< Host role (NULL if unknown or not set)              */
     const char*       host_location;            /**< Host location (NULL if unknown or not set)          */
@@ -316,6 +317,13 @@ extern const char* NcbiLogP_GetSessionID_Env(void);
  *  Return NULL if not found.
  */
 extern const char* NcbiLogP_GetHitID_Env(void);
+
+
+/** Get unsigned int value from a numeric-based environment variable.
+ *  Return 0 if found and succesfully converted to uint. Save its value to variable passed by pointer.
+ *  Return -1 on error: not defined, unable to convert to numeric value.
+ */
+extern int NcbiLogP_GetEnv_UInt(const char* env_var_name, unsigned int* value);
 
 
 /** Generate new unique process ID.
