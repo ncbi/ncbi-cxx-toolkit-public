@@ -10710,10 +10710,15 @@ if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
       GCC:* | *Clang:* )
         DEF_FAST_FLAGS="-O3 -finline-functions -fstrict-aliasing"
         # DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
-        if test "$with_profiling" != "yes"; then
-           # incompatible with -pg
-           DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
-        fi
+        case "$with_profiling:$compiler:$compiler_version:$host_cpu" in
+           yes:* | *:AppleClang:15*:arm* )
+              ;;
+           * )
+              # incompatible with -pg; breaks exception handling with
+              # Apple Clang 15 on Silicon.
+              DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fomit-frame-pointer"
+              ;;
+        esac
         ;;
       WorkShop5[89]* | WorkShop510 )
         # Limit optimization to -xO2 (-O now maps to -xO3) due to compiler bugs.
