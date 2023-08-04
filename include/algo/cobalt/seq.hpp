@@ -122,7 +122,7 @@ public:
     /// Get the length of the current sequence
     /// @return Sequence length
     ///
-    int GetLength() const { return m_Sequence.size(); }
+    int GetLength() const { return (int)m_Sequence.size(); }
 
     /// Given an edit script, insert gaps into a sequence. The
     /// profile of the sequence is adjusted automatically, and
