@@ -43,7 +43,9 @@
 #include "dbapi_sample_base.hpp"
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/plugin_manager_store.hpp>
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
@@ -88,6 +90,11 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
 
 #ifdef NCBI_DLL_SUPPORT
     CPluginManager_DllResolver::EnableGlobally(true);
+    // Avoid underlinkage under Apple Developer Tools 15
+    CConfig empty_config(CMemoryRegistry());
+    CEndpointKey fake_endpoint("1.2.3.4:5", 0);
+    CPluginManagerGetterImpl::GetMutex();
+
 #else
 
 #ifdef HAVE_LIBSYBASE

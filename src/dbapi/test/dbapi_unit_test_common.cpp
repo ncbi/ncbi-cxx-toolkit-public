@@ -35,6 +35,9 @@
 #include <corelib/ncbiargs.hpp>
 //#include <corelib/ncbithr.hpp>
 #include <corelib/expr.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/ncbi_pool_balancer.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
 
@@ -167,6 +170,11 @@ bool s_CommonInit(void)
 
 #else
     CPluginManager_DllResolver::EnableGlobally(true);
+    // Avoid underlinkage under Apple Developer Tools 15
+    CConfig empty_config((CMemoryRegistry()));
+    CEndpointKey fake_endpoint("1.2.3.4:5", 0);
+    CPluginManagerGetterImpl::GetMutex();
+    CPoolBalancer fake_balancer("foo", {}, false);
 #endif // NCBI_DLL_SUPPORT
 
     if (false) {
