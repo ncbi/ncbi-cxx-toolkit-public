@@ -74,7 +74,7 @@ static CRef<CBioseq> s_CreateBioseq(const string& sequence, int id)
     for (size_t i=0;i < sequence.length();i++) {
         data[i] = (char)AMINOACID_TO_NCBISTDAA[(int)sequence[i]];
     }
-    bioseq->SetInst().SetLength(sequence.length());
+    bioseq->SetInst().SetLength((unsigned int)sequence.length());
     bioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
 
     bioseq->SetId().clear();

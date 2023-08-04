@@ -423,7 +423,7 @@ BOOST_AUTO_TEST_CASE(TestMoreElements)
     BOOST_REQUIRE_EQUAL(dmat.GetCols(), dmat.GetRows());
 
     // two elements
-    const int num_elements = dmat.GetCols();
+    const int num_elements = (int)dmat.GetCols();
 
     // maximum cluster diameter
     const double max_distance = 0.8;
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE(TestMoreElements)
     for (size_t i=0;i < dmat.GetCols() - 1;i++) {
         for (size_t j=i+1;j < dmat.GetCols();j++) {
             if (dmat(i, j) < max_distance) {
-                links->AddLink(i, j, dmat(i, j));
+                links->AddLink((int)i, (int)j, dmat(i, j));
             }
         }
     }

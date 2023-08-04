@@ -180,7 +180,7 @@ x_FillResidueFrequencies(double **freq_data,
                     vector<CSequence>& query_data)
 {
     int align_length = query_data[0].GetLength();
-    int num_seqs = query_data.size();
+    int num_seqs = (int)query_data.size();
     for (int i = 0; i < align_length; i++) {
         for (int j = 0; j < num_seqs; j++)
             freq_data[i][query_data[j].GetLetter(i)]++;
@@ -531,7 +531,7 @@ int CMultiApplication::Run(void)
     int first_index = args["first"].AsInteger();
     int last_index = args["last"].AsInteger();
     if (last_index == 0) {
-        last_index = align_list.size() - 1;
+        last_index = (int)align_list.size() - 1;
     }
     else {
         // last_index starts from 1
@@ -591,7 +591,7 @@ int CMultiApplication::Run(void)
         printf("\n\n");
     }
 
-    int num_clusters = align_list.size();
+    int num_clusters = (int)align_list.size();
 
     if (args["d"]) {
         CNcbiIstream& dfile(args["d"].AsInputFile());
