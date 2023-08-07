@@ -89,16 +89,11 @@ class NCBI_XLOADER_GENBANK_EXPORT CPSGDataLoader : public CGBDataLoader
 public:
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
         const CGBLoaderParams& params,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        const TParamTree& param_tree,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 

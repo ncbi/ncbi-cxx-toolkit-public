@@ -151,7 +151,6 @@ CConstRef<CPsgBlobId> CPsgBlobId::GetPsgBlobId(const CBlobId& blob_id)
 
 
 #define PSGLOADER_NAME "GBLOADER"
-#define PSGLOADER_HUP_NAME "GBLOADER-HUP"
 
 const char kDataLoader_PSG_DriverName[] = "psg";
 
@@ -170,18 +169,6 @@ void CPSGDataLoader::SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value)
 
 CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    const CGBLoaderParams& params,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority priority)
-{
-    TMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
-}
-
-
-CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
-    CObjectManager& om,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
@@ -194,11 +181,10 @@ CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
 
 CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    const TParamTree& param_tree,
+    const CGBLoaderParams& params,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    CGBLoaderParams params(&param_tree);
     TMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return ConvertRegInfo(maker.GetRegisterInfo());

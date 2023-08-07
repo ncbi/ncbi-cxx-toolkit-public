@@ -1054,12 +1054,9 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }
 
-    string service_name;
-    if (psg_params) {
+    string service_name = params.GetPSGServiceName();
+    if (service_name.empty() && psg_params) {
         service_name = CPSGDataLoader::GetParam(psg_params, NCBI_PSGLOADER_SERVICE_NAME);
-    }
-    if (service_name.empty()) {
-        service_name = params.GetPSGServiceName();
     }
     if (service_name.empty()) {
         service_name = TPSG_ServiceName::GetDefault();
