@@ -88,6 +88,8 @@ public:
     CJsonResponse(const string& id, int code, const string& message);
 
     static void SetReplyType(bool value) { sm_SetReplyType = value; }
+    static void SetDataLimit(size_t value) { sm_DataLimit = value; }
+    static void SetPreviewSize(size_t value) { sm_PreviewSize = value; }
 
 private:
     CJsonResponse(const string& id);
@@ -147,6 +149,8 @@ private:
     CJson_Object m_JsonObj;
     bool m_Error = false;
     static bool sm_SetReplyType;
+    inline static auto sm_DataLimit = numeric_limits<size_t>::max();
+    inline static auto sm_PreviewSize = numeric_limits<size_t>::max();
 };
 
 struct SParams
@@ -223,11 +227,15 @@ using TIpgBatchResolveParams = SParallelProcessingParams;
 
 struct SInteractiveParams : SParallelProcessingParams
 {
+    const size_t data_limit;
+    const size_t preview_size;
     const bool echo;
     const bool testing;
 
-    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, bool e, bool t) :
+    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool t) :
         SParallelProcessingParams(move(s), move(ua), r, wt, p, srv),
+        data_limit(dl),
+        preview_size(ps),
         echo(e),
         testing(t)
     {}
@@ -277,7 +285,7 @@ private:
         TReplyComplete GetReplyComplete();
 
     private:
-        void Init();
+        void Init(const TParams& params);
 
         const TParams& m_Params;
         CPSG_WaitingQueue<string> m_InputQueue;

@@ -41,6 +41,7 @@
 #include <serial/objcopy.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <util/checksum.hpp>
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 
@@ -322,7 +323,18 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
     Set("id", blob_data);
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
-    Set("data", NStr::Base64Encode(os.str()));
+    auto data = os.str();
+
+    if (const auto data_size = data.size(); data_size <= sm_DataLimit) {
+        Set("data", NStr::Base64Encode(data));
+    } else {
+        Set("length", data_size);
+        CHash hash;
+        hash.Calculate(data.data(), data_size);
+        Set("hash", hash.GetResultHex());
+        data.erase(sm_PreviewSize);
+        Set("preview", NStr::Base64Encode(data));
+    }
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
@@ -804,7 +816,7 @@ struct SBatchResolveContext : string
 };
 
 template <class TParams>
-void CParallelProcessing<TParams>::SImpl::Init()
+void CParallelProcessing<TParams>::SImpl::Init(const TParams&)
 {
         CJsonResponse::SetReplyType(false);
 }
@@ -895,8 +907,10 @@ void CParallelProcessing<TIpgBatchResolveParams>::SImpl::Submitter(CPSG_Queue& o
 }
 
 template <>
-void CParallelProcessing<SInteractiveParams>::SImpl::Init()
+void CParallelProcessing<SInteractiveParams>::SImpl::Init(const SInteractiveParams& params)
 {
+    CJsonResponse::SetDataLimit(params.data_limit);
+    CJsonResponse::SetPreviewSize(params.preview_size);
 }
 
 template <>
@@ -1018,7 +1032,7 @@ CParallelProcessing<TParams>::SImpl::SImpl(const TParams& params) :
     json_out(params.pipe, params.server),
     m_Params(params)
 {
-    Init();
+    Init(params);
 }
 
 template <class TParams>
