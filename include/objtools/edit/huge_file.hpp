@@ -87,8 +87,8 @@ public:
     unique_ptr<CObjectIStream> MakeObjStream(std::streampos pos = 0) const;
 
 private:
-    bool x_TryOpenStreamFile(const string& filename);
-    bool x_TryOpenMemoryFile(const string& filename);
+    bool x_TryOpenStreamFile(const string& filename, std::streampos filesize);
+    bool x_TryOpenMemoryFile(const string& filename, std::streampos filesize);
 };
 
 class NCBI_XOBJEDIT_EXPORT CHugeFileException : public CException
