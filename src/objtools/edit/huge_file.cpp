@@ -48,19 +48,20 @@ CHugeFile::~CHugeFile(){}
 
 void CHugeFile::Open(const std::string& filename, const set<TTypeInfo>* supported_types)
 {
-    if (x_TryOpenMemoryFile(filename) ||
-        x_TryOpenStreamFile(filename)) {
-        m_supported_types = supported_types;
-        m_content = RecognizeContent(*m_stream);
+    auto filesize = CFile(filename).GetLength();
+    if (filesize > 0) {
+        if (x_TryOpenMemoryFile(filename, filesize) ||
+            x_TryOpenStreamFile(filename, filesize)) {
+            m_supported_types = supported_types;
+            m_content = RecognizeContent(*m_stream);
+        }
     }
+    if (m_filesize <= 0)
+        NCBI_THROW(CFileException, eNotExists, "Cannot open " + filename);
 }
 
-bool CHugeFile::x_TryOpenMemoryFile(const string& filename)
+bool CHugeFile::x_TryOpenMemoryFile(const string& filename, std::streampos filesize)
 {
-    auto filesize = CFile(filename).GetLength();
-    if (filesize <= 0)
-        return false;
-
     try
     {
         auto memfile = std::make_unique<CMemoryFile>(filename,
@@ -92,12 +93,8 @@ bool CHugeFile::x_TryOpenMemoryFile(const string& filename)
 
 }
 
-bool CHugeFile::x_TryOpenStreamFile(const string& filename)
+bool CHugeFile::x_TryOpenStreamFile(const string& filename, std::streampos filesize)
 {
-    auto filesize = CFile(filename).GetLength();
-    if (filesize <= 0)
-        return false;
-
     std::unique_ptr<std::ifstream> stream{new std::ifstream(filename, ios::binary)};
     if (!stream->is_open())
         return false;
