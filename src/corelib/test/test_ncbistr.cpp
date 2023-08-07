@@ -1995,6 +1995,17 @@ BOOST_AUTO_TEST_CASE(s_Replace)
         dst = NStr::Replace(src, search, replace, src.size() - 1);
         BOOST_CHECK_EQUAL(dst, string("aaabbbaaccczzcccXx"));
 
+        search  = "a";
+        replace = "ab";
+        dst = NStr::Replace(src, search, replace);
+        BOOST_CHECK_EQUAL(dst, string("abababbbbababccczzcccXX"));
+
+        search  = "ab";
+        replace = "a";
+        dst = NStr::Replace(src, search, replace);
+        BOOST_CHECK_EQUAL(dst, string("aaabbaaccczzcccXX"));
+
+
         // ReplaceInPlace()
 
         search  = "a";
@@ -2013,6 +2024,16 @@ BOOST_AUTO_TEST_CASE(s_Replace)
         BOOST_CHECK_EQUAL(src, string("WWbbbbbbbWccczzcccXX"));
 
         search = "bb";
+        replace = "c";
+        NStr::ReplaceInPlace(src, search, replace);
+        BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
+
+        search = "c";
+        replace = "cb";
+        NStr::ReplaceInPlace(src, search, replace);
+        BOOST_CHECK_EQUAL(src, string("WWcbcbcbbWcbcbcbzzcbcbcbXX"));
+
+        search = "cb";
         replace = "c";
         NStr::ReplaceInPlace(src, search, replace);
         BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
