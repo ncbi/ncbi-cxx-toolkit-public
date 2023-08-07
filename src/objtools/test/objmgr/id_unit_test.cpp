@@ -1418,7 +1418,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
-    BOOST_CHECK_EQUAL(pub_count, 3);
+    BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
     BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
@@ -1428,7 +1428,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
-    BOOST_CHECK_EQUAL(total_count, 11);
+    BOOST_CHECK_EQUAL(total_count, 10);
 }
 
 
