@@ -2378,8 +2378,7 @@ public:
     /// Replace occurrences of a substring within a string.
     ///
     /// @param src
-    ///   Source string from which specified substring occurrences are
-    ///   replaced.
+    ///   Source string from which specified substring occurrences are replaced.
     /// @param search
     ///   Substring value in "src" that is replaced.
     /// @param replace
@@ -2398,6 +2397,11 @@ public:
     /// @return
     ///   Result of replacing the "search" string with "replace" in "src". This
     ///   value is placed in "dst" as well.
+    /// @note
+    ///   After replacing each occurence of the "search" string with "replace"
+    ///   this function move current search position behind a new replacement 
+    ///   in the resulting string, so it doesn't search over any part of the 
+    ///   inserted "replace".
     /// @sa
     ///   Version of Replace() that returns a new string.
     static string& Replace(const string& src,
@@ -2429,6 +2433,11 @@ public:
     /// @return
     ///   A new string containing the result of replacing the "search" string
     ///   with "replace" in "src"
+    /// @note
+    ///   After replacing each occurence of the "search" string with "replace"
+    ///   this function move current search position behind a new replacement 
+    ///   in the resulting string, so it doesn't search over any part of the 
+    ///   inserted "replace".
     /// @sa
     ///   Version of Replace() that has a destination parameter to accept
     ///   result.
@@ -2457,6 +2466,11 @@ public:
     ///   Replace no more than "max_replace" occurrences of substring "search"
     ///   If "max_replace" is zero(default), then replace all occurrences with
     ///   "replace".
+    /// @note
+    ///   After replacing each occurence of the "search" string with "replace"
+    ///   this function move current search position behind a new replacement 
+    ///   in the resulting string, so it doesn't search over any part of the 
+    ///   inserted "replace".
     /// @param num_replace
     ///   Optional pointer to a value which receives number of replacements occurred.
     /// @return
