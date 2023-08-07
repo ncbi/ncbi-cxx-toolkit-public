@@ -22,7 +22,7 @@ endmacro()
 
 ##############################################################################
 macro(NCBI_util_Cfg_ToStd _value _result)
-    if("${_value}" MATCHES "Debug")
+    if("${_value}" MATCHES "[Dd]ebug")
         set(${_result} Debug)
     else()
         set(${_result} Release)
