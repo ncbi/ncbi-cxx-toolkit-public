@@ -43,6 +43,12 @@ class PsgClient:
         if service := args_dict.get('service'):
             self._cmd += ['-service', service]
 
+        if data_limit := args_dict.get('data_limit'):
+            self._cmd += ['-data-limit', data_limit]
+
+        if preview_size := args_dict.get('preview_size'):
+            self._cmd += ['-preview-size', preview_size]
+
         if testing := args_dict.get('testing'):
             self._cmd += ['-testing']
 
@@ -727,6 +733,8 @@ if __name__ == '__main__':
     parser_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
     parser_testcases.add_argument('-testcase', help='A specific testcase to run')
     parser_testcases.add_argument('-report', help='Report successful testcases', action='store_true')
+    parser_testcases.add_argument('-data-limit', help='Show a data preview for any data larger the limit (if set)', default='1KB')
+    parser_testcases.add_argument('-preview-size', help='How much of data to show as the preview', default='16')
     parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_testcases.add_argument('-no-testing-opt', help=argparse.SUPPRESS, dest='testing', action='store_false')
 
