@@ -91,7 +91,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
 #ifdef NCBI_DLL_SUPPORT
     CPluginManager_DllResolver::EnableGlobally(true);
     // Avoid underlinkage under Apple Developer Tools 15
-    CConfig empty_config(CMemoryRegistry());
+    CConfig empty_config((CMemoryRegistry()));
     CEndpointKey fake_endpoint("1.2.3.4:5", 0);
     CPluginManagerGetterImpl::GetMutex();
 
