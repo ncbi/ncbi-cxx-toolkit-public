@@ -171,55 +171,6 @@ public:
     virtual bool CanGetBlobById(void) const override;
     virtual TTSE_Lock GetBlobById(const TBlobId& id) override;
 
-    // Create GB loader and register in the object manager if
-    // no loader with the same name is registered yet.
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        CReader* reader = 0,
-        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-
-    // Select reader by name. If failed, select default reader.
-    // Reader name may be the same as in environment: PUBSEQOS, ID1 etc.
-    // Several names may be separated with ":". Empty name or "*"
-    // included as one of the names allows to include reader names
-    // from environment and registry.
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        const string&   reader_name,
-        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
-
-    // GBLoader with HUP data included.
-    // The reader will be chosen from default configuration,
-    // either pubseqos or pubseqos2.
-    // The default loader priority will be slightly lower than for main data.
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        EIncludeHUP     include_hup,
-        const string& web_cookie,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
-
-    // GBLoader with HUP data included.
-    // The reader can be either pubseqos or pubseqos2.
-    // The default loader priority will be slightly lower than for main data.
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        const string&   reader_name, // pubseqos or pubseqos2
-        EIncludeHUP     include_hup,
-        const string& web_cookie,
-        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
-
-    // Setup loader using param tree. If tree is null or failed to find params,
-    // use environment or select default reader.
-    static TRegisterLoaderInfo RegisterInObjectManager(
-        CObjectManager& om,
-        const TParamTree& params,
-        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
-
     // Setup loader using param tree. If tree is null or failed to find params,
     // use environment or select default reader.
     static TRegisterLoaderInfo RegisterInObjectManager(
@@ -298,7 +249,7 @@ private:
 
     void x_CreateDriver(const CGBLoaderParams& params);
 
-    pair<string, string> GetReaderWriterName(const TParamTree* params) const;
+    pair<string, string> GetReaderWriterName(const TParamTree* params, const CGBLoaderParams& loader_params) const;
     bool x_CreateReaders(const string& str,
                          const TParamTree* params,
                          CGBLoaderParams::EPreopenConnection preopen);

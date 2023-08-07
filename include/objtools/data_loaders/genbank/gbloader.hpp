@@ -109,6 +109,16 @@ public:
             return m_LoaderName;
         }
 
+    void SetLoaderMethod(const string& loader_method)
+    {
+        m_LoaderMethod = loader_method;
+    }
+
+    const string& GetLoaderMethod(void) const
+    {
+        return m_LoaderMethod;
+    }
+
     void SetReaderName(const string& reader_name)
         {
             m_ReaderName = reader_name;
@@ -116,6 +126,15 @@ public:
     const string& GetReaderName(void) const
         {
             return m_ReaderName;
+        }
+
+    void SetWriterName(const string& writer_name)
+        {
+            m_WriterName = writer_name;
+        }
+    const string& GetWriterName(void) const
+        {
+            return m_WriterName;
         }
 
     void SetReaderPtr(CReader* reader_ptr);
@@ -174,6 +193,8 @@ public:
 
 private:
     string m_ReaderName;
+    string m_WriterName;
+    string m_LoaderMethod;
     CRef<CReader> m_ReaderPtr;
     const TParamTree* m_ParamTree;
     EPreopenConnection m_Preopen;
@@ -386,8 +407,7 @@ protected:
     CGBDataLoader(const string&     loader_name,
                   const CGBLoaderParams& params);
 
-    static void SetLoaderMethod(const CGBLoaderParams& params);
-    static const string& GetLoaderMethod(void) { return sm_LoaderMethod; }
+    static void SetLoaderMethod(CGBLoaderParams& params);
 
     TExpirationTimeout      m_IdExpirationTimeout;
 
@@ -397,7 +417,6 @@ protected:
     bool                    m_HasHUPIncluded;
     EGBErrorAction          m_PTISErrorAction;
     string                  m_WebCookie;
-    static string           sm_LoaderMethod;
 
 private:
     CGBDataLoader(const CGBDataLoader&);

@@ -153,76 +153,6 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::ConvertRegInfo(const TG
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
     CObjectManager& om,
-    CReader*        reader_ptr,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    CGBLoaderParams params(reader_ptr);
-    TGBMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
-    const string&   reader_name,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    CGBLoaderParams params(reader_name);
-    TGBMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
-    EIncludeHUP     /*include_hup*/,
-    const string& web_cookie,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    CGBLoaderParams params("PUBSEQOS2:PUBSEQOS");
-    params.SetHUPIncluded(true, web_cookie);
-    TGBMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
-    const string&   reader_name,
-    EIncludeHUP     /*include_hup*/,
-    const string& web_cookie,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    CGBLoaderParams params(reader_name);
-    params.SetHUPIncluded(true, web_cookie);
-    TGBMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
-    const TParamTree& param_tree,
-    CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
-{
-    CGBLoaderParams params(&param_tree);
-    TGBMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
-    CObjectManager& om,
     const CGBLoaderParams& params,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
@@ -420,7 +350,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
         }
     }
     else {
-        pair<string, string> rw_name = GetReaderWriterName(gb_params);
+        pair<string, string> rw_name = GetReaderWriterName(gb_params, params);
         if ( x_CreateReaders(rw_name.first, gb_params, preopen) ) {
             x_CreateWriters(rw_name.second, gb_params);
         }
@@ -429,19 +359,22 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
 
 
 pair<string, string>
-CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params) const
+CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params, const CGBLoaderParams& loader_params) const
 {
     pair<string, string> ret;
     ret.first = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
     if ( ret.first.empty() ) {
         ret.first = TGenbankReaderName::GetDefault();
     }
-    ret.second = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
-    if ( ret.first.empty() ) {
-        ret.first = TGenbankWriterName::GetDefault();
+    ret.second = loader_params.GetWriterName();
+    if (ret.second.empty()) {
+        ret.second = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
+    }
+    if ( ret.second.empty() ) {
+        ret.second = TGenbankWriterName::GetDefault();
     }
     if ( ret.first.empty() || ret.second.empty() ) {
-        string method = GetLoaderMethod();
+        string method = loader_params.GetLoaderMethod();
         if ( method.empty() ) {
             // fall back default reader list
             method = DEFAULT_DRV_ORDER;
