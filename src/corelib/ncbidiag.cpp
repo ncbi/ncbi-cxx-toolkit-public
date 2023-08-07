@@ -3674,13 +3674,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
             collect = eDCM_Discard;
             break;
         case eDS_AppSpecific:
-            {
-                CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
-                if ( app ) {
-                    app->SetupDiag_AppSpecific(); /* NCBI_FAKE_WARNING */
-                }
-                collect = eDCM_Discard;
-            }
+            collect = eDCM_Discard;
             break;
         case eDS_ToSyslog:
             if (old_log_name != CSysLog::kLogName_Syslog) {
