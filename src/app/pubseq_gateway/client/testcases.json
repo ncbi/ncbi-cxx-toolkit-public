@@ -18291,7 +18291,9 @@
                         "user_args": "send_blob_if_small=50000&resend_timeout=0"
                     },
                     "id": "annot_1"
-                },
+                }
+            ],
+            [
                 {
                     "jsonrpc": "2.0",
                     "method": "named_annot",
