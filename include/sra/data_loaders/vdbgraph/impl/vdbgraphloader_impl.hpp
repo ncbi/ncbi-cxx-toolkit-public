@@ -62,9 +62,16 @@ public:
     typedef vector<CAnnotName> TAnnotNames;
     TAnnotNames GetPossibleAnnotNames(void) const;
 
+    template<class Call>
+    typename std::invoke_result<Call>::type
+    CallWithRetry(Call&& call,
+                  const char* name,
+                  unsigned retry_count = 0);
+
     TBlobId GetBlobId(const CSeq_id_Handle& idh);
     TBlobId GetBlobIdFromString(const string& str) const;
     TTSE_Lock GetBlobById(CDataSource* ds, const TBlobId& blob_id);
+    TTSE_Lock GetBlobByIdOnce(CDataSource* ds, const TBlobId& blob_id);
     TTSE_LockSet GetRecords(CDataSource* ds,
                             const CSeq_id_Handle& idh,
                             CDataLoader::EChoice choice);
@@ -72,7 +79,12 @@ public:
                                        const CSeq_id_Handle& idh,
                                        const SAnnotSelector* sel,
                                        CDataLoader::TProcessedNAs* processed_nas);
+    TTSE_LockSet GetOrphanAnnotRecordsOnce(CDataSource* ds,
+                                           const CSeq_id_Handle& idh,
+                                           const SAnnotSelector* sel,
+                                           CDataLoader::TProcessedNAs* processed_nas);
     void GetChunk(CTSE_Chunk_Info& chunk);
+    void GetChunkOnce(CTSE_Chunk_Info& chunk);
 
     CRef<CSeq_entry> LoadFullEntry(const CVDBGraphBlobId& blob_id);
     void LoadSplitEntry(CTSE_Info& tse, const CVDBGraphBlobId& blob_id);
@@ -86,6 +98,10 @@ public:
         string GetMidZoomAnnotName(void) const;
         bool ContainsAnnotsFor(const CSeq_id_Handle& id) const;
     };
+
+    CRef<SVDBFileInfo> OpenVDBGraphFile(const string& name);
+    CRef<SVDBFileInfo> OpenVDBGraphFileOnce(const string& name);
+    
 protected:
     typedef map<string, CRef<SVDBFileInfo> > TFixedFileMap;
     typedef limited_size_map<string, CRef<SVDBFileInfo> > TAutoFileMap;
@@ -97,6 +113,7 @@ protected:
     // mutex guarding input into the map
     CMutex m_Mutex;
     CVDBMgr m_Mgr;
+    unsigned m_RetryCount;
     TFixedFileMap m_FixedFileMap;
     TAutoFileMap m_AutoFileMap;
     TMissingFileSet m_MissingFileSet;
