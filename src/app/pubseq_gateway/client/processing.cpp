@@ -328,7 +328,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
     if (const auto data_size = data.size(); data_size <= sm_DataLimit) {
         Set("data", NStr::Base64Encode(data));
     } else {
-        Set("length", data_size);
+        Set("length", static_cast<Uint8>(data_size)); // macOS requires static_cast, Set() would be ambiguous otherwise
         CHash hash;
         hash.Calculate(data.data(), data_size);
         Set("hash", hash.GetResultHex());
