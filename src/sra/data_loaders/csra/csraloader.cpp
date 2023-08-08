@@ -414,7 +414,7 @@ void CCSRADataLoader::GetChunk(TChunk chunk)
 {
     TBlobId blob_id = chunk->GetBlobId();
     const CCSRABlobId& csra_id = dynamic_cast<const CCSRABlobId&>(*blob_id);
-    m_Impl->LoadChunk(csra_id, *chunk);
+    m_Impl->GetChunk(csra_id, *chunk);
 }
 
 

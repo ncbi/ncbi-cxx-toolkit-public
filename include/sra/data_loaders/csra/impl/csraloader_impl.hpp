@@ -478,6 +478,7 @@ public:
 
     void AddSrzDef(void);
     void AddCSRAFile(const string& csra);
+    void AddCSRAFileOnce(const string& csra);
     
     typedef CCacheWithLock<string, CRef<CCSRAFileInfo> > TSRRFiles;
     typedef pair<CRef<CCSRAFileInfo>, TSRRFiles::CLock> TFileLock;
@@ -521,30 +522,51 @@ public:
     CCSraRefSeqIterator GetRefSeqIterator(const CSeq_id_Handle& idh);
     CCSraShortReadIterator GetShortReadIterator(const CSeq_id_Handle& idh);
 
+    template<class Call>
+    typename std::invoke_result<Call>::type
+    CallWithRetry(Call&& call,
+                  const char* name,
+                  unsigned retry_count = 0);
+    
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
+    CDataLoader::TTSE_LockSet GetRecordsOnce(CDataSource* data_source,
+                                             const CSeq_id_Handle& idh,
+                                             CDataLoader::EChoice choice);
     CRef<CCSRABlobId> GetBlobId(const CSeq_id_Handle& idh);
+    CRef<CCSRABlobId> GetBlobIdOnce(const CSeq_id_Handle& idh);
     CRef<CCSRABlobId> GetBlobId(const TRefLock& lock, CCSRABlobId::EBlobType type);
     CRef<CCSRABlobId> GetReadsBlobId(const TFileLock& lock, TVDBRowId spot_id);
     CTSE_LoadLock GetBlobById(CDataSource* data_source,
                               const CCSRABlobId& blob_id);
+    CTSE_LoadLock GetBlobByIdOnce(CDataSource* data_source,
+                                  const CCSRABlobId& blob_id);
     void LoadBlob(const CCSRABlobId& blob_id,
                   CTSE_LoadLock& load_lock);
-    void LoadChunk(const CCSRABlobId& blob_id,
-                   CTSE_Chunk_Info& chunk);
+    void GetChunk(const CCSRABlobId& blob_id,
+                  CTSE_Chunk_Info& chunk);
+    void GetChunkOnce(const CCSRABlobId& blob_id,
+                      CTSE_Chunk_Info& chunk);
 
     typedef CCSRADataLoader::TAnnotNames TAnnotNames;
     TAnnotNames GetPossibleAnnotNames(void) const;
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+    void GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids);
     CDataSource::SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
+    CDataSource::SAccVerFound GetAccVerOnce(const CSeq_id_Handle& idh);
     CDataSource::SGiFound GetGi(const CSeq_id_Handle& idh);
+    CDataSource::SGiFound GetGiOnce(const CSeq_id_Handle& idh);
     string GetLabel(const CSeq_id_Handle& idh);
+    string GetLabelOnce(const CSeq_id_Handle& idh);
     TTaxId GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxIdOnce(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+    TSeqPos GetSequenceLengthOnce(const CSeq_id_Handle& idh);
     CDataSource::STypeFound GetSequenceType(const CSeq_id_Handle& idh);
+    CDataSource::STypeFound GetSequenceTypeOnce(const CSeq_id_Handle& idh);
 
 protected:
     friend class CCSRAFileInfo;
@@ -566,6 +588,7 @@ private:
     // mutex guarding input into the map
     CVDBMgr m_Mgr;
     string  m_DirPath;
+    unsigned m_RetryCount;
     int m_MinMapQuality;
     bool m_PileupGraphs;
     bool m_QualityGraphs;
