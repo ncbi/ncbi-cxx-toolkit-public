@@ -238,7 +238,7 @@ void CWGSDataLoader::GetChunk(TChunk chunk)
 {
     TBlobId blob_id = chunk->GetBlobId();
     const CWGSBlobId& wgs_id = dynamic_cast<const CWGSBlobId&>(*blob_id);
-    m_Impl->LoadChunk(wgs_id, *chunk);
+    m_Impl->GetChunk(wgs_id, *chunk);
 }
 
 
