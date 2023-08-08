@@ -379,8 +379,7 @@ const string& CNcbiArguments::GetProgramName(EFollowLinks follow_links) const
             string proc_link = "/proc/" + NStr::IntToString(getpid()) + "/exe";
             m_ResolvedName = CDirEntry::NormalizePath(proc_link, follow_links);
 #else
-            m_ResolvedName = CDirEntry::NormalizePath
-                (GetProgramName(eIgnoreLinks), follow_links);
+            m_ResolvedName = CDirEntry::NormalizePath(GetProgramName(eIgnoreLinks), follow_links);
 #endif
         }
         return m_ResolvedName;
