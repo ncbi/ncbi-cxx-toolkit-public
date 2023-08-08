@@ -54,7 +54,7 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   cSRAReader
-NCBI_DEFINE_ERR_SUBCODE_X(1);
+NCBI_DEFINE_ERR_SUBCODE_X(2);
 
 BEGIN_NAMESPACE(objects);
 
@@ -296,6 +296,7 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
             // report all other exceptions as is
             throw;
         }
+        LOG_POST_X(2, Info<<"CCSraDb: eDataError opening VDB "<<csra_path<<", trying VTable...");
     }
     CRef<SRefTableCursor> ref;
     if ( m_Db ) {
