@@ -2264,18 +2264,47 @@ BOOST_AUTO_TEST_CASE(FetchProt23c)
 }
 
 
-static const bool s_MakeFasta = 0;
-
-
-BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
+template<class Call>
+static
+typename std::invoke_result<Call>::type
+s_CallWithRetry(Call&& call,
+                const char* name,
+                int retry_count)
 {
-    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+    for ( int t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<name<<"(): waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
 
-    CStopWatch sw(CStopWatch::eStart);
+
+static CScope::TIds s_LoadScaffoldIdsOnce(const string& name)
+{
     CScope::TIds ids;
     {{
         CVDBMgr mgr;
-        CWGSDb wgs_db(mgr, "ALWZ01");
+        CWGSDb wgs_db(mgr, name);
         size_t limit_count = 30000, start_row = 1, count = 0;
         for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
             ++count;
@@ -2284,6 +2313,27 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
             ids.push_back(CSeq_id_Handle::GetHandle(*it.GetAccSeq_id()));
         }
     }}
+    return ids;
+}
+
+
+static CScope::TIds s_LoadScaffoldIds(const string& name)
+{
+    return s_CallWithRetry(bind(&s_LoadScaffoldIdsOnce,
+                                name),
+                           "s_LoadScaffoldIds", 3);
+}
+
+
+static const bool s_MakeFasta = 0;
+
+
+BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    CStopWatch sw(CStopWatch::eStart);
+    CScope::TIds ids = s_LoadScaffoldIds("ALWZ01");
 
     CScope scope(*om);
     scope.AddDefaults();
@@ -2363,18 +2413,7 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
 
     CStopWatch sw(CStopWatch::eStart);
-    CScope::TIds ids;
-    {{
-        CVDBMgr mgr;
-        CWGSDb wgs_db(mgr, "ALWZ02");
-        size_t limit_count = 30000, start_row = 1, count = 0;
-        for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
-            ++count;
-            if (limit_count > 0 && count > limit_count)
-                break;
-            ids.push_back(CSeq_id_Handle::GetHandle(*it.GetAccSeq_id()));
-        }
-    }}
+    CScope::TIds ids = s_LoadScaffoldIds("ALWZ02");
 
     CScope scope(*om);
     scope.AddDefaults();

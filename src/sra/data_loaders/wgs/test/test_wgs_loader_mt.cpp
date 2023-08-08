@@ -247,6 +247,61 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 }
 
 
+template<class Call>
+static
+typename std::invoke_result<Call>::type
+s_CallWithRetry(Call&& call,
+                const char* name,
+                int retry_count)
+{
+    for ( int t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<name<<"(): waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
+static vector<string> s_LoadProteinAccsOnce(const string& project, size_t count)
+{
+    vector<string> ids;
+    CVDBMgr mgr;
+    CWGSDb wgs(mgr, project);
+    for ( CWGSProteinIterator it(wgs); it && ids.size() < count; ++it ) {
+        ids.push_back(it.GetAccession());
+    }
+    return ids;
+}
+
+
+static vector<string> s_LoadProteinAccs(const string& project, size_t count)
+{
+    return s_CallWithRetry(bind(&s_LoadProteinAccsOnce,
+                                project, count),
+                           "s_LoadProteinAccs", 3);
+}
+
+
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
 {
     LOG_POST("Checking WGS master sequence descriptors on proteins");
@@ -274,12 +329,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
     };
     vector<vector<string>> ids(NQ);
     {{
-        CVDBMgr mgr;
         for ( size_t k = 0; k < NQ; ++k ) {
-            CWGSDb wgs(mgr, accs[k]);
-            for ( CWGSProteinIterator it(wgs); it && ids[k].size() < NS; ++it ) {
-                ids[k].push_back(it.GetAccession());
-            }
+            ids[k] = s_LoadProteinAccs(accs[k], NS);
             LOG_POST("WGS "<<accs[k]<<" testing "<<ids[k].size()<<" proteins");
         }
     }}

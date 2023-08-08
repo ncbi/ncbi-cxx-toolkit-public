@@ -154,25 +154,48 @@ public:
     SAccFileInfo GetFileInfoByGeneral(const CDbtag& dbtag);
     SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
+    template<class Call>
+    typename std::invoke_result<Call>::type
+    CallWithRetry(Call&& call,
+                  const char* name,
+                  unsigned retry_count = 0);
+    
+    CRef<CWGSFileInfo> OpenWGSFile(CTempString prefix);
+    CRef<CWGSFileInfo> OpenWGSFileOnce(CTempString prefix);
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
+    CDataLoader::TTSE_LockSet GetRecordsOnce(CDataSource* data_source,
+                                             const CSeq_id_Handle& idh,
+                                             CDataLoader::EChoice choice);
     CRef<CWGSBlobId> GetBlobId(const CSeq_id_Handle& idh);
+    CRef<CWGSBlobId> GetBlobIdOnce(const CSeq_id_Handle& idh);
     CTSE_LoadLock GetBlobById(CDataSource* data_source,
                               const CWGSBlobId& blob_id);
+    CTSE_LoadLock GetBlobByIdOnce(CDataSource* data_source,
+                                  const CWGSBlobId& blob_id);
     void LoadBlob(const CWGSBlobId& blob_id,
                   CTSE_LoadLock& load_lock);
-    void LoadChunk(const CWGSBlobId& blob_id,
-                   CTSE_Chunk_Info& chunk);
+    void GetChunk(const CWGSBlobId& blob_id,
+                  CTSE_Chunk_Info& chunk);
+    void GetChunkOnce(const CWGSBlobId& blob_id,
+                      CTSE_Chunk_Info& chunk);
 
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+    void GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids);
     CDataLoader::SAccVerFound GetAccVer(const CSeq_id_Handle& idh);
+    CDataLoader::SAccVerFound GetAccVerOnce(const CSeq_id_Handle& idh);
     CDataLoader::SGiFound GetGi(const CSeq_id_Handle& idh);
+    CDataLoader::SGiFound GetGiOnce(const CSeq_id_Handle& idh);
     TTaxId GetTaxId(const CSeq_id_Handle& idh);
+    TTaxId GetTaxIdOnce(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+    TSeqPos GetSequenceLengthOnce(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
+    CDataLoader::SHashFound GetSequenceHashOnce(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceType(const CSeq_id_Handle& idh);
+    CDataLoader::STypeFound GetSequenceTypeOnce(const CSeq_id_Handle& idh);
 
     bool GetAddWGSMasterDescr(void) const
         {
@@ -204,6 +227,7 @@ private:
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
     CRef<CWGSResolver> m_Resolver;
+    unsigned m_RetryCount;
     unsigned m_UpdateDelay;
     CRef<CThreadNonStop> m_UpdateThread;
     TFixedFiles m_FixedFiles;
