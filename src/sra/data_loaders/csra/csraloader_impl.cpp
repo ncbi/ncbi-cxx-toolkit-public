@@ -116,6 +116,17 @@ static size_t GetGCSize(void)
 }
 
 
+NCBI_PARAM_DECL(unsigned, CSRA_LOADER, RETRY_COUNT);
+NCBI_PARAM_DEF(unsigned, CSRA_LOADER, RETRY_COUNT, 3);
+
+
+static unsigned GetRetryCountParam(void)
+{
+    static unsigned value = NCBI_PARAM_TYPE(CSRA_LOADER, RETRY_COUNT)::GetDefault();
+    return value;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CCSRABlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -452,9 +463,9 @@ bool CCSRABlobId::operator==(const CBlobId& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 
-CCSRADataLoader_Impl::CCSRADataLoader_Impl(
-    const CCSRADataLoader::SLoaderParams& params)
-    : m_SRRFiles(new TSRRFiles(GetGCSize())),
+CCSRADataLoader_Impl::CCSRADataLoader_Impl(const CCSRADataLoader::SLoaderParams& params)
+    : m_RetryCount(GetRetryCountParam()),
+      m_SRRFiles(new TSRRFiles(GetGCSize())),
       m_IdMapper(params.m_IdMapper)
 {
     m_DirPath = params.m_DirPath;
@@ -483,7 +494,52 @@ CCSRADataLoader_Impl::~CCSRADataLoader_Impl(void)
 }
 
 
+template<class Call>
+typename std::invoke_result<Call>::type
+CCSRADataLoader_Impl::CallWithRetry(Call&& call,
+                                    const char* name,
+                                    unsigned retry_count)
+{
+    if ( retry_count == 0 ) {
+        retry_count = m_RetryCount;
+    }
+    for ( unsigned t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"CCSRADataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"CCSRADataLoader::"<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"CCSRADataLoader::"<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<"CCSRADataLoader: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
 void CCSRADataLoader_Impl::AddCSRAFile(const string& csra)
+{
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::AddCSRAFileOnce, this,
+                              cref(csra)),
+                         "AddCSRAFile");
+}
+
+
+void CCSRADataLoader_Impl::AddCSRAFileOnce(const string& csra)
 {
     m_FixedFiles[csra] =
         new CCSRAFileInfo(*this, csra, CCSraDb::eRefId_SEQ_ID);
@@ -791,8 +847,17 @@ void CCSRADataLoader_Impl::LoadBlob(const CCSRABlobId& blob_id,
 }
 
 
-void CCSRADataLoader_Impl::LoadChunk(const CCSRABlobId& blob_id,
-                                    CTSE_Chunk_Info& chunk_info)
+void CCSRADataLoader_Impl::GetChunk(const CCSRABlobId& blob_id,
+                                        CTSE_Chunk_Info& chunk_info)
+{
+    CallWithRetry(bind(&CCSRADataLoader_Impl::GetChunkOnce, this,
+                       cref(blob_id), ref(chunk_info)),
+                  "GetChunk");
+}
+
+
+void CCSRADataLoader_Impl::GetChunkOnce(const CCSRABlobId& blob_id,
+                                        CTSE_Chunk_Info& chunk_info)
 {
     CVDBMgr::CRequestContextUpdater ctx_updater;
     _TRACE("Loading chunk "<<blob_id.ToString()<<"."<<chunk_info.GetChunkId());
@@ -849,6 +914,14 @@ CCSRADataLoader_Impl::GetShortReadIterator(const CSeq_id_Handle& idh)
 
 void CCSRADataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
+    CallWithRetry(bind(&CCSRADataLoader_Impl::GetIdsOnce, this,
+                       cref(idh), ref(ids)),
+                  "GetIds");
+}
+
+
+void CCSRADataLoader_Impl::GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids)
+{
     CVDBMgr::CRequestContextUpdater ctx_updater;
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
         ITERATE ( CBioseq::TId, it, iter.GetRefSeq_ids() ) {
@@ -863,6 +936,15 @@ void CCSRADataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 
 CDataSource::SAccVerFound
 CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetAccVerOnce, this,
+                              cref(idh)),
+                         "GetAccVer");
+}
+
+
+CDataSource::SAccVerFound
+CCSRADataLoader_Impl::GetAccVerOnce(const CSeq_id_Handle& idh)
 {
     CVDBMgr::CRequestContextUpdater ctx_updater;
     CDataSource::SAccVerFound ret;
@@ -886,6 +968,15 @@ CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 CDataSource::SGiFound
 CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetGiOnce, this,
+                              cref(idh)),
+                         "GetAccVer");
+}
+
+
+CDataSource::SGiFound
+CCSRADataLoader_Impl::GetGiOnce(const CSeq_id_Handle& idh)
+{
     CVDBMgr::CRequestContextUpdater ctx_updater;
     CDataSource::SGiFound ret;
     // the only possible gi is for reference sequence
@@ -907,6 +998,14 @@ CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 
 string CCSRADataLoader_Impl::GetLabel(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetLabelOnce, this,
+                              cref(idh)),
+                         "GetLabel");
+}
+
+
+string CCSRADataLoader_Impl::GetLabelOnce(const CSeq_id_Handle& idh)
+{
     if ( GetBlobId(idh) ) {
         return objects::GetLabel(idh); // default label from Seq-id
     }
@@ -916,6 +1015,14 @@ string CCSRADataLoader_Impl::GetLabel(const CSeq_id_Handle& idh)
 
 TTaxId CCSRADataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetTaxIdOnce, this,
+                              cref(idh)),
+                         "GetTaxId");
+}
+
+
+TTaxId CCSRADataLoader_Impl::GetTaxIdOnce(const CSeq_id_Handle& idh)
+{
     if ( GetBlobId(idh) ) {
         return ZERO_TAX_ID; // taxid is not defined
     }
@@ -924,6 +1031,14 @@ TTaxId CCSRADataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 
 
 TSeqPos CCSRADataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetSequenceLengthOnce, this,
+                              cref(idh)),
+                         "GetSequenceLength");
+}
+
+
+TSeqPos CCSRADataLoader_Impl::GetSequenceLengthOnce(const CSeq_id_Handle& idh)
 {
     CVDBMgr::CRequestContextUpdater ctx_updater;
     // the only possible acc.ver is for reference sequence
@@ -939,6 +1054,15 @@ TSeqPos CCSRADataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 
 CDataSource::STypeFound
 CCSRADataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetSequenceTypeOnce, this,
+                              cref(idh)),
+                         "GetSequenceType");
+}
+
+
+CDataSource::STypeFound
+CCSRADataLoader_Impl::GetSequenceTypeOnce(const CSeq_id_Handle& idh)
 {
     CDataSource::STypeFound ret;
     if ( GetBlobId(idh) ) {
