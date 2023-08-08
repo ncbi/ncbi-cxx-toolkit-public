@@ -55,10 +55,11 @@ bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
 {
     static string   yes = "yes";
     static string   no = "no";
+    static string   acceptable = "Acceptable values are '" + yes +
+                                 "' and '" + no + "'.";
 
     if (param_value != yes && param_value != no) {
-        err_msg = "Malformed '" + param_name + "' parameter. "
-                  "Acceptable values are '" + yes + "' and '" + no + "'.";
+        err_msg = "Malformed '" + param_name + "' parameter. " + acceptable;
         return false;
     }
     return true;
@@ -118,6 +119,7 @@ void CPubseqGatewayApp::x_MalformedArguments(
                                 const psg_time_point_t &  now,
                                 const string &  err_msg)
 {
+    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
     m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
     x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                      CRequestStatus::e400_BadRequest,
@@ -131,6 +133,7 @@ void CPubseqGatewayApp::x_InsufficientArguments(
                                 const psg_time_point_t &  now,
                                 const string &  err_msg)
 {
+    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
     m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_InsufficientArgs);
     x_SendMessageAndCompletionChunks(reply, now, err_msg,
                                      CRequestStatus::e400_BadRequest,
@@ -226,7 +229,7 @@ CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
         }
 
         if (resend_timeout < 0.0) {
-            err_msg = "Invalid '" + kResendTimeoutParam + "' value " +
+            err_msg = "Invalid '" + kResendTimeoutParam + "' parameter value " +
                       to_string(resend_timeout) + ". It must be >= 0.0";
             x_MalformedArguments(reply, now, err_msg);
             return false;
@@ -280,14 +283,14 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
         }
 
         if (hops < 0) {
-            err_msg = "Invalid '" + kHopsParam + "' value " + to_string(hops) +
-                      ". It must be > 0.";
+            err_msg = "Invalid '" + kHopsParam + "' parameter value " +
+                      to_string(hops) + ". It must be > 0.";
             x_MalformedArguments(reply, now, err_msg);
             return false;
         }
 
         if (hops > m_Settings.m_MaxHops) {
-            err_msg = "The '" + kHopsParam + "' value " + to_string(hops) +
+            err_msg = "The '" + kHopsParam + "' parameter value " + to_string(hops) +
                       " exceeds the server configured value " +
                       to_string(m_Settings.m_MaxHops) + ".";
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MaxHopsExceededError);
@@ -315,12 +318,10 @@ CPubseqGatewayApp::x_GetLastModified(CHttpRequest &  req,
 
     SRequestParameter   last_modified_param = x_GetParam(req, kLastModifiedParam);
     if (last_modified_param.m_Found) {
-        try {
-            last_modified = NStr::StringToLong(last_modified_param.m_Value);
-        } catch (...) {
-            x_MalformedArguments(reply, now,
-                                 "Malformed '" + kLastModifiedParam +
-                                 "' parameter. Expected an integer");
+        string      err_msg;
+        if (!x_ConvertIntParameter(kLastModifiedParam, last_modified_param.m_Value,
+                                   last_modified, err_msg)) {
+            x_MalformedArguments(reply, now, err_msg);
             return false;
         }
     }
@@ -339,8 +340,8 @@ CPubseqGatewayApp::x_GetBlobId(CHttpRequest &  req,
     SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
     if (!blob_id_param.m_Found) {
         x_InsufficientArguments(reply, now,
-                                "Mandatory parameter "
-                                "'" + kBlobIdParam + "' is not found.");
+                                "Mandatory '" + kBlobIdParam +
+                                "' parameter is not found.");
         return false;
     }
 
@@ -414,25 +415,25 @@ CPubseqGatewayApp::x_GetId2Chunk(CHttpRequest &  req,
     id2_chunk = INT64_MIN;
     SRequestParameter   id2_chunk_param = x_GetParam(req, kId2ChunkParam);
     if (!id2_chunk_param.m_Found) {
-        x_InsufficientArguments(reply, now, "Mandatory parameter "
-                                "'" + kId2ChunkParam + "' is not found.");
+        x_InsufficientArguments(reply, now, "Mandatory '" + kId2ChunkParam +
+                                "' parameter is not found.");
         return false;
     }
 
-    try {
-        id2_chunk = NStr::StringToLong(id2_chunk_param.m_Value);
-        if (id2_chunk < 0) {
-            x_MalformedArguments(reply, now,
-                                 "Invalid '" + kId2ChunkParam +
-                                 "' parameter. Expected >= 0");
-            return false;
-        }
-    } catch (...) {
-        x_MalformedArguments(reply, now,
-                             "Malformed '" + kId2ChunkParam + "' parameter. "
-                             "Expected an integer");
+    string      err_msg;
+    if (!x_ConvertIntParameter(kId2ChunkParam,
+                               id2_chunk_param.m_Value, id2_chunk, err_msg)) {
+        x_MalformedArguments(reply, now, err_msg);
         return false;
     }
+
+    if (id2_chunk < 0) {
+        x_MalformedArguments(reply, now,
+                             "Invalid '" + kId2ChunkParam +
+                             "' parameter value. It must be >= 0");
+        return false;
+    }
+
     return true;
 }
 
@@ -495,15 +496,12 @@ CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
     for (const auto & en_processor : enabled_processors) {
         for (const auto &  dis_processor : disabled_processors) {
             if (NStr::CompareNocase(en_processor, dis_processor) == 0) {
-                string      err_msg = "The same processor name is found "
-                    "in both '" + kEnableProcessor + "' (has it as " + en_processor + ") and '" +
-                    kDisableProcessor + "' (has it as " + dis_processor + ") lists";
-                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
-                x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                                 CRequestStatus::e400_BadRequest,
-                                                 ePSGS_MalformedParameter,
-                                                 eDiag_Error);
-                PSG_WARNING(err_msg);
+                x_MalformedArguments(reply, now,
+                                     "The same processor name is found "
+                                     "in both '" + kEnableProcessor +
+                                     "' (has it as " + en_processor + ") and '" +
+                                     kDisableProcessor + "' (has it as " +
+                                     dis_processor + ") lists");
                 return false;
             }
         }
@@ -524,6 +522,9 @@ bool CPubseqGatewayApp::x_GetTSEOption(CHttpRequest &  req,
     static string   orig = "orig";
     static string   smart = "smart";
     static string   slim = "slim";
+    static string   acceptable = "Acceptable values are '" + none + "', '" +
+                                 whole + "', '" + orig + "', '" +
+                                 smart + "' and '" + slim + "'.";
 
     SRequestParameter       tse_param = x_GetParam(req, kTSEParam);
     if (tse_param.m_Found) {
@@ -548,14 +549,8 @@ bool CPubseqGatewayApp::x_GetTSEOption(CHttpRequest &  req,
             return true;
         }
 
-        x_MalformedArguments(reply, now,
-                             "Malformed '" + kTSEParam + "' parameter. "
-                             "Acceptable values are '" +
-                             none + "', '" +
-                             whole + "', '" +
-                             orig + "', '" +
-                             smart + "' and '" +
-                             slim + "'.");
+        x_MalformedArguments(reply, now, "Malformed '" + kTSEParam +
+                             "' parameter. " + acceptable);
         return false;
     }
 
@@ -574,6 +569,10 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
     static string       default_option = "default";
     static string       limited_option = "limited";
     static string       never_option = "never";
+    static string       acceptable = "Acceptable values are '" +
+                                     default_option + "', '" +
+                                     limited_option + "', '" +
+                                     never_option + "'.";
 
     SRequestParameter   subst_param = x_GetParam(req, kAccSubstitutionParam);
     if (subst_param.m_Found) {
@@ -591,11 +590,8 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
         }
 
         x_MalformedArguments(reply, now,
-                             "Malformed '" + kAccSubstitutionParam + "' parameter. "
-                             "Acceptable values are '" +
-                             default_option + "', '" +
-                             limited_option + "', '" +
-                             never_option + "'.");
+                             "Malformed '" + kAccSubstitutionParam +
+                             "' parameter. " + acceptable);
         return false;
     }
     return true;
@@ -610,6 +606,8 @@ CPubseqGatewayApp::x_GetIntrospectionFormat(CHttpRequest &  req,
     static string   kFmtParam = "fmt";
     static string   html = "html";
     static string   json = "json";
+    static string   acceptable = "Acceptable values are '" + html +
+                                 "' and '" + json + "'";
 
 
     SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
@@ -623,8 +621,7 @@ CPubseqGatewayApp::x_GetIntrospectionFormat(CHttpRequest &  req,
             return true;
         }
 
-        err_msg = "Malformed '" + kFmtParam + "' parameter. "
-                  "Acceptable values are '" + html + "' and '" + json + "'";
+        err_msg = "Malformed '" + kFmtParam + "' parameter. " + acceptable;
         return false;
     }
 
@@ -644,6 +641,10 @@ CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
     static string   protobuf = "protobuf";
     static string   json = "json";
     static string   native = "native";
+    static string   acceptable = "Acceptable values are '" +
+                                 protobuf + "' and '" +
+                                 json + "' and '" +
+                                 native + "'.";
 
     SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
     if (fmt_param.m_Found) {
@@ -661,11 +662,8 @@ CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
         }
 
         x_MalformedArguments(reply, now,
-                             "Malformed '" + kFmtParam + "' parameter. "
-                             "Acceptable values are '" +
-                             protobuf + "' and '" +
-                             json + "' and '" +
-                             native + "'.");
+                             "Malformed '" + kFmtParam + "' parameter. " +
+                             acceptable);
         return false;
     }
     return true;
@@ -723,8 +721,8 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
 
         if (send_blob_if_small < 0) {
             x_MalformedArguments(reply, now,
-                                 "Invalid " + kSendBlobIfSmallParam +
-                                 " value. It must be an integer >= 0");
+                                 "Invalid '" + kSendBlobIfSmallParam +
+                                 "' parameter value. It must be an integer >= 0");
             return false;
         }
     }
@@ -772,13 +770,11 @@ CPubseqGatewayApp::x_GetCommonIDRequestParams(
 {
     trace = SPSGS_RequestBase::ePSGS_NoTracing;     // default
     if (!x_GetTraceParameter(req, reply, now, trace)) {
-        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         return false;
     }
 
     hops = 0;   // default
     if (!x_GetHops(req, reply, now, hops)) {
-        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         return false;
     }
 
@@ -786,13 +782,11 @@ CPubseqGatewayApp::x_GetCommonIDRequestParams(
     disabled_processors.clear();    // default
     if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
                                            disabled_processors)) {
-        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         return false;
     }
 
     processor_events = false;   // default
     if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
-        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         return false;
     }
     return true;
@@ -820,7 +814,6 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
         if (!seq_id_is_optional) {
             x_InsufficientArguments(reply, now,
                                     "Missing the '" + kSeqIdParam + "' parameter");
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return false;
         }
     }
@@ -828,7 +821,6 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
         if (!seq_id_is_optional) {
             x_MalformedArguments(reply, now,
                                  "Missing value of the '" + kSeqIdParam + "' parameter");
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return false;
         }
     }
@@ -841,7 +833,6 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
 
     use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
     if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
-        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         return false;
     }
 
@@ -850,16 +841,14 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
         if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
             x_MalformedArguments(reply, now, err_msg);
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return false;
         }
 
         if (seq_id_type < 0 || seq_id_type >= CSeq_id::e_MaxChoice) {
             err_msg = "The '" + kSeqIdTypeParam +
-                      "' value must be >= 0 and less than " +
+                      "' value must be >= 0 and < " +
                       to_string(CSeq_id::e_MaxChoice);
             x_MalformedArguments(reply, now, err_msg);
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return false;
         }
     } else {
@@ -903,15 +892,12 @@ CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
         if (!x_ConvertIntParameter(kIPGParam, ipg_param.m_Value,
                                    ipg, err_msg)) {
             x_MalformedArguments(reply, now, err_msg);
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return false;
         }
 
         if (ipg <= 0) {
-            err_msg = "The '" + kIPGParam +
-                      "' value must be > 0";
-            x_MalformedArguments(reply, now, err_msg);
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+            x_MalformedArguments(reply, now, "The '" + kIPGParam +
+                                             "' parameter value must be > 0");
             return false;
         }
     } else {
@@ -952,6 +938,11 @@ CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
     static string       kContig = "contig";
     static string       kSupercontig = "supercontig";
     static string       kUnit = "unit";
+    static string       acceptable = "Acceptable values are '" +
+                                     kChromosome + "' and '" +
+                                     kContig + "' and '" +
+                                     kSupercontig + "' and '" +
+                                     kUnit + "'.";
 
     SRequestParameter   snp_scale_limit_param = x_GetParam(req, kSNPScaleLimitParam);
     if (snp_scale_limit_param.m_Found) {
@@ -978,12 +969,8 @@ CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
         }
 
         x_MalformedArguments(reply, now,
-                             "Malformed '" + kSNPScaleLimitParam + "' parameter. "
-                             "Acceptable values are '" +
-                             kChromosome + "' and '" +
-                             kContig + "' and '" +
-                             kSupercontig + "' and '" +
-                             kUnit + "'.");
+                             "Malformed '" + kSNPScaleLimitParam +
+                             "' parameter. " + acceptable);
         return false;
     }
 
@@ -1031,7 +1018,7 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
         for (auto &  item : parts) {
             if (last) {
                 x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                     "' is malformed. Another item is found "
+                                     "' parameter is malformed. Another item is found "
                                      "after the one which describes the rest "
                                      "of the time series.");
 
@@ -1042,7 +1029,7 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
             NStr::Split(item, ":", vals);
             if (vals.size() != 2) {
                 x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                     "' is malformed. One or more items "
+                                     "' parameter is malformed. One or more items "
                                      "do not have a second value.");
                 return false;
             }
@@ -1052,13 +1039,13 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
                 aggregation = NStr::StringToInt(vals[0]);
             } catch (...) {
                 x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                     "' is malformed. Cannot convert one or more "
+                                     "' parameter is malformed. Cannot convert one or more "
                                      "aggregation mins into an integer");
                 return false;
             }
             if (aggregation <= 0) {
                 x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                     "' is malformed. One or more "
+                                     "' paremeter is malformed. One or more "
                                      "aggregation mins is <= 0 while it must be > 0.");
                 return false;
             }
@@ -1072,14 +1059,14 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
                     last_minute = NStr::StringToInt(vals[1]);
                 } catch (...) {
                     x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                         "' is malformed. Cannot convert one or more "
+                                         "' parameter is malformed. Cannot convert one or more "
                                          "last minute into an integer");
                     return false;
                 }
 
                 if (last_minute <= previous) {
                     x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                         "' is malformed. One or more last minute "
+                                         "' parameter is malformed. One or more last minute "
                                          "<= than the previous one");
                     return false;
                 }
@@ -1091,7 +1078,7 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
                 }
                 if ((last_minute - start + 1) % aggregation != 0) {
                    x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                         "' is malformed. The range " +
+                                         "' parameter is malformed. The range " +
                                          to_string(start) + "-" +
                                          to_string(last_minute) +
                                          " is not divisable by aggregation of " +
@@ -1107,7 +1094,7 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
 
         if (!last) {
             x_MalformedArguments(reply, now, "The '" + kTimeSeriesParam +
-                                 "' is malformed. The item which descibes the "
+                                 "' parameter is malformed. The item which descibes the "
                                  "rest of the series is not found.");
             return false;
         }
