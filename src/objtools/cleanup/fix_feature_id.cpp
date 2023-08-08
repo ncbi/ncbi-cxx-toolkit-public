@@ -66,88 +66,6 @@ static void FindNextOffset(const CFixFeatureId::TIdSet &existing_ids,
 }
 
 
-
-bool CFixFeatureId::UpdateFeatureIds(CSeq_entry_Handle entry_handle,
-        TIdSet& existing_ids,
-        TId& offset)
-{
-    TIdSet new_ids;
-    TIdSet unchanged_ids;
-    unordered_map<TId, TId> id_map;
-    bool any_changes = false;
-
-    for (CFeat_CI feat_it(entry_handle);
-        feat_it;
-        ++feat_it) {
-
-        const auto& feat = feat_it->GetOriginalFeature();
-        CRef<CSeq_feat> pUpdatedFeat(new CSeq_feat());
-        pUpdatedFeat->Assign(feat);
-
-        bool feature_changed = false;
-
-        if (feat.IsSetId() &&
-            feat.GetId().IsLocal() &&
-            feat.GetId().GetLocal().IsId()) {
-            TId feat_id = feat.GetId().GetLocal().GetId();
-            if (existing_ids.find(feat_id) != existing_ids.end() ||
-                new_ids.find(feat_id) != new_ids.end()) {
-
-                auto it = id_map.find(feat_id);
-                if (it != id_map.end()) {
-                    pUpdatedFeat->SetId().SetLocal().SetId(it->second);
-                }
-                else {
-                    FindNextOffset(existing_ids, unchanged_ids, new_ids, offset); // find id that does not exist among either of the 3 sets
-                    id_map[feat_id] = offset;
-                    pUpdatedFeat->SetId().SetLocal().SetId(offset);
-                    new_ids.insert(offset);
-                }
-                feature_changed = true;
-
-            }
-            else {
-                unchanged_ids.insert(feat_id);
-            }
-        }
-
-        // Loop over xrefs goes here ...
-        if (pUpdatedFeat->IsSetXref()) {
-            for (auto pXref : pUpdatedFeat->SetXref()) {
-                if (pXref->IsSetId() &&
-                    pXref->GetId().IsLocal() &
-                    pXref->GetId().GetLocal().IsId()) {
-                    TId feat_id = pXref->GetId().GetLocal().GetId();
-                    auto it = id_map.find(feat_id);
-                    if (it != id_map.end()) {
-                        pXref->SetId().SetLocal().SetId(it->second);
-                        feature_changed = true;
-                    }
-                    else if (existing_ids.find(feat_id)  != existing_ids.end() ||
-                             new_ids.find(feat_id) != new_ids.end()) {
-                        FindNextOffset(existing_ids, unchanged_ids, new_ids, offset); // find id that does not exist among either of the 3 sets
-                        id_map[feat_id] = offset;
-                        new_ids.insert(offset);
-                        pXref->SetId().SetLocal().SetId(feat_id);
-                        feature_changed = true;
-                    }
-                    else {
-                        unchanged_ids.insert(feat_id);
-                    }
-                }
-            }
-        }
-
-        if (feature_changed) {
-            CSeq_feat_EditHandle editHandle(*feat_it);
-            editHandle.Replace(*pUpdatedFeat);
-            any_changes = true;
-        }
-    }
-    // Forgot to update existing ids!!
-    return any_changes;
-}
-
 void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats,
         TIdSet &existing_ids, TId &offset)
 {
@@ -267,7 +185,6 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse)
         }
     }
 }
-
 
 // This function maps existing feature ids to the sequential ints - 1,2,3,...
 void CFixFeatureId::s_MakeIDPairs(const CSeq_entry_Handle& entry, map<TId,TId> &id_pairs)
