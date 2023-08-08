@@ -166,6 +166,12 @@ int CTest::Run(void)
 
     // ResolvePath() test
 
+#if defined(NCBI_OS_DARWIN)
+    bool res = CExec::IsExecutable(app_c);
+    cout << "Last error: " << CNcbiError::GetLast() << endl;
+    cout << "Executablle: " << res << endl; 
+#endif
+
     assert( CExec::IsExecutable(app_c) );
     string res_path;
     res_path = CExec::ResolvePath(app_c);
