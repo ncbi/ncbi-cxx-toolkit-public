@@ -268,8 +268,7 @@ public:
     void Shift(int n=1);
 
     /// Get program name.
-    const string& GetProgramName(EFollowLinks follow_links = eIgnoreLinks)
-        const;
+    const string& GetProgramName(EFollowLinks follow_links = eIgnoreLinks) const;
 
     /// Get program base name.
     string GetProgramBasename(EFollowLinks follow_links = eIgnoreLinks) const;

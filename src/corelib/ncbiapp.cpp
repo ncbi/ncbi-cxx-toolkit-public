@@ -831,6 +831,7 @@ int CNcbiApplicationAPI::AppMain
             }
         }
     }
+
     // Setup logging as soon as possible.
     // Setup for diagnostics
     try {
@@ -1499,6 +1500,14 @@ string CNcbiApplicationAPI::FindProgramExecutablePath(
         if (real_path) {
             real_path->erase();
         }
+        // This can happens on non-Windows/Linux platforms if logging is used 
+        // before CNcbiApplication initialization, and no argc/argv valuies passed in arguments.
+        // As a fallback reset the initialization state, so it can be (maybe) initialized correctly later.
+#if !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_LINUX)
+        if (argc == 0) {
+            s_Init = false;
+        }
+#endif
         return kEmptyStr;
     }
 
