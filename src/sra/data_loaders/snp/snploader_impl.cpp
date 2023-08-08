@@ -115,6 +115,16 @@ static size_t GetMissingGCSize(void)
 }
 
 
+NCBI_PARAM_DECL(unsigned, SNP_LOADER, RETRY_COUNT);
+NCBI_PARAM_DEF(unsigned, SNP_LOADER, RETRY_COUNT, 3);
+
+static unsigned GetRetryCountParam(void)
+{
+    static unsigned value = NCBI_PARAM_TYPE(SNP_LOADER, RETRY_COUNT)::GetDefault();
+    return value;
+}
+
+
 /*
 NCBI_PARAM_DECL(string, SNP_LOADER, ANNOT_NAME);
 NCBI_PARAM_DEF_EX(string, SNP_LOADER, ANNOT_NAME, "SNP",
@@ -580,7 +590,8 @@ bool CSNPBlobId::operator==(const CBlobId& id) const
 CSNPDataLoader_Impl::CSNPDataLoader_Impl(
     const CSNPDataLoader::SLoaderParams& params)
     : m_FoundFiles(GetGCSize()),
-      m_MissingFiles(GetMissingGCSize())
+      m_MissingFiles(GetMissingGCSize()),
+      m_RetryCount(GetRetryCountParam())
 {
     m_DirPath = params.m_DirPath;
     m_AnnotName = params.m_AnnotName;
@@ -612,7 +623,52 @@ CSNPDataLoader_Impl::~CSNPDataLoader_Impl(void)
 }
 
 
+template<class Call>
+typename std::invoke_result<Call>::type
+CSNPDataLoader_Impl::CallWithRetry(Call&& call,
+                                   const char* name,
+                                   unsigned retry_count)
+{
+    if ( retry_count == 0 ) {
+        retry_count = m_RetryCount;
+    }
+    for ( unsigned t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"CSNPDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"CSNPDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"CSNPDataLoader::"<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<"CSNPDataLoader: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
 void CSNPDataLoader_Impl::AddFixedFile(const string& file)
+{
+    CallWithRetry(bind(&CSNPDataLoader_Impl::AddFixedFileOnce, this,
+                       file),
+                  "AddFixedFile");
+}
+
+
+void CSNPDataLoader_Impl::AddFixedFileOnce(const string& file)
 {
     CRef<CSNPFileInfo> info(new CSNPFileInfo(*this, file));
     string key = info->GetBaseAnnotName();
@@ -639,7 +695,7 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
     }
     CMutexGuard guard(m_Mutex);
     TMissingFiles::iterator it2 = m_MissingFiles.find(acc);
-    if ( it2 != m_MissingFiles.end() ) {
+    if ( it2 != m_MissingFiles.end() && it2->second >= m_RetryCount ) {
         return null;
     }
     TFoundFiles::iterator it = m_FoundFiles.find(acc);
@@ -657,11 +713,14 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
             return null;
         }
         ERR_POST_X(4, "CSNPDataLoader::FindFile("<<acc<<"): accession not found: "<<exc);
-        m_MissingFiles[acc] = true;
+        m_MissingFiles[acc] += 1;
         return null;
     }
     // store file in cache
     m_FoundFiles[acc] = info;
+    if ( it2 != m_MissingFiles.end() ) {
+        m_MissingFiles.erase(it2);
+    }
     return info;
 }
 
@@ -696,6 +755,15 @@ CSNPDataLoader_Impl::GetSeqInfo(const CSNPBlobId& blob_id)
 
 CTSE_LoadLock CSNPDataLoader_Impl::GetBlobById(CDataSource* data_source,
                                                const CSNPBlobId& blob_id)
+{
+    return CallWithRetry(bind(&CSNPDataLoader_Impl::GetBlobByIdOnce, this,
+                              data_source, cref(blob_id)),
+                         "GetBlobById");
+}
+
+
+CTSE_LoadLock CSNPDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source,
+                                                   const CSNPBlobId& blob_id)
 {
     CDataLoader::TBlobId loader_blob_id(&blob_id);
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(loader_blob_id);
@@ -742,6 +810,18 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                            const CSeq_id_Handle& id,
                                            const SAnnotSelector* sel,
                                            CDataLoader::TProcessedNAs* processed_nas)
+{
+    return CallWithRetry(bind(&CSNPDataLoader_Impl::GetOrphanAnnotRecordsOnce, this,
+                              ds, cref(id), sel, processed_nas),
+                         "GetOrphanAnnotRecords");
+}
+
+
+CDataLoader::TTSE_LockSet
+CSNPDataLoader_Impl::GetOrphanAnnotRecordsOnce(CDataSource* ds,
+                                               const CSeq_id_Handle& id,
+                                               const SAnnotSelector* sel,
+                                               CDataLoader::TProcessedNAs* processed_nas)
 {
     CDataLoader::TTSE_LockSet locks;
     // implicitly load NA accessions
@@ -845,8 +925,17 @@ void CSNPDataLoader_Impl::LoadBlob(const CSNPBlobId& blob_id,
 }
 
 
-void CSNPDataLoader_Impl::LoadChunk(const CSNPBlobId& blob_id,
-                                    CTSE_Chunk_Info& chunk_info)
+void CSNPDataLoader_Impl::GetChunk(const CSNPBlobId& blob_id,
+                                   CTSE_Chunk_Info& chunk)
+{
+    CallWithRetry(bind(&CSNPDataLoader_Impl::GetChunkOnce, this,
+                       cref(blob_id), ref(chunk)),
+                  "GetChunk");
+}
+
+
+void CSNPDataLoader_Impl::GetChunkOnce(const CSNPBlobId& blob_id,
+                                       CTSE_Chunk_Info& chunk_info)
 {
     CStopWatch sw;
     if ( GetDebugLevel() >= eDebug_load ) {

@@ -295,6 +295,13 @@ public:
     ~CSNPDataLoader_Impl(void);
 
     void AddFixedFile(const string& file_name);
+    void AddFixedFileOnce(const string& file_name);
+    
+    template<class Call>
+    typename std::invoke_result<Call>::type
+    CallWithRetry(Call&& call,
+                  const char* name,
+                  unsigned retry_count = 0);
     
     CRef<CSNPFileInfo> GetFixedFile(const string& acc);
     CRef<CSNPFileInfo> FindFile(const string& acc);
@@ -309,13 +316,21 @@ public:
                                                     const CSeq_id_Handle& idh,
                                                     const SAnnotSelector* sel,
                                                     CDataLoader::TProcessedNAs* processed_nas);
+    CDataLoader::TTSE_LockSet GetOrphanAnnotRecordsOnce(CDataSource* ds,
+                                                        const CSeq_id_Handle& id,
+                                                        const SAnnotSelector* sel,
+                                                        CDataLoader::TProcessedNAs* processed_nas);
 
     CTSE_LoadLock GetBlobById(CDataSource* data_source,
                               const CSNPBlobId& blob_id);
+    CTSE_LoadLock GetBlobByIdOnce(CDataSource* data_source,
+                                  const CSNPBlobId& blob_id);
     void LoadBlob(const CSNPBlobId& blob_id,
                   CTSE_LoadLock& load_lock);
-    void LoadChunk(const CSNPBlobId& blob_id,
-                   CTSE_Chunk_Info& chunk);
+    void GetChunk(const CSNPBlobId& blob_id,
+                  CTSE_Chunk_Info& chunk);
+    void GetChunkOnce(const CSNPBlobId& blob_id,
+                      CTSE_Chunk_Info& chunk_info);
 
     CObjectManager::TPriority GetDefaultPriority(void) const;
     
@@ -334,7 +349,7 @@ protected:
 private:
     typedef map<string, CRef<CSNPFileInfo> > TFixedFiles;
     typedef limited_size_map<string, CRef<CSNPFileInfo> > TFoundFiles;
-    typedef limited_size_map<string, bool> TMissingFiles;
+    typedef limited_size_map<string, unsigned> TMissingFiles;
 
     // mutex guarding input into the map
     mutable CMutex m_Mutex;
@@ -344,6 +359,7 @@ private:
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     TMissingFiles m_MissingFiles;
+    unsigned m_RetryCount;
     bool m_AddPTIS;
     CRef<CSnpPtisClient> m_PTISClient;
 };
