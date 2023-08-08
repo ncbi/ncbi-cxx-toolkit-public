@@ -1,7 +1,7 @@
 {
-    "timeout": 6000,
+    "timeout": 120,
     "IPG by ipg found huge size": {
-        "timeout": 6000,
+        "timeout": 120,
         "description": "IPG by ipg found huge size",
         "requests": [
             [
@@ -100,7 +100,7 @@
         ]
     },
     "IPG by ipg found normal size": {
-        "timeout": 6000,
+        "timeout": 120,
         "description": "IPG by ipg found normal size",
         "requests": [
             [
