@@ -156,6 +156,16 @@ static CVDBGraphDb_Impl::ELookupType GetLookupType(void)
 }
 
 
+NCBI_PARAM_DECL(unsigned, VDBGRAPH_LOADER, RETRY_COUNT);
+NCBI_PARAM_DEF(unsigned, VDBGRAPH_LOADER, RETRY_COUNT, 3);
+
+static unsigned GetRetryCountParam(void)
+{
+    static unsigned value = NCBI_PARAM_TYPE(VDBGRAPH_LOADER, RETRY_COUNT)::GetDefault();
+    return value;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CVDBGraphBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -227,17 +237,15 @@ bool CVDBGraphBlobId::operator==(const CBlobId& id) const
 
 
 CVDBGraphDataLoader_Impl::CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files)
-    : m_AutoFileMap(GetGCSize()),
+    : m_RetryCount(GetRetryCountParam()),
+      m_AutoFileMap(GetGCSize()),
       m_MissingFileSet(GetMissingGCSize())
 {
     ITERATE ( TVDBFiles, it, vdb_files ) {
         if ( GetDebugLevel() >= 2 ) {
             LOG_POST_X(1, "CVDBGraphDataLoader: opening explicit file "<<*it);
         }
-        CRef<SVDBFileInfo> info(new SVDBFileInfo);
-        info->m_VDBFile = *it;
-        info->m_BaseAnnotName = CDirEntry(*it).GetName();
-        info->m_VDB = CVDBGraphDb(m_Mgr, *it, GetLookupType());
+        CRef<SVDBFileInfo> info = OpenVDBGraphFile(*it);
         m_FixedFileMap[*it] = info;
     }
 }
@@ -248,9 +256,66 @@ CVDBGraphDataLoader_Impl::~CVDBGraphDataLoader_Impl(void)
 }
 
 
+template<class Call>
+typename std::invoke_result<Call>::type
+CVDBGraphDataLoader_Impl::CallWithRetry(Call&& call,
+                                        const char* name,
+                                        unsigned retry_count)
+{
+    if ( retry_count == 0 ) {
+        retry_count = m_RetryCount;
+    }
+    for ( unsigned t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"CVDBGraphDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"CVDBGraphDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"CVDBGraphDataLoader::"<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<"CVDBGraphDataLoader: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
 bool CVDBGraphDataLoader_Impl::SVDBFileInfo::ContainsAnnotsFor(const CSeq_id_Handle& id) const
 {
     return CVDBGraphSeqIterator(m_VDB, id);
+}
+
+
+CRef<CVDBGraphDataLoader_Impl::SVDBFileInfo>
+CVDBGraphDataLoader_Impl::OpenVDBGraphFile(const string& name)
+{
+    return CallWithRetry(bind(&CVDBGraphDataLoader_Impl::OpenVDBGraphFileOnce, this,
+                              name),
+                         "OpenVDBGraphFile");
+}
+
+
+CRef<CVDBGraphDataLoader_Impl::SVDBFileInfo>
+CVDBGraphDataLoader_Impl::OpenVDBGraphFileOnce(const string& name)
+{
+    CRef<SVDBFileInfo> info(new SVDBFileInfo);
+    info->m_VDBFile = name;
+    info->m_BaseAnnotName = CDirEntry(name).GetName();
+    info->m_VDB = CVDBGraphDb(m_Mgr, name, GetLookupType());
+    return info;
 }
 
 
@@ -316,7 +381,17 @@ CVDBGraphDataLoader_Impl::GetBlobIdFromString(const string& str) const
 
 CDataLoader::TTSE_Lock
 CVDBGraphDataLoader_Impl::GetBlobById(CDataSource* ds,
-                                      const CDataLoader::TBlobId& blob_id0)
+                                      const CDataLoader::TBlobId& blob_id)
+{
+    return CallWithRetry(bind(&CVDBGraphDataLoader_Impl::GetBlobByIdOnce, this,
+                              ds, cref(blob_id)),
+                         "GetBlobById");
+}
+
+
+CDataLoader::TTSE_Lock
+CVDBGraphDataLoader_Impl::GetBlobByIdOnce(CDataSource* ds,
+                                          const CDataLoader::TBlobId& blob_id0)
 {
     CTSE_LoadLock load_lock = ds->GetTSE_LoadLock(blob_id0);
     if ( !load_lock.IsLoaded() ) {
@@ -352,6 +427,18 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                                 const CSeq_id_Handle& id,
                                                 const SAnnotSelector* sel,
                                                 CDataLoader::TProcessedNAs* processed_nas)
+{
+    return CallWithRetry(bind(&CVDBGraphDataLoader_Impl::GetOrphanAnnotRecordsOnce, this,
+                              ds, cref(id), sel, processed_nas),
+                         "GetOrphanAnnotRecords");
+}
+
+
+CDataLoader::TTSE_LockSet
+CVDBGraphDataLoader_Impl::GetOrphanAnnotRecordsOnce(CDataSource* ds,
+                                                    const CSeq_id_Handle& id,
+                                                    const SAnnotSelector* sel,
+                                                    CDataLoader::TProcessedNAs* processed_nas)
 {
     TTSE_LockSet locks;
     // explicitly specified files
@@ -509,6 +596,14 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
 
 
 void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
+{
+    CallWithRetry(bind(&CVDBGraphDataLoader_Impl::GetChunkOnce, this,
+                       ref(chunk)),
+                  "GetChunk");
+}
+
+
+void CVDBGraphDataLoader_Impl::GetChunkOnce(CTSE_Chunk_Info& chunk)
 {
     const CVDBGraphBlobId& blob_id =
         dynamic_cast<const CVDBGraphBlobId&>(*chunk.GetBlobId());
