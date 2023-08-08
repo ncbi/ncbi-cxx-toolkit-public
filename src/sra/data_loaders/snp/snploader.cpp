@@ -326,7 +326,7 @@ void CSNPDataLoader::GetChunk(TChunk chunk)
 {
     TBlobId blob_id = chunk->GetBlobId();
     const CSNPBlobId& id = dynamic_cast<const CSNPBlobId&>(*blob_id);
-    m_Impl->LoadChunk(id, *chunk);
+    m_Impl->GetChunk(id, *chunk);
 }
 
 
