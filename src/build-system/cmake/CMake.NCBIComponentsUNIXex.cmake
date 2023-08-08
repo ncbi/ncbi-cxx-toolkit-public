@@ -446,7 +446,6 @@ NCBI_define_Xcomponent(NAME wxWidgets LIB
     wxscintilla-${_wx_ver}
     INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
 )
-NCBIcomponent_report(wxWidgets)
 if(NCBI_COMPONENT_wxWidgets_FOUND)
     list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
     get_filename_component(_libdir ${_lib} DIRECTORY)
@@ -460,7 +459,10 @@ if(NCBI_COMPONENT_wxWidgets_FOUND)
     else()
         set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
     endif()
+else()
+    NCBI_define_Xcomponent(NAME wxWidgets PACKAGE wxWidgets)
 endif()
+NCBIcomponent_report(wxWidgets)
 
 ##############################################################################
 # GCRYPT
