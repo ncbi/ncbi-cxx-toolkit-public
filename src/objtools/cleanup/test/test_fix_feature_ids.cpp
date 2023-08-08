@@ -35,6 +35,7 @@
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
+#include <corelib/ncbifile.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <serial/iterator.hpp>
 #include <objmgr/object_manager.hpp>
@@ -47,13 +48,13 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-#define TEST_DIR "test_cases/FixFeatureIds/"
+static string testfilesDir{"test_cases/FixFeatureIds"};
 
-static void sx_RunTest_Unique_Feature_Ids(const string& file_name)
+static void sx_RunTest_Unique_Feature_Ids(const string& testDir, const string& file_name)
 {
-    string asn_name = TEST_DIR+file_name+".asn";
-    string ref_name = TEST_DIR+file_name+".ref";
-    string out_name = TEST_DIR+file_name+".out";
+    string asn_name = CDir::ConcatPath(testDir, file_name+".asn");
+    string ref_name = CDir::ConcatPath(testDir, file_name+".ref");
+    string out_name = CDir::ConcatPath(testDir, file_name+".out");
     CSeq_entry entry, ref_entry;
     {
         CNcbiIfstream in(asn_name.c_str());
@@ -95,11 +96,11 @@ static void sx_RunTest_Unique_Feature_Ids(const string& file_name)
     }
 }
 
-static void sx_RunTest_Reassign_Feature_Ids(const string& file_name)
+static void sx_RunTest_Reassign_Feature_Ids(const string& testDir, const string& file_name)
 {
-    string asn_name = TEST_DIR+file_name+".asn";
-    string ref_name = TEST_DIR+file_name+".ref";
-    string out_name = TEST_DIR+file_name+".out";
+    string asn_name = CDir::ConcatPath(testDir, file_name+".asn");
+    string ref_name = CDir::ConcatPath(testDir, file_name+".ref");
+    string out_name = CDir::ConcatPath(testDir, file_name+".out");
     CSeq_entry entry, ref_entry;
     {
         CNcbiIfstream in(asn_name.c_str());
@@ -142,13 +143,40 @@ static void sx_RunTest_Reassign_Feature_Ids(const string& file_name)
 }
 
 
+NCBITEST_AUTO_INIT()
+{
+}
+
+
+NCBITEST_INIT_CMDLINE(arg_descrs)
+{
+    arg_descrs->AddDefaultKey("test-dir", "TEST_FILE_DIRECTORY",
+        "Set the root directory under which all test files can be found.",
+        CArgDescriptions::eDirectory,
+        testfilesDir);
+}
+
+
+NCBITEST_AUTO_FINI()
+{
+}
+
+
 BOOST_AUTO_TEST_CASE(TestExample1)
 {
-    sx_RunTest_Unique_Feature_Ids("GB-2561");
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    const string testDir = args["test-dir"].AsString();
+    sx_RunTest_Unique_Feature_Ids(testDir, "GB-2561");
 }
+
 
 BOOST_AUTO_TEST_CASE(TestExample2)
 {
-    sx_RunTest_Reassign_Feature_Ids("comparison_1.raw_test");
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+    const string testDir = args["test-dir"].AsString();
+    sx_RunTest_Reassign_Feature_Ids(testDir, "comparison_1.raw_test");
 }
+
+
+
 
