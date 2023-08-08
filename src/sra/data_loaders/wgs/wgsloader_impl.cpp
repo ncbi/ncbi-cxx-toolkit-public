@@ -215,6 +215,17 @@ static unsigned GetUpdateTime(void)
 }
 
 
+NCBI_PARAM_DECL(unsigned, WGS_LOADER, RETRY_COUNT);
+NCBI_PARAM_DEF(unsigned, WGS_LOADER, RETRY_COUNT, 3);
+
+
+static unsigned GetRetryCountParam(void)
+{
+    static unsigned value = NCBI_PARAM_TYPE(WGS_LOADER, RETRY_COUNT)::GetDefault();
+    return value;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -370,6 +381,7 @@ END_LOCAL_NAMESPACE;
 CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     const CWGSDataLoader::SLoaderParams& params)
     : m_WGSVolPath(params.m_WGSVolPath),
+      m_RetryCount(GetRetryCountParam()),
       m_FoundFiles(GetGCSize()),
       m_AddWGSMasterDescr(GetMasterDescrParam()),
       m_ResolveGIs(GetResolveGIsParam()),
@@ -380,7 +392,7 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
         m_WGSVolPath = GetWGSVolPath();
     }
     ITERATE (vector<string>, it, params.m_WGSFiles) {
-        CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, *it));
+        CRef<CWGSFileInfo> info = OpenWGSFile(*it);
         if ( !m_FixedFiles.insert(TFixedFiles::value_type(info->GetWGSPrefix(),
                                                           info)).second ) {
             NCBI_THROW_FMT(CSraException, eOtherError,
@@ -471,6 +483,57 @@ protected:
 };
 
 END_LOCAL_NAMESPACE;
+
+
+template<class Call>
+typename std::invoke_result<Call>::type
+CWGSDataLoader_Impl::CallWithRetry(Call&& call,
+                                   const char* name,
+                                   unsigned retry_count)
+{
+    if ( retry_count == 0 ) {
+        retry_count = m_RetryCount;
+    }
+    for ( unsigned t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"CWGSDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"CWGSDataLoader::"<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"CWGSDataLoader::"<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<"CWGSDataLoader: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFile(CTempString prefix)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::OpenWGSFileOnce, this,
+                              prefix),
+                         "OpenWGSFile");
+}
+
+
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFileOnce(CTempString prefix)
+{
+    return Ref(new CWGSFileInfo(*this, prefix));
+}
 
 
 CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
@@ -876,6 +939,14 @@ CWGSFileInfo::SAccFileInfo::GetRootFileInfo(void) const
 
 CRef<CWGSBlobId> CWGSDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetBlobIdOnce, this,
+                              cref(idh)),
+                         "GetBlobId");
+}
+
+
+CRef<CWGSBlobId> CWGSDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& idh)
+{
     // return blob-id of blob with sequence
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
         if ( CWGSFileInfo::SAccFileInfo root_info = info.GetRootFileInfo() ) {
@@ -947,6 +1018,15 @@ CWGSFileInfo::GetProteinIterator(const CWGSBlobId& blob_id) const
 CTSE_LoadLock CWGSDataLoader_Impl::GetBlobById(CDataSource* data_source,
                                                const CWGSBlobId& blob_id)
 {
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetBlobByIdOnce, this,
+                              data_source, cref(blob_id)),
+                         "GetBlobById");
+}
+
+
+CTSE_LoadLock CWGSDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source,
+                                                   const CWGSBlobId& blob_id)
+{
     CDataLoader::TBlobId loader_blob_id(&blob_id);
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(loader_blob_id);
     if ( !load_lock.IsLoaded() ) {
@@ -961,6 +1041,17 @@ CDataLoader::TTSE_LockSet
 CWGSDataLoader_Impl::GetRecords(CDataSource* data_source,
                                 const CSeq_id_Handle& idh,
                                 CDataLoader::EChoice choice)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetRecordsOnce, this,
+                              data_source, cref(idh), choice),
+                         "GetRecords");
+}
+
+
+CDataLoader::TTSE_LockSet
+CWGSDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
+                                    const CSeq_id_Handle& idh,
+                                    CDataLoader::EChoice choice)
 {
     CDataLoader::TTSE_LockSet locks;
     if ( choice == CDataLoader::eExtAnnot ||
@@ -995,14 +1086,31 @@ void CWGSDataLoader_Impl::LoadBlob(const CWGSBlobId& blob_id,
 }
 
 
-void CWGSDataLoader_Impl::LoadChunk(const CWGSBlobId& blob_id,
-                                    CTSE_Chunk_Info& chunk_info)
+void CWGSDataLoader_Impl::GetChunk(const CWGSBlobId& blob_id,
+                                   CTSE_Chunk_Info& chunk_info)
+{
+    CallWithRetry(bind(&CWGSDataLoader_Impl::GetChunkOnce, this,
+                       cref(blob_id), ref(chunk_info)),
+                  "GetChunk");
+}
+
+
+void CWGSDataLoader_Impl::GetChunkOnce(const CWGSBlobId& blob_id,
+                                       CTSE_Chunk_Info& chunk_info)
 {
     GetFileInfo(blob_id)->LoadChunk(blob_id, chunk_info);
 }
 
 
 void CWGSDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
+{
+    CallWithRetry(bind(&CWGSDataLoader_Impl::GetIdsOnce, this,
+                       cref(idh), ref(ids)),
+                  "GetIds");
+}
+
+
+void CWGSDataLoader_Impl::GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids)
 {
     CBioseq::TId ids2;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
@@ -1026,6 +1134,15 @@ void CWGSDataLoader_Impl::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 
 CDataLoader::SAccVerFound
 CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetAccVer, this,
+                              cref(idh)),
+                         "GetAccVer");
+}
+
+
+CDataLoader::SAccVerFound
+CWGSDataLoader_Impl::GetAccVerOnce(const CSeq_id_Handle& idh)
 {
     CDataLoader::SAccVerFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
@@ -1059,6 +1176,15 @@ CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 CDataLoader::SGiFound
 CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetGiOnce, this,
+                              cref(idh)),
+                         "GetGi");
+}
+
+
+CDataLoader::SGiFound
+CWGSDataLoader_Impl::GetGiOnce(const CSeq_id_Handle& idh)
+{
     CDataLoader::SGiFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
         ret.sequence_found = true;
@@ -1081,7 +1207,16 @@ CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 }
 
 
-TTaxId CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
+TTaxId
+CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetTaxIdOnce, this,
+                              cref(idh)),
+                         "GetTaxId");
+}
+
+
+TTaxId CWGSDataLoader_Impl::GetTaxIdOnce(const CSeq_id_Handle& idh)
 {
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
         auto& vdb = info.file->GetDb();
@@ -1108,7 +1243,16 @@ TTaxId CWGSDataLoader_Impl::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
-TSeqPos CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
+TSeqPos
+CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetSequenceLengthOnce, this,
+                              cref(idh)),
+                         "GetSequenceLength");
+}
+
+
+TSeqPos CWGSDataLoader_Impl::GetSequenceLengthOnce(const CSeq_id_Handle& idh)
 {
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
         switch ( info.seq_type ) {
@@ -1135,6 +1279,15 @@ TSeqPos CWGSDataLoader_Impl::GetSequenceLength(const CSeq_id_Handle& idh)
 
 CDataLoader::SHashFound
 CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetSequenceHashOnce, this,
+                              cref(idh)),
+                         "GetSequenceHash");
+}
+
+
+CDataLoader::SHashFound
+CWGSDataLoader_Impl::GetSequenceHashOnce(const CSeq_id_Handle& idh)
 {
     CDataLoader::SHashFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
@@ -1171,6 +1324,15 @@ CWGSDataLoader_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
 
 CDataLoader::STypeFound
 CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
+{
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetSequenceTypeOnce, this,
+                              cref(idh)),
+                         "GetSequenceType");
+}
+
+
+CDataLoader::STypeFound
+CWGSDataLoader_Impl::GetSequenceTypeOnce(const CSeq_id_Handle& idh)
 {
     CDataLoader::STypeFound ret;
     if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
