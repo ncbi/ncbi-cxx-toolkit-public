@@ -56,7 +56,6 @@ public:
 private:
     static void s_MakeIDPairs(const objects::CSeq_entry_Handle& entry, map<TId,TId> &id_pairs);
     static void s_UpdateFeatureIds(const objects::CSeq_entry_Handle& entry, TFeatMap &changed_feats, TIdSet &existing_ids, TId &offset);
-    static bool UpdateFeatureIds(objects::CSeq_entry_Handle entry_handle, TIdSet& existing_ids, TId& offset);
 };
 
 
