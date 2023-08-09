@@ -604,6 +604,11 @@ if(DEFINED NCBI_PTBCFG_MAPPED_SOURCE)
     set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -fdebug-prefix-map=${NCBI_TREE_ROOT}=${NCBI_PTBCFG_MAPPED_SOURCE}")
 endif()
 
+if(NCBI_COMPILER_GCC)
+    set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} -gdwarf-4")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -gdwarf-4")
+endif()
+
 #----------------------------------------------------------------------------
 # RPATH
 if (NOT NCBI_PTBCFG_CUSTOMRPATH)
