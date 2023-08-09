@@ -99,18 +99,8 @@ void CGffIdTracker::CheckAndIndexRecord(
     const CGff2Record& record)
 //  ============================================================================
 {
-    CReaderMessage errorMissingId(
-        eDiag_Error,
-        0,
-        string("Bad data line: missing record ID"));
-
     string id;
     record.GetAttribute("ID", id);
-    auto recType = record.Type();
-    auto idRequired = recType == "gene"  ||  NStr::EndsWith(recType, "rna");
-    if (id.empty()  &&  idRequired) {
-        throw errorMissingId;
-    }
     CheckAndIndexRecord(id, record);
 }
 
