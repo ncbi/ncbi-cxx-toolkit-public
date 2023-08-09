@@ -932,7 +932,7 @@ struct SInvertVDB_CDD {
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD)
 {
-    if (!s_HaveID2() || CId2Reader::GetVDB_CDD_Enabled()) return;
+    if (!s_HaveMongoDBCDD()) return;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -943,8 +943,8 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 {
-    if (!s_HaveID2() || !CId2Reader::GetVDB_CDD_Enabled()) return;
     SInvertVDB_CDD invert;
+    if (!s_HaveMongoDBCDD()) return;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -955,7 +955,7 @@ BOOST_AUTO_TEST_CASE(CheckExtCDD2)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 {
-    if (!s_HaveID2() || CId2Reader::GetVDB_CDD_Enabled()) return;
+    if (!s_HaveMongoDBCDD()) return;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -966,8 +966,8 @@ BOOST_AUTO_TEST_CASE(CheckExtCDDonWGS)
 
 BOOST_AUTO_TEST_CASE(CheckExtCDD2onWGS)
 {
-    if (!s_HaveID2() || !CId2Reader::GetVDB_CDD_Enabled()) return;
     SInvertVDB_CDD invert;
+    if (!s_HaveMongoDBCDD()) return;
     LOG_POST("Checking ExtAnnot "<<s_GetVDB_CDD_Source()<<" CDD on WGS sequence");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
@@ -1008,11 +1008,11 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 
 BOOST_AUTO_TEST_CASE(CheckExtSTS)
 {
-    LOG_POST("Checking ExtAnnot STS"); 	 
-    SAnnotSelector sel(CSeqFeatData::eSubtype_STS); 	 
-    sel.SetResolveAll().SetAdaptiveDepth(); 	 
-    sel.AddNamedAnnots("STS"); 	 
-    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249220000)); 	 
+    LOG_POST("Checking ExtAnnot STS");
+    SAnnotSelector sel(CSeqFeatData::eSubtype_STS);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    sel.AddNamedAnnots("STS");
+    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249220000));
 }
 
 
@@ -1368,17 +1368,19 @@ BOOST_AUTO_TEST_CASE(CheckExtGetAllTSEs)
     BOOST_CHECK(!CFeat_CI(bh, sel));
     CScope::TTSE_Handles tses;
     scope->GetAllTSEs(tses, CScope::eAllTSEs);
-    BOOST_CHECK(tses.size() > 1);
+    BOOST_CHECK(tses.size() > (s_HaveMongoDBCDD() ? 1 : 0));
     size_t size = 0;
     for ( auto& tse : tses ) {
         size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
     }
     BOOST_CHECK(size == 0);
-    sel.SetFeatSubtype(CSeqFeatData::eSubtype_region);
-    for ( auto& tse : tses ) {
-        size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
+    if (s_HaveMongoDBCDD()) {
+        sel.SetFeatSubtype(CSeqFeatData::eSubtype_region);
+        for ( auto& tse : tses ) {
+            size += CFeat_CI(tse.GetTopLevelEntry(), sel).GetSize();
+        }
+        BOOST_CHECK(size > 0);
     }
-    BOOST_CHECK(size > 0);
 }
 
 
