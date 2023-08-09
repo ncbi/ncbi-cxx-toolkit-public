@@ -34,7 +34,6 @@ class PsgClient:
 
     def __init__(self, args):
         self._cmd = [args.binary, 'interactive', '-server-mode']
-        self._deadline = 30 + time.monotonic()
         self._verbose = args.verbose
         self._sent = {}
 
@@ -63,7 +62,7 @@ class PsgClient:
         return self
 
     def _run(self):
-        while True:
+        while self._pipe.poll() is None:
             try:
                 line = self._pipe.stdout.readline()
             except ValueError:
@@ -72,30 +71,44 @@ class PsgClient:
                 self._queue.put(line)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._pipe.stdin.close()
+        rv = exc_type == BrokenPipeError
+        if not rv:
+            self._pipe.stdin.close()
         self._pipe.stdout.close()
-        self._pipe.wait()
+        self._pipe.terminate()
         self._thread.join()
+        return rv
 
     def send(self, request, id=None):
         print(json.dumps(request), file=self._pipe.stdin)
 
         if self._verbose >= PsgClient.VerboseLevel.REQUEST:
-            print(request)
+            print(json.dumps(request))
 
         self._sent[id or request['id']] = request
         return request
 
     def receive(self, /, deadline=None):
-        deadline = min(deadline, self._deadline) if deadline else self._deadline
-
         while True:
-            line = self._queue.get(timeout=deadline - time.monotonic()).rstrip()
+            if deadline is None:
+                timeout = None
+            else:
+                timeout = deadline - time.monotonic()
+
+                if timeout <= 0:
+                    raise queue.Empty
+
+            line = self._queue.get(timeout=timeout).rstrip()
 
             if self._verbose >= PsgClient.VerboseLevel.RESPONSE:
                 print(line)
 
-            data = json.loads(line)
+            try:
+                data = json.loads(line)
+            except json.decoder.JSONDecodeError:
+                print(f"Error: 'Failed to parse response \"{line}\"'", file=sys.stderr)
+                break
+
             yield data
 
             result = data.get('result')
@@ -328,12 +341,11 @@ def get_all_ipgs(psg_client, ipgs, /, max_ids=1000):
     return ids
 
 def check_binary(args):
-    if shutil.which(args.binary) is None:
-        found_binary = shutil.which("psg_client")
-        if found_binary is None:
-            sys.exit(f'"{args.binary}" does not exist or is not executable')
-        else:
-            args.binary = found_binary
+    for args.binary in (args.binary,) if args.binary else ('./psg_client', 'psg_client'):
+        if shutil.which(args.binary):
+            return
+    else:
+        sys.exit(f'"{args.binary}" does not exist or is not executable')
 
 def read_bio_ids(input_file):
     return ([bio_id] + bio_type for (bio_id, *bio_type) in csv.reader(input_file))
@@ -409,10 +421,93 @@ def syntest_cmd(args):
         sys.exit(0 if result else -1)
 
 class Response(collections.UserList):
-    """PSG replies sorted by their JSON representations."""
+    """PSG replies optionally sorted by their JSON representations."""
 
-    def __init__(self, iterable):
-        super().__init__(sorted(iterable, key=json.dumps))
+    def __init__(self, iterable, /, actual=False):
+        super().__init__(sorted(iterable, key=json.dumps) if actual else iterable)
+
+    def apply(self, expected, deadline):
+        """Apply null from the expected response."""
+
+        def _any(actual, expected, modify):
+            if isinstance(actual, dict):
+                if isinstance(expected, dict):
+                    return _dict(actual, expected, modify)
+            elif isinstance(actual, list):
+                if isinstance(expected, list):
+                    return _list(actual, expected, modify)
+            else:
+                return actual == expected
+
+            return False
+
+        def _list(actual, expected, modify, deadline=None):
+            i = 0
+            success = True
+            matching_any = False
+
+            for e in expected:
+                if deadline is not None and deadline <= time.monotonic():
+                    raise queue.Empty
+
+                if e is None:
+                    matching_any = True
+                    continue
+
+                for k, a in enumerate(itertools.islice(actual, i, None)):
+                    if _any(a, e, modify=False):
+                        # Modify only after it fully matches
+                        if modify:
+                            _any(a, e, modify=True)
+
+                            if matching_any:
+                                actual[i:i + k] = [None]
+
+                        if k > 0:
+                            if not matching_any:
+                                # Found after some unexpected values
+                                success = False
+                            elif modify:
+                                i += 1
+                            else:
+                                i += k
+
+                        i += 1
+                        matching_any = False
+                        break
+                else:
+                    if not matching_any:
+                        # Missing this expected value
+                        success = False
+                    elif modify:
+                        actual[i] = None
+                    else:
+                        i += 1
+
+            if not matching_any:
+                if i < len(actual):
+                    success = False
+            elif modify:
+                actual[i:] = [None]
+
+            return success
+
+        def _dict(actual, expected, modify):
+            if actual.keys() != expected.keys():
+                return False
+
+            return all(map(lambda args: _dict_elem(*args), ((actual, k, expected[k], modify) for k in actual.keys())))
+
+        def _dict_elem(actual, i, expected, modify):
+            if expected is not None:
+                return _any(actual[i], expected, modify)
+
+            if modify:
+                actual[i] = None
+
+            return True
+
+        _list(self.data, expected.data, modify=True, deadline=deadline)
 
     def diff(self, other):
         """Produce a unified diff between two responses."""
@@ -423,44 +518,39 @@ class Response(collections.UserList):
 
         return list(unified_diff(_to_lines(self), _to_lines(other), fromfile='Expected', tofile='Actual', n=3))
 
-    def find_any(self):
-        """Find 'any' (None) values in the response."""
-
-        def _impl(prefix, value):
-            if isinstance(value, list):
-                for i, v in enumerate(value):
-                    yield from _impl(prefix + (i,), v)
-            elif isinstance(value, dict):
-                for k, v in value.items():
-                    yield from _impl(prefix + (k,), v)
-            elif value is None:
-                yield prefix
-
-        yield from _impl((), self.data)
-
-    def apply_any(self, found):
-        """Apply found 'any' (None) values to the response."""
-
-        def _impl(value, prefix):
-            if len(prefix) > 1:
-                _impl(value[prefix[0]], prefix[1:])
-            else:
-                value[prefix[0]] = None
-
-        for prefix in found:
-            _impl(self, prefix)
-
 def testcases_cmd(args):
-    result = False
+    def enabled(name):
+        return name != 'timeout' and (not args.testcase or name in args.testcase) and (not args.no_testcase or name not in args.no_testcase)
+
+    def describe(name, testcase, what):
+        desc = testcase['description']
+        return '\n\t'.join([f'Testcase{what}:', name] + ([desc] if name != desc else []) + [''])
+
+    total = 0
+    succeeded = 0
     check_binary(args)
 
     with PsgClient(args) as psg_client:
         updated_testcases = {}
 
-        for (name, testcase) in json.load(args.input_file).items():
-            if not args.testcase or args.testcase == name:
-                if deadline := testcase.get('timeout'):
-                    deadline += time.monotonic()
+        testcases = json.loads(''.join(filter(lambda l: l.lstrip()[:1] not in ['#', ''], args.input_file)))
+        overall_deadline = (args.timeout or testcases.get('timeout', 25)) + time.monotonic()
+
+        for (name, testcase) in filter(lambda x: enabled(x[0]), testcases.items()):
+            total += 1
+
+            if args.list:
+                print(describe(name, testcase, ''))
+                continue
+
+            try:
+                if overall_deadline <= time.monotonic():
+                    raise queue.Empty
+
+                if timeout := testcase.get('timeout'):
+                    deadline = min(overall_deadline, timeout + time.monotonic())
+                else:
+                    deadline = overall_deadline
 
                 actual = []
 
@@ -469,36 +559,45 @@ def testcases_cmd(args):
                         psg_client.send(request)
 
                     for i in range(i + 1):
-                        try:
-                            actual.extend(psg_client.receive(deadline=deadline))
-                        except queue.Empty:
-                            sys.exit(f'Testcase timed out:\n\t{name}\n\t{testcase["description"]}\n\t\n\tExpected:\n\t\t{expected}')
+                        actual.extend(psg_client.receive(deadline=deadline))
 
                 expected = Response(testcase['response'])
-                actual = Response(actual)
-                actual.apply_any(expected.find_any())
+                actual = Response(actual, actual=True)
+                actual.apply(expected, deadline=deadline)
+            except queue.Empty:
+                print(describe(name, testcase, ' timed out'))
+                sys.exit(2)
 
-                if args.output_file:
-                    testcase['response'] = actual.data
-                    updated_testcases[name] = testcase
+            if args.output_file:
+                testcase['response'] = actual.data
+                updated_testcases[name] = testcase
+            else:
+                diff = expected.diff(actual)
 
-                elif diff := expected.diff(actual):
-                    print('Testcase failed:', name, testcase['description'], '', sep='\n\t', end='')
+                if diff:
+                    print(describe(name, testcase, ' failed'), end='')
                     print(*diff, sep='\t')
-                    result = True
+                else:
+                    succeeded += 1
 
-                elif args.report:
-                    print('Testcase succeeded:', name, testcase['description'], '', sep='\n\t')
-
-    if result:
-        sys.exit(result)
+                    if args.report:
+                        print(describe(name, testcase, ' succeeded'))
 
     if args.output_file:
         with open(args.output_file, 'w') as of:
             json.dump(updated_testcases, of, indent=4)
             of.write('\n')
+    elif args.list:
+        print(f'{total} testcases total')
+    else:
+        if args.report:
+            print(f'{succeeded} of {total} testcases succeeded')
+
+        if succeeded != total:
+            sys.exit(1)
 
 def generate_cmd(args):
+    check_binary(args)
     request_generator = RequestGenerator()
 
     if args.TYPE == 'named_annot':
@@ -521,8 +620,6 @@ def generate_cmd(args):
         if args.TYPE in ('biodata', 'resolve'):
             ids = bio_ids
         elif args.TYPE in ('blob', 'chunk'):
-            check_binary(args)
-
             max_blob_ids = args.NUMBER if args.TYPE == 'blob' else 0
             max_chunk_ids = args.NUMBER if args.TYPE != 'blob' else 0
 
@@ -718,29 +815,34 @@ if __name__ == '__main__':
     parser_syntest = subparsers.add_parser('syntest', help='Perform synthetic psg_client tests', description='Perform synthetic psg_client tests', aliases=['test'])
     parser_syntest.set_defaults(func=syntest_cmd)
     parser_syntest.add_argument('-service', help='PSG service/server to use')
-    parser_syntest.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_syntest.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_syntest.add_argument('-bio-file', help='CSV file with bio IDs "BioID[,Type]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_syntest.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
     parser_syntest.add_argument('-ipg-file', help='CSV file with IPG IDs "Protein,[IPG][,Nucleotide]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_syntest.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_syntest.add_argument('-no-testing-opt', help='Do not pass option "-testing" to psg_client binary', dest='testing', action='store_false')
 
-    parser_testcases = subparsers.add_parser('testcases', help='Perform JSON-specified psg_client tests', description='Perform JSON-specified psg_client tests')
+    parser_testcases = subparsers.add_parser('testcases', help='Perform JSON-specified PSG tests', description='Perform JSON-specified PSG tests')
     parser_testcases.set_defaults(func=testcases_cmd)
+    group1_testcases = parser_testcases.add_mutually_exclusive_group()
+    group2_testcases = parser_testcases.add_mutually_exclusive_group()
     parser_testcases.add_argument('-service', help='PSG service/server to use')
-    parser_testcases.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_testcases.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_testcases.add_argument('-input-file', help='JSON file with testcases" (default: ./testcases.json)', metavar='FILE', type=argparse.FileType(), default='./testcases.json')
-    parser_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
-    parser_testcases.add_argument('-testcase', help='A specific testcase to run')
-    parser_testcases.add_argument('-report', help='Report successful testcases', action='store_true')
+    group1_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
+    group2_testcases.add_argument('-testcase', help='Run only specified testcase(s) (multiple are allowed)', action='append')
+    group2_testcases.add_argument('-no-testcase', help='Run all but specified testcase(s) (multiple are allowed)', action='append')
+    group1_testcases.add_argument('-report', help='Report testcase results', action='store_true')
+    group1_testcases.add_argument('-list', help='List available testcases', action='store_true')
     parser_testcases.add_argument('-data-limit', help='Show a data preview for any data larger the limit (if set)', default='1KB')
     parser_testcases.add_argument('-preview-size', help='How much of data to show as the preview', default='16')
+    parser_testcases.add_argument('-timeout', help='Overall timeout (overrides overall timeout from JSON file)', type=int)
     parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_testcases.add_argument('-no-testing-opt', help=argparse.SUPPRESS, dest='testing', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
     parser_generate.set_defaults(func=generate_cmd)
-    parser_generate.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_generate.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_generate.add_argument('-params', help='Params to add to requests (e.g. \'{"include_info": ["canonical-id", "gi"]}\')')
     parser_generate.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_generate.add_argument('INPUT_FILE', help='CSV file with bio IDs "BioID[,Type]", named annotations "BioID,NamedAnnotID[,NamedAnnotID]... or IPG IDs "Protein,[IPG][,Nucleotide]"', type=argparse.FileType())
@@ -749,7 +851,7 @@ if __name__ == '__main__':
 
     parser_cgi_help = subparsers.add_parser('cgi_help', help='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)', description='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)')
     parser_cgi_help.set_defaults(func=cgi_help_cmd)
-    parser_cgi_help.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)', default='./psg_client')
+    parser_cgi_help.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_cgi_help.add_argument('-output-file', help='Output file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
 
     args = parser.parse_args()
