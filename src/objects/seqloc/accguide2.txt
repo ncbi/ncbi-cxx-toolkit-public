@@ -1322,7 +1322,7 @@ version  2 # of file format
 2+6  OR  gb_dirsub
 2+8  OR  gb_other_nuc
 2+10 OR  gb_other_nuc
-2+6  OS  gb_other_nuc
+2+6  OS  gb_patent
 2+8  OS  gb_other_nuc
 2+10 OS  gb_other_nuc
 2+6  OT  gb_other_nuc
