@@ -671,6 +671,14 @@ CCSRADataLoader_Impl::GetFileInfo(const CCSRABlobId& blob_id)
 
 CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 {
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetBlobIdOnce, this,
+                              cref(idh)),
+                         "GetBlobId");
+}
+
+
+CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& idh)
+{
     CVDBMgr::CRequestContextUpdater ctx_updater;
     // return blob-id of blob with sequence
     // annots may be different
@@ -694,6 +702,15 @@ CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 CTSE_LoadLock CCSRADataLoader_Impl::GetBlobById(CDataSource* data_source,
                                                 const CCSRABlobId& blob_id)
 {
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetBlobByIdOnce, this,
+                              data_source, cref(blob_id)),
+                         "GetBlobById");
+}
+
+
+CTSE_LoadLock CCSRADataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source,
+                                                    const CCSRABlobId& blob_id)
+{
     CDataLoader::TBlobId loader_blob_id(&blob_id);
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(loader_blob_id);
     if ( !load_lock.IsLoaded() ) {
@@ -714,6 +731,17 @@ CDataLoader::TTSE_LockSet
 CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
                                  const CSeq_id_Handle& idh,
                                  CDataLoader::EChoice choice)
+{
+    return CallWithRetry(bind(&CCSRADataLoader_Impl::GetRecordsOnce, this,
+                              data_source, cref(idh), choice),
+                         "GetRecords");
+}
+
+
+CDataLoader::TTSE_LockSet
+CCSRADataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
+                                     const CSeq_id_Handle& idh,
+                                     CDataLoader::EChoice choice)
 {
     CDataLoader::TTSE_LockSet locks;
     // return blob-id of blob with annotations and possibly with sequence
@@ -847,7 +875,7 @@ void CCSRADataLoader_Impl::LoadBlob(const CCSRABlobId& blob_id,
 
 
 void CCSRADataLoader_Impl::GetChunk(const CCSRABlobId& blob_id,
-                                        CTSE_Chunk_Info& chunk_info)
+                                    CTSE_Chunk_Info& chunk_info)
 {
     CallWithRetry(bind(&CCSRADataLoader_Impl::GetChunkOnce, this,
                        cref(blob_id), ref(chunk_info)),
@@ -969,7 +997,7 @@ CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
     return CallWithRetry(bind(&CCSRADataLoader_Impl::GetGiOnce, this,
                               cref(idh)),
-                         "GetAccVer");
+                         "GetGi");
 }
 
 
