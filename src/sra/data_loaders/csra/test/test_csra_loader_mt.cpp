@@ -75,7 +75,15 @@ private:
                       Int8 spot_id);
     Int8 FindMaxSpotId(const string& acc);
     Int8 GetMaxSpotId(size_t index);
+
+    template<class Call>
+    typename std::invoke_result<Call>::type
+    CallWithRetry(Call&& call,
+                  const char* name,
+                  int retry_count);
+    
     void LoadRefSeqs();
+    void LoadRefSeqsOnce();
     
     bool TestShortReads(int idx);
     bool TestRefSeqs(int idx);
@@ -264,7 +272,47 @@ Int8 CCSRATestApp::GetMaxSpotId(size_t index)
     return m_MaxSpotId[index];
 }
 
+template<class Call>
+typename std::invoke_result<Call>::type
+CCSRATestApp::CallWithRetry(Call&& call,
+                            const char* name,
+                            int retry_count)
+{
+    for ( int t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<name<<"(): waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
 void CCSRATestApp::LoadRefSeqs()
+{
+    CallWithRetry(bind(&CCSRATestApp::LoadRefSeqsOnce, this), "LoadRefSeqs", 3);
+}
+
+
+void CCSRATestApp::LoadRefSeqsOnce()
 {
     CVDBMgr mgr;
     for ( auto& acc : m_Accession ) {
