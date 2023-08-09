@@ -48,6 +48,9 @@ class PsgClient:
         if preview_size := args_dict.get('preview_size'):
             self._cmd += ['-preview-size', preview_size]
 
+        if one_server := args_dict.get('one_server'):
+            self._cmd += ['-one-server']
+
         if testing := args_dict.get('testing'):
             self._cmd += ['-testing']
 
@@ -838,6 +841,7 @@ if __name__ == '__main__':
     parser_testcases.add_argument('-preview-size', help='How much of data to show as the preview', default='16')
     parser_testcases.add_argument('-timeout', help='Overall timeout (overrides overall timeout from JSON file)', type=int)
     parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
+    parser_testcases.add_argument('-no-one-server-opt', help=argparse.SUPPRESS, dest='one_server', action='store_false')
     parser_testcases.add_argument('-no-testing-opt', help=argparse.SUPPRESS, dest='testing', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')

@@ -232,13 +232,15 @@ struct SInteractiveParams : SParallelProcessingParams
     const bool echo;
     const bool testing;
 
-    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool t) :
-        SParallelProcessingParams(move(s), move(ua), r, wt, p, srv),
+    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
+        SParallelProcessingParams(GetService(move(s), os), move(ua), r, wt, p, srv),
         data_limit(dl),
         preview_size(ps),
         echo(e),
         testing(t)
     {}
+
+    static string GetService(string service, bool one_server);
 };
 
 struct SPerformanceParams : SParams
