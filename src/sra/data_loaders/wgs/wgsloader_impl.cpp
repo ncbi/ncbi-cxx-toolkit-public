@@ -1135,7 +1135,7 @@ void CWGSDataLoader_Impl::GetIdsOnce(const CSeq_id_Handle& idh, TIds& ids)
 CDataLoader::SAccVerFound
 CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 {
-    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetAccVer, this,
+    return CallWithRetry(bind(&CWGSDataLoader_Impl::GetAccVerOnce, this,
                               cref(idh)),
                          "GetAccVer");
 }
