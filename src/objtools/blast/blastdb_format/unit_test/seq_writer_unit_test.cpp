@@ -173,16 +173,13 @@ BOOST_AUTO_TEST_CASE(TestRequestSeqId)
 
 BOOST_AUTO_TEST_CASE(TestRequestSeqIdLong)
 {
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    string old_value;
-    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
-    if (had_entry) {
-        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
-    }
-    sentry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
-    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+	string old_value = kEmptyStr;
+	bool found = false;
+	CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
+	CNcbiEnvironment& env = app->SetEnvironment();
+	old_value = env.Get("NCBI_CONFIG__BLAST__LONG_SEQID", &found);
+    env.Set("NCBI_CONFIG__BLAST__LONG_SEQID", "1");
+    BOOST_REQUIRE(env.Get("NCBI_CONFIG__BLAST__LONG_SEQID") == "1");
 
     const int kGi(43123516);
     const string kSeqId("gb|EAC27631.1|");
@@ -205,12 +202,11 @@ BOOST_AUTO_TEST_CASE(TestRequestSeqIdLong)
 
     BOOST_REQUIRE_EQUAL(tokens[0], kSeqId);
 
-    if (had_entry) {
-        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
-                             IRWRegistry::fPersistent);
+    if (found) {
+        env.Set("NCBI_CONFIG__BLAST__LONG_SEQID", old_value);
     }
     else {
-        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+        env.Unset("NCBI_CONFIG__BLAST__LONG_SEQID");
     }
 }
 
