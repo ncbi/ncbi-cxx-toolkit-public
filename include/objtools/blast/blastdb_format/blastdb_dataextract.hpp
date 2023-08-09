@@ -67,7 +67,9 @@ public:
               m_LineWidth(line_width),
               m_TargetOnly(target_only),
               m_UseCtrlA(ctrl_a),
-              m_Oid(0)
+              m_Oid(0),
+              m_UseLongSeqIds(false)
+
     {
         m_Gi2TaxidMap.first = -1;
         m_Gi2AccMap.first = -1;
