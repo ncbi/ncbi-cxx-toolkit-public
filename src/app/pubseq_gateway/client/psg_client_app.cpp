@@ -282,6 +282,7 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("preview-size", "SIZE", "How much of data to show as the preview", CArgDescriptions::eDataSize, "16");
     arg_desc.AddFlag("server-mode", "Output one JSON-RPC response per line and always output reply statuses");
     arg_desc.AddFlag("echo", "Echo all incoming requests");
+    arg_desc.AddFlag("one-server", "Use only one server from the service", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("testing", "Testing mode adjustments", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
@@ -447,6 +448,7 @@ struct SInteractive : SParallelProcessing<SInteractiveParams>
             GetDataLimit(args["data-limit"]),
             static_cast<size_t>(args["preview-size"].AsInt8()),
             args["echo"].HasValue(),
+            args["one-server"].HasValue(),
             args["testing"].HasValue()
         }
     {

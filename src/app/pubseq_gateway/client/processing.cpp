@@ -523,6 +523,20 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
     Set(obj["id2_info"],  chunk_id.GetId2Info());
 }
 
+string SInteractiveParams::GetService(string service, bool one_server)
+{
+    if (one_server) {
+        auto servers = CServiceDiscovery(service)();
+
+        if (!servers.empty()) {
+            sort(servers.begin(), servers.end(), [](const auto& l, const auto& r) { return l.second < r.second; });
+            return servers.back().first.AsString();
+        }
+    }
+
+    return move(service);
+}
+
 void SMetrics::OutputItems(ostream& os) const
 {
     for (const auto& item : m_Items) {
