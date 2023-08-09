@@ -74,7 +74,12 @@ foreach( _inc IN ITEMS ${includedir} ${incinternal} ${_tk_includedir} ${_tk_inci
 endforeach()
 list(REMOVE_DUPLICATES _inc_dirs)
 include_directories(${incdir} ${_inc_dirs})
-include_regular_expression("^.*[.](h|hpp|c|cpp|inl|inc)$")
+if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    include_regular_expression(
+        "^.*[.](h|hpp|c|cpp|inl|inc)$|ncbi_build_ver[.]cmake_nodep")
+else()
+    include_regular_expression("^.*[.](h|hpp|c|cpp|inl|inc)$")
+endif()
 if(OFF)
     message("include_directories(${incdir} ${_inc_dirs})")
 endif()
