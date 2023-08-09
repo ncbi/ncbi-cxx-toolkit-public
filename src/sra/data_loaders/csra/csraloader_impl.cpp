@@ -565,8 +565,7 @@ CCSRADataLoader_Impl::TFileLock CCSRADataLoader_Impl::GetSRRFile(const string& a
                     // no such SRA table
                     return TFileLock();
                 }
-                ERR_POST_X(4, "CCSRADataLoader::GetSRRFile("<<acc<<"): accession not found: "<<exc);
-                return TFileLock();
+                throw;
             }
         }
     }}
