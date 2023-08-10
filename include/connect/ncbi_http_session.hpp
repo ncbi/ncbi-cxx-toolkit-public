@@ -186,9 +186,9 @@ class NCBI_XCONNECT_EXPORT CHttpProxy
 public:
     CHttpProxy(void) : m_Port(0) {}
     CHttpProxy(string host, unsigned short port)
-        : m_Host(move(host)), m_Port(port) {}
+        : m_Host(std::move(host)), m_Port(port) {}
     CHttpProxy(string host, unsigned short port, string user, string password)
-        : m_Host(move(host)), m_Port(port), m_User(move(user)), m_Password(move(password)) {}
+        : m_Host(std::move(host)), m_Port(port), m_User(std::move(user)), m_Password(std::move(password)) {}
 
     bool IsEmpty(void) const { return m_Host.empty(); }
     const string& GetHost(void) const { return m_Host; }
