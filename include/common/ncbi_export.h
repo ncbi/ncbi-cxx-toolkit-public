@@ -243,7 +243,6 @@
 /* Definitions for NCBI_ALGO_STRUCTURE.DLL
  */
 #ifdef NCBI_ALGOSTRUCTURE_EXPORTS
-#  define NCBI_BMAREFINE_EXPORTS
 #  define NCBI_CDUTILS_EXPORTS
 #  define NCBI_STRUCTDP_EXPORTS
 #  define NCBI_STRUCTUTIL_EXPORTS
@@ -358,14 +357,6 @@
 #  define NCBI_BLAST_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_BLAST_EXPORT NCBI_DLL_IMPORT
-#endif
-
-/* Export specifier for library cdd
- */
-#ifdef NCBI_BMAREFINE_EXPORTS
-#  define NCBI_BMAREFINE_EXPORT NCBI_DLL_EXPORT
-#else
-#  define NCBI_BMAREFINE_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library cdd

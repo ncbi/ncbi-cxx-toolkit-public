@@ -2,8 +2,7 @@
 
 DLL = ncbi_algo_structure
 
-HOSTED_LIBS    = xbma_refiner \
-                      xcd_utils \
+HOSTED_LIBS    = xcd_utils \
                       xstruct_dp \
                       xstruct_util \
                       xstruct_thread
