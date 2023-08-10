@@ -4927,7 +4927,7 @@ CTempString s_Unquote(const CTempString str, size_t* n_read)
 
 string NStr::ParseQuoted(const CTempString str, size_t* n_read /*= NULL*/)
 {
-    return ParseEscapes(s_Unquote(move(str), n_read));
+    return ParseEscapes(s_Unquote(std::move(str), n_read));
 }
 
 
@@ -4995,7 +4995,7 @@ string s_ParseJsonEncodeEscapes(const CTempString str)
 
 string NStr::JsonDecode(const CTempString str, size_t* n_read /*= NULL*/)
 {
-    return s_ParseJsonEncodeEscapes(s_Unquote(move(str), n_read));
+    return s_ParseJsonEncodeEscapes(s_Unquote(std::move(str), n_read));
 }
 
 
