@@ -1112,6 +1112,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr2)
     BOOST_CHECK_EQUAL(user_count.size(), 2u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 8);
 }
 
 
