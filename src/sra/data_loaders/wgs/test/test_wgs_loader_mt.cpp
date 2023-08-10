@@ -146,6 +146,12 @@ thread_type get_thread(const thread_extra&, const Func& func)
 }
 #endif
 
+static string s_MakeContigAcc(const char* wgs_acc, size_t index)
+{
+    string digits = NStr::NumericToString(index);
+    return wgs_acc + string(6-digits.size(), '0') + digits + ".1";
+}
+
 BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
 {
     LOG_POST("Checking WGS master sequence descriptors");
@@ -174,8 +180,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     vector<vector<string>> ids(NQ);
     for ( size_t k = 0; k < NQ; ++k ) {
         for ( size_t i = 0; i < NS; ++i ) {
-            char id[99];
-            sprintf(id, "%s%06u.1", accs[r.GetRandIndexSize_t(ArraySize(accs))], r.GetRand(1, 100));
+            size_t index = r.GetRandIndexSize_t(ArraySize(accs));
+            string id = s_MakeContigAcc(accs[index], r.GetRand(1, 100));
             ids[k].push_back(id);
         }
     }
@@ -217,6 +223,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
                                 BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                                BOOST_CHECK_MT_SAFE(comment_count == 0 || comment_count == 1);
                                 //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
@@ -372,6 +379,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
                                 BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                                BOOST_CHECK_EQUAL_MT_SAFE(comment_count, 0);
                                 //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
@@ -461,9 +469,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
     map<string, size_t> id2index;
     for ( size_t k = 0; k < NQ; ++k ) {
         for ( size_t i = 0; i < NS; ++i ) {
-            char id[99];
             size_t index = r.GetRandIndexSize_t(ArraySize(accs));
-            sprintf(id, "%s%06d.1", accs[index], int(r.GetRand(1, 100)));
+            string id = s_MakeContigAcc(accs[index], r.GetRand(1, 100));
             ids[k].push_back(id);
             id2index[id] = index;
         }
@@ -534,6 +541,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
                                 BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                                BOOST_CHECK_EQUAL_MT_SAFE(comment_count, 0);
                                 //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
                                 BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
