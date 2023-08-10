@@ -2213,7 +2213,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgTaxIdListFile);
     database_args.push_back(kArgNegativeTaxIdList);
     database_args.push_back(kArgNegativeTaxIdListFile);
-    database_args.push_back(kArgTaxIdTargetOnly);
+    database_args.push_back(kArgNoTaxIdExpansion);
     if (m_SupportIPGFiltering) {
     	database_args.push_back(kArgIpgList);
     	database_args.push_back(kArgNegativeIpgList);
@@ -2256,25 +2256,25 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         // Tax ID list
         arg_desc.AddOptionalKey(kArgTaxIdList, "taxids",
                                 "Restrict search of database to include only "
-                                "the specified taxonomy IDs "
+                                "the specified taxonomy IDs and their descendants "
                                 "(multiple IDs delimited by ',')",
                                 CArgDescriptions::eString);
         arg_desc.AddOptionalKey(kArgNegativeTaxIdList, "taxids",
                                 "Restrict search of database to everything "
-                                "except the specified taxonomy IDs "
+                                "except the specified taxonomy IDs and their descendants "
                                 "(multiple IDs delimited by ',')",
                                 CArgDescriptions::eString);
         // Tax ID list file
         arg_desc.AddOptionalKey(kArgTaxIdListFile, "filename",
                                 "Restrict search of database to include only "
-                                "the specified taxonomy IDs",
+                                "the specified taxonomy IDs and their descendants ",
                                 CArgDescriptions::eString);
         arg_desc.AddOptionalKey(kArgNegativeTaxIdListFile, "filename",
                                 "Restrict search of database to everything "
-                                "except the specified taxonomy IDs",
+                                "except the specified taxonomy IDs and their descendants ",
                                 CArgDescriptions::eString);
 	// Disable Tax ID resoution to the descendants
-        arg_desc.AddFlag(kArgTaxIdTargetOnly, "Disable TaxId resolution to the descendants ", true);
+        arg_desc.AddFlag(kArgNoTaxIdExpansion, "Do not expand the taxonomy IDs provided to their descendant taxonomy IDs ", true);
 
         if (m_SupportIPGFiltering) {
             arg_desc.AddOptionalKey(kArgIpgList, "filename",
@@ -2491,16 +2491,16 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
             string fn(SeqDB_ResolveDbPath(args[kArgNegativeSeqidList].AsString()));
             m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,CSeqDBFileGiList::eSiList)));
         } else if (args.Exist(kArgTaxIdList) && args[kArgTaxIdList]) {
-        	s_GetTaxIDList(args[kArgTaxIdList].AsString(), false, false, m_SearchDb,args[kArgTaxIdTargetOnly].AsBoolean());
+        	s_GetTaxIDList(args[kArgTaxIdList].AsString(), false, false, m_SearchDb,args[kArgNoTaxIdExpansion].AsBoolean());
 
         } else if (args.Exist(kArgTaxIdListFile) && args[kArgTaxIdListFile]) {
-        	s_GetTaxIDList(args[kArgTaxIdListFile].AsString(), true, false, m_SearchDb, args[kArgTaxIdTargetOnly].AsBoolean());
+        	s_GetTaxIDList(args[kArgTaxIdListFile].AsString(), true, false, m_SearchDb, args[kArgNoTaxIdExpansion].AsBoolean());
 
         } else if (args.Exist(kArgNegativeTaxIdList) && args[kArgNegativeTaxIdList]) {
-        	s_GetTaxIDList(args[kArgNegativeTaxIdList].AsString(), false, true, m_SearchDb, args[kArgTaxIdTargetOnly].AsBoolean());
+        	s_GetTaxIDList(args[kArgNegativeTaxIdList].AsString(), false, true, m_SearchDb, args[kArgNoTaxIdExpansion].AsBoolean());
 
         } else if (args.Exist(kArgNegativeTaxIdListFile) && args[kArgNegativeTaxIdListFile]) {
-        	s_GetTaxIDList(args[kArgNegativeTaxIdListFile].AsString(), true, true, m_SearchDb,args[kArgTaxIdTargetOnly].AsBoolean());
+        	s_GetTaxIDList(args[kArgNegativeTaxIdListFile].AsString(), true, true, m_SearchDb,args[kArgNoTaxIdExpansion].AsBoolean());
 
         } else if (args.Exist(kArgIpgList) && args[kArgIpgList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgIpgList].AsString()));
