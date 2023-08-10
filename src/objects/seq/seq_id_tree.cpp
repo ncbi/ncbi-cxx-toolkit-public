@@ -1870,7 +1870,7 @@ CSeq_id_Local_Info::CSeq_id_Local_Info(const CObject_id& oid, CSeq_id_Mapper* ma
         m_HasMatchingId = sx_ParseLocalStrId(oid.GetStr(), m_MatchingId);
         oid2.SetStr(oid.GetStr());
     }
-    m_Seq_id = move(seq_id);
+    m_Seq_id = std::move(seq_id);
 }
 
 
@@ -2409,7 +2409,7 @@ CSeq_id_General_PlainInfo::CSeq_id_General_PlainInfo(const CDbtag& dbid, CSeq_id
 {
     CRef<CSeq_id> seq_id(new CSeq_id);
     s_AssignDbtag(seq_id->SetGeneral(), dbid);
-    m_Seq_id = move(seq_id);
+    m_Seq_id = std::move(seq_id);
 }
 
 
@@ -2962,7 +2962,7 @@ void CSeq_id_Giim_Tree::FindMatchStr(const string& sid,
             id_list.insert(CSeq_id_Handle(*git));
         }
     }
-    catch (CStringException) {
+    catch (CStringException&) {
         // Not an integer value
         return;
     }
