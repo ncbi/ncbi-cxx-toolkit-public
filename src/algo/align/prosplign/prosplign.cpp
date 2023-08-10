@@ -1158,7 +1158,7 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
             int minus_score = m_implementation->FindGlobalAlignment_stage1(scope, protein, *genomic);
             
             if (minus_score <= plus_score)
-                m_implementation = move(plus_data);
+                m_implementation = std::move(plus_data);
         }
 
         result = m_implementation->FindGlobalAlignment_stage2();
