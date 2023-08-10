@@ -115,8 +115,8 @@ public:
                 return *this;
             }
         CLock(CLock&& lock)
-            : m_Cache(move(lock.m_Cache)),
-              m_Slot(move(lock.m_Slot))
+            : m_Cache(std::move(lock.m_Cache)),
+              m_Slot(std::move(lock.m_Slot))
             {
             }
         CLock& operator=(CLock&& lock)
@@ -305,8 +305,8 @@ public:
                 return *this;
             }
         CLock(CLock&& lock)
-            : m_Cache(move(lock.m_Cache)),
-              m_Slot(move(lock.m_Slot))
+            : m_Cache(std::move(lock.m_Cache)),
+              m_Slot(std::move(lock.m_Slot))
             {
             }
         CLock& operator=(CLock&& lock)
