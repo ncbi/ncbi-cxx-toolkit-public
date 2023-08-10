@@ -1346,9 +1346,6 @@ xblastformat needs align_format
 xblastformat needs blastxml
 xblastformat needs blastxml2
 xblastformat needs3party $(BLAST_THIRD_PARTY_LIBS)
-xbma_refiner needs xcd_utils
-xbma_refiner needs xstruct_util
-xbma_refiner_gui needs wx_tools
 xcb needs3party $(ORIG_LIBS)
 xcb needs3party Xau
 xcd_utils needs $(BLAST_LIBS)
