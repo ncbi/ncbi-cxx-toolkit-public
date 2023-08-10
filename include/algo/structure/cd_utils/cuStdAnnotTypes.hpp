@@ -94,9 +94,6 @@ public:
     //  Return true if 'type' is a valid key and typeNamesPair can be populated.
     static bool GetTypeNamesPair(int type, TTypeNamesPair& typeNamesPair);
 
-    //  Return the number of predefined names for 'type' (0 if 'type' is not valid).
-    static unsigned int NumPredefinedDescrs(int type);
-
     //  Return true only when 'descr' is among the predefined names for 'type'.
     //  By default, 'descr' is searched for in a case-sensivitive fashion.
     static bool IsPredefinedDescrForType(int type, const string& descr, bool useCase = true);

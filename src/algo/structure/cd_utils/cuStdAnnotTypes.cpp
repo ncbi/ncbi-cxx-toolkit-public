@@ -186,16 +186,6 @@ bool CStdAnnotTypes::GetTypeNamesPair(int type, TTypeNamesPair& typeNamesPair)
     return result;
 }
 
-unsigned int CStdAnnotTypes::NumPredefinedDescrs(int type)
-{
-    unsigned int n = 0;
-    TStandardTypesData::const_iterator cit = m_stdAnnotTypeData.find(type);
-    if ((type != m_invalidType) && (cit != m_stdAnnotTypeData.end())) {
-        n = cit->second.second.size();
-    }
-    return n;
-}
-
 bool CStdAnnotTypes::IsPredefinedDescrForType(int type, const string& descr, bool useCase)
 {
     bool result = false;
