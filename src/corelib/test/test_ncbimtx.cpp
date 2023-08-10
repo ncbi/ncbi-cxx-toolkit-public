@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(SemaphorePostRace)
         for (auto j = n; j > 0; --j) {
             packaged_task<int()> t(post);
             fs.emplace_back(t.get_future());
-            ts.emplace_back(move(t));
+            ts.emplace_back(std::move(t));
         }
 
         auto r = accumulate(fs.begin(), fs.end(), 0, [](int i, future<int>& f) { return i + f.get(); });

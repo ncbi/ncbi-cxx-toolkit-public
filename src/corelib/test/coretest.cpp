@@ -1030,11 +1030,11 @@ void s_TestCopyMove()
     BOOST_CHECK(obj2);
     BOOST_CHECK(!(obj2 != obj0));
 
-    Src obj3 = move(obj1); // move constructor !empty
+    Src obj3 = std::move(obj1); // move constructor !empty
     BOOST_CHECK(obj3);
     BOOST_CHECK(!obj1);
 
-    Src obj4; obj4 = move(obj2); // move assignment !empty -> empty
+    Src obj4; obj4 = std::move(obj2); // move assignment !empty -> empty
     BOOST_CHECK(obj4);
     BOOST_CHECK(!obj2);
 
@@ -1047,11 +1047,11 @@ void s_TestCopyMove()
     BOOST_CHECK(obj6);
     BOOST_CHECK(!(obj6 != obj4));
 
-    Dst obj7 = move(obj3); // move constructor !empty
+    Dst obj7 = std::move(obj3); // move constructor !empty
     BOOST_CHECK(obj7);
     BOOST_CHECK(!obj3);
 
-    Dst obj8; obj8 = move(obj4); // move assignment !empty -> empty
+    Dst obj8; obj8 = std::move(obj4); // move assignment !empty -> empty
     BOOST_CHECK(obj8);
     BOOST_CHECK(!obj4);
 
@@ -1059,7 +1059,7 @@ void s_TestCopyMove()
     BOOST_CHECK(obj5);
     BOOST_CHECK(obj6);
     
-    obj6 = move(obj5); // move assignment !empty -> !empty
+    obj6 = std::move(obj5); // move assignment !empty -> !empty
     BOOST_CHECK(!obj5);
     BOOST_CHECK(obj6);
 
@@ -1070,11 +1070,11 @@ void s_TestCopyMove()
     BOOST_CHECK(obj7);
     BOOST_CHECK(obj8);
     
-    obj8 = move(obj7); // move assignment !empty -> !empty
+    obj8 = std::move(obj7); // move assignment !empty -> !empty
     BOOST_CHECK(!obj7);
     BOOST_CHECK(obj8);
 
-    obj8 = move(Src()); // move assignment empty -> !empty
+    obj8 = std::move(Src()); // move assignment empty -> !empty
     BOOST_CHECK(!obj8);
 
     BOOST_REQUIRE(obj0);
