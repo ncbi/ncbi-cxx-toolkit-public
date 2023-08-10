@@ -1532,6 +1532,7 @@
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
 
+#define NCBI_BMAREFINE_EXPORT
 #define NCBI_TEST_MT_EXPORT
 #define NCBI_XALNUTIL_EXPORT
 #define NCBI_XALNTOOL_EXPORT
