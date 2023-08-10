@@ -74,13 +74,16 @@ void CDense_seg::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 
 // Implemented as a macro so any assertion messages will be more meaningful
 #ifdef _DEBUG
-#  define ASSERT_CONSISTENCY() \
-    do { \
-        size_t numseg = GetNumseg(), dim = GetDim(); \
-        _ASSERT(numseg == GetLens().size()); \
-        _ASSERT(numseg * dim == GetStarts().size()); \
-        _ASSERT( !IsSetStrands()  ||  numseg * dim == GetStrands().size()); \
-        _ASSERT(dim == GetIds().size()); \
+#  define ASSERT_CONSISTENCY()                                          \
+    do {                                                                \
+        TNumseg numseg = GetNumseg();                                   \
+        TDim dim = GetDim();                                            \
+        _ASSERT(numseg >= 0);                                           \
+        _ASSERT(dim >= 0);                                              \
+        _ASSERT(size_t(numseg) == GetLens().size());                    \
+        _ASSERT(size_t(numseg) * dim == GetStarts().size());            \
+        _ASSERT(!IsSetStrands() || GetStarts().size() == GetStrands().size()); \
+        _ASSERT(size_t(dim) == GetIds().size());                        \
     } while (false)
 #else
 #  define ASSERT_CONSISTENCY() NCBI_EAT_SEMICOLON()
@@ -89,10 +92,15 @@ void CDense_seg::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 CDense_seg::TDim CDense_seg::CheckNumRows() const
 {
     const TDim dim = GetDim();
-    if (dim != GetIds().size()) {
+    if (dim < 0) {
         NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                   "CDense_seg::CheckNumRows()"
-                   " ids.size is inconsistent with dim");
+                   "CDense_seg::CheckNumRows(): "
+                   "negative dim");
+    }
+    if (size_t(dim) != GetIds().size()) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumRows(): "
+                   "ids.size is inconsistent with dim");
     }
     return dim;
 }
@@ -106,28 +114,38 @@ CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
     const CDense_seg::TWidths&  widths  = GetWidths();
 
     const TDim    numrows = GetDim();
-    const TDim    numsegs = GetNumseg();
+    const TNumseg numsegs = GetNumseg();
     const size_t  num     = static_cast<size_t>(numrows) * numsegs;
 
-    if (starts.size() != num) {
-        string errstr = string("CDense_seg::CheckNumSegs():")
-            + " starts.size is inconsistent with dim * numseg";
-        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    if (numrows < 0) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumSegs(): "
+                   "negative dim");
     }
-    if (lens.size() != numsegs) {
-        string errstr = string("CDense_seg::CheckNumSegs():")
-            + " lens.size is inconsistent with numseg";
-        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    if (numsegs < 0) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumSegs(): "
+                   "negative numseg");
+    }
+    if (starts.size() != num) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumSegs(): "
+                   "starts.size is inconsistent with dim * numseg");
+    }
+    if (lens.size() != size_t(numsegs)) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumSegs(): "
+                   "lens.size is inconsistent with numseg");
     }
     if (strands.size()  &&  strands.size() != num) {
-        string errstr = string("CDense_seg::CheckNumSegs():")
-            + " strands.size is inconsistent with dim * numseg";
-        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumSegs(): "
+                   "strands.size is inconsistent with dim * numseg");
     }
-    if (widths.size()  &&  widths.size() != numrows) {
-        string errstr = string("CDense_seg::CheckNumSegs():")
-            + " widths.size is inconsistent with dim";
-        NCBI_THROW(CSeqalignException, eInvalidAlignment, errstr);
+    if (widths.size()  &&  widths.size() != size_t(numrows)) {
+        NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                   "CDense_seg::CheckNumSegs(): "
+                   "widths.size is inconsistent with dim");
     }
     return numsegs;
 }
@@ -152,8 +170,8 @@ TSeqPos CDense_seg::GetSeqStart(TDim row) const
 
     if (row < 0  ||  row >= dim) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                   "CDense_seg::GetSeqStart():"
-                   " Invalid row number");
+                   "CDense_seg::GetSeqStart(): "
+                   "Invalid row number");
     }
 
     TSignedSeqPos start;
@@ -177,7 +195,8 @@ TSeqPos CDense_seg::GetSeqStart(TDim row) const
         }
     }
     NCBI_THROW(CSeqalignException, eInvalidAlignment,
-               "CDense_seg::GetSeqStart(): Row is empty");
+               "CDense_seg::GetSeqStart(): "
+               "Row is empty");
 }
 
 
@@ -189,8 +208,8 @@ TSeqPos CDense_seg::GetSeqStop(TDim row) const
 
     if (row < 0  ||  row >= dim) {
         NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                   "CDense_seg::GetSeqStop():"
-                   " Invalid row number");
+                   "CDense_seg::GetSeqStop(): "
+                   "Invalid row number");
     }
 
     TSignedSeqPos start;
@@ -214,7 +233,8 @@ TSeqPos CDense_seg::GetSeqStop(TDim row) const
         }        
     }
     NCBI_THROW(CSeqalignException, eInvalidAlignment,
-               "CDense_seg::GetSeqStop(): Row is empty");
+               "CDense_seg::GetSeqStop(): "
+               "Row is empty");
 }
 
 
@@ -236,13 +256,14 @@ ENa_strand CDense_seg::GetSeqStrand(TDim row) const
             // multiplication) we don't check for the full numrows x
             // numsegs size here
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
+                       "CDense_seg::GetSeqStrand(): "
                        "Invalid strands size");
         }
         
         if (row < 0  ||  row >= dim) {
             NCBI_THROW(CSeqalignException, eInvalidRowNumber,
-                       "CDense_seg::GetSeqStrand():"
-                       " Invalid row number");
+                       "CDense_seg::GetSeqStrand(): "
+                       "Invalid row number");
         }
         
         return GetStrands()[row];
@@ -257,8 +278,8 @@ void CDense_seg::Validate(bool full_test) const
     const CDense_seg::TLens&    lens    = GetLens();
     const CDense_seg::TWidths&  widths  = GetWidths();
 
-    const size_t& numrows = CheckNumRows();
-    const size_t& numsegs = CheckNumSegs();
+    const size_t numrows = CheckNumRows();
+    const size_t numsegs = CheckNumSegs();
 
     if (numsegs  == 0) {
         return;
@@ -1014,13 +1035,13 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc,
 
                 // insert new data to account for our split segment
                 TStarts temp_starts(numrows, -1);
-                for (size_t row_i = 0, tmp_idx = seg * numrows;
+                for (int row_i = 0, tmp_idx = seg * numrows;
                      row_i < numrows;  ++row_i, ++tmp_idx) {
                     TSignedSeqPos& this_start = SetStarts()[tmp_idx];
                     if (this_start != -1) {
                         temp_starts[row_i] = this_start;
                         if (loc_plus == (strands[row_i] != eNa_strand_minus)) {
-                            if ((size_t) row == row_i) {
+                            if (row == row_i) {
                                 temp_starts[row_i] = start;
                             } else {
                                 temp_starts[row_i] += len;
@@ -1211,7 +1232,7 @@ CRef<CDense_seg> CDense_seg::FillUnaligned() const
 
         // insert extra segments
         if (extra_numsegs) {
-            for ( ;  extra_seg < extra_segs.size()  &&  extra_segs[extra_seg] == seg;  ++new_seg, ++extra_seg) {
+            for ( ;  size_t(extra_seg) < extra_segs.size()  &&  extra_segs[extra_seg] == seg;  ++new_seg, ++extra_seg) {
                 new_lens[new_seg] = extra_lens[extra_seg];
                 for (row = 0;  row < numrows;  ++row, ++new_idx, ++extra_idx) {
                     new_starts[new_idx] = extra_starts[extra_idx];
