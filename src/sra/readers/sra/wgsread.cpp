@@ -5312,7 +5312,7 @@ void CWGSSeqIterator::x_SetDelta(CSeq_inst& inst,
         delta.push_back(seq);
         pos += it->range.GetLength();
     }
-    _ASSERT(pos == inst.GetLength());
+    _VERIFY(pos == inst.GetLength());
 }
 
 
