@@ -8483,7 +8483,7 @@
             }
         ]
     },
-    "Biodata of 164040 with exlude blobs no match": {
+    "Biodata of 164040 with exclude blobs no match": {
         "description": "Biodata of 164040 with exclude blobs no match",
         "requests": [
             [
@@ -8583,7 +8583,7 @@
             }
         ]
     },
-    "Biodata of 164040 with exlude blobs match": {
+    "Biodata of 164040 with exclude blobs match": {
         "description": "Biodata of 164040 with exclude blobs match",
         "requests": [
             [
