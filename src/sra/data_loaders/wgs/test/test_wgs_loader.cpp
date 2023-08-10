@@ -2938,6 +2938,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Genbank));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
@@ -2987,6 +2988,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr4)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
     BOOST_CHECK_EQUAL(user_count.size(), 1u);
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
@@ -3124,6 +3126,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr9)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 4);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -3170,6 +3173,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr10)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -3215,6 +3219,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr11)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 2);
     BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -3307,6 +3312,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr13)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
@@ -3351,6 +3357,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr14)
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
     BOOST_CHECK_EQUAL(pub_count, 4);
+    BOOST_CHECK_EQUAL(comment_count, 0);
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
     BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
