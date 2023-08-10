@@ -393,7 +393,7 @@ private:
             else
                 ++c_iterator;
         }
-        m_Ranges = move(intersection_ranges);
+        m_Ranges = std::move(intersection_ranges);
     }
 
     void    x_Divide(const position_type& p)
