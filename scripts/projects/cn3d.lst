@@ -31,7 +31,6 @@ objtools/blast/seqdb_reader$
 algo/blast/composition_adjustment$
 algo/blast/dbindex$
 algo/blast/api$
-algo/structure/bma_refine$
 algo/structure/cd_utils$
 algo/structure/struct_dp$
 algo/structure/struct_util$
