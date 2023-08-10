@@ -1274,7 +1274,7 @@ x_GetSlaveRangeGivenMasterRange(const CSeq_align& input_align,
     
     CRange<TSeqPos> slave_range = CRange<TSeqPos>::GetEmpty();
     SSlaveRange cache_id;
-    cache_id.align_index = (uintptr_t) &input_align;
+    cache_id.align_index = &input_align;
     cache_id.master_start = master_range.GetFrom();
     cache_id.master_stop = master_range.GetTo();
     map <SSlaveRange, CRange<TSeqPos>, slave_range_sort_order>::iterator ij = m_SlaveRangeCache[index].find(cache_id); 
