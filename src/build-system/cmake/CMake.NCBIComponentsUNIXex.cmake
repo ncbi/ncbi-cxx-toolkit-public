@@ -164,10 +164,20 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
             set(NCBI_C_LIBPATH  "${NCBI_CTOOLKIT_PATH}/lib64")
         endif()
 
-        set(NCBI_C_ncbi     "ncbi")
+        add_library(ncbi_corelib STATIC IMPORTED GLOBAL)
+        if(EXISTS "${NCBI_C_LIBPATH}/libncbi_connectless.a")
+            set_target_properties(ncbi_corelib PROPERTIES
+                IMPORTED_LOCATION "${NCBI_C_LIBPATH}/libncbi_connectless.a"
+                INTERFACE_LINK_LIBRARIES xconnect)
+        else()
+            set_target_properties(ncbi_corelib PROPERTIES
+                IMPORTED_LOCATION "${NCBI_C_LIBPATH}/libncbi.a")
+        endif()
         if (APPLE)
-            set(NCBI_C_ncbi ${NCBI_C_ncbi} -Wl,-framework,ApplicationServices)
+            set_target_properties(ncbi_corelib PROPERTIES
+                INTERFACE_LINK_OPTIONS -Wl,-framework,ApplicationServices)
         endif ()
+        set(NCBI_C_ncbi "ncbi_corelib")
         set(HAVE_NCBI_C YES)
     else()
         set(HAVE_NCBI_C NO)
