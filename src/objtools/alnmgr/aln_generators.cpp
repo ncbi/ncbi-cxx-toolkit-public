@@ -249,7 +249,6 @@ CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
     }
 
     for (int row = 0;  row < dim;  ++row) {
-        size_t seg = 0;
         CSeq_align::TSegs::TDendiag::iterator diag_it = diags.begin();
 
         TAnchorSegments::const_iterator seg_i = anchor_segments.begin();
@@ -296,7 +295,6 @@ CreateDense_diagFromAnchoredAln(CSeq_align::TSegs::TDendiag& dd,
             (*diag_it)->SetStrands()[row] =
                 (direct ? eNa_strand_plus : eNa_strand_minus);
             ++seg_i;
-            ++seg;
             ++diag_it;
         }
     }

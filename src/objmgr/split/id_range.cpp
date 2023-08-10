@@ -331,7 +331,6 @@ void CSeqsRange::Add(const CSpliced_seg& spliced,
 void CSeqsRange::Add(const CSparse_seg& sparse,
                      const CBlobSplitterImpl& /*impl*/)
 {
-    size_t row = 0;
     ITERATE ( CSparse_seg::TRows, it, sparse.GetRows() ) {
         const CSparse_align& aln_row = **it;
         size_t numseg = aln_row.GetNumseg();
@@ -367,7 +366,6 @@ void CSeqsRange::Add(const CSparse_seg& sparse,
             m_Ranges[idh].Add(aln_row.GetSecond_starts()[seg],
                 aln_row.GetSecond_starts()[seg] + len - 1);
         }
-        row++;
     }
 }
 

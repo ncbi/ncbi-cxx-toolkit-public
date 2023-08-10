@@ -3691,7 +3691,6 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
          annot_info.x_HasSNP_annot_Info() ) {
         const CSeq_annot_SNP_Info& snp_annot =
             annot_info.x_GetSNP_annot_Info();
-        TSeqPos index = 0;
         ITERATE ( CSeq_annot_SNP_Info, snp_it, snp_annot ) {
             const SSNP_Info& snp = *snp_it;
             CAnnotObject_Ref annot_ref(snp_annot, sah, snp, 0);
@@ -3699,7 +3698,6 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
             if ( m_Selector->m_CollectSeq_annots || x_NoMoreObjects() ) {
                 return;
             }
-            ++index;
         }
     }
 }
