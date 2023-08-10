@@ -260,12 +260,12 @@ string s_GuessType(CNcbiIstream& in, ESerialDataFormat format)
                 test_in->Skip(type);
                 return type->GetName();
             }
-            catch (CEofException) {
+            catch (CEofException&) {
                 // Not enough data in the test stream, but the blob type
                 // is correct.
                 return type->GetName();
             }
-            catch (CSerialException ex) {
+            catch (CSerialException& ex) {
                 if (ex.GetErrCode() == CSerialException::eEOF) {
                     // Same as CEofException
                     return type->GetName();
