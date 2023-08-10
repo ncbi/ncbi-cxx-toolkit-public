@@ -1007,7 +1007,7 @@ do { \
         s_AddFailed(idx); \
         atomic_cout() << "CASE-" << idx << " ERROR: no exception thrown by '" << #expr << "', expected " << #expt << endl; \
     } \
-    catch (expt) {} \
+    catch (expt&) {} \
     catch (exception& e) { \
         s_AddFailed(idx); \
         atomic_cout() << "CASE-" << idx << " ERROR: unexpected exception thrown by '" << #expr << "': " << e.what() << endl; \
