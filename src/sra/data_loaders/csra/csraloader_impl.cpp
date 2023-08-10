@@ -582,7 +582,7 @@ CCSRADataLoader_Impl::GetRefSeqInfo(const CSeq_id_Handle& idh)
         if ( !file.first ) {
             return TRefLock();
         }
-        return TRefLock(file.first->GetRefSeqInfo(idh), move(file.second));
+        return TRefLock(file.first->GetRefSeqInfo(idh), std::move(file.second));
     }
     TRefLock ret;
     NON_CONST_ITERATE ( TFixedFiles, it, m_FixedFiles ) {
@@ -840,7 +840,7 @@ CCSRADataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
             }
         }
         if ( need_align && ref_info ) {
-            if ( CRef<CCSRABlobId> blob_id = GetBlobId(TRefLock(ref_info, move(file.second)), CCSRABlobId::eBlobType_annot) ) {
+            if ( CRef<CCSRABlobId> blob_id = GetBlobId(TRefLock(ref_info, std::move(file.second)), CCSRABlobId::eBlobType_annot) ) {
                 CDataLoader::TTSE_Lock tse_lock = GetBlobById(data_source, *blob_id);
                 tse_lock->x_LoadChunk(kMainChunkId);
                 int chunk_id = ref_info->GetAnnotChunkId(ref_pos);
