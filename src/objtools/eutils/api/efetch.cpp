@@ -130,7 +130,7 @@ CRef<uilist::CIdList> CEFetch_Request::FetchIdList(int chunk_size)
             }
         }
     }
-    catch (CSerialException) {
+    catch (CSerialException&) {
     }
     catch (...) {
         SetRetStart(retstart);
