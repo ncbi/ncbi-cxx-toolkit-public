@@ -55,7 +55,7 @@
 #include <netinet/in.h>
 #include <resolv.h>
 
-#define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 31 and up */
+#define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 32 and up */
 
 
 #define SizeOf(a)                (sizeof(a) / sizeof((a)[0]))
