@@ -1890,7 +1890,7 @@ static TSeqPos s_GetAlignmentLength(const CSeq_align& align,
                     }
                 }
             } else {
-                for (CDense_seg::TNumseg i = 0;  i < ds.GetLens().size();
+                for (CDense_seg::TNumseg i = 0;  size_t(i) < ds.GetLens().size();
                      ++i) {
                     len += s_DenseSegLength(ds, i, ranges);
                }
