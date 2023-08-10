@@ -354,6 +354,12 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
     s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
 }
 
+static string s_MakeNA(int index)
+{
+    string digits = NStr::NumericToString(index);
+    return "NA" + string(9-digits.size(), '0') + digits + ".1";
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeq3)
 {
     CSeq_id seqid1("NC_002333.2");
@@ -371,9 +377,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
         vector<string> naccs;
         int first_na = 8777, last_na = t < 2? 8781: 8788;
         for ( int na = first_na; na <= last_na; ++na ) {
-            char buf[99];
-            sprintf(buf, "NA%09d.1", na);
-            naccs.push_back(buf);
+            naccs.push_back(s_MakeNA(na));
         }
         s_CheckFast(*scope, seqid1, seq_len, naccs);
         ITERATE ( vector<string>, it, naccs ) {
@@ -397,9 +401,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
     vector<string> naccs;
     int first_na = 8777, last_na = 8781;
     for ( int na = first_na; na <= last_na; ++na ) {
-        char buf[99];
-        sprintf(buf, "NA%09d.1", na);
-        naccs.push_back(buf);
+        naccs.push_back(s_MakeNA(na));
     }
     s_CheckFast(*scope, seqid1, seq_len, naccs);
     ITERATE ( vector<string>, it, naccs ) {
