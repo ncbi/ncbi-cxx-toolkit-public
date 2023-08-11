@@ -100,17 +100,17 @@ namespace {
 
         // reject prot-only accessions, or accessions that aren't found
         CSeq_id::EAccessionInfo fAccnInfo = seq_id->IdentifyAccession();
-        const bool bAccnIsProtOnly = ( 
+        const bool bAccnIsProtOnly = (
             (fAccnInfo & CSeq_id::fAcc_prot) &&
             ! (fAccnInfo & CSeq_id::fAcc_nuc));
         const bool bSeqIdIsFound = ( pScope ? pScope->GetBioseqHandle(*seq_id) : false );
-        if( bAccnIsProtOnly || ! bSeqIdIsFound ) 
+        if( bAccnIsProtOnly || ! bSeqIdIsFound )
         {
             // fall back on local ID
             return pLocalSeqId;
         }
 
-        const bool bLocalSeqIdIsfound = ( 
+        const bool bLocalSeqIdIsfound = (
             pScope ? pScope->GetBioseqHandle(*pLocalSeqId) : false );
         if( bLocalSeqIdIsfound ) {
             // print a warning that a local ID was overridden
@@ -186,7 +186,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     }
 
     if( ! loadlog.empty() ) {
-        m_pLoadLogFile.reset( 
+        m_pLoadLogFile.reset(
             new CNcbiOfstream(loadlog.c_str() ) );
     }
 
@@ -207,16 +207,16 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     }
     if( x_IsLogFileOpen() ) {
         ITERATE(TSeqIdSet, seq_id_it, compSeqIds) {
-            COMP_LOG("Component seq-id from AGP file(s): " 
+            COMP_LOG("Component seq-id from AGP file(s): "
                 << seq_id_it->AsString());
         }
         ITERATE(TSeqIdSet, seq_id_it, objSeqIds) {
-            COMP_LOG("Object seq-id from AGP file(s): " 
+            COMP_LOG("Object seq-id from AGP file(s): "
                 << seq_id_it->AsString());
         }
     }
 
-    // load local component FASTA sequences and Genbank into 
+    // load local component FASTA sequences and Genbank into
     // local scope for lookups using local data storage
     unique_ptr<CTmpFile> ldsdb_file;
     CRef<CLDS2_Manager> lds_mgr;
@@ -228,7 +228,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     CFastaReader::TFlags fasta_flags = lds_mgr->GetFastaFlags();
     fasta_flags &= ~CFastaReader::fParseGaps;
     // component ids are always interpreted as local
-    fasta_flags &= ~CFastaReader::fParseRawID; 
+    fasta_flags &= ~CFastaReader::fParseRawID;
     fasta_flags |= CFastaReader::fAddMods;
     fasta_flags |= CFastaReader::fDisableParseRange; //rw-1155: match what the AGP parser does.
     lds_mgr->SetFastaFlags(fasta_flags);
@@ -247,7 +247,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
         ifstream file_strm( file_iter->c_str() );
         string line;
         // look at the ids in the file to try to determine what
-        // 
+        //
         while( NcbiGetline(file_strm, line, "\r\n") ) {
             // extract accession
             // Get first word, trim final '|' (if any).
@@ -262,7 +262,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
             CRef<CSeq_id> seq_id = s_CustomGetSeqIdFromStr( acc_long, NULL );
             CSeq_id_Handle acc_h = CSeq_id_Handle::GetHandle(*seq_id);
 
-            COMP_LOG("Sample accession from " << *file_iter 
+            COMP_LOG("Sample accession from " << *file_iter
                 << ": " << acc_h.AsString());
             if( compSeqIds.find(acc_h) != compSeqIds.end() ) {
                 // component files go into the component object
@@ -281,7 +281,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
         // no seq-id in the file seems relevant
         if( ! file_strm ) {
             // none of the seq-ids seem to be used anywhere
-            cerr << "Warning: This file seems to be unused: '" 
+            cerr << "Warning: This file seems to be unused: '"
                 << *file_iter << "'" << endl;
         }
     }
@@ -290,7 +290,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
         *om, ldsdb_file->GetFileName(), ( fasta_flags & ~CFastaReader::fNoSeqData ),
         CObjectManager::eDefault, 1 );
     CGBDataLoader::RegisterInObjectManager(
-        *om, 0, 
+        *om, 0,
         CObjectManager::eDefault, 2 );
 
     // calculate checksum of the AGP sequences and the FASTA sequences
@@ -311,7 +311,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     x_ProcessAgps( agpFiles, agp_ids, temp_dir.get()  );
 
     TUniqueSeqs fasta_ids;
-    // process every objfile 
+    // process every objfile
     if( objfiles.empty() ) {
         cerr << "error: could not find any obj files" << endl;
         return eResult_Failure;
@@ -380,13 +380,13 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
               inserter(vSeqIdAGPOnly, vSeqIdAGPOnly.begin() ) );
     }
 
-    // look at vSeqIdFASTAOnly and vSeqIdAGPOnly and 
+    // look at vSeqIdFASTAOnly and vSeqIdAGPOnly and
     // print in user-friendly way
     // Also, fill in SeqIds that are in both
     TSeqIdSet seqIdIntersection;
     x_OutputDifferingSeqIds( vSeqIdFASTAOnly, vSeqIdAGPOnly, diffsToHide, seqIdIntersection );
 
-    const bool bThereWereDifferences = ( 
+    const bool bThereWereDifferences = (
         ( ! vSeqIdFASTAOnly.empty() &&
           ! (diffsToHide & fDiffsToHide_ObjfileOnly) ) ||
         ( ! vSeqIdAGPOnly.empty() &&
@@ -399,7 +399,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     }
 
     if( bThereWereDifferences && diffs_to_find > 0 &&
-        ! seqIdIntersection.empty() ) 
+        ! seqIdIntersection.empty() )
     {
         x_OutputSeqDifferences( diffs_to_find,
                                 seqIdIntersection,
@@ -432,7 +432,7 @@ CAgpFastaComparator::CTmpSeqVecStorage::~CTmpSeqVecStorage(void)
 
 void CAgpFastaComparator::CTmpSeqVecStorage::WriteData( EType type, CSeq_entry_Handle seh )
 {
-    for (CBioseq_CI bioseq_it(seh, CSeq_inst::eMol_na);  bioseq_it;  ++bioseq_it) 
+    for (CBioseq_CI bioseq_it(seh, CSeq_inst::eMol_na);  bioseq_it;  ++bioseq_it)
     {
         CSeq_id_Handle idh = sequence::GetId(*bioseq_it,
                                              sequence::eGetId_Best);
@@ -446,7 +446,7 @@ void CAgpFastaComparator::CTmpSeqVecStorage::WriteData( EType type, CSeq_entry_H
         for( ; iter != vec.end(); ++iter, ++bytes_copied ) {
             if( bytes_copied > 0 && (bytes_copied % 60) == 0 ) {
                 // use '\n' instead of endl to avoid flushing
-                output_stream << '\n'; 
+                output_stream << '\n';
             }
             output_stream << *iter;
         }
@@ -511,8 +511,8 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
                                     int * in_out_pBioseqsSkipped,
                                     CNcbiOfstream *pDataOutFile )
 {
-    _ASSERT( 
-        in_out_pUniqueBioseqsLoaded != NULL && 
+    _ASSERT(
+        in_out_pUniqueBioseqsLoaded != NULL &&
         in_out_pBioseqsSkipped != NULL );
 
     // skipped is total minus loaded.
@@ -529,7 +529,7 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
                      "in AGP file "
                      "(length issue or does not include range [1, "
                      << bioseq_it->GetBioseqLength() << "] or "
-                     "doesn't exist) for " << idh 
+                     "doesn't exist) for " << idh
                      << " (though issue could be due to failure to resolve "
                      "one of the contigs.  "
                      "Are all necessary components in GenBank or in files "
@@ -542,10 +542,10 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
         }
         try {
             vec.GetSeqData(0, bioseq_it->GetBioseqLength(), data);
-        } catch(CSeqVectorException ex) {
+        } catch(const CSeqVectorException& ex) {
             LOG_POST(Error << "  Skipping one: could not load due to error, "
-                "probably in AGP file, possibly a length issue, for " 
-                << idh << Endl() << Endl() 
+                "probably in AGP file, possibly a length issue, for "
+                << idh << Endl() << Endl()
                 << "Raw technical information about error: " << ex.what() );
             m_bSuccess = false;
             continue;
@@ -729,7 +729,7 @@ bool CAgpFastaComparator::x_GetCompAndObjSeqIds(
                 return false;
             }
             const char chCompType = toupper(sComponentType[0]);
-            if( chCompType == 'N' || chCompType == 'U' ) 
+            if( chCompType == 'N' || chCompType == 'U' )
             {
                 // skip gaps
                 continue;
@@ -767,7 +767,7 @@ void CAgpFastaComparator::x_ProcessObjects(
         const string &filename = *file_iter;
         try {
             CFormatGuess guesser( filename );
-            const CFormatGuess::EFormat format = 
+            const CFormatGuess::EFormat format =
                 guesser.GuessFormat();
 
             if( format == CFormatGuess::eFasta ) {
@@ -783,7 +783,7 @@ void CAgpFastaComparator::x_ProcessObjects(
                         temp_dir->WriteData( CTmpSeqVecStorage::eType_Obj, seh );
                     }
                 }
-            } else if( format == CFormatGuess::eBinaryASN || 
+            } else if( format == CFormatGuess::eBinaryASN ||
                        format == CFormatGuess::eTextASN )
             {
                 // see if it's a submit
@@ -802,8 +802,8 @@ void CAgpFastaComparator::x_ProcessObjects(
                         return;
                     }
 
-                    ITERATE( CSeq_submit::C_Data::TEntrys, entry_iter, 
-                             submit->GetData().GetEntrys() ) 
+                    ITERATE( CSeq_submit::C_Data::TEntrys, entry_iter,
+                             submit->GetData().GetEntrys() )
                     {
                         const CSeq_entry &entry = **entry_iter;
 
@@ -814,7 +814,7 @@ void CAgpFastaComparator::x_ProcessObjects(
                             temp_dir->WriteData( CTmpSeqVecStorage::eType_Obj, seh );
                         }
                     }
-                } 
+                }
                 else
                 {
                     CRef<CSeq_entry> entry( new CSeq_entry );
@@ -831,7 +831,7 @@ void CAgpFastaComparator::x_ProcessObjects(
                     }
                 }
             } else {
-                LOG_POST(Error << "Could not determine format of " << filename 
+                LOG_POST(Error << "Could not determine format of " << filename
                          << ", best guess is: " << CFormatGuess::GetFormatName(format) );
                 m_bSuccess = false;
                 return;
@@ -912,7 +912,7 @@ void CAgpFastaComparator::x_OutputDifferingSeqIds(
     TSeqIdSet & out_seqIdIntersection )
 {
     // find the ones in both
-    set_intersection( 
+    set_intersection(
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(out_seqIdIntersection, out_seqIdIntersection.begin()) );
@@ -926,7 +926,7 @@ void CAgpFastaComparator::x_OutputDifferingSeqIds(
 
     // find the ones in FASTA only
     TSeqIdSet vSeqIdTempSet;
-    set_difference( 
+    set_difference(
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
@@ -942,7 +942,7 @@ void CAgpFastaComparator::x_OutputDifferingSeqIds(
 
     // find the ones in AGP only
     vSeqIdTempSet.clear();
-    set_difference( 
+    set_difference(
         vSeqIdAGPOnly.begin(), vSeqIdAGPOnly.end(),
         vSeqIdFASTAOnly.begin(), vSeqIdFASTAOnly.end(),
         inserter(vSeqIdTempSet, vSeqIdTempSet.begin()) );
@@ -995,7 +995,7 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         const string agp_file = temp_dir.GetFileName( CTmpSeqVecStorage::eType_AGP, idh );
         const string obj_file = temp_dir.GetFileName( CTmpSeqVecStorage::eType_Obj, idh );
 
-        cout << endl;        
+        cout << endl;
         cout << "##### Comparing " << idh << " for AGP ('<') and Obj ('>'):" << endl;
         cout << endl;
 
@@ -1004,7 +1004,7 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
         // - CExec::System is prone to exploits (though since agp_validate
         //   is not setuid or setgid, this is less severe an issue than
         //   it could be).
-        //   - Similarly, building a command-line from a stringstream 
+        //   - Similarly, building a command-line from a stringstream
         //     could also be dangerous.
         // I'm awaiting JIRA CXX-3145 to see if a superior
         // solution is possible.  In particular, I would like the NCBI
@@ -1019,7 +1019,7 @@ void CAgpFastaComparator::x_OutputSeqDifferences(
     }
 }
 
-void CAgpFastaComparator::x_SetBinaryVsText( CNcbiIstream & file_istrm, 
+void CAgpFastaComparator::x_SetBinaryVsText( CNcbiIstream & file_istrm,
                                                     CFormatGuess::EFormat guess_format )
 {
     // set binary vs. text

@@ -61,7 +61,7 @@ void CAlignmentItem::Format
 }
 
 
-void CAlignmentItem::x_GatherInfo(CBioseqContext& ctx)
+void CAlignmentItem::x_GatherInfo(CBioseqContext& /*ctx*/)
 {
     // !!!
 }

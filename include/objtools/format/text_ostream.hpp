@@ -60,8 +60,8 @@ public:
 
     // TODO: for SC-9, make this pure virtual
     /** This adds a list of strings to the stream one at a time, unconditionally adding a newline to each one. */
-    virtual void AddParagraph(const list<string>&  text,
-                              const CSerialObject* obj = nullptr)
+    virtual void AddParagraph(const list<string>&  /*text*/,
+                              const CSerialObject* /*obj*/ = nullptr)
     {
         // must be overridden
         _TROUBLE;
@@ -69,9 +69,9 @@ public:
 
     // TODO: for SC-9, make this pure virtual
     /** This adds its given argument, appending a newline only if the add_newline argument is eAddNewline_Yes. */
-    virtual void AddLine( const CTempString& line,
-                          const CSerialObject* obj = nullptr,
-                          EAddNewline add_newline = eAddNewline_Yes )
+    virtual void AddLine( const CTempString& /*line*/,
+                          const CSerialObject* /*obj*/ = nullptr,
+                          EAddNewline /*add_newline*/ = eAddNewline_Yes )
     {
         // must be overridden
         _TROUBLE;

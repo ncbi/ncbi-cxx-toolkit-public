@@ -124,7 +124,7 @@ public:
       CArgDescriptions(),
       m_VersionInfo(move(versionInfo)) {}
 
-  string& PrintUsage(string& str, bool detailed) const
+  string& PrintUsage(string& str, bool /*detailed*/) const
   {
       auto version_str = m_VersionInfo.Print();
       version_str+=", AGP Specification v2.1";
@@ -919,4 +919,3 @@ int main(int argc, const char* argv[])
 
   return CAgpValidateApplication().AppMain(argc, argv);
 }
-

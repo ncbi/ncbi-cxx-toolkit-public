@@ -466,7 +466,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
 {
     s.clear();
 
-    const bool is_html = ctx.Config().DoHTML();
+    //const bool is_html = ctx.Config().DoHTML();
     vector<string> assembly_pieces;
 
     if ( uo.HasField("Assembly") ) {
@@ -806,8 +806,8 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
             obj.GetType().GetStr() == "RefSeqGene") {
             CConstRef<CUser_field> f = obj.GetFieldRef("Status");
             if (f  &&  f->GetData().IsStr()) {
-                const string& status = f->GetData().GetStr();
-                if (status == "Reference Standard") {
+                const string& status1 = f->GetData().GetStr();
+                if (status1 == "Reference Standard") {
                     oss << "~This sequence is a reference standard in the "
                         << (is_html ? kRefSeqGeneLink : kRefSeqGene)
                         << " project.";
@@ -2065,11 +2065,11 @@ string CGenomeAnnotComment::GetGenomeBuildNumber(const CUser_object& uo)
             }
 
             if ( uo.HasField("NcbiVersion") ) {
-                const CUser_field& uf = uo.GetField("NcbiVersion");
-                if ( uf.CanGetData()  &&  uf.GetData().IsStr()  &&
-                     !uf.GetData().GetStr().empty() ) {
+                const CUser_field& uf_version = uo.GetField("NcbiVersion");
+                if ( uf_version.CanGetData() && uf_version.GetData().IsStr()  &&
+                     !uf_version.GetData().GetStr().empty() ) {
                     build_num += " version ";
-                    build_num += uf.GetData().GetStr();
+                    build_num += uf_version.GetData().GetStr();
                 }
             }
             return build_num;
@@ -2371,4 +2371,3 @@ void CFileIdComment::x_GatherInfo(CBioseqContext&)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
