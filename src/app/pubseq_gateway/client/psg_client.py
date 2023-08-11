@@ -78,8 +78,10 @@ class PsgClient:
         if not rv:
             self._pipe.stdin.close()
         self._pipe.stdout.close()
-        self._pipe.terminate()
-        self._thread.join()
+        try:
+            self._pipe.terminate()
+        finally:
+            self._thread.join()
         return rv
 
     def send(self, request, id=None):
