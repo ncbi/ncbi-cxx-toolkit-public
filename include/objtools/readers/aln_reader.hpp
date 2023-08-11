@@ -116,7 +116,7 @@ public:
     private:
         list<CAlnError> errors;
     public:
-        size_t GetErrorCount(CAlnError::EAlnErr category) const
+        size_t GetErrorCount(CAlnError::EAlnErr /*category*/) const
         {
             return 0;
         }
@@ -124,7 +124,7 @@ public:
         void clear(void) {
         }
 
-        void push_back(const CAlnError& error) {
+        void push_back(const CAlnError& /*error*/) {
         }
 
         size_t size(void) const {
