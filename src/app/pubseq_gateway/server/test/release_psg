@@ -31,7 +31,7 @@ import json
 
 # Order is important
 SUPPORTED_COMMANDS = ['all', 'build', 'functional_test', 'stability_test', 'memcheck', 'stress_test',
-                      'compare', 'perf_test', 'archive']
+                      'compare', 'production_tests', 'perf_test', 'archive']
 
 VERBOSE = False
 PORT1 = 10999
@@ -43,6 +43,9 @@ SRV2 = None
 # So, wait a bit before running a test suite
 AFTER_START_DELAY = 10
 AFTER_STOP_DELAY = 10
+
+PRODUCTION_SERVICE = 'PSG2'
+DEV_SERVICE = 'PSG2_DEV'
 
 def timestamp():
     now = datetime.datetime.now()
@@ -308,8 +311,8 @@ def resolveService(name):
     return instances
 
 def getDevProdServerPair():
-    devInstances = resolveService('PSG2_DEV')
-    prodInstances = resolveService('PSG2')
+    devInstances = resolveService(DEV_SERVICE)
+    prodInstances = resolveService(PRODUCTION_SERVICE)
 
     # They must work on the same host
     for devInstance in devInstances:
@@ -353,17 +356,18 @@ def main():
         """
     %prog <command> [options]
     Supported commands:
-        no command      - print help message
-        build           - tag, configure, build and archive the release
-                          (accepts all arguments of the prepare_release script)
-        functional_test - run functional tests
-        stability_test  - run tests when many clients drop their connections
-        memcheck        - run tests against 'sanitized' build
-        stress_test     - run stress tests
-        compare         - compare performance against another release
-        perf_test       - run performance tests
-        archive         - Archive the completed release
-        all             - do all of the above except archive
+        no command       - print help message
+        build            - tag, configure, build and archive the release
+                           (accepts all arguments of the prepare_release script)
+        functional_test  - run functional tests
+        stability_test   - run tests when many clients drop their connections
+        memcheck         - run tests against 'sanitized' build
+        stress_test      - run stress tests
+        compare          - compare performance against another release
+        production_tests - run smoke tests against production PSG2 service
+        perf_test        - run performance tests
+        archive          - Archive the completed release
+        all              - do all of the above except archive
     """)
 
     parser.add_option("-v", "--verbose",
@@ -537,6 +541,38 @@ def compare_check_args(commands, options, args):
         return 0
 
     return checkVersionOptionAndDirectory(options)
+
+def production_tests_check_args(commands, options, args):
+    try:
+        # it is used only for the perf_test
+        import ncbi.grid.deployment_info.services as services
+        import ncbi.grid.deployment_info.parser as parser
+    except:
+        print_error("The 'production_tests' action requires grid_deployment module to be installed.")
+        return 1
+
+    # Check the presence of psg_client, psg_client.py, testcases.json and
+    # testcases-heavy.json
+    psg_client_path = parser.get_psg_client_path()
+    psg_client_py_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'psg_client.py'
+    testcases_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases.json'
+    testcases_heavy_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases-heavy.json'
+
+    if not os.path.exists(psg_client_path):
+        print_error(f"The 'production_tests' action requires psg_client. Could not find it here: {psg_client_path}")
+        return 1
+    if not os.path.exists(psg_client_py_path):
+        print_error(f"The 'production_tests' action requires psg_client.py. Could not find it here: {psg_client_py_path}")
+        return 1
+    if not os.path.exists(testcases_json_path):
+        print_error(f"The 'production_tests' action requires testcases.json. Could not find it here: {testcases_json_path}")
+        return 1
+    if not os.path.exists(testcases_heavy_json_path):
+        print_error(f"The 'production_tests' action requires testcases.json. Could not find it here: {testcases_heavy_json_path}")
+        return 1
+
+    return 0
+
 
 def perf_test_check_args(commands, options, args):
     try:
@@ -1294,6 +1330,55 @@ def archive(commands, options, args):
     else:
         print_verbose('perf_test results have been archived successfully')
     return ret
+
+
+def production_tests(commands, options, args):
+    devInstances = resolveService(DEV_SERVICE)
+    if not devInstances:
+        print_error(f'Cannot find dev instance in {DEV_SERVICE}')
+        return 1
+
+    devInstance = devInstances[0][0] + ':' + str(devInstances[0][1])
+    print_verbose('Dev instance to use: ' + devInstance)
+
+    # Get the psg_client, psg_client.py, testcases.json, testcases-heavy.json
+    import ncbi.grid.deployment_info.parser as parser
+    psg_client_path = parser.get_psg_client_path()
+    psg_client_py_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'psg_client.py'
+    testcases_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases.json'
+    testcases_heavy_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases-heavy.json'
+
+    # Form a command line for testcases.json
+    cmdLine = f'{psg_client_py_path} testcases -binary {psg_client_path} ' \
+              f'-service {devInstance} -input-file {testcases_json_path} ' \
+               '-data-limit 1KB -preview-size 16 -report'
+
+    # Run
+    print_verbose(f'Running production tests: {cmdLine}')
+    ret1 = os.system(cmdLine)
+    print_verbose(f'Production tests return code: {ret1}')
+    if ret1 != 0:
+        print_error(f'Error running production tests. Return code: {ret1}')
+    else:
+        print_verbose('Production tests succeeded')
+
+    # Form a command line for testcases-heavy.json
+    cmdLine = f'{psg_client_py_path} testcases -binary {psg_client_path} ' \
+              f'-service {devInstance} -input-file {testcases_heavy_json_path} ' \
+               '-data-limit 1KB -preview-size 16 -report'
+
+    # Run
+    print_verbose(f'Running heavy production tests: {cmdLine}')
+    ret2 = os.system(cmdLine)
+    print_verbose(f'Heavy production tests return code: {ret2}')
+    if ret2 != 0:
+        print_error(f'Error running heavy production tests. Return code: {ret2}')
+    else:
+        print_verbose('Heavy production tests succeeded')
+
+    return ret1 + ret2
+
+
 
 def perf_test(commands, options, args):
     devInstance, prodInstance = getDevProdServerPair()
