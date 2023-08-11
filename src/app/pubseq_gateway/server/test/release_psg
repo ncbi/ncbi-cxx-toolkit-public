@@ -568,7 +568,7 @@ def production_tests_check_args(commands, options, args):
         print_error(f"The 'production_tests' action requires testcases.json. Could not find it here: {testcases_json_path}")
         return 1
     if not os.path.exists(testcases_heavy_json_path):
-        print_error(f"The 'production_tests' action requires testcases.json. Could not find it here: {testcases_heavy_json_path}")
+        print_error(f"The 'production_tests' action requires testcases-heavy.json. Could not find it here: {testcases_heavy_json_path}")
         return 1
 
     return 0
