@@ -4,7 +4,7 @@ DLL = gui_graph
 
 HOSTED_LIBS    = gui_graph
 
-DEPENDENCIES   = gui_utils \
+DEPENDENCIES   = gui_opengl \
                  ncbi_core
 
 CPPFLAGS = -DNCBI_GUIGRAPH_EXPORTS
