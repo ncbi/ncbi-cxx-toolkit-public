@@ -194,6 +194,7 @@ void CFlatFileGenerator::ResetSeqEntryIndex(void)
 // Generate a flat-file report for a Seq-entry
 // (the other CFlatFileGenerator::Generate functions ultimately
 // call this)
+#if 0
 void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CFlatItemOStream& item_os)
@@ -604,17 +605,92 @@ void CFlatFileGenerator::Generate
         Generate(*loc, scope, item_os);
     }
 }
+void CFlatFileGenerator::Generate
+(const CSeq_submit& submit,
+ CScope& scope,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(submit, scope, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CBioseq& bioseq,
+ CScope& scope,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_entry_Handle& entry,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(entry, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CBioseq_Handle& bsh,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_loc& loc,
+ CScope& scope,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(loc, scope, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_id& id,
+ const TRange& range,
+ ENa_strand strand,
+ CScope& scope,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream>
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(id, range, strand, scope, *item_os);
+}
+
+
+#endif
 
 
 // This version iterates Bioseqs within the Bioseq_set
 void CFlatFileGenerator::Generate(
     const CSeq_entry_Handle& entry,
     CFlatItemOStream& item_os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     // useSeqEntryIndexing now turned ON by default
-    useSeqEntryIndexing = true;
+    bool useSeqEntryIndexing = true;
 
     /*
     // useSeqEntryIndexing argument also set by relevant flags in CFlatFileConfig
@@ -992,105 +1068,28 @@ void CFlatFileGenerator::Generate(
 }
 
 
-void CFlatFileGenerator::Generate
-(const CSeq_submit& submit,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(submit, scope, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CBioseq& bioseq,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_entry_Handle& entry,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(entry, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CBioseq_Handle& bsh,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_loc& loc,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(loc, scope, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_id& id,
- const TRange& range,
- ENa_strand strand,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(id, range, strand, scope, *item_os);
-}
-
-
 void CFlatFileGenerator::Generate(
     const CSeq_entry_Handle& entry,
     CNcbiOstream& os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-    Generate(entry, *item_os, useSeqEntryIndexing, mo);
+    Generate(entry, *item_os, mo);
 }
 
 
 void CFlatFileGenerator::Generate(
     const CBioseq_Handle& bsh,
     CNcbiOstream& os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     CRef<CFlatItemOStream>
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os, useSeqEntryIndexing, mo);
+    Generate(entry, *item_os, mo);
 }
 
 
@@ -1098,7 +1097,6 @@ void CFlatFileGenerator::Generate(
     const CSeq_submit& submit,
     CScope& scope,
     CNcbiOstream& os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     _ASSERT(submit.CanGetData());
@@ -1126,7 +1124,7 @@ void CFlatFileGenerator::Generate(
         CRef<CFlatItemOStream>
             item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
-        Generate(entry, *item_os, useSeqEntryIndexing, mo);
+        Generate(entry, *item_os, mo);
     }
 }
 
@@ -1135,7 +1133,6 @@ void CFlatFileGenerator::Generate(
     const CBioseq& bioseq,
     CScope& scope,
     CNcbiOstream& os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     CRef<CFlatItemOStream>
@@ -1143,7 +1140,7 @@ void CFlatFileGenerator::Generate(
 
     const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
     const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os, useSeqEntryIndexing, mo);
+    Generate(entry, *item_os, mo);
 }
 
 
@@ -1151,7 +1148,6 @@ void CFlatFileGenerator::Generate(
     const CSeq_loc& loc,
     CScope& scope,
     CNcbiOstream& os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
@@ -1171,7 +1167,7 @@ void CFlatFileGenerator::Generate(
         cfg.SetStyleMaster();
     }
 
-    Generate(entry, os, useSeqEntryIndexing, mo);
+    Generate(entry, os, mo);
 }
 
 
@@ -1181,7 +1177,6 @@ void CFlatFileGenerator::Generate(
     ENa_strand strand,
     CScope& scope,
     CNcbiOstream& os,
-    bool useSeqEntryIndexing,
     const multiout& mo)
 {
     CRef<CSeq_id> id2(new CSeq_id);
@@ -1194,7 +1189,7 @@ void CFlatFileGenerator::Generate(
         loc.Reset(new CSeq_loc(*id2, range.GetFrom(), range.GetTo(), strand));
     }
     if ( loc ) {
-        Generate(*loc, scope, os, useSeqEntryIndexing, mo);
+        Generate(*loc, scope, os, mo);
     }
 }
 
