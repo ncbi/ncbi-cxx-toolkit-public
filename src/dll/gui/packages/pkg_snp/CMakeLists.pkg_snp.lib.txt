@@ -1,0 +1,5 @@
+NCBI_begin_lib(pkg_snp SHARED)
+  NCBI_hosts_projects(
+    gui/packages/pkg_snp/package/pkg_snp 
+  )
+NCBI_end_lib()

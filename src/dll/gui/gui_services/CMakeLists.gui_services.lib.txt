@@ -1,0 +1,8 @@
+NCBI_begin_lib(gui_services SHARED)
+  NCBI_hosts_projects(
+    gui_services 
+  )
+  NCBI_add_definitions(
+    NCBI_GUISERVICES_EXPORTS 
+  )
+NCBI_end_lib()
