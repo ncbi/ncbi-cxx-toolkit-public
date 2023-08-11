@@ -16,6 +16,7 @@ class CSeq_annot;
 class IProcessorCallback
 {
 public:
+    virtual ~IProcessorCallback() {}
 
     virtual void Process(CRef<CSerialObject>& obj) = 0;
 };

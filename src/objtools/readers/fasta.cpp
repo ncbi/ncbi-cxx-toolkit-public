@@ -495,7 +495,7 @@ void CFastaReader::SetMaxIDLength(Uint4 max_len)
 // CRef<CSeq_interval> to access range information - RW-26
 void CFastaReader::ParseDefLine(const TStr& defLine,
                                 const SDefLineParseInfo& info,
-                                const TIgnoredProblems& ignoredErrors,
+                                const TIgnoredProblems& /*ignoredErrors*/,
                                 list<CRef<CSeq_id>>& ids,
                                 bool& hasRange,
                                 TSeqPos& rangeStart,
@@ -618,7 +618,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
 
 void CFastaReader::PostProcessIDs(
     const CBioseq::TId& defline_ids,
-    const string& defline,
+    const string& /*defline*/,
     const bool has_range,
     const TSeqPos range_start,
     const TSeqPos range_end)
@@ -1016,7 +1016,7 @@ void CFastaReader::ParseDataLine(
 }
 
 void CFastaReader::x_CloseGap(
-    TSeqPos len, bool atStartOfLine, ILineErrorListener * pMessageListener)
+    TSeqPos len, bool atStartOfLine, ILineErrorListener * /*pMessageListener*/)
 {
     _ASSERT(len > 0  &&  TestFlag(fParseGaps));
 
@@ -1049,7 +1049,7 @@ void CFastaReader::x_CloseGap(
             // (do NOT treat a lone 'N' or 'X' as unknown length)
             if (len == 1 && m_CurrentGapChar == '-' ) {
                 TSeqPos l = m_SeqData.length();
-                if ((l == pos) || (l == pos + (*GetLineReader()).length() && atStartOfLine)) { 
+                if ((l == pos) || (l == pos + (*GetLineReader()).length() && atStartOfLine)) {
                     //and it's not the first col of the line
                     len = 0;
                     eKnownSize = SGap::eKnownSize_No;
@@ -1545,7 +1545,7 @@ static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CBios
 }
 
 
-void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
+void CFastaReader::AssignMolType(ILineErrorListener * /*pMessageListener*/)
 {
     CSeq_inst::EMol             default_mol;
     CFormatGuess::ESTStrictness strictness;
@@ -2165,4 +2165,3 @@ void CFastaReader::IgnoreProblem(ILineError::EProblem problem)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
