@@ -707,6 +707,8 @@ ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
 ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
+ncbi_connectless includes tables
+ncbi_connectless needs xconnect
 ncbi_xblobstorage_netcache needs xconnserv
 ncbi_xcache_bdb needs bdb
 ncbi_xcache_netcache needs xconnserv
