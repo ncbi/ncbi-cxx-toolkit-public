@@ -47,7 +47,7 @@ public:
     CFeatureGatherer(void) {};
 
 protected:
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const {
+    virtual void x_DoSingleSection(CBioseqContext& /*ctx*/) const {
         x_GatherFeatures();
     };
 };

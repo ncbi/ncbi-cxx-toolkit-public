@@ -91,7 +91,7 @@ public:
         const CException* prev_exception,
         EErrCode err_code, const string& message,
         const SBadResiduePositions& badResiduePositions,
-        EDiagSev severity = eDiag_Error) THROWS_NONE
+        EDiagSev /*severity*/ = eDiag_Error) THROWS_NONE
         : CObjReaderException(info, prev_exception,
         (CObjReaderException::EErrCode) err_code,
         message), m_BadResiduePositions(badResiduePositions)

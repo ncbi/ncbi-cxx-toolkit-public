@@ -81,7 +81,7 @@ public:
 
     EItem GetItemType() const override;
 private:
-    void x_GatherInfo(CBioseqContext& ctx) override {}
+    void x_GatherInfo(CBioseqContext& /*ctx*/) override {}
 
     // data
     TSeqPos     m_From, m_To;

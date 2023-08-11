@@ -94,8 +94,8 @@ void CAltValidator::Init(void)
     cerr << "FATAL: cannot connect to GenBank!\n";
     exit(1);
   }
-  
-#ifdef HAVE_NCBI_VDB  
+
+#ifdef HAVE_NCBI_VDB
   const auto wgsInfo = CWGSDataLoader::RegisterInObjectManager(
           *m_ObjectManager, CObjectManager::eDefault);
 
@@ -345,12 +345,12 @@ void CAltValidator::x_QueryAccessions()
 
     auto bioseqHandles = m_Scope->GetBioseqHandles(idHandles);
 
-    size_t index = 0; 
+    size_t index = 0;
     for (auto it=begin(bioseqHandles);
-              it!=end(bioseqHandles); 
+              it!=end(bioseqHandles);
               ++it, ++index)   {
         if (!*it) {
-          continue; 
+          continue;
         }
         const auto& bioseqHandle = *it;
         auto idHandle = sequence::GetId(bioseqHandle, sequence::eGetId_ForceAcc);
@@ -358,7 +358,7 @@ void CAltValidator::x_QueryAccessions()
                              idHandle.GetSeqId()->GetGenbank() :
                              idHandle.GetSeqId()->GetOther();
 
-        // Add information to map  
+        // Add information to map
         auto& compInfo = m_ComponentInfoMap[accVer.GetAccession()];
         compInfo.currentVersion = accVer.GetVersion();
         compInfo.len = bioseqHandle.GetInst_Length();
@@ -382,7 +382,7 @@ static void s_WriteLine(
         return;
     }
 
-    if (currentVersion==1) {  
+    if (currentVersion==1) {
         size_t pos=NPOS;
         size_t tabCount=0;
         for (size_t i=0; i<line.size(); ++i) {
@@ -403,19 +403,19 @@ static void s_WriteLine(
     if (currentVersion) {
         ostr << line << "#current version " << accession << "." << currentVersion << '\n';
     }
-    else 
-    if (!inDatabase) 
-    {   
+    else
+    if (!inDatabase)
+    {
         ostr << line << "#component_id not in GenBank" << '\n';
     }
 }
-    
+
 
 void CAltValidator::ProcessQueue()
 {
     x_QueryAccessions(); // In: accessions; Out: m_ComponentInfoMap.
 
-    for (const auto& lineInfo : m_LineQueue) 
+    for (const auto& lineInfo : m_LineQueue)
     {
         const CTempString& acc=lineInfo.comp_id;
         const string& orig_line = lineInfo.orig_line;
@@ -429,7 +429,7 @@ void CAltValidator::ProcessQueue()
 
 
         SIZE_TYPE pos_ver = acc.find('.');
-        const bool versionSpecified = 
+        const bool versionSpecified =
             (pos_ver != NPOS) ?
             (NStr::StringToNonNegativeInt(acc.substr(pos_ver+1)) != -1) :
             false;
@@ -444,10 +444,10 @@ void CAltValidator::ProcessQueue()
         if (itAccData!=m_ComponentInfoMap.end()) {
             acc_data = itAccData->second;
             if (!acc_data.currentVersion) {
-                pAgpErr->Msg(CAgpErrEx::G_DataError, 
+                pAgpErr->Msg(CAgpErrEx::G_DataError,
                     " - cannot get version for "+acc);
             }
-            else 
+            else
             if (m_check_len_taxid && acc_data.taxid == ZERO_TAX_ID) {
                 pAgpErr->Msg(CAgpErrEx::G_DataError,
                     " - cannot retrieve taxonomic id for "+acc);
@@ -484,9 +484,9 @@ void CAltValidator::ProcessQueue()
         }
 
         if (m_pOut) {
-            s_WriteLine(acc, 
-                    orig_line, 
-                    acc_data.inDatabase, 
+            s_WriteLine(acc,
+                    orig_line,
+                    acc_data.inDatabase,
                     acc_data.currentVersion,
                     versionSpecified,
                     *m_pOut);
@@ -522,7 +522,7 @@ string ExtractAccession(const string& long_acc)
     if( pos1 != NPOS ) return s.substr(pos1+1);
     return s;
   }
-  catch(CException e){
+  catch(const CException&){
     return long_acc;
   }
 }
@@ -561,4 +561,3 @@ void OverrideLenIfAccession(const string & acc, int & in_out_len)
 }
 
 END_NCBI_SCOPE
-

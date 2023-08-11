@@ -100,39 +100,14 @@ public:
     void SetSeqEntryIndex(CRef<CSeqEntryIndex> idx);
     void ResetSeqEntryIndex(void);
 
-    NCBI_DEPRECATED void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
-    NCBI_DEPRECATED void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os);
-    NCBI_DEPRECATED void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
-    NCBI_DEPRECATED void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
-    NCBI_DEPRECATED void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os);
-    NCBI_DEPRECATED void Generate(const CSeq_id& id, const TRange& range,
-        ENa_strand strand, CScope& scope, CNcbiOstream& os);
-
-    // NB: the item ostream should be allocated on the heap!
-    NCBI_DEPRECATED void Generate(const CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
-    NCBI_DEPRECATED void Generate(const CBioseq& bioseq, CScope& scope, CFlatItemOStream& item_os);
-    NCBI_DEPRECATED void Generate(const CSeq_loc& loc, CScope& scope, CFlatItemOStream& item_os);
-    NCBI_DEPRECATED void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
-    NCBI_DEPRECATED void Generate(const CBioseq_Handle& bsh, CFlatItemOStream& item_os);
-    NCBI_DEPRECATED void Generate(const CSeq_id& id, const TRange& range,
-        ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
-
-    // Versions that loop through Bioseq components
-    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, bool useSeqEntryIndexing,
-                  const multiout& = {});
-    void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  const multiout& = {});
-    void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  const multiout& = {});
-    void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  const multiout& = {});
-    void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  const multiout& = {});
-    void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  const multiout& = {});
+    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os, const multiout& = {});
+    void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os, const multiout& = {});
+    void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os, const multiout& = {});
+    void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os, const multiout& = {});
+    void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os, const multiout& = {});
+    void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os, const multiout& = {});
     void Generate(const CSeq_id& id, const TRange& range, ENa_strand strand,
-                  CScope& scope, CNcbiOstream& os, bool useSeqEntryIndexing,
-                  const multiout& = {});
+                CScope& scope, CNcbiOstream& os, const multiout& = {});
 
     // for use when generating a range of a Seq-submit
     void SetSubmit(const CSubmit_block& sub) { m_Ctx->SetSubmit(sub); }
