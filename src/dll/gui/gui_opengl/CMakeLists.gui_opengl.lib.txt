@@ -1,0 +1,7 @@
+NCBI_begin_lib(gui_utils SHARED)
+  NCBI_hosts_projects(
+    gui/opengl/gui_opengl
+    gui/print/gui_print
+  )
+  NCBI_add_definitions(NCBI_GUIOPENGL_EXPORTS)
+NCBI_end_lib()
