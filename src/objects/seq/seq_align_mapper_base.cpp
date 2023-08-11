@@ -1471,7 +1471,7 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
         }
         // Add rows.
         non_gap_count = 0;
-        size_t row_n = 0;
+        int row_n = 0;
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             // Check sequence type, set width to 3 for prots.
             int width = (m_LocMapper.GetSeqTypeById(row->m_Id) ==
@@ -1649,7 +1649,7 @@ void CSeq_align_Mapper_Base::x_GetDstDisc(CRef<CSeq_align>& dst) const
         try {
             data.push_back((*it)->GetDstAlign());
         }
-        catch (CAnnotMapperException) {
+        catch (CAnnotMapperException&) {
             // Skip invalid sub-alignments.
         }
     }
@@ -2615,7 +2615,7 @@ ssize_t CSeq_align_Mapper_Base::x_GetPartialDenseg(CRef<CSeq_align>& dst,
     // First, find the requested segment. Since TSegments is a list, we
     // have to iterate over it and skip 'start_seg' items.
     TSegments::const_iterator start_seg_it = m_Segs.begin();
-    for (int s = 0; s < start_seg && start_seg_it != m_Segs.end();
+    for (size_t s = 0; s < start_seg && start_seg_it != m_Segs.end();
         s++, start_seg_it++) {
     }
     if (start_seg_it == m_Segs.end()) {
@@ -2798,7 +2798,7 @@ void CSeq_align_Mapper_Base::x_ConvToDstDisc(CRef<CSeq_align>& dst) const
     ssize_t seg = 0;
     // The iteration stops when the last segment is converted or
     // when an error occurs and x_GetPartialDenseg returns -1.
-    while (seg >= 0  &&  seg < m_Segs.size()) {
+    while (seg >= 0  &&  seg < (ssize_t)m_Segs.size()) {
         // Convert as many segments as possible to a single dense-seg.
         CRef<CSeq_align> dseg(new CSeq_align);
         seg = x_GetPartialDenseg(dseg, seg);
