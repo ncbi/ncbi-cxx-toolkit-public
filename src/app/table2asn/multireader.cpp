@@ -122,22 +122,6 @@ void g_ModifySeqIds(CSeq_annot& annot, const CSeq_id& match, CRef<CSeq_id> new_i
 namespace
 {
 
-    CRef<CSeq_id> GetSeqIdWithoutVersion(const CSeq_id& id)
-    {
-        const CTextseq_id* text_id = id.GetTextseq_Id();
-
-        if (text_id && text_id->IsSetVersion())
-        {
-            CRef<CSeq_id> new_id(new CSeq_id);
-            new_id->Assign(id);
-            CTextseq_id* text_id = (CTextseq_id*)new_id->GetTextseq_Id();
-            text_id->ResetVersion();
-            return new_id;
-        }
-
-        return CRef<CSeq_id>();
-    }
-
     struct SCSeqidCompare
     {
         inline
@@ -147,15 +131,6 @@ namespace
         };
     };
 
-    CRef<CSeq_id> GetIdByKind(const CSeq_id& id, const CBioseq::TId& ids)
-    {
-        ITERATE(CBioseq::TId, it, ids)
-        {
-            if ((**it).Which() == id.Which())
-                return *it;
-        }
-        return CRef<CSeq_id>();
-    }
 }
 
 
@@ -813,9 +788,9 @@ void CMultiReader::LoadGFF3Fasta(istream& in, TAnnotMap& annotMap)
 }
 
 
-CRef<CSerialObject> CMultiReader::FetchEntry(const CFormatGuess::EFormat& format, 
+CRef<CSerialObject> CMultiReader::FetchEntry(const CFormatGuess::EFormat& format,
         const string& objectType,
-        unique_ptr<istream>& pIstr, 
+        unique_ptr<istream>& pIstr,
         TAnnotMap& annotMap)
 {
     CRef<CSerialObject> pInputObject;
@@ -831,7 +806,7 @@ CRef<CSerialObject> CMultiReader::FetchEntry(const CFormatGuess::EFormat& format
         case CFormatGuess::eGff3:
             LoadGFF3Fasta(*pIstr, annotMap);
         case CFormatGuess::eFasta: // What about buffered input?
-        default:  
+        default:
             m_iFlags = CFastaReader::fNoUserObjs;
             pInputObject = xReadFasta(*pIstr);
     }
@@ -990,7 +965,7 @@ static void s_RemoveGenBankDbxrefs(list<CRef<CSeq_feat>>& ftable)
             auto& dbxrefs = pFeat->SetDbxref();
             auto it = remove_if(dbxrefs.begin(), dbxrefs.end(),
                 [](const CRef<CDbtag>& pDbtag) {
-                return(pDbtag && pDbtag->IsSetDb() && 
+                return(pDbtag && pDbtag->IsSetDb() &&
                         NStr::EqualNocase(pDbtag->GetDb(), "GenBank"));
                 });
             dbxrefs.erase(it, dbxrefs.end());
@@ -1349,7 +1324,7 @@ static void s_AddAnnotsToBioseq(
             featEdit.MergeFeatures((*it)->SetData().SetFtable());
             ++it;
         }
-    } 
+    }
     else {
         for (auto pAnnot : annots) {
             objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
@@ -1358,9 +1333,9 @@ static void s_AddAnnotsToBioseq(
     }
 }
 
-static bool s_HasPrefixMatch( 
+static bool s_HasPrefixMatch(
     const string& idString,
-    CMultiReader::TAnnotMap& annotMap, 
+    CMultiReader::TAnnotMap& annotMap,
     map<string, CMultiReader::TAnnotMap::iterator>& matchMap)
 {
     matchMap.clear();
@@ -1374,7 +1349,7 @@ static bool s_HasPrefixMatch(
 
 bool CMultiReader::x_HasMatch(
     bool matchVersions,
-    const string& idString, 
+    const string& idString,
     CMultiReader::TAnnotMap& annotMap,
     set<string>& matchedAnnots,
     list<CRef<CSeq_annot>>& annots) const
@@ -1397,8 +1372,8 @@ bool CMultiReader::x_HasMatch(
             auto it = match.second;
             if (matchedAnnots.insert(annotId).second) {
                 hasMatch = true;
-                annots.splice(annots.end(), it->second); 
-                annotMap.erase(it);                   
+                annots.splice(annots.end(), it->second);
+                annotMap.erase(it);
             }
         }
     }
@@ -1407,7 +1382,7 @@ bool CMultiReader::x_HasMatch(
 }
 
 bool CMultiReader::x_HasExactMatch(
-    const string& idString, 
+    const string& idString,
     CMultiReader::TAnnotMap& annotMap,
     set<string>& matchedAnnots,
     list<CRef<CSeq_annot>>& annots) const
@@ -1423,9 +1398,9 @@ bool CMultiReader::x_HasExactMatch(
     {
         unique_lock<shared_mutex> uLock{m_Mutex};
         if (matchedAnnots.insert(annotId).second) {
-            annots = move(it->second); 
-            annotMap.erase(it);       
-            return true;            
+            annots = move(it->second);
+            annotMap.erase(it);
+            return true;
         }
     }
 
@@ -1456,18 +1431,18 @@ void CMultiReader::AddAnnots(TAnnotMap& annotMap,
             NStr::ToLower(idString);
             hasMatch = x_HasMatch(matchVersions, idString, annotMap, matchedAnnots, annots);
         }
-            
+
         if (!hasMatch) {
             continue;
         }
-        
+
 
         for (auto pAnnot : annots) {
             auto pAnnotId = s_GetAnnotId(*pAnnot);
-            g_ModifySeqIds(*pAnnot, *pAnnotId, pSeqId);    
+            g_ModifySeqIds(*pAnnot, *pAnnotId, pSeqId);
         }
 
-        s_AddAnnotsToBioseq(annots, bioseq, pBioseqAnnot);    
+        s_AddAnnotsToBioseq(annots, bioseq, pBioseqAnnot);
     }
 }
 
