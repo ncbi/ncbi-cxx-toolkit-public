@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = gui_opengl
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
