@@ -58,6 +58,9 @@ XDLL_LIB_FLAGS = $(runpath) @f_libpath@$(libdir)
 XDLL_LIB      = $(XDLL_LIB_FLAGS) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
+XDLL_LIB0 := $(XDLL_LIB)
+LIBS0 := $(LIBS)
+
 ifneq "" "$(wildcard Makefile.$(TMPL).dll.libdep)"
   include Makefile.$(TMPL).dll.libdep
   ifneq "" "$(GENERATED_LIB_ORDER)"
@@ -67,6 +70,18 @@ ifneq "" "$(wildcard Makefile.$(TMPL).dll.libdep)"
   ifneq "" "$(GENERATED_LIB3PARTY_ORDER)"
     LIBS = $(GENERATED_LIB3PARTY_ORDER)
   endif
+endif
+ifeq "$(XDLL_LIB0) $(LIBS0)" "$(XDLL_LIB) $(LIBS)"
+  OR_CMD0 =
+  OR_CMD0b = 
+else
+  ARGS0 = $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB0) $(LIBS0)
+  TAIL0 = $(call regroup_runpaths,$(ARGS0)) $(LINK_FILTER)
+  NOTE = "project_tree_builder's suggestions failed.  Trying original settings:"
+  CMD0 = $(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(TAIL0)
+  CMD0b = $(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(TAIL0)
+  OR_CMD0 = || (echo $(NOTE); echo $(CMD0); $(CMD0))
+  OR_CMD0b = || (echo $(NOTE); echo $(CMD0b); $(CMD0b))
 endif
 
 ifeq "" "$(KEEP_CORELIB)"
@@ -156,9 +171,9 @@ else
  $(XDLL): $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
-	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(TAIL)
+	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(TAIL) $(OR_CMD0)
 	$(POST_LINK) $(XDLL)
-	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(TAIL)
+	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(TAIL) $(OR_CMD0b)
 	@has_dll_loadable@$(POST_LINK) $(XDLL_LOADABLE)
  ifeq "$(wildcard $(XDLLDEP))" ""
 	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XDLLDEP)
