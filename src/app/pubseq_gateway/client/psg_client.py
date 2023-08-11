@@ -80,8 +80,9 @@ class PsgClient:
         self._pipe.stdout.close()
         try:
             self._pipe.terminate()
-        finally:
-            self._thread.join()
+        except:
+            pass
+        self._thread.join()
         return rv
 
     def send(self, request, id=None):
