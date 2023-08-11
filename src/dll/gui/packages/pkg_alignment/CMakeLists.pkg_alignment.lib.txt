@@ -1,0 +1,5 @@
+NCBI_begin_lib(pkg_alignment SHARED)
+  NCBI_hosts_projects(
+    gui/packages/pkg_alignment/pkg_alignment 
+  )
+NCBI_end_lib()
