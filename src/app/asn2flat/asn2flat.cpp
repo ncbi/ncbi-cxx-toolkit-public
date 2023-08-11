@@ -1076,7 +1076,7 @@ void CAsn2FlatApp::HandleTextId(TFFContext& context, const string& strId) const
 bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle seh) const
 //  ============================================================================
 {
-    const CArgs& args = GetArgs();
+    //const CArgs& args = GetArgs();
 
     if (m_do_cleanup) {
         CSeq_entry_EditHandle  tseh = seh.GetTopLevelEntry().GetEditHandle();
@@ -1465,7 +1465,7 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
         auto* flatfile_os = context.m_streams[eFlatFileCodes::all].get();
-        context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, true, { flatfile_os });
+        context.m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os, { flatfile_os });
     } else {
         auto* all  = context.m_streams[eFlatFileCodes::all].get();
         auto* nuc  = context.m_streams[eFlatFileCodes::nuc].get();
@@ -1473,7 +1473,7 @@ void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) cons
         auto* rna  = context.m_streams[eFlatFileCodes::rna].get();
         auto* prot = context.m_streams[eFlatFileCodes::prot].get();
         auto* unk  = context.m_streams[eFlatFileCodes::unk].get();
-        context.m_FFGenerator->Generate(seh, *all, true, { all, nuc, gen, rna, prot, unk });
+        context.m_FFGenerator->Generate(seh, *all, { all, nuc, gen, rna, prot, unk });
     }
 }
 
@@ -1541,7 +1541,6 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-    #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing
     list<string> split_args;
     vector<const char*> new_argv;
@@ -1580,7 +1579,7 @@ int main(int argc, const char** argv)
 
         argv = new_argv.data();
     }
-    #endif
+
     CScope::SetDefaultKeepExternalAnnotsForEdit(true);
     return CAsn2FlatApp().AppMain(argc, argv);
 }

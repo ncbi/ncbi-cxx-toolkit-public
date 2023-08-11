@@ -1286,9 +1286,9 @@ void CTbl2AsnApp::MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, 
             CFlatFileConfig::eMode_Entrez);
 
     if (submit.Empty())
-        ffgenerator.Generate(seh, ostream, false);
+        ffgenerator.Generate(seh, ostream);
     else
-        ffgenerator.Generate(*submit, seh.GetScope(), ostream, false);
+        ffgenerator.Generate(*submit, seh.GetScope(), ostream);
 }
 
 void CTbl2AsnApp::SetupAndOpenDiagnosticStreams()
