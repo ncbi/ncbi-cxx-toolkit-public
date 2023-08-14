@@ -1133,7 +1133,7 @@ namespace {
             ret += result.GetRequestedId().AsString();
         }
         else {
-            int total = 0;
+            size_t total = 0;
             for (auto key : keys) {
                 CTSE_LoadLock lock = result.GetTSE_LoadLock(key);
                 CTSE_Info::TSeqIds ids;
