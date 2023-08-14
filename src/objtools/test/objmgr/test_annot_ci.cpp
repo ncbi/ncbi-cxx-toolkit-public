@@ -116,7 +116,7 @@ void CTestResult<TObjectType>::Check(const TObjectList& obj_list,
             try {
                 args["results"].AsInputFile() >> MSerial_AsnText >> ref;
             }
-            catch (CSerialException) {
+            catch (CSerialException&) {
                 SetDiagStream(&NcbiCerr);
                 ERR_POST(Fatal << "Test '" << title
                     << "' failed - unable to read "
@@ -242,7 +242,7 @@ void CTestApp::LoadEntries(void)
             ERR_POST(Fatal <<
                 "Error reading source Seq-entry: " << e.what());
         }
-        catch (CEofException) {
+        catch (CEofException&) {
             // Ignore EOF exceptions - it's just end of data
             break;
         }

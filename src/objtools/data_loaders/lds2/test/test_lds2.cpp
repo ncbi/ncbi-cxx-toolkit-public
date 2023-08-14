@@ -205,7 +205,7 @@ void CLDS2TestApplication::x_ConvertFile(const string& rel_name)
                 break;
             }
         }
-        catch (CEofException) {
+        catch (CEofException&) {
             break;
         }
     }

@@ -98,7 +98,7 @@ string CLDS2_DataLoader::GetLoaderNameFromArgs(const string& db_path)
         try {
             abs_path = CDirEntry::CreateAbsolutePath(db_path);
         }
-        catch (CFileException) {
+        catch (CFileException&) {
         }
     }
     return "LDS2_dataloader:" + abs_path;

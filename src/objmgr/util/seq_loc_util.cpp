@@ -609,7 +609,7 @@ bool BadSeqLocSortOrder
             }
             last_range = lit.GetRange();
         }
-    } catch (CException) {
+    } catch (CException&) {
         // exception will be thrown if references far sequence and not remote fetching
     }
     return false;

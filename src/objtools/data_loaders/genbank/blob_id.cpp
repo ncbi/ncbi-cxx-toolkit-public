@@ -48,7 +48,7 @@ CBlob_id::CBlob_id(CTempString str_id)
         SetSat(sat);
         SetSatKey(satkey);
     }
-    catch (CStringException) {
+    catch (CStringException&) {
     }
 }
 
