@@ -101,8 +101,6 @@ public:
     TChanges BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
     /// Cleanup a Seq-submit.
     TChanges BasicCleanup(CSeq_submit& ss,  Uint4 options = 0);
-    /// Cleanup a Bioseq.
-    TChanges BasicCleanup(CBioseq& bs,     Uint4 ooptions = 0);
     /// Cleanup a Bioseq_set.
     TChanges BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
     /// Cleanup a Seq-Annot.
