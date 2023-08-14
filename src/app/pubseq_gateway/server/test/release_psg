@@ -321,6 +321,40 @@ def getDevProdServerPair():
                 return devInstance[0] + ':' + str(devInstance[1]), prodInstance[0] + ':' + str(prodInstance[1])
     return None, None
 
+def getDevServiceInstanceByVersion(ver):
+    devInstances = resolveService(DEV_SERVICE)
+    if not devInstances:
+        print_error(f'Cannot find dev instance in {DEV_SERVICE}')
+        return None
+
+    tryInstances = []
+    for devInstance in devInstances:
+        instance = devInstance[0] + ':' + str(devInstance[1])
+        tryInstances.append(instance)
+
+        # Get version
+        try:
+            print_verbose(f'Getting PSG version from {instance}')
+            url = f'http://{instance}/ADMIN/info'
+            req = urlrequest.Request(url)
+            response = urlrequest.urlopen(req, timeout=10)
+            content = response.read().decode('utf-8')
+            info = json.loads(content)
+
+            instanceVer = info["Version"]
+            if instanceVer == ver:
+                return instance
+        except Exception as exc:
+            err = str(exc)
+            print_verbose(f'Error getting version from {instance}: {err}')
+
+
+    # Here: no suitable instance was found
+    instances = ', '.join(tryInstances)
+    print_error(f'Could not find a PSG instance of version {ver} in service {DEV_SERVICE}')
+    return None
+
+
 def getArchivedTestPath(options):
     binPath = getArchivedBinaryPath(options.psg_ver)
     if binPath is None:
@@ -543,6 +577,11 @@ def compare_check_args(commands, options, args):
     return checkVersionOptionAndDirectory(options)
 
 def production_tests_check_args(commands, options, args):
+
+    if not options.psg_ver:
+        print_error('The "--psg-version" option must be specified')
+        return 1
+
     try:
         # it is used only for the perf_test
         import ncbi.grid.deployment_info.services as services
@@ -1333,12 +1372,11 @@ def archive(commands, options, args):
 
 
 def production_tests(commands, options, args):
-    devInstances = resolveService(DEV_SERVICE)
-    if not devInstances:
-        print_error(f'Cannot find dev instance in {DEV_SERVICE}')
+    devInstance = getDevServiceInstanceByVersion(options.psg_ver)
+    if devInstance is None:
+        # Error message has been printed in getDevServiceInstanceByVersion()
         return 1
 
-    devInstance = devInstances[0][0] + ':' + str(devInstances[0][1])
     print_verbose('Dev instance to use: ' + devInstance)
 
     # Get the psg_client, psg_client.py, testcases.json, testcases-heavy.json
