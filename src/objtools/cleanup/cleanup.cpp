@@ -153,15 +153,6 @@ CCleanup::TChanges CCleanup::BasicCleanup(CSubmit_block& block, Uint4 options)
 }
 
 
-/// Cleanup a Bioseq.
-CCleanup::TChanges CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
-{
-    CLEANUP_SETUP
-    clean_i.BasicCleanupBioseq(bs);
-    return changes;
-}
-
-
 CCleanup::TChanges CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options)
 {
     CLEANUP_SETUP
