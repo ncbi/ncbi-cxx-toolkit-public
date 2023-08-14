@@ -975,9 +975,16 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
        min_subject_length = (Int4) (total_length/num_seqs);
    }
 
-   BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info, 
-                               min_subject_length, (*ext_params)->options->compositionBasedStats, 
-				hit_params);
+   if(min_subject_length <=0) {
+	   return BLASTERR_SUBJECT_LENGTH_INVALID;
+   }
+
+   if ((status = BlastHitSavingParametersNew(program_number, hit_options, sbp,
+		                                     query_info, min_subject_length,
+		                                     (*ext_params)->options->compositionBasedStats,
+		                                     hit_params)) != 0){
+       return status;
+   }
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */

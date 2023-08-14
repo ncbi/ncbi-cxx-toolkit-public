@@ -212,6 +212,12 @@ Blast_PerrorEx(Blast_Message* *msg,
         new_msg->context = context;
         break;
 
+    case BLASTERR_SUBJECT_LENGTH_INVALID:
+        new_msg->message = strdup("The average subject length is too short");
+        new_msg->severity = eBlastSevFatal;
+        new_msg->context = context;
+        break;
+
     case BLASTERR_SEQSRC:
         new_msg->message = strdup("search cannot proceed due to errors "
                                  "retrieving sequences from databases");
