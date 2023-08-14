@@ -464,7 +464,7 @@ void CTestNcbiLinkerdProxyApp::Init(void)
 
 int CTestNcbiLinkerdProxyApp::Run(void)
 {
-    int num_total = m_Proxies.size() * m_Mappers.size();
+    int num_total = static_cast<int>(m_Proxies.size() * m_Mappers.size());
     int num_run = 0, num_passed = 0, num_failed = 0;
 
     ERR_POST(Info << "CTestNcbiLinkerdProxyApp::Run()   $Id$");
