@@ -229,7 +229,7 @@ void sx_Analyze_4na(CTempString seq, const CWGSSeqIterator& it)
     vector<bool> ambig_block(ambig_block_count);
     size_t ambig_bases = 0;
     size_t ambig_bases_counts[16] = {};
-    size_t cur_ambig_count = 0;
+    //size_t cur_ambig_count = 0;
     size_t gap_bases = 0;
     for ( TSeqPos i = 0; i < seq.size(); ++i ) {
         Uint1 c = seq[i];
@@ -245,11 +245,11 @@ void sx_Analyze_4na(CTempString seq, const CWGSSeqIterator& it)
             // ambiguity
             ++ambig_bases;
             ++ambig_bases_counts[c];
-            ++cur_ambig_count;
+            //++cur_ambig_count;
             ambig_block[i/kAmbiguityBlockSize] = true;
         }
         else {
-            cur_ambig_count = 0;
+            //cur_ambig_count = 0;
         }
     }
     cout << acc_ver<< ": Gap bases: "<<gap_bases<<endl;
@@ -292,6 +292,9 @@ void sx_Analyze_4na(CTempString seq, const CWGSSeqIterator& it)
     }
     if ( wrong_1 ) {
         cout << acc_ver<< ": Wrong ambiguity bits set: "<<wrong_1<<endl;
+    }
+    if ( correct_0 ) {
+        cout << acc_ver<< ": Correct ambiguity bits not set: "<<correct_0<<endl;
     }
     if ( correct_1 ) {
         cout << acc_ver<< ": Correct ambiguity bits set: "<<correct_1<<endl;
