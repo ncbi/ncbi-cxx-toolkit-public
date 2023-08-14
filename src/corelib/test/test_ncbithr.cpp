@@ -502,6 +502,7 @@ void* CTestThread::Main(void)
             m_Res->EndRead(m_Index);
             m_RW->Unlock();
         }
+        assert(lock_success + lock_fail == sRCycles*2/3 + 1);
     }
     else {                     // <------ Writer
         for (int w_cycle=0; w_cycle<sWCycles; w_cycle++) {
@@ -580,6 +581,7 @@ void* CTestThread::Main(void)
             m_RW->Unlock();
             delay(1);
         }
+        assert(lock_success + lock_fail == sWCycles/3 + 1);
     }
 
     // ======= CTls test =======
