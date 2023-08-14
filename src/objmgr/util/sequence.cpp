@@ -811,7 +811,7 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
         TSeqPos prot_length;
         try {
             prot_length = GetLength(feat.GetProduct(), scope);
-        } catch (CObjmgrUtilException) {
+        } catch (CObjmgrUtilException&) {
             prot_length = numeric_limits<TSeqPos>::max();
         }
         NON_CONST_ITERATE (SRelLoc::TRanges, it, rl.m_Ranges) {
@@ -854,12 +854,12 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
         TSeqPos nuc_length, prot_length;
         try {
             nuc_length = GetLength(feat.GetLocation(), scope);
-        } catch (CObjmgrUtilException) {
+        } catch (CObjmgrUtilException&) {
             nuc_length = numeric_limits<TSeqPos>::max();
         }
         try {
             prot_length = GetLength(feat.GetProduct(), scope);
-        } catch (CObjmgrUtilException) {
+        } catch (CObjmgrUtilException&) {
             prot_length = numeric_limits<TSeqPos>::max();
         }
         NON_CONST_ITERATE(SRelLoc::TRanges, it, rl.m_Ranges) {
@@ -4760,7 +4760,7 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
                 ERR_POST_X(8, Warning << "SRelLoc::Resolve: Relative position "
                            << start << " exceeds length (" << total_length
                            << ") of parent location " << label);
-            } catch (CObjmgrUtilException) {
+            } catch (CObjmgrUtilException&) {
                 ERR_POST_X(9, Warning << "SRelLoc::Resolve: Relative position "
                            << start
                            << " exceeds length (?\?\?) of parent location "

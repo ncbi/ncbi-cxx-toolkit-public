@@ -360,7 +360,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
             // GetProteinWeight succeeds.
             double weight = GetProteinWeight(handle, *it);
             weights[*it] = weight;
-        } catch (CObjmgrUtilException) {
+        } catch (CObjmgrUtilException&) {
             // Silently elide
         }
     }

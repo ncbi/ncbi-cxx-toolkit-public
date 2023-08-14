@@ -275,7 +275,7 @@ void CLDS2_AnnotType_Hook::SkipObject(CObjectIStream& in,
                 (*m_Ids)[idh].range.CombineWith(align.GetSeqRange(row));
             }
         }
-        catch (CSeqalignException) {
+        catch (CSeqalignException&) {
         }
     }
     else if (m_Ids  &&  m_Type == "Seq-graph") {
@@ -814,7 +814,7 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
             m_LastBlobPos += NcbiStreamposToInt8(objstr->GetStreamPos());
             m_LastBlobType = m_BlobType;
         }
-        catch (CSerialException) {
+        catch (CSerialException&) {
             ResetBlob();
             m_BlobType = SLDS2_Blob::eUnknown;
             return false;
@@ -830,7 +830,7 @@ bool CLDS2_ObjectParser::ParseNext(SLDS2_Blob::EBlobType blob_type)
             objstr->Close(); // Pushback unparsed data if any.
             blob_type = x_GetBlobType();
         }
-        catch (CEofException) {
+        catch (CEofException&) {
             break;
         }
         // Collected enough aligns?
@@ -1111,7 +1111,7 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
                     }
                     parsed_entries++;
                 }
-                catch (CEofException) {
+                catch (CEofException&) {
                     break;
                 }
             }
@@ -1154,7 +1154,7 @@ void CLDS2_Manager::x_ParseFile(const SLDS2_File&      info,
                     }
                 }
             }
-            catch (CException) {
+            catch (CException&) {
                 m_Db->DeleteFile(info.id);
                 if (m_ErrorMode == eError_Throw) {
                     throw;

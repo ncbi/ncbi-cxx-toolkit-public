@@ -461,7 +461,7 @@ int CAlnTestApp::Run(void)
         try {
             aln_id_map.push_back(**aln_it);
         }
-        catch (CAlnException e) {
+        catch (CAlnException& e) {
             cerr << "Skipping alignment: " << e.what() << endl;
         }
     }
