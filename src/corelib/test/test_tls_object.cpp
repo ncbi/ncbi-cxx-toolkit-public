@@ -185,7 +185,7 @@ class CObjectWithNew
             const char* objectPtr = reinterpret_cast<const char*>(ptr);
             bool inStack =
                 (objectPtr > stackObjectPtr) &&
-                (objectPtr < stackObjectPtr + STACK_THRESHOLD);
+                ((objectPtr - stackObjectPtr) <= STACK_THRESHOLD);
             if ( inStack ) {
                 ERR_FATAL("!!!InStack,"
                          " s_CurrentStep: "<<s_CurrentStep<<
@@ -548,17 +548,8 @@ public:
         }
     }
 
-    static void* operator new(size_t s) {
-        add_alloc(1);
-        CObjectWithTLS* ptr = (CObjectWithTLS*)::operator new(s);
-        RegisterNew(ptr);
-        return ptr;
-    }
-    static void operator delete(void* ptr) {
-        add_alloc(-1);
-        RegisterDelete((CObjectWithTLS*)ptr);
-        ::operator delete(ptr);
-    }
+    static void* operator new(size_t s);
+    static void operator delete(void* ptr);
     
 private:
     unsigned m_Counter;
@@ -567,6 +558,19 @@ private:
     CObjectWithTLS(const CObjectWithTLS&);
     void operator=(CObjectWithTLS&);
 };
+void* CObjectWithTLS::operator new(size_t s)
+{
+    add_alloc(1);
+    CObjectWithTLS* ptr = (CObjectWithTLS*)::operator new(s);
+    RegisterNew(ptr);
+    return ptr;
+}
+void CObjectWithTLS::operator delete(void* ptr)
+{
+    add_alloc(-1);
+    RegisterDelete((CObjectWithTLS*)ptr);
+    ::operator delete(ptr);
+}
 
 class CObjectWithTLS2 : public CObjectWithTLS
 {
