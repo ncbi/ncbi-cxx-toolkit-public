@@ -198,7 +198,7 @@ CGff3Reader::CGff3Reader(
 //  ----------------------------------------------------------------------------
     CGff2Reader( uFlags, name, title, resolver, pRL )
 {
-    mpLocations.reset(new CGff3LocationMerger(uFlags, resolver, 0));
+    mpLocations.reset(new CGff3LocationMerger(uFlags, resolver, 0, pRL));
     CGff2Record::ResetId();
 }
 

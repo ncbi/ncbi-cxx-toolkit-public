@@ -39,6 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 class CGff2Record;
+class CReaderListener;
 
 //  ============================================================================
 class CGff3LocationRecord
@@ -97,6 +98,8 @@ class CGffIdTracker
 //  ============================================================================
 {
 public:
+    CGffIdTracker(CReaderListener* pListener=nullptr);
+
     void CheckAndIndexRecord(
         string id,
         const CGff2Record& record);
@@ -109,6 +112,7 @@ public:
 private:
     map<string, list<CGffIdTrackRecord>> mIds;
     set<string> mParentIds;
+    CReaderListener* m_pMessageListener=nullptr;
 };
 
 
@@ -123,7 +127,8 @@ public:
     CGff3LocationMerger(
         unsigned int flags =0,
         CGff3ReadRecord::SeqIdResolver = CReadUtil::AsSeqId,
-        TSeqPos sequenceSize =0);
+        TSeqPos sequenceSize =0,
+        CReaderListener* pListener=nullptr);
 
     void Reset() {
         mMapIdToLocations.clear();
@@ -184,6 +189,7 @@ private:
 
     LOCATION_MAP mMapIdToLocations;
     CGffIdTracker mIdTracker;
+    CReaderListener* m_pMessageListener=nullptr;
 };
 
 END_SCOPE(objects)
