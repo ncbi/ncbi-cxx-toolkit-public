@@ -1048,10 +1048,10 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
     if (seqtype == CSeq_id::e_not_set) {
         if (acc && ! NStr::IsBlank(acc)) {
             auto pId = Ref(new CSeq_id(CSeq_id::e_Local, acc));
-            res->SetId().push_back(move(pId));
+            res->SetId().push_back(std::move(pId));
         } else if (pp->mode == Parser::EMode::Relaxed && locus) {
             auto pId = Ref(new CSeq_id(CSeq_id::e_Local, locus));
-            res->SetId().push_back(move(pId));
+            res->SetId().push_back(std::move(pId));
         } else {
             SetEmptyId(*res);
         }

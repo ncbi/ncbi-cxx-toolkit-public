@@ -958,7 +958,7 @@ void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
     } else {
         auto pId = Ref(new CSeq_id());
         pId->Assign(id);
-        ibp->ids.push_back(move(pId));
+        ibp->ids.push_back(std::move(pId));
     }
 }
 
