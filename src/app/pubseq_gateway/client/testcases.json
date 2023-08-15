@@ -23692,5 +23692,1275 @@
                 }
             }
         ]
+    },
+    "ID/get_na CDD for 2222": {
+        "description": "ID/get_na CDD for 2222",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "2222"
+                        ],
+                        "named_annots": [
+                            "CDD"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "CDD",
+                    "blob_id": {
+                        "id": "8087/131232.4272018794"
+                    },
+                    "id2_annot_info": "MICggBoDQ0REAACjgDGAMICggAIBCQAAoYAxgAIBUwAAAAAAADCAoIACAQwAAKGAMYACAVYAAAAAAAAAAAAApIChgKWAMIChgBoIQ0FBNzgzMjIAAKOAAgEBAAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "CDD",
+                            "status": "Success"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "ID/get_na CDD for CAA42669.1": {
+        "description": "ID/get_na CDD for CAA42669.1",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "CAA42669.1"
+                        ],
+                        "named_annots": [
+                            "CDD"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "CDD",
+                    "blob_id": {
+                        "id": "8087/411853.621091671"
+                    },
+                    "id2_annot_info": "MICggBoDQ0REAACjgDGAMICggAIBCQAAoYAxgAIBUwAAAAAAADCAoIACAQwAAKGAMYACAVYAAAAAAAAAAAAApIChgKWAMIChgBoIQ0FBNDI2NjkAAKOAAgEBAAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "CDD",
+                            "status": "Success"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "ID/get_na CDD for gi|90070": {
+        "description": "ID/get_na CDD for gi|90070",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "gi|90070"
+                        ],
+                        "named_annots": [
+                            "CDD"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "CDD",
+                    "blob_id": {
+                        "id": "8087/345425.100627255"
+                    },
+                    "id2_annot_info": "MICggBoDQ0REAACjgDGAMICggAIBCQAAoYAxgAIBUwAAAAAAADCAoIACAQwAAKGAMYACAVYAAAAAAAAAAAAApIChgKaAMIChgBoGQjMwNTA1AAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "CDD",
+                            "status": "Success"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "ID/get_na CDD for 2222 (3 na)": {
+        "description": "ID/get_na CDD for 2222 (3 na)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "2222"
+                        ],
+                        "named_annots": [
+                            "FOOBAR",
+                            "SNP",
+                            "CDD"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "CDD",
+                    "blob_id": {
+                        "id": "8087/131232.4272018794"
+                    },
+                    "id2_annot_info": "MICggBoDQ0REAACjgDGAMICggAIBCQAAoYAxgAIBUwAAAAAAADCAoIACAQwAAKGAMYACAVYAAAAAAAAAAAAApIChgKWAMIChgBoIQ0FBNzgzMjIAAKOAAgEBAAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "CDD",
+                            "status": "Success"
+                        },
+                        {
+                            "name": "FOOBAR",
+                            "status": "NotFound"
+                        },
+                        {
+                            "name": "SNP",
+                            "status": "NotFound"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "ID/get_na SNP for ref|NG_011355.1": {
+        "description": "ID/get_na SNP for ref|NG_011355.1",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "ref|NG_011355.1"
+                        ],
+                        "named_annots": [
+                            "SNP"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "SNP",
+                    "blob_id": {
+                        "id": "3019/1000146873.16005934"
+                    },
+                    "id2_annot_info": "MICggBoDU05QAACigAUAAACkgKGAqYAwgKGAGglOR18wMTEzNTUAAKOAAgEBAAAAAAAAAAAAAAAAMICggBoIU05QQEAxMDAAAKKABQAAAKSAoYCpgDCAoYAaCU5HXzAxMTM1NQAAo4ACAQEAAAAAAAAAAAAAAAA="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "SNP",
+                    "blob_id": {
+                        "id": "3019/146873.16005934"
+                    },
+                    "id2_annot_info": "MICggBoDU05QAACjgDGAMICggAIBCAAAoYAxgAIBRwAAAAAAAAAAAACkgKGAqYAwgKGAGglOR18wMTEzNTUAAKOAAgEBAAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "SNP",
+                            "status": "Success"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "ID/get_na SNP for NG_011231.1": {
+        "description": "ID/get_na SNP for NG_011231.1",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "NG_011231.1"
+                        ],
+                        "named_annots": [
+                            "SNP"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "SNP",
+                    "blob_id": {
+                        "id": "3019/1000146873.16005812"
+                    },
+                    "id2_annot_info": "MICggBoDU05QAACigAUAAACkgKGAqYAwgKGAGglOR18wMTEyMzEAAKOAAgEBAAAAAAAAAAAAAAAAMICggBoIU05QQEAxMDAAAKKABQAAAKSAoYCpgDCAoYAaCU5HXzAxMTIzMQAAo4ACAQEAAAAAAAAAAAAAAAA="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "SNP",
+                    "blob_id": {
+                        "id": "3019/146873.16005812"
+                    },
+                    "id2_annot_info": "MICggBoDU05QAACjgDGAMICggAIBCAAAoYAxgAIBRwAAAAAAAAAAAACkgKGAqYAwgKGAGglOR18wMTEyMzEAAKOAAgEBAAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "SNP",
+                            "status": "Success"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "ID/get_na SNP for 224500879": {
+        "description": "ID/get_na SNP for 224500879",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "named_annot",
+                    "params": {
+                        "bio_id": [
+                            "224500879"
+                        ],
+                        "named_annots": [
+                            "SNP"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "SNP",
+                    "blob_id": {
+                        "id": "3019/1000146873.16005812"
+                    },
+                    "id2_annot_info": "MICggBoDU05QAACigAUAAACkgKGAqYAwgKGAGglOR18wMTEyMzEAAKOAAgEBAAAAAAAAAAAAAAAAMICggBoIU05QQEAxMDAAAKKABQAAAKSAoYCpgDCAoYAaCU5HXzAxMTIzMQAAo4ACAQEAAAAAAAAAAAAAAAA="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotInfo",
+                    "name": "SNP",
+                    "blob_id": {
+                        "id": "3019/146873.16005812"
+                    },
+                    "id2_annot_info": "MICggBoDU05QAACjgDGAMICggAIBCAAAoYAxgAIBRwAAAAAAAAAAAACkgKGAqYAwgKGAGglOR18wMTEyMzEAAKOAAgEBAAAAAAAAAAAAAAAA"
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "NamedAnnotStatus",
+                    "statuses": [
+                        {
+                            "name": "SNP",
+                            "status": "Success"
+                        }
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS resolve EAB1000000": {
+        "description": "WGS resolve EAB1000000",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "resolve",
+                    "params": {
+                        "bio_id": [
+                            "EAB1000000"
+                        ],
+                        "include_info": [
+                            "all-info-except"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|EAB1000000.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:AAADOR|EF220_14310",
+                            "type": 11
+                        }
+                    ],
+                    "molecule_type": "aa",
+                    "length": 175,
+                    "state": 5,
+                    "blob_id": {
+                        "id": "1016/656237304.28"
+                    },
+                    "tax_id": 562,
+                    "hash": 1649657003,
+                    "gi": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EAB1000000"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS resolve EAB2056000": {
+        "description": "WGS resolve EAB2056000",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "resolve",
+                    "params": {
+                        "bio_id": [
+                            "EAB2056000"
+                        ],
+                        "include_info": [
+                            "all-info-except"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|EAB2056000.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:AAADWX|D7C00_05660",
+                            "type": 11
+                        }
+                    ],
+                    "molecule_type": "aa",
+                    "length": 59,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "1016/731181368.1"
+                    },
+                    "tax_id": 28901,
+                    "hash": -987315230,
+                    "gi": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EAB2056000"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS resolve EAB2056000 (no WGS proc)": {
+        "description": "WGS resolve EAB2056000 (no WGS proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "resolve",
+                    "params": {
+                        "bio_id": [
+                            "EAB2056000"
+                        ],
+                        "include_info": [
+                            "all-info-except"
+                        ],
+                        "user_args": "disable_processor=WGS"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EAB2056000"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "WGS resolve JRAS01000001 (no Cassandra proc)": {
+        "description": "WGS resolve JRAS01000001 (no Cassandra proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "resolve",
+                    "params": {
+                        "bio_id": [
+                            "JRAS01000001"
+                        ],
+                        "include_info": [
+                            "all-info-except"
+                        ],
+                        "user_args": "disable_processor=Cassandra"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|JRAS01000001.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:JRAS01|297",
+                            "type": 11
+                        },
+                        {
+                            "id": "gi|699058966",
+                            "type": 12
+                        }
+                    ],
+                    "molecule_type": "dna",
+                    "length": 12889,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "1000/69470373.1"
+                    },
+                    "tax_id": 1329640,
+                    "hash": -502653465,
+                    "gi": 699058966
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS resolve JRAS01000001 (no WGS proc)": {
+        "description": "WGS resolve JRAS01000001 (no WGS proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "resolve",
+                    "params": {
+                        "bio_id": [
+                            "JRAS01000001"
+                        ],
+                        "include_info": [
+                            "all-info-except"
+                        ],
+                        "user_args": "disable_processor=WGS"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|JRAS01000001.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:JRAS01|297",
+                            "type": 11
+                        },
+                        {
+                            "id": "gi|699058966",
+                            "type": 12
+                        }
+                    ],
+                    "molecule_type": "dna",
+                    "length": 12889,
+                    "seq_state": 10,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "37.227981207"
+                    },
+                    "tax_id": 1329640,
+                    "hash": -502653465,
+                    "date_changed": "02/17/2023 11:59:29",
+                    "gi": 699058966
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS resolve JRAS01000001 (no WGS proc, no Cassandra proc)": {
+        "description": "WGS resolve JRAS01000001 (no WGS proc, no Cassandra proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "resolve",
+                    "params": {
+                        "bio_id": [
+                            "JRAS01000001"
+                        ],
+                        "include_info": [
+                            "all-info-except"
+                        ],
+                        "user_args": "disable_processor=WGS&disable_processor=Cassandra"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound",
+                    "errors": [
+                        "No matching processors found"
+                    ]
+                }
+            }
+        ]
+    },
+    "WGS biodata EAB1000000": {
+        "description": "WGS biodata EAB1000000",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "biodata",
+                    "params": {
+                        "bio_id": [
+                            "EAB1000000"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|EAB1000000.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:AAADOR|EF220_14310",
+                            "type": 11
+                        }
+                    ],
+                    "molecule_type": "aa",
+                    "length": 175,
+                    "state": 5,
+                    "blob_id": {
+                        "id": "1016/656237304.28"
+                    },
+                    "tax_id": 562,
+                    "hash": 1649657003,
+                    "gi": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EAB1000000"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobData",
+                    "id": {
+                        "id2_chunk": 999999999,
+                        "id2_info": "1016/656237304.28.0.1"
+                    },
+                    "length": 61648,
+                    "hash": "3042AE6ACE505338",
+                    "preview": "MIChgDGAMICggAIBAgAAoQ=="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobInfo",
+                    "id": {
+                        "id": "1016/656237304.28"
+                    },
+                    "compression": "",
+                    "format": "asn.1",
+                    "storage_size": 0,
+                    "size": 0,
+                    "is_dead": false,
+                    "is_suppressed": true,
+                    "is_withdrawn": false,
+                    "hup_release_date": "",
+                    "owner": 0,
+                    "original_load_date": "",
+                    "class": "not-set",
+                    "division": "",
+                    "username": "",
+                    "id2_info": "1016/656237304.28.0.1",
+                    "n_chunks": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobInfo",
+                    "id": {
+                        "id2_chunk": 999999999,
+                        "id2_info": "1016/656237304.28.0.1"
+                    },
+                    "compression": "",
+                    "format": "asn.1",
+                    "storage_size": 0,
+                    "size": 0,
+                    "is_dead": false,
+                    "is_suppressed": false,
+                    "is_withdrawn": false,
+                    "hup_release_date": "",
+                    "owner": 0,
+                    "original_load_date": "",
+                    "class": "not-set",
+                    "division": "",
+                    "username": "",
+                    "id2_info": "",
+                    "n_chunks": 4
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS biodata EAB2056000": {
+        "description": "WGS biodata EAB2056000",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "biodata",
+                    "params": {
+                        "bio_id": [
+                            "EAB2056000"
+                        ]
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|EAB2056000.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:AAADWX|D7C00_05660",
+                            "type": 11
+                        }
+                    ],
+                    "molecule_type": "aa",
+                    "length": 59,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "1016/731181368.1"
+                    },
+                    "tax_id": 28901,
+                    "hash": -987315230,
+                    "gi": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EAB2056000"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobData",
+                    "id": {
+                        "id2_chunk": 999999999,
+                        "id2_info": "1016/731181368.1.0.1"
+                    },
+                    "length": 193781,
+                    "hash": "32A579BBA7F7A6A8",
+                    "preview": "MIChgDGAMICggAIBAQAAoQ=="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobInfo",
+                    "id": {
+                        "id": "1016/731181368.1"
+                    },
+                    "compression": "",
+                    "format": "asn.1",
+                    "storage_size": 0,
+                    "size": 0,
+                    "is_dead": false,
+                    "is_suppressed": false,
+                    "is_withdrawn": false,
+                    "hup_release_date": "",
+                    "owner": 0,
+                    "original_load_date": "",
+                    "class": "not-set",
+                    "division": "",
+                    "username": "",
+                    "id2_info": "1016/731181368.1.0.1",
+                    "n_chunks": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobInfo",
+                    "id": {
+                        "id2_chunk": 999999999,
+                        "id2_info": "1016/731181368.1.0.1"
+                    },
+                    "compression": "",
+                    "format": "asn.1",
+                    "storage_size": 0,
+                    "size": 0,
+                    "is_dead": false,
+                    "is_suppressed": false,
+                    "is_withdrawn": false,
+                    "hup_release_date": "",
+                    "owner": 0,
+                    "original_load_date": "",
+                    "class": "not-set",
+                    "division": "",
+                    "username": "",
+                    "id2_info": "",
+                    "n_chunks": 12
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS biodata EAB2056000 (no WGS proc)": {
+        "description": "WGS biodata EAB2056000 (no WGS proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "biodata",
+                    "params": {
+                        "bio_id": [
+                            "EAB2056000"
+                        ],
+                        "user_args": "disable_processor=WGS"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EAB2056000"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "WGS biodata JRAS01000001 (no Cassandra proc)": {
+        "description": "WGS biodata JRAS01000001 (no Cassandra proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "biodata",
+                    "params": {
+                        "bio_id": [
+                            "JRAS01000001"
+                        ],
+                        "user_args": "disable_processor=Cassandra"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|JRAS01000001.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:JRAS01|297",
+                            "type": 11
+                        },
+                        {
+                            "id": "gi|699058966",
+                            "type": 12
+                        }
+                    ],
+                    "molecule_type": "dna",
+                    "length": 12889,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "1000/69470373.1"
+                    },
+                    "tax_id": 1329640,
+                    "hash": -502653465,
+                    "gi": 699058966
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobData",
+                    "id": {
+                        "id": "1000/69470373.1"
+                    },
+                    "length": 21828,
+                    "hash": "3AC08891D2111C96",
+                    "preview": "oYAwgKOACgEBAACmgDGAtg=="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobInfo",
+                    "id": {
+                        "id": "1000/69470373.1"
+                    },
+                    "compression": "",
+                    "format": "asn.1",
+                    "storage_size": 0,
+                    "size": 0,
+                    "is_dead": false,
+                    "is_suppressed": false,
+                    "is_withdrawn": false,
+                    "hup_release_date": "",
+                    "owner": 0,
+                    "original_load_date": "",
+                    "class": "not-set",
+                    "division": "",
+                    "username": "",
+                    "id2_info": "",
+                    "n_chunks": 2
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS biodata JRAS01000001 (no WGS proc)": {
+        "description": "WGS biodata JRAS01000001 (no WGS proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "biodata",
+                    "params": {
+                        "bio_id": [
+                            "JRAS01000001"
+                        ],
+                        "user_args": "disable_processor=WGS"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "canonical_id": {
+                        "id": "gb|JRAS01000001.1|",
+                        "type": 5
+                    },
+                    "other_ids": [
+                        {
+                            "id": "gnl|WGS:JRAS01|297",
+                            "type": 11
+                        },
+                        {
+                            "id": "gi|699058966",
+                            "type": 12
+                        }
+                    ],
+                    "molecule_type": "dna",
+                    "length": 12889,
+                    "seq_state": 10,
+                    "state": 10,
+                    "blob_id": {
+                        "id": "37.227981207"
+                    },
+                    "tax_id": 1329640,
+                    "hash": -502653465,
+                    "date_changed": "02/17/2023 11:59:29",
+                    "gi": 699058966
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobData",
+                    "id": {
+                        "id": "37.227981207",
+                        "last_modified": 1676635169943
+                    },
+                    "length": 8448,
+                    "hash": "9C81AA4973D49902",
+                    "preview": "eJzVXAl4TGfbnkyQIIsqoQ=="
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BlobInfo",
+                    "id": {
+                        "id": "37.227981207",
+                        "last_modified": 1676635169943
+                    },
+                    "compression": "gzip",
+                    "format": "asn.1",
+                    "storage_size": 8448,
+                    "size": 21843,
+                    "is_dead": false,
+                    "is_suppressed": false,
+                    "is_withdrawn": false,
+                    "hup_release_date": "",
+                    "owner": 63,
+                    "original_load_date": "10/23/2014 16:49:15",
+                    "class": "nuc-prot",
+                    "division": "WGS",
+                    "username": "gbupdate",
+                    "id2_info": "",
+                    "n_chunks": 1
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "WGS biodata JRAS01000001 (no WGS proc, no Cassandra proc)": {
+        "description": "WGS biodata JRAS01000001 (no WGS proc, no Cassandra proc)",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "biodata",
+                    "params": {
+                        "bio_id": [
+                            "JRAS01000001"
+                        ],
+                        "user_args": "disable_processor=WGS&disable_processor=Cassandra"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound",
+                    "errors": [
+                        "No matching processors found"
+                    ]
+                }
+            }
+        ]
     }
 }
