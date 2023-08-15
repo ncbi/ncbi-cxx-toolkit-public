@@ -34,6 +34,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objtools/readers/gff3_location_merger.hpp>
 #include "reader_message_handler.hpp"
+#include <objtools/readers/reader_listener.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
@@ -93,6 +94,11 @@ CGff3LocationRecord::ComparePositions(
     return (lhs.mStart < rhs.mStart);
 }
 
+CGffIdTracker::CGffIdTracker(CReaderListener* pListener)
+    : m_pMessageListener(pListener)
+{
+}
+
 
 //  ============================================================================
 void CGffIdTracker::CheckAndIndexRecord(
@@ -145,12 +151,22 @@ void CGffIdTracker::CheckAndIndexRecord(
     	_ASSERT(!recordList.empty());
     	auto expectedType = recordList.front().mSeqType;
     	if (pendingType != expectedType) {
-        	throw errorDuplicateId;
+            if (m_pMessageListener) {
+                m_pMessageListener->PutMessage(errorDuplicateId);
+            }
+            else {
+        	    throw errorDuplicateId;
+            }
     	}
     	auto pendingSeqId = record.Id();
     	auto expectedSeqId = recordList.front().mSeqId;
     	if (pendingSeqId != expectedSeqId) {
-        	throw errorDuplicateId;
+            if (m_pMessageListener) {
+                m_pMessageListener->PutMessage(errorDuplicateId);
+            } 
+            else {
+        	    throw errorDuplicateId;
+            }
     	}
 	}
     if (!parentId.empty()) {
@@ -173,7 +189,12 @@ void CGffIdTracker::CheckIntegrity()
                 0,
                 string("Bad data line: Parent \"" + parentId + 
                     "\" does not refer to a GFF3 record ID"));
-            throw errorBadParentId;
+            if (m_pMessageListener) {
+                m_pMessageListener->PutMessage(errorBadParentId);
+            }
+            else {
+                throw errorBadParentId;
+            }
         }
     }
 }
@@ -183,10 +204,13 @@ void CGffIdTracker::CheckIntegrity()
 CGff3LocationMerger::CGff3LocationMerger(
     unsigned int flags,
     CGff3ReadRecord::SeqIdResolver idResolver,
-    TSeqPos sequenceSize):
+    TSeqPos sequenceSize,
+    CReaderListener* pListener):
 //  ============================================================================
     mFlags(flags),
-    mIdResolver(idResolver)
+    mIdResolver(idResolver),
+    mIdTracker(pListener),
+    m_pMessageListener(pListener)
 {
 }
 
@@ -213,7 +237,11 @@ CGff3LocationMerger::VerifyRecordLocation(
             eDiag_Error,
             0,
             message);
-        throw error;
+        if (m_pMessageListener) {
+            m_pMessageListener->PutMessage(error);    
+        } else {
+            throw error;
+        }
     }
     // (2) no longer than sequence itself:
     if (record.SeqStop() - record.SeqStart() >= seqSize) {
@@ -223,7 +251,11 @@ CGff3LocationMerger::VerifyRecordLocation(
             eDiag_Error,
             0,
             message);
-        throw error;
+        if (m_pMessageListener) {
+            m_pMessageListener->PutMessage(error);
+        } else {
+            throw error;
+        }
     }
 }
 

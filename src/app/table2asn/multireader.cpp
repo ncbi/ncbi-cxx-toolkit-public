@@ -72,6 +72,7 @@
 #include <objtools/readers/aln_reader.hpp>
 
 #include <objtools/readers/format_guess_ex.hpp>
+#include <objtools/readers/reader_listener.hpp>
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
@@ -967,7 +968,9 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
     flags |= CGff3Reader::fRetainLocusIds;
     flags |= CGff3Reader::fGeneXrefs;
     flags |= CGff3Reader::fAllIdsAsLocal;
-    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
+
+    CReaderListener readerListener;
+    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle, CReadUtil::AsSeqId, &readerListener);
 
     CStreamLineReader lr(instream);
     TAnnots annots;
@@ -975,10 +978,15 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
     reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
     m_gff3_merger = reader.GetLocationMerger();
     mAtSequenceData = reader.AtSequenceData();
-
+   
     if (post_process) {
         x_PostProcessAnnots(annots);
     }
+  
+    for (const auto& msg : readerListener) {
+        m_context.m_logger->PutMessage(msg);
+    }
+    
     return annots;
 }
 

@@ -1029,7 +1029,8 @@ void CMultiReaderApp::xProcessGff3(
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
-    CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle,
+                       CReadUtil::AsSeqId, &newStyleMessageListener);
     if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
