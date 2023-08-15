@@ -767,6 +767,10 @@ void SimplifyBioseqForCD(CBioseq& bioseq, const vector<string>& keptComments, bo
         }
     }
 
+    if(bioseq.GetDescr().Get().size() == 0){
+        bioseq.ResetDescr();
+    }
+    
     // reset annot field
     bioseq.ResetAnnot();   
 }
