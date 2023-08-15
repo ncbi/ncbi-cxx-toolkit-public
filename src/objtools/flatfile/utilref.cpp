@@ -153,7 +153,7 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
                 last.resize(i);
                 NStr::TruncateSpacesInPlace(s);
                 if (! s.empty())
-                    name.SetFirst(move(s));
+                    name.SetFirst(std::move(s));
             }
         }
 
