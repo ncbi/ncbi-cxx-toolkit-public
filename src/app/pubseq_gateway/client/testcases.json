@@ -1,6 +1,4 @@
 {
-    "timeout": 10,
-
     "Admin status": {
         "description": "Admin status",
         "requests": [
@@ -196,7 +194,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'seq_id_type' value must be >= 0 and less than 21"
+                        "The 'seq_id_type' value must be >= 0 and < 21"
                     ]
                 }
             }
@@ -3110,7 +3108,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Mandatory parameter 'blob_id' is not found."
+                        "Mandatory 'blob_id' parameter is not found."
                     ]
                 }
             }
@@ -3262,7 +3260,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Malformed 'last_modified' parameter. Expected an integer"
+                        "Error converting 'last_modified' parameter to integer (received value: '')"
                     ]
                 }
             }
@@ -3292,7 +3290,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Malformed 'last_modified' parameter. Expected an integer"
+                        "Error converting 'last_modified' parameter to integer (received value: 'invalid')"
                     ]
                 }
             }
@@ -3808,7 +3806,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'seq_id_type' value must be >= 0 and less than 21"
+                        "The 'seq_id_type' value must be >= 0 and < 21"
                     ]
                 }
             }
@@ -10112,7 +10110,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'seq_id_type' value must be >= 0 and less than 21"
+                        "The 'seq_id_type' value must be >= 0 and < 21"
                     ]
                 }
             }
@@ -10561,7 +10559,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Missing alert parameter"
+                        "Missing the 'alert' parameter"
                     ]
                 }
             }
@@ -10588,7 +10586,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Missing username parameter"
+                        "Missing the 'username' parameter"
                     ]
                 }
             }
@@ -10705,7 +10703,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Invalid 'id2_chunk' parameter. Expected >= 0"
+                        "Invalid 'id2_chunk' parameter value. It must be >= 0"
                     ]
                 }
             }
@@ -14273,7 +14271,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Invalid 'hops' value -1. It must be > 0."
+                        "Invalid 'hops' parameter value -1. It must be > 0."
                     ]
                 }
             }
@@ -14306,7 +14304,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'hops' value 500 exceeds the server configured value 2."
+                        "The 'hops' parameter value 500 exceeds the server configured value 2."
                     ]
                 }
             }
@@ -21288,7 +21286,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "Invalid 'resend_timeout' value -9.400000. It must be >= 0.0"
+                        "Invalid 'resend_timeout' parameter value -9.400000. It must be >= 0.0"
                     ]
                 }
             }
@@ -22374,7 +22372,7 @@
                     "reply": "IpgInfo",
                     "status": "NotFound",
                     "errors": [
-                        "No IPG info found for criteria: ipg: 1111111111; protein: <not set>; nucleotide: <not set>"
+                        "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"
                     ]
                 }
             },
@@ -22410,7 +22408,7 @@
                     "reply": "IpgInfo",
                     "status": "NotFound",
                     "errors": [
-                        "No IPG info found for criteria: ipg: <not set>; protein: 1111111111; nucleotide: <not set>"
+                        "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
                     ]
                 }
             },
@@ -22482,7 +22480,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'ipg' value must be > 0"
+                        "The 'ipg' parameter value must be > 0"
                     ]
                 }
             }
@@ -22575,7 +22573,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'time_series' is malformed. One or more items do not have a second value."
+                        "The 'time_series' parameter is malformed. One or more items do not have a second value."
                     ]
                 }
             }
@@ -22602,7 +22600,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'time_series' is malformed. The item which descibes the rest of the series is not found."
+                        "The 'time_series' parameter is malformed. The item which descibes the rest of the series is not found."
                     ]
                 }
             }
@@ -22629,7 +22627,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'time_series' is malformed. One or more last minute <= than the previous one"
+                        "The 'time_series' parameter is malformed. One or more last minute <= than the previous one"
                     ]
                 }
             }
@@ -22656,7 +22654,7 @@
                 "result": {
                     "status": "Error",
                     "errors": [
-                        "The 'time_series' is malformed. The range 0-17 is not divisable by aggregation of 7"
+                        "The 'time_series' parameter is malformed. The range 0-17 is not divisable by aggregation of 7"
                     ]
                 }
             }
@@ -22691,6 +22689,1006 @@
                     "errors": [
                         "Malformed 'snp_scale_limit' parameter. Acceptable values are 'chromosome' and 'contig' and 'supercontig' and 'unit'."
                     ]
+                }
+            }
+        ]
+    },
+    "IPG invalid seq_id_resolve": {
+        "description": "IPG invalid seq_id_resolve",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "ipg": 111,
+                        "user_args": "seq_id_resolve=true"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Error",
+                    "errors": [
+                        "Malformed 'seq_id_resolve' parameter. Acceptable values are 'yes' and 'no'."
+                    ]
+                }
+            }
+        ]
+    },
+    "IPG gi gi good": {
+        "description": "IPG gi gi good",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "1950564459",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG gi gi good 2": {
+        "description": "IPG gi gi good 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "1950564459",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG gi non gi good": {
+        "description": "IPG gi non gi good",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "NZ_JAEFCF010000002.1",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG gi non gi good 2": {
+        "description": "IPG gi non gi good 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "NZ_JAEFCF010000002.1",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG non gi gi good": {
+        "description": "IPG gi non gi good",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266.1",
+                        "nucleotide": "1950564459",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG non gi gi good 2": {
+        "description": "IPG gi non gi good 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266.1",
+                        "nucleotide": "1950564459",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG gi gi no data": {
+        "description": "IPG gi gi no data",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "494005967",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi gi no data 2": {
+        "description": "IPG gi gi no data 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "494005967",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi non gi no data": {
+        "description": "IPG gi non gi no data",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "NCBI_GENOMES|1014658",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi non gi non data 2": {
+        "description": "IPG gi non gi non data 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "NCBI_GENOMES|1014658",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi gi no data": {
+        "description": "IPG non gi gi no data",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "494005967",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi gi no data 2": {
+        "description": "IPG non gi gi no data 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "494005967",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi non gi good": {
+        "description": "IPG non gi non gi good",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "NZ_JAEFCF010000002",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG non gi non gi good 2": {
+        "description": "IPG non gi non gi good 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "NZ_JAEFCF010000002",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG non gi non gi no data": {
+        "description": "IPG non gi non gi no data",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "NZ_CAVJ000000000",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi non gi no data 2": {
+        "description": "IPG non gi non gi no data 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "NZ_CAVJ000000000",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi gi no resolve": {
+        "description": "IPG gi gi no resolve",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "4147483647",
+                        "nucleotide": "4147483648",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id 4147483647"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi gi no resolve 2": {
+        "description": "IPG gi gi no resolve 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "4147483647",
+                        "nucleotide": "4147483648",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id 4147483647"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi non gi no resolve": {
+        "description": "IPG non gi non gi no resolve",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "EGB0709986.2",
+                        "nucleotide": "AAVJDV010000007.2",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EGB0709986.2"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi non gi no resolve 2": {
+        "description": "IPG non gi non gi no resolve 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "EGB0709986.2",
+                        "nucleotide": "AAVJDV010000007.2",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id EGB0709986.2"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi non gi no resolve": {
+        "description": "IPG gi non gi no resolve",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "4147483647",
+                        "nucleotide": "NZ_CAVJ000000000",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id 4147483647"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG gi non gi no resolve 2": {
+        "description": "IPG gi non gi no resolve 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "4147483647",
+                        "nucleotide": "NZ_CAVJ000000000",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id 4147483647"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi gi no resolve": {
+        "description": "IPG non gi gi no resolve",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "4147483648",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id 4147483648"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG non gi gi no resolve 2": {
+        "description": "IPG non gi gi no resolve 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "WP_198835266",
+                        "nucleotide": "4147483648",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "BioseqInfo",
+                    "status": "NotFound",
+                    "errors": [
+                        "Could not resolve seq_id 4147483648"
+                    ]
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "NotFound"
+                }
+            }
+        ]
+    },
+    "IPG two fetches good": {
+        "description": "IPG two fetches good",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "NZ_JAEFCF010000002",
+                        "user_args": "seq_id_resolve=yes"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
+                }
+            }
+        ]
+    },
+    "IPG two fetches good 2": {
+        "description": "IPG two fetches good 2",
+        "requests": [
+            [
+                {
+                    "jsonrpc": "2.0",
+                    "method": "ipg_resolve",
+                    "params": {
+                        "protein": "1950560271",
+                        "nucleotide": "NZ_JAEFCF010000002",
+                        "user_args": "seq_id_resolve=yes&use_cache=no"
+                    },
+                    "id": "resolve_1"
+                }
+            ]
+        ],
+        "response": [
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "reply": "IpgInfo",
+                    "protein": "WP_198835266.1",
+                    "ipg": 387437790,
+                    "nucleotide": "NZ_JAEFCF010000002.1",
+                    "tax_id": 2779367,
+                    "gb_state": 0
+                }
+            },
+            {
+                "jsonrpc": "2.0",
+                "id": "resolve_1",
+                "result": {
+                    "status": "Success"
                 }
             }
         ]
