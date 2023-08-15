@@ -975,15 +975,20 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
     CStreamLineReader lr(instream);
     TAnnots annots;
 
-    reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
-    m_gff3_merger = reader.GetLocationMerger();
-    mAtSequenceData = reader.AtSequenceData();
+    try {
+        reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
+        m_gff3_merger = reader.GetLocationMerger();
+        mAtSequenceData = reader.AtSequenceData();
    
-    if (post_process) {
-        x_PostProcessAnnots(annots);
-    }
+        if (post_process) {
+            x_PostProcessAnnots(annots);
+        }
   
-    for (const auto& msg : readerListener) {
+        for (const auto& msg : readerListener) {
+            m_context.m_logger->PutMessage(msg);
+        }
+    }
+    catch (const CReaderMessage& msg) {
         m_context.m_logger->PutMessage(msg);
     }
     
@@ -1491,9 +1496,13 @@ CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream)
     CGtfReader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
     TAnnots annots;
-    reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
-
-    x_PostProcessAnnots(annots);
+    try {
+        reader.ReadSeqAnnots(annots, lr, m_context.m_logger);
+        x_PostProcessAnnots(annots);
+    }
+    catch (CReaderMessage& msg) {
+        m_context.m_logger->PutMessage(msg);
+    }
 
     return annots;
 }
