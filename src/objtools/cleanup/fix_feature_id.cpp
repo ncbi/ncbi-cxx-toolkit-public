@@ -149,7 +149,8 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
     }
 }
 
-
+//LCOV_EXCL_START
+// Exercised by test_fix_feature_ids
 void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats)
 {
     TId offset = 0;
@@ -163,6 +164,7 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handl
         }
     }
 }
+//LCOV_EXCL_STOP
 
 void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse)
 {
@@ -186,6 +188,9 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse)
     }
 }
 
+//LCOV_EXCL_START
+// The following 2 methods are exercised in test_fix_feature_ids.
+//
 // This function maps existing feature ids to the sequential ints - 1,2,3,...
 void CFixFeatureId::s_MakeIDPairs(const CSeq_entry_Handle& entry, map<TId,TId> &id_pairs)
 {
@@ -261,5 +266,6 @@ void CFixFeatureId::s_ReassignFeatureIds(const CSeq_entry_Handle& entry, map<CSe
        }
     }
 }
+//LCOV_EXCL_STOP
 
 END_NCBI_SCOPE
