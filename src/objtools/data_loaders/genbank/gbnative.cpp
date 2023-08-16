@@ -94,9 +94,9 @@ NCBI_PARAM_DEF_EX(string, GENBANK, WRITER_NAME, "",
 typedef NCBI_PARAM_TYPE(GENBANK, WRITER_NAME) TGenbankWriterName;
 
 #if defined(HAVE_PUBSEQ_OS)
-static const char* const DEFAULT_DRV_ORDER = "ID2:PUBSEQOS:ID1";
+static const char* const DEFAULT_DRV_ORDER = "id2:pubseqos";
 #else
-static const char* const DEFAULT_DRV_ORDER = "ID2:ID1";
+static const char* const DEFAULT_DRV_ORDER = "id2";
 #endif
 
 #define GBLOADER_NAME "GBLOADER"
