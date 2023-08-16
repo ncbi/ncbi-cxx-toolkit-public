@@ -5,5 +5,8 @@
     "errors": [
         "Blob 4.9994804 properties are not found (last modified: 1146697225362)"
     ]
+},
+{
+    "status": "NotFound"
 }
 ]
