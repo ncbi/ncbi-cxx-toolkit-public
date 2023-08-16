@@ -2275,6 +2275,13 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 CArgDescriptions::eString);
 	// Disable Tax ID resoution to the descendants
         arg_desc.AddFlag(kArgNoTaxIdExpansion, "Do not expand the taxonomy IDs provided to their descendant taxonomy IDs ", true);
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgSubject );
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgSubjectLocation );
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgWindowMaskerTaxId);
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgGiList );
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgSeqIdList );
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgNegativeGiList );
+	arg_desc.SetDependency(kArgNoTaxIdExpansion,CArgDescriptions::eExcludes, kArgNegativeSeqidList );
 
         if (m_SupportIPGFiltering) {
             arg_desc.AddOptionalKey(kArgIpgList, "filename",
