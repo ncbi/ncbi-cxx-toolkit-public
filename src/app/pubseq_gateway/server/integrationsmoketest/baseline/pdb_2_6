@@ -5,5 +5,8 @@
     "errors": [
         "Could not resolve seq_id 1vu9|aa"
     ]
+},
+{
+    "status": "NotFound"
 }
 ]

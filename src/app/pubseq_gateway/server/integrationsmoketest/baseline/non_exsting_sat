@@ -5,5 +5,8 @@
     "errors": [
         "Cassandra-getblob processor failed to map sat 999 to a Cassandra keyspace"
     ]
+},
+{
+    "status": "NotFound"
 }
 ]

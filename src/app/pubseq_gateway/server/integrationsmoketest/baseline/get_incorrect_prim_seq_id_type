@@ -5,5 +5,8 @@
     "errors": [
         "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
     ]
+},
+{
+    "status": "NotFound"
 }
 ]

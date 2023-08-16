@@ -2,7 +2,7 @@
 {
     "status": "Error",
     "errors": [
-        "The 'seq_id_type' value must be >= 0 and less than 21"
+        "The 'seq_id_type' value must be >= 0 and < 21"
     ]
 }
 ]
