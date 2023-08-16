@@ -123,7 +123,8 @@ TESTS="pdb_1_5 pdb_1_6 pdb_2_5 pdb_2_6 pdb_3_5 pdb_3_6 pdb_4_5 pdb_4_6
        invalid_primary_seq_id non_exsting_sat get_non_existing_seq_id
        get_incorrect_sec_seq_id_type get_incorrect_prim_seq_id_type
        get_na_two_valid_annot get_na_one_of_two_valid_annot get_na_one_valid_annot
-       get_na_two_valid_annot_sep1 get_na_two_valid_annot_sep2 get_na_two_valid_annot_sep3"
+       get_na_two_valid_annot_sep1 get_na_two_valid_annot_sep2 get_na_two_valid_annot_sep3
+       get_na_two_valid_annot_dup get_na_two_valid_annot_dup2"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     curl "${curl_https}" -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | sed -e 's/\r$//' | grep . | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed -r 's/&n_chunks=[0-9]+//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort | uniq > $ofile
     exit 0

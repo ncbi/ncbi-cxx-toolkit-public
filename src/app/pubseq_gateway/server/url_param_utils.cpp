@@ -747,13 +747,34 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
     }
 
     names.clear();
-    NStr::Split(names_param.m_Value, ", ", names, NStr::fSplit_Tokenize);
+
+    vector<string>      raw_names;
+    NStr::Split(names_param.m_Value, ", ", raw_names, NStr::fSplit_Tokenize);
+
+    // Filter out those names which repeated more than once
+    for (const auto &  raw_item : raw_names) {
+        if (!raw_item.empty()) {
+            bool    found = false;
+            for (const auto &  good_item : names) {
+                if (NStr::CompareNocase(raw_item, good_item) == 0) {
+                    PSG_WARNING("The annotation name " + raw_item +
+                                " is found in the list of names more than once "
+                                "(case insensitive). The duplicates are ignored.");
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                names.push_back(raw_item);
+            }
+        }
+    }
+
     if (names.empty()) {
         x_MalformedArguments(reply, now,
                              "Named annotation names are not found in the request");
         return false;
     }
-
     return true;
 }
 
