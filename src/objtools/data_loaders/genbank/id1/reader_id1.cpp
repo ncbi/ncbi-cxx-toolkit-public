@@ -129,6 +129,7 @@ enum EDebugLevel
 CId1Reader::CId1Reader(int max_connections)
     : m_Connector(DEFAULT_SERVICE)
 {
+    ERR_POST_X_ONCE(2, "This app is using OM++ ID1 reader which is being phased out. Please switch to using ID2 or PSG.");
     SetMaximumConnections(max_connections, DEFAULT_NUM_CONN);
 }
 
@@ -136,6 +137,7 @@ CId1Reader::CId1Reader(int max_connections)
 CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
                        const string& driver_name)
 {
+    ERR_POST_X_ONCE(2, "This app is using OM++ ID1 reader which is being phased out. Please switch to using ID2 or PSG.");
     CConfig conf(params);
     string service_name = conf.GetString(
         driver_name,
