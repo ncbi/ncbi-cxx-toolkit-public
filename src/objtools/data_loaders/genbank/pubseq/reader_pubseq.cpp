@@ -159,6 +159,7 @@ CPubseqReader::CPubseqReader(int max_connections,
       m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
       m_SetCubbyUser(false)
 {
+    LOG_POST_X_ONCE(1, "This app is using OM++ PubSeqOS reader which is being phased out. Please switch to using ID2 or PSG.");
     if ( m_Server.empty() ) {
         m_Server = DEFAULT_DB_SERVER;
     }
@@ -191,6 +192,7 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
       m_ExclWGSMaster(DEFAULT_EXCL_WGS_MASTER),
       m_SetCubbyUser(false)
 {
+    LOG_POST_X_ONCE(1, "This app is using OM++ PubSeqOS reader which is being phased out. Please switch to using ID2 or PSG.");
     CConfig conf(params);
     m_Server = conf.GetString(
         driver_name,
