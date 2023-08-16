@@ -754,17 +754,11 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
     // Filter out those names which repeated more than once
     for (const auto &  raw_item : raw_names) {
         if (!raw_item.empty()) {
-            bool    found = false;
-            for (const auto &  good_item : names) {
-                if (NStr::CompareNocase(raw_item, good_item) == 0) {
-                    PSG_WARNING("The annotation name " + raw_item +
-                                " is found in the list of names more than once "
-                                "(case insensitive). The duplicates are ignored.");
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
+            if (find(names.begin(), names.end(), raw_item) != names.end()) {
+                PSG_WARNING("The annotation name " + raw_item +
+                            " is found in the list of names more than once "
+                            "(case sensitive). The duplicates are ignored.");
+            } else {
                 names.push_back(raw_item);
             }
         }
