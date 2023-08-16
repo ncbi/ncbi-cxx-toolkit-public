@@ -747,12 +747,13 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
     }
 
     names.clear();
-    NStr::Split(names_param.m_Value, ",", names);
+    NStr::Split(names_param.m_Value, ", ", names, NStr::fSplit_Tokenize);
     if (names.empty()) {
         x_MalformedArguments(reply, now,
                              "Named annotation names are not found in the request");
         return false;
     }
+
     return true;
 }
 
