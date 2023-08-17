@@ -438,7 +438,7 @@ int CAgpRow::FromString(const string& line)
         NStr::Split(line.substr(0, pcomment), "\t", cols);
     }
     else {
-      int pos=line.size();
+      SIZE_TYPE pos=line.size();
       if(pos == 0) {
           m_AgpErr->Msg(CAgpErr::E_EmptyLine);
           return CAgpErr::E_EmptyLine;
@@ -1628,7 +1628,7 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 
     m_line_num_pp = m_line_num_prev; m_line_num_prev = line_num;
     m_line_pp     = m_line_prev    ; m_line_prev     = s;
-    m_filenum_pp  = m_filenum_prev ; m_filenum_prev  = m_InputFiles.size()-1;
+    m_filenum_pp  = m_filenum_prev ; m_filenum_prev  = GetFileNum()-1;
 
     if(invalid_line) {
         m_lines_skipped++;
@@ -1640,7 +1640,7 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 void CAgpErrEx::StartFile(const string& s)
 {
     // might need to set it here in case some file is empty and LineDone() is never called
-    m_filenum_pp=m_filenum_prev; m_filenum_prev=m_InputFiles.size()-1;
+    m_filenum_pp = m_filenum_prev; m_filenum_prev = GetFileNum()-1;
     m_filename=s;
     m_InputFiles.push_back(s);
 }
