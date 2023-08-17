@@ -44,25 +44,25 @@ public:
     CModData() = default;
 
     template<typename _T1, typename _T2>
-    CModData(_T1&& name, _T2&& value): m_name{forward<_T1>(name)}, m_value{forward<_T2>(value)}
+    CModData(_T1&& name, _T2&& value) : m_name{ std::forward<_T1>(name) }, m_value{ std::forward<_T2>(value) }
     {
     }
 
     template<typename _T>
     void SetName(_T&& name)
     {
-        m_name = forward<_T>(name);
+        m_name = std::forward<_T>(name);
     }
 
     template<typename _T>
     void SetValue(_T&& value)
     {
-        m_value = forward<_T>(value);
+        m_value = std::forward<_T>(value);
     }
     template<typename _T>
     void SetAttrib(_T&& attrib)
     {
-        m_attrib = forward<_T>(attrib);
+        m_attrib = std::forward<_T>(attrib);
     }
     bool IsSetAttrib(void) const
     {
