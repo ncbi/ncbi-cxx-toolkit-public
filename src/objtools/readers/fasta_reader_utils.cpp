@@ -130,7 +130,7 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
     has_range   = data.has_range;
     range_start = data.range_start;
     range_end   = data.range_end;
-    titles  = move(data.titles);
+    titles      = std::move(data.titles);
 }
 
 void CFastaDeflineReader::ParseDefline(const CTempString& defline,

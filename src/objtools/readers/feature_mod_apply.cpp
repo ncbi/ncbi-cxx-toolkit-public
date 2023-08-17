@@ -130,7 +130,7 @@ bool CFeatModApply::x_TryProtRefMod(const TModEntry& mod_entry)
         for (const auto& mod : mod_entry.second) {
             names.push_back(mod.GetValue());
         }
-        x_SetProtein().SetData().SetProt().SetName() = move(names);
+        x_SetProtein().SetData().SetProt().SetName() = std::move(names);
         return true;
     }
 
@@ -140,7 +140,7 @@ bool CFeatModApply::x_TryProtRefMod(const TModEntry& mod_entry)
         for (const auto& mod : mod_entry.second) {
             ec_numbers.push_back(mod.GetValue());
         }
-        x_SetProtein().SetData().SetProt().SetEc() = move(ec_numbers);
+        x_SetProtein().SetData().SetProt().SetEc() = std::move(ec_numbers);
         return true;
     }
 
@@ -150,7 +150,7 @@ bool CFeatModApply::x_TryProtRefMod(const TModEntry& mod_entry)
         for (const auto& mod : mod_entry.second) {
             activity.push_back(mod.GetValue());
         }
-        x_SetProtein().SetData().SetProt().SetActivity() = move(activity);
+        x_SetProtein().SetData().SetProt().SetActivity() = std::move(activity);
         return true;
     }
     return false;
