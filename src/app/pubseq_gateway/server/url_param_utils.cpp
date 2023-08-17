@@ -405,6 +405,27 @@ CPubseqGatewayApp::x_GetResolveFlags(CHttpRequest &  req,
 
 
 bool
+CPubseqGatewayApp::x_GetId2Info(CHttpRequest &  req,
+                                shared_ptr<CPSGS_Reply>  reply,
+                                const psg_time_point_t &  now,
+                                string &  id2_info)
+{
+    static string   kId2InfoParam = "id2_info";
+
+    SRequestParameter   id2_info_param = x_GetParam(req, kId2InfoParam);
+    if (!id2_info_param.m_Found)
+    {
+        x_InsufficientArguments(reply, now, "Mandatory parameter '" +
+                                kId2InfoParam + "' is not found.");
+        return false;
+    }
+
+    id2_info = id2_info_param.m_Value;
+    return true;
+}
+
+
+bool
 CPubseqGatewayApp::x_GetId2Chunk(CHttpRequest &  req,
                                  shared_ptr<CPSGS_Reply>  reply,
                                  const psg_time_point_t &  now,

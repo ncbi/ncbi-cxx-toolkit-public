@@ -60,7 +60,6 @@ static string  kLogParam = "log";
 static string  kUsernameParam = "username";
 static string  kAlertParam = "alert";
 static string  kResetParam = "reset";
-static string  kId2InfoParam = "id2_info";
 static string  kMostRecentTimeParam = "most_recent_time";
 static string  kMostAncientTimeParam = "most_ancient_time";
 static string  kHistogramNamesParam = "histogram_names";
@@ -162,20 +161,20 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_BadUrlPath);
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         } catch (const exception &  exc) {
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Exception when handling a bad URL event: " +
                         string(exc.what()));
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
-        } catch (...) {
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+        } catch (...) {
             x_Finish500(reply, now, ePSGS_BadURL,
                         "Unknown exception when handling a bad URL event");
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
+            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
         }
     }
     return 0;
@@ -476,7 +475,6 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
         }
 
@@ -569,19 +567,14 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
         }
 
-        SRequestParameter   id2_info_param = x_GetParam(req, kId2InfoParam);
-        if (!id2_info_param.m_Found)
-        {
-            x_InsufficientArguments(reply, now, "Mandatory parameter '" +
-                                    kId2InfoParam + "' is not found.");
+        string              id2_info;
+        if (!x_GetId2Info(req, reply, now, id2_info)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
             return 0;
         }
 
@@ -596,7 +589,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         // All parameters are good
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
-                        id2_chunk_value, id2_info_param.m_Value,
+                        id2_chunk_value, id2_info,
                         use_cache, hops, trace, processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
@@ -1620,8 +1613,6 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                     msg += "User: " + username;
                 PSG_MESSAGE(msg);
 
-                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
-                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
                 x_SendMessageAndCompletionChunks(
                         reply, now, "Invalid timeout (must be a positive integer)",
                         CRequestStatus::e400_BadRequest,
@@ -1629,6 +1620,8 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
                 x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                    CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
+                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
                 return 0;
             }
         }
@@ -2053,9 +2046,9 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                                        CPSGS_Request::ePSGS_UnknownRequest,
                                        CRequestStatus::e400_BadRequest,
                                        reply->GetBytesSent());
+                    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+                    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
                 }
-                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
-                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
                 return 0;
             }
         } else {
@@ -2068,9 +2061,9 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
                 x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                    CRequestStatus::e400_BadRequest,
                                    reply->GetBytesSent());
+                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+                m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
             }
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
-            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
             return 0;
         }
 
@@ -2080,11 +2073,12 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
         // true: persistent
         reply->SendOk(m_IOTestBuffer.get(), data_size, true);
 
-        if (need_log)
+        if (need_log) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e200_Ok,
                                reply->GetBytesSent());
-        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_TestIORequest);
+            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_TestIORequest);
+        }
     } catch (const exception &  exc) {
         x_Finish500(reply, now, ePSGS_TestIOError,
                     "Exception when handling a test io request: " +

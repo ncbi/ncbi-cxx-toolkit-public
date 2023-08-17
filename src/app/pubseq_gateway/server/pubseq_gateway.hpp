@@ -348,6 +348,10 @@ private:
                        shared_ptr<CPSGS_Reply>  reply,
                        const psg_time_point_t &  now,
                        int64_t &  id2_chunk);
+    bool x_GetId2Info(CHttpRequest &  req,
+                      shared_ptr<CPSGS_Reply>  reply,
+                      const psg_time_point_t &  now,
+                      string &  id2_info);
     vector<string> x_GetExcludeBlobs(CHttpRequest &  req) const;
     bool x_GetAccessionSubstitutionOption(CHttpRequest &  req,
                                           shared_ptr<CPSGS_Reply>  reply,
