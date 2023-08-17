@@ -321,7 +321,7 @@ void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
         if (mod.IsSetAttrib()) {
             pSubSource->SetAttrib(mod.GetAttrib());
         }
-        m_pDescrCache->SetSubtype().push_back(move(pSubSource));
+        m_pDescrCache->SetSubtype().push_back(std::move(pSubSource));
     }
 }
 
@@ -345,7 +345,7 @@ static void s_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_s
         else {
             auto pPrimer = Ref(new CPCRPrimer());
             pPrimer->SetName().Set(names[i]);
-            primer_set.Set().push_back(move(pPrimer));
+            primer_set.Set().push_back(std::move(pPrimer));
         }
     }
 }
@@ -370,7 +370,7 @@ static void s_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set
         else {
             auto pPrimer = Ref(new CPCRPrimer());
             pPrimer->SetSeq().Set(seqs[i]);
-            primer_set.Set().push_back(move(pPrimer));
+            primer_set.Set().push_back(std::move(pPrimer));
         }
     }
 }
@@ -421,7 +421,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             if (it == pcr_reaction_set.Set().end()) {
                 auto pPCRReaction = Ref(new CPCRReaction());
                 s_SetPrimerNames(reaction_names, pPCRReaction->SetForward());
-                pcr_reaction_set.Set().push_back(move(pPCRReaction));
+                pcr_reaction_set.Set().push_back(std::move(pPCRReaction));
             }
             else {
                 s_SetPrimerNames(reaction_names, (*it++)->SetForward());
@@ -443,7 +443,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             if (it == pcr_reaction_set.Set().end()) {
                 auto pPCRReaction = Ref(new CPCRReaction());
                 s_SetPrimerSeqs(reaction_seqs, pPCRReaction->SetForward());
-                pcr_reaction_set.Set().push_back(move(pPCRReaction));
+                pcr_reaction_set.Set().push_back(std::move(pPCRReaction));
             }
             else {
                 s_SetPrimerSeqs(reaction_seqs, (*it++)->SetForward());
@@ -479,7 +479,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
                 for (auto i=num_reactions; i<num_names; ++i) {
                     auto pPCRReaction = Ref(new CPCRReaction());
                     s_SetPrimerNames(names[i], pPCRReaction->SetReverse());
-                    pcr_reaction_set.Set().push_back(move(pPCRReaction));
+                    pcr_reaction_set.Set().push_back(std::move(pPCRReaction));
                 }
             }
         }
@@ -512,7 +512,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
                 for (auto i=num_reactions; i<num_seqs; ++i) {
                     auto pPCRReaction = Ref(new CPCRReaction());
                     s_SetPrimerSeqs(seqs[i], pPCRReaction->SetReverse());
-                    pcr_reaction_set.Set().push_back(move(pPCRReaction));
+                    pcr_reaction_set.Set().push_back(std::move(pPCRReaction));
                 }
             }
         }
@@ -591,7 +591,7 @@ void CDescrModApply::x_SetDBxref(const TModEntry& mod_entry)
        auto pDbtag = Ref(new CDbtag());
        pDbtag->SetDb(database);
        pDbtag->SetTag().SetStr(tag);
-       dbtags.push_back(move(pDbtag));
+       dbtags.push_back(std::move(pDbtag));
    }
 
    m_pDescrCache->SetBioSource().SetOrg().SetDb() = dbtags;
@@ -658,7 +658,7 @@ void CDescrModApply::x_SetOrgMod(const TModEntry& mod_entry)
         if (mod.IsSetAttrib()) {
             pOrgMod->SetAttrib(mod.GetAttrib());
         }
-        m_pDescrCache->SetOrgMods().push_back(move(pOrgMod));
+        m_pDescrCache->SetOrgMods().push_back(std::move(pOrgMod));
     }
 }
 
@@ -815,7 +815,7 @@ void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry)
         auto pSubfield = Ref(new CUser_field());
         pSubfield->SetLabel().SetStr("accession");
         pSubfield->SetData().SetStr(accession);
-        pField->SetData().SetFields().push_back(move(pSubfield));
+        pField->SetData().SetFields().push_back(std::move(pSubfield));
         return pField;
     };
 
@@ -938,7 +938,7 @@ void CDescrModApply::x_SetPMID(const TModEntry& mod_entry)
         m_pDescrCache->SetPubdesc()
                       .SetPub()
                       .Set()
-                      .push_back(move(pPub));
+                      .push_back(std::move(pPub));
     }
 }
 

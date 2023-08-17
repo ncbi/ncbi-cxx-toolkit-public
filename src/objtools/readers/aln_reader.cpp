@@ -856,7 +856,7 @@ void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq)
     }
     auto pDesc = Ref(new CSeqdesc());
     pDesc->SetTitle() = title;
-    bioseq.SetDescr().Set().push_back(move(pDesc));
+    bioseq.SetDescr().Set().push_back(std::move(pDesc));
 }
 
 
