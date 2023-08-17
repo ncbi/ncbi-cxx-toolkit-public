@@ -319,7 +319,7 @@ void CModHandler::AddMods(const TModList& mods,
         rejected_mods.splice(rejected_mods.end(), conflicts.second);
     }
 
-    x_SaveMods(move(accepted_mods), handle_existing, m_Mods);
+    x_SaveMods(std::move(accepted_mods), handle_existing, m_Mods);
 }
 
 
@@ -344,10 +344,10 @@ void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMod
             if (x_MultipleValuesAllowed(canonical_name)){
                 dest_mod_list.splice(
                         dest_mod_list.end(),
-                        move(mod_entry.second));
+                    std::move(mod_entry.second));
             }
             else {
-                dest_mod_list = move(mod_entry.second);
+                dest_mod_list = std::move(mod_entry.second);
             }
         }
     }
@@ -357,13 +357,13 @@ void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMod
             const auto& canonical_name = mod_entry.first;
             auto& dest_mod_list = dest[canonical_name];
             if (dest_mod_list.empty()) {
-                dest_mod_list = move(mod_entry.second);
+                dest_mod_list = std::move(mod_entry.second);
             }
             else
             if (x_MultipleValuesAllowed(canonical_name)){
                 dest_mod_list.splice(
                         dest_mod_list.end(),
-                        move(mod_entry.second));
+                    std::move(mod_entry.second));
             }
         }
     }
@@ -695,7 +695,7 @@ void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
     transform(id_list.begin(), id_list.end(), back_inserter(secondary_ids),
             [](const string& id_string) { return Ref(new CSeq_id(id_string)); });
 
-    seq_inst.SetHist().SetReplaces().SetIds() = move(secondary_ids);
+    seq_inst.SetHist().SetReplaces().SetIds() = std::move(secondary_ids);
 }
 
 

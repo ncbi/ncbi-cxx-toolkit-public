@@ -510,11 +510,11 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
         data,
         pMessageListener);
 
-    ids = move(data.ids);
+    ids        = std::move(data.ids);
     hasRange   = data.has_range;
     rangeStart = data.range_start;
     rangeEnd   = data.range_end;
-    seqTitles  = move(data.titles);
+    seqTitles  = std::move(data.titles);
 }
 
 
@@ -571,7 +571,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     CFastaDeflineReader::SDeflineData data;
     CFastaDeflineReader::ParseDefline(s, parseInfo, data, pMessageListener, m_fIdCheck);
 
-    m_CurrentSeqTitles = move(data.titles);
+    m_CurrentSeqTitles = std::move(data.titles);
 
     if (data.ids.empty()) {
         if (TestFlag(fRequireID)) {
@@ -1490,12 +1490,12 @@ void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
                             CSeq_gap::TLinkage_evidence::value_type pNewLinkEvid(
                                 new CLinkage_evidence );
                             pNewLinkEvid->SetType( *link_evid_it );
-                            vecLinkEvids.push_back(move(pNewLinkEvid));
+                            vecLinkEvids.push_back(std::move(pNewLinkEvid));
                         }
                     }
                 }
             }
-            delta_ext.Set().push_back(move(gap_ds));
+            delta_ext.Set().push_back(std::move(gap_ds));
 
             TSeqPos next_start = (i == n-1) ? m_CurrentPos : m_Gaps[i+1]->m_uPos;
             if (next_start != m_Gaps[i]->m_uPos) {
@@ -1519,7 +1519,7 @@ static void s_AddBiomol(CMolInfo::EBiomol biomol, CBioseq& bioseq)
 {
     auto pDesc = Ref(new CSeqdesc());
     pDesc->SetMolinfo().SetBiomol(biomol);
-    bioseq.SetDescr().Set().emplace_back(move(pDesc));
+    bioseq.SetDescr().Set().emplace_back(std::move(pDesc));
 }
 
 static bool sRefineNaMol(const char* beginSeqData, const char* endSeqData, CBioseq& bioseq)
@@ -2048,7 +2048,7 @@ void CFastaReader::x_ApplyMods(
     if (!processed_title.empty()) {
         auto pDesc = Ref(new CSeqdesc());
         pDesc->SetTitle() = processed_title;
-        bioseq.SetDescr().Set().push_back(move(pDesc));
+        bioseq.SetDescr().Set().push_back(std::move(pDesc));
     }
 }
 
