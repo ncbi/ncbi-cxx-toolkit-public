@@ -1019,7 +1019,9 @@ void CFlatGatherer::x_GatherComments(void) const
     */
 
     x_HistoryComments(ctx);
+// LCOV_EXCL_START
     x_RefSeqGenomeComments(ctx);
+// LCOV_EXCL_STOP
     x_WGSComment(ctx);
     x_TSAComment(ctx);
     x_TLSComment(ctx);
@@ -1464,6 +1466,7 @@ void CFlatGatherer::x_HistoryComments(CBioseqContext& ctx) const
     }
 }
 
+// LCOV_EXCL_START
 void CFlatGatherer::x_RefSeqGenomeComments(CBioseqContext& ctx) const
 {
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User);  it;  ++it) {
@@ -1476,6 +1479,7 @@ void CFlatGatherer::x_RefSeqGenomeComments(CBioseqContext& ctx) const
         }
     }
 }
+// LCOV_EXCL_STOP
 
 
 void CFlatGatherer::x_WGSComment(CBioseqContext& ctx) const
