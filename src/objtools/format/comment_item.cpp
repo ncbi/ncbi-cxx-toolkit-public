@@ -613,7 +613,6 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
     return retval;
 }
 
-
 string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser_object& uo,
     const CBioseq_Handle& bsh,
     EGenomeBuildComment eGenomeBuildComment )
@@ -819,6 +818,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
     return CNcbiOstrstreamToString(oss);
 }
 
+// LCOV_EXCL_START
 string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
 {
     if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str)  ||
@@ -886,6 +886,7 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
 
     return CNcbiOstrstreamToString(result_oss);
 }
+// LCOV_EXCL_STOP
 
 
 string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
