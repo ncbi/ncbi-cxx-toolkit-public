@@ -1797,7 +1797,7 @@ static bool sIsAccPrefixChar(char c)  {
  *
  **********************************************************/
 /*
-bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, int skip)
+bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, unsigned skip)
 {
     string       accession;
     list<string> tokens;
@@ -1934,7 +1934,7 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 */
 
 
-bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, Int4 skip)
+bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned skip)
 {
     Char            acc[200];
     string          temp;

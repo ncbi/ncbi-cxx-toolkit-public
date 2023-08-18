@@ -262,7 +262,7 @@ static bool sIsPrefixChar(char c)
     return ('A' <= c && c <= 'Z') || c == '_';
 }
 /**********************************************************/
-bool ParseAccessionRange(list<string>& tokens, int skip)
+bool ParseAccessionRange(list<string>& tokens, unsigned skip)
 {
     bool bad = false;
 
@@ -337,7 +337,7 @@ bool ParseAccessionRange(list<string>& tokens, int skip)
 }
 
 /**********************************************************/
-bool ParseAccessionRange(TokenStatBlkPtr tsbp, Int4 skip)
+bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 {
     TokenBlkPtr tbp;
     TokenBlkPtr tbpnext;
@@ -1041,7 +1041,7 @@ CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source
  **********************************************************/
 int SrchKeyword(const CTempString& ptr, const vector<string>& keywordList)
 {
-    int keywordCount = keywordList.size();
+    SIZE_TYPE keywordCount = keywordList.size();
 
     for (int i = 0; i < keywordCount; ++i) {
         if (NStr::StartsWith(ptr, keywordList[i])) {
