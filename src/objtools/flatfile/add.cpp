@@ -800,7 +800,7 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
     pri_acc = fta_if_wgs_acc(acc);
 
     CTempString primaryAccession(acc);
-    int         prefixLength = 0;
+    SIZE_TYPE   prefixLength = 0;
 
     list<CRef<CSeq_id>> replaces;
 
@@ -824,7 +824,7 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
             }
 
             if (pri_acc == 1) { // Contig WGS accession
-                if (! prefixLength) {
+                if (prefixLength <= 0) {
                     prefixLength = sGetPrefixLength(primaryAccession);
                 }
 
