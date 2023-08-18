@@ -1428,18 +1428,17 @@ int CProcessing::JsonCheck(istream* schema_is)
         ++line_no;
 
         if (!input_doc.ParseString(line)) {
-            cerr << "Error on reading JSON document (" << line_no << "): " << input_doc.GetReadError() << endl;
+            cout << "Error on reading JSON document (" << line_no << "): " << input_doc.GetReadError() << endl;
             if (rv == 0) rv = -2;
-        }
-
-        if (schema.Validate(input_doc)) {
+        } else if (schema.Validate(input_doc)) {
+            cout << "JSON document (" << line_no << ") is valid" << endl;
         } else {
-            cerr << "Error on validating JSON document (" << line_no << "): " << schema.GetValidationError() << endl;
+            cout << "Error on validating JSON document (" << line_no << "): " << schema.GetValidationError() << endl;
             if (rv == 0) rv = -3;
         }
     }
 
-    cout << "JSON documents (" << line_no << ") are valid" << endl;
+    cout << line_no << " JSON document(s) have been checked" << endl;
     return rv;
 }
 
@@ -1578,7 +1577,7 @@ const initializer_list<SInfoFlag>& SRequestBuilder::GetInfoFlags()
 
 CJson_Document CProcessing::RequestSchema()
 {
-    return CJson_Document(R"REQUEST_SCHEMA(
+    CJson_Document rv(R"REQUEST_SCHEMA(
 {
     "type": "object",
     "definitions": {
@@ -1854,7 +1853,7 @@ CJson_Document CProcessing::RequestSchema()
                 "params": {
                     "type": "object",
                     "properties": {
-                        "abs_path_ref": { "type": "string" }
+                        "abs_path_ref": { "type": "string" },
                         "context": { "$ref": "#/definitions/context" }
                     },
                     "required": [ "abs_path_ref" ]
@@ -1866,6 +1865,9 @@ CJson_Document CProcessing::RequestSchema()
     ]
 }
         )REQUEST_SCHEMA");
+
+    _DEBUG_CODE(if (!rv.ReadSucceeded()) { auto error = rv.GetReadError(); NCBI_ALWAYS_TROUBLE(error.c_str()); });
+    return rv;
 }
 
 END_NCBI_SCOPE
