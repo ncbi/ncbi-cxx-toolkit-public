@@ -70,6 +70,39 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+namespace temp
+{
+CNcbiOstream& operator<<(CNcbiOstream& os, EPubmedError err)
+{
+    const char* error = nullptr;
+    switch (err) {
+    case EPubmedError::not_found:
+        error = "not-found";
+        break;
+    case EPubmedError::operational_error:
+        error = "operational-error";
+        break;
+    case EPubmedError::citation_not_found:
+        error = "citation-not-found";
+        break;
+    case EPubmedError::citation_ambiguous:
+        error = "citation-ambiguous";
+        break;
+    case EPubmedError::cannot_connect_pmdb:
+        error = "cannot-connect-pmdb";
+        break;
+    case EPubmedError::cannot_connect_searchbackend_pmdb:
+        error = "cannot-connect-searchbackend-pmdb";
+        break;
+    default:
+        return os;
+    }
+
+    os << error;
+    return os;
+}
+}
+
 enum eCitMatchFlags {
     e_J = 1 << 0, // Journal
     e_V = 1 << 1, // Volume
