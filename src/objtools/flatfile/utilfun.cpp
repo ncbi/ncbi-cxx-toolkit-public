@@ -1043,9 +1043,9 @@ int SrchKeyword(const CTempString& ptr, const vector<string>& keywordList)
 {
     SIZE_TYPE keywordCount = keywordList.size();
 
-    for (int i = 0; i < keywordCount; ++i) {
+    for (unsigned i = 0; i < keywordCount; ++i) {
         if (NStr::StartsWith(ptr, keywordList[i])) {
-            return i;
+            return (int)i;
         }
     }
     return ParFlat_UNKW;
