@@ -79,7 +79,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   VDBReader
-NCBI_DEFINE_ERR_SUBCODE_X(2);
+NCBI_DEFINE_ERR_SUBCODE_X(9);
 
 BEGIN_SCOPE(objects)
 
@@ -443,6 +443,128 @@ string CVDBMgr::FindAccPath(const string& acc) const
         m_Resolver = CVResolver(CVFSManager(*this));
     }
     return m_Resolver.Resolve(acc);
+}
+
+
+string CVDBMgr::FindDereferencedAccPath(const string& acc_or_path) const
+{
+    string path;
+    if ( CVPath::IsPlainAccession(acc_or_path) ) {
+        // resolve VDB accessions
+        path = FindAccPath(acc_or_path);
+        if ( s_GetDebugLevel() >= 2 ) {
+            LOG_POST_X(4, "CVDBMgr: resolved accession: " << acc_or_path << " -> " << path);
+        }
+    }
+    else {
+        // real path, http:, etc.
+        path = acc_or_path;
+    }
+
+    // resolve symbolic links for correct timestamp and longer-living reference
+    CDirEntry de(path);
+    if ( de.Exists() ) {
+        de.DereferenceLink();
+        if ( de.GetPath() != path ) {
+            path = de.GetPath();
+            if ( s_GetDebugLevel() >= 2 ) {
+                LOG_POST_X(5, "CVDBMgr: resolved file link: " << acc_or_path << " -> " << path);
+            }
+        }
+    }
+    return path;
+}
+
+
+CTime CVDBMgr::GetTimestamp(const string& path) const
+{
+    CTime timestamp;
+    if ( path[0] == 'h' &&
+         (NStr::StartsWith(path, "http://") ||
+          NStr::StartsWith(path, "https://")) ) {
+        // try http:
+        timestamp = GetURLTimestamp(path);
+    }
+    else {
+        // try direct file access
+        if ( !CDirEntry(path).GetTime(&timestamp) ) {
+            NCBI_THROW_FMT(CSraException, eInitFailed,
+                "Cannot get timestamp of local path: " << path);
+        }
+        timestamp.ToUniversalTime();
+    }
+    _ASSERT(!timestamp.IsEmpty());
+    _ASSERT(timestamp.IsUniversalTime());
+    if ( s_GetDebugLevel() >= 2 ) {
+        LOG_POST_X(3, "CVDBMgr: timestamp of " << path << ": " << CTime(timestamp).ToLocalTime());
+    }
+    return timestamp;
+}
+
+
+DECLARE_SRA_REF_TRAITS(KClientHttpRequest, );
+DECLARE_SRA_REF_TRAITS(KClientHttpResult, );
+
+DEFINE_SRA_REF_TRAITS(KClientHttpRequest, );
+DEFINE_SRA_REF_TRAITS(KClientHttpResult, );
+
+class NCBI_SRAREAD_EXPORT CClientHttpRequest
+    : public CSraRef<KClientHttpRequest>
+{
+public:
+    CClientHttpRequest(const CKNSManager& mgr, const string& path)
+    {
+        const ver_t kHTTP_1_1 = 0x01010000;
+        if ( rc_t rc = KNSManagerMakeClientRequest(mgr, x_InitPtr(),
+                                                   kHTTP_1_1, nullptr,
+                                                   "%s", path.c_str()) ) {
+            *x_InitPtr() = 0;
+            NCBI_THROW2(CSraException, eInitFailed,
+                        "Cannot create http client request", rc);
+        }
+    }
+
+private:
+};
+
+
+class NCBI_SRAREAD_EXPORT CClientHttpResult
+    : public CSraRef<KClientHttpResult>
+{
+public:
+    enum EHead {
+        eHead
+    };
+
+    CClientHttpResult(const CClientHttpRequest& request, EHead)
+    {
+        if ( rc_t rc = KClientHttpRequestHEAD(request, x_InitPtr()) ) {
+            *x_InitPtr() = 0;
+            NCBI_THROW2(CSraException, eInitFailed,
+                        "Cannot get http HEAD", rc);
+        }
+    }
+
+private:
+};
+
+
+CTime CVDBMgr::GetURLTimestamp(const string& path) const
+{
+    CVFSManager vfs(*this);
+    CKNSManager kns(vfs);
+    CClientHttpRequest request(kns, path);
+    CClientHttpResult result(request, CClientHttpResult::eHead);
+    char buffer[99];
+    size_t size;
+    if ( rc_t rc = KClientHttpResultGetHeader(result, "Last-Modified",
+                                              buffer, sizeof(buffer), &size) ) {
+        NCBI_THROW2(CSraException, eNotFoundValue,
+                    "No Last-Modified header in HEAD response", rc);
+    }
+    CTempString str(buffer, size);
+    CTimeFormat fmt("w, d b Y h:m:s Z"); // standard Last-Modified HTTP header format
+    return CTime(str, fmt);
 }
 
 
