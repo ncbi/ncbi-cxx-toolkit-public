@@ -37,7 +37,6 @@
 #include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
 #include <sra/error_codes.hpp>
-#include <kns/http.h>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -378,149 +377,6 @@ void CWGSResolver_VDB::x_Close()
 }
 
 
-static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
-{
-    string path;
-    if ( CVPath::IsPlainAccession(acc_or_path) ) {
-        // resolve VDB accessions
-        try {
-            path = mgr.FindAccPath(acc_or_path);
-            if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_open) ) {
-                LOG_POST_X(28, "CWGSResolver_VDB("<<acc_or_path<<"): -> "<<path);
-            }
-        }
-        catch ( CSraException& /*ignored*/ ) {
-            path = acc_or_path;
-        }
-    }
-    else {
-        // real path, http:, etc.
-        path = acc_or_path;
-    }
-
-    // resolve symbolic links for correct timestamp and longer-living reference
-    CDirEntry de(path);
-    if ( de.Exists() ) {
-        de.DereferenceLink();
-        if ( de.GetPath() != path ) {
-            path = de.GetPath();
-            if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_open) ) {
-                LOG_POST_X(29, "CWGSResolver_VDB("<<acc_or_path<<"): "
-                           "resolved index link to "<<path);
-            }
-        }
-    }
-    return path;
-}
-
-
-DECLARE_SRA_REF_TRAITS(KClientHttpRequest, );
-DECLARE_SRA_REF_TRAITS(KClientHttpResult, );
-
-DEFINE_SRA_REF_TRAITS(KClientHttpRequest, );
-DEFINE_SRA_REF_TRAITS(KClientHttpResult, );
-
-class NCBI_SRAREAD_EXPORT CClientHttpRequest
-    : public CSraRef<KClientHttpRequest>
-{
-public:
-    CClientHttpRequest(const CKNSManager& mgr, const string& path)
-        {
-            if ( rc_t rc = KNSManagerMakeClientRequest(mgr, x_InitPtr(), 0x01010000, 0,
-                                                       "%s", path.c_str()) ) {
-                *x_InitPtr() = 0;
-                NCBI_THROW2(CSraException, eInitFailed,
-                            "Cannot create http client request", rc);
-            }
-        }
-
-private:
-};
-
-
-class NCBI_SRAREAD_EXPORT CClientHttpResult
-    : public CSraRef<KClientHttpResult>
-{
-public:
-    enum EHead {
-        eHead
-    };
-    
-    CClientHttpResult(const CClientHttpRequest& request, EHead)
-        {
-            if ( rc_t rc = KClientHttpRequestHEAD(request, x_InitPtr()) ) {
-                *x_InitPtr() = 0;
-                NCBI_THROW2(CSraException, eInitFailed,
-                            "Cannot get http HEAD", rc);
-            }
-        }
-    
-private:
-};
-
-
-static CTime s_GetURLTimestamp(const CVDBMgr& mgr, const string& path)
-{
-    try {
-        CVFSManager vfs(mgr);
-        CKNSManager kns(vfs);
-        CClientHttpRequest request(kns, path);
-        CClientHttpResult result(request, CClientHttpResult::eHead);
-        char buffer[99];
-        size_t size;
-        if ( rc_t rc = KClientHttpResultGetHeader(result, "Last-Modified",
-                                                  buffer, sizeof(buffer), &size) ) {
-            NCBI_THROW2(CSraException, eNotFound,
-                        "No Last-Modified header in HEAD response", rc);
-        }
-        CTempString str(buffer, size);
-        CTimeFormat fmt("w, d b Y h:m:s Z"); // standard Last-Modified HTTP header format
-        return CTime(str, fmt);
-    }
-    catch ( CException& exc ) {
-        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
-            ERR_POST_X(36, "CWGSResolver_VDB: cannot get URL timestamp of "<<path<<": "<<exc);
-        }
-        return CTime();
-    }
-}
-
-
-static CTime s_GetTimestamp(const CVDBMgr& mgr, const string& path)
-{
-    CTime timestamp;
-    if ( path[0] == 'h' &&
-         (NStr::StartsWith(path, "http://") ||
-          NStr::StartsWith(path, "https://")) ) {
-        // try http:
-        timestamp = s_GetURLTimestamp(mgr, path);
-    }
-    else {
-        // try direct file access
-        if ( CDirEntry(path).GetTime(&timestamp) ) {
-            timestamp.ToUniversalTime();
-        }
-        else {
-            timestamp = CTime();
-        }
-    }
-    if ( timestamp.IsEmpty() ) {
-        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
-            ERR_POST_X(34, "CWGSResolver_VDB("<<path<<"): "
-                       "cannot get timestamp");
-        }
-    }
-    else {
-        _ASSERT(timestamp.IsUniversalTime());
-        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_open) ) {
-            LOG_POST_X(35, "CWGSResolver_VDB("<<path<<"): "
-                       "timestamp: "<<CTime(timestamp).ToLocalTime());
-        }
-    }
-    return timestamp;
-}
-
-
 void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
 {
     // open VDB file
@@ -611,7 +467,7 @@ CWGSResolver_VDB::SImpl::SImpl(const CVDBMgr& mgr, const string& acc_or_path)
     : m_FailedGiRequestCount(0),
       m_FailedAccRequestCount(0)
 {
-    string path = s_ResolveAccOrPath(mgr, acc_or_path);
+    string path = mgr.FindDereferencedAccPath(acc_or_path);
     try {
         m_Db = CVDB(mgr, path);
     }
@@ -624,7 +480,14 @@ CWGSResolver_VDB::SImpl::SImpl(const CVDBMgr& mgr, const string& acc_or_path)
 
     // save original argument for possible changes in symbolic links
     m_WGSIndexResolvedPath = path;
-    m_Timestamp = s_GetTimestamp(mgr, path);
+    try {
+        m_Timestamp = mgr.GetTimestamp(path);
+    }
+    catch ( CException& exc ) {
+        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
+            ERR_POST_X(36, "CWGSResolver_VDB: cannot get URL timestamp of " << path << ": " << exc);
+        }
+    }
     m_GiIdxTable = CVDBTable(m_Db, "GI_IDX");
     m_AccIdxTable = CVDBTable(m_Db, "ACC_IDX");
     m_AccIndexIsPrefix = true;
@@ -666,7 +529,7 @@ bool CWGSResolver_VDB::Update(void)
 
 bool CWGSResolver_VDB::x_Update(void)
 {
-    string path = s_ResolveAccOrPath(m_Mgr, GetWGSIndexPath());
+    string path = m_Mgr.FindDereferencedAccPath(GetWGSIndexPath());
     if ( path != GetWGSIndexResolvedPath() ) {
         // resolved to a different path -> new index by symbolic link
         if ( s_DebugEnabled(eDebug_open) ) {
@@ -676,15 +539,18 @@ bool CWGSResolver_VDB::x_Update(void)
         return true;
     }
 
-    CTime timestamp = s_GetTimestamp(m_Mgr, path);
-    if ( timestamp.IsEmpty() ) {
-        // cannot get timestamp, always reopen
-        Reopen();
-        return true;
+    try {
+        CTime timestamp = m_Mgr.GetTimestamp(path);
+        if ( timestamp == GetTimestamp() ) {
+            // same timestamp
+            return false;
+        }
     }
-    if ( timestamp == GetTimestamp() ) {
-        // same timestamp
-        return false;
+    catch ( CException& exc ) {
+        if ( CWGSResolver::s_DebugEnabled(CWGSResolver::eDebug_error) ) {
+            ERR_POST_X(36, "CWGSResolver_VDB: cannot get URL timestamp of " << path << ": " << exc);
+        }
+        // cannot get timestamp, always reopen
     }
     Reopen();
     return true;

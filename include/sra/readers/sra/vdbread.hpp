@@ -218,7 +218,10 @@ class NCBI_SRAREAD_EXPORT CVDBMgr
 public:
     CVDBMgr(void);
 
+    // resolve possible VDB accession
     string FindAccPath(const string& acc) const;
+    // in addition to FindAccPath() also resolve file symbolic links
+    string FindDereferencedAccPath(const string& acc_or_path) const;
 
     void Close(void) {
         Release();
@@ -245,6 +248,11 @@ public:
         ~CRequestContextUpdater();
         CRequestContextUpdater(const CRequestContextUpdater&) = delete;
     };
+
+    // Retrieve timestamp of a file (local or remote)
+    CTime GetTimestamp(const string& path) const;
+    // Get timestamp of a file by URL
+    CTime GetURLTimestamp(const string& url) const;
 
 protected:
     void x_Init(void);
