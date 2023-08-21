@@ -260,7 +260,7 @@ static const char* GetResidue(TokenStatBlkPtr stoken)
  *                                              2-26-93
  *
  **********************************************************/
-bool XReadFile(FILE* fp, FinfoBlk& finfo)
+static bool XReadFile(FILE* fp, FinfoBlk& finfo)
 {
     bool end_of_file = false;
 
@@ -1515,7 +1515,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
                            Parser::ESource source,
                            Parser::EMode   mode,
                            char*           priacc,
-                           Int4            skip)
+                           unsigned        skip)
 {
     TokenBlkPtr tbp;
     bool        badac;
