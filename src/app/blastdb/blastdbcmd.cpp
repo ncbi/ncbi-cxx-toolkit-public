@@ -43,6 +43,8 @@
 #include <objtools/blast/blastdb_format/seq_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
+#include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
+#include <objtools/blast/seqdb_reader/tax4blastsqlite.hpp> // for taxid to their descendant taxids lookup
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <serial/objostrjson.hpp>
@@ -333,8 +335,33 @@ CBlastDBCmdApp::x_InitBlastDB_TaxIdList()
     	    }
     	}
     }
+    // JIRA SB-3780,SB-3791
+    unique_ptr<ITaxonomy4Blast> tb;
+    if( ! args[kArgNoTaxIdExpansion].AsBoolean() ){
+	try{
+	    tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
+	}
+	catch(CException &){
+	    NCBI_THROW(CBlastException, eInvalidArgument, "The -taxids command line option requires additional data files. Please see URL_HERE for details.");
+	}
+    }
+
     for(unsigned int i=0; i < ids.size(); i++) {
     	m_TaxIdList.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
+	if( tb ) // SQLite DB initialized 
+	{
+	    // resolve given taxid to their descendant taxids 
+	    vector<int> desc;
+	    auto taxid = NStr::StringToInt( ids[i] );
+	    tb->GetLeafNodeTaxids(taxid, desc);
+	    if( desc.size() ) {
+	       //SECOND:  descendant taxids  
+	       for (auto i: desc){
+		    m_TaxIdList.insert( static_cast<TTaxId>(i) );
+	       }
+	    }
+	} // end of resolving taxid part
+
     }
 
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
@@ -932,25 +959,13 @@ void CBlastDBCmdApp::Init()
         arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "strand");
         arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "mask_sequence_with");
 
-    arg_desc->AddOptionalKey(kArgTaxIdList, "taxonomy_ids",
-    						"Comma-delimited taxonomy identifiers", CArgDescriptions::eString);
-    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "entry");
-    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "entry_batch");
-    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "pig");
-
-    arg_desc->AddOptionalKey(kArgTaxIdListFile, "input_file",
-    						"Input file for taxonomy identifiers", CArgDescriptions::eInputFile);
-    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "entry");
-    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "entry_batch");
-    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "pig");
-    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgTaxIdList);
-
     arg_desc->AddFlag("info", "Print BLAST database information", true);
     // All other options to this program should be here
     const char* exclusions[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
         "mask_sequence", "list", "remove_redundant_dbs", "recursive",
-        "list_outfmt", "metadata", "metadata_output_prefix", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
+        "list_outfmt", "metadata", "metadata_output_prefix", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str(),
+        kArgNoTaxIdExpansion.c_str()};
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency("info", CArgDescriptions::eExcludes,
                                 string(exclusions[i]));
@@ -961,7 +976,8 @@ void CBlastDBCmdApp::Init()
     const char* exclusions_m[]  = { "entry", "entry_batch", "outfmt", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
         "mask_sequence", "list", "remove_redundant_dbs", "recursive",
-        "list_outfmt", "info", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str()};
+        "list_outfmt", "info", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str(),
+        kArgNoTaxIdExpansion.c_str()};
     for (size_t i = 0; i < sizeof(exclusions_m)/sizeof(*exclusions_m); i++) {
         arg_desc->SetDependency("metadata", CArgDescriptions::eExcludes,
                                 string(exclusions_m[i]));
@@ -985,7 +1001,8 @@ void CBlastDBCmdApp::Init()
     const char* tax_info_exclusions[]  = { "info", "entry", "entry_batch", "strand",
         "target_only", "ctrl_a", "get_dups", "pig", "range",
         "mask_sequence", "list", "remove_redundant_dbs", "recursive",
-        "list_outfmt", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str() };
+        "list_outfmt", kArgTaxIdListFile.c_str(), kArgTaxIdList.c_str(),
+        kArgNoTaxIdExpansion.c_str() };
     for (size_t i = 0; i < sizeof(tax_info_exclusions)/sizeof(*tax_info_exclusions); i++) {
         arg_desc->SetDependency("tax_info", CArgDescriptions::eExcludes,
                                 string(tax_info_exclusions[i]));
@@ -1008,6 +1025,26 @@ void CBlastDBCmdApp::Init()
                              "algorithm ID specified",
                              CArgDescriptions::eString);
 
+    // Some additional tax related grouping
+    arg_desc->SetCurrentGroup("Taxonomic filtering options"); 
+    arg_desc->AddOptionalKey(kArgTaxIdList, "taxonomy_ids",
+    						"Comma-delimited taxonomy identifiers", CArgDescriptions::eString);
+    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency(kArgTaxIdList, CArgDescriptions::eExcludes, "pig");
+
+    arg_desc->AddOptionalKey(kArgTaxIdListFile, "input_file",
+    						"Input file for taxonomy identifiers", CArgDescriptions::eInputFile);
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, "pig");
+    arg_desc->SetDependency(kArgTaxIdListFile, CArgDescriptions::eExcludes, kArgTaxIdList);
+
+    // Disable Tax ID resoution to the descendants SB-3791/SB-3779 
+    arg_desc->AddFlag(kArgNoTaxIdExpansion, "Do not expand the taxonomy IDs provided to their descendant taxonomy IDs ", true);
+    arg_desc->SetDependency(kArgNoTaxIdExpansion, CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency(kArgNoTaxIdExpansion, CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency(kArgNoTaxIdExpansion, CArgDescriptions::eExcludes, "pig");
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name",
                             CArgDescriptions::eOutputFile, "-");
