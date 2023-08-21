@@ -158,6 +158,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
 
     CRandom r(1);
+    const size_t NT = 10;
     const size_t NQ = 12;
     const size_t NS = 20;
     const char* accs[] = {
@@ -186,70 +187,72 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr)
         }
     }
     thread_extra extra = get_thread_extra();
-    vector<thread_type> tt(NQ);
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
-            get_thread(extra, bind([&](const vector<string>& ids)
-                {
-                    try {
-                        CScope scope(*CObjectManager::GetInstance());
-                        scope.AddDefaults();
-                        for ( auto& id : ids ) {
-                            try {
-                                CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
-                                BOOST_REQUIRE_MT_SAFE(bh);
-                                int desc_mask = 0;
-                                map<string, int> user_count;
-                                int comment_count = 0;
-                                int pub_count = 0;
-                                for ( CSeqdesc_CI it(bh); it; ++it ) {
-                                    desc_mask |= 1<<it->Which();
-                                    switch ( it->Which() ) {
-                                    case CSeqdesc::e_Comment:
-                                        ++comment_count;
-                                        break;
-                                    case CSeqdesc::e_Pub:
-                                        ++pub_count;
-                                        break;
-                                    case CSeqdesc::e_User:
-                                        ++user_count[it->GetUser().GetType().GetStr()];
-                                        break;
-                                    default:
-                                        break;
+    for ( size_t test = 0; test < NT; ++test ) {
+        vector<thread_type> tt(NQ);
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i] =
+                get_thread(extra, bind([&](const vector<string>& ids)
+                    {
+                        try {
+                            CScope scope(*CObjectManager::GetInstance());
+                            scope.AddDefaults();
+                            for ( auto& id : ids ) {
+                                try {
+                                    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+                                    BOOST_REQUIRE_MT_SAFE(bh);
+                                    int desc_mask = 0;
+                                    map<string, int> user_count;
+                                    int comment_count = 0;
+                                    int pub_count = 0;
+                                    for ( CSeqdesc_CI it(bh); it; ++it ) {
+                                        desc_mask |= 1<<it->Which();
+                                        switch ( it->Which() ) {
+                                        case CSeqdesc::e_Comment:
+                                            ++comment_count;
+                                            break;
+                                        case CSeqdesc::e_Pub:
+                                            ++pub_count;
+                                            break;
+                                        case CSeqdesc::e_User:
+                                            ++user_count[it->GetUser().GetType().GetStr()];
+                                            break;
+                                        default:
+                                            break;
+                                        }
                                     }
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
+                                    BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                                    BOOST_CHECK_MT_SAFE(comment_count == 0 || comment_count == 1);
+                                    //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
                                 }
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
-                                BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
-                                BOOST_CHECK_MT_SAFE(comment_count == 0 || comment_count == 1);
-                                //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
-                            }
-                            catch (...) {
-                                ERR_POST("Failed id: "<<id);
-                                throw;
+                                catch (...) {
+                                    ERR_POST("Failed id: "<<id);
+                                    throw;
+                                }
                             }
                         }
-                    }
-                    catch ( CException& exc ) {
-                        ERR_POST("MT1["<<i<<"]: "<<exc);
-                        BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
-                    }
-                    catch ( exception& exc ) {
-                        ERR_POST("MT1["<<i<<"]: "<<exc.what());
-                        BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
-                    }
-                }, ids[i]));
-    }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+                        catch ( CException& exc ) {
+                            ERR_POST("MT1["<<i<<"]: "<<exc);
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                        catch ( exception& exc ) {
+                            ERR_POST("MT1["<<i<<"]: "<<exc.what());
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                    }, ids[i]));
+        }
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i].join();
+        }
     }
 }
 
@@ -315,6 +318,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
 
     CRandom r(1);
+    const size_t NT = 10;
     const size_t NQ = 12;
     const size_t NS = 2000;
     const char* accs[] = {
@@ -341,71 +345,73 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescrProt)
             LOG_POST("WGS "<<accs[k]<<" testing "<<ids[k].size()<<" proteins");
         }
     }}
-    thread_extra extra = get_thread_extra();
-    vector<thread_type> tt(NQ);
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
-            get_thread(extra, bind([&](const vector<string>& ids)
-                {
-                    try {
-                        CScope scope(*CObjectManager::GetInstance());
-                        scope.AddDefaults();
-                        for ( auto& id : ids ) {
-                            try {
-                                CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
-                                BOOST_REQUIRE_MT_SAFE(bh);
-                                int desc_mask = 0;
-                                map<string, int> user_count;
-                                int comment_count = 0;
-                                int pub_count = 0;
-                                for ( CSeqdesc_CI it(bh); it; ++it ) {
-                                    desc_mask |= 1<<it->Which();
-                                    switch ( it->Which() ) {
-                                    case CSeqdesc::e_Comment:
-                                        ++comment_count;
-                                        break;
-                                    case CSeqdesc::e_Pub:
-                                        ++pub_count;
-                                        break;
-                                    case CSeqdesc::e_User:
-                                        ++user_count[it->GetUser().GetType().GetStr()];
-                                        break;
-                                    default:
-                                        break;
+    for ( size_t test = 0; test < NT; ++test ) {
+        thread_extra extra = get_thread_extra();
+        vector<thread_type> tt(NQ);
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i] =
+                get_thread(extra, bind([&](const vector<string>& ids)
+                    {
+                        try {
+                            CScope scope(*CObjectManager::GetInstance());
+                            scope.AddDefaults();
+                            for ( auto& id : ids ) {
+                                try {
+                                    CBioseq_Handle bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+                                    BOOST_REQUIRE_MT_SAFE(bh);
+                                    int desc_mask = 0;
+                                    map<string, int> user_count;
+                                    int comment_count = 0;
+                                    int pub_count = 0;
+                                    for ( CSeqdesc_CI it(bh); it; ++it ) {
+                                        desc_mask |= 1<<it->Which();
+                                        switch ( it->Which() ) {
+                                        case CSeqdesc::e_Comment:
+                                            ++comment_count;
+                                            break;
+                                        case CSeqdesc::e_Pub:
+                                            ++pub_count;
+                                            break;
+                                        case CSeqdesc::e_User:
+                                            ++user_count[it->GetUser().GetType().GetStr()];
+                                            break;
+                                        default:
+                                            break;
+                                        }
                                     }
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
+                                    BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(comment_count, 0);
+                                    //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
                                 }
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
-                                BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
-                                BOOST_CHECK_EQUAL_MT_SAFE(comment_count, 0);
-                                //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
-                            }
-                            catch (...) {
-                                ERR_POST("Failed id: "<<id);
-                                throw;
+                                catch (...) {
+                                    ERR_POST("Failed id: "<<id);
+                                    throw;
+                                }
                             }
                         }
-                    }
-                    catch ( CException& exc ) {
-                        ERR_POST("MT2["<<i<<"]: "<<exc);
-                        BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
-                    }
-                    catch ( exception& exc ) {
-                        ERR_POST("MT2["<<i<<"]: "<<exc.what());
-                        BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
-                    }
-                }, ids[i]));
-    }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+                        catch ( CException& exc ) {
+                            ERR_POST("MT2["<<i<<"]: "<<exc);
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                        catch ( exception& exc ) {
+                            ERR_POST("MT2["<<i<<"]: "<<exc.what());
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                    }, ids[i]));
+        }
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i].join();
+        }
     }
 }
 
@@ -462,7 +468,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
         }
     }}
 
-    
+
+    const size_t NT = 10;
     const size_t NQ = sizeof(accs)/sizeof(accs[0]);
     const size_t NS = 20;
     vector<vector<string>> ids(NQ);
@@ -488,86 +495,88 @@ BOOST_AUTO_TEST_CASE(CheckWGSUserAgent)
             CVDBUserAgentMonitor::SetExpectedUserAgentValues(accs[i]+suffix, values);
         }
     }
-    thread_extra extra = get_thread_extra();
-    vector<thread_type> tt(NQ);
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i] =
-            get_thread(extra, bind([&](size_t index, const vector<string>& ids)
-                {
-                    try {
-                        CScope scope(*CObjectManager::GetInstance());
-                        scope.AddDefaults();
-                        size_t last_index = size_t(-1);
-                        for ( auto& id : ids ) {
-                            try {
-                                auto index_iter = id2index.find(id);
-                                BOOST_REQUIRE_MT_SAFE(index_iter != id2index.end());
-                                size_t index = index_iter->second;
-                                if ( index != last_index ) {
-                                    _TRACE("index="<<index<<" wgs="<<accs[index]);
-                                }
-                                {
-                                    auto& ctx = CDiagContext::GetRequestContext();
-                                    ctx.SetClientIP(get_cip(index));
-                                    ctx.SetSessionID(get_sid(index));
-                                    ctx.SetHitID(get_hid(index));
-                                }
-                                
-                                CBioseq_Handle bh =
-                                    scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
-                                BOOST_REQUIRE_MT_SAFE(bh);
-                                int desc_mask = 0;
-                                map<string, int> user_count;
-                                int comment_count = 0;
-                                int pub_count = 0;
-                                for ( CSeqdesc_CI it(bh); it; ++it ) {
-                                    desc_mask |= 1<<it->Which();
-                                    switch ( it->Which() ) {
-                                    case CSeqdesc::e_Comment:
-                                        ++comment_count;
-                                        break;
-                                    case CSeqdesc::e_Pub:
-                                        ++pub_count;
-                                        break;
-                                    case CSeqdesc::e_User:
-                                        ++user_count[it->GetUser().GetType().GetStr()];
-                                        break;
-                                    default:
-                                        break;
+    for ( size_t test = 0; test < NT; ++test ) {
+        thread_extra extra = get_thread_extra();
+        vector<thread_type> tt(NQ);
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i] =
+                get_thread(extra, bind([&](size_t index, const vector<string>& ids)
+                    {
+                        try {
+                            CScope scope(*CObjectManager::GetInstance());
+                            scope.AddDefaults();
+                            size_t last_index = size_t(-1);
+                            for ( auto& id : ids ) {
+                                try {
+                                    auto index_iter = id2index.find(id);
+                                    BOOST_REQUIRE_MT_SAFE(index_iter != id2index.end());
+                                    size_t index = index_iter->second;
+                                    if ( index != last_index ) {
+                                        _TRACE("index="<<index<<" wgs="<<accs[index]);
                                     }
+                                    {
+                                        auto& ctx = CDiagContext::GetRequestContext();
+                                        ctx.SetClientIP(get_cip(index));
+                                        ctx.SetSessionID(get_sid(index));
+                                        ctx.SetHitID(get_hid(index));
+                                    }
+                                
+                                    CBioseq_Handle bh =
+                                        scope.GetBioseqHandle(CSeq_id_Handle::GetHandle(id));
+                                    BOOST_REQUIRE_MT_SAFE(bh);
+                                    int desc_mask = 0;
+                                    map<string, int> user_count;
+                                    int comment_count = 0;
+                                    int pub_count = 0;
+                                    for ( CSeqdesc_CI it(bh); it; ++it ) {
+                                        desc_mask |= 1<<it->Which();
+                                        switch ( it->Which() ) {
+                                        case CSeqdesc::e_Comment:
+                                            ++comment_count;
+                                            break;
+                                        case CSeqdesc::e_Pub:
+                                            ++pub_count;
+                                            break;
+                                        case CSeqdesc::e_User:
+                                            ++user_count[it->GetUser().GetType().GetStr()];
+                                            break;
+                                        default:
+                                            break;
+                                        }
+                                    }
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
+                                    BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(comment_count, 0);
+                                    //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
+                                    BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
+                                    BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
                                 }
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Title));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Source));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Molinfo));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Pub));
-                                BOOST_CHECK_MT_SAFE(pub_count == 2 || pub_count == 3);
-                                BOOST_CHECK_EQUAL_MT_SAFE(comment_count, 0);
-                                //BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Genbank));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Create_date));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_Update_date));
-                                BOOST_CHECK_MT_SAFE(desc_mask & (1<<CSeqdesc::e_User));
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count.size(), 2u);
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count["StructuredComment"], 1);
-                                BOOST_CHECK_EQUAL_MT_SAFE(user_count["DBLink"], 1);
-                            }
-                            catch (...) {
-                                ERR_POST("Failed id: "<<id);
-                                throw;
+                                catch (...) {
+                                    ERR_POST("Failed id: "<<id);
+                                    throw;
+                                }
                             }
                         }
-                    }
-                    catch ( CException& exc ) {
-                        ERR_POST("MT4["<<i<<"]: "<<exc);
-                        BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
-                    }
-                    catch ( exception& exc ) {
-                        ERR_POST("MT4["<<i<<"]: "<<exc.what());
-                        BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
-                    }
-                }, i, ids[i]));
-    }
-    for ( size_t i = 0; i < NQ; ++i ) {
-        tt[i].join();
+                        catch ( CException& exc ) {
+                            ERR_POST("MT4["<<i<<"]: "<<exc);
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                        catch ( exception& exc ) {
+                            ERR_POST("MT4["<<i<<"]: "<<exc.what());
+                            BOOST_CHECK_EQUAL_MT_SAFE(exc.what(), "---");
+                        }
+                    }, i, ids[i]));
+        }
+        for ( size_t i = 0; i < NQ; ++i ) {
+            tt[i].join();
+        }
     }
     CVDBUserAgentMonitor::ReportErrors();
     BOOST_CHECK_MT_SAFE(!CVDBUserAgentMonitor::GetErrorFlags());
