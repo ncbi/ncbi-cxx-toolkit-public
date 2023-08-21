@@ -56,7 +56,9 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
-#include <util/thread_nonstop.hpp>
+#ifdef NCBI_THREADS
+# include <util/thread_nonstop.hpp>
+#endif
 
 #include <sra/error_codes.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
@@ -108,7 +110,7 @@ static bool GetMasterDescrParam(void)
 NCBI_PARAM_DECL(size_t, WGS_LOADER, GC_SIZE);
 NCBI_PARAM_DEF(size_t, WGS_LOADER, GC_SIZE, 100);
 
-static size_t GetGCSize(void)
+static size_t GetGCSizeParam(void)
 {
     return NCBI_PARAM_TYPE(WGS_LOADER, GC_SIZE)::GetDefault();
 }
@@ -207,7 +209,7 @@ NCBI_PARAM_DECL(unsigned, WGS_LOADER, INDEX_UPDATE_TIME);
 NCBI_PARAM_DEF(unsigned, WGS_LOADER, INDEX_UPDATE_TIME, 600);
 
 
-static unsigned GetUpdateTime(void)
+static unsigned GetIndexUpdateTimeParam(void)
 {
     static unsigned value =
         NCBI_PARAM_TYPE(WGS_LOADER, INDEX_UPDATE_TIME)::GetDefault();
@@ -221,7 +223,32 @@ NCBI_PARAM_DEF(unsigned, WGS_LOADER, RETRY_COUNT, 3);
 
 static unsigned GetRetryCountParam(void)
 {
-    static unsigned value = NCBI_PARAM_TYPE(WGS_LOADER, RETRY_COUNT)::GetDefault();
+    static unsigned value =
+        NCBI_PARAM_TYPE(WGS_LOADER, RETRY_COUNT)::GetDefault();
+    return value;
+}
+
+
+NCBI_PARAM_DECL(unsigned, WGS_LOADER, FILE_REOPEN_TIME);
+NCBI_PARAM_DEF(unsigned, WGS_LOADER, FILE_REOPEN_TIME, 60*60); // 1 hour
+
+
+static unsigned GetFileReopenTimeParam(void)
+{
+    static unsigned value =
+        NCBI_PARAM_TYPE(WGS_LOADER, FILE_REOPEN_TIME)::GetDefault();
+    return value;
+}
+
+
+NCBI_PARAM_DECL(unsigned, WGS_LOADER, FILE_RECHECK_TIME);
+NCBI_PARAM_DEF(unsigned, WGS_LOADER, FILE_RECHECK_TIME, 5*60); // 5 minutes
+
+
+static unsigned GetFileRecheckTimeParam(void)
+{
+    static unsigned value =
+        NCBI_PARAM_TYPE(WGS_LOADER, FILE_RECHECK_TIME)::GetDefault();
     return value;
 }
 
@@ -325,6 +352,31 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 BEGIN_LOCAL_NAMESPACE;
 
 
+void sx_Update(CWGSResolver& resolver)
+{
+    try {
+        if ( resolver.Update() ) {
+            if ( GetDebugLevel() >= 1 ) {
+                LOG_POST_X(18, Info<<"CWGSDataLoader: updated WGS index");
+            }
+        }
+    }
+    catch ( CException& exc ) {
+        if ( GetDebugLevel() >= 1 ) {
+            ERR_POST_X(20, "ID2WGS: "
+                       "Exception while updating WGS index: "<<exc);
+        }
+    }
+    catch ( exception& exc ) {
+        if ( GetDebugLevel() >= 1 ) {
+            ERR_POST_X(20, "ID2WGS: "
+                       "Exception while updating WGS index: "<<exc.what());
+        }
+    }
+}
+
+
+#ifdef NCBI_THREADS
 class CIndexUpdateThread : public CThreadNonStop
 {
 public:
@@ -343,32 +395,14 @@ protected:
             m_FirstRun = false;
             return;
         }
-        try {
-            if ( m_Resolver->Update() ) {
-                if ( GetDebugLevel() >= 1 ) {
-                    LOG_POST_X(18, Info<<"CWGSDataLoader: updated WGS index");
-                }
-            }
-        }
-        catch ( CException& exc ) {
-            if ( GetDebugLevel() >= 1 ) {
-                ERR_POST_X(20, "ID2WGS: "
-                           "Exception while updating WGS index: "<<exc);
-            }
-        }
-        catch ( exception& exc ) {
-            if ( GetDebugLevel() >= 1 ) {
-                ERR_POST_X(20, "ID2WGS: "
-                           "Exception while updating WGS index: "<<exc.what());
-            }
-        }
+        sx_Update(*m_Resolver);
     }
 
 private:
     bool m_FirstRun;
     CRef<CWGSResolver> m_Resolver;
 };
-
+#endif
 
 END_LOCAL_NAMESPACE;
 
@@ -382,7 +416,10 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     const CWGSDataLoader::SLoaderParams& params)
     : m_WGSVolPath(params.m_WGSVolPath),
       m_RetryCount(GetRetryCountParam()),
-      m_FoundFiles(GetGCSize()),
+      m_IndexUpdateDelay(GetIndexUpdateTimeParam()),
+      m_FileReopenTime(GetFileReopenTimeParam()),
+      m_FileRecheckTime(GetFileRecheckTimeParam()),
+      m_FoundFiles(GetGCSizeParam()),
       m_AddWGSMasterDescr(GetMasterDescrParam()),
       m_ResolveGIs(GetResolveGIsParam()),
       m_ResolveProtAccs(GetResolveProtAccsParam()),
@@ -393,8 +430,10 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     }
     ITERATE (vector<string>, it, params.m_WGSFiles) {
         CRef<CWGSFileInfo> info = OpenWGSFile(*it);
+        CRef<SWGSFileInfoSlot> info_slot(new SWGSFileInfoSlot());
+        info_slot->m_FileInfo = info;
         if ( !m_FixedFiles.insert(TFixedFiles::value_type(info->GetWGSPrefix(),
-                                                          info)).second ) {
+                                                          info_slot)).second ) {
             NCBI_THROW_FMT(CSraException, eOtherError,
                            "Duplicated fixed WGS prefix: "<<
                            info->GetWGSPrefix());
@@ -405,10 +444,12 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
 
 CWGSDataLoader_Impl::~CWGSDataLoader_Impl(void)
 {
-    if ( m_UpdateThread ) {
-        m_UpdateThread->RequestStop();
-        m_UpdateThread->Join();
+#ifdef NCBI_THREADS
+    if ( m_IndexUpdateThread ) {
+        m_IndexUpdateThread->RequestStop();
+        m_IndexUpdateThread->Join();
     }
+#endif
 }
 
 
@@ -539,7 +580,7 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFileOnce(CTempString prefix)
 CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
 {
     if ( !m_ResolverCreated.load(memory_order_acquire) ) {
-        CMutexGuard guard(m_Mutex);
+        CFastMutexGuard guard(m_ResolverMutex);
         if ( !m_ResolverCreated.load(memory_order_acquire) ) {
             if ( !m_Resolver ) {
                 m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
@@ -547,58 +588,56 @@ CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
             if ( !m_Resolver ) {
                 m_Resolver = CWGSResolver_DL::CreateResolver();
             }
-            if ( m_Resolver && !m_UpdateThread ) {
+            if ( m_Resolver ) {
 #ifdef NCBI_THREADS
-                m_UpdateThread = new CIndexUpdateThread(GetUpdateTime(), m_Resolver);
-                m_UpdateThread->Run();
+                if ( !m_IndexUpdateThread ) {
+                    m_IndexUpdateThread = new CIndexUpdateThread(m_IndexUpdateDelay, m_Resolver);
+                    m_IndexUpdateThread->Run();
+                }
+#else
+                m_IndexUpdateDeadline = make_unique<CDeadline>(m_IndexUpdateDelay);
 #endif
             }
             m_ResolverCreated.store(true, memory_order_release);
         }
     }
+#ifndef NCBI_THREADS
+    if ( m_Resolver && m_IndexUpdateDeadline->IsExpired() ) {
+        sx_Update(*m_Resolver);
+        *m_IndexUpdateDeadline = CDeadline(m_IndexUpdateDelay);
+    }
+#endif
     return *m_Resolver;
 }
 
 
 CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
 {
+    CRef<SWGSFileInfoSlot> info_slot;
     if ( !m_FixedFiles.empty() ) {
         // no dynamic WGS accessions
         TFixedFiles::iterator it = m_FixedFiles.find(prefix);
-        if ( it != m_FixedFiles.end() ) {
-            return it->second;
+        if ( it == m_FixedFiles.end() ) {
+            return null;
         }
-        return null;
+        info_slot = it->second;
     }
-    CRef<CWGSFileInfo> info;
-    //CMutexGuard guard2(m_Mutex);
-    {{
-        // lookup in cache
-        CMutexGuard guard(m_Mutex);
-        auto& slot = m_FoundFiles[prefix];
-        if ( slot ) {
+    else {
+        // lookup in dynamic cache
+        CFastMutexGuard guard(m_FoundFilesMutex);
+        auto& map_slot = m_FoundFiles[prefix];
+        if ( map_slot ) {
             // use cached info
-            info = slot;
+            info_slot = map_slot;
         }
         else {
             // create new info
-            slot = info = new CWGSFileInfo();
+            map_slot = info_slot = new SWGSFileInfoSlot();
         }
-    }}
-    // make sure the file is opened
-    try {
-        info->Open(*this, prefix);
     }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == exc.eNotFoundDb ||
-             exc.GetErrCode() == exc.eProtectedDb ) {
-            // no such WGS table
-            return null;
-        }
-        else {
-            // problem in VDB or WGS reader
-            throw;
-        }
+    CRef<CWGSFileInfo> info = x_GetFileInfo(*info_slot, prefix);
+    if ( !info ) {
+        return null;
     }
     if ( info->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
         // replaced
@@ -614,13 +653,50 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
 }
 
 
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::x_GetFileInfo(SWGSFileInfoSlot& info_slot,
+                                                      const string& prefix)
+{
+    CRef<CWGSFileInfo> info; // return info
+    CRef<CWGSFileInfo> delete_info; // delete stale file info after releasing mutex
+    // now open or reopen the WGS file under individual guard
+    CFastMutexGuard guard(info_slot.m_FileInfoMutex);
+    info = info_slot.m_FileInfo;
+    if ( info && info->IsExpired(*this, prefix) ) {
+        if ( GetDebugLevel() >= 1 ) {
+            LOG_POST_X(4, Info<<"CWGSDataLoader: "
+                       "Reopening WGS project expired in cache: "<<prefix);
+        }
+        info_slot.m_FileInfo = null;
+        delete_info.Swap(info);
+    }
+    if ( !info ) {
+        // make sure the file is opened
+        try {
+            info_slot.m_FileInfo = info = new CWGSFileInfo(*this, prefix);
+        }
+        catch ( CSraException& exc ) {
+            if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                 exc.GetErrCode() == exc.eProtectedDb ) {
+                // no such WGS table
+                return null;
+            }
+            else {
+                // problem in VDB or WGS reader
+                throw;
+            }
+        }
+    }
+    return info;
+}
+
+
 CWGSFileInfo::SAccFileInfo
 CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
 {
     CWGSFileInfo::SAccFileInfo ret;
     if ( !m_FixedFiles.empty() ) {
         for ( auto& slot : m_FixedFiles ) {
-            if ( slot.second->FindGi(ret, gi) ) {
+            if ( x_GetFileInfo(*slot.second, slot.first)->FindGi(ret, gi) ) {
                 if ( GetDebugLevel() >= 2 ) {
                     LOG_POST_X(3, Info<<"CWGSDataLoader: "
                                "Resolved gi "<<gi<<
@@ -664,7 +740,7 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const CTextseq_id& text_id)
     CWGSFileInfo::SAccFileInfo ret;
     if ( !m_FixedFiles.empty() ) {
         for ( auto& slot : m_FixedFiles ) {
-            if ( slot.second->FindProtAcc(ret, text_id) ) {
+            if ( x_GetFileInfo(*slot.second, slot.first)->FindProtAcc(ret, text_id) ) {
                 if ( GetDebugLevel() >= 2 ) {
                     LOG_POST_X(7, Info<<"CWGSDataLoader: "
                                "Resolved prot acc "<<acc<<
@@ -1359,21 +1435,46 @@ CWGSDataLoader_Impl::GetSequenceTypeOnce(const CSeq_id_Handle& idh)
 
 
 CWGSFileInfo::CWGSFileInfo()
+    : m_FileReopenDeadline(CDeadline::eInfinite),
+      m_FileRecheckDeadline(CDeadline::eInfinite)
 {
 }
 
 
 CWGSFileInfo::CWGSFileInfo(const CWGSDataLoader_Impl& impl,
                            CTempString prefix)
+    : m_FileReopenDeadline(CDeadline::eInfinite),
+      m_FileRecheckDeadline(CDeadline::eInfinite)
 {
     Open(impl, prefix);
+}
+
+
+bool CWGSFileInfo::IsExpired(const CWGSDataLoader_Impl& impl,
+                             CTempString prefix) const
+{
+    if ( m_FileReopenDeadline.IsExpired() ) {
+        // forced cache expiration
+        return true;
+    }
+    if ( m_FileRecheckDeadline.IsExpired() ) {
+        string new_path = impl.m_Mgr.FindDereferencedAccPath(prefix);
+        if ( new_path != m_DereferencedPath ) {
+            return true;
+        }
+        CTime new_timestamp = impl.m_Mgr.GetTimestamp(new_path);
+        if ( new_timestamp != m_Timestamp ) {
+            return true;
+        }
+        m_FileRecheckDeadline = CDeadline(impl.m_FileRecheckTime);
+    }
+    return false;
 }
 
 
 void CWGSFileInfo::Open(const CWGSDataLoader_Impl& impl,
                         CTempString prefix)
 {
-    CMutexGuard guard(m_Mutex);
     if ( m_WGSDb ) {
         return;
     }
@@ -1406,6 +1507,10 @@ void CWGSFileInfo::x_Initialize(const CWGSDataLoader_Impl& impl,
 {
     auto mgr = impl.m_Mgr;
     m_WGSDb = CWGSDb(mgr, prefix, impl.m_WGSVolPath);
+    m_FileReopenDeadline = CDeadline(impl.m_FileReopenTime);
+    m_FileRecheckDeadline = CDeadline(impl.m_FileRecheckTime);
+    m_DereferencedPath = mgr.FindDereferencedAccPath(prefix);
+    m_Timestamp = mgr.GetTimestamp(m_DereferencedPath);
     m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
     if ( GetDebugLevel() >= 1 ) {
         LOG_POST_X(2, Info<<"CWGSDataLoader: "

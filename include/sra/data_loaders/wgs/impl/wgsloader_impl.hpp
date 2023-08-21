@@ -36,13 +36,16 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <sra/readers/sra/wgsread.hpp>
 #include <util/limited_size_map.hpp>
 
 BEGIN_NCBI_SCOPE
 
+#ifdef NCBI_THREADS
 class CThreadNonStop;
+#endif
 
 BEGIN_SCOPE(objects)
 
@@ -107,6 +110,9 @@ public:
     bool FindGi(SAccFileInfo& info, TGi gi);
     bool FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id);
 
+    bool IsExpired(const CWGSDataLoader_Impl& impl,
+                   CTempString prefix) const;
+    
     const CWGSDb& GetDb(void) const
         {
             return m_WGSDb;
@@ -134,7 +140,10 @@ protected:
 
     string m_WGSPrefix;
     CWGSDb m_WGSDb;
-    CMutex m_Mutex;
+    CDeadline m_FileReopenDeadline;
+    mutable CDeadline m_FileRecheckDeadline;
+    string m_DereferencedPath;
+    CTime  m_Timestamp;
 };
 
 
@@ -218,18 +227,32 @@ private:
     //   true if dynamically loaded SRA
     // second: SRA accession or wgs file path
 
+    struct SWGSFileInfoSlot : public CObject
+    {
+        CFastMutex m_FileInfoMutex;
+        CRef<CWGSFileInfo> m_FileInfo;
+    };
     // WGS files by accession
-    typedef map<string, CRef<CWGSFileInfo> > TFixedFiles;
-    typedef limited_size_map<string, CRef<CWGSFileInfo> > TFoundFiles;
+    typedef map<string, CRef<SWGSFileInfoSlot>> TFixedFiles;
+    typedef limited_size_map<string, CRef<SWGSFileInfoSlot>> TFoundFiles;
+
+    CRef<CWGSFileInfo> x_GetFileInfo(SWGSFileInfoSlot& info_slot, const string& prefix);
 
     // mutex guarding input into the map
-    CMutex  m_Mutex;
+    CFastMutex  m_FoundFilesMutex;
+    CFastMutex  m_ResolverMutex;
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
     CRef<CWGSResolver> m_Resolver;
     unsigned m_RetryCount;
-    unsigned m_UpdateDelay;
-    CRef<CThreadNonStop> m_UpdateThread;
+    unsigned m_IndexUpdateDelay;
+    unsigned m_FileReopenTime;
+    unsigned m_FileRecheckTime;
+#ifdef NCBI_THREADS
+    CRef<CThreadNonStop> m_IndexUpdateThread;
+#else
+    unique_ptr<CDeadline> m_IndexUpdateDeadline;
+#endif
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;
