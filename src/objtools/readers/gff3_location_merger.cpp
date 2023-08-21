@@ -153,8 +153,7 @@ void CGffIdTracker::CheckAndIndexRecord(
     	if (pendingType != expectedType) {
             if (m_pMessageListener) {
                 m_pMessageListener->PutMessage(errorDuplicateId);
-            }
-            else {
+            } else {
         	    throw errorDuplicateId;
             }
     	}
@@ -163,8 +162,7 @@ void CGffIdTracker::CheckAndIndexRecord(
     	if (pendingSeqId != expectedSeqId) {
             if (m_pMessageListener) {
                 m_pMessageListener->PutMessage(errorDuplicateId);
-            } 
-            else {
+            } else {
         	    throw errorDuplicateId;
             }
     	}
