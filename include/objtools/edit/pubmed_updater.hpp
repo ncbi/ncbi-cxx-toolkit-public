@@ -40,12 +40,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CPub;
-class CTitle_msg;
-class CTitle_msg_list;
 
 BEGIN_SCOPE(edit)
 
 using EPubmedError = EError_val;
+
+namespace temp
+{
+enum class EPubmedError {
+    ok,
+    not_found,
+    operational_error,
+    citation_not_found,
+    citation_ambiguous,
+    cannot_connect_pmdb,
+    cannot_connect_searchbackend_pmdb,
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& os, EPubmedError err);
+}
 
 struct NCBI_XOBJEDIT_EXPORT SCitMatch {
     string Journal;
