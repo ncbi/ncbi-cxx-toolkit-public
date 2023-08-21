@@ -44,4 +44,6 @@ if which envsubst > /dev/null 2>&1; then
 else
     ( echo 'cat <<EOF'; cat "${pfx}${template}${sfx}"; echo 'EOF' ) | /bin/sh -s > "${toolchain}"
 fi
+chmod ug+rw ${toolchain}
+chmod o+r ${toolchain}
 echo ${toolchain}
