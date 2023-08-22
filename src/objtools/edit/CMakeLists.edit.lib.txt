@@ -14,6 +14,6 @@ NCBI_begin_lib(xobjedit)
     huge_asn_reader huge_file huge_file_process huge_asn_loader
     huge_asn_macro_reader
   )
-  NCBI_uses_toolkit_libraries(eutils efetch esearch esummary mla taxon3 valid xobjread xobjutil xlogging)
+  NCBI_uses_toolkit_libraries(eutils efetch esearch esummary taxon3 valid xobjread xobjutil xlogging)
   NCBI_project_watchers(stakhovv gotvyans foleyjp choi)
 NCBI_end_lib()
