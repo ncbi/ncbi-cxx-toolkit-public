@@ -342,7 +342,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
         if ( NStr::StartsWith(reader_name, "pubseqos") )
             m_WebCookie = params.GetWebCookie();
     
-        if ( x_CreateReaders(reader_name, gb_params, preopen) ) {
+        if ( x_CreateReaders(reader_name, gb_params, params.GetReaderParams(), preopen) ) {
             if ( reader_name == "cache" ||
                  NStr::StartsWith(reader_name, "cache;") ) {
                 x_CreateWriters("cache", gb_params);
@@ -351,7 +351,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
     }
     else {
         pair<string, string> rw_name = GetReaderWriterName(gb_params, params);
-        if ( x_CreateReaders(rw_name.first, gb_params, preopen) ) {
+        if ( x_CreateReaders(rw_name.first, gb_params, params.GetReaderParams(), preopen) ) {
             x_CreateWriters(rw_name.second, gb_params);
         }
     }
@@ -394,14 +394,15 @@ CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params, const CGBLoa
 
 
 bool CGBDataLoader_Native::x_CreateReaders(const string& str,
-                                    const TParamTree* params,
-                                    CGBLoaderParams::EPreopenConnection preopen)
+                                           const TParamTree* params,
+                                           const CReaderParams& reader_params,
+                                           CGBLoaderParams::EPreopenConnection preopen)
 {
     vector<string> str_list;
     NStr::Split(str, ";", str_list);
     size_t reader_count = 0;
     for ( size_t i = 0; i < str_list.size(); ++i ) {
-        CRef<CReader> reader(x_CreateReader(str_list[i], params));
+        CRef<CReader> reader(x_CreateReader(str_list[i], reader_params, params));
         if( reader ) {
             if ( HasHUPIncluded() ) {
                 reader->SetIncludeHUP(true, m_WebCookie);
@@ -487,7 +488,8 @@ static bool s_ForceDriver(const string& name)
 
 
 CReader* CGBDataLoader_Native::x_CreateReader(const string& name,
-                                       const TParamTree* params)
+                                              const CReaderParams& reader_params,
+                                              const TParamTree* params)
 {
     CRef<TReaderManager> manager = x_GetReaderManager();
     CReader* ret = manager->CreateInstanceFromList(params, name);
@@ -499,6 +501,7 @@ CReader* CGBDataLoader_Native::x_CreateReader(const string& name,
         }
     }
     else {
+        ret->SetParams(reader_params);
         ret->InitializeCache(m_CacheManager, params);
     }
     return ret;

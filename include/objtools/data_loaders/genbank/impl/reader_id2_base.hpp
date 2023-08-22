@@ -153,12 +153,18 @@ public:
         eTraceBlobData = 9
     };
     static int GetDebugLevel(void);
+    static bool GetVDB_SNP_Enabled();
+    static void SetVDB_SNP_Enabled(bool enabled = true);
+    static bool GetVDB_WGS_Enabled();
+    static void SetVDB_WGS_Enabled(bool enabled = true);
     static bool GetVDB_CDD_Enabled();
     static void SetVDB_CDD_Enabled(bool enabled = true);
 
     // Global default SNP scale limit.
     static CSeq_id::ESNPScaleLimit GetSNP_Scale_Limit(void);
     static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
+
+    void SetParams(const CReaderParams& params) override;
 
 protected:
     virtual string x_ConnDescription(TConn conn) const = 0;

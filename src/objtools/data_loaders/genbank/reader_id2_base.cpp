@@ -120,6 +120,9 @@ NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_SNP, true,
 NCBI_PARAM_DEF_EX(bool, GENBANK, VDB_CDD, true,
     eParam_NoThread, GENBANK_VDB_CDD);
 
+typedef NCBI_PARAM_TYPE(GENBANK, VDB_WGS) TGenbankVdbWgsParam;
+typedef NCBI_PARAM_TYPE(GENBANK, VDB_SNP) TGenbankVdbSnpParam;
+typedef NCBI_PARAM_TYPE(GENBANK, VDB_CDD) TGenbankVdbCddParam;
 
 int CId2ReaderBase::GetDebugLevel(void)
 {
@@ -128,15 +131,39 @@ int CId2ReaderBase::GetDebugLevel(void)
 }
 
 
+bool CId2ReaderBase::GetVDB_SNP_Enabled()
+{
+    return TGenbankVdbSnpParam::GetDefault();
+}
+
+
+void CId2ReaderBase::SetVDB_SNP_Enabled(bool enabled)
+{
+    return TGenbankVdbSnpParam::SetDefault(enabled);
+}
+
+
+bool CId2ReaderBase::GetVDB_WGS_Enabled()
+{
+    return TGenbankVdbWgsParam::GetDefault();
+}
+
+
+void CId2ReaderBase::SetVDB_WGS_Enabled(bool enabled)
+{
+    return TGenbankVdbWgsParam::SetDefault(enabled);
+}
+
+
 bool CId2ReaderBase::GetVDB_CDD_Enabled()
 {
-    return NCBI_PARAM_TYPE(GENBANK, VDB_CDD)::GetDefault();
+    return TGenbankVdbCddParam::GetDefault();
 }
 
 
 void CId2ReaderBase::SetVDB_CDD_Enabled(bool enabled)
 {
-    return NCBI_PARAM_TYPE(GENBANK, VDB_CDD)::SetDefault(enabled);
+    return TGenbankVdbCddParam::SetDefault(enabled);
 }
 
 
@@ -1670,6 +1697,20 @@ struct SId2ProcessingState
 };
 
 
+void CId2ReaderBase::SetParams(const CReaderParams& params)
+{
+    if (params.IsSetEnableSNP()) {
+        SetVDB_SNP_Enabled(params.GetEnableSNP());
+    }
+    if (params.IsSetEnableWGS()) {
+        SetVDB_WGS_Enabled(params.GetEnableWGS());
+    }
+    if (params.IsSetEnableCDD()) {
+        SetVDB_CDD_Enabled(params.GetEnableCDD());
+    }
+}
+
+
 void CId2ReaderBase::x_SetContextData(CID2_Request& request)
 {
     if ( request.GetRequest().IsInit() ) {
@@ -1682,11 +1723,11 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
             param->SetName("id2:allow");
             // allow new blob-state field in several ID2 replies
             param->SetValue().push_back("*.blob-state");
-            if ( NCBI_PARAM_TYPE(GENBANK, VDB_WGS)::GetDefault() ) {
+            if ( GetVDB_WGS_Enabled() ) {
                 // enable VDB-based WGS sequences
                 param->SetValue().push_back("vdb-wgs");
             }
-            if ( NCBI_PARAM_TYPE(GENBANK, VDB_SNP)::GetDefault() ) {
+            if ( GetVDB_SNP_Enabled() ) {
                 // enable VDB-based SNP sequences
                 param->SetValue().push_back("vdb-snp");
             }

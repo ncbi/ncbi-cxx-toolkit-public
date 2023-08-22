@@ -252,9 +252,10 @@ private:
     pair<string, string> GetReaderWriterName(const TParamTree* params, const CGBLoaderParams& loader_params) const;
     bool x_CreateReaders(const string& str,
                          const TParamTree* params,
+                         const CReaderParams& reader_params,
                          CGBLoaderParams::EPreopenConnection preopen);
     void x_CreateWriters(const string& str, const TParamTree* params);
-    CReader* x_CreateReader(const string& names, const TParamTree* params = 0);
+    CReader* x_CreateReader(const string& names, const CReaderParams& reader_params, const TParamTree* params = 0);
     CWriter* x_CreateWriter(const string& names, const TParamTree* params = 0);
 
     typedef CPluginManager<CReader> TReaderManager;

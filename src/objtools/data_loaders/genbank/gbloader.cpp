@@ -90,7 +90,9 @@ CGBLoaderParams::CGBLoaderParams(void)
       m_ParamTree(0),
       m_Preopen(ePreopenByConfig),
       m_HasHUPIncluded(false),
-      m_PSGNoSplit(false)
+      m_PSGNoSplit(false),
+      m_ReaderParams(new CReaderParams)
+
 {
 }
 
@@ -101,7 +103,8 @@ CGBLoaderParams::CGBLoaderParams(const string& reader_name)
       m_ParamTree(0),
       m_Preopen(ePreopenByConfig),
       m_HasHUPIncluded(false),
-      m_PSGNoSplit(false)
+      m_PSGNoSplit(false),
+      m_ReaderParams(new CReaderParams)
 {
 }
 
@@ -111,7 +114,8 @@ CGBLoaderParams::CGBLoaderParams(CReader* reader_ptr)
       m_ParamTree(0),
       m_Preopen(ePreopenByConfig),
       m_HasHUPIncluded(false),
-      m_PSGNoSplit(false)
+      m_PSGNoSplit(false),
+      m_ReaderParams(new CReaderParams)
 {
 }
 
@@ -121,7 +125,8 @@ CGBLoaderParams::CGBLoaderParams(const TParamTree* param_tree)
       m_ParamTree(param_tree),
       m_Preopen(ePreopenByConfig),
       m_HasHUPIncluded(false),
-      m_PSGNoSplit(false)
+      m_PSGNoSplit(false),
+      m_ReaderParams(new CReaderParams)
 {
 }
 
@@ -131,7 +136,8 @@ CGBLoaderParams::CGBLoaderParams(EPreopenConnection preopen)
       m_ParamTree(0),
       m_Preopen(preopen),
       m_HasHUPIncluded(false),
-      m_PSGNoSplit(false)
+      m_PSGNoSplit(false),
+      m_ReaderParams(new CReaderParams)
 {
 }
 
@@ -152,7 +158,8 @@ CGBLoaderParams::CGBLoaderParams(const CGBLoaderParams& params)
       m_WebCookie(params.m_WebCookie),
       m_LoaderName(params.m_LoaderName),
       m_PSGServiceName(params.m_PSGServiceName),
-      m_PSGNoSplit(params.m_PSGNoSplit)
+      m_PSGNoSplit(params.m_PSGNoSplit),
+      m_ReaderParams(new CReaderParams(*params.m_ReaderParams))
 {
 }
 
@@ -171,6 +178,7 @@ CGBLoaderParams& CGBLoaderParams::operator=(const CGBLoaderParams& params)
         m_LoaderName = params.m_LoaderName;
         m_PSGServiceName = params.m_PSGServiceName;
         m_PSGNoSplit = params.m_PSGNoSplit;
+        m_ReaderParams.reset(new CReaderParams(*params.m_ReaderParams));
     }
     return *this;
 }
