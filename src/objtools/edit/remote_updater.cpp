@@ -82,8 +82,8 @@ TEntrezId FindPMID(const list<CRef<CPub>>& arr)
 static bool s_IsConnectionFailure(EPubmedError errorVal)
 {
     switch (errorVal) {
-    case eError_val_cannot_connect_pmdb:
-    case eError_val_cannot_connect_searchbackend_pmdb:
+    case EPubmedError::cannot_connect_pmdb:
+    case EPubmedError::cannot_connect_searchbackend_pmdb:
         return true;
     default:
         break;

@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(Test_Empty)
         EPubmedError err;
         TEntrezId    pmid = upd->CitMatch(pub, &err);
         BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
-        BOOST_CHECK_EQUAL(err, eError_val_citation_not_found);
+        BOOST_CHECK_EQUAL(err, EPubmedError::citation_not_found);
     }
 }
 

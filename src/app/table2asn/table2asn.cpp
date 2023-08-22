@@ -138,7 +138,7 @@ public:
         auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
         if (edit)
         {
-            if (edit->m_error != eError_val_citation_not_found)
+            if (edit->m_error != edit::EPubmedError::citation_not_found)
                 return false;
         }
         return CMessageListenerLenient::PutMessage(message);
