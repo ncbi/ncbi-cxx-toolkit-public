@@ -49,6 +49,32 @@ class CReaderCacheManager;
 class CReaderAllocatedConnection;
 struct SAnnotSelector;
 
+
+class NCBI_XREADER_EXPORT CReaderParams
+{
+public:
+    CReaderParams(void) {}
+    ~CReaderParams(void) {}
+
+    bool IsSetEnableSNP(void) const { return !m_EnableSNP.IsNull(); }
+    bool GetEnableSNP(void) const { return m_EnableSNP.GetValue(); }
+    void SetEnableSNP(bool enable) { m_EnableSNP.SetValue() = enable; }
+
+    bool IsSetEnableWGS(void) const { return !m_EnableWGS.IsNull(); }
+    bool GetEnableWGS(void) const { return m_EnableWGS.GetValue(); }
+    void SetEnableWGS(bool enable) { m_EnableWGS.SetValue() = enable; }
+
+    bool IsSetEnableCDD(void) const { return !m_EnableCDD.IsNull(); }
+    bool GetEnableCDD(void) const { return m_EnableCDD.GetValue(); }
+    void SetEnableCDD(bool enable) { m_EnableCDD.SetValue() = enable; }
+
+private:
+    CNullable<bool> m_EnableSNP;
+    CNullable<bool> m_EnableWGS;
+    CNullable<bool> m_EnableCDD;
+};
+
+
 class NCBI_XREADER_EXPORT CReader : public CObject
 {
 public:
@@ -274,6 +300,8 @@ public:
     
     virtual void SetIncludeHUP(bool include_hup = true,
                                const string& web_cookie = NcbiEmptyString);
+
+    virtual void SetParams(const CReaderParams& params);
 
 #if 0
 /*

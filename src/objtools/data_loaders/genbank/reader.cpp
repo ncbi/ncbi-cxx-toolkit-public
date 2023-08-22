@@ -1331,6 +1331,11 @@ void CReader::SetIncludeHUP(bool include_hup, const string& web_cookie)
 }
 
 
+void CReader::SetParams(const CReaderParams& params)
+{
+}
+
+
 CReaderCacheManager::CReaderCacheManager(void)
 {
 }
