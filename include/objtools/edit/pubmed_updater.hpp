@@ -52,6 +52,7 @@ enum class EPubmedError {
     cannot_connect_searchbackend_pmdb,
 };
 
+NCBI_XOBJEDIT_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& os, EPubmedError err);
 
 struct NCBI_XOBJEDIT_EXPORT SCitMatch {
