@@ -34,7 +34,6 @@
 #define _PUBMED_UPDATER_HPP_
 
 #include <corelib/ncbiobj.hpp>
-#include <objects/mla/Error_val.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -43,10 +42,6 @@ class CPub;
 
 BEGIN_SCOPE(edit)
 
-using EPubmedError = EError_val;
-
-namespace temp
-{
 enum class EPubmedError {
     ok,
     not_found,
@@ -58,7 +53,6 @@ enum class EPubmedError {
 };
 
 CNcbiOstream& operator<<(CNcbiOstream& os, EPubmedError err);
-}
 
 struct NCBI_XOBJEDIT_EXPORT SCitMatch {
     string Journal;
