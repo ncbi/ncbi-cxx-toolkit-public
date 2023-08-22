@@ -70,6 +70,7 @@ class CReader;
 class CSeqref;
 class CReadDispatcher;
 class CGBInfoManager;
+class CReaderParams;
 
 // Parameter names used by loader factory
 
@@ -191,6 +192,9 @@ public:
         m_PSGNoSplit = no_split;
     }
 
+    const CReaderParams& GetReaderParams(void) const { return *m_ReaderParams; }
+    CReaderParams& SetReaderParams(void) { return *m_ReaderParams; }
+
 private:
     string m_ReaderName;
     string m_WriterName;
@@ -203,6 +207,7 @@ private:
     string m_LoaderName;
     string m_PSGServiceName;
     bool m_PSGNoSplit;
+    unique_ptr<CReaderParams> m_ReaderParams;
 };
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
