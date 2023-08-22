@@ -70,8 +70,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-namespace temp
-{
 CNcbiOstream& operator<<(CNcbiOstream& os, EPubmedError err)
 {
     const char* error = nullptr;
@@ -100,7 +98,6 @@ CNcbiOstream& operator<<(CNcbiOstream& os, EPubmedError err)
 
     os << error;
     return os;
-}
 }
 
 enum eCitMatchFlags {
@@ -320,7 +317,7 @@ public:
 
     TEntrezId GetResponse(EPubmedError& err)
     {
-        err = eError_val_operational_error;
+        err = EPubmedError::operational_error;
 
         CRef<esearch::CESearchResult> result = this->GetESearchResult();
         if (result && result->IsSetData()) {
@@ -330,20 +327,20 @@ public:
                 if (idList.IsSetId()) {
                     const auto& ids = idList.GetId();
                     if (ids.size() == 0) {
-                        err = eError_val_not_found;
+                        err = EPubmedError::not_found;
                     } else if (ids.size() == 1) {
                         string id = ids.front();
                         TIntId pmid;
                         if (NStr::StringToNumeric(id, &pmid, NStr::fConvErr_NoThrow)) {
                             return ENTREZ_ID_FROM(TIntId, pmid);
                         } else {
-                            err = eError_val_not_found;
+                            err = EPubmedError::not_found;
                         }
                     } else {
-                        err = eError_val_citation_ambiguous;
+                        err = EPubmedError::citation_ambiguous;
                     }
                 } else {
-                    err = eError_val_not_found;
+                    err = EPubmedError::not_found;
                 }
             }
         }
@@ -366,7 +363,7 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
         return CitMatch(cm, perr);
     } else {
         if (perr) {
-            *perr = eError_val_not_found;
+            *perr = EPubmedError::not_found;
         }
         return ZERO_ENTREZ_ID;
     }
@@ -378,7 +375,7 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
     req->SetField("title");
     req->SetRetMax(2);
     req->SetUseHistory(false);
-    EPubmedError err = eError_val_citation_not_found;
+    EPubmedError err = EPubmedError::citation_not_found;
 
     // clang-format off
     constexpr array<eCitMatchFlags, 6> ruleset_single = {
@@ -519,7 +516,7 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
         CNcbiIstrstream(content) >> MSerial_Xml >> pas;
     } catch (...) {
         if (perr) {
-            *perr = EError_val::eError_val_citation_not_found;
+            *perr = EPubmedError::citation_not_found;
         }
         return {};
     }
@@ -552,7 +549,7 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
     }
 
     if (perr) {
-        *perr = EError_val::eError_val_citation_not_found;
+        *perr = EPubmedError::citation_not_found;
     }
     return {};
 }
