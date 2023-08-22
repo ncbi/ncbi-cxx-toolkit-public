@@ -148,20 +148,23 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     switch (idh.Which()) {
+// LCOV_EXCL_START
     case CSeq_id::e_Pir:
         m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddPIRBlock(ctx);
         break;
+// LCOV_EXCL_STOP
 
     case CSeq_id::e_Swissprot:
         m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddSPBlock(ctx);
         break;
-
+// LCOV_EXCL_START
     case CSeq_id::e_Prf:
         m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddPRFBlock(ctx);
         break;
+// LCOV_EXCL_STOP
 
     case CSeq_id::e_Pdb:
         m_DBSource.push_back(x_FormatDBSourceID(idh));
@@ -249,6 +252,7 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
     }
 }
 
+// LCOV_EXCL_START
 void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
 {
     // In this function, the newlines seem weird because the C toolkit
@@ -343,6 +347,7 @@ void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
         m_DBSource.front() += "\n";
     }
 }
+// LCOV_EXCL_STOP
 
 static void s_FormatDate(const CDate& date, string& str)
 {
@@ -470,7 +475,7 @@ void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
     }
 }
 
-
+// LCOV_EXCL_START
 void CDBSourceItem::x_AddPRFBlock(CBioseqContext& ctx)
 {
     CSeqdesc_CI dsc(ctx.GetHandle(), CSeqdesc::e_Prf);
@@ -503,6 +508,7 @@ void CDBSourceItem::x_AddPRFBlock(CBioseqContext& ctx)
         *it += (&*it == &m_DBSource.back() ? '.' : ';');
     }
 }
+// LCOV_EXCL_STOP
 
 
 void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
