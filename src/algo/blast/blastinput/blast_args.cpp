@@ -2418,14 +2418,16 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
     // JIRA SB-3780
     //auto dbpath =  kEmptyStr;
     unique_ptr<ITaxonomy4Blast> tb;
-    try{
-      tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
+    if( !isTargetOnly ) {
+	try{
+	    tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
+	}
+	catch(CException &){
+	NCBI_THROW(CBlastException, eInvalidArgument,
+		"The -taxids command line option requires additional data files. Please see URL_HERE for details.");
+	}
     }
-    catch(CException &){
-	NCBI_THROW(CBlastException, eInvalidArgument, "Missing taxonomy4blast.sqlite3");
-    }
-
-	set<TTaxId> tax_ids;
+    set<TTaxId> tax_ids;
     for(unsigned int i=0; i < ids.size(); i++) {
     	try {
     		if(NStr::IsBlank(ids[i])){
