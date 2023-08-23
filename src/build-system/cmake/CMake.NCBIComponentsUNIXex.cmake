@@ -202,6 +202,7 @@ NCBIcomponent_report(NCBI_C)
 #############################################################################
 # BACKWARD, UNWIND
 NCBI_define_Xcomponent(NAME BACKWARD)
+NCBIcomponent_report(BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
     if(NOT NCBI_PTBCFG_USECONAN AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
@@ -212,6 +213,8 @@ if(NCBI_COMPONENT_BACKWARD_FOUND)
         endif()
     endif()
 endif()
+check_include_file_cxx(backward.hpp HAVE_BACKWARD_HPP
+    -I${NCBI_COMPONENT_BACKWARD_INCLUDE})
 if(NOT NCBI_COMPONENT_UNWIND_FOUND)
     if(NOT CYGWIN OR (DEFINED NCBI_COMPONENT_UNWIND_DISABLED AND NOT NCBI_COMPONENT_UNWIND_DISABLED))
         check_include_file(libunwind.h HAVE_LIBUNWIND_H)

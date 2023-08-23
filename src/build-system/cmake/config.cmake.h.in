@@ -804,6 +804,9 @@
 
 /* ======================================================================= */
 /* ======================================================================= */
+/* Define to 1 if backward.hpp is available. */
+#cmakedefine HAVE_BACKWARD_HPP 1
+
 /* Define to 1 if NCBI C++ API for BerkeleyDB is available. */
 #cmakedefine HAVE_BDB 1
 

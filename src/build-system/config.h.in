@@ -37,6 +37,9 @@
    __attribute__((visibility("default"))) */
 #undef HAVE_ATTRIBUTE_VISIBILITY_DEFAULT
 
+/* Define to 1 if you have the <backward.hpp> header file. */
+#undef HAVE_BACKWARD_HPP
+
 /* Define to 1 if you have the `basename' function. */
 #undef HAVE_BASENAME
 
