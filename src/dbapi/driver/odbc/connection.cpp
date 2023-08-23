@@ -45,7 +45,7 @@
 #include "odbc_utils.hpp"
 
 // #define DEFAULT_ODBC_DRIVER_NAME "SQL Server"
-#define DEFAULT_ODBC_DRIVER_NAME "ODBC Driver 17 for SQL Server"
+#define DEFAULT_ODBC_DRIVER_NAME "ODBC Driver 18 for SQL Server"
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Conn
 
@@ -168,7 +168,8 @@ void CODBC_Connection::x_Connect(
         }
         conn_str_suffix +=
             ";UID=" + params.GetUserName() +
-            ";PWD=" + params.GetPassword()
+            ";PWD=" + params.GetPassword() +
+            ";TrustServerCertificate=yes"
             ;
 
         CNcbiApplication* app = CNcbiApplication::Instance();
