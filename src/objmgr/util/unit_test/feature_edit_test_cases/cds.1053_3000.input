@@ -1,0 +1,41 @@
+Seq-feat ::=    {
+                  id local id 14280,
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole general {
+                    db "Q9212",
+                    tag str "LIQ164TEHY_005203-T1.cds"
+                  },
+                  location mix {
+                    int {
+                      from 887,
+                      to 956,
+                      strand plus,
+                      id local str "scaffold_533"
+                    },
+                    int {
+                      from 1635,
+                      to 2086,
+                      strand plus,
+                      id local str "scaffold_533"
+                    }
+                  },
+                  qual {
+                    {
+                      qual "orig_transcript_id",
+                      val "gnl|Q9212|LIQ164TEHY_005203-T1"
+                    }
+                  },
+                  xref {
+                    {
+                      id local id 14278
+                    },
+                    {
+                      id local id 14279
+                    }
+                  }
+                }

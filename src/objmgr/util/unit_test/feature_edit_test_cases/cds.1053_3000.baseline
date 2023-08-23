@@ -1,0 +1,40 @@
+Seq-feat ::= {
+  id local id 14280,
+  data cdregion {
+    frame three,
+    code {
+      id 1
+    }
+  },
+  partial TRUE,
+  product whole general {
+    db "Q9212",
+    tag str "LIQ164TEHY_005203-T1.cds"
+  },
+  location int {
+    from 1635,
+    to 2086,
+    strand plus,
+    id local str "scaffold_533",
+    fuzz-from lim lt
+  },
+  qual {
+    {
+      qual "orig_transcript_id",
+      val "gnl|Q9212|LIQ164TEHY_005203-T1"
+    }
+  },
+  xref {
+    {
+      id local id 14278
+    },
+    {
+      id local id 14279
+    }
+  }
+}
+/home/foleyjp/toolkit/src/objmgr/util/unit_test/unit_test_feature_edit.cpp(257): [1;31;49merror: in "RunTests": an std::exception was thrown by sRunFeatureTrimTest(testName, testInfo, args["keep-diffs"]) : NCBI C++ Exception:
+    T0 "/home/foleyjp/toolkit/src/util/strbuffer.cpp", line 435: Error: (CEofException::eEof) ncbi::CIStreamBuffer::FillBuffer() - end of file
+    T0 "/home/foleyjp/toolkit/src/serial/objistr.cpp", line 594: Error: (CEofException::eEof) ncbi::CObjectIStream::HandleEOF() -  Frame type= eFrameNamed, Object type= Seq-feat
+[0;39;49m
+Executed 1 test cases.
