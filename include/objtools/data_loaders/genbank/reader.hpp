@@ -58,15 +58,15 @@ public:
 
     bool IsSetEnableSNP(void) const { return !m_EnableSNP.IsNull(); }
     bool GetEnableSNP(void) const { return m_EnableSNP.GetValue(); }
-    void SetEnableSNP(bool enable) { m_EnableSNP.SetValue() = enable; }
+    void SetEnableSNP(bool enable) { m_EnableSNP = enable; }
 
     bool IsSetEnableWGS(void) const { return !m_EnableWGS.IsNull(); }
     bool GetEnableWGS(void) const { return m_EnableWGS.GetValue(); }
-    void SetEnableWGS(bool enable) { m_EnableWGS.SetValue() = enable; }
+    void SetEnableWGS(bool enable) { m_EnableWGS = enable; }
 
     bool IsSetEnableCDD(void) const { return !m_EnableCDD.IsNull(); }
     bool GetEnableCDD(void) const { return m_EnableCDD.GetValue(); }
-    void SetEnableCDD(bool enable) { m_EnableCDD.SetValue() = enable; }
+    void SetEnableCDD(bool enable) { m_EnableCDD = enable; }
 
 private:
     CNullable<bool> m_EnableSNP;
