@@ -260,14 +260,15 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
     }
 }
 
-int CODBC_RowResult::x_GetVarLenData(SQLSMALLINT target_type,
-                                     TItemBuffer& buffer,
-                                     SQLINTEGER buffer_size)
+ssize_t CODBC_RowResult::x_GetVarLenData(SQLSMALLINT target_type,
+                                         TItemBuffer& buffer,
+                                         SQLINTEGER buffer_size)
 {
     list<string> extra_buffers;
     char * current_buffer = buffer.get();
     SQLINTEGER current_size = buffer_size;
-    int n, nul_size;
+    ssize_t n;
+    int nul_size;
     bool more;
     switch (target_type) {
     case SQL_C_CHAR:  nul_size = 1;               break;
@@ -278,7 +279,7 @@ int CODBC_RowResult::x_GetVarLenData(SQLSMALLINT target_type,
            >= current_size  &&  more) {
         if (n > current_size) {
             // Add margin for (possibly wide) NUL-related complications.
-            current_size = n + 2 * nul_size - current_size;
+            current_size = static_cast<int>(n) + 2 * nul_size - current_size;
         }
         extra_buffers.emplace_back(string(current_size, '\0'));
         current_buffer = const_cast<char*>(extra_buffers.back().data());
@@ -296,7 +297,7 @@ int CODBC_RowResult::x_GetVarLenData(SQLSMALLINT target_type,
     }
     buffer.reset(new char[n + nul_size]);
     memcpy(buffer.get(), orig_buffer, buffer_size);
-    int pos = buffer_size;
+    ssize_t pos = buffer_size;
     for (const auto & it : extra_buffers) {
         if (nul_size > 0  &&  pos >= nul_size) {
             bool elide = true;
@@ -448,7 +449,7 @@ CDB_Object* CODBC_RowResult::x_LoadItem(I_Result::EGetItem policy, CDB_Object* i
 {
     char base_buf[8*1024];
     TItemBuffer buffer(base_buf, eNoOwnership);
-    int outlen;
+    ssize_t outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
     case SQL_WCHAR:
@@ -870,7 +871,7 @@ CDB_Object* CODBC_RowResult::x_MakeItem()
 {
     char base_buf[8*1024];
     TItemBuffer buffer(base_buf, eNoOwnership);
-    int outlen;
+    ssize_t outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
     case SQL_WCHAR:

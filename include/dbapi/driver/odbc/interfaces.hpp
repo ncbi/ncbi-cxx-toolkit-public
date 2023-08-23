@@ -771,8 +771,8 @@ protected:
 
     int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
                  SQLINTEGER buffer_size, bool* more = NULL);
-    int x_GetVarLenData(SQLSMALLINT target_type, TItemBuffer& buffer,
-                        SQLINTEGER buffer_size);
+    ssize_t x_GetVarLenData(SQLSMALLINT target_type, TItemBuffer& buffer,
+                            SQLINTEGER buffer_size);
     CDB_Object* x_LoadItem(I_Result::EGetItem policy, CDB_Object* item_buf);
     CDB_Object* x_MakeItem(void);
 
