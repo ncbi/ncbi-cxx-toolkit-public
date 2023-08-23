@@ -1120,6 +1120,8 @@ public:
     /// Traverse the JSON data stream contents
     static void Walk(std::istream& in, CJson_WalkHandler& walk);
 
+    /// Check that the JSON document is a valid JSON schema
+    bool IsSchema(void) const;
 
 private:
     _DocImpl m_DocImpl;
@@ -2468,6 +2470,19 @@ inline void CJson_Document::Walk(std::istream& in,
     rapidjson::IStreamWrapper ifs(in);
     rapidjson::Reader rdr;
     rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk);
+}
+
+inline bool CJson_Document::IsSchema(void) const {
+    bool valid = false;
+    string metaname(CDirEntry::ConvertToOSPath(CDirEntry::ConcatPath(CDirEntry(__FILE__).GetDir(), "meta.jsd")));
+    if (CDirEntry(metaname).Exists()) {
+        CJson_Document metadoc;
+        if (metadoc.Read(metaname)) {
+            CJson_Schema metaschema(metadoc);
+            valid = metaschema.Validate(*this);
+        }
+    }
+    return valid;
 }
 
 // --------------------------------------------------------------------------
