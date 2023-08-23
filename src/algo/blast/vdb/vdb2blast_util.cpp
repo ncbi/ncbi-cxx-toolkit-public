@@ -735,8 +735,13 @@ Uint4 CVDBBlastUtil::SetupVDBManager()
 	if(status != 0 || mgr == NULL) {
 	        NCBI_THROW(CException, eInvalid, "Fail to setup VDB manager");
 	}
-	status = VdbBlastMgrKLogLevelSetWarn ( mgr);
-
+	status = VdbBlastMgrKLogHandlerSetStdErr(mgr);
+	if (status == 0) {
+		status = VdbBlastMgrKLogLibHandlerSetStdErr(mgr);
+	}
+	if (status == 0) {
+	status = VdbBlastMgrKLogLevelSetWarn(mgr);
+	}
 	return status;
 }
 

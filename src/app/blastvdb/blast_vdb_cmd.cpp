@@ -275,12 +275,12 @@ void CVdbFastaExtractor::Write(CRef<CBioseq> bioseq, int oid)
 	     while ((seq_arg.oid = BlastSeqSrcIteratorNext(seqsrc, itr)) != BLAST_SEQSRC_EOF) {
 	    	 if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
        			ERR_POST("Iterator returns BLAST_SEQSRC_ERROR");
-        		return;
+       			exit(1);
              }
 	    	 CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromOid(seq_arg.oid);
              if (bioseq.Empty()) {
      	  		ERR_POST("Empty Bioseq");
-     	    	return;
+     	  		exit(1);
              }
              fasta.Write(*bioseq);
          }
@@ -289,7 +289,7 @@ void CVdbFastaExtractor::Write(CRef<CBioseq> bioseq, int oid)
 	     while ((seq_arg.oid = BlastSeqSrcIteratorNext(seqsrc, itr)) != BLAST_SEQSRC_EOF) {
 	    	 if (seq_arg.oid == BLAST_SEQSRC_ERROR) {
        			ERR_POST("Iterator returns BLAST_SEQSRC_ERROR");
-        		return;
+        		exit(1);
              }
 	    	 CRef<CBioseq> bioseq = m_VdbBlastDB->CreateBioseqFromOid(seq_arg.oid);
              if (bioseq.Empty()) {
