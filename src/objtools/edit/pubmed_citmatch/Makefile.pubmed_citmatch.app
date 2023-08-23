@@ -2,7 +2,7 @@
 
 APP = pubmed_citmatch
 SRC = pubmed_citmatch
-LIB = $(OBJEDIT_LIBS) mla eutils uilist efetch seqset $(SEQ_LIBS) \
+LIB = $(OBJEDIT_LIBS) eutils uilist efetch seqset $(SEQ_LIBS) \
       pubmed medlars pub medline biblio general xser xconnect xutil xncbi
 
 LIBS = $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
