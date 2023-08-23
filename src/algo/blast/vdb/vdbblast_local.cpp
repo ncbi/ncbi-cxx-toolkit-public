@@ -213,9 +213,9 @@ CRef<CSearchResultSet> s_RunLocalVDBSearch(const string & dbs,
 		 results = lcl_blast.Run();
 	}
 	catch (const CBlastException& e) {
-	        cerr << "BLAST engine error: " << e.what() << endl;
+	        ERR_POST("BLAST engine error: " << e.what());
 	    	// Temporary fix to avoid vdb core dump during cleanup SB-1170
-	    	abort();
+	        exit(1);
 	}
     num_extensions = lcl_blast.GetNumExtensions();
     return results;
@@ -247,9 +247,9 @@ CRef<CSearchResultSet> s_RunPsiVDBSearch(const string & dbs,
 		 results = psi_blast.Run();
 	}
 	catch (const CBlastException& e) {
-	        cerr << "BLAST engine error: " << e.what() << endl;
+	        ERR_POST("BLAST engine error: " << e.what());
 	    	// Temporary fix to avoid vdb core dump during cleanup SB-1170
-	    	abort();
+	    	exit(1);
 	}
     return results;
 }
