@@ -43,7 +43,6 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/blastxml2/Range.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
