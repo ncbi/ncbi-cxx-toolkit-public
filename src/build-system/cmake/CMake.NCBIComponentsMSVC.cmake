@@ -98,7 +98,7 @@ elseif("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2017.64")
     set(NCBI_ThirdParty_XERCES ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/2.8.0 CACHE PATH "XERCES root")
     set(NCBI_ThirdParty_UV     ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.35.0 CACHE PATH "UV root")
 endif()
-set(NCBI_ThirdParty_SQLServer   "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/170/SDK")
+set(NCBI_ThirdParty_SQLServer   "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/180/SDK")
 
 
 #############################################################################
@@ -168,9 +168,9 @@ endif()
 NCBIcomponent_report(ODBC)
 
 if(NOT NCBI_COMPONENT_SQLServer_DISABLED)
-    NCBI_define_Wcomponent(SQLServer "x64/msodbcsql17.lib")
+    NCBI_define_Wcomponent(SQLServer "x64/msodbcsql18.lib")
     if(NCBI_COMPONENT_SQLServer_FOUND)
-        set(NCBI_COMPONENT_SQLServer_VERSION 170)
+        set(NCBI_COMPONENT_SQLServer_VERSION 180)
     endif()
 endif()
 NCBIcomponent_report(SQLServer)
