@@ -157,24 +157,19 @@ void CODBC_Connection::x_Connect(
 
     if(!cntx.GetUseDSN()) {
         string connect_str;
-        string conn_str_suffix;
+        string conn_str_suffix = ";SERVER=" + server_name;
 
         if (params.GetHost() && params.GetPort()) {
-            conn_str_suffix =
-                ";SERVER=" + server_name +
+            conn_str_suffix +=
                 ";ADDRESS=" + server_name +
                 "," + NStr::IntToString(params.GetPort()) +
-                ";NETWORK=DBMSSOCN" +
-                ";UID=" + params.GetUserName() +
-                ";PWD=" + params.GetPassword()
-                ;
-        } else {
-            conn_str_suffix =
-                ";SERVER=" + server_name +
-                ";UID=" + params.GetUserName() +
-                ";PWD=" + params.GetPassword()
+                ";NETWORK=DBMSSOCN"
                 ;
         }
+        conn_str_suffix +=
+            ";UID=" + params.GetUserName() +
+            ";PWD=" + params.GetPassword()
+            ;
 
         CNcbiApplication* app = CNcbiApplication::Instance();
 
