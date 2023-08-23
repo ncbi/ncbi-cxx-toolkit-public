@@ -17467,6 +17467,35 @@ $as_echo "#define HAVE_LIBDW 1" >>confdefs.h
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
+case "$with_backward_cpp" in
+   yes | '' ) ;;
+   no       ) ncbi_cv_lib_backward_cpp=no ;;
+   *        ) BACKWARD_CPP_PATH=$with_backward_cpp ;;
+esac
+if test -d "$BACKWARD_CPP_PATH"; then
+   BACKWARD_CPP_INCLUDE=-I$BACKWARD_CPP_PATH/include
+   in_path=" in $BACKWARD_CPP_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $BACKWARD_CPP_INCLUDE"
+for ac_header in backward.hpp
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "backward.hpp" "ac_cv_header_backward_hpp" "$ac_includes_default"
+if test "x$ac_cv_header_backward_hpp" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_BACKWARD_HPP 1
+_ACEOF
+           WithPackages="$WithPackages${WithPackagesSep}BACKWARD_CPP"; WithPackagesSep=" "
+else
+  BACKWARD_CPP_INCLUDE=; if test "${with_backward_cpp:=no}" != no; then
+       as_fn_error $? "--with-backward_cpp explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+fi
+
+done
+
+
 if test "$with_backward_cpp" != "no"; then
     case "$BACKWARD_CPP_PATH:$with_backward_cpp" in
        *:yes | *: | $with_backward_cpp* ) ;;

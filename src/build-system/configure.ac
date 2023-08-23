@@ -4728,6 +4728,21 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(libdw, LIBDW, dw,
 LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
+case "$with_backward_cpp" in
+   yes | '' ) ;;
+   no       ) ncbi_cv_lib_backward_cpp=no ;;
+   *        ) BACKWARD_CPP_PATH=$with_backward_cpp ;;
+esac
+if test -d "$BACKWARD_CPP_PATH"; then
+   BACKWARD_CPP_INCLUDE=-I$BACKWARD_CPP_PATH/include
+   in_path=" in $BACKWARD_CPP_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $BACKWARD_CPP_INCLUDE"
+AC_CHECK_HEADERS([backward.hpp], [NCBI_PACKAGE(BACKWARD_CPP)],
+   [BACKWARD_CPP_INCLUDE=; NCBI_MISSING_PACKAGE(backward_cpp)])
+
 NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
  [AC_LANG_PROGRAM([@%:@ifdef HAVE_LIBUNWIND
                    @%:@  define BACKWARD_HAS_UNWIND 1

@@ -255,6 +255,8 @@ NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp REQUIRES libdwarf FI
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
+    check_include_file(backward.hpp HAVE_BACKWARD_HPP
+        -I${NCBI_COMPONENT_BACKWARD_INCLUDE})
 endif()
 NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind REQUIRES xz_utils;zlib FIND libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
