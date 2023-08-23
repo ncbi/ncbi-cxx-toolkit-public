@@ -968,6 +968,7 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
             "},\"required\": [\"id\", \"name\", \"price\"]}"
             );
         CJson_Document sd(str_schema);
+        BOOST_CHECK(sd.IsSchema());
         CJson_Schema sc(sd);
         CJson_Document testdoc;
         testdoc.SetObject().insert("id", 1);
