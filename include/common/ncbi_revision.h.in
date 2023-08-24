@@ -31,6 +31,10 @@
 #    undef NCBI_REVISION
 #  endif
 #  define NCBI_REVISION "@NCBI_REVISION@"
+#  ifdef NCBI_GIT_BRANCH
+#    undef NCBI_GIT_BRANCH
+#  endif
+#  define NCBI_GIT_BRANCH "@NCBI_GIT_BRANCH@"
 #endif
 
 #if @NCBI_SUBVERSION_REVISION@ != 0
