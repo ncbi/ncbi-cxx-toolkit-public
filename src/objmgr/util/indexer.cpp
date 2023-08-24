@@ -2050,6 +2050,13 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     sel.SetFailUnresolved();
 }
 
+// GetSelector is public access to selector populated by command-line arguments
+void CBioseqIndex::GetSelector (SAnnotSelector& sel)
+
+{
+    x_DefaultSelector(sel, m_Policy, m_Flags, m_ForceOnlyNearFeats, *m_Scope);
+}
+
 // Feature collection common implementation method (delayed until needed)
 void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
 
