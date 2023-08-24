@@ -1146,7 +1146,7 @@ public:
     /// Validate JSON data from a file
     bool Validate(const std::string& filename) {
         std::ifstream in(filename.c_str());
-	return Validate(in);
+        return Validate(in);
     }
 
     /// Return result of the most recent validation
@@ -1167,6 +1167,14 @@ private:
     friend class CJson_Document;
 };
 
+/// JSON meta-schema describes JSON schema itself
+/// So, other JSON schemas can be validated against it
+class CJson_MetaSchema : public CJson_Schema
+{
+public:
+    /// Construct JSON meta-schema
+    CJson_MetaSchema(void);
+};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2473,7 +2481,14 @@ inline void CJson_Document::Walk(std::istream& in,
 }
 
 inline bool CJson_Document::IsSchema(void) const {
-    string meta(R"META(
+    return CJson_MetaSchema().Validate(*this);
+}
+
+// --------------------------------------------------------------------------
+// CJson_MetaSchema
+
+inline CJson_MetaSchema::CJson_MetaSchema(void)
+    : CJson_Schema( CJson_Document( R"META(
 {
     "id": "http://json-schema.org/draft-04/schema#",
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -2623,15 +2638,11 @@ inline bool CJson_Document::IsSchema(void) const {
     },
     "default": {}
 }
-    )META");
-    CJson_Document d(meta);
-    CJson_Schema metaschema(d);
-    return metaschema.Validate(*this);
+    )META" )) {
 }
 
 // --------------------------------------------------------------------------
 // CJson_Schema methods
-
 
 inline CJson_Schema::CJson_Schema(const CJson_Document& schema)
     : m_SchemaDocument(schema.m_DocImpl),
