@@ -73,7 +73,8 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
         eDevelopmentVersion,
         eProductionVersion,
         eBuiltAs,
-        eRevision ///< Not necessarily numeric
+        eRevision, ///< Not necessarily numeric
+        eGitBranch
     };
     string date;
     string tag;

@@ -39,6 +39,7 @@
 #endif
 
 #include <corelib/ncbi_base_build_ver.h>
+#undef NCBI_GIT_BRANCH
 #undef NCBI_REVISION
 #undef NCBI_SUBVERSION_REVISION
 #undef NCBI_TEAMCITY_BUILD_NUMBER
@@ -47,6 +48,9 @@
 #undef NCBI_TEAMCITY_BUILD_ID
 #ifdef HAVE_COMMON_NCBI_BUILD_VER_H
 #  include <common/ncbi_build_ver.h>
+#endif
+#ifndef NCBI_GIT_BRANCH
+#  define NCBI_GIT_BRANCH ""
 #endif
 #ifndef NCBI_REVISION
 #  define NCBI_REVISION ""
@@ -170,6 +174,7 @@ double NCBI_GetCheckTimeoutMult(void)
     const type kNCBI_##symbol = NCBI_##macro;
 #endif
 
+EXPOSE_METADATA(TStringLiteral, GIT_BRANCH,              GitBranch)
 EXPOSE_METADATA(TStringLiteral, REVISION,                Revision)
 EXPOSE_METADATA(int,            SUBVERSION_REVISION,     SubversionRevision)
 EXPOSE_METADATA(TStringLiteral, TEAMCITY_BUILDCONF_NAME, TeamCityBuildConfName)

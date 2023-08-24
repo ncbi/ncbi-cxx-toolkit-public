@@ -44,6 +44,7 @@ extern "C" {
 
 typedef const char* TStringLiteral;
 
+DECLARE_NCBI_BUILD_METADATA(TStringLiteral, GitBranch);
 DECLARE_NCBI_BUILD_METADATA(TStringLiteral, Revision);
 DECLARE_NCBI_BUILD_METADATA(int,            SubversionRevision);
 DECLARE_NCBI_BUILD_METADATA(TStringLiteral, TeamCityBuildConfName);
@@ -51,6 +52,7 @@ DECLARE_NCBI_BUILD_METADATA(TStringLiteral, TeamCityBuildID);
 DECLARE_NCBI_BUILD_METADATA(int,            TeamCityBuildNumber);
 DECLARE_NCBI_BUILD_METADATA(TStringLiteral, TeamCityProjectName);
 
+#define NCBI_GIT_BRANCH              NCBI_BUILD_METADATA(GitBranch)
 #define NCBI_REVISION                NCBI_BUILD_METADATA(Revision)
 #define NCBI_SUBVERSION_REVISION     NCBI_BUILD_METADATA(SubversionRevision)
 #define NCBI_TEAMCITY_BUILDCONF_NAME NCBI_BUILD_METADATA(TeamCityBuildConfName)
