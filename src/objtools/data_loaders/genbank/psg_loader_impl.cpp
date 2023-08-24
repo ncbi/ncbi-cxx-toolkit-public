@@ -35,6 +35,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_url.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
 #include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
@@ -50,6 +51,7 @@
 #include <objtools/data_loaders/genbank/impl/psg_loader_impl.hpp>
 #include <objtools/data_loaders/genbank/gbloader_params.h>
 #include <objtools/data_loaders/genbank/impl/wgsmaster.hpp>
+#include <objtools/data_loaders/genbank/reader.hpp>
 #include <util/compress/compress.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
@@ -1145,6 +1147,21 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
 
     if (TPSG_IpgTaxIdEnabled::GetDefault()) {
         m_IpgTaxIdMap.reset(new CPSGIpgTaxIdMap(m_CacheLifespan, cache_max_size));
+    }
+
+    CUrlArgs args;
+    const CReaderParams& rparams = params.GetReaderParams();
+    if (rparams.IsSetEnableSNP()) {
+        args.AddValue(rparams.GetEnableSNP() ? "enable_processor" : "disable_processor", "snp");
+    }
+    if (rparams.IsSetEnableWGS()) {
+        args.AddValue(rparams.GetEnableWGS() ? "enable_processor" : "disable_processor", "wgs");
+    }
+    if (rparams.IsSetEnableCDD()) {
+        args.AddValue(rparams.GetEnableCDD() ? "enable_processor" : "disable_processor", "cdd");
+    }
+    if (!args.GetArgs().empty()) {
+        m_Queue->SetUserArgs(SPSG_UserArgs(args));
     }
 }
 
