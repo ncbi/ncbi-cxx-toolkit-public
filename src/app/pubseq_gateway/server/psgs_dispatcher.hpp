@@ -136,7 +136,8 @@ private:
     x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const;
     CRequestStatus::ECode
     x_ConcludeIDGetNARequestStatus(shared_ptr<CPSGS_Request> request,
-                                   shared_ptr<CPSGS_Reply> reply);
+                                   shared_ptr<CPSGS_Reply> reply,
+                                   bool low_level_close);
     CRequestStatus::ECode
     x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply,

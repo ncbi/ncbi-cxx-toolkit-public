@@ -653,7 +653,9 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             CRequestStatus::ECode   request_status = CRequestStatus::e200_Ok;
             if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
                 // This way is only for ID/get_na requests
-                request_status = x_ConcludeIDGetNARequestStatus(request, reply);
+                request_status = x_ConcludeIDGetNARequestStatus(request,
+                                                                reply,
+                                                                procs->second->m_LowLevelClose);
             } else {
                 // This way is for all the other requests
                 request_status = x_ConcludeRequestStatus(request, reply, proc_statuses);
@@ -888,7 +890,8 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
 CRequestStatus::ECode
 CPSGS_Dispatcher::x_ConcludeIDGetNARequestStatus(
                             shared_ptr<CPSGS_Request> request,
-                            shared_ptr<CPSGS_Reply> reply)
+                            shared_ptr<CPSGS_Reply> reply,
+                            bool low_level_close)
 {
     // The request status is based on per-NA results
     SPSGS_AnnotRequest *    annot_request = & request->GetRequest<SPSGS_AnnotRequest>();
@@ -938,8 +941,10 @@ CPSGS_Dispatcher::x_ConcludeIDGetNARequestStatus(
         result_per_na[name] = 404;
     }
 
-    // Send the per NA information to the client
-    reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
+    if (!low_level_close) {
+        // Send the per NA information to the client
+        reply->SendPerNamedAnnotationResults(ToJsonString(result_per_na));
+    }
 
     if (overall_status == 200) {
         if (count_200 == 0) {
@@ -1191,40 +1196,69 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
         }
 
         if (!procs->second->m_RequestStopPrinted) {
-            // That means the request stop has not been really issued before
-            // the group is removed
-            auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
-            counters.Increment(nullptr, CPSGSCounters::ePSGS_NoRequestStop);
+            if (procs->second->m_LowLevelClose) {
+                // In case of a low-level socket problem detection the request stop
+                // may be missed because it is issued right after the final chunk
+                // is formed and flushed.
+                // Issue the request stop here.
 
-            string      per_proc;
-            for (const auto &  proc_data : procs->second->m_Processors) {
-                if (!per_proc.empty())
-                    per_proc += "; ";
-                per_proc += "processor: " + proc_data.m_Processor->GetName() +
-                            " [dispatch status: " + to_string(proc_data.m_DispatchStatus) +
-                            "; finish status: " + to_string(proc_data.m_FinishStatus) +
-                            "; done status registered: " + to_string(proc_data.m_DoneStatusRegistered) +
-                            "]";
+                auto    processor = procs->second->m_Processors.begin()->m_Processor;
+                auto    reply = processor->GetReply();
+                auto    request = processor->GetRequest();
+
+                CRequestStatus::ECode   request_status = CRequestStatus::e200_Ok;
+                if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
+                    // This way is only for ID/get_na requests
+                    request_status = x_ConcludeIDGetNARequestStatus(request,
+                                                                    reply,
+                                                                    procs->second->m_LowLevelClose);
+                } else {
+                    // This way is for all the other requests
+                    vector<IPSGS_Processor::EPSGS_Status>   proc_statuses;
+                    for (auto &  proc: procs->second->m_Processors) {
+                        proc_statuses.push_back(proc.m_Processor->GetStatus());
+                    }
+                    request_status = x_ConcludeRequestStatus(request, reply, proc_statuses);
+                }
+
+                procs->second->m_RequestStopPrinted = true;
+                x_PrintRequestStop(request, request_status, reply->GetBytesSent());
+            } else {
+                // That means the request stop has not been really issued before
+                // the group is removed
+                auto &  counters = CPubseqGatewayApp::GetInstance()->GetCounters();
+                counters.Increment(nullptr, CPSGSCounters::ePSGS_NoRequestStop);
+
+                string      per_proc;
+                for (const auto &  proc_data : procs->second->m_Processors) {
+                    if (!per_proc.empty())
+                        per_proc += "; ";
+                    per_proc += "processor: " + proc_data.m_Processor->GetName() +
+                                " [dispatch status: " + to_string(proc_data.m_DispatchStatus) +
+                                "; finish status: " + to_string(proc_data.m_FinishStatus) +
+                                "; done status registered: " + to_string(proc_data.m_DoneStatusRegistered) +
+                                "]";
+                }
+
+                string      started_proc = "started processor: ";
+                if (procs->second->m_StartedProcessing)
+                    started_proc += procs->second->m_StartedProcessing->GetName();
+                else
+                    started_proc += "none";
+
+                PSG_ERROR("Removing a processor group for which "
+                          "request stop has not been issued "
+                          "(request id: " + to_string(request_id) +
+                          "; timer active: " + to_string(procs->second->m_TimerActive) +
+                          "; timer closed: " + to_string(procs->second->m_TimerClosed) +
+                          "; request final flush: " + to_string(procs->second->m_FinallyFlushed) +
+                          "; all processors finished: " + to_string(procs->second->m_AllProcessorsFinished) +
+                          "; lib h2o finished: " + to_string(procs->second->m_Libh2oFinished) +
+                          "; low level close: " + to_string(procs->second->m_LowLevelClose) +
+                          "; number of processors: " + to_string(procs->second->m_Processors.size()) +
+                          "; " + per_proc +
+                          "; " + started_proc + ")");
             }
-
-            string      started_proc = "started processor: ";
-            if (procs->second->m_StartedProcessing)
-                started_proc += procs->second->m_StartedProcessing->GetName();
-            else
-                started_proc += "none";
-
-            PSG_ERROR("Removing a processor group for which "
-                      "request stop has not been issued "
-                      "(request id: " + to_string(request_id) +
-                      "; timer active: " + to_string(procs->second->m_TimerActive) +
-                      "; timer closed: " + to_string(procs->second->m_TimerClosed) +
-                      "; request final flush: " + to_string(procs->second->m_FinallyFlushed) +
-                      "; all processors finished: " + to_string(procs->second->m_AllProcessorsFinished) +
-                      "; lib h2o finished: " + to_string(procs->second->m_Libh2oFinished) +
-                      "; low level close: " + to_string(procs->second->m_LowLevelClose) +
-                      "; number of processors: " + to_string(procs->second->m_Processors.size()) +
-                      "; " + per_proc +
-                      "; " + started_proc + ")");
         }
 
         group = procs->second.release();
