@@ -465,7 +465,8 @@ public:
 
     void SetFetchFailure (bool fails) { m_FetchFailure = fails; }
 
-public:
+    void GetSelector(SAnnotSelector& sel);
+
     // Seq-inst fields
     bool IsNA (void) const {  return m_IsNA; }
     bool IsAA (void) const { return m_IsAA; }
