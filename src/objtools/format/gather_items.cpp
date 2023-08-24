@@ -3544,7 +3544,14 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     CSeq_feat_Handle prev_feat;
     CConstRef<IFlatItem> item;
 
+    CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
+    if (! idx) return;
+    CBioseq_Handle hdl = ctx.GetHandle();
+    CRef<CBioseqIndex> bsx = idx->GetBioseqIndex (hdl);
+    if (! bsx) return;
+
     SAnnotSelector sel_cpy = sel;
+    bsx->GetSelector(sel_cpy);
     sel_cpy.SetIgnoreStrand();
     if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
         sel_cpy.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);
