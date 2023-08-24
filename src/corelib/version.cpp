@@ -493,6 +493,7 @@ string SBuildInfo::ExtraName(EExtra key)
     case eProductionVersion:       return "Production-Version";
     case eBuiltAs:                 return "Built-As";
     case eRevision:                return "Revision";
+    case eGitBranch:               return "GitBranch";
     }
     return "Unknown";
 }
@@ -513,6 +514,7 @@ string SBuildInfo::ExtraNameAppLog(EExtra key)
     case eProductionVersion:       return "ncbi_app_prod_version";
     case eBuiltAs:                 return "ncbi_app_built_as";
     case eRevision:                return "ncbi_app_revision";
+    case eGitBranch:               return "ncbi_app_gitbranch";
     }
     return "ncbi_app_unk";
 }

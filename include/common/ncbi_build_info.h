@@ -63,6 +63,11 @@
 
 // New property, no use for a proxy (but should bypass HAVE_NCBI_REVISION
 // to account for older import_project-produced trees).
+#if defined(NCBI_GIT_BRANCH)
+#  define NCBI_GIT_BRANCH_SBUILDINFO .Extra(SBuildInfo::eGitBranch, NCBI_GIT_BRANCH)
+#else
+#  define NCBI_GIT_BRANCH_SBUILDINFO /* empty */
+#endif
 #if defined(NCBI_REVISION)
 #  define NCBI_REVISION_SBUILDINFO .Extra(SBuildInfo::eRevision, NCBI_REVISION)
 #else
