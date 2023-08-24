@@ -35,7 +35,7 @@ endmacro()
 #############################################################################
 # Stable components
 #
-set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 27)
+set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 28)
 set(NCBI_CPP_TOOLKIT_VERSION_MINOR 0)
 set(NCBI_CPP_TOOLKIT_VERSION_PATCH 0)
 set(NCBI_CPP_TOOLKIT_VERSION_EXTRA "")
@@ -107,6 +107,8 @@ if(NOT NCBITK_BUILDTIME)
                 set(NCBI_SC_VERSION ${_SC_VER})
                 message(STATUS "Stable Components Number = ${NCBI_SC_VERSION}")
             endif()
+        else()
+            set(NCBI_SC_VERSION ${NCBI_CPP_TOOLKIT_VERSION_MAJOR})
         endif()
     endif()
 
