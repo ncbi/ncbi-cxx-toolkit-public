@@ -1222,7 +1222,11 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
                 }
 
                 procs->second->m_RequestStopPrinted = true;
-                x_PrintRequestStop(request, request_status, reply->GetBytesSent());
+
+                // Note: the number of bytes sent is not available here because
+                // libh2o may already free the corresponding data structures.
+                // Thus, use 0 instead of reply->GetBytesSent()
+                x_PrintRequestStop(request, request_status, 0);
             } else {
                 // That means the request stop has not been really issued before
                 // the group is removed
