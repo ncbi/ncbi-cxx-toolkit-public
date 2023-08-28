@@ -91,7 +91,10 @@ public:
     static void SetDataLimit(size_t value) { sm_DataLimit = value; }
     static void SetPreviewSize(size_t value) { sm_PreviewSize = value; }
 
+    static CJsonResponse NewItem(const shared_ptr<CPSG_ReplyItem>& reply_item);
+
 private:
+    CJsonResponse() : m_JsonObj(SetObject()) {}
     CJsonResponse(const string& id);
 
     template <class TItem>
@@ -282,9 +285,11 @@ private:
 
         using TItemComplete = void (*)(SJsonOut&, EPSG_Status, const shared_ptr<CPSG_ReplyItem>&);
         using TReplyComplete = void (*)(SJsonOut&, EPSG_Status, const shared_ptr<CPSG_Reply>&);
+        using TNewItem = void (*)(SJsonOut&, const shared_ptr<CPSG_ReplyItem>&);
 
         TItemComplete GetItemComplete();
         TReplyComplete GetReplyComplete();
+        TNewItem GetNewItem();
 
     private:
         void Init(const TParams& params);
