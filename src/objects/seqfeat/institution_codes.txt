@@ -6706,6 +6706,7 @@ SCAPPC	c	Specialty Crop-Associated Plant Pathogen Collections
 SCAR	s	Wood End Museum			
 SCAUB	s	South China Agricultural University			
 SCB	s	Station Centrale de Boukoko			
+SCBI	s	Smithsonian Conservation Biology Institute			
 SCBUCN	s	Sala de Colecciones Biologicas Universidad Catolica del Norte			
 SCCAP	c	Scandinavian Culture Collection of Algae and Protozoa			
 SCCBC	s	Selkirk College, Environmental Sciences and Technologies Department			
