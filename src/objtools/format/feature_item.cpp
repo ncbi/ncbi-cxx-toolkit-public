@@ -970,26 +970,6 @@ static bool s_IsValidRefSeqExceptionText(const string& text)
     return sc_LegalRefSeqExceptText.find(text.c_str()) != sc_LegalRefSeqExceptText.end();
 }
 
-bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
-{
-    if ( ! feat->IsSetQual() ) {
-        return false;
-    }
-    const CSeq_feat_Base::TQual & qual = feat->GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
-    ITERATE( CSeq_feat::TQual, it, qual ) {
-        if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) {
-            continue;
-        }
-        if ( (*it)->GetQual() != key ) {
-            continue;
-        }
-        value = (*it)->GetVal();
-        return true;
-    }
-    return false;
-}
-
-
 // -- FeatureItemBase
 
 CFeatureItemBase::CFeatureItemBase
