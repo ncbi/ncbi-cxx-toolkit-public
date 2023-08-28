@@ -242,6 +242,15 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
     return "UnknownItem";
 }
 
+CJsonResponse CJsonResponse::NewItem(const shared_ptr<CPSG_ReplyItem>& reply_item)
+{
+    CJsonResponse rv;
+    rv.Set("reply", "NewItem");
+    rv.Set("item", s_GetItemName(reply_item->GetType()));
+    rv.Set("status", s_StrStatus(reply_item->GetStatus(CDeadline::eNoWait)));
+    return rv;
+}
+
 void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
 {
     auto reply_item_type = reply_item->GetType();
@@ -780,6 +789,17 @@ void s_ReplyComplete<SOneRequestParams>(SJsonOut& json_out, EPSG_Status status, 
     }
 }
 
+template <class... TArgs>
+void s_NewItem(SJsonOut&, const shared_ptr<CPSG_ReplyItem>&)
+{
+}
+
+template <>
+void s_NewItem<SOneRequestParams>(SJsonOut& json_out, const shared_ptr<CPSG_ReplyItem>& reply_item)
+{
+    json_out << CJsonResponse::NewItem(reply_item);
+}
+
 int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Request> request)
 {
     SDataOnlyCopy data_only_copy(params.data_only);
@@ -813,7 +833,8 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
     } else {
         auto item_complete = bind(&s_ItemComplete<SOneRequestParams>, ref(json_out), _1, _2);
         auto reply_complete = bind(&s_ReplyComplete<SOneRequestParams>, ref(json_out), _1, _2);
-        queue = CPSG_EventLoop(params.service, item_complete, reply_complete);
+        auto new_item = bind(&s_NewItem<SOneRequestParams>, ref(json_out), _1);
+        queue = CPSG_EventLoop(params.service, item_complete, reply_complete, new_item);
     }
 
     CJsonResponse::SetReplyType(true);
@@ -900,6 +921,12 @@ typename CParallelProcessing<TParams>::SImpl::TReplyComplete CParallelProcessing
     } else {
         return &s_ReplyComplete<no_verbose>;
     }
+}
+
+template <class TParams>
+typename CParallelProcessing<TParams>::SImpl::TNewItem CParallelProcessing<TParams>::SImpl::GetNewItem()
+{
+    return &s_NewItem<TParams>;
 }
 
 template <>
@@ -1041,6 +1068,27 @@ CParallelProcessing<SInteractiveParams>::SImpl::TReplyComplete CParallelProcessi
     }
 }
 
+template <>
+void s_NewItem<SInteractiveParams, verbose>(SJsonOut& json_out, const shared_ptr<CPSG_ReplyItem>& item)
+{
+    const auto request = item->GetReply()->GetRequest();
+    const auto& request_id = *request->GetUserContext<string>();
+
+    auto result_doc = CJsonResponse::NewItem(item);
+    json_out << CJsonResponse(request_id, result_doc);
+}
+
+template <>
+CParallelProcessing<SInteractiveParams>::SImpl::TNewItem CParallelProcessing<SInteractiveParams>::SImpl::GetNewItem()
+{
+    // MS VS does not like the ternary operator here anymore
+    if (SParams::verbose) {
+        return &s_NewItem<SInteractiveParams, verbose>;
+    } else {
+        return &s_NewItem<SInteractiveParams, no_verbose>;
+    }
+}
+
 template <class TParams>
 CParallelProcessing<TParams>::SImpl::SImpl(const TParams& params) :
     json_out(params.pipe, params.server),
@@ -1056,9 +1104,10 @@ CParallelProcessing<TParams>::CParallelProcessing(const TParams& params) :
     using namespace placeholders;
     auto item_complete = bind(m_Impl.GetItemComplete(), ref(m_Impl.json_out), _1, _2);
     auto reply_complete = bind(m_Impl.GetReplyComplete(), ref(m_Impl.json_out), _1, _2);
+    auto new_item = bind(m_Impl.GetNewItem(), ref(m_Impl.json_out), _1);
 
     for (int n = params.worker_threads; n > 0; --n) {
-        m_PsgQueues.emplace_back(params.service, item_complete, reply_complete);
+        m_PsgQueues.emplace_back(params.service, item_complete, reply_complete, new_item);
         auto& queue = m_PsgQueues.back();
         queue.SetUserArgs(params.user_args);
         m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
