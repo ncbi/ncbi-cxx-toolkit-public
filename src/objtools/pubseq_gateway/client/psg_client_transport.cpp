@@ -927,7 +927,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
             item.state.SetStatus(SPSG_Reply::SState::FromRequestStatus(status), true);
         }
 
-        if ((item_type != SPSG_Args::eBlob) || !args.GetValue("reason").empty()) {
+        if ((item_type != SPSG_Args::eBlob) || item.chunks.empty()) {
             rv = eNewItem;
         }
 
@@ -955,10 +955,6 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
         } else if (const auto status = get_status(); can_retry_503(status, chunk.c_str())) {
             return eRetry503;
         } else {
-            if (item_type == SPSG_Args::eBlob) {
-                rv = eNewItem;
-            }
-
             item.state.AddError(move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
         }
 
