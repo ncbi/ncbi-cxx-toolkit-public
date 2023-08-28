@@ -4542,6 +4542,7 @@ special2 CAUEER+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CAUEET000000000-CAUEGG999999999  embl_tpa_wgs_nuc # 6+9
 special  CAUEII000000000-CAUFVH999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUJND000000000-CAUJNO999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HBHG+8 embl_tpa_tsa_nuc
