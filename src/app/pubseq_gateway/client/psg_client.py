@@ -4,6 +4,7 @@ import argparse
 import ast
 import csv
 import collections
+from contextlib import contextmanager
 from difflib import unified_diff
 import enum
 import functools
@@ -11,6 +12,7 @@ import itertools
 import json
 import queue
 import random
+import re
 import shutil
 import subprocess
 import sys
@@ -56,6 +58,7 @@ class PsgClient:
 
         if self._verbose >= PsgClient.VerboseLevel.DEBUG:
             self._cmd += ['-debug-printout', 'some']
+            print(self._cmd)
 
     def __enter__(self):
         self._pipe = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=1, text=True)
@@ -67,11 +70,10 @@ class PsgClient:
     def _run(self):
         while self._pipe.poll() is None:
             try:
-                line = self._pipe.stdout.readline()
+                if line := self._pipe.stdout.readline():
+                    self._queue.put(line)
             except ValueError:
                 break
-            else:
-                self._queue.put(line)
 
     def __exit__(self, exc_type, exc_value, traceback):
         rv = exc_type == BrokenPipeError
@@ -435,13 +437,21 @@ class Response(collections.UserList):
     def apply(self, expected, deadline):
         """Apply null from the expected response."""
 
-        def _any(actual, expected, modify):
+        def _any(actual_any, index, expected, modify):
+            actual = actual_any[index]
             if isinstance(actual, dict):
                 if isinstance(expected, dict):
                     return _dict(actual, expected, modify)
             elif isinstance(actual, list):
                 if isinstance(expected, list):
                     return _list(actual, expected, modify)
+            elif isinstance(actual, str) and isinstance(expected, dict) and 'regex' in expected:
+                if re.fullmatch(expected['regex'], actual):
+                    if modify:
+                        actual_any[index] = expected
+                    return True
+
+                return False
             else:
                 return actual == expected
 
@@ -461,10 +471,10 @@ class Response(collections.UserList):
                     continue
 
                 for k, a in enumerate(itertools.islice(actual, i, None)):
-                    if _any(a, e, modify=False):
+                    if _any(actual, i + k, e, modify=False):
                         # Modify only after it fully matches
                         if modify:
-                            _any(a, e, modify=True)
+                            _any(actual, i + k, e, modify=True)
 
                             if matching_any:
                                 actual[i:i + k] = [None]
@@ -506,7 +516,7 @@ class Response(collections.UserList):
 
         def _dict_elem(actual, i, expected, modify):
             if expected is not None:
-                return _any(actual[i], expected, modify)
+                return _any(actual, i, expected, modify)
 
             if modify:
                 actual[i] = None
@@ -515,92 +525,220 @@ class Response(collections.UserList):
 
         _list(self.data, expected.data, modify=True, deadline=deadline)
 
-    def diff(self, other):
+    def diff(self, other, keepends):
         """Produce a unified diff between two responses."""
 
         def _to_lines(iterable):
             """Transform a response into JSON and split it into list of strings."""
-            return list(itertools.chain.from_iterable((json.dumps(value, indent=2) + '\n').splitlines(keepends=True) for value in iterable))
+            return list(itertools.chain.from_iterable((json.dumps(value, indent=2) + '\n').splitlines(keepends=keepends) for value in iterable))
 
-        return list(unified_diff(_to_lines(self), _to_lines(other), fromfile='Expected', tofile='Actual', n=3))
+        return list(unified_diff(_to_lines(self), _to_lines(other), fromfile='Expected', tofile='Actual', n=3, lineterm='\n' if keepends else ''))
+
+class Processor:
+    class Testcase:
+        def __init__(self, testcase):
+            self._testcase = testcase
+            self._actual = []
+
+            if timeout := self.data.get('timeout'):
+                self._deadline = timeout + time.monotonic()
+            else:
+                self._deadline = None
+
+        def __iadd__(self, replies):
+            self._actual.extend(replies)
+            return self
+
+        def __str__(self):
+            return '\n\t'.join([':'] + self.namedesc + [''])
+
+        def __call__(self):
+            expected = Response(self.data['response'])
+            actual = Response(self._actual, actual=True)
+            actual.apply(expected, deadline=self.deadline)
+            return expected, actual
+
+        @property
+        def name(self):
+            return self._testcase[0]
+
+        @property
+        def namedesc(self):
+            desc = self.data.get('description')
+            return [self.name] if desc is None or desc == self.name else [self.name, desc]
+
+        @property
+        def data(self):
+            return self._testcase[1]
+
+        @property
+        def deadline(self):
+            return self._deadline
+
+        @deadline.setter
+        def deadline(self, value):
+            self._deadline = value if self._deadline is None else min(value, self._deadline)
+
+    def __init__(self):
+        self._total = 0
+
+    @contextmanager
+    def __call__(self, testcase):
+        def skip(name):
+            return name == 'timeout' or (args.testcase and name not in args.testcase) or (args.no_testcase and name in args.no_testcase)
+
+        if skip(name=testcase[0]):
+            yield None
+        else:
+            self._total += 1
+            self._testcase = self.Testcase(testcase)
+
+            try:
+                yield self.testcase_to_run
+                self._complete()
+            except queue.Empty:
+                self._timeout()
+
+    @property
+    def testcase_to_run(self):
+        return self._testcase
+
+    @staticmethod
+    @contextmanager
+    def create(args):
+        if args.output_file:
+            processor = OutputFileProcessor()
+        elif args.list:
+            processor = ListProcessor()
+        elif args.report == 'text':
+            processor = ReportTextProcessor()
+        elif args.report == 'json':
+            processor = ReportJsonProcessor()
+        else:
+            processor = ReportProcessor()
+        try:
+            yield processor
+            processor._close()
+        except KeyboardInterrupt:
+            pass
+
+class OutputFileProcessor(Processor):
+    def __init__(self):
+        self._updated_testcases = {}
+        super().__init__()
+
+    def _complete(self):
+        expected, actual = self._testcase()
+        self._testcase.data['response'] = actual.data
+        self._updated_testcases[self._testcase.name] = self._testcase.data
+
+    def _timeout(self):
+        sys.exit(2)
+
+    def _close(self):
+        with open(args.output_file, 'w') as of:
+            json.dump(self._updated_testcases, of, indent=4)
+            of.write('\n')
+
+class ListProcessor(Processor):
+    @property
+    def testcase_to_run(self):
+        return None
+
+    def _complete(self):
+        print('Testcase' + str(self._testcase))
+
+    def _close(self):
+        print(f'{self._total} testcases total')
+
+class ReportBaseProcessor(Processor):
+    def __init__(self):
+        self._passed = 0
+        super().__init__()
+
+    def _diff(self, keepends):
+        expected, actual = self._testcase()
+        diff = expected.diff(actual, keepends=keepends)
+
+        if not diff:
+            self._passed += 1
+
+        return diff
+
+class ReportJsonProcessor(ReportBaseProcessor):
+    class Testcase(ReportBaseProcessor.Testcase):
+        def __str__(self):
+            return ' - '. join(self.namedesc)
+
+    def __init__(self):
+        self._output = {}
+        super().__init__()
+
+    def _complete(self):
+        if diff := self._diff(keepends=False):
+            self._output.setdefault('failed', {})[str(self._testcase)] = diff
+        else:
+            self._output.setdefault('passed', []).append(str(self._testcase))
+
+    def _timeout(self):
+        self._output.setdefault('timeout', []).append(str(self._testcase))
+
+    def _close(self):
+        print(json.dumps(self._output, indent=2))
+
+        if self._passed != self._total:
+            sys.exit(1)
+
+class ReportProcessor(ReportBaseProcessor):
+    def _complete(self):
+        if diff := super()._diff(keepends=True):
+            print('Testcase failed' + str(self._testcase), end='')
+            print(*diff, sep='\t')
+
+        return not bool(diff)
+
+    def _timeout(self):
+        print('Testcase timed out' + str(self._testcase))
+        sys.exit(2)
+
+    def _close(self):
+        if self._passed != self._total:
+            sys.exit(1)
+
+class ReportTextProcessor(ReportProcessor):
+    def _complete(self):
+        if super()._complete():
+            print('Testcase passed' + str(self._testcase))
+
+    def _close(self):
+        if self._passed == self._total:
+            print(f'All {self._total} testcases passed')
+        else:
+            print(f'{self._passed} of {self._total} testcases passed')
+
+        super()._close()
 
 def testcases_cmd(args):
-    def enabled(name):
-        return name != 'timeout' and (not args.testcase or name in args.testcase) and (not args.no_testcase or name not in args.no_testcase)
-
-    def describe(name, testcase, what):
-        desc = testcase['description']
-        return '\n\t'.join([f'Testcase{what}:', name] + ([desc] if name != desc else []) + [''])
-
-    total = 0
-    succeeded = 0
     check_binary(args)
 
-    with PsgClient(args) as psg_client:
-        updated_testcases = {}
-
+    with Processor.create(args) as processor, PsgClient(args) as psg_client:
         testcases = json.loads(''.join(filter(lambda l: l.lstrip()[:1] not in ['#', ''], args.input_file)))
         overall_deadline = (args.timeout or testcases.get('timeout', 25)) + time.monotonic()
 
-        for (name, testcase) in filter(lambda x: enabled(x[0]), testcases.items()):
-            total += 1
+        for data in testcases.items():
+            with processor(data) as testcase:
+                if testcase:
+                    if overall_deadline <= time.monotonic():
+                        raise queue.Empty
 
-            if args.list:
-                print(describe(name, testcase, ''))
-                continue
+                    testcase.deadline = overall_deadline
 
-            try:
-                if overall_deadline <= time.monotonic():
-                    raise queue.Empty
+                    for request_batch in testcase.data['requests']:
+                        for i, request in enumerate(request_batch):
+                            psg_client.send(request)
 
-                if timeout := testcase.get('timeout'):
-                    deadline = min(overall_deadline, timeout + time.monotonic())
-                else:
-                    deadline = overall_deadline
-
-                actual = []
-
-                for request_batch in testcase['requests']:
-                    for i, request in enumerate(request_batch):
-                        psg_client.send(request)
-
-                    for i in range(i + 1):
-                        actual.extend(psg_client.receive(deadline=deadline))
-
-                expected = Response(testcase['response'])
-                actual = Response(actual, actual=True)
-                actual.apply(expected, deadline=deadline)
-            except queue.Empty:
-                print(describe(name, testcase, ' timed out'))
-                sys.exit(2)
-
-            if args.output_file:
-                testcase['response'] = actual.data
-                updated_testcases[name] = testcase
-            else:
-                diff = expected.diff(actual)
-
-                if diff:
-                    print(describe(name, testcase, ' failed'), end='')
-                    print(*diff, sep='\t')
-                else:
-                    succeeded += 1
-
-                    if args.report:
-                        print(describe(name, testcase, ' succeeded'))
-
-    if args.output_file:
-        with open(args.output_file, 'w') as of:
-            json.dump(updated_testcases, of, indent=4)
-            of.write('\n')
-    elif args.list:
-        print(f'{total} testcases total')
-    else:
-        if args.report:
-            print(f'{succeeded} of {total} testcases succeeded')
-
-        if succeeded != total:
-            sys.exit(1)
+                        for i in range(i + 1):
+                            testcase += psg_client.receive(deadline=testcase.deadline)
 
 def generate_cmd(args):
     check_binary(args)
@@ -838,7 +976,7 @@ if __name__ == '__main__':
     group1_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
     group2_testcases.add_argument('-testcase', help='Run only specified testcase(s) (multiple are allowed)', action='append')
     group2_testcases.add_argument('-no-testcase', help='Run all but specified testcase(s) (multiple are allowed)', action='append')
-    group1_testcases.add_argument('-report', help='Report testcase results', action='store_true')
+    group1_testcases.add_argument('-report', help='Report testcase results', choices=['text', 'json'], nargs='?', const='text')
     group1_testcases.add_argument('-list', help='List available testcases', action='store_true')
     parser_testcases.add_argument('-data-limit', help='Show a data preview for any data larger the limit (if set)', default='1KB')
     parser_testcases.add_argument('-preview-size', help='How much of data to show as the preview', default='16')
