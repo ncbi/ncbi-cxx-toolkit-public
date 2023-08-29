@@ -1465,6 +1465,10 @@ int CProcessing::JsonCheck(istream* schema_is)
     } else if (!schema_doc.Read(*schema_is)) {
         cerr << "Error on reading JSON schema: " << schema_doc.GetReadError() << endl;
         return -1;
+
+    } else if (CJson_MetaSchema meta_schema; !meta_schema.Validate(schema_doc)) {
+        cerr << "Error on validating JSON schema: " << meta_schema.GetValidationError() << endl;
+        return -1;
     }
 
     CJson_Schema schema(schema_doc);
@@ -1632,11 +1636,9 @@ CJson_Document CProcessing::RequestSchema()
     "definitions": {
         "jsonrpc": {
             "$id": "#jsonrpc",
-            "enum": [ "2.0" ]
-        },
-        "id": {
-            "$id": "#id",
-            "type": "string"
+            "enum": [
+                "2.0"
+            ]
         },
         "bio_id": {
             "$id": "#bio_id",
@@ -1763,159 +1765,398 @@ CJson_Document CProcessing::RequestSchema()
         "context": {
             "$id": "#context",
             "type": "object",
-            "items": {
-                "sid": { "type": "string" },
-                "phid": { "type": "string" },
-                "client_ip": { "type": "string" }
+            "properties": {
+                "sid": {
+                    "type": "string"
+                },
+                "phid": {
+                    "type": "string"
+                },
+                "client_ip": {
+                    "type": "string"
+                }
             }
         },
-        "user_args": {
-            "$id": "#user_args",
-            "type": "string"
+        "biodata": {
+            "$id": "#biodata",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "biodata"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "bio_id": {
+                            "$ref": "#/definitions/bio_id"
+                        },
+                        "include_data": {
+                            "$ref": "#/definitions/include_data"
+                        },
+                        "exclude_blobs": {
+                            "$ref": "#/definitions/exclude_blobs"
+                        },
+                        "acc_substitution": {
+                            "$ref": "#/definitions/acc_substitution"
+                        },
+                        "bio_id_resolution": {
+                            "type": "boolean"
+                        },
+                        "resend_timeout": {
+                            "type": "number"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "bio_id"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
+        "blob": {
+            "$id": "#blob",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "blob"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "blob_id": {
+                            "$ref": "#/definitions/blob_id"
+                        },
+                        "include_data": {
+                            "$ref": "#/definitions/include_data"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "blob_id"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
+        "resolve": {
+            "$id": "#resolve",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "resolve"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "bio_id": {
+                            "$ref": "#/definitions/bio_id"
+                        },
+                        "include_info": {
+                            "$ref": "#/definitions/include_info"
+                        },
+                        "acc_substitution": {
+                            "$ref": "#/definitions/acc_substitution"
+                        },
+                        "bio_id_resolution": {
+                            "type": "boolean"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "bio_id"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
+        "named_annot": {
+            "$id": "#named_annot",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "named_annot"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "bio_id": {
+                            "$ref": "#/definitions/bio_id"
+                        },
+                        "bio_ids": {
+                            "$ref": "#/definitions/bio_ids"
+                        },
+                        "named_annots": {
+                            "$ref": "#/definitions/named_annots"
+                        },
+                        "acc_substitution": {
+                            "$ref": "#/definitions/acc_substitution"
+                        },
+                        "bio_id_resolution": {
+                            "type": "boolean"
+                        },
+                        "snp_scale_limit": {
+                            "$ref": "#/definitions/snp_scale_limit"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "named_annots"
+                    ],
+                    "oneOf": [
+                        {
+                            "required": [
+                                "bio_id"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "bio_ids"
+                            ]
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
+        "chunk": {
+            "$id": "#chunk",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "chunk"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "chunk_id": {
+                            "$ref": "#/definitions/chunk_id"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "chunk_id"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
+        "ipg_resolve": {
+            "$id": "#ipg_resolve",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "ipg_resolve"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "protein": {
+                            "type": "string"
+                        },
+                        "ipg": {
+                            "type": "number"
+                        },
+                        "nucleotide": {
+                            "type": "string"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "dependencies": {
+                        "nucleotide": [
+                            "protein"
+                        ]
+                    },
+                    "anyOf": [
+                        {
+                            "required": [
+                                "protein"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "ipg"
+                            ]
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
+        "raw": {
+            "$id": "#raw",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "raw"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "abs_path_ref": {
+                            "type": "string"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        }
+                    },
+                    "required": [
+                        "abs_path_ref"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
         }
     },
     "oneOf": [
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "biodata" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "bio_id" : { "$ref": "#/definitions/bio_id" },
-                        "include_data": { "$ref": "#/definitions/include_data" },
-                        "exclude_blobs": { "$ref": "#/definitions/exclude_blobs" },
-                        "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
-                        "bio_id_resolution": { "type": "boolean" },
-                        "resend_timeout": { "type": "number" },
-                        "context": { "$ref": "#/definitions/context" },
-                        "user_args": { "$ref": "#/definitions/user_args" }
-                    },
-                    "required": [ "bio_id" ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/biodata"
         },
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "blob" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "blob_id": { "$ref": "#/definitions/blob_id" },
-                        "include_data": { "$ref": "#/definitions/include_data" },
-                        "context": { "$ref": "#/definitions/context" },
-                        "user_args": { "$ref": "#/definitions/user_args" }
-                    },
-                    "required": [ "blob_id" ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/blob"
         },
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "resolve" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "bio_id" : { "$ref": "#/definitions/bio_id" },
-                        "include_info": { "$ref": "#/definitions/include_info" },
-                        "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
-                        "bio_id_resolution": { "type": "boolean" },
-                        "context": { "$ref": "#/definitions/context" },
-                        "user_args": { "$ref": "#/definitions/user_args" }
-                    },
-                    "required": [ "bio_id" ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/resolve"
         },
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "named_annot" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "bio_id" : { "$ref": "#/definitions/bio_id" },
-                        "bio_ids" : { "$ref": "#/definitions/bio_ids" },
-                        "named_annots": { "$ref": "#/definitions/named_annots" },
-                        "acc_substitution": { "$ref": "#/definitions/acc_substitution" },
-                        "bio_id_resolution": { "type": "boolean" },
-                        "snp_scale_limit": { "$ref": "#/definitions/snp_scale_limit" },
-                        "context": { "$ref": "#/definitions/context" },
-                        "user_args": { "$ref": "#/definitions/user_args" }
-                    },
-                    "required": [ "named_annots" ],
-                    "oneOf": [ { "required": [ "bio_id" ] }, { "required": [ "bio_ids" ] } ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/named_annot"
         },
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "chunk" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "chunk_id": { "$ref": "#/definitions/chunk_id" },
-                        "context": { "$ref": "#/definitions/context" },
-                        "user_args": { "$ref": "#/definitions/user_args" }
-                    },
-                    "required": [ "chunk_id" ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/chunk"
         },
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "ipg_resolve" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "protein": { "type": "string" },
-                        "ipg": { "type": "number" },
-                        "nucleotide": { "type": "string" },
-                        "context": { "$ref": "#/definitions/context" },
-                        "user_args": { "$ref": "#/definitions/user_args" }
-                    },
-                    "dependencies": { "nucleotide": [ "protein" ] },
-                    "anyOf": [ { "required": [ "protein" ] }, { "required": [ "ipg" ] } ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/ipg_resolve"
         },
         {
-            "properties": {
-                "jsonrpc": { "$ref": "#/definitions/jsonrpc" },
-                "method": { "enum": [ "raw" ] },
-                "params": {
-                    "type": "object",
-                    "properties": {
-                        "abs_path_ref": { "type": "string" },
-                        "context": { "$ref": "#/definitions/context" }
-                    },
-                    "required": [ "abs_path_ref" ]
-                },
-                "id": { "$ref": "#/definitions/id" }
-            },
-            "required": [ "jsonrpc", "method", "params", "id" ]
+            "$ref": "#/definitions/raw"
         }
     ]
 }
         )REQUEST_SCHEMA");
 
     _DEBUG_CODE(if (!rv.ReadSucceeded()) { auto error = rv.GetReadError(); NCBI_ALWAYS_TROUBLE(error.c_str()); });
+    _DEBUG_CODE(if (CJson_MetaSchema m; !m.Validate(rv)) { auto error = m.GetValidationError(); NCBI_ALWAYS_TROUBLE(error.c_str()); });
     return rv;
 }
 
