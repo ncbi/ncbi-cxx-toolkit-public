@@ -37,6 +37,7 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
+#include <objtools/data_loaders/genbank/reader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
@@ -114,6 +115,25 @@ void CDataLoadersUtil::AddArgumentDescriptions(CArgDescriptions& arg_desc,
                                  "Do not use GenBank data loader.");
             }
         }
+        arg_desc.AddOptionalKey("gb-method", "GBMethod",
+                                "Semicolon-separated list of Genbank loader method(s)",
+                                CArgDescriptions::eString,
+                                CArgDescriptions::fAllowMultiple);
+        arg_desc.AddOptionalKey("gb-snp", "enable",
+                                "Genbank SNP processor",
+                                CArgDescriptions::eBoolean);
+        arg_desc.AddOptionalKey("gb-wgs", "enable",
+                                "Genbank WGS processor",
+                                CArgDescriptions::eBoolean);
+        arg_desc.AddOptionalKey("gb-cdd", "enable",
+                                "Genbank SNP processor",
+                                CArgDescriptions::eBoolean);
+        CArgDescriptions::EDependency dep_type = loaders & fGenbankOffByDefault ? CArgDescriptions::eRequires : CArgDescriptions::eExcludes;
+        string dep_arg = loaders & fGenbankOffByDefault ? "genbank" : "nogenbank";
+        arg_desc.SetDependency("gb-method", dep_type, dep_arg);
+        arg_desc.SetDependency("gb-snp", dep_type, dep_arg);
+        arg_desc.SetDependency("gb-wgs", dep_type, dep_arg);
+        arg_desc.SetDependency("gb-cdd", dep_type, dep_arg);
     }
 
 #ifdef HAVE_NCBI_VDB
@@ -180,6 +200,31 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
     }
 
     if ( ! nogenbank ) {
+        CGBLoaderParams params;
+
+        CArgValue::TStringArray methods;
+        if (args.Exist("gb-method") && args["gb-method"]) {
+            methods = args["gb-method"].GetStringList();
+        }
+        string gb_methods;
+        ITERATE (CArgValue::TStringArray, it, methods) {
+            if (!gb_methods.empty()) gb_methods += ";";
+            gb_methods += *it;
+        }
+        if (!gb_methods.empty()) {
+            params.SetLoaderMethod(gb_methods);
+        }
+
+        if (args["gb-snp"]) {
+            params.SetReaderParams().SetEnableSNP(args["gb-snp"].AsBoolean());
+        }
+        if (args["gb-wgs"]) {
+            params.SetReaderParams().SetEnableWGS(args["gb-wgs"].AsBoolean());
+        }
+        if (args["gb-cdd"]) {
+            params.SetReaderParams().SetEnableCDD(args["gb-cdd"].AsBoolean());
+        }
+
         // pubseqos* drivers require this
         DBAPI_RegisterDriver_FTDS();
 
@@ -195,7 +240,7 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
         // leave a gap in the priority range.
         priority = max(priority, 16000);
         CGBDataLoader::RegisterInObjectManager(obj_mgr,
-                                               0,
+                                               params,
                                                CObjectManager::eDefault,
                                                priority);
 
