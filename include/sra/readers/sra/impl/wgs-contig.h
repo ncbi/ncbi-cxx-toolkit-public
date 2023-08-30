@@ -143,6 +143,8 @@ enum
  *                    such as RH, linkage, fingerprint or optical
  *  strobe            strobe sequencing (PacBio)
  *  unspecified
+ *  pcr               derived from PCR
+ *  proximity_ligation 
  */
 enum
 {
@@ -156,7 +158,8 @@ enum
     NCBI_WGS_gap_linkage_evidence_map                = 128,
     NCBI_WGS_gap_linkage_evidence_strobe             = 256,
     NCBI_WGS_gap_linkage_evidence_unspecified        = 512,
-    NCBI_WGS_gap_linkage_evidence_pcr                = 1024
+    NCBI_WGS_gap_linkage_evidence_pcr                = 1024,
+    NCBI_WGS_gap_linkage_evidence_proximity_ligation = 2048
 };
 
 
