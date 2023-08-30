@@ -1002,7 +1002,7 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
           |  CFastaReader::fForceType;
 
     unique_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
-    pReader->SetIgnoredMods({"gene"});
+    pReader->SetIgnoredMods({"gene","allele"});
 
     CRef<CSeq_entry> result;
     CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_context.m_logger);
