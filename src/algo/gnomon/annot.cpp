@@ -86,7 +86,7 @@ double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
     cerr << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
                     
     m_gnomon->ResetRange(l,r);
-    return m_gnomon->Run(test_align, false, false, false, false, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf.get());
+    return m_gnomon->Run(test_align, false, false, false, false, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf_slice.get());
 }
 
 double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns, TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
@@ -128,7 +128,7 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
         m_gnomon->ResetRange(left, right);
         if(found_bad_cluster) {
             cerr << "Testing w/o bad alignments in fragment " << left << ' ' << right << endl;
-            return m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf.get());
+            return m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf_slice.get());
         }
     }
     return BadScore();
@@ -147,7 +147,7 @@ double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_alig
         it = suspect_aligns.erase(it);
         
         cerr << "Testing w/o " << algn.ID();
-        score = m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf.get());
+        score = m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf_slice.get());
         if (score != BadScore()) {
             cerr << "- Good. Deleting alignment " << algn.ID() << endl;
             algn.Status() |= CGeneModel::eSkipped;
@@ -178,7 +178,7 @@ double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspec
         it = suspect_aligns.erase(it);
         
         cerr << "Testing fragment " << left << ' ' << right << endl;
-        score = m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf.get());
+        score = m_gnomon->Run(suspect_aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf_slice.get());
     }
     return score;
 }
@@ -238,7 +238,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 
             cerr << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
         
-            score = m_gnomon->Run(aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf.get());
+            score = m_gnomon->Run(aligns, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_notbridgeable_gaps_len, m_inserted_seqs, m_pcsf_slice.get());
         
             if(score == BadScore()) {
                 cerr << "Inconsistent alignments in fragment " << left << ' ' << right << '\n';
@@ -340,44 +340,48 @@ bool s_AlignSeqOrder(const CGeneModel& ap, const CGeneModel& bp)
 
 void SaveWallModel(unique_ptr<CGeneModel>& wall_model, TGeneModelList& aligns)
 {
-    if(wall_model.get() != nullptr)
-        aligns.push_back(*wall_model); 
-    wall_model.reset();
+    if (wall_model.get() != 0 && wall_model->Type() == CGeneModel::eWall+CGeneModel::eGnomon) {
+        aligns.push_back(*wall_model);
+    }
 }
 
 void FindPartials(TGeneModelList& models, TGeneModelList& aligns, EStrand strand)
 {
+    TSignedSeqPos right = -1;
     unique_ptr<CGeneModel> wall_model;
 
-    for(auto loop_it = models.begin(); loop_it != models.end();) {
-        auto ir = loop_it++;
+    for (TGeneModelList::iterator loop_it = models.begin(); loop_it != models.end();) {
+        TGeneModelList::iterator ir = loop_it;
+        ++loop_it;
 
-        if(ir->Strand() != strand)
-            continue;        
+        if(ir->Strand() != strand || (ir->Type()&CGeneModel::eNested)) { //at this point all nested are ab initio extensions yet without model/gene attributes
+            continue;
+        }
         
         TSignedSeqRange limits = GetWallLimits(*ir);
 
-        if((ir->Type() & CGeneModel::eNested) != 0) {           // nested already extended, create new nested wall
-            CGeneModel new_nested_wall(ir->Strand(),ir->ID(),CGeneModel::eNested+CGeneModel::eGnomon);
-            new_nested_wall.AddExon(limits);
-            aligns.push_back(new_nested_wall);            
-        } else if(ir->RankInGene() == 1 && !ir->GoodEnoughToBeAnnotation()) { // partial needs ab initio
+        if ( right < limits.GetFrom() ) { // new cluster
+            SaveWallModel(wall_model, aligns);
+        }
+
+        if ( right < limits.GetFrom() ) { // new cluster
+            wall_model.reset( new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eWall+CGeneModel::eGnomon));
+            wall_model->SetGeneID(ir->GeneID());
+            wall_model->AddExon(limits);
+        }
+        
+        right = max(right, limits.GetTo());
+        if (ir->RankInGene() == 1 && !ir->GoodEnoughToBeAnnotation()) {
             ir->Status() &= ~CGeneModel::eFullSupCDS;
             aligns.splice(aligns.end(), models, ir);
-        } else { // complete
-            if(wall_model.get() != nullptr && wall_model->Limits().GetTo() < limits.GetFrom()) // new cluster
-                SaveWallModel(wall_model, aligns);           
-
-            if(wall_model.get() == nullptr) {  // create new wall model
-                wall_model.reset(new CGeneModel(ir->Strand(),ir->ID(),CGeneModel::eWall+CGeneModel::eGnomon));
-                wall_model->AddExon(limits);
-            } else if(limits.GetTo()- wall_model->Limits().GetTo() > 0)  { // extend wall model
-                wall_model->ExtendRight(limits.GetTo()-wall_model->Limits().GetTo());
-            }
+            wall_model->SetType(CGeneModel::eGnomon);
+        } else if (limits.GetTo()- wall_model->Limits().GetTo() > 0)  {
+            wall_model->ExtendRight(limits.GetTo() - wall_model->Limits().GetTo());
         }
     }
     SaveWallModel(wall_model, aligns);
 }
+
 
 void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns)
 {
@@ -392,7 +396,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         typedef map<Int8,TIterList> TGIDIterlist;
         TGIDIterlist genes;
         NON_CONST_ITERATE(TGeneModelList, im, models) {
-            if(im->Type()&CGeneModel::eNested && !im->GoodEnoughToBeAnnotation())
+            if(im->Type()&CGeneModel::eNested)
                 im->SetType(im->Type()-CGeneModel::eNested);  // ignore flag set in chainer    
             genes[im->GeneID()].push_back(im);
         }
@@ -728,12 +732,11 @@ void RemoveTrailingNs::transform_model(CGeneModel& m)
 
 void CGnomonAnnotatorArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
 {
-    arg_desc->AddFlag("nognomon","Skips ab initio prediction and ab initio extension of partial chains.");
     arg_desc->AddKey("param", "param",
                      "Organism specific parameters",
                      CArgDescriptions::eInputFile);
-    arg_desc->AddOptionalKey("pcsf","pcsf","phyloPCSF scores",CArgDescriptions::eInputFile);
-    arg_desc->AddDefaultKey("pcsf_factor","pcsf_factor","Normalisation factor for phyloPCSF scores",CArgDescriptions::eDouble,"0.03");
+    arg_desc->AddDefaultKey("pcsf_factor","pcsf_factor","Normalisation factor for phyloPCSF scores",CArgDescriptions::eDouble,"0.1");
+    arg_desc->AddFlag("nognomon","Skips ab initio prediction and ab initio extension of partial chains.");
     arg_desc->AddDefaultKey("window","window","Prediction window",CArgDescriptions::eInteger,"200000");
     arg_desc->AddDefaultKey("margin","margin","The minimal distance between chains to place the end of prediction window",CArgDescriptions::eInteger,"1000");
     arg_desc->AddFlag("open","Allow partial predictions at the ends of contigs. Used for poorly assembled genomes with lots of unfinished contigs.");
@@ -754,10 +757,7 @@ void CGnomonAnnotatorArgUtil::ReadArgs(CGnomonAnnotator* annot, const CArgs& arg
 {
     CNcbiIfstream param_file(args["param"].AsString().c_str());
     annot->SetHMMParameters(new CHMMParameters(param_file));
-    if(args["pcsf"]) {
-        annot->m_pcsf_source = &args["pcsf"].AsInputFile(CArgValue::fBinary);
-        annot->m_pcsf_factor = args["pcsf_factor"].AsDouble();
-    }
+    annot->m_pcsf_factor = args["pcsf_factor"].AsDouble();    
 
     annot->window = args["window"].AsInteger();
     annot->margin = args["margin"].AsInteger();

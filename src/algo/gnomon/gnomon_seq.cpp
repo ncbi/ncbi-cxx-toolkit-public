@@ -46,7 +46,7 @@ void Convert(const CResidueVec& src, CEResidueVec& dst)
     dst.clear();
     dst.reserve(len);
     for(size_t i = 0; i < len; ++i)
-	dst.push_back( fromACGT(src[i]) );
+        dst.push_back( fromACGT(src[i]) );
 }
 
 void Convert(const CResidueVec& src, CDoubleStrandSeq& dst)
@@ -61,16 +61,16 @@ void Convert(const CEResidueVec& src, CResidueVec& dst)
     dst.clear();
     dst.reserve(len);
     for(size_t i = 0; i < len; ++i)
-	dst.push_back( toACGT(src[i]) );
+        dst.push_back( toACGT(src[i]) );
 }
 
 void ReverseComplement(const CEResidueVec& src, CEResidueVec& dst)
 {
-    TSignedSeqPos len = src.size();
+    TSignedSeqPos len = (TSignedSeqPos)src.size();
     dst.clear();
     dst.reserve(len);
     for(TSignedSeqPos i = len-1; i >= 0; --i)
-	dst.push_back(k_toMinus[(int)src[i]]);
+        dst.push_back(k_toMinus[(int)src[i]]);
 }
 
 const TResidue codons[4][4] = {"ATG", "TAA", "TAG", "TGA"};

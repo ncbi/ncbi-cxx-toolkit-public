@@ -121,6 +121,7 @@ public:
     void SetGenomic(const CResidueVec& seq);
     void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TGeneModelList* models = 0);
     void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const SCorrectionData& correction_data, TSignedSeqRange range = TSignedSeqRange::GetWhole(), const string& mask_annots = kEmptyStr);
+    void SetPCSF(const CPhyloCSFData* pcsf_datap) { m_pcsf_data = pcsf_datap; }
 
     CGnomonEngine& GetGnomon();
     void MapAlignmentsToEditedContig(TAlignModelList& alignments) const;
@@ -148,8 +149,8 @@ protected:
     TIntMap m_notbridgeable_gaps_len;   // don't allow introns to cross this
     TSignedSeqRange m_limits;           // limits on contig
     string m_contig_acc;
-    unique_ptr<CPhyloCSFData> m_pcsf;
-    CNcbiIstream* m_pcsf_source = nullptr;
+    unique_ptr<SPhyloCSFSlice> m_pcsf_slice;
+    const CPhyloCSFData* m_pcsf_data = nullptr;
     double m_pcsf_factor = 0.;
 };
 
