@@ -530,7 +530,7 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "Formatting style",
                                  CArgDescriptions::eString, "normal");
          arg_desc->SetConstraint("style",
-                                 &(*new CArgAllow_Strings, "normal", "segment", "master", "contig"));
+                                 &(*new CArgAllow_Strings, "normal", "segment", "master", "contig", "conwithfeat"));
 
          // policy (default: adaptive)
          arg_desc->AddDefaultKey("policy", "Policy",
@@ -751,6 +751,8 @@ CFlatFileConfig::EStyle x_GetStyle(const CArgs& args)
         return CFlatFileConfig::eStyle_Master;
     } else if ( style == "contig" ) {
         return CFlatFileConfig::eStyle_Contig;
+    } else if ( style == "conwithfeat" ) {
+        return CFlatFileConfig::eStyle_Contig;
     }
 
     // default
@@ -897,6 +899,12 @@ CFlatFileConfig::TFlags x_GetFlags(const CArgs& args)
                         );
             }
         }
+    }
+
+    const string& style = args["style"].AsString();
+    if ( style == "conwithfeat" ) {
+        flags |= CFlatFileConfig::fShowContigFeatures;
+        flags |= CFlatFileConfig::fShowContigSources;
     }
 
     return flags;
