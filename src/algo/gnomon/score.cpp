@@ -271,7 +271,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
 
 //void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, 
 void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool rightwall, double consensuspenalty, 
-                       const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo, CPhyloCSFData* pcsf)
+                       const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo, SPhyloCSFSlice* pcsf_slice)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
@@ -613,12 +613,13 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
     for(TSignedSeqPos i = 1; i < len; ++i)
         m_protnum[i] += m_protnum[i-1];
 
-    TAlignSet::iterator it_prev = allaligns.end();
+    //    TAlignSet::iterator it_prev = allaligns.end();
 
     for(TAlignSet::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
     {
         const CGeneModel& algn(*it);
 
+        /* doesn't work with chainer jobs contained in introns
         if (it_prev != allaligns.end()) {
             const CGeneModel& algn_prev(*it_prev);
             if(algn.Limits().IntersectingWith(algn_prev.Limits())) {
@@ -629,6 +630,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             }
         }
         it_prev = it;
+        */
 
         int strand = algn.Strand();
         int otherstrand = (strand == ePlus) ? eMinus : ePlus;
@@ -852,9 +854,33 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             if(i > 0) m_ingscr[strand][i] += m_ingscr[strand][i-1];
         }
 
+        if(pcsf_slice != nullptr) { // generate pcsf scores for chunk
+            auto& score = (*pcsf_slice->m_scoresp)[strand];
+            TSignedSeqRange compact_range = pcsf_slice->CompactRange(strand, chunk);
+            for(TSignedSeqPos  compactp = compact_range.GetFrom(); compactp <= compact_range.GetTo(); ++compactp) { // loop over existing scores only
+                TSignedSeqPos orig_pos = score.m_scores[compactp].first;
+                TPhyloCSFScore pcsf_score = pcsf_slice->m_factor*score.m_scores[compactp].second;
+                TSignedSeqPos codon_left = orig_pos-pcsf_slice->m_shift;
+                if(pcsf_slice->m_map != nullptr)
+                    codon_left = pcsf_slice->m_map->MapOrigToEdited(codon_left);
+                if(codon_left < 0)
+                    continue;
+                codon_left = m_map.MapOrigToEdited(codon_left);  // account for frameshifts in alignments
+
+                if(codon_left < 0 || codon_left > len-3)
+                    continue;
+                int frame = strand == ePlus ? (3-codon_left%3)%3 : (2+codon_left%3)%3;  // frame = position of i=0 in 'biological' codon
+                if(pcsf_score > 0) {
+                    for(int step = 0; step < 3; ++step)
+                        m_cdrscr[strand][frame][codon_left+step] = pcsf_score;
+                }
+            }
+        }
+
         for(int frame = 0; frame < 3; ++frame)
         {
-            if(pcsf != nullptr) {
+            /*
+            if(pcsf_slice != nullptr) {
                 int codon_left;
                 if(strand == ePlus)
                     codon_left = (-frame+3)%3;   // first codon overlapping origin is shifted -frame
@@ -864,13 +890,14 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                     int orig_codon_left = m_map.MapEditedToOrig(codon_left);  // account for frameshifts in alignments
                     double pcsf_score = 0;
                     if(orig_codon_left >= 0)
-                        pcsf_score = pcsf->Factor()*pcsf->Score(strand, orig_codon_left);
+                        pcsf_score = pcsf_slice->m_factor*pcsf_slice->Score(strand, orig_codon_left);
                     if(pcsf_score > 0) {
                         for(int step = 0; step < 3; ++step)
                             m_cdrscr[strand][frame][codon_left+step] = pcsf_score;
                     }
                 }
             }
+            */
 
             for(TSignedSeqPos i = 0; i < len; ++i)
             {
@@ -1274,7 +1301,7 @@ double CGnomonEngine::PointCodingScore(int l, EStrand strand, int frame) const {
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
     const CCodingRegion& cdr = *m_data->m_cdr;
     const CDoubleStrandSeq& ds = m_data->m_ds;
-    int len = ds[ePlus].size();
+    TSignedSeqPos len = (TSignedSeqPos)ds[ePlus].size();
 
     int codonshift = (l+3-frame)%3; // distance to the left codon end in correct strand
     int pos = l;
@@ -1297,13 +1324,13 @@ double CGnomonEngine::PointCodingScore(int l, EStrand strand, int frame) const {
 
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, TSignedSeqPos& best_start, TSignedSeqPos& best_stop, bool extend5p) const
 {
-    const CTerminal& acceptor    = *m_data->m_acceptor;
-    const CTerminal& donor       = *m_data->m_donor;
-    const CTerminal& stt         = *m_data->m_start;
-    const CTerminal& stp         = *m_data->m_stop;
-    const CCodingRegion& cdr     = *m_data->m_cdr;
-    const CNonCodingRegion& ncdr = *m_data->m_ncdr;
-    const CPhyloCSFData* pcsf    =  m_data->m_pcsf;
+    const CTerminal& acceptor        = *m_data->m_acceptor;
+    const CTerminal& donor           = *m_data->m_donor;
+    const CTerminal& stt             = *m_data->m_start;
+    const CTerminal& stp             = *m_data->m_stop;
+    const CCodingRegion& cdr         = *m_data->m_cdr;
+    const CNonCodingRegion& ncdr     = *m_data->m_ncdr;
+    const SPhyloCSFSlice* pcsf_slice =  m_data->m_pcsf_slice;
     TSignedSeqPos contig_len = (TSignedSeqPos)m_data->m_seq.size();
     EStrand strand = model.Strand();
     const vector<CModelExon>& exons = model.Exons();
@@ -1390,7 +1417,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
             cdrscr[frame].resize(mrna.size(), 0);
     }
 
-    if(pcsf != nullptr) {
+    if(pcsf_slice != nullptr) {
         CAlignMap amap = model.GetAlignMap();
         for(int frame = 0; frame < 3; ++frame) {
             if(frame==best_frame || best_frame==-1) {
@@ -1398,7 +1425,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
                     TSignedSeqRange codon_on_genome = amap.MapRangeEditedToOrig(TSignedSeqRange(codon_left, codon_left+2), false);
                     if(codon_on_genome.GetLength() != 3)
                         continue;
-                    double pcsf_score = pcsf->Factor()*pcsf->Score(model.Strand(), codon_on_genome.GetFrom());
+                    double pcsf_score = pcsf_slice->m_factor*pcsf_slice->Score(model.Strand(), codon_on_genome.GetFrom());
                     if(pcsf_score > 0) {
                         for(int step = 0; step < 3; ++step)
                             cdrscr[frame][codon_left+step] = pcsf_score;

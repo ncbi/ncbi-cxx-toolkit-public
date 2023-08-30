@@ -45,15 +45,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
-(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range, CPhyloCSFData* pcsf) : m_seq(std::move(sequence)), m_range(range), m_gccontent(0), m_hmm_params(hmm_params), m_pcsf(pcsf) {}
+(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range, SPhyloCSFSlice* pcsf_slice) : m_seq(std::move(sequence)), m_range(range), m_gccontent(0), m_hmm_params(hmm_params), m_pcsf_slice(pcsf_slice) {}
 //for consistency with old code
 CGnomonEngine::SGnomonEngineImplData::SGnomonEngineImplData
-(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range, CPhyloCSFData* pcsf) : m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params), m_pcsf(pcsf) {}
+(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range, SPhyloCSFSlice* pcsf_slice) : m_seq(sequence), m_range(range), m_gccontent(0), m_hmm_params(hmm_params), m_pcsf_slice(pcsf_slice) {}
 
 CGnomonEngine::SGnomonEngineImplData::~SGnomonEngineImplData() {}
 
-CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range, CPhyloCSFData* pcsf)
-    : m_data(new SGnomonEngineImplData(hmm_params,std::move(sequence),range, pcsf))
+CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range, SPhyloCSFSlice* pcsf_slice)
+    : m_data(new SGnomonEngineImplData(hmm_params,std::move(sequence),range, pcsf_slice))
 {
     CheckRange();
     Convert(m_data->m_seq,m_data->m_ds);
@@ -61,8 +61,8 @@ CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&&
     ResetRange(m_data->m_range);
 }
 //for consistency with old code
-CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range, CPhyloCSFData* pcsf)
-    : m_data(new SGnomonEngineImplData(hmm_params,sequence,range, pcsf))
+CGnomonEngine::CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range, SPhyloCSFSlice* pcsf_slice)
+    : m_data(new SGnomonEngineImplData(hmm_params,sequence,range, pcsf_slice))
 {
     CheckRange();
     Convert(m_data->m_seq,m_data->m_ds);
@@ -153,20 +153,20 @@ int CGnomonEngine::GetGCcontent() const
     return m_data->m_gccontent;
 }
 
-double CGnomonEngine::Run(bool leftwall, bool rightwall, double mpp, CPhyloCSFData* pcsf)
+double CGnomonEngine::Run(bool leftwall, bool rightwall, double mpp, SPhyloCSFSlice* pcsf_slice)
 {
     TGeneModelList cls;
     CGnomonAnnotator_Base::TGgapInfo ggapinfo;
     CGnomonAnnotator_Base::TIntMap notbridgeable_gaps_len;
 
     return Run( cls, leftwall, rightwall, false, false,
-                mpp, BadScore(), notbridgeable_gaps_len, ggapinfo, pcsf
+                mpp, BadScore(), notbridgeable_gaps_len, ggapinfo, pcsf_slice
               );
 }
 
 double CGnomonEngine::Run(const TGeneModelList& cls,
                           bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty, 
-                          const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo, CPhyloCSFData* pcsf)
+                          const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo, SPhyloCSFSlice* pcsf_slice)
 {
     m_data->m_parse.reset();
     m_data->m_ss.reset();
@@ -179,7 +179,7 @@ double CGnomonEngine::Run(const TGeneModelList& cls,
                                        m_data->m_range.GetFrom(),  m_data->m_range.GetTo(),
                                        cls, initial_fshifts, mpp, *this)
                 );
-    m_data->m_ss->Init(m_data->m_seq, leftwall, rightwall, consensuspenalty, notbridgeable_gaps_len, ggapinfo, pcsf);
+    m_data->m_ss->Init(m_data->m_seq, leftwall, rightwall, consensuspenalty, notbridgeable_gaps_len, ggapinfo, pcsf_slice);
     m_data->m_parse.reset( new CParse(*m_data->m_ss,
                                       *m_data->m_intron_params,
                                       *m_data->m_intergenic_params,

@@ -46,8 +46,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
 struct CGnomonEngine::SGnomonEngineImplData {
-    SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range, CPhyloCSFData* pcsf);
-    SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range, CPhyloCSFData* pcsf);
+    SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range, SPhyloCSFSlice* pcsf_slice);
+    SGnomonEngineImplData(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range, SPhyloCSFSlice* pcsf_slice);
     ~SGnomonEngineImplData();
 
     CResidueVec       m_seq;
@@ -73,7 +73,7 @@ struct CGnomonEngine::SGnomonEngineImplData {
     const CIntronParameters*      m_intron_params;
     const CIntergenicParameters*  m_intergenic_params;
     const CExonParameters*        m_exon_params;
-    const CPhyloCSFData*          m_pcsf;
+    const SPhyloCSFSlice*         m_pcsf_slice;
 
     unique_ptr<CSeqScores>        m_ss;
     unique_ptr<CParse>            m_parse;
