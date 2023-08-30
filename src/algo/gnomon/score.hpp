@@ -57,7 +57,7 @@ public:
               bool rightwall, double consensuspenalty,
               const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len,
               const CGnomonAnnotator_Base::TGgapInfo& ggapinfo,
-              CPhyloCSFData* pcsf = nullptr
+              SPhyloCSFSlice* pcsf_slice = nullptr
               );
         
     TSignedSeqPos From() const { return m_chunk_start; }

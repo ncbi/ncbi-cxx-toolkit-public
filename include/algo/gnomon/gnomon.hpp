@@ -70,8 +70,8 @@ private:
 
 class NCBI_XALGOGNOMON_EXPORT CGnomonEngine {
 public:
-    CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole(), CPhyloCSFData* pcsf = nullptr);
-    CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole(), CPhyloCSFData* pcsf = nullptr);
+    CGnomonEngine(CConstRef<CHMMParameters> hmm_params, const CResidueVec& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole(), SPhyloCSFSlice* pcsf_slice = nullptr);
+    CGnomonEngine(CConstRef<CHMMParameters> hmm_params, CResidueVec&& sequence, TSignedSeqRange range = TSignedSeqRange::GetWhole(), SPhyloCSFSlice* pcsf_slice = nullptr);
     ~CGnomonEngine();
 
     void ResetRange(TSignedSeqRange range);
@@ -94,11 +94,11 @@ public:
     double PointCodingScore(int l, EStrand strand, int frame) const; // frame = left_codon_end%3 regardless of the strand
 
     // run gnomon. return score
-    double Run(bool leftwall = true, bool rightwall = true, double mpp = 10, CPhyloCSFData* pcsf = nullptr); // pure ab initio
+    double Run(bool leftwall = true, bool rightwall = true, double mpp = 10, SPhyloCSFSlice* pcsf_slice = nullptr); // pure ab initio
 
     double Run(const TGeneModelList& chains, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore(), 
                const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len = CGnomonAnnotator_Base::TIntMap(),
-               const CGnomonAnnotator_Base::TGgapInfo& ggapinfo = CGnomonAnnotator_Base::TGgapInfo(), CPhyloCSFData* pcsf = nullptr);
+               const CGnomonAnnotator_Base::TGgapInfo& ggapinfo = CGnomonAnnotator_Base::TGgapInfo(), SPhyloCSFSlice* pcsf_slice = nullptr);
 
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id& id);
 
