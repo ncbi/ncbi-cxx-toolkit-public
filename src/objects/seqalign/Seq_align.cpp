@@ -1916,7 +1916,6 @@ static TSeqPos s_GetAlignmentLength(const CSeq_align& align,
              /// find total ranges
              vector<TSeqPos> sizes;
 
-             size_t count = 0;
              ITERATE (CSeq_align::TSegs::TStd, iter, align.GetSegs().GetStd()) {
                  const CStd_seg& seg = **iter;
 
@@ -1948,8 +1947,6 @@ static TSeqPos s_GetAlignmentLength(const CSeq_align& align,
                          ++i;
                      }
                  }
-
-                 ++count;
              }
 
              /// pass 2: determine shortest length
