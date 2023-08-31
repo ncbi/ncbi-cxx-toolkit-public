@@ -166,7 +166,7 @@ public:
 
     void Set(TReaderPtr reader, size_t blob_size)
     {
-        m_Reader = move(reader);
+        m_Reader = std::move(reader);
         m_BlobSize = blob_size;
         m_BytesRead = 0;
     }
@@ -191,7 +191,7 @@ public:
 
     void Set(TWriterPtr writer)
     {
-        m_Writer = move(writer);
+        m_Writer = std::move(writer);
     }
 
     ERW_Result Write(const void* buf, size_t count, size_t* written) override;
