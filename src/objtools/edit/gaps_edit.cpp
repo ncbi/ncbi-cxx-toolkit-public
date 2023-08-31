@@ -393,7 +393,7 @@ void CGapsEditor::x_SetGapParameters(CDelta_seq& lit, bool length_unknown)
         for (const auto& evidence : evidenceSet) {
             auto pEvidence = Ref(new CLinkage_evidence());
             pEvidence->SetType(evidence);
-            gap.SetSeq_data().SetGap().SetLinkage_evidence().emplace_back(move(pEvidence));
+            gap.SetSeq_data().SetGap().SetLinkage_evidence().emplace_back(std::move(pEvidence));
         }
         gap.SetSeq_data().SetGap().SetLinkage(CSeq_gap::eLinkage_linked);
         gap.SetSeq_data().SetGap().SetType(m_gap_type);
