@@ -105,7 +105,7 @@ struct CRemoteAppRemoverTask
 };
 
 CRemoteAppRemoverTask::CRemoteAppRemoverTask(string p) :
-    path(move(p))
+    path(std::move(p))
 {
     if (path.empty()) return;
 
@@ -162,7 +162,7 @@ struct CRemoteAppRemover::SGuard
 {
     SGuard(CRemoteAppRemover* remover, CRemoteAppRemoverTask task, bool remove_tmp_dir) :
         m_Scheduler(remover ? &remover->GetScheduler() : nullptr),
-        m_Task(move(task)),
+        m_Task(std::move(task)),
         m_RemoveTmpDir(remove_tmp_dir)
     {}
 
@@ -211,7 +211,7 @@ public:
         CRemoteAppReaper::CScheduler& process_manager;
 
         SParams(string pt, const CTimeout& rt, CRemoteAppReaper::CScheduler& pm) :
-            process_type(move(pt)),
+            process_type(std::move(pt)),
             run_timeout(rt),
             process_manager(pm)
         {}
@@ -618,7 +618,7 @@ public:
                 const CTimeout& kap,
                 CRemoteAppTimeoutReporter& tr,
                 CRemoteAppReaper::CScheduler& pm)
-            : CTimedProcessWatcher::SParams(move(pt), rt, pm),
+            : CTimedProcessWatcher::SParams(std::move(pt), rt, pm),
                 job_context(jc),
                 keep_alive_period(kap),
                 timeout_reporter(tr)
