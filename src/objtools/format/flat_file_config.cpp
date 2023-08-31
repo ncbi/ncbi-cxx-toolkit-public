@@ -664,6 +664,10 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          arg_desc->AddOptionalKey("strand", "Strand",
                                   "1 (plus) or 2 (minus)", CArgDescriptions::eInteger);
 
+         // multi-interval location
+         arg_desc->AddOptionalKey("location", "Location",
+                                   "Multi-interval region to show", CArgDescriptions::eString);
+
          // accession to extract
 
          // html
