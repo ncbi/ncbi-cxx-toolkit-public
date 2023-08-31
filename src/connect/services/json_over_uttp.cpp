@@ -1049,7 +1049,7 @@ string CJsonParser::ParseString(size_t max_len)
     const bool standard_json = m_Flags & CJsonNode::fStandardJson;
     auto str = CTempString(m_Ch, max_len);
     size_t len;
-    auto val = standard_json ? NStr::JsonDecode(move(str), &len) : NStr::ParseQuoted(move(str), &len);
+    auto val = standard_json ? NStr::JsonDecode(std::move(str), &len) : NStr::ParseQuoted(std::move(str), &len);
 
     m_Ch += len;
     return val;

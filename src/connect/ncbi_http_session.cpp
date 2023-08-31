@@ -468,7 +468,7 @@ CHttpResponse::CHttpResponse(CHttpSession_Base&   session,
     : m_Session(&session),
       m_Url(url),
       m_Location(url),
-      m_Stream(move(stream)),
+      m_Stream(std::move(stream)),
       m_Headers(new CHttpHeaders),
       m_StatusCode(0)
 {
@@ -511,7 +511,7 @@ void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, st
 {
     m_Headers->m_Headers.swap(headers);
     m_StatusCode = status_code;
-    m_StatusText = move(status_text);
+    m_StatusText = std::move(status_text);
     const auto& cookies = m_Headers->GetAllValues(CHttpHeaders::eSetCookie);
     m_Session->x_SetCookies(cookies, &m_Location);
 }
@@ -788,7 +788,7 @@ void CHttpRequest::x_AdjustHeaders(bool use_form_data)
 void CHttpRequest::x_UpdateResponse(CHttpHeaders::THeaders headers, int status_code, string status_text)
 {
     if (m_Response) {
-        m_Response->x_Update(move(headers), status_code, move(status_text));
+        m_Response->x_Update(std::move(headers), status_code, std::move(status_text));
     }
 }
 
@@ -922,7 +922,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
 void CHttpRequest::x_InitConnection2(shared_ptr<iostream> stream)
 {
-    m_Stream = move(stream);
+    m_Stream = std::move(stream);
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, m_Stream));
 }
 

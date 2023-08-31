@@ -177,7 +177,7 @@ struct SThrottleParams
 
 struct SThrottleStats
 {
-    SThrottleStats(SThrottleParams params) : m_Params(move(params)) { Reset(); }
+    SThrottleStats(SThrottleParams params) : m_Params(std::move(params)) { Reset(); }
 
     void Adjust(SNetServerImpl* server_impl, int err_code);
     void Check(SNetServerImpl* server_impl);

@@ -395,7 +395,7 @@ void SNetServiceImpl::Construct()
 {
     if (!m_ServiceName.empty()) {
         if (auto address = SSocketAddress::Parse(m_ServiceName)) {
-            Construct(m_ServerPool->FindOrCreateServerImpl(move(address)));
+            Construct(m_ServerPool->FindOrCreateServerImpl(std::move(address)));
         } else {
             m_ServiceType = eLoadBalancedService;
         }
@@ -743,7 +743,7 @@ bool CNetService::IsLoadBalanced() const
 
 void CNetServerPool::StickToServer(SSocketAddress address)
 {
-    m_Impl->m_EnforcedServer = move(address);
+    m_Impl->m_EnforcedServer = std::move(address);
 }
 
 void CNetService::PrintCmdOutput(const string& cmd,
@@ -803,7 +803,7 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
     if (!loc.second)
         return loc.first->second;
 
-    auto* server = new SNetServerInPool(move(server_address), m_PropCreator(), m_ThrottleParams);
+    auto* server = new SNetServerInPool(std::move(server_address), m_PropCreator(), m_ThrottleParams);
 
     loc.first->second = server;
 
@@ -823,7 +823,7 @@ CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, SSocketAddres
 {
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
-    auto* server = FindOrCreateServerImpl(m_EnforcedServer.host == 0 ? move(server_address) : m_EnforcedServer);
+    auto* server = FindOrCreateServerImpl(m_EnforcedServer.host == 0 ? std::move(server_address) : m_EnforcedServer);
     server->m_ServerPool = this;
 
     return new SNetServerImpl(service, server);
@@ -832,7 +832,7 @@ CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, SSocketAddres
 CNetServer SNetServiceImpl::GetServer(SSocketAddress server_address)
 {
     m_RebalanceStrategy.OnResourceRequested();
-    return m_ServerPool->GetServer(this, move(server_address));
+    return m_ServerPool->GetServer(this, std::move(server_address));
 }
 
 CNetServer CNetService::GetServer(const string& host,

@@ -225,8 +225,8 @@ public:
     SParamIndices indices;
 
     SRandomParam(SRandomGenerator& generator, vector<string> sv, vector<string> nv) :
-        sections_values(move(sv)),
-        names_values(move(nv)),
+        sections_values(std::move(sv)),
+        names_values(std::move(nv)),
         sections(sections_values.front()),
         names(names_values.front()),
         included(generator.GetSection()),
@@ -486,10 +486,10 @@ SFixture::SFixture()
             names_values.push_back(unique_name);
         }
 
-        SRandomParam param(generator, move(sections_values), move(names_values));
+        SRandomParam param(generator, std::move(sections_values), std::move(names_values));
 
         if (IsUnique(param)) {
-            random_params.push_back(move(param));
+            random_params.push_back(std::move(param));
         }
     }
 }

@@ -592,7 +592,7 @@ int SGridWorkerNodeImpl::Run(
 
     ITERATE(vector<string>, it, vhosts) {
         if (auto address = SSocketAddress::Parse(NStr::TruncateSpaces(*it))) {
-            m_Masters.insert(move(address));
+            m_Masters.insert(std::move(address));
         }
     }
 

@@ -126,8 +126,8 @@ struct SServiceDiscoveryImpl : protected CConnIniter
     shared_ptr<void> GetSingleServer(const string& service_name) const
     {
         if (auto address = SSocketAddress::Parse(service_name)) {
-            CServiceDiscovery::TServer server(move(address), 1.0);
-            return make_shared<CServiceDiscovery::TServers>(1, move(server));
+            CServiceDiscovery::TServer server(std::move(address), 1.0);
+            return make_shared<CServiceDiscovery::TServers>(1, std::move(server));
         }
 
         return {};
