@@ -82,7 +82,7 @@ ERW_Result CStringOrWriter::Write(const void* buf, size_t count, size_t* bytes_w
 
     m_Data = s_JobOutputPrefixNetCache + key;
 
-    m_Writer = move(writer);
+    m_Writer = std::move(writer);
     return m_Writer->Write(buf, count, bytes_written);
 }
 

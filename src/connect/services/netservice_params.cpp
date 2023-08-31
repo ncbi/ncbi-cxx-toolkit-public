@@ -84,7 +84,7 @@ CConfig* CConfigRegistry::GetSubConfig(const string& section) const
     if (const CConfig::TParamTree* tree = m_Config->GetTree()) {
         if (const CConfig::TParamTree* sub_tree = tree->FindSubNode(section)) {
             unique_ptr<CConfig> sub_config(new CConfig(sub_tree));
-            auto result = m_SubConfigs.emplace(section, move(sub_config));
+            auto result = m_SubConfigs.emplace(section, std::move(sub_config));
             return result.first->second.get();
         }
     }

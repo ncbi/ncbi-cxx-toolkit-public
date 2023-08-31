@@ -157,9 +157,9 @@ public:
     };
 
     CLogLatencies(SRegex start, SRegex stop, std::optional<SRegex> server_side = nullopt) :
-        m_Start(move(start)),
-        m_Stop(move(stop)),
-        m_ServerSide(move(server_side))
+        m_Start(std::move(start)),
+        m_Stop(std::move(stop)),
+        m_ServerSide(std::move(server_side))
     {}
 
     void SetWhich(EWhich which) { m_Which = which; }
@@ -184,7 +184,7 @@ class NCBI_XCONNECT_EXPORT CLogLatencyReport : public CLogLatencies
 {
 public:
     template <class... TArgs>
-    CLogLatencyReport(string filter, TArgs&&... args) : CLogLatencies(forward<TArgs>(args)...), m_Filter(move(filter)) {}
+    CLogLatencyReport(string filter, TArgs&&... args) : CLogLatencies(forward<TArgs>(args)...), m_Filter(std::move(filter)) {}
 
     ~CLogLatencyReport();
 

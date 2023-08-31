@@ -312,9 +312,9 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 /*************************************************************************/
 SNetServerInPool::SNetServerInPool(SSocketAddress address,
         INetServerProperties* server_properties, SThrottleParams throttle_params) :
-    m_Address(move(address)),
+    m_Address(std::move(address)),
     m_ServerProperties(server_properties),
-    m_ThrottleStats(move(throttle_params))
+    m_ThrottleStats(std::move(throttle_params))
 {
     m_CurrentConnectionGeneration.Set(0);
 
@@ -365,7 +365,7 @@ CUrlArgs::TArgs s_GetAttributes(const string& version_string)
 
     try {
         CUrlArgs args(version_string);
-        rv = move(args.GetArgs());
+        rv = std::move(args.GetArgs());
     }
     catch (CUrlParserException&) {
         const char* version = version_string.c_str();
