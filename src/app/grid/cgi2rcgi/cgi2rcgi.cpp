@@ -106,7 +106,7 @@ struct SInputValidator::SEntry
     string name;
 
     template <class TF>
-    SEntry(string n, TF f) : name(move(n)), m_Func(f) {}
+    SEntry(string n, TF f) : name(std::move(n)), m_Func(f) {}
 
     bool Check(const string& value);
 
@@ -167,7 +167,7 @@ void SInputValidator::CheckEntry(const string& name, const string& value, bool i
 
 void SInputValidator::AddAffinityEntry(string name)
 {
-    m_Entries.push_back(SEntry(move(name), CheckAffinity));
+    m_Entries.push_back(SEntry(std::move(name), CheckAffinity));
 }
 
 vector<string> SInputValidator::GetListenJobs(const string& value)
