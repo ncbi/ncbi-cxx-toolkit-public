@@ -315,7 +315,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParsePlain()  // plain string
         return unique_ptr<CRegX>(new CRegXEmpty());
     }
     if (V.size() == 1) {
-        return move(V[0]);
+        return std::move(V[0]);
     }
     return unique_ptr<CRegX>(new CRegXConcat(V));
 }
@@ -325,7 +325,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseSelect()  // e.g.: /a|b|c/
 {
     vector<unique_ptr<CRegX> > V;
     while (unique_ptr<CRegX> x = x_ParseConcat()) {
-        V.push_back(move(x));
+        V.push_back(std::move(x));
         if (m_Cur >= m_Str.length() || m_Str[m_Cur] != '|') {
             break;
         }
@@ -335,7 +335,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseSelect()  // e.g.: /a|b|c/
         return unique_ptr<CRegX>(new CRegXEmpty());
     }
     if (V.size() == 1) {
-        return move(V[0]);
+        return std::move(V[0]);
     }
     return unique_ptr<CRegX>(new CRegXSelect(V));
 }
@@ -346,7 +346,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseConcat()  // e.g.: /abc/
     vector<unique_ptr<CRegX> > V;
     while (unique_ptr<CRegX> x = x_ParseTerm()) {
         if (*x) {
-            V.push_back(move(x));
+            V.push_back(std::move(x));
         }
         if (m_Cur >= m_Str.length() || m_Str[m_Cur] == '|' || m_Str[m_Cur] == ')' || m_Str[m_Cur] == '/') {
             break;
@@ -356,7 +356,7 @@ unique_ptr<CRegEx::CRegX> CRegEx::x_ParseConcat()  // e.g.: /abc/
         return unique_ptr<CRegX>(new CRegXEmpty());
     }
     if (V.size() == 1) {
-        return move(V[0]);
+        return std::move(V[0]);
     }
     return unique_ptr<CRegX>(new CRegXConcat(V));
 }
@@ -1180,16 +1180,16 @@ void CRegExFSA::Add(const vector<unique_ptr<CRegEx>>& v)
         unique_ptr<CRegExFSA> p(new CRegExFSA);
         p->Create(*rx, m_Str.size());
         m_Str.push_back(rx->m_Str);
-        w.push_back(move(p));
+        w.push_back(std::move(p));
     }
     while (w.size() > 1) {
         size_t h = (w.size() + 1) / 2;
         for (size_t i = 0, j = h; j < w.size(); i++, j++) {
-            w[i]->Merge(move(w[j]));
+            w[i]->Merge(std::move(w[j]));
         }
         w.resize(h);
     }
-    Merge(move(w[0]));
+    Merge(std::move(w[0]));
 }
 
 
@@ -1200,7 +1200,7 @@ void CRegExFSA::Merge(unique_ptr<CRegExFSA> fsa)
         for (auto& trans : state->m_Trans) {
             trans += shift;
         }
-        m_States.push_back(move(state));
+        m_States.push_back(std::move(state));
     }
     Short(0, shift);
     Short(shift, 0);

@@ -280,7 +280,7 @@ IWriter* CAsyncWriteCache::GetWriteStream(const string& key, TBlobVersion versio
     if (m_ThreadPool) {
         auto ctx = GetDiagContext().GetRequestContext().Clone();
         SMeta meta{key, version, subkey, time_to_live, owner, ctx};
-        return new SDeferredWriter(m_ThreadPool, m_Writer, move(meta));
+        return new SDeferredWriter(m_ThreadPool, m_Writer, std::move(meta));
     }
 
     return m_Writer->GetWriteStream(key, version, subkey, time_to_live, owner);
