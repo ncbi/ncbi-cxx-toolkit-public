@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(VecToStringUnknown)
     for (auto linkage_type : type_vector) {
         auto evidence = Ref(new CLinkage_evidence());
         evidence->SetType(linkage_type);
-        evidence_vector.push_back(move(evidence));
+        evidence_vector.push_back(std::move(evidence));
     }
 
     string output;
