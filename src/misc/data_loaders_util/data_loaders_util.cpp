@@ -215,13 +215,13 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
             params.SetLoaderMethod(gb_methods);
         }
 
-        if (args["gb-snp"]) {
+        if (args.Exist("gb-snp") && args["gb-snp"]) {
             params.SetReaderParams().SetEnableSNP(args["gb-snp"].AsBoolean());
         }
-        if (args["gb-wgs"]) {
+        if (args.Exist("gb-wgs") && args["gb-wgs"]) {
             params.SetReaderParams().SetEnableWGS(args["gb-wgs"].AsBoolean());
         }
-        if (args["gb-cdd"]) {
+        if (args.Exist("gb-cdd") && args["gb-cdd"]) {
             params.SetReaderParams().SetEnableCDD(args["gb-cdd"].AsBoolean());
         }
 
