@@ -104,7 +104,7 @@ protected:
 
     struct CRegXTerm : public CRegX  // /a?/ /a+/ /a*/ /a{1,2}/
     {
-        CRegXTerm(unique_ptr<CRegX>& x, unsigned int min, unsigned int max, bool lazy = false) : m_RegX(move(x)), m_Min(min), m_Max(max), m_Lazy(lazy) {}
+        CRegXTerm(unique_ptr<CRegX>& x, unsigned int min, unsigned int max, bool lazy = false) : m_RegX(std::move(x)), m_Min(min), m_Max(max), m_Lazy(lazy) {}
         void SetCaseInsensitive() { m_RegX->SetCaseInsensitive(); }
         bool IsCaseInsensitive() const { return m_RegX->IsCaseInsensitive(); }
         void Print(ostream& out, size_t off) const;
@@ -118,7 +118,7 @@ protected:
     struct CRegXConcat : public CRegX  // /abc/
     {
         CRegXConcat() {}
-        CRegXConcat(vector<unique_ptr<CRegX> >& v) : m_Vec(move(v)) {}
+        CRegXConcat(vector<unique_ptr<CRegX> >& v) : m_Vec(std::move(v)) {}
         void SetCaseInsensitive() { for (size_t n = 0; n < m_Vec.size(); n++) m_Vec[n]->SetCaseInsensitive(); }
         bool IsCaseInsensitive() const { for (size_t n = 0; n < m_Vec.size(); n++) if (!m_Vec[n]->IsCaseInsensitive()) return false; return true; }
         void Print(ostream& out, size_t off) const { PrintOffset(out, off); out << "<concat>\n"; for (size_t n = 0; n < m_Vec.size(); n++) m_Vec[n]->Print(out, off + 2); }
@@ -129,7 +129,7 @@ protected:
     struct CRegXSelect : public CRegX  // /a|b|c/
     {
         CRegXSelect() {}
-        CRegXSelect(vector<unique_ptr<CRegX> >& v) : m_Vec(move(v)) {}
+        CRegXSelect(vector<unique_ptr<CRegX> >& v) : m_Vec(std::move(v)) {}
         void SetCaseInsensitive() { for (size_t n = 0; n < m_Vec.size(); n++) m_Vec[n]->SetCaseInsensitive(); }
         bool IsCaseInsensitive() const { for (size_t n = 0; n < m_Vec.size(); n++) if (!m_Vec[n]->IsCaseInsensitive()) return false; return true; }
         void Print(ostream& out, size_t off) const { PrintOffset(out, off); out << "<select>\n"; for (size_t n = 0; n < m_Vec.size(); n++) m_Vec[n]->Print(out, off + 2); }
@@ -151,7 +151,7 @@ protected:
             eAssertLookBackNeg    // (?<!...) will not support
         };
         CRegXAssert(EAssert a) : m_Assert(a) {}
-        CRegXAssert(EAssert a, unique_ptr<CRegX>& x) : m_Assert(a), m_RegX(move(x)) {}
+        CRegXAssert(EAssert a, unique_ptr<CRegX>& x) : m_Assert(a), m_RegX(std::move(x)) {}
         void SetCaseInsensitive() { if (m_RegX) m_RegX->SetCaseInsensitive(); }
         bool IsCaseInsensitive() const { return m_RegX ? m_RegX->IsCaseInsensitive() : true; }
         virtual bool IsAssert() const { return true; }
