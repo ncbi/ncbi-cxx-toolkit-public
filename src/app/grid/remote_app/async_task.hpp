@@ -85,7 +85,7 @@ class CAsyncTaskProcessor
         {
             SThread(CContext& context, string thread_name)
                 : m_Context(context),
-                m_ThreadName(move(thread_name))
+                m_ThreadName(std::move(thread_name))
             {}
 
             void Stop()
@@ -113,7 +113,7 @@ class CAsyncTaskProcessor
 
     public:
         CExecutor(CContext& context, string thread_name)
-            : m_Thread(context.Enabled() ? new SThread(context, move(thread_name)) : nullptr)
+            : m_Thread(context.Enabled() ? new SThread(context, std::move(thread_name)) : nullptr)
         {}
 
         void Start() { if (m_Thread) m_Thread->Run(); }
@@ -217,7 +217,7 @@ template <class TTask>
 inline CAsyncTaskProcessor<TTask>::CAsyncTaskProcessor(int sleep, int max_attempts, string thread_name)
     : m_Context(sleep, max_attempts),
       m_Scheduler(m_Context),
-      m_Executor(m_Context, move(thread_name))
+      m_Executor(m_Context, std::move(thread_name))
 {
 }
 

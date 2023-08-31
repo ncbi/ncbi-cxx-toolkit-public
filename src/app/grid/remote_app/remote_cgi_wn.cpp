@@ -102,7 +102,7 @@ struct HasValue
 template <typename T>
 struct SNot : T
 {
-    SNot(T o) : T(move(o)) {}
+    SNot(T o) : T(std::move(o)) {}
     bool operator() (const string& val) const { return !T::operator()(val); }
 };
 
