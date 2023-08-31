@@ -483,7 +483,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                         list<string> affiliations;
                         for (auto affiliation_info : list_affiliation_info) {
                             string affiliation = s_Utf8TextListToString(affiliation_info->GetAffiliation().Get());
-                            if (!affiliation.empty()) affiliations.emplace_back(move(affiliation));
+                            if (!affiliation.empty()) affiliations.emplace_back(std::move(affiliation));
                         }
                         if (!affiliations.empty()) {
                             CRef<CAffil> affil(new CAffil());
