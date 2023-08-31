@@ -1531,7 +1531,7 @@ CObjectIStreamAsyncIterator<TRoot>::CData::x_UpdateFuturesQueue()
     swap(m_GarbageQueue, tmp_garbage_queue);
 
     m_FuturesQueue.push( async( m_Policy, m_Parser,
-        data,  m_Istr->GetDataFormat(), m_Params, move(tmp_garbage_queue)));
+        data,  m_Istr->GetDataFormat(), m_Params, std::move(tmp_garbage_queue)));
 }
 
 template<typename TRoot>
