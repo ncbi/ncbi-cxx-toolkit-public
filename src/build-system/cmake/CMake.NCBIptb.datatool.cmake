@@ -107,6 +107,8 @@ function(NCBI_internal_process_dataspec _variable _access _value)
         else()
             set(_opm -opm "${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_SRC}")
         endif()
+    else()
+        set(_opm -opm "${NCBITK_SRC_ROOT}")
     endif()
 
     NCBI_util_get_value(PCH _fpch)
