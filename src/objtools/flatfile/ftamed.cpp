@@ -77,7 +77,7 @@ static unique_ptr<edit::IPubmedUpdater> s_updater;
 void InitPubmedClient(bool normalize)
 {
     if (! s_updater) {
-        s_updater.reset(new edit::CEUtilsUpdater(normalize));
+        s_updater.reset(new edit::CEUtilsUpdaterWithCache(normalize));
     }
 }
 
