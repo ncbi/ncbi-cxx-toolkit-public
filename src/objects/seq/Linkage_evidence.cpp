@@ -94,7 +94,7 @@ bool CLinkage_evidence::GetLinkageEvidence(
         }
         CRef<CLinkage_evidence> new_evid( new CLinkage_evidence() );
         new_evid->SetType(it->second);
-        temp_vector.push_back(move(new_evid));
+        temp_vector.push_back(std::move(new_evid));
 
     }
 
