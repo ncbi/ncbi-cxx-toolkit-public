@@ -665,6 +665,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnFactory)
         DBLB_INSTALL_DEFAULT();
     }
     catch(const CException& ex) {
+        DBLB_INSTALL_DEFAULT();
         DBAPI_BOOST_FAIL(ex);
     }
 }
