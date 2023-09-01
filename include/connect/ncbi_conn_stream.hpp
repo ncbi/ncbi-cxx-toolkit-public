@@ -925,8 +925,8 @@ protected:
 /// CConn_PipeStream for command piping
 ///
 /// @note
-///   Exercise caution when operating on the underlying pipe while it's  being
-///   in use as it may cause undefined behavior.
+///   Exercise caution when operating on the underlying pipe while it's being
+///   in use by the stream as that may cause some unpredictable behavior.
 ///
 /// Provided "timeout" is set at the connection level if different from
 /// kDefaultTimeout (which is infinite for this class by default).
@@ -950,9 +950,14 @@ public:
 
     virtual EIO_Status Close(void);
 
-    /// A valid exit code is only made available after an explicit Close().
+    /// A valid exit code is only made available after an explicit Close()
+    /// @sa
+    ///   CProcess::CExitInfo
     int    GetExitCode(void) const { return m_ExitCode; }
 
+    /// Return an underlying CPipe; it's valid for as long as the stream exists
+    /// @sa
+    ///   CPipe
     CPipe& GetPipe(void)           { return *m_Pipe;    }
 
 protected:
