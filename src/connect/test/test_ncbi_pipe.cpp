@@ -572,7 +572,7 @@ int CTest::Run(void)
     status = ps.GetPipe().Open(dir, args,
                                CPipe::fStdIn_Close | CPipe::fStdErr_StdOut);
     assert(status == eIO_Success);
-    if (!NcbiStreamToString(&str, ps)  ||  ps.good() ||  !ps.eof())
+    if (!NcbiStreamToString(&str, ps)  ||  ps.good()  ||  !ps.eof())
         ERR_POST(Fatal << "Cannot read directory");
     status = ps.Close();
     elapsed = sw.Elapsed();
