@@ -184,7 +184,7 @@ class NCBI_XCONNECT_EXPORT CLogLatencyReport : public CLogLatencies
 {
 public:
     template <class... TArgs>
-    CLogLatencyReport(string filter, TArgs&&... args) : CLogLatencies(forward<TArgs>(args)...), m_Filter(std::move(filter)) {}
+    CLogLatencyReport(string filter, TArgs&&... args) : CLogLatencies(std::forward<TArgs>(args)...), m_Filter(std::move(filter)) {}
 
     ~CLogLatencyReport();
 
