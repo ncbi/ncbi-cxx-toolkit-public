@@ -379,7 +379,7 @@ int CTest::Run(void)
     assert(n_written == 0);
 
 
-    // Bidirectional pipe (iostream)
+    // Bidirectional stream (pipe)
     args.back() = NStr::IntToString(eStream);
     ERR_POST(Info << "TEST:  Bidirectional stream");
     CConn_PipeStream ps(app.c_str(), args, share, 0, &timeout);
@@ -555,6 +555,32 @@ int CTest::Run(void)
         ERR_POST(Info << "Pipe closed: " << IO_StatusStr(status));
     } else
         ERR_POST(Warning << "Pipe closed okay because of an extended delay");
+
+
+    // Stream capture (shell backquote)
+    ps.clear();
+    sw.Restart();
+    ERR_POST(Info << "TEST:  Checking stream directory capture");
+    args.clear();
+#ifdef NCBI_OS_MSWIN
+    string dir("dir");
+    args.push_back("/B");
+#else
+    string dir("ls");
+    args.push_back("-1");
+#endif /*NCBI_OS_MSWIN*/
+    status = ps.GetPipe().Open(dir, args,
+                               CPipe::fStdIn_Close | CPipe::fStdErr_StdOut);
+    assert(status == eIO_Success);
+    if (!NcbiStreamToString(&str, ps)  ||  ps.good() ||  !ps.eof())
+        ERR_POST(Fatal << "Cannot read directory");
+    status = ps.Close();
+    elapsed = sw.Elapsed();
+    exitcode = ps.GetExitCode();
+    ERR_POST(Info << "Command \"" << dir << ' ' << args[0]
+             << "\" completed with status " << IO_StatusStr(status)
+             << " and exit code " << exitcode << " in " << elapsed << "s ("
+             << str.size() << " byte" << &"s"[!(str.size() != 1)] << " read)");
 
 
     // ExecWait()
