@@ -79,7 +79,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
 
             if (key.GetVersion() != 3) {
                 if (auto address = SSocketAddress::Parse(m_Opts.nc_service)) {
-                    m_NetCacheAPI.GetService().GetServerPool().StickToServer(move(address));
+                    m_NetCacheAPI.GetService().GetServerPool().StickToServer(std::move(address));
                 } else {
                     NCBI_THROW(CArgException, eInvalidArg,
                         "When blob ID is given, '--" NETCACHE_OPTION "' "
