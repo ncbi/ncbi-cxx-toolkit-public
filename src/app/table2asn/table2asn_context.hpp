@@ -148,6 +148,7 @@ public:
     bool   m_allow_accession{ false };
     bool   m_verbose{ false };
     bool   m_augustus_fix{ false };
+    bool   m_intronless { false };
     bool   m_make_flatfile{ false };
     bool   m_run_discrepancy{ false };
     bool   m_split_discrepancy{ false };
