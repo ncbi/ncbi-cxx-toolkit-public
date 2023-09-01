@@ -638,7 +638,7 @@ void NBestPlacement::Rank(
 
     int rank = 1;
     int rank1_index = 1;
-    for(const auto p : v) {
+    for(const auto& p : v) {
         auto aln = p.second;
 
         if(rank1_count > 1 && p.first == v.front().first) {
