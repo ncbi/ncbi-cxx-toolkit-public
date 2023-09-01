@@ -87,7 +87,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     if (job_provided && service_provided) {
         if (auto address = SSocketAddress::Parse(m_Opts.ns_service)) {
-            m_NetScheduleAPI.GetService().GetServerPool().StickToServer(move(address));
+            m_NetScheduleAPI.GetService().GetServerPool().StickToServer(std::move(address));
         } else {
             NCBI_THROW(CArgException, eInvalidArg,
                     "When job ID is given, '--" NETSCHEDULE_OPTION "' "
