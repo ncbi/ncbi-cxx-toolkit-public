@@ -2744,9 +2744,14 @@ CSeqMap_CI s_CreateGapMapIter(const CSeq_loc& loc, CBioseqContext& ctx)
         return gap_it;
     }
 
+    int gapDepth = ctx.Config().GetGapDepth();
+    if (gapDepth < 1) {
+        gapDepth = 1;
+    }
+
     SSeqMapSelector sel;
     sel.SetFlags(CSeqMap::fFindGap)   // only iterate gaps
-       .SetResolveCount(1);           // starting with a Seq-loc resolve 1 level
+       .SetResolveCount(gapDepth);           // starting with a Seq-loc resolve 1 level
     gap_it = CSeqMap_CI(seqmap, &ctx.GetScope(), sel);
 
     return gap_it;
