@@ -138,7 +138,7 @@ private:
 
 /// istream-based IReader
 ///
-/// Besides other uses, this class can help unite two uni-derectional streams
+/// Besides other uses, this class can help unite two uni-directional streams
 /// into a single bi-directional one, e.g.:
 ///     CRWStream rw(new CStreamReader(cin), new CStreamWriter(cout),
 ///                  0, 0, CRWStreambuf::fOwnAll);
@@ -172,7 +172,7 @@ private:
 
 /// ostream-based IWriter
 ///
-/// Can help create single bi-directional stream from two uni-derectional ones:
+/// Can help create single bi-directional stream from two uni-directional ones:
 ///     CRWStream rw(new CStreamReader(cin), new CStreamWriter(cout),
 ///                  0, 0, CRWStreambuf::fOwnAll);
 /// @sa
