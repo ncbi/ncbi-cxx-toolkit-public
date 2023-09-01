@@ -1376,17 +1376,18 @@ static CBioseq_Handle s_GetSingleNucSeq(CSeq_entry_Handle seh) {
 }
 
 
-static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope, 
-                                  const CSeq_id& proteinId, 
+static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
+                                  const CSeq_id& proteinId,
                                   const CSeq_loc& genomicLoc,
-                                  TSeqPos bioseqLength)
+                                  TSeqPos bioseqLength,
+                                  bool intronless)
 {
     CProSplignScoring scoring;
     scoring.SetAltStarts(true);
-    CProSplign prosplign(scoring, false, true, false, false);
+    CProSplign prosplign(scoring, intronless, true, false, false);
     CRef<CSeq_align> alignment = prosplign.FindAlignment(scope, proteinId, genomicLoc,
                                                      CProSplignOutputOptions(CProSplignOutputOptions::ePassThrough));
-    
+
     bool found_start_codon = false;
     bool found_stop_codon = false;
     list<CRef<CSeq_loc>> exonLocs;
@@ -1500,8 +1501,8 @@ bool CFeatureTableReader::xAddProteinToSeqEntry(const CBioseq& protein, CSeq_ent
 
     CSeq_entry_Handle protein_h = seh.GetScope().AddTopLevelSeqEntry(*protein_entry);
 
-    auto cds_loc = s_GetCDSLoc(seh.GetScope(), *protein_entry->GetSeq().GetId().front(), 
-                               *match_loc, bsh_match.GetBioseqLength());
+    auto cds_loc = s_GetCDSLoc(seh.GetScope(), *protein_entry->GetSeq().GetId().front(),
+                               *match_loc, bsh_match.GetBioseqLength(), m_context.m_intronless);
 
     if (!cds_loc) {
         string label;
