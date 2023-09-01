@@ -626,6 +626,7 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 NCBI_SC_VERSION
 NCBI_SUBVERSION_REVISION
+NCBI_GIT_BRANCH
 NCBI_REVISION
 NCBI_TEAMCITY_BUILD_ID
 NCBI_TEAMCITY_BUILDCONF_NAME
@@ -6459,8 +6460,9 @@ if test -n "$svnrev"; then
    NCBI_SUBVERSION_REVISION=$svnrev
 fi
 if test -n "$gitrev"; then
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gitrev (Git)" >&5
-$as_echo "$gitrev (Git)" >&6; }
+   NCBI_GIT_BRANCH=`git -C "$srcdir" branch --show-current`
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gitrev (Git: $NCBI_GIT_BRANCH)" >&5
+$as_echo "$gitrev (Git: $NCBI_GIT_BRANCH)" >&6; }
    NCBI_REVISION=$gitrev
    : ${NCBI_SUBVERSION_REVISION=0}
 elif test -n "$svnrev"; then
@@ -37051,6 +37053,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 

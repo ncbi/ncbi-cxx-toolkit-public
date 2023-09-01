@@ -1094,7 +1094,8 @@ if test -n "$svnrev"; then
    NCBI_SUBVERSION_REVISION=$svnrev
 fi
 if test -n "$gitrev"; then
-   AC_MSG_RESULT([$gitrev (Git)])
+   NCBI_GIT_BRANCH=`git -C "$srcdir" branch --show-current`
+   AC_MSG_RESULT([$gitrev (Git: $NCBI_GIT_BRANCH)])
    NCBI_REVISION=$gitrev
    : ${NCBI_SUBVERSION_REVISION=0}
 elif test -n "$svnrev"; then
@@ -9991,6 +9992,7 @@ AC_SUBST(NCBI_TEAMCITY_PROJECT_NAME)
 AC_SUBST(NCBI_TEAMCITY_BUILDCONF_NAME)
 AC_SUBST(NCBI_TEAMCITY_BUILD_ID)
 AC_SUBST(NCBI_REVISION)
+AC_SUBST(NCBI_GIT_BRANCH)
 AC_SUBST(NCBI_SUBVERSION_REVISION)
 AC_SUBST(NCBI_SC_VERSION)
 
