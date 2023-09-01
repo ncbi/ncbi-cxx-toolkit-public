@@ -6879,6 +6879,7 @@ SIBS	s	Institute of Marine Biological Research (IMBR)
 SICAU	s	Herbarium of Sichuan Agricultural University			
 SICAUCC 	c	Sichuan Agricultural University Culture Collection	SICAUCC		
 SICH	s	Simpson College, Biology and Environmental Sciences Department			
+SIE	s	Southern Institute of Ecology			
 SIEMEA	s	Severtsov Insitute for Evolutionary Morphology and Animal Ecology			
 SIENA	s	Universita di Siena, Dipartimento di Scienze Ambientali "G. Sarfatti"			
 SIEZC	s	Zoological collection of the Southern Institute of Ecology			
