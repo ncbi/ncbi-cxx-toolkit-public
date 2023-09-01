@@ -4743,6 +4743,7 @@ CPPFLAGS="$orig_CPPFLAGS $BACKWARD_CPP_INCLUDE"
 AC_CHECK_HEADERS([backward.hpp], [NCBI_PACKAGE(BACKWARD_CPP)],
    [BACKWARD_CPP_INCLUDE=; NCBI_MISSING_PACKAGE(backward_cpp)])
 
+orig_BACKWARD_CPP_INCLUDE=$BACKWARD_CPP_INCLUDE
 NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
  [AC_LANG_PROGRAM([@%:@ifdef HAVE_LIBUNWIND
                    @%:@  define BACKWARD_HAS_UNWIND 1
@@ -4755,6 +4756,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(backward_cpp, BACKWARD_CPP, backward,
                    @%:@include <backward.hpp>],
       [[backward::StackTrace st; st.load_here(32);]])],
  [], [], [$LIBUNWIND_INCLUDE $LIBDW_INCLUDE])
+BACKWARD_CPP_INCLUDE=$orig_BACKWARD_CPP_INCLUDE
 
 
 if test "$with_backward_cpp_sig" = yes; then
