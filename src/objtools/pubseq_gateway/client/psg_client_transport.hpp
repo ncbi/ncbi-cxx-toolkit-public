@@ -733,7 +733,7 @@ protected:
             const uint8_t* value, size_t valuelen, uint8_t flags);
 
 private:
-    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eClientIP, eSize };
+    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eCookie, eClientIP, eSize };
 
     using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
