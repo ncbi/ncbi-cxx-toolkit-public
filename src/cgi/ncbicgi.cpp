@@ -102,6 +102,11 @@ NCBI_PARAM_ENUM_DEF_EX(CCgiCookie::ECookieEncoding, CGI, Cookie_Encoding,
 typedef NCBI_PARAM_TYPE(CGI, Cookie_Encoding) TCookieEncoding;
 
 
+NCBI_PARAM_DECL(string, CGI, cookie_auth_token);
+NCBI_PARAM_DEF(string, CGI, cookie_auth_token, "WebCubbyUser");
+typedef NCBI_PARAM_TYPE(CGI, cookie_auth_token) TCookieAuthToken;
+
+
 // Helper function for encoding cookie name/value
 string CCgiCookie::x_EncodeCookie(const string& str,
                                   EFieldType ftype,
@@ -1287,6 +1292,15 @@ void CCgiRequest::x_InitRequestContext(TFlags flags)
         string dtab = x_GetPropertyByName("HTTP_DTAB_LOCAL");
         if ( !dtab.empty() ) {
             rctx.SetDtab(dtab);
+        }
+    }
+    if (!rctx.IsSetProperty("auth_token")) {
+        if (auto auth_token = TCookieAuthToken::GetDefault(); !auth_token.empty()) {
+            if (auto cookie = m_Cookies.Find(auth_token)) {
+                ostringstream os;
+                cookie->Write(os, CCgiCookie::eHTTPRequest, eUrlEncode_None);
+                rctx.SetProperty("auth_token", os.str());
+            }
         }
     }
 }
