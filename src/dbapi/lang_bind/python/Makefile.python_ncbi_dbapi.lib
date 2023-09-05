@@ -19,4 +19,4 @@ WATCHERS = ucko satskyse
 
 
 USES_LIBRARIES =  \
-    $(NETWORK_LIBS) $(ORIG_LIBS) $(PYTHON_LIBS) dbapi_driver
+    dbapi_driver
