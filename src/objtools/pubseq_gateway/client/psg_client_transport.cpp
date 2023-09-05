@@ -1030,6 +1030,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
         { "user-agent", SUvNgHttp2_UserAgent::Get() },
         { "http_ncbi_sid" },
         { "http_ncbi_phid" },
+        { "cookie" },
         { "x-forwarded-for" }
     }},
     m_Queue(queue)
@@ -1195,12 +1196,14 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
     const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
+    const auto& cookie = context.GetProperty("auth_token");
     const auto& client_ip = context.GetClientIP();
     auto headers_size = m_Headers.size();
 
     m_Headers[ePath] = path;
     m_Headers[eSessionID] = session_id;
     m_Headers[eSubHitID] = sub_hit_id;
+    m_Headers[eCookie] = cookie;
 
     if (!client_ip.empty()) {
         m_Headers[eClientIP] = client_ip;
