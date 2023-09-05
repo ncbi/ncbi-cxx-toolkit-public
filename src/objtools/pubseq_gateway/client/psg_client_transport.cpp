@@ -78,6 +78,8 @@ NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_chunks, false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
+NCBI_PARAM_DEF(string,   PSG, auth_token_name,        "WebCubbyUser");
+NCBI_PARAM_DEF(string,   PSG, auth_token,             "");
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
 NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
 
@@ -1176,7 +1178,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
     const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
-    const auto& cookie = context.GetProperty("auth_token");
+    const auto& cookie = m_Params.GetCookie([&]() { return context.GetProperty("auth_token"); });
     const auto& client_ip = context.GetClientIP();
     auto headers_size = m_Headers.size();
 
