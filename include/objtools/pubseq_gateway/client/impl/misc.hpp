@@ -340,6 +340,12 @@ typedef NCBI_PARAM_TYPE(PSG, https) TPSG_Https;
 NCBI_PARAM_DECL(double, PSG, no_servers_retry_delay);
 typedef NCBI_PARAM_TYPE(PSG, no_servers_retry_delay) TPSG_NoServersRetryDelay;
 
+NCBI_PARAM_DECL(string, PSG, auth_token_name);
+using TPSG_AuthTokenName = PSG_PARAM_VALUE_TYPE(PSG, auth_token_name);
+
+NCBI_PARAM_DECL(string, PSG, auth_token);
+using TPSG_AuthToken = PSG_PARAM_VALUE_TYPE(PSG, auth_token);
+
 NCBI_PARAM_DECL(bool, PSG, stats);
 typedef NCBI_PARAM_TYPE(PSG, stats) TPSG_Stats;
 
