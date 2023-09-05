@@ -34,6 +34,7 @@
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_signal.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
@@ -46,6 +47,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seq/seq_macros.hpp>
+#include <objects/seq/seq_loc_from_string.hpp>
 
 #include <objects/misc/sequence_macros.hpp>
 
@@ -53,6 +55,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_config.hpp>
@@ -1320,6 +1323,23 @@ ENa_strand CAsn2FlatApp::x_GetStrand(const CArgs& args) const
 }
 
 
+class CGetSeqLocFromStringHelper_ReadLocFromText : public CGetSeqLocFromStringHelper {
+public:
+    CGetSeqLocFromStringHelper_ReadLocFromText( CScope *scope )
+        : m_scope(scope) { }
+
+    virtual CRef<CSeq_loc> Seq_loc_Add(
+        const CSeq_loc&    loc1,
+        const CSeq_loc&    loc2,
+        CSeq_loc::TOpFlags flags )
+    {
+        return sequence::Seq_loc_Add( loc1, loc2, flags, m_scope );
+    }
+
+private:
+    CScope *m_scope;
+};
+
 void CAsn2FlatApp::x_GetLocation(const CSeq_entry_Handle& entry,
                                  const CArgs&             args,
                                  CSeq_loc&                loc) const
@@ -1330,6 +1350,18 @@ void CAsn2FlatApp::x_GetLocation(const CSeq_entry_Handle& entry,
     if (! h) {
         NCBI_THROW(CFlatException, eInvalidParam, "Cannot deduce target bioseq.");
     }
+
+    if (args["location"]) {
+        vector<string> location;
+        const string& locn = args["location"].AsString();
+        CGetSeqLocFromStringHelper_ReadLocFromText helper(&entry.GetScope());
+        CRef<CSeq_loc> lc = GetSeqLocFromString(locn, h.GetSeqId(), &helper);
+        if (lc) {
+            loc.Assign(*lc);
+        }
+        return;
+    }
+
     TSeqPos    length = h.GetInst_Length();
     TSeqPos    from   = x_GetFrom(args);
     TSeqPos    to     = min(x_GetTo(args), length - 1);
@@ -1338,7 +1370,7 @@ void CAsn2FlatApp::x_GetLocation(const CSeq_entry_Handle& entry,
         strand = x_GetStrand(args);
     }
 
-    if (from == CRange<TSeqPos>::GetWholeFrom() && to == length) {
+    if (from == CRange<TSeqPos>::GetWholeFrom() && to == length - 1) {
         // whole
         loc.SetWhole().Assign(*h.GetSeqId());
     } else {
@@ -1461,7 +1493,7 @@ int CAsn2FlatApp::x_AddSNPAnnots(CBioseq_Handle& bsh, TFFContext& ff_context) co
 void CAsn2FlatApp::x_FFGenerate(CSeq_entry_Handle seh, TFFContext& context) const
 {
     const CArgs& args = GetArgs();
-    if (args["from"] || args["to"] || args["strand"]) {
+    if (args["from"] || args["to"] || args["strand"] || args["location"]) {
         CSeq_loc loc;
         x_GetLocation(seh, args, loc);
         auto* flatfile_os = context.m_streams[eFlatFileCodes::all].get();
