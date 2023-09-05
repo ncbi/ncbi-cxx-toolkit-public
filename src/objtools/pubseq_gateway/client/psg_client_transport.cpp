@@ -78,10 +78,10 @@ NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_chunks, false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
-NCBI_PARAM_DEF(string,   PSG, auth_token_name,        "WebCubbyUser");
-NCBI_PARAM_DEF(string,   PSG, auth_token,             "");
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
 NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
+NCBI_PARAM_DEF_EX(string,   PSG, auth_token_name,       "WebCubbyUser",     eParam_Default,     NCBI_PSG_AUTH_TOKEN_NAME);
+NCBI_PARAM_DEF_EX(string,   PSG, auth_token,            "",                 eParam_Default,     NCBI_PSG_AUTH_TOKEN);
 
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
