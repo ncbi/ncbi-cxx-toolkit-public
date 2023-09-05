@@ -1297,9 +1297,7 @@ void CCgiRequest::x_InitRequestContext(TFlags flags)
     if (!rctx.IsSetProperty("auth_token")) {
         if (auto auth_token = TCookieAuthToken::GetDefault(); !auth_token.empty()) {
             if (auto cookie = m_Cookies.Find(auth_token)) {
-                ostringstream os;
-                cookie->Write(os, CCgiCookie::eHTTPRequest, eUrlEncode_None);
-                rctx.SetProperty("auth_token", os.str());
+                rctx.SetProperty("auth_token", cookie->GetValue());
             }
         }
     }
