@@ -1378,6 +1378,12 @@ SInteractiveNewRequestStart::SInteractiveNewRequestStart(const string& request, 
             ctx.SetHitID(phid->value.GetValue().GetString());
         }
 
+        auto auth_token = context_obj.find("auth_token");
+
+        if (auth_token != context_obj.end()) {
+            ctx.SetProperty("auth_token", auth_token->value.GetValue().GetString());
+        }
+
         auto client_ip = context_obj.find("client_ip");
 
         if (client_ip != context_obj.end()) {
@@ -1770,6 +1776,9 @@ CJson_Document CProcessing::RequestSchema()
                     "type": "string"
                 },
                 "phid": {
+                    "type": "string"
+                },
+                "auth_token": {
                     "type": "string"
                 },
                 "client_ip": {
