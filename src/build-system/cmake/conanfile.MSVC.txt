@@ -2,7 +2,7 @@
 #  NCBI C++ Toolkit requirements for Conan/MSVC
 
 [requires]
-libdb/5.3.28
+libdb/18.1.40
 boost/1.82.0
 bzip2/1.0.8
 #cassandra-cpp-driver/2.15.3
