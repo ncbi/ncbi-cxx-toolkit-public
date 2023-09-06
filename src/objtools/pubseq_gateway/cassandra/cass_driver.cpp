@@ -731,6 +731,24 @@ string CCassConnection::GetDatacenterName()
     return "";
 }
 
+vector<string> CCassConnection::GetColumnNames(string const & keyspace, string const & table) const
+{
+    auto schema_meta = GetMetaPointer(m_session);
+    auto table_meta = GetTableMetaPointer(schema_meta.get(), keyspace, table);
+    size_t key_count = cass_table_meta_column_count(table_meta);
+    vector<string> result;
+    for (size_t i = 0; i < key_count; ++i) {
+        const CassColumnMeta* column_meta = cass_table_meta_column(table_meta, i);
+        if (column_meta) {
+            const char* name;
+            size_t name_length;
+            cass_column_meta_name(column_meta, &name, &name_length);
+            result.emplace_back(name, name_length);
+        }
+    }
+    return result;
+}
+
 vector<string> CCassConnection::GetPartitionKeyColumnNames(string const & keyspace, string const & table) const
 {
     auto schema_meta = GetMetaPointer(m_session);

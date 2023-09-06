@@ -124,7 +124,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
     size_t call_count{0};
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
-    request.SetAccession("AC005299");
+    request.SetAccession("H82419");
     CCassBioseqInfoTaskFetch fetch(
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
@@ -135,20 +135,21 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
     );
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
-    ASSERT_EQ(6UL, actual_records.size());
+    ASSERT_EQ(2UL, actual_records.size());
 
-    EXPECT_EQ("AC005299", actual_records[0].GetAccession());
+    EXPECT_EQ("H82419", actual_records[0].GetAccession());
     EXPECT_EQ(1, actual_records[0].GetVersion());
     EXPECT_EQ(5, actual_records[0].GetSeqIdType());
-    EXPECT_EQ(3786039, actual_records[0].GetGI());
+    EXPECT_EQ(1060508, actual_records[0].GetGI());
 
-    EXPECT_EQ("AC005299", actual_records[5].GetAccession());
-    EXPECT_EQ(0, actual_records[5].GetVersion());
-    EXPECT_EQ(5, actual_records[5].GetSeqIdType());
-    EXPECT_EQ(3327928, actual_records[5].GetGI());
+    EXPECT_EQ("H82419", actual_records[1].GetAccession());
+    EXPECT_EQ(0, actual_records[1].GetVersion());
+    EXPECT_EQ(7, actual_records[1].GetSeqIdType());
+    EXPECT_EQ(11278869, actual_records[1].GetGI());
 }
 
-TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionMultiple) {
+// ADD SatOLD12 and SatOLD14 to replication list to ENABLE
+TEST_F(CBioseqInfoTaskFetchTest, DISABLED_AccessionVersionMultiple) {
     size_t call_count{0};
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
@@ -180,7 +181,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
     size_t call_count{0};
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
-    request.SetAccession("AC005299").SetVersion(1);
+    request.SetAccession("H82419").SetVersion(1);
     CCassBioseqInfoTaskFetch fetch(
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
@@ -193,40 +194,17 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, actual_records.size());
 
-    EXPECT_EQ("AC005299", actual_records[0].GetAccession());
+    EXPECT_EQ("H82419", actual_records[0].GetAccession());
     EXPECT_EQ(1, actual_records[0].GetVersion());
     EXPECT_EQ(5, actual_records[0].GetSeqIdType());
-    EXPECT_EQ(3786039, actual_records[0].GetGI());
+    EXPECT_EQ(1060508, actual_records[0].GetGI());
 }
 
 TEST_F(CBioseqInfoTaskFetchTest, AccessionSeqIdType) {
     size_t call_count{0};
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
-    request.SetAccession("AC005299").SetSeqIdType(5);
-    CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
-        [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
-            ++call_count;
-            actual_records = move(records);
-        },
-        error_function
-    );
-    wait_function(fetch);
-    EXPECT_EQ(1UL, call_count);
-    ASSERT_EQ(6UL, actual_records.size());
-
-    EXPECT_EQ("AC005299", actual_records[0].GetAccession());
-    EXPECT_EQ(1, actual_records[0].GetVersion());
-    EXPECT_EQ(5, actual_records[0].GetSeqIdType());
-    EXPECT_EQ(3786039, actual_records[0].GetGI());
-}
-
-TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
-    size_t call_count{0};
-    vector<CBioseqInfoRecord> actual_records;
-    CBioseqInfoFetchRequest request;
-    request.SetAccession("AC005299").SetGI(3643631);
+    request.SetAccession("H82419").SetSeqIdType(7);
     CCassBioseqInfoTaskFetch fetch(
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
@@ -239,13 +217,37 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(1UL, actual_records.size());
 
-    EXPECT_EQ("AC005299", actual_records[0].GetAccession());
+    EXPECT_EQ("H82419", actual_records[0].GetAccession());
     EXPECT_EQ(0, actual_records[0].GetVersion());
-    EXPECT_EQ(5, actual_records[0].GetSeqIdType());
-    EXPECT_EQ(3643631, actual_records[0].GetGI());
+    EXPECT_EQ(7, actual_records[0].GetSeqIdType());
+    EXPECT_EQ(11278869, actual_records[0].GetGI());
 }
 
-TEST_F(CBioseqInfoTaskFetchTest, SeqIdsInheritance) {
+TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
+    size_t call_count{0};
+    vector<CBioseqInfoRecord> actual_records;
+    CBioseqInfoFetchRequest request;
+    request.SetAccession("H82419").SetGI(11278869);
+    CCassBioseqInfoTaskFetch fetch(
+        m_Connection, m_KeyspaceName, request,
+        [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
+            ++call_count;
+            actual_records = move(records);
+        },
+        error_function
+    );
+    wait_function(fetch);
+    EXPECT_EQ(1UL, call_count);
+    ASSERT_EQ(1UL, actual_records.size());
+
+    EXPECT_EQ("H82419", actual_records[0].GetAccession());
+    EXPECT_EQ(0, actual_records[0].GetVersion());
+    EXPECT_EQ(7, actual_records[0].GetSeqIdType());
+    EXPECT_EQ(11278869, actual_records[0].GetGI());
+}
+
+// ADD SatOLD12 and SatOLD14 to replication list to ENABLE
+TEST_F(CBioseqInfoTaskFetchTest, DISABLED_SeqIdsInheritance) {
     size_t call_count{0};
     vector<CBioseqInfoRecord> actual_records;
     CBioseqInfoFetchRequest request;
