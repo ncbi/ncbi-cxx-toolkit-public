@@ -3640,7 +3640,7 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 continue;
             }
 
-            // feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
+            feat_loc = Seq_loc_Merge(*feat_loc, CSeq_loc::fMerge_Abutting, &scope);
 
             // HANDLE GAPS SECTION GOES HERE
 
