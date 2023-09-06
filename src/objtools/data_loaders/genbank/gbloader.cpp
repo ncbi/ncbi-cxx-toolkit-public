@@ -202,6 +202,52 @@ void CGBLoaderParams::SetParamTree(const TPluginManagerParamTree* param_tree)
 }
 
 
+bool CGBLoaderParams::IsSetEnableSNP(void) const
+{
+    return m_ReaderParams->IsSetEnableSNP();
+}
+
+bool CGBLoaderParams::GetEnableSNP(void) const
+{
+    return m_ReaderParams->GetEnableSNP();
+}
+
+void CGBLoaderParams::SetEnableSNP(bool enable)
+{
+    m_ReaderParams->SetEnableSNP(enable);
+}
+
+bool CGBLoaderParams::IsSetEnableWGS(void) const
+{
+    return m_ReaderParams->IsSetEnableWGS();
+}
+
+bool CGBLoaderParams::GetEnableWGS(void) const
+{
+    return m_ReaderParams->GetEnableWGS();
+}
+
+void CGBLoaderParams::SetEnableWGS(bool enable)
+{
+    m_ReaderParams->SetEnableWGS(enable);
+}
+
+bool CGBLoaderParams::IsSetEnableCDD(void) const
+{
+    return m_ReaderParams->IsSetEnableCDD();
+}
+
+bool CGBLoaderParams::GetEnableCDD(void) const
+{
+    return m_ReaderParams->GetEnableCDD();
+}
+
+void CGBLoaderParams::SetEnableCDD(bool enable)
+{
+    m_ReaderParams->SetEnableCDD(enable);
+}
+
+
 NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, "",
                   eParam_NoThread, GENBANK_LOADER_METHOD);
 typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
