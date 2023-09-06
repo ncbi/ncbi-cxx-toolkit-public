@@ -116,7 +116,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
     size_t call_count{0};
     vector<CSI2CSIRecord> si2csi_records;
     CSi2CsiFetchRequest si2csi_request;
-    si2csi_request.SetSecSeqId("3643631");
+    si2csi_request.SetSecSeqId("3786039");
     CCassSI2CSITaskFetch si2csi_fetch(
         m_Connection, m_KeyspaceName, si2csi_request,
         [&call_count, &si2csi_records](vector<CSI2CSIRecord> &&records) {
@@ -152,15 +152,15 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
     ASSERT_EQ(1UL, bioseq_records.size());
 
     EXPECT_EQ("AC005299", bioseq_records[0].GetAccession());
-    EXPECT_EQ(0, bioseq_records[0].GetVersion());
+    EXPECT_EQ(1, bioseq_records[0].GetVersion());
     EXPECT_EQ(5, bioseq_records[0].GetSeqIdType());
-    EXPECT_EQ(3643631, bioseq_records[0].GetGI());
-    EXPECT_EQ(0, bioseq_records[0].GetState());
+    EXPECT_EQ(3786039, bioseq_records[0].GetGI());
+    EXPECT_EQ(10, bioseq_records[0].GetState());
     EXPECT_EQ(10, bioseq_records[0].GetSeqState());
     EXPECT_EQ(2UL, bioseq_records[0].GetSeqIds().size());
     set<tuple<int16_t, string>> expected_seq_ids;
     // Own
-    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "3643631"));
+    expected_seq_ids.insert(make_tuple<int16_t, string>(12, "3786039"));
 
     // Inherited
     expected_seq_ids.insert(make_tuple<int16_t, string>(11, "UOKNOR|2H2"));
