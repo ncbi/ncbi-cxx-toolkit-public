@@ -342,7 +342,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
         if ( NStr::StartsWith(reader_name, "pubseqos") )
             m_WebCookie = params.GetWebCookie();
     
-        if ( x_CreateReaders(reader_name, gb_params, params.GetReaderParams(), preopen) ) {
+        if ( x_CreateReaders(reader_name, gb_params, *params.m_ReaderParams, preopen) ) {
             if ( reader_name == "cache" ||
                  NStr::StartsWith(reader_name, "cache;") ) {
                 x_CreateWriters("cache", gb_params);
@@ -351,7 +351,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
     }
     else {
         pair<string, string> rw_name = GetReaderWriterName(gb_params, params);
-        if ( x_CreateReaders(rw_name.first, gb_params, params.GetReaderParams(), preopen) ) {
+        if ( x_CreateReaders(rw_name.first, gb_params, *params.m_ReaderParams, preopen) ) {
             x_CreateWriters(rw_name.second, gb_params);
         }
     }
