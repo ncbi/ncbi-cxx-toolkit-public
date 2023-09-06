@@ -1117,7 +1117,7 @@ string SMakeProjectT::StripConfigurableDefine(const string& define)
 
 bool   SMakeProjectT::HasConfigurableDefine(const string& define)
 {
-    return define.find("@") != string::npos;
+    return count(define.begin(), define.end(), '@') > 1;
 }
 
 string SMakeProjectT::ExtractConfigurableDefine (const string& define)
