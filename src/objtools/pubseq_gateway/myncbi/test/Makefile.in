@@ -1,0 +1,4 @@
+EXPENDABLE_APP_PROJ=psg_myncbi_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
