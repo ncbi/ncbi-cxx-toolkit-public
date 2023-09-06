@@ -192,8 +192,17 @@ public:
         m_PSGNoSplit = no_split;
     }
 
-    const CReaderParams& GetReaderParams(void) const { return *m_ReaderParams; }
-    CReaderParams& SetReaderParams(void) { return *m_ReaderParams; }
+    bool IsSetEnableSNP(void) const;
+    bool GetEnableSNP(void) const;
+    void SetEnableSNP(bool enable);
+
+    bool IsSetEnableWGS(void) const;
+    bool GetEnableWGS(void) const;
+    void SetEnableWGS(bool enable);
+
+    bool IsSetEnableCDD(void) const;
+    bool GetEnableCDD(void) const;
+    void SetEnableCDD(bool enable);
 
 private:
     string m_ReaderName;
@@ -207,6 +216,8 @@ private:
     string m_LoaderName;
     string m_PSGServiceName;
     bool m_PSGNoSplit;
+
+    friend class CGBDataLoader_Native;
     unique_ptr<CReaderParams> m_ReaderParams;
 };
 

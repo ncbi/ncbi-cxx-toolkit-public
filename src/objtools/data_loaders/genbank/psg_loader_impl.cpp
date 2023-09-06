@@ -1150,15 +1150,14 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     }
 
     CUrlArgs args;
-    const CReaderParams& rparams = params.GetReaderParams();
-    if (rparams.IsSetEnableSNP()) {
-        args.AddValue(rparams.GetEnableSNP() ? "enable_processor" : "disable_processor", "snp");
+    if (params.IsSetEnableSNP()) {
+        args.AddValue(params.GetEnableSNP() ? "enable_processor" : "disable_processor", "snp");
     }
-    if (rparams.IsSetEnableWGS()) {
-        args.AddValue(rparams.GetEnableWGS() ? "enable_processor" : "disable_processor", "wgs");
+    if (params.IsSetEnableWGS()) {
+        args.AddValue(params.GetEnableWGS() ? "enable_processor" : "disable_processor", "wgs");
     }
-    if (rparams.IsSetEnableCDD()) {
-        args.AddValue(rparams.GetEnableCDD() ? "enable_processor" : "disable_processor", "cdd");
+    if (params.IsSetEnableCDD()) {
+        args.AddValue(params.GetEnableCDD() ? "enable_processor" : "disable_processor", "cdd");
     }
     if (!args.GetArgs().empty()) {
         m_Queue->SetUserArgs(SPSG_UserArgs(args));

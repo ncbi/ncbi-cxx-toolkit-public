@@ -37,7 +37,6 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
-#include <objtools/data_loaders/genbank/reader.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
@@ -216,13 +215,13 @@ void CDataLoadersUtil::x_SetupGenbankDataLoader(const CArgs& args,
         }
 
         if (args.Exist("gb-snp") && args["gb-snp"]) {
-            params.SetReaderParams().SetEnableSNP(args["gb-snp"].AsBoolean());
+            params.SetEnableSNP(args["gb-snp"].AsBoolean());
         }
         if (args.Exist("gb-wgs") && args["gb-wgs"]) {
-            params.SetReaderParams().SetEnableWGS(args["gb-wgs"].AsBoolean());
+            params.SetEnableWGS(args["gb-wgs"].AsBoolean());
         }
         if (args.Exist("gb-cdd") && args["gb-cdd"]) {
-            params.SetReaderParams().SetEnableCDD(args["gb-cdd"].AsBoolean());
+            params.SetEnableCDD(args["gb-cdd"].AsBoolean());
         }
 
         // pubseqos* drivers require this
