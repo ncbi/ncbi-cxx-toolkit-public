@@ -1370,7 +1370,7 @@ void CAsn2FlatApp::x_GetLocation(const CSeq_entry_Handle& entry,
         strand = x_GetStrand(args);
     }
 
-    if (from == CRange<TSeqPos>::GetWholeFrom() && to == length - 1) {
+    if (from == CRange<TSeqPos>::GetWholeFrom() && to == length - 1 && strand == eNa_strand_unknown) {
         // whole
         loc.SetWhole().Assign(*h.GetSeqId());
     } else {
