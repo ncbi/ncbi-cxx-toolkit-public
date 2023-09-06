@@ -1,0 +1,17 @@
+# $Id$
+
+SRC = myncbi_factory myncbi_request
+
+LIB = psg_myncbi
+LIBS = $(OPENSSL_LIBS) $(NETWORK_LIBS) $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(LIBUV_STATIC_LIBS) $(CURL_STATIC_LIBS) $(ORIG_LIBS)
+DLL_LIB = xmlwrapp xconnext connext xconnect
+
+USES_LIBRARIES = xmlwrapp xconnext connext xconnect
+
+#COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
+CPPFLAGS = $(CURL_INCLUDE) $(OPENSSL_INCLUDE) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE) $(ORIG_CPPFLAGS) $(COVERAGE_FLAGS)
+LDFLAGS = $(ORIG_LDFLAGS) $(COVERAGE_FLAGS)
+
+REQUIRES = MT Linux LIBUV LIBXML LIBXSLT
+
+WATCHERS = satskyse saprykin
