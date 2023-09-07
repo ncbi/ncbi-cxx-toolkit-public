@@ -68,7 +68,7 @@ void CProteinAlignText::AddSpliceText(CSeqVector_CI& genomic_ci, int& nuc_prev, 
     m_protein.append((SIZE_TYPE)2,INTRON_CHAR);
 }
 
-void CProteinAlignText::AddDNAText(CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len)
+void CProteinAlignText::AddDNAText(CSeqVector_CI& genomic_ci, int& nuc_prev, int len)
 {
     string buf;
     genomic_ci.GetSeqData(buf,len);
@@ -76,7 +76,7 @@ void CProteinAlignText::AddDNAText(CSeqVector_CI& genomic_ci, int& nuc_prev, siz
     m_dna.append(buf);
 }
 
-void CProteinAlignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, size_t len)
+void CProteinAlignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, int len)
 {
     m_protein.reserve(m_protein.size()+len);
 
@@ -320,7 +320,7 @@ CProteinAlignText::CProteinAlignText(objects::CScope& scope, const objects::CSeq
                         nuc_cur_start, prot_cur_start);
             prev_genomic_ins = 0;
         } else { //intron
-            SIZE_TYPE intron_len = nuc_cur_start - nuc_prev -1;
+            int intron_len = nuc_cur_start - nuc_prev -1;
             AddDNAText(genomic_ci, nuc_prev, intron_len);
             m_translation.append(intron_len,SPACE_CHAR);
             m_match.append(intron_len,MISMATCH_CHAR);
@@ -354,13 +354,13 @@ CProteinAlignText::CProteinAlignText(objects::CScope& scope, const objects::CSeq
                 } else
                     MatchText(len, chunk.IsMatch());
             } else if (chunk.IsProduct_ins()) {
-                SIZE_TYPE len = chunk.GetProduct_ins();
+                int len = chunk.GetProduct_ins();
                 m_dna.append(len,GAP_CHAR);
                 TranslateDNA((prot_prev+1)%3,len,false);
                 m_match.append(len,MISMATCH_CHAR);
                 AddProtText(protein_ci,prot_prev,len);
             } else if (chunk.IsGenomic_ins()) {
-                SIZE_TYPE len = chunk.GetGenomic_ins();
+                lin len = chunk.GetGenomic_ins();
                 AddDNAText(genomic_ci,nuc_prev,len);
                 if (0<=prot_prev && prot_prev<prot_len-1 && (prot_prev+1)%3==0)
                     TranslateDNA(prev_genomic_ins,len,true);

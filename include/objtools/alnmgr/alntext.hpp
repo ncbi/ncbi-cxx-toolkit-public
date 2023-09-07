@@ -94,9 +94,9 @@ private:
     const objects::CTrans_table* m_trans_table;
     SNCBIFullScoreMatrix m_matrix;
 
-    void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, size_t len);
+    void AddDNAText(objects::CSeqVector_CI& genomic_ci, int& nuc_prev, int len);
     void TranslateDNA(int phase, size_t len, bool is_insertion);
-    void AddProtText(objects::CSeqVector_CI& protein_ci, int& prot_prev, size_t len);
+    void AddProtText(objects::CSeqVector_CI& protein_ci, int& prot_prev, int len);
     void MatchText(size_t len, bool is_match=false);
     char MatchChar(size_t i);
     void AddHoleText(bool prev_3_prime_splice, bool cur_5_prime_splice,

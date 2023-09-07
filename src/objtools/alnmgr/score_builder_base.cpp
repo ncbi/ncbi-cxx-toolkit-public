@@ -1025,7 +1025,7 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
     typedef TSpliced::TExons TExons;
     const TExons & exons (spliced.GetExons());
 
-    size_t matches (0),
+    TSeqPos matches (0),
         aligned_query_bases (0),  // matches, mismatches and indels
         aln_length_exons (0),
         aln_length_gaps (0),
