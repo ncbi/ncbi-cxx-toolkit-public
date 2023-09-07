@@ -80,13 +80,13 @@ void CProteinAlignText::AddProtText(CSeqVector_CI& protein_ci, int& prot_prev, i
 {
     m_protein.reserve(m_protein.size()+len);
 
-    size_t phase = (prot_prev+1)%3;
+    int phase = (prot_prev+1)%3;
 
     if (phase!=0) {
         size_t prev_not_intron_pos = m_protein.find_last_not_of(INTRON_OR_GAP,m_protein.size()-1);
         char aa = m_protein[prev_not_intron_pos];
         _ASSERT( aa != SPACE_CHAR );
-        SIZE_TYPE added_len = min(3-phase,len);
+        int added_len = min(3-phase,len);
         if (prev_not_intron_pos == m_protein.size()-1 && phase+added_len==3 && (phase==1 || m_protein[prev_not_intron_pos-1]==aa)) {
             m_protein.append(added_len,SPACE_CHAR);
             m_protein[m_protein.size()-3] = SPACE_CHAR;
@@ -360,7 +360,7 @@ CProteinAlignText::CProteinAlignText(objects::CScope& scope, const objects::CSeq
                 m_match.append(len,MISMATCH_CHAR);
                 AddProtText(protein_ci,prot_prev,len);
             } else if (chunk.IsGenomic_ins()) {
-                lin len = chunk.GetGenomic_ins();
+                unsigned len = chunk.GetGenomic_ins();
                 AddDNAText(genomic_ci,nuc_prev,len);
                 if (0<=prot_prev && prot_prev<prot_len-1 && (prot_prev+1)%3==0)
                     TranslateDNA(prev_genomic_ins,len,true);
