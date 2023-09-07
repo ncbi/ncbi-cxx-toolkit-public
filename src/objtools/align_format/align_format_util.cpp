@@ -4557,7 +4557,7 @@ bool CAlignFormatUtil::MatchSeqInUseThisSeqList(list<string> &use_this_seq, stri
     return has_match;
 }
 
-bool CAlignFormatUtil::RemoveSeqsOfAccessionTypeFromSeqInUse(list<string> &use_this_seq, CSeq_id::EAccessionInfo accesionType)
+bool CAlignFormatUtil::RemoveSeqsOfAccessionTypeFromSeqInUse(list<string> &use_this_seq, CSeq_id::EAccessionInfo accessionType)
 {
     list<string> new_use_this_seq;
     bool hasAccType = false;
@@ -4566,7 +4566,7 @@ bool CAlignFormatUtil::RemoveSeqsOfAccessionTypeFromSeqInUse(list<string> &use_t
     ITERATE(list<string>, iter_seq, use_this_seq) {       
         string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGI); 
         CSeq_id::EAccessionInfo useThisSeqAccType = CSeq_id::IdentifyAccession (useThisSeq);        
-        if(useThisSeqAccType != accesionType) {     
+        if(useThisSeqAccType != accessionType) {     
             new_use_this_seq.push_back(useThisSeq);             
         } 
         else {
