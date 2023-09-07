@@ -934,7 +934,7 @@ void CTaxFormat::x_InitTaxInfoMap(void)
                             TTaxId taxid;
                             CAlignFormatUtil::GetDisplayIds(handle,*seqInfo->seqID,use_this_seqid,&dispGI,&taxid,&dispSeqID);                            
                             if(dispGI == ZERO_GI && !dispSeqID.empty()) {
-                                dispSeqID = seqInfo->label; //accesion without version
+                                dispSeqID = seqInfo->label; //accession without version
                             }                                
                         }                                        
                         seqInfo->displGi = dispGI;
