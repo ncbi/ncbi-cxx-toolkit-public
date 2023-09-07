@@ -784,7 +784,7 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
         		if(warning != kEmptyStr){
         			warning += ": ";
         		}
-        		warning += "Subject sequence contians no data";
+        		warning += "Subject sequence contains no data";
         		ERR_POST(Warning << warning);
         		continue;
         	}
