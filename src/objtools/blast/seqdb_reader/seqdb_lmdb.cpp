@@ -82,10 +82,18 @@ CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, ELMDBFileType file
 	m_Env.set_max_dbs(num_db);
 	m_dbis.resize(eDbiMax, UINT_MAX);
 	if(m_ReadOnly) {
-		CFile tf(fname);
+        CFile tf(fname);
 		Uint8 readMapSize = (tf.GetLength()/10000 + 1) *10000;
+        if (!tf.Exists()) {
+            NCBI_THROW( CSeqDBException, eFileErr, "File " + fname + " not found. If you renamed any BLAST database files, please use original file names, and makeblastdb to rename the database. If you deleted any BLAST database files, you need to recreate the database.");
+        }
 		m_Env.set_mapsize(readMapSize);
-		m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR|MDB_NOLOCK|MDB_RDONLY, 0664);
+        try {
+            m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR|MDB_NOLOCK|MDB_RDONLY, 0664);
+        }
+        catch (lmdb::error& e) {
+            NCBI_THROW(CSeqDBException, eFileErr, "LMDB runtime error: " + (string)e.what());
+        }
         InitDbi(m_Env,file_type);
 	}
 	else {
@@ -94,7 +102,12 @@ CBlastLMDBManager::CBlastEnv::CBlastEnv(const string & fname, ELMDBFileType file
 		if(map_size != 0) {
 			m_Env.set_mapsize(map_size);
 		}
-		m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR , 0664);
+        try {
+            m_Env.open(m_Filename.c_str(), MDB_NOSUBDIR , 0664);
+        }
+        catch (lmdb::error& e) {
+            NCBI_THROW(CSeqDBException, eFileErr, "LMDB runtime error: " + (string)e.what());
+        }
 	}
 }
 

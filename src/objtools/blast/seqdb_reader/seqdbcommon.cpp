@@ -96,7 +96,7 @@ CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s)
 
         if (extn[0] == '.'     &&
             (extn[1] == 'n' || extn[1] == 'p') &&
-            (extn2 == "al"  || extn2 == "in")) {
+            (extn2 == "al"  || extn2 == "in" || extn2 == "db")) {
             /*
             isalpha( s[slen-3] ) &&
             isalpha( s[slen-2] ) &&
