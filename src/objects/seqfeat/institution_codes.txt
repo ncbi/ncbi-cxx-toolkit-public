@@ -227,6 +227,7 @@ AMNH:ORN	s	American Museum of Natural History, Ornithology Collection	Birds
 AMNH:R	s	American Museum of Natural History, Reptile Collection			
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division			
 AMO	s	Herbario AMO			
+Amp	s	Amphibian collection			
 AMP<AUS>	c	Australian Mycological Panel			
 AMP<GBR>	s	Ampleforth College			
 AMS	s	Australian Museum	AM		
@@ -257,6 +258,7 @@ ANK	s	Ankara UEniversitesi, Biyoloji Boeluemue
 ANKO	s	Forest Research Institute, Turkey			
 ANLW	s	Amt Der Niederosterreichischen Landsregierung			
 ANMR	c	Asian Network on Microbial Researches			
+Ann	s	Annelid collection			
 ANPC	s	Alexander Napolov			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
 ANSP	s	Academy of Natural Sciences	ANSDU		
@@ -296,6 +298,7 @@ AQP	s	Estudios Fitogeograficos del Peru
 AQUAMEB 	c	Culture Collection of Microalgae and Cyanobacteria, Bursa Technical University	AQUAMEB		
 AQUI	s	Universita degli Studi di L'Aquila, Dipartimento di Scienze Ambientali			
 AR	s	Pomor State University			
+Ara	s	Spider Collection			
 ARA	s	Universidade Federal de Alagoas			
 ARAGO	s	Universite Pierre et Marie Curie			
 ARAN	s	Alto de Zorroaga s.n., Departamento de Botanica			
@@ -399,6 +402,7 @@ AUV	s	Andhra University
 AUW	s	Acadia University, Wildlife Museum			
 AV	s	Museum Requien			
 AVCH	s	City of Alexandria			
+Ave	s	Bird collection			
 AVE	s	Universidade de Aveiro, Departamento de Biologia			
 AVU	s	Vrije Universiteit, Department of Systematic Botany			
 AWC	s	Arizona Western College			
@@ -1197,6 +1201,7 @@ CHEP	s	Escuela Superior Politecnica del Chimborazo
 CHER	s	Yu. Fedcovich Chernivtsi State University, Botany Department			
 CHFC-EA	sc	Chilean Fungal Collection	CHFC,ChFC		
 CHFD	s	Chelmsford and Essex Museum			
+Chi	s	Centipede collection			
 CHI	s	University of Illinois, Biological Sciences Department			
 CHIA	s	National Chiayi Agricultural College, Forestry Department			
 CHIC	s	Chicago Botanic Garden, Research Department			
@@ -1406,6 +1411,7 @@ CNHM<CRO>	s	Croatian Natural History Museum, Botany Department
 CNHM<USA-OH>	s	Cincinnati Museum of Natural History			
 CNHM<USA-OH>:ORNITH	s	Cincinnati Museum of Natural History, Ornithology collection	CNHM:ORNITH,CNHM<USA-OH>ORNITH		
 CNHS	s	Croydon Natural History and Scientific Society			
+Cni	s	Coral collection			
 CNM	s	Cheltenham Naturalists' Association			
 CNM-CM	c	Filamentous fungus collection of the Spanish National Center for Microbiology			
 CNM<ESP>	s	Centro Nacional de Microbiologia			
@@ -1530,6 +1536,7 @@ CRMM	s	Observatoire PELAGIS -UMS 3462- University of la Rochelle-CNRS
 CRO	s	Wellington College			
 CRP	s	I.N.T.A., E.E.A. Bariloche			
 CRRHA	s	Centre Regional de Recherches en Hydrobiologie Appliquee			
+Cru	s	Crustacean collection			
 CS<AUS>	c	Australian National Algae Culture Collection, ANACC	ANNAC		
 CS<FRA>	s	Musee des Dinosaures d?Esperaza (Aude)			
 CS<USA-CO>	s	Colorado State University herbarium			
@@ -1798,6 +1805,7 @@ DIAM	s	Universidade Federal dos Vales do Jequitinhonha e Mucuri
 DIN	s	Museum National d'Histoire Naturelle, Laboratoire Maritime			
 DINH	s	Delta Institute of Natural History			
 DINO	s	Dinosaur National Monument			
+Dip	s	Millipede collection			
 DIS	s	Dinamation International Society			
 DISCA	s	Estacion Biologica de Rancho Grande, Ministerio del Ambiente y Recursos Naturales Renovables			
 DISCOLL	s	National Oceanography Centre, Southampton			
@@ -1985,6 +1993,7 @@ EBUM	s	Universidad Michoacana de San Nicolas de Hidalgo
 EBV	s	Laboratoire de Biologie Generale et de Botanique			
 ECACC	c	European Collection of Authenticated Cell Cultures			
 ECENT	s	East Central University			
+Ech	s	Echinoderm collection			
 ECH	s	Elmira College			
 ECK	s	Buffalo State College			
 ECM	s	Hubei College of Traditional Chinese Medicine, Department of Chinese Materia Medica			
@@ -3228,6 +3237,7 @@ ICF	s	INIFAP
 ICFC	c	IIB-INTECH Collection of Fungal Cultures			
 ICFP	s	Islamia College University Peshawar			
 ICGC	s	Istituto Calasanzio			
+Ich	s	Fish collection			
 ICH	s	Iranian Research Organization for Science and Technology (IROST)			
 ICHAUWAY	s	Jones Center at Ichauway			
 ICHUM	s	Invertebrate Collection of the Hokkaido University Museum			
@@ -3438,6 +3448,7 @@ INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia
 INPC	s	National Pusa Collections			
 INRA	b	Institut National de la Recherche Agronomique			
 INRA:CGAB	cb	Institut National de la Recherche Agronomique, Collection of Germplasms of Agaricus bisporus			
+Ins	s	Insect collection			
 INU	s	Inonu University			
 INV	s	Inverness Museum and Art Gallery			
 INVA	s	Invergordon Academy			
@@ -4452,6 +4463,7 @@ MALA	s	Malaspina University, Biology Department
 MALC	s	Museu Municipal de la Vila d'Alcover			
 MALG	s	Universitas Negeri Malang			
 MALS	s	Manti-LaSal National Forest			
+Mam	s	Mammal collection			
 MAMU	s	University of Sydney, Macleay Museum			
 MAN	s	Universitas Cenderawasih			
 MANCH	s	University of Manchester			
@@ -5143,6 +5155,7 @@ MUHNAC	s	Museu Nacional de Historia Natural e da Ciencia
 MUHW	s	Marshall University, Biological Sciences Department			
 MUJ	s	Museo Javeriano de Historia Natural, Laboratoriao de Entomologia			
 MUL	c	Department of Microbiology MUL-B 250			
+Mul	s	Molluscs collection			
 MULU	s	Museum Ludovicae Ulricae, Zoology Institute of the University of Uppsala			
 MUM	c	Micoteca da Universidade do Minho			
 MUMF	s	Department of Life Sciences			
@@ -5390,6 +5403,7 @@ NEGI	s	Herbarium Cepullae Sinicae
 NEHAR	s	Central Ayurveda Research Institute, Guwahati (Assam)			
 NEHU	s	North Eastern Hills University			
 NEM	c	Faculte de Medecine Necker-Enfants Malades			
+Nem	s	Nematode collection			
 NEMO	s	Truman State University			
 NEMSU	s	Truman State University			
 NEMU	s	Newark Museum			
@@ -6413,6 +6427,7 @@ REN	s	Campus Scientifique de Beaulieu, Laboratoire de Botanique
 RENO	s	University of Nevada, Environmental and Resource Sciences Department			
 RENZ	s	Universitaet Basel, The Swiss Orchid Foundation			
 REP	s	Desert Experiment Station of the W.I.R.			
+Rep	s	Reptile collection			
 RESC	s	Shasta College			
 RESC<P>	s	Ronald E. Somerby			
 RET	s	Herbarium Amanitarum Rooseveltensis			
