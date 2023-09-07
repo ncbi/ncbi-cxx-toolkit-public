@@ -233,7 +233,8 @@ struct SPSG_Params
     template <class TGet>
     string GetCookie(TGet get)
     {
-        return auth_token_name.Get() + '=' + (auth_token.Get().empty() ? get() : auth_token.Get());
+        auto rv = auth_token.Get().empty() ? get() : auth_token.Get();
+        return rv.empty() ? rv : auth_token_name.Get() + '=' + rv;
     }
 
 private:
