@@ -4490,6 +4490,7 @@ void CFlatGatherer::x_GetFeatsOnCdsProductIdx(
             feat->SetLocation(*loc);
             mapped_feat = s_GetTrimmedMappedFeat(*feat, range, scope);
             loc = mapped_loc;
+            loc = Seq_loc_Merge(*loc, CSeq_loc::fMerge_Abutting, &scope);
         }
 
         item = ConstRef( x_NewFeatureItem(*it, ctx,
