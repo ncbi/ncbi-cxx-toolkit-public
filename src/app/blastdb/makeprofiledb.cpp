@@ -613,13 +613,13 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 
 		if(!pssm.IsSetQuery() || (0 == pssm.GetQueryLength()))
 		{
-			string err = filename + " contians no bioseq data";
+			string err = filename + " contains no bioseq data";
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
 		if(!pssm.IsSetNumRows() || !pssm.IsSetNumColumns())
 		{
-			string err = filename + " contians no info on num of columns or num of rows";
+			string err = filename + " contains no info on num of columns or num of rows";
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
@@ -672,13 +672,13 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 
 		if(sm_invalid == sm)
 		{
-			string err = filename + " contians no pssm or residue frequencies";
+			string err = filename + " contains no pssm or residue frequencies";
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 	}
 	else
 	{
-		string err = filename + " contians no scoremat";
+		string err = filename + " contains no scoremat";
 		NCBI_THROW(CInputException, eInvalidInput,  err);
 	}
 
