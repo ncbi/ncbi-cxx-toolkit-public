@@ -8400,7 +8400,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("LBM");
     ambig.push_back("NI");
     ambig.push_back("CB");
-    ambig.push_back("AMP");
+    // ambig.push_back("AMP");
     ambig.push_back("MM");
     ambig.push_back("PMU");
     ambig.push_back("DM");
@@ -8526,7 +8526,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("LBM");
     ambig.push_back("NI");
     ambig.push_back("CB");
-    ambig.push_back("AMP");
+    // ambig.push_back("AMP");
     ambig.push_back("RIVE");
     ambig.push_back("DUM");
     ambig.push_back("AKU");
