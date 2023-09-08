@@ -129,17 +129,17 @@ public:
                 CRef<CSeq_submit> ss(new CSeq_submit);
                 obj_in_stream->Read(Begin(*ss), CObjectIStream::eNoFileHeader);
                 CType<CSeq_entry>::AddTo(i);
-                int tse_cnt = 0;
+                //int tse_cnt = 0;
                 for (i = Begin(*ss); i; ++i) {
                     if ( CType<CSeq_align>::Match(i) ) {
                         callback(CType<CSeq_align>::Get(i));
                     }
-                    else if ( CType<CSeq_entry>::Match(i) ) {
-                        if ( !(tse_cnt++) ) {
-                            //m_Scope.AddTopLevelSeqEntry
-                            (*(CType<CSeq_entry>::Get(i)));
-                        }
-                    }
+                    //else if ( CType<CSeq_entry>::Match(i) ) {
+                    //    if ( !(tse_cnt++) ) {
+                    //        m_Scope.AddTopLevelSeqEntry
+                    //        (*(CType<CSeq_entry>::Get(i)));
+                    //    }
+                    //}
                 }
             }
             else if (obj == "Seq-align") {
