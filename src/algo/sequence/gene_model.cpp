@@ -72,6 +72,7 @@
 #include <objects/general/Object_id.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/range_coll.hpp>
+#include <util/value_convert.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
 #include "feature_generator.hpp"
@@ -1264,8 +1265,8 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
             }
         }
 
-        int part_count = 0;
-        int mapped_exon_len = 0;
+        unsigned part_count = 0;
+        unsigned mapped_exon_len = 0;
         for (CSeq_loc_CI part_it(*mrna_loc);  part_it;  ++part_it) {
             ++part_count;
             if (prev_product_to<0) {
@@ -2922,7 +2923,7 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
             }
         }
 
-        size_t tail_len = prod_end - prod_it;
+        unsigned tail_len = Convert(prod_end - prod_it);
         size_t count_a = 0;
         for ( ;  prod_it != prod_end;  ++prod_it) {
             if (*prod_it == 'A') {
@@ -3325,7 +3326,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it2_end = xlate.end();
 
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
-        CRef<CSeq_loc> mapped = s_MapSingleAA(it1 - actual.begin(),
+        TSeqPos pos = Convert(it1 - actual.begin());
+        CRef<CSeq_loc> mapped = s_MapSingleAA(pos,
              mapped_protein_id, product_ranges, to_mrna, to_genomic);
         CRef<CCode_break> code_break;
         if (mapped && feat.GetData().GetCdregion().IsSetCode_break()) {
@@ -3364,7 +3366,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     }
 
     if (has_stop && filled_by_polya) {
-        CRef<CSeq_loc> mapped = s_MapSingleAA(xlate.size(), mapped_protein_id,
+        TSeqPos pos = Convert(xlate.size());
+        CRef<CSeq_loc> mapped = s_MapSingleAA(pos, mapped_protein_id,
                                        product_ranges, to_mrna, to_genomic);
         if (mapped) {
             AddCodeBreak(feat, *mapped, '*');
@@ -3624,8 +3627,8 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
     align_info->SetType().SetStr("AlignInfo");
 
     if (m_is_best_refseq) {
-        size_t indel_count = insert_locs.size() + delete_locs.size();
-        size_t frameshift_count = 0;
+        unsigned indel_count = Convert(insert_locs.size() + delete_locs.size());
+        unsigned frameshift_count = 0;
         unsigned pct_coverage = 100, cds_pct_coverage = 100;
         if (partial_unaligned_section) {
             pct_coverage =
@@ -3635,7 +3638,7 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                                                        cds_ranges);
         }
         if (cds_feat && cds_feat_on_mrna) {
-            size_t cds_indel_count = 0;
+            unsigned cds_indel_count = 0;
             ITERATE (CRangeCollection<TSeqPos>, it, inserts_in_cds) {
               ++(it->GetLength() % 3 ? frameshift_count : cds_indel_count);
             }
@@ -3644,7 +3647,7 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                                                  : cds_indel_count);
             }
             indel_count -= frameshift_count;
-            size_t cds_mismatch_count = 0;
+            unsigned cds_mismatch_count = 0;
             bool start_codon_mismatch = false;
             CSeqVector prot(cds_feat->GetProduct(), *m_scope,
                             CBioseq_Handle::eCoding_Iupac);
@@ -3812,29 +3815,31 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                 }
             }
         }
+        unsigned insert_codons_count = Convert(insert_codons.size()),
+                 delete_codons_count = Convert(delete_codons.size());
         if (inserted_bases || deleted_bases) {
             rna_comment = k_rna_comment;
         }
         if (inserted_bases) {
             rna_comment += ": inserted " + s_Count(inserted_bases, "base")
-                         + " in " + s_Count(insert_codons.size(), "codon");
+                         + " in " + s_Count(insert_codons_count, "codon");
         }
         if (deleted_bases) {
             rna_comment += string(NStr::EndsWith(rna_comment,"CDS") ? ":" : ";")
                          + " deleted " + s_Count(deleted_bases, "base")
-                         + " in " + s_Count(delete_codons.size(), "codon");
+                         + " in " + s_Count(delete_codons_count, "codon");
         }
         if (cds_inserted_bases || cds_deleted_bases || code_breaks) {
             cds_comment = k_cds_comment;
         }
         if (cds_inserted_bases) {
             cds_comment += ": inserted " + s_Count(cds_inserted_bases, "base")
-                         + " in " + s_Count(insert_codons.size(), "codon");
+                         + " in " + s_Count(insert_codons_count, "codon");
         }
         if (cds_deleted_bases) {
             cds_comment += string(NStr::EndsWith(cds_comment,"CDS") ? ":" : ";")
                          + " deleted " + s_Count(cds_deleted_bases, "base")
-                         + " in " + s_Count(delete_codons.size(), "codon");
+                         + " in " + s_Count(delete_codons_count, "codon");
         }
         if (code_breaks) {
             cds_comment += string(NStr::EndsWith(cds_comment,"CDS") ? ":" : ";")
