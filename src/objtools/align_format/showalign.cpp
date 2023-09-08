@@ -1449,19 +1449,19 @@ void CDisplaySeqalign::x_DisplayRowData(SAlnRowInfo *alnRoInfo,CNcbiOstream& out
         //Used for download query range specified by m_QueryAnchoredSetIndex
         //Until m_QueryAnchoredSetIndex==rowSetsCount do not display alignment just calculate prev_stop, etc.
         if(m_QueryAnchoredSetIndex != -1 && m_QueryAnchoredSetIndex != rowSetsCount) {
-            x_ProcessRowDataSet(alnRoInfo,j, prev_stop);            
+            x_ProcessRowDataSet(alnRoInfo,j, prev_stop);
         }
         else {
-            string rowdata = x_DisplayRowDataSet(alnRoInfo,j, prev_stop);        
+            string rowdata = x_DisplayRowDataSet(alnRoInfo,j, prev_stop);
             if(m_AlignTemplates && !m_AlignTemplates->alignQueryAnchTempl.empty()) {//Templates will be used for query anchored display
-                rowdata = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alignQueryAnchTempl,"rowdata",rowdata);       
-                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"currQueryAnchSet",NStr::IntToString(rowSetsCount));       
-                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"nextQueryAnchSet",NStr::IntToString(rowSetsCount + 1));       
-                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"prevQueryAnchSet",NStr::IntToString(rowSetsCount - 1));                
-                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"fromQueryRange",NStr::IntToString(j + 1));    
-                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"toQueryRange",NStr::IntToString(j + alnRoInfo->currActualLineLen));    
-            }            
-            out << rowdata;            
+                rowdata = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alignQueryAnchTempl,"rowdata",rowdata);
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"currQueryAnchSet",NStr::IntToString(rowSetsCount));
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"nextQueryAnchSet",NStr::IntToString(rowSetsCount + 1));
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"prevQueryAnchSet",NStr::IntToString(rowSetsCount - 1));
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"fromQueryRange",NStr::IntToString(j + 1));
+                rowdata = CAlignFormatUtil::MapTemplate(rowdata,"toQueryRange",NStr::IntToString(j + alnRoInfo->currActualLineLen));
+            }
+            out << rowdata;
         }
         rowSetsCount++;
     }//end of displaying rows
@@ -1556,7 +1556,7 @@ void CDisplaySeqalign::x_ProcessRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start,
     size_t aln_stop=m_AV->GetAlnStop();
 
     int rowNum = alnRoInfo->rowNum;
-    
+
 
     //output according to aln coordinates
     if(aln_stop-aln_start+1<m_LineLen) {
@@ -1576,7 +1576,7 @@ void CDisplaySeqalign::x_ProcessRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start,
         }
         //only output rows that have sequence
         if (hasSequence){
-            int end = alnRoInfo->seqStops[row].front() + 1;          
+            int end = alnRoInfo->seqStops[row].front() + 1;
             prev_stop[row] = end;
         }
         if(!alnRoInfo->seqStarts[row].empty()){ //shouldn't need this check
@@ -1585,7 +1585,7 @@ void CDisplaySeqalign::x_ProcessRowDataSet(SAlnRowInfo *alnRoInfo,int aln_start,
         if(!alnRoInfo->seqStops[row].empty()){
                 alnRoInfo->seqStops[row].pop_front();
         }
-    }//end of displaying rows    
+    }//end of displaying rows
 }
 
 void CDisplaySeqalign::x_DisplaySequenceLine(SAlnRowInfo *alnRoInfo, int row, int prev_stop, CNcbiOstrstream &out)
@@ -1874,7 +1874,7 @@ void CDisplaySeqalign::x_InitAlignParams(CSeq_align_set &actual_aln_list)
         string name = CGBDataLoader::GetLoaderNameFromArgs();
         m_featScope->AddDataLoader(name);
     }
-    m_CanRetrieveSeq = CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope) == CAlignFormatUtil::eDbTypeNotSet ? false : true;    
+    m_CanRetrieveSeq = CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope) == CAlignFormatUtil::eDbTypeNotSet ? false : true;
     if(m_AlignOption & eHtml || m_AlignOption & eDynamicFeature){
         //set config file
         m_ConfigFile = new CNcbiIfstream(".ncbirc");
@@ -2202,7 +2202,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
 		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID,CSeq_id::eContent);//Just accession without db part like ref| or pdbd|
 
-		
+
 		TTaxId taxid = ZERO_TAX_ID;
 		string type_temp = m_BlastType;
 		type_temp = NStr::TruncateSpaces(NStr::ToLower(type_temp));
@@ -3770,10 +3770,10 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             //actually not so fast...as we now fetch from entrez even when it's not in blast db
             //there is no blast defline in such case.
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
-			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);                            
+			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
             m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
                 NStr::NumericToString(alnDispParams->gi) : CAlignFormatUtil::GetLabel(alnDispParams->seqID);
-            
+
             if (m_UseLongSeqIds || alnDispParams->seqID->IsLocal()) {
                 m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
             }
@@ -3862,13 +3862,13 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             deflines = firstDefline;
         }
         else {
-            string alnTitles = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesTmpl,"seqTitles",deflines);                
+            string alnTitles = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesTmpl,"seqTitles",deflines);
             string alnTitleslnk = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnTitlesLinkTmpl,"titleNum",NStr::IntToString(m_NumBlastDefLines - 1));
-            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"allTitleNum",NStr::IntToString(m_NumBlastDefLines));            
-            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"acc",m_CurrAlnAccession);            
-            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"rid",m_Rid);            
-            
-            
+            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"allTitleNum",NStr::IntToString(m_NumBlastDefLines));
+            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"acc",m_CurrAlnAccession);
+            alnTitleslnk = CAlignFormatUtil::MapTemplate(alnTitleslnk,"rid",m_Rid);
+
+
             deflines = firstDefline + alnTitleslnk + alnTitles;
         }
     }
@@ -4140,10 +4140,10 @@ void CDisplaySeqalign::x_PrepareDynamicFeatureInfo(SAlnInfo* aln_vec_info)
 			if(range.GetFrom() > range.GetTo()){
 				aln_vec_info->actual_range.Set(range.GetTo(), range.GetFrom());
 			}
-            string id_str;            
+            string id_str;
             const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
-            CRef<CSeq_id> wid = FindBestChoice(subject_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);            
-            wid->GetLabel(&id_str, CSeq_id::eBoth);            
+            CRef<CSeq_id> wid = FindBestChoice(subject_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
+            wid->GetLabel(&id_str, CSeq_id::eBoth);
             aln_vec_info->subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
             aln_vec_info->feat_list  =  m_DynamicFeature->GetFeatInfo(id_str, aln_vec_info->actual_range, aln_vec_info->feat5, aln_vec_info->feat3, 2);
         }
