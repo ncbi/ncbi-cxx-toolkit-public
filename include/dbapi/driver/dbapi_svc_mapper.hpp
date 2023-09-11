@@ -191,7 +191,7 @@ protected:
 
 private:
     typedef map<string, bool>                       TLBNameMap;
-    typedef map<TSvrRef, double, SDereferenceLess>  TSvrMap;
+    typedef multimap<TSvrRef, double, SDereferenceLess> TSvrMap;
     typedef map<string, TSvrMap>                    TServiceMap;
     typedef multimap<double, TSvrRef>               TServerUsageMap;
     typedef map<string, TServerUsageMap>            TServiceUsageMap;
