@@ -85,4 +85,3 @@ private:
 END_NCBI_SCOPE
 
 #endif  // PSG_MYNCBI__MYNCBI_FACTORY__HPP
-

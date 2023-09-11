@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_lib(psg_myncbi)
+  NCBI_sources(myncbi_factory myncbi_request)
+  NCBI_requires(UV XML XSLT MT Linux)
+  NCBI_uses_toolkit_libraries(xmlwrapp xconnext connext xconnect connect xncbi)
+  NCBI_project_watchers(saprykin satskyse)
+NCBI_end_lib()

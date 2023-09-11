@@ -146,8 +146,6 @@ void check_multi_info(SCurlMultiContext *context, weak_ptr<IPSG_MyNCBIRequest> r
             curl_multi_remove_handle(context->curl_mhandle, easy_handle);
             curl_easy_cleanup(easy_handle);
             request_finished = true;
-
-
             auto request_ptr = request.lock();
             if (request_ptr) {
                 VLOG("DONE reading URL - '", done_str, "'; multi context - &", reinterpret_cast<intptr_t>(context));
@@ -305,10 +303,8 @@ void curl_send_request(SCurlMultiContext* multi_context, CPSG_MyNCBIFactory* fac
     if (factory->IsVerboseCURL()) {
         curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
     }
-
     /*multi_context->connect_to = curl_slist_append(nullptr, "::sman110:8306");
     curl_easy_setopt(handle, CURLOPT_CONNECT_TO, multi_context->connect_to);*/
-
     curl_easy_setopt(handle, CURLOPT_COPYPOSTFIELDS, request.c_str());
     curl_easy_setopt(handle, CURLOPT_TIMEOUT_MS, factory->GetRequestTimeout().count());
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, curl_write_data_cv);
