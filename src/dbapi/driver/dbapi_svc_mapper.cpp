@@ -720,7 +720,8 @@ CDBUDPriorityMapper::Exclude(const string& service,
          it != usage_map.end();) {
 
         if (it->second == server) {
-            usage_map.erase(it++);
+            usage_map.erase(it);
+            break;
         }
         else {
             ++it;
