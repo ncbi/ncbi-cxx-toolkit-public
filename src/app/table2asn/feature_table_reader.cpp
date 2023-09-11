@@ -1386,7 +1386,7 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
     scoring.SetAltStarts(true);
     CProSplign prosplign(scoring, intronless, true, false, false);
     CRef<CSeq_align> alignment = prosplign.FindAlignment(scope, proteinId, genomicLoc,
-                                                     CProSplignOutputOptions());
+                                                     CProSplignOutputOptions(CProSplignOutputOptions::ePassThrough));
 
     bool found_start_codon = false;
     bool found_stop_codon = false;
