@@ -1,7 +1,7 @@
 # $Id$
 
 %.gz: %
-	gzip -Nf $<
+	gzip -Nf $(GZFLAGS) $<
 
 %.bz2: %
-	bzip2 -f $<
+	bzip2 -f $(BZ2FLAGS) $<
