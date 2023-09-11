@@ -163,6 +163,12 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 /// CDBUDPriorityMapper
 ///
+/// @note When listing a single server multiple times with different
+/// (possibly implicit) degrees of preference, each instance starts
+/// out with a handicap corresponding to its immediately associated
+/// preference, but subsequent deprioritization to give other servers
+/// turns is based on the first-listed instance's degree of preference
+/// (or the most recent SetPreference call's, if any).
 
 class NCBI_DBAPIDRIVER_EXPORT CDBUDPriorityMapper : public IDBServiceMapper
 {
@@ -191,7 +197,7 @@ protected:
 
 private:
     typedef map<string, bool>                       TLBNameMap;
-    typedef multimap<TSvrRef, double, SDereferenceLess> TSvrMap;
+    typedef map<TSvrRef, double, SDereferenceLess>  TSvrMap;
     typedef map<string, TSvrMap>                    TServiceMap;
     typedef multimap<double, TSvrRef>               TServerUsageMap;
     typedef map<string, TServerUsageMap>            TServiceUsageMap;
