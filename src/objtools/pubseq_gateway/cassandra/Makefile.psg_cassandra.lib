@@ -22,9 +22,9 @@ REQUIRES = CASSANDRA MT Linux
 WATCHERS = satskyse saprykin belyi
 
 #PEDANTIC = -pedantic -Wextra
-#EXTRA=-fno-omit-frame-pointer -fsanitize=address
-#LOCAL_CPPFLAGS += $(EXTRA) 
-#LOCAL_CPPFLAGS += $(PEDANTIC) 
+#EXTRA=-fno-omit-frame-pointer -fsanitize=address -fsanitize=undefined -fsanitize=leak
+LOCAL_CPPFLAGS += $(EXTRA)
+LOCAL_CPPFLAGS += $(PEDANTIC)
 #user_homedir = $(shell readlink -e ~)
 #LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include
 
