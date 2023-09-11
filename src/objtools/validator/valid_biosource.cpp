@@ -580,6 +580,7 @@ const CSeq_entry *ctx)
     bool chrom_conflict = false;
     CPCRSetList pcr_set_list;
     const CSubSource* chromosome = nullptr;
+    const CSubSource* linkage_group = nullptr;
     string countryname;
     string lat_lon;
     double lat_value = 0.0, lon_value = 0.0;
@@ -640,6 +641,10 @@ const CSeq_entry *ctx)
             } else {
                 chromosome = ssit->GetPointer();
             }
+            break;
+
+        case CSubSource::eSubtype_linkage_group:
+            linkage_group = ssit->GetPointer();
             break;
 
         case CSubSource::eSubtype_fwd_primer_name:
@@ -846,6 +851,61 @@ const CSeq_entry *ctx)
             string msg = "INDEXER_ONLY - source contains chromosome value '";
             if (chromosome->IsSetName()) {
                 msg += chromosome->GetName();
+            }
+            msg += "' but the BioSource location is not set to chromosome";
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_ChromosomeWithoutLocation,
+                msg, obj, ctx);
+        }
+    }
+
+    if (IsIndexerVersion() && ctx && CValidError_bioseq::IsWGS(*ctx) &&
+        linkage_group && (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_chromosome)) {
+        // exception for /map="unlocalized"
+        bool suppress = false;
+        for (auto& it : bsrc.GetSubtype()) {
+            if (it->IsSetSubtype() && it->GetSubtype() == CSubSource::eSubtype_map &&
+                it->IsSetName() && NStr::Equal(it->GetName(), "unlocalized")) {
+                suppress = true;
+                break;
+            }
+        }
+        if (!suppress) {
+            if (linkage_group->IsSetName() && NStr::EqualNocase(linkage_group->GetName(), "Unknown")) {
+                const CSeq_entry& entry = *ctx;
+                if (entry.IsSeq()) {
+                    const CBioseq& bsp = entry.GetSeq();
+                    FOR_EACH_SEQID_ON_BIOSEQ(itr, bsp) {
+                        const CSeq_id& sid = **itr;
+                        switch (sid.Which()) {
+                        case CSeq_id::e_Genbank:
+                        case CSeq_id::e_Embl:
+                        case CSeq_id::e_Ddbj:
+                        case CSeq_id::e_Tpg:
+                        case CSeq_id::e_Tpe:
+                        case CSeq_id::e_Tpd:
+                        {
+                            const CTextseq_id* tsid = sid.GetTextseq_Id();
+                            // need to check accession format
+                            if (tsid && tsid->IsSetAccession()) {
+                                const string& acc = tsid->GetAccession();
+                                if (acc.length() == 8) {
+                                    suppress = true;
+                                }
+                            }
+                        }
+                        break;
+
+                        default:
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!suppress) {
+            string msg = "INDEXER_ONLY - source contains linkage_group value '";
+            if (linkage_group->IsSetName()) {
+                msg += linkage_group->GetName();
             }
             msg += "' but the BioSource location is not set to chromosome";
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_ChromosomeWithoutLocation,
