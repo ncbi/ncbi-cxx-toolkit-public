@@ -66,9 +66,12 @@ ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CC
     vector<SSatInfoEntry> result;
     for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
+            auto columns = connection->GetColumnNames(keyspace, "sat2keyspace");
+            bool flags_column_exists = find(cbegin(columns), cend(columns), "flags") != cend(columns);
+            string flags_cql = flags_column_exists ? ", flags" : "";
             auto query = connection->NewQuery();
             query->SetSQL(
-                "SELECT sat, keyspace_name, schema_type, service FROM "
+                "SELECT sat, keyspace_name, schema_type, service" + flags_cql + " FROM "
                 + keyspace + ".sat2keyspace WHERE domain = ?", 1);
             query->BindStr(0, domain);
             query->Query(kSatInfoReadConsistency, false, false);
@@ -78,6 +81,9 @@ ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CC
                 row.keyspace = query->FieldGetStrValue(1);
                 row.schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
                 row.service = query->FieldGetStrValueDef(3, "");
+                if (flags_column_exists) {
+                    row.flags = query->FieldGetInt64Value(4, 0);
+                }
                 if (row.schema_type <= eUnknownSchema || row.schema_type > eMaxSchema) {
                     // ignoring
                 }
@@ -110,6 +116,7 @@ ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<C
     auto result = make_shared<CPSGMessages>();
     for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
+            result->Clear();
             auto query = connection->NewQuery();
             query->SetSQL("SELECT name, value FROM " + keyspace + ".messages WHERE domain = ?", 1);
             query->BindStr(0, domain);
@@ -119,6 +126,33 @@ ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<C
                     query->FieldGetStrValue(0),
                     query->FieldGetStrValueDef(1, "")
                 );
+            }
+            break;
+        }
+        catch (CCassandraException const& e) {
+            if (!CanRetry(e, i)) {
+                throw;
+            }
+        }
+    }
+    return result;
+}
+
+set<string> ReadSecureSatUsers(string const& keyspace, int32_t sat, shared_ptr<CCassConnection> connection)
+{
+    set<string> result;
+    for (int i = kSatInfoReadRetry; i >= 0; --i) {
+        try {
+            result.clear();
+            auto query = connection->NewQuery();
+            query->SetSQL("SELECT username FROM " + keyspace + ".web_user WHERE sat = ?", 1);
+            query->BindInt32(0, sat);
+            query->Query(kSatInfoReadConsistency, false, false);
+            while (query->NextRow() == ar_dataready) {
+                auto username = query->FieldGetStrValueDef(0, "");
+                if (!username.empty()) {
+                    result.insert(username);
+                }
             }
             break;
         }
@@ -150,16 +184,59 @@ inline void hash_combine(size_t& seed, const T& v)
     seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 }
 
-size_t HashSatInfoData(vector<SSatInfoEntry> const& rows)
+size_t HashSatInfoData(
+    vector<SSatInfoEntry> const& rows,
+    string const& secure_registry_section,
+    map<int32_t, set<string>> secure_users
+)
 {
     size_t result{0};
+    hash_combine(result, secure_registry_section);
     for (auto const& row : rows) {
         hash_combine(result, row.sat);
         hash_combine(result, row.keyspace);
         hash_combine(result, row.schema_type);
         hash_combine(result, row.service);
+        hash_combine(result, row.flags);
+        if (row.IsSecureSat()) {
+            for (auto user: secure_users[row.sat]) {
+                hash_combine(result, user);
+            }
+        }
     }
     return result;
+}
+
+
+shared_ptr<CCassConnection>
+MakeCassConnection(
+    shared_ptr<IRegistry const> const& registry,
+    string const& section,
+    string const& service,
+    bool reset_namespace
+)
+{
+    auto factory = CCassConnectionFactory::s_Create();
+    factory->LoadConfig(registry.get(), section);
+    if (!service.empty()) {
+        factory->SetServiceName(service);
+    }
+    if (reset_namespace) {
+        factory->SetDataNamespace("");
+    }
+    auto connection = factory->CreateInstance();
+    connection->Connect();
+    return connection;
+}
+
+inline string GetServiceKey(string const& service, string const& registry_section)
+{
+    return registry_section + "|" + service;
+}
+
+inline string GetConnectionPointKey(string const& peer, int16_t port, string const& registry_section)
+{
+    return registry_section + "|" + peer + ":" + to_string(port);
 }
 
 END_SCOPE()
@@ -200,9 +277,21 @@ optional<SSatInfoEntry> CSatInfoSchema::GetIPGKeyspace() const
     return m_IPGKeyspace;
 }
 
-shared_ptr<CCassConnection> CSatInfoSchema::x_GetConnectionByService(string const& service) const
+bool CSatInfoSchema::IsUserAllowedToRead(int32_t sat, string username) const
 {
-    auto itr = m_Service2Cluster.find(service);
+    auto user_list = m_SecureSatUsers.find(sat);
+    bool user_list_exists = user_list != cend(m_SecureSatUsers);
+    if (!user_list_exists) {
+        return false;
+    }
+    auto user_entry = user_list->second.find(username);
+    bool user_allowed_to_read = user_entry != end(user_list->second);
+    return user_allowed_to_read;
+}
+
+shared_ptr<CCassConnection> CSatInfoSchema::x_GetConnectionByService(string const& service, string const& registry_section) const
+{
+    auto itr = m_Service2Cluster.find(GetServiceKey(service, registry_section));
     return itr == cend(m_Service2Cluster) ? nullptr : itr->second;
 }
 
@@ -212,21 +301,28 @@ shared_ptr<CCassConnection> CSatInfoSchema::x_GetConnectionByConnectionPoint(str
     return itr == cend(m_Point2Cluster) ? nullptr : itr->second;
 }
 
-optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterConnection(shared_ptr<CCassConnection> const& connection, bool is_default)
+optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddConnection(
+    shared_ptr<CCassConnection> const& connection,
+    string const& registry_section,
+    string const& service,
+    bool is_default
+)
 {
-    auto port = ":" + to_string(connection->GetPort());
-    auto peer_list = connection->GetLocalPeersAddressList("");
-    for (auto & peer : peer_list) {
-        auto point = peer + port;
-        m_Point2Cluster[point] = connection;
+    for (auto peer : connection->GetLocalPeersAddressList("")) {
+        m_Point2Cluster[GetConnectionPointKey(peer, connection->GetPort(), registry_section)] = connection;
     }
     if (is_default) {
-        m_DefaultCluster = connection;
+        m_DefaultConnection = connection;
+        m_DefaultRegistrySection = registry_section;
+    }
+    else {
+        m_Service2Cluster[GetServiceKey(service, registry_section)] = connection;
     }
     return {};
 }
 
-optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveServiceName(string const& service, vector<string>& connection_points)
+optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveServiceName(
+    string const& service, string const& registry_section, vector<string>& connection_points)
 {
     connection_points.clear();
     {
@@ -265,62 +361,62 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveServiceName(strin
             if (item_host.empty()) {
                 return ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved;
             }
-            connection_points.push_back(item_host + ":" + to_string(item_port));
+            connection_points.push_back(GetConnectionPointKey(item_host, item_port, registry_section));
         }
         else {
             item = GetAddressString(item, is_hostlist);
             if (item.empty()) {
                 return ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved;
             }
-            connection_points.push_back(item + ":" + to_string(CCassConnection::kCassDefaultPort));
+            connection_points.push_back(
+                GetConnectionPointKey(item_host, CCassConnection::kCassDefaultPort, registry_section)
+            );
         }
     }
     return {};
 }
 
-optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterByServiceName(
+optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveConnectionByServiceName(
     string const& service,
     shared_ptr<CSatInfoSchema> const& old_schema,
-    shared_ptr<CCassConnection>& cluster,
     shared_ptr<IRegistry const> const& registry,
-    string const& registry_section
+    string const& registry_section,
+    shared_ptr<CCassConnection>& connection
 )
 {
     // Check this schema data
-    if (service.empty()) {
-        cluster = m_DefaultCluster;
+    if (service.empty() && registry_section == m_DefaultRegistrySection) {
+        connection = m_DefaultConnection;
         return {};
     }
-    cluster = x_GetConnectionByService(service);
-    if (cluster) {
+    connection = x_GetConnectionByService(service, registry_section);
+    if (connection) {
         return {};
     }
     vector<string> connection_points;
-    auto result = x_ResolveServiceName(service, connection_points);
+    auto result = x_ResolveServiceName(service, registry_section, connection_points);
     if (result.has_value()) {
         return result;
     }
     for (auto const& connection_point : connection_points) {
-        cluster = x_GetConnectionByConnectionPoint(connection_point);
-        if (cluster) {
-            m_Service2Cluster.emplace(service, cluster);
+        connection = x_GetConnectionByConnectionPoint(connection_point);
+        if (connection) {
+            m_Service2Cluster.emplace(GetServiceKey(service, registry_section), connection);
             return {};
         }
     }
 
     // Check previous schema version
     if (old_schema) {
-        cluster = old_schema->x_GetConnectionByService(service);
-        if (cluster) {
-            m_Service2Cluster[service] = cluster;
-            x_AddClusterConnection(cluster, false);
+        connection = old_schema->x_GetConnectionByService(service, registry_section);
+        if (connection) {
+            x_AddConnection(connection, registry_section, service, false);
             return {};
         }
         for (auto const& connection_point : connection_points) {
-            cluster = old_schema->x_GetConnectionByConnectionPoint(connection_point);
-            if (cluster) {
-                m_Service2Cluster[service] = cluster;
-                x_AddClusterConnection(cluster, false);
+            connection = old_schema->x_GetConnectionByConnectionPoint(connection_point);
+            if (connection) {
+                x_AddConnection(connection, registry_section, service, false);
                 return {};
             }
         }
@@ -328,14 +424,8 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddClusterByServiceName(
 
     // Make NEW connection
     {
-        auto factory = CCassConnectionFactory::s_Create();
-        factory->LoadConfig(registry.get(), registry_section);
-        factory->SetServiceName(service);
-        factory->SetDataNamespace("");
-        cluster = factory->CreateInstance();
-        cluster->Connect();
-        m_Service2Cluster[service] = cluster;
-        x_AddClusterConnection(cluster, false);
+        connection = MakeCassConnection(registry, registry_section, service, true);
+        x_AddConnection(connection, registry_section, service, false);
         return {};
     }
 
@@ -346,13 +436,17 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
     SSatInfoEntry&& entry,
     shared_ptr<CSatInfoSchema> const& old_schema,
     shared_ptr<IRegistry const> const& registry,
-    string const& registry_section
+    string const& registry_section,
+    set<string> const& secure_users
 )
 {
     shared_ptr<CCassConnection> connection;
-    auto result = x_AddClusterByServiceName(entry.service, old_schema, connection, registry, registry_section);
+    auto result = x_ResolveConnectionByServiceName(entry.service, old_schema, registry, registry_section, connection);
     if (result.has_value()) {
         return result;
+    }
+    if (!secure_users.empty()) {
+        m_SecureSatUsers[entry.sat] = secure_users;
     }
     switch(entry.schema_type) {
         case eResolverSchema: {
@@ -386,6 +480,51 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
             break; // LCOV_EXCL_LINE
     }
     return {};
+}
+
+string SSatInfoEntry::ToString() const
+{
+    return "sat: " + to_string(sat)
+        + ", schema: "+ to_string(static_cast<int>(schema_type))
+        + ", keyspace: '" + keyspace + "'"
+        + ", service: '" + service + "'"
+        + ", flags: " + to_string(flags)
+        + ", connection: &" + to_string(reinterpret_cast<intptr_t>(connection.get()));
+}
+
+string CSatInfoSchema::ToString() const
+{
+    stringstream s;
+    s << "Blob keyspaces: \n";
+    for (auto sat : m_BlobKeyspaces) {
+        s << "  " << sat.second.ToString() << "\n";
+    }
+    s << "BioseqNA keyspaces: \n";
+    for (auto sat : m_BioseqNaKeyspaces) {
+        s << "  " << sat.ToString() << "\n";
+    }
+    s << "Resolver keyspace: \n";
+    s << "  " << m_ResolverKeyspace.ToString() << "\n";
+    s << "IPG keyspace: \n";
+    s << "  " << ((m_IPGKeyspace) ? m_IPGKeyspace->ToString()  :  "None") << "\n";
+    s << "Secure sat users: \n";
+    for (auto sat_users : m_SecureSatUsers) {
+        s << "  " << sat_users.first << "\n";
+        for (auto user : sat_users.second) {
+            s << "  - '" << user << "'\n";
+        }
+    }
+    s << "Default connection: &" << to_string(reinterpret_cast<intptr_t>(m_DefaultConnection.get())) << "\n";
+    s << "Default registry section: '" << m_DefaultRegistrySection << "'\n";
+    s << "m_Point2Cluster: \n";
+    for (auto item : m_Point2Cluster) {
+        s << "  " << item.first << " : &" << to_string(reinterpret_cast<intptr_t>(item.second.get())) << "\n";
+    }
+    s << "m_Service2Cluster: \n";
+    for (auto item : m_Service2Cluster) {
+        s << "  " << item.first << " : &" << to_string(reinterpret_cast<intptr_t>(item.second.get())) << "\n";
+    }
+    return s.str();
 }
 
 CSatInfoSchemaProvider::CSatInfoSchemaProvider(
@@ -473,7 +612,16 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
         x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".sat2keyspace info is empty");
         return ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty;
     }
-    auto rows_hash = HashSatInfoData(rows);
+    map<int32_t, set<string>> secure_users;
+    if (!m_SecureSatRegistrySection.empty()) {
+        auto secure_connection = MakeCassConnection(m_Registry, m_SecureSatRegistrySection, "", false);
+        for (auto sat_info: rows) {
+            if (sat_info.IsSecureSat()) {
+                secure_users[sat_info.sat] = ReadSecureSatUsers(secure_connection->Keyspace(), sat_info.sat, secure_connection);
+            }
+        }
+    }
+    auto rows_hash = HashSatInfoData(rows, m_SecureSatRegistrySection, secure_users);
     if (rows_hash == m_SatInfoHash) {
         return ESatInfoRefreshSchemaResult::eSatInfoUnchanged;
     }
@@ -482,7 +630,7 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
     }
     auto schema = make_shared<CSatInfoSchema>();
     auto old_schema = GetSchema();
-    auto result = x_PopulateNewSchema(schema, old_schema, move(rows));
+    auto result = x_PopulateNewSchema(schema, old_schema, move(rows), move(secure_users));
     if (result.has_value()) {
         return result.value();
     }
@@ -494,15 +642,21 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
 optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchema(
     shared_ptr<CSatInfoSchema>& new_schema,
     shared_ptr<CSatInfoSchema> const& old_schema,
-    vector<SSatInfoEntry>&& sat_info
+    vector<SSatInfoEntry>&& sat_info,
+    map<int32_t, set<string>>&& secure_users
 )
 {
-    auto result = new_schema->x_AddClusterConnection(x_GetSatInfoConnection(), true);
+    auto result = new_schema->x_AddConnection(x_GetSatInfoConnection(), m_RegistrySection, "", true);
     if (result.has_value()) {
         return result.value();
     }
     for (auto& entry : sat_info) {
-        auto result = new_schema->x_AddSatInfoEntry(move(entry), old_schema, m_Registry, m_RegistrySection);
+        string registry_section = m_RegistrySection;
+        if (entry.IsSecureSat() && !m_SecureSatRegistrySection.empty()) {
+            registry_section = m_SecureSatRegistrySection;
+        }
+        auto sat_secure_users = secure_users[entry.sat];
+        auto result = new_schema->x_AddSatInfoEntry(move(entry), old_schema, m_Registry, registry_section, sat_secure_users);
         if (result.has_value()) {
             switch(result.value()) {
             case ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated:

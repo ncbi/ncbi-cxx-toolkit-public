@@ -70,6 +70,9 @@ class CSatInfoProviderTest
  protected:
     static void SetUpTestCase() {
         m_Registry.Set(m_ConfigSection, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        m_Registry.Set(m_ConfigSectionSecure, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        m_Registry.Set(m_ConfigSectionSecure, "namespace", string(m_SecureKeyspace), IRegistry::fPersistent);
+        m_Registry.Set(m_ConfigSectionSecure, "qtimeout", "11111", IRegistry::fPersistent);
         m_RegistryPtr = make_shared<CCompoundRegistry>();
         m_RegistryPtr->Add(m_Registry);
         m_Factory = CCassConnectionFactory::s_Create();
@@ -86,6 +89,8 @@ class CSatInfoProviderTest
 
     static const char* m_TestClusterName;
     static const char * m_ConfigSection;
+    static const char * m_ConfigSectionSecure;
+    static const char * m_SecureKeyspace;
     static shared_ptr<CCassConnectionFactory> m_Factory;
     static shared_ptr<CCassConnection> m_Connection;
     static CNcbiRegistry m_Registry;
@@ -96,6 +101,8 @@ class CSatInfoProviderTest
 
 const char* CSatInfoProviderTest::m_TestClusterName = "ID_CASS_TEST";
 const char* CSatInfoProviderTest::m_ConfigSection = "TEST";
+const char* CSatInfoProviderTest::m_ConfigSectionSecure = "TEST_SECURE";
+const char* CSatInfoProviderTest::m_SecureKeyspace = "sat_info_secure";
 shared_ptr<CCassConnectionFactory> CSatInfoProviderTest::m_Factory(nullptr);
 shared_ptr<CCassConnection> CSatInfoProviderTest::m_Connection(nullptr);
 CNcbiRegistry CSatInfoProviderTest::m_Registry;
@@ -197,6 +204,55 @@ TEST_F(CSatInfoProviderTest, Basic) {
     ASSERT_TRUE(sat230.has_value());
     // Connection should be inherited from previous schema version (no Cassandra reconnect)
     EXPECT_EQ(sat230.value().connection.get(), sat23.value().connection.get());
+
+    //cout << provider.GetSchema()->ToString() << endl;
+}
+
+TEST_F(CSatInfoProviderTest, SecureSat) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT_SECURE", m_Connection,
+        m_RegistryPtr, m_ConfigSection
+    );
+
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUnchanged, provider.RefreshSchema(false));
+    auto sat4 = provider.GetBlobKeyspace(4);
+    auto sat5 = provider.GetBlobKeyspace(5);
+    ASSERT_TRUE(sat4.has_value());
+    ASSERT_TRUE(sat5.has_value());
+
+    ASSERT_NE(nullptr, sat4->connection);
+    ASSERT_NE(nullptr, sat5->connection);
+    EXPECT_EQ(sat4->connection.get(), sat5->connection.get());
+    EXPECT_FALSE(sat4->IsSecureSat());
+    EXPECT_TRUE(sat5->IsSecureSat());
+
+    provider.SatSecureSatRegistrySection(m_ConfigSectionSecure);
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUnchanged, provider.RefreshSchema(false));
+    sat4 = provider.GetBlobKeyspace(4);
+    sat5 = provider.GetBlobKeyspace(5);
+    ASSERT_TRUE(sat4.has_value());
+    ASSERT_TRUE(sat5.has_value());
+
+    ASSERT_NE(nullptr, sat4->connection);
+    ASSERT_NE(nullptr, sat5->connection);
+    EXPECT_NE(sat4->connection.get(), sat5->connection.get());
+    EXPECT_FALSE(sat4->IsSecureSat());
+    EXPECT_TRUE(sat5->IsSecureSat());
+
+    EXPECT_EQ("DC1", sat4.value().connection->GetDatacenterName());
+    EXPECT_EQ("DC1", sat5.value().connection->GetDatacenterName());
+
+    auto schema_snapshot = provider.GetSchema();
+    EXPECT_FALSE(schema_snapshot->IsUserAllowedToRead(5, "random_user"));
+    EXPECT_FALSE(schema_snapshot->IsUserAllowedToRead(5, ""));
+    EXPECT_TRUE(schema_snapshot->IsUserAllowedToRead(5, "secure_user"));
+
+    // Permissions for not configured satellites are always denied
+    EXPECT_FALSE(schema_snapshot->IsUserAllowedToRead(23, ""));
+
+    //cout << provider.GetSchema()->ToString() << endl;
 }
 
 TEST_F(CSatInfoProviderTest, NotLoaded) {

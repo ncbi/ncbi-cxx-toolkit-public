@@ -79,6 +79,11 @@ class CPSGMessages
         return m_Messages.empty();
     }
 
+    void Clear()
+    {
+        m_Messages.clear();
+    }
+
  private:
     TCollection m_Messages;
 };

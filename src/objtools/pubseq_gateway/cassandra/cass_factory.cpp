@@ -52,10 +52,8 @@ USING_NCBI_SCOPE;
 const string                    kCassConfigSection = "CASSANDRA_DB";
 
 const unsigned int              kCassConnTimeoutDefault = 30000;
-const unsigned int              kCassConnTimeoutMin = 0;
 const unsigned int              kCassConnTimeoutMax = UINT_MAX;
 const unsigned int              kCassQueryTimeoutDefault = 5000;
-const unsigned int              kCassQueryTimeoutMin = 0;
 const unsigned int              kCassQueryTimeoutMax = UINT_MAX;
 const loadbalancing_policy_t    kLoadBalancingDefaultPolicy = LB_DCAWARE;
 const unsigned int              kNumThreadsIoMin = 1;
@@ -64,10 +62,8 @@ const unsigned int              kNumThreadsIoDefault = 4;
 const unsigned int              kNumConnPerHostMin = 1;
 const unsigned int              kNumConnPerHostMax = 8;
 const unsigned int              kNumConnPerHostDefault = 2;
-const unsigned int              kKeepaliveMin = 0;
 const unsigned int              kKeepaliveMax = UINT_MAX;
 const unsigned int              kKeepaliveDefault = 0;
-const unsigned int              kCassFallbackWrConsistencyMin = 0;
 const unsigned int              kCassFallbackWrConsistencyMax = UINT_MAX;
 const unsigned int              kCassFallbackWrConsistencyDefault = 0;
 
@@ -318,28 +314,25 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance()
 
 void CCassConnectionFactory::x_ValidateArgs(void)
 {
-    if (m_CassConnTimeoutMs < kCassConnTimeoutMin || m_CassConnTimeoutMs > kCassConnTimeoutMax) {
+    if (m_CassConnTimeoutMs > kCassConnTimeoutMax) {
         ERR_POST("The cassandra connection timeout is out of range. Allowed "
-                 "range: " << kCassConnTimeoutMin << "..." <<
-                 kCassConnTimeoutMax << ". Received: " <<
+                 "range: 0..." << kCassConnTimeoutMax << ". Received: " <<
                  m_CassConnTimeoutMs << ". Reset to default: " <<
                  kCassConnTimeoutDefault);
         m_CassConnTimeoutMs = kCassConnTimeoutDefault;
     }
 
-    if (m_CassQueryTimeoutMs < kCassQueryTimeoutMin || m_CassQueryTimeoutMs > kCassQueryTimeoutMax) {
+    if (m_CassQueryTimeoutMs > kCassQueryTimeoutMax) {
         ERR_POST("The cassandra query timeout is out of range. Allowed "
-                 "range: " << kCassQueryTimeoutMin << "..." <<
-                 kCassQueryTimeoutMax << ". Received: " <<
+                 "range: 0..." << kCassQueryTimeoutMax << ". Received: " <<
                  m_CassQueryTimeoutMs << ". Reset to "
                  "default: " << kCassQueryTimeoutDefault);
         m_CassQueryTimeoutMs = kCassQueryTimeoutDefault;
     }
 
-    if (m_CassQueryRetryTimeoutMs < kCassQueryTimeoutMin || m_CassQueryRetryTimeoutMs > kCassQueryTimeoutMax) {
+    if (m_CassQueryRetryTimeoutMs > kCassQueryTimeoutMax) {
         ERR_POST("The cassandra query retry timeout is out of range. Allowed "
-                 "range: " << kCassQueryTimeoutMin << "..." <<
-                 kCassQueryTimeoutMax << ". Received: " <<
+                 "range: 0..." << kCassQueryTimeoutMax << ". Received: " <<
                  m_CassQueryRetryTimeoutMs << ". Reset to "
                  "default: 0");
         m_CassQueryTimeoutMs = 0;
@@ -393,24 +386,20 @@ void CCassConnectionFactory::x_ValidateArgs(void)
         m_NumConnPerHost = kNumConnPerHostDefault;
     }
 
-    if (m_Keepalive < kKeepaliveMin ||
-        m_Keepalive > kKeepaliveMax) {
+    if (m_Keepalive > kKeepaliveMax) {
         ERR_POST("The TCP keep-alive the initial delay is out of range. Allowed "
-                 "range: " << kKeepaliveMin << "..." <<
-                 kKeepaliveMax << ". Received: " <<
+                 "range: 0..." << kKeepaliveMax << ". Received: " <<
                  m_Keepalive << ". Reset to "
                  "default: " << kKeepaliveDefault);
         m_Keepalive = kKeepaliveDefault;
     }
 
-    if (m_CassFallbackWrConsistency < kCassFallbackWrConsistencyMin ||
-        m_CassFallbackWrConsistency > kCassFallbackWrConsistencyMax) {
+    if (m_CassFallbackWrConsistency > kCassFallbackWrConsistencyMax) {
         ERR_POST("The cassandra write quorum is out of range. Allowed "
-                 "range: " << kCassFallbackWrConsistencyMin << "..." <<
-                 kCassFallbackWrConsistencyMax << ". Received: " <<
+                 "range: 0..." << kCassFallbackWrConsistencyMax << ". Received: " <<
                  m_CassFallbackWrConsistency << ". Reset to "
                  "default: " << kCassFallbackWrConsistencyDefault);
-        m_CassFallbackWrConsistency = kKeepaliveDefault;
+        m_CassFallbackWrConsistency = kCassFallbackWrConsistencyDefault;
     }
 }
 

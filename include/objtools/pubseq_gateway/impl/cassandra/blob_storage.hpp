@@ -58,6 +58,12 @@ enum ECassSchemaType {
     eMaxSchema = eIPGSchema
 };
 
+enum class ECassSatInfoFlags : Int4
+{
+    // Requires WebCookie verification befor blob access
+    eSecureSat = 1,
+};
+
 struct SBlobStorageConstants
 {
     SBlobStorageConstants() = delete;
@@ -73,7 +79,15 @@ struct SSatInfoEntry final
     ECassSchemaType schema_type{eUnknownSchema};
     string keyspace;
     string service;
+    int64_t flags{0};
     shared_ptr<CCassConnection> connection;
+
+    bool IsSecureSat() const
+    {
+        return flags & static_cast<Int4>(ECassSatInfoFlags::eSecureSat);
+    }
+
+    string ToString() const;
 };
 
 enum class ESatInfoRefreshSchemaResult : char
@@ -107,35 +121,77 @@ class CSatInfoSchema final
 
     CSatInfoSchema() = default;
 
+    /// Get blob keyspace connection by sat id
+    ///
+    /// @param sat
+    ///   Blob sat id
+    ///
+    /// @return
+    ///   Configuration entry or empty optional
+    ///   if sat does not exists or has non blob schema type
     optional<SSatInfoEntry> GetBlobKeyspace(int32_t sat) const;
+
+    /// Get list of BioseqNA keyspaces connections
     vector<SSatInfoEntry> GetNAKeyspaces() const;
+
+    /// Get connection to resolver keyspace
     SSatInfoEntry GetResolverKeyspace() const;
+
+    /// Get connection to IPG keyspace
     optional<SSatInfoEntry> GetIPGKeyspace() const;
 
+    /// Check if user allowed to read secure keyspace data
+    ///
+    /// @param sat
+    ///   Blob sat id
+    /// @param username
+    ///   User name
+    ///
+    /// @return
+    ///   True if username is present in allowed users list for {sat}
+    ///   False - otherwise (e.g. user list does not exist, user list is empty)
+    bool IsUserAllowedToRead(int32_t sat, string username) const;
+
+    /// Get max id value for existing blob sat
     int32_t GetMaxBlobKeyspaceSat() const;
 
+    /// Print internal state of CSatInfoSchema
+    ///
+    /// @for_tests, @for_debug
+    string ToString() const;
+
  private:
-    shared_ptr<CCassConnection> x_GetConnectionByService(string const& service) const;
+    shared_ptr<CCassConnection> x_GetConnectionByService(string const& service, string const& registry_section) const;
     shared_ptr<CCassConnection> x_GetConnectionByConnectionPoint(string const& connection_point) const;
 
-    optional<ESatInfoRefreshSchemaResult> x_AddClusterConnection(shared_ptr<CCassConnection> const& connection, bool is_default);
+    optional<ESatInfoRefreshSchemaResult> x_AddConnection(
+        shared_ptr<CCassConnection> const& connection,
+        string const& registry_section,
+        string const& service,
+        bool is_default
+    );
     optional<ESatInfoRefreshSchemaResult> x_AddSatInfoEntry(
         SSatInfoEntry&& entry,
         shared_ptr<CSatInfoSchema> const& old_schema,
         shared_ptr<IRegistry const> const& registry,
-        string const& registry_section
+        string const& registry_section,
+        set<string> const& secure_users
     );
-    optional<ESatInfoRefreshSchemaResult> x_AddClusterByServiceName(
+    optional<ESatInfoRefreshSchemaResult> x_ResolveConnectionByServiceName(
         string const& service,
         shared_ptr<CSatInfoSchema> const& old_schema,
-        shared_ptr<CCassConnection>& cluster,
         shared_ptr<IRegistry const> const& registry,
-        string const& registry_section
+        string const& registry_section,
+        shared_ptr<CCassConnection>& connection
     );
-    optional<ESatInfoRefreshSchemaResult> x_ResolveServiceName(string const& service, vector<string>& connection_points);
+    optional<ESatInfoRefreshSchemaResult> x_ResolveServiceName(
+        string const& service, string const& registry_section, vector<string>& connection_points);
 
     // Mapping {sat => Connection to blob keyspace}
     map<int32_t, SSatInfoEntry> m_BlobKeyspaces;
+
+    // Mapping {sat => set<string>}. List of usernames for eSecureSat satellites.
+    map<int32_t, set<string>> m_SecureSatUsers;
 
     // List of BioseqNA connections
     vector<SSatInfoEntry> m_BioseqNaKeyspaces;
@@ -153,7 +209,10 @@ class CSatInfoSchema final
     map<string, shared_ptr<CCassConnection>> m_Service2Cluster;
 
     // Default cluster connection
-    shared_ptr<CCassConnection> m_DefaultCluster;
+    shared_ptr<CCassConnection> m_DefaultConnection;
+
+    // Default cluster registry section name
+    string m_DefaultRegistrySection;
 };
 
 class CSatInfoSchemaProvider final
@@ -178,6 +237,19 @@ class CSatInfoSchemaProvider final
         shared_ptr<IRegistry const> registry,
         string const& registry_section
     );
+
+    /// Changes configuration domain for existing provider
+    ///
+    /// @param registry_section
+    ///   Registry section name used as a template creating new cluster connection for secure satellite access
+    ///   and secure satellite user list storage
+    ///   {service} entry of registry section gets replaced by {service} from {sat_info3.sat2keyspace} table
+    ///
+    /// @not_thread_safe
+    void SatSecureSatRegistrySection(string const& registry_section)
+    {
+        m_SecureSatRegistrySection = registry_section;
+    }
 
     /// Changes configuration domain for existing provider
     ///
@@ -216,7 +288,7 @@ class CSatInfoSchemaProvider final
     ///   Blob sat id
     ///
     /// @return
-    ///   Configuration entry of empty optional
+    ///   Configuration entry or empty optional
     ///   if sat does not exists or has non blob schema type
     ///
     /// @thread_safe
@@ -296,7 +368,8 @@ class CSatInfoSchemaProvider final
     optional<ESatInfoRefreshSchemaResult> x_PopulateNewSchema(
         shared_ptr<CSatInfoSchema>& new_schema,
         shared_ptr<CSatInfoSchema> const& old_schema,
-        vector<SSatInfoEntry>&& sat_info
+        vector<SSatInfoEntry>&& sat_info,
+        map<int32_t, set<string>>&& secure_users
     );
 
     string m_SatInfoKeyspace;
@@ -305,6 +378,7 @@ class CSatInfoSchemaProvider final
 
     shared_ptr<IRegistry const> m_Registry;
     string m_RegistrySection;
+    string m_SecureSatRegistrySection;
 
     shared_ptr<CSatInfoSchema> m_SatInfoSchema;
     shared_ptr<CPSGMessages> m_SatInfoMessages;
