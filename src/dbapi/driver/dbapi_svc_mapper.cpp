@@ -561,13 +561,15 @@ CDBUDRandomMapper::x_RecalculatePreferences(const string& service)
     vector<double> weights;
     bool all_zero = true;
     for (const auto & it : m_ServerMap[service]) {
+        double weight = 0.0;
         if ( !it->IsExcluded() ) {
-            double weight = it->GetRanking();
+            weight = it->GetRanking();
             _ASSERT(weight < 100.0);
             if (weight > 0.0) {
                 all_zero = false;
             }
         }
+        weights.push_back(weight);
     }
     if (all_zero) {
         for (auto & w : weights) {
