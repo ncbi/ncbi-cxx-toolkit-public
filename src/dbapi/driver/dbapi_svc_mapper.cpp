@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 // #include <connect/ncbi_socket.h>
 #include <algorithm>
+#include <cmath>
 
 
 BEGIN_NCBI_SCOPE
@@ -758,6 +759,48 @@ CDBUDPriorityMapper::SetPreference(const string&  service,
 
     if (pr_it != server_map.end()) {
         pr_it->second = preference;
+    }
+}
+
+
+void
+CDBUDPriorityMapper::GetServerOptions(const string& service,
+                                      TOptions*     options)
+{
+    CFastMutexGuard mg(m_Mtx);
+    options->clear();
+    auto sit = m_ServerMap.find(service);
+    if (sit == m_ServerMap.end()  ||  sit->second.empty()) {
+        return;
+    }
+    auto uit = m_ServiceUsageMap.find(service);
+    if (uit == m_ServiceUsageMap.end()  ||  uit->second.empty()) {
+        _TROUBLE;
+        return;
+    }
+    map<TSvrRef, double> rankings;
+    auto                 baseline = uit->second.begin()->first;
+    for (const auto &uit2 : uit->second) {
+        auto sit2 = sit->second.find(uit2.second);
+        _ASSERT(sit2 != sit->second.end());
+        rankings[sit2->first]
+            += exp2(0.1 * (sit2->second + baseline - uit2.first));
+    }
+    for (const auto& sit2 : sit->second) {
+        auto rit = rankings.find(sit2.first);
+        double ranking;
+        auto state = CDBServerOption::fState_Normal;
+        if (rit == rankings.end()) {
+            ranking = exp2(0.1 * sit2.second);
+            state = CDBServerOption::fState_Excluded;
+        } else {
+            ranking = rit->second;
+        }
+        // Expiration?
+        options->emplace_back(new CDBServerOption(sit2.first->GetName(),
+                                                  sit2.first->GetHost(),
+                                                  sit2.first->GetPort(),
+                                                  ranking, state));
     }
 }
 
