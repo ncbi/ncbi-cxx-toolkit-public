@@ -186,6 +186,7 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100.0);
+    virtual void GetServerOptions(const string& service, TOptions* options);
             void    Add          (const string&    service,
                                   const TSvrRef&   server,
                                   double           preference = 0.0);
