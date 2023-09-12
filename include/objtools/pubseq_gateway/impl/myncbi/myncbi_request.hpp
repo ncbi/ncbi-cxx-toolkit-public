@@ -72,7 +72,7 @@ public:
 protected:
     TDataErrorCallback m_ErrorCallback;
 private:
-    string m_ResponseData;
+    string m_HttpResponseData;
     long m_HttpResponseStatus{-1};
     EPSG_MyNCBIResponseStatus m_ResponseStatus{EPSG_MyNCBIResponseStatus::eInProgress};
 };

@@ -36,6 +36,7 @@
 #include <string>
 #include <sstream>
 
+#include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/request_status.hpp>
 
@@ -60,25 +61,12 @@ void VLOG(TArgs &&... args)
 
 struct SCurlMultiContext
 {
-    ~SCurlMultiContext()
-    {
-        VLOG("~SCurlMultiContext()");
-        if (curl_mhandle) {
-            curl_multi_cleanup(curl_mhandle);
-            curl_mhandle = nullptr;
-        }
-
-        if (connect_to) {
-            curl_slist_free_all(connect_to);
-            connect_to = nullptr;
-        }
-    }
+    ~SCurlMultiContext();
 
     CURLM *curl_mhandle{nullptr};
     uv_loop_t* uv_loop{nullptr};
     uv_timer_t uv_timer{};
     weak_ptr<IPSG_MyNCBIRequest> request;
-    curl_slist *connect_to{nullptr};
 };
 
 struct SCurlSocketContext
@@ -88,6 +76,15 @@ struct SCurlSocketContext
     SCurlMultiContext* multi_context{nullptr};
 };
 
+SCurlMultiContext::~SCurlMultiContext()
+{
+    VLOG("~SCurlMultiContext()");
+    if (curl_mhandle) {
+        curl_multi_cleanup(curl_mhandle);
+        curl_mhandle = nullptr;
+    }
+}
+
 SCurlSocketContext *create_curl_context(curl_socket_t sockfd, SCurlMultiContext* multi_context)
 {
     VLOG("Creating curl_context for socket ", sockfd);
@@ -96,23 +93,23 @@ SCurlSocketContext *create_curl_context(curl_socket_t sockfd, SCurlMultiContext*
     context->multi_context = multi_context;
     int r = uv_poll_init_socket(multi_context->uv_loop, &context->poll_handle, sockfd);
     if (r != 0) {
-        VLOG("Failed to init socket for polling by uv_poll_init_socket for ", sockfd);
+        VLOG("Failed to init socket for polling by uv_poll_init_socket for ", sockfd, ". RC = ", r);
         delete context;
         return nullptr;
     }
+    VLOG("     new socket context address - &", reinterpret_cast<intptr_t>(context));
     context->poll_handle.data = context;
     return context;
 }
 
 void uv_curl_close_cb(uv_handle_t *handle)
 {
-    VLOG("curl_close_cb for &", reinterpret_cast<intptr_t>(handle));
+    VLOG("uv_curl_close_cb for &", reinterpret_cast<intptr_t>(handle));
     auto context = reinterpret_cast<SCurlSocketContext*>(handle->data);
     if (context) {
-        VLOG("curl_close_cb deleted socket context for &", reinterpret_cast<intptr_t>(handle));
-        //delete context->multi_context;
+        VLOG("uv_curl_close_cb deleted socket context for &", reinterpret_cast<intptr_t>(handle));
+        context->poll_handle.data = nullptr;
         delete context;
-        handle->data = nullptr;
     }
 }
 
@@ -186,12 +183,52 @@ void uv_curl_perform_cb(uv_poll_t *req, int status, int events)
     check_multi_info(context->multi_context, context->multi_context->request);
 }
 
+int curl_debug_cb(CURL */*handle*/, curl_infotype type, char *data, size_t size, void */*clientp*/)
+{
+    switch (type) {
+        case CURLINFO_TEXT: {
+            string str(data, size);
+            NStr::TrimSuffixInPlace(str, "\n");
+            VLOG("CURL: * ", str);
+        }
+        case CURLINFO_HEADER_OUT: {
+            string str(data, size);
+            NStr::TrimSuffixInPlace(str, "\r\n");
+            VLOG("CURL: Header>>> ", str);
+            break;
+        }
+        case CURLINFO_DATA_OUT:
+            VLOG("CURL: Data>>> ", size, " bytes");
+            break;
+        case CURLINFO_SSL_DATA_OUT:
+            VLOG("CURL: SSLData>>> ", size, " bytes");
+            break;
+        case CURLINFO_HEADER_IN: {
+            string str(data, size);
+            NStr::TrimSuffixInPlace(str, "\r\n");
+            VLOG("CURL: Header<<< ", str);
+            break;
+        }
+        case CURLINFO_DATA_IN:
+            VLOG("CURL: Data<<< ", size, " bytes");
+            break;
+        case CURLINFO_SSL_DATA_IN:
+            VLOG("CURL: SSLData<<< ", size, " bytes");
+            break;
+        default:
+            return 0;
+    }
+
+    return 0;
+}
+
 int curl_handle_socket_cb(CURL */*easy*/, curl_socket_t s, int action, void *clientp, void *socketp)
 {
     auto context = reinterpret_cast<SCurlMultiContext*>(clientp);
     VLOG("curl_handle_socket_cb: socket - ", s, "; action - ", action, "; multi context - &", reinterpret_cast<intptr_t>(clientp));
     SCurlSocketContext *socket_context{nullptr};
     if (action == CURL_POLL_IN || action == CURL_POLL_OUT) {
+        VLOG("     socketp - &", reinterpret_cast<intptr_t>(socketp));
         if (socketp) {
             socket_context = reinterpret_cast<SCurlSocketContext*>(socketp);
         }
@@ -199,7 +236,7 @@ int curl_handle_socket_cb(CURL */*easy*/, curl_socket_t s, int action, void *cli
             socket_context = create_curl_context(s, context);
             auto assign_rc = curl_multi_assign(context->curl_mhandle, s, socket_context);
             if (assign_rc != 0) {
-                VLOG("Failed to assign socket context by curl_multi_assign()");
+                VLOG("Failed to assign socket context by curl_multi_assign(). RC = ", assign_rc);
             }
         }
         if (socket_context == nullptr) {
@@ -229,9 +266,12 @@ int curl_handle_socket_cb(CURL */*easy*/, curl_socket_t s, int action, void *cli
         }
         case CURL_POLL_REMOVE:
             if (socketp) {
-                uv_poll_stop(&(reinterpret_cast<SCurlSocketContext*>(socketp))->poll_handle);
+                uv_poll_stop(&reinterpret_cast<SCurlSocketContext*>(socketp)->poll_handle);
+                auto assign_rc = curl_multi_assign(context->curl_mhandle, s, nullptr);
+                if (assign_rc != 0) {
+                    VLOG("Failed to remove socket context by curl_multi_assign(). RC = ", assign_rc);
+                }
                 destroy_curl_context(reinterpret_cast<SCurlSocketContext*>(socketp));
-                curl_multi_assign(context->curl_mhandle, s, nullptr);
             }
             break;
         default: {
@@ -301,6 +341,7 @@ void curl_send_request(SCurlMultiContext* multi_context, CPSG_MyNCBIFactory* fac
         curl_easy_setopt(handle, CURLOPT_PROXY, proxy.c_str());
     }
     if (factory->IsVerboseCURL()) {
+        curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, curl_debug_cb);
         curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
     }
     /*multi_context->connect_to = curl_slist_append(nullptr, "::sman110:8306");
