@@ -39,12 +39,12 @@ BEGIN_NCBI_SCOPE
 
 void IPSG_MyNCBIRequest::ReceiveHttpResponseData(string data)
 {
-    m_ResponseData.append(move(data));
+    m_HttpResponseData.append(data);
 }
 
 string IPSG_MyNCBIRequest::GetHttpResponseData() const
 {
-    return m_ResponseData;
+    return m_HttpResponseData;
 }
 
 void IPSG_MyNCBIRequest::SetHttpResponseStatus(long status)
