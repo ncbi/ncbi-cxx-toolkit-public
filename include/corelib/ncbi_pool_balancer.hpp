@@ -90,9 +90,12 @@ private:
         unsigned int           actual_count;
         unsigned int           penalty_level;
     };
-    typedef map<CEndpointKey, SEndpointInfo> TEndpoints;
+    typedef multimap<CEndpointKey, SEndpointInfo> TEndpoints;
 
     CEndpointKey x_NameToKey(CTempString& name) const;
+    TEndpoints::iterator x_FindEndpoint(CEndpointKey key, CTempString name);
+    TEndpoints::iterator x_FindEndpointAsIs(CEndpointKey key,
+                                            CTempString name);
     
     string            m_ServiceName;
     TEndpoints        m_Endpoints;
