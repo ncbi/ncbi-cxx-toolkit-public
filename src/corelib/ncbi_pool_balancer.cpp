@@ -90,20 +90,27 @@ CPoolBalancer::CPoolBalancer(const string& service_name,
         }
         _TRACE_X(1,
                  service_name << ": " << key << " -> " << name << " per DBLB");
-        auto&  endpoint = m_Endpoints[key];
+
+        auto endpoint = x_FindEndpoint(key, name);
+        if (endpoint == m_Endpoints.end()) {
+            SEndpointInfo info;
+            info.ref = it;
+            endpoint = m_Endpoints.emplace(key, info);
+        }
+
         double ranking  = it->GetRanking();
 
         if (it->IsPenalized()) {
             ranking *= numeric_limits<double>::epsilon();
-            ++endpoint.penalty_level;
+            ++endpoint->second.penalty_level;
         }
         if (it->IsExcluded()) {
             ranking *= numeric_limits<double>::epsilon();
-            ++endpoint.penalty_level;
+            ++endpoint->second.penalty_level;
         }
         
-        endpoint.ref = it;
-        endpoint.effective_ranking = ranking;
+        endpoint->second.ref = it;
+        endpoint->second.effective_ranking = ranking;
         m_Rankings.insert(ranking);
     }
 }
@@ -115,7 +122,7 @@ void CPoolBalancer::LocallyPenalize(TSvrRef server)
         return;
     }
     CEndpointKey key(server->GetHost(), server->GetPort());
-    auto it = m_Endpoints.find(key);
+    auto it = x_FindEndpoint(key, server->GetName());
     if (it == m_Endpoints.end()) {
         return;
     }
@@ -352,5 +359,43 @@ CEndpointKey CPoolBalancer::x_NameToKey(CTempString& name) const
     return key;
 }
 
+
+CPoolBalancer::TEndpoints::iterator CPoolBalancer::x_FindEndpoint(
+    CEndpointKey key, CTempString name)
+{
+    auto it = x_FindEndpointAsIs(key, name);
+    if (it == m_Endpoints.end()) {
+        auto host = key.GetHost();
+        auto port = key.GetPort();
+        if (port != 0U) {
+            it = x_FindEndpointAsIs(CEndpointKey(host, 0U), name);
+        }
+        if (it == m_Endpoints.end()  &&  host != 0U) {
+            it = x_FindEndpointAsIs(CEndpointKey(0U, port), name);
+        }
+        if (it == m_Endpoints.end()  &&  host != 0U  &&  port != 0U) {
+            it = x_FindEndpointAsIs(CEndpointKey(0U, 0U), name);
+        }
+    }
+    return it;
+}
+
+
+CPoolBalancer::TEndpoints::iterator CPoolBalancer::x_FindEndpointAsIs(
+    CEndpointKey key, CTempString name)
+{
+    auto it = m_Endpoints.lower_bound(key);
+    if (it == m_Endpoints.end()  ||  it->first != key) {
+        return m_Endpoints.end();
+    } else if (key.GetHost() == 0U /* ||  key.GetPort() == 0U */) {
+        for (;  it != m_Endpoints.end()  &&  it->first == key;  ++it) {
+            if (it->second.ref->GetName() == name) {
+                return it;
+            }
+        }
+        return m_Endpoints.end();
+    }
+    return it;
+}
 
 END_NCBI_SCOPE
