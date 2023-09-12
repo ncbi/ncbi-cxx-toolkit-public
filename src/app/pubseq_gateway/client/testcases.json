@@ -3,16 +3,25 @@
         "": {
             "exclude": []
         },
-
         "on-deploy": {
             "timeout": 20,
             "sub-runs": ["fast", "fast-nocache-noretries"]
         },
+        "on-ci": {
+            "sub-runs": ["", "nocache", "noretries", "nocache-noretries"]
+        },
 
+        "noretries": {
+            "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
+        },
+        "nocache-noretries": {
+            "exclude": ["lmdb"],
+            "user_args": "use_cache=no",
+            "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
+        }
         "all-fast": {
             "sub-runs": ["fast", "fast-nocache", "fast-nocache-noretries"]
         },
-
         "fast": {
             "exclude": ["slow"]
         },
@@ -24,7 +33,6 @@
             "exclude": ["slow", "lmdb"],
             "user_args": "use_cache=no"
         },
-
         "fast-noretries": {
             "exclude": ["slow"],
             "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
