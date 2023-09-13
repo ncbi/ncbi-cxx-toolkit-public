@@ -10,6 +10,8 @@ import enum
 import functools
 import itertools
 import json
+import operator
+import os
 import queue
 import random
 import re
@@ -31,15 +33,65 @@ class RequestGenerator:
         request_id = f'{method}_{self._request_no}'
         return { 'jsonrpc': '2.0', 'method': method, 'params': params, 'id': request_id }, request_id 
 
+class Deadline:
+    def __init__(self, timeout=None):
+        self._value = None if timeout is None else timeout + time.monotonic()
+
+    def __or__(self, other):
+        if self._value is None:
+            return other
+        elif other._value is None:
+            return self
+        else:
+            return self if self._value <= other._value else other
+
+    def get_remaining_or_raise(self):
+        if self._value is None:
+            return None
+
+        timeout = self._value - time.monotonic()
+
+        if timeout > 0.0:
+            return timeout
+
+        raise queue.Empty
+
+@functools.total_ordering
+class Version:
+    def __init__(self, value=None):
+        self._data = tuple(value.split('.')) if value else ()
+
+    def _next_ne(self, other):
+        return next(filter(lambda args : operator.ne(*args), itertools.zip_longest(self._data, other._data, fillvalue='0')), None)
+        return rv
+
+    def __eq__(self, other):
+        return self._next_ne(other) is None
+
+    def __lt__(self, other):
+        if n := self._next_ne(other):
+            a, b = n
+            return int(a) < int(b) if a.isnumeric() and b.isnumeric() else a < b
+        else:
+            return False
+
+    def __bool__(self):
+        return bool(self._data)
+
 class PsgClient:
     VerboseLevel = enum.IntEnum('VerboseLevel', 'REQUEST RESPONSE DEBUG')
 
     def __init__(self, args):
         self._cmd = [args.binary, 'interactive', '-server-mode']
+        self._env = {}
         self._verbose = args.verbose
         self._sent = {}
+        self._queue = queue.Queue()
 
         args_dict = vars(args)
+
+        self._detect_server_version = (server_version := args_dict.get('server_version')) is None
+        self._server_version = Version(server_version)
 
         if service := args_dict.get('service'):
             self._cmd += ['-service', service]
@@ -61,10 +113,29 @@ class PsgClient:
             print(self._cmd)
 
     def __enter__(self):
-        self._pipe = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=1, text=True)
-        self._queue = queue.Queue()
+        if self._env:
+            env = os.environ.copy()
+            env.update(self._env)
+        else:
+            env = None
+
+        self._pipe = subprocess.Popen(self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=1, text=True, env=env)
         self._thread = threading.Thread(target=self._run)
         self._thread.start()
+
+        if self._detect_server_version:
+            self._server_version = Version()
+            PsgClient.send(self, {'jsonrpc': '2.0', 'method': 'raw', 'params': {'abs_path_ref': '/ADMIN/info'}, 'id': 'server_version'})
+
+            for reply in PsgClient.receive(self):
+                if result := reply.get('result', {}):
+                    if result.get('reply') == 'unknown':
+                        if version := result.get('Version'):
+                            self._server_version = Version(version)
+
+            if not self._server_version:
+                print("Warning: 'Failed to get server version'", file=sys.stderr)
+
         return self
 
     def _run(self):
@@ -87,6 +158,15 @@ class PsgClient:
         self._thread.join()
         return rv
 
+    def restart(self, env):
+        if self._env != env:
+            self._env = env
+            self._pipe.stdin.close()
+            self._pipe.stdout.close()
+            self._pipe.wait()
+            self._thread.join()
+            self.__enter__();
+
     def send(self, request, id=None):
         print(json.dumps(request), file=self._pipe.stdin)
 
@@ -96,17 +176,9 @@ class PsgClient:
         self._sent[id or request['id']] = request
         return request
 
-    def receive(self, /, deadline=None):
+    def receive(self, /, deadline=Deadline()):
         while True:
-            if deadline is None:
-                timeout = None
-            else:
-                timeout = deadline - time.monotonic()
-
-                if timeout <= 0:
-                    raise queue.Empty
-
-            line = self._queue.get(timeout=timeout).rstrip()
+            line = self._queue.get(timeout=deadline.get_remaining_or_raise()).rstrip()
 
             if self._verbose >= PsgClient.VerboseLevel.RESPONSE:
                 print(line)
@@ -124,6 +196,10 @@ class PsgClient:
             if not result or not result.get('reply'):
                 return
 
+    @property
+    def server_version(self):
+        return self._server_version
+
 class SynthPsgClient(PsgClient):
     def __init__(self, args):
         self._request_generator = RequestGenerator()
@@ -132,7 +208,7 @@ class SynthPsgClient(PsgClient):
     def send(self, method, **params):
         return super().send(*self._request_generator(method, **params))
 
-    def receive(self, /, deadline=None, errors_only=False):
+    def receive(self, /, deadline=Deadline(), errors_only=False):
         for data in super().receive(deadline):
             if result := data.get('result'):
                 status = result.get('status')
@@ -457,14 +533,13 @@ class Response(collections.UserList):
 
             return False
 
-        def _list(actual, expected, modify, deadline=None):
+        def _list(actual, expected, modify, deadline=Deadline()):
             i = 0
             success = True
             matching_any = False
 
             for e in expected:
-                if deadline is not None and deadline <= time.monotonic():
-                    raise queue.Empty
+                deadline.get_remaining_or_raise()
 
                 if e is None:
                     matching_any = True
@@ -535,15 +610,35 @@ class Response(collections.UserList):
         return list(unified_diff(_to_lines(self), _to_lines(other), fromfile='Expected', tofile='Actual', n=3, lineterm='\n' if keepends else ''))
 
 class Processor:
+    class Run:
+        def __init__(self, name, data):
+            self._name = name
+            self._data = data
+            self._deadline = Deadline(self._data.get('timeout'))
+
+        def adjust(self, deadline):
+            self._deadline |= deadline
+
+        @property
+        def name(self):
+            return self._name
+
+        @property
+        def data(self):
+            return self._data
+
+        @property
+        def deadline(self):
+            return self._deadline
+
     class Testcase:
-        def __init__(self, testcase):
+        def __init__(self, run, testcase):
+            self._run = run
             self._testcase = testcase
             self._actual = []
-
-            if timeout := self.data.get('timeout'):
-                self._deadline = timeout + time.monotonic()
-            else:
-                self._deadline = None
+            self._deadline = Deadline(self.data.get('timeout'))
+            self._env = self.data.get('env', {}).copy()
+            self._skipped = False
 
         def __iadd__(self, replies):
             self._actual.extend(replies)
@@ -558,14 +653,54 @@ class Processor:
             actual.apply(expected, deadline=self.deadline)
             return expected, actual
 
+        def adjust(self, run):
+            self._deadline |= run.deadline
+            env = run.data.get('env', {}).copy()
+
+            if user_args := run.data.get('user_args'):
+                user_args_param = 'NCBI_CONFIG__PSG__REQUEST_USER_ARGS'
+
+                # Do not override NCBI_CONFIG__PSG__REQUEST_USER_ARGS, add to it
+                run_env_user_args = env.get(user_args_param)
+                testcase_env_user_args = self._env.get(user_args_param)
+                user_args = '&'.join(filter(None, (run_env_user_args, testcase_env_user_args, user_args)))
+                env[user_args_param] = user_args
+
+            self._env.update(env)
+
+        def skip(self, server_version):
+            if server_version:
+                if requirements := self.data.get('server', []):
+                    condition_ops = { "min-ver": operator.ge, "max-ver": operator.le }
+
+                    for requirement in requirements:
+                        for condition, value in requirement.items():
+                            if op := condition_ops.get(condition):
+                                if not op(server_version, Version(value)):
+                                    break
+                            else:
+                                print(f"Warning: 'Unknown version condition \"{condition}\"'", file=sys.stderr)
+                        else:
+                            return False
+
+                    self._skipped = True
+                    return True
+
+            return False
+
         @property
         def name(self):
             return self._testcase[0]
 
         @property
         def namedesc(self):
-            desc = self.data.get('description')
-            return [self.name] if desc is None or desc == self.name else [self.name, desc]
+            namedesc = ['.'.join(filter(None, (self._run, self.name)))]
+
+            if desc := self.data.get('description'):
+                if desc != self.name:
+                    namedesc.append(desc)
+
+            return namedesc
 
         @property
         def data(self):
@@ -575,29 +710,108 @@ class Processor:
         def deadline(self):
             return self._deadline
 
-        @deadline.setter
-        def deadline(self, value):
-            self._deadline = value if self._deadline is None else min(value, self._deadline)
+        @property
+        def env(self):
+            return self._env
+
+        @property
+        def skipped(self):
+            return self._skipped
 
     def __init__(self):
         self._total = 0
+        self._data = json.loads(''.join(filter(lambda l: l.lstrip()[:1] not in ['#', ''], args.input_file)))
+
+    def _get_cond_filter(self):
+        return lambda tags, cond: not tags or not cond or eval(cond)
+
+    def get_runs(self):
+        def _should_run(name):
+            if args.run:
+                return name in args.run
+            elif args.no_run:
+                return name not in args.no_run
+            else:
+                return name == ''
+
+        def _simple_runs(name):
+            run = runs.get(name)
+
+            if run is not None:
+                if sub_runs := run.get('sub-runs'):
+                    for sub_name in sub_runs:
+                        yield from _simple_runs(sub_name)
+                else:
+                    yield name
+            elif name == '':
+                yield name
+            else:
+                sys.exit(f'Cannot find run "{name}"')
+
+        runs = self.data.get('runs', {})
+
+        for name in filter(_should_run, set(runs.keys()) | set(('',))):
+            for simple_name in set(_simple_runs(name)):
+                yield self.Run(simple_name, runs.get(simple_name, {}))
+
+    def get_testcases(self, run):
+        if exclude := run.get('exclude'):
+            run_filter = '!' + ' and !'.join(exclude)
+        else:
+            run_filter = run.get('filter', '')
+
+        replaces = (
+                (r'\bnot\s',   r'!'),
+                (r'\band\b',   r'&&'),
+                (r'\bor\b',    r'||'),
+                (r'(!?)(\w+)', r'"\2"\1 in tags'),
+                (r'!',         r' not'),
+                (r'&&',        r'and'),
+                (r'\|\|',      r'or')
+            )
+        cond = functools.reduce(lambda c, r: re.sub(*r, c, flags=re.IGNORECASE), replaces, run_filter)
+        cond_filter = self._get_cond_filter()
+
+        def testcases_filter(testcase):
+            name, testcase = testcase
+
+            if args.testcase:
+                return name in args.testcase
+            elif args.no_testcase:
+                return name not in args.no_testcase
+            else:
+                tags = set(testcase.get('tags', []))
+
+                if args.tag:
+                    return tags & args.tag
+                elif args.no_tag:
+                    return not tags & args.no_tag
+                else:
+                    return cond_filter(tags, cond)
+
+        testcases = self.data.get('testcases')
+
+        for testcase in filter(testcases_filter, testcases.items()):
+            yield testcase
 
     @contextmanager
-    def __call__(self, testcase):
-        def skip(name):
-            return name == 'timeout' or (args.testcase and name not in args.testcase) or (args.no_testcase and name in args.no_testcase)
+    def __call__(self, run, testcase):
+        self._total += 1
+        self._testcase = self.Testcase(run, testcase)
 
-        if skip(name=testcase[0]):
-            yield None
-        else:
-            self._total += 1
-            self._testcase = self.Testcase(testcase)
+        try:
+            yield self.testcase_to_run
 
-            try:
-                yield self.testcase_to_run
+            if self._testcase.skipped:
+                self._total -= 1
+            else:
                 self._complete()
-            except queue.Empty:
-                self._timeout()
+        except queue.Empty:
+            self._timeout()
+
+    @property
+    def data(self):
+        return self._data
 
     @property
     def testcase_to_run(self):
@@ -627,6 +841,12 @@ class OutputFileProcessor(Processor):
         self._updated_testcases = {}
         super().__init__()
 
+    def _get_cond_filter(self):
+        if args.run or args.no_run:
+            return super()._get_cond_filter()
+        else:
+            return lambda tags, cond: True
+
     def _complete(self):
         expected, actual = self._testcase()
         self._testcase.data['response'] = actual.data
@@ -636,8 +856,10 @@ class OutputFileProcessor(Processor):
         sys.exit(2)
 
     def _close(self):
+        self._data['testcases'].update(self._updated_testcases)
+
         with open(args.output_file, 'w') as of:
-            json.dump(self._updated_testcases, of, indent=4)
+            json.dump(self.data, of, indent=4)
             of.write('\n')
 
 class ListProcessor(Processor):
@@ -711,7 +933,9 @@ class ReportTextProcessor(ReportProcessor):
             print('Testcase passed' + str(self._testcase))
 
     def _close(self):
-        if self._passed == self._total:
+        if not self._total:
+            print('No testcases run')
+        elif self._passed == self._total:
             print(f'All {self._total} testcases passed')
         else:
             print(f'{self._passed} of {self._total} testcases passed')
@@ -720,25 +944,34 @@ class ReportTextProcessor(ReportProcessor):
 
 def testcases_cmd(args):
     check_binary(args)
+    args.tag = set(args.tag or [])
+    args.no_tag = set(args.no_tag or [])
+    args.run = set(args.run or [])
+    args.no_run = set(args.no_run or [])
 
     with Processor.create(args) as processor, PsgClient(args) as psg_client:
-        testcases = json.loads(''.join(filter(lambda l: l.lstrip()[:1] not in ['#', ''], args.input_file)))
-        overall_deadline = (args.timeout or testcases.get('timeout', 25)) + time.monotonic()
+        overall_deadline = Deadline(processor.data.get('timeout', 25)) if args.timeout is None else Deadline(args.timeout)
 
-        for data in testcases.items():
-            with processor(data) as testcase:
-                if testcase:
-                    if overall_deadline <= time.monotonic():
-                        raise queue.Empty
+        for run in processor.get_runs():
+            run.adjust(overall_deadline)
 
-                    testcase.deadline = overall_deadline
+            for testcase in processor.get_testcases(run.data):
+                with processor(run.name, testcase) as testcase:
+                    if testcase:
+                        testcase.adjust(run)
+                        testcase.deadline.get_remaining_or_raise()
 
-                    for request_batch in testcase.data['requests']:
-                        for i, request in enumerate(request_batch):
-                            psg_client.send(request)
+                        psg_client.restart(testcase.env)
 
-                        for i in range(i + 1):
-                            testcase += psg_client.receive(deadline=testcase.deadline)
+                        if testcase.skip(psg_client.server_version):
+                            continue
+
+                        for request_batch in testcase.data['requests']:
+                            for i, request in enumerate(request_batch):
+                                psg_client.send(request)
+
+                            for i in range(i + 1):
+                                testcase += psg_client.receive(deadline=testcase.deadline)
 
 def generate_cmd(args):
     check_binary(args)
@@ -976,11 +1209,16 @@ if __name__ == '__main__':
     group1_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
     group2_testcases.add_argument('-testcase', help='Run only specified testcase(s) (multiple are allowed)', action='append')
     group2_testcases.add_argument('-no-testcase', help='Run all but specified testcase(s) (multiple are allowed)', action='append')
+    group2_testcases.add_argument('-tag', help='Run only specified tag(s) (multiple are allowed)', action='append')
+    group2_testcases.add_argument('-no-tag', help='Run all but specified tag(s) (multiple are allowed)', action='append')
+    group2_testcases.add_argument('-run', help='Run only specified run(s) (multiple are allowed)', action='append')
+    group2_testcases.add_argument('-no-run', help='Run all but specified run(s) (multiple are allowed)', action='append')
     group1_testcases.add_argument('-report', help='Report testcase results', choices=['text', 'json'], nargs='?', const='text')
     group1_testcases.add_argument('-list', help='List available testcases', action='store_true')
     parser_testcases.add_argument('-data-limit', help='Show a data preview for any data larger the limit (if set)', default='1KB')
     parser_testcases.add_argument('-preview-size', help='How much of data to show as the preview', default='16')
     parser_testcases.add_argument('-timeout', help='Overall timeout (overrides overall timeout from JSON file)', type=int)
+    parser_testcases.add_argument('-server-version', help='Overrides detected server version (if set empty, disables version filtering)')
     parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_testcases.add_argument('-no-one-server-opt', help=argparse.SUPPRESS, dest='one_server', action='store_false')
     parser_testcases.add_argument('-no-testing-opt', help=argparse.SUPPRESS, dest='testing', action='store_false')
