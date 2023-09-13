@@ -590,12 +590,10 @@ def production_tests_check_args(commands, options, args):
         print_error("The 'production_tests' action requires grid_deployment module to be installed.")
         return 1
 
-    # Check the presence of psg_client, psg_client.py, testcases.json and
-    # testcases-heavy.json
+    # Check the presence of psg_client, psg_client.py and testcases.json
     psg_client_path = parser.get_psg_client_path()
     psg_client_py_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'psg_client.py'
     testcases_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases.json'
-    testcases_heavy_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases-heavy.json'
 
     if not os.path.exists(psg_client_path):
         print_error(f"The 'production_tests' action requires psg_client. Could not find it here: {psg_client_path}")
@@ -605,9 +603,6 @@ def production_tests_check_args(commands, options, args):
         return 1
     if not os.path.exists(testcases_json_path):
         print_error(f"The 'production_tests' action requires testcases.json. Could not find it here: {testcases_json_path}")
-        return 1
-    if not os.path.exists(testcases_heavy_json_path):
-        print_error(f"The 'production_tests' action requires testcases-heavy.json. Could not find it here: {testcases_heavy_json_path}")
         return 1
 
     return 0
@@ -1379,42 +1374,27 @@ def production_tests(commands, options, args):
 
     print_verbose('Dev instance to use: ' + devInstance)
 
-    # Get the psg_client, psg_client.py, testcases.json, testcases-heavy.json
+    # Get the psg_client, psg_client.py, testcases.json
     import ncbi.grid.deployment_info.parser as parser
     psg_client_path = parser.get_psg_client_path()
     psg_client_py_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'psg_client.py'
     testcases_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases.json'
-    testcases_heavy_json_path = os.path.dirname(parser.get_psg_client_path()) + os.path.sep + 'testcases-heavy.json'
 
     # Form a command line for testcases.json
     cmdLine = f'{psg_client_py_path} testcases -binary {psg_client_path} ' \
               f'-service {devInstance} -input-file {testcases_json_path} ' \
-               '-data-limit 1KB -preview-size 16 -report'
+               '-run on-ci -data-limit 1KB -preview-size 16 -report'
 
     # Run
     print_verbose(f'Running production tests: {cmdLine}')
-    ret1 = os.system(cmdLine)
-    print_verbose(f'Production tests return code: {ret1}')
-    if ret1 != 0:
-        print_error(f'Error running production tests. Return code: {ret1}')
+    ret = os.system(cmdLine)
+    print_verbose(f'Production tests return code: {ret}')
+    if ret != 0:
+        print_error(f'Error running production tests. Return code: {ret}')
     else:
         print_verbose('Production tests succeeded')
 
-    # Form a command line for testcases-heavy.json
-    cmdLine = f'{psg_client_py_path} testcases -binary {psg_client_path} ' \
-              f'-service {devInstance} -input-file {testcases_heavy_json_path} ' \
-               '-data-limit 1KB -preview-size 16 -report'
-
-    # Run
-    print_verbose(f'Running heavy production tests: {cmdLine}')
-    ret2 = os.system(cmdLine)
-    print_verbose(f'Heavy production tests return code: {ret2}')
-    if ret2 != 0:
-        print_error(f'Error running heavy production tests. Return code: {ret2}')
-    else:
-        print_verbose('Heavy production tests succeeded')
-
-    return ret1 + ret2
+    return ret
 
 
 
