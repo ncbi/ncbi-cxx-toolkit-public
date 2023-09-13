@@ -318,7 +318,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
     if (auto request = blob_data->GetReply()->GetRequest(); s_IsRawRequest(request)) {
         if (auto blob_id = blob_data->GetId<CPSG_BlobId>(); s_IsRawResponse(blob_id)) {
             if (CJson_Document json_doc; json_doc.Read(blob_data->GetStream())) {
-                m_JsonObj.insert("reply",  blob_id->GetId());
+                Set("reply", blob_id->GetId());
 
                 for (const auto& p : json_doc.GetObject()) {
                     m_JsonObj.insert(p.name,  p.value);
@@ -2120,6 +2120,9 @@ CJson_Document CProcessing::RequestSchema()
                         },
                         "context": {
                             "$ref": "#/definitions/context"
+                        },
+                        "user_args": {
+                            "type": "string"
                         }
                     },
                     "required": [
