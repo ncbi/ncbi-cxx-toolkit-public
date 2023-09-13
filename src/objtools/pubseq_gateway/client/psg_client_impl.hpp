@@ -100,6 +100,7 @@ struct SPSG_UserArgsBuilder
     SPSG_UserArgsBuilder() { x_UpdateCache(); }
     void SetQueueArgs(SPSG_UserArgs queue_args) { m_QueueArgs = move(queue_args); x_UpdateCache(); }
     void Build(ostream& os, const SPSG_UserArgs& request_args);
+    void BuildRaw(ostringstream& os, const SPSG_UserArgs& request_args);
 
 private:
     void x_UpdateCache();
