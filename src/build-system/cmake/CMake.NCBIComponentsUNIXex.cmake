@@ -663,6 +663,21 @@ NCBIcomponent_report(SGE)
 #############################################################################
 # MONGOCXX
 NCBI_define_Xcomponent(NAME MONGOC LIB mongoc-1.0 bson-1.0)
+if(NCBI_COMPONENT_MONGOC_FOUND)
+  list(GET NCBI_COMPONENT_MONGOC_LIBS 0 NCBI_COMPONENT_MONGOC_LIBS_0)
+  get_filename_component(NCBI_COMPONENT_MONGOC_LIBDIR
+    ${NCBI_COMPONENT_MONGOC_LIBS_0} DIRECTORY)
+  # Avoid find_*, as they return the usual versions, which may differ
+  set(NCBI_COMPONENT_MONGOC_LIBSSL "${NCBI_COMPONENT_MONGOC_LIBDIR}/libssl.so")
+  set(NCBI_COMPONENT_MONGOC_LIBCRYPTO
+    "${NCBI_COMPONENT_MONGOC_LIBDIR}/libcrypto.so")
+  if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBSSL})
+    list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBSSL})
+  endif()
+  if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
+    list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
+  endif()
+endif()
 NCBI_define_Xcomponent(NAME MONGOCXX MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
 NCBIcomponent_report(MONGOCXX)
 NCBIcomponent_add(MONGOCXX MONGOC)
