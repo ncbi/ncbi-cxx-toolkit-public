@@ -92,7 +92,10 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
     IBalanceable* balanceable = nullptr;
     auto svr_ref = x_GetServer(params, &balanceable);
     if (conn != nullptr) {
-        *conn = static_cast<CDB_Connection*>(balanceable);
+        *conn = dynamic_cast<CDB_Connection*>(balanceable);
+    }
+    if (conn == nullptr  ||  *conn == nullptr) {
+        delete balanceable;
     }
     return svr_ref;
 }
