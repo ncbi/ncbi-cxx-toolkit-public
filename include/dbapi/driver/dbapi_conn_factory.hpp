@@ -363,6 +363,36 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+class CDB_DBLB_Delegate : public CDBConnParamsDelegate
+{
+public:
+    CDB_DBLB_Delegate(
+            const string& srv_name,
+            Uint4 host,
+            Uint2 port,
+            const CDBConnParams& other);
+    virtual ~CDB_DBLB_Delegate(void);
+
+public:
+    virtual string GetServerName(void) const;
+    virtual Uint4 GetHost(void) const;
+    virtual Uint2  GetPort(void) const;
+    virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const;
+    impl::CDBHandlerStack& SetOpeningMsgHandlers(void);
+
+private:
+    // Non-copyable.
+    CDB_DBLB_Delegate(const CDB_DBLB_Delegate& other);
+    CDB_DBLB_Delegate& operator =(const CDB_DBLB_Delegate& other);
+
+private:
+    const string m_ServerName;
+    const Uint4  m_Host;
+    const Uint2  m_Port;
+    impl::CDBHandlerStack m_OpeningMsgHandlers;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 inline
