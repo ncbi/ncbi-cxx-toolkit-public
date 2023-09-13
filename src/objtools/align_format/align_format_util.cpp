@@ -2446,10 +2446,17 @@ int CAlignFormatUtil::GetSeqLinkoutInfo(CBioseq::TId& cur_id,
             else if(GetTextSeqID(cur_id)){
                 CRef<CSeq_id> seqID = FindBestChoice(cur_id, CSeq_id::WorstRank);
                 linkout = (*linkoutdb)->GetLinkout(*seqID, mv_build_name);
+                string str_id = seqID->GetSeqIdString(false);
+                CRef<CSeq_id> seqIDNew(new CSeq_id(str_id));
+                int linkoutWithoutVersion = (*linkoutdb)->GetLinkout(*seqIDNew, mv_build_name);
+                if(linkoutWithoutVersion && (linkoutWithoutVersion | eStructure)) {
+                    linkout = linkout | linkoutWithoutVersion;
+                }
             }
         }
         catch (const CException & e) {
             ERR_POST("Problem with linkoutdb: " + e.GetMsg());
+            cerr << "[BLAST FORMATTER EXCEPTION] Problem with linkoutdb: " << e.GetMsg() << endl;
             *linkoutdb = NULL;
         }
     }
@@ -4032,10 +4039,12 @@ string  CAlignFormatUtil::GetGeneInfo(TGi giForGeneLookup)
     catch (CException& e)
     {
         geneSym = "(Gene info extraction error: "  + e.GetMsg() +  ")";
+        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error: " << e.GetMsg() << endl;
     }
     catch (...)
     {
         geneSym = "(Gene info extraction error)";
+        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error " << endl;
     }
     return geneSym;
 }

@@ -2163,6 +2163,7 @@ int CDisplaySeqalign::x_GetLinkout(const objects::CSeq_id &  id)
         }
         catch (const CException & e) {
             ERR_POST("Problem with linkoutdb: " + e.GetMsg());
+            cerr << "[BLAST FORMATTER EXCEPTION] Problem with linkoutdb: " << e.GetMsg() << endl;
             m_AlignOption &= ~eLinkout; //Remove linkout bit for the rest of sequences
             linkout = 0;
         }
@@ -3375,10 +3376,12 @@ string CDisplaySeqalign::x_DisplayGeneInfo(const CBioseq_Handle& bsp_handle,SAln
     {
         out << "(Gene info extraction error: "
         << e.GetMsg() << ")" << "\n";
+        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error: " << e.GetMsg() << endl;
     }
     catch (...)
     {
         out << "(Gene info extraction error)" << "\n";
+        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error " << endl;
     }
     string formattedString = CNcbiOstrstreamToString(out);
     return formattedString;
