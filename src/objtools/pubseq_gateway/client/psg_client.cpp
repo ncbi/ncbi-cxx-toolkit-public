@@ -667,6 +667,27 @@ void SPSG_UserArgsBuilder::Build(ostream& os, const SPSG_UserArgs& request_args)
     os << m_CachedArgs;
 }
 
+void SPSG_UserArgsBuilder::BuildRaw(ostringstream& os, const SPSG_UserArgs& request_args)
+{
+    ostringstream user_args_os;
+    Build(user_args_os, request_args);
+
+    if (auto user_args = user_args_os.str(); !user_args.empty()) {
+        auto abs_path_ref = os.str();
+
+        if (auto found = abs_path_ref.find('?'); found == string::npos) {
+            os << '?' << user_args.substr(1);
+
+        } else if (found == abs_path_ref.size() - 1) {
+            os << user_args.substr(1);
+
+        } else {
+            os << user_args;
+        }
+    }
+}
+
+
 void SPSG_UserArgsBuilder::x_UpdateCache()
 {
     auto combined_args = s_GetIniArgs();
@@ -731,6 +752,8 @@ string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_re
     if (!raw) {
         os << other_args;
         m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
+    } else {
+        m_UserArgsBuilder.GetLock()->BuildRaw(os, user_request->m_UserArgs);
     }
 
     return os.str();
