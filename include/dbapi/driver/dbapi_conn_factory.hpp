@@ -116,7 +116,7 @@ protected:
         void SetDispatchedServer(const TSvrRef& server);
         TSvrRef GetDispatchedServer(void) const
             { return m_Dispatched; }
-        TSvrRef GetMappedServer(void)
+        TSvrRef GetMappedServer(void) override
             { return m_Mapper->GetServer(m_ServiceName); }
 
         unsigned int GetNumOfDispatches(void) const
