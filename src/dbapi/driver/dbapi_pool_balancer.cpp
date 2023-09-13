@@ -65,13 +65,14 @@ public:
 
 CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
                                  const string& pool_name,
-                                 I_DriverContext* driver_ctx)
+                                 I_DriverContext* driver_ctx,
+                                 bool is_pooled)
     : CPoolBalancer(service_info.GetServiceName(), service_info.GetOptions(),
                     driver_ctx != nullptr
                     &&  !NStr::StartsWith(driver_ctx->GetDriverName(),
                                           "ftds")),
       m_ServiceInfo(&service_info), m_PoolName(pool_name),
-      m_DriverCtx(driver_ctx)
+      m_DriverCtx(driver_ctx), m_IsPooled(is_pooled)
 {
     x_ReinitFromCounts();
 }
@@ -87,6 +88,7 @@ void CDBPoolBalancer::x_ReinitFromCounts(void)
             ERR_POST_X(1, Warning <<
                        "Called with non-standard IDriverContext");
         }
+    } else if ( !m_IsPooled ) {
     } else if (m_PoolName.empty()) {
         ctx_impl->GetCountsForService(m_ServiceInfo->GetServiceName(),
                                       &counts);
@@ -103,6 +105,20 @@ IBalanceable* CDBPoolBalancer::x_TryPool(const void* params_in)
     _ASSERT(params != nullptr);
     if (m_DriverCtx == nullptr) {
         return nullptr;
+    } else if ( !m_IsPooled ) {
+        auto server = m_ServiceInfo->GetMappedServer();
+        IBalanceable * conn = nullptr;
+        CDB_DBLB_Delegate resolved_params(server->GetName(), server->GetHost(),
+                                          server->GetPort(), *params);
+        {{
+            IDBServiceInfo::TAntiGuard anti_guard(*m_ServiceInfo);
+            conn = IDBConnectionFactory::CtxMakeConnection(*m_DriverCtx,
+                                                           resolved_params);
+        }}
+        if (conn == nullptr) {
+            LocallyPenalize(server);
+        }
+        return conn;
     } else {
         CDBConnParams_DNC dnc_params(*params);
         IBalanceable * conn = nullptr;

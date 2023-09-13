@@ -53,6 +53,7 @@ public:
     
     virtual const string& GetServiceName(void) const = 0;
     virtual const TOptions& GetOptions(void) = 0;
+    virtual TSvrRef GetMappedServer(void) = 0;
     virtual void Lock(void) = 0;
     virtual void Unlock(void) = 0;
 };
@@ -63,7 +64,8 @@ class CDBPoolBalancer : public CPoolBalancer
 public:
     CDBPoolBalancer(IDBServiceInfo& service_info,
                     const string& pool_name,
-                    I_DriverContext* driver_ctx = nullptr);
+                    I_DriverContext* driver_ctx = nullptr,
+                    bool is_pooled = true);
 
     TSvrRef GetServer(CDB_Connection** conn, const CDBConnParams* params);
 
@@ -79,6 +81,7 @@ private:
     CRef<IDBServiceInfo> m_ServiceInfo;
     string               m_PoolName;
     I_DriverContext*     m_DriverCtx;
+    bool                 m_IsPooled;
 };
 
 
