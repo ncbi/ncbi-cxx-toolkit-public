@@ -387,11 +387,11 @@ CDBConnectionFactory::DispatchServerName(
     CRef<CDBPoolBalancer> balancer;
     CServiceInfo& service_info = ctx.service_info;
 
-    if ( !do_not_dispatch  &&  params.GetParam("is_pooled") == "true"
-        &&  !service_name.empty()  ) {
+    if ( !do_not_dispatch  &&  !service_name.empty() ) {
         balancer.Reset(new CDBPoolBalancer
                        (service_info, params.GetParam("pool_name"),
-                        &ctx.driver_ctx));
+                        &ctx.driver_ctx,
+                        params.GetParam("is_pooled") == "true"));
     }
     for ( ; !t_con && alternatives > 0; --alternatives ) {
         TSvrRef dsp_srv;
@@ -407,7 +407,12 @@ CDBConnectionFactory::DispatchServerName(
         else if (!service_name.empty()) {
             if (balancer.NotEmpty()) {
                 ctx.excluded = ctx.service_info.GetExcluded();
-                dsp_srv = balancer->GetServer(&t_con, &params);
+                try {
+                    dsp_srv = balancer->GetServer(&t_con, &params);
+                } catch (CDB_Exception& ex) {
+                    ctx.errors.push_back(ex.Clone());
+                    continue;
+                }
             }
             if (dsp_srv.Empty()) {
                 dsp_srv = service_info.GetDispatchedServer();
