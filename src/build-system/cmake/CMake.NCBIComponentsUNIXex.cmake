@@ -662,7 +662,7 @@ NCBIcomponent_report(SGE)
 
 #############################################################################
 # MONGOCXX
-NCBI_define_Xcomponent(NAME MONGOC LIB mongoc bson)
+NCBI_define_Xcomponent(NAME MONGOC LIB mongoc-1.0 bson-1.0)
 NCBI_define_Xcomponent(NAME MONGOCXX MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
 NCBIcomponent_report(MONGOCXX)
 NCBIcomponent_add(MONGOCXX MONGOC)
