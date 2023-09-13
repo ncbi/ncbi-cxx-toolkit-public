@@ -61,6 +61,25 @@ public:
             }
         }
 };
+
+
+class CDB_FakeConnection : public IBalanceable
+{
+public:
+    CDB_FakeConnection(TSvrRef server)
+        : m_Server(server)
+        { _ASSERT(server.NotEmpty()); }
+
+    const string& ServerName(void) const override
+        { return m_Server->GetName(); }
+    Uint4 Host(void) const override
+        { return m_Server->GetHost(); }
+    Uint2 Port(void) const override
+        { return m_Server->GetPort(); }
+
+private:
+    TSvrRef m_Server;
+};
     
 
 CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
@@ -107,18 +126,11 @@ IBalanceable* CDBPoolBalancer::x_TryPool(const void* params_in)
         return nullptr;
     } else if ( !m_IsPooled ) {
         auto server = m_ServiceInfo->GetMappedServer();
-        IBalanceable * conn = nullptr;
-        CDB_DBLB_Delegate resolved_params(server->GetName(), server->GetHost(),
-                                          server->GetPort(), *params);
-        {{
-            IDBServiceInfo::TAntiGuard anti_guard(*m_ServiceInfo);
-            conn = IDBConnectionFactory::CtxMakeConnection(*m_DriverCtx,
-                                                           resolved_params);
-        }}
-        if (conn == nullptr) {
-            LocallyPenalize(server);
+        if (server.Empty()) {
+            return nullptr;
+        } else {
+            return new CDB_FakeConnection(server);
         }
-        return conn;
     } else {
         CDBConnParams_DNC dnc_params(*params);
         IBalanceable * conn = nullptr;
@@ -163,8 +175,11 @@ void CDBPoolBalancer::x_Discard(const void* params_in, IBalanceable* conn_in)
 {
     auto params = static_cast<const CDBConnParams*>(params_in);
     _ASSERT(params != nullptr);
-    auto conn = static_cast<const CDB_Connection*>(conn_in);
-    _ASSERT(conn != nullptr);
+    auto conn = dynamic_cast<const CDB_Connection*>(conn_in);
+    if (conn == nullptr) {
+        _ASSERT(dynamic_cast<const CDB_FakeConnection*>(conn_in) != nullptr);
+        return;
+    }
     _TRACE("Proceeding to request turnover");
     string  server_name   = conn->ServerName();
     bool    was_reusable  = conn->IsReusable();
