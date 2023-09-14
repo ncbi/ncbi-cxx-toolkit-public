@@ -38,7 +38,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <sra/data_loaders/snp/snploader.hpp>
 #include <sra/readers/sra/snpread.hpp>
-#include <util/limited_size_map.hpp>
+#include <sra/readers/sra/vdbcache.hpp>
 #include <objects/dbsnp/primary_track/snpptis.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -294,6 +294,7 @@ public:
     explicit CSNPDataLoader_Impl(const CSNPDataLoader::SLoaderParams& params);
     ~CSNPDataLoader_Impl(void);
 
+    typedef CVDBCacheWithExpiration::CSlot SSNPFileInfoSlot;
     void AddFixedFile(const string& file_name);
     void AddFixedFileOnce(const string& file_name);
     
@@ -347,19 +348,21 @@ protected:
     };
 
 private:
-    typedef map<string, CRef<CSNPFileInfo> > TFixedFiles;
-    typedef limited_size_map<string, CRef<CSNPFileInfo> > TFoundFiles;
-    typedef limited_size_map<string, unsigned> TMissingFiles;
+    CRef<CSNPFileInfo> x_GetFileInfo(const string& file);
+    
+    typedef map<string, string> TFixedFiles; // SNP NA accession -> acc_or_path
+    typedef CVDBCacheWithExpiration TFoundFiles;
 
     // mutex guarding input into the map
     mutable CMutex m_Mutex;
     CVDBMgr m_Mgr;
+    unsigned m_FileReopenTime;
+    unsigned m_FileRecheckTime;
+    unsigned m_RetryCount;
     string  m_DirPath;
     string  m_AnnotName;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
-    TMissingFiles m_MissingFiles;
-    unsigned m_RetryCount;
     bool m_AddPTIS;
     CRef<CSnpPtisClient> m_PTISClient;
 };
