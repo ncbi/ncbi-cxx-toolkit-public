@@ -85,6 +85,10 @@ static CGBRequestStatistics sx_Statistics[CGBRequestStatistics::eStats_Count] =
     CGBRequestStatistics("parsed", "SNP data"),
     CGBRequestStatistics("parsed", "split data"),
     CGBRequestStatistics("parsed", "chunk data"),
+    CGBRequestStatistics("attached", "blob data"),
+    CGBRequestStatistics("attached", "SNP data"),
+    CGBRequestStatistics("attached", "split data"),
+    CGBRequestStatistics("attached", "chunk data"),
     CGBRequestStatistics("loaded", "sequence hash"),
     CGBRequestStatistics("loaded", "sequence length"),
     CGBRequestStatistics("loaded", "sequence type")

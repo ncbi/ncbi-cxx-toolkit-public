@@ -681,16 +681,17 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
         guard.StartDelayBuffer(obj_stream);
     }
     SetSeqEntryReadHooks(obj_stream);
-
+    size_t data_size = 0;
     {{
         CReaderRequestResultRecursion r(result);
                 
         obj_stream >> reply;
             
+        data_size = size_t(obj_stream.GetStreamPos());
         LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadBlob,
                 "CProcessor_ID1: read data",
-                obj_stream.GetStreamPos());
+                data_size);
     }}
 
     TBlobVersion version = GetVersion(reply);
@@ -703,8 +704,13 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
         if ( entry.first ) {
+            CReaderRequestResultRecursion r(result);
             OffsetAllGisToOM(*entry.first);
             setter.SetSeq_entry(*entry.first);
+            LogStat(r, blob_id,
+                    CGBRequestStatistics::eStat_AttachBlob,
+                    "CProcessor_ID1: attached entry",
+                    data_size);
         }
         setter.SetLoaded();
     }
@@ -900,17 +906,18 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     }
     CRef<CTSE_SetObjectInfo> set_info(new CTSE_SetObjectInfo);
     CID1server_back reply;
+    size_t data_size = 0;
     {{
         CReaderRequestResultRecursion r(result);
             
         CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
                                           Begin(reply),
                                           *set_info);
-            
+        data_size = size_t(obj_stream.GetStreamPos());
         LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadSNPBlob,
                 "CProcessor_ID1: read SNP data",
-                obj_stream.GetStreamPos());
+                data_size);
     }}
 
     TBlobVersion version = GetVersion(reply);
@@ -944,8 +951,13 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
         if ( entry.first ) {
+            CReaderRequestResultRecursion r(result);
             OffsetAllGisToOM(*entry.first, set_info);
             setter.SetSeq_entry(*entry.first, set_info);
+            LogStat(r, blob_id,
+                    CGBRequestStatistics::eStat_AttachBlob,
+                    "CProcessor_ID1: attached entry",
+                    data_size);
         }
         setter.SetLoaded();
     }
@@ -1001,21 +1013,31 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         }
 
         SetSeqEntryReadHooks(obj_stream);
-
+        size_t data_size = 0;
         {{
             CReaderRequestResultRecursion r(result);
             
             obj_stream >> *seq_entry;
 
+            data_size = size_t(obj_stream.GetStreamPos());
             LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_LoadBlob,
                     "CProcessor_SE: read seq-entry",
-                    obj_stream.GetStreamPos());
+                    data_size);
         }}
 
+        {{
+            CReaderRequestResultRecursion r(result);
+            
+            OffsetAllGisToOM(*seq_entry);
+            setter.SetSeq_entry(*seq_entry);
+            
+            LogStat(r, blob_id,
+                    CGBRequestStatistics::eStat_AttachBlob,
+                    "CProcessor_SE: attached entry",
+                    data_size);
+        }}
         
-        OffsetAllGisToOM(*seq_entry);
-        setter.SetSeq_entry(*seq_entry);
         if ( chunk_id == kMain_ChunkId &&
              s_CanBeWGSBlob(blob_id) &&
              result.GetAddWGSMasterDescr() ) {
@@ -1098,6 +1120,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
     }
     CRef<CTSE_SetObjectInfo> set_info(new CTSE_SetObjectInfo);
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
+    size_t data_size = 0;
     {{
         CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, setter, "SE_SNP");
 
@@ -1107,11 +1130,12 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
             CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
                                               Begin(*seq_entry),
                                               *set_info);
+            data_size = size_t(obj_stream.GetStreamPos());
             
             LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_ParseSNPBlob,
                     "CProcessor_SE_SNP: parse SNP data",
-                    obj_stream.GetStreamPos());
+                    data_size);
         }}
 
         if ( writer ) {
@@ -1141,8 +1165,18 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
             }
         }
     }}
-    OffsetAllGisToOM(*seq_entry, set_info);
-    setter.SetSeq_entry(*seq_entry, set_info);
+    {{
+        CReaderRequestResultRecursion r(result);
+            
+        OffsetAllGisToOM(*seq_entry, set_info);
+        setter.SetSeq_entry(*seq_entry, set_info);
+        
+        LogStat(r, blob_id,
+                CGBRequestStatistics::eStat_AttachSNPBlob,
+                "CProcessor_SE_SNP: attached SNP entry to OM",
+                data_size);
+    }}
+    
     setter.SetLoaded();
 }
 
@@ -1401,26 +1435,36 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
 
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     CRef<CTSE_SetObjectInfo> set_info(new CTSE_SetObjectInfo);
-
+    Int8 data_size = 0;
+    
     {{
         CReaderRequestResultRecursion r(result);
-        Int8 size = NcbiStreamposToInt8(stream.tellg());
+        data_size = NcbiStreamposToInt8(stream.tellg());
         
         CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), *set_info);
 
-        size = NcbiStreamposToInt8(stream.tellg()) - size;
+        data_size = NcbiStreamposToInt8(stream.tellg()) - data_size;
         LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadSNPBlob,
                 "CProcessor_St_SE_SNPT: read SNP table",
-                double(size));
+                double(data_size));
     }}
     
     CWriter* writer = GetWriter(result);
     if ( writer ) {
         SaveSNPBlob(result, blob_id, chunk_id, writer, *seq_entry, blob_state, *set_info);
     }
-    OffsetAllGisToOM(*seq_entry, set_info);
-    setter.SetSeq_entry(*seq_entry, set_info);
+    {{
+        CReaderRequestResultRecursion r(result);
+        
+        OffsetAllGisToOM(*seq_entry, set_info);
+        setter.SetSeq_entry(*seq_entry, set_info);
+        
+        LogStat(r, blob_id,
+                CGBRequestStatistics::eStat_AttachSNPBlob,
+                "CProcessor_St_SE_SNPT: attached SNP table",
+                double(data_size));
+    }}
     setter.SetLoaded();
 }
 
@@ -1556,12 +1600,22 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         result.SetAndSaveBlobState(blob_id, blob_state);
         CLoadLockSetter setter(blob);
         if ( !setter.IsLoaded() ) {
-            OffsetAllGisToOM(*entry);
-            setter.SetSeq_entry(*entry);
-            if ( s_CanBeWGSBlob(blob_id) &&
-                 result.GetAddWGSMasterDescr() ) {
-                CWGSMasterSupport::AddWGSMaster(setter.GetTSE_LoadLock());
-            }
+            {{
+                CReaderRequestResultRecursion r(result);
+                
+                OffsetAllGisToOM(*entry);
+                setter.SetSeq_entry(*entry);
+                
+                if ( s_CanBeWGSBlob(blob_id) &&
+                     result.GetAddWGSMasterDescr() ) {
+                    CWGSMasterSupport::AddWGSMaster(setter.GetTSE_LoadLock());
+                }
+                
+                LogStat(r, blob_id,
+                        CGBRequestStatistics::eStat_AttachBlob,
+                        "CProcessor_ID2: attached Seq-entry",
+                        data_size);
+            }}
             setter.SetLoaded();
         }
         
@@ -1629,14 +1683,24 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         result.SetAndSaveBlobState(blob_id, blob_state);
         CLoadLockSetter setter(blob);
         if ( !setter.IsLoaded() ) {
-            CTSE_LoadLock& lock = setter.GetTSE_LoadLock();
-            lock->GetSplitInfo().SetSplitVersion(split_version);
-            OffsetAllGisToOM(*split_info);
-            CSplitParser::Attach(*lock, *split_info);
-            if ( s_CanBeWGSBlob(blob_id) &&
-                 result.GetAddWGSMasterDescr() ) {
-                CWGSMasterSupport::AddWGSMaster(setter.GetTSE_LoadLock());
-            }
+            {{
+                CReaderRequestResultRecursion r(result);
+                
+                CTSE_LoadLock& lock = setter.GetTSE_LoadLock();
+                lock->GetSplitInfo().SetSplitVersion(split_version);
+                OffsetAllGisToOM(*split_info);
+                CSplitParser::Attach(*lock, *split_info);
+                if ( s_CanBeWGSBlob(blob_id) &&
+                     result.GetAddWGSMasterDescr() ) {
+                    CWGSMasterSupport::AddWGSMaster(setter.GetTSE_LoadLock());
+                }
+
+                LogStat(r, blob_id,
+                        CGBRequestStatistics::eStat_AttachSplit,
+                        "CProcessor_ID2: attached entry",
+                        data_size);
+            }}
+            
             setter.SetLoaded();
         }
 
@@ -1680,12 +1744,21 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             CReaderRequestResultRecursion r(result);
             
             x_ReadData(data, Begin(*chunk), data_size);
+            LogStat(r, blob_id, chunk_id,
+                    CGBRequestStatistics::eStat_ParseChunk,
+                    "CProcessor_ID2: parsed split chunk",
+                    data_size);
+        }}
+
+        {{
+            CReaderRequestResultRecursion r(result);
+            
             OffsetAllGisToOM(*chunk);
             CSplitParser::Load(setter.GetTSE_Chunk_Info(), *chunk);
             
             LogStat(r, blob_id, chunk_id,
-                    CGBRequestStatistics::eStat_ParseChunk,
-                    "CProcessor_ID2: parsed split chunk",
+                    CGBRequestStatistics::eStat_AttachChunk,
+                    "CProcessor_ID2: attached chunk",
                     data_size);
         }}
         setter.SetLoaded();
