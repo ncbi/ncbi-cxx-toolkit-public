@@ -39,7 +39,7 @@
 #include <corelib/ncbitime.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <sra/readers/sra/wgsread.hpp>
-#include <util/limited_size_map.hpp>
+#include <sra/readers/sra/vdbcache.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -59,14 +59,13 @@ class CWGSResolver;
 class CWGSFileInfo : public CObject
 {
 public:
-    CWGSFileInfo();
     CWGSFileInfo(const CWGSDataLoader_Impl& impl,
-                 CTempString prefix);
+                 const string& prefix);
 
     void Open(const CWGSDataLoader_Impl& impl,
-              CTempString prefix);
+              const string& prefix);
     
-    CTempString GetWGSPrefix(void) const
+    const string& GetWGSPrefix(void) const
         {
             return m_WGSPrefix;
         }
@@ -110,9 +109,6 @@ public:
     bool FindGi(SAccFileInfo& info, TGi gi);
     bool FindProtAcc(SAccFileInfo& info, const CTextseq_id& text_id);
 
-    bool IsExpired(const CWGSDataLoader_Impl& impl,
-                   CTempString prefix) const;
-    
     const CWGSDb& GetDb(void) const
         {
             return m_WGSDb;
@@ -135,15 +131,11 @@ protected:
     friend class CWGSDataLoader_Impl;
 
     void x_Initialize(const CWGSDataLoader_Impl& impl,
-                      CTempString prefix);
+                      const string& prefix);
     void x_InitMasterDescr(void);
 
     string m_WGSPrefix;
     CWGSDb m_WGSDb;
-    CDeadline m_FileReopenDeadline;
-    mutable CDeadline m_FileRecheckDeadline;
-    string m_DereferencedPath;
-    CTime  m_Timestamp;
 };
 
 
@@ -169,8 +161,11 @@ public:
                   const char* name,
                   unsigned retry_count = 0);
     
-    CRef<CWGSFileInfo> OpenWGSFile(CTempString prefix);
-    CRef<CWGSFileInfo> OpenWGSFileOnce(CTempString prefix);
+    typedef CVDBCacheWithExpiration::CSlot SWGSFileInfoSlot;
+    CRef<CWGSFileInfo> OpenWGSFile(SWGSFileInfoSlot& slot,
+                                   const string& prefix);
+    CRef<CWGSFileInfo> OpenWGSFileOnce(SWGSFileInfoSlot& slot,
+                                       const string& prefix);
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
@@ -227,19 +222,13 @@ private:
     //   true if dynamically loaded SRA
     // second: SRA accession or wgs file path
 
-    struct SWGSFileInfoSlot : public CObject
-    {
-        CFastMutex m_FileInfoMutex;
-        CRef<CWGSFileInfo> m_FileInfo;
-    };
     // WGS files by accession
     typedef map<string, CRef<SWGSFileInfoSlot>> TFixedFiles;
-    typedef limited_size_map<string, CRef<SWGSFileInfoSlot>> TFoundFiles;
+    typedef CVDBCacheWithExpiration TFoundFiles;
 
     CRef<CWGSFileInfo> x_GetFileInfo(SWGSFileInfoSlot& info_slot, const string& prefix);
 
     // mutex guarding input into the map
-    CFastMutex  m_FoundFilesMutex;
     CFastMutex  m_ResolverMutex;
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
@@ -265,7 +254,7 @@ private:
 class CWGSBlobId : public CBlobId
 {
 public:
-    explicit CWGSBlobId(CTempString str);
+    explicit CWGSBlobId(const string& str);
     explicit CWGSBlobId(const CWGSFileInfo::SAccFileInfo& info);
     ~CWGSBlobId(void);
 
