@@ -1002,10 +1002,11 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
           |  CFastaReader::fForceType;
 
     unique_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
-    pReader->SetIgnoredMods({"gene","allele"});
+    pReader->SetPostponedMods({"gene","allele"});
 
     CRef<CSeq_entry> result;
     CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_context.m_logger);
+    m_PrtModMap = pReader->GetPostponedModMap();
 
     if (pep.NotEmpty())
     {
@@ -1063,7 +1064,7 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
             } else {
                 ++it;
             }
-        }  
+        }
     }
 }
 
@@ -1199,10 +1200,10 @@ void SetMolinfoForProtein (CSeq_descr& protein_descr, bool partial5, bool partia
     SetMolinfoCompleteness(pdesc.Set().SetMolinfo(), partial5, partial3);
 }
 
-CRef<CSeq_feat> AddEmptyProteinFeatureToProtein (CRef<CSeq_entry> protein, bool partial5, bool partial3)
+CRef<CSeq_feat> AddEmptyProteinFeatureToProtein (CBioseq& protein, bool partial5, bool partial3)
 {
     CRef<CSeq_annot> ftable;
-    NON_CONST_ITERATE(CSeq_entry::TAnnot, annot_it, protein->SetSeq().SetAnnot()) {
+    NON_CONST_ITERATE(CSeq_entry::TAnnot, annot_it, protein.SetAnnot()) {
         if ((*annot_it)->IsFtable()) {
             ftable = *annot_it;
             break;
@@ -1210,7 +1211,7 @@ CRef<CSeq_feat> AddEmptyProteinFeatureToProtein (CRef<CSeq_entry> protein, bool 
     }
     if (!ftable) {
         ftable = new CSeq_annot();
-        protein->SetSeq().SetAnnot().push_back(ftable);
+        protein.SetAnnot().push_back(ftable);
     }
 
     CRef<CSeq_feat> prot_feat;
@@ -1226,10 +1227,10 @@ CRef<CSeq_feat> AddEmptyProteinFeatureToProtein (CRef<CSeq_entry> protein, bool 
         ftable->SetData().SetFtable().push_back(prot_feat);
     }
     CRef<CSeq_id> prot_id(new CSeq_id());
-    prot_id->Assign(*(protein->GetSeq().GetId().front()));
+    prot_id->Assign(*(protein.GetId().front()));
     prot_feat->SetLocation().SetInt().SetId(*prot_id);
     prot_feat->SetLocation().SetInt().SetFrom(0);
-    prot_feat->SetLocation().SetInt().SetTo(protein->GetSeq().GetLength() - 1);
+    prot_feat->SetLocation().SetInt().SetTo(protein.GetLength() - 1);
     prot_feat->SetLocation().SetPartialStart(partial5, eExtreme_Biological);
     prot_feat->SetLocation().SetPartialStop(partial3, eExtreme_Biological);
     if (partial5 || partial3) {
@@ -1240,30 +1241,6 @@ CRef<CSeq_feat> AddEmptyProteinFeatureToProtein (CRef<CSeq_entry> protein, bool 
     return prot_feat;
 }
 
-CRef<CSeq_feat> AddProteinFeatureToProtein (CRef<CSeq_entry> nuc, CConstRef<CSeq_loc> cds_loc, CRef<CSeq_entry> protein, bool partial5, bool partial3)
-{
-    CSourceModParser smp(CSourceModParser::eHandleBadMod_Ignore);
-    // later - fix protein title by removing attributes used?
-    CConstRef<CSeqdesc> title_desc = protein->GetSeq().GetClosestDescriptor(CSeqdesc::e_Title);
-    if (title_desc) {
-        string& title(const_cast<string&>(title_desc->GetTitle()));
-        title = smp.ParseTitle(title, CConstRef<CSeq_id>(protein->GetSeq().GetFirstId()));
-        smp.ApplyAllMods(protein->SetSeq());
-        if (nuc->IsSeq()) {
-            smp.ApplyAllMods(nuc->SetSeq(), "", cds_loc);
-        }
-        else {
-            for (auto pEntry : nuc->SetSet().SetSeq_set()) {
-                if (pEntry->IsSeq() && pEntry->GetSeq().IsNa()) {
-                    smp.ApplyAllMods(pEntry->SetSeq(), "", cds_loc);
-                    break;
-                }
-            }
-        }
-    }
-
-    return AddEmptyProteinFeatureToProtein(protein, partial5, partial3);
-}
 
 void AddSeqEntry(CSeq_entry_Handle m_SEH, CSeq_entry* m_Add)
 {
@@ -1341,6 +1318,68 @@ void AddFeature(CSeq_entry_Handle m_seh, CSeq_feat* m_Feat)
 
 }
 
+
+static void s_ReportDuplicateMods(
+        const set<string>& duplicateMods,
+        const string& idString,
+        TSeqPos lineNumber,
+        objects::ILineErrorListener& logger)
+{
+    for (const auto& modName : duplicateMods) {
+        string message = "Multiple '" + modName + "' modifiers. Only the first will be used.";
+        logger.PutError(*unique_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, idString, lineNumber, 
+                    "", "", "", message)));
+    }
+}
+
+
+CRef<CSeq_feat> CFeatureTableReader::x_AddProteinFeatureToProtein (CRef<CSeq_entry> nuc, CConstRef<CSeq_loc> cds_loc, 
+        const CBioseq::TId& pOriginalProtIds,
+        CBioseq& protein, bool partial5, bool partial3)
+{
+    CSourceModParser smp(CSourceModParser::eHandleBadMod_Ignore);
+    TSeqPos lineNumber=0;
+    const auto& proteinIds = pOriginalProtIds.empty() ?
+        protein.GetId() :
+        pOriginalProtIds;
+
+    for (auto pId : proteinIds) {
+        const auto idString = pId->AsFastaString();
+        if (auto it = m_PrtModMap.find(idString); it != m_PrtModMap.end()) {
+            const auto& modList = it->second.second;      
+            lineNumber = it->second.first;
+            set<string> duplicateMods;  
+            for (auto mod : modList) {
+                if (!smp.AddMods(mod.GetName(), mod.GetValue())) {
+                    duplicateMods.insert(mod.GetName());
+                }
+            }
+            s_ReportDuplicateMods(duplicateMods, idString, lineNumber, *(m_context.m_logger));
+            m_PrtModMap.erase(it);
+            break;
+        }
+    }
+
+    if (!smp.GetAllMods().empty()) {
+        smp.ApplyAllMods(protein);
+        if (nuc->IsSeq()) {
+            smp.ApplyAllMods(nuc->SetSeq(), "", cds_loc);
+        }
+        else {
+            for (auto pEntry : nuc->SetSet().SetSeq_set()) {
+                if (pEntry->IsSeq() && pEntry->GetSeq().IsNa()) {
+                    smp.ApplyAllMods(pEntry->SetSeq(), "", cds_loc);
+                    break;
+                }
+            }
+        }
+    }
+
+    return AddEmptyProteinFeatureToProtein(protein, partial5, partial3);
+}
+
+
 static CBioseq_Handle s_MatchProteinById(const CBioseq& protein, CSeq_entry_Handle seh)
 {
     for (auto pId : protein.GetId()) {
@@ -1385,8 +1424,8 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
     CProSplignScoring scoring;
     scoring.SetAltStarts(true);
     CProSplign prosplign(scoring, intronless, true, false, false);
-    CRef<CSeq_align> alignment = prosplign.FindAlignment(scope, proteinId, genomicLoc,
-                                                     CProSplignOutputOptions(CProSplignOutputOptions::ePassThrough));
+    auto alignment = prosplign.FindAlignment(scope, proteinId, genomicLoc,
+            CProSplignOutputOptions(CProSplignOutputOptions::ePassThrough));
 
     bool found_start_codon = false;
     bool found_stop_codon = false;
@@ -1397,12 +1436,13 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
         seq_id->Assign(*(genomicLoc.GetId()));
         const auto& splicedSegs = alignment->GetSegs().GetSpliced();
         const bool isMinusStrand = (splicedSegs.IsSetGenomic_strand() && 
-                                    splicedSegs.GetGenomic_strand() == eNa_strand_minus);
-         
+                splicedSegs.GetGenomic_strand() == eNa_strand_minus);
+             
         for (auto pExon : splicedSegs.GetExons()) {
             auto pExonLoc = Ref(new CSeq_loc(*seq_id,
-                                            pExon->GetGenomic_start(),
-                                            pExon->GetGenomic_end()));
+                        pExon->GetGenomic_start(),
+                        pExon->GetGenomic_end()));
+
             if (isMinusStrand) {
                 pExonLoc->SetStrand(eNa_strand_minus);
             } else if (pExon->IsSetGenomic_strand()) {
@@ -1420,6 +1460,7 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
             }
         }
     }
+
     if (exonLocs.empty()) {
         return CRef<CSeq_loc>();
     }
@@ -1435,13 +1476,13 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
     if (!found_start_codon) {
         pCDSLoc->SetPartialStart(true, eExtreme_Biological);
     }
+
     if (found_stop_codon) {
         // extend to cover stop codon
         auto& finalInterval = pCDSLoc->IsMix() ? 
             pCDSLoc->SetMix().Set().back()->SetInt() :
             pCDSLoc->SetInt();
         s_ExtendIntervalToEnd(finalInterval, bioseqLength);
-
     } else {
         pCDSLoc->SetPartialStop(true, eExtreme_Biological);
     }
@@ -1493,7 +1534,9 @@ bool CFeatureTableReader::xAddProteinToSeqEntry(const CBioseq& protein, CSeq_ent
 
     CRef<CSeq_entry> protein_entry(new CSeq_entry());
     protein_entry->SetSeq().Assign(protein);
+    CBioseq::TId pOriginalIds;
     if (id_match) {
+        pOriginalIds = move(protein_entry->SetSeq().SetId());
         CRef<CSeq_id> product_id = GetNewProteinId(seh, bsh_match);
         protein_entry->SetSeq().ResetId();
         protein_entry->SetSeq().SetId().push_back(product_id);
@@ -1508,9 +1551,7 @@ bool CFeatureTableReader::xAddProteinToSeqEntry(const CBioseq& protein, CSeq_ent
         string label;
         protein.GetId().front()->GetLabel(&label, CSeq_id::eContent);
         string error = "Unable to find coding region location for protein sequence " + label + ".";
-        m_context.m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-            error)));
+        g_LogGeneralParsingError(error, *(m_context.m_logger));
         return false;
     }
 
@@ -1519,7 +1560,9 @@ bool CFeatureTableReader::xAddProteinToSeqEntry(const CBioseq& protein, CSeq_ent
     bool partial5 = cds_loc->IsPartialStart(eExtreme_Biological);
     bool partial3 = cds_loc->IsPartialStop(eExtreme_Biological);
     SetMolinfoForProtein(protein_entry->SetDescr(), partial5, partial3);
-    CRef<CSeq_feat> protein_feat = AddProteinFeatureToProtein(nuc_entry, cds_loc, protein_entry, partial5, partial3);
+    CRef<CSeq_feat> protein_feat = x_AddProteinFeatureToProtein(nuc_entry, cds_loc, 
+            pOriginalIds,
+            protein_entry->SetSeq(), partial5, partial3);
 
     AddSeqEntry(bsh_match.GetParentEntry(), protein_entry);
 
@@ -1603,9 +1646,9 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
                 CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString((**sLE_qual).GetVal()));
                 if (it == linkage_evidence_to_value_map.end())
                 {
-                    m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                        CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                        string("Unrecognized linkage evidence ") + (**sLE_qual).GetVal())));
+                    g_LogGeneralParsingError(
+                            string("Unrecognized linkage evidence ") + (**sLE_qual).GetVal(), 
+                            *(m_context.m_logger));
                     return CRef<CDelta_seq>();
                 }
                 else
@@ -1619,9 +1662,10 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
                 case CSeq_gap::eLinkEvid_UnspecifiedOnly:
                     if (evidence != CLinkage_evidence::eType_unspecified)
                     {
-                        m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                            string("Linkage evidence must not be specified for ") + sGT)));
+                        g_LogGeneralParsingError(
+                            string("Linkage evidence must not be specified for ") + sGT,
+                            *(m_context.m_logger));
+
                         return CRef<CDelta_seq>();
                     }
                     break;
@@ -1629,9 +1673,10 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
                 case CSeq_gap::eLinkEvid_Forbidden:
                     if (evidence == CLinkage_evidence::eType_unspecified)
                     {
-                        m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                            string("Linkage evidence must be specified for ") + sGT)));
+                        g_LogGeneralParsingError(
+                            string("Linkage evidence must be specified for ") + sGT,
+                            *(m_context.m_logger));
+
                         return CRef<CDelta_seq>();
                     }
                     break;
@@ -1647,9 +1692,10 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
         }
         else
         {
-            m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                string("Unrecognized gap type ") + sGT)));
+            g_LogGeneralParsingError(
+                    string("Unrecognized gap type ") + sGT,
+                    *(m_context.m_logger));
+
             return CRef<CDelta_seq>();
         }
     }
@@ -1693,9 +1739,9 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh) const
                             CRef<CDelta_seq> gap = MakeGap(*pBioseq, feature_gap);
                             if (gap.Empty())
                             {
-                                m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                                    CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                                    "Failed to convert feature gap into a gap")));
+                                g_LogGeneralParsingError(
+                                    "Failed to convert feature gap into a gap",
+                                    *(m_context.m_logger));
                             }
                             else
                             {
@@ -1704,9 +1750,7 @@ void CFeatureTableReader::MakeGapsFromFeatures(CSeq_entry_Handle seh) const
                         }
                         catch(const CException& ex)
                         {
-                            m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                                ex.GetMsg())));
+                            g_LogGeneralParsingError(ex.GetMsg(), *(m_context.m_logger));
                         }
                         continue;
                     }
@@ -1755,15 +1799,13 @@ void CFeatureTableReader::MakeGapsFromFeatures(CBioseq& bioseq) const
                         fit = ftable.erase(fit);
                         continue;
                     }
-                    m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                                "Failed to convert feature gap into a gap")));
+                    g_LogGeneralParsingError( 
+                            "Failed to convert feature gap into a gap",
+                            *(m_context.m_logger));
                 }
                 catch(const CException& ex)
                 {
-                    m_context.m_logger->PutError(*unique_ptr<CLineError>(
-                                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                                ex.GetMsg())));
+                    g_LogGeneralParsingError(ex.GetMsg(), *(m_context.m_logger));
                 }
 
             }

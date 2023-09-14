@@ -250,7 +250,7 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
             m_context.m_logger->PutError(
                 *unique_ptr<CLineError>(
                     CLineError::Create(ILineError::eProblem_Unset,
-                        eDiag_Warning, "", 0, msg)));
+                        eDiag_Warning, "", 0, "", "", "", msg)));
         }
     }
 

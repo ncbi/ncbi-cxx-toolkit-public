@@ -444,9 +444,8 @@ public:
     virtual std::string
     ProblemStr(void) const
     {
-        if (m_eProblem == ILineError::eProblem_GeneralParsingError  &&
-                !ErrorMessage().empty()) {
-            return ErrorMessage();
+        if (const auto& msg = ErrorMessage(); !msg.empty()) {
+            return msg;
         }
         return ILineError::ProblemStr(Problem());
     }
