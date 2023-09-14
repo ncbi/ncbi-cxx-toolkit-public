@@ -227,7 +227,7 @@ TEST_F(CSatInfoProviderTest, SecureSat) {
     EXPECT_FALSE(sat4->IsSecureSat());
     EXPECT_TRUE(sat5->IsSecureSat());
 
-    provider.SatSecureSatRegistrySection(m_ConfigSectionSecure);
+    provider.SetSecureSatRegistrySection(m_ConfigSectionSecure);
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUnchanged, provider.RefreshSchema(false));
     sat4 = provider.GetBlobKeyspace(4);
