@@ -88,7 +88,7 @@
 
 #include "table2asn.hpp"
 #include "suspect_feat.hpp"
-
+#include "utils.hpp"
 
 #include <common/ncbi_revision.h>
 
@@ -796,10 +796,7 @@ int CTbl2AsnApp::Run()
     }
     catch (const CException&)
     {
-        m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
-            "", 0, "", "", "",
-            "Error loading template file")));
+        g_LogGeneralParsingError("Error loading template file", *m_logger);
     }
 
     try
@@ -811,10 +808,7 @@ int CTbl2AsnApp::Run()
     }
     catch (const CException&)
     {
-        m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
-            "", 0, "", "", "",
-            "Error loading descriptors file")));
+        g_LogGeneralParsingError("Error loading descriptors file", *m_logger);
     }
 
     if (m_logger->Count() == 0)
@@ -953,13 +947,8 @@ int CTbl2AsnApp::Run()
                 if (!args["r"] && !(args.Exist("vdb") && args["vdb"]) && msg.find("Cannot resolve") != string::npos) {
                     msg += " - try running with -r to enable remote retrieval of sequences";
                 }
-                m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, "", "", "", msg)));
-            } else {
-                m_logger->PutError(*unique_ptr<CLineError>(
-                    CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
-                    "", 0, "", "", "",
-                    msg)));
             }
+            g_LogGeneralParsingError(msg, *m_logger);
         }
     }
 
@@ -1155,9 +1144,9 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
     bool need_report = (inputFormat == CFormatGuess::eFasta) && !m_context.m_HandleAsSet;
     if (need_report)
     {
-        m_context.m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
-            "File " + m_context.m_current_file + " contains multiple sequences")));
+        g_LogGeneralParsingError(eDiag_Warning, 
+                "File " + m_context.m_current_file + " contains multiple sequences",
+                *(m_context.m_logger));
     }
 }
 
@@ -1737,9 +1726,7 @@ void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
     }
 
     if (file.GetLength() == 0) {
-        m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
-            "Empty file: " + pathname)));
+        g_LogGeneralParsingError(eDiag_Warning, "Empty file: " + pathname, *m_logger);
         return;
     }
 

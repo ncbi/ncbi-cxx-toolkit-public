@@ -78,7 +78,7 @@ void CObjtoolsMessage::WriteAsXML(CNcbiOstream& out) const
 {
     out << "<message severity=\"" << NStr::XmlEncode(s_GetSeverityName(GetSeverity())) << "\" "
         << "problem=\"" << NStr::XmlEncode(GetText()) << "\" ";
-    out << "</message>" << endl;
+    out << "/>" << endl;
 }
 
 void CObjtoolsMessage::DumpAsXML(CNcbiOstream& out) const 

@@ -1957,13 +1957,13 @@ void CSourceModParser::SetAllUnused()
     }
 }
 
-void CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
+bool CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
 {
     SMod newmod(NStr::TruncateSpaces_Unsafe(name));
     newmod.value = NStr::TruncateSpaces_Unsafe(value);
     newmod.used = false;
 
-    m_Mods.insert(newmod);
+    return m_Mods.insert(newmod).second;
 }
 
 END_SCOPE(objects)

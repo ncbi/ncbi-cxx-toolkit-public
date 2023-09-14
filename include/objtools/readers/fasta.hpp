@@ -50,6 +50,7 @@
 #include <objtools/readers/fasta_reader_utils.hpp>
 #include <objtools/readers/mod_reader.hpp>
 
+#include <unordered_set>
 #include <stack>
 #include <sstream>
 
@@ -179,6 +180,10 @@ public:
 
     void SetExcludedMods(const vector<string>& excluded_mods);
     void SetIgnoredMods(const list<string>& ignored_mods);
+    void SetPostponedMods(const list<string>& postponed_mods);
+
+    using TPostponedModMap = map<string, pair<TSeqPos, CModHandler::TModList>>;
+    const TPostponedModMap& GetPostponedModMap() const;
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length. Overrides the id lengths specified in class CSeq_id.
@@ -317,6 +322,10 @@ private:
                      CBioseq& bioseq,
                      ILineErrorListener* pMessageListener);
 
+    void x_CheckForPostponedMods(const string& idString,
+            TSeqPos line_number,
+            CModHandler::TModList& mods);
+
     void x_SetDeflineParseInfo(SDefLineParseInfo& info);
 
     bool m_bModifiedMaxIdLength=false;
@@ -409,6 +418,8 @@ protected:
     std::vector<ILineError::EProblem> m_ignorable;
     FIdCheck m_fIdCheck;
     FModFilter m_fModFilter = nullptr;
+    unordered_set<string> m_PostponedMods;
+    TPostponedModMap m_PostponedModMap;
 };
 
 

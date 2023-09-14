@@ -1999,6 +1999,21 @@ void CFastaReader::SetIgnoredMods(const list<string>& ignored_mods)
     m_ModHandler.SetIgnoredMods(ignored_mods);
 }
 
+void CFastaReader::SetPostponedMods(const list<string>& postponed_mods)
+{
+    m_PostponedMods.clear();
+    transform(postponed_mods.begin(), postponed_mods.end(),
+            inserter(m_PostponedMods, m_PostponedMods.end()),
+            [](const string& mod_name) { return CModHandler::GetCanonicalName(mod_name); });
+}
+
+
+const CFastaReader::TPostponedModMap& 
+CFastaReader::GetPostponedModMap() const
+{
+    return m_PostponedModMap;
+}
+
 
 void CFastaReader::x_ApplyMods(
      const string& title,
@@ -2011,10 +2026,18 @@ void CFastaReader::x_ApplyMods(
         string remainder;
         CModHandler::TModList mods;
         CTitleParser::Apply(processed_title, mods, remainder);
+        if (mods.empty()) {
+            return;
+        }
 
         const auto* pFirstID = bioseq.GetFirstId();
         _ASSERT(pFirstID);
         const auto idString = pFirstID->AsFastaString();
+    
+        x_CheckForPostponedMods(idString, line_number, mods);
+        if (mods.empty()) {
+            return;
+        }
 
         CDefaultModErrorReporter
             errorReporter(idString, line_number, pMessageListener);
@@ -2049,6 +2072,34 @@ void CFastaReader::x_ApplyMods(
         auto pDesc = Ref(new CSeqdesc());
         pDesc->SetTitle() = processed_title;
         bioseq.SetDescr().Set().push_back(std::move(pDesc));
+    }
+}
+
+
+void CFastaReader::x_CheckForPostponedMods(const string& idString, 
+        TSeqPos line_number,
+        CModHandler::TModList& mods) 
+{
+    if (mods.empty() || m_PostponedMods.empty()) {
+        return;
+    }
+
+    auto it = mods.begin();
+    while(it != mods.end()) {
+        if (m_PostponedMods.find(CModHandler::GetCanonicalName(it->GetName()))
+            != m_PostponedMods.end()) {
+
+            if (auto mit = m_PostponedModMap.find(idString); 
+                mit != m_PostponedModMap.end()) {
+                mit->second.second.push_back(*it); 
+            } 
+            else {
+                m_PostponedModMap[idString] = {line_number, {*it}};
+            }
+            it = mods.erase(it); 
+        } else {
+            ++it;
+        }
     }
 }
 
