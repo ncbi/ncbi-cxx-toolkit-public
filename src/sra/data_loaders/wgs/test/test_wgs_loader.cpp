@@ -103,6 +103,41 @@ static bool AddGBForMasterDescr()
 }
 
 
+template<class Call>
+static
+typename std::invoke_result<Call>::type
+s_CallWithRetry(Call&& call,
+                const char* name,
+                int retry_count)
+{
+    for ( int t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<name<<"(): waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+
+
 enum EMasterDescrType
 {
     eWithoutMasterDescr,
@@ -173,11 +208,18 @@ bool sx_CanOpen(const string& acc)
     }
 }
 
-bool sx_HasNewWGSRepository()
+bool sx_HasNewWGSRepositoryOnce()
 {
     static bool new_rep = sx_CanOpen("AIDX01.2");
     return new_rep;
 }
+
+bool sx_HasNewWGSRepository()
+{
+    return s_CallWithRetry(&sx_HasNewWGSRepositoryOnce,
+                           "sx_HasNewWGSRepository", 3);
+}
+
 
 CBioseq_Handle sx_LoadFromGB(const CBioseq_Handle& bh)
 {
@@ -2261,41 +2303,6 @@ BOOST_AUTO_TEST_CASE(FetchProt23c)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(!bsh);
-}
-
-
-template<class Call>
-static
-typename std::invoke_result<Call>::type
-s_CallWithRetry(Call&& call,
-                const char* name,
-                int retry_count)
-{
-    for ( int t = 1; t < retry_count; ++ t ) {
-        try {
-            return call();
-        }
-        catch ( CBlobStateException& ) {
-            // no retry
-            throw;
-        }
-        catch ( CException& exc ) {
-            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc);
-        }
-        catch ( exception& exc ) {
-            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc.what());
-        }
-        catch ( ... ) {
-            LOG_POST(Warning<<name<<"() try "<<t<<" exception");
-        }
-        if ( t >= 2 ) {
-            //double wait_sec = m_WaitTime.GetTime(t-2);
-            double wait_sec = 1;
-            LOG_POST(Warning<<name<<"(): waiting "<<wait_sec<<"s before retry");
-            SleepMilliSec(Uint4(wait_sec*1000));
-        }
-    }
-    return call();
 }
 
 
