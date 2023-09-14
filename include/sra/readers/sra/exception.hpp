@@ -96,6 +96,7 @@ public:
         eDataError,     ///< VDB data is incorrect
         eNotFoundIndex, ///< VDB index not found
         eProtectedDb,   ///< DB is protected
+        eTimeout,       ///< timeout, re-try logic is recommended
         eUnknownError   ///< Not used
     };
     /// Constructors.
@@ -154,6 +155,8 @@ public:
             m_Param = param;
         }
 
+    static bool IsTimeout(rc_t rc);
+    
     static void ReportError(const char* msg, rc_t rc);
 
 protected:
@@ -173,6 +176,18 @@ private:
 # define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \
     throw NCBI_EXCEPTION2(exception_class, err_code, FORMAT(message), extra)
 #endif
+
+
+#define CHECK_VDB_TIMEOUT(msg, rc)                                      \
+    do {                                                                \
+        if ( rc && CSraException::IsTimeout(rc) )                       \
+            NCBI_THROW2(CSraException, eTimeout, msg, rc);              \
+    } while (0)
+#define CHECK_VDB_TIMEOUT_FMT(msg, rc)                                  \
+    do {                                                                \
+        if ( rc && CSraException::IsTimeout(rc) )                       \
+            NCBI_THROW2_FMT(CSraException, eTimeout, msg, rc);          \
+    } while (0)
 
 
 END_SCOPE(objects)

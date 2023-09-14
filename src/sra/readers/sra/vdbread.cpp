@@ -41,6 +41,7 @@
 #include <klib/sra-release-version.h>
 #include <kfg/config.h>
 #include <kdb/manager.h>
+#include <kdb/database.h>
 #include <kdb/kdb-priv.h>
 #include <kns/manager.h>
 #include <kns/http.h>
@@ -121,6 +122,52 @@ DEFINE_SRA_REF_TRAITS(KNSManager, );
 DEFINE_SRA_REF_TRAITS(VFSManager, );
 DEFINE_SRA_REF_TRAITS(VPath, const);
 DEFINE_SRA_REF_TRAITS(VResolver, );
+
+//#define VDB_RANDOM_FAILS 1
+
+#define FAILS_VAR(name, suffix) NCBI_NAME3(VDB_, name, suffix)
+
+#define VDB_RESOLVE_RANDOM_FAILS 1
+#define VDB_OPEN_RANDOM_FAILS 1
+#define VDB_SCHEMA_RANDOM_FAILS 1
+#define VDB_READ_RANDOM_FAILS 1
+
+#define VDB_RESOLVE_RANDOM_FAILS_FREQUENCY 20
+#define VDB_RESOLVE_RANDOM_FAILS_RECOVER 10
+#define VDB_OPEN_RANDOM_FAILS_FREQUENCY 10
+#define VDB_OPEN_RANDOM_FAILS_RECOVER 5
+#define VDB_SCHEMA_RANDOM_FAILS_FREQUENCY 50
+#define VDB_SCHEMA_RANDOM_FAILS_RECOVER 100
+#define VDB_READ_RANDOM_FAILS_FREQUENCY 20000
+#define VDB_READ_RANDOM_FAILS_RECOVER 1000
+
+#if defined(VDB_RANDOM_FAILS)
+# define SIMULATE_ERROR(name)                                           \
+    if ( !(FAILS_VAR(name, _RANDOM_FAILS)) ) {                          \
+    }                                                                   \
+    else {                                                              \
+        static thread_local unsigned recover_counter = 0;               \
+        if ( recover_counter > 0 ) {                                    \
+            --recover_counter;                                          \
+        }                                                               \
+        else {                                                          \
+            if ( (rand() % (FAILS_VAR(name, _RANDOM_FAILS_FREQUENCY))) == 0 ) { \
+                recover_counter = (FAILS_VAR(name, _RANDOM_FAILS_RECOVER)); \
+                ERR_POST("VDB: Simulated " #name " failure: "<<CStackTrace()); \
+                NCBI_THROW(CSraException, eOtherError,                  \
+                           "Simulated " #name " failure");              \
+            }                                                           \
+        }                                                               \
+    }
+#else
+# define SIMULATE_ERROR(name) ((void)0)
+#endif
+
+#define SIMULATE_RESOLVE_ERROR() SIMULATE_ERROR(RESOLVE)
+#define SIMULATE_OPEN_ERROR() SIMULATE_ERROR(OPEN)
+#define SIMULATE_SCHEMA_ERROR() SIMULATE_ERROR(SCHEMA)
+#define SIMULATE_READ_ERROR() SIMULATE_ERROR(READ)
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CKConfig
@@ -409,18 +456,39 @@ string CVResolver::Resolve(const string& acc_or_path) const
         // already a path
         return acc_or_path;
     }
+    SIMULATE_RESOLVE_ERROR();
     CVPath acc(m_Mgr, acc_or_path, CVPath::eAcc);
     const VPath* path;
     rc_t rc = VResolverLocal(*this, acc, &path);
     if ( rc ) {
+        if ( GetRCObject(rc) == rcName &&
+             GetRCState(rc) == rcNotFound &&
+             GetRCContext(rc) == rcResolving ) {
+            // continue with other ways to resolve
+        }
+        else {
+            NCBI_THROW2_FMT(CSraException, eOtherError,
+                            "VResolverLocal("<<acc_or_path<<") failed", rc);
+        }
         rc = VResolverRemote(*this, eProtocolNone, acc, &path);
     }
     if ( rc ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot find acc path: "<<acc_or_path, rc);
+        if ( GetRCObject(rc) == rcName &&
+             GetRCState(rc) == rcNotFound &&
+             GetRCContext(rc) == rcResolving ) {
+            // continue with other ways to resolve
+        }
+        else {
+            NCBI_THROW2_FMT(CSraException, eOtherError,
+                            "VResolverRemote("<<acc_or_path<<") failed", rc);
+        }
         if ( CDirEntry(acc_or_path).Exists() ) {
             // local file
             return acc_or_path;
         }
-        NCBI_THROW2_FMT(CSraException, eNotFound,
+        // couldnt resolve with any way
+        NCBI_THROW2_FMT(CSraException, eNotFoundDb,
                         "Cannot find acc path: "<<acc_or_path, rc);
     }
     return CVPath(path).ToString();
@@ -519,6 +587,7 @@ public:
                                                    kHTTP_1_1, nullptr,
                                                    "%s", path.c_str()) ) {
             *x_InitPtr() = 0;
+            CHECK_VDB_TIMEOUT("Cannot create http request", rc);
             NCBI_THROW2(CSraException, eInitFailed,
                         "Cannot create http client request", rc);
         }
@@ -540,6 +609,7 @@ public:
     {
         if ( rc_t rc = KClientHttpRequestHEAD(request, x_InitPtr()) ) {
             *x_InitPtr() = 0;
+            CHECK_VDB_TIMEOUT("Cannot get http HEAD", rc);
             NCBI_THROW2(CSraException, eInitFailed,
                         "Cannot get http HEAD", rc);
         }
@@ -559,6 +629,7 @@ CTime CVDBMgr::GetURLTimestamp(const string& path) const
     size_t size;
     if ( rc_t rc = KClientHttpResultGetHeader(result, "Last-Modified",
                                               buffer, sizeof(buffer), &size) ) {
+        CHECK_VDB_TIMEOUT("No Last-Modified header in HEAD response", rc);
         NCBI_THROW2(CSraException, eNotFoundValue,
                     "No Last-Modified header in HEAD response", rc);
     }
@@ -983,40 +1054,52 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
     DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
+    SIMULATE_OPEN_ERROR();
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0, "%.*s",
                                         int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
+        string msg = "Cannot open VDB: "+acc_or_path;
+        CHECK_VDB_TIMEOUT(msg, rc);
         if ( (GetRCObject(rc) == RCObject(rcDirectory) ||
               GetRCObject(rc) == RCObject(rcPath) ||
               GetRCObject(rc) == RCObject(rcFile)) &&
              GetRCState(rc) == rcNotFound ) {
-            // no SRA accession
-            NCBI_THROW2_FMT(CSraException, eNotFoundDb,
-                            "Cannot open VDB: "<<acc_or_path, rc);
+            // no VDB accession
+            NCBI_THROW2(CSraException, eNotFoundDb, msg, rc);
         }
         else if ( GetRCObject(rc) == rcName &&
                   GetRCState(rc) == rcNotFound &&
                   GetRCContext(rc) == rcResolving ) {
-            // invalid SRA database
-            NCBI_THROW2_FMT(CSraException, eNotFoundDb,
-                            "Cannot open VDB: "<<acc_or_path, rc);
+            // invalid VDB database
+            NCBI_THROW2(CSraException, eNotFoundDb, msg, rc);
         }
         else if ( GetRCObject(rc) == RCObject(rcFile) &&
                   GetRCState(rc) == rcUnauthorized ) {
-            // invalid SRA database
-            NCBI_THROW2_FMT(CSraException, eProtectedDb,
-                            "Cannot open VDB: "<<acc_or_path, rc);
+            // no permission to use VDB database
+            NCBI_THROW2(CSraException, eProtectedDb, msg, rc);
         }
         else if ( GetRCObject(rc) == RCObject(rcDatabase) &&
                   GetRCState(rc) == rcIncorrect ) {
-            // invalid SRA database
-            NCBI_THROW2_FMT(CSraException, eDataError,
-                            "Cannot open VDB: "<<acc_or_path, rc);
+            // invalid VDB database
+            NCBI_THROW2(CSraException, eDataError, msg, rc);
         }
         else {
             // other errors
-            NCBI_THROW2_FMT(CSraException, eOtherError,
-                            "Cannot open VDB: "<<acc_or_path, rc);
+            NCBI_THROW2(CSraException, eOtherError, msg, rc);
+        }
+    }
+    if ( 0 ) {
+        const KDatabase* kdb = 0;
+        if ( rc_t rc = VDatabaseOpenKDatabaseRead(*this, &kdb) ) {
+            NCBI_THROW2(CSraException, eOtherError, "VDatabaseOpenKDatabaseRead() failed", rc);
+        }
+        const char* kdb_path = 0;
+        if ( rc_t rc = KDatabaseGetPath(kdb, &kdb_path) ) {
+            NCBI_THROW2(CSraException, eOtherError, "KDatabaseGetPath() failed", rc);
+        }
+        LOG_POST("CVDB("<<acc_or_path<<") -> "<<path<<" -> "<<kdb_path);
+        if ( rc_t rc = KDatabaseRelease(kdb) ) {
+            NCBI_THROW2(CSraException, eOtherError, "KDatabaseRelease() failed", rc);
         }
     }
 }
@@ -1046,8 +1129,11 @@ CVDBTable::CVDBTable(const CVDB& db,
 {
     DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
+    SIMULATE_SCHEMA_ERROR();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
         *x_InitPtr() = 0;
+        string msg = "Cannot open VDB: "+GetFullName();
+        CHECK_VDB_TIMEOUT(msg, rc);
         RCState rc_state = GetRCState(rc);
         int rc_object = GetRCObject(rc);
         if ( rc_state == rcNotFound &&
@@ -1057,13 +1143,11 @@ CVDBTable::CVDBTable(const CVDB& db,
             if ( missing != eMissing_Throw ) {
                 return;
             }
-            NCBI_THROW2_FMT(CSraException, eNotFoundTable,
-                            "Cannot open VDB table: "<<*this, rc);
+            NCBI_THROW2(CSraException, eNotFoundTable, msg, rc);
         }
         else {
             // other errors
-            NCBI_THROW2_FMT(CSraException, eOtherError,
-                            "Cannot open VDB table: "<<*this, rc);
+            NCBI_THROW2(CSraException, eOtherError, msg, rc);
         }
     }
 }
@@ -1078,9 +1162,12 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
     DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
+    SIMULATE_OPEN_ERROR();
     if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), 0, "%.*s",
                                            int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
+        string msg = "Cannot open VDB: "+acc_or_path;
+        CHECK_VDB_TIMEOUT(msg, rc);
         if ( (GetRCObject(rc) == RCObject(rcDirectory) ||
               GetRCObject(rc) == RCObject(rcPath)) &&
              GetRCState(rc) == rcNotFound ) {
@@ -1088,19 +1175,16 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
             if ( missing != eMissing_Throw ) {
                 return;
             }
-            NCBI_THROW2_FMT(CSraException, eNotFoundTable,
-                            "Cannot open SRA table: "<<acc_or_path, rc);
+            NCBI_THROW2(CSraException, eNotFoundTable, msg, rc);
         }
         else if ( GetRCObject(rc) == RCObject(rcDatabase) &&
                   GetRCState(rc) == rcIncorrect ) {
             // invalid SRA database
-            NCBI_THROW2_FMT(CSraException, eDataError,
-                            "Cannot open SRA table: "<<acc_or_path, rc);
+            NCBI_THROW2(CSraException, eDataError, msg, rc);
         }
         else {
             // other errors
-            NCBI_THROW2_FMT(CSraException, eOtherError,
-                            "Cannot open SRA table: "<<acc_or_path, rc);
+            NCBI_THROW2(CSraException, eOtherError, msg, rc);
         }
     }
 }
@@ -1144,20 +1228,21 @@ CVDBTableIndex::CVDBTableIndex(const CVDBTable& table,
       m_Name(index_name)
 {
     CFinalRequestContextUpdater ctx_updater;
+    SIMULATE_SCHEMA_ERROR();
     if ( rc_t rc = VTableOpenIndexRead(table, x_InitPtr(), index_name) ) {
         *x_InitPtr() = 0;
+        string msg = "Cannot open VDB table index: "+GetFullName();
+        CHECK_VDB_TIMEOUT(msg, rc);
         if ( GetRCObject(rc) == RCObject(rcIndex) &&
              GetRCState(rc) == rcNotFound ) {
             // no such index
             if ( missing != eMissing_Throw ) {
                 return;
             }
-            NCBI_THROW2_FMT(CSraException, eNotFoundIndex,
-                            "Cannot open VDB table index: "<<*this, rc);
+            NCBI_THROW2(CSraException, eNotFoundIndex, msg, rc);
         }
         else {
-            NCBI_THROW2_FMT(CSraException, eOtherError,
-                            "Cannot open VDB table index: "<<*this, rc);
+            NCBI_THROW2(CSraException, eOtherError, msg, rc);
         }
     }
 }
@@ -1180,6 +1265,7 @@ TVDBRowIdRange CVDBTableIndex::Find(const string& value) const
     TVDBRowIdRange range;
     if ( rc_t rc = KIndexFindText(*this, value.c_str(),
                                   &range.first, &range.second, 0, 0) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot find value in index: "<<*this<<": "<<value, rc);
         if ( GetRCObject(rc) == RCObject(rcString) &&
              GetRCState(rc) == rcNotFound ) {
             // no such value
@@ -1187,8 +1273,7 @@ TVDBRowIdRange CVDBTableIndex::Find(const string& value) const
         }
         else {
             NCBI_THROW2_FMT(CSraException, eOtherError,
-                            "Cannot find value in index: "<<*this<<": "<<value,
-                            rc);
+                            "Cannot find value in index: "<<*this<<": "<<value, rc);
         }
     }
     return range;
@@ -1220,16 +1305,18 @@ void CVDBCursor::Init(const CVDBTable& table)
     }
     if ( rc_t rc = VTableCreateCursorRead(table, x_InitPtr()) ) {
         *x_InitPtr() = 0;
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot create VDB cursor", rc);
+        CHECK_VDB_TIMEOUT_FMT("Cannot create VDB cursor: "<<table, rc);
+        NCBI_THROW2_FMT(CSraException, eInitFailed,
+                        "Cannot create VDB cursor: "<<table, rc);
     }
     if ( rc_t rc = VCursorPermitPostOpenAdd(*this) ) {
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot allow VDB cursor post open column add", rc);
+        NCBI_THROW2_FMT(CSraException, eInitFailed,
+                        "Cannot allow VDB cursor post open column add: "<<table, rc);
     }
     if ( rc_t rc = VCursorOpen(*this) ) {
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot open VDB cursor", rc);
+        CHECK_VDB_TIMEOUT_FMT("Cannot open VDB cursor: "<<table, rc);
+        NCBI_THROW2_FMT(CSraException, eInitFailed,
+                        "Cannot open VDB cursor: "<<table, rc);
     }
     m_Table = table;
 }
@@ -1266,9 +1353,9 @@ rc_t CVDBCursor::OpenRowRc(TVDBRowId row_id)
 void CVDBCursor::OpenRow(TVDBRowId row_id)
 {
     if ( rc_t rc = OpenRowRc(row_id) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot open VDB cursor row: "<<*this<<": "<<row_id, rc);
         NCBI_THROW2_FMT(CSraException, eInitFailed,
-                        "Cannot open VDB cursor row: "<<*this<<": "<<row_id,
-                        rc);
+                        "Cannot open VDB cursor row: "<<*this<<": "<<row_id, rc);
     }
 }
 
@@ -1277,9 +1364,9 @@ TVDBRowIdRange CVDBCursor::GetRowIdRange(TVDBColumnIdx column) const
 {
     TVDBRowIdRange ret;
     if ( rc_t rc = VCursorIdRange(*this, column, &ret.first, &ret.second) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot get VDB cursor row range: "<<*this<<": "<<column, rc);
         NCBI_THROW2_FMT(CSraException, eInitFailed,
-                        "Cannot get VDB cursor row range: "<<*this<<": "<<column,
-                        rc);
+                        "Cannot get VDB cursor row range: "<<*this<<": "<<column, rc);
     }
     return ret;
 }
@@ -1314,6 +1401,8 @@ uint32_t CVDBCursor::GetElementCount(TVDBRowId row, const CVDBColumn& column,
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
                                          elem_bits, 0, 0, 0, 0,
                                          &read_count, &remaining_count) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot read VDB value array size: "<<*this<<column<<
+                              '['<<row<<']', rc);
         NCBI_THROW2_FMT(CSraException, eNotFoundValue,
                         "Cannot read VDB value array size: "<<*this<<column<<
                         '['<<row<<']', rc);
@@ -1333,6 +1422,8 @@ void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
                                          elem_bits, start, buffer, 0, count,
                                          &read_count, &remaining_count) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot read VDB value array: "<<*this<<column<<
+                              '['<<row<<"]["<<start<<".."<<(start+count-1)<<']', rc);
         NCBI_THROW2_FMT(CSraException, eNotFoundValue,
                         "Cannot read VDB value array: "<<*this<<column<<
                         '['<<row<<"]["<<start<<".."<<(start+count-1)<<']', rc);
@@ -1446,12 +1537,15 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
     DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     m_Name = name;
+    //SIMULATE_SCHEMA_ERROR();
     if ( rc_t rc = VCursorAddColumn(cursor, &m_Index, name) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot get VDB column: "<<cursor<<*this, rc);
         if ( backup_name &&
              (rc = VCursorAddColumn(cursor, &m_Index, backup_name)) == 0 ) {
             m_Name = backup_name;
         }
         else {
+            CHECK_VDB_TIMEOUT_FMT("Cannot get VDB column: "<<cursor<<*this, rc);
             m_Index = kInvalidIndex;
             if ( missing == eMissing_Throw ) {
                 NCBI_THROW2_FMT(CSraException, eNotFoundColumn,
@@ -1465,6 +1559,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
     if ( element_bit_size ) {
         VTypedesc type;
         if ( rc_t rc = VCursorDatatype(cursor, m_Index, 0, &type) ) {
+            CHECK_VDB_TIMEOUT_FMT("Cannot get VDB column type: "<<cursor<<*this,rc);
             NCBI_THROW2_FMT(CSraException, eInvalidState,
                             "Cannot get VDB column type: "<<cursor<<*this,rc);
         }
@@ -1538,6 +1633,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
     if ( rc_t rc = VCursorCellData(cursor, column.GetIndex(),
                                    &bit_length, &m_Data, &bit_offset,
                                    &m_ElemCount) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot read VDB value: "<<cursor<<column, rc);
         NCBI_THROW2_FMT(CSraException, eNotFoundValue,
                         "Cannot read VDB value: "<<cursor<<column, rc);
     }
@@ -1596,6 +1692,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
                                          &bit_length, &m_Data, &bit_offset,
                                          &m_ElemCount) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot read VDB value: "<<cursor<<column<<'['<<row<<']', rc);
         if ( missing != eMissing_Throw ) {
             m_Data = 0;
             m_ElemCount = 0;
@@ -1711,6 +1808,8 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
                                          &bit_length, &data, &bit_offset,
                                          &elem_count) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot read VDB 4-bits value array: "<<
+                              cursor<<column<<'['<<row<<']', rc);
         NCBI_THROW2_FMT(CSraException, eNotFoundValue,
                         "Cannot read VDB 4-bits value array: "<<
                         cursor<<column<<'['<<row<<']', rc);
@@ -1807,6 +1906,8 @@ void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
                                          &bit_length, &data, &bit_offset,
                                          &elem_count) ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot read VDB 2-bits value array: "<<
+                              cursor<<column<<'['<<row<<']', rc);
         NCBI_THROW2_FMT(CSraException, eNotFoundValue,
                         "Cannot read VDB 2-bits value array: "<<
                         cursor<<column<<'['<<row<<']', rc);

@@ -3,7 +3,7 @@
 NCBI_begin_lib(sraread SHARED)
   NCBI_sources(
     sraread vdbread kdbread csraread wgsresolver wgsresolver_impl wgsread
-    graphread snpread
+    graphread snpread vdbcache
   )
   NCBI_add_definitions(NCBI_SRAREAD_EXPORTS)
   NCBI_uses_toolkit_libraries(seqsplit seqset)

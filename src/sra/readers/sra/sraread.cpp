@@ -185,6 +185,7 @@ const char* CSraException::GetErrCodeString(void) const
     case eDataError:    return "eDataError";
     case eNotFoundIndex: return "eNotFoundIndex";
     case eProtectedDb:  return "eProtectedDb";
+    case eTimeout:      return "eTimeout";
     default:            return CException::GetErrCodeString();
     }
 }
@@ -217,6 +218,20 @@ void CSraException::ReportExtra(ostream& out) const
 void CSraException::ReportError(const char* msg, rc_t rc)
 {
     ERR_POST_X(1, msg<<": "<<CSraRcFormatter(rc));
+}
+
+
+bool CSraException::IsTimeout(rc_t rc)
+{
+    if ( GetRCTarget(rc) == rcTimeout && GetRCState(rc) == rcExhausted ) {
+        return true;
+    }
+    /*
+    if ( rc == SILENT_RC(rcVFS, rcQuery, rcExecuting, rcString, rcInsufficient) ) {
+        return true;
+    }
+    */
+    return false;
 }
 
 
@@ -307,6 +322,7 @@ string CSraPath::FindAccPath(const string& acc) const
         }
     }}
     if ( rc ) {
+        CHECK_VDB_TIMEOUT_FMT("Cannot find acc path: "<<acc, rc);
         NCBI_THROW3(CSraException, eNotFound,
                     "Cannot find acc path", rc, acc);
     }
@@ -444,6 +460,7 @@ void CSraRun::x_DoInit(CSraMgr& mgr, const string& acc)
     if ( rc_t rc = SRAMgrOpenTableRead(mgr, x_InitPtr(), "%.*s",
                                        int(acc.size()), acc.data()) ) {
         *x_InitPtr() = 0;
+        CHECK_VDB_TIMEOUT_FMT("Cannot open run read: "<<acc, rc);
         NCBI_THROW3(CSraException, eNotFoundDb,
                     "Cannot open run read", rc, acc);
     }
@@ -468,6 +485,7 @@ void CSraColumn::Init(const CSraRun& run,
 {
     if ( rc_t rc = TryInitRc(run, name, type) ) {
         *x_InitPtr() = 0;
+        CHECK_VDB_TIMEOUT_FMT("Cannot get SRA column: "<<name, rc);
         NCBI_THROW3(CSraException, eInitFailed,
                     "Cannot get SRA column", rc, name);
     }
