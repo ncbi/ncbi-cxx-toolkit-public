@@ -1346,6 +1346,72 @@ version  2 # of file format
 2+6  PE  ddbj_patent # from Korea
 2+8  PE  ddbj_other_nuc
 2+10 PE  ddbj_other_nuc
+2+6  PF  ddbj_other_nuc
+2+8  PF  ddbj_other_nuc
+2+10 PF  ddbj_other_nuc
+2+6  PG  ddbj_other_nuc
+2+8  PG  ddbj_other_nuc
+2+10 PG  ddbj_other_nuc
+2+6  PH  ddbj_other_nuc
+2+8  PH  ddbj_other_nuc
+2+10 PH  ddbj_other_nuc
+2+6  PI  ddbj_other_nuc
+2+8  PI  ddbj_other_nuc
+2+10 PI  ddbj_other_nuc
+2+6  PJ  ddbj_other_nuc
+2+8  PJ  ddbj_other_nuc
+2+10 PJ  ddbj_other_nuc
+2+6  PK  ddbj_other_nuc
+2+8  PK  ddbj_other_nuc
+2+10 PK  ddbj_other_nuc
+2+6  PL  ddbj_other_nuc
+2+8  PL  ddbj_other_nuc
+2+10 PL  ddbj_other_nuc
+2+6  PM  ddbj_other_nuc
+2+8  PM  ddbj_other_nuc
+2+10 PM  ddbj_other_nuc
+2+6  PN  ddbj_other_nuc
+2+8  PN  ddbj_other_nuc
+2+10 PN  ddbj_other_nuc
+2+6  PO  ddbj_other_nuc
+2+8  PO  ddbj_other_nuc
+2+10 PO  ddbj_other_nuc
+2+6  PW  unreserved_nuc # deliberately skipped
+2+8  PW  unreserved_nuc # deliberately skipped
+2+10 PW  unreserved_nuc # deliberately skipped
+2+6  P?  gb_other_nuc
+2+8  P?  gb_other_nuc
+2+10 P?  gb_other_nuc
+2+6  QA  gb_other_nuc
+2+8  QA  gb_other_nuc
+2+10 QA  gb_other_nuc
+2+6  QB  gb_other_nuc
+2+8  QB  gb_other_nuc
+2+10 QB  gb_other_nuc
+2+6  QC  gb_other_nuc
+2+8  QC  gb_other_nuc
+2+10 QC  gb_other_nuc
+2+6  QD  gb_other_nuc
+2+8  QD  gb_other_nuc
+2+10 QD  gb_other_nuc
+2+6  QE  gb_other_nuc
+2+8  QE  gb_other_nuc
+2+10 QE  gb_other_nuc
+2+6  QF  gb_other_nuc
+2+8  QF  gb_other_nuc
+2+10 QF  gb_other_nuc
+2+6  QG  gb_other_nuc
+2+8  QG  gb_other_nuc
+2+10 QG  gb_other_nuc
+2+6  QH  gb_other_nuc
+2+8  QH  gb_other_nuc
+2+10 QH  gb_other_nuc
+2+6  QI  gb_other_nuc
+2+8  QI  gb_other_nuc
+2+10 QI  gb_other_nuc
+2+6  QJ  gb_other_nuc
+2+8  QJ  gb_other_nuc
+2+10 QJ  gb_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
