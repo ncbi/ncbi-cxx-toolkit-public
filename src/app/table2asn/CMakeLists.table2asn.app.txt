@@ -10,5 +10,5 @@ NCBI_begin_app(table2asn)
     data_loaders_util prosplign xdiscrepancy xflatfile
     xmlwrapp xvalidate xobjwrite
   )
-  NCBI_project_watchers(stakhovv gotvyans)
+  NCBI_project_watchers(stakhovv gotvyans foleyjp)
 NCBI_end_app()
