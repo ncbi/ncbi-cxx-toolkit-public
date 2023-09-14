@@ -754,6 +754,7 @@
 1.3.1.125	acrylate reductase
 1.3.1.n3	curcumin reductase
 1.3.2.3	L-galactonolactone dehydrogenase
+1.3.2.4	fumarate reductase (cytochrome)
 1.3.3.3	coproporphyrinogen oxidase
 1.3.3.4	protoporphyrinogen oxidase
 1.3.3.5	bilirubin oxidase
@@ -886,6 +887,7 @@
 1.4.3.23	7-chloro-L-tryptophan oxidase
 1.4.3.25	L-arginine oxidase
 1.4.3.26	pre-mycofactocin synthase
+1.4.3.27	homospermidine oxidase
 1.4.4.2	glycine dehydrogenase (aminomethyl-transferring)
 1.4.5.1	D-amino acid dehydrogenase (quinone)
 1.4.7.1	glutamate synthase (ferredoxin)
@@ -962,6 +964,8 @@
 1.5.3.22	coenzyme F420H2 oxidase
 1.5.3.23	glyphosate oxidoreductase
 1.5.3.24	sarcosine oxidase (5,10-methylenetetrahydrofolate-forming)
+1.5.3.25	fructosyl amine oxidase (glucosone-forming)
+1.5.3.26	fructosyl amine oxidase (fructosamine-forming)
 1.5.4.1	pyrimidodiazepine synthase
 1.5.5.1	electron-transferring-flavoprotein dehydrogenase
 1.5.5.2	proline dehydrogenase
@@ -3108,6 +3112,9 @@
 2.4.1.387	isomaltosyltransferase
 2.4.1.388	glucosylgalactose phosphorylase
 2.4.1.389	solabiose phosphorylase
+2.4.1.390	4,3-alpha-glucanotransferase
+2.4.1.391	beta-1,2-glucosyltransferase
+2.4.1.392	3-O-beta-D-glucopyranosyl-beta-D-glucuronide phosphorylase
 2.4.1.n2	loliose synthase
 2.4.2.1	purine-nucleoside phosphorylase
 2.4.2.2	pyrimidine-nucleoside phosphorylase
@@ -4033,7 +4040,7 @@
 3.1.1.26	galactolipase
 3.1.1.27	4-pyridoxolactonase
 3.1.1.28	acylcarnitine hydrolase
-3.1.1.29	aminoacyl-tRNA hydrolase
+3.1.1.29	peptidyl-tRNA hydrolase
 3.1.1.30	D-arabinonolactonase
 3.1.1.31	6-phosphogluconolactonase
 3.1.1.32	phospholipase A1
@@ -4251,6 +4258,7 @@
 3.1.3.106	2-lysophosphatidate phosphatase
 3.1.3.107	amicoumacin phosphatase
 3.1.3.108	nocturnin
+3.1.3.109	ribulose-1,5-bisphosphate 5-phosphatase
 3.1.4.1	phosphodiesterase I
 3.1.4.2	glycerophosphocholine phosphodiesterase
 3.1.4.3	phospholipase C
@@ -4564,6 +4572,8 @@
 3.2.1.215	arabinogalactan exo alpha-(1,3)-alpha-D-galactosyl-(1->3)-L-arabinofuranosidase (non-reducing end)
 3.2.1.216	kojibiose hydrolase
 3.2.1.217	exo-acting protein-alpha-N-acetylgalactosaminidase
+3.2.1.218	alpha-3'-ketoglucosidase
+3.2.1.219	palatinase
 3.2.1.n1	blood group B branched chain alpha-1,3-galactosidase
 3.2.1.n2	blood group B linear chain alpha-1,3-galactosidase
 3.2.1.n3	Dictyostelium lysozyme A
@@ -5426,7 +5436,7 @@
 4.1.1.84	D-dopachrome decarboxylase
 4.1.1.85	3-dehydro-L-gulonate-6-phosphate decarboxylase
 4.1.1.86	diaminobutyrate decarboxylase
-4.1.1.87	malonyl-S-ACP decarboxylase
+4.1.1.87	malonyl-[malonate decarboxylase] decarboxylase
 4.1.1.88	biotin-independent malonate decarboxylase
 4.1.1.90	peptidyl-glutamate 4-carboxylase
 4.1.1.91	salicylate decarboxylase
@@ -5742,6 +5752,7 @@
 4.2.2.25	gellan lyase
 4.2.2.26	oligo-alginate lyase
 4.2.2.27	pectin monosaccharide-lyase
+4.2.2.28	alpha-L-rhamnosyl-(1->4)-beta-D-glucuronate lyase
 4.2.2.n1	peptidoglycan lytic exotransglycosylase
 4.2.2.n2	peptidoglycan lytic endotransglycosylase
 4.2.3.1	threonine synthase
