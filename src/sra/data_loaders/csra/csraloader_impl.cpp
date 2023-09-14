@@ -1776,8 +1776,6 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
                    chunk_info.GetChunkId());
     }
     LoadRanges(); // also loads m_CovAnnot
-    CTSE_Split_Info& split_info =
-        const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
     string align_name;
     bool separate_spot_groups = !m_File->GetSeparateSpotGroups().empty();
     if ( !separate_spot_groups ) {
@@ -1785,6 +1783,10 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
     }
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
 
+    // save annots and chunks to add them after all reading successfully finished
+    vector<CRef<CSeq_annot>> new_annots;
+    vector<CRef<CTSE_Chunk_Info>> new_chunks;
+    
     // whole coverage graph
     if ( separate_spot_groups ) {
         // duplucate coverage graph for all spot groups
@@ -1795,13 +1797,13 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
             CRef<CAnnotdesc> desc(new CAnnotdesc);
             desc->SetName(align_name);
             annot->SetDesc().Set().push_back(desc);
-            chunk_info.x_LoadAnnot(place, *annot);
+            new_annots.push_back(annot);
         }
     }
     else {
-        chunk_info.x_LoadAnnot(place, *m_CovAnnot);
+        new_annots.push_back(m_CovAnnot);
     }
-    
+
     CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
     CRange<TSeqPos> range;
     {{
@@ -1838,7 +1840,7 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
             double seconds = bytes*(k_read_byte_seconds+k_make_align_seconds);
             chunk->x_SetLoadBytes(bytes);
             chunk->x_SetLoadSeconds(seconds);
-            split_info.AddChunk(*chunk);
+            new_chunks.push_back(chunk);
         }
     }}
     if ( m_File->GetPileupGraphs() ) {
@@ -1873,10 +1875,19 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
             double seconds = bytes*(k_read_byte_seconds+k_make_graph_seconds);
             chunk->x_SetLoadBytes(bytes);
             chunk->x_SetLoadSeconds(seconds);
-            split_info.AddChunk(*chunk);
+            new_chunks.push_back(chunk);
         }
     }
 
+    // now regiter all collected data to OM
+    for ( auto& annot : new_annots ) {
+        chunk_info.x_LoadAnnot(place, *annot);
+    }
+    CTSE_Split_Info& split_info =
+        const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
+    for ( auto& chunk : new_chunks ) {
+        split_info.AddChunk(*chunk);
+    }
     chunk_info.SetLoaded();
 }
 
@@ -1923,12 +1934,12 @@ void CCSRARefSeqInfo::LoadRefSeqMainEntry(CTSE_LoadLock& load_lock)
     CRef<CBioseq> seq = it.GetRefBioseq(it.eOmitData);
     entry->SetSeq(*seq);
     TSeqPos ref_data_size = it.GetSeqLength();
+    TSeqPos chunk_size = m_File->GetDb().GetRowSize()*kChunkSeqDataMul;
 
     load_lock->SetSeq_entry(*entry);
     CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
 
     // register ref seq data chunks
-    TSeqPos chunk_size = m_File->GetDb().GetRowSize()*kChunkSeqDataMul;
     vector<CTSE_Chunk_Info::TLocation> loc_set(1);
     loc_set[0].first = GetRefSeqId();
     for ( TSeqPos i = 0; i*chunk_size < ref_data_size; ++i ) {
