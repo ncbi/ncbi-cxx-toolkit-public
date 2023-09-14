@@ -3,6 +3,7 @@
 
 
 #include <corelib/ncbistl.hpp>
+#include <objtools/readers/fasta.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -22,6 +23,7 @@ namespace objects
         class CFeatTree;
     }
 }
+
 
 class CSerialObject;
 class ILineReader;
@@ -74,7 +76,15 @@ private:
     bool xAddProteinToSeqEntry(const objects::CBioseq& protein, objects::CSeq_entry_Handle seh);
     void xMoveCdRegions(objects::CSeq_entry_Handle entry_h, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable, TAsyncToken&);
 
+    CRef<objects::CSeq_feat> x_AddProteinFeatureToProtein(CRef<objects::CSeq_entry> nuc, 
+        CConstRef<objects::CSeq_loc> cds_loc, 
+        const list<CRef<objects::CSeq_id>>& pOriginalProtIds,
+        objects::CBioseq& protein, 
+        bool partial5, bool partial3);
+
+
     CTable2AsnContext& m_context;
+    objects::CFastaReader::TPostponedModMap m_PrtModMap;
 };
 
 END_NCBI_SCOPE

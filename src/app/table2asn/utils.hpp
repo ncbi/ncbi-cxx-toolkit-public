@@ -5,9 +5,12 @@
 #include <map>
 
 BEGIN_NCBI_SCOPE
+namespace objects {
+    class CSeq_feat;
+    class ILineErrorListener;
+}
 
 bool AssignLocalIdIfEmpty(ncbi::objects::CSeq_feat& feature, int& id);
-
 class COnceMutex
 {
 public:
@@ -64,6 +67,20 @@ private:
 };
 
 using CBufferedInput  = CBufferedStream<CNcbiIfstream>;
+
+
+void g_LogGeneralParsingError(EDiagSev sev, 
+    const string& idString, 
+    const string& msg, 
+    objects::ILineErrorListener& listener);
+
+void g_LogGeneralParsingError(EDiagSev sev,
+    const string& msg,
+    objects::ILineErrorListener& listener);
+
+void g_LogGeneralParsingError(
+    const string& msg,
+    objects::ILineErrorListener& listener);
 
 END_NCBI_SCOPE
 

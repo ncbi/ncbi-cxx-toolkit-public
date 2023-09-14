@@ -116,7 +116,7 @@ public:
     string ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid,
         size_t iMaxModsToParse = std::numeric_limits<size_t>::max() );
 
-    void AddMods(const CTempString& name, const CTempString& value);
+    bool AddMods(const CTempString& name, const CTempString& value);
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.

@@ -369,9 +369,9 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
     if (result->IsSet() && !m_context.m_HandleAsSet)
     {
-        m_context.m_logger->PutError(*unique_ptr<CLineError>(
-            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
-            "File " + m_context.m_current_file + " contains multiple sequences")));
+        g_LogGeneralParsingError(eDiag_Warning, 
+                "File " + m_context.m_current_file + " contains multiple sequences",
+                *(m_context.m_logger));
     }
     if (result->IsSet())
     {
@@ -917,7 +917,7 @@ CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool m
                 m_context.m_logger->PutError(
                     *unique_ptr<CLineError>(
                         CLineError::Create(ILineError::eProblem_Unset,
-                            eDiag_Warning, "", 0, msg)));
+                            eDiag_Warning, "", 0, "", "", "", msg)));
             }
         }
     }
