@@ -203,7 +203,8 @@ protected:
         fError_withdrawn            = 1 << 6,
         fError_suppressed_perm      = 1 << 7,
         fError_suppressed_temp      = 1 << 8,
-        fError_inactivity_timeout   = 1 << 9
+        fError_inactivity_timeout   = 1 << 9,
+        fError_failed_command       = 1 << 10
     };
     typedef int TErrorFlags;
     TErrorFlags x_GetError(CReaderRequestResult& result,

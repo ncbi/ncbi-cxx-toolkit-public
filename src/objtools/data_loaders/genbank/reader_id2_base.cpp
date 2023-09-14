@@ -72,7 +72,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DEFINE_ERR_SUBCODE_X(16);
+NCBI_DEFINE_ERR_SUBCODE_X(17);
 
 
 NCBI_PARAM_ENUM_ARRAY(objects::CSeq_id::ESNPScaleLimit, GENBANK, ID2SNP_SCALE_LIMIT) {
@@ -2056,6 +2056,10 @@ int CId2ReaderBase::x_GetReplyIndex(CReaderRequestResult& result,
                 NCBI_THROW_FMT(CLoaderException, eConnectionFailed,
                                "CId2ReaderBase: connection failed"<<descr);
             }
+            if ( error & fError_failed_command ) {
+                NCBI_THROW_FMT(CLoaderException, eOtherError,
+                               "CId2ReaderBase: failed command"<<descr);
+            }
         }
         else if ( reply.GetReply().IsEmpty() ) {
             ERR_POST_X(8, "CId2ReaderBase: bad reply serial number: "<<descr);
@@ -2103,6 +2107,9 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
             if ( num >= 0 ) {
                 try {
                     x_ProcessReply(result, loaded_sets[num], *reply, *packet_info.requests[num]);
+                }
+                catch ( CLoaderException& /*rethrown*/ ) {
+                    throw;
                 }
                 catch ( CException& exc ) {
                     NCBI_RETHROW(exc, CLoaderException, eOtherError,
@@ -2285,7 +2292,7 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
         }
         break;
     case CID2_Error::eSeverity_failed_command:
-        error_flags |= fError_bad_command;
+        error_flags |= fError_failed_command;
         break;
     case CID2_Error::eSeverity_failed_connection:
         error_flags |= fError_bad_connection;
@@ -2339,7 +2346,7 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
         }
         break;
     case CID2_Error::eSeverity_failed_command:
-        error_flags |= fError_bad_command;
+        error_flags |= fError_failed_command;
         break;
     case CID2_Error::eSeverity_failed_connection:
         error_flags |= fError_bad_connection;
@@ -2476,9 +2483,18 @@ void CId2ReaderBase::x_ProcessReply(CReaderRequestResult& result,
                                     const CID2_Reply& main_reply,
                                     const CID2_Request& request)
 {
-    if ( x_GetError(result, main_reply) &
-         (fError_bad_command | fError_bad_connection) ) {
-        return;
+    if ( auto error = x_GetError(result, main_reply) ) {
+        if ( error & fError_bad_connection ) {
+            NCBI_THROW(CLoaderException, eConnectionFailed,
+                       "CId2ReaderBase: connection failed");
+        }
+        if ( error & fError_failed_command ) {
+            ERR_POST_X(17, "CId2ReaderBase: failed command reply: "<<
+                       MSerial_AsnText<<main_reply<<
+                       MSerial_AsnText<<request);
+            NCBI_THROW(CLoaderException, eOtherError,
+                       "CId2ReaderBase: failed command");
+        }
     }
     auto& reply = main_reply.GetReply();
     switch ( reply.Which() ) {
