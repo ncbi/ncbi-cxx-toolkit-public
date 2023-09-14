@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Jun 30 14:50:52 EDT 2023; formally
+/* time_t value corresponding to Thu Sep 14 13:48:25 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1688151052UL;
+static const unsigned long kECNum_specific_Timestamp = 1694713705UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -790,6 +790,7 @@ static const char* const kECNum_specific[] = {
     "1.3.1.125\tacrylate reductase",
     "1.3.1.n3\tcurcumin reductase",
     "1.3.2.3\tL-galactonolactone dehydrogenase",
+    "1.3.2.4\tfumarate reductase (cytochrome)",
     "1.3.3.3\tcoproporphyrinogen oxidase",
     "1.3.3.4\tprotoporphyrinogen oxidase",
     "1.3.3.5\tbilirubin oxidase",
@@ -922,6 +923,7 @@ static const char* const kECNum_specific[] = {
     "1.4.3.23\t7-chloro-L-tryptophan oxidase",
     "1.4.3.25\tL-arginine oxidase",
     "1.4.3.26\tpre-mycofactocin synthase",
+    "1.4.3.27\thomospermidine oxidase",
     "1.4.4.2\tglycine dehydrogenase (aminomethyl-transferring)",
     "1.4.5.1\tD-amino acid dehydrogenase (quinone)",
     "1.4.7.1\tglutamate synthase (ferredoxin)",
@@ -998,6 +1000,8 @@ static const char* const kECNum_specific[] = {
     "1.5.3.22\tcoenzyme F420H2 oxidase",
     "1.5.3.23\tglyphosate oxidoreductase",
     "1.5.3.24\tsarcosine oxidase (5,10-methylenetetrahydrofolate-forming)",
+    "1.5.3.25\tfructosyl amine oxidase (glucosone-forming)",
+    "1.5.3.26\tfructosyl amine oxidase (fructosamine-forming)",
     "1.5.4.1\tpyrimidodiazepine synthase",
     "1.5.5.1\telectron-transferring-flavoprotein dehydrogenase",
     "1.5.5.2\tproline dehydrogenase",
@@ -3144,6 +3148,9 @@ static const char* const kECNum_specific[] = {
     "2.4.1.387\tisomaltosyltransferase",
     "2.4.1.388\tglucosylgalactose phosphorylase",
     "2.4.1.389\tsolabiose phosphorylase",
+    "2.4.1.390\t4,3-alpha-glucanotransferase",
+    "2.4.1.391\tbeta-1,2-glucosyltransferase",
+    "2.4.1.392\t3-O-beta-D-glucopyranosyl-beta-D-glucuronide phosphorylase",
     "2.4.1.n2\tloliose synthase",
     "2.4.2.1\tpurine-nucleoside phosphorylase",
     "2.4.2.2\tpyrimidine-nucleoside phosphorylase",
@@ -4069,7 +4076,7 @@ static const char* const kECNum_specific[] = {
     "3.1.1.26\tgalactolipase",
     "3.1.1.27\t4-pyridoxolactonase",
     "3.1.1.28\tacylcarnitine hydrolase",
-    "3.1.1.29\taminoacyl-tRNA hydrolase",
+    "3.1.1.29\tpeptidyl-tRNA hydrolase",
     "3.1.1.30\tD-arabinonolactonase",
     "3.1.1.31\t6-phosphogluconolactonase",
     "3.1.1.32\tphospholipase A1",
@@ -4287,6 +4294,7 @@ static const char* const kECNum_specific[] = {
     "3.1.3.106\t2-lysophosphatidate phosphatase",
     "3.1.3.107\tamicoumacin phosphatase",
     "3.1.3.108\tnocturnin",
+    "3.1.3.109\tribulose-1,5-bisphosphate 5-phosphatase",
     "3.1.4.1\tphosphodiesterase I",
     "3.1.4.2\tglycerophosphocholine phosphodiesterase",
     "3.1.4.3\tphospholipase C",
@@ -4600,6 +4608,8 @@ static const char* const kECNum_specific[] = {
     "3.2.1.215\tarabinogalactan exo alpha-(1,3)-alpha-D-galactosyl-(1->3)-L-arabinofuranosidase (non-reducing end)",
     "3.2.1.216\tkojibiose hydrolase",
     "3.2.1.217\texo-acting protein-alpha-N-acetylgalactosaminidase",
+    "3.2.1.218\talpha-3'-ketoglucosidase",
+    "3.2.1.219\tpalatinase",
     "3.2.1.n1\tblood group B branched chain alpha-1,3-galactosidase",
     "3.2.1.n2\tblood group B linear chain alpha-1,3-galactosidase",
     "3.2.1.n3\tDictyostelium lysozyme A",
@@ -5462,7 +5472,7 @@ static const char* const kECNum_specific[] = {
     "4.1.1.84\tD-dopachrome decarboxylase",
     "4.1.1.85\t3-dehydro-L-gulonate-6-phosphate decarboxylase",
     "4.1.1.86\tdiaminobutyrate decarboxylase",
-    "4.1.1.87\tmalonyl-S-ACP decarboxylase",
+    "4.1.1.87\tmalonyl-[malonate decarboxylase] decarboxylase",
     "4.1.1.88\tbiotin-independent malonate decarboxylase",
     "4.1.1.90\tpeptidyl-glutamate 4-carboxylase",
     "4.1.1.91\tsalicylate decarboxylase",
@@ -5778,6 +5788,7 @@ static const char* const kECNum_specific[] = {
     "4.2.2.25\tgellan lyase",
     "4.2.2.26\toligo-alginate lyase",
     "4.2.2.27\tpectin monosaccharide-lyase",
+    "4.2.2.28\talpha-L-rhamnosyl-(1->4)-beta-D-glucuronate lyase",
     "4.2.2.n1\tpeptidoglycan lytic exotransglycosylase",
     "4.2.2.n2\tpeptidoglycan lytic endotransglycosylase",
     "4.2.3.1\tthreonine synthase",
