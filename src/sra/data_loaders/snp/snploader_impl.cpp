@@ -125,6 +125,30 @@ static unsigned GetRetryCountParam(void)
 }
 
 
+NCBI_PARAM_DECL(unsigned, SNP_LOADER, FILE_REOPEN_TIME);
+NCBI_PARAM_DEF(unsigned, SNP_LOADER, FILE_REOPEN_TIME, 60*60); // 1 hour
+
+
+static unsigned GetFileReopenTimeParam(void)
+{
+    static unsigned value =
+        NCBI_PARAM_TYPE(SNP_LOADER, FILE_REOPEN_TIME)::GetDefault();
+    return value;
+}
+
+
+NCBI_PARAM_DECL(unsigned, SNP_LOADER, FILE_RECHECK_TIME);
+NCBI_PARAM_DEF(unsigned, SNP_LOADER, FILE_RECHECK_TIME, 5*60); // 5 minutes
+
+
+static unsigned GetFileRecheckTimeParam(void)
+{
+    static unsigned value =
+        NCBI_PARAM_TYPE(SNP_LOADER, FILE_RECHECK_TIME)::GetDefault();
+    return value;
+}
+
+
 /*
 NCBI_PARAM_DECL(string, SNP_LOADER, ANNOT_NAME);
 NCBI_PARAM_DEF_EX(string, SNP_LOADER, ANNOT_NAME, "SNP",
@@ -589,9 +613,11 @@ bool CSNPBlobId::operator==(const CBlobId& id) const
 
 CSNPDataLoader_Impl::CSNPDataLoader_Impl(
     const CSNPDataLoader::SLoaderParams& params)
-    : m_FoundFiles(GetGCSize()),
-      m_MissingFiles(GetMissingGCSize()),
-      m_RetryCount(GetRetryCountParam())
+    : m_FileReopenTime(GetFileReopenTimeParam()),
+      m_FileRecheckTime(GetFileRecheckTimeParam()),
+      m_RetryCount(GetRetryCountParam()),
+      m_FoundFiles(max(params.m_VDBFiles.size(), GetGCSize()),
+                   m_FileReopenTime, m_FileRecheckTime)
 {
     m_DirPath = params.m_DirPath;
     m_AnnotName = params.m_AnnotName;
@@ -673,7 +699,53 @@ void CSNPDataLoader_Impl::AddFixedFileOnce(const string& file)
     CRef<CSNPFileInfo> info(new CSNPFileInfo(*this, file));
     string key = info->GetBaseAnnotName();
     sx_ExtractFilterIndex(key);
-    m_FixedFiles[key] = info;
+    if ( !m_FixedFiles.insert(TFixedFiles::value_type(key, info->m_FileName)).second ) {
+        NCBI_THROW_FMT(CSraException, eOtherError,
+                       "Duplicated fixed SNP NA: "<<
+                       key);
+    }
+    CRef<SSNPFileInfoSlot> info_slot = m_FoundFiles.GetSlot(info->m_FileName);
+    info_slot->UpdateExpiration(m_FoundFiles, info->m_FileName);
+    info_slot->SetObject(info);
+}
+
+
+CRef<CSNPFileInfo> CSNPDataLoader_Impl::x_GetFileInfo(const string& file)
+{
+    CRef<SSNPFileInfoSlot> info_slot = m_FoundFiles.GetSlot(file);
+    CRef<CSNPFileInfo> info; // return info
+    CRef<CSNPFileInfo> delete_info; // delete stale file info after releasing mutex
+    // now open or reopen the SNP file under individual guard
+    SSNPFileInfoSlot::TSlotMutex::TWriteLockGuard guard(info_slot->GetSlotMutex());
+    info = info_slot->GetObject<CSNPFileInfo>();
+    if ( info && info_slot->IsExpired(m_FoundFiles, file) ) {
+        if ( GetDebugLevel() >= 1 ) {
+            LOG_POST_X(4, Info<<"CSNPDataLoader: "
+                       "Reopening SNP file expired in cache: "<<file);
+        }
+        info_slot->ResetObject();
+        delete_info.Swap(info);
+    }
+    if ( !info ) {
+        // make sure the file is opened
+        try {
+            info_slot->UpdateExpiration(m_FoundFiles, file);
+            info = new CSNPFileInfo(*this, file);
+            info_slot->SetObject(info);
+        }
+        catch ( CSraException& exc ) {
+            if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                 exc.GetErrCode() == exc.eProtectedDb ) {
+                // no such SNP NA accession
+                return null;
+            }
+            else {
+                // problem in VDB or SNP reader
+                throw;
+            }
+        }
+    }
+    return info;
 }
 
 
@@ -683,7 +755,7 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::GetFixedFile(const string& acc)
     if ( it == m_FixedFiles.end() ) {
         return null;
     }
-    return it->second;
+    return x_GetFileInfo(it->second);
 }
 
 
@@ -693,6 +765,8 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
         // no dynamic accessions
         return null;
     }
+    return x_GetFileInfo(acc);
+    /*
     CMutexGuard guard(m_Mutex);
     TMissingFiles::iterator it2 = m_MissingFiles.find(acc);
     if ( it2 != m_MissingFiles.end() && it2->second >= m_RetryCount ) {
@@ -713,7 +787,9 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
             return null;
         }
         ERR_POST_X(4, "CSNPDataLoader::FindFile("<<acc<<"): accession not found: "<<exc);
-        m_MissingFiles[acc] += 1;
+        if ( ++m_MissingFiles[acc] < m_RetryCount ) {
+            throw;
+        }
         return null;
     }
     // store file in cache
@@ -722,6 +798,7 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
         m_MissingFiles.erase(it2);
     }
     return info;
+    */
 }
 
 
@@ -830,18 +907,22 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecordsOnce(CDataSource* ds,
             sel->GetNamedAnnotAccessions();
         if ( m_FixedFiles.empty() ) {
             auto accs_size = accs.size();
-            if ( m_FoundFiles.get_size_limit() < accs_size ||
-                 m_MissingFiles.get_size_limit() < accs_size ) {
-                CMutexGuard guard(m_Mutex);
+            if ( m_FoundFiles.get_size_limit() < accs_size ) {
+                CMutexGuard guard(m_FoundFiles.GetCacheMutex());
                 if ( m_FoundFiles.get_size_limit() < accs_size ) {
                     // increase VDB cache size
                     m_FoundFiles.set_size_limit(accs_size+GetGCSize());
                 }
+            }
+            /*
+            if ( m_MissingFiles.get_size_limit() < accs_size ) {
+                CMutexGuard guard(m_MissingFiles.GetCacheMutex());
                 if ( m_MissingFiles.get_size_limit() < accs_size ) {
                     // increase VDB cache size
                     m_MissingFiles.set_size_limit(accs_size+GetMissingGCSize());
                 }
             }
+            */
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
             if ( m_AddPTIS && it->first == "SNP" ) {
