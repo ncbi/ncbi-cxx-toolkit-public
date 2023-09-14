@@ -1350,7 +1350,7 @@ CRef<CSeq_feat> CFeatureTableReader::x_AddProteinFeatureToProtein (CRef<CSeq_ent
             const auto& modList = it->second.second;      
             lineNumber = it->second.first;
             set<string> duplicateMods;  
-            for (auto mod : modList) {
+            for (const auto& mod : modList) {
                 if (!smp.AddMods(mod.GetName(), mod.GetValue())) {
                     duplicateMods.insert(mod.GetName());
                 }
