@@ -38,6 +38,7 @@
 #include <util/limited_size_map.hpp>
 #include <objects/general/general__.hpp>
 #include <sra/readers/sra/wgsread.hpp>
+#include <sra/readers/sra/vdbcache.hpp>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -64,7 +65,9 @@ struct SWGSProcessor_Config
     };
 
     size_t m_CacheSize = 100;
-    unsigned m_UpdateDelay = 600;
+    unsigned m_IndexUpdateDelay = 600;
+    unsigned m_FileReopenTime = 3600;
+    unsigned m_FileRecheckTime = 600;
     ECompressData m_CompressData = eCompressData_some;
 };
 
@@ -104,10 +107,9 @@ class CWGSClient
 public:
     class CWGSDbInfo : public CObject {
     public:
-        CFastMutex m_Mutex;
         objects::CWGSDb m_WGSDb;
     };
-    typedef limited_size_map<string, CRef<CWGSDbInfo> > TWGSDbCache;
+    typedef CVDBCacheWithExpiration TWGSDbCache;
     typedef vector<string> TBlobIds;
 
     struct SWGSSeqInfo {
@@ -223,11 +225,11 @@ private:
                           EPSGOperationStatus status);
     
     SWGSProcessor_Config m_Config;
-    CMutex m_Mutex;
     objects::CVDBMgr m_Mgr;
+    CFastMutex m_ResolverMutex;
     CRef<objects::CWGSResolver> m_Resolver;
     TWGSDbCache m_WGSDbCache;
-    CRef<CThreadNonStop> m_UpdateThread;
+    CRef<CThreadNonStop> m_IndexUpdateThread;
 };
 
 

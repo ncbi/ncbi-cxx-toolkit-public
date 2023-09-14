@@ -246,17 +246,17 @@ END_LOCAL_NAMESPACE;
 
 
 CWGSClient::CWGSClient(const SWGSProcessor_Config& config)
-    : m_Config(config)
+    : m_Config(config),
+      m_WGSDbCache(config.m_CacheSize, config.m_FileReopenTime, config.m_FileRecheckTime)
 {
-    m_WGSDbCache.set_size_limit(m_Config.m_CacheSize);
 }
 
 
 CWGSClient::~CWGSClient(void)
 {
-    if ( m_UpdateThread ) {
-        m_UpdateThread->RequestStop();
-        m_UpdateThread->Join();
+    if ( m_IndexUpdateThread ) {
+        m_IndexUpdateThread->RequestStop();
+        m_IndexUpdateThread->Join();
     }
 }
 
@@ -264,13 +264,13 @@ CWGSClient::~CWGSClient(void)
 CRef<CWGSResolver> CWGSClient::GetWGSResolver(void)
 {
     if ( !m_Resolver ) {
-        CMutexGuard guard(m_Mutex);
+        CFastMutexGuard guard(m_ResolverMutex);
         if ( !m_Resolver ) {
             m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
         }
-        if ( m_Resolver && !m_UpdateThread ) {
-            m_UpdateThread = new CIndexUpdateThread(m_Config.m_UpdateDelay, m_Resolver);
-            m_UpdateThread->Run();
+        if ( m_Resolver && !m_IndexUpdateThread ) {
+            m_IndexUpdateThread = new CIndexUpdateThread(m_Config.m_IndexUpdateDelay, m_Resolver);
+            m_IndexUpdateThread->Run();
         }
     }
     return m_Resolver;
@@ -424,53 +424,52 @@ CWGSDb CWGSClient::GetWGSDb(const string& prefix)
 {
     CWGSDb wgs_db;
     {{
-        CRef<CWGSDbInfo> info;
-        {{
-            CMutexGuard guard(m_Mutex);
-            auto& slot = m_WGSDbCache[prefix];
-            if ( !slot ) {
-                slot = new CWGSDbInfo;
+        CRef<CWGSDbInfo> delete_info; // delete stale file info after releasing mutex
+        auto slot = m_WGSDbCache.GetSlot(prefix);
+        TWGSDbCache::CSlot::TSlotMutex::TWriteLockGuard guard(slot->GetSlotMutex());
+        CRef<CWGSDbInfo> info = slot->GetObject<CWGSDbInfo>();
+        if ( info && slot->IsExpired(m_WGSDbCache, prefix) ) {
+            PSG_INFO("PSGS_WGS: GetWGSDb: opened " << prefix << " has expired");
+            slot->ResetObject();
+            delete_info.Swap(info);
+        }
+        if ( !info ) {
+            slot->UpdateExpiration(m_WGSDbCache, prefix);
+            try {
+                psg_time_point_t start = psg_clock_t::now();
+                wgs_db = CWGSDb(m_Mgr, prefix);
+                if ( s_AddMasterDescrLevel() != eAddMasterDescr_none ) {
+                    wgs_db.LoadMasterDescr();
+                }
+                x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
             }
-            info = slot;
-        }}
-        {{
-            CFastMutexGuard guard(info->m_Mutex);
-            wgs_db = info->m_WGSDb;
-            if ( !wgs_db ) {
-                // create new DB
-                try {
-                    psg_time_point_t start = psg_clock_t::now();
-                    wgs_db = CWGSDb(m_Mgr, prefix);
-                    if ( s_AddMasterDescrLevel() != eAddMasterDescr_none ) {
-                        wgs_db.LoadMasterDescr();
-                    }
-                    info->m_WGSDb = wgs_db;
-                    x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                     exc.GetErrCode() == exc.eProtectedDb ) {
+                    // no such WGS table
                 }
-                catch ( CSraException& exc ) {
-                    if ( exc.GetErrCode() == exc.eNotFoundDb ||
-                         exc.GetErrCode() == exc.eProtectedDb ) {
-                        // no such WGS table
-                    }
-                    else {
-                        // problem in VDB or WGS reader
-                        PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc);
-                        throw;
-                    }
-                    return CWGSDb();
-                }
-                catch ( CException& exc ) {
+                else {
                     // problem in VDB or WGS reader
                     PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc);
                     throw;
                 }
-                catch ( exception& exc ) {
-                    // problem in VDB or WGS reader
-                    PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc.what());
-                    throw;
-                }
+                return CWGSDb();
             }
-        }}
+            catch ( CException& exc ) {
+                // problem in VDB or WGS reader
+                PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc);
+                throw;
+            }
+            catch ( exception& exc ) {
+                // problem in VDB or WGS reader
+                PSG_ERROR("PSGS_WGS: Exception while opening WGS DB " << prefix << ": " << exc.what());
+                throw;
+            }
+            info = new CWGSDbInfo;
+            info->m_WGSDb = wgs_db;
+            slot->SetObject(info);
+        }
+        wgs_db = info->m_WGSDb;
     }}
     if ( wgs_db->IsReplaced() && !s_KeepReplaced() ) {
         // replaced
@@ -927,9 +926,9 @@ CWGSClient::ResolveProtAcc(const CTextseq_id& id, bool skip_lookup)
 
 CWGSClient::SWGSSeqInfo
 CWGSClient::ResolveWGSAcc(const string& acc,
-                                  const CTextseq_id& id,
-                                  TAllowSeqType allow_seq_type,
-                                  bool skip_lookup)
+                          const CTextseq_id& id,
+                          TAllowSeqType allow_seq_type,
+                          bool skip_lookup)
 {
     if ( acc.size() < kPrefixLenV1 + kMinRowDigitsV1 ||
          acc.size() > kPrefixLenV2 + kMaxRowDigitsV2 + 1 ) { // one for type letter
@@ -1411,7 +1410,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         else if ( auto text_id = id->GetTextseq_Id() ) {
             // only versioned accession goes to canonical id
             if ( !(data->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId) &&
-                    text_id->IsSetAccession() && text_id->IsSetVersion() ) {
+                 text_id->IsSetAccession() && text_id->IsSetVersion() ) {
                 info.SetSeqIdType(id->Which());
                 info.SetAccession(text_id->GetAccession());
                 info.SetVersion(text_id->GetVersion());
