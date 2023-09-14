@@ -246,7 +246,7 @@ class CSatInfoSchemaProvider final
     ///   {service} entry of registry section gets replaced by {service} from {sat_info3.sat2keyspace} table
     ///
     /// @not_thread_safe
-    void SatSecureSatRegistrySection(string const& registry_section)
+    void SetSecureSatRegistrySection(string const& registry_section)
     {
         m_SecureSatRegistrySection = registry_section;
     }
