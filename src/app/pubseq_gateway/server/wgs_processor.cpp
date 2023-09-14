@@ -201,10 +201,14 @@ static bool s_SimulateError()
 
 #define PARAM_VDB_CACHE_SIZE "vdb_cache_size"
 #define PARAM_INDEX_UPDATE_TIME "index_update_time"
+#define PARAM_FILE_REOPEN_TIME "file_reopen_time"
+#define PARAM_FILE_RECHECK_TIME "file_recheck_time"
 #define PARAM_COMPRESS_DATA "compress_data"
 
 #define DEFAULT_VDB_CACHE_SIZE 100
 #define DEFAULT_INDEX_UPDATE_TIME 600
+#define DEFAULT_FILE_REOPEN_TIME 3600
+#define DEFAULT_FILE_RECHECK_TIME 600
 #define DEFAULT_COMPRESS_DATA SWGSProcessor_Config::eCompressData_some
 
 
@@ -258,7 +262,9 @@ void CPSGS_WGSProcessor::x_LoadConfig(void)
          compress_data <= SWGSProcessor_Config::eCompressData_always ) {
         m_Config->m_CompressData = SWGSProcessor_Config::ECompressData(compress_data);
     }
-    m_Config->m_UpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
+    m_Config->m_IndexUpdateDelay = registry.GetInt(kWGSProcessorSection, PARAM_INDEX_UPDATE_TIME, DEFAULT_INDEX_UPDATE_TIME);
+    m_Config->m_FileReopenTime = registry.GetInt(kWGSProcessorSection, PARAM_FILE_REOPEN_TIME, DEFAULT_FILE_REOPEN_TIME);
+    m_Config->m_FileRecheckTime = registry.GetInt(kWGSProcessorSection, PARAM_FILE_RECHECK_TIME, DEFAULT_FILE_RECHECK_TIME);
 
     unsigned int max_conn = registry.GetInt(kWGSProcessorSection, kParamMaxConn, kDefaultMaxConn);
     if (max_conn == 0) {
