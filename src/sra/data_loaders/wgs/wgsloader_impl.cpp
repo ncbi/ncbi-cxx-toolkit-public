@@ -257,7 +257,7 @@ static unsigned GetFileRecheckTimeParam(void)
 // CWGSBlobId
 /////////////////////////////////////////////////////////////////////////////
 
-CWGSBlobId::CWGSBlobId(CTempString str)
+CWGSBlobId::CWGSBlobId(const string& str)
 {
     FromString(str);
 }
@@ -419,7 +419,8 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
       m_IndexUpdateDelay(GetIndexUpdateTimeParam()),
       m_FileReopenTime(GetFileReopenTimeParam()),
       m_FileRecheckTime(GetFileRecheckTimeParam()),
-      m_FoundFiles(GetGCSizeParam()),
+      m_FoundFiles(max(params.m_WGSFiles.size(), GetGCSizeParam()),
+                   m_FileReopenTime, m_FileRecheckTime),
       m_AddWGSMasterDescr(GetMasterDescrParam()),
       m_ResolveGIs(GetResolveGIsParam()),
       m_ResolveProtAccs(GetResolveProtAccsParam()),
@@ -429,9 +430,8 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
         m_WGSVolPath = GetWGSVolPath();
     }
     ITERATE (vector<string>, it, params.m_WGSFiles) {
-        CRef<CWGSFileInfo> info = OpenWGSFile(*it);
-        CRef<SWGSFileInfoSlot> info_slot(new SWGSFileInfoSlot());
-        info_slot->m_FileInfo = info;
+        CRef<SWGSFileInfoSlot> info_slot = m_FoundFiles.GetSlot(*it);
+        CRef<CWGSFileInfo> info = OpenWGSFile(*info_slot, *it);
         if ( !m_FixedFiles.insert(TFixedFiles::value_type(info->GetWGSPrefix(),
                                                           info_slot)).second ) {
             NCBI_THROW_FMT(CSraException, eOtherError,
@@ -563,17 +563,23 @@ CWGSDataLoader_Impl::CallWithRetry(Call&& call,
 }
 
 
-CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFile(CTempString prefix)
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFile(SWGSFileInfoSlot& info_slot,
+                                                    const string& prefix)
 {
     return CallWithRetry(bind(&CWGSDataLoader_Impl::OpenWGSFileOnce, this,
-                              prefix),
+                              ref(info_slot), cref(prefix)),
                          "OpenWGSFile");
 }
 
 
-CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFileOnce(CTempString prefix)
+CRef<CWGSFileInfo> CWGSDataLoader_Impl::OpenWGSFileOnce(SWGSFileInfoSlot& info_slot,
+                                                        const string& prefix)
 {
-    return Ref(new CWGSFileInfo(*this, prefix));
+    string path = CWGSDb_Impl::NormalizePathOrAccession(prefix, m_WGSVolPath);
+    info_slot.UpdateExpiration(m_FoundFiles, path);
+    CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, prefix));
+    info_slot.SetObject(info);
+    return info;
 }
 
 
@@ -624,16 +630,7 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
     }
     else {
         // lookup in dynamic cache
-        CFastMutexGuard guard(m_FoundFilesMutex);
-        auto& map_slot = m_FoundFiles[prefix];
-        if ( map_slot ) {
-            // use cached info
-            info_slot = map_slot;
-        }
-        else {
-            // create new info
-            map_slot = info_slot = new SWGSFileInfoSlot();
-        }
+        info_slot = m_FoundFiles.GetSlot(prefix);
     }
     CRef<CWGSFileInfo> info = x_GetFileInfo(*info_slot, prefix);
     if ( !info ) {
@@ -659,20 +656,20 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::x_GetFileInfo(SWGSFileInfoSlot& info_slo
     CRef<CWGSFileInfo> info; // return info
     CRef<CWGSFileInfo> delete_info; // delete stale file info after releasing mutex
     // now open or reopen the WGS file under individual guard
-    CFastMutexGuard guard(info_slot.m_FileInfoMutex);
-    info = info_slot.m_FileInfo;
-    if ( info && info->IsExpired(*this, prefix) ) {
+    SWGSFileInfoSlot::TSlotMutex::TWriteLockGuard guard(info_slot.GetSlotMutex());
+    info = info_slot.GetObject<CWGSFileInfo>();
+    if ( info && info_slot.IsExpired(m_FoundFiles, prefix) ) {
         if ( GetDebugLevel() >= 1 ) {
             LOG_POST_X(4, Info<<"CWGSDataLoader: "
                        "Reopening WGS project expired in cache: "<<prefix);
         }
-        info_slot.m_FileInfo = null;
+        info_slot.ResetObject();
         delete_info.Swap(info);
     }
     if ( !info ) {
         // make sure the file is opened
         try {
-            info_slot.m_FileInfo = info = new CWGSFileInfo(*this, prefix);
+            info = OpenWGSFileOnce(info_slot, prefix);
         }
         catch ( CSraException& exc ) {
             if ( exc.GetErrCode() == exc.eNotFoundDb ||
@@ -1434,46 +1431,15 @@ CWGSDataLoader_Impl::GetSequenceTypeOnce(const CSeq_id_Handle& idh)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CWGSFileInfo::CWGSFileInfo()
-    : m_FileReopenDeadline(CDeadline::eInfinite),
-      m_FileRecheckDeadline(CDeadline::eInfinite)
-{
-}
-
-
 CWGSFileInfo::CWGSFileInfo(const CWGSDataLoader_Impl& impl,
-                           CTempString prefix)
-    : m_FileReopenDeadline(CDeadline::eInfinite),
-      m_FileRecheckDeadline(CDeadline::eInfinite)
+                           const string& prefix)
 {
     Open(impl, prefix);
 }
 
 
-bool CWGSFileInfo::IsExpired(const CWGSDataLoader_Impl& impl,
-                             CTempString prefix) const
-{
-    if ( m_FileReopenDeadline.IsExpired() ) {
-        // forced cache expiration
-        return true;
-    }
-    if ( m_FileRecheckDeadline.IsExpired() ) {
-        string new_path = impl.m_Mgr.FindDereferencedAccPath(prefix);
-        if ( new_path != m_DereferencedPath ) {
-            return true;
-        }
-        CTime new_timestamp = impl.m_Mgr.GetTimestamp(new_path);
-        if ( new_timestamp != m_Timestamp ) {
-            return true;
-        }
-        m_FileRecheckDeadline = CDeadline(impl.m_FileRecheckTime);
-    }
-    return false;
-}
-
-
 void CWGSFileInfo::Open(const CWGSDataLoader_Impl& impl,
-                        CTempString prefix)
+                        const string& prefix)
 {
     if ( m_WGSDb ) {
         return;
@@ -1503,14 +1469,10 @@ void CWGSFileInfo::Open(const CWGSDataLoader_Impl& impl,
 
 
 void CWGSFileInfo::x_Initialize(const CWGSDataLoader_Impl& impl,
-                                CTempString prefix)
+                                const string& prefix)
 {
     auto mgr = impl.m_Mgr;
     m_WGSDb = CWGSDb(mgr, prefix, impl.m_WGSVolPath);
-    m_FileReopenDeadline = CDeadline(impl.m_FileReopenTime);
-    m_FileRecheckDeadline = CDeadline(impl.m_FileRecheckTime);
-    m_DereferencedPath = mgr.FindDereferencedAccPath(prefix);
-    m_Timestamp = mgr.GetTimestamp(m_DereferencedPath);
     m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
     if ( GetDebugLevel() >= 1 ) {
         LOG_POST_X(2, Info<<"CWGSDataLoader: "
