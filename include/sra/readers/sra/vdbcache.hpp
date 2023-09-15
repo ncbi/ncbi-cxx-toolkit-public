@@ -69,7 +69,7 @@ public:
     void SetForceReopenSeconds(unsigned seconds);
     void SetRecheckSeconds(unsigned seconds);
 
-    class CExpirationInfo : public CObject
+    class NCBI_SRAREAD_EXPORT CExpirationInfo : public CObject
     {
     public:
         CExpirationInfo(const CVDBCacheWithExpiration& cache, const string& acc_or_path);
@@ -86,7 +86,7 @@ public:
         string       m_DereferencedPath;
         CTime        m_Timestamp;
     };
-    class CSlot : public CObject
+    class NCBI_SRAREAD_EXPORT CSlot : public CObject
     {
     public:
         CSlot();
