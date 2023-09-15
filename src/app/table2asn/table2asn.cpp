@@ -360,6 +360,7 @@ may be implemented in the future; RW-1253
     arg_desc->AddFlag("allow-acc", "Allow accession recognition in sequence IDs. Default is local");
     arg_desc->AddFlag("augustus-fix", "Special handling of unusual problems in Augustus annotations");
     arg_desc->AddFlag("intronless", "Intronless alignments");
+    arg_desc->AddFlag("refine-prt-alignments", "Refine ProSplign aligments when processing .prt input");
 
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
@@ -542,7 +543,8 @@ int CTbl2AsnApp::Run()
 
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
     m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
-    m_context.m_intronless = args["intronless"].AsBoolean();
+    m_context.prosplignConfig.intronless = args["intronless"].AsBoolean();
+    m_context.prosplignConfig.refineAlignment = args["refine-prt-alignments"].AsBoolean();
 
     //   if (args["taxname"])
     //       m_context.m_OrganismName = args["taxname"].AsString();
