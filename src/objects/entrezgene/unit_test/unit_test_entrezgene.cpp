@@ -42,6 +42,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Gene_nomenclature.hpp>
+#include <objects/seqfeat/Gene_ref.hpp>
 
 #include <objtools/eutils/api/efetch.hpp>
 
@@ -105,6 +106,7 @@ BOOST_AUTO_TEST_CASE(s_TestNomenclature)
 
     // Data comes from formal-name element.
     s_GetObject("4535", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), true);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_official);
     BOOST_CHECK_EQUAL(nomen->GetSymbol(), "MT-ND1");
@@ -113,15 +115,17 @@ BOOST_AUTO_TEST_CASE(s_TestNomenclature)
     BOOST_CHECK_EQUAL(nomen->GetSource().GetTag().GetStr(), "HGNC:7455");
 
     // Interim symbol and name, from general comment elements.
-    s_GetObject("100856875", eg_obj);
+    s_GetObject("121110513", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), false);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_interim);
-    BOOST_CHECK_EQUAL(nomen->GetSymbol(), "TRNASTOP-CUA");
-    BOOST_CHECK_EQUAL(nomen->GetName(), "transfer RNA amber suppressor (anticodon CUA)");
+    BOOST_CHECK_EQUAL(nomen->GetSymbol(), "TRNASTOP-UCA");
+    BOOST_CHECK_EQUAL(nomen->GetName(), "transfer RNA opal suppressor (anticodon UCA)");
     // TODO: check source field when it becomes available
 
     // Official symbol and name, from general comment elements.
     s_GetObject("1", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), false);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_official);
     BOOST_CHECK_EQUAL(nomen->GetSymbol(), "A1BG");
@@ -130,6 +134,7 @@ BOOST_AUTO_TEST_CASE(s_TestNomenclature)
 
     // None available in the data.
     s_GetObject("107547967", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), false);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_unknown);
 }
