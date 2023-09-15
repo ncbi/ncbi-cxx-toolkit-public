@@ -79,7 +79,7 @@ my $opt_show_version = 0;
 my $opt_decompress = 0;
 my $opt_source;
 my $opt_legacy_exit_code = 0;
-my $opt_nt = &get_num_cores();
+my $opt_nt = &compute_default_num_threads();
 my $opt_gcp_prj = undef;
 my $opt_use_ftp_protocol = 0;
 my $result = GetOptions("verbose+"          =>  \$opt_verbose,
@@ -112,8 +112,16 @@ if (defined $opt_blastdb_ver) {
                -msg => "Invalid BLAST database version: $opt_blastdb_ver. Supported values: 4, 5"}) 
         unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
 }
+
 pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid number of threads"}) 
-    if ($opt_nt <= 0);
+    if ($opt_nt < 0);
+my $max_num_cores = &get_num_cores();
+$opt_nt = $max_num_cores if ($opt_nt == 0);
+if ($opt_nt > $max_num_cores) {
+    print STDERR "WARNING: num_threads setting of $opt_nt is higher than the available number of cores ($max_num_cores); resetting it to $max_num_cores\n";
+    $opt_nt = $max_num_cores;
+}
+
 if (length($opt_passive) and $opt_passive =~ /n|no/i) {
     $opt_passive = 0;
 } else {
@@ -863,14 +871,63 @@ sub get_awscli_path
     return undef;
 }
 
+# Returns the number of cores, assuming lscpu is available, otherwise undef
+sub read_lscpu_output 
+{
+    my $retval;
+    if (open(my $fh, "-|", "/usr/bin/lscpu")) {
+        my ($num_threads, $num_threads_per_core);
+        while (<$fh>) {
+            /^CPU.s.:\s*(\d+)/ and $num_threads = $1;
+            /^Thread.s. per core:\s*(\d+)/ and $num_threads_per_core = $1;
+        }
+        if ($num_threads_per_core and $num_threads) {
+            $retval = $num_threads / $num_threads_per_core;
+        }
+        close($fh);
+    }
+    return $retval;
+}
+
+sub compute_default_num_threads
+{
+    my $retval = 1;
+    return $retval if ($^O =~ /mswin/i);
+    my $quarter = int(&get_num_cores()*.25);
+    return ($quarter > $retval ? $quarter : $retval);
+}
+
+# Returns the number of cores based on /proc/cpuinfo, otherwise undef
+sub read_proc_cpuinfo 
+{
+    my $retval;
+    if (open(my $fh, "<", "/proc/cpuinfo")) {
+        my ($num_siblings, $num_processors, $num_cpu_cores);
+        while (<$fh>) {
+            /^siblings\s+:\s+(\d+)/ and $num_siblings = $1;
+            /^processor/ and $num_processors++;
+            /^cpu cores\s+:\s+(\d+)/ and $num_cpu_cores = $1;
+        }
+        close($fh);
+        if ($num_siblings == $num_cpu_cores) {
+            $retval = $num_processors;
+        } else {
+            $retval = $num_processors / ($num_siblings / $num_cpu_cores);
+        }
+    }
+    return $retval;
+}
+
 # Returns the number of cores, or 1 if unknown
 sub get_num_cores
 {
     my $retval = 1;
     if ($^O =~ /linux/i) {
-        open my $fh, "/proc/cpuinfo" or return $retval;
-        $retval = scalar(map /^processor/, <$fh>);
-        close($fh);
+        $retval = &read_lscpu_output();
+        unless (defined($retval)) {
+            $retval = &read_proc_cpuinfo();
+        }
+        $retval = 1 unless defined ($retval);
     } elsif ($^O =~ /darwin/i) {
         chomp($retval = `/usr/sbin/sysctl -n hw.ncpu`);
     }
@@ -963,7 +1020,9 @@ Prints this script's version. Overrides all other options.
 =item B<--num_threads>
 
 Sets the number of threads to utilize to perform downloads in parallel when data comes from the cloud.
-Defaults to use all available CPUs on the machine (Linux and macos only).
+On Windows it defaults to 1.
+On Linux and macos: defaults to max(1, (number_of_available_cores/4)) and if
+set to 0, the script uses all available cores on the machine.
 
 =item B<--legacy_exit_code>
 
