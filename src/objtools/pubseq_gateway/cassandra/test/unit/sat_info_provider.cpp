@@ -359,6 +359,15 @@ TEST_F(CSatInfoProviderTest, CassException) {
             CCassandraException
         );
     }
+    {
+        CSatInfoSchemaProvider provider(
+            m_KeyspaceName, "PSG_CASS_UNIT1", m_Connection,
+            m_RegistryPtr, m_ConfigSection
+        );
+        provider.RefreshSchema(true);
+        provider.SetSecureSatRegistrySection("NON_EXISTENT_SECTION");
+        EXPECT_THROW(provider.RefreshSchema(true), CCassandraException);
+    }
 }
 
 }  // namespace

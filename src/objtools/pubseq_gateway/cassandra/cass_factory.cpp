@@ -177,6 +177,12 @@ void CCassConnectionFactory::ReloadConfig(IRegistry const* registry)
     }
 
     if (registry && !registry->Empty()) {
+        list<string> section_names;
+        registry->EnumerateSections(&section_names);
+        auto section_itr = find(cbegin(section_names), cend(section_names), m_Section);
+        if (section_itr == cend(section_names)) {
+            NCBI_THROW(CCassandraException, eGeneric, "Cassandra configuration section '" + m_Section + "' not found!");
+        }
         m_CassConnTimeoutMs = registry->GetInt(m_Section, "ctimeout", kCassConnTimeoutDefault);
         m_CassQueryTimeoutMs = registry->GetInt(m_Section, "qtimeout", kCassQueryTimeoutDefault);
         m_CassQueryRetryTimeoutMs = registry->GetInt(m_Section, "qtimeout_retry", 0);
