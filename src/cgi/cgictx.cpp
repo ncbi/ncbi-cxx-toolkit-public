@@ -365,13 +365,14 @@ const string& CCgiContext::GetSelfURL(void) const
         : caf_url.empty() ? GetRequest().GetRandomProperty("HOST") : kEmptyStr;
 
     CTempString host, port;
+    bool no_host = false, no_port = false;
     if ( !host_port.empty() ) {
         size_t pos = host_port.find(':');
         host = CTempString(host_port, 0, pos != NPOS ? pos : host_port.size());
         port = CTempString(host_port, pos != NPOS? pos + 1 : host_port.size(),
                            host_port.size());
     } else if ( !caf_url.empty() ) {
-        host = url.GetHost();
+        no_host = no_port = true;
         port = url.GetPort();
     } else {
         host = GetRequest().GetProperty(eCgi_ServerName);
@@ -379,10 +380,13 @@ const string& CCgiContext::GetSelfURL(void) const
     }
     // Skip port if it's default for the selected scheme
     if ((!m_IsSecure  &&  port == "80")  ||  (m_IsSecure  &&  port == "443")) {
+        no_port = false;
         port.clear();
     }
-    url.SetHost(host);
-    url.SetPort(port);
+    if ( !no_host )
+        url.SetHost(host);
+    if ( !no_port )
+        url.SetPort(port);
 
     string path;
     if ( !caf_url.empty() ) {
