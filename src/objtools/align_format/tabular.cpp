@@ -2406,6 +2406,97 @@ int CIgBlastTabularInfo::SetFields(const CSeq_align& align,
     return CBlastTabularInfo::SetFields(align, scope, matrix);
 };
 
+void CIgBlastTabularInfo::SetIgCDR3FWR4Annotation(const CRef<blast::CIgAnnotation> &annot)
+{
+   
+    m_Fwr4Start = annot->m_JDomain[2];
+    m_Fwr4End = annot->m_JDomain[3];
+    m_Cdr3Start = annot->m_JDomain[0];
+    m_Cdr3End = annot->m_JDomain[1];
+
+    m_Fwr4Seq = NcbiEmptyString;
+    m_Fwr4SeqTrans = NcbiEmptyString;
+    m_Cdr3Seq = NcbiEmptyString;
+    m_Cdr3SeqTrans = NcbiEmptyString;
+    m_AirrCdr3Seq = NcbiEmptyString;
+    m_AirrCdr3SeqTrans = NcbiEmptyString;
+   
+    if (m_Fwr4Start > 0 && m_Fwr4End > m_Fwr4Start) {
+        
+        m_Fwr4Seq = m_Query.substr(m_Fwr4Start, m_Fwr4End - m_Fwr4Start + 1);
+        
+        int coding_frame_offset = (m_Fwr4Start - annot->m_FrameInfo[0])%3; 
+        if ((int)m_Fwr4Seq.size() >= 3) {
+            string fwr4_seq_for_translatioin = m_Fwr4Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            
+            CSeqTranslator::Translate(fwr4_seq_for_translatioin, 
+                                      m_Fwr4SeqTrans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
+    }
+
+    if (m_Cdr3Start > 0 && m_Cdr3End > m_Cdr3Start) {
+       
+        m_Cdr3Seq = m_Query.substr(m_Cdr3Start, m_Cdr3End - m_Cdr3Start + 1);
+        
+        int coding_frame_offset = (m_Cdr3Start - annot->m_FrameInfo[0])%3; 
+        if ((int)m_Cdr3Seq.size() >= 3) {
+            string cdr3_seq_for_translatioin = m_Cdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            
+            CSeqTranslator::Translate(cdr3_seq_for_translatioin, 
+                                      m_Cdr3SeqTrans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
+        SIZE_TYPE query_length = m_Query.length();
+        int airrcdr3start = max(m_Cdr3Start -3, 0);
+        m_AirrCdr3Seq = m_Query.substr(airrcdr3start, min(m_Cdr3End - m_Cdr3Start + 7, 
+                                                          (int)(query_length - airrcdr3start)));
+        if ((int)m_AirrCdr3Seq.size() >= 3) {
+            string airr_cdr3_seq_for_translatioin = m_AirrCdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
+            
+            CSeqTranslator::Translate(airr_cdr3_seq_for_translatioin, 
+                                      m_AirrCdr3SeqTrans, 
+                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+        }
+    }
+    
+       
+
+};
+
+static void SetCdrFwrSeq (const string& nuc_seq, string& translated_seq, bool is_first_domain, int region_start, int frame_start, 
+                          string& next_trans_addition, bool& next_trans_substract, string extra_from_next_region) {
+    
+    string seq_for_translatioin = NcbiEmptyString;
+    if (is_first_domain) {
+         //+3 to avoid negative value but does not affect frame
+        int coding_frame_offset = ((region_start%3 + 3) - frame_start%3)%3;;
+        int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
+                
+        if (start_pos < (int)nuc_seq.size()){ 
+            seq_for_translatioin = nuc_seq.substr(start_pos);
+        }
+    } else {
+        seq_for_translatioin = next_trans_addition + nuc_seq;
+        next_trans_addition = NcbiEmptyString;
+    }
+    if (next_trans_substract) {
+        seq_for_translatioin.erase(0, 1);
+        next_trans_substract = false;
+    }
+    int next_trans_offset = seq_for_translatioin.length()%3;
+    if (next_trans_offset == 2) {//take the first base of the next region
+        seq_for_translatioin = seq_for_translatioin + extra_from_next_region;;
+        next_trans_substract = true;
+    } else if (next_trans_offset == 1) {//move the last base to next region
+        next_trans_addition = seq_for_translatioin.substr(seq_for_translatioin.length() - next_trans_offset);
+        seq_for_translatioin = seq_for_translatioin.substr(0, seq_for_translatioin.length() - next_trans_offset);
+    }
+    
+    CSeqTranslator::Translate(seq_for_translatioin, translated_seq, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+} 
+
+
 void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &annot,
                                           const CConstRef<blast::CIgBlastOptions> &ig_opts,
                                           CConstRef<CSeq_align_set>& align_result,
@@ -2537,58 +2628,7 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                 annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
     AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"CDR3 (V gene only)":"CDR3-IMGT (germline)",
                 annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
-
-    m_Fwr4Start = annot->m_JDomain[2];
-    m_Fwr4End = annot->m_JDomain[3];
-    m_Cdr3Start = annot->m_JDomain[0];
-    m_Cdr3End = annot->m_JDomain[1];
-
-    m_Fwr4Seq = NcbiEmptyString;
-    m_Fwr4SeqTrans = NcbiEmptyString;
-    m_Cdr3Seq = NcbiEmptyString;
-    m_Cdr3SeqTrans = NcbiEmptyString;
-    m_AirrCdr3Seq = NcbiEmptyString;
-    m_AirrCdr3SeqTrans = NcbiEmptyString;
-   
-    if (m_Fwr4Start > 0 && m_Fwr4End > m_Fwr4Start) {
-        
-        m_Fwr4Seq = m_Query.substr(m_Fwr4Start, m_Fwr4End - m_Fwr4Start + 1);
-        
-        int coding_frame_offset = (m_Fwr4Start - annot->m_FrameInfo[0])%3; 
-        if ((int)m_Fwr4Seq.size() >= 3) {
-            string fwr4_seq_for_translatioin = m_Fwr4Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            
-            CSeqTranslator::Translate(fwr4_seq_for_translatioin, 
-                                      m_Fwr4SeqTrans, 
-                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        }
-    }
-
-    if (m_Cdr3Start > 0 && m_Cdr3End > m_Cdr3Start) {
-       
-        m_Cdr3Seq = m_Query.substr(m_Cdr3Start, m_Cdr3End - m_Cdr3Start + 1);
-        
-        int coding_frame_offset = (m_Cdr3Start - annot->m_FrameInfo[0])%3; 
-        if ((int)m_Cdr3Seq.size() >= 3) {
-            string cdr3_seq_for_translatioin = m_Cdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            
-            CSeqTranslator::Translate(cdr3_seq_for_translatioin, 
-                                      m_Cdr3SeqTrans, 
-                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        }
-        SIZE_TYPE query_length = m_Query.length();
-        int airrcdr3start = max(m_Cdr3Start -3, 0);
-        m_AirrCdr3Seq = m_Query.substr(airrcdr3start, min(m_Cdr3End - m_Cdr3Start + 7, 
-                                                          (int)(query_length - airrcdr3start)));
-        if ((int)m_AirrCdr3Seq.size() >= 3) {
-            string airr_cdr3_seq_for_translatioin = m_AirrCdr3Seq.substr(coding_frame_offset>0?(3-coding_frame_offset):0);
-            
-            CSeqTranslator::Translate(airr_cdr3_seq_for_translatioin, 
-                                      m_AirrCdr3SeqTrans, 
-                                      CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-        }
-    }
-
+ 
     m_Fwr1Seq = NcbiEmptyString;
     m_Fwr1SeqTrans = NcbiEmptyString;
     m_Cdr1Seq = NcbiEmptyString;
@@ -2599,60 +2639,57 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
     m_Cdr2SeqTrans = NcbiEmptyString;
     m_Fwr3Seq = NcbiEmptyString;
     m_Fwr3SeqTrans = NcbiEmptyString;
+  
+    string next_trans_addition = NcbiEmptyString;
+    bool is_first_domain = true;
+    bool next_trans_substract = false;
+
     for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
         if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
             m_Fwr1Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
+            SetCdrFwrSeq (m_Fwr1Seq, m_Fwr1SeqTrans, is_first_domain, m_IgDomains[i]->start, annot->m_FrameInfo[0],
+                          next_trans_addition, next_trans_substract, 
+                          (m_IgDomains.size() > i + 1) ? m_Query.substr(m_IgDomains[i+1]->start, 1) : NcbiEmptyString);
             
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
-            //+3 to avoid negative value but does not affect frame
-            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
-            if (start_pos < (int)m_Fwr1Seq.size()){ 
-                string seq_for_translatioin = m_Fwr1Seq.substr(start_pos);
-                CSeqTranslator::Translate(seq_for_translatioin, m_Fwr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-            }
+            is_first_domain = false;   
+            
         }
         if (m_IgDomains[i]->name.find("CDR1") !=  string::npos) {
             m_Cdr1Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
-            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
-            if (start_pos < (int)m_Cdr1Seq.size()){ 
-                string seq_for_translatioin = m_Cdr1Seq.substr(start_pos);
-                CSeqTranslator::Translate(seq_for_translatioin, m_Cdr1SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-            }
-        } 
+            SetCdrFwrSeq (m_Cdr1Seq, m_Cdr1SeqTrans, is_first_domain, m_IgDomains[i]->start, annot->m_FrameInfo[0],
+                          next_trans_addition, next_trans_substract, 
+                          (m_IgDomains.size() > i + 1) ? m_Query.substr(m_IgDomains[i+1]->start, 1) : NcbiEmptyString);
+            is_first_domain = false;
+        }
+        
         if (m_IgDomains[i]->name.find("FR2") !=  string::npos) {
             m_Fwr2Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
-            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
-            if (start_pos < (int)m_Fwr2Seq.size()){ 
-                string seq_for_translatioin = m_Fwr2Seq.substr(start_pos);
-                CSeqTranslator::Translate(seq_for_translatioin, m_Fwr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-            }
+            SetCdrFwrSeq (m_Fwr2Seq, m_Fwr2SeqTrans, is_first_domain, m_IgDomains[i]->start, annot->m_FrameInfo[0],
+                          next_trans_addition, next_trans_substract, 
+                          (m_IgDomains.size() > i + 1) ? m_Query.substr(m_IgDomains[i+1]->start, 1) : NcbiEmptyString);
+            is_first_domain = false;
         } 
         if (m_IgDomains[i]->name.find("CDR2") !=  string::npos) {
             m_Cdr2Seq = m_Query.substr(m_IgDomains[i]->start, m_IgDomains[i]->end - m_IgDomains[i]->start);
-            int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
-            int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
-            if (start_pos < (int)m_Cdr2Seq.size()){ 
-                string seq_for_translatioin = m_Cdr2Seq.substr(start_pos);
-                CSeqTranslator::Translate(seq_for_translatioin, m_Cdr2SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-            }
+
+            SetCdrFwrSeq (m_Cdr2Seq, m_Cdr2SeqTrans, is_first_domain, m_IgDomains[i]->start, annot->m_FrameInfo[0],
+                          next_trans_addition, next_trans_substract, 
+                          (m_IgDomains.size() > i + 1) ? m_Query.substr(m_IgDomains[i+1]->start, 1) : NcbiEmptyString);
+ 
+            is_first_domain = false;
         } 
         if (m_IgDomains[i]->name.find("FR3") !=  string::npos) {
             if (annot->m_DomainInfo[9] >=0) {
                 //fwr3 is special since it may extends past end of v
                 m_Fwr3Seq = m_Query.substr(m_IgDomains[i]->start, min(m_QueryAlignSeqEnd, annot->m_DomainInfo[9]) - m_IgDomains[i]->start + 1);
-                int coding_frame_offset = ((m_IgDomains[i]->start + 3) - annot->m_FrameInfo[0])%3;
-                int start_pos = coding_frame_offset>0?(3-coding_frame_offset):0;
-                if (start_pos < (int)m_Fwr3Seq.size()){ 
-                    string seq_for_translatioin = m_Fwr3Seq.substr(start_pos);
-                    CSeqTranslator::Translate(seq_for_translatioin, m_Fwr3SeqTrans, CSeqTranslator::fIs5PrimePartial, NULL, NULL);
-                }
+                SetCdrFwrSeq (m_Fwr3Seq, m_Fwr3SeqTrans, is_first_domain, m_IgDomains[i]->start, annot->m_FrameInfo[0],
+                              next_trans_addition, next_trans_substract, NcbiEmptyString);
                
             }
         }
     }
-    
+
+    SetIgCDR3FWR4Annotation(annot);
 };
 
 void CIgBlastTabularInfo::Print(void)
