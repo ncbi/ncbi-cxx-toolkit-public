@@ -149,11 +149,12 @@ public:
     bool   m_verbose{ false };
     bool   m_augustus_fix{ false };
 
-    struct SProSplignConfig {
+    struct SPrtAlnOptions {
         bool refineAlignment { false };
         bool intronless { false };
+        string filterQueryString;
     };
-    SProSplignConfig prosplignConfig;
+    SPrtAlnOptions prtAlnOptions;
 
     bool   m_make_flatfile{ false };
     bool   m_run_discrepancy{ false };

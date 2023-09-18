@@ -51,6 +51,7 @@
 #include <objtools/readers/readfeat.hpp>
 #include <algo/sequence/orf.hpp>
 #include <algo/align/prosplign/prosplign.hpp>
+#include <algo/align/util/align_filter.hpp>
 
 #include <objects/seqset/seqset_macros.hpp>
 #include <objects/seq/seq_macros.hpp>
@@ -1419,21 +1420,33 @@ static CRef<CSeq_loc> s_GetCDSLoc(CScope& scope,
                                   const CSeq_id& proteinId,
                                   const CSeq_loc& genomicLoc,
                                   TSeqPos bioseqLength,
-                                  const CTable2AsnContext::SProSplignConfig& prosplignConfig)
+                                  const CTable2AsnContext::SPrtAlnOptions& prtAlnOptions)
 {
     CProSplignScoring scoring;
     scoring.SetAltStarts(true);
-    CProSplign prosplign(scoring, prosplignConfig.intronless, true, false, false);
+    CProSplign prosplign(scoring, prtAlnOptions.intronless, true, false, false);
     auto alignment = prosplign.FindAlignment(scope, proteinId, genomicLoc,
-            CProSplignOutputOptions(prosplignConfig.refineAlignment ? 
+            CProSplignOutputOptions(prtAlnOptions.refineAlignment ? 
                 CProSplignOutputOptions::eWithHoles :
                 CProSplignOutputOptions::ePassThrough));
+
+    if (!alignment) {
+        return CRef<CSeq_loc>();
+    }
+
+
+    if (!NStr::IsBlank(prtAlnOptions.filterQueryString)) {
+        CAlignFilter filter(prtAlnOptions.filterQueryString);
+        if (!filter.Match(*alignment)) {
+            return CRef<CSeq_loc>();
+        }
+    }
 
     bool found_start_codon = false;
     bool found_stop_codon = false;
     list<CRef<CSeq_loc>> exonLocs;
 
-    if (alignment && alignment->IsSetSegs() && alignment->GetSegs().IsSpliced()) {
+    if (alignment->IsSetSegs() && alignment->GetSegs().IsSpliced()) {
         CRef<CSeq_id> seq_id (new CSeq_id());
         seq_id->Assign(*(genomicLoc.GetId()));
         const auto& splicedSegs = alignment->GetSegs().GetSpliced();
@@ -1547,7 +1560,7 @@ bool CFeatureTableReader::xAddProteinToSeqEntry(const CBioseq& protein, CSeq_ent
     CSeq_entry_Handle protein_h = seh.GetScope().AddTopLevelSeqEntry(*protein_entry);
 
     auto cds_loc = s_GetCDSLoc(seh.GetScope(), *protein_entry->GetSeq().GetId().front(),
-                               *match_loc, bsh_match.GetBioseqLength(), m_context.prosplignConfig);
+                               *match_loc, bsh_match.GetBioseqLength(), m_context.prtAlnOptions);
 
     if (!cds_loc) {
         string label;

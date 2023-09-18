@@ -361,7 +361,8 @@ may be implemented in the future; RW-1253
     arg_desc->AddFlag("augustus-fix", "Special handling of unusual problems in Augustus annotations");
     arg_desc->AddFlag("intronless", "Intronless alignments");
     arg_desc->AddFlag("refine-prt-alignments", "Refine ProSplign aligments when processing .prt input");
-
+    arg_desc->AddOptionalKey("prt-alignment-filter-query", "String", 
+            "Filter query string for .prt alignments", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddOptionalKey("logxml", "LogFile", "XML Error Log File", CArgDescriptions::eOutputFile);
@@ -543,9 +544,11 @@ int CTbl2AsnApp::Run()
 
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
     m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
-    m_context.prosplignConfig.intronless = args["intronless"].AsBoolean();
-    m_context.prosplignConfig.refineAlignment = args["refine-prt-alignments"].AsBoolean();
-
+    m_context.prtAlnOptions.intronless = args["intronless"].AsBoolean();
+    m_context.prtAlnOptions.refineAlignment = args["refine-prt-alignments"].AsBoolean();
+    if (args["prt-alignment-filter-query"]) {
+        m_context.prtAlnOptions.filterQueryString = args["prt-alignment-filter-query"].AsString(); 
+    }
     //   if (args["taxname"])
     //       m_context.m_OrganismName = args["taxname"].AsString();
     //   if (args["taxid"])
