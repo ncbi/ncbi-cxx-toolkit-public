@@ -77,6 +77,9 @@ public:
         
         bool IsExpired(const CVDBCacheWithExpiration& cache, const string& acc_or_path) const;
         
+        static string DereferncePath(const CVDBMgr& mgr, const string& acc_or_path);
+        static CTime GetTimestamp(const CVDBMgr& mgr, const string& path);
+        
     private:
         CExpirationInfo(const CExpirationInfo&) = delete;
         void operator=(const CExpirationInfo&) = delete;
