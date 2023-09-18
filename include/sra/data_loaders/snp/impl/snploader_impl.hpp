@@ -254,6 +254,8 @@ public:
             return m_SNPMutex;
         }
 
+    void InitializeDb(CSNPDataLoader_Impl& impl);
+    
     CSNPDb& GetDb(void)
         {
             return m_SNPDb;
@@ -270,13 +272,14 @@ public:
     
 protected:
     friend class CSNPDataLoader_Impl;
-
+    
     typedef map<CSeq_id_Handle, CRef<CSNPSeqInfo> > TSeqById;
     typedef map<size_t, CRef<CSNPSeqInfo> > TSeqByIdx;
 
     void x_Initialize(CSNPDataLoader_Impl& impl,
                       const string& file_name);
 
+    unsigned m_RemainingOpenRetries;
     bool m_IsValidNA;
     string m_FileName; // external VDB file access string
     string m_Accession; // OM named annot accession (without filter index)

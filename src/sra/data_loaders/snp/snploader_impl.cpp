@@ -104,17 +104,6 @@ static size_t GetGCSize(void)
 }
 
 
-NCBI_PARAM_DECL(size_t, SNP_LOADER, MISSING_GC_SIZE);
-NCBI_PARAM_DEF_EX(size_t, SNP_LOADER, MISSING_GC_SIZE, 10000,
-                  eParam_NoThread, SNP_LOADER_MISSING_GC_SIZE);
-
-static size_t GetMissingGCSize(void)
-{
-    static CSafeStatic<NCBI_PARAM_TYPE(SNP_LOADER, MISSING_GC_SIZE)> s_Value;
-    return s_Value->Get();
-}
-
-
 NCBI_PARAM_DECL(unsigned, SNP_LOADER, RETRY_COUNT);
 NCBI_PARAM_DEF(unsigned, SNP_LOADER, RETRY_COUNT, 3);
 
@@ -707,6 +696,7 @@ void CSNPDataLoader_Impl::AddFixedFileOnce(const string& file)
     CRef<SSNPFileInfoSlot> info_slot = m_FoundFiles.GetSlot(info->m_FileName);
     info_slot->UpdateExpiration(m_FoundFiles, info->m_FileName);
     info_slot->SetObject(info);
+    info->InitializeDb(*this);
 }
 
 
@@ -745,6 +735,7 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::x_GetFileInfo(const string& file)
             }
         }
     }
+    info->InitializeDb(*this);
     return info;
 }
 
@@ -766,39 +757,6 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
         return null;
     }
     return x_GetFileInfo(acc);
-    /*
-    CMutexGuard guard(m_Mutex);
-    TMissingFiles::iterator it2 = m_MissingFiles.find(acc);
-    if ( it2 != m_MissingFiles.end() && it2->second >= m_RetryCount ) {
-        return null;
-    }
-    TFoundFiles::iterator it = m_FoundFiles.find(acc);
-    if ( it != m_FoundFiles.end() ) {
-        return it->second;
-    }
-    CRef<CSNPFileInfo> info;
-    try {
-        info = new CSNPFileInfo(*this, acc);
-    }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == exc.eNotFoundDb ||
-             exc.GetErrCode() == exc.eProtectedDb ) {
-            // no such SRA table
-            return null;
-        }
-        ERR_POST_X(4, "CSNPDataLoader::FindFile("<<acc<<"): accession not found: "<<exc);
-        if ( ++m_MissingFiles[acc] < m_RetryCount ) {
-            throw;
-        }
-        return null;
-    }
-    // store file in cache
-    m_FoundFiles[acc] = info;
-    if ( it2 != m_MissingFiles.end() ) {
-        m_MissingFiles.erase(it2);
-    }
-    return info;
-    */
 }
 
 
@@ -914,15 +872,6 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecordsOnce(CDataSource* ds,
                     m_FoundFiles.set_size_limit(accs_size+GetGCSize());
                 }
             }
-            /*
-            if ( m_MissingFiles.get_size_limit() < accs_size ) {
-                CMutexGuard guard(m_MissingFiles.GetCacheMutex());
-                if ( m_MissingFiles.get_size_limit() < accs_size ) {
-                    // increase VDB cache size
-                    m_MissingFiles.set_size_limit(accs_size+GetMissingGCSize());
-                }
-            }
-            */
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
             if ( m_AddPTIS && it->first == "SNP" ) {
@@ -1070,6 +1019,7 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
 {
     m_FileName = csra;
     sx_ExtractFilterIndex(m_FileName);
+    m_RemainingOpenRetries = impl.m_RetryCount;
     m_IsValidNA = CSNPBlobId::IsValidNA(m_FileName);
     m_Accession = m_FileName;
     if ( !m_IsValidNA ) {
@@ -1083,17 +1033,24 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
     if ( m_AnnotName.empty() ) {
         m_AnnotName = m_Accession;
     }
-    CStopWatch sw;
-    if ( GetDebugLevel() >= eDebug_open ) {
-        LOG_POST_X(1, Info <<
-                   "CSNPDataLoader("<<m_FileName<<")");
-        sw.Start();
-    }
-    m_SNPDb = CSNPDb(impl.m_Mgr, m_FileName);
-    if ( GetDebugLevel() >= eDebug_open_time ) {
-        LOG_POST_X(2, Info <<
-                   "CSNPDataLoader("<<m_FileName<<")"
-                   " opened VDB in "<<sw.Elapsed());
+}
+
+
+void CSNPFileInfo::InitializeDb(CSNPDataLoader_Impl& impl)
+{
+    if ( !m_SNPDb && m_RemainingOpenRetries > 0 ) {
+        CStopWatch sw;
+        if ( GetDebugLevel() >= eDebug_open ) {
+            LOG_POST_X(1, Info <<
+                       "CSNPDataLoader("<<m_FileName<<")");
+            sw.Start();
+        }
+        m_SNPDb = CSNPDb(impl.m_Mgr, m_FileName);
+        if ( GetDebugLevel() >= eDebug_open_time ) {
+            LOG_POST_X(2, Info <<
+                       "CSNPDataLoader("<<m_FileName<<")"
+                       " opened VDB in "<<sw.Elapsed());
+        }
     }
 }
 
