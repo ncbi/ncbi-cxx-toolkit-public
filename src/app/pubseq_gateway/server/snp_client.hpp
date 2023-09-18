@@ -35,9 +35,9 @@
 #include "psgs_request.hpp"
 #include "timing.hpp"
 #include <sra/readers/sra/snpread.hpp>
+#include <sra/readers/sra/vdbcache.hpp>
 #include <objects/dbsnp/primary_track/snpptis.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <util/limited_size_map.hpp>
 
 
 BEGIN_NCBI_NAMESPACE;
@@ -63,10 +63,12 @@ struct SSNPProcessor_Config
 {
     size_t m_GCSize = 10;
     size_t m_MissingGCSize = 10000;
+    unsigned m_FileReopenTime = 3600;
+    unsigned m_FileRecheckTime = 600;
+    unsigned m_FileOpenRetry = 3;
     bool m_Split = true;
     string m_AnnotName;
     bool m_AddPTIS = true;
-    vector<string> m_VDBFiles;
     bool m_AllowNonRefSeq = false;
     objects::CSeq_id::ESNPScaleLimit m_SNPScaleLimit = objects::CSeq_id::eSNPScaleLimit_Default;
 };
@@ -290,6 +292,7 @@ protected:
     string m_FileName; // external VDB file access string
     string m_Accession; // OM named annot accession (without filter index)
     string m_AnnotName; // OM annot name (without filter index)
+    unsigned m_RemainingOpenRetries; // number of tries to open a VDB file
     objects::CSNPDb m_SNPDb;
     TSeqById m_SeqById;
     TSeqByIdx m_SeqByIdx;
@@ -311,10 +314,6 @@ public:
     SSNPData GetBlobByBlobId(const string& blob_id);
     SSNPData GetChunk(const string& id2info, int chunk_id);
 
-    void EnsureCacheSize(size_t size);
-    void AddFixedFile(const string& file);
-    CRef<CSNPFileInfo> GetFixedFile(const string& acc);
-    CRef<CSNPFileInfo> FindFile(const string& acc);
     CRef<CSNPFileInfo> GetFileInfo(const string& acc);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
     
@@ -326,9 +325,7 @@ public:
 private:
     friend class CSNPFileInfo;
 
-    typedef map<string, CRef<CSNPFileInfo> > TFixedFiles;
-    typedef limited_size_map<string, CRef<CSNPFileInfo> > TFoundFiles;
-    typedef limited_size_map<string, bool> TMissingFiles;
+    typedef CVDBCacheWithExpiration TSNPDbCache;
 
     CRef<objects::CID2S_Seq_annot_Info> x_GetFeatInfo(const string& name, const objects::CSeq_id_Handle& id);
     CRef<objects::CID2S_Seq_annot_Info> x_GetGraphInfo(const string& name, const objects::CSeq_id_Handle& id);
@@ -340,10 +337,7 @@ private:
     SSNPProcessor_Config m_Config;
     shared_ptr<objects::CVDBMgr> m_Mgr;
     CRef<objects::CSnpPtisClient> m_PTISClient;
-    CMutex m_Mutex;
-    TFixedFiles m_FixedFiles;
-    TFoundFiles m_FoundFiles;
-    TMissingFiles m_MissingFiles;
+    TSNPDbCache m_SNPDbCache;
 };
 
 
