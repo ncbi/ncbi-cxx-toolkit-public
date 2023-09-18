@@ -191,6 +191,9 @@ static bool s_SimulateError()
 
 #define PARAM_GC_CACHE_SIZE "gc_cache_size"
 #define PARAM_MISSING_GC_SIZE "missing_gc_size"
+#define PARAM_FILE_REOPEN_TIME "file_reopen_time"
+#define PARAM_FILE_RECHECK_TIME "file_recheck_time"
+#define PARAM_FILE_OPEN_RETRY "file_open_retry"
 #define PARAM_SPLIT "split"
 #define PARAM_VDB_FILES "vdb_files"
 #define PARAM_ANNOT_NAME "annot_name"
@@ -200,6 +203,9 @@ static bool s_SimulateError()
 
 #define DEFAULT_GC_CACHE_SIZE 10
 #define DEFAULT_MISSING_GC_SIZE 10000
+#define DEFAULT_FILE_REOPEN_TIME 3600
+#define DEFAULT_FILE_RECHECK_TIME 600
+#define DEFAULT_FILE_OPEN_RETRY 3
 #define DEFAULT_SPLIT true
 #define DEFAULT_VDB_FILES ""
 #define DEFAULT_ANNOT_NAME ""
@@ -257,12 +263,15 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
     const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
     m_Config->m_GCSize = registry.GetInt(kSNPProcessorSection, PARAM_GC_CACHE_SIZE, DEFAULT_GC_CACHE_SIZE);
     m_Config->m_MissingGCSize = registry.GetInt(kSNPProcessorSection, PARAM_MISSING_GC_SIZE, DEFAULT_MISSING_GC_SIZE);
+    m_Config->m_FileReopenTime = registry.GetInt(kSNPProcessorSection, PARAM_FILE_REOPEN_TIME, DEFAULT_FILE_REOPEN_TIME);
+    m_Config->m_FileRecheckTime = registry.GetInt(kSNPProcessorSection, PARAM_FILE_RECHECK_TIME, DEFAULT_FILE_RECHECK_TIME);
+    m_Config->m_FileOpenRetry = registry.GetInt(kSNPProcessorSection, PARAM_FILE_OPEN_RETRY, DEFAULT_FILE_OPEN_RETRY);
     m_Config->m_Split = registry.GetBool(kSNPProcessorSection, PARAM_SPLIT, DEFAULT_SPLIT);
     m_Config->m_AnnotName = registry.GetString(kSNPProcessorSection, PARAM_ANNOT_NAME, DEFAULT_ANNOT_NAME);
-
+    /*
     string vdb_files = registry.GetString(kSNPProcessorSection, PARAM_VDB_FILES, DEFAULT_VDB_FILES);
     NStr::Split(vdb_files, ",", m_Config->m_VDBFiles);
-
+    */
     m_Config->m_AddPTIS = registry.GetBool(kSNPProcessorSection, PARAM_ADD_PTIS, DEFAULT_ADD_PTIS);
     if (m_Config->m_AddPTIS && !CSnpPtisClient::IsEnabled()) {
         PSG_ERROR("CSNPClient: SNP primary track is disabled due to lack of GRPC support");

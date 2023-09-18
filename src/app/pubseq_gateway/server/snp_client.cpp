@@ -606,6 +606,8 @@ void CSNPSeqInfo::LoadChunk(SSNPData& data, int chunk_id)
 
 
 CSNPFileInfo::CSNPFileInfo(CSNPClient& client, const string& acc)
+    : m_IsValidNA(false),
+      m_RemainingOpenRetries(client.m_Config.m_FileOpenRetry)
 {
     x_Initialize(client, acc);
 }
@@ -628,9 +630,6 @@ void CSNPFileInfo::x_Initialize(CSNPClient& client, const string& csra)
     if (m_AnnotName.empty()) {
         m_AnnotName = m_Accession;
     }
-    psg_time_point_t start = psg_clock_t::now();
-    m_SNPDb = CSNPDb(*client.m_Mgr, m_FileName);
-    client.x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
 }
 
 
@@ -753,15 +752,10 @@ bool CSNPClient::IsValidSeqId(const string& id, int id_type, int version) const
 CSNPClient::CSNPClient(const SSNPProcessor_Config& config)
     : m_Config(config),
       m_Mgr(new CVDBMgr),
-      m_FoundFiles(config.m_GCSize),
-      m_MissingFiles(config.m_MissingGCSize)
+      m_SNPDbCache(config.m_GCSize, config.m_FileReopenTime, config.m_FileRecheckTime)
 {
     if (m_Config.m_AddPTIS) {
         m_PTISClient = CSnpPtisClient::CreateClient();
-    }
-
-    for (auto& file : m_Config.m_VDBFiles) {
-        AddFixedFile(file);
     }
 }
 
@@ -771,68 +765,76 @@ CSNPClient::~CSNPClient(void)
 }
 
 
-void CSNPClient::AddFixedFile(const string& file)
-{
-    CRef<CSNPFileInfo> info(new CSNPFileInfo(*this, file));
-    string key = info->GetBaseAnnotName();
-    s_ExtractFilterIndex(key);
-    m_FixedFiles[key] = info;
-}
-
-
-CRef<CSNPFileInfo> CSNPClient::GetFixedFile(const string& acc)
-{
-    TFixedFiles::iterator it = m_FixedFiles.find(acc);
-    if (it == m_FixedFiles.end()) {
-        return null;
-    }
-    return it->second;
-}
-
-
-CRef<CSNPFileInfo> CSNPClient::FindFile(const string& acc)
-{
-    if (!m_FixedFiles.empty()) {
-        // no dynamic accessions
-        return null;
-    }
-    CMutexGuard guard(m_Mutex);
-    TMissingFiles::iterator it2 = m_MissingFiles.find(acc);
-    if (it2 != m_MissingFiles.end()) {
-        return null;
-    }
-    TFoundFiles::iterator it = m_FoundFiles.find(acc);
-    if (it != m_FoundFiles.end()) {
-        return it->second;
-    }
-    CRef<CSNPFileInfo> info;
-    try {
-        info = new CSNPFileInfo(*this, acc);
-    }
-    catch (CSraException& exc) {
-        if (exc.GetErrCode() == exc.eNotFoundDb ||
-            exc.GetErrCode() == exc.eProtectedDb) {
-            // no such SRA table
-            return null;
-        }
-        PSG_ERROR("CSNPClient::FindFile(" << acc << "): accession not found: " << exc);
-        m_MissingFiles[acc] = true;
-        return null;
-    }
-    // store file in cache
-    m_FoundFiles[acc] = info;
-    return info;
-}
-
-
 CRef<CSNPFileInfo> CSNPClient::GetFileInfo(const string& acc)
 {
-    if (!m_FixedFiles.empty()) {
-        return GetFixedFile(acc);
+    CRef<CSNPFileInfo> info;
+    {{
+        CRef<CSNPFileInfo> delete_info; // delete stale file info after releasing mutex
+        auto slot = m_SNPDbCache.GetSlot(acc);
+        TSNPDbCache::CSlot::TSlotMutex::TWriteLockGuard guard(slot->GetSlotMutex());
+        info = slot->GetObject<CSNPFileInfo>();
+        if ( info && slot->IsExpired(m_SNPDbCache, acc) ) {
+            PSG_INFO("PSGS_SNP: GetFileInfo: opened " << acc << " has expired");
+            slot->ResetObject();
+            delete_info.Swap(info);
+        }
+        if ( !info ) {
+            slot->UpdateExpiration(m_SNPDbCache, acc);
+            slot->SetObject(info);
+        }
+        if ( !info->m_SNPDb && info->m_RemainingOpenRetries > 0 ) {
+            try {
+                --info->m_RemainingOpenRetries;
+                psg_time_point_t start = psg_clock_t::now();
+                info->m_SNPDb = CSNPDb(*m_Mgr, info->m_FileName);
+                x_RegisterTiming(start, eVDBOpen, eOpStatusFound);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                     exc.GetErrCode() == exc.eProtectedDb ) {
+                    // no such SNP table
+                    info->m_RemainingOpenRetries = 0; // no more opening retries
+                }
+                else {
+                    // problem in VDB or WGS reader
+                    PSG_ERROR("PSGS_SNP: Exception while opening SNP DB " << acc << ": " << exc);
+                    if ( info->m_RemainingOpenRetries > 0 ) {
+                        throw;
+                    }
+                    else {
+                        // assume the file is not SNP file
+                        PSG_ERROR("PSGS_SNP: assume DB " << acc << " is not SNP");
+                    }
+                }
+            }
+            catch ( CException& exc ) {
+                // problem in VDB or WGS reader
+                PSG_ERROR("PSGS_SNP: Exception while opening SNP DB " << acc << ": " << exc);
+                if ( info->m_RemainingOpenRetries > 0 ) {
+                    throw;
+                }
+                else {
+                    // assume the file is not SNP file
+                    PSG_ERROR("PSGS_SNP: assume DB " << acc << " is not SNP");
+                }
+            }
+            catch ( exception& exc ) {
+                // problem in VDB or WGS reader
+                PSG_ERROR("PSGS_SNP: Exception while opening SNP DB " << acc << ": " << exc.what());
+                if ( info->m_RemainingOpenRetries > 0 ) {
+                    throw;
+                }
+                else {
+                    // assume the file is not SNP file
+                    PSG_ERROR("PSGS_SNP: assume DB " << acc << " is not SNP");
+                }
+            }
+        }
+    }}
+    if ( !info->m_SNPDb ) {
+        return null;
     }
-    else {
-        return FindFile(acc);
-    }
+    return info;
 }
 
 
@@ -897,22 +899,6 @@ bool CSNPClient::CanProcessRequest(CPSGS_Request& request, TProcessorPriority pr
     }
     return false;
 }
-
-
-void CSNPClient::EnsureCacheSize(size_t size)
-{
-    CMutexGuard guard(m_Mutex);
-    if (m_FixedFiles.empty()) {
-        if (m_FoundFiles.get_size_limit() < size) {
-            // increase VDB cache size
-            m_FoundFiles.set_size_limit(size + m_Config.m_GCSize);
-        }
-        if (m_MissingFiles.get_size_limit() < size) {
-            // increase VDB cache size
-            m_MissingFiles.set_size_limit(size + m_Config.m_MissingGCSize);
-        }
-    }
- }
 
 
 vector<SSNPData> CSNPClient::GetAnnotInfo(const CSeq_id_Handle& id,
