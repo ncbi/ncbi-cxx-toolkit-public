@@ -1787,12 +1787,22 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         if ((stop - q_ends[1])*q_dir > 0) stop = q_ends[1];
 
                         if ((start - stop)*q_dir > 0) continue;
-
-                        start = q_map.GetSeqPosFromSeqPos(1, 0, start, IAlnExplorer::eForward);
-                        stop = q_map.GetSeqPosFromSeqPos(1, 0, stop, IAlnExplorer::eBackwards);
-
-                        start = q_map.GetSeqPosFromSeqPos(0, 1, start);
-                        stop = q_map.GetSeqPosFromSeqPos(0, 1, stop);
+                        
+                        int aln_start = q_map.GetAlnPosFromSeqPos (0, start);
+                        CAlnMap::TNumseg seg = q_map.GetSeg(aln_start);
+                        int pos = q_map.GetStart(1, seg);
+                        if (pos >=0) {//no mapping for gap
+                            start = q_map.GetSeqPosFromSeqPos(1, 0, start, IAlnExplorer::eForward);
+                            start = q_map.GetSeqPosFromSeqPos(0, 1, start);
+                        }
+                        
+                        int aln_stop = q_map.GetAlnPosFromSeqPos (0, stop);
+                        seg = q_map.GetSeg(aln_stop);
+                        pos = q_map.GetStart(1, seg);
+                        if (pos >=0) {
+                            stop = q_map.GetSeqPosFromSeqPos(1, 0, stop, IAlnExplorer::eBackwards);
+                            stop = q_map.GetSeqPosFromSeqPos(0, 1, stop);
+                        }
  
                         if ((start - stop)*q_dir > 0) continue;
                         //annotate query

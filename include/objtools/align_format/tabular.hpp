@@ -672,6 +672,8 @@ public:
                          const CConstRef<blast::CIgBlastOptions> &ig_opts,
                          CConstRef<CSeq_align_set>& align_result,
                          CScope& scope);
+    /// method to set cdr3 and fwr4 annotation information
+    void SetIgCDR3FWR4Annotation(const CRef<blast::CIgAnnotation> &annot);
 
     ///Getter
     void GetIgInfo (string& v, 
