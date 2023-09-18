@@ -58,10 +58,10 @@ BOOST_AUTO_TEST_CASE(TestSearchHistory)
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv");
-    BOOST_CHECK ( 1 == items.size() );
+    BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 WebEnv: " + body );
 
     items  = root.run_xpath_query("./QueryKey");
-    BOOST_CHECK ( 1 == items.size() );
+    BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 QueryKey: " + body );
 }
 
 BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
@@ -80,27 +80,27 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
-    BOOST_CHECK ( 1 == items.size() );
+    BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 WebEnv: " + body );
     string web_env = ( items.size() > 0 ) ? items.begin()->get_content() : "";
 
     items  = root.run_xpath_query("./QueryKey/text()");
-    BOOST_CHECK ( 1 == items.size() );
+    BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 QueryKey: " + body );
     int query_key = (items.size() > 0) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
     if ( !web_env.empty() && query_key > 0 ) {
         items = root.run_xpath_query("./Count/text()");
-        BOOST_CHECK ( 1 == items.size() );
+        BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 Count: " + body );
         int count = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
 
         items = root.run_xpath_query("./RetMax/text()");
-        BOOST_CHECK ( 1 == items.size() );
+        BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 RetMax: " + body );
         int retmax = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
 
         items = root.run_xpath_query("./RetStart/text()");
-        BOOST_CHECK ( 1 == items.size() );
+        BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 RetStart: " + body );
 
         int retstart = NStr::StringToNumeric<int>(items.size() ? items.begin()->get_content() : "0");
-        BOOST_CHECK ( retstart + retmax <= count );
+        BOOST_CHECK_MESSAGE ( retstart + retmax <= count , "Expecting RetStart + RetMax <= Count: " + body );
 
         // Get next chunk from the history server.
         if ( retstart + retmax < count ) {
@@ -112,9 +112,9 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
             xml::document doc(body.c_str(), body.size(), NULL);
             const xml::node& root = doc.get_root_node();
             const xml::node_set nodes = root.run_xpath_query("./RetStart/text()");
-            BOOST_REQUIRE_MESSAGE ( nodes.size() == 1, "Expecting exactly one RetStart in XML response" );
+            BOOST_REQUIRE_MESSAGE ( nodes.size() == 1, "Expecting 1 RetStart: " + body );
             int retstart = NStr::StringToNumeric<int>(nodes.begin()->get_content());
-            BOOST_CHECK ( retstart == next_start );
+            BOOST_CHECK_MESSAGE ( retstart == next_start , "Expecting RetStart = Nnext start: " + body );
         }
     }
 }
@@ -131,11 +131,11 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
-    BOOST_CHECK ( items.size() != 0 );
+    BOOST_CHECK_MESSAGE ( items.size() != 0 , "Expecting 1 WebEnv: " + body );
     string web_env = ( items.size() > 0) ? items.begin()->get_content(): "";
 
     items  = root.run_xpath_query("./QueryKey/text()");
-    BOOST_CHECK ( items.size() != 0 );
+    BOOST_CHECK_MESSAGE ( items.size() != 0 , "Expecting 1 QueryKey: " + body );
     int query_key = (items.size() > 0) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
     if ( !web_env.empty() && query_key > 0 ) {
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
              const xml::node& root = doc.get_root_node();
 
              xml::node_set nodes = root.run_xpath_query("//DocumentSummary");
-             BOOST_CHECK ( 101 == nodes.size() );
+             BOOST_CHECK_MESSAGE ( 101 == nodes.size() , "Expecting 101 DocumentSummary nodes: " + body);
          }}
     }
 }
@@ -165,11 +165,11 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("./WebEnv/text()");
-    BOOST_CHECK ( items.size() != 0 );
+    BOOST_CHECK_MESSAGE ( items.size() != 0 , "Expecting 1 WebEnv: " + body );
     string web_env = ( 1 == items.size() ) ? items.begin()->get_content() : "";
 
     items  = root.run_xpath_query("./QueryKey/text()");
-    BOOST_CHECK ( items.size() != 0 );
+    BOOST_CHECK_MESSAGE ( items.size() != 0 , "Expecting 1 QueryKey: " + body );
     int query_key = ( items.size() > 0 ) ? NStr::StringToNumeric<int>(items.begin()->get_content()) : 0;
 
     if ( !web_env.empty() && query_key > 0 ) {
@@ -181,7 +181,8 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
              xml::document doc(body.c_str(), body.size(), NULL);
              const xml::node& root = doc.get_root_node();
 
-             BOOST_CHECK ( 101 == root.run_xpath_query("//PubmedArticle").size() + root.run_xpath_query("//PubmedBookArticle").size() );
+             BOOST_CHECK_MESSAGE ( 101 == root.run_xpath_query("//PubmedArticle").size() + root.run_xpath_query("//PubmedBookArticle").size() ,
+                                   "Expecting 101 PubmedArticle and PubmedBokArticle: " + body);
          }}
     }
 }
@@ -202,35 +203,38 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
     const xml::node& root = doc.get_root_node();
 
     xml::node_set items = root.run_xpath_query("//WebEnv/text()");
-    BOOST_CHECK ( 1 == items.size() );
+    BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 WebEnv: " + body );
 
     items  = root.run_xpath_query("//QueryKey/text()");
-    BOOST_CHECK ( 1 == items.size() );
+    BOOST_CHECK_MESSAGE ( 1 == items.size() , "Expecting 1 QueryKey: " + body );
 }
 
 BOOST_AUTO_TEST_CASE(TestLinkOut)
 {
     CEutilsClient cli;
     xml::document doc;
+    string body;
 
     {
         vector<int> uids = { 124000572, 124000574 };
 
         cli.SetMaxReturn(101); 
         BOOST_REQUIRE_NO_THROW(cli.LinkOut("nucleotide", uids, doc, "llinks"));
+        doc.save_to_string(body);
         const xml::node& root = doc.get_root_node();
 
         xml::node_set items = root.run_xpath_query("//eLinkResult/LinkSet/IdUrlList/IdUrlSet");
-        BOOST_CHECK ( 2 == items.size() );
+        BOOST_CHECK_MESSAGE ( 2 == items.size() , "Expecting 2 IdUrlSet nodes: " + body );
     }
 
     //The same with accessions
     {
         vector<objects::CSeq_id_Handle> acc = { objects::CSeq_id_Handle::GetHandle("DQ896796.2"), objects::CSeq_id_Handle::GetHandle("DQ896797.2") };
         BOOST_REQUIRE_NO_THROW(cli.LinkOut("nucleotide", acc, doc, "llinkslib"));
+        doc.save_to_string(body);
         const xml::node& root = doc.get_root_node();
 
         xml::node_set items = root.run_xpath_query("//eLinkResult/LinkSet/IdUrlList/IdUrlSet");
-        BOOST_CHECK ( 2 == items.size() );
+        BOOST_CHECK_MESSAGE ( 2 == items.size() , "Expecting 2 IdUrlSet nodes: " + body );
     }    
 }
