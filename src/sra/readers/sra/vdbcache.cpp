@@ -100,8 +100,8 @@ CVDBCacheWithExpiration::CExpirationInfo::CExpirationInfo(const CVDBCacheWithExp
                                                           const string& acc_or_path)
     : m_ForceReopenDeadline(cache.m_ForceReopenSeconds),
       m_RecheckDeadline(cache.m_RecheckSeconds),
-      m_DereferencedPath(cache.m_Mgr.FindDereferencedAccPath(acc_or_path)),
-      m_Timestamp(cache.m_Mgr.GetTimestamp(m_DereferencedPath))
+      m_DereferencedPath(DereferncePath(cache.m_Mgr, acc_or_path)),
+      m_Timestamp(GetTimestamp(cache.m_Mgr, m_DereferencedPath))
 {
     //LOG_POST("CVDBCacheWithExpiration: "<<acc_or_path<<" info: "
     //         << m_DereferencedPath << ", " << m_Timestamp);
@@ -110,6 +110,42 @@ CVDBCacheWithExpiration::CExpirationInfo::CExpirationInfo(const CVDBCacheWithExp
 
 CVDBCacheWithExpiration::CExpirationInfo::~CExpirationInfo()
 {
+}
+
+
+string CVDBCacheWithExpiration::CExpirationInfo::DereferncePath(const CVDBMgr& mgr,
+                                                                const string& acc_or_path)
+{
+    string path;
+    try {
+        path = mgr.FindDereferencedAccPath(acc_or_path);
+    }
+    catch ( CSraException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFoundDb ||
+             exc.GetErrCode() == exc.eProtectedDb ) {
+            // no such SNP NA accession, return empty string
+            return string();
+        }
+    }
+    catch ( exception& /*ignored*/ ) {
+    }
+    // in case of error assume original accession or path
+    return path.empty()? acc_or_path: path;
+}
+
+
+CTime CVDBCacheWithExpiration::CExpirationInfo::GetTimestamp(const CVDBMgr& mgr,
+                                                             const string& path)
+{
+    if ( !path.empty() ) {
+        try {
+            return mgr.GetTimestamp(path);
+        }
+        catch ( exception& /*ignored*/ ) {
+        }
+    }
+    // in case of error return empty timestamp
+    return CTime();
 }
 
 
@@ -126,14 +162,14 @@ bool CVDBCacheWithExpiration::CExpirationInfo::IsExpired(const CVDBCacheWithExpi
         return false;
     }
     // check if the file has changed
-    string new_path = cache.m_Mgr.FindDereferencedAccPath(acc_or_path);
+    string new_path = DereferncePath(cache.m_Mgr, acc_or_path);
     if ( new_path != m_DereferencedPath ) {
         // actual file path has changed
         //LOG_POST("CVDBCacheWithExpiration: path of "<<acc_or_path<<" has changed: "
         //         << m_DereferencedPath << " -> " << new_path);
         return true;
     }
-    CTime new_timestamp = cache.m_Mgr.GetTimestamp(new_path);
+    CTime new_timestamp = GetTimestamp(cache.m_Mgr, new_path);
     if ( new_timestamp != m_Timestamp ) {
         // file timestamp has changed
         //LOG_POST("CVDBCacheWithExpiration: timestamp of "<<acc_or_path<<" has changed: "

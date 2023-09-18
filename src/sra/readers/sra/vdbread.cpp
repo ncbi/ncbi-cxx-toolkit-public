@@ -532,7 +532,7 @@ string CVDBMgr::FindDereferencedAccPath(const string& acc_or_path) const
     // resolve symbolic links for correct timestamp and longer-living reference
     CDirEntry de(path);
     if ( de.Exists() ) {
-        de.DereferenceLink();
+        de.DereferencePath();
         if ( de.GetPath() != path ) {
             path = de.GetPath();
             if ( s_GetDebugLevel() >= 2 ) {
