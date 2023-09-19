@@ -730,12 +730,30 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_NamedAnnotInfo> named_annot_info)
 }
 
 template <class... TArgs>
-struct SNonVerbose
+struct SNonVerboseBase
 {
+    static void ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+    {
+        json_out << CJsonResponse(status, item);
+    }
+
+    static void ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+    {
+        json_out << CJsonResponse(status, reply);
+    }
+};
+
+template <class... TArgs>
+struct SNonVerbose : SNonVerboseBase<TArgs...>
+{
+    using SNonVerboseBase<TArgs...>::SNonVerboseBase;
+
     void ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     void ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 
 private:
+    using TBase = SNonVerboseBase<TArgs...>;
+
     map<CPSG_ReplyItem::EType, shared_ptr<CPSG_ReplyItem>> m_Items;
 };
 
@@ -747,7 +765,7 @@ void SNonVerbose<TArgs...>::ItemComplete(SJsonOut& json_out, EPSG_Status status,
     if (status == EPSG_Status::eNotFound) {
         m_Items.try_emplace(type, item);
     } else {
-        json_out << CJsonResponse(status, item);
+        TBase::ItemComplete(json_out, status, item);
 
         if (auto [it, result] = m_Items.try_emplace(type, nullptr); !result && it->second) {
             it->second.reset();
@@ -760,12 +778,12 @@ void SNonVerbose<TArgs...>::ReplyComplete(SJsonOut& json_out, EPSG_Status status
 {
     for (const auto& p : m_Items) {
         if (auto& item = p.second) {
-            json_out << CJsonResponse(EPSG_Status::eNotFound, item);
+            TBase::ItemComplete(json_out, EPSG_Status::eNotFound, item);
         }
     }
 
     if (status != EPSG_Status::eSuccess) {
-        json_out << CJsonResponse(status, reply);
+        TBase::ReplyComplete(json_out, status, reply);
     }
 }
 
