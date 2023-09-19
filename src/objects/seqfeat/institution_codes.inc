@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Sep 13 05:12:02 EDT 2023; formally
+/* time_t value corresponding to Tue Sep 19 05:12:02 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1694596322UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1695114722UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -2138,6 +2138,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ENSA\ts\tEcole Nationale Superieure Agronomique\t\t\t",
 "ENSJ\ts\tEscuela Normal Superior de Jalisco\t\t\t",
 "ENT\ts\tHerbarium, Ministry of Natural Resources, Uganda\t\t\t",
+"Ento\ts\tEntomology Collection\t\t\t",
 "ENTOMOFOR\ts\tCollection of necrophagous Fauna of the Forensic Entomology Laboratory (Basque Country University)\t\t\t",
 "EONJ\ts\tUpsala College, Biology Department\t\t\t",
 "EOSC\ts\tEastern Oregon University, Biology Department\t\t\t",
@@ -7726,6 +7727,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UA<GRC>\ts\tDepartment of Historical Geology and Paleontology\t\t\t",
 "UA<USA-AL>\ts\tUniversity of Alabama Collection\t\t\t",
 "UA<USA-AZ>\ts\tUniversity of Arizona\t\t\t",
+"UAA\ts\tAlaska Center for Conservation Science, University of Alaska Anchorage\t\t\t",
 "UAAAC\ts\tUniversity of Alaska Anchorage Avian Collection\t\t\t",
 "UAAH\ts\tHerbarium, Department of Biological Sciences, University of Alaska Anchorage\t\t\t",
 "UAAM\ts\tThe Arthropod Museum, University of Arkansas\t\t\t",
