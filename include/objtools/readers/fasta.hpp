@@ -322,6 +322,11 @@ private:
                      CBioseq& bioseq,
                      ILineErrorListener* pMessageListener);
 
+    void x_AddMods(TSeqPos line_number,
+            CBioseq& bioseq,
+            string& processed_title,
+            ILineErrorListener* pMessageListener);
+
     void x_CheckForPostponedMods(const string& idString,
             TSeqPos line_number,
             CModHandler::TModList& mods);

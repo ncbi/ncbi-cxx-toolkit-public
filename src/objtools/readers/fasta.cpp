@@ -2023,33 +2023,7 @@ void CFastaReader::x_ApplyMods(
 {
     string processed_title = title;
     if (TestFlag(fAddMods)) {
-        string remainder;
-        CModHandler::TModList mods;
-        CTitleParser::Apply(processed_title, mods, remainder);
-
-        const auto* pFirstID = bioseq.GetFirstId();
-        _ASSERT(pFirstID);
-        const auto idString = pFirstID->AsFastaString();
-    
-        x_CheckForPostponedMods(idString, line_number, mods);
-
-        CDefaultModErrorReporter
-            errorReporter(idString, line_number, pMessageListener);
-
-        CModHandler::TModList rejected_mods;
-        m_ModHandler.Clear();
-        m_ModHandler.AddMods(mods, CModHandler::eReplace, rejected_mods, errorReporter);
-        s_AppendMods(rejected_mods, remainder);
-
-        CModHandler::TModList skipped_mods;
-        const bool logInfo =
-            pMessageListener ?
-            pMessageListener->SevEnabled(eDiag_Info) :
-            false;
-        CModAdder::Apply(m_ModHandler, bioseq, skipped_mods, logInfo, errorReporter);
-        s_AppendMods(skipped_mods, remainder);
-
-        processed_title = remainder;
+        x_AddMods(line_number, bioseq, processed_title, pMessageListener);
     }
     else
     if (!TestFlag(fIgnoreMods) &&
@@ -2067,6 +2041,48 @@ void CFastaReader::x_ApplyMods(
         pDesc->SetTitle() = processed_title;
         bioseq.SetDescr().Set().push_back(std::move(pDesc));
     }
+}
+
+
+void CFastaReader::x_AddMods(
+        TSeqPos line_number,
+        CBioseq& bioseq, 
+        string& processed_title,
+        ILineErrorListener* pMessageListener)
+{
+    string remainder;
+    CModHandler::TModList mods;
+    CTitleParser::Apply(processed_title, mods, remainder);
+    if (mods.empty()) {
+        return;
+    }
+
+    const auto* pFirstID = bioseq.GetFirstId();
+    _ASSERT(pFirstID);
+    const auto idString = pFirstID->AsFastaString();
+    
+    x_CheckForPostponedMods(idString, line_number, mods);
+    if (mods.empty()) {
+        return;
+    }
+    
+    CDefaultModErrorReporter
+        errorReporter(idString, line_number, pMessageListener);
+
+    CModHandler::TModList rejected_mods;
+    m_ModHandler.Clear();
+    m_ModHandler.AddMods(mods, CModHandler::eReplace, rejected_mods, errorReporter);
+    s_AppendMods(rejected_mods, remainder);
+
+    CModHandler::TModList skipped_mods;
+    const bool logInfo =
+        pMessageListener ?
+        pMessageListener->SevEnabled(eDiag_Info) :
+        false;
+    CModAdder::Apply(m_ModHandler, bioseq, skipped_mods, logInfo, errorReporter);
+    s_AppendMods(skipped_mods, remainder);
+
+    processed_title = remainder;
 }
 
 
