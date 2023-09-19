@@ -273,7 +273,7 @@ CScope* scope)
             if (m_Mismatches.size() * 50 <= m_ProtLen) {
                 m_ProblemFlags |= eCDSTranslationProblem_ErroneousException;
             }
-        } else if (!product_replaced && !transcript_or_proteomic) {
+        } else if (!product_replaced && !transcript_or_proteomic && !rna_editing) {
             m_ProblemFlags |= eCDSTranslationProblem_UnqualifiedException;
         }
     }
