@@ -2102,6 +2102,7 @@ ENS	s	Hubei College for Nationalities, Forestry Department
 ENSA	s	Ecole Nationale Superieure Agronomique			
 ENSJ	s	Escuela Normal Superior de Jalisco			
 ENT	s	Herbarium, Ministry of Natural Resources, Uganda			
+Ento	s	Entomology Collection			
 ENTOMOFOR	s	Collection of necrophagous Fauna of the Forensic Entomology Laboratory (Basque Country University)			
 EONJ	s	Upsala College, Biology Department			
 EOSC	s	Eastern Oregon University, Biology Department			
@@ -7690,6 +7691,7 @@ U	s	Nationaal Herbarium Nederland, Utrecht University branch
 UA<GRC>	s	Department of Historical Geology and Paleontology			
 UA<USA-AL>	s	University of Alabama Collection			
 UA<USA-AZ>	s	University of Arizona			
+UAA	s	Alaska Center for Conservation Science, University of Alaska Anchorage			
 UAAAC	s	University of Alaska Anchorage Avian Collection			
 UAAH	s	Herbarium, Department of Biological Sciences, University of Alaska Anchorage			
 UAAM	s	The Arthropod Museum, University of Arkansas			
