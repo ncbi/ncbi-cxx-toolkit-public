@@ -2026,18 +2026,12 @@ void CFastaReader::x_ApplyMods(
         string remainder;
         CModHandler::TModList mods;
         CTitleParser::Apply(processed_title, mods, remainder);
-        if (mods.empty()) {
-            return;
-        }
 
         const auto* pFirstID = bioseq.GetFirstId();
         _ASSERT(pFirstID);
         const auto idString = pFirstID->AsFastaString();
     
         x_CheckForPostponedMods(idString, line_number, mods);
-        if (mods.empty()) {
-            return;
-        }
 
         CDefaultModErrorReporter
             errorReporter(idString, line_number, pMessageListener);
