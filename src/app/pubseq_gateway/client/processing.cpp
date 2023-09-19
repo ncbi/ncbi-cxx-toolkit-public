@@ -866,6 +866,9 @@ struct SBatchResolveContext : string
 {
     set<EPSG_Status> reported;
     SBatchResolveContext(string id) : string(move(id)) {}
+
+    void ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
+    void ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
 };
 
 template <class TParams>
@@ -902,8 +905,12 @@ void s_ItemComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const sh
 {
     auto context = item->GetReply()->GetRequest()->GetUserContext<SBatchResolveContext>();
     _ASSERT(context);
-    context->reported.emplace(status);
+    context->ItemComplete(json_out, status, item);
+}
 
+void SBatchResolveContext::ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+{
+    reported.emplace(status);
     s_ItemComplete<verbose>(json_out, status, item);
 }
 
@@ -912,8 +919,12 @@ void s_ReplyComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const s
 {
     auto context = reply->GetRequest()->GetUserContext<SBatchResolveContext>();
     _ASSERT(context);
+    context->ReplyComplete(json_out, status, reply);
+}
 
-    if (auto first_message = reply->GetNextMessage(); !first_message.empty() || (context->reported.find(status) == context->reported.end())) {
+void SBatchResolveContext::ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+{
+    if (auto first_message = reply->GetNextMessage(); !first_message.empty() || (reported.find(status) == reported.end())) {
         CJsonResponse result_doc(status, reply, first_message);
         json_out << result_doc;
     }
