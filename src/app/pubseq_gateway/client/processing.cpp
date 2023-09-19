@@ -862,10 +862,11 @@ int CProcessing::OneRequest(const SOneRequestParams& params, shared_ptr<CPSG_Req
     return data_only_copy;
 }
 
-struct SBatchResolveContext : string
+template <>
+struct SNonVerboseBase<SBatchResolveParams> : string
 {
     set<EPSG_Status> reported;
-    SBatchResolveContext(string id) : string(move(id)) {}
+    SNonVerboseBase(string id) : string(move(id)) {}
 
     void ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     void ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
@@ -885,7 +886,7 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::Submitter(CPSG_Queue& outp
     while (m_InputQueue.Pop(id)) {
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
         auto bio_id = CPSG_BioId(id, m_Params.type);
-        auto user_context = make_shared<SBatchResolveContext>(move(id));
+        auto user_context = make_shared<SNonVerbose<SBatchResolveParams>>(move(id));
         auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), m_Params.bio_id_resolution, move(user_context));
 
         request->IncludeInfo(m_Params.include_info);
@@ -903,12 +904,12 @@ using no_verbose = false_type;
 template <>
 void s_ItemComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
-    auto context = item->GetReply()->GetRequest()->GetUserContext<SBatchResolveContext>();
+    auto context = item->GetReply()->GetRequest()->GetUserContext<SNonVerbose<SBatchResolveParams>>();
     _ASSERT(context);
     context->ItemComplete(json_out, status, item);
 }
 
-void SBatchResolveContext::ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
+void SNonVerboseBase<SBatchResolveParams>::ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     reported.emplace(status);
     s_ItemComplete<verbose>(json_out, status, item);
@@ -917,12 +918,12 @@ void SBatchResolveContext::ItemComplete(SJsonOut& json_out, EPSG_Status status, 
 template <>
 void s_ReplyComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
-    auto context = reply->GetRequest()->GetUserContext<SBatchResolveContext>();
+    auto context = reply->GetRequest()->GetUserContext<SNonVerbose<SBatchResolveParams>>();
     _ASSERT(context);
     context->ReplyComplete(json_out, status, reply);
 }
 
-void SBatchResolveContext::ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
+void SNonVerboseBase<SBatchResolveParams>::ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
     if (auto first_message = reply->GetNextMessage(); !first_message.empty() || (reported.find(status) == reported.end())) {
         CJsonResponse result_doc(status, reply, first_message);
@@ -967,7 +968,7 @@ void CParallelProcessing<TIpgBatchResolveParams>::SImpl::Submitter(CPSG_Queue& o
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
 
         auto nucleotide = NStr::SplitInTwo(line, ",", protein, n) ? CPSG_Request_IpgResolve::TNucleotide(n) : null;
-        auto user_context = make_shared<SBatchResolveContext>(move(line));
+        auto user_context = make_shared<SNonVerbose<SBatchResolveParams>>(move(line));
         auto request = make_shared<CPSG_Request_IpgResolve>(move(protein), 0, move(nucleotide),  move(user_context));
 
         _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
