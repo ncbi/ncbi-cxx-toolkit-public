@@ -630,6 +630,7 @@ BIOT	s	Regional Center for Tropical Biology
 BIOUG<CAN>	s	Biodiversity Institute of Ontario, University of Guelph	BIO,UOG:BIO		
 BIPB	s	Barbara I. P. Barratt			
 BIRA	s	Birmingham Museums and Art Gallery, Curatorial Services			
+Bird	s	Bird Collection			
 BIRD	s	Charles Bird			
 BIRDI	b	Biotechnology Research & Development Institute Vietnam	BiRDI		
 BIRM	s	University of Birmingham			
@@ -2279,6 +2280,7 @@ FIP	s	Florida Institute of Paleontology
 FIPF	s	Universita di Firenze			
 FIPIA	s	Institut Teknologi Bandung, Jurusan Biologi			
 FIRDI	c	Food Industry Research and Development Institute			
+Fish	s	Fish collection			
 FJFC	s	Fujian Forestry College			
 FJSI	s	Fujian Institute of Subtropical Botany			
 FKC	s	Filipp Kovalevsky			
@@ -2797,6 +2799,7 @@ HER<CAN>	c	Felix d'Herelle Reference Center for Bacterial Viruses (Bacteriophage
 HER<ZAF>	s	Hermanus Botanical Society			
 HERA	s	Altinbas University			
 HERBAM	s	Universidade do Estado de Mato Grosso			
+Herp	s	Herpetology Collection			
 HERT	s	Fundacao Universidade Estadual do Ceara			
 HERZ	s	Herzen State Pedagogical University of Russia, Department of Botany			
 HERZU	s	Universidad del Zulia			
@@ -4466,6 +4469,7 @@ MALC	s	Museu Municipal de la Vila d'Alcover
 MALG	s	Universitas Negeri Malang			
 MALS	s	Manti-LaSal National Forest			
 Mam	s	Mammal collection			
+Mamm	s	Mammal collection			
 MAMU	s	University of Sydney, Macleay Museum			
 MAN	s	Universitas Cenderawasih			
 MANCH	s	University of Manchester			
@@ -6606,7 +6610,6 @@ RV<RUS>	s	Molotov State University of Rostov, Botany Department
 RVP	s	Museo Provincial de Historia Natural de La Pampa (Argentina)			
 RWBC	s	Richard W. Boscoe			
 RWBG	s	Rostov State University			
-RWC	s	State University of New York, Roosevelt Wildlife Collection			
 RWC <P>	s	Reginald Webster	RWC		
 RWCJ	s	Robert William Cavanaugh, Jr.			
 RWDN	s	University of Glasgow Field Station			
