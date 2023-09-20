@@ -69,9 +69,8 @@ private:
 
 CPoolBalancer::CPoolBalancer(const string& service_name,
                              const IDBServiceMapper::TOptions& options,
-                             bool ignore_raw_ips)
-    : m_ServiceName(service_name), m_TotalCount(0U),
-      m_IgnoreRawIPs(ignore_raw_ips)
+                             TFlags flags)
+    : m_ServiceName(service_name), m_TotalCount(0U), m_Flags(flags)
 {
     for (auto it : options) {
         CTempString name = it->GetName();
@@ -79,7 +78,7 @@ CPoolBalancer::CPoolBalancer(const string& service_name,
         if (key == 0  &&  name != service_name) {
             key = x_NameToKey(name);
             if (key != 0) {
-                if (ignore_raw_ips  &&  name == it->GetName() ) {
+                if ((flags & fIgnoreRawIPs)  &&  name == it->GetName() ) {
                     continue;
                 }
                 it.Reset(new CDBServerOption(name, key.GetHost(),
@@ -151,7 +150,8 @@ void CPoolBalancer::x_InitFromCounts(const TCounts& counts)
              ||  key.GetHost() != eit->first.GetHost()
              ||  (key.GetPort() != 0
                   &&  key.GetPort() != eit->first.GetPort()))
-            &&  ( !m_IgnoreRawIPs  ||  key == 0  ||  name != cit.first)) {
+            &&  ( !(m_Flags & fIgnoreRawIPs)  ||  key == 0
+                 ||  name != cit.first)) {
             _TRACE_X(2,
                      m_ServiceName << ": " << key << " -> " << name
                      << " per existing connection(s)");

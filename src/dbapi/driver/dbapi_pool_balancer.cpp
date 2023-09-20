@@ -87,13 +87,26 @@ CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
                                  I_DriverContext* driver_ctx,
                                  bool is_pooled)
     : CPoolBalancer(service_info.GetServiceName(), service_info.GetOptions(),
-                    driver_ctx != nullptr
-                    &&  !NStr::StartsWith(driver_ctx->GetDriverName(),
-                                          "ftds")),
+                    x_GetFlags(driver_ctx, is_pooled)),
       m_ServiceInfo(&service_info), m_PoolName(pool_name),
       m_DriverCtx(driver_ctx), m_IsPooled(is_pooled)
 {
     x_ReinitFromCounts();
+}
+
+
+CPoolBalancer::TFlags CDBPoolBalancer::x_GetFlags(I_DriverContext* driver_ctx,
+                                                  bool is_pooled)
+{
+    TFlags flags;
+    if (driver_ctx != nullptr
+        &&  !NStr::StartsWith(driver_ctx->GetDriverName(), "ftds")) {
+        flags |= fIgnoreRawIPs;
+    }
+    if ( !is_pooled ) {
+        flags |= fNoPooling;
+    }
+    return flags;
 }
 
 
@@ -107,7 +120,7 @@ void CDBPoolBalancer::x_ReinitFromCounts(void)
             ERR_POST_X(1, Warning <<
                        "Called with non-standard IDriverContext");
         }
-    } else if ( !m_IsPooled ) {
+    } else if (x_NoPooling()) {
     } else if (m_PoolName.empty()) {
         ctx_impl->GetCountsForService(m_ServiceInfo->GetServiceName(),
                                       &counts);
@@ -124,7 +137,7 @@ IBalanceable* CDBPoolBalancer::x_TryPool(const void* params_in)
     _ASSERT(params != nullptr);
     if (m_DriverCtx == nullptr) {
         return nullptr;
-    } else if ( !m_IsPooled ) {
+    } else if (x_NoPooling()) {
         auto server = m_ServiceInfo->GetMappedServer();
         if (server.Empty()) {
             return nullptr;

@@ -52,9 +52,23 @@ public:
 class NCBI_XNCBI_EXPORT CPoolBalancer : public CObject
 {
 public:
+    enum EFlags {
+        fIgnoreRawIPs = 1 << 0,
+        fNoPooling    = 1 << 1
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+    
     CPoolBalancer(const string& service_name,
                   const IDBServiceMapper::TOptions& options,
-                  bool ignore_raw_ips);
+                  TFlags flags);
+
+    CPoolBalancer(const string& service_name,
+                  const IDBServiceMapper::TOptions& options,
+                  bool ignore_raw_ips)
+        : CPoolBalancer(service_name, options,
+                        ignore_raw_ips ? fIgnoreRawIPs
+                        : static_cast<TFlags>(0))
+        { }
 
     TSvrRef GetServer(void)
         { return x_GetServer(nullptr, nullptr); }
@@ -66,6 +80,8 @@ protected:
 
     void x_InitFromCounts(const TCounts& counts);
     TSvrRef x_GetServer(const void* params, IBalanceable** conn);
+    bool x_NoPooling(void) const
+        { return m_Flags & fNoPooling; }
 
     virtual IBalanceable* x_TryPool(const void* /* params */)
         { return nullptr; }
@@ -101,8 +117,10 @@ private:
     TEndpoints        m_Endpoints;
     multiset<double>  m_Rankings;
     unsigned int      m_TotalCount;
-    bool              m_IgnoreRawIPs;
+    TFlags            m_Flags;
 };
+
+DECLARE_SAFE_FLAGS(CPoolBalancer::EFlags);
 
 
 END_NCBI_SCOPE
