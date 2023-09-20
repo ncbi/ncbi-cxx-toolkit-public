@@ -178,7 +178,7 @@ class CSatInfoSchema final
         set<string> const& secure_users
     );
     optional<ESatInfoRefreshSchemaResult> x_ResolveConnectionByServiceName(
-        string const& service,
+        string service,
         shared_ptr<CSatInfoSchema> const& old_schema,
         shared_ptr<IRegistry const> const& registry,
         string const& registry_section,
