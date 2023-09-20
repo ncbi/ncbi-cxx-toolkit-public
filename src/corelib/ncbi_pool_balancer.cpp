@@ -261,18 +261,19 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
                 CRandomGuard rg;
                 uniform_real_distribution<double> urd(0.0, pool_max);
                 if (urd(*s_RandomEngine) <= excess) {
-                    // defer turnover (endpoint may be reselected!) but
-                    // speculatively update counts
                     keep = false;
-                    --m_TotalCount;
-                    if (it != m_Endpoints.end()) {
-                        --it->second.actual_count;
-                    }
                 }
             }
             if (keep) {
                 _TRACE_X(6, "Sparing connection immediately");
                 return result;
+            } else {
+                // defer turnover (endpoint may be reselected!) but
+                // speculatively update counts
+                --m_TotalCount;
+                if (it != m_Endpoints.end()) {
+                    --it->second.actual_count;
+                }
             }
         }
     }
