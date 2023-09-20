@@ -98,7 +98,7 @@ CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
 CPoolBalancer::TFlags CDBPoolBalancer::x_GetFlags(I_DriverContext* driver_ctx,
                                                   bool is_pooled)
 {
-    TFlags flags;
+    TFlags flags = static_cast<EFlags>(0);
     if (driver_ctx != nullptr
         &&  !NStr::StartsWith(driver_ctx->GetDriverName(), "ftds")) {
         flags |= fIgnoreRawIPs;
