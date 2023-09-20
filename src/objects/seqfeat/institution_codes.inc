@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Sep 19 05:12:02 EDT 2023; formally
+/* time_t value corresponding to Wed Sep 20 05:12:02 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1695114722UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1695201122UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -666,6 +666,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BIOUG<CAN>\ts\tBiodiversity Institute of Ontario, University of Guelph\tBIO,UOG:BIO\t\t",
 "BIPB\ts\tBarbara I. P. Barratt\t\t\t",
 "BIRA\ts\tBirmingham Museums and Art Gallery, Curatorial Services\t\t\t",
+"Bird\ts\tBird Collection\t\t\t",
 "BIRD\ts\tCharles Bird\t\t\t",
 "BIRDI\tb\tBiotechnology Research & Development Institute Vietnam\tBiRDI\t\t",
 "BIRM\ts\tUniversity of Birmingham\t\t\t",
@@ -2315,6 +2316,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FIPF\ts\tUniversita di Firenze\t\t\t",
 "FIPIA\ts\tInstitut Teknologi Bandung, Jurusan Biologi\t\t\t",
 "FIRDI\tc\tFood Industry Research and Development Institute\t\t\t",
+"Fish\ts\tFish collection\t\t\t",
 "FJFC\ts\tFujian Forestry College\t\t\t",
 "FJSI\ts\tFujian Institute of Subtropical Botany\t\t\t",
 "FKC\ts\tFilipp Kovalevsky\t\t\t",
@@ -2833,6 +2835,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HER<ZAF>\ts\tHermanus Botanical Society\t\t\t",
 "HERA\ts\tAltinbas University\t\t\t",
 "HERBAM\ts\tUniversidade do Estado de Mato Grosso\t\t\t",
+"Herp\ts\tHerpetology Collection\t\t\t",
 "HERT\ts\tFundacao Universidade Estadual do Ceara\t\t\t",
 "HERZ\ts\tHerzen State Pedagogical University of Russia, Department of Botany\t\t\t",
 "HERZU\ts\tUniversidad del Zulia\t\t\t",
@@ -4502,6 +4505,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MALG\ts\tUniversitas Negeri Malang\t\t\t",
 "MALS\ts\tManti-LaSal National Forest\t\t\t",
 "Mam\ts\tMammal collection\t\t\t",
+"Mamm\ts\tMammal collection\t\t\t",
 "MAMU\ts\tUniversity of Sydney, Macleay Museum\t\t\t",
 "MAN\ts\tUniversitas Cenderawasih\t\t\t",
 "MANCH\ts\tUniversity of Manchester\t\t\t",
@@ -6642,7 +6646,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RVP\ts\tMuseo Provincial de Historia Natural de La Pampa (Argentina)\t\t\t",
 "RWBC\ts\tRichard W. Boscoe\t\t\t",
 "RWBG\ts\tRostov State University\t\t\t",
-"RWC\ts\tState University of New York, Roosevelt Wildlife Collection\t\t\t",
 "RWC <P>\ts\tReginald Webster\tRWC\t\t",
 "RWCJ\ts\tRobert William Cavanaugh, Jr.\t\t\t",
 "RWDN\ts\tUniversity of Glasgow Field Station\t\t\t",
