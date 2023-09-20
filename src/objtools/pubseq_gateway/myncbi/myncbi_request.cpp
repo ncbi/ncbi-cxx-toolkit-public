@@ -105,8 +105,8 @@ void CPSG_MyNCBIRequest_WhoAmI::HandleResponse()
         }
         else {
             SetResponseStatus(EPSG_MyNCBIResponseStatus::eError);
-            m_ErrorCallback(CRequestStatus::e500_InternalServerError, GetHttpResponseStatus(), eDiag_Error,
-                "Request failed: response status - " + to_string(GetHttpResponseStatus())
+            m_ErrorCallback(CRequestStatus::e404_NotFound, GetHttpResponseStatus(), eDiag_Error,
+                "MyNCBIUser data not found: response status - " + to_string(GetHttpResponseStatus())
                 + "; response text - '" + GetHttpResponseData() + "'");
         }
     }
@@ -132,8 +132,8 @@ void CPSG_MyNCBIRequest_SignIn::HandleResponse()
         }
         else {
             SetResponseStatus(EPSG_MyNCBIResponseStatus::eError);
-            m_ErrorCallback(CRequestStatus::e500_InternalServerError, GetHttpResponseStatus(), eDiag_Error,
-                "Request failed: response status - " + to_string(GetHttpResponseStatus())
+            m_ErrorCallback(CRequestStatus::e404_NotFound, GetHttpResponseStatus(), eDiag_Error,
+                "MyNCBIUser data not found: response status - " + to_string(GetHttpResponseStatus())
                 + "; response text - '" + GetHttpResponseData() + "'");
         }
     }
