@@ -33,6 +33,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <chrono>
+
 #include <gtest/gtest.h>
 
 #include <corelib/ncbireg.hpp>
@@ -90,6 +92,7 @@ namespace {
         factory->SetMyNCBIURL("http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNCBIAccount");
         factory->SetHttpProxy("linkerd:4140");
         factory->SetVerboseCURL(false);
+        factory->SetRequestTimeout(chrono::milliseconds(100));
 
         auto signin = factory->CreateSignIn(loop, m_Username, m_Password, error_fn);
         uv_run(loop, UV_RUN_DEFAULT);
