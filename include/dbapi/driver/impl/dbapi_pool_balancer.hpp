@@ -76,6 +76,7 @@ protected:
     void          x_Discard(const void* params, IBalanceable* conn) override;
 
 private:
+    static TFlags x_GetFlags(I_DriverContext* driver_ctx, bool is_pooled);
     void x_ReinitFromCounts(void);
     
     CRef<IDBServiceInfo> m_ServiceInfo;
