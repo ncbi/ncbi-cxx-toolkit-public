@@ -140,7 +140,7 @@ ostream& operator<<(ostream& os, const CEndpointKey& key);
 /// IDBServiceMapper
 ///
 
-class CDBServer : public CObject
+class NCBI_XNCBI_EXPORT CDBServer : public CObject
 {
 public:
     CDBServer(void);
