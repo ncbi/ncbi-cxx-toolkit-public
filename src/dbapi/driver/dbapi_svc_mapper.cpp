@@ -454,7 +454,7 @@ CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
     auto svc = m_ServerMap.find(service);
     if (svc != m_ServerMap.end()) {
         for (auto svr : svc->second) {
-            if (svr == server  ||  *svr == *server) {
+            if (svr->Matches(*server, service)) {
                 svr->m_State |= CDBServerOption::fState_Excluded;
             }
         }
@@ -722,8 +722,8 @@ CDBUDPriorityMapper::Exclude(const string& service,
     for (TServerUsageMap::iterator it = usage_map.begin();
          it != usage_map.end();) {
 
-        if (it->second == server) {
-            usage_map.erase(it);
+        if (it->second->Matches(*server, service)) {
+            it = usage_map.erase(it);
             break;
         }
         else {
