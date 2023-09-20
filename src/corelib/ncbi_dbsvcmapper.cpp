@@ -39,6 +39,61 @@
 BEGIN_NCBI_SCOPE
 
 
+bool CDBServer::Matches(const CDBServer& that, CTempString service) const
+{
+    if (this == &that  ||  *this == that) {
+        return true;
+    }
+    enum ESubStatus {
+        eMismatch,
+        eBothBlank,
+        eOneBlank,
+        eMatch
+    };
+    ESubStatus name_status, host_status, port_status;
+
+    bool this_name_is_wild = m_Name.empty()       ||  m_Name == service;
+    bool that_name_is_wild = that.m_Name.empty()  ||  that.m_Name == service;
+    if (this_name_is_wild  &&  that_name_is_wild) {
+        name_status = eBothBlank;
+    } else if (this_name_is_wild  ||  that_name_is_wild) {
+        name_status = eOneBlank;
+    } else if (m_Name == that.m_Name) {
+        name_status = eMatch;
+    } else {
+        name_status = eMismatch;
+    }
+
+    if (m_Host == 0U  &&  that.m_Host == 0U) {
+        host_status = eBothBlank;
+    } else if (m_Host == 0U  ||  that.m_Host == 0U) {
+        host_status = eOneBlank;
+    } else if (m_Host == that.m_Host) {
+        host_status = eMatch;
+    } else {
+        host_status = eMismatch;
+    }
+
+    if (m_Port == 0U  &&  that.m_Port == 0U) {
+        port_status = eBothBlank;
+    } else if (m_Port == 0U  ||  that.m_Port == 0U) {
+        port_status = eOneBlank;
+    } else if (m_Port == that.m_Port) {
+        port_status = eMatch;
+    } else {
+        port_status = eMismatch;
+    }
+
+    if (name_status == eMismatch) {
+        return host_status == eMatch  &&  port_status == eMatch;
+    } else if (name_status == eMatch) {
+        return host_status != eMismatch  &&  port_status != eMismatch;
+    } else {
+        return host_status == eMatch  &&  port_status != eMismatch;
+    }
+}
+
+
 CEndpointKey::CEndpointKey(const CTempString& name,
                            NStr::TStringToNumFlags flags)
 {
