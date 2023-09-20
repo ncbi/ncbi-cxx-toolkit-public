@@ -66,7 +66,7 @@ public:
                   const IDBServiceMapper::TOptions& options,
                   bool ignore_raw_ips)
         : CPoolBalancer(service_name, options,
-                        ignore_raw_ips ? fIgnoreRawIPs
+                        ignore_raw_ips ? TFlags(fIgnoreRawIPs)
                         : static_cast<TFlags>(0))
         { }
 
