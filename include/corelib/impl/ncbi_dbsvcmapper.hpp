@@ -159,6 +159,8 @@ public:
         return !GetName().empty() || GetHost() != 0;
     }
 
+    bool Matches(const CDBServer& that, CTempString service) const;
+
 private:
     const string m_Name;
     const Uint4  m_Host;
