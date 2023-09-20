@@ -377,7 +377,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveServiceName(
 }
 
 optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveConnectionByServiceName(
-    string const& service,
+    string service,
     shared_ptr<CSatInfoSchema> const& old_schema,
     shared_ptr<IRegistry const> const& registry,
     string const& registry_section,
@@ -385,9 +385,18 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveConnectionByServi
 )
 {
     // Check this schema data
+    if (service.empty()) {
+        if (registry_section == m_DefaultRegistrySection) {
+            connection = m_DefaultConnection;
+            return {};
+        }
+        else {
+            service = registry->Get(registry_section, "service");
+        }
+    }
     if (service.empty() && registry_section == m_DefaultRegistrySection) {
         connection = m_DefaultConnection;
-        return {};
+
     }
     connection = x_GetConnectionByService(service, registry_section);
     if (connection) {

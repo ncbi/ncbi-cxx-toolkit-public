@@ -370,4 +370,16 @@ TEST_F(CSatInfoProviderTest, CassException) {
     }
 }
 
+TEST_F(CSatInfoProviderTest, PsgDomain) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_TEST", m_Connection,
+        m_RegistryPtr, m_ConfigSection
+    );
+    provider.SetSecureSatRegistrySection(m_ConfigSectionSecure);
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUnchanged, provider.RefreshSchema(false));
+
+    //cout << provider.GetSchema()->ToString() << endl;
+}
+
 }  // namespace
