@@ -1,3 +1,9 @@
+Version 1.25.2 (2023-09-21):
+* Play better with code using logging.basicConfig, which would otherwise
+  take effect only with force = True.  There are still some scenarios
+  in which this module will implicitly establish a stock configuration,
+  but it now issues a warning immediately beforehand.
+
 Version 1.25.1 (2023-01-26):
 * Anticipate possible output from statements with OUTPUT clauses
   (checked only for INSERT, DELETE, UPDATE, and MERGE).
