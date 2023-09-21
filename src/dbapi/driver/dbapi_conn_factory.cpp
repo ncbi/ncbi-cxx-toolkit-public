@@ -478,20 +478,6 @@ CDBConnectionFactory::DispatchServerName(
                 }
             }
 
-            // If connection attempts will take too long mapper can return
-            // the same server once more. Let's not try to connect to it
-            // again.
-            bool found = false;
-            ITERATE(list<TSvrRef>, it, tried_servers) {
-                if (**it == *dsp_srv) {
-                    service_info.Exclude(dsp_srv);
-                    found = true;
-                    break;
-                }
-            }
-            if (found)
-                continue;
-
             // curr_conn_attr.srv_name = dsp_srv->GetName();
             cur_srv_name = dsp_srv->GetName();
             cur_host = dsp_srv->GetHost();
