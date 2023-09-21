@@ -3,6 +3,8 @@ Version 1.25.2 (2023-09-21):
   take effect only with force = True.  There are still some scenarios
   in which this module will implicitly establish a stock configuration,
   but it now issues a warning immediately beforehand.
+* Drop the build for Python 3.8 (no longer supported), leaving just
+  3.9 and 3.11.
 
 Version 1.25.1 (2023-01-26):
 * Anticipate possible output from statements with OUTPUT clauses
