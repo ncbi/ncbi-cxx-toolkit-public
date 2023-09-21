@@ -221,7 +221,7 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
             bool           keep         = true;
             string         penalty_note;
             conn_key = CEndpointKey(host, port);
-            auto it = m_Endpoints.find(conn_key);
+            auto it = x_FindEndpoint(conn_key, server_name);
             if (it == m_Endpoints.end()) {
                 ERR_POST_X(4,
                            "Unrecognized endpoint for existing connection to "
@@ -267,7 +267,7 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
             if (keep) {
                 _TRACE_X(6, "Sparing connection immediately");
                 return result;
-            } else {
+            } else if ( !x_NoPooling() ) {
                 // defer turnover (endpoint may be reselected!) but
                 // speculatively update counts
                 --m_TotalCount;
@@ -318,10 +318,14 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
              "Picked " << options[i]->first << " ("
              << options[i]->second.ref->GetName() << ')');
     if (conn != NULL  &&  *conn != NULL) {
-        if (conn_key == options[i]->first) {
+        if (CDBServer((*conn)->ServerName(), conn_key.GetHost(),
+                      conn_key.GetPort())
+            .Matches(*options[i]->second.ref, m_ServiceName)) {
             _TRACE_X(11, "Sparing connection (endpoint reselected)");
-            ++options[i]->second.actual_count;
-            ++m_TotalCount;
+            if ( !x_NoPooling() ) {
+                ++options[i]->second.actual_count;
+                ++m_TotalCount;
+            }
         } else {
             _TRACE_X(12, "Proceeding to request turnover");
             auto to_discard = *conn;
