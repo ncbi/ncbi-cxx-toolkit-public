@@ -4493,31 +4493,44 @@ public:
 
 private:
     pythonpp::CModule          m_LoggingModule;
+    pythonpp::CDict            m_LoggingDict;
     vector<pythonpp::CCalable> m_LoggingFunctions;
+#if PY_VERSION_HEX >= 0x03020000
+    pythonpp::CCalable         m_HasHandlers;
+    pythonpp::CTuple           m_RootLogger;
+    pythonpp::CBool            m_IsConfigured;
+#endif
 };
 
 CPythonDiagHandler::CPythonDiagHandler()
     : m_LoggingModule(PyImport_ImportModule("logging"))
+    , m_LoggingDict(m_LoggingModule.GetDict())
+#if PY_VERSION_HEX >= 0x03020000
+    , m_HasHandlers(m_LoggingDict.GetItem("Logger").GetAttr("hasHandlers"))
+    , m_RootLogger(1), m_IsConfigured(false)
+#endif
 {
-    pythonpp::CDict d = m_LoggingModule.GetDict();
-
+#if PY_VERSION_HEX >= 0x03020000
+    m_RootLogger.SetItem
+        (0, pythonpp::CCalable(m_LoggingDict.GetItem("getLogger")).Apply());
+#endif
     _ASSERT(m_LoggingFunctions.size() == eDiag_Info);
-    pythonpp::CObject info = d.GetItem("info");
+    pythonpp::CObject info = m_LoggingDict.GetItem("info");
     pythonpp::IncRefCount(info.Get());
     m_LoggingFunctions.emplace_back(info);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Warning);
-    pythonpp::CObject warning = d.GetItem("warning");
+    pythonpp::CObject warning = m_LoggingDict.GetItem("warning");
     pythonpp::IncRefCount(warning.Get());
     m_LoggingFunctions.emplace_back(warning);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Error);
-    pythonpp::CObject error = d.GetItem("error");
+    pythonpp::CObject error = m_LoggingDict.GetItem("error");
     pythonpp::IncRefCount(error.Get());
     m_LoggingFunctions.emplace_back(error);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Critical);
-    pythonpp::CObject critical = d.GetItem("critical");
+    pythonpp::CObject critical = m_LoggingDict.GetItem("critical");
     pythonpp::IncRefCount(critical.Get());
     m_LoggingFunctions.emplace_back(critical);
 
@@ -4525,7 +4538,7 @@ CPythonDiagHandler::CPythonDiagHandler()
     m_LoggingFunctions.emplace_back(critical);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Trace);
-    pythonpp::CObject debug = d.GetItem("debug");
+    pythonpp::CObject debug = m_LoggingDict.GetItem("debug");
     pythonpp::IncRefCount(debug.Get());
     m_LoggingFunctions.emplace_back(debug);
 
@@ -4537,6 +4550,22 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
     pythonpp::CStateGuard guard;
     pythonpp::CTuple args(2);
     pythonpp::CString format("%s", 2);
+    args.SetItem(0, format);
+#if PY_VERSION_HEX >= 0x03020000
+    if ( !m_IsConfigured ) {
+        m_IsConfigured = m_HasHandlers.Apply(m_RootLogger);
+        if ( !m_IsConfigured ) {
+            if (mess.m_BufferLen <= 0
+                ||  CompareDiagPostLevel(mess.m_Severity, eDiag_Warning) < 0) {
+                return;
+            }
+            pythonpp::CString warning
+                ("python_ncbi_dbapi: Allowing automatic logging.basicConfig");
+            args.SetItem(1, warning);
+            m_LoggingFunctions[eDiag_Warning].Apply(args);
+        }
+    }
+#endif
     pythonpp::CString buffer(mess.m_Buffer, mess.m_BufferLen);
     if (mess.m_BufferLen > 0) {
         string s;
@@ -4549,7 +4578,6 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
         // attempting to determine whether applog is in use.
         buffer = NStr::Replace(s, "\v", "\n");
     }
-    args.SetItem(0, format);
     args.SetItem(1, buffer);
     if (mess.m_ExtraArgs.empty()) {
         m_LoggingFunctions[mess.m_Severity].Apply(args);
