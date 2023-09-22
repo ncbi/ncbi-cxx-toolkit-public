@@ -68,7 +68,8 @@ CAutoOutputFileReset::GetStream()
 
 int
 GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */, 
-                  bool is_remote /* = false */, bool use_default /* = true */)
+                  bool is_remote /* = false */, bool use_default /* = true */, 
+                  string task_name /* = "" */, bool mt_mode /* = false */)
 {
     int retval = 0;
 
@@ -97,6 +98,9 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */,
 
     if (! use_default) return 0;
 
+    if (task_name == "")
+        task_name = EProgramToTaskName(program);
+
     switch (program) {
     case eBlastn:
         retval = 100000;
@@ -118,6 +122,11 @@ GetQueryBatchSize(EProgram program, bool is_ungapped /* = false */,
     // split, context N%6 in one chunk will have the same frame as context N%6
     // in the next chunk
     case eBlastx:
+        if (task_name == "blastx-fast" && mt_mode == true)
+        {
+		retval = 20004;
+		break;
+	}
     case eTblastx:
         // N.B.: the splitting is done on the nucleotide query sequences, then
         // each of these chunks is translated
