@@ -973,7 +973,7 @@ void LogCmdOptions(blast::CBlastUsageReport & report, const CBlastAppArgs & args
 	}
 }
 
-int GetMTByQueriesBatchSize(EProgram p, int num_threads)
+int GetMTByQueriesBatchSize(EProgram p, int num_threads, const string & task)
 {
 	    int batch_size = 0;
 
@@ -988,6 +988,10 @@ int GetMTByQueriesBatchSize(EProgram p, int num_threads)
 			}
 			batch_size = GetQueryBatchSize(p)/factor;
 		}
+                if (task == "blastx-fast")
+                {  // Set batch_size to 20004
+                        batch_size *= 2;
+                }
 		return batch_size;
 }
 

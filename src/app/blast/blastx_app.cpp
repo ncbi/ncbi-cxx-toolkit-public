@@ -276,7 +276,7 @@ int CBlastxApp::x_RunMTBySplitQuery()
    		LogCmdOptions(m_UsageReport, *m_CmdLineArgs);
 
    		int chunk_num = 0;
-   	    int batch_size = GetMTByQueriesBatchSize(opts_hndl->GetOptions().GetProgram(), kMaxNumOfThreads);
+   	    int batch_size = GetMTByQueriesBatchSize(opts_hndl->GetOptions().GetProgram(), kMaxNumOfThreads, m_CmdLineArgs->GetTask());
    		INFO_POST("Batch Size: " << batch_size);
    		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 2000);
 		while (master_node.Processing()) {

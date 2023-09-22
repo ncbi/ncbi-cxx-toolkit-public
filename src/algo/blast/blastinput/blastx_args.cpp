@@ -143,7 +143,9 @@ int
 CBlastxAppArgs::GetQueryBatchSize() const
 {
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
-    return blast::GetQueryBatchSize(eBlastx, m_IsUngapped, is_remote);
+    bool is_default = true;
+    return blast::GetQueryBatchSize(eBlastx, m_IsUngapped, is_remote, is_default, 
+          GetTask());
 }
 
 /// Get the input stream
@@ -179,7 +181,9 @@ int
 CBlastxNodeArgs::GetQueryBatchSize() const
 {
     bool is_remote = (m_RemoteArgs.NotEmpty() && m_RemoteArgs->ExecuteRemotely());
-    return blast::GetQueryBatchSize(eBlastx, m_IsUngapped, is_remote);
+    bool split_by_query = true;
+    bool use_default = true;
+    return blast::GetQueryBatchSize(eBlastx, m_IsUngapped, is_remote, use_default, GetTask(), split_by_query);
 }
 
 CRef<CBlastOptionsHandle>
