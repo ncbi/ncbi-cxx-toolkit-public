@@ -166,6 +166,8 @@ TEST_F(CSatInfoProviderTest, Basic) {
     ASSERT_NE(nullptr, sat24.value().connection);
     ASSERT_NE(nullptr, sat52.value().connection);
 
+    ASSERT_EQ(sat52->GetConnection(), sat52->connection);
+
     ASSERT_EQ("idmain2", provider.GetResolverKeyspace().keyspace);
     ASSERT_EQ("ipg_storage", ipg_keyspace.value().keyspace);
     ASSERT_EQ("satncbi_extended", sat4.value().keyspace);
@@ -223,13 +225,14 @@ TEST_F(CSatInfoProviderTest, SecureSat) {
 
     EXPECT_FALSE(sat4->IsSecureSat());
     EXPECT_NE(nullptr, sat4->connection);
-    EXPECT_EQ(nullptr, sat4->GetSecureConnection(""));
+    EXPECT_THROW(sat4->GetSecureConnection(""), CCassandraException);
 
     // Secure configuration section is not loaded
     EXPECT_TRUE(sat5->IsSecureSat());
     EXPECT_EQ(nullptr, sat5->connection);
     EXPECT_EQ(nullptr, sat5->GetSecureConnection("random_user"));
     EXPECT_EQ(nullptr, sat5->GetSecureConnection("secure_user"));
+    EXPECT_THROW(sat5->GetConnection(), CCassandraException);
 
     provider.SetSecureSatRegistrySection(m_ConfigSectionSecure);
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));

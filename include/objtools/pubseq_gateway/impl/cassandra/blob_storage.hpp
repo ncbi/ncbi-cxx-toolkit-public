@@ -125,10 +125,20 @@ struct SSatInfoEntry final
     /// @param username
     ///   User name
     ///
+    /// @throws When IsSecureSat() == false
+    ///
     /// @return
     ///   Connection if username is in allowed users list
     ///   nullptr - otherwise
     shared_ptr<CCassConnection> GetSecureConnection(string const& username) const;
+
+    /// Get public satellite connection
+    ///
+    /// @throws When IsSecureSat() == true
+    ///
+    /// @return
+    ///   Connection for public satellites
+    shared_ptr<CCassConnection> GetConnection() const;
 
  private:
     // Connection to access secure satellite
