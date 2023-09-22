@@ -277,18 +277,6 @@ optional<SSatInfoEntry> CSatInfoSchema::GetIPGKeyspace() const
     return m_IPGKeyspace;
 }
 
-bool CSatInfoSchema::IsUserAllowedToRead(int32_t sat, string username) const
-{
-    auto user_list = m_SecureSatUsers.find(sat);
-    bool user_list_exists = user_list != cend(m_SecureSatUsers);
-    if (!user_list_exists) {
-        return false;
-    }
-    auto user_entry = user_list->second.find(username);
-    bool user_allowed_to_read = user_entry != end(user_list->second);
-    return user_allowed_to_read;
-}
-
 shared_ptr<CCassConnection> CSatInfoSchema::x_GetConnectionByService(string const& service, string const& registry_section) const
 {
     auto itr = m_Service2Cluster.find(GetServiceKey(service, registry_section));
@@ -442,7 +430,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveConnectionByServi
 }
 
 optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
-    SSatInfoEntry&& entry,
+    SSatInfoEntry entry,
     shared_ptr<CSatInfoSchema> const& old_schema,
     shared_ptr<IRegistry const> const& registry,
     string const& registry_section,
@@ -455,19 +443,32 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
         return result;
     }
     if (!secure_users.empty()) {
+        entry.m_SecureUsers = secure_users;
         m_SecureSatUsers[entry.sat] = secure_users;
+    }
+    if (entry.IsSecureSat()) {
+        entry.connection = nullptr;
+        entry.m_SecureConnection = move(connection);
+    }
+    else {
+        entry.connection = move(connection);
+        entry.m_SecureConnection = nullptr;
+    }
+
+    // Temporary restriction. Until PSG needs/supports those types of secure satellites
+    if (entry.IsSecureSat() && entry.schema_type != eBlobVer2Schema)
+    {
+        return ESatInfoRefreshSchemaResult::eUnsupportedSecureKeyspace;
     }
     switch(entry.schema_type) {
         case eResolverSchema: {
             if (!m_ResolverKeyspace.keyspace.empty()) {
                 return ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated;
             }
-            m_ResolverKeyspace = entry;
-            m_ResolverKeyspace.connection = move(connection);
+            m_ResolverKeyspace = move(entry);
             break;
         }
         case eNamedAnnotationsSchema: {
-            entry.connection = move(connection);
             m_BlobKeyspaces.emplace(entry.sat, entry);
             m_BioseqNaKeyspaces.push_back(move(entry));
             break;
@@ -475,13 +476,11 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
         case eBlobVer1Schema:
         case eBlobVer2Schema:
         {
-            entry.connection = move(connection);
             m_BlobKeyspaces.emplace(entry.sat, move(entry));
             break;
         }
         case eIPGSchema:
         {
-            entry.connection = move(connection);
             m_IPGKeyspace = make_optional(move(entry));
             break;
         }
@@ -491,14 +490,38 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
     return {};
 }
 
-string SSatInfoEntry::ToString() const
+string SSatInfoEntry::ToString(string const& prefix) const
 {
-    return "sat: " + to_string(sat)
+    stringstream s;
+    for (auto user : m_SecureUsers) {
+        s << "\n" << prefix << " - '" << user << "'";
+    }
+
+    string secure_users = s.str();
+    secure_users = secure_users.empty() ? "{}" : secure_users;
+    return prefix + "sat: " + to_string(sat)
         + ", schema: "+ to_string(static_cast<int>(schema_type))
         + ", keyspace: '" + keyspace + "'"
         + ", service: '" + service + "'"
         + ", flags: " + to_string(flags)
-        + ", connection: &" + to_string(reinterpret_cast<intptr_t>(connection.get()));
+        + ", connection: &" + to_string(reinterpret_cast<intptr_t>(connection.get()))
+        + ", secure_connection: &" + to_string(reinterpret_cast<intptr_t>(m_SecureConnection.get()))
+        + ", secure_users: " + secure_users;
+}
+
+shared_ptr<CCassConnection> SSatInfoEntry::GetSecureConnection(string const& username) const
+{
+    if (username.empty() || m_SecureUsers.empty()) {
+        return nullptr;
+    }
+    auto user_entry = m_SecureUsers.find(username);
+    bool user_allowed_to_read = user_entry != cend(m_SecureUsers);
+    if (user_allowed_to_read) {
+        return m_SecureConnection;
+    }
+    else {
+        return nullptr;
+    }
 }
 
 string CSatInfoSchema::ToString() const
@@ -506,16 +529,16 @@ string CSatInfoSchema::ToString() const
     stringstream s;
     s << "Blob keyspaces: \n";
     for (auto sat : m_BlobKeyspaces) {
-        s << "  " << sat.second.ToString() << "\n";
+        s << sat.second.ToString("  ") << "\n";
     }
     s << "BioseqNA keyspaces: \n";
     for (auto sat : m_BioseqNaKeyspaces) {
-        s << "  " << sat.ToString() << "\n";
+        s << sat.ToString("  ") << "\n";
     }
     s << "Resolver keyspace: \n";
-    s << "  " << m_ResolverKeyspace.ToString() << "\n";
+    s << m_ResolverKeyspace.ToString("  ") << "\n";
     s << "IPG keyspace: \n";
-    s << "  " << ((m_IPGKeyspace) ? m_IPGKeyspace->ToString()  :  "None") << "\n";
+    s << ((m_IPGKeyspace) ? m_IPGKeyspace->ToString("  ")  :  "  None") << "\n";
     s << "Secure sat users: \n";
     for (auto sat_users : m_SecureSatUsers) {
         s << "  " << sat_users.first << "\n";
@@ -665,7 +688,7 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
             registry_section = m_SecureSatRegistrySection;
         }
         auto sat_secure_users = secure_users[entry.sat];
-        auto result = new_schema->x_AddSatInfoEntry(move(entry), old_schema, m_Registry, registry_section, sat_secure_users);
+        auto result = new_schema->x_AddSatInfoEntry(entry, old_schema, m_Registry, registry_section, sat_secure_users);
         if (result.has_value()) {
             switch(result.value()) {
             case ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated:
@@ -674,6 +697,9 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchemaProvider::x_PopulateNewSchem
             break;
             case ESatInfoRefreshSchemaResult::eLbsmServiceNotResolved:
                 x_SetRefreshErrorMessage("Cannot resolve service name: '" + entry.service + "'");
+            break;
+            case ESatInfoRefreshSchemaResult::eUnsupportedSecureKeyspace:
+                x_SetRefreshErrorMessage("Satellite with id (" + to_string(entry.sat) + ") cannot be configured as secure");
             break;
             default:
                 x_SetRefreshErrorMessage("Unexpected result for SatInfoEntry processing: "
