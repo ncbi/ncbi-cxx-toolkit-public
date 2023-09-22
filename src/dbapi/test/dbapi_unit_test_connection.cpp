@@ -393,7 +393,7 @@ s_Check_Validator(TDBConnectionFactoryFactory factory,
     BOOST_CHECK(conn.get() != NULL);
 
     // There are only 3 of server01 ...
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 12; ++i) {
         conn->ConnectValidated(
             validator,
             GetArgs().GetUserName(),
