@@ -234,7 +234,7 @@ struct SPSG_Params
     string GetCookie(TGet get)
     {
         auto rv = auth_token.Get().empty() ? get() : auth_token.Get();
-        return rv.empty() ? rv : auth_token_name.Get() + '=' + rv;
+        return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::Quote(rv);
     }
 
 private:
