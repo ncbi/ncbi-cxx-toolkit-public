@@ -71,23 +71,71 @@ struct SBlobStorageConstants
     static const char* const kChunkTableBig;
 };
 
+class CSatInfoSchema;
 struct SSatInfoEntry final
 {
+    friend CSatInfoSchema;
+ public:
     static constexpr int32_t kInvalidSat{-100};
 
+    SSatInfoEntry() = default;
+    SSatInfoEntry(SSatInfoEntry &&) = default;
+    SSatInfoEntry(SSatInfoEntry const&) = default;
+    SSatInfoEntry& operator=(SSatInfoEntry &&) = default;
+    SSatInfoEntry& operator=(SSatInfoEntry const&) = default;
+
+    // Satellite id
     int32_t sat{kInvalidSat};
+
+    // Satellite schema type
     ECassSchemaType schema_type{eUnknownSchema};
+
+    // Keyspace name to read data
     string keyspace;
+
+    // Service name to connect to satellite
     string service;
-    int64_t flags{0};
+
+    // Connection to access secure satellite
     shared_ptr<CCassConnection> connection;
 
+    // Bitmask of satellite properties
+    // @see ECassSatInfoFlags
+    int64_t flags{0};
+
+    /// Is satellite requires secure access. If True connection should be acquired through
+    /// GetSecureConnection() method.
+    ///
+    /// @return
+    ///   True if satellite requires secure access
+    ///   False - otherwise (data is public)
     bool IsSecureSat() const
     {
         return flags & static_cast<Int4>(ECassSatInfoFlags::eSecureSat);
     }
 
-    string ToString() const;
+    /// Get string representation for debug
+    ///
+    /// @return
+    ///   String representation for debug
+    string ToString(string const& prefix) const;
+
+    /// Get secure satellite connection
+    ///
+    /// @param username
+    ///   User name
+    ///
+    /// @return
+    ///   Connection if username is in allowed users list
+    ///   nullptr - otherwise
+    shared_ptr<CCassConnection> GetSecureConnection(string const& username) const;
+
+ private:
+    // Connection to access secure satellite
+    shared_ptr<CCassConnection> m_SecureConnection;
+
+    // List of usernames for eSecureSat satellite.
+    set<string> m_SecureUsers;
 };
 
 enum class ESatInfoRefreshSchemaResult : char
@@ -101,6 +149,7 @@ enum class ESatInfoRefreshSchemaResult : char
     eResolverKeyspaceUndefined = 7,
     eBlobKeyspacesEmpty = 8,
     eLbsmServiceNotResolved = 9,
+    eUnsupportedSecureKeyspace = 10,
 };
 
 enum class ESatInfoRefreshMessagesResult : char
@@ -140,18 +189,6 @@ class CSatInfoSchema final
     /// Get connection to IPG keyspace
     optional<SSatInfoEntry> GetIPGKeyspace() const;
 
-    /// Check if user allowed to read secure keyspace data
-    ///
-    /// @param sat
-    ///   Blob sat id
-    /// @param username
-    ///   User name
-    ///
-    /// @return
-    ///   True if username is present in allowed users list for {sat}
-    ///   False - otherwise (e.g. user list does not exist, user list is empty)
-    bool IsUserAllowedToRead(int32_t sat, string username) const;
-
     /// Get max id value for existing blob sat
     int32_t GetMaxBlobKeyspaceSat() const;
 
@@ -171,7 +208,7 @@ class CSatInfoSchema final
         bool is_default
     );
     optional<ESatInfoRefreshSchemaResult> x_AddSatInfoEntry(
-        SSatInfoEntry&& entry,
+        SSatInfoEntry entry,
         shared_ptr<CSatInfoSchema> const& old_schema,
         shared_ptr<IRegistry const> const& registry,
         string const& registry_section,

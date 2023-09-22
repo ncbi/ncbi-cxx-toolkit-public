@@ -221,11 +221,15 @@ TEST_F(CSatInfoProviderTest, SecureSat) {
     ASSERT_TRUE(sat4.has_value());
     ASSERT_TRUE(sat5.has_value());
 
-    ASSERT_NE(nullptr, sat4->connection);
-    ASSERT_NE(nullptr, sat5->connection);
-    EXPECT_EQ(sat4->connection.get(), sat5->connection.get());
     EXPECT_FALSE(sat4->IsSecureSat());
+    EXPECT_NE(nullptr, sat4->connection);
+    EXPECT_EQ(nullptr, sat4->GetSecureConnection(""));
+
+    // Secure configuration section is not loaded
     EXPECT_TRUE(sat5->IsSecureSat());
+    EXPECT_EQ(nullptr, sat5->connection);
+    EXPECT_EQ(nullptr, sat5->GetSecureConnection("random_user"));
+    EXPECT_EQ(nullptr, sat5->GetSecureConnection("secure_user"));
 
     provider.SetSecureSatRegistrySection(m_ConfigSectionSecure);
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
@@ -235,22 +239,18 @@ TEST_F(CSatInfoProviderTest, SecureSat) {
     ASSERT_TRUE(sat4.has_value());
     ASSERT_TRUE(sat5.has_value());
 
-    ASSERT_NE(nullptr, sat4->connection);
-    ASSERT_NE(nullptr, sat5->connection);
-    EXPECT_NE(sat4->connection.get(), sat5->connection.get());
     EXPECT_FALSE(sat4->IsSecureSat());
-    EXPECT_TRUE(sat5->IsSecureSat());
-
+    ASSERT_NE(nullptr, sat4->connection);
     EXPECT_EQ("DC1", sat4.value().connection->GetDatacenterName());
-    EXPECT_EQ("DC1", sat5.value().connection->GetDatacenterName());
 
-    auto schema_snapshot = provider.GetSchema();
-    EXPECT_FALSE(schema_snapshot->IsUserAllowedToRead(5, "random_user"));
-    EXPECT_FALSE(schema_snapshot->IsUserAllowedToRead(5, ""));
-    EXPECT_TRUE(schema_snapshot->IsUserAllowedToRead(5, "secure_user"));
-
-    // Permissions for not configured satellites are always denied
-    EXPECT_FALSE(schema_snapshot->IsUserAllowedToRead(23, ""));
+    // Secure configuration section is loaded
+    EXPECT_TRUE(sat5->IsSecureSat());
+    EXPECT_EQ(nullptr, sat5->connection);
+    ASSERT_NE(nullptr, sat5->GetSecureConnection("secure_user"));
+    EXPECT_EQ(nullptr, sat5->GetSecureConnection("random_user"));
+    EXPECT_EQ(nullptr, sat5->GetSecureConnection(""));
+    EXPECT_NE(sat4->connection.get(), sat5->GetSecureConnection("secure_user").get());
+    EXPECT_EQ("DC1", sat5->GetSecureConnection("secure_user")->GetDatacenterName());
 
     //cout << provider.GetSchema()->ToString() << endl;
 }
