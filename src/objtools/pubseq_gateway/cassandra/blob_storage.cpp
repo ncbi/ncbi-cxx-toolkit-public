@@ -511,6 +511,9 @@ string SSatInfoEntry::ToString(string const& prefix) const
 
 shared_ptr<CCassConnection> SSatInfoEntry::GetSecureConnection(string const& username) const
 {
+    if (!IsSecureSat()) {
+        NCBI_THROW(CCassandraException, eGeneric, "SSatInfoEntry::GetSecureConnection() should not be called for NON secure satellites");
+    }
     if (username.empty() || m_SecureUsers.empty()) {
         return nullptr;
     }
@@ -522,6 +525,14 @@ shared_ptr<CCassConnection> SSatInfoEntry::GetSecureConnection(string const& use
     else {
         return nullptr;
     }
+}
+
+shared_ptr<CCassConnection> SSatInfoEntry::GetConnection() const
+{
+    if (IsSecureSat()) {
+        NCBI_THROW(CCassandraException, eGeneric, "SSatInfoEntry::GetConnection() should not be called for secure satellites");
+    }
+    return this->connection;
 }
 
 string CSatInfoSchema::ToString() const
