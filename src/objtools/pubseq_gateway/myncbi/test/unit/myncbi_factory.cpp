@@ -66,6 +66,19 @@ namespace {
             CPSG_MyNCBIFactory::CleanupGlobal();
         }
 
+        static int UvLoopClose (uv_loop_t* loop)
+        {
+            int rc = uv_loop_close(loop);
+            if (rc != 0) {
+                uv_run(loop, UV_RUN_DEFAULT);
+                rc = uv_loop_close(loop);
+                if (rc != 0) {
+                    uv_print_all_handles(loop, stderr);
+                }
+            }
+            return rc;
+        }
+
         static string m_Username;
         static string m_Password;
     };
@@ -87,20 +100,21 @@ namespace {
         {
             user_info = info;
         };
-        auto loop = uv_default_loop();
+        uv_loop_t loop;
+        ASSERT_EQ(0, uv_loop_init(&loop));
         auto factory = make_shared<CPSG_MyNCBIFactory>();
         factory->SetMyNCBIURL("http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNCBIAccount");
         factory->SetHttpProxy("linkerd:4140");
         factory->SetVerboseCURL(false);
         factory->SetRequestTimeout(chrono::milliseconds(100));
 
-        auto signin = factory->CreateSignIn(loop, m_Username, m_Password, error_fn);
-        uv_run(loop, UV_RUN_DEFAULT);
+        auto signin = factory->CreateSignIn(&loop, m_Username, m_Password, error_fn);
+        uv_run(&loop, UV_RUN_DEFAULT);
         ASSERT_EQ(signin->GetResponseStatus(), EPSG_MyNCBIResponseStatus::eSuccess);
         ASSERT_EQ(error_cb_called, 0UL);
-        auto whoami = factory->CreateWhoAmI(loop, signin->GetCookie(), user_fn, error_fn);
+        auto whoami = factory->CreateWhoAmI(&loop, signin->GetCookie(), user_fn, error_fn);
         signin.reset();
-        uv_run(loop, UV_RUN_DEFAULT);
+        uv_run(&loop, UV_RUN_DEFAULT);
         ASSERT_EQ(whoami->GetResponseStatus(), EPSG_MyNCBIResponseStatus::eSuccess);
         ASSERT_EQ(error_cb_called, 0UL);
         EXPECT_EQ(whoami->GetUserId(), 3500004);
@@ -111,6 +125,7 @@ namespace {
         EXPECT_EQ(whoami->GetEmailAddress(), user_info.email_address);
         whoami.reset();
         factory.reset();
+        EXPECT_EQ(0, UvLoopClose(&loop)) << "Failed to close uv_loop properly";
     }
 
     TEST_F(CMyNCBIFactoryTest, WrongCookie)
@@ -120,7 +135,7 @@ namespace {
             [&error_cb_called]
             (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
             {
-                EXPECT_EQ(status, CRequestStatus::e500_InternalServerError);
+                EXPECT_EQ(status, CRequestStatus::e404_NotFound);
                 EXPECT_EQ(code, 200);
                 EXPECT_EQ(severity, eDiag_Error);
                 EXPECT_FALSE(message.empty());
@@ -149,6 +164,7 @@ namespace {
         EXPECT_EQ(whoami->GetEmailAddress(), user_info.email_address);
         whoami.reset();
         factory.reset();
+        EXPECT_EQ(0, UvLoopClose(loop)) << "Failed to close uv_loop properly";
     }
 
     TEST_F(CMyNCBIFactoryTest, WrongURL)
@@ -161,7 +177,7 @@ namespace {
                 EXPECT_EQ(status, CRequestStatus::e500_InternalServerError);
                 EXPECT_EQ(code, 502);
                 EXPECT_EQ(severity, eDiag_Error);
-                EXPECT_EQ(message, "Request failed: response status - 502; response text - ''");
+                EXPECT_EQ(message, "Request failed: MyNCBI response status - 502; MyNCBI response text - ''");
                 ++error_cb_called;
             };
         CPSG_MyNCBIRequest_WhoAmI::SUserInfo user_info;
@@ -187,6 +203,7 @@ namespace {
         EXPECT_EQ(whoami->GetEmailAddress(), user_info.email_address);
         whoami.reset();
         factory.reset();
+        EXPECT_EQ(0, UvLoopClose(loop)) << "Failed to close uv_loop properly";
     }
 
 }  // namespace
