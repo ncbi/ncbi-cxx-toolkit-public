@@ -59,13 +59,20 @@ void VLOG(TArgs &&... args)
     }
 }
 
+void uv_timer_close_cb(uv_handle_t *handle)
+{
+    auto timer = reinterpret_cast<uv_timer_t*>(handle);
+    VLOG("uv_timer_close_cb for &", reinterpret_cast<intptr_t>(timer));
+    delete timer;
+}
+
 struct SCurlMultiContext
 {
     ~SCurlMultiContext();
 
     CURLM *curl_mhandle{nullptr};
     uv_loop_t* uv_loop{nullptr};
-    uv_timer_t uv_timer{};
+    uv_timer_t* uv_timer{nullptr};
     weak_ptr<IPSG_MyNCBIRequest> request;
 };
 
@@ -78,17 +85,22 @@ struct SCurlSocketContext
 
 SCurlMultiContext::~SCurlMultiContext()
 {
-    VLOG("~SCurlMultiContext()");
+    VLOG("~SCurlMultiContext() for &", reinterpret_cast<intptr_t>(this));
     if (curl_mhandle) {
         curl_multi_cleanup(curl_mhandle);
         curl_mhandle = nullptr;
+    }
+    if (uv_timer) {
+        uv_close(reinterpret_cast<uv_handle_t*>(uv_timer), uv_timer_close_cb);
+        uv_timer = nullptr;
     }
 }
 
 SCurlSocketContext *create_curl_context(curl_socket_t sockfd, SCurlMultiContext* multi_context)
 {
     VLOG("Creating curl_context for socket ", sockfd);
-    auto context = new SCurlSocketContext();
+    auto context = new SCurlSocketContext;
+    VLOG("Created SCurlSocketContext with address &", reinterpret_cast<intptr_t>(context));
     context->sockfd = sockfd;
     context->multi_context = multi_context;
     int r = uv_poll_init_socket(multi_context->uv_loop, &context->poll_handle, sockfd);
@@ -97,7 +109,6 @@ SCurlSocketContext *create_curl_context(curl_socket_t sockfd, SCurlMultiContext*
         delete context;
         return nullptr;
     }
-    VLOG("     new socket context address - &", reinterpret_cast<intptr_t>(context));
     context->poll_handle.data = context;
     return context;
 }
@@ -113,9 +124,9 @@ void uv_curl_close_cb(uv_handle_t *handle)
     }
 }
 
-void destroy_curl_context(SCurlSocketContext *context)
+void destroy_curl_socket_context(SCurlSocketContext *context)
 {
-    VLOG("destroy_curl_context: socket context - &", reinterpret_cast<intptr_t>(context));
+    VLOG("destroy_curl_socket_context: socket context - &", reinterpret_cast<intptr_t>(context));
     uv_close(reinterpret_cast<uv_handle_t*>(&context->poll_handle), uv_curl_close_cb);
 }
 
@@ -166,7 +177,9 @@ void uv_curl_perform_cb(uv_poll_t *req, int status, int events)
     auto context = reinterpret_cast<SCurlSocketContext*>(req);
     VLOG("uv_curl_perform_cb: status - ", status, "; events - ", events,
          "; socket context - &", reinterpret_cast<intptr_t>(context));
-    uv_timer_stop(&context->multi_context->uv_timer);
+    if (context->multi_context->uv_timer) {
+        uv_timer_stop(context->multi_context->uv_timer);
+    }
     int flags{0};
     if (status < 0) {
         flags = CURL_CSELECT_ERR;
@@ -271,7 +284,7 @@ int curl_handle_socket_cb(CURL */*easy*/, curl_socket_t s, int action, void *cli
                 if (assign_rc != 0) {
                     VLOG("Failed to remove socket context by curl_multi_assign(). RC = ", assign_rc);
                 }
-                destroy_curl_context(reinterpret_cast<SCurlSocketContext*>(socketp));
+                destroy_curl_socket_context(reinterpret_cast<SCurlSocketContext*>(socketp));
             }
             break;
         default: {
@@ -299,15 +312,15 @@ void curl_start_timeout_cb(CURLM */*multi*/, long timeout_ms, void *clientp)
     VLOG("curl_start_timeout_cb; multi context - &", reinterpret_cast<intptr_t>(context), "; timeout_ms - ",  timeout_ms);
     // CURL asks to remove timer
     if (timeout_ms < 0) {
-        uv_timer_stop(&context->uv_timer);
+        uv_timer_stop(context->uv_timer);
     }
     else {
         // CURL wants to fire right now but we will postpone a little bit
         if (timeout_ms == 0) {
             timeout_ms = 1;
         }
-        context->uv_timer.data = context;
-        uv_timer_start(&context->uv_timer, uv_on_timeout_cb, timeout_ms, 0);
+        context->uv_timer->data = context;
+        uv_timer_start(context->uv_timer, uv_on_timeout_cb, timeout_ms, 0);
     }
 }
 
@@ -356,13 +369,16 @@ void curl_send_request(SCurlMultiContext* multi_context, CPSG_MyNCBIFactory* fac
 unique_ptr<SCurlMultiContext> init_request(uv_loop_t * loop, TDataErrorCallback& error_cb)
 {
     auto multi_context = make_unique<SCurlMultiContext>();
+    VLOG("Created SCurlMultiContext with address &", reinterpret_cast<intptr_t>(multi_context.get()));
     multi_context->uv_loop = loop;
     multi_context->curl_mhandle = curl_multi_init();
     if (!multi_context->curl_mhandle) {
         error_cb(CRequestStatus::e500_InternalServerError, 0, eDiag_Critical, "Error creating curl multi handle");
         return nullptr;
     }
-    int rc = uv_timer_init(loop, &multi_context->uv_timer);
+    multi_context->uv_timer = new uv_timer_t;
+    VLOG("Created uv_timer_t with address &", reinterpret_cast<intptr_t>(multi_context->uv_timer));
+    int rc = uv_timer_init(loop, multi_context->uv_timer);
     if (rc != 0) {
         error_cb(CRequestStatus::e500_InternalServerError, rc, eDiag_Critical,
             "Error initializing uv_timer: " + to_string(rc) + " - " + string(uv_strerror(rc)));
