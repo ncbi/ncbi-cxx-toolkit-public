@@ -1287,8 +1287,9 @@ class NCBI_BLASTINPUT_EXPORT CMTArgs : public IBlastCmdLineArgs
 public:
 	enum EMTMode {
 		eNotSupported = -1,
-		eSplitByDB,
-	    eSplitByQueries
+		eSplitAuto,
+	    eSplitByQueries,
+		eSplitByDB
 	};
     /// Default Constructor
     CMTArgs(size_t default_num_threads = CThreadable::kMinNumThreads, EMTMode mt_mode = eNotSupported) :
@@ -1454,6 +1455,10 @@ public:
     /// Get the number of threads to spawn
     size_t GetNumThreads() const {
         return m_MTArgs->GetNumThreads();
+    }
+
+    int GetMTMode() const {
+    	return m_MTArgs->GetMTMode();
     }
 
     /// Get the input stream
