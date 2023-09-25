@@ -1413,6 +1413,10 @@ void CSingleFeatValidator::x_ValidateGbquals()
                 switch (gbqual) {
 
                     case CSeqFeatData::eQual_rpt_type:
+                        if (NStr::Find(val, ",") != NPOS) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                "Compound '" + val + "' must be split into separate instances of qualifier " + qual_str);
+                        }
                         if (!CGb_qual::IsValidRptTypeValue(val)) {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                                 val + " is not a legal value for qualifier " + qual_str);
