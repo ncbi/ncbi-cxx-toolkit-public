@@ -352,10 +352,9 @@ const string& CCgiContext::GetSelfURL(void) const
         url.SetUrl(caf_url);
         url.GetArgs().clear();
         url.SetFragment(kEmptyStr);
-        if (secure != eSecure_On  &&  NStr::EqualNocase(caf_url, 0, 8, "https://")) {
-            secure  = eSecure_On;
-        } else {
-            secure  = eSecure_Off;
+        if (secure != eSecure_On) {
+            secure  = NStr::EqualNocase(caf_url, 0, 8, "https://") 
+                ? eSecure_On : eSecure_Off;
         }
     }
     m_IsSecure = secure == eSecure_On;
