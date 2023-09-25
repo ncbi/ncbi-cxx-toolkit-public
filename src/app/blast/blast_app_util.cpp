@@ -982,11 +982,7 @@ int GetMTByQueriesBatchSize(EProgram p, int num_threads, const string & task)
 			batch_size = NStr::StringToInt(mt_query_batch_env);
 		}
 		else {
-			int factor = 1;
-			if ( EProgramToEBlastProgramType(p) == eBlastTypeBlastn ) {
-				factor = 2;
-			}
-			batch_size = GetQueryBatchSize(p)/factor;
+			batch_size = GetQueryBatchSize(p);
 		}
                 if (task == "blastx-fast")
                 {  // Set batch_size to 20004
@@ -995,41 +991,18 @@ int GetMTByQueriesBatchSize(EProgram p, int num_threads, const string & task)
 		return batch_size;
 }
 
-void CheckMTByQueries_DBSize(CRef<CLocalDbAdapter> & db_adapter, const CBlastOptions & opt)
+void MTByQueries_DBSize_Warning(const Int8 length_limit, bool is_db_protein)
 {
-	CRef<CSearchDatabase> sdb = db_adapter->GetSearchDatabase();
-	const CRef<CSeqDBGiList>&  gi = sdb->GetGiList();
-	const CRef<CSeqDBGiList>& n_gi = sdb->GetNegativeGiList();
-
-	if (gi.NotEmpty() || n_gi.NotEmpty()) {
-		return;
-	}
-
-	//EProgram prog = opt.GetProgram();
-	CRef<CSeqDB> seqdb = sdb->GetSeqDb();
-	Uint8 total_length = seqdb->GetTotalLength();
-	Uint8 length_limit = 0;
-
-	if (db_adapter->IsProtein()) {
-		static const Uint8 kMaxProtTotalLength = 2000000000;
-		length_limit = kMaxProtTotalLength;
+	string warn = "This database is probably too large to benefit from -mt_mode=1. " \
+				  "We suggest using -mt_mode=1 only if the database is less than " \
+				  + NStr::Int8ToString(length_limit, NStr::fWithCommas);
+	if (is_db_protein) {
+		warn +=  + " residues ";
 	}
 	else {
-		static const Uint8 kMaxNuclTotalLength = 14000000000;
-		length_limit = kMaxNuclTotalLength;
+		warn += " bases ";
 	}
-
-	if(total_length > length_limit) {
-		string warn = "This database is probably too large to benefit from -mt_mode=1. " \
-					  "We suggest using -mt_mode=1 only if the database is less than";
-		if (db_adapter->IsProtein()) {
-			warn += " 2 billion residues ";
-		}
-		else {
-			warn += " 14 billion bases ";
-		}
-       	ERR_POST(Warning <<   warn + "or if the search is limited by an option such as -taxids, -taxidlist or -gilist.");
-	}
+   	ERR_POST(Warning <<   warn + "or if the search is limited by an option such as -taxids, -taxidlist or -gilist.");
 	return;
 }
 
