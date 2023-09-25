@@ -341,6 +341,8 @@ const string& CCgiContext::GetSelfURL(void) const
     if ( !m_SelfURL.empty() )
         return m_SelfURL;
 
+    ESecureMode secure = x_IsSecure();
+
     // Compose self URL
     CUrl url;
 
@@ -350,12 +352,13 @@ const string& CCgiContext::GetSelfURL(void) const
         url.SetUrl(caf_url);
         url.GetArgs().clear();
         url.SetFragment(kEmptyStr);
-        ESecureMode secure = x_IsSecure();
-        m_IsSecure = secure != eSecure_NotSet ? secure == eSecure_On
-            : NStr::EqualNocase(caf_url, 0, 8, "https://");
-    } else {
-        m_IsSecure = x_IsSecure() == eSecure_On;
+        if (secure != eSecure_On  &&  NStr::EqualNocase(caf_url, 0, 8, "https://")) {
+            secure  = eSecure_On;
+        } else {
+            secure  = eSecure_Off;
+        }
     }
+    m_IsSecure = secure == eSecure_On;
 
     // Check HTTP_X_FORWARDED_HOST for host:port
     const string& x_fwd_host =
@@ -379,14 +382,17 @@ const string& CCgiContext::GetSelfURL(void) const
         port = GetRequest().GetProperty(eCgi_ServerPort);
     }
     // Skip port if it's default for the selected scheme
-    if ((!m_IsSecure  &&  port == "80")  ||  (m_IsSecure  &&  port == "443")) {
+    if ((secure == eSecure_Off  &&  port == "80")  ||
+        (secure == eSecure_On   &&  port == "443")) {
         no_port = false;
         port.clear();
     }
-    if ( !no_host )
+    if ( !no_host ) {
         url.SetHost(host);
-    if ( !no_port )
+    }
+    if ( !no_port ) {
         url.SetPort(port);
+    }
 
     string path;
     if ( !caf_url.empty() ) {
@@ -406,9 +412,15 @@ const string& CCgiContext::GetSelfURL(void) const
     //  it should not hurt, and may help with similar proxies outside NCBI)
     url.SetPath(NStr::ReplaceInPlace(path, "//", "/"));
 
-    url.SetIsGeneric(true);
-    url.SetScheme(m_IsSecure ? "https" : "http");
-    url.ComposeUrl(CUrlArgs::eAmp_Char/*no args, anyways*/).swap(m_SelfURL);
+    if (!url.IsEmpty()) {
+        url.SetIsGeneric(true);
+        if (secure != eSecure_NotSet) {
+            url.SetScheme(m_IsSecure ? "https" : "http");
+        } else {
+            _ASSERT(url.GetScheme().empty());
+        }
+        url.ComposeUrl(CUrlArgs::eAmp_Char/*no args anyways*/).swap(m_SelfURL);
+    }
     return m_SelfURL;
 }
 
