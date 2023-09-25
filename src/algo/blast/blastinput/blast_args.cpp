@@ -3161,12 +3161,13 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if (m_MTMode >= 0) {
     	arg_desc.AddDefaultKey(kArgMTMode, "int_value",
                                "Multi-thread mode to use in BLAST search:\n "
-                               "0 (auto) split by database \n "
-                               "1 split by queries",
+                               "0 auto split by database or queries \n "
+                               "1 split by queries\n "
+                               "2 split by database",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(0));
     	arg_desc.SetConstraint(kArgMTMode,
-                               new CArgAllowValuesBetween(0, 1, true));
+                               new CArgAllowValuesBetween(0, 2, true));
     	arg_desc.SetDependency(kArgMTMode,
                                CArgDescriptions::eRequires,
                                kArgNumThreads);
