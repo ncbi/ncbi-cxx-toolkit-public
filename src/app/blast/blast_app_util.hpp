@@ -321,7 +321,7 @@ void LogCmdOptions(blast::CBlastUsageReport & report, const blast::CBlastAppArgs
 
 int GetMTByQueriesBatchSize(blast::EProgram p, int num_threads, const string & task = "");
 
-void CheckMTByQueries_DBSize(CRef<blast::CLocalDbAdapter> & db_adapter, const blast::CBlastOptions & opt);
+void MTByQueries_DBSize_Warning(const Int8 length_limit, bool is_db_protein);
 void CheckMTByQueries_QuerySize(blast::EProgram prog, int batch_size);
 
 END_NCBI_SCOPE
