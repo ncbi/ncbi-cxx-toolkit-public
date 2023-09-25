@@ -573,16 +573,16 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
     }
     string url;
 
-    // Host or service name only require some special processing.
-    bool host_only =  (!m_Host.empty() || !m_Service.empty())
-        && m_Scheme.empty()
+    // Service- or host- name only require some special processing.
+    bool host_only = (IsService() || !m_Host.empty())
+        &&  m_Scheme.empty()
         && !m_IsGeneric
-        && m_User.empty()
-        && m_Password.empty()
-        && m_Port.empty()
-        && m_Path.empty()
-        && m_Fragment.empty() &&
-        !HaveArgs();
+        &&  m_User.empty()
+        &&  m_Password.empty()
+        &&  m_Port.empty()
+        &&  m_Path.empty()
+        &&  m_Fragment.empty()
+        && !HaveArgs();
     if (host_only && IsService()) {
         // Do not add ncbilb:// if only service name is set.
         return NStr::URLEncode(m_Service, NStr::eUrlEnc_ProcessMarkChars);
@@ -616,7 +616,7 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
     if ( have_user_info ) {
         url += "@";
     }
-    if ( !m_Service.empty() ) {
+    if ( IsService() ) {
         url += NStr::URLEncode(m_Service, NStr::eUrlEnc_ProcessMarkChars);
     }
     else if ( !m_Host.empty() ) {
@@ -803,7 +803,7 @@ IUrlEncoder* CUrl::GetDefaultEncoder(void)
 bool CUrl::IsEmpty(void) const
 {
     // At least one of host, service or path must be present.
-    return m_Host.empty()  &&  m_Service.empty()  &&  m_Path.empty();
+    return m_Host.empty()  &&  !IsService()  &&  m_Path.empty();
 }
 
 
