@@ -48,30 +48,35 @@ elseif(NCBI_PTBCFG_USECONAN)
         set(_cmd ${_cmd} -s compiler.libcxx=libstdc++11)
     endif()
 
+    string(REPLACE "," ";" NCBI_PTBCFG_CONAN_ARGS "${NCBI_PTBCFG_CONAN_ARGS}")
+    string(REPLACE " " ";" NCBI_PTBCFG_CONAN_ARGS "${NCBI_PTBCFG_CONAN_ARGS}")
+    set(_cmd ${_cmd} ${NCBI_PTBCFG_CONAN_ARGS})
+
     set(_types)
     if (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "")
         set(_types ${CMAKE_BUILD_TYPE})
     elseif (NOT "${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
         set(_types ${CMAKE_CONFIGURATION_TYPES})
     endif()
-    list(LENGTH _types _count)
-    if("${_count}" EQUAL 1)
-        NCBI_util_Cfg_ToStd(${_types} _type)
-        set(_cmd ${_cmd} -s build_type=${_type})
-    endif()
+    set(_configs)
+    foreach(_t IN LISTS _types)
+        NCBI_util_Cfg_ToStd(${_t} _cfg)
+        set(_cmd${_cfg} ${_cmd} -s build_type=${_cfg})
+        list(APPEND _configs ${_cfg})
+    endforeach()
+    list(REMOVE_DUPLICATES _configs)
 
-    string(REPLACE "," ";" NCBI_PTBCFG_CONAN_ARGS "${NCBI_PTBCFG_CONAN_ARGS}")
-    string(REPLACE " " ";" NCBI_PTBCFG_CONAN_ARGS "${NCBI_PTBCFG_CONAN_ARGS}")
-    set(_cmd ${_cmd} ${NCBI_PTBCFG_CONAN_ARGS})
+    foreach(_cfg IN LISTS _configs)
+        execute_process(
+            COMMAND ${NCBI_CONAN_APP} ${_cmd${_cfg}}
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+            RESULT_VARIABLE CONAN_INSTALL_RESULT
+        )
+        if(NOT CONAN_INSTALL_RESULT EQUAL "0")
+            message(FATAL_ERROR "Conan setup failed: error = ${CONAN_INSTALL_RESULT}")
+        endif()
+    endforeach()
 
-    execute_process(
-        COMMAND ${NCBI_CONAN_APP} ${_cmd}
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-        RESULT_VARIABLE CONAN_INSTALL_RESULT
-    )
-    if(NOT CONAN_INSTALL_RESULT EQUAL "0")
-        message(FATAL_ERROR "Conan setup failed: error = ${CONAN_INSTALL_RESULT}")
-    endif()
     message("Done with installing Conan packages")
     message("#############################################################################")
 
