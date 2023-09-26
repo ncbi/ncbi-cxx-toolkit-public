@@ -43,7 +43,7 @@ elseif(NCBI_PTBCFG_USECONAN)
     find_program(NCBI_CMAKE_APP cmake${CMAKE_EXECUTABLE_SUFFIX})
     message("CMake: ${NCBI_CMAKE_APP}")
 
-    set(_cmd install ${CMAKE_BINARY_DIR} --build missing -pr:b default -if ${NCBI_DIRNAME_CONANGEN})
+    set(_cmd install ${CMAKE_BINARY_DIR} --build missing -pr:b default -if ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN})
     if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "Intel")
         set(_cmd ${_cmd} -s compiler.libcxx=libstdc++11)
     endif()
