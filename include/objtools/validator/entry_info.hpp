@@ -79,8 +79,6 @@ public:
     void SetProteinHasGeneralID(bool val=true);
     void SetINSDInSep(bool val=true);
     void SetGeneious(bool val=true);
-    void SetNumMisplacedFeats(unsigned int num);
-    void SetNumMisplacedSmallGenomeSetFeats(unsigned int num);
 
     bool IsNoPubs() const;
     bool IsNoCitSubPubs() const;
@@ -108,8 +106,6 @@ public:
     bool DoesAnyProteinHaveGeneralID() const;
     bool IsINSDInSep() const;
     bool IsGeneious() const;
-    optional<unsigned int> NumMisplacedFeats() const;
-    optional<unsigned int> NumMisplacedSmallGenomeSetFeats() const;
 
 private:
     bool m_NoPubs=false;                  // Suppress no pub error if true
@@ -138,8 +134,6 @@ private:
     bool m_IsINSDInSep=false;
     bool m_FarFetchFailure=false;
     bool m_IsGeneious=false;
-    optional<unsigned int> m_NumMisplacedFeats;
-    optional<unsigned int> m_NumMisplacedSmallGenomeSetFeats;
 };
 
 END_SCOPE(validator)
