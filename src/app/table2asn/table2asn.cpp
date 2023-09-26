@@ -1244,13 +1244,17 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     seh = scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
-    if (m_context.m_RemotePubLookup)
-    {
-        m_context.m_remote_updater->UpdatePubReferences(*obj);
-    }
-    if (m_context.m_postprocess_pubs)
-    {
-        m_context.m_remote_updater->PostProcessPubs(*entry);
+    // Do not repeat expensive processing of the top-level entry; RW-2107
+    if ((inputFormat != CFormatGuess::eFasta) || ! m_context.m_RemotePubLookupDone) {
+        if (m_context.m_RemotePubLookup)
+        {
+            m_context.m_remote_updater->UpdatePubReferences(*obj);
+            m_context.m_RemotePubLookupDone = true;
+        }
+        if (m_context.m_postprocess_pubs)
+        {
+            m_context.m_remote_updater->PostProcessPubs(*entry);
+        }
     }
 
     if (m_context.m_cleanup.find('-') == string::npos)
