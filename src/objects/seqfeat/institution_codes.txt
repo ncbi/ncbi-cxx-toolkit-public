@@ -7309,6 +7309,7 @@ SVCK	c	Sammlung von Conjugaten Kulturen
 SVER	s	Institute of Plant and Animal Ecology, Laboratory of Plant Ecology and Geobotany			
 SVG	s	Arkeologisk museum i Stavanger			
 SVIEC	c	Secao de Virus			
+SVU	s	South Valley University			
 SVUTY	s	Sri Venkateswara University			
 SVVC	s	Seminario Vescovile			
 SVZ	s	Herbarium Sander van Zon			
