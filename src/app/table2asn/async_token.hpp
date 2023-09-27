@@ -54,6 +54,7 @@ struct TAsyncToken
     TFeatMap map_transcript_to_mrna;
     TFeatMap map_protein_to_mrna;
     TFeatMap map_locus_to_gene;
+    atomic_bool* pPubLookupDone = nullptr;
 
     operator CConstRef<CSeq_entry>() const;
     void Clear();

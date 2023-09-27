@@ -1245,11 +1245,11 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     // Do not repeat expensive processing of the top-level entry; RW-2107
-    if ((inputFormat != CFormatGuess::eFasta) || ! m_context.m_RemotePubLookupDone) {
+    if ((inputFormat != CFormatGuess::eFasta) || ! *token.pPubLookupDone) {
         if (m_context.m_RemotePubLookup)
         {
             m_context.m_remote_updater->UpdatePubReferences(*obj);
-            m_context.m_RemotePubLookupDone = true;
+            *token.pPubLookupDone = true;
         }
         if (m_context.m_postprocess_pubs)
         {
