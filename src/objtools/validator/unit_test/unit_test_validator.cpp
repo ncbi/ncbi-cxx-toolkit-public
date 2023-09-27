@@ -1604,6 +1604,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
 }
 
 
+/*
 static void WriteOutTemp (CRef<CSeq_entry> entry)
 {
     // construct a temp file name
@@ -1632,6 +1633,7 @@ static void WriteOutTemp (CRef<CSeq_entry> entry)
     } catch (exception& ) {
     }
 }
+*/
 
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
@@ -1659,7 +1661,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    WriteOutTemp(entry);
+    // WriteOutTemp(entry);
 
     CLEAR_ERRORS
     cds->ResetExcept();
@@ -1675,13 +1677,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
-    WriteOutTemp(entry);
+    // WriteOutTemp(entry);
 
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
 
     // write out seq-entry
-    WriteOutTemp(entry);
+    // WriteOutTemp(entry);
 
     delete expected_errors[1];
     expected_errors[1] = nullptr;
@@ -11295,7 +11297,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GPSnonGPSPackaging)
     entry->SetSet().SetSeq_set().push_back(unit_test_util::BuildGoodEcoSet());
     entry->SetSet().SetSeq_set().push_back(unit_test_util::BuildGoodGenProdSet());
 
-    WriteOutTemp (entry);
+    // WriteOutTemp (entry);
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "GPSnonGPSPackaging",
