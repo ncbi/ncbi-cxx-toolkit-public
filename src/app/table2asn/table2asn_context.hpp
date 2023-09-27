@@ -124,7 +124,6 @@ public:
     string m_disc_lineage;
     bool   m_RemoteTaxonomyLookup{ false };
     bool   m_RemotePubLookup{ false };
-    bool   m_RemotePubLookupDone{ false };
     bool   m_HandleAsSet{ false };
     objects::CBioseq_set::TClass m_ClassValue{ objects::CBioseq_set::eClass_genbank };
     bool   m_SetIDFromFile{ false };

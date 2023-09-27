@@ -118,6 +118,7 @@ struct THugeFileWriteContext
     IHugeAsnSource*   source   = nullptr;
     CRef<CSeq_entry>  m_topentry;
     CRef<CSeq_submit> m_submit;
+    atomic_bool       m_PubLookupDone{ false };
 
     std::function<CRef<CSeq_entry>()> next_entry;
 
@@ -326,6 +327,7 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
             if (token.entry.Empty())
                 return false;
             context.PopulateTempTopObject(token.submit, token.top_entry, token.entry);
+            token.pPubLookupDone = &context.m_PubLookupDone;
             return true;
         };
 
@@ -393,6 +395,7 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
             TAsyncToken token;
             token.submit = context.m_submit;
             token.entry  = token.top_entry = context.m_topentry;
+            token.pPubLookupDone = &context.m_PubLookupDone;
             process_async(token);
             async_writer.Write(topobject);
             if (ff_chain_func)
