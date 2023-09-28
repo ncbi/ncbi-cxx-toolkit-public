@@ -185,7 +185,7 @@ void CCgiIOTestApplication::x_SetupArgs()
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Test CGI reaction to aborted connection");
+                              "Test CGI reaction to aborted connection", false, 1000);
 
     //
     arg_desc->AddKey("header_before",
