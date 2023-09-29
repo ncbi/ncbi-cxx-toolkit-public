@@ -22,9 +22,9 @@ NCBI_begin_app(pubseq_gateway)
     ipg_resolve settings user_info_cache
   )
   NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_ipg psg_cassandra
-    psg_protobuf psg_cache xcgi xconnext connext xconnserv xconnect xcompress
+    psg_protobuf psg_cache psg_myncbi xcgi xconnext connext xconnserv xconnect xcompress
     sraread dbsnp_ptis grpc_integration)
-  NCBI_requires(OpenSSL CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext -ICC)
+  NCBI_requires(OpenSSL XML XSLT CURL CASSANDRA MT Linux H2O LMDB UV PROTOBUF connext -ICC)
   NCBI_project_watchers(satskyse)
 
   NCBI_set_test_assets(test pubseq_gateway.ini)
