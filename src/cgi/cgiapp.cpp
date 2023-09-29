@@ -2532,7 +2532,7 @@ int CCgiRequestProcessor::OnException(std::exception& e, CNcbiOstream& os)
 
         // Message
         os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
-        os << message << HTTP_EOL HTTP_EOL;
+        os << NStr::HtmlEncode(message) << HTTP_EOL HTTP_EOL;
 
         if ( dynamic_cast<CArgException*> (&e) ) {
             string ustr;
