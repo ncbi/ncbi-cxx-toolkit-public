@@ -90,7 +90,7 @@ void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
     // It is safe to unlock the request many times
     UnlockWaitingProcessor();
 
-    if (!AreAllFinishedRead()) {
+    if (!AreAllFinishedRead() || !IsMyNCBIFinished()) {
         // Cannot really report finish because there could be still not
         // finished cassandra fetches. In this case there will be an async
         // event which will lead to another SignalFinishProcessing() call and
@@ -142,10 +142,15 @@ IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
     if (m_Status == CRequestStatus::e504_GatewayTimeout)
         return IPSGS_Processor::ePSGS_Timeout;
 
+    // 300 never actually happens
     if (m_Status < 300)
         return IPSGS_Processor::ePSGS_Done;
-    if (m_Status < 500)
-        return IPSGS_Processor::ePSGS_NotFound; // 300 never actually happens
+    if (m_Status < 500) {
+        if (m_Status == CRequestStatus::e401_Unauthorized) {
+            return IPSGS_Processor::ePSGS_Unauthorized;
+        }
+        return IPSGS_Processor::ePSGS_NotFound;
+    }
     return IPSGS_Processor::ePSGS_Error;
 }
 
@@ -419,5 +424,167 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
     }
 
     return is_error;
+}
+
+
+bool CPSGS_CassProcessorBase::IsMyNCBIFinished(void) const
+{
+    if (m_WhoAmIRequest.get() == nullptr)
+        return true;    // Not even started
+
+    return m_WhoAmIRequest->GetResponseStatus() != EPSG_MyNCBIResponseStatus::eInProgress;
+}
+
+
+CPSGS_CassProcessorBase::EPSGS_MyNCBILookupResult
+CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
+                                            TMyNCBIErrorCB  error_cb)
+{
+    if (m_UserName.has_value()) {
+        // It has already been retrieved one way or another.
+        // There could be only one user per request so no need to do anything
+        return ePSGS_FoundInCache;
+    }
+
+    // Check for the cookie
+    auto web_cubby_user = IPSGS_Processor::m_Request->GetWebCubbyUser();
+    if (!web_cubby_user.has_value()) {
+        ReportNoWebCubbyUser();
+        return ePSGS_CookieNotPresent;
+    }
+
+    string  cookie = web_cubby_user.value();
+    bool    need_trace = m_Request->NeedTrace();
+
+    // Cookie is here. Check the cache if it was already resolved
+    auto  app = CPubseqGatewayApp::GetInstance();
+    auto  user_info = app->GetUserInfoCache()->GetUserInfo(cookie);
+    if (user_info.has_value()) {
+        if (need_trace) {
+            m_Reply->SendTrace("MyNCBI user info found in cache for cookie: " + cookie +
+                               ". User name: " + user_info->username,
+                               m_Request->GetStartTimestamp());
+        }
+
+        m_UserName = user_info->username;
+        return ePSGS_FoundInCache;
+    }
+
+
+    // User info has not been found in cache so initiate a my ncbi request
+    uv_loop_t *     loop = app->GetUVLoop();
+
+    if (need_trace) {
+        m_Reply->SendTrace("Initiating MyNCBI request for cookie: " + cookie,
+                           m_Request->GetStartTimestamp());
+    }
+
+    m_WhoAmIRequest =
+        app->GetMyNCBIFactory()->CreateWhoAmI(loop, cookie,
+                                              CMyNCBIDataCallback(this, data_cb, cookie),
+                                              CMyNCBIErrorCallback(this, error_cb, cookie));
+    return ePSGS_RequestInitiated;
+}
+
+
+void CPSGS_CassProcessorBase::ReportNoWebCubbyUser(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_NoWebCubbyUserCookie);
+
+    string  err_msg = GetName() + " processor failed to get a "
+                      "web cubby user cookie for a Cassandra secure keyspace.";
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e401_Unauthorized,
+            ePSGS_NoWebCubbyUserCookieError, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
+    PSG_ERROR(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::ReportMyNCBIError(const string &  my_ncbi_message)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_MyNCBIErrorCounter);
+
+    string  err_msg = GetName() + " processor received an error from MyNCBI "
+                      "while checking permissions for a Cassandra secure keyspace. Message: " +
+                      my_ncbi_message;
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e500_InternalServerError,
+            ePSGS_MyNCBIError, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::ReportMyNCBINotFound(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_MyNCBINotFoundCounter);
+
+    string  err_msg = GetName() + " processor received a not found report from MyNCBI "
+                      "while checking permissions for a Cassandra secure keyspace.";
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e401_Unauthorized,
+            ePSGS_MyNCBINotFound, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
+    PSG_ERROR(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::ReportFailureToGetCassConnection(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_FailureToGetCassConnectionCounter);
+
+    string  err_msg = GetName() +
+                      " processor failed to get a Cassandra connection because of an unknown reason.";
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e500_InternalServerError,
+            ePSGS_CassConnectionError, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::ReportFailureToGetCassConnection(const string &  message)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_FailureToGetCassConnectionCounter);
+
+    string  err_msg = GetName() +
+                      " processor failed to get a Cassandra connection. Message: " + message;
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e500_InternalServerError,
+            ePSGS_CassConnectionError, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    PSG_ERROR(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::ReportSecureSatUnauthorized(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_SecureSatUnauthorizedCounter);
+
+    string  err_msg = GetName() + " processor Cassandra secure satellite authorization failure.";
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e401_Unauthorized,
+            ePSGS_SecureSatUnauthorized, eDiag_Error);
+    UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
+    PSG_ERROR(err_msg);
 }
 

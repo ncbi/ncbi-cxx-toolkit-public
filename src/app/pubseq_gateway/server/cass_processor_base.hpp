@@ -40,6 +40,7 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include "ipsgs_processor.hpp"
+#include "myncbi_callback.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -65,6 +66,7 @@ public:
 protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) const;
     bool AreAllFinishedRead(void) const;
+    bool IsMyNCBIFinished(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);
     bool IsCassandraProcessorEnabled(shared_ptr<CPSGS_Request> request) const;
     void CancelLoaders(void);
@@ -81,6 +83,21 @@ protected:
                     EPSGS_LoggingFlag  logging_flag=ePSGS_NeedLogging);
 
 protected:
+    enum EPSGS_MyNCBILookupResult {
+        ePSGS_FoundInCache,
+        ePSGS_CookieNotPresent,
+        ePSGS_RequestInitiated
+    };
+    EPSGS_MyNCBILookupResult PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
+                                                TMyNCBIErrorCB  error_cb);
+    void ReportNoWebCubbyUser(void);
+    void ReportMyNCBIError(const string &  my_ncbi_message);
+    void ReportMyNCBINotFound(void);
+    void ReportSecureSatUnauthorized(void);
+    void ReportFailureToGetCassConnection(const string &  message);
+    void ReportFailureToGetCassConnection(void);
+
+protected:
     // Cassandra data loaders; there could be many of them
     list<unique_ptr<CCassFetch>>    m_FetchDetails;
 
@@ -92,6 +109,10 @@ protected:
     // It should not interfere the other processor statuses and be updated
     // exclusively on per processor basis.
     CRequestStatus::ECode           m_Status;
+
+    // Populated via MyNCBI
+    optional<string>                        m_UserName;
+    shared_ptr<CPSG_MyNCBIRequest_WhoAmI>   m_WhoAmIRequest;
 };
 
 #endif  // PSGS_CASSPROCESSORBASE__HPP

@@ -500,7 +500,7 @@ CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
     auto        ipg_keyspace = app->GetIPGKeyspace();
 
     CPubseqGatewayFetchIpgReport *  fetch_task =
-        new CPubseqGatewayFetchIpgReport(ipg_keyspace->connection,
+        new CPubseqGatewayFetchIpgReport(ipg_keyspace->GetConnection(),
                                          ipg_keyspace->keyspace,
                                          request,
                                          nullptr, nullptr, true);

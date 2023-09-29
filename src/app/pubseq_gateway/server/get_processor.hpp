@@ -75,7 +75,15 @@ private:
                         SBioseqResolution &&  bioseq_resolution);
     void x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution);
     void x_GetBlob(void);
+    void x_GetBlobFinalStage(void);
     bool x_IsExcludedBlob(void) const;
+    void x_OnMyNCBIData(const string &  cookie,
+                        CPSG_MyNCBIRequest_WhoAmI::SUserInfo user_info);
+    void x_OnMyNCBIError(const string &  cookie,
+                         CRequestStatus::ECode  status,
+                         int  code,
+                         EDiagSev  severity,
+                         const string &  message);
 
 private:
     void OnGetBlobProp(CCassBlobFetch *  fetch_details,

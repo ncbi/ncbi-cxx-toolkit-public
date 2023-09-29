@@ -34,6 +34,7 @@
 
 #include <vector>
 #include <string>
+#include <optional>
 using namespace std;
 
 #include <h2o.h>
@@ -96,6 +97,14 @@ public:
         m_ParamParsed(false)
     {}
 
+    CHttpRequest():
+        m_Req(nullptr),
+        m_ParamCount(0),
+        m_PostParser(nullptr),
+        m_GetParser(nullptr),
+        m_ParamParsed(false)
+    {}
+
     void SetPostParser(CHttpPostParser *  parser)
     {
         m_PostParser = parser;
@@ -140,6 +149,7 @@ public:
     void  PrintLogFields(const CNcbiLogFields &  log_fields);
 
     string GetHeaderValue(const string &  name);
+    optional<string> GetWebCubbyUser(void);
     TNCBI_IPv6Addr GetClientIP(void);
     string GetPeerIP(void);
 

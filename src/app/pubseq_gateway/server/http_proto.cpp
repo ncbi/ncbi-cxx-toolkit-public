@@ -324,6 +324,7 @@ void CHttpProto::x_SetupSSL(void)
                             SSL_OP_NO_TLSv1_1;
     SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, ssl_flags);
     SSL_CTX_set_ecdh_auto(m_HttpAcceptCtx.ssl_ctx, 1);
+    SSL_CTX_set_timeout(m_HttpAcceptCtx.ssl_ctx, 1);
 
     if (SSL_CTX_use_certificate_chain_file(m_HttpAcceptCtx.ssl_ctx,
                                            cert_file.c_str()) != 1) {

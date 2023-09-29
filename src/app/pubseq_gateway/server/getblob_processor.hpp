@@ -75,11 +75,20 @@ private:
                         unsigned int  data_size, int  chunk_no);
 
 private:
+    void x_Process(void);
     void x_Peek(bool  need_wait);
     bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
 
 private:
+    void x_OnMyNCBIError(const string &  cookie,
+                         CRequestStatus::ECode  status,
+                         int  code,
+                         EDiagSev  severity,
+                         const string &  message);
+    void x_OnMyNCBIData(const string &  cookie,
+                        CPSG_MyNCBIRequest_WhoAmI::SUserInfo info);
+
     SPSGS_BlobBySatSatKeyRequest *  m_BlobRequest;
 };
 

@@ -245,6 +245,34 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "DestroyedProcessorCallbacks", "Destroyed processor callback counter",
             "Number of times a postponed callback was going to be invoked when a processor has already been destroyed");
+    m_Counters[ePSGS_NoWebCubbyUserCookie] =
+        new SCounterInfo(
+            "NoWebCubbyUserCookieCount", "No web cubby user cookie found counter",
+            "Number of times a web cubby user cookie was not found for a secure keyspace");
+    m_Counters[ePSGS_FailureToGetCassConnectionCounter] =
+        new SCounterInfo(
+            "FailureToGetCassConnectionCount", "Getting Cassandra connection failure counter",
+            "Number of times there was a failure to get a Cassandra connection (secure or unsecure)");
+    m_Counters[ePSGS_MyNCBIErrorCounter] =
+        new SCounterInfo(
+            "MyNCBIErrorCount", "My NCBI error counter",
+            "Number of times my NCBI service replied with an error");
+    m_Counters[ePSGS_MyNCBINotFoundCounter] =
+        new SCounterInfo(
+            "MyNCBINotFoundCount", "My NCBI not found counter",
+            "Number of times my NCBI service replied with 'not found'");
+    m_Counters[ePSGS_SecureSatUnauthorizedCounter] =
+        new SCounterInfo(
+            "SecureSatUnauthorizedCount", "Secure satellite unauthorized counter",
+            "Number of times a secure satellite refused authorization");
+    m_Counters[ePSGS_UserInfoCacheMiss] =
+        new SCounterInfo(
+            "MyNCBIUserInfoCacheMissCount", "My NCBI user info cache miss counter",
+            "Number of times a lookup in the my NCBI user info cache found no record");
+    m_Counters[ePSGS_UserInfoCacheHit] =
+        new SCounterInfo(
+            "MyNCBIUserInfoCacheHitCount", "My NCBI user info cache hit counter",
+            "Number of times a lookup in the my NCBI user info cache found a record");
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",
@@ -445,6 +473,11 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "SplitInfoCacheSize", "Split info cache size",
             "Number of records in the split info cache",
+            SCounterInfo::ePSGS_Arbitrary);
+    m_Counters[ePSGS_UserInfoCacheSize] =
+        new SCounterInfo(
+            "MyNCBIUserInfoCacheSize", "My NCBI user info cache size",
+            "Number of records in the my NCBI user info cache",
             SCounterInfo::ePSGS_Arbitrary);
     m_Counters[ePSGS_ShutdownRequested] =
         new SCounterInfo(

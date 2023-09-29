@@ -660,7 +660,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
 
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
-        load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->connection,
+        load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->GetConnection(),
                                               blob_id.m_Keyspace->keyspace,
                                               move(blob_record),
                                               false, nullptr);
@@ -685,7 +685,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
             return;
         }
 
-        load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->connection,
+        load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->GetConnection(),
                                               blob_id.m_Keyspace->keyspace,
                                               blob_id.m_SatKey,
                                               last_modified,

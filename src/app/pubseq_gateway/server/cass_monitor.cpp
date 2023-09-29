@@ -85,6 +85,7 @@ void CassMonitorThreadedFunction(void)
         }
 
         app->MaintainSplitInfoBlobCache();
+        app->MaintainUserInfoCache();
     }
 }
 

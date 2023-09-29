@@ -64,6 +64,7 @@ struct SPubseqGatewaySettings
     double                              m_RequestTimeoutSec;
     size_t                              m_ProcessorMaxConcurrency;
     size_t                              m_SplitInfoBlobCacheSize;
+    size_t                              m_UserInfoCacheSize;
     size_t                              m_ShutdownIfTooManyOpenFD;
     string                              m_RootKeyspace;
     string                              m_ConfigurationDomain;
@@ -132,6 +133,11 @@ struct SPubseqGatewaySettings
     // Configured counter/statistics ID to name/description
     map<string, tuple<string, string>>  m_IdToNameAndDescription;
 
+    // [MY_NCBI]
+    string                              m_MyNCBIURL;
+    string                              m_MyNCBIHttpProxy;
+    size_t                              m_MyNCBITimeoutMs;
+
 private:
     void x_ReadServerSection(const CNcbiRegistry &   registry);
     void x_ReadStatisticsSection(const CNcbiRegistry &   registry);
@@ -148,6 +154,7 @@ private:
     void x_ReadCDDProcessorSection(const CNcbiRegistry &   registry);
     void x_ReadWGSProcessorSection(const CNcbiRegistry &   registry);
     void x_ReadSNPProcessorSection(const CNcbiRegistry &   registry);
+    void x_ReadMyNCBISection(const CNcbiRegistry &   registry);
     void x_ReadCountersSection(const CNcbiRegistry &   registry);
 
     unsigned long x_GetDataSize(const CNcbiRegistry &  registry,

@@ -70,6 +70,8 @@ enum EPSGOperation {
     eLookupCassBioseqInfo,          // (2)
     eLookupCassBlobProp,            // (2)
 
+    eMyNCBIRetrieve,                // (2)
+
     eResolutionLmdb,                // (2) From request start
     eResolutionCass,                // (2) From cassandra start
 
@@ -198,6 +200,9 @@ TIMING_CLASS(CLmdbResolutionTiming);
 // Cassandra operations are supposed to be slower than LMDB.
 // There are three cassandra tables
 TIMING_CLASS(CCassTiming);
+
+// Retrieve data from MyNCBI
+TIMING_CLASS(CMyNCBITiming);
 
 // Cassandra resolution may need a few tries with a two tables
 TIMING_CLASS(CCassResolutionTiming);
@@ -343,6 +348,7 @@ class COperationTiming
         vector<unique_ptr<CCassTiming>>                     m_LookupCassSi2csiTiming;
         vector<unique_ptr<CCassTiming>>                     m_LookupCassBioseqInfoTiming;
         vector<unique_ptr<CCassTiming>>                     m_LookupCassBlobPropTiming;
+        vector<unique_ptr<CMyNCBITiming>>                   m_RetrieveMyNCBITiming;
 
         vector<unique_ptr<CLmdbResolutionTiming>>           m_ResolutionLmdbTiming;
         vector<unique_ptr<CCassResolutionTiming>>           m_ResolutionCassTiming;

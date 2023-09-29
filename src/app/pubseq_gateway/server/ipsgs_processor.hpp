@@ -82,7 +82,8 @@ public:
         ePSGS_Canceled,     //< Processor finished because earlier it received
                             //< the Cancel() call.
         ePSGS_Timeout,      //< Processor finished because of a backend timeout.
-        ePSGS_Error         //< Processor finished and there was an error.
+        ePSGS_Error,        //< Processor finished and there was an error.
+        ePSGS_Unauthorized  //< Processor finsihed and there was an authorization error.
     };
 
     /// Converts the processor status to a string for tracing and logging

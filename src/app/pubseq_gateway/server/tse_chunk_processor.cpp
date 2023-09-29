@@ -208,11 +208,10 @@ bool
 CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id,
                                                  bool  need_finish)
 {
-    auto *      app = CPubseqGatewayApp::GetInstance();
-    blob_id.m_Keyspace = app->SatToKeyspace(blob_id.m_Sat);
-    if (blob_id.m_Keyspace.has_value())
+    if (blob_id.MapSatToKeyspace())
         return true;
 
+    auto *      app = CPubseqGatewayApp::GetInstance();
     app->GetCounters().Increment(this,
                                  CPSGSCounters::ePSGS_ServerSatToSatNameError);
     string  msg = "Unknown TSE chunk satellite number " +
@@ -275,6 +274,54 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
         x_SendProcessorError(err_msg, CRequestStatus::e404_NotFound,
                              ePSGS_UnknownResolvedSatellite);
         UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    }
+
+    if (m_IdModVerId2Info->GetTSEId().m_IsSecureKeyspace.value()) {
+        // Need the user name from MyNCBI
+        if (!x_GetMyNCBIUser()) {
+            return;
+        }
+    }
+
+    x_ProcessIdModVerId2InfoFinalStage();
+}
+
+
+void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    string  err_msg;
+
+    shared_ptr<CCassConnection>     cass_connection;
+    try {
+        if (m_IdModVerId2Info->GetTSEId().m_IsSecureKeyspace.value()) {
+            cass_connection = m_IdModVerId2Info->GetTSEId().m_Keyspace->GetSecureConnection(
+                                                m_UserName.value());
+            if (!cass_connection) {
+                ReportSecureSatUnauthorized();
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+                if (IPSGS_Processor::m_Reply->IsOutputReady())
+                    x_Peek(false);
+                return;
+            }
+        } else {
+            cass_connection = m_IdModVerId2Info->GetTSEId().m_Keyspace->GetConnection();
+        }
+    } catch (const exception &  exc) {
+        ReportFailureToGetCassConnection(exc.what());
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    } catch (...) {
+        ReportFailureToGetCassConnection();
         CPSGS_CassProcessorBase::SignalFinishProcessing();
 
         if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -384,7 +431,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
             unique_ptr<CCassBlobFetch>  fetch_details;
             fetch_details.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
             CCassBlobTaskLoadBlob *         load_task =
-                new CCassBlobTaskLoadBlob(chunk_blob_id.m_Keyspace->connection,
+                new CCassBlobTaskLoadBlob(cass_connection,
                                           chunk_blob_id.m_Keyspace->keyspace,
                                           move(blob_record),
                                           true, nullptr);
@@ -454,7 +501,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
                                                    m_IdModVerId2Info->GetTSEId(),
                                                    m_IdModVerId2Info->GetSplitVersion()));
     CCassBlobTaskFetchSplitHistory *   load_task =
-        new  CCassBlobTaskFetchSplitHistory(m_IdModVerId2Info->GetTSEId().m_Keyspace->connection,
+        new  CCassBlobTaskFetchSplitHistory(cass_connection,
                                             m_IdModVerId2Info->GetTSEId().m_Keyspace->keyspace,
                                             m_IdModVerId2Info->GetTSEId().m_SatKey,
                                             m_IdModVerId2Info->GetSplitVersion(),
@@ -486,6 +533,32 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2Info(void)
 }
 
 
+bool CPSGS_TSEChunkProcessor::x_GetMyNCBIUser(void)
+{
+    auto    result = PopulateMyNCBIUser(
+                            bind(&CPSGS_TSEChunkProcessor::x_OnMyNCBIData,
+                                 this, _1, _2),
+                            bind(&CPSGS_TSEChunkProcessor::x_OnMyNCBIError,
+                                 this, _1, _2, _3, _4, _5));
+    switch (result) {
+        case CPSGS_CassBlobBase::ePSGS_FoundInCache:
+            return true;
+        case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
+            if (IPSGS_Processor::m_Reply->IsOutputReady())
+                x_Peek(false);
+            return false;
+        case CPSGS_CassBlobBase::ePSGS_RequestInitiated:
+            return false;
+        default:
+            break;
+    }
+
+    // Cannot happened
+    return true;
+}
+
+
 void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
 {
     // This option is when id2info came in a shape of sat.info.chunks[.ver]
@@ -505,6 +578,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
                                   true))
         return;
 
+
     int64_t         sat_key;
     if (m_TSEChunkRequest->m_Id2Chunk == kSplitInfoChunk) {
         // Special case
@@ -514,9 +588,55 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
         sat_key = m_SatInfoChunkVerId2Info->GetInfo() -
                   m_SatInfoChunkVerId2Info->GetChunks() - 1 + m_TSEChunkRequest->m_Id2Chunk;
     }
-    SCass_BlobId    chunk_blob_id(m_SatInfoChunkVerId2Info->GetSat(), sat_key);
-    if (!x_TSEChunkSatToKeyspace(chunk_blob_id))
+    m_SatInfoChunkVerBlobId.m_Sat = m_SatInfoChunkVerId2Info->GetSat();
+    m_SatInfoChunkVerBlobId.m_SatKey = sat_key;
+    if (!x_TSEChunkSatToKeyspace(m_SatInfoChunkVerBlobId))
         return;
+
+    if (m_SatInfoChunkVerBlobId.m_IsSecureKeyspace.value()) {
+        // Need the user name from MyNCBI
+        if (!x_GetMyNCBIUser()) {
+            return;
+        }
+    }
+
+    x_ProcessSatInfoChunkVerId2InfoFinalStage();
+}
+
+
+void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
+{
+    shared_ptr<CCassConnection>     cass_connection;
+    try {
+        if (m_SatInfoChunkVerBlobId.m_IsSecureKeyspace.value()) {
+            cass_connection = m_SatInfoChunkVerBlobId.m_Keyspace->GetSecureConnection(
+                                                m_UserName.value());
+            if (!cass_connection) {
+                ReportSecureSatUnauthorized();
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+                if (IPSGS_Processor::m_Reply->IsOutputReady())
+                    x_Peek(false);
+                return;
+            }
+        } else {
+            cass_connection = m_SatInfoChunkVerBlobId.m_Keyspace->GetConnection();
+        }
+    } catch (const exception &  exc) {
+        ReportFailureToGetCassConnection(exc.what());
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    } catch (...) {
+        ReportFailureToGetCassConnection();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    }
 
     // Search in cache the TSE chunk properties
     CPSGCache                   psg_cache(IPSGS_Processor::m_Request,
@@ -524,7 +644,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     int64_t                     last_modified = INT64_MIN;
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
     auto                        tse_blob_prop_cache_lookup_result =
-        psg_cache.LookupBlobProp(this, chunk_blob_id.m_Sat, chunk_blob_id.m_SatKey,
+        psg_cache.LookupBlobProp(this, m_SatInfoChunkVerBlobId.m_Sat, m_SatInfoChunkVerBlobId.m_SatKey,
                                  last_modified, *blob_record.get());
 
 
@@ -533,7 +653,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
     if (IPSGS_Processor::m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
     SPSGS_BlobBySatSatKeyRequest
-                        chunk_request(SPSGS_BlobId(chunk_blob_id.ToString()),
+                        chunk_request(SPSGS_BlobId(m_SatInfoChunkVerBlobId.ToString()),
                                       INT64_MIN,
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
@@ -543,19 +663,19 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2Info(void)
                                       psg_clock_t::now());
 
     unique_ptr<CCassBlobFetch>  fetch_details;
-    fetch_details.reset(new CCassBlobFetch(chunk_request, chunk_blob_id));
+    fetch_details.reset(new CCassBlobFetch(chunk_request, m_SatInfoChunkVerBlobId));
 
     CCassBlobTaskLoadBlob *         load_task = nullptr;
     if (tse_blob_prop_cache_lookup_result != ePSGS_CacheHit) {
         // Cassandra should look for blob props as well
-        load_task = new CCassBlobTaskLoadBlob(chunk_blob_id.m_Keyspace->connection,
-                                              chunk_blob_id.m_Keyspace->keyspace,
-                                              chunk_blob_id.m_SatKey,
+        load_task = new CCassBlobTaskLoadBlob(cass_connection,
+                                              m_SatInfoChunkVerBlobId.m_Keyspace->keyspace,
+                                              m_SatInfoChunkVerBlobId.m_SatKey,
                                               true, nullptr);
     } else {
         // Blob props are already here
-        load_task = new CCassBlobTaskLoadBlob(chunk_blob_id.m_Keyspace->connection,
-                                              chunk_blob_id.m_Keyspace->keyspace,
+        load_task = new CCassBlobTaskLoadBlob(cass_connection,
+                                              m_SatInfoChunkVerBlobId.m_Keyspace->keyspace,
                                               move(blob_record),
                                               true, nullptr);
     }
@@ -904,6 +1024,38 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     if (!x_TSEChunkSatToKeyspace(chunk_blob_id, true))
         return;
 
+    shared_ptr<CCassConnection>     cass_connection;
+    try {
+        if (chunk_blob_id.m_IsSecureKeyspace.value()) {
+            cass_connection = chunk_blob_id.m_Keyspace->GetSecureConnection(
+                                                m_UserName.value());
+            if (!cass_connection) {
+                ReportSecureSatUnauthorized();
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+                if (IPSGS_Processor::m_Reply->IsOutputReady())
+                    x_Peek(false);
+                return;
+            }
+        } else {
+            cass_connection = chunk_blob_id.m_Keyspace->GetConnection();
+        }
+    } catch (const exception &  exc) {
+        ReportFailureToGetCassConnection(exc.what());
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    } catch (...) {
+        ReportFailureToGetCassConnection();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    }
+
     // Look for the blob props
     // Form the chunk request with/without blob props
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
@@ -948,13 +1100,13 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
 
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(
-                            chunk_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             chunk_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
     } else {
         load_task = new CCassBlobTaskLoadBlob(
-                            chunk_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             chunk_blob_id.m_Keyspace->keyspace,
                             chunk_blob_id.m_SatKey,
                             true, nullptr);
@@ -1061,11 +1213,10 @@ CPSGS_TSEChunkProcessor::x_ValidateTSEChunkNumber(
 bool
 CPSGS_TSEChunkProcessor::x_TSEChunkSatToKeyspace(SCass_BlobId &  blob_id)
 {
-    auto *      app = CPubseqGatewayApp::GetInstance();
-    blob_id.m_Keyspace = app->SatToKeyspace(blob_id.m_Sat);
-    if (blob_id.m_Keyspace.has_value())
+    if (blob_id.MapSatToKeyspace())
         return true;
 
+    auto *      app = CPubseqGatewayApp::GetInstance();
     app->GetCounters().Increment(this,
                                  CPSGSCounters::ePSGS_ClientSatToSatNameError);
 
@@ -1146,7 +1297,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
     // TSE chunk: ready packets need to be sent right away
     IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
-    if (AreAllFinishedRead()) {
+    if (AreAllFinishedRead() && IsMyNCBIFinished()) {
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
 
@@ -1204,5 +1355,41 @@ bool CPSGS_TSEChunkProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
     }
 
     return final_state;
+}
+
+
+void CPSGS_TSEChunkProcessor::x_OnMyNCBIError(const string &  cookie,
+                                              CRequestStatus::ECode  status,
+                                              int  code,
+                                              EDiagSev  severity,
+                                              const string &  message)
+{
+    if (status == CRequestStatus::e404_NotFound) {
+        ReportMyNCBINotFound();
+    } else {
+        ReportMyNCBIError(message);
+    }
+
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        x_Peek(false);
+}
+
+
+void CPSGS_TSEChunkProcessor::x_OnMyNCBIData(const string &  cookie,
+                                             CPSG_MyNCBIRequest_WhoAmI::SUserInfo user_info)
+{
+    // All good, can proceed
+    m_UserName = user_info.username;
+
+    if (m_SatInfoChunkVerId2Info.get() != nullptr) {
+        x_ProcessSatInfoChunkVerId2InfoFinalStage();
+        return;
+    }
+    if (m_IdModVerId2Info.get() != nullptr) {
+        x_ProcessIdModVerId2InfoFinalStage();
+        return;
+    }
 }
 

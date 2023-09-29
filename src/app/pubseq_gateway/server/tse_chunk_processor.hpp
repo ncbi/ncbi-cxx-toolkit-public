@@ -86,7 +86,9 @@ private:
 
 private:
     void x_ProcessSatInfoChunkVerId2Info(void);
+    void x_ProcessSatInfoChunkVerId2InfoFinalStage(void);
     void x_ProcessIdModVerId2Info(void);
+    void x_ProcessIdModVerId2InfoFinalStage(void);
 
     void x_SendProcessorError(const string &  msg,
                               CRequestStatus::ECode  status,
@@ -114,6 +116,14 @@ private:
     void x_Peek(bool  need_wait);
     bool x_Peek(unique_ptr<CCassFetch> &  fetch_details,
                 bool  need_wait);
+    void x_OnMyNCBIError(const string &  cookie,
+                         CRequestStatus::ECode  status,
+                         int  code,
+                         EDiagSev  severity,
+                         const string &  message);
+    void x_OnMyNCBIData(const string &  cookie,
+                        CPSG_MyNCBIRequest_WhoAmI::SUserInfo user_info);
+    bool x_GetMyNCBIUser(void);
 
 private:
     SPSGS_TSEChunkRequest *                             m_TSEChunkRequest;
@@ -121,6 +131,8 @@ private:
     // NB: Only one will be populated
     shared_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>     m_SatInfoChunkVerId2Info;
     shared_ptr<CPSGS_IdModifiedVerFlavorId2Info>        m_IdModVerId2Info;
+
+    SCass_BlobId                                        m_SatInfoChunkVerBlobId;
 };
 
 #endif  // PSGS_TSECHUNKPROCESSOR__HPP
