@@ -2,6 +2,6 @@
 NCBI_begin_app(psg_myncbi_test)
   NCBI_sources(psg_myncbi_test unit/myncbi_factory)
   NCBI_uses_toolkit_libraries(psg_myncbi xmlwrapp xconnext connext xconnect)
-  NCBI_requires(MT Linux UV XML XSLT CASSANDRA GMOCK)
+  NCBI_requires(MT Linux CURL UV XML XSLT CASSANDRA GMOCK)
   NCBI_project_watchers(saprykin)
 NCBI_end_app()
