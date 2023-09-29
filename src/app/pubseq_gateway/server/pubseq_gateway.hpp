@@ -42,6 +42,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/messages.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
+#include <objtools/pubseq_gateway/impl/myncbi/myncbi_factory.hpp>
 
 #include "pending_operation.hpp"
 #include "http_daemon.hpp"
@@ -51,6 +52,7 @@
 #include "pubseq_gateway_types.hpp"
 #include "exclude_blob_cache.hpp"
 #include "split_info_cache.hpp"
+#include "user_info_cache.hpp"
 #include "alerts.hpp"
 #include "timing.hpp"
 #include "psgs_dispatcher.hpp"
@@ -76,6 +78,7 @@ public:
     void ParseArgs(void);
     void OpenCache(void);
     bool OpenCass(void);
+    void CreateMyNCBIFactory(void);
     bool PopulateCassandraMapping(bool  initialization);
     void CheckCassMapping(void);
     void CloseCass(void);
@@ -85,6 +88,10 @@ public:
     void MaintainSplitInfoBlobCache(void) {
         if (m_SplitInfoCache)
             m_SplitInfoCache->Maintain();
+    }
+    void MaintainUserInfoCache(void) {
+        if (m_UserInfoCache)
+            m_UserInfoCache->Maintain();
     }
 
     SSatInfoEntry GetBioseqKeyspace(void) const
@@ -104,6 +111,9 @@ public:
 
     CSplitInfoCache *  GetSplitInfoCache(void)
     { return m_SplitInfoCache.get(); }
+
+    CUserInfoCache *  GetUserInfoCache(void)
+    { return m_UserInfoCache.get(); }
 
     shared_ptr<CPSGMessages>  GetPublicCommentsMapping(void)
     { return m_CassSchemaProvider->GetMessages(); }
@@ -252,6 +262,9 @@ public:
     { return m_RequestDispatcher.get(); }
 
     CPSGS_UvLoopBinder &  GetUvLoopBinder(uv_thread_t  uv_thread_id);
+
+    shared_ptr<CPSG_MyNCBIFactory> GetMyNCBIFactory(void)
+    { return m_MyNCBIFactory; }
 
 private:
     struct SRequestParameter
@@ -435,6 +448,7 @@ private:
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
     shared_ptr<CSatInfoSchemaProvider>  m_CassSchemaProvider;
+    shared_ptr<CPSG_MyNCBIFactory>      m_MyNCBIFactory;
 
     CTime                               m_StartTime;
 
@@ -445,6 +459,7 @@ private:
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
     unique_ptr<CSplitInfoCache>         m_SplitInfoCache;
+    unique_ptr<CUserInfoCache>          m_UserInfoCache;
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;

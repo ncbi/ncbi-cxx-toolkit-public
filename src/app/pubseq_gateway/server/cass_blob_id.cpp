@@ -57,6 +57,10 @@ SCass_BlobId::SCass_BlobId(const string &  blob_id) :
 bool SCass_BlobId::MapSatToKeyspace(void)
 {
     m_Keyspace = CPubseqGatewayApp::GetInstance()->SatToKeyspace(m_Sat);
-    return m_Keyspace.has_value();
+    if (m_Keyspace.has_value()) {
+        m_IsSecureKeyspace = m_Keyspace->IsSecureSat();
+        return true;
+    }
+    return false;
 }
 

@@ -32,59 +32,64 @@
 #include <ncbi_pch.hpp>
 
 #include <algorithm>
-#include "split_info_cache.hpp"
+#include "user_info_cache.hpp"
+#include "pubseq_gateway.hpp"
 
 
 
-optional<CRef<CID2S_Split_Info>>
-CSplitInfoCache::GetBlob(const SCass_BlobId &  info_blob_id)
+optional<CPSG_MyNCBIRequest_WhoAmI::SUserInfo>
+CUserInfoCache::GetUserInfo(const string &  cookie)
 {
-    optional<CRef<CID2S_Split_Info>>    ret;
-    lock_guard<mutex>                   guard(m_Lock);
+    optional<CPSG_MyNCBIRequest_WhoAmI::SUserInfo>  ret;
+    auto &                                          counters = m_App->GetCounters();
 
-    auto    it = m_Cache.find(info_blob_id);
+    lock_guard<mutex>   guard(m_Lock);
+
+    auto    it = m_Cache.find(cookie);
     if (it == m_Cache.cend()) {
+        counters.Increment(nullptr, CPSGSCounters::ePSGS_UserInfoCacheMiss);
         return ret;
     }
 
-    auto lru_it = find(m_LRU.begin(), m_LRU.end(), info_blob_id);
+    auto lru_it = find(m_LRU.begin(), m_LRU.end(), cookie);
     if (lru_it != m_LRU.begin()) {
         m_LRU.erase(lru_it);
-        m_LRU.push_front(info_blob_id);
+        m_LRU.push_front(cookie);
     }
 
+    counters.Increment(nullptr, CPSGSCounters::ePSGS_UserInfoCacheHit);
     it->second.m_LastTouch = psg_clock_t::now();
-    ret = it->second.m_SplitInfoBlob;
+    ret = it->second.m_UserInfo;
     return ret;
 }
 
 
 void
-CSplitInfoCache::AddBlob(const SCass_BlobId &  info_blob_id,
-                         CRef<CID2S_Split_Info>  blob)
+CUserInfoCache::AddUserInfo(const string &  cookie,
+                            const CPSG_MyNCBIRequest_WhoAmI::SUserInfo &  user_info)
 {
     lock_guard<mutex>   guard(m_Lock);
 
-    auto  find_it = m_Cache.find(info_blob_id);
+    auto  find_it = m_Cache.find(cookie);
     if (find_it == m_Cache.end()) {
-        // No blob, add a new one
-        m_Cache[info_blob_id] = SSplitInfoCacheItem(blob);
-        m_LRU.emplace_front(info_blob_id);
+        // No cookie, add a new one
+        m_Cache[cookie] = SUserInfoCacheItem(user_info);
+        m_LRU.emplace_front(cookie);
         return;
     }
 
     // It already exists
     find_it->second.m_LastTouch = psg_clock_t::now();
 
-    auto lru_it = find(m_LRU.begin(), m_LRU.end(), info_blob_id);
+    auto lru_it = find(m_LRU.begin(), m_LRU.end(), cookie);
     if (lru_it != m_LRU.begin()) {
         m_LRU.erase(lru_it);
-        m_LRU.push_front(info_blob_id);
+        m_LRU.push_front(cookie);
     }
 }
 
 
-void CSplitInfoCache::Maintain(void)
+void CUserInfoCache::Maintain(void)
 {
     lock_guard<mutex>   guard(m_Lock);
 

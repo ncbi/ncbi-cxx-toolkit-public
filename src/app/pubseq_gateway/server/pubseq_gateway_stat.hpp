@@ -94,6 +94,13 @@ class CPSGSCounters
             ePSGS_AcceptFailure,
             ePSGS_FrameworkUnknownError,
             ePSGS_NoRequestStop,
+            ePSGS_NoWebCubbyUserCookie,
+            ePSGS_MyNCBIErrorCounter,
+            ePSGS_MyNCBINotFoundCounter,
+            ePSGS_SecureSatUnauthorizedCounter,
+            ePSGS_UserInfoCacheMiss,
+            ePSGS_UserInfoCacheHit,
+            ePSGS_FailureToGetCassConnectionCounter,
 
             // Request stop statuses
             ePSGS_100,
@@ -150,6 +157,7 @@ class CPSGSCounters
             ePSGS_ShutdownRequested,
             ePSGS_GracefulShutdownExpiredInSec,
             ePSGS_SplitInfoCacheSize,
+            ePSGS_UserInfoCacheSize,
 
             // Used to reserve an array for individual counters
             ePSGS_MaxIndividualCounter,

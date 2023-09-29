@@ -104,7 +104,13 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_NotFoundAndNotInstantiated         = 337,
 
     ePSGS_IPGNotFound                        = 338,
-    ePSGS_IPGKeyspaceNotAvailable            = 339
+    ePSGS_IPGKeyspaceNotAvailable            = 339,
+
+    ePSGS_NoWebCubbyUserCookieError          = 340,
+    ePSGS_MyNCBIError                        = 341,
+    ePSGS_MyNCBINotFound                     = 342,
+    ePSGS_SecureSatUnauthorized              = 343,
+    ePSGS_CassConnectionError                = 344
 };
 
 

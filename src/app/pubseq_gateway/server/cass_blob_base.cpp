@@ -304,9 +304,34 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     if (m_Request->NeedTrace())
         trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
 
+    auto                            cass_blob_id = fetch_details->GetBlobId();
+
+    shared_ptr<CCassConnection>     cass_connection;
+    try {
+        if (cass_blob_id.m_IsSecureKeyspace.value()) {
+            cass_connection = cass_blob_id.m_Keyspace->GetSecureConnection(
+                                                m_UserName.value());
+            if (!cass_connection) {
+                ReportSecureSatUnauthorized();
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+                return;
+            }
+        } else {
+            cass_connection = cass_blob_id.m_Keyspace->GetConnection();
+        }
+    } catch (const exception &  exc) {
+        ReportFailureToGetCassConnection(exc.what());
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        return;
+    } catch (...) {
+        ReportFailureToGetCassConnection();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+        return;
+    }
+
+
     // eUnknownTSE is safe here; no blob prop call will happen anyway
     // eUnknownUseCache is safe here; no further resolution required
-    auto    cass_blob_id = fetch_details->GetBlobId();
     SPSGS_BlobBySatSatKeyRequest
             orig_blob_request(SPSGS_BlobId(cass_blob_id.ToString()),
                               blob.GetModified(),
@@ -321,7 +346,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     // Create the cass async loader
     unique_ptr<CBlobRecord>             blob_record(new CBlobRecord(blob));
     CCassBlobTaskLoadBlob *             load_task =
-        new CCassBlobTaskLoadBlob(cass_blob_id.m_Keyspace->connection,
+        new CCassBlobTaskLoadBlob(cass_connection,
                                   cass_blob_id.m_Keyspace->keyspace,
                                   move(blob_record),
                                   true, nullptr);
@@ -364,9 +389,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
     // Translate sat to keyspace
     SCass_BlobId    info_blob_id(m_Id2Info->GetSat(), m_Id2Info->GetInfo());    // mandatory
-    info_blob_id.m_Keyspace = app->SatToKeyspace(m_Id2Info->GetSat());
 
-    if (!info_blob_id.m_Keyspace.has_value()) {
+    if (!info_blob_id.MapSatToKeyspace()) {
         // Error: send it in the context of the blob props
         string      message = "Error mapping id2 info sat (" +
                               to_string(m_Id2Info->GetSat()) +
@@ -379,6 +403,46 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                      CPSGSCounters::ePSGS_ServerSatToSatNameError);
         UpdateOverallStatus(CRequestStatus::e502_BadGateway);
         PSG_ERROR(message);
+        return;
+    }
+
+    // Note: the blobs from a public keyspace may only point to the blobs in a
+    // public keyspace. A similar rule is about a secure keyspace: HUP blobs
+    // point only to HUP blobs. Thus if a keyspace is secure then the MyNCBI
+    // resultion has already happened and can be used here.
+
+    shared_ptr<CCassConnection>     cass_connection;
+
+    try {
+        if (info_blob_id.m_IsSecureKeyspace.value()) {
+            cass_connection = info_blob_id.m_Keyspace->GetSecureConnection(
+                                                m_UserName.value());
+            if (!cass_connection) {
+                x_PrepareBlobPropMessage(fetch_details,
+                                         "id2 info sat connection unauthorized "
+                                         "for the blob " + fetch_details->GetBlobId().ToString(),
+                                         CRequestStatus::e401_Unauthorized,
+                                         ePSGS_SecureSatUnauthorized, eDiag_Error);
+                ReportSecureSatUnauthorized();
+                return;
+            }
+        } else {
+            cass_connection = info_blob_id.m_Keyspace->GetConnection();
+        }
+    } catch (const exception &  exc) {
+        x_PrepareBlobPropMessage(fetch_details,
+                                 "id2 info sat connection authorization error: " +
+                                 string(exc.what()),
+                                 CRequestStatus::e500_InternalServerError,
+                                 ePSGS_CassConnectionError, eDiag_Error);
+        ReportFailureToGetCassConnection(exc.what());
+        return;
+    } catch (...) {
+        x_PrepareBlobPropMessage(fetch_details,
+                                 "id2 info sat connection authorization unknown error",
+                                 CRequestStatus::e500_InternalServerError,
+                                 ePSGS_CassConnectionError, eDiag_Error);
+        ReportFailureToGetCassConnection();
         return;
     }
 
@@ -420,7 +484,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            info_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             info_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
@@ -455,7 +519,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            info_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             info_blob_id.m_Keyspace->keyspace,
                             info_blob_id.m_SatKey,
                             true, nullptr);
@@ -517,6 +581,45 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
         // before
         chunks_blob_id.MapSatToKeyspace();
 
+        // Note: the blobs from a public keyspace may only point to the blobs in a
+        // public keyspace. A similar rule is about a secure keyspace: HUP blobs
+        // point only to HUP blobs. Thus if a keyspace is secure then the MyNCBI
+        // resultion has already happened and can be used here.
+        shared_ptr<CCassConnection>     cass_connection;
+
+        try {
+            if (chunks_blob_id.m_IsSecureKeyspace.value()) {
+                cass_connection = chunks_blob_id.m_Keyspace->GetSecureConnection(
+                                                    m_UserName.value());
+                if (!cass_connection) {
+                    x_PrepareBlobPropMessage(fetch_details,
+                                             "id2 split chunk sat connection unauthorized "
+                                             "for the blob " + fetch_details->GetBlobId().ToString(),
+                                             CRequestStatus::e401_Unauthorized,
+                                             ePSGS_SecureSatUnauthorized, eDiag_Error);
+                    ReportSecureSatUnauthorized();
+                    return;
+                }
+            } else {
+                cass_connection = chunks_blob_id.m_Keyspace->GetConnection();
+            }
+        } catch (const exception &  exc) {
+            x_PrepareBlobPropMessage(fetch_details,
+                                     "id2 split chunk sat connection authorization error: " +
+                                     string(exc.what()),
+                                     CRequestStatus::e500_InternalServerError,
+                                     ePSGS_CassConnectionError, eDiag_Error);
+            ReportFailureToGetCassConnection(exc.what());
+            return;
+        } catch (...) {
+            x_PrepareBlobPropMessage(fetch_details,
+                                     "id2 split chunk sat connection authorization unknown error",
+                                     CRequestStatus::e500_InternalServerError,
+                                     ePSGS_CassConnectionError, eDiag_Error);
+            ReportFailureToGetCassConnection();
+            return;
+        }
+
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
         // sending completion message, no requesting other blobs)
         // eUnknownUseCache is safe here; no further resolution required
@@ -552,7 +655,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            chunks_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             chunks_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
@@ -587,7 +690,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            chunks_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             chunks_blob_id.m_Keyspace->keyspace,
                             chunks_blob_id.m_SatKey,
                             true, nullptr);
@@ -663,7 +766,7 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
     // Check the cached info first
     auto *  app = CPubseqGatewayApp::GetInstance();
     auto    cache_search_result = app->GetSplitInfoCache()->GetBlob(info_blob_id);
-    if (cache_search_result.first) {
+    if (cache_search_result.has_value()) {
         // The chunks are in cache
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Extra split info blob for " + info_blob_id.ToString() +
@@ -673,7 +776,7 @@ CPSGS_CassBlobBase::x_DecideToRequestMoreChunksForSmartTSE(
         vector<int>     extra_chunks;
         try {
             extra_chunks = psg::GetBioseqChunks(m_ResolvedSeqID,
-                                                *cache_search_result.second);
+                                                *cache_search_result.value());
         } catch (const exception &  exc) {
             PSG_ERROR("Error getting bioseq chunks from split info: " +
                       string(exc.what()));
@@ -754,6 +857,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         SCass_BlobId    chunks_blob_id(m_Id2Info->GetSat(),
                                        m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
         chunks_blob_id.m_Keyspace = m_InfoBlobId.m_Keyspace;
+        chunks_blob_id.m_IsSecureKeyspace = m_InfoBlobId.m_IsSecureKeyspace;
 
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
         // sending completion message, no requesting other blobs)
@@ -778,6 +882,44 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
             continue;
         }
 
+        // Note: the blobs from a public keyspace may only point to the blobs in a
+        // public keyspace. A similar rule is about a secure keyspace: HUP blobs
+        // point only to HUP blobs. Thus if a keyspace is secure then the MyNCBI
+        // resultion has already happened and can be used here.
+        shared_ptr<CCassConnection>     cass_connection;
+
+        try {
+            if (chunks_blob_id.m_IsSecureKeyspace.value()) {
+                cass_connection = chunks_blob_id.m_Keyspace->GetSecureConnection(
+                                                    m_UserName.value());
+                if (!cass_connection) {
+                    x_PrepareBlobPropMessage(fetch_details,
+                                             "id2 split chunk sat connection unauthorized "
+                                             "for the blob " + fetch_details->GetBlobId().ToString(),
+                                             CRequestStatus::e401_Unauthorized,
+                                             ePSGS_SecureSatUnauthorized, eDiag_Error);
+                    ReportSecureSatUnauthorized();
+                    return;
+                }
+            } else {
+                cass_connection = chunks_blob_id.m_Keyspace->GetConnection();
+            }
+        } catch (const exception &  exc) {
+            x_PrepareBlobPropMessage(fetch_details,
+                                     "id2 split chunk sat connection authorization error: " +
+                                     string(exc.what()),
+                                     CRequestStatus::e500_InternalServerError,
+                                     ePSGS_CassConnectionError, eDiag_Error);
+            ReportFailureToGetCassConnection(exc.what());
+            return;
+        } catch (...) {
+            x_PrepareBlobPropMessage(fetch_details,
+                                     "id2 split chunk sat connection authorization unknown error",
+                                     CRequestStatus::e500_InternalServerError,
+                                     ePSGS_CassConnectionError, eDiag_Error);
+            ReportFailureToGetCassConnection();
+            return;
+        }
 
         unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
         CPSGCache                   psg_cache(m_Request, m_Reply);
@@ -792,7 +934,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
         if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
             load_task = new CCassBlobTaskLoadBlob(
-                            chunks_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             chunks_blob_id.m_Keyspace->keyspace,
                             move(blob_record),
                             true, nullptr);
@@ -825,7 +967,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
             }
 
             load_task = new CCassBlobTaskLoadBlob(
-                            chunks_blob_id.m_Keyspace->connection,
+                            cass_connection,
                             chunks_blob_id.m_Keyspace->keyspace,
                             chunks_blob_id.m_SatKey,
                             true, nullptr);
@@ -1212,9 +1354,35 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                 m_LastModified);
         }
 
+        // Note: the blobs from a public keyspace may only point to the blobs in a
+        // public keyspace. A similar rule is about a secure keyspace: HUP blobs
+        // point only to HUP blobs. Thus if a keyspace is secure then the MyNCBI
+        // resultion has already happened and can be used here.
+
+        shared_ptr<CCassConnection>     cass_connection;
+
+        try {
+            if (blob_fetch_details->GetBlobId().m_IsSecureKeyspace.value()) {
+                cass_connection = blob_fetch_details->GetBlobId().m_Keyspace->GetSecureConnection(
+                                                    m_UserName.value());
+                if (!cass_connection) {
+                    ReportSecureSatUnauthorized();
+                    return;
+                }
+            } else {
+                cass_connection = blob_fetch_details->GetBlobId().m_Keyspace->GetConnection();
+            }
+        } catch (const exception &  exc) {
+            ReportFailureToGetCassConnection(exc.what());
+            return;
+        } catch (...) {
+            ReportFailureToGetCassConnection();
+            return;
+        }
+
         CCassStatusHistoryTaskGetPublicComment *    load_task =
             new CCassStatusHistoryTaskGetPublicComment(
-                    blob_fetch_details->GetBlobId().m_Keyspace->connection,
+                    cass_connection,
                     blob_fetch_details->GetBlobId().m_Keyspace->keyspace,
                     blob, nullptr);
         comment_fetch_details->SetLoader(load_task);

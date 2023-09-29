@@ -66,6 +66,7 @@ USING_NCBI_SCOPE;
 const EDiagSev          kDefaultSeverity = eDiag_Critical;
 const bool              kDefaultTrace = false;
 const float             kSplitInfoBlobCacheSizeMultiplier = 0.8;    // Used to calculate low mark
+const float             kUserInfoCacheSizeMultiplier = 0.8;         // Used to calculate low mark
 
 static const string     kDaemonizeArgName = "daemonize";
 
@@ -238,6 +239,10 @@ bool CPubseqGatewayApp::OpenCass(void)
                                                 registry,
                                                 "CASSANDRA_DB");
 
+        // To start using HUP (hold until publication) a secure section needs
+        // to be set for the provider.
+        m_CassSchemaProvider->SetSecureSatRegistrySection("CASSANDRA_SECURE_DB");
+
         // Next step in the startup data initialization
         m_StartupDataState = ePSGS_NoValidCassMapping;
     } catch (const exception &  exc) {
@@ -268,6 +273,17 @@ void CPubseqGatewayApp::CloseCass(void)
 {
     m_CassConnection = nullptr;
     m_CassConnectionFactory = nullptr;
+}
+
+
+void CPubseqGatewayApp::CreateMyNCBIFactory(void)
+{
+    m_MyNCBIFactory = make_shared<CPSG_MyNCBIFactory>();
+    m_MyNCBIFactory->SetMyNCBIURL(m_Settings.m_MyNCBIURL);
+    if (!m_Settings.m_MyNCBIHttpProxy.empty()) {
+        m_MyNCBIFactory->SetHttpProxy(m_Settings.m_MyNCBIHttpProxy);
+    }
+    m_MyNCBIFactory->SetRequestTimeout(chrono::milliseconds(m_Settings.m_MyNCBITimeoutMs));
 }
 
 
@@ -308,6 +324,9 @@ int CPubseqGatewayApp::Run(void)
     if (populated)
         OpenCache();
 
+    // Creates the factory to resolve web cubby user cookie into a user info
+    CreateMyNCBIFactory();
+
     m_RequestDispatcher.reset(new CPSGS_Dispatcher(m_Settings.m_RequestTimeoutSec));
     x_RegisterProcessors();
 
@@ -320,6 +339,8 @@ int CPubseqGatewayApp::Run(void)
 
     m_SplitInfoCache.reset(new CSplitInfoCache(m_Settings.m_SplitInfoBlobCacheSize,
                                                m_Settings.m_SplitInfoBlobCacheSize * kSplitInfoBlobCacheSizeMultiplier));
+    m_UserInfoCache.reset(new CUserInfoCache(this, m_Settings.m_UserInfoCacheSize,
+                                             m_Settings.m_UserInfoCacheSize * kUserInfoCacheSizeMultiplier));
 
     m_Timing.reset(new COperationTiming(m_Settings.m_MinStatValue,
                                         m_Settings.m_MaxStatValue,
@@ -734,9 +755,6 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  initialization)
         return false;
     }
 
-    // Next step in the startup data initialization
-    m_StartupDataState = ePSGS_NoCassCache;
-
     if (!initialization) {
         // We are not the first time here; It means that the alert about
         // the bad mapping has been set before. So now we accepted the
@@ -746,6 +764,9 @@ bool CPubseqGatewayApp::PopulateCassandraMapping(bool  initialization)
                           "Keyspace and public comment mapping "
                           "from Cassandra has been populated");
     }
+
+    // Next step in the startup data initialization
+    m_StartupDataState = ePSGS_NoCassCache;
 
     need_logging = false;
     return true;

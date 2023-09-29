@@ -45,6 +45,7 @@
 
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_types.hpp"
+#include "http_request.hpp"
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
@@ -137,7 +138,8 @@ public:
 public:
     CPSGS_Request();
     ~CPSGS_Request();
-    CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
+    CPSGS_Request(const CHttpRequest &  http_request,
+                  unique_ptr<SPSGS_RequestBase> req,
                   CRef<CRequestContext>  request_context);
 
     EPSGS_Type  GetRequestType(void) const;
@@ -197,6 +199,11 @@ public:
     virtual string GetName(void) const;
     virtual CJsonNode Serialize(void) const;
 
+    optional<string> GetWebCubbyUser(void)
+    {
+        return m_HttpRequest.GetWebCubbyUser();
+    }
+
     size_t GetLimitedProcessorCount(void) const
     {
         return m_LimitedProcessors.size();
@@ -215,6 +222,7 @@ public:
     CPSGS_Request &  operator=(CPSGS_Request &&) = default;
 
 private:
+    CHttpRequest                    m_HttpRequest;
     unique_ptr<SPSGS_RequestBase>   m_Request;
     CRef<CRequestContext>           m_RequestContext;
     size_t                          m_RequestId;

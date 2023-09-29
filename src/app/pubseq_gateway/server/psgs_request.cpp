@@ -100,8 +100,10 @@ CPSGS_Request::~CPSGS_Request()
 }
 
 
-CPSGS_Request::CPSGS_Request(unique_ptr<SPSGS_RequestBase> req,
+CPSGS_Request::CPSGS_Request(const CHttpRequest &  http_request,
+                             unique_ptr<SPSGS_RequestBase> req,
                              CRef<CRequestContext>  request_context) :
+    m_HttpRequest(http_request),
     m_Request(move(req)),
     m_RequestContext(request_context),
     m_RequestId(GetNextRequestId()),

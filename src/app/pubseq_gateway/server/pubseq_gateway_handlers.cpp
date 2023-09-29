@@ -69,12 +69,12 @@ static string  kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized: ";
 
 
-int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
+int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context,
@@ -84,12 +84,12 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
         return 0;
     }
 
-    if (req.GetPath() == "/") {
+    if (http_req.GetPath() == "/") {
         // Special case: no path at all so provide a help message
         try {
             string      fmt;
             string      err_msg;
-            if (!x_GetIntrospectionFormat(req, fmt, err_msg)) {
+            if (!x_GetIntrospectionFormat(http_req, fmt, err_msg)) {
                 // Basically an incorrect format parameter
                 reply->Send400(err_msg.c_str());
                 PSG_ERROR(err_msg);
@@ -141,7 +141,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
         }
     } else {
         try {
-            string      bad_url = req.GetPath();
+            string      bad_url = http_req.GetPath();
             x_SendMessageAndCompletionChunks(reply, now,
                                              kBadUrlMessage + NStr::PrintableString(bad_url),
                                              CRequestStatus::e400_BadRequest,
@@ -181,12 +181,12 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
+int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
                              shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
@@ -202,7 +202,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
+        if (!x_GetCommonIDRequestParams(http_req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
@@ -215,7 +215,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(http_req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
@@ -224,28 +224,28 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         }
 
         SPSGS_BlobRequestBase::EPSGS_TSEOption  tse_option = SPSGS_BlobRequestBase::ePSGS_OrigTSE;
-        if (!x_GetTSEOption(req, reply, now, tse_option)) {
+        if (!x_GetTSEOption(http_req, reply, now, tse_option)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
 
-        vector<string>      exclude_blobs = x_GetExcludeBlobs(req);
+        vector<string>      exclude_blobs = x_GetExcludeBlobs(http_req);
 
         SPSGS_RequestBase::EPSGS_AccSubstitutioOption
                                 subst_option = SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
-        if (!x_GetAccessionSubstitutionOption(req, reply, now, subst_option)) {
+        if (!x_GetAccessionSubstitutionOption(http_req, reply, now, subst_option)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
 
-        SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
+        SRequestParameter   client_id_param = x_GetParam(http_req, kClientIdParam);
 
         double  resend_timeout;
-        if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
+        if (!x_GetResendTimeout(http_req, reply, now, resend_timeout)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -253,7 +253,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         }
 
         int     send_blob_if_small = 0;
-        if (!x_GetSendBlobIfSmallParameter(req, reply, now, send_blob_if_small)) {
+        if (!x_GetSendBlobIfSmallParameter(http_req, reply, now, send_blob_if_small)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -261,7 +261,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
         }
 
         bool    seq_id_resolve = true;  // default
-        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+        if (!x_GetSeqIdResolveParameter(http_req, reply, now, seq_id_resolve)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -282,7 +282,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), context));
+            request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -309,12 +309,12 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
+int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
                                  shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
@@ -330,7 +330,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
+        if (!x_GetCommonIDRequestParams(http_req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
@@ -341,7 +341,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 
         SPSGS_BlobRequestBase::EPSGS_TSEOption
                             tse_option = SPSGS_BlobRequestBase::ePSGS_OrigTSE;
-        if (!x_GetTSEOption(req, reply, now, tse_option)) {
+        if (!x_GetTSEOption(http_req, reply, now, tse_option)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -349,7 +349,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         }
 
         int64_t             last_modified = INT64_MIN;
-        if (!x_GetLastModified(req, reply, now, last_modified)) {
+        if (!x_GetLastModified(http_req, reply, now, last_modified)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -357,7 +357,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
-        if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
+        if (!x_GetUseCacheParameter(http_req, reply, now, use_cache)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -365,17 +365,17 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
         }
 
         int     send_blob_if_small = 0;
-        if (!x_GetSendBlobIfSmallParameter(req, reply, now, send_blob_if_small)) {
+        if (!x_GetSendBlobIfSmallParameter(http_req, reply, now, send_blob_if_small)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
 
-        SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
+        SRequestParameter   client_id_param = x_GetParam(http_req, kClientIdParam);
 
         SPSGS_BlobId        blob_id;
-        if (!x_GetBlobId(req, reply, now, blob_id)) {
+        if (!x_GetBlobId(http_req, reply, now, blob_id)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -392,7 +392,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
                             processor_events,
                             enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
-                request(new CPSGS_Request(move(req), context));
+                request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -419,12 +419,12 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
+int CPubseqGatewayApp::OnResolve(CHttpRequest &  http_req,
                                  shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
@@ -440,7 +440,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
+        if (!x_GetCommonIDRequestParams(http_req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
@@ -453,7 +453,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(http_req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
@@ -463,7 +463,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         SPSGS_ResolveRequest::EPSGS_OutputFormat
                             output_format = SPSGS_ResolveRequest::ePSGS_NativeFormat;
-        if (!x_GetOutputFormat(req, reply, now, output_format)) {
+        if (!x_GetOutputFormat(http_req, reply, now, output_format)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -471,7 +471,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         }
 
         SPSGS_ResolveRequest::TPSGS_BioseqIncludeData   include_data_flags = 0;
-        if (!x_GetResolveFlags(req, reply, now, include_data_flags)) {
+        if (!x_GetResolveFlags(http_req, reply, now, include_data_flags)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -480,7 +480,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 
         SPSGS_RequestBase::EPSGS_AccSubstitutioOption
                                 subst_option = SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
-        if (!x_GetAccessionSubstitutionOption(req, reply, now, subst_option)) {
+        if (!x_GetAccessionSubstitutionOption(http_req, reply, now, subst_option)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -488,7 +488,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
         }
 
         bool                seq_id_resolve = true;  // default
-        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+        if (!x_GetSeqIdResolveParameter(http_req, reply, now, seq_id_resolve)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -504,7 +504,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
                         processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), context));
+            request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -531,12 +531,12 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
+int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
                                      shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
@@ -552,7 +552,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
+        if (!x_GetCommonIDRequestParams(http_req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
@@ -563,7 +563,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 
         // Mandatory parameter id2_chunk
         int64_t             id2_chunk_value = INT64_MIN;
-        if (!x_GetId2Chunk(req, reply, now, id2_chunk_value)) {
+        if (!x_GetId2Chunk(http_req, reply, now, id2_chunk_value)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -571,7 +571,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         }
 
         string              id2_info;
-        if (!x_GetId2Info(req, reply, now, id2_info)) {
+        if (!x_GetId2Info(http_req, reply, now, id2_info)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -579,7 +579,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
-        if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
+        if (!x_GetUseCacheParameter(http_req, reply, now, use_cache)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -593,7 +593,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
                         use_cache, hops, trace, processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), context));
+            request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -620,12 +620,12 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
+int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
                                shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
@@ -641,7 +641,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
+        if (!x_GetCommonIDRequestParams(http_req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
@@ -655,7 +655,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
         // true => seq_id is optional
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(http_req, reply, now, seq_id,
                                                 seq_id_type, use_cache, true)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
@@ -665,7 +665,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         SPSGS_ResolveRequest::EPSGS_OutputFormat
                         output_format = SPSGS_ResolveRequest::ePSGS_JsonFormat;
-        if (!x_GetOutputFormat(req, reply, now, output_format)) {
+        if (!x_GetOutputFormat(http_req, reply, now, output_format)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -689,7 +689,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         // Get the annotation names
         vector<string>          names;
-        if (!x_GetNames(req, reply, now, names)) {
+        if (!x_GetNames(http_req, reply, now, names)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -697,7 +697,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         // Get other seq ids
-        SRequestParameter       seq_ids_param = x_GetParam(req, kSeqIdsParam);
+        SRequestParameter       seq_ids_param = x_GetParam(http_req, kSeqIdsParam);
         vector<string>          seq_ids;
         if (seq_ids_param.m_Found) {
             if (!seq_ids_param.m_Value.empty()) {
@@ -733,17 +733,17 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 
         SPSGS_BlobRequestBase::EPSGS_TSEOption
                             tse_option = SPSGS_BlobRequestBase::ePSGS_NoneTSE;
-        if (!x_GetTSEOption(req, reply, now, tse_option)) {
+        if (!x_GetTSEOption(http_req, reply, now, tse_option)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
             return 0;
         }
 
-        SRequestParameter   client_id_param = x_GetParam(req, kClientIdParam);
+        SRequestParameter   client_id_param = x_GetParam(http_req, kClientIdParam);
 
         int     send_blob_if_small = 0;
-        if (!x_GetSendBlobIfSmallParameter(req, reply, now, send_blob_if_small)) {
+        if (!x_GetSendBlobIfSmallParameter(http_req, reply, now, send_blob_if_small)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -751,7 +751,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         double              resend_timeout;
-        if (!x_GetResendTimeout(req, reply, now, resend_timeout)) {
+        if (!x_GetResendTimeout(http_req, reply, now, resend_timeout)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -759,7 +759,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         bool                seq_id_resolve = true;  // default
-        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+        if (!x_GetSeqIdResolveParameter(http_req, reply, now, seq_id_resolve)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -767,7 +767,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
         }
 
         optional<CSeq_id::ESNPScaleLimit>    snp_scale_limit;
-        if (!x_GetSNPScaleLimit(req, reply, now, snp_scale_limit)) {
+        if (!x_GetSNPScaleLimit(http_req, reply, now, snp_scale_limit)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -789,7 +789,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), context));
+            request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -816,12 +816,12 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
+int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  http_req,
                                                  shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context,
@@ -838,7 +838,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetCommonIDRequestParams(req, reply, now, trace, hops,
+        if (!x_GetCommonIDRequestParams(http_req, reply, now, trace, hops,
                                         enabled_processors, disabled_processors,
                                         processor_events)) {
             x_PrintRequestStop(context,
@@ -852,7 +852,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
         int                                     seq_id_type;
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
 
-        if (!x_ProcessCommonGetAndResolveParams(req, reply, now, seq_id,
+        if (!x_ProcessCommonGetAndResolveParams(http_req, reply, now, seq_id,
                                                 seq_id_type, use_cache)) {
             x_PrintRequestStop(context,
                                CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
@@ -869,7 +869,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), context));
+            request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -900,12 +900,12 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
+int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
                                     shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
@@ -919,7 +919,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         vector<string>                  disabled_processors;
         bool                            processor_events = false;
 
-        if (!x_GetEnabledAndDisabledProcessors(req, reply, now, enabled_processors,
+        if (!x_GetEnabledAndDisabledProcessors(http_req, reply, now, enabled_processors,
                                                disabled_processors)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
@@ -928,7 +928,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         processor_events = false;   // default
-        if (!x_GetProcessorEventsParameter(req, reply, now, processor_events)) {
+        if (!x_GetProcessorEventsParameter(http_req, reply, now, processor_events)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -936,7 +936,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         optional<string>        protein;
-        if (!x_GetProtein(req, reply, now, protein)) {
+        if (!x_GetProtein(http_req, reply, now, protein)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -944,7 +944,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         optional<string>        nucleotide;
-        if (!x_GetNucleotide(req, reply, now, nucleotide)) {
+        if (!x_GetNucleotide(http_req, reply, now, nucleotide)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -952,7 +952,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         int64_t                         ipg = -1;
-        if (!x_GetIPG(req, reply, now, ipg)) {
+        if (!x_GetIPG(http_req, reply, now, ipg)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -985,7 +985,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_CacheAndDbUse  use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;
-        if (!x_GetUseCacheParameter(req, reply, now, use_cache)) {
+        if (!x_GetUseCacheParameter(http_req, reply, now, use_cache)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -993,7 +993,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         bool    seq_id_resolve = true;  // default
-        if (!x_GetSeqIdResolveParameter(req, reply, now, seq_id_resolve)) {
+        if (!x_GetSeqIdResolveParameter(http_req, reply, now, seq_id_resolve)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -1001,7 +1001,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
         }
 
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
-        if (!x_GetTraceParameter(req, reply, now, trace)) {
+        if (!x_GetTraceParameter(http_req, reply, now, trace)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -1020,7 +1020,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), context));
+            request(new CPSGS_Request(http_req, move(req), context));
 
         bool    have_proc = x_DispatchRequest(context, request, reply);
         if (!have_proc) {
@@ -1048,7 +1048,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
+int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
     static string   separator = "==============================================";
@@ -1056,7 +1056,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     auto    startup_data_state = GetStartupDataState();
     if (startup_data_state != ePSGS_StartupDataOK) {
@@ -1127,7 +1127,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
                                          enabled_processors, disabled_processors,
                                          now));
         shared_ptr<CPSGS_Request>
-            request(new CPSGS_Request(move(req), CRef<CRequestContext>()));
+            request(new CPSGS_Request(http_req, move(req), CRef<CRequestContext>()));
 
 
         CPSGS_ResolveProcessor  resolve_processor(request, reply, 0);
@@ -1199,7 +1199,7 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
+int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
     static string   kConfigurationFilePath = "ConfigurationFilePath";
@@ -1209,7 +1209,7 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
         CNcbiOstrstream             conf;
@@ -1247,7 +1247,7 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
+int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
                               shared_ptr<CPSGS_Reply>  reply)
 {
     static string   kPID = "PID";
@@ -1283,7 +1283,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     auto                    app = CPubseqGatewayApp::GetInstance();
     try {
@@ -1455,14 +1455,14 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
+int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
     // NOTE: expected to work regardless of the shutdown request
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
         CJsonNode                       status(CJsonNode::NewObjectNode());
@@ -1483,6 +1483,9 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_SplitInfoCacheSize,
             static_cast<uint64_t>(m_SplitInfoCache->Size()));
+        m_Counters->AppendValueNode(
+            status, CPSGSCounters::ePSGS_UserInfoCacheSize,
+            static_cast<uint64_t>(m_UserInfoCache->Size()));
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_ShutdownRequested,
             g_ShutdownData.m_ShutdownRequested);
@@ -1530,7 +1533,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
+int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
                                   shared_ptr<CPSGS_Reply>  reply)
 {
     // NOTE: expected to work regardless of the shutdown request
@@ -1540,19 +1543,19 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
         string              msg;
         string              username;
-        SRequestParameter   username_param = x_GetParam(req, kUsernameParam);
+        SRequestParameter   username_param = x_GetParam(http_req, kUsernameParam);
         if (username_param.m_Found) {
             username = string(username_param.m_Value.data(),
                               username_param.m_Value.size());
         }
 
         if (!m_Settings.m_AuthToken.empty()) {
-            SRequestParameter   auth_token_param = x_GetParam(req, kAuthTokenParam);
+            SRequestParameter   auth_token_param = x_GetParam(http_req, kAuthTokenParam);
 
             bool    auth_good = false;
             if (auth_token_param.m_Found) {
@@ -1580,7 +1583,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
         }
 
         int                 timeout = 10; // Default: 10 sec
-        SRequestParameter   timeout_param = x_GetParam(req, kTimeoutParam);
+        SRequestParameter   timeout_param = x_GetParam(http_req, kTimeoutParam);
         if (timeout_param.m_Found) {
             try {
                 timeout = stoi(string(timeout_param.m_Value.data(),
@@ -1682,14 +1685,14 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
+int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  http_req,
                                    shared_ptr<CPSGS_Reply>  reply)
 {
     // NOTE: expected to work regardless of the shutdown request
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
         string      content = m_Alerts.Serialize().Repr(CJsonNode::fStandardJson);
@@ -1719,12 +1722,12 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
+int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
                                   shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -1736,7 +1739,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
     string                  msg;
 
     try {
-        SRequestParameter   alert_param = x_GetParam(req, kAlertParam);
+        SRequestParameter   alert_param = x_GetParam(http_req, kAlertParam);
         if (!alert_param.m_Found) {
             x_InsufficientArguments(reply, now, "Missing the '" + kAlertParam +
                                                 "' parameter");
@@ -1746,7 +1749,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
             return 0;
         }
 
-        SRequestParameter   username_param = x_GetParam(req, kUsernameParam);
+        SRequestParameter   username_param = x_GetParam(http_req, kUsernameParam);
         if (!username_param.m_Found) {
             x_InsufficientArguments(reply, now, "Missing the '" + kUsernameParam +
                                                 "' parameter");
@@ -1808,12 +1811,12 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  req,
 }
 
 
-int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
+int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
                                     shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -1828,7 +1831,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
 
 
         bool                    reset = false;
-        SRequestParameter       reset_param = x_GetParam(req, kResetParam);
+        SRequestParameter       reset_param = x_GetParam(http_req, kResetParam);
         if (reset_param.m_Found) {
             string      err_msg;
             if (!x_IsBoolParamValid(kResetParam, reset_param.m_Value, err_msg)) {
@@ -1855,7 +1858,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
         }
 
         int                 most_recent_time = INT_MIN;
-        SRequestParameter   most_recent_time_param = x_GetParam(req, kMostRecentTimeParam);
+        SRequestParameter   most_recent_time_param = x_GetParam(http_req, kMostRecentTimeParam);
         if (most_recent_time_param.m_Found) {
             string          err_msg;
             try {
@@ -1880,7 +1883,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
         }
 
         int                 most_ancient_time = INT_MIN;
-        SRequestParameter   most_ancient_time_param = x_GetParam(req, kMostAncientTimeParam);
+        SRequestParameter   most_ancient_time_param = x_GetParam(http_req, kMostAncientTimeParam);
         if (most_ancient_time_param.m_Found) {
             string          err_msg;
             try {
@@ -1912,13 +1915,13 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
         }
 
         vector<CTempString> histogram_names;
-        SRequestParameter   histogram_names_param = x_GetParam(req, kHistogramNamesParam);
+        SRequestParameter   histogram_names_param = x_GetParam(http_req, kHistogramNamesParam);
         if (histogram_names_param.m_Found) {
             NStr::Split(histogram_names_param.m_Value, ",", histogram_names);
         }
 
         vector<pair<int, int>>      time_series;
-        if (!x_GetTimeSeries(req, reply, now, time_series)) {
+        if (!x_GetTimeSeries(http_req, reply, now, time_series)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                                CRequestStatus::e400_BadRequest,
                                reply->GetBytesSent());
@@ -1956,14 +1959,14 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  req,
     return 0;
 }
 
-int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  req,
+int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
                                           shared_ptr<CPSGS_Reply>  reply)
 {
     // NOTE: expected to work regardless of the shutdown request
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
         CJsonNode  dispatcher_status(CJsonNode::NewArrayNode());
@@ -1998,7 +2001,7 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  req,
 
 
 
-int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
+int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
     auto                    now = psg_clock_t::now();
@@ -2016,7 +2019,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
     try {
         string                  err_msg;
 
-        SRequestParameter       log_param = x_GetParam(req, kLogParam);
+        SRequestParameter       log_param = x_GetParam(http_req, kLogParam);
         if (log_param.m_Found) {
             if (!x_IsBoolParamValid(kLogParam, log_param.m_Value, err_msg)) {
                 x_MalformedArguments(reply, now, err_msg);
@@ -2026,10 +2029,10 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  req,
         }
 
         if (need_log)
-            context = x_CreateRequestContext(req);
+            context = x_CreateRequestContext(http_req);
 
         // Read the return data size
-        SRequestParameter   data_size_param = x_GetParam(req, kDataSizeParam);
+        SRequestParameter   data_size_param = x_GetParam(http_req, kDataSizeParam);
         long                data_size = 0;
         if (data_size_param.m_Found) {
             data_size = NStr::StringToLong(data_size_param.m_Value);

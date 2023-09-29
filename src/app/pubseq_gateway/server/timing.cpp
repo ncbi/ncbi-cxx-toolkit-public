@@ -225,6 +225,7 @@ CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
 TIMING_CLASS_DEF(CLmdbCacheTiming);
 TIMING_CLASS_DEF(CLmdbResolutionTiming);
 TIMING_CLASS_DEF(CCassTiming);
+TIMING_CLASS_DEF(CMyNCBITiming);
 TIMING_CLASS_DEF(CCassResolutionTiming);
 TIMING_CLASS_DEF(CHugeBlobRetrieveTiming);
 TIMING_CLASS_DEF(CNotFoundBlobRetrieveTiming);
@@ -350,6 +351,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
             unique_ptr<CCassTiming>(
                 new CCassTiming(min_stat_value, max_stat_value,
                                 n_bins, scale_type, reset_to_default)));
+        m_RetrieveMyNCBITiming.push_back(
+            unique_ptr<CMyNCBITiming>(
+                new CMyNCBITiming(min_stat_value, max_stat_value,
+                                  n_bins, scale_type, reset_to_default)));
 
         m_ResolutionLmdbTiming.push_back(
             unique_ptr<CLmdbResolutionTiming>(
@@ -508,6 +513,20 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "blob properties Cassandra not found",
                 "The timing of blob properties Cassandra lookup "
                 "when there was no record found"
+               )
+        },
+        { "RetrieveMyNCBIFound",
+          SInfo(m_RetrieveMyNCBITiming[0].get(),
+                "retrieve MyNCBI found",
+                "The timing of the retrieve data from MyNCBI when a record "
+                "was found"
+               )
+        },
+        { "RetrieveMyNCBINotFound",
+          SInfo(m_RetrieveMyNCBITiming[1].get(),
+                "retrieve MyNCBI not found",
+                "The timing of the retrieve data from MyNCBI when there was no "
+                "record found"
                )
         },
         { "ResolutionLmdbFound",
@@ -864,6 +883,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_TooLongIDs[eLookupCassSi2csi] = "lookup_cass_si2csi_too_long";
     m_TooLongIDs[eLookupCassBioseqInfo] = "lookup_cass_bioseq_info_too_long";
     m_TooLongIDs[eLookupCassBlobProp] = "lookup_cass_blob_prop_too_long";
+    m_TooLongIDs[eMyNCBIRetrieve] = "retrieve_my_ncbi_too_long";
     m_TooLongIDs[eResolutionLmdb] = "resolution_lmdb_too_long";
     m_TooLongIDs[eResolutionCass] = "resolution_cass_too_long";
     m_TooLongIDs[eResolutionError] = "resolution_error_too_long";
@@ -993,6 +1013,9 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
             break;
         case eLookupCassBlobProp:
             m_LookupCassBlobPropTiming[index]->Add(mks);
+            break;
+        case eMyNCBIRetrieve:
+            m_RetrieveMyNCBITiming[index]->Add(mks);
             break;
         case eResolutionLmdb:
             m_ResolutionLmdbTiming[index]->Add(mks);
@@ -1204,6 +1227,7 @@ void COperationTiming::Rotate(void)
         m_LookupCassSi2csiTiming[k]->Rotate();
         m_LookupCassBioseqInfoTiming[k]->Rotate();
         m_LookupCassBlobPropTiming[k]->Rotate();
+        m_RetrieveMyNCBITiming[k]->Rotate();
         m_ResolutionLmdbTiming[k]->Rotate();
         m_ResolutionCassTiming[k]->Rotate();
         m_SplitHistoryRetrieveTiming[k]->Rotate();
@@ -1296,6 +1320,7 @@ void COperationTiming::Reset(void)
             m_LookupCassSi2csiTiming[k]->Reset();
             m_LookupCassBioseqInfoTiming[k]->Reset();
             m_LookupCassBlobPropTiming[k]->Reset();
+            m_RetrieveMyNCBITiming[k]->Reset();
             m_ResolutionLmdbTiming[k]->Reset();
             m_ResolutionCassTiming[k]->Reset();
             m_SplitHistoryRetrieveTiming[k]->Reset();

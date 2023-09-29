@@ -55,6 +55,8 @@ IPSGS_Processor::StatusToString(IPSGS_Processor::EPSGS_Status  status)
             return "ePSGS_Canceled";
         case IPSGS_Processor::ePSGS_Timeout:
             return "ePSGS_Timeout";
+        case IPSGS_Processor::ePSGS_Unauthorized:
+            return "ePSGS_Unauthorized";
         default:
             break;
     }
@@ -79,6 +81,8 @@ IPSGS_Processor::StatusToProgressMessage(IPSGS_Processor::EPSGS_Status  status)
             return "canceled";
         case IPSGS_Processor::ePSGS_Timeout:
             return "timeout";
+        case IPSGS_Processor::ePSGS_Unauthorized:
+            return "unauthorized";
         default:
             break;
     }

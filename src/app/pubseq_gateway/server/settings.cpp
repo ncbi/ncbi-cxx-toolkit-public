@@ -54,6 +54,7 @@ const string            kWGSProcessorSection = "WGS_PROCESSOR";
 const string            kSNPProcessorSection = "SNP_PROCESSOR";
 const string            kCassandraProcessorSection = "CASSANDRA_PROCESSOR";
 const string            kAdminSection = "ADMIN";
+const string            kMyNCBISection = "MY_NCBI";
 const string            kCountersSection = "COUNTERS";
 
 
@@ -82,6 +83,7 @@ const double            kDefaultResendTimeoutSec = 0.2;
 const double            kDefaultRequestTimeoutSec = 30.0;
 const size_t            kDefaultProcessorMaxConcurrency = 1200;
 const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
+const size_t            kDefaultUserInfoCacheSize = 100;
 const size_t            kDefaultIPGPageSize = 1024;
 const bool              kDefaultEnableHugeIPG = true;
 const string            kDefaultAuthToken = "";
@@ -98,6 +100,9 @@ const bool              kDefaultOSGProcessorsEnabled = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
 const bool              kDefaultWGSProcessorsEnabled = true;
 const bool              kDefaultSNPProcessorsEnabled = true;
+const string            kDefaultMyNCBIURL = "http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNCBIAccount";
+const string            kDefaultMyNCBIHttpProxy = "linkerd:4140";
+size_t                  kDefaultMyNCBITimeoutMs = 100;
 
 
 
@@ -115,6 +120,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_RequestTimeoutSec(kDefaultRequestTimeoutSec),
     m_ProcessorMaxConcurrency(kDefaultProcessorMaxConcurrency),
     m_SplitInfoBlobCacheSize(kDefaultSplitInfoBlobCacheSize),
+    m_UserInfoCacheSize(kDefaultUserInfoCacheSize),
     m_ShutdownIfTooManyOpenFD(0),
     m_RootKeyspace(kDefaultRootKeyspace),
     m_ConfigurationDomain(kDefaultConfigurationDomain),
@@ -170,6 +176,7 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
     x_ReadCDDProcessorSection(registry);
     x_ReadWGSProcessorSection(registry);
     x_ReadSNPProcessorSection(registry);
+    x_ReadMyNCBISection(registry);
     x_ReadCountersSection(registry);
 }
 
@@ -222,6 +229,9 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
     m_SplitInfoBlobCacheSize = registry.GetInt(kServerSection,
                                                "split_info_blob_cache_size",
                                                kDefaultSplitInfoBlobCacheSize);
+    m_UserInfoCacheSize = registry.GetInt(kServerSection,
+                                          "user_info_cache_size",
+                                           kDefaultUserInfoCacheSize);
 
     if (m_SSLEnable) {
         m_ShutdownIfTooManyOpenFD =
@@ -358,6 +368,20 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
     m_SNPProcessorsEnabled = registry.GetBool(kSNPProcessorSection,
                                               "enabled",
                                               kDefaultSNPProcessorsEnabled);
+}
+
+
+void SPubseqGatewaySettings::x_ReadMyNCBISection(const CNcbiRegistry &   registry)
+{
+    m_MyNCBIURL = registry.GetString(kMyNCBISection,
+                                     "url",
+                                     kDefaultMyNCBIURL);
+    m_MyNCBIHttpProxy = registry.GetString(kMyNCBISection,
+                                           "http_proxy",
+                                           kDefaultMyNCBIHttpProxy);
+    m_MyNCBITimeoutMs = registry.GetInt(kMyNCBISection,
+                                        "timeout_ms",
+                                        kDefaultMyNCBITimeoutMs);
 }
 
 
@@ -722,6 +746,20 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
         if (m_SSLCiphers.empty()) {
             m_SSLCiphers = kDefaultSSLCiphers;
         }
+    }
+
+    if (m_MyNCBIURL.empty()) {
+        PSG_WARNING("The [" + kMyNCBISection + "]/url value must be not empty. "
+                    "The [" + kMyNCBISection + "]/url is switched to the "
+                    "default value: " + kDefaultMyNCBIURL);
+        m_MyNCBIURL = kDefaultMyNCBIURL;
+    }
+
+    if (m_MyNCBITimeoutMs <= 0) {
+        PSG_WARNING("The [" + kMyNCBISection + "]/timeout_ms value must be > 0. "
+                    "The [" + kMyNCBISection + "]/timeout_ms is switched to the "
+                    "default value: " + to_string(kDefaultMyNCBITimeoutMs));
+        m_MyNCBITimeoutMs = kDefaultMyNCBITimeoutMs;
     }
 }
 

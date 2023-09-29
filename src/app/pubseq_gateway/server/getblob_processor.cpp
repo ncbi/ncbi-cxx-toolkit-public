@@ -35,6 +35,7 @@
 #include "pubseq_gateway_cache_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "get_blob_callback.hpp"
+#include "user_info_cache.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -148,23 +149,88 @@ void CPSGS_GetBlobProcessor::Process(void)
     // processors may wait on the event
     IPSGS_Processor::m_Request->Lock(kCassandraProcessorEvent);
 
+    if (m_BlobId.m_IsSecureKeyspace.value()) {
+
+        auto    populate_result = PopulateMyNCBIUser(
+                                  bind(&CPSGS_GetBlobProcessor::x_OnMyNCBIData,
+                                       this, _1, _2),
+                                  bind(&CPSGS_GetBlobProcessor::x_OnMyNCBIError,
+                                       this, _1, _2, _3, _4, _5));
+        switch (populate_result) {
+            case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+                if (IPSGS_Processor::m_Reply->IsOutputReady())
+                    x_Peek(false);
+                return;
+            case CPSGS_CassBlobBase::ePSGS_RequestInitiated:
+                return;
+            case CPSGS_CassBlobBase::ePSGS_FoundInCache:
+                break;
+            default:
+                break;  // Cannot happened
+        }
+    }
+
+    x_Process();
+}
+
+
+void CPSGS_GetBlobProcessor::x_Process(void)
+{
+    // The user name check is done when a connection is requested
+    shared_ptr<CCassConnection>     cass_connection;
+    try {
+        if (m_BlobId.m_IsSecureKeyspace.value()) {
+            cass_connection = m_BlobId.m_Keyspace->GetSecureConnection(
+                                                m_UserName.value());
+            if (!cass_connection) {
+                ReportSecureSatUnauthorized();
+                CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+                if (IPSGS_Processor::m_Reply->IsOutputReady())
+                    x_Peek(false);
+                return;
+            }
+        } else {
+            cass_connection = m_BlobId.m_Keyspace->GetConnection();
+        }
+    } catch (const exception &  exc) {
+        ReportFailureToGetCassConnection(exc.what());
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    } catch (...) {
+        ReportFailureToGetCassConnection();
+        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (IPSGS_Processor::m_Reply->IsOutputReady())
+            x_Peek(false);
+        return;
+    }
+
     unique_ptr<CCassBlobFetch>  fetch_details;
     fetch_details.reset(new CCassBlobFetch(*m_BlobRequest, m_BlobId));
 
     unique_ptr<CBlobRecord> blob_record(new CBlobRecord);
     CPSGCache               psg_cache(IPSGS_Processor::m_Request,
                                       IPSGS_Processor::m_Reply);
-    auto                    blob_prop_cache_lookup_result =
-                                    psg_cache.LookupBlobProp(
-                                        this,
-                                        m_BlobId.m_Sat,
-                                        m_BlobId.m_SatKey,
-                                        m_BlobRequest->m_LastModified,
-                                        *blob_record.get());
+    EPSGS_CacheLookupResult blob_prop_cache_lookup_result = ePSGS_CacheNotHit;
+
+    if (!m_BlobId.m_IsSecureKeyspace) {
+        // The secure sat blob props are not cached
+        blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
+                                            this,
+                                            m_BlobId.m_Sat,
+                                            m_BlobId.m_SatKey,
+                                            m_BlobRequest->m_LastModified,
+                                            *blob_record.get());
+    }
 
     CCassBlobTaskLoadBlob *     load_task = nullptr;
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
-        load_task = new CCassBlobTaskLoadBlob(m_BlobId.m_Keyspace->connection,
+        load_task = new CCassBlobTaskLoadBlob(cass_connection,
                                               m_BlobId.m_Keyspace->keyspace,
                                               move(blob_record),
                                               false, nullptr);
@@ -199,13 +265,13 @@ void CPSGS_GetBlobProcessor::Process(void)
         }
 
         if (m_BlobRequest->m_LastModified == INT64_MIN) {
-            load_task = new CCassBlobTaskLoadBlob(m_BlobId.m_Keyspace->connection,
+            load_task = new CCassBlobTaskLoadBlob(cass_connection,
                                                   m_BlobId.m_Keyspace->keyspace,
                                                   m_BlobId.m_SatKey,
                                                   false, nullptr);
             fetch_details->SetLoader(load_task);
         } else {
-            load_task = new CCassBlobTaskLoadBlob(m_BlobId.m_Keyspace->connection,
+            load_task = new CCassBlobTaskLoadBlob(cass_connection,
                                                   m_BlobId.m_Keyspace->keyspace,
                                                   m_BlobId.m_SatKey,
                                                   m_BlobRequest->m_LastModified,
@@ -371,7 +437,7 @@ void CPSGS_GetBlobProcessor::x_Peek(bool  need_wait)
     IPSGS_Processor::m_Reply->Flush(CPSGS_Reply::ePSGS_SendAccumulated);
 
     // Blob specific: deal with exclude blob cache
-    if (AreAllFinishedRead()) {
+    if (AreAllFinishedRead() && IsMyNCBIFinished()) {
         for (auto &  details: m_FetchDetails) {
             if (details) {
                 // Update the cache records where needed
@@ -418,5 +484,33 @@ bool CPSGS_GetBlobProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
     }
 
     return final_state;
+}
+
+
+void CPSGS_GetBlobProcessor::x_OnMyNCBIError(const string &  cookie,
+                                             CRequestStatus::ECode  status,
+                                             int  code,
+                                             EDiagSev  severity,
+                                             const string &  message)
+{
+    if (status == CRequestStatus::e404_NotFound) {
+        ReportMyNCBINotFound();
+    } else {
+        ReportMyNCBIError(message);
+    }
+
+    CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+    if (IPSGS_Processor::m_Reply->IsOutputReady())
+        x_Peek(false);
+}
+
+
+void CPSGS_GetBlobProcessor::x_OnMyNCBIData(const string &  cookie,
+                                            CPSG_MyNCBIRequest_WhoAmI::SUserInfo user_info)
+{
+    // All good, can proceed
+    m_UserName = user_info.username;
+    x_Process();
 }
 

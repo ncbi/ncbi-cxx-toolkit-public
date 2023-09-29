@@ -35,6 +35,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <string>
+#include <optional>
 
 USING_IDBLOB_SCOPE;
 
@@ -49,9 +50,9 @@ struct SCass_BlobId
     CBioseqInfoRecord::TSat     m_Sat;
     CBioseqInfoRecord::TSatKey  m_SatKey;
 
-    // Resolved sat
-    // The resolved sat appears later in the process
+    // The resolved sat and a flag if it is a secure keyspace appear later in the process
     optional<SSatInfoEntry>     m_Keyspace;
+    optional<bool>              m_IsSecureKeyspace;
 
     SCass_BlobId() :
         m_Sat(-1), m_SatKey(-1)

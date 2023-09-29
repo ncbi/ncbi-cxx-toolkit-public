@@ -1,5 +1,5 @@
-#ifndef SPLIT_INFO_CACHE__HPP
-#define SPLIT_INFO_CACHE__HPP
+#ifndef USER_INFO_CACHE__HPP
+#define USER_INFO_CACHE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -36,55 +36,56 @@
 #include <mutex>
 #include <map>
 #include <list>
+#include <string>
 #include <optional>
 using namespace std;
 
 #include "pubseq_gateway_types.hpp"
-#include "cass_blob_id.hpp"
-#include "split_info_utils.hpp"
-#include <objects/seqsplit/seqsplit__.hpp>
+#include <objtools/pubseq_gateway/impl/myncbi/myncbi_request.hpp>
 
 USING_NCBI_SCOPE;
 
-using namespace ncbi::objects;
 
-struct SSplitInfoCacheItem
+class CPubseqGatewayApp;
+
+
+struct SUserInfoCacheItem
 {
     public:
-        SSplitInfoCacheItem(CRef<CID2S_Split_Info> blob) :
+        SUserInfoCacheItem(const CPSG_MyNCBIRequest_WhoAmI::SUserInfo &  user_info) :
             m_LastTouch(psg_clock_t::now()),
-            m_SplitInfoBlob(blob)
+            m_UserInfo(user_info)
         {}
 
-        SSplitInfoCacheItem()
+        SUserInfoCacheItem()
         {}
 
-        ~SSplitInfoCacheItem()
+        ~SUserInfoCacheItem()
         {}
 
     public:
         // For the future - if the cache needs to be purged
-        psg_time_point_t            m_LastTouch;
-        CRef<CID2S_Split_Info>      m_SplitInfoBlob;
+        psg_time_point_t                        m_LastTouch;
+        CPSG_MyNCBIRequest_WhoAmI::SUserInfo    m_UserInfo;
 };
 
 
 
-class CSplitInfoCache
+class CUserInfoCache
 {
     public:
-        CSplitInfoCache(size_t  high_mark, size_t  low_mark) :
-            m_HighMark(high_mark), m_LowMark(low_mark)
+        CUserInfoCache(CPubseqGatewayApp *  app, size_t  high_mark, size_t  low_mark) :
+            m_App(app), m_HighMark(high_mark), m_LowMark(low_mark)
         {}
 
-        ~CSplitInfoCache()
+        ~CUserInfoCache()
         {}
 
     public:
-        optional<CRef<CID2S_Split_Info>>
-                                GetBlob(const SCass_BlobId &  info_blob_id);
-        void                    AddBlob(const SCass_BlobId &  info_blob_id,
-                                        CRef<CID2S_Split_Info>);
+        optional<CPSG_MyNCBIRequest_WhoAmI::SUserInfo>
+                                GetUserInfo(const string &  cookie);
+        void                    AddUserInfo(const string &  cookie,
+                                            const CPSG_MyNCBIRequest_WhoAmI::SUserInfo &  user_info);
 
         size_t Size(void)
         {
@@ -99,12 +100,15 @@ class CSplitInfoCache
         void Maintain(void);
 
     private:
-        size_t                                      m_HighMark;
-        size_t                                      m_LowMark;
-        map<SCass_BlobId, SSplitInfoCacheItem>      m_Cache;
-        list<SCass_BlobId>                          m_LRU;
-        mutex                                       m_Lock;
+        CPubseqGatewayApp *                 m_App;
+
+        size_t                              m_HighMark;
+        size_t                              m_LowMark;
+        map<string, SUserInfoCacheItem>     m_Cache;
+        list<string>                        m_LRU;
+        mutex                               m_Lock;
 };
 
 
 #endif
+
