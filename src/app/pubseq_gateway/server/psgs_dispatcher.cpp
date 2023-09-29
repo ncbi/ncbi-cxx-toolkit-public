@@ -810,6 +810,8 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
             return CRequestStatus::e500_InternalServerError;
         case IPSGS_Processor::ePSGS_Timeout:
             return CRequestStatus::e504_GatewayTimeout;
+        case IPSGS_Processor::ePSGS_Unauthorized:
+            return CRequestStatus::e401_Unauthorized;
         default:
             break;
     }
@@ -830,6 +832,7 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
     size_t                  count_200 = 0;
     size_t                  count_404_or_cancel = 0;
     size_t                  count_timeout = 0;
+    size_t                  count_unauthorized = 0;
     for (const auto  status: proc_statuses) {
         switch (status) {
             case IPSGS_Processor::ePSGS_Done:
@@ -843,6 +846,9 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
                 ++count_timeout;
                 break;
             case IPSGS_Processor::ePSGS_Error:
+                break;
+            case IPSGS_Processor::ePSGS_Unauthorized:
+                ++count_unauthorized;
                 break;
             default:
                 break;
@@ -860,6 +866,11 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
         // All processors not found or canceled and there were no limited
         // processors
         return CRequestStatus::e404_NotFound;
+    }
+
+    if (count_unauthorized > 0) {
+        // At least one processor had not been authorized
+        return CRequestStatus::e401_Unauthorized;
     }
 
     // Here: the worst status should be returned
@@ -974,6 +985,7 @@ CPSGS_Dispatcher::x_SendProgressMessage(IPSGS_Processor::EPSGS_Status  finish_st
 {
     if (finish_status == IPSGS_Processor::ePSGS_Timeout ||
         finish_status == IPSGS_Processor::ePSGS_Error ||
+        finish_status == IPSGS_Processor::ePSGS_Unauthorized ||
         request->NeedProcessorEvents()) {
         reply->PrepareProcessorProgressMessage(
             processor->GetName(),
