@@ -495,7 +495,7 @@ extern const char* CORE_SendMailEx(const char*          to,
     if ((status = SOCK_CreateEx(info->mx_host, info->mx_port,
                                 &info->mx_timeout, &sock,
                                 0, 0, log)) != eIO_Success) {
-        sprintf(buffer, "%s:%hu (%s)", info->mx_host, info->mx_port,
+        sprintf(buffer, "%.512s:%hu (%s)", info->mx_host, info->mx_port,
                 IO_StatusStr(status));
         SENDMAIL_RETURN2(8, "Cannot connect to sendmail", buffer);
     }
