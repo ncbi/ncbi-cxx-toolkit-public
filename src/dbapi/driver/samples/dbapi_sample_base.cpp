@@ -94,6 +94,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     CConfig empty_config((CMemoryRegistry()));
     CEndpointKey fake_endpoint("1.2.3.4:5", 0);
     CPluginManagerGetterImpl::GetMutex();
+    CPoolBalancer fake_balancer("foo", {}, false);
 
 #else
 
