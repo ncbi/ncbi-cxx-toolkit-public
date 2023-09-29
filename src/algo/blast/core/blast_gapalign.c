@@ -2585,9 +2585,6 @@ static void s_UpdateEditScript(GapEditScript* esp, int pos, int bf, int af) {
       } while (qd > 0 || sd > 0);
 
       esp->num[op] = -MAX(qd, sd);
-      if ((op ==0) && (esp->num[0] <= 0)) {
-    	  return;
-      }
       esp->op_type[op++] = eGapAlignSub;
       for (; op < pos-1; op++) esp->num[op] = 0;
       esp->num[pos] += bf;
@@ -2642,7 +2639,14 @@ static void s_RebuildEditScript(GapEditScript* esp) {
               esp->num[j-1] += esp->num[i];
               esp->num[j] = d;
            } else if (d < 0) {
-              esp->num[j-1] += esp->num[j];
+
+              if (j == 0 && i - j > 0) {
+                  esp->op_type[j] = eGapAlignSub;
+                  j++;
+              }
+              else {
+                  esp->num[j-1] += esp->num[j];
+              }
               esp->num[j] = -d;
               esp->op_type[j] = esp->op_type[i];
            } else {
