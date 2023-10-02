@@ -58,6 +58,11 @@ public:
         bool NoBioSource    = true;
         bool NoPubsFound    = true;
         bool NoCitSubsFound = true;
+        bool CurrTpaAssembly = false;
+        bool CurrIsGI = false;
+        int JustTpaAssembly;
+        int TpaAssemblyHist;
+        int TpaNoHistYesGI;
         set<int> pubSerialNumbers;
         set<int> conflictingSerialNumbers;
         set<CMolInfo::TBiomol> biomols;
@@ -71,6 +76,11 @@ public:
             NoBioSource    = true;
             NoPubsFound    = true;
             NoCitSubsFound = true;
+            CurrIsGI = false;
+            CurrTpaAssembly = false;
+            JustTpaAssembly = 0;
+            TpaAssemblyHist = 0;
+            TpaNoHistYesGI = 0;
             pubSerialNumbers.clear();
             conflictingSerialNumbers.clear();
             biomols.clear();
