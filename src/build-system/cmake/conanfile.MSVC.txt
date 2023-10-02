@@ -28,7 +28,14 @@ ncbi-vdb/3.0.7
 ncbicrypt/20230516
 
 [options]
-#ncbi-vdb:shared = True
+abseil:shared=False
+boost:shared=False
+googleapis:shared=False
+grpc-proto:shared=False
+grpc:shared=False
+protobuf:shared=False
+libxml2:shared=False
+pcre:shared=False
 #
 grpc:cpp_plugin = True
 grpc:csharp_plugin = False
