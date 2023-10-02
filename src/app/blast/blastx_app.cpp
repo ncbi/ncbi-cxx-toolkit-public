@@ -98,19 +98,19 @@ void CBlastxApp::Init()
 static void s_GetMT1Cutoffs(const int word_size, Int8 & max_db_size, Int8 & min_q_size)
 {
 	const Int8 kMT1MaxDbSz_Blastx = 900000000;
-	const Int8 kMT1MinQSzPerThread_Blastx = 1250000;
+	const Int8 kMT1MinQSz_Blastx = 1250000;
 
 	const Int8 kMT1MaxDbSz_BlastxFast = 900000000;
-	const Int8 kMT1MinQSzPerThread_BlastxFast = 1250000;
+	const Int8 kMT1MinQSz_BlastxFast = 1250000;
 
 	if (word_size > 4) {
 		// CompressedAa
 		max_db_size = kMT1MaxDbSz_BlastxFast;
-		min_q_size = kMT1MinQSzPerThread_BlastxFast;
+		min_q_size = kMT1MinQSz_BlastxFast;
 	}
 	else {
 		max_db_size = kMT1MaxDbSz_Blastx;
-		min_q_size = kMT1MinQSzPerThread_Blastx;
+		min_q_size = kMT1MinQSz_Blastx;
 	}
 }
 
@@ -146,7 +146,7 @@ int CBlastxApp::Run(void)
 				if (total_length < max_db_size) {
 					if (args.Exist(kArgQuery) && args[kArgQuery].HasValue()) {
 						CFile file( args[kArgQuery].AsString());
-						if (file.GetLength() > min_q_size*num_threads) {
+						if (file.GetLength() > min_q_size) {
 							m_UsageReport.AddParam(CBlastUsageReport::eMTMode, CMTArgs::eSplitByQueries);
 							return x_RunMTBySplitQuery();
 						}
