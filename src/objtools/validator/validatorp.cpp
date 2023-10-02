@@ -1489,21 +1489,24 @@ bool CValidError_imp::Validate
 
     // validation from data collected during previous step
 
-    if ( m_NumTpaWithHistory > 0  &&
-         m_NumTpaWithoutHistory > 0 ) {
-        PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssemblyProblem,
-            "There are " +
-            NStr::SizetToString(m_NumTpaWithHistory) +
-            " TPAs with history and " +
-            NStr::SizetToString(m_NumTpaWithoutHistory) +
-            " without history in this record.", *seq);
+    if (!GetContext().PreprocessHugeFile) {
+        if ( m_NumTpaWithHistory > 0  &&
+             m_NumTpaWithoutHistory > 0 ) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssemblyProblem,
+                "There are " +
+                NStr::SizetToString(m_NumTpaWithHistory) +
+                " TPAs with history and " +
+                NStr::SizetToString(m_NumTpaWithoutHistory) +
+                " without history in this record.", *seq);
+        }
+        if ( m_NumTpaWithoutHistory > 0 && has_gi) {
+            PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssemblyProblem,
+                "There are " +
+                NStr::SizetToString(m_NumTpaWithoutHistory) +
+                " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
+        }
     }
-    if ( m_NumTpaWithoutHistory > 0 && has_gi) {
-        PostErr (eDiag_Warning, eErr_SEQ_INST_TpaAssemblyProblem,
-            "There are " +
-            NStr::SizetToString(m_NumTpaWithoutHistory) +
-            " TPAs without history in this record, but the record has a gi number assignment.", *m_TSE);
-    }
+
     if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
         call_once(SetContext().ProteinHaveGeneralIDOnceFlag,
             [] (CValidError_imp* imp, CSeq_entry_Handle seh) {

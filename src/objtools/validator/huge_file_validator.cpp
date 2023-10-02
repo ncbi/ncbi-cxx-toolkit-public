@@ -365,6 +365,30 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
             x_ReportConflictingBiomols(pErrors);
         }
     }
+
+    if (globalInfo.TpaAssemblyHist > 0  &&
+        globalInfo.JustTpaAssembly > 0) {
+        s_PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssemblyProblem,
+            "There are " +
+            NStr::SizetToString(globalInfo.TpaAssemblyHist) +
+            " TPAs with history and " +
+            NStr::SizetToString(globalInfo.JustTpaAssembly) +
+            " without history in this record.",
+            x_GetHugeSetLabel(), pErrors);
+    }
+    if (globalInfo.TpaNoHistYesGI > 0) {
+        s_PostErr(eDiag_Warning, eErr_SEQ_INST_TpaAssemblyProblem,
+            "There are " +
+            NStr::SizetToString(globalInfo.TpaNoHistYesGI) +
+            " TPAs without history in this record where the record has a gi number assignment.",
+            x_GetHugeSetLabel(), pErrors);
+    }
+
+    /*
+    cerr << "globalInfo.JustTpaAssembly " << NStr::IntToString(globalInfo.JustTpaAssembly) << endl;
+    cerr << "globalInfo.TpaAssemblyHist " << NStr::IntToString(globalInfo.TpaAssemblyHist) << endl;
+    cerr << "globalInfo.TpaNoHistYesGI " << NStr::IntToString(globalInfo.TpaNoHistYesGI) << endl;
+    */
 }
 
 
@@ -382,12 +406,15 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     context.PreprocessHugeFile = true;
     context.HugeSetId = g_GetHugeSetIdString(m_Reader);
 
-    context.IsPatent        = globalInfo.IsPatent;
-    context.IsPDB           = globalInfo.IsPDB;
-    context.IsRefSeq        = globalInfo.IsRefSeq;
-    context.NoBioSource     = globalInfo.NoBioSource;
-    context.NoPubsFound     = globalInfo.NoPubsFound;
-    context.NoCitSubsFound  = globalInfo.NoCitSubsFound;
+    context.IsPatent         = globalInfo.IsPatent;
+    context.IsPDB            = globalInfo.IsPDB;
+    context.IsRefSeq         = globalInfo.IsRefSeq;
+    context.NoBioSource      = globalInfo.NoBioSource;
+    context.NoPubsFound      = globalInfo.NoPubsFound;
+    context.NoCitSubsFound   = globalInfo.NoCitSubsFound;
+    context.JustTpaAssembly  = globalInfo.JustTpaAssembly;
+    context.TpaAssemblyHist  = globalInfo.TpaAssemblyHist;
+    context.TpaNoHistYesGI   = globalInfo.TpaNoHistYesGI;
 
     if (!context.IsIdInBlob) {
         context.IsIdInBlob = [this](const CSeq_id& id) {
@@ -429,7 +456,11 @@ static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInf
         break;
     case CSeq_id::e_Other:
         globalInfo.IsRefSeq = true;
-    default:
+        break;
+    case CSeq_id::e_Gi:
+        globalInfo.CurrIsGI = true;
+        break;
+   default:
         break;
     }
 }
@@ -507,6 +538,53 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
                 auto* pSeqId = CTypeConverter<CSeq_id>::SafeCast(pObject);
                 s_UpdateGlobalInfo(*pSeqId, m_GlobalInfo);
         });
+    
+    
+    // Set UserObject read hook
+    SetLocalReadHook(CType<CUser_object>(), objStream,
+                     [this] (CObjectIStream& in, const CObjectInfo& object)
+                     {
+        auto* pObject = object.GetObjectPtr();
+        object.GetTypeInfo()->DefaultReadData(in, pObject);
+        auto* pUser_object = CTypeConverter<CUser_object>::SafeCast(pObject);
+        if (pUser_object->IsSetType() && pUser_object->GetType().IsStr()
+            && NStr::EqualNocase(pUser_object->GetType().GetStr(), "TpaAssembly")) {
+            m_GlobalInfo.CurrTpaAssembly = true;
+            m_GlobalInfo.JustTpaAssembly++;
+            if (m_GlobalInfo.CurrIsGI) {
+                m_GlobalInfo.TpaNoHistYesGI++;
+            }
+        }
+    });
+    
+    
+    // Set History skip hook
+    SetLocalSkipHook(CType<CSeq_hist>(), objStream,
+                     [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+                     {
+        auto pSeqhist = Ref(new CSeq_hist());
+        type.GetTypeInfo()->DefaultReadData(in, pSeqhist);
+        if (pSeqhist->IsSetAssembly() && !pSeqhist->GetAssembly().empty()) {
+            if (m_GlobalInfo.CurrTpaAssembly) {
+                m_GlobalInfo.JustTpaAssembly--;
+                m_GlobalInfo.TpaAssemblyHist++;
+            }
+        } else if (m_GlobalInfo.CurrTpaAssembly && m_GlobalInfo.CurrIsGI) {
+            m_GlobalInfo.TpaNoHistYesGI--;
+        }
+    });
+
+
+    // Set Seq-inst skip hook
+    SetLocalSkipHook(CType<CSeq_inst>(), objStream,
+            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            {
+                type.GetTypeInfo()->DefaultSkipData(in);
+                // clear flags after set by seq-id or user object and after hist examines it
+                m_GlobalInfo.CurrTpaAssembly = false;
+                m_GlobalInfo.CurrIsGI = false;
+            });
+
 }
 
 
