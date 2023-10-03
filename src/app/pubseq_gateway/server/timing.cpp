@@ -402,6 +402,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
 
     }
 
+    m_RetrieveMyNCBIErrorTiming.reset(
+        new CMyNCBITiming(min_stat_value, max_stat_value,
+                          n_bins, scale_type, reset_to_default));
+
     m_BacklogTiming.reset(
         new CBacklogTiming(min_stat_value, max_stat_value,
                            n_bins, scale_type, reset_to_default));
@@ -520,6 +524,12 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 "retrieve MyNCBI found",
                 "The timing of the retrieve data from MyNCBI when a record "
                 "was found"
+               )
+        },
+        { "RetrieveMyNCBIError",
+          SInfo(m_RetrieveMyNCBIErrorTiming.get(),
+                "MyNCBI retrieve timing in case of errors",
+                "The time MyNCBI replied within when there was an error"
                )
         },
         { "RetrieveMyNCBINotFound",
@@ -1017,6 +1027,9 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
         case eMyNCBIRetrieve:
             m_RetrieveMyNCBITiming[index]->Add(mks);
             break;
+        case eMyNCBIRetrieveError:
+            m_RetrieveMyNCBIErrorTiming->Add(mks);
+            break;
         case eResolutionLmdb:
             m_ResolutionLmdbTiming[index]->Add(mks);
             break;
@@ -1273,6 +1286,8 @@ void COperationTiming::Rotate(void)
         item->Rotate();
 
     m_BacklogTiming->Rotate();
+    m_RetrieveMyNCBIErrorTiming->Rotate();
+
     for (auto &  item : m_ResolutionFoundCassandraTiming)
         item->Rotate();
 
@@ -1366,6 +1381,8 @@ void COperationTiming::Reset(void)
             item->Reset();
 
         m_BacklogTiming->Reset();
+        m_RetrieveMyNCBIErrorTiming->Reset();
+
         for (auto &  item : m_ResolutionFoundCassandraTiming)
             item->Reset();
 
