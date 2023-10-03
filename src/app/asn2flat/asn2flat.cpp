@@ -231,11 +231,105 @@ void CHTMLFormatterEx::FormatNucSearch(CNcbiOstream& os, const string& id) const
     os << "<a href=\"" << strLinkBaseNucSearch << id << "\">" << id << "</a>";
 }
 
+static void s_AddSeqIntString(const CSeq_interval& seqint, string& loc_str,
+                              bool& add_comma)
+{
+    TSeqPos iFrom = seqint.GetFrom() + 1;
+    TSeqPos iTo = seqint.GetTo() + 1;
+
+    if (add_comma) loc_str += ",";
+
+    loc_str += NStr::IntToString(iFrom) + ":" + NStr::IntToString(iTo);
+
+    // When location is on the reverse strand, add the strand value
+    if (seqint.CanGetStrand() && seqint.GetStrand() == eNa_strand_minus)
+        loc_str += ":2";
+
+    add_comma = true;
+}
+
+static void
+s_AddSeqPointString(const CSeq_point& seqpnt, string& loc_str, bool& add_comma)
+{
+    string pnt_str = NStr::IntToString(seqpnt.GetPoint() + 1);
+
+    if (add_comma) loc_str += ",";
+    loc_str += pnt_str;
+
+    // When location is on the reverse strand, add end-point (equal to start)
+    // and strand value.
+    if (seqpnt.CanGetStrand() && seqpnt.GetStrand() == eNa_strand_minus)
+        loc_str += ":" + pnt_str + ":2";
+
+    add_comma = true;
+}
+
+static void
+s_AddSeqBondString(const CSeq_bond& seqbond, string& loc_str, bool& add_comma)
+{
+    // This actually should always be available, but just in case.
+    if (seqbond.CanGetA()) {
+        s_AddSeqPointString(seqbond.GetA(), loc_str, add_comma);
+    }
+    if (seqbond.CanGetB()) {
+        s_AddSeqPointString(seqbond.GetB(), loc_str, add_comma);
+    }
+}
+
+static void
+s_AddSeqPackedPointString(const CPacked_seqpnt& packed_pnt, string& loc_str,
+                          bool& add_comma)
+{
+    bool reverse =
+        (packed_pnt.CanGetStrand() && packed_pnt.GetStrand() == eNa_strand_minus);
+    string pnt_str;
+            
+    ITERATE(CPacked_seqpnt::TPoints, it, packed_pnt.GetPoints()) {
+        if (add_comma) loc_str += ",";
+        pnt_str = NStr::IntToString(*it + 1);
+        loc_str += pnt_str;
+        if (reverse)
+            loc_str += ":" + pnt_str + ":2";
+        add_comma = true;
+    }
+}
+
+static void s_AddLocString(const CSeq_loc& loc, string& loc_str, bool& add_comma)
+{
+    switch(loc.Which()) {
+    case CSeq_loc::e_Int:
+        s_AddSeqIntString(loc.GetInt(), loc_str, add_comma);
+        break;
+    case CSeq_loc::e_Pnt:
+        s_AddSeqPointString(loc.GetPnt(), loc_str, add_comma);
+        break;
+    case CSeq_loc::e_Bond:
+        s_AddSeqBondString(loc.GetBond(), loc_str, add_comma);
+        break;
+    case CSeq_loc::e_Mix:
+        ITERATE(CSeq_loc_mix::Tdata, loc_it, loc.GetMix().Get()) {
+            s_AddLocString(**loc_it, loc_str, add_comma);
+        }
+        break;
+    case CSeq_loc::e_Packed_int:
+        ITERATE(CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
+            s_AddSeqIntString(**it, loc_str, add_comma);
+        }
+        break;
+    case CSeq_loc::e_Packed_pnt:
+        s_AddSeqPackedPointString(loc.GetPacked_pnt(), loc_str, add_comma);
+        break;
+    default:
+        break;
+    }
+}
+
 void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TIntId gi, const string& visible_text) const
 {
+    string acc;
     // check if this is a protein or nucleotide link
     bool is_prot = false;
-    {
+    {{
         CBioseq_Handle bioseq_h;
         for (auto& loc_ci: loc) {
             bioseq_h = m_scope->GetBioseqHandle(loc_ci.GetSeq_id());
@@ -245,11 +339,13 @@ void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TInt
         }
         if (bioseq_h) {
             is_prot = (bioseq_h.GetBioseqMolType() == CSeq_inst::eMol_aa);
+            CConstRef<CSeq_id> accid = FindBestChoice(bioseq_h.GetBioseqCore()->GetId(), CSeq_id::Score);
+            acc = GetLabel(*accid);
         }
-    }
+    }}
 
     // assembly of the actual string:
-    strLink.reserve(100); // euristical URL length
+    strLink.reserve(100); // heuristical URL length
 
     strLink = "<a href=\"";
 
@@ -259,7 +355,8 @@ void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TInt
     } else {
         strLink += strLinkBaseNuc;
     }
-    strLink += NStr::NumericToString(gi);
+    // strLink += NStr::NumericToString(gi);
+    strLink += acc;
 
     // location
     if (loc.IsInt() || loc.IsPnt()) {
@@ -270,8 +367,9 @@ void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TInt
         strLink += "&amp;to=";
         strLink += NStr::IntToString(iTo);
     } else if (visible_text != "Precursor") {
-        // TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
-        strLink += "?itemid=TBD";
+        bool add_comma = false;
+        strLink += "?location=";
+        s_AddLocString(loc, strLink, add_comma);
     }
 
     strLink += "\">";
