@@ -4511,8 +4511,13 @@ CPythonDiagHandler::CPythonDiagHandler()
 #endif
 {
 #if PY_VERSION_HEX >= 0x03020000
-    m_RootLogger.SetItem
-        (0, pythonpp::CCalable(m_LoggingDict.GetItem("getLogger")).Apply());
+    {{
+        pythonpp::CCalable get_logger(m_LoggingDict.GetItem("getLogger"));
+        pythonpp::IncRefCount(get_logger.Get());
+        auto root_logger = get_logger.Apply();
+        pythonpp::IncRefCount(root_logger.Get());
+        m_RootLogger.SetItem(0, root_logger);
+    }}
 #endif
     _ASSERT(m_LoggingFunctions.size() == eDiag_Info);
     pythonpp::CObject info = m_LoggingDict.GetItem("info");
