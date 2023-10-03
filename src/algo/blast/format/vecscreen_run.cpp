@@ -62,12 +62,17 @@ map<string, int> match_type_ints = { {"Strong",0}, {"Moderate",1}, {"Weak",2}, {
 map<int, string> match_type_strs = { {0,"Strong"}, {1,"Moderate"}, {2,"Weak"}, {3,"Suspect"},{4,"Absent"} };
 
 
-string s_PopFastaPipe(const string& in_str) 
+string s_PopIdPart(const string& in_str) 
 {
-    if(in_str.find("|") == NPOS)
+    auto bar_p = in_str.find("|");
+    auto colon_p = in_str.find(":");
+
+    if(bar_p == NPOS && colon_p == NPOS)
         return "";
 
-    return in_str.substr(in_str.find("|")+1, NPOS);
+    auto min_p = min(bar_p, colon_p);
+
+    return in_str.substr(min_p+1, NPOS);
 }
 
 void s_MakeFastaSubStrs(const string& in_str, list<string>& out_strs) 
@@ -75,7 +80,7 @@ void s_MakeFastaSubStrs(const string& in_str, list<string>& out_strs)
     string new_str = in_str;
     while(!new_str.empty()) {
         out_strs.push_back(new_str);
-        new_str = s_PopFastaPipe(new_str);
+        new_str = s_PopIdPart(new_str);
     }
 }
 
@@ -171,32 +176,9 @@ list<CRef<CSeq_id> > s_SetIdList(const CBioseq_Handle& bh, string& title)
         }
     }
 
-    // this is the normal defline from the Bioseq, ususally directly from the fasta reader
-    //  's_MakeFastaSubIds' is not used here because CFastaReader::ParseDefLine seems to do that already 
-    //    while CShowBlastDefline::GetSeqIdList doesnt.  But it could be used where too. 
-    {{
-        list<CRef<CSeq_id> > id_list;
-        bool has_range=false;
-        TSeqPos range_start=0, range_stop=0;
-        CFastaDeflineReader::TSeqTitles titles;
-        CDeflineGenerator dg;
-        string defline = ">"+dg.GenerateDefline(bh, 0);
-        CFastaDeflineReader::SDeflineParseInfo dpi;
-        CFastaReader::TIgnoredProblems ignored_problems;
-        CFastaReader::ParseDefLine(defline, dpi, ignored_problems, 
-                             id_list, has_range, range_start, range_stop, titles, 
-                             NULL);
-        ITERATE(list<CRef<CSeq_id> >, ii, id_list) {
-            out_list.push_back(*ii);
-        }
-        if(!titles.empty()) {
-            title = titles[0].m_sLineText;
-        }
-    }}
-
     // And this is to just loop over whatever other seq-ids exist in the bioseq. 
     // substitute any local ids by new fake local ids, with label set to the first token of this Bioseq's title.
-	ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
     	CRef<CSeq_id> next_id = s_ReplaceLocalId(bh, itr->GetSeqId(), true);
     	out_list.push_back(next_id);
     }
@@ -297,16 +279,10 @@ void CVecscreenRun::CFormatter::x_GetIdsAndTitlesForSeqAlign(const CSeq_align& a
     qidl = s_SetIdList(query_bh, qtitle);   
     sidl = s_SetIdList(subjt_bh, stitle);    
 
-//int count=0;
-//ITERATE(list<CRef<CSeq_id> >, iditer, qidl) {
-//cerr <<__LINE__<<" : Q ID " << ++count << " : "<< MSerial_AsnText<<**iditer<<endl;
-//}
-
     CConstRef<CSeq_id> qaccid = FindBestChoice(qidl, CSeq_id::Score);
     qaccid->GetLabel(&qid, CSeq_id::eContent, CSeq_id::fLabel_Version);
     CConstRef<CSeq_id> saccid = FindBestChoice(sidl, CSeq_id::Score);
     saccid->GetLabel(&sid, CSeq_id::eContent, CSeq_id::fLabel_Version);
-//cerr<<__LINE__<<" : Q ID CHOSEN  " << qid << " : "<<MSerial_AsnText << *qaccid << endl;
 }
 
 
