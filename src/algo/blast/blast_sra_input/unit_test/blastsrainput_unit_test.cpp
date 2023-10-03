@@ -29,6 +29,10 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_cookies.hpp>
+#include <corelib/ncbi_message.hpp>
+#include <corelib/plugin_manager.hpp>
+#include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
@@ -46,6 +50,14 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
+NCBITEST_AUTO_INIT()
+{
+    // Avoid underlinkage under Apple Developer Tools 15
+    CHttpCookie empty_cookie;
+    CEndpointKey fake_endpoint("1.2.3.4:5", 0);
+    CMessage_Basic empty_message(kEmptyStr, eDiag_Trace);
+    CPluginManager_DllResolver dummy_resolver;
+}
 
 BOOST_AUTO_TEST_SUITE(sra)
 
