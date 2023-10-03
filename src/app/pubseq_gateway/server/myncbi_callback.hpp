@@ -71,6 +71,11 @@ class CMyNCBIErrorCallback
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, eMyNCBIRetrieve, eOpStatusNotFound,
                              m_MyNCBITiming);
+            } else {
+                // Timing
+                CPubseqGatewayApp::GetInstance()->GetTiming().
+                    Register(m_Processor, eMyNCBIRetrieveError, eOpStatusNotFound,
+                             m_MyNCBITiming);
             }
 
             // Trace

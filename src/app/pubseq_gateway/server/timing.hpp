@@ -71,6 +71,7 @@ enum EPSGOperation {
     eLookupCassBlobProp,            // (2)
 
     eMyNCBIRetrieve,                // (2)
+    eMyNCBIRetrieveError,           // (1)
 
     eResolutionLmdb,                // (2) From request start
     eResolutionCass,                // (2) From cassandra start
@@ -349,6 +350,7 @@ class COperationTiming
         vector<unique_ptr<CCassTiming>>                     m_LookupCassBioseqInfoTiming;
         vector<unique_ptr<CCassTiming>>                     m_LookupCassBlobPropTiming;
         vector<unique_ptr<CMyNCBITiming>>                   m_RetrieveMyNCBITiming;
+        unique_ptr<CMyNCBITiming>                           m_RetrieveMyNCBIErrorTiming;
 
         vector<unique_ptr<CLmdbResolutionTiming>>           m_ResolutionLmdbTiming;
         vector<unique_ptr<CCassResolutionTiming>>           m_ResolutionCassTiming;
