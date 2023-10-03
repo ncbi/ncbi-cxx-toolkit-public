@@ -32,6 +32,9 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#define BLAST_SECONDARY_SOURCE 1
+
 #include "seqsrc_mock.hpp"
 
 #include <algo/blast/core/blast_seqsrc_impl.h>

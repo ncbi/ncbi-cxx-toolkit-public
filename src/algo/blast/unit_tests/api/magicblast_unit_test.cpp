@@ -56,6 +56,8 @@
 #include <algo/blast/api/magicblast_options.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;

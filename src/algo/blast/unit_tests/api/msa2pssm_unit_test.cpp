@@ -34,6 +34,8 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/msa_pssm_input.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 #include <corelib/test_boost.hpp>
 
 using namespace std;

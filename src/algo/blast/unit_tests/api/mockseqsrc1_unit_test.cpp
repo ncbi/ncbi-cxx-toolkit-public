@@ -31,6 +31,9 @@
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
+
+#define BLAST_SECONDARY_SOURCE 1
+
 #include <corelib/test_boost.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include "seqsrc_mock.hpp"

@@ -37,6 +37,8 @@
 #include <util/range.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 // Forward declarations

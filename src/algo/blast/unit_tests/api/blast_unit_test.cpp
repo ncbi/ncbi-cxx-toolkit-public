@@ -36,6 +36,8 @@
 #include <algo/blast/core/blast_def.h>
 #include <vector>
 
+#include "ensure_enough_corelib.hpp"
+
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING

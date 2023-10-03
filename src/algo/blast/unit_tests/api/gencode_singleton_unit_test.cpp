@@ -36,6 +36,8 @@
 #include <algo/blast/core/gencode_singleton.h>
 #include <algo/blast/api/blast_aux.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 #include <corelib/test_boost.hpp>
 #ifndef SKIP_DOXYGEN_PROCESSING
 

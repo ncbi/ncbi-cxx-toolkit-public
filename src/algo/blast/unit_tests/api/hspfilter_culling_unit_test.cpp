@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 #include <algo/blast/core/hspfilter_culling.h>
 
+#include "ensure_enough_corelib.hpp"
+
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
