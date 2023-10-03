@@ -32,6 +32,9 @@
    conserved domains.
  */
 #include <ncbi_pch.hpp>
+
+#define BLAST_SECONDARY_SOURCE 1
+
 #include <corelib/test_boost.hpp>
 
 // Serial library includes

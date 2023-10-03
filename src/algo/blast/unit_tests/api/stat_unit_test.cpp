@@ -36,6 +36,8 @@
 #include <algo/blast/core/blast_stat.h>
 #include <vector>
 
+#include "ensure_enough_corelib.hpp"
+
 using namespace std;
 
 BOOST_AUTO_TEST_SUITE(stats)

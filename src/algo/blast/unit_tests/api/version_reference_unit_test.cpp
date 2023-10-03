@@ -36,6 +36,8 @@
 
 #include <sstream>
 
+#include "ensure_enough_corelib.hpp"
+
 using std::string;
 using namespace ncbi;
 

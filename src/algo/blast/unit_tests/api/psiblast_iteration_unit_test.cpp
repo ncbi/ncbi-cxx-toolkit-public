@@ -37,6 +37,8 @@
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/psiblast_iteration.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;

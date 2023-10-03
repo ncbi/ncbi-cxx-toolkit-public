@@ -41,6 +41,8 @@
 #include <algo/blast/core/phi_gapalign.h>
 #include <blast_setup.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 using namespace std;
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
