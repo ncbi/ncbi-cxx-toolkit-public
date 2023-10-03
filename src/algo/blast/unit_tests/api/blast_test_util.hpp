@@ -55,6 +55,8 @@
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 // forward declarations
 namespace ncbi {
     namespace objects {

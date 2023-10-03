@@ -36,6 +36,8 @@
 #include <algo/blast/core/blast_util.h> // for FENCE_SENTRY
 #include <algo/blast/api/subj_ranges_set.hpp>
 
+#include "ensure_enough_corelib.hpp"
+
 #include <corelib/test_boost.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING

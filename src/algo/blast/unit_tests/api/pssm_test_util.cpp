@@ -33,6 +33,9 @@
 
 
 #include <ncbi_pch.hpp>
+
+#define BLAST_SECONDARY_SOURCE 1
+
 #include <corelib/test_boost.hpp>
 #include "blast_test_util.hpp"
 #include "pssm_test_util.hpp"

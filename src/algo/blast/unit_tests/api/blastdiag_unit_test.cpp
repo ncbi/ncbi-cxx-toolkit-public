@@ -35,6 +35,8 @@
 
 #include <algo/blast/core/blast_extend.h>
 
+#include "ensure_enough_corelib.hpp"
+
 
 using namespace ncbi;
 
