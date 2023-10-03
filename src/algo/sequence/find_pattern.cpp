@@ -49,10 +49,10 @@ void CFindPattern::Find(const string& seq, const string& pattern,
 
     starts.clear();
     ends.clear();
-    unsigned int offset = 0;
+    CRegexp::TOffset offset = 0;
     while (!re.GetMatch(seq, offset).empty()) {  
         // (empty string means no match)
-        const int *res = re.GetResults(0);
+        const auto *res = re.GetResults(0);
         starts.push_back(res[0]);
         ends.push_back(res[1] - 1);
         offset = res[1];
