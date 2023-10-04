@@ -67,13 +67,13 @@ class CCassandraFullscanRunner
 
     bool Execute();
  private:
-    size_t m_ThreadCount;
-    CassConsistency m_Consistency;
-    unsigned int m_PageSize;
-    unsigned int m_MaxActiveStatements;
+    size_t m_ThreadCount{1};
+    TCassConsistency m_Consistency{CCassConsistency::kLocalQuorum};
+    unsigned int m_PageSize{kPageSizeDefault};
+    unsigned int m_MaxActiveStatements{kMaxActiveStatementsDefault};
     TCassandraFullscanConsumerFactory m_ConsumerFactory;
     unique_ptr<ICassandraFullscanPlan> m_ExecutionPlan;
-    unsigned int m_MaxRetryCount;
+    unsigned int m_MaxRetryCount{kMaxRetryCountDefault};
 };
 
 END_IDBLOB_SCOPE

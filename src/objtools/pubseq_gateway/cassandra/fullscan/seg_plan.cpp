@@ -46,10 +46,7 @@ void FilterTokenRanges(CCassConnection::TTokenRanges& ranges, size_t segment, si
 }
 END_SCOPE()
 
-CCassandraSegscanPlan::CCassandraSegscanPlan()
-  : m_Segment({0, 1})
-{}
-
+CCassandraSegscanPlan::CCassandraSegscanPlan() = default;
 CCassandraSegscanPlan& CCassandraSegscanPlan::SetSegment(pair<size_t, size_t> segment)
 {
     m_Segment = segment;

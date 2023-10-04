@@ -30,13 +30,9 @@
 
 #include "worker.hpp"
 
-#include <unistd.h>
-
 #include <memory>
 #include <utility>
-#include <vector>
 #include <string>
-#include <thread>
 
 #include <corelib/ncbistr.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/runner.hpp>
@@ -44,18 +40,7 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-CCassandraFullscanWorker::CCassandraFullscanWorker()
-    : m_RowConsumer(nullptr)
-    , m_Consistency(CASS_CONSISTENCY_LOCAL_QUORUM)
-    , m_PageSize(CCassandraFullscanRunner::kPageSizeDefault)
-    , m_MaxActiveStatements(CCassandraFullscanRunner::kMaxActiveStatementsDefault)
-    , m_ReadyQueries(new CFutex(0))
-    , m_ActiveQueries(new atomic_long(0))
-    , m_QueryMaxRetryCount(CCassandraFullscanRunner::kMaxRetryCountDefault)
-    , m_Finished(false)
-    , m_HadError(false)
-{
-}
+CCassandraFullscanWorker::CCassandraFullscanWorker() = default;
 
 CCassandraFullscanWorker& CCassandraFullscanWorker::SetRowConsumer(unique_ptr<ICassandraFullscanConsumer> consumer)
 {
