@@ -26,7 +26,7 @@
  * Author: Vitaly Stakhovsky, NCBI
  *
  * File Description:
- *  Test CitMatch implementations: MedArch vs EUtils
+ *  Test CitMatch EUtils implementation
  *
  */
 
@@ -43,8 +43,6 @@
 
 #include <objtools/edit/eutils_updater.hpp>
 
-#include <array>
-
 #include <common/test_assert.h> /* This header must go last */
 
 USING_NCBI_SCOPE;
@@ -52,8 +50,6 @@ USING_SCOPE(objects);
 USING_SCOPE(edit);
 
 static CEUtilsUpdater upd_eutils;
-
-static array<IPubmedUpdater*, 1> updaters = { &upd_eutils };
 
 BOOST_AUTO_TEST_CASE(Test_EmptyASN)
 {
@@ -74,10 +70,8 @@ Pub ::= article {
     CPub pub;
     TEST_PUB >> pub;
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(pub);
-        BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(pub);
+    BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
 }
 
 BOOST_AUTO_TEST_CASE(Test_Empty)
@@ -87,12 +81,10 @@ BOOST_AUTO_TEST_CASE(Test_Empty)
     J.SetTitle();
     J.SetImp().SetDate().SetStd().SetYear(0);
 
-    for (auto upd : updaters) {
-        EPubmedError err;
-        TEntrezId    pmid = upd->CitMatch(pub, &err);
-        BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
-        BOOST_CHECK_EQUAL(err, EPubmedError::citation_not_found);
-    }
+    EPubmedError err;
+    TEntrezId    pmid = upd_eutils.CitMatch(pub, &err);
+    BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
+    BOOST_CHECK_EQUAL(err, EPubmedError::citation_not_found);
 }
 
 BOOST_AUTO_TEST_CASE(Test1_ASN)
@@ -117,10 +109,8 @@ Pub ::= article {
     CPub pub;
     TEST_PUB >> pub;
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(pub);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(17'659'802));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(pub);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(17'659'802));
 }
 
 BOOST_AUTO_TEST_CASE(Test1)
@@ -131,20 +121,16 @@ BOOST_AUTO_TEST_CASE(Test1)
     cm.Volume  = "130";
     cm.Page    = "162-166";
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(17'659'802));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(17'659'802));
 }
 
 BOOST_AUTO_TEST_CASE(Test_Known_PMID)
 {
     TEntrezId pmid = ENTREZ_ID_CONST(12'345);
-    for (auto upd : updaters) {
-        auto      pub      = upd->GetPub(pmid);
-        TEntrezId pmid_new = upd->CitMatch(*pub);
-        BOOST_CHECK_EQUAL(pmid_new, pmid);
-    }
+    auto      pub      = upd_eutils.GetPub(pmid);
+    TEntrezId pmid_new = upd_eutils.CitMatch(*pub);
+    BOOST_CHECK_EQUAL(pmid_new, pmid);
 }
 
 BOOST_AUTO_TEST_CASE(Test2)
@@ -155,10 +141,8 @@ BOOST_AUTO_TEST_CASE(Test2)
     cm.Volume  = "291";
     cm.Page    = "252";
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'253'208));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'253'208));
 }
 
 BOOST_AUTO_TEST_CASE(Test3)
@@ -168,10 +152,8 @@ BOOST_AUTO_TEST_CASE(Test3)
     cm.Title   = "Genome Sequence of the Yeast Cyberlindnera fabianii (Hansenula fabianii)";
     cm.Author  = "Freel KC";
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(25'103'752));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(25'103'752));
 }
 
 BOOST_AUTO_TEST_CASE(Test4)
@@ -183,17 +165,15 @@ BOOST_AUTO_TEST_CASE(Test4)
     cm.Year    = "1994";
     cm.Volume  = "0";
 
-    for (auto upd : updaters) {
-        EPubmedError err;
+    EPubmedError err;
 
-        cm.InPress = false;
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(7'844'524));
+    cm.InPress = false;
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(7'844'524));
 
-        cm.InPress = true;
-        pmid = upd->CitMatch(cm, &err);
-        BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
-    }
+    cm.InPress = true;
+    pmid = upd_eutils.CitMatch(cm, &err);
+    BOOST_CHECK_EQUAL(pmid, ZERO_ENTREZ_ID);
 }
 
 BOOST_AUTO_TEST_CASE(Test5)
@@ -206,10 +186,8 @@ BOOST_AUTO_TEST_CASE(Test5)
     cm.Author  = "Nilsson MA";
     cm.Title   = "Radiation of marsupials after the K/T boundary: evidence from complete mitochondrial genomes";
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(15'008'398));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(15'008'398));
 }
 
 BOOST_AUTO_TEST_CASE(HF933230)
@@ -223,10 +201,8 @@ BOOST_AUTO_TEST_CASE(HF933230)
     cm.Issue   = "3";
     cm.Title   = "Genomic and phenotypic characterization of a wild medaka population: towards the establishment of an isogenic population genetic resource in fish";
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(24'408'034));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(24'408'034));
 }
 
 BOOST_AUTO_TEST_CASE(AJ251216)
@@ -239,10 +215,8 @@ BOOST_AUTO_TEST_CASE(AJ251216)
     cm.Volume  = "703";
     cm.Page    = "140";
 
-    for (auto upd : updaters) {
-        TEntrezId pmid = upd->CitMatch(cm);
-        BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'087'671));
-    }
+    TEntrezId pmid = upd_eutils.CitMatch(cm);
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(11'087'671));
 }
 
 BOOST_AUTO_TEST_CASE(Test_Hydra)
@@ -254,8 +228,7 @@ BOOST_AUTO_TEST_CASE(Test_Hydra)
         "transcriptional activity";
     cm.Option1 = true;
 
-    
     TEntrezId pmid = upd_eutils.CitMatch(cm);
-    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(26846853));
+    BOOST_CHECK_EQUAL(pmid, ENTREZ_ID_CONST(26'846'853));
 }
 

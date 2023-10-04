@@ -129,7 +129,7 @@ public:
             output = &NcbiCout;
         }
 
-        unique_ptr<IPubmedUpdater> upd(new CEUtilsUpdater(bNormalize));
+        unique_ptr<CEUtilsUpdater> upd(new CEUtilsUpdater(bNormalize));
 
         bool       bstats = args["stats"];
         unsigned   nruns  = 0;
