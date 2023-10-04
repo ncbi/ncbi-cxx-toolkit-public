@@ -30,13 +30,13 @@
 #define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__FULLSCAN__WORKER_HPP
 
 #include <corelib/ncbistl.hpp>
-#include <cassandra.h>
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/consumer.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/runner.hpp>
 
 #include <memory>
 #include <string>
@@ -116,18 +116,18 @@ class CCassandraFullscanWorker
     void ProcessError(string const & msg);
     void ProcessError(exception const & e);
 
-    unique_ptr<ICassandraFullscanConsumer> m_RowConsumer;
-    CassConsistency m_Consistency;
-    unsigned int m_PageSize;
-    unsigned int m_MaxActiveStatements;
+    unique_ptr<ICassandraFullscanConsumer> m_RowConsumer{nullptr};
+    TCassConsistency m_Consistency{CCassConsistency::kLocalQuorum};
+    unsigned int m_PageSize{CCassandraFullscanRunner::kPageSizeDefault};
+    unsigned int m_MaxActiveStatements{CCassandraFullscanRunner::kMaxActiveStatementsDefault};
     TTaskProvider m_TaskProvider;
 
     vector<shared_ptr<SQueryContext>> m_Queries;
-    shared_ptr<CFutex> m_ReadyQueries;
-    unique_ptr<atomic_long> m_ActiveQueries;
-    unsigned int m_QueryMaxRetryCount;
-    bool m_Finished;
-    bool m_HadError;
+    shared_ptr<CFutex> m_ReadyQueries{make_shared<CFutex>(0)};
+    unique_ptr<atomic_long> m_ActiveQueries{make_unique<atomic_long>(0)};
+    unsigned int m_QueryMaxRetryCount{CCassandraFullscanRunner::kMaxRetryCountDefault};
+    bool m_Finished{false};
+    bool m_HadError{false};
     string m_FirstError;
 };
 

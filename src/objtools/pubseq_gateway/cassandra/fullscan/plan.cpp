@@ -168,7 +168,7 @@ size_t CCassandraFullscanPlan::GetMinPartitionsForSubrangeScan()
 size_t CCassandraFullscanPlan::GetPartitionCountEstimate()
 {
     string datacenter, schema, schema_bytes;
-    int64_t peers_count = 0, partition_count = 0;
+    int64_t peers_count{0}, partition_count{0};
 
     shared_ptr<CCassQuery> query = m_Connection->NewQuery();
     query->SetSQL("SELECT data_center, schema_version, uuidAsBlob(schema_version) FROM system.local", 0);

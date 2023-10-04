@@ -35,7 +35,8 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-class CCassandraSegscanPlan: public CCassandraFullscanPlan
+class CCassandraSegscanPlan
+    : public CCassandraFullscanPlan
 {
  public:
     CCassandraSegscanPlan();
@@ -52,9 +53,9 @@ class CCassandraSegscanPlan: public CCassandraFullscanPlan
     //                and so forth
     CCassandraSegscanPlan& SetSegment(pair<size_t, size_t> segment);
 
-    virtual void Generate() override;
+    void Generate() override;
  private:
-    pair<size_t, size_t> m_Segment;
+    pair<size_t, size_t> m_Segment{make_pair(0, 1)};
 };
 
 END_IDBLOB_SCOPE

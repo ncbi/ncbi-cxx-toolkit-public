@@ -54,7 +54,7 @@ class ICassandraFullscanPlan
 class CCassandraFullscanPlan
     : public ICassandraFullscanPlan
 {
-    static const size_t kMinPartitionsForSubrangeScanDefault = 100000;
+    static const size_t kMinPartitionsForSubrangeScanDefault = 100'000;
  public:
     using TQueryPtr = shared_ptr<CCassQuery>;
 
@@ -79,9 +79,9 @@ class CCassandraFullscanPlan
     CCassandraFullscanPlan& SetPartitionCountPerQueryLimit(int64_t value);
     size_t GetMinPartitionsForSubrangeScan();
 
-    virtual void Generate();
-    virtual TQueryPtr GetNextQuery();
-    virtual size_t    GetQueryCount() const;
+    void Generate() override;
+    TQueryPtr GetNextQuery() override;
+    size_t GetQueryCount() const override;
 
  protected:
     CCassConnection::TTokenRanges& GetTokenRanges();

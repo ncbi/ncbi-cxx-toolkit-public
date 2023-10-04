@@ -35,10 +35,8 @@
 #include <vector>
 #include <string>
 #include <thread>
-#include <algorithm>
 
 #include <corelib/ncbistr.hpp>
-#include <cassandra.h>
 #include "worker.hpp"
 
 BEGIN_IDBLOB_SCOPE
@@ -48,15 +46,7 @@ const unsigned int CCassandraFullscanRunner::kPageSizeDefault = 4096;
 const unsigned int CCassandraFullscanRunner::kMaxActiveStatementsDefault = 256;
 const unsigned int CCassandraFullscanRunner::kMaxRetryCountDefault = 5;
 
-CCassandraFullscanRunner::CCassandraFullscanRunner()
-    : m_ThreadCount(1)
-    , m_Consistency(CASS_CONSISTENCY_LOCAL_QUORUM)
-    , m_PageSize(kPageSizeDefault)
-    , m_MaxActiveStatements(kMaxActiveStatementsDefault)
-    , m_MaxRetryCount(kMaxRetryCountDefault)
-{
-}
-
+CCassandraFullscanRunner::CCassandraFullscanRunner() = default;
 CCassandraFullscanRunner& CCassandraFullscanRunner::SetThreadCount(size_t value)
 {
     m_ThreadCount = value;
