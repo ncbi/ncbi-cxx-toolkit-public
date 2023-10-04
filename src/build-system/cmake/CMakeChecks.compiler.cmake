@@ -58,6 +58,7 @@ endif()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
+if(OFF)
     if(NCBI_COMPILER_GCC)
         if ("${NCBI_COMPILER_VERSION}" GREATER_EQUAL 1220)
             set(CMAKE_CXX_STANDARD 20)
@@ -67,6 +68,7 @@ if(NOT DEFINED CMAKE_CXX_STANDARD)
             set(CMAKE_CXX_STANDARD 20)
         endif()
     endif()
+endif()
 endif()
 
 # ---------------------------------------------------------------------------
