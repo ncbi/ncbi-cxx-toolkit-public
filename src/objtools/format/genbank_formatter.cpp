@@ -1470,10 +1470,18 @@ bool s_GetLinkFeatureKey(
     unsigned int uItemNumber = 0 )
 //  ============================================================================
 {
-    if ( strRawKey == "gap" || strRawKey == "assembly_gap" ||
-        strRawKey == "source" )
+    if ( strRawKey == "gap" || strRawKey == "assembly_gap" )
     {
         return false;
+    }
+    if ( strRawKey == "source" ) {
+        const string& loc = feat.GetLoc().GetString();
+        if (NStr::StartsWith(loc, "1..") && NStr::Find(loc, ",") == NPOS) {
+            return false;
+        }
+        if (NStr::Find(loc, "order") != NPOS || NStr::Find(loc, "join") != NPOS) {
+            return false;
+        }
     }
 
     TGi iGi = ZERO_GI;
