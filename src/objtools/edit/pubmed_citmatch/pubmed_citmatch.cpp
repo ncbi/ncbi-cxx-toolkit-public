@@ -180,7 +180,7 @@ public:
             output = &NcbiCout;
         }
 
-        unique_ptr<IPubmedUpdater> upd(new CEUtilsUpdater());
+        unique_ptr<CEUtilsUpdater> upd(new CEUtilsUpdater());
 
         bool           bstats = args["stats"];
         unsigned       nruns  = 0;
