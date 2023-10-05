@@ -81,7 +81,7 @@ struct SModelEvidance;
 
 // --- Flat File HTML configuration class
 
-class CHTMLFormatterEx : public IHTMLFormatter
+class NCBI_FORMAT_EXPORT CHTMLFormatterEx : public IHTMLFormatter
 {
 public:
     CHTMLFormatterEx(CRef<CScope> scope);
