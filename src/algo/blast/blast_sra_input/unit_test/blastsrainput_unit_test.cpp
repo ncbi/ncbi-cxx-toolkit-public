@@ -41,6 +41,8 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
 
+#include <objmgr/data_loader_factory.hpp>
+
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <unordered_map>
 
@@ -50,11 +52,22 @@ using namespace ncbi;
 using namespace ncbi::objects;
 using namespace ncbi::blast;
 
+class CFakeDataLoaderFactory : public CDataLoaderFactory
+{
+public:
+    CFakeDataLoaderFactory() : CDataLoaderFactory("foo") { }
+protected:
+    CDataLoader* CreateAndRegister(CObjectManager&,
+                                   const TPluginManagerParamTree*) const
+        { return nullptr; }
+};
+
 NCBITEST_AUTO_INIT()
 {
     // Avoid underlinkage under Apple Developer Tools 15
     CHttpCookie empty_cookie;
     CEndpointKey fake_endpoint("1.2.3.4:5", 0);
+    CFakeDataLoaderFactory fake_dl_factory;
     CMessage_Basic empty_message(kEmptyStr, eDiag_Trace);
     CPluginManager_DllResolver dummy_resolver;
 }
