@@ -44,12 +44,26 @@
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <corelib/impl/rwstreambuf.hpp>
 
+#include <objmgr/data_loader_factory.hpp>
+
 BEGIN_NCBI_SCOPE
 
 void BLAST_Test_EnsureEnoughCorelib(void)
 {
+    class CFakeDataLoaderFactory : public objects::CDataLoaderFactory
+    {
+    public:
+        CFakeDataLoaderFactory() : CDataLoaderFactory("foo") { }
+    protected:
+        objects::CDataLoader* CreateAndRegister(objects::CObjectManager&,
+                                                const TPluginManagerParamTree*)
+            const
+            { return nullptr; }
+    };
+
     CConfig empty_config((CMemoryRegistry()));
     CEndpointKey fake_endpoint("1.2.3.4:5", 0);
+    CFakeDataLoaderFactory fake_dl_factory;
     CHttpCookie empty_cookie;
     CMessage_Basic empty_message(kEmptyStr, eDiag_Trace);
     CPluginManager_DllResolver dummy_resolver;
