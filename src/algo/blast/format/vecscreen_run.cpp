@@ -176,6 +176,31 @@ list<CRef<CSeq_id> > s_SetIdList(const CBioseq_Handle& bh, string& title)
         }
     }
 
+
+    // this is the normal defline from the Bioseq, ususally directly from the fasta reader
+    //  's_MakeFastaSubIds' is not used here because CFastaReader::ParseDefLine seems to do that already
+    //    while CShowBlastDefline::GetSeqIdList doesnt.  But it could be used where too.
+    {{
+        list<CRef<CSeq_id> > id_list;
+        bool has_range=false;
+        TSeqPos range_start=0, range_stop=0;
+        CFastaDeflineReader::TSeqTitles titles;
+        CDeflineGenerator dg;
+        string defline = ">"+dg.GenerateDefline(bh, 0);
+        CFastaDeflineReader::SDeflineParseInfo dpi;
+        CFastaReader::TIgnoredProblems ignored_problems;
+        CFastaReader::ParseDefLine(defline, dpi, ignored_problems,
+                             id_list, has_range, range_start, range_stop, titles,
+                             NULL);
+        ITERATE(list<CRef<CSeq_id> >, ii, id_list) {
+            out_list.push_back(*ii);
+        }
+        if(!titles.empty() && title.empty()) {
+            title = titles[0].m_sLineText;
+        }
+    }}
+
+
     // And this is to just loop over whatever other seq-ids exist in the bioseq. 
     // substitute any local ids by new fake local ids, with label set to the first token of this Bioseq's title.
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
@@ -283,6 +308,13 @@ void CVecscreenRun::CFormatter::x_GetIdsAndTitlesForSeqAlign(const CSeq_align& a
     qaccid->GetLabel(&qid, CSeq_id::eContent, CSeq_id::fLabel_Version);
     CConstRef<CSeq_id> saccid = FindBestChoice(sidl, CSeq_id::Score);
     saccid->GetLabel(&sid, CSeq_id::eContent, CSeq_id::fLabel_Version);
+
+//cerr<<__LINE__<<":Q ID:"<<qidl.size()<<":"<<MSerial_AsnText<<*qaccid<<endl;
+//cerr<<__LINE__<<":S ID:"<<sidl.size()<<":"<<MSerial_AsnText<<*saccid<<endl;
+//cerr<<__LINE__<<":Q T:"<<qtitle<<endl;
+//cerr<<__LINE__<<":S T:"<<stitle<<endl;
+
+
 }
 
 
