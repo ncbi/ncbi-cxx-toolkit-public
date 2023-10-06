@@ -274,6 +274,7 @@ bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
 
 CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
 {
+    static string   kPeerSocketPort = "peer_socket_port";
     if (!m_ParamParsed)
         ParseParams();
 
@@ -281,6 +282,22 @@ CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
         extra.Print(string(m_Params[i].m_Name, m_Params[i].m_NameLen),
                     string(m_Params[i].m_Val, m_Params[i].m_ValLen));
     }
+
+    // Print peer socket port
+    struct sockaddr     sock_addr;
+    if (m_Req->conn->callbacks->get_peername(m_Req->conn, &sock_addr) != 0) {
+        switch (sock_addr.sa_family) {
+            case AF_INET:
+                extra.Print(kPeerSocketPort, ((struct sockaddr_in *)&sock_addr)->sin_port);
+                break;
+            case AF_INET6:
+                extra.Print(kPeerSocketPort, ((struct sockaddr_in6 *)&sock_addr)->sin6_port);
+                break;
+            default:
+                break;
+        }
+    }
+
     return extra;
 }
 
