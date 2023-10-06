@@ -152,7 +152,7 @@ int CTblastnApp::Run(void)
 			}
 			else {
 				if (total_length > max_db_size) {
-					MTByQueries_DBSize_Warning(max_db_size, true);
+					MTByQueries_DBSize_Warning(max_db_size, false);
 				}
 			}
 		}
