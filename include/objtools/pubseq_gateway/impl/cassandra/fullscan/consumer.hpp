@@ -41,6 +41,11 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+enum class ECassandraFullscanConsumerPolicy {
+    eOnePerThread = 0,
+    eOnePerQuery = 1,
+};
+
 class ICassandraFullscanConsumer
 {
  public:
@@ -50,6 +55,9 @@ class ICassandraFullscanConsumer
     {
         return true;
     };
+
+    // Override to handle segment Query restarts
+    virtual void OnQueryRestart() {};
 
     // Called for every row
     // @return false to stop processing

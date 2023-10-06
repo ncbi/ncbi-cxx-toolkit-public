@@ -83,6 +83,12 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetConsumerFactory(
     return *this;
 }
 
+CCassandraFullscanRunner& CCassandraFullscanRunner::SetConsumerCreationPolicy(ECassandraFullscanConsumerPolicy policy)
+{
+    m_ConsumerCreationPolicy = policy;
+    return *this;
+}
+
 CCassandraFullscanRunner& CCassandraFullscanRunner::SetExecutionPlan(
     unique_ptr<ICassandraFullscanPlan> plan
 )
@@ -143,6 +149,11 @@ bool CCassandraFullscanRunner::Execute()
         };
     }
 
+    auto consumer_factory_fn =
+        [this]() -> unique_ptr<ICassandraFullscanConsumer> {
+            lock_guard _(m_ConsumerFactoryMutex);
+            return m_ConsumerFactory();
+        };
     // Creating workers
     for (size_t i = 0; i < thread_count; ++i) {
         CCassandraFullscanWorker worker;
@@ -151,7 +162,8 @@ bool CCassandraFullscanRunner::Execute()
             .SetPageSize(m_PageSize)
             .SetMaxRetryCount(m_MaxRetryCount)
             .SetMaxActiveStatements(m_MaxActiveStatements / thread_count)
-            .SetRowConsumer(m_ConsumerFactory())
+            .SetConsumerFactory(consumer_factory_fn)
+            .SetConsumerCreationPolicy(m_ConsumerCreationPolicy)
             .SetTaskProvider(task_provider);
         workers.emplace_back(move(worker));
     }
