@@ -1151,6 +1151,42 @@ CJsonNode  GetTestIoRequestNode(void)
 }
 
 
+CJsonNode  GetHealthRequestNode(void)
+{
+    CJsonNode   health(CJsonNode::NewObjectNode());
+    health.SetString(kDescription,
+        "Performs a basic functionality check. It can be used by monitoring facilities.");
+
+    health.SetByKey("parameters", CJsonNode::NewObjectNode());
+
+    CJsonNode   health_reply(CJsonNode::NewObjectNode());
+    health_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the functionality check succeeded. "
+        "Otherwise the HTTP status is set to 500 and the HTTP body "
+        "may have a detailed message.");
+    health.SetByKey("reply", health_reply);
+    return health;
+}
+
+
+CJsonNode  GetDeepHealthRequestNode(void)
+{
+    CJsonNode   health(CJsonNode::NewObjectNode());
+    health.SetString(kDescription,
+        "At the moment the implementation matches the 'health' command.");
+
+    health.SetByKey("parameters", CJsonNode::NewObjectNode());
+
+    CJsonNode   health_reply(CJsonNode::NewObjectNode());
+    health_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the functionality check succeeded. "
+        "Otherwise the HTTP status is set to 500 and the HTTP body "
+        "may have a detailed message.");
+    health.SetByKey("reply", health_reply);
+    return health;
+}
+
+
 CJsonNode  GetFaviconRequestNode(void)
 {
     CJsonNode   favicon(CJsonNode::NewObjectNode());
@@ -1217,6 +1253,8 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ADMIN/ack_alerts", GetAdminAckAlertsRequestNode());
     requests_node.SetByKey("ADMIN/statistics", GetAdminStatisticsRequestNode());
     requests_node.SetByKey("TEST/io", GetTestIoRequestNode());
+    requests_node.SetByKey("health", GetHealthRequestNode());
+    requests_node.SetByKey("deep-health", GetDeepHealthRequestNode());
     requests_node.SetByKey("favicon.ico", GetFaviconRequestNode());
     requests_node.SetByKey("unknown", GetUnknownRequestNode());
     return requests_node;
