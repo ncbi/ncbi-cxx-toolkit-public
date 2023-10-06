@@ -30,7 +30,6 @@
 #define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__FULLSCAN__RUNNER_HPP
 
 #include <corelib/ncbistl.hpp>
-#include <cassandra.h>
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -38,6 +37,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
 #include <memory>
+#include <mutex>
 #include <vector>
 #include <string>
 
@@ -64,6 +64,7 @@ class CCassandraFullscanRunner
     CCassandraFullscanRunner& SetConsumerFactory(TCassandraFullscanConsumerFactory consumer_factory);
     CCassandraFullscanRunner& SetExecutionPlan(unique_ptr<ICassandraFullscanPlan> plan);
     CCassandraFullscanRunner& SetMaxRetryCount(unsigned int max_retry_count);
+    CCassandraFullscanRunner& SetConsumerCreationPolicy(ECassandraFullscanConsumerPolicy policy);
 
     bool Execute();
  private:
@@ -71,9 +72,11 @@ class CCassandraFullscanRunner
     TCassConsistency m_Consistency{CCassConsistency::kLocalQuorum};
     unsigned int m_PageSize{kPageSizeDefault};
     unsigned int m_MaxActiveStatements{kMaxActiveStatementsDefault};
-    TCassandraFullscanConsumerFactory m_ConsumerFactory;
+    TCassandraFullscanConsumerFactory m_ConsumerFactory{nullptr};
+    mutex m_ConsumerFactoryMutex;
     unique_ptr<ICassandraFullscanPlan> m_ExecutionPlan;
     unsigned int m_MaxRetryCount{kMaxRetryCountDefault};
+    ECassandraFullscanConsumerPolicy m_ConsumerCreationPolicy{ECassandraFullscanConsumerPolicy::eOnePerThread};
 };
 
 END_IDBLOB_SCOPE

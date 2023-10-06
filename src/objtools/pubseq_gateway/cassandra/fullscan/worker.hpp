@@ -33,15 +33,16 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/consumer.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/runner.hpp>
 
-#include <memory>
-#include <string>
-#include <functional>
 #include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -50,6 +51,12 @@ USING_NCBI_SCOPE;
 
 class CCassandraFullscanWorker
 {
+    struct SProgressStatus
+    {
+        atomic_long ready_queries{0};
+        condition_variable ready_condition;
+        mutex ready_mutex;
+    };
     struct SQueryContext
         : public CCassDataCallbackReceiver
     {
@@ -61,17 +68,20 @@ class CCassandraFullscanWorker
         SQueryContext()
             : SQueryContext(nullptr, nullptr, 0)
         {}
-        SQueryContext(CCassandraFullscanPlan::TQueryPtr q, shared_ptr<CFutex> ready, unsigned int max_retries)
-            : query(move(q))
-            , data_ready(false)
-            , total_ready(ready)
+        SQueryContext(CCassandraFullscanPlan::TQueryPtr q, shared_ptr<SProgressStatus> p, unsigned int max_retries)
+            : query(std::move(q))
+            , progress(p)
             , retires(max_retries)
         {}
 
         void OnData() override
         {
-            data_ready = true;
-            total_ready->Inc();
+            {
+                lock_guard _(progress->ready_mutex);
+                ++progress->ready_queries;
+                query_ready = true;
+            }
+            progress->ready_condition.notify_one();
         }
 
         ~SQueryContext()
@@ -83,9 +93,10 @@ class CCassandraFullscanWorker
         }
 
         CCassandraFullscanPlan::TQueryPtr query;
-        atomic_bool data_ready;
-        shared_ptr<CFutex> total_ready;
-        unsigned int retires;
+        unique_ptr<ICassandraFullscanConsumer> row_consumer{nullptr};
+        shared_ptr<SProgressStatus> progress;
+        unsigned int retires{0};
+        atomic_bool query_ready{false};
     };
 
  public:
@@ -99,10 +110,11 @@ class CCassandraFullscanWorker
 
     CCassandraFullscanWorker& SetConsistency(CassConsistency value);
     CCassandraFullscanWorker& SetPageSize(unsigned int value);
-    CCassandraFullscanWorker& SetRowConsumer(unique_ptr<ICassandraFullscanConsumer> consumer);
+    CCassandraFullscanWorker& SetConsumerFactory(TCassandraFullscanConsumerFactory consumer_factory);
     CCassandraFullscanWorker& SetMaxActiveStatements(unsigned int value);
     CCassandraFullscanWorker& SetTaskProvider(TTaskProvider provider);
     CCassandraFullscanWorker& SetMaxRetryCount(unsigned int max_retry_count);
+    CCassandraFullscanWorker& SetConsumerCreationPolicy(ECassandraFullscanConsumerPolicy policy);
 
     void operator()();
     bool IsFinished() const;
@@ -110,11 +122,11 @@ class CCassandraFullscanWorker
     string GetFirstError() const;
 
  private:
-    bool StartQuery(size_t index);
-    bool ProcessQueryResult(size_t index);
-    CCassandraFullscanPlan::TQueryPtr GetNextTask();
-    void ProcessError(string const & msg);
-    void ProcessError(exception const & e);
+    bool x_StartQuery(size_t index);
+    bool x_ProcessQueryResult(size_t index);
+    CCassandraFullscanPlan::TQueryPtr x_GetNextTask();
+    void x_ProcessError(string const & msg);
+    void x_ProcessError(exception const & e);
 
     unique_ptr<ICassandraFullscanConsumer> m_RowConsumer{nullptr};
     TCassConsistency m_Consistency{CCassConsistency::kLocalQuorum};
@@ -123,9 +135,11 @@ class CCassandraFullscanWorker
     TTaskProvider m_TaskProvider;
 
     vector<shared_ptr<SQueryContext>> m_Queries;
-    shared_ptr<CFutex> m_ReadyQueries{make_shared<CFutex>(0)};
+    shared_ptr<SProgressStatus> m_ProgressStatus{make_shared<SProgressStatus>()};
     unique_ptr<atomic_long> m_ActiveQueries{make_unique<atomic_long>(0)};
     unsigned int m_QueryMaxRetryCount{CCassandraFullscanRunner::kMaxRetryCountDefault};
+    TCassandraFullscanConsumerFactory m_ConsumerFactory;
+    ECassandraFullscanConsumerPolicy m_ConsumerCreationPolicy{ECassandraFullscanConsumerPolicy::eOnePerThread};
     bool m_Finished{false};
     bool m_HadError{false};
     string m_FirstError;

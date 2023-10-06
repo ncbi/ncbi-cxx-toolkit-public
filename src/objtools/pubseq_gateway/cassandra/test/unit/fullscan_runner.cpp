@@ -42,7 +42,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <thread>
 #include <utility>
 #include <set>
@@ -98,18 +97,21 @@ shared_ptr<CCassConnection> CCassandraFullscanRunnerTest::m_Connection(nullptr);
 
 struct SConsumeContext {
     CFastMutex mutex;
-    bool tick_result = true;
-    bool read_result = true;
-    size_t tick_called = 0;
-    size_t finalize_called = 0;
-    size_t read_called = 0;
-    bool finalize_should_throw = false;
-    bool read_should_throw = false;
+    bool tick_result{true};
+    bool read_result{true};
+    bool restartable{false};
+    size_t tick_called{0};
+    size_t finalize_called{0};
+    size_t read_called{0};
+    size_t consumer_created{0};
+    size_t query_restart_called{0};
+    bool finalize_should_throw{false};
+    bool read_should_throw{false};
     set<thread::id> thread_ids;
     map<int64_t, size_t> ids_returned;
 
-    size_t max_consequtive_rows = 0;
-    size_t consequtive_rows = 0;
+    size_t max_consecutive_rows{0};
+    size_t consecutive_rows{0};
 };
 
 class CSimpleRowConsumer
@@ -119,6 +121,10 @@ class CSimpleRowConsumer
     explicit CSimpleRowConsumer(SConsumeContext * context)
         : m_Context(context)
     {
+        if (m_Context) {
+            CFastMutexGuard _(m_Context->mutex);
+            ++m_Context->consumer_created;
+        }
     }
 
     bool Tick() override
@@ -127,10 +133,10 @@ class CSimpleRowConsumer
             CFastMutexGuard _(m_Context->mutex);
             m_Context->thread_ids.insert(this_thread::get_id());
             ++m_Context->tick_called;
-            if (m_Context->consequtive_rows > m_Context->max_consequtive_rows) {
-                m_Context->max_consequtive_rows = m_Context->consequtive_rows;
+            if (m_Context->consecutive_rows > m_Context->max_consecutive_rows) {
+                m_Context->max_consecutive_rows = m_Context->consecutive_rows;
             }
-            m_Context->consequtive_rows = 0;
+            m_Context->consecutive_rows = 0;
         }
         EXPECT_EQ(true, ICassandraFullscanConsumer::Tick())
                 << "Base Tick funcion should return true always";
@@ -143,13 +149,30 @@ class CSimpleRowConsumer
             CFastMutexGuard _(m_Context->mutex);
             m_Context->thread_ids.insert(this_thread::get_id());
             ++m_Context->ids_returned[query.FieldGetInt64Value(0)];
-            ++m_Context->consequtive_rows;
+            ++m_ConsumerIdsReturned[query.FieldGetInt64Value(0)];
+            ++m_Context->consecutive_rows;
             ++m_Context->read_called;
             if (m_Context->read_should_throw) {
-                NCBI_THROW(CCassandraException, eFatal, "Finalize may throw");
+                NCBI_THROW(CCassandraException, eFatal, "ReadRow may throw");
             }
         }
         return m_Context ? m_Context->read_result : true;
+    }
+
+    void OnQueryRestart() override
+    {
+        cout << "QUERY RESTARTED" << endl;
+        // Simulate reset of internal container on Query failure
+        if (m_Context) {
+            CFastMutexGuard _(m_Context->mutex);
+            if (m_Context->restartable) {
+                for (auto item : m_ConsumerIdsReturned) {
+                    m_Context->ids_returned[item.first] -= item.second;
+                }
+                m_ConsumerIdsReturned.clear();
+            }
+            ++m_Context->query_restart_called;
+        }
     }
 
     void Finalize() override
@@ -165,6 +188,32 @@ class CSimpleRowConsumer
     }
 
     SConsumeContext* m_Context;
+    map<int64_t, size_t> m_ConsumerIdsReturned;
+};
+
+class CCassandraFullscanPlanCaching
+  : public CCassandraFullscanPlan
+{
+ public:
+    TQueryPtr GetNextQuery() override
+    {
+        auto query = CCassandraFullscanPlan::GetNextQuery();
+        if (query) {
+            query->UsePerRequestTimeout(true);
+            query->SetTimeout(1);
+        }
+        return query;
+    }
+
+    void Generate() override
+    {
+        if (!m_Generated) {
+            CCassandraFullscanPlan::Generate();
+            m_Generated = true;
+        }
+    }
+ private:
+    bool m_Generated{false};
 };
 
 unique_ptr<MockCassandraFullscanPlan> make_default_plan_mock()
@@ -431,7 +480,54 @@ TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
         );
 
     EXPECT_TRUE(runner.Execute());
-    EXPECT_EQ(2UL, context.max_consequtive_rows);
+    EXPECT_EQ(2UL, context.max_consecutive_rows);
+    EXPECT_EQ(3UL, context.ids_returned[15724717]);
+}
+
+TEST_F(CCassandraFullscanRunnerTest, ConsumerPerQueryTest)
+{
+    auto connection = m_Factory->CreateInstance();
+    connection->Connect();
+    auto plan = make_unique<CCassandraFullscanPlanCaching>();
+    plan
+        ->SetConnection(connection)
+        .SetFieldList({"ipg", "accession"})
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName)
+        .SetMinPartitionsForSubrangeScan(0);
+
+    plan->Generate();
+    auto plan_query_count = plan->GetQueryCount();
+
+    // To allow Query succeed when restarted
+    connection->SetQueryTimeoutRetry(1000);
+
+    SConsumeContext context;
+    context.restartable = true;
+    CCassandraFullscanRunner runner;
+    runner
+        .SetThreadCount(4)
+        .SetExecutionPlan(move(plan))
+        .SetConsumerFactory(
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
+            }
+        )
+        .SetConsumerCreationPolicy(ECassandraFullscanConsumerPolicy::eOnePerQuery);
+    testing::internal::CaptureStdout();
+    testing::internal::CaptureStderr();
+    auto execution_result = runner.Execute();
+    testing::internal::GetCapturedStdout();
+    testing::internal::GetCapturedStderr();
+    EXPECT_TRUE(execution_result);
+    size_t total_rows{0};
+    for (auto ipg_block : context.ids_returned) {
+        total_rows += ipg_block.second;
+    }
+    EXPECT_EQ(35425UL, total_rows);
+    EXPECT_EQ(plan_query_count, context.consumer_created);
+    EXPECT_LT(10UL, context.query_restart_called);
+    EXPECT_LT(1000UL, context.consumer_created);
 }
 
 TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
@@ -440,18 +536,25 @@ TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
         ->SetConnection(m_Connection)
         .SetFieldList({"ipg", "accession"})
         .SetKeyspace(m_KeyspaceName)
-        .SetTable(m_TableName);
+        .SetTable(m_TableName)
+        .SetMinPartitionsForSubrangeScan(0);
 
+    SConsumeContext context;
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
         .SetExecutionPlan(move(plan))
         .SetConsumerFactory(
-            [] {
-                return make_unique<CSimpleRowConsumer>(nullptr);
+            [&context] {
+                return make_unique<CSimpleRowConsumer>(&context);
             }
         );
     EXPECT_TRUE(runner.Execute());
+    size_t total_rows{0};
+    for (auto ipg_block : context.ids_returned) {
+        total_rows += ipg_block.second;
+    }
+    EXPECT_EQ(35425UL, total_rows);
 }
 
 }  // namespace

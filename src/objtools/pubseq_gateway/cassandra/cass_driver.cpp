@@ -1384,7 +1384,7 @@ void CCassQuery::RestartExecute(TCassConsistency c)
 void CCassQuery::Restart(TCassConsistency c)
 {
     if (!m_future) {
-        RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
+        RAISE_DB_ERROR(eSeqFailed, "Query is not in restartable state");
     }
     string params;
     for (size_t i = 0; i < ParamCount(); ++i) {
