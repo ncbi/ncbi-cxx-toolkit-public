@@ -1307,13 +1307,23 @@ CPSGS_CassBlobBase::x_IsAuthorized(EPSGS_BlobOp  blob_op,
     // By some reasons the function deals not only with the authorization but
     // with withdrawal and blob publication date (confidentiality)
 
-    if (blob.IsConfidential()) {
-        if (m_Request->NeedTrace()) {
-            m_Reply->SendTrace(
-                "Blob " + blob_id.ToString() + " is not authorized "
-                "because it is confidential", m_Request->GetStartTimestamp());
+    // Note: the IsConfidential() needs to be checked only if it is not a
+    // secure keyspace. For the secure keyspace the confidential blobs need to
+    // be supplied anyway.
+    bool    is_secure_keyspace = false;
+    if (blob_id.m_IsSecureKeyspace.has_value()) {
+        is_secure_keyspace = blob_id.m_IsSecureKeyspace.value();
+    }
+
+    if (!is_secure_keyspace) {
+        if (blob.IsConfidential()) {
+            if (m_Request->NeedTrace()) {
+                m_Reply->SendTrace(
+                    "Blob " + blob_id.ToString() + " is not authorized "
+                    "because it is confidential", m_Request->GetStartTimestamp());
+            }
+            return false;
         }
-        return false;
     }
 
     if (blob.GetFlag(EBlobFlags::eWithdrawn)) {
