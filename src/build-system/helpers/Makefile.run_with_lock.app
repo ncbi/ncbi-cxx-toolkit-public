@@ -1,6 +1,7 @@
 # $Id$
 APP = run_with_lock
 SRC = run_with_lock
+LIB =
 
 CC          = $(CC_FOR_BUILD)
 CC_WRAPPER  =
