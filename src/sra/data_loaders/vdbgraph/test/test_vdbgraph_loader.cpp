@@ -247,6 +247,7 @@ static void s_VerifyGraphs(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
 
 BOOST_AUTO_TEST_CASE(FetchSeq1)
 {
+    LOG_POST("Checking direct access to NA file");
     string nacc = "NA000008777.1";
     string nacc2 = "NA000008778.1";
     CSeq_id seqid1("NC_002333.2");
@@ -267,6 +268,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
 
 BOOST_AUTO_TEST_CASE(FetchSeq2)
 {
+    LOG_POST("Checking access to NA file with resolution");
     string nacc = "NA000008777.1";
     string nacc2 = "NA000008778.1";
     CSeq_id seqid1("NC_002333.2");

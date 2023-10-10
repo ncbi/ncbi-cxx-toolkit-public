@@ -11,6 +11,7 @@ LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 
+CHECK_COPY = test_vdbgraph_loader.ini
 CHECK_CMD = test_vdbgraph_loader
 
 WATCHERS = vasilche
