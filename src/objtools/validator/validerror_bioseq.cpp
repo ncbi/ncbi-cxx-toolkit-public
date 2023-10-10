@@ -5189,7 +5189,8 @@ void CValidError_bioseq::x_ValidateCompletness
                          && NStr::FindNoCase(biosrc.GetLineage(), "Viroids") == string::npos)) // not viral
                     && (!biosrc.IsSetOrigin() || biosrc.GetOrigin() != CBioSource::eOrigin_artificial) // not artificial
                     && (!src_desc->GetSource().IsSetGenome()
-                        || src_desc->GetSource().GetGenome() == CBioSource::eGenome_genomic)) { // location not set or genomic
+                        || src_desc->GetSource().GetGenome() == CBioSource::eGenome_genomic
+                        || src_desc->GetSource().GetGenome() == CBioSource::eGenome_unknown)) { // location not set or genomic or unknown
                     x_ReportSuspiciousUseOfComplete(seq, eDiag_Warning);
                     reported = true;
                 }
