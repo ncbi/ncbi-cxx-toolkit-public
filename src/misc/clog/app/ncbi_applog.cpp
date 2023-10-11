@@ -935,7 +935,8 @@ int CNcbiApplogApp::Redirect()
     _ASSERT(m_Raw_is);
     do {
         if (re.IsMatch(m_Raw_line)) {
-            // TODO: sanitize each line (replace all not printable symbols: '\n' and etc)
+
+            // Send matched lines to CGI
             *cgi << m_Raw_line << endl;
             ++n_sent_lines;
 
