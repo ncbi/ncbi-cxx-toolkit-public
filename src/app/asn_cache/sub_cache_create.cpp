@@ -359,7 +359,9 @@ void VerifyMolType(CBioseq_Handle bsh)
 {
     if (s_MolType == CSeq_inst::eMol_not_set) {
         s_MolType = bsh.GetBioseqMolType();
+        cout << bsh.GetSeq_id_Handle() << " mol type " << (unsigned) s_MolType << endl;
     } else if (s_TrimLargeNucprots && s_MolType != bsh.GetBioseqMolType()) {
+        cout << bsh.GetSeq_id_Handle() << " contradictory mol type " << (unsigned)  bsh.GetBioseqMolType() << endl;
         NCBI_THROW(CException, eUnknown,
              "Mixed input mol types not allowed with trim-large-nucprots");
     }
@@ -644,6 +646,7 @@ public:
         : m_TotalRecords(0),
           m_RecordsNotInMainCache(0),
           m_RecordsInSubCache(0),
+          m_RecordsFetchedFromID(0),
           m_RecordsNotFound(0),
           m_RecordsWithdrawn(0),
           m_MaxRecursionLevel(kMax_Int),
@@ -696,6 +699,7 @@ private:
     size_t m_RecordsNotInMainCache;
     size_t m_RecordsInSubCache;
     size_t m_RecordsNotFound;
+    size_t m_RecordsFetchedFromID;
     size_t m_RecordsWithdrawn;
     int    m_MaxRecursionLevel;
     sequence::EGetIdType m_IdType;
@@ -1095,6 +1099,7 @@ int CAsnSubCacheCreateApplication::Run(void)
                 CCurrentProcess::GetMemoryUsage(memory_usage);
     LOG_POST(Error << "total memory consumed: " << memory_usage.total);
     if (fetch_missing) {
+        LOG_POST(Error << "total record fetched from ID: " << m_RecordsFetchedFromID);
         LOG_POST(Error << "total record retrieval failures: " << m_RecordsNotFound);
         LOG_POST(Error << "total records withdrawn:         " << m_RecordsWithdrawn);
     }
@@ -1334,6 +1339,7 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
                     }
                     m_output_seq_ids.insert(output_idh ? output_idh : idh);
                 }
+                ++m_RecordsFetchedFromID;
             }
             catch (CException& e) {
                 LOG_POST(Error << "failed to retrieve sequence: "
