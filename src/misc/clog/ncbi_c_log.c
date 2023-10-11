@@ -1046,13 +1046,16 @@ static void s_URL_Encode
 }
 
 
+#if 0
+-- not used.
+-- only s_EscapeNewlines() is used to escape newlines to applog format during printing messages.
+
 /** Get a printable version of the specified string. 
  *  All non-printable characters will be represented as "\r", "\n", "\v",
  *  "\t", etc, or "\ooo" where 'ooo' is the octal code of the character. 
  *
  *  This function read up to "src_size" symbols(bytes) from buffer "src_buf".
- *  Write the encoded data to buffer "dst_buf", but no more than
- *  "dst_size" bytes.
+ *  Write the encoded data to buffer "dst_buf", but no more than "dst_size" bytes.
  *  Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
  *  Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  */
@@ -1118,14 +1121,70 @@ static void s_Sanitize
             *(++dst) = (unsigned char)('0' + v);
             v = c & 7;
             *(++dst) = (unsigned char)('0' + v);
+
             *dst_written += 4;
         }
     }
 }
+#endif
+
+
+/** Escape newlines in the string. 
+ * 
+ *  Follow CXX-7439 applog standard newline replacement convention.
+ *  - \n -> \v
+ *  - \v -> 0xFF \v
+ *  - 0xFF -> 0xFF 0xFF
+ *
+ *  This function read up to "src_size" symbols(bytes) from buffer "src_buf".
+ *  Write the escaped data to buffer "dst_buf", but no more than "dst_size" bytes.
+ *  Assign "*src_read" to the # of bytes successfully escaped from "src_buf".
+ *  Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+ */
+static void s_EscapeNewlines
+    (const void* src_buf,    /* [in]     non-NULL */
+     size_t      src_size,   /* [in]              */
+     size_t*     src_read,   /* [out]    non-NULL */
+     void*       dst_buf,    /* [in/out] non-NULL */
+     size_t      dst_size,   /* [in]              */
+     size_t*     dst_written /* [out]    non-NULL */
+     )
+{
+    unsigned char* src = (unsigned char*) src_buf;
+    unsigned char* dst = (unsigned char*) dst_buf;
+
+    *src_read    = 0;
+    *dst_written = 0;
+    if (!src_size  ||  !dst_size  ||  !dst  ||  !src)
+        return;
+
+    for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
+             src++, (*src_read)++, 
+             dst++, (*dst_written)++)
+    {
+        unsigned char c = *src;
+        switch (c) {
+            case '\377':
+            case '\v':
+                if (*dst_written + 2 > dst_size) {
+                    break;
+                }
+                *dst = '\377';
+                dst++;
+                (*dst_written)++;
+                break;
+            case '\n':
+                *dst = '\v'; 
+                continue;
+        }
+        *dst = c;
+    }
+}
+
 
 
 /** Get base name of application.
- *  Rerun a pointer to allocates memory with zero-terminated string.
+ *  Return a pointer to a newly allocated memory with zero-terminated string.
  */
 static char* s_GetAppBaseName(const char* path)
 {
@@ -2362,7 +2421,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
     }
 
     /* Message */
-    s_Sanitize(msg, strlen(msg), &r_len, buf + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
+    s_EscapeNewlines(msg, strlen(msg), &r_len, buf + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
     buf[pos] = '\0';
 
