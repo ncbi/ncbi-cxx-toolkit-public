@@ -377,12 +377,11 @@ static void s_TestMisc(void)
     // Week number in the year/month
     {{
         CTime t(1970, 1, 1);
-        int i;
+        time_t gt = t.GetTimeT();
         char buf[3];
 
-        time_t gt = t.GetTimeT();
+        while (t <= CTime(2030, 12, 31)) {
 
-        for (i = 1; t <= CTime(2030, 12, 31); i++, t.AddDay(), gt += 24*3600) {
             struct tm *today = gmtime(&gt);
             assert(today != 0);
             int week_num_rtl, week_num, month_week_num;
@@ -402,6 +401,10 @@ static void s_TestMisc(void)
             assert(week_num_rtl == week_num);
             month_week_num = t.MonthWeekNumber(CTime::eMonday);
             assert(month_week_num >= 1  &&  month_week_num <= 6);
+
+            // increment time
+            t.AddDay();
+            gt += 24*3600;
         }
     }}
 
