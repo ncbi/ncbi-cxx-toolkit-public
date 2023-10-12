@@ -3779,12 +3779,10 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
             const char* type = i&1? "str.begin()": "str.c_str()";
             LOG_POST("Calling " << type);
             if ( i&1 ) {
-                auto dummy = s2.begin();
-                dummy++; // to avoid warnings
+                std::ignore = s2.begin();
             }
             else {
-                auto dummy = s1.c_str();
-                dummy++; // to avoid warnings
+                std::ignore = s1.c_str();
             }
             if ( s1.data() == s2.data() ) {
                 LOG_POST("GOOD: " << type << " doesn't affect reference counting");
@@ -3803,14 +3801,13 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
             if ( i&1 ) continue;
 
             LOG_POST("Calling " << type << " on source");
-            auto dummy = s1.c_str();
-            dummy++; // to avoid warnings
+            std::ignore = s1.c_str();
             if ( s1.data() != s2.data() ) {
                 LOG_POST("BAD: " << type << " on source turns reference counting OFF");
             }
 
             LOG_POST("Calling "<< type <<" on destination");
-            dummy = s2.c_str();
+            std::ignore = s2.c_str();
             if ( s1.data() != s2.data() ) {
                 LOG_POST("BAD: " << type << " on destination turns reference counting OFF");
             }
