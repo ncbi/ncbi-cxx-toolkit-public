@@ -1150,8 +1150,8 @@ static void s_EscapeNewlines
      size_t*     dst_written /* [out]    non-NULL */
      )
 {
-    unsigned char* src = (unsigned char*) src_buf;
-    unsigned char* dst = (unsigned char*) dst_buf;
+    char* src = (char*) src_buf;
+    char* dst = (char*) dst_buf;
 
     *src_read    = 0;
     *dst_written = 0;
@@ -1162,7 +1162,7 @@ static void s_EscapeNewlines
              src++, (*src_read)++, 
              dst++, (*dst_written)++)
     {
-        unsigned char c = *src;
+        char c = *src;
         switch (c) {
             case '\377':
             case '\v':
