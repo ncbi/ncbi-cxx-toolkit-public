@@ -1867,8 +1867,12 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
         }
         switch (fix_method) {
         case eFNP_ReplaceAndWarn:
+#if 0
             CNcbiDiag(eDiag_Error, eDPF_Default)
                 << ErrCode(NCBI_ERRCODE_X, 7) << message << Endm;
+#else
+            ERR_POST_X(7, message);
+#endif
             break;
         case eFNP_Throw:
             NCBI_THROW(CSerialException,eFormatError,message);
