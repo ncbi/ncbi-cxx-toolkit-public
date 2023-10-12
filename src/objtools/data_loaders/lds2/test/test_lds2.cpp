@@ -388,17 +388,11 @@ void* CLDS2_TestThread::Main(void)
         CSeq_loc loc;
         loc.SetWhole().Assign(seq_id);
         CFeat_CI fit(m_Scope, loc, sel);
-        int fcount = 0;
-        for (; fit; ++fit) {
-            fcount++;
-        }
+        while (fit) ++fit;
 
         sel.SetByProduct(true);
         CFeat_CI fitp(m_Scope, loc, sel);
-        fcount = 0;
-        for (; fitp; ++fitp) {
-            fcount++;
-        }
+        while (fitp) ++fitp;
     }
     return 0;
 }
