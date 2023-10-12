@@ -4712,15 +4712,11 @@ special  CAUPQM000000000-CAUPQN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAUPQP000000000-CAUPQR999999999  embl_tpa_wgs_nuc # 6+9
 special2 CAUPRB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CAUPSY000000000-CAUSVJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAUSVL000000000-CAUTMV999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUPSY000000000-CAUTMV999999999  embl_tpa_wgs_nuc # 6+9
 special2 CAUTMX+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CAUTNA000000000-CAUTNC999999999  embl_tpa_wgs_nuc # 6+9
-special  CAUTNE000000000-CAUTOK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAUTOM000000000-CAUTOT999999999  embl_tpa_wgs_nuc # 6+9
-special  CAUTOV000000000-CAUUOD999999999  embl_tpa_wgs_nuc # 6+9
-special  CAUUOF000000000-CAUVWA999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUTNA000000000-CAUTOK999999999  embl_tpa_wgs_nuc # 6+9
+special  CAUTOM000000000-CAUVWA999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HBHG+8 embl_tpa_tsa_nuc
