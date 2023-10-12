@@ -1635,7 +1635,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
         return (sfbp);
     }
 
-    Int4 count_skip   = 0;
+    Int4 NCBI_UNUSED count_skip = 0;
     Int4 count_noskip = 0;
     bool same         = true;
     for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {

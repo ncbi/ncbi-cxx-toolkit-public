@@ -2784,8 +2784,6 @@ static void fta_check_multiple_locus_tag(DataBlkPtr dbp, bool* drop)
 /**********************************************************/
 static void fta_check_old_locus_tags(DataBlkPtr dbp, bool* drop)
 {
-    Int4 i;
-
     PredIsGivenQual isOldLocusTag("old_locus_tag"),
         isLocusTag("locus_tag");
 
@@ -2803,12 +2801,9 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, bool* drop)
             ErrPostEx(SEV_REJECT, ERR_FEATURE_OldLocusTagWithoutNew, "Feature \"%s\" at \"%s\" has an /old_locus_tag qualifier but lacks a /locus_tag qualifier. Entry dropped.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
             *drop = true;
         } else {
-            i = 0;
             for (const auto& gbqp1 : fbp->quals) {
                 if (! gbqp1->IsSetQual() || ! gbqp1->IsSetVal() || ! isLocusTag(gbqp1))
                     continue;
-
-                i++;
 
                 const string& gbqp1_val = gbqp1->GetVal();
                 if (gbqp1_val.empty())
