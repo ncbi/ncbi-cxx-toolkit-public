@@ -3493,7 +3493,11 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
         subPt++;
 
-        for (CSeqMap_CI gap_it(bsh, sel); gap_it; ++gap_it) {
+        CSeqMap_CI gap_it(bsh, sel);
+
+        subPt++;
+
+        for (; gap_it; ++gap_it) {
 
             subPt++;
 
