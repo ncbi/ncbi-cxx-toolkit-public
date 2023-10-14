@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Sep 26 05:12:02 EDT 2023; formally
+/* time_t value corresponding to Sat Oct 14 05:12:02 EDT 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1695719522UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1697274722UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -521,6 +521,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BBS\ts\tUniversity of Suriname\t\t\t",
 "BBSL\ts\tBee Biology and Systematics Laboratory\t\t\t",
 "BBSUK\ts\tNational Museum and Gallery, Department of Biodiversity and Systematic Biology\t\t\t",
+"BC\ts\tBiospelological Collection\t\t\t",
 "BC\ts\tInstitut Botanic de Barcelona\t\t\t",
 "BCAC\tsc\tBashkortostan Collection of Algae and Cyanobacteria\t\t\t",
 "BCB\ts\tUniversitat Autonoma de Barcelona, Unitat de Botanica\t\t\t",
@@ -1037,6 +1038,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CBRA\ts\tCraveri Civic Museum of Natural History\t\t\t",
 "CBS\tsc\tWesterdijk Fungal Biodiversity Institute\t\thttps://wi.knaw.nl/page/fungal_display/name/CBS%20\t",
 "CBSIZA\ts\tCaspian Biological Station Institute of Zoology\t\t\t",
+"CBSS\ts\tCroatian Biospeleological Society\t\t\t",
 "CBTCCCAS\tc\tThe Cell Bank of Type Culture Collection of Chinese Academy of Sciences\t\t\t",
 "CBU<CAN>\ts\tCape Breton University\t\t\t",
 "CBU<SKOR>\ts\tChungbuk National University, School of Life Science\t\t\t",

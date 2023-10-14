@@ -485,6 +485,7 @@ BBPP	c	Bacteriology Branch, Plant Pathology and Microbiology Division, Departmen
 BBS	s	University of Suriname			
 BBSL	s	Bee Biology and Systematics Laboratory			
 BBSUK	s	National Museum and Gallery, Department of Biodiversity and Systematic Biology			
+BC	s	Biospelological Collection			
 BC	s	Institut Botanic de Barcelona			
 BCAC	sc	Bashkortostan Collection of Algae and Cyanobacteria			
 BCB	s	Universitat Autonoma de Barcelona, Unitat de Botanica			
@@ -1001,6 +1002,7 @@ CBPM	s	Fundacao Oswaldo Cruz - FIOCRUZ (Oswaldo Cruz Foundation)
 CBRA	s	Craveri Civic Museum of Natural History			
 CBS	sc	Westerdijk Fungal Biodiversity Institute		https://wi.knaw.nl/page/fungal_display/name/CBS%20	
 CBSIZA	s	Caspian Biological Station Institute of Zoology			
+CBSS	s	Croatian Biospeleological Society			
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences			
 CBU<CAN>	s	Cape Breton University			
 CBU<SKOR>	s	Chungbuk National University, School of Life Science			
