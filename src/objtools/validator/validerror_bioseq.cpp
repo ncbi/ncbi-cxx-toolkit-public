@@ -3482,46 +3482,35 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
         subPt++;
 
         vector<TSeqPos> gapPositions;
-
         subPt++;
 
         SSeqMapSelector sel;
-
         subPt++;
 
         sel.SetFlags(CSeqMap::fFindGap).SetResolveCount(1);
-
         subPt++;
 
+        // exception thrown here in TeamCity production environment
         CSeqMap_CI gap_it(bsh, sel);
-
         subPt++;
 
         for (; gap_it; ++gap_it) {
-
             subPt++;
 
             TSeqPos gp_start = gap_it.GetPosition();
-
             subPt++;
-
             TSeqPos gp_end = gap_it.GetEndPosition() - 1;
-
             subPt++;
 
             gapPositions.push_back(gp_start);
-
             subPt++;
-
             gapPositions.push_back(gp_end);
-
             subPt++;
 
             // cout << "gap start: " << gp_start << ", end: " << gp_end << endl;
         }
 
         subPt++;
-
         errPt++;
 
         vector<TSeqPos> featPositions;
