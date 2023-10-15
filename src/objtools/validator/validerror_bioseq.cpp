@@ -3603,9 +3603,9 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
         errPt++;
 
-    } catch ( const exception& ) {
+    } catch ( const CException& e ) {
         PostErr(eDiag_Warning, eErr_SEQ_INST_InstantiatedGapMismatch,
-            string("Exception " + NStr::IntToString(errPt) + "." + NStr::IntToString(subPt) + " in GapByGapInst"), seq);
+            string("Exception " + NStr::IntToString(errPt) + "." + NStr::IntToString(subPt) + " in GapByGapInst. EXCEPTION: ") + e.what(), seq);
     }
 }
 
