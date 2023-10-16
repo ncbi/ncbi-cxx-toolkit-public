@@ -1435,7 +1435,7 @@ bool CValidError_imp::Validate
                     for (size_t i = 0; i < accessions.size(); i++) {
                         NStr::TruncateSpacesInPlace (accessions[i]);
                         string acc_prefix, accession;
-                        if (CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (remainder, acc_prefix, accession)) {
+                        if (CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (accessions[i], acc_prefix, accession)) {
                             if (NStr::EqualNocase (acc_prefix, "INSD") || NStr::EqualNocase (acc_prefix, "RefSeq")) {
                                 num_accessions++;
                             }
