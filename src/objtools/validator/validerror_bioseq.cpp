@@ -3450,8 +3450,6 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 {
     // rough measure of where exception occurs - triggered by certain conditions set up in unit_test_validator
     int errPt = 0;
-    // finer measure for narrowing down exception that only occurs on TeamCity production server
-    int subPt = 0;
 
     try {
 
@@ -3479,38 +3477,26 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
         }
 
         errPt++;
-        subPt++;
 
         vector<TSeqPos> gapPositions;
-        subPt++;
 
         SSeqMapSelector sel;
-        subPt++;
-
-        sel.SetFlags(CSeqMap::fFindGap).SetResolveCount(1);
-        subPt++;
+        sel.SetFlags(CSeqMap::fFindGap | CSeqMap::fIgnoreUnresolved).SetResolveCount(1);
 
         // exception thrown here in TeamCity production environment
         CSeqMap_CI gap_it(bsh, sel);
-        subPt++;
 
         for (; gap_it; ++gap_it) {
-            subPt++;
 
             TSeqPos gp_start = gap_it.GetPosition();
-            subPt++;
             TSeqPos gp_end = gap_it.GetEndPosition() - 1;
-            subPt++;
 
             gapPositions.push_back(gp_start);
-            subPt++;
             gapPositions.push_back(gp_end);
-            subPt++;
 
             // cout << "gap start: " << gp_start << ", end: " << gp_end << endl;
         }
 
-        subPt++;
         errPt++;
 
         vector<TSeqPos> featPositions;
@@ -3605,7 +3591,7 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
     } catch ( const exception& ) {
         PostErr(eDiag_Warning, eErr_SEQ_INST_InstantiatedGapMismatch,
-            string("Exception " + NStr::IntToString(errPt) + "." + NStr::IntToString(subPt) + " in GapByGapInst."), seq);
+            string("Exception " + NStr::IntToString(errPt) + " in GapByGapInst."), seq);
     }
 }
 
