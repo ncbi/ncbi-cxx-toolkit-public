@@ -4155,7 +4155,6 @@ BOOST_AUTO_TEST_CASE(Test_DeltaComponentIsGi0)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InstantiatedGapMismatch", "Exception 2 in GapByGapInst"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "DeltaComponentIsGi0", "Delta component is gi|0"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DeltaSeqError", "Unable to find far delta sequence component"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -4197,7 +4196,7 @@ BOOST_AUTO_TEST_CASE(Test_SelfReferentialSequence)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "SelfReferentialSequence", "Self-referential delta sequence"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InstantiatedGapMismatch", "Exception 3 in GapByGapInst"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InstantiatedGapMismatch", "Exception 4 in GapByGapInst"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
     eval = validator.Validate(seh, options);

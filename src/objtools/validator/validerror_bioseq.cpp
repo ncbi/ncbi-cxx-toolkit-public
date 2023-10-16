@@ -3483,8 +3483,9 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
         SSeqMapSelector sel;
         sel.SetFlags(CSeqMap::fFindGap | CSeqMap::fIgnoreUnresolved).SetResolveCount(1);
 
-        // exception thrown here in TeamCity production environment
         CSeqMap_CI gap_it(bsh, sel);
+
+        errPt++;
 
         for (; gap_it; ++gap_it) {
 
@@ -3501,7 +3502,11 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
         vector<TSeqPos> featPositions;
 
-        for (CFeat_CI feat_it(bsh); feat_it; ++feat_it) {
+        CFeat_CI feat_it(bsh);
+
+        errPt++;
+
+        for (; feat_it; ++feat_it) {
 
             CSeq_feat_Handle feat = feat_it->GetSeq_feat_Handle();
             CSeqFeatData::ESubtype subtype = feat.GetFeatSubtype();
@@ -3591,7 +3596,7 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 
     } catch ( const exception& ) {
         PostErr(eDiag_Warning, eErr_SEQ_INST_InstantiatedGapMismatch,
-            string("Exception " + NStr::IntToString(errPt) + " in GapByGapInst."), seq);
+            string("Exception " + NStr::IntToString(errPt) + " in GapByGapInst"), seq);
     }
 }
 
