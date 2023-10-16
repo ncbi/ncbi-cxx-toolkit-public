@@ -158,7 +158,7 @@ good3: 70
 }
 */
 
-tuple<CRef<CSeq_entry>, CRef<CSeq_align>, CRef<CSeq_entry>, CRef<CSeq_entry>, CRef<CSeq_entry> >  CreateBioseqsAndAlign(size_t front_insert)
+tuple<CRef<CSeq_entry>, CRef<CSeq_align>, CRef<CSeq_entry>, CRef<CSeq_entry>, CRef<CSeq_entry>> CreateBioseqsAndAlign(TSeqPos front_insert)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
@@ -289,7 +289,7 @@ void AddAnticodon(CRef<CSeq_feat> trna, CRef<CSeq_loc> subloc)
 // propagate cds without code-break from seq 1 to seq 2 and 3
 void TestCds(bool loc_partial5, bool loc_partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -333,7 +333,7 @@ void TestCds(bool loc_partial5, bool loc_partial3)
 // propagate cds with code-break from seq 1 to seq 2 and 3
 void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -375,7 +375,7 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
 // propagate cds without code-break from seq 3 to seq 1 and 2
 void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -417,7 +417,7 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
 // propagate cds with code-break from seq 3 to seq 1 and 2
 void TestCdsFromLastBioseqWithCodeBreak()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -459,7 +459,7 @@ void TestCdsFromLastBioseqWithCodeBreak()
 // propagate trna with anticodon from seq 1 to seq 2 and 3
 void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -501,7 +501,7 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
 // propagate trna with anticodon from seq 3 to seq 1 and 2
 void TestTrnaAnticodonFromLastBioseq()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -543,7 +543,7 @@ void TestTrnaAnticodonFromLastBioseq()
 // propagate cds outside of the alignment from seq 3 to seq 1
 void TestCdsFromLastBioseqOutsideAlign()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -571,7 +571,7 @@ void TestCdsFromLastBioseqOutsideAlign()
 // propagate 2 exon cds with 1 exon outside of the alignment from seq 3 to seq 1
 void TestTwoIntCdsFromLastBioseqOutsideAlign()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -604,7 +604,7 @@ void TestTwoIntCdsFromLastBioseqOutsideAlign()
 // propagate 2 exon cds on minus strand from seq 3 to seq 1
 void TestTwoIntCdsOnMinusStrand()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -633,7 +633,7 @@ void TestTwoIntCdsOnMinusStrand()
 // test partial when the stop is cut off
 void TestPartialWhenCutStop(bool partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -681,7 +681,7 @@ void TestPartialWhenCutStop(bool partial3)
 // test partial when the last interval is cut off
 void TestPartialWhenCutLastInterval(bool partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -729,7 +729,7 @@ void TestPartialWhenCutLastInterval(bool partial3)
 // test partial when the start is cut off
 void TestPartialWhenCutStart(bool partial5)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -766,7 +766,7 @@ void TestPartialWhenCutStart(bool partial5)
 // test fuse abutting intervals
 void TestFuseAbuttingIntervals()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -812,7 +812,7 @@ void TestFuseAbuttingIntervals()
 // test do not fuse abutting intervals
 void TestDoNotFuseAbuttingIntervals()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -857,7 +857,7 @@ void TestDoNotFuseAbuttingIntervals()
 // test extend over gaps
 void TestExtendOverGap()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -902,7 +902,7 @@ void TestExtendOverGap()
 // test do not extend over gaps
 void TestDoNotExtendOverGap()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -948,7 +948,7 @@ void TestDoNotExtendOverGap()
 // test ordered vs. joined locations
 void TestOrderedLoc()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -976,7 +976,7 @@ void TestOrderedLoc()
 // test circular topology
 void TestCircularTopology()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -1028,7 +1028,7 @@ void TestCircularTopology()
 // test point location inside alignment
 void TestPointLocInside()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -1058,7 +1058,7 @@ void TestPointLocInside()
 // test point location outside alignment
 void TestPointLocOutside()
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -1086,7 +1086,7 @@ void TestPointLocOutside()
 // test partial when the stop is cut off and do not extend
 void TestPartialWhenCutStopDoNotExtend(bool partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -1123,7 +1123,7 @@ void TestPartialWhenCutStopDoNotExtend(bool partial3)
 // test partial when the last interval is cut off and do not extend
 void TestPartialWhenCutLastIntervalDoNotExtend(bool partial3)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -1161,7 +1161,7 @@ void TestPartialWhenCutLastIntervalDoNotExtend(bool partial3)
 // test partial when the start is cut off and do not extend
 void TestPartialWhenCutStartDoNotExtend(bool partial5)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_align> align;
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
@@ -1205,7 +1205,7 @@ void TestFeatInsideGap(bool is_minus)
     id1->SetLocal().SetStr("seq1");
     seq1->SetSeq().SetId().push_back(id1);
     seq1->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(str1);
-    seq1->SetSeq().SetInst().SetLength(str1.length());
+    seq1->SetSeq().SetInst().SetLength(TSeqPos(str1.length()));
     seq1->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     seq1->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
     entry->SetSet().SetSeq_set().push_back(seq1);
@@ -1216,14 +1216,14 @@ void TestFeatInsideGap(bool is_minus)
     id2->SetLocal().SetStr("seq2");
     seq2->SetSeq().SetId().push_back(id2);
     seq2->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(str2);
-    seq2->SetSeq().SetInst().SetLength(str2.length());
+    seq2->SetSeq().SetInst().SetLength(TSeqPos(str2.length()));
     seq2->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
     seq2->SetSeq().SetInst().SetMol(CSeq_inst::eMol_na);
     entry->SetSet().SetSeq_set().push_back(seq2);
 
     CRef<CSeq_align> align(new CSeq_align());
     align->SetType(objects::CSeq_align::eType_global);
-    align->SetDim(entry->GetSet().GetSeq_set().size());
+    align->SetDim(int(entry->GetSet().GetSeq_set().size()));
     align->SetSegs().SetDenseg().SetIds().push_back(id1);
     align->SetSegs().SetDenseg().SetIds().push_back(id2);
 
@@ -1232,7 +1232,7 @@ void TestFeatInsideGap(bool is_minus)
     denseg.SetLens().push_back(5);
     denseg.SetLens().push_back(4);
     denseg.SetLens().push_back(11);
-    denseg.SetDim(entry->GetSet().GetSeq_set().size());
+    denseg.SetDim(int(entry->GetSet().GetSeq_set().size()));
     denseg.SetStarts().push_back(0);
     denseg.SetStarts().push_back(0);
     denseg.SetStarts().push_back(5);
@@ -1367,7 +1367,7 @@ void InsertStop(CBioseq& seq, size_t pos)
 
 BOOST_AUTO_TEST_CASE(Test_CdRegionAlterations)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
 
     CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
@@ -1448,7 +1448,7 @@ BOOST_AUTO_TEST_CASE(Test_CdRegionAlterations)
 }
 
 
-void ImproveAlignment(CSeq_align& align, size_t front_insert)
+void ImproveAlignment(CSeq_align& align, TSeqPos front_insert)
 {
     CDense_seg& denseg = align.SetSegs().SetDenseg();
     denseg.SetNumseg(3);
@@ -1472,7 +1472,7 @@ void ImproveAlignment(CSeq_align& align, size_t front_insert)
 
 BOOST_AUTO_TEST_CASE(Test_PropagateAll)
 {
-    size_t front_insert = 10;
+    TSeqPos front_insert = 10;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
     // make a better alignment, with some sequences in the gap at the front
@@ -1520,7 +1520,7 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
 
 BOOST_AUTO_TEST_CASE(Test_PropagateAllReportFailures)
 {
-    size_t front_insert = 10;
+    TSeqPos front_insert = 10;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
     // make a better alignment, with some sequences in the gap at the front
@@ -1584,7 +1584,7 @@ CObject_id::TId s_FindHighestFeatId(const CSeq_entry_Handle entry)
 
 CSeq_entry_Handle GetGoodSeqEntryWithFeatureIds(int& feat_id)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
 
@@ -1852,7 +1852,7 @@ void CreateXRefLink(CSeq_feat& from_feat, CSeq_feat& to_feat)
 
 BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
 
@@ -1916,7 +1916,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs)
 
 BOOST_AUTO_TEST_CASE(Test_Propagate1FeatureWithXrefs)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
 
@@ -1972,7 +1972,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate1FeatureWithXrefs)
 
 BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs_RevOrder)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
 
@@ -2036,7 +2036,7 @@ BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs_RevOrder)
 
 BOOST_AUTO_TEST_CASE(Test_PropagateFeaturesWithXrefsWithCDS)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
 
@@ -2195,7 +2195,7 @@ CRef<CSeq_entry> BuildAlignmentWithInternalGap()
 
     CRef<objects::CSeq_align> align(new CSeq_align());
     align->SetType(objects::CSeq_align::eType_global);
-    align->SetDim(entry->GetSet().GetSeq_set().size());
+    align->SetDim(int(entry->GetSet().GetSeq_set().size()));
 
     // assign IDs
     for (auto& s : entry->SetSet().SetSeq_set()) {
@@ -2230,7 +2230,7 @@ CRef<CSeq_entry> BuildAlignmentWithInternalGap()
     denseg.SetLens().push_back(20);
     denseg.SetLens().push_back(20);
     denseg.SetLens().push_back(20);
-    denseg.SetDim(entry->GetSet().GetSeq_set().size());
+    denseg.SetDim(int(entry->GetSet().GetSeq_set().size()));
     // first segment - second sequence missing
     denseg.SetStarts().push_back(20);
     denseg.SetStarts().push_back(-1);
@@ -2338,7 +2338,7 @@ BOOST_AUTO_TEST_CASE(Test_DoNotPropagateToGap_RW_887)
 // checked in by mistake
 BOOST_AUTO_TEST_CASE(Test_MergeIntervals)
 {
-    size_t front_insert = 5;
+    TSeqPos front_insert = 5;
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
     CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
 
