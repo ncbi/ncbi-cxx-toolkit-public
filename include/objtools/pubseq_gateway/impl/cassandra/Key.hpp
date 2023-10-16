@@ -60,12 +60,13 @@ struct SBlobStat
 
 struct SBlobFullStat
 {
-    int64_t modified = 0;
-    int64_t flags = 0;
-    int64_t size = 0;
-    int32_t sat_key = 0;
-    int32_t info = 0;
-    bool    seen = false;
+    int64_t modified{0};
+    int64_t flags{0};
+    int64_t size{0};
+    int32_t sat_key{0};
+    int32_t info{0};
+    int32_t owner{0};
+    bool    seen{false};
 };
 
 using TBlobFullStatVec = deque<SBlobFullStat>;
