@@ -335,14 +335,14 @@ CBlastDBCmdApp::x_InitBlastDB_TaxIdList()
     	    }
     	}
     }
-    // JIRA SB-3780,SB-3791
+
     unique_ptr<ITaxonomy4Blast> tb;
     if( ! args[kArgNoTaxIdExpansion].AsBoolean() ){
         try{
-            tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
+            tb.reset(new CTaxonomy4BlastSQLite());
         }
         catch(CException &){
-            NCBI_THROW(CSeqDBException, eFileErr, "The -taxids command line option requires additional data files. Please see the section 'Taxonomic filtering for BLAST databases' in https://www.ncbi.nlm.nih.gov/books/NBK569839/ for details.");
+            LOG_POST(Warning << "The -taxids command line option requires additional data files. Please see the section 'Taxonomic filtering for BLAST databases' in https://www.ncbi.nlm.nih.gov/books/NBK569839/ for details.");
         }
     }
 

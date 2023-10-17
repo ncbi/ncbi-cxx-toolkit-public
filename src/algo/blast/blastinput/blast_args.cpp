@@ -2397,12 +2397,11 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 //
 static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, CRef<CSearchDatabase> & sdb, bool isTargetOnly )
 {
-	vector<string> ids;
-	if (isFile) {
+    vector<string> ids;
+    if (isFile) {
         string filename(SeqDB_ResolveDbPath(in));
         if(filename == kEmptyStr) {
-        	NCBI_THROW(CInputException, eInvalidInput,
-        			   "File is not acessible: "+ in );
+            NCBI_THROW(CInputException, eInvalidInput, "File is not acessible: "+ in );
         }
         CNcbiIfstream instream(filename.c_str());
         CStreamLineReader reader(instream);        
@@ -2411,50 +2410,37 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
             reader.ReadLine();
             ids.push_back(reader.GetCurrentLine());
         }
-    }
-	else {
+    } else {
         NStr::Split(in, ",", ids, NStr::fSplit_Tokenize);
     }
-    // JIRA SB-3780
-    //auto dbpath =  kEmptyStr;
     unique_ptr<ITaxonomy4Blast> tb;
     if( !isTargetOnly ) {
-	try{
-	    tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
-	}
-	catch(CException &){
-	NCBI_THROW(CBlastException, eInvalidArgument,
-		"The -taxids command line option requires additional data files. Please see URL_HERE for details.");
-	}
+        try{
+            tb.reset(new CTaxonomy4BlastSQLite());
+        }
+        catch(CException &){
+            LOG_POST(Warning << "The -taxids command line option requires additional data files. Please see the section 'Taxonomic filtering for BLAST databases' in https://www.ncbi.nlm.nih.gov/books/NBK569839/ for details.");
+        }
     }
     set<TTaxId> tax_ids;
-    for(unsigned int i=0; i < ids.size(); i++) {
-    	try {
-    		if(NStr::IsBlank(ids[i])){
-    			continue;
-    		}
-		if( isTargetOnly ) {
-    		   tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
-		}
-		else {
-		    //FIRST:  ADD user's taxid
-		    tax_ids.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
-		// JIRA SB-3780
-		// resolve given taxid to their descendant taxids 
-		    vector<int> desc;
-		    auto taxid = NStr::StringToInt( ids[i] );
-		    tb->GetLeafNodeTaxids(taxid, desc);
-		    if( desc.size() ) {
-		       //SECOND:  descendant taxids  
-		       for (auto i: desc){
-			  tax_ids.insert( static_cast<TTaxId>(i) );
-		       }
-		    }
-		}
-    	}
-    	catch(CException &){
-    		NCBI_THROW(CInputException, eInvalidInput, "Invalid taxidlist file ");
-    	}
+    for (auto id : ids) {
+        try {
+            if (NStr::IsBlank(id)) {
+                continue;
+            }
+            auto taxid = NStr::StringToNumeric<TTaxId>(id, NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+            if( isTargetOnly ) {
+                tax_ids.insert(taxid);
+            } else {
+                tax_ids.insert(taxid);
+                vector<int> desc;
+                tb->GetLeafNodeTaxids(taxid, desc);
+                for (auto i: desc)
+                    tax_ids.insert( static_cast<TTaxId>(i) );
+            }
+        } catch(CException &){
+            NCBI_THROW(CInputException, eInvalidInput, "Invalid taxidlist file ");
+        }
     }
 
    	CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
