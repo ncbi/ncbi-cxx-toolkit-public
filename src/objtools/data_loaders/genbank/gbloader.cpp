@@ -256,6 +256,9 @@ void CGBDataLoader::SetLoaderMethod(CGBLoaderParams& params)
 {
     string loader_method = params.GetLoaderMethod();
     if (loader_method.empty()) {
+        loader_method = params.GetReaderName();
+    }
+    if (loader_method.empty()) {
         unique_ptr<TParamTree> app_params;
         const TParamTree* gb_params = 0;
         if ( params.GetParamTree() ) {
