@@ -779,6 +779,7 @@ CRef<CSNPFileInfo> CSNPClient::GetFileInfo(const string& acc)
             delete_info.Swap(info);
         }
         if ( !info ) {
+            info = new CSNPFileInfo(*this, acc);
             slot->UpdateExpiration(m_SNPDbCache, acc);
             slot->SetObject(info);
         }
