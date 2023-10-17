@@ -338,30 +338,23 @@ CBlastDBCmdApp::x_InitBlastDB_TaxIdList()
     // JIRA SB-3780,SB-3791
     unique_ptr<ITaxonomy4Blast> tb;
     if( ! args[kArgNoTaxIdExpansion].AsBoolean() ){
-	try{
-	    tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
-	}
-	catch(CException &){
-	    NCBI_THROW(CBlastException, eInvalidArgument, "The -taxids command line option requires additional data files. Please see URL_HERE for details.");
-	}
+        try{
+            tb.reset(new CTaxonomy4BlastSQLite(kEmptyStr));
+        }
+        catch(CException &){
+            NCBI_THROW(CSeqDBException, eFileErr, "The -taxids command line option requires additional data files. Please see the section 'Taxonomic filtering for BLAST databases' in https://www.ncbi.nlm.nih.gov/books/NBK569839/ for details.");
+        }
     }
 
-    for(unsigned int i=0; i < ids.size(); i++) {
-    	m_TaxIdList.insert(NStr::StringToNumeric<TTaxId>(ids[i], NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces));
-	if( tb ) // SQLite DB initialized 
-	{
-	    // resolve given taxid to their descendant taxids 
-	    vector<int> desc;
-	    auto taxid = NStr::StringToInt( ids[i] );
-	    tb->GetLeafNodeTaxids(taxid, desc);
-	    if( desc.size() ) {
-	       //SECOND:  descendant taxids  
-	       for (auto i: desc){
-		    m_TaxIdList.insert( static_cast<TTaxId>(i) );
-	       }
-	    }
-	} // end of resolving taxid part
-
+    for (auto id : ids) {
+        auto taxid = NStr::StringToNumeric<TTaxId>(id, NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+    	m_TaxIdList.insert(taxid);
+        if (tb) {
+            vector<int> descendants;
+            tb->GetLeafNodeTaxids(taxid, descendants);
+            for (auto d: descendants)
+                m_TaxIdList.insert(static_cast<TTaxId>(d));
+        }
     }
 
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
