@@ -339,8 +339,14 @@ int CPubseqGatewayApp::Run(void)
 
     m_SplitInfoCache.reset(new CSplitInfoCache(m_Settings.m_SplitInfoBlobCacheSize,
                                                m_Settings.m_SplitInfoBlobCacheSize * kSplitInfoBlobCacheSizeMultiplier));
-    m_UserInfoCache.reset(new CUserInfoCache(this, m_Settings.m_UserInfoCacheSize,
-                                             m_Settings.m_UserInfoCacheSize * kUserInfoCacheSizeMultiplier));
+    m_MyNCBIOKCache.reset(new CMyNCBIOKCache(this, m_Settings.m_MyNCBIOKCacheSize,
+                                             m_Settings.m_MyNCBIOKCacheSize * kUserInfoCacheSizeMultiplier));
+    m_MyNCBINotFoundCache.reset(new CMyNCBINotFoundCache(this, m_Settings.m_MyNCBINotFoundCacheSize,
+                                             m_Settings.m_MyNCBINotFoundCacheSize * kUserInfoCacheSizeMultiplier,
+                                             m_Settings.m_MyNCBINotFoundCacheExpirationSec));
+    m_MyNCBIErrorCache.reset(new CMyNCBIErrorCache(this, m_Settings.m_MyNCBIErrorCacheSize,
+                                             m_Settings.m_MyNCBIErrorCacheSize * kUserInfoCacheSizeMultiplier,
+                                             m_Settings.m_MyNCBIErrorCacheBackOffMs));
 
     m_Timing.reset(new COperationTiming(m_Settings.m_MinStatValue,
                                         m_Settings.m_MaxStatValue,

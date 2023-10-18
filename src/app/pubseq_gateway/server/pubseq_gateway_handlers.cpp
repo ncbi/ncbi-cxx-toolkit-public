@@ -1484,8 +1484,14 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
             status, CPSGSCounters::ePSGS_SplitInfoCacheSize,
             static_cast<uint64_t>(m_SplitInfoCache->Size()));
         m_Counters->AppendValueNode(
-            status, CPSGSCounters::ePSGS_UserInfoCacheSize,
-            static_cast<uint64_t>(m_UserInfoCache->Size()));
+            status, CPSGSCounters::ePSGS_MyNCBIOKCacheSize,
+            static_cast<uint64_t>(m_MyNCBIOKCache->Size()));
+        m_Counters->AppendValueNode(
+            status, CPSGSCounters::ePSGS_MyNCBINotFoundCacheSize,
+            static_cast<uint64_t>(m_MyNCBINotFoundCache->Size()));
+        m_Counters->AppendValueNode(
+            status, CPSGSCounters::ePSGS_MyNCBIErrorCacheSize,
+            static_cast<uint64_t>(m_MyNCBIErrorCache->Size()));
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_ShutdownRequested,
             g_ShutdownData.m_ShutdownRequested);

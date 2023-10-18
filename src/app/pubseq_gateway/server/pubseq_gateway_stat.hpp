@@ -98,9 +98,14 @@ class CPSGSCounters
             ePSGS_MyNCBIErrorCounter,
             ePSGS_MyNCBINotFoundCounter,
             ePSGS_SecureSatUnauthorizedCounter,
-            ePSGS_UserInfoCacheMiss,
-            ePSGS_UserInfoCacheHit,
             ePSGS_FailureToGetCassConnectionCounter,
+            ePSGS_MyNCBIOKCacheMiss,
+            ePSGS_MyNCBIOKCacheHit,
+            ePSGS_MyNCBINotFoundCacheMiss,
+            ePSGS_MyNCBINotFoundCacheHit,
+            ePSGS_MyNCBIErrorCacheMiss,
+            ePSGS_MyNCBIErrorCacheHit,
+            ePSGS_MyNCBIOKCacheWaitHit,
 
             // Request stop statuses
             ePSGS_100,
@@ -157,7 +162,9 @@ class CPSGSCounters
             ePSGS_ShutdownRequested,
             ePSGS_GracefulShutdownExpiredInSec,
             ePSGS_SplitInfoCacheSize,
-            ePSGS_UserInfoCacheSize,
+            ePSGS_MyNCBIOKCacheSize,
+            ePSGS_MyNCBINotFoundCacheSize,
+            ePSGS_MyNCBIErrorCacheSize,
 
             // Used to reserve an array for individual counters
             ePSGS_MaxIndividualCounter,

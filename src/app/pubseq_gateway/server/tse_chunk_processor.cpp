@@ -74,7 +74,9 @@ CPSGS_TSEChunkProcessor::CPSGS_TSEChunkProcessor(
 
 
 CPSGS_TSEChunkProcessor::~CPSGS_TSEChunkProcessor()
-{}
+{
+    CleanupMyNCBICache();
+}
 
 
 bool
@@ -541,14 +543,23 @@ bool CPSGS_TSEChunkProcessor::x_GetMyNCBIUser(void)
                             bind(&CPSGS_TSEChunkProcessor::x_OnMyNCBIError,
                                  this, _1, _2, _3, _4, _5));
     switch (result) {
-        case CPSGS_CassBlobBase::ePSGS_FoundInCache:
+        case CPSGS_CassBlobBase::ePSGS_FoundInOKCache:
+            // The user name has been populated
             return true;
         case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
             CPSGS_CassProcessorBase::SignalFinishProcessing();
             if (IPSGS_Processor::m_Reply->IsOutputReady())
                 x_Peek(false);
             return false;
+        case CPSGS_CassBlobBase::ePSGS_FoundInErrorCache:
+        case CPSGS_CassBlobBase::ePSGS_FoundInNotFoundCache:
+            // The error handlers have been called while checking the caches.
+            // The error handlers called SignalFinishProcessing()
+            return false;
+        case CPSGS_CassBlobBase::ePSGS_AddedToWaitlist:
         case CPSGS_CassBlobBase::ePSGS_RequestInitiated:
+            // Wait for a callback which comes from cache or from the my
+            // ncbi access wrapper asynchronously
             return false;
         default:
             break;

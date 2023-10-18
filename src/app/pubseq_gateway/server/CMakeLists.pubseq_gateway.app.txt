@@ -19,7 +19,7 @@ NCBI_begin_app(pubseq_gateway)
     wgs_client wgs_processor cass_processor_dispatch snp_client snp_processor
     psgs_seq_id_utils http_request http_connection http_reply http_proto
     tcp_daemon http_daemon url_param_utils dummy_processor time_series_stat
-    ipg_resolve settings user_info_cache
+    ipg_resolve settings my_ncbi_cache myncbi_callback
   )
   NCBI_uses_toolkit_libraries(cdd_access xregexp id2 seq psg_ipg psg_cassandra
     psg_protobuf psg_cache psg_myncbi xcgi xconnext connext xconnserv xconnect xcompress

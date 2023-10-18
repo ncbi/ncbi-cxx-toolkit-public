@@ -83,7 +83,6 @@ const double            kDefaultResendTimeoutSec = 0.2;
 const double            kDefaultRequestTimeoutSec = 30.0;
 const size_t            kDefaultProcessorMaxConcurrency = 1200;
 const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
-const size_t            kDefaultUserInfoCacheSize = 100;
 const size_t            kDefaultIPGPageSize = 1024;
 const bool              kDefaultEnableHugeIPG = true;
 const string            kDefaultAuthToken = "";
@@ -100,6 +99,11 @@ const bool              kDefaultOSGProcessorsEnabled = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
 const bool              kDefaultWGSProcessorsEnabled = true;
 const bool              kDefaultSNPProcessorsEnabled = true;
+const size_t            kDefaultMyNCBIOKCacheSize = 10000;
+const size_t            kDefaultMyNCBINotFoundCacheSize = 10000;
+const size_t            kDefaultMyNCBINotFoundCacheExpirationSec = 3600;
+const size_t            kDefaultMyNCBIErrorCacheSize = 10000;
+const size_t            kDefaultMyNCBIErrorCacheBackOffMs = 1000;
 const string            kDefaultMyNCBIURL = "http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNCBIAccount";
 const string            kDefaultMyNCBIHttpProxy = "linkerd:4140";
 size_t                  kDefaultMyNCBITimeoutMs = 100;
@@ -120,7 +124,6 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_RequestTimeoutSec(kDefaultRequestTimeoutSec),
     m_ProcessorMaxConcurrency(kDefaultProcessorMaxConcurrency),
     m_SplitInfoBlobCacheSize(kDefaultSplitInfoBlobCacheSize),
-    m_UserInfoCacheSize(kDefaultUserInfoCacheSize),
     m_ShutdownIfTooManyOpenFD(0),
     m_RootKeyspace(kDefaultRootKeyspace),
     m_ConfigurationDomain(kDefaultConfigurationDomain),
@@ -148,7 +151,15 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
-    m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled)
+    m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
+    m_MyNCBIOKCacheSize(kDefaultMyNCBIOKCacheSize),
+    m_MyNCBINotFoundCacheSize(kDefaultMyNCBINotFoundCacheSize),
+    m_MyNCBINotFoundCacheExpirationSec(kDefaultMyNCBINotFoundCacheExpirationSec),
+    m_MyNCBIErrorCacheSize(kDefaultMyNCBIErrorCacheSize),
+    m_MyNCBIErrorCacheBackOffMs(kDefaultMyNCBIErrorCacheBackOffMs),
+    m_MyNCBIURL(kDefaultMyNCBIURL),
+    m_MyNCBIHttpProxy(kDefaultMyNCBIHttpProxy),
+    m_MyNCBITimeoutMs(kDefaultMyNCBITimeoutMs)
 {}
 
 
@@ -229,9 +240,6 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
     m_SplitInfoBlobCacheSize = registry.GetInt(kServerSection,
                                                "split_info_blob_cache_size",
                                                kDefaultSplitInfoBlobCacheSize);
-    m_UserInfoCacheSize = registry.GetInt(kServerSection,
-                                          "user_info_cache_size",
-                                           kDefaultUserInfoCacheSize);
 
     if (m_SSLEnable) {
         m_ShutdownIfTooManyOpenFD =
@@ -373,6 +381,21 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
 
 void SPubseqGatewaySettings::x_ReadMyNCBISection(const CNcbiRegistry &   registry)
 {
+    m_MyNCBIOKCacheSize = registry.GetInt(kMyNCBISection,
+                                          "ok_cache_size",
+                                          kDefaultMyNCBIOKCacheSize);
+    m_MyNCBINotFoundCacheSize = registry.GetInt(kMyNCBISection,
+                                                "not_found_cache_size",
+                                                kDefaultMyNCBINotFoundCacheSize);
+    m_MyNCBINotFoundCacheExpirationSec = registry.GetInt(
+            kMyNCBISection, "not_found_cache_expiration_sec",
+            kDefaultMyNCBINotFoundCacheExpirationSec);
+    m_MyNCBIErrorCacheSize = registry.GetInt(kMyNCBISection,
+                                             "error_cache_size",
+                                             kDefaultMyNCBIErrorCacheSize);
+    m_MyNCBIErrorCacheBackOffMs = registry.GetInt(kMyNCBISection,
+                                                  "error_cache_back_off_ms",
+                                                  kDefaultMyNCBIErrorCacheBackOffMs);
     m_MyNCBIURL = registry.GetString(kMyNCBISection,
                                      "url",
                                      kDefaultMyNCBIURL);

@@ -1478,6 +1478,12 @@ unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point)
 }
 
 
+unsigned long GetTimespanToNowMs(const psg_time_point_t &  t_point)
+{
+    return chrono::duration_cast<chrono::milliseconds>(psg_clock_t::now() - t_point).count();
+}
+
+
 // The standard C++ to_string() seems to use a variation sprintf().
 // It works slow and visible in the profiler.
 // The version below appears faster and more suitable for the PSG purposes

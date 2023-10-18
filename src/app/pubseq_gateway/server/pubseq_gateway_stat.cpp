@@ -265,14 +265,34 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "SecureSatUnauthorizedCount", "Secure satellite unauthorized counter",
             "Number of times a secure satellite refused authorization");
-    m_Counters[ePSGS_UserInfoCacheMiss] =
+    m_Counters[ePSGS_MyNCBIOKCacheMiss] =
         new SCounterInfo(
-            "MyNCBIUserInfoCacheMissCount", "My NCBI user info cache miss counter",
-            "Number of times a lookup in the my NCBI user info cache found no record");
-    m_Counters[ePSGS_UserInfoCacheHit] =
+            "MyNCBIOKCacheMissCount", "My NCBI user info OK cache miss counter",
+            "Number of times a lookup in the my NCBI user info OK cache found no record");
+    m_Counters[ePSGS_MyNCBIOKCacheHit] =
         new SCounterInfo(
-            "MyNCBIUserInfoCacheHitCount", "My NCBI user info cache hit counter",
-            "Number of times a lookup in the my NCBI user info cache found a record");
+            "MyNCBIOKCacheHitCount", "My NCBI user info OK cache hit counter",
+            "Number of times a lookup in the my NCBI user info OK cache found a record");
+    m_Counters[ePSGS_MyNCBINotFoundCacheMiss] =
+        new SCounterInfo(
+            "MyNCBINotFoundCacheMissCount", "My NCBI not found cache miss counter",
+            "Number of times a lookup in the my NCBI not found cache found no record");
+    m_Counters[ePSGS_MyNCBINotFoundCacheHit] =
+        new SCounterInfo(
+            "MyNCBINotFoundCacheHitCount", "My NCBI not found cache hit counter",
+            "Number of times a lookup in the my NCBI not found cache found a record");
+    m_Counters[ePSGS_MyNCBIErrorCacheMiss] =
+        new SCounterInfo(
+            "MyNCBIErrorCacheMissCount", "My NCBI error cache miss counter",
+            "Number of times a lookup in the my NCBI error cache found no record");
+    m_Counters[ePSGS_MyNCBIErrorCacheHit] =
+        new SCounterInfo(
+            "MyNCBIErrorCacheHitCount", "My NCBI error cache hit counter",
+            "Number of times a lookup in the my NCBI error cache found a record");
+    m_Counters[ePSGS_MyNCBIOKCacheWaitHit] =
+        new SCounterInfo(
+            "MyNCBIOKCacheWaitHitCount", "My NCBI OK cache hit counter when resolution is in progress",
+            "Number of times a lookup in the my NCBI user info OK cache found a record in an in progress state");
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",
@@ -474,10 +494,20 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
             "SplitInfoCacheSize", "Split info cache size",
             "Number of records in the split info cache",
             SCounterInfo::ePSGS_Arbitrary);
-    m_Counters[ePSGS_UserInfoCacheSize] =
+    m_Counters[ePSGS_MyNCBIOKCacheSize] =
         new SCounterInfo(
-            "MyNCBIUserInfoCacheSize", "My NCBI user info cache size",
-            "Number of records in the my NCBI user info cache",
+            "MyNCBIOKCacheSize", "My NCBI user info OK cache size",
+            "Number of records in the my NCBI user info OK cache",
+            SCounterInfo::ePSGS_Arbitrary);
+    m_Counters[ePSGS_MyNCBINotFoundCacheSize] =
+        new SCounterInfo(
+            "MyNCBINotFoundCacheSize", "My NCBI not found cache size",
+            "Number of records in the my NCBI not found cache",
+            SCounterInfo::ePSGS_Arbitrary);
+    m_Counters[ePSGS_MyNCBIErrorCacheSize] =
+        new SCounterInfo(
+            "MyNCBIErrorCacheSize", "My NCBI error cache size",
+            "Number of records in the my NCBI error cache",
             SCounterInfo::ePSGS_Arbitrary);
     m_Counters[ePSGS_ShutdownRequested] =
         new SCounterInfo(
