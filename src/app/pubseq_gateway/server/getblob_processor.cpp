@@ -35,7 +35,7 @@
 #include "pubseq_gateway_cache_utils.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "get_blob_callback.hpp"
-#include "user_info_cache.hpp"
+#include "my_ncbi_cache.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -72,7 +72,9 @@ CPSGS_GetBlobProcessor::CPSGS_GetBlobProcessor(
 
 
 CPSGS_GetBlobProcessor::~CPSGS_GetBlobProcessor()
-{}
+{
+    CleanupMyNCBICache();
+}
 
 
 bool
@@ -157,15 +159,25 @@ void CPSGS_GetBlobProcessor::Process(void)
                                   bind(&CPSGS_GetBlobProcessor::x_OnMyNCBIError,
                                        this, _1, _2, _3, _4, _5));
         switch (populate_result) {
+            case CPSGS_CassBlobBase::ePSGS_FoundInOKCache:
+                // The user name has been populated so just continue
+                break;
             case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
                 if (IPSGS_Processor::m_Reply->IsOutputReady())
                     x_Peek(false);
                 return;
-            case CPSGS_CassBlobBase::ePSGS_RequestInitiated:
+            case CPSGS_CassBlobBase::ePSGS_FoundInErrorCache:
+            case CPSGS_CassBlobBase::ePSGS_FoundInNotFoundCache:
+                // The error handlers have been called while checking the caches.
+                // The error handlers called SignalFinishProcessing() so just
+                // return.
                 return;
-            case CPSGS_CassBlobBase::ePSGS_FoundInCache:
-                break;
+            case CPSGS_CassBlobBase::ePSGS_AddedToWaitlist:
+            case CPSGS_CassBlobBase::ePSGS_RequestInitiated:
+                // Wait for a callback which comes from cache or from the my
+                // ncbi access wrapper asynchronously
+                return;
             default:
                 break;  // Cannot happened
         }

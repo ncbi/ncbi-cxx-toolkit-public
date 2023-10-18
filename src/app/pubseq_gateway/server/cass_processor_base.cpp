@@ -436,6 +436,9 @@ bool CPSGS_CassProcessorBase::IsMyNCBIFinished(void) const
 }
 
 
+
+extern mutex    g_MyNCBICacheLock;
+
 CPSGS_CassProcessorBase::EPSGS_MyNCBILookupResult
 CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
                                             TMyNCBIErrorCB  error_cb)
@@ -443,35 +446,105 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
     if (m_UserName.has_value()) {
         // It has already been retrieved one way or another.
         // There could be only one user per request so no need to do anything
-        return ePSGS_FoundInCache;
+        return ePSGS_FoundInOKCache;
     }
 
     // Check for the cookie
-    auto web_cubby_user = IPSGS_Processor::m_Request->GetWebCubbyUser();
-    if (!web_cubby_user.has_value()) {
+    m_MyNCBICookie = IPSGS_Processor::m_Request->GetWebCubbyUser();
+    if (!m_MyNCBICookie.has_value()) {
         ReportNoWebCubbyUser();
         return ePSGS_CookieNotPresent;
     }
 
-    string  cookie = web_cubby_user.value();
-    bool    need_trace = m_Request->NeedTrace();
+    // Cookie is here. Check all three caches (error, not found and ok)
 
-    // Cookie is here. Check the cache if it was already resolved
-    auto  app = CPubseqGatewayApp::GetInstance();
-    auto  user_info = app->GetUserInfoCache()->GetUserInfo(cookie);
-    if (user_info.has_value()) {
+    string  cookie = m_MyNCBICookie.value();
+    bool    need_trace = m_Request->NeedTrace();
+    auto    app = CPubseqGatewayApp::GetInstance();
+
+    // Since there are 3 caches to check, that should be done under a mutex
+    g_MyNCBICacheLock.lock();
+
+    // Check first the error cache
+    auto    err_cache_ret = app->GetMyNCBIErrorCache()->GetError(cookie);
+    if (err_cache_ret.has_value()) {
+        g_MyNCBICacheLock.unlock();
+
+        // Found in error cache; invoke a callback for errors and return saying
+        // no further actions are required.
         if (need_trace) {
-            m_Reply->SendTrace("MyNCBI user info found in cache for cookie: " + cookie +
-                               ". User name: " + user_info->username,
+            m_Reply->SendTrace("MyNCBI cookie was found in the error cache: " +
+                               cookie + ". Call the error callback right away.",
+                               m_Request->GetStartTimestamp());
+        }
+        error_cb(cookie, err_cache_ret.value().m_Status,
+                 err_cache_ret.value().m_Code,
+                 err_cache_ret.value().m_Severity,
+                 err_cache_ret.value().m_Message);
+
+        return ePSGS_FoundInErrorCache;
+    }
+
+    auto  not_found_cache_ret = app->GetMyNCBINotFoundCache()->IsNotFound(cookie);
+    if (not_found_cache_ret) {
+        g_MyNCBICacheLock.unlock();
+
+        // Found in not found cache; invoke a callback for not found and return saying
+        // no further actions are required.
+        if (need_trace) {
+            m_Reply->SendTrace("MyNCBI cookie was found in the not found cache: " +
+                               cookie + ". Call the error callback right away.",
                                m_Request->GetStartTimestamp());
         }
 
-        m_UserName = user_info->username;
-        return ePSGS_FoundInCache;
+        // Error callback is used for not found case as well. The 404 status is
+        // the differentiating factor
+        error_cb(cookie, CRequestStatus::e404_NotFound,
+                 -1, eDiag_Error, "");
+
+        return ePSGS_FoundInNotFoundCache;
+    }
+
+    // Check the OK cache. If found then the item can be in READY or INPROGRESS
+    // state.
+
+    // Note: the passed callbacks are used for the wait list if the request is
+    // in progress. The callbacks are the same for both cases:
+    // - called by my ncbi wrapper in responce to the request
+    // - called from the cache when a wait list is checked
+    // In both cases callbacks are called asynchronously.
+    auto  user_info = app->GetMyNCBIOKCache()->GetUserInfo(this, cookie,
+                                                           data_cb, error_cb);
+    g_MyNCBICacheLock.unlock();
+
+    if (user_info.has_value()) {
+        if (user_info.value().m_Status == SMyNCBIOKCacheItem::ePSGS_Ready) {
+            // The data are ready to use
+            if (need_trace) {
+                m_Reply->SendTrace("MyNCBI user info found in OK cache "
+                                   "in Ready state for cookie: " + cookie +
+                                   ". User name: " + user_info.value().m_UserInfo.username,
+                                   m_Request->GetStartTimestamp());
+            }
+
+            m_UserName = user_info.value().m_UserInfo.username;
+            return ePSGS_FoundInOKCache;
+        }
+
+        // Here: status == SMyNCBIOKCacheItem::ePSGS_InProgress
+        // That means the caller is put into a wait list. Thus there is nothing
+        // else to do; just wait for a callback
+        if (need_trace) {
+            m_Reply->SendTrace("MyNCBI cookie found in OK cache "
+                               "in InProgress state for cookie: " + cookie +
+                               ". We are in a wait list now.",
+                               m_Request->GetStartTimestamp());
+        }
+        return ePSGS_AddedToWaitlist;
     }
 
 
-    // User info has not been found in cache so initiate a my ncbi request
+    // Cookie has not been found in any of the caches so initiate a my ncbi request
     uv_loop_t *     loop = app->GetUVLoop();
 
     if (need_trace) {
@@ -570,6 +643,32 @@ void CPSGS_CassProcessorBase::ReportFailureToGetCassConnection(const string &  m
             ePSGS_CassConnectionError, eDiag_Error);
     UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
     PSG_ERROR(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::CleanupMyNCBICache(void)
+{
+    // It is possible that:
+    // - the processor is destroyed because of the abrupt connection dropping and
+    // - the processor has initiated a myncbi request or
+    // - in the wait list of the my ncbi reply
+    // So the my NCBI cache must be cleaned
+
+    // If cookie is present => it is a waiter or initiator
+    if (!m_MyNCBICookie.has_value()) {
+        // The processor did not do anything with my NCBI
+        return;
+    }
+
+    auto    app = CPubseqGatewayApp::GetInstance();
+    if (m_WhoAmIRequest.get() == nullptr) {
+        // Possibly this is a processor in the wait list
+        app->GetMyNCBIOKCache()->ClearWaitingProcessor(m_MyNCBICookie.value(),
+                                                       this);
+    } else {
+        // Possibly this is a processor which initiated the request
+        app->GetMyNCBIOKCache()->ClearInitiatedRequest(m_MyNCBICookie.value());
+    }
 }
 
 

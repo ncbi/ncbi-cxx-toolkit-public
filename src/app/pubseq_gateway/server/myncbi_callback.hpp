@@ -32,11 +32,9 @@
  *
  */
 
-#include "cass_fetch.hpp"
-#include "pubseq_gateway.hpp"
-#include "pubseq_gateway_convert_utils.hpp"
-
 #include <functional>
+#include <objtools/pubseq_gateway/impl/myncbi/myncbi_request.hpp>
+
 
 using TMyNCBIErrorCB = function<void(const string &  cookie,
                                      CRequestStatus::ECode  status,
@@ -54,44 +52,12 @@ class CMyNCBIErrorCallback
     public:
         CMyNCBIErrorCallback(IPSGS_Processor *  processor,
                              TMyNCBIErrorCB  my_ncbi_error_cb,
-                             const string &  cookie) :
-            m_Processor(processor),
-            m_MyNCBIErrorCB(my_ncbi_error_cb),
-            m_Cookie(cookie),
-            m_MyNCBITiming(psg_clock_t::now())
-        {}
+                             const string &  cookie);
 
         void operator()(CRequestStatus::ECode  status,
                         int  code,
                         EDiagSev  severity,
-                        const string &  message)
-        {
-            if (status == CRequestStatus::e404_NotFound) {
-                // Timing
-                CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(m_Processor, eMyNCBIRetrieve, eOpStatusNotFound,
-                             m_MyNCBITiming);
-            } else {
-                // Timing
-                CPubseqGatewayApp::GetInstance()->GetTiming().
-                    Register(m_Processor, eMyNCBIRetrieveError, eOpStatusNotFound,
-                             m_MyNCBITiming);
-            }
-
-            // Trace
-            auto    request = m_Processor->GetRequest();
-            if (request->NeedTrace()) {
-                m_Processor->GetReply()->SendTrace(
-                    "MyNCBI error callback. Cookie: " + m_Cookie +
-                    " Status: " + to_string(status) +
-                    " Code: " + to_string(code) +
-                    " Severity: " + to_string(severity) +
-                    " Message: " + message,
-                    request->GetStartTimestamp());
-            }
-
-            m_MyNCBIErrorCB(m_Cookie, status, code, severity, message);
-        }
+                        const string &  message);
 
     private:
         IPSGS_Processor *   m_Processor;
@@ -108,37 +74,9 @@ class CMyNCBIDataCallback
     public:
         CMyNCBIDataCallback(IPSGS_Processor *  processor,
                             TMyNCBIDataCB  my_ncbi_data_cb,
-                            const string &  cookie) :
-            m_Processor(processor),
-            m_MyNCBIDataCB(my_ncbi_data_cb),
-            m_Cookie(cookie),
-            m_MyNCBITiming(psg_clock_t::now())
-        {}
+                            const string &  cookie);
 
-        void operator()(CPSG_MyNCBIRequest_WhoAmI::SUserInfo info)
-        {
-            // Timing
-            CPubseqGatewayApp::GetInstance()->GetTiming().
-                Register(m_Processor, eMyNCBIRetrieve, eOpStatusFound,
-                         m_MyNCBITiming);
-
-            // Add to cache
-            CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
-            app->GetUserInfoCache()->AddUserInfo(m_Cookie, info);
-
-            // Trace
-            auto    request = m_Processor->GetRequest();
-            if (request->NeedTrace()) {
-                m_Processor->GetReply()->SendTrace(
-                    "MyNCBI data callback. Cookie: " + m_Cookie +
-                    " User ID: " + to_string(info.user_id) +
-                    " User name: " + info.username +
-                    " Email: " + info.email_address,
-                    request->GetStartTimestamp());
-            }
-
-            m_MyNCBIDataCB(m_Cookie, info);
-        }
+        void operator()(CPSG_MyNCBIRequest_WhoAmI::SUserInfo info);
 
     private:
         IPSGS_Processor *       m_Processor;

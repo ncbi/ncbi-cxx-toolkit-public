@@ -110,7 +110,8 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_MyNCBIError                        = 341,
     ePSGS_MyNCBINotFound                     = 342,
     ePSGS_SecureSatUnauthorized              = 343,
-    ePSGS_CassConnectionError                = 344
+    ePSGS_CassConnectionError                = 344,
+    ePSGS_MyNCBIRequestInitiatorDestroyed    = 345
 };
 
 

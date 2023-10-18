@@ -59,3 +59,10 @@ Manual tests for the resolution algorithm
    python3 -u ./si2csi_psg_test.py > output 2>&1
 
    NB: an exclusion file can also be supplied for the python script
+
+
+HUP
+~~~
+HUP records need a cookie. This is how to send cookie with h2load
+./h2load -n 100 "http://tonka1:2180/ID/get?seq_id=gb|MF358689|&seq_id_type=5" -H 'cookie: WebCubbyUser="...;...;...;..."'
+

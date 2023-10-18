@@ -52,7 +52,7 @@
 #include "pubseq_gateway_types.hpp"
 #include "exclude_blob_cache.hpp"
 #include "split_info_cache.hpp"
-#include "user_info_cache.hpp"
+#include "my_ncbi_cache.hpp"
 #include "alerts.hpp"
 #include "timing.hpp"
 #include "psgs_dispatcher.hpp"
@@ -89,9 +89,13 @@ public:
         if (m_SplitInfoCache)
             m_SplitInfoCache->Maintain();
     }
-    void MaintainUserInfoCache(void) {
-        if (m_UserInfoCache)
-            m_UserInfoCache->Maintain();
+    void MaintainMyNCBICaches(void) {
+        if (m_MyNCBIOKCache)
+            m_MyNCBIOKCache->Maintain();
+        if (m_MyNCBINotFoundCache)
+            m_MyNCBINotFoundCache->Maintain();
+        if (m_MyNCBIErrorCache)
+            m_MyNCBIErrorCache->Maintain();
     }
 
     SSatInfoEntry GetBioseqKeyspace(void) const
@@ -112,8 +116,14 @@ public:
     CSplitInfoCache *  GetSplitInfoCache(void)
     { return m_SplitInfoCache.get(); }
 
-    CUserInfoCache *  GetUserInfoCache(void)
-    { return m_UserInfoCache.get(); }
+    CMyNCBIOKCache *  GetMyNCBIOKCache(void)
+    { return m_MyNCBIOKCache.get(); }
+
+    CMyNCBINotFoundCache *  GetMyNCBINotFoundCache(void)
+    { return m_MyNCBINotFoundCache.get(); }
+
+    CMyNCBIErrorCache *  GetMyNCBIErrorCache(void)
+    { return m_MyNCBIErrorCache.get(); }
 
     shared_ptr<CPSGMessages>  GetPublicCommentsMapping(void)
     { return m_CassSchemaProvider->GetMessages(); }
@@ -459,7 +469,9 @@ private:
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
     unique_ptr<CSplitInfoCache>         m_SplitInfoCache;
-    unique_ptr<CUserInfoCache>          m_UserInfoCache;
+    unique_ptr<CMyNCBIOKCache>          m_MyNCBIOKCache;
+    unique_ptr<CMyNCBINotFoundCache>    m_MyNCBINotFoundCache;
+    unique_ptr<CMyNCBIErrorCache>       m_MyNCBIErrorCache;
 
     CPSGAlerts                          m_Alerts;
     unique_ptr<COperationTiming>        m_Timing;

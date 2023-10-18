@@ -50,6 +50,7 @@ const string    kCassandraProcessorEvent = "Cassandra";
 const string    kCassandraProcessorGroupName = "CASSANDRA";
 
 
+
 class CPSGS_CassProcessorBase : public IPSGS_Processor
 {
 public:
@@ -84,9 +85,12 @@ protected:
 
 protected:
     enum EPSGS_MyNCBILookupResult {
-        ePSGS_FoundInCache,
+        ePSGS_FoundInOKCache,
+        ePSGS_FoundInErrorCache,
+        ePSGS_FoundInNotFoundCache,
         ePSGS_CookieNotPresent,
-        ePSGS_RequestInitiated
+        ePSGS_RequestInitiated,
+        ePSGS_AddedToWaitlist
     };
     EPSGS_MyNCBILookupResult PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
                                                 TMyNCBIErrorCB  error_cb);
@@ -96,6 +100,7 @@ protected:
     void ReportSecureSatUnauthorized(void);
     void ReportFailureToGetCassConnection(const string &  message);
     void ReportFailureToGetCassConnection(void);
+    void CleanupMyNCBICache(void);
 
 protected:
     // Cassandra data loaders; there could be many of them
@@ -113,6 +118,7 @@ protected:
     // Populated via MyNCBI
     optional<string>                        m_UserName;
     shared_ptr<CPSG_MyNCBIRequest_WhoAmI>   m_WhoAmIRequest;
+    optional<string>                        m_MyNCBICookie;
 };
 
 #endif  // PSGS_CASSPROCESSORBASE__HPP

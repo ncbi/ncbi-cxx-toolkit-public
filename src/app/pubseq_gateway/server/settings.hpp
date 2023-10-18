@@ -64,7 +64,6 @@ struct SPubseqGatewaySettings
     double                              m_RequestTimeoutSec;
     size_t                              m_ProcessorMaxConcurrency;
     size_t                              m_SplitInfoBlobCacheSize;
-    size_t                              m_UserInfoCacheSize;
     size_t                              m_ShutdownIfTooManyOpenFD;
     string                              m_RootKeyspace;
     string                              m_ConfigurationDomain;
@@ -134,6 +133,11 @@ struct SPubseqGatewaySettings
     map<string, tuple<string, string>>  m_IdToNameAndDescription;
 
     // [MY_NCBI]
+    size_t                              m_MyNCBIOKCacheSize;
+    size_t                              m_MyNCBINotFoundCacheSize;
+    size_t                              m_MyNCBINotFoundCacheExpirationSec;
+    size_t                              m_MyNCBIErrorCacheSize;
+    size_t                              m_MyNCBIErrorCacheBackOffMs;
     string                              m_MyNCBIURL;
     string                              m_MyNCBIHttpProxy;
     size_t                              m_MyNCBITimeoutMs;
