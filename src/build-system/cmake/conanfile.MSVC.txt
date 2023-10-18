@@ -36,6 +36,7 @@ grpc/*:shared=False
 protobuf/*:shared=False
 libxml2/*:shared=False
 pcre/*:shared=False
+ncbicrypt/*:shared=False
 #
 grpc/*:cpp_plugin = True
 grpc/*:csharp_plugin = False
