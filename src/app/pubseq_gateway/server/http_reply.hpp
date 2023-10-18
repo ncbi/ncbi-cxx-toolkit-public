@@ -440,26 +440,6 @@ private:
         if (!x_ConnectionPrecheck(count, is_last))
             return;
 
-h2o_conn_t *    conn = m_Req->conn;
-h2o_socket_t *  sock = conn->callbacks->get_socket(conn);
-int             fd = h2o_socket_get_fd(sock);
-
-if (fd == -1) {
-    cout << "FD is -1\n";
-    return;
-}
-
-
-if (fcntl(fd, F_GETFD) == -1) {
-    cout << "FD is not good\n";
-    return;
-}
-if (errno == EBADF ) {
-    cout << "FD is not good: errno\n";
-    return;
-}
-
-
         PSG_TRACE("x_DoSend: " << count << " chunks, "
                   "is_last: " << is_last << ", state: " << m_State);
 
