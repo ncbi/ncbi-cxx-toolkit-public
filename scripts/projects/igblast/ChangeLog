@@ -1,3 +1,9 @@
+Oct 18, 2023
+Release 1.22.0
+*Improved CDR3/FR4 boundary detection by allowing non-exact match to the first 3 nucleotides of the FR4 region in J genes.  The purpose of this is to accommodate possible nucleotide variation/deletion introduced by D-J and V-J rearrangement as well as mutation events.
+
+*Improved V gene amino acid sequence translation of individual FR/CDR regions for AIRR rearrangement format when there is internal frame shift in V gene.  Previously the amino acid sequence was translated from the corresponding individual FR/CDR region without considering frame shift that possibly exists at some FR/CDR boundary.	
+
 Mar 7, 2023
 Release 1.21.0
 *Added gaps to *_alignment_aa fields (such as sequence_alignment_aa) to reflect gaps in nucleotide sequence alignment.
