@@ -36,7 +36,7 @@
 
 using namespace ncbi;
 
-CAppConfig::CAppConfig(const CArgs& args)
+CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
 {
     mQuiet = args["quiet"] && args["quiet"].AsBoolean();
     mDoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
@@ -61,7 +61,8 @@ CAppConfig::CAppConfig(const CArgs& args)
         mOnlyError = args["E"].AsString();
     }
     mOnlyAnnots = args["annot"];
-    mHugeFile = args["huge"];
+    mHugeFile = args["huge"] || reg.GetBool("asnvalidate", "UseHugeFiles", false);
+
     mContinue = false;
     // Set validator options
     m_Options = objects::validator::CValidatorArgUtil::ArgsToValidatorOptions(args);

@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbireg.hpp>
 
 using namespace ncbi;
 
@@ -50,7 +51,7 @@ public:
         eVerbosity_min = 1, eVerbosity_max = 4
     };
 
-    CAppConfig(const CArgs& args);
+    CAppConfig(const CArgs& args, const CNcbiRegistry& reg);
 
     bool mQuiet;
     bool mDoCleanup;
