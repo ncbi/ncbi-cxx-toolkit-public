@@ -518,6 +518,20 @@ if(NOT NCBI_PTBCFG_FLAGS_DEFINED)
 endif(NOT NCBI_PTBCFG_FLAGS_DEFINED)
 
 
+# Work around most occurrences of a -Wrestrict false positive in GCC
+# 12.0-12.3 observed under -O3 but usually not -O2; at least on 64-bit
+# x86, the relevant difference comes down to these three parameters,
+# with any adjustments towards -O3's defaults leading to more occurrences
+# of https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105651.
+if(NCBI_COMPILER_GCC AND "${NCBI_COMPILER_VERSION}" GREATER "1199"
+   AND "${NCBI_COMPILER_VERSION}" LESS "1240")
+    set(_inline_less
+      "--param=early-inlining-insns=11 --param=inline-min-speedup=24")
+    set(_inline_less "${_inline_less} --param=max-inline-insns-single=123")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${_inline_less}")
+endif()
+
+
 if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     if(DEFINED CMAKE_C_FLAGS_RELWITHDEBINFO)
         set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
