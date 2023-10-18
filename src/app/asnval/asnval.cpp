@@ -482,7 +482,7 @@ void CAsnvalApp::Setup(const CArgs& args)
     // Setup MT-safety for CONNECT library
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
-    mAppConfig.reset(new CAppConfig(args));
+    mAppConfig.reset(new CAppConfig(args, GetConfig()));
 
     // Create object manager
     CDataLoadersUtil::SetupObjectManager(args, *CObjectManager::GetInstance(),

@@ -554,6 +554,11 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
 #endif
 }
 
+static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
+{
+    return args["huge"] || cfg.GetBool("asn_cleanup", "UseHugeFiles", false);
+}
+
 void CCleanupApp::x_ProcessOneFile(const string& filename)
 {
     const CArgs& args = GetArgs();
@@ -604,13 +609,10 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
     EProcessingMode mode = eModeRegular;
     m_state.m_IsMultiSeq = false;
-    bool is_Xi = args["X"] && (NStr::Find(args["X"].AsString(), "i") != string::npos);
-    // "-X i" is incompatible with -huge mode, until fixed, always use Regular
     if (asn_type == CBioseq::GetTypeInfo()) {
         // always regular mode
         mode = eModeRegular;
-    } else if (args["huge"]) {
-      //  if (!is_Xi)
+    } else if (s_IsHugeMode(args, GetConfig())) {
             mode = eModeHugefile;
     } else if (args["batch"]) {
         mode = eModeBatch;

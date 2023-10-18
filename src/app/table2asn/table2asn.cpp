@@ -439,7 +439,7 @@ int CTbl2AsnApp::Run()
 
     m_context.m_disable_huge_files = args["disable-huge"];
     if  (!m_context.m_disable_huge_files) {
-        m_context.m_can_use_huge_files = GetConfig().GetBool("table2asn", "UseHugeFiles", false) || args["huge"];
+        m_context.m_can_use_huge_files = args["huge"] || GetConfig().GetBool("table2asn", "UseHugeFiles", false);
         if (m_context.m_can_use_huge_files)
         {
             std::cerr << "Will be using huge files scenario" << std::endl;

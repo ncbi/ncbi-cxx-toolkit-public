@@ -393,7 +393,8 @@ int CAsn2FlatApp::Run()
         }
     }
 
-    const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
+    //const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
+    const CNcbiRegistry& cfg = GetConfig();
     m_PSGMode = cfg.GetBool("genbank", "loader_psg", false, 0, CNcbiRegistry::eReturn);
     if (m_PSGMode) {
 #ifdef USE_SNPLOADER
@@ -426,7 +427,8 @@ int CAsn2FlatApp::Run()
             x_ResetContext(ctx);
         });
 
-    m_HugeFileMode = (args["huge"]);
+    m_HugeFileMode = args["huge"] || cfg.GetBool("asn2flat", "UseHugeFiles", false);
+
     if (m_HugeFileMode && ! args["i"]) {
         NcbiCerr << "Use of -huge mode also requires use of the -i argument. Disabling -huge mode." << endl;
         m_HugeFileMode = false;
