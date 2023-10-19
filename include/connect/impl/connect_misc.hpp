@@ -51,14 +51,19 @@ BEGIN_NCBI_SCOPE
 
 struct NCBI_XCONNECT_EXPORT SSocketAddress
 {
+    string name;
     unsigned host;
     unsigned short port;
 
     struct NCBI_XCONNECT_EXPORT SHost
     {
+        enum class EName { eResolved, eOriginal };
+
+        string name;
         unsigned host;
+
         SHost(unsigned h) : host(h) {}
-        SHost(const string& h);
+        SHost(const string& h, EName n = EName::eResolved);
     };
 
     struct SPort
@@ -69,13 +74,13 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
         SPort(CTempString p)    : port(NStr::StringToNumeric<unsigned short>(p)) {}
     };
 
-    SSocketAddress(SHost h, SPort p) : host(h.host), port(p.port) {}
+    SSocketAddress(SHost h, SPort p) : name(h.name), host(h.host), port(p.port) {}
 
     explicit operator bool() const { return host && port; }
     string GetHostName() const;
     string AsString() const { return GetHostName() + ':' + NStr::UIntToString(port); }
 
-    static SSocketAddress Parse(const string& address);
+    static SSocketAddress Parse(const string& address, SHost::EName name = SHost::EName::eResolved);
 
     friend ostream& operator<<(ostream& os, const SSocketAddress& address) { return os << address.AsString(); }
 };
@@ -86,7 +91,7 @@ NCBI_XCONNECT_EXPORT bool operator< (const SSocketAddress& lhs, const SSocketAdd
 class NCBI_XCONNECT_EXPORT CServiceDiscovery
 {
 public:
-    CServiceDiscovery(const string& service_name);
+    CServiceDiscovery(const string& service_name, SSocketAddress::SHost::EName name = SSocketAddress::SHost::EName::eOriginal);
 
     using TServer = pair<SSocketAddress, double>;
     using TServers = vector<TServer>;

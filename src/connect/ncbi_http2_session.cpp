@@ -611,7 +611,8 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const SH2S_Request::SStart& request
         }
     }
 
-    SH2S_Session::TAddrNCred addr_n_cred(SSocketAddress(url.GetHost(), port), request.cred);
+    SSocketAddress::SHost host(url.GetHost(), SSocketAddress::SHost::EName::eOriginal);
+    SH2S_Session::TAddrNCred addr_n_cred(SSocketAddress(move(host), port), request.cred);
     auto https = scheme == "https" || (scheme.empty() && (port == "443"));
     auto range = m_Sessions.equal_range(addr_n_cred);
 
