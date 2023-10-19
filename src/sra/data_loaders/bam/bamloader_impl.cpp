@@ -64,17 +64,18 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   BAMLoader
-NCBI_DEFINE_ERR_SUBCODE_X(18);
+NCBI_DEFINE_ERR_SUBCODE_X(30);
 
 BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
 static const int kTSEId = 1;
-static const size_t kChunkSize = 500;
+static const Uint8 kSingleAlignBytes = 60; // estimated size of a single alignment in bytes
 //static const size_t kGraphScale = 1000;
 //static const size_t kGraphPoints = 20;
-static const size_t kChunkDataSize = 250000;
+static const size_t kChunkDataSize = 250000; // target chunk size in bytes
+static const size_t kChunkSize = kChunkDataSize/kSingleAlignBytes; // target chunk align count
 static const int kMainChunkId = CTSE_Chunk_Info::kDelayedMain_ChunkId;
 
 //#define SKIP_TOO_LONG_ALIGNMENTS
@@ -205,6 +206,16 @@ void CBAMDataLoader::SetEstimatedCoverageGraphParamDefault(bool param)
 static inline bool GetEstimatedCoverageGraphParam(void)
 {
     return CBAMDataLoader::GetEstimatedCoverageGraphParamDefault();
+}
+
+
+NCBI_PARAM_DECL(bool, BAM_LOADER, PREFER_RAW_INDEX_OVER_COVERAGE_GRAPH);
+NCBI_PARAM_DEF_EX(bool, BAM_LOADER, PREFER_RAW_INDEX_OVER_COVERAGE_GRAPH, false,
+                  eParam_NoThread, BAM_LOADER_PREFER_RAW_INDEX_OVER_COVERAGE_GRAPH);
+
+static bool GetPreferRawIndexOverCoverageGraphParam(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, PREFER_RAW_INDEX_OVER_COVERAGE_GRAPH)::GetDefault();
 }
 
 
@@ -352,8 +363,18 @@ CBAMDataLoader_Impl::CBAMDataLoader_Impl(
 }
 
 
+static double s_CreateTime = 0;
+static double s_AttachTime = 0;
+
+
 CBAMDataLoader_Impl::~CBAMDataLoader_Impl(void)
 {
+    if ( GetDebugLevel() >= 4 ) {
+        LOG_POST_X(21, Info<<"CBAMDataLoader: "
+                   "Total create time: "<<s_CreateTime);
+        LOG_POST_X(22, Info<<"CBAMDataLoader: "
+                   "Total attach time: "<<s_AttachTime);
+    }
 }
 
 
@@ -615,7 +636,8 @@ CBamFileInfo::CBamFileInfo(const CBAMDataLoader_Impl& impl,
         }
     }
     if ( GetDebugLevel() >= 1 ) {
-        LOG_POST_X(16, "Opened BAM file "<<bam.m_BamName<<" in "<<sw.Elapsed());
+        LOG_POST_X(16, Info<<"CBAMDataLoader: "
+                   "Opened BAM file "<<bam.m_BamName<<" in "<<sw.Elapsed());
     }
 }
 
@@ -893,6 +915,10 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
     if ( m_CovFileName.empty() ) {
         return false;
     }
+    if ( m_File->GetBamDb().UsesRawIndex() && GetPreferRawIndexOverCoverageGraphParam() ) {
+        // use more precise index information
+        return false;
+    }
     try {
         CRef<CSeq_entry> entry(new CSeq_entry);
         CRef<CSeq_annot> annot;
@@ -929,6 +955,7 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
         CConstRef<CUser_field> outliers = params->GetFieldRef("Outliers");
         double vmul = graph->GetA();
         double vadd = graph->GetB();
+        double outliers_mul = 1./slot;
 
         size_t non_zero_count = 0;
         vector<double> cov(cnt);
@@ -944,7 +971,7 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
                     continue;
                 }
                 if ( vg > vmax ) {
-                    v = GetIdField(*outliers, i).GetData().GetReal();
+                    v = GetIdField(*outliers, i).GetData().GetReal()*outliers_mul;
                 }
                 else {
                     v = vmul*vg+vadd;
@@ -965,7 +992,7 @@ bool CBamRefSeqInfo::x_LoadRangesCov(void)
                     continue;
                 }
                 if ( vg > vmax ) {
-                    v = GetIdField(*outliers, i).GetData().GetReal();
+                    v = GetIdField(*outliers, i).GetData().GetReal()*outliers_mul;
                 }
                 else {
                     v = vmul*vg+vadd;
@@ -1059,7 +1086,8 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     TSeqPos bin_count = TSeqPos(data_sizes.size());
     TSeqPos bin_size = raw_db.GetIndex().GetMinBinSize();
     if ( GetDebugLevel() >= 2 ) {
-        LOG_POST("Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
+        LOG_POST_X(26, Info<<"CBAMDataLoader:"
+                   " Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
     }
     static const TSeqPos kZeroBlocks = 8;
     static const TSeqPos kMaxChunkLength = 300*1024*1024;
@@ -1082,7 +1110,14 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                 _ASSERT(cur_data_size > 0);
                 TSeqPos non_zero_end = pos - zero_count*bin_size;
                 CBamRefSeqChunkInfo info;
-                info.m_AlignCount = cur_data_size;
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(23, Info << "CBAMDataLoader:"
+                               " Chunk "<<m_Chunks.size()<<
+                               " Range "<<last_pos<<"-"<<
+                               s_GetEnd(over_ends, i-zero_count-1, bin_size)<<
+                               " size: "<<cur_data_size);
+                }
+                info.m_DataSize = cur_data_size;
                 info.m_RefSeqRange.SetFrom(last_pos);
                 info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count-1, bin_size));
                 _ASSERT(info.m_RefSeqRange.GetLength() > 0);
@@ -1099,7 +1134,14 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                 _ASSERT(last_pos == pos-zero_count*bin_size);
                 _ASSERT(cur_data_size == 0);
                 CBamRefSeqChunkInfo info;
-                info.m_AlignCount = 0;
+                info.m_DataSize = 0;
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(24, Info << "CBAMDataLoader:"
+                               " Chunk "<<m_Chunks.size()<<
+                               " Range "<<last_pos<<"-"<<
+                               s_GetEnd(over_ends, i-zero_count, bin_size)<<
+                               " size: "<<0);
+                }
                 info.m_RefSeqRange.SetFrom(last_pos);
                 info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count, bin_size));
                 _ASSERT(info.m_RefSeqRange.GetLength() > 0);
@@ -1121,8 +1163,15 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
             {
                 _ASSERT(last_pos <= pos);
                 _ASSERT(cur_data_size > 0);
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(25, Info << "CBAMDataLoader:"
+                               " Chunk "<<m_Chunks.size()<<
+                               " Range "<<last_pos<<"-"<<
+                               s_GetEnd(over_ends, i, bin_size)<<
+                               " size: "<<cur_data_size);
+                }
                 CBamRefSeqChunkInfo info;
-                info.m_AlignCount = cur_data_size;
+                info.m_DataSize = cur_data_size;
                 info.m_RefSeqRange.SetFrom(last_pos);
                 info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i, bin_size));
                 _ASSERT(info.m_RefSeqRange.GetLength() > 0);
@@ -1358,7 +1407,8 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
                           whole_range);
     split_info.AddChunk(*chunk);
     if ( GetDebugLevel() >= 1 ) {
-        LOG_POST_X(17, "Initialized BAM refseq "<<GetRefSeq_id()<<" in "<<sw.Elapsed());
+        LOG_POST_X(17, Info<<"CBAMDataLoader: "
+                   "Initialized BAM refseq "<<GetRefSeq_id()<<" in "<<sw.Elapsed());
     }
 }
 
@@ -1378,7 +1428,7 @@ void CBamRefSeqInfo::LoadMainChunk(CTSE_Chunk_Info& chunk_info)
 
 
 static const double k_make_graph_seconds = 7.5e-9; // 133 MB/s
-static const double k_make_align_seconds = 80e-9; // 12 MB/s
+static const double k_make_align_seconds = 250e-9; // 4 MB/s
 static const double k_make_read_seconds = 80e-9; // 12 MB/s
 
 
@@ -1410,11 +1460,21 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         CRange<TSeqPos> wide_range = m_Chunks[range_id].GetAlignRange();
         
         int base_id = int(range_id*kChunkIdMul);
-        if ( m_Chunks[range_id].GetAlignCount() ) {
+        auto align_count = m_Chunks[range_id].GetAlignCount();
+        auto data_size = m_Chunks[range_id].m_DataSize;
+        if ( align_count == 0 && data_size != 0 ) {
+            align_count = data_size / kSingleAlignBytes + 1;
+        }
+        else if ( data_size == 0 && align_count != 0 ) {
+            data_size = align_count * kSingleAlignBytes;
+        }
+        if ( align_count ) {
             if ( raw_db ) {
-                if ( m_Chunks[range_id].GetAlignCount() < 2*kChunkDataSize ) {
+                if ( align_count < 2*kChunkDataSize ) {
                     // add single chunk for in-range and overlapping aligns
-                    Uint8 bytes = m_Chunks[range_id].GetAlignCount();
+                    Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range,
+                                                   CBamIndex::kLevel0, CBamIndex::kMaxLevel,
+                                                   CBamIndex::eSearchByStart).GetFileSize();
                     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align));
                     chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
                     //chunk->x_SetLoadSeconds(bytes*align_seconds);
@@ -1477,7 +1537,7 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
                 if ( GetDebugLevel() >= 2 ) {
                     LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
                                "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
-                               " with "<<m_Chunks[range_id].GetAlignCount()<<" aligns");
+                               " with "<<align_count<<" aligns");
                 }
             }
         }
@@ -1485,7 +1545,7 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         if ( has_pileup ) {
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_pileup_graph));
             if ( raw_db ) {
-                Uint8 bytes = m_Chunks[range_id].GetAlignCount();
+                Uint8 bytes = data_size;
                 if ( !bytes ) {
                     // empty sequence span might load tails of previous alignmnets
                     // get actual data size of the tails
@@ -1599,6 +1659,7 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
 void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 {
     CStopWatch sw;
+    CStopWatch sw1;
     if ( GetDebugLevel() >= 3 ) {
         sw.Start();
     }
@@ -1660,8 +1721,14 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
             annot = ait.GetSeq_annot(m_File->GetAnnotName());
             align_list = &annot->SetData().SetAlign();
         }
+        if ( GetDebugLevel() >= 4 ) {
+            sw1.Start();
+        }
         align_list->push_back(ait.GetMatchAlign());
         short_ids.push_back(CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id()));
+        if ( GetDebugLevel() >= 4 ) {
+            sw1.Stop();
+        }
     }
     if ( annot ) {
         chunk_info.x_LoadAnnot(place, *annot);
@@ -1669,6 +1736,17 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
     }
     {{
         CMutexGuard guard(m_Seq2ChunkMutex);
+        if ( GetDebugLevel() >= 4 ) {
+            double time = sw1.Elapsed();
+            LOG_POST_X(19, Info<<"CBAMDataLoader: "
+                       "Created alignments "<<GetRefSeqId()<<" @ "<<
+                       chunk.GetRefSeqRange()<<": "<<
+                       count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
+                       " skipped: "<<skipped<<" in "<<time);
+            s_CreateTime += time;
+            sw1.Reset();
+            sw1.Start();
+        }
         int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq+(sub_chunk-eChunk_align);
         CRef<CTSE_Chunk_Info> seq_chunk;
         ITERATE ( vector<CSeq_id_Handle>, it, short_ids ) {
@@ -1686,6 +1764,15 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
             }
             seq_chunk->x_AddBioseqPlace(kTSEId);
             split_info.AddChunk(*seq_chunk);
+        }
+        if ( GetDebugLevel() >= 4 ) {
+            double time = sw1.Elapsed();
+            s_AttachTime += time;
+            LOG_POST_X(20, Info<<"CBAMDataLoader: "
+                       "Attached alignments "<<GetRefSeqId()<<" @ "<<
+                       chunk.GetRefSeqRange()<<": "<<
+                       count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
+                       " skipped: "<<skipped<<" in "<<time);
         }
     }}
     if ( GetDebugLevel() >= 3 ) {
@@ -2453,7 +2540,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                     }
                 }
                 if ( seglen == 0 ) {
-                    ERR_POST_X(4, "Bad CIGAR length: "<<type<<"0 in "<<cigar);
+                    ERR_POST_X(4, "CBAMDataLoader: Bad CIGAR length: "<<type<<"0 in "<<cigar);
                     break;
                 }
                 if ( type == '=' ) {
@@ -2491,7 +2578,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                     ss_pos += seglen;
                 }
                 else if ( type != 'P' ) {
-                    ERR_POST_X(14, "Bad CIGAR char: "<<type<<" in "<<cigar);
+                    ERR_POST_X(14, "CBAMDataLoader: Bad CIGAR char: "<<type<<" in "<<cigar);
                     break;
                 }
             }
