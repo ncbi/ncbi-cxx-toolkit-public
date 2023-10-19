@@ -13,6 +13,7 @@ dbapi
 check
 dll
 misc$
+misc/xmlwrapp
 misc/third_party
 misc/third_party_static
 
@@ -92,6 +93,8 @@ util/bitset$
 util/cache$
 util/sequtil$
 util/xregexp
+util/regexp$
+util/regexp/testdata$
 util/compress
 util/checksum
 
