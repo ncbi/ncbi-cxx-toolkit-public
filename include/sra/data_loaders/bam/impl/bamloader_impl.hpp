@@ -68,7 +68,7 @@ class CBamRefSeqChunkInfo
 {
 public:
     CBamRefSeqChunkInfo(void)
-        : m_AlignCount(0), m_MaxRefSeqFrom(0)
+        : m_AlignCount(0), m_DataSize(0), m_MaxRefSeqFrom(0)
         {
         }
 
@@ -115,6 +115,7 @@ protected:
     friend class CBamRefSeqInfo;
 
     Uint8 m_AlignCount; // 0 - graph only
+    Uint8 m_DataSize;
     TRange m_RefSeqRange;
     TSeqPos m_MaxRefSeqFrom;
 };
