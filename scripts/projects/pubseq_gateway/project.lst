@@ -94,6 +94,10 @@ util/xregexp
 util/compress
 util/checksum
 
+cgi
+-cgi/demo
+-cgi/test
+
 sra$
 sra/readers$
 sra/readers/sra
