@@ -86,22 +86,23 @@ private:
     map<unsigned, string> m_Data;
 };
 
-SSocketAddress::SHost::SHost(const string& h) :
+SSocketAddress::SHost::SHost(const string& h, EName n) :
+    name(n == EName::eOriginal ? h : string()),
     host(SSocketAddressImpl::GetInstance().GetHost(h))
 {
 }
 
 string SSocketAddress::GetHostName() const
 {
-    return SSocketAddressImpl::GetInstance().GetName(host);
+    return name.empty() ? SSocketAddressImpl::GetInstance().GetName(host) : name;
 }
 
-SSocketAddress SSocketAddress::Parse(const string& address)
+SSocketAddress SSocketAddress::Parse(const string& address, SHost::EName name)
 {
     string host, port;
 
     if (NStr::SplitInTwo(address, ":", host, port)) {
-        return { host, port };
+        return { { host, name }, port };
     }
 
     return { 0, 0 };
@@ -123,9 +124,9 @@ bool operator< (const SSocketAddress& lhs, const SSocketAddress& rhs)
 struct SServiceDiscoveryImpl : protected CConnIniter
 {
     // Do not make static (see above)
-    shared_ptr<void> GetSingleServer(const string& service_name) const
+    shared_ptr<void> GetSingleServer(const string& service_name, SSocketAddress::SHost::EName name) const
     {
-        if (auto address = SSocketAddress::Parse(service_name)) {
+        if (auto address = SSocketAddress::Parse(service_name, name)) {
             CServiceDiscovery::TServer server(std::move(address), 1.0);
             return make_shared<CServiceDiscovery::TServers>(1, std::move(server));
         }
@@ -134,9 +135,9 @@ struct SServiceDiscoveryImpl : protected CConnIniter
     }
 };
 
-CServiceDiscovery::CServiceDiscovery(const string& service_name) :
+CServiceDiscovery::CServiceDiscovery(const string& service_name, SSocketAddress::SHost::EName name) :
     m_ServiceName(service_name),
-    m_Data(SServiceDiscoveryImpl().GetSingleServer(m_ServiceName)),
+    m_Data(SServiceDiscoveryImpl().GetSingleServer(m_ServiceName, name)),
     m_IsSingleServer(m_Data)
 {
 }
