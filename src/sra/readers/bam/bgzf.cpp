@@ -372,7 +372,7 @@ CBGZFFile::CBGZFFile(const string& file_name)
 CBGZFFile::~CBGZFFile()
 {
     if ( s_GetDebug() >= 1 ) {
-        auto stat = GetReadStatistics();
+        auto stat = GetUncompressStatistics();
         if ( stat.first ) {
             LOG_POST("BGZF: Total decompressed "<<stat.first/double(1<<20)<<" MB"
                      " speed: "<<stat.first/(stat.second*(1<<20))<<" MB/s"
