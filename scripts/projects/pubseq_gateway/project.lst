@@ -35,6 +35,7 @@ objtools/pubseq_gateway/impl
 objtools/pubseq_gateway/cache
 objtools/pubseq_gateway/protobuf
 objtools/pubseq_gateway/ipg
+objtools/pubseq_gateway/myncbi
 objtools/cdd
 objtools/readers/sra
 objtools/logging
