@@ -2431,7 +2431,7 @@ static void s_GetTaxIDList(const string & in, bool isFile, bool isNegativeList, 
             auto taxid = NStr::StringToNumeric<TTaxId>(id, NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
             if( isTargetOnly ) {
                 tax_ids.insert(taxid);
-            } else {
+            } else if (tb) {
                 tax_ids.insert(taxid);
                 vector<int> desc;
                 tb->GetLeafNodeTaxids(taxid, desc);
