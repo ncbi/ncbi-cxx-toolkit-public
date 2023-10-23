@@ -786,9 +786,7 @@ protected:
 
     virtual void x_SetPathHooks(bool set) override;
     EFixNonPrint x_GetFixCharsMethodDefault(void) const;
-    EFixNonPrint x_FixCharsMethod(void) const {
-        return m_FixMethod;
-    }
+    EFixNonPrint x_FixCharsMethod(void) const;
     char x_FixCharsSubst(void) const {
         return m_NonPrintSubst;
     }

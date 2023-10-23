@@ -308,6 +308,16 @@ EFixNonPrint CObjectIStream::x_GetFixCharsMethodDefault(void) const
     return s_SerialFixChars->Get();
 }
 
+EFixNonPrint CObjectIStream::x_FixCharsMethod(void) const {
+    if (GetDataFormat() == eSerial_AsnText || GetDataFormat() == eSerial_AsnBinary) {
+        if (GetStackDepth() > 1 && FetchFrameFromTop(1).HasTypeInfo() &&
+            FetchFrameFromTop(1).GetTypeInfo()->GetDataSpec() != EDataSpec::eASN) {
+            return eFNP_Allow;
+        }
+    }
+    return m_FixMethod;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // skip unknown members setup
 
