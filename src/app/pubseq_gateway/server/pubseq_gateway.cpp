@@ -222,7 +222,9 @@ void CPubseqGatewayApp::OpenCache(void)
 
 bool CPubseqGatewayApp::OpenCass(void)
 {
-    static bool need_logging = true;
+    static bool             need_logging = true;
+    static const string     insecure_cass_section = "CASSANDRA_DB";
+    static const string     secure_cass_section = "CASSANDRA_SECURE_DB";
 
     try {
         if (!m_CassConnection)
@@ -237,11 +239,19 @@ bool CPubseqGatewayApp::OpenCass(void)
                                                 m_Settings.m_ConfigurationDomain,
                                                 m_CassConnection,
                                                 registry,
-                                                "CASSANDRA_DB");
+                                                insecure_cass_section);
 
         // To start using HUP (hold until publication) a secure section needs
-        // to be set for the provider.
-        m_CassSchemaProvider->SetSecureSatRegistrySection("CASSANDRA_SECURE_DB");
+        // to be set for the provider. Set the section only if it exists in the
+        // configuration file.
+        list<string>        sections;
+        GetConfig().EnumerateSections(&sections);
+        for (auto &  section : sections) {
+            if (NStr::CompareNocase(section, secure_cass_section) == 0) {
+                m_CassSchemaProvider->SetSecureSatRegistrySection(secure_cass_section);
+                break;
+            }
+        }
 
         // Next step in the startup data initialization
         m_StartupDataState = ePSGS_NoValidCassMapping;
