@@ -113,18 +113,9 @@ public:
     CValidator(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext);
 
-    NCBI_DEPRECATED
     CValidator(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext,
             shared_ptr<ITaxon3> taxon);
-
-    NCBI_DEPRECATED
-    CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon);
-
-    NCBI_DEPRECATED
-    CValidator(CObjectManager& objmgr,
-            shared_ptr<SValidatorContext> pContext,
-            AutoPtr<ITaxon3> taxon);
 
     CValidator(const CValidator&) = delete;
     CValidator& operator= (const CValidator&) = delete;

@@ -80,17 +80,6 @@ CValidator::CValidator(CObjectManager& objmgr,
         m_pContext->m_taxon_update = MakeTaxUpdateFunction(m_pOwnTaxon);
 }
 
-CValidator::CValidator(CObjectManager& objmgr,
-    shared_ptr<SValidatorContext> pContext,
-    AutoPtr<ITaxon3> taxon) :  // deprecated
-        CValidator(objmgr, pContext, shared_ptr<ITaxon3> (taxon.release()))
-{}
-
-CValidator::CValidator(CObjectManager& objmgr,
-    AutoPtr<ITaxon3> taxon) : // deprecated
-        CValidator(objmgr, make_shared<SValidatorContext>(), shared_ptr<ITaxon3> (taxon.release()))
-{}
-
 CValidator::~CValidator()
 {}
 
