@@ -428,7 +428,7 @@ void CGBDataLoader_Native::x_CreateWriters(const string& str,
     vector<string> str_list;
     NStr::Split(str, ";", str_list);
     for ( size_t i = 0; i < str_list.size(); ++i ) {
-        if ( HasHUPIncluded() ) {
+        if ( HasHUPIncluded() || m_Dispatcher->HasReaderWithHUPIncluded() ) {
             NCBI_THROW(CObjMgrException, eRegisterError,
                        "HUP GBLoader cannot have cache");
         }

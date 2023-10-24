@@ -74,6 +74,7 @@ public:
     void InsertReader   (TLevel       level,  CRef<CReader>    reader);
     void InsertWriter   (TLevel       level,  CRef<CWriter>    writer);
     void InsertProcessor(CRef<CProcessor> processor);
+    bool HasReaderWithHUPIncluded() const;
 
     CWriter* GetWriter(const CReaderRequestResult& result,
                        CWriter::EType type) const;
