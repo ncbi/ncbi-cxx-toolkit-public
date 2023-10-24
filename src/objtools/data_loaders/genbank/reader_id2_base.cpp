@@ -1767,12 +1767,16 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
 }
 
 
+#define x_GetReaderName(conn)                                           \
+    (x_ConnDescription((conn)).empty()? "CPubseq2Reader": "CId2Reader")
+
+
 void CId2ReaderBase::x_DumpPacket(TConn conn,
                                   const CID2_Request_Packet& packet,
                                   const char* msg)
 {
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn, "CId2Reader");
+        CDebugPrinter s(conn, x_GetReaderName(conn));
         s << msg;
         if ( GetDebugLevel() >= eTraceASN ) {
             s << ": " << MSerial_AsnText << packet;
@@ -1790,7 +1794,7 @@ void CId2ReaderBase::x_DumpReply(TConn conn,
                                  const char* msg)
 {
     if ( GetDebugLevel() >= eTraceConn   ) {
-        CDebugPrinter s(conn, "CId2Reader");
+        CDebugPrinter s(conn, x_GetReaderName(conn));
         s << msg;
         if ( GetDebugLevel() >= eTraceASN ) {
             if ( GetDebugLevel() >= eTraceBlobData ) {
@@ -1854,7 +1858,7 @@ void CId2ReaderBase::x_SendToConnection(TConn conn,
                      x_ConnDescription(conn));
     }
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn, "CId2Reader");
+        CDebugPrinter s(conn, x_GetReaderName(conn));
         s << "Sent ID2-Request-Packet.";
     }
 }
@@ -1863,7 +1867,7 @@ void CId2ReaderBase::x_SendToConnection(TConn conn,
 CRef<CID2_Reply> CId2ReaderBase::x_ReceiveFromConnection(TConn conn)
 {
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn, "CId2Reader");
+        CDebugPrinter s(conn, x_GetReaderName(conn));
         s << "Receiving ID2-Reply...";
     }
     CRef<CID2_Reply> reply(new CID2_Reply);
@@ -1913,12 +1917,12 @@ void CId2ReaderBase::x_SendID2Packet(CReaderRequestResult& result,
     TConn conn = state.GetConn();
     try {
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn, "CId2Reader");
+            CDebugPrinter s(conn, x_GetReaderName(conn));
             s << "Sending ID2-Request-Packet...";
         }
         x_SendPacket(conn, packet);
         if ( GetDebugLevel() >= eTraceConn ) {
-            CDebugPrinter s(conn, "CId2Reader");
+            CDebugPrinter s(conn, x_GetReaderName(conn));
             s << "Sent ID2-Request-Packet.";
         }
     }
@@ -1956,7 +1960,7 @@ CRef<CID2_Reply> CId2ReaderBase::x_ReceiveID2ReplyStage(SId2ProcessingState& sta
         TConn conn = state.GetConn();
         for (;;) {
             if ( GetDebugLevel() >= eTraceConn ) {
-                CDebugPrinter s(conn, "CId2Reader");
+                CDebugPrinter s(conn, x_GetReaderName(conn));
                 s << "Receiving ID2-Reply...";
             }
             CRef<CID2_Reply> reply(new CID2_Reply);
@@ -2128,7 +2132,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     }
     catch ( exception& /*rethrown*/ ) {
         if ( GetDebugLevel() >= eTraceError ) {
-            CDebugPrinter s(state.GetConn(), "CId2Reader");
+            CDebugPrinter s(state.GetConn(), x_GetReaderName(state.GetConn()));
             s << "Error processing request: " << MSerial_AsnText << packet;
             if ( reply &&
                  (reply->IsSetSerial_number() ||
@@ -2203,7 +2207,7 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
                          !ExtractZoomLevel(annot_info.GetName(), 0, 0) ) {
                         // graphs are suppozed to be zoom tracks
                         if ( GetDebugLevel() >= eTraceASN ) {
-                            CDebugPrinter s(0, "CId2Reader");
+                            CDebugPrinter s(0, x_GetReaderName(0));
                             s << "Adding zoom tracks for "
                               << MSerial_AsnText << annot_info;
                         }
