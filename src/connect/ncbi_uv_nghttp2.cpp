@@ -787,7 +787,6 @@ int SUvNgHttp2_TlsImpl::Init()
             break;
     }
 
-    m_WriteBuffer.clear();
     auto rv = mbedtls_ssl_session_reset(&m_Ssl);
 
     if (rv < 0) {
@@ -877,6 +876,7 @@ int SUvNgHttp2_TlsImpl::Close()
         case eReady:       break;
     }
 
+    m_WriteBuffer.clear();
     m_State = eClosed;
     return mbedtls_ssl_close_notify(&m_Ssl);
 }
