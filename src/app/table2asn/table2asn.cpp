@@ -1257,9 +1257,13 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
         }
     }
 
-    if (m_context.m_cleanup.find('-') == string::npos)
-    {
-       m_validator->Cleanup(submit, seh, m_context.m_cleanup);
+    if (m_context.m_cleanup.find('-') == string::npos) {
+        if (token.cleanup_mutex) {
+            std::lock_guard<std::mutex> g{ *token.cleanup_mutex };
+            m_validator->Cleanup(submit, seh, m_context.m_cleanup);
+        } else {
+            m_validator->Cleanup(submit, seh, m_context.m_cleanup);
+        }
     }
 
     // make asn.1 look nicier

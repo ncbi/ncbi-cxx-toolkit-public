@@ -56,9 +56,6 @@
 using namespace ncbi;
 using namespace objects;
 
-using namespace ncbi;
-using namespace objects;
-
 TAsyncToken::operator CConstRef<CSeq_entry>() const
 {
     if (entry)

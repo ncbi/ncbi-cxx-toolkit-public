@@ -30,6 +30,8 @@
 *
 */
 
+#include <mutex>
+
 BEGIN_NCBI_SCOPE
 
 using namespace objects;
@@ -55,6 +57,7 @@ struct TAsyncToken
     TFeatMap map_protein_to_mrna;
     TFeatMap map_locus_to_gene;
     atomic_bool* pPubLookupDone = nullptr;
+    std::mutex* cleanup_mutex = nullptr;
 
     operator CConstRef<CSeq_entry>() const;
     void Clear();
