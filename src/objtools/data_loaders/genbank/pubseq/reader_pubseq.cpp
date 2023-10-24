@@ -79,11 +79,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-// we have non MT-safe library used in MT application
-static CAtomicCounter s_pubseq_readers;
-#endif
-
 NCBI_PARAM_DECL(int, GENBANK, PUBSEQOS_DEBUG);
 NCBI_PARAM_DEF_EX(int, GENBANK, PUBSEQOS_DEBUG, 0,
                   eParam_NoThread, GENBANK_PUBSEQOS_DEBUG);
@@ -173,14 +168,6 @@ CPubseqReader::CPubseqReader(int max_connections,
         m_DbapiDriver = DEFAULT_DB_DRIVER;
     }
 
-#if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
-    if ( s_pubseq_readers.Add(1) > 1 ) {
-        s_pubseq_readers.Add(-1);
-        NCBI_THROW(CLoaderException, eNoConnection,
-                   "Attempt to open multiple pubseq_readers "
-                   "without MT-safe DB library");
-    }
-#endif
     SetMaximumConnections(max_connections, DEFAULT_NUM_CONN);
 }
 
@@ -230,15 +217,6 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         CConfig::eErr_NoThrow,
         false);
 
-#if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
-    if ( s_pubseq_readers.Add(1) > 1 ) {
-        s_pubseq_readers.Add(-1);
-        NCBI_THROW(CLoaderException, eNoConnection,
-                   "Attempt to open multiple pubseq_readers "
-                   "without MT-safe DB library");
-    }
-#endif
-
     CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
 
@@ -246,15 +224,12 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
 CPubseqReader::~CPubseqReader()
 {
     delete m_Context.exchange(nullptr);
-#if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-    s_pubseq_readers.Add(-1);
-#endif
 }
 
 
 int CPubseqReader::GetMaximumConnectionsLimit(void) const
 {
-#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
+#if defined(NCBI_THREADS)
     return MAX_MT_CONN;
 #else
     return 1;
