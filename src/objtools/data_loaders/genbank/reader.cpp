@@ -112,6 +112,7 @@ CReader::CReader(void)
     : m_Dispatcher(0),
       m_MaxConnections(0),
       m_PreopenConnection(DEFAULT_PREOPEN),
+      m_IncludeHUP(false),
       m_NextNewConnection(0),
       m_NumFreeConnections(0, 1000),
       m_MaximumRetryCount(3),

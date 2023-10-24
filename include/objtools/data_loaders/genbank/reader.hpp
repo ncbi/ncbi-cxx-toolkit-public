@@ -300,6 +300,10 @@ public:
     
     virtual void SetIncludeHUP(bool include_hup = true,
                                const string& web_cookie = NcbiEmptyString);
+    bool HasHUPIncluded() const
+    {
+        return m_IncludeHUP;
+    }
 
     virtual void SetParams(const CReaderParams& params);
 
@@ -352,6 +356,10 @@ protected:
     // report failed or stale connection
     void x_ReportDisconnect(const char* reader, const char* server,
                             TConn conn, bool failed) const;
+    void x_SetIncludeHUP(bool include_hup)
+    {
+        m_IncludeHUP = include_hup;
+    }
 
 private:
     friend class CReaderAllocatedConnection;
@@ -367,6 +375,7 @@ private:
     // parameters
     TConn            m_MaxConnections;
     bool             m_PreopenConnection;
+    bool             m_IncludeHUP;
 
     // current state
     TConn            m_NextNewConnection;
