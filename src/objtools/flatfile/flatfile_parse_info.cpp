@@ -47,9 +47,9 @@ Parser::Parser() :
 }
 
 void Parser::InitializeKeywordParser(
-    EFormat format)
+    EFormat fmt)
 {
-    mpKeywordParser = new CKeywordParser(format);
+    mpKeywordParser = new CKeywordParser(fmt);
 }
 
 CKeywordParser&

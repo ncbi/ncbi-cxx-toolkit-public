@@ -131,7 +131,7 @@ char*            SrchNodeType(DataBlk* entry, Int4 type, size_t* len);
 char*            xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
 string           xGetNodeData(const DataBlk& entry, int nodeType);
 DataBlk*         TrackNodeType(const DataBlk& entry, Int2 type);
-const SectionPtr xTrackNodeType(const Entry&, int type);
+const Section* xTrackNodeType(const Entry&, int type);
 ValNode*         ConstructValNode(objects::CSeq_id::E_Choice choice, const char* data);
 bool             fta_is_tpa_keyword(const char* str);
 bool             fta_tpa_keywords_check(const TKeywordList& kwds);
