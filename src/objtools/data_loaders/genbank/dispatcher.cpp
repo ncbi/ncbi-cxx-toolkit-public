@@ -232,6 +232,17 @@ void CReadDispatcher::CheckReaders(void) const
 }
 
 
+bool CReadDispatcher::HasReaderWithHUPIncluded() const
+{
+    for ( auto& rd : m_Readers ) {
+        if ( rd.second->HasHUPIncluded() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CReadDispatcher::ResetCaches(void)
 {
     NON_CONST_ITERATE(TReaders, rd, m_Readers) {

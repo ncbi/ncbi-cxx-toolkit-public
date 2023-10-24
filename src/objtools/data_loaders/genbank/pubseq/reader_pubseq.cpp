@@ -211,12 +211,14 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER,
         CConfig::eErr_NoThrow,
         DEFAULT_EXCL_WGS_MASTER);
-    m_SetCubbyUser = conf.GetBool(
+    bool set_cubby_user = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_SET_CUBBY_USER,
         CConfig::eErr_NoThrow,
         false);
-
+    if ( set_cubby_user ) {
+        SetIncludeHUP(set_cubby_user);
+    }
     CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
 
@@ -1308,6 +1310,7 @@ void CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
 
 void CPubseqReader::SetIncludeHUP(bool include_hup, const string& web_cookie)
 {
+    x_SetIncludeHUP(include_hup);
     m_SetCubbyUser = include_hup;
     if ( !web_cookie.empty() ) {
         // link-in corelib classes used by CPubseqReader2
