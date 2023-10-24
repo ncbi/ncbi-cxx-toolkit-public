@@ -512,6 +512,8 @@ SH2S_IoCoordinator::~SH2S_IoCoordinator()
 
 void SH2S_IoCoordinator::Process(TH2S_RequestQueue& request_queue)
 {
+    m_Loop.Run(UV_RUN_NOWAIT);
+
     // Retrieve all events from the queue
     for (;;) {
         auto queue_locked = request_queue.GetLock();
