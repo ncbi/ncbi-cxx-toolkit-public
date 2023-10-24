@@ -300,7 +300,7 @@ static void xlex_error_func(const char*   msg,
 }
 
 
-static int advance_to(const char c, int current_pos, const string& line)
+static unsigned advance_to(const char c, unsigned current_pos, const string& line)
 {
     int pos = current_pos;
     while (pos < line.size()) {
@@ -1102,7 +1102,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                     ret->SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_tl);
                     in_caret = true;
                     /*---no break on purpose ---*/
-
+                    NCBI_FALLTHROUGH;
                 case ETokenType::eDotDot:
                     ++currentPt;
                     if (currentPt == end_it) {
@@ -1114,6 +1114,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                         return CRef<CSeq_loc>();
                     }
                     /*--no break on purpose here ---*/
+                    NCBI_FALLTHROUGH;
                 case ETokenType::eNumber:
                 case ETokenType::eLeft:
 
@@ -1506,6 +1507,7 @@ CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, int&
                 keep_rawPt = true;
                 ++numErrors;
                 /*  no break on purpose */
+                NCBI_FALLTHROUGH;
             case ETokenType::eUnknown:
             default:
             case ETokenType::eRight:

@@ -1056,7 +1056,6 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
 {
     char* p;
     Char  msg[51];
-    Int2  i;
 
     if (after_origin) {
         for (p = ptr; *p >= '0' && *p <= '9';)
@@ -1066,7 +1065,7 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
     }
 
     auto keywordCount = keywordList.size();
-    for (i = 0; i < keywordCount; i++) {
+    for (unsigned i = 0; i < keywordCount; i++) {
         auto keyword = keywordList[i];
         if (StringEquN(ptr, keyword.c_str(), keyword.size()))
             return true;
@@ -1151,9 +1150,9 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
 }
 
 
-const SectionPtr xTrackNodeType(const Entry& entry, int type)
+const Section* xTrackNodeType(const Entry& entry, int type)
 {
-    for (SectionPtr sectionPtr : entry.mSections) {
+    for (const Section* sectionPtr : entry.mSections) {
         if (sectionPtr->mType == type) {
             return sectionPtr;
         }
