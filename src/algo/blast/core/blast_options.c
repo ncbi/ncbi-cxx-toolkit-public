@@ -1325,7 +1325,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
                   "Word-size must be 4 or greater for nucleotide comparison");
         return BLASTERR_OPTION_VALUE_INVALID;
     } else if (program_number != eBlastTypeBlastn &&
-               program_number != eBlastTypeMapping && options->word_size > 5)
+               program_number != eBlastTypeMapping && options->word_size > 4)
     {
         if (program_number == eBlastTypeBlastp ||
             program_number == eBlastTypeTblastn ||
@@ -1338,6 +1338,14 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
                                    "8 for a tblastn, blastp or blastx search");
                 return BLASTERR_OPTION_VALUE_INVALID;
             }
+        }
+        else if (program_number == eBlastTypePsiBlast &&
+                 options->word_size > 4) {
+                Blast_MessageWrite(blast_msg, eBlastSevError, 
+                               kBlastMessageNoContext,
+                               "Word-size must be less "
+                               "than 5 for psiblast");
+                return BLASTERR_OPTION_VALUE_INVALID;
         }
         else {
             Blast_MessageWrite(blast_msg, eBlastSevError, 
