@@ -20,7 +20,7 @@ sqlite3/3.42.0
 libtiff/4.5.0
 libxml2/2.11.4
 libxslt/1.1.34
-libuv/1.45.0
+libuv/1.46.0
 zlib/1.2.13
 zstd/1.5.5
 openssl/1.1.1s
