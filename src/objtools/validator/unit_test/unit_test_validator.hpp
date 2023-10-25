@@ -154,8 +154,9 @@ public:
     scope.AddDefaults(); \
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
     CConstRef<CValidError> eval; \
+    CValidator validator(*objmgr, make_shared<SValidatorContext>()); \
     auto taxon = make_shared<CMockTaxon>(replies); \
-    CValidator validator(*objmgr, make_shared<SValidatorContext>(), taxon); \
+    validator.SetTaxon3(taxon); \
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
                           | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
