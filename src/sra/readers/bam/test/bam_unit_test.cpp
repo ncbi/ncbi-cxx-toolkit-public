@@ -52,6 +52,7 @@
 #include <corelib/test_boost.hpp>
 #include <common/test_assert.h>  /* This header must go last */
 
+#define NCBI_FTP "https://ftp-ext.ncbi.nlm.nih.gov"
 
 USING_NCBI_SCOPE;
 
@@ -105,12 +106,12 @@ static string Hex(const vector<char>& v)
 BOOST_AUTO_TEST_CASE(OpenMultipleBAMFiles)
 {
     string urls[] = {
-        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam",
-        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam.bai",
-        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_ucsc.bam",
-        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_ucsc.bam.bai",
-        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam",
-        "https://ftp.ncbi.nlm.nih.gov/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam.bai",
+        NCBI_FTP "/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam",
+        NCBI_FTP "/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/human/grch38_wgsim_gb_accs.bam.bai",
+        NCBI_FTP "/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_ucsc.bam",
+        NCBI_FTP "/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_ucsc.bam.bai",
+        NCBI_FTP "/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam",
+        NCBI_FTP "/toolbox/gbench/samples/udc_seqgraphic_rmt_testing/remote_BAM_remap_UUD-324/yeast/yeast_wgsim_gb_accs.bam.bai",
     };
     const size_t URL_COUNT = ArraySize(urls);
     uint64_t sizes[URL_COUNT];
