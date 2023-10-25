@@ -85,9 +85,6 @@ public:
     bool
     Contains(
         const CGtfLocationRecord&) const;
-    bool
-    IsContainedBy(
-        const CGtfLocationRecord&) const;
 
     using TYPEORDER_MAP = map<string, RecordType>;
     static TYPEORDER_MAP msTypeOrder;

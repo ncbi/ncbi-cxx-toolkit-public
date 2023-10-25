@@ -131,14 +131,6 @@ CGtfLocationRecord::Contains(
     return ((mStart <= other.mStart)  &&  (mStop >= other.mStop));
 }
 
-//  ----------------------------------------------------------------------------
-bool
-CGtfLocationRecord::IsContainedBy(
-    const CGtfLocationRecord& other) const
-//  ----------------------------------------------------------------------------
-{
-    return other.Contains(*this);
-}
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_loc>
@@ -220,6 +212,20 @@ CGtfLocationMerger::AddRecord(
     AddRecordForId(GetFeatureIdFor(record), record);
 }
 
+static bool s_IsTranscriptType(int recType)
+{
+    switch (recType) {
+    case CGtfLocationRecord::TYPE_5utr:
+    case CGtfLocationRecord::TYPE_initial:
+    case CGtfLocationRecord::TYPE_exon:
+    case CGtfLocationRecord::TYPE_terminal:
+    case CGtfLocationRecord::TYPE_3utr:
+        return true;
+    }
+    return false;
+}
+
+
 //  ============================================================================
 void
 CGtfLocationMerger::AddRecordForId(
@@ -233,21 +239,25 @@ CGtfLocationMerger::AddRecordForId(
     }
 
     CGtfLocationRecord location(record, mFlags, mIdResolver);
-    auto& existingRecords = existingEntry->second;
-    for (auto& record: existingRecords) {
-        if (record.Contains(location)) {
-            if (location.mType == CGtfLocationRecord::TYPE_start_codon) {
-                record.mType = CGtfLocationRecord::TYPE_start_codon;
-                record.mPartNum = location.mPartNum;
+
+    for (auto& existingRecord: existingEntry->second) {
+        if (existingRecord.Contains(location)) {
+            if (!s_IsTranscriptType(existingRecord.mType)) {
+                if (location.mType == CGtfLocationRecord::TYPE_start_codon || 
+                    s_IsTranscriptType(location.mType)) {
+                    existingRecord.mType = location.mType;
+                    existingRecord.mPartNum = location.mPartNum;
+                } 
             }
             return;
         }
-        if (record.IsContainedBy(location)) {
-            if (record.mType == CGtfLocationRecord::TYPE_start_codon) {
+        if (location.Contains(existingRecord)) {
+            if (!s_IsTranscriptType(location.mType) && 
+                existingRecord.mType == CGtfLocationRecord::TYPE_start_codon) {
                 location.mType = CGtfLocationRecord::TYPE_start_codon;
-                location.mPartNum = record.mPartNum;
+                location.mPartNum = existingRecord.mPartNum;
             }
-            record = location;
+            existingRecord = location;
             return;
         }
     }
