@@ -37,7 +37,7 @@ set(NCBI_ThirdParty_ZSTD          ${NCBI_TOOLS_ROOT}/zstd-1.5.2 CACHE PATH "ZSTD
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_TOOLS_ROOT}/sqlite-3.26.0-ncbi1 CACHE PATH "SQLITE2 root")
 set(NCBI_ThirdParty_Boost_VERSION "1.76.0")
 set(NCBI_ThirdParty_Boost      ${NCBI_TOOLS_ROOT}/boost-${NCBI_ThirdParty_Boost_VERSION}-ncbi1 CACHE PATH "Boost root")
-set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB CACHE PATH "BerkeleyDB root")
+set(NCBI_ThirdParty_BerkeleyDB ${NCBI_TOOLS_ROOT}/BerkeleyDB-5.3.28-ncbi1 CACHE PATH "BerkeleyDB root")
 set(NCBI_ThirdParty_FASTCGI    ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
 set(NCBI_ThirdParty_FASTCGI_SHLIB ${NCBI_ThirdParty_FASTCGI})
 set(NCBI_ThirdParty_PYTHON_VERSION  3.9 CACHE STRING "PYTHON version")
