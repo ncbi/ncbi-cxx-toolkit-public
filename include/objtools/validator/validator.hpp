@@ -105,20 +105,17 @@ public:
     };
 
     // Constructor / Destructor
-    // If no taxon service is provided, a CTAxon3 client will
-    // be created.
 
+    // If no taxon service is provided, a CTaxon3 client will be created.
     CValidator(CObjectManager& objmgr);
 
     CValidator(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext);
 
-    CValidator(CObjectManager& objmgr,
-            shared_ptr<SValidatorContext> pContext,
-            shared_ptr<ITaxon3> taxon);
+    void SetTaxon3(shared_ptr<ITaxon3> taxon);
 
     CValidator(const CValidator&) = delete;
-    CValidator& operator= (const CValidator&) = delete;
+    CValidator& operator=(const CValidator&) = delete;
 
     ~CValidator();
 
