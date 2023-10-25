@@ -35,19 +35,26 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff2_reader.hpp>
+#include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGtfLocationMerger;
+class CGtfAttributes;
+
+CGtfAttributes g_GetIntersection(const CGtfAttributes& x, const CGtfAttributes& y);
 
 //  ============================================================================
 class CGtfAttributes
 //  ============================================================================
 {
 public:
-    using MultiValue = vector<string>;
+  //  using MultiValue = vector<string>;
+    using MultiValue = set<string>;
+
     using MultiAttributes = map<string, MultiValue>;
 
     const MultiAttributes&
@@ -63,7 +70,7 @@ public:
         MultiValue values;
         GetValues(key, values);
         if (values.size() == 1) {
-            return values.front();
+            return *(values.begin());
         }
         return "";
     }
@@ -77,14 +84,15 @@ public:
         if (it == mAttributes.end()) {
             return false;
         }
+        if (value.empty()) {
+            return true;
+        }
+
         const auto& values = it->second;
         if (values.empty()) {
             return false;
         }
-        if (value.empty()) {
-            return true;
-        }
-        return (find(values.begin(), values.end(), value) != values.end());
+        return (values.find(value) != values.end());
     };
 
     void
@@ -92,13 +100,14 @@ public:
         const string& key,
         MultiValue& values) const
     {
-        const MultiValue empty;
-        values = empty;
-        auto it = mAttributes.find(key);
-        if (it != mAttributes.end()) {
+        if (auto it = mAttributes.find(key); it != mAttributes.end()) {
             values = it->second;
         }
+        else {
+            values.clear();
+        }
     };
+
 
     void
     AddValue(
@@ -107,17 +116,43 @@ public:
     {
         auto kit = mAttributes.find(key);
         if (kit == mAttributes.end()) {
-            kit = mAttributes.insert(make_pair(key, MultiValue())).first;
+            kit = mAttributes.emplace(key, MultiValue()).first;
         }
-        auto vit = find(kit->second.begin(), kit->second.end(), value);
-        if (vit == kit->second.end()) {
-            kit->second.push_back(value);
-        }
+        kit->second.insert(value);
     };
 
+    void 
+    Remove(const string& key)
+    {
+        auto it = mAttributes.find(key);
+        if (it == mAttributes.end()) {
+            return;
+        }
+        mAttributes.erase(it);
+    }
+
+    void 
+    RemoveValue(const string& key, const string& value)
+    {
+        auto it = mAttributes.find(key);
+        if (it == mAttributes.end()) {
+            return;
+        }
+
+        auto& values = it->second;
+        if (auto vit = values.find(value); vit != values.end()) {
+            values.erase(vit);
+            if (values.empty()) {
+                mAttributes.erase(it);
+            }
+        }
+    }
+
+    friend CGtfAttributes g_GetIntersection(const CGtfAttributes& x, const CGtfAttributes& y);
 protected:
     MultiAttributes mAttributes;
 };
+
 
 //  ============================================================================
 class CGtfReadRecord
@@ -158,6 +193,11 @@ public:
             transcriptId = "t" + NStr::IntToString(tidCounter++);
         }
         return GeneKey() + "_" + transcriptId;
+    }
+
+    string TranscriptId() const
+    {
+        return mAttributes.ValueOf("transcript_id");
     }
 
 protected:
@@ -216,6 +256,13 @@ protected:
         const CGtfReadRecord&,
         CSeq_annot&);
 
+private:
+    bool xUpdateAnnotParent(
+        const CGtfReadRecord& record,
+        const string& parentType,
+        CSeq_annot& annot);
+
+protected:
     void xPostProcessAnnot(
         CSeq_annot&) override;
 
@@ -239,6 +286,14 @@ protected:
     bool xFeatureSetQualifiersCds(
         const CGtfReadRecord& record,
         CSeq_feat&);
+
+private:
+    bool xFeatureSetQualifiers(
+        const CGtfReadRecord& record,
+        const set<string>& ignoredAttrs,
+        CSeq_feat&);
+
+protected:    
 
     bool xCreateParentCds(
         const CGtfReadRecord&,
@@ -268,7 +323,28 @@ protected:
     bool xFeatureTrimQualifiers(
         const CGtfReadRecord&,
         CSeq_feat&);
+private:
+    bool xFeatureTrimQualifiers(
+        const CGtfAttributes& attributes,
+        CSeq_feat&);
 
+    bool xFeatureTrimQualifiers(
+        const CGtfAttributes& prevAttributes,
+        const CGtfAttributes& currentAttributes,
+        CSeq_feat&);
+
+
+    void xCheckForGeneIdConflict(
+        const CGtfReadRecord& record);
+
+
+    void xPropagateQualToParent(
+            const CGtfReadRecord& record,
+            const string& qualName,
+            CSeq_feat& parent);
+
+
+protected:
     CRef<CSeq_feat> xFindFeatById(
         const string&);
 
@@ -287,6 +363,13 @@ protected:
         CSeq_feat&) override;
 
     unique_ptr<CGtfLocationMerger> mpLocations;
+
+private:
+    using TChildQualMap = map<string, CGtfAttributes>;
+    using TParentChildQualMap = map<string, TChildQualMap>;
+
+    map<string, string> m_TranscriptToGeneMap;
+    TParentChildQualMap m_ParentChildQualMap;
 };
 
 END_SCOPE(objects)

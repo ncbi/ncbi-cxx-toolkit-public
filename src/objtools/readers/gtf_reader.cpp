@@ -180,6 +180,18 @@ CGtfReader::xProcessData(
     }
 }
 
+
+static bool s_IsTranscriptType(const string& recType)
+{
+    return (recType == "exon" || recType == "5utr" || recType == "3utr");
+}
+
+static bool s_IsCDSType(const string& recType) 
+{
+    return (recType == "cds" || recType == "start_codon" || recType == "stop_codon");
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xUpdateAnnotFeature(
     const CGff2Record& record,
@@ -190,32 +202,17 @@ bool CGtfReader::xUpdateAnnotFeature(
     const CGtfReadRecord& gff = dynamic_cast<const CGtfReadRecord&>(record);
     auto recType = gff.NormalizedType();
 
-    using TYPEHANDLER = bool (CGtfReader::*)(const CGtfReadRecord&, CSeq_annot&);
-    using HANDLERMAP = map<string, TYPEHANDLER>;
 
-    HANDLERMAP typeHandlers = {
-        {"cds",         &CGtfReader::xUpdateAnnotCds},
-        {"start_codon", &CGtfReader::xUpdateAnnotCds},
-        {"stop_codon",  &CGtfReader::xUpdateAnnotCds},
-        {"5utr",        &CGtfReader::xUpdateAnnotTranscript},
-        {"3utr",        &CGtfReader::xUpdateAnnotTranscript},
-        {"exon",        &CGtfReader::xUpdateAnnotTranscript},
-        {"initial",     &CGtfReader::xUpdateAnnotTranscript},
-        {"internal",    &CGtfReader::xUpdateAnnotTranscript},
-        {"terminal",    &CGtfReader::xUpdateAnnotTranscript},
-        {"single",      &CGtfReader::xUpdateAnnotTranscript},
-    };
-
-    //
-    // Handle officially recognized GTF types:
-    //
-    HANDLERMAP::iterator it = typeHandlers.find(recType);
-    if (it != typeHandlers.end()) {
-        TYPEHANDLER handler = it->second;
-        return (this->*handler)(gff, annot);
+    if (s_IsCDSType(recType)) { // Only attempt to create/update the transcript if xUpdateAnnotCds() succeeds
+        return (xUpdateAnnotCds(gff, annot) && 
+                xUpdateAnnotTranscript(gff, annot));
     }
 
-    //
+    if (s_IsTranscriptType(recType))
+    {
+        return xUpdateAnnotTranscript(gff, annot);
+    }
+
     //  Every other type is not officially sanctioned GTF, and per spec we are
     //  supposed to ignore it. In the spirit of being lenient on input we may
     //  try to salvage some of it anyway.
@@ -229,6 +226,49 @@ bool CGtfReader::xUpdateAnnotFeature(
     return true;
 }
 
+
+CGtfAttributes g_GetIntersection(const CGtfAttributes& x, const CGtfAttributes& y)
+{
+    CGtfAttributes result;
+    const auto& xAttributes = x.Get();
+    const auto& yAttributes = y.Get();
+
+    auto xit = xAttributes.begin();
+    auto yit = yAttributes.begin();
+    while (xit != xAttributes.end() && yit != yAttributes.end()) {
+        if (xit->first < yit->first) {
+            ++xit;
+        } else if (yit->first < xit->first) {
+            ++yit;
+        }
+        else { // xit->first == yit->first
+            const set<string>& xVals = xit->second;
+            if (xVals.empty()) {
+                result.AddValue(xit->first, "");
+            }
+            else {
+                const set<string>& yVals = yit->second;
+                set<string> commonVals;
+                set_intersection(begin(xVals), end(xVals), 
+                    begin(yVals), end(yVals), 
+                    inserter(commonVals, commonVals.begin()));
+                if (!commonVals.empty()) {
+                    for (const auto& val : commonVals) {
+                        result.AddValue(xit->first, val);
+                    }    
+                }
+            }
+            ++xit;
+            ++yit;       
+        }
+
+    }
+
+
+    return result;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xUpdateAnnotCds(
     const CGtfReadRecord& gff,
@@ -238,7 +278,90 @@ bool CGtfReader::xUpdateAnnotCds(
     auto featId = mpLocations->GetFeatureIdFor(gff, "cds");
     mpLocations->AddRecordForId(featId, gff) ;
     return (xFindFeatById(featId)  ||  xCreateParentCds(gff, annot));
- }
+}
+
+
+//  ----------------------------------------------------------------------------
+void CGtfReader::xPropagateQualToParent(
+        const CGtfReadRecord& record,
+        const string& qualName,
+        CSeq_feat& parent)
+//  ----------------------------------------------------------------------------
+{
+    CGtfAttributes::MultiValue values;
+    record.GtfAttributes().GetValues(qualName, values);
+    if (!values.empty()) {
+        xFeatureAddQualifiers(qualName, values, parent);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::xUpdateAnnotParent(
+        const CGtfReadRecord& record,
+        const string& parentType,
+        CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+
+    auto recType = record.NormalizedType();
+    //
+    // If there is no gene feature to go with this CDS then make one. Otherwise,
+    //  make sure the existing gene feature includes the location of the CDS.
+    //
+    auto parentFeatId = mpLocations->GetFeatureIdFor(record, parentType);
+    auto pParent = xFindFeatById(parentFeatId);
+    if (!pParent) {
+        if (parentType == "gene") {
+            if (!xCreateParentGene(record, annot)) {
+                return false;
+            }
+        } 
+        else {
+            if (!xCreateParentMrna(record, annot)) {
+                return false;
+            }
+        }
+        
+        m_ParentChildQualMap[parentFeatId].emplace(recType, record.GtfAttributes());
+        mpLocations->AddRecordForId(parentFeatId, record);
+    }
+    else {
+        mpLocations->AddRecordForId(parentFeatId, record);
+
+        if (auto parentIt = m_ParentChildQualMap.find(parentFeatId); 
+            parentIt != m_ParentChildQualMap.end()) {
+            if (auto childIt = parentIt->second.find(recType);
+                childIt != parentIt->second.end()) {
+
+                auto& childAttributes = childIt->second;
+                if (!xFeatureTrimQualifiers(childAttributes, record.GtfAttributes(), *pParent)) {
+                    return false;
+                }
+                auto accumulatedAttributes = g_GetIntersection(childAttributes, record.GtfAttributes());
+                childAttributes = accumulatedAttributes;
+            } else { // First feature 
+                parentIt->second.emplace(recType, record.GtfAttributes());
+
+                if (parentType == "gene") {
+                    if (s_IsCDSType(recType)) {
+                        xPropagateQualToParent(record, "gene_id", *pParent);
+                    } else if (!xFeatureSetQualifiersGene(record, *pParent)) {
+                        return false;
+                    }
+                } else {
+                    if (s_IsCDSType(recType)) {
+                        xPropagateQualToParent(record, "gene_id", *pParent);
+                        xPropagateQualToParent(record, "transcript_id", *pParent);
+                    } else if (!xFeatureSetQualifiersRna(record, *pParent)) {
+                        return false;
+                    }
+                }
+            } 
+        } 
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xUpdateAnnotTranscript(
@@ -246,50 +369,10 @@ bool CGtfReader::xUpdateAnnotTranscript(
     CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    //
-    // If there is no gene feature to go with this CDS then make one. Otherwise,
-    //  make sure the existing gene feature includes the location of the CDS.
-    //
-    auto geneFeatId = mpLocations->GetFeatureIdFor(gff, "gene");
-    CRef< CSeq_feat > pGene = xFindFeatById(geneFeatId);
-    if (!pGene) {
-        if (!xCreateParentGene(gff, annot)) {
-            return false;
-        }
-        mpLocations->AddRecordForId(geneFeatId, gff);
+    if (!xUpdateAnnotParent(gff, "gene", annot)) {
+        return false;
     }
-    else {
-        mpLocations->AddRecordForId(geneFeatId, gff);
-        if (!xFeatureTrimQualifiers(gff, *pGene)) {
-            return false;
-        }
-    }
-
-    //
-    // If there is no mRNA feature with this gene_id|transcript_id then make one.
-    //  Otherwise, fix up the location of the existing one.
-    //
-    auto transcriptFeatId = mpLocations->GetFeatureIdFor(gff, "transcript");
-    CRef<CSeq_feat> pMrna = xFindFeatById(transcriptFeatId);
-    if (!pMrna) {
-        //
-        // Create a brand new CDS feature:
-        //
-        if (!xCreateParentMrna(gff, annot)) {
-            return false;
-        }
-        mpLocations->AddRecordForId(transcriptFeatId, gff);
-    }
-    else {
-        //
-        // Update an already existing CDS features:
-        //
-        mpLocations->AddRecordForId(transcriptFeatId, gff);
-        if (!xFeatureTrimQualifiers(gff, *pMrna)) {
-            return false;
-        }
-    }
-    return true;
+    return xUpdateAnnotParent(gff, "transcript", annot);
 }
 
 //  ----------------------------------------------------------------------------
@@ -330,7 +413,9 @@ bool CGtfReader::xCreateParentGene(
     if (!xCreateFeatureId(gff, "gene", *pFeature)) {
         return false;
     }
-    if ( !xFeatureSetQualifiersGene(gff, *pFeature)) {
+    if (gff.NormalizedType() == "cds") {
+        xPropagateQualToParent(gff, "gene_id", *pFeature);
+    } else if (!xFeatureSetQualifiersGene(gff, *pFeature)) {
         return false;
     }
 
@@ -342,36 +427,19 @@ bool CGtfReader::xCreateParentGene(
     return true;
 }
 
+
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersGene(
     const CGtfReadRecord& record,
     CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    list<string> ignoredAttrs = {
+    set<string> ignoredAttrs = {
         "locus_tag", "transcript_id"
     };
-    //
-    //  Create GB qualifiers for the record attributes:
-    //
-
-    const auto& attrs = record.GtfAttributes().Get();
-    auto it = attrs.begin();
-    for (/*NOOP*/; it != attrs.end(); ++it) {
-        auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
-        if (cit != ignoredAttrs.end()) {
-            continue;
-        }
-        // special case some well-known attributes
-        if (xProcessQualifierSpecialCase(it->first, it->second, feature)) {
-            continue;
-        }
-
-        // turn everything else into a qualifier
-        xFeatureAddQualifiers(it->first, it->second, feature);
-    }
-    return true;
+    return xFeatureSetQualifiers(record, ignoredAttrs, feature);
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersRna(
@@ -379,27 +447,13 @@ bool CGtfReader::xFeatureSetQualifiersRna(
     CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    list<string> ignoredAttrs = {
+    set<string> ignoredAttrs = {
         "locus_tag"
     };
 
-    const auto& attrs = record.GtfAttributes().Get();
-    auto it = attrs.begin();
-    for (/*NOOP*/; it != attrs.end(); ++it) {
-        auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
-        if (cit != ignoredAttrs.end()) {
-            continue;
-        }
-        // special case some well-known attributes
-        if (xProcessQualifierSpecialCase(it->first, it->second, feature)) {
-            continue;
-        }
-
-        // turn everything else into a qualifier
-        xFeatureAddQualifiers(it->first, it->second, feature);
-    }
-    return true;
+    return xFeatureSetQualifiers(record, ignoredAttrs, feature);
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersCds(
@@ -407,27 +461,40 @@ bool CGtfReader::xFeatureSetQualifiersCds(
     CSeq_feat& feature )
 //  ----------------------------------------------------------------------------
 {
-    list<string> ignoredAttrs = {
+    set<string> ignoredAttrs = {
         "locus_tag"
     };
+    return xFeatureSetQualifiers(record, ignoredAttrs, feature);
+}
 
-    const auto& attrs = record.GtfAttributes().Get();
-    auto it = attrs.begin();
-    for (/*NOOP*/; it != attrs.end(); ++it) {
-        auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
-        if (cit != ignoredAttrs.end()) {
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::xFeatureSetQualifiers(
+    const CGtfReadRecord& record,
+    const set<string>& ignoredAttrs,
+    CSeq_feat& feature )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Create GB qualifiers for the record attributes:
+    //
+    for (const auto& attribute : record.GtfAttributes().Get()) {
+        const auto& name = attribute.first;
+        if (ignoredAttrs.find(name) != ignoredAttrs.end()) {
             continue;
         }
+        const auto& vals = attribute.second;
         // special case some well-known attributes
-        if (xProcessQualifierSpecialCase(it->first, it->second, feature)) {
+        if (xProcessQualifierSpecialCase(name, vals, feature)) {
             continue;
         }
 
         // turn everything else into a qualifier
-        xFeatureAddQualifiers(it->first, it->second, feature);
+        xFeatureAddQualifiers(name, vals, feature);
     }
     return true;
 }
+
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::xCreateParentCds(
@@ -435,11 +502,6 @@ bool CGtfReader::xCreateParentCds(
     CSeq_annot& annot )
 //  -----------------------------------------------------------------------------
 {
-    auto featId = mpLocations->GetFeatureIdFor(gff, "cds");
-    if (m_MapIdToFeature.find(featId) != m_MapIdToFeature.end()) {
-        return true;
-    }
-
     CRef<CSeq_feat> pFeature(new CSeq_feat);
 
     if (!xFeatureSetDataCds(gff, *pFeature)) {
@@ -451,9 +513,40 @@ bool CGtfReader::xCreateParentCds(
     if (!xFeatureSetQualifiersCds(gff, *pFeature)) {
         return false;
     }
+
+    auto featId = mpLocations->GetFeatureIdFor(gff, "cds");
+
+    xCheckForGeneIdConflict(gff);
+
     m_MapIdToFeature[featId] = pFeature;
     return xAddFeatureToAnnot(pFeature, annot);
 }
+
+
+void CGtfReader::xCheckForGeneIdConflict(       
+    const CGtfReadRecord& gff) 
+{
+    auto transcriptId = gff.TranscriptId();
+    if (!transcriptId.empty()) {
+        if (auto geneId = gff.GeneKey(); !geneId.empty()) {
+            if (auto it = m_TranscriptToGeneMap.find(transcriptId); it != m_TranscriptToGeneMap.end()) {
+                if (it->second != geneId) {
+                    string msg = "Gene id '" + geneId + "' for transcript '" + transcriptId + 
+                    "' conflicts with previously-assigned '" + it->second + "'";
+                    CReaderMessage error(
+                        eDiag_Error,
+                        m_uLineNumber,
+                        msg);
+                    m_pMessageHandler->Report(error);
+                }
+            }   
+            else {
+                m_TranscriptToGeneMap.emplace(transcriptId, geneId);
+            }
+        }
+    }
+}
+
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::xCreateParentMrna(
@@ -474,7 +567,11 @@ bool CGtfReader::xCreateParentMrna(
     if (!xCreateFeatureId(gff, "mrna", *pFeature)) {
         return false;
     }
-    if ( ! xFeatureSetQualifiersRna( gff, *pFeature ) ) {
+
+    if (gff.NormalizedType() == "cds") {
+        xPropagateQualToParent(gff, "gene_id", *pFeature);
+        xPropagateQualToParent(gff, "transcript_id", *pFeature);
+    } else if (!xFeatureSetQualifiersRna( gff, *pFeature ) ) {
         return false;
     }
 
@@ -592,37 +689,35 @@ bool CGtfReader::xFeatureTrimQualifiers(
     CSeq_feat& feature )
     //  ----------------------------------------------------------------------------
 {
-    typedef CSeq_feat::TQual TQual;
+    return xFeatureTrimQualifiers(record.GtfAttributes(), feature);
+}
+
+
+bool CGtfReader::xFeatureTrimQualifiers(
+    const CGtfAttributes& attributes,
+    CSeq_feat& feature )
+    //  ----------------------------------------------------------------------------
+{
     //task:
     // for each attribute of the new piece check if we already got a feature
     //  qualifier
     // if so, and with the same value, then the qualifier is allowed to live
     // otherwise it is subfeature specific and hence removed from the feature
-    TQual& quals = feature.SetQual();
-    for (TQual::iterator it = quals.begin(); it != quals.end(); /**/) {
+    auto& quals = feature.SetQual();
+    for (auto it = quals.begin(); it != quals.end(); /**/) {
         const string& qualKey = (*it)->GetQual();
-        if (NStr::StartsWith(qualKey, "gff_")) {
-            it++;
+
+        if (NStr::StartsWith(qualKey, "gff_") ||
+            qualKey == "locus_tag" ||
+            qualKey == "old_locus_tag" ||
+            qualKey == "product" ||
+            qualKey == "protein_id") {
+            ++it;
             continue;
         }
-        if (qualKey == "locus_tag") {
-            it++;
-            continue;
-        }
-        if (qualKey == "old_locus_tag") {
-            it++;
-            continue;
-        }
-        if (qualKey == "product") {
-            it++;
-            continue;
-        }
-        if (qualKey == "protein_id") {
-            it++;
-            continue;
-        }
+
         const string& qualVal = (*it)->GetVal();
-        if (!record.GtfAttributes().HasValue(qualKey, qualVal)) {
+        if (!attributes.HasValue(qualKey, qualVal)) {
             //superfluous qualifier- squish
             it = quals.erase(it);
             continue;
@@ -631,6 +726,49 @@ bool CGtfReader::xFeatureTrimQualifiers(
     }
     return true;
 }
+
+
+bool CGtfReader::xFeatureTrimQualifiers(
+    const CGtfAttributes& prevAttributes,
+    const CGtfAttributes& attributes,
+    CSeq_feat& feature )
+    //  ----------------------------------------------------------------------------
+{
+    //task:
+    // for each attribute of the new piece check if we already got a feature
+    //  qualifier
+    // if so, and with the same value, then the qualifier is allowed to live
+    // otherwise it is subfeature specific and hence removed from the feature
+    auto& quals = feature.SetQual();
+    for (auto it = quals.begin(); it != quals.end(); /**/) {
+        const string& qualKey = (*it)->GetQual();
+
+        if (NStr::StartsWith(qualKey, "gff_") ||
+            qualKey == "locus_tag" ||
+            qualKey == "old_locus_tag" ||
+            qualKey == "product" ||
+            qualKey == "protein_id") {
+            ++it;
+            continue;
+        }
+        
+        const string& qualVal = (*it)->GetVal();
+        if (!prevAttributes.HasValue(qualKey, qualVal)) {
+            ++it;
+            continue;
+        }
+
+        if (!attributes.HasValue(qualKey, qualVal)) {
+            //superfluous qualifier- squish
+            it = quals.erase(it);
+            continue;
+        }
+        it++;
+    }
+    return true;
+}
+
+
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xProcessQualifierSpecialCase(
@@ -684,8 +822,17 @@ void CGtfReader::xFeatureAddQualifiers(
     CSeq_feat& feature)
     //  ----------------------------------------------------------------------------
 {
+    set<string> existingVals;
+    for (const auto& pQual : feature.GetQual()) {
+        if (pQual->GetQual() == key) {
+            existingVals.insert(pQual->GetVal());
+        }
+    }
+
     for (auto value: values) {
-        feature.AddQualifier(key, value);
+        if (existingVals.find(value) == existingVals.end()) {
+            feature.AddQualifier(key, value);
+        }
     }
 };
 
