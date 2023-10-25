@@ -164,7 +164,7 @@ public:
     static CSeq_id::ESNPScaleLimit GetSNP_Scale_Limit(void);
     static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
 
-    void SetParams(const CReaderParams& params) override;
+    virtual void SetParams(const CReaderParams& params);
 
 protected:
     virtual string x_ConnDescription(TConn conn) const = 0;
