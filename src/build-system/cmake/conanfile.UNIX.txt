@@ -84,6 +84,6 @@ boost/*:without_type_erasure = True
 boost/*:without_wave = True
 
 [generators]
-#CMakeDeps
-cmake_find_package
+CMakeDeps
+#cmake_find_package
 
