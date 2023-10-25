@@ -59,10 +59,10 @@ USING_SCOPE(sequence);
 // *********************** CValidator implementation *******************
 //
 CValidator::CValidator(CObjectManager& objmgr) :
-    CValidator(objmgr,
-            make_shared<SValidatorContext>(),
-            make_shared<CTaxon3>())
-{}
+    CValidator(objmgr, make_shared<SValidatorContext>())
+{
+    SetTaxon3(make_shared<CTaxon3>());
+}
 
 CValidator::CValidator(CObjectManager& objmgr,
         shared_ptr<SValidatorContext> pContext):
@@ -71,9 +71,7 @@ CValidator::CValidator(CObjectManager& objmgr,
 {}
 
 
-CValidator::CValidator(CObjectManager& objmgr,
-    shared_ptr<SValidatorContext> pContext,
-    shared_ptr<ITaxon3> pTaxon) :  CValidator(objmgr, pContext)
+void CValidator::SetTaxon3(shared_ptr<ITaxon3> pTaxon)
 {
     m_pOwnTaxon = pTaxon;
     if (m_pOwnTaxon)
