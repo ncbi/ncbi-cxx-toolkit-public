@@ -94,6 +94,8 @@ elseif(NCBI_PTBCFG_USECONAN)
         NCBI_util_Cfg_ToStd(${_t} _cfg)
         if(NCBI_CONAN_VERSION EQUAL 1 OR NOT MSVC)
             set(_cmd${_cfg} ${_cmd} -s build_type=${_cfg})
+#invoke Conan install so that it will generate files for the debug configuration, pointing at the release one
+#set(_cmd${_cfg} ${_cmd} -s &:build_type=${_cfg} -s build_type=Release)
         else()
             set(_cmd${_cfg} ${_cmd} -s build_type=${_cfg} -s compiler.runtime_type=${_cfg})
         endif()
