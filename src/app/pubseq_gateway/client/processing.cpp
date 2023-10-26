@@ -448,6 +448,7 @@ string s_ProgressStatusToString(CPSG_Processor::EProgressStatus progress_status)
         case CPSG_Processor::eCanceled:  return "canceled";
         case CPSG_Processor::eTimeout:   return "timeout";
         case CPSG_Processor::eError:     return "error";
+        case CPSG_Processor::eUnauthorized:     return "unauthorized";
         case CPSG_Processor::eUnknown:   return "unknown";
     }
 
