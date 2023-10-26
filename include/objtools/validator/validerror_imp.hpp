@@ -364,9 +364,11 @@ public:
     inline void ResetGeneCount() { m_NumGenes = 0; }
     inline void IncrementGeneCount() { m_NumGenes++; }
     inline void AddToGeneCount(SIZE_TYPE num) { m_NumGenes += num; }
+    inline SIZE_TYPE GetGeneCount(void) const { return m_NumGenes; }
     inline void ResetGeneXrefCount() { m_NumGeneXrefs = 0; }
     inline void IncrementGeneXrefCount() { m_NumGeneXrefs++; }
     inline void AddToGeneXrefCount(SIZE_TYPE num) { m_NumGeneXrefs += num; }
+    inline SIZE_TYPE GetGeneXrefCount(void) const { return m_NumGeneXrefs; }
 
     // counting sequences with and without TPA history
     inline void ResetTpaWithHistoryCount() { m_NumTpaWithHistory = 0; }
