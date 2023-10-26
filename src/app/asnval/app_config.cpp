@@ -61,7 +61,7 @@ CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
         mOnlyError = args["E"].AsString();
     }
     mOnlyAnnots = args["annot"];
-    mHugeFile = args["huge"] || reg.GetBool("asnvalidate", "UseHugeFiles", false);
+    mHugeFile = ! args["disable-huge"] && (args["huge"] || reg.GetBool("asnvalidate", "UseHugeFiles", false));
 
     mContinue = false;
     // Set validator options
