@@ -722,8 +722,8 @@ class Processor:
         self._total = 0
         self._data = json.loads(''.join(filter(lambda l: l.lstrip()[:1] not in ['#', ''], args.input_file)))
 
-    def _get_cond_filter(self):
-        return lambda tags, cond: not tags or not cond or eval(cond)
+    def _get_cond_filter(self, /, require=True):
+        return lambda tags, cond: not (require or tags) or not cond or eval(cond)
 
     def get_runs(self):
         def _should_run(name):
@@ -755,22 +755,29 @@ class Processor:
                 yield self.Run(simple_name, runs.get(simple_name, {}))
 
     def get_testcases(self, run):
-        if exclude := run.get('exclude'):
+        exclude = run.data.get('exclude')
+        require = run.data.get('require')
+
+        if exclude and require:
+            sys.exit(f'Run "{run.name}" has both "exclude" and "require" attributes, which is not allowed')
+        elif exclude:
             run_filter = '!' + ' and !'.join(exclude)
+        elif require:
+            run_filter = ' or '.join(require)
         else:
-            run_filter = run.get('filter', '')
+            run_filter = run.data.get('filter', '')
 
         replaces = (
                 (r'\bnot\s',   r'!'),
                 (r'\band\b',   r'&&'),
                 (r'\bor\b',    r'||'),
-                (r'(!?)(\w+)', r'"\2"\1 in tags'),
+                (r'(!?)([\w-]+)', r'"\2"\1 in tags'),
                 (r'!',         r' not'),
                 (r'&&',        r'and'),
                 (r'\|\|',      r'or')
             )
         cond = functools.reduce(lambda c, r: re.sub(*r, c, flags=re.IGNORECASE), replaces, run_filter)
-        cond_filter = self._get_cond_filter()
+        cond_filter = self._get_cond_filter(require)
 
         def testcases_filter(testcase):
             name, testcase = testcase
@@ -841,9 +848,9 @@ class OutputFileProcessor(Processor):
         self._updated_testcases = {}
         super().__init__()
 
-    def _get_cond_filter(self):
+    def _get_cond_filter(self, /, require=True):
         if args.run or args.no_run:
-            return super()._get_cond_filter()
+            return super()._get_cond_filter(require)
         else:
             return lambda tags, cond: True
 
@@ -955,7 +962,7 @@ def testcases_cmd(args):
         for run in processor.get_runs():
             run.adjust(overall_deadline)
 
-            for testcase in processor.get_testcases(run.data):
+            for testcase in processor.get_testcases(run):
                 with processor(run.name, testcase) as testcase:
                     if testcase:
                         testcase.adjust(run)
