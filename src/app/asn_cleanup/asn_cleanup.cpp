@@ -295,6 +295,12 @@ void CCleanupApp::Init()
         arg_desc->AddFlag("huge",
             "Process file in huge files mode");
 
+        // huge mode
+        arg_desc->AddFlag("disable-huge",
+            "Explicitly disable huge files mode");
+        arg_desc->SetDependency("disable-huge",
+                                CArgDescriptions::eExcludes,
+                                "huge");
     }}
 
     // remote
@@ -556,7 +562,11 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
 
 static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
 {
-    return args["huge"] || cfg.GetBool("asn_cleanup", "UseHugeFiles", false);
+    if (args["disable-huge"])
+        return false;
+    if (args["huge"])
+        return true;
+    return cfg.GetBool("asn_cleanup", "UseHugeFiles", false);
 }
 
 void CCleanupApp::x_ProcessOneFile(const string& filename)

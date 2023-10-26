@@ -296,6 +296,10 @@ void CAsnvalApp::Init()
     arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
     arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
     arg_desc->AddFlag("huge", "Execute in huge-file mode");
+    arg_desc->AddFlag("disable-huge", "Explicitly disable huge-files mode");
+    arg_desc->SetDependency("disable-huge",
+                            CArgDescriptions::eExcludes,
+                            "huge");
 
     arg_desc->AddOptionalKey(
         "D", "String", "Path to lat_lon country data files",

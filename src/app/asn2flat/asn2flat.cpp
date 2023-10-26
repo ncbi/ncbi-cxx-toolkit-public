@@ -321,6 +321,10 @@ void CAsn2FlatApp::Init()
         arg_desc->SetCurrentGroup("Debugging Options - Subject to change or removal without warning");
 
         arg_desc->AddFlag("huge", "Use Huge files mode");
+        arg_desc->AddFlag("disable-huge", "Explicitly disable huge-files mode");
+        arg_desc->SetDependency("disable-huge",
+                                CArgDescriptions::eExcludes,
+                                "huge");
         arg_desc->AddFlag("use_mt", "Use multiple threads when possible");
 
 #if 0
@@ -427,7 +431,7 @@ int CAsn2FlatApp::Run()
             x_ResetContext(ctx);
         });
 
-    m_HugeFileMode = args["huge"] || cfg.GetBool("asn2flat", "UseHugeFiles", false);
+    m_HugeFileMode = ! args["disable-huge"] && (args["huge"] || cfg.GetBool("asn2flat", "UseHugeFiles", false));
 
     if (m_HugeFileMode && ! args["i"]) {
         NcbiCerr << "Use of -huge mode also requires use of the -i argument. Disabling -huge mode." << endl;
