@@ -4495,47 +4495,48 @@ private:
     pythonpp::CModule          m_LoggingModule;
     pythonpp::CDict            m_LoggingDict;
     vector<pythonpp::CCalable> m_LoggingFunctions;
+    pythonpp::CTuple           m_Logger;
+    pythonpp::CObject          m_LoggerClass;
 #if PY_VERSION_HEX >= 0x03020000
     pythonpp::CCalable         m_HasHandlers;
-    pythonpp::CTuple           m_RootLogger;
     pythonpp::CBool            m_IsConfigured;
 #endif
 };
 
 CPythonDiagHandler::CPythonDiagHandler()
     : m_LoggingModule(PyImport_ImportModule("logging"))
-    , m_LoggingDict(m_LoggingModule.GetDict())
+    , m_LoggingDict(m_LoggingModule.GetDict()), m_Logger(1)
+    , m_LoggerClass(m_LoggingDict.GetItem("Logger"))
 #if PY_VERSION_HEX >= 0x03020000
-    , m_HasHandlers(m_LoggingDict.GetItem("Logger").GetAttr("hasHandlers"))
-    , m_RootLogger(1), m_IsConfigured(false)
+    , m_HasHandlers(m_LoggerClass.GetAttr("hasHandlers"))
+    , m_IsConfigured(false)
 #endif
 {
-#if PY_VERSION_HEX >= 0x03020000
     {{
         pythonpp::CCalable get_logger(m_LoggingDict.GetItem("getLogger"));
         pythonpp::IncRefCount(get_logger.Get());
         auto root_logger = get_logger.Apply();
         pythonpp::IncRefCount(root_logger.Get());
-        m_RootLogger.SetItem(0, root_logger);
+        m_Logger.SetItem(0, root_logger);
     }}
-#endif
+
     _ASSERT(m_LoggingFunctions.size() == eDiag_Info);
-    pythonpp::CObject info = m_LoggingDict.GetItem("info");
+    pythonpp::CObject info = m_LoggerClass.GetAttr("info");
     pythonpp::IncRefCount(info.Get());
     m_LoggingFunctions.emplace_back(info);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Warning);
-    pythonpp::CObject warning = m_LoggingDict.GetItem("warning");
+    pythonpp::CObject warning = m_LoggerClass.GetAttr("warning");
     pythonpp::IncRefCount(warning.Get());
     m_LoggingFunctions.emplace_back(warning);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Error);
-    pythonpp::CObject error = m_LoggingDict.GetItem("error");
+    pythonpp::CObject error = m_LoggerClass.GetAttr("error");
     pythonpp::IncRefCount(error.Get());
     m_LoggingFunctions.emplace_back(error);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Critical);
-    pythonpp::CObject critical = m_LoggingDict.GetItem("critical");
+    pythonpp::CObject critical = m_LoggerClass.GetAttr("critical");
     pythonpp::IncRefCount(critical.Get());
     m_LoggingFunctions.emplace_back(critical);
 
@@ -4543,7 +4544,7 @@ CPythonDiagHandler::CPythonDiagHandler()
     m_LoggingFunctions.emplace_back(critical);
 
     _ASSERT(m_LoggingFunctions.size() == eDiag_Trace);
-    pythonpp::CObject debug = m_LoggingDict.GetItem("debug");
+    pythonpp::CObject debug = m_LoggerClass.GetAttr("debug");
     pythonpp::IncRefCount(debug.Get());
     m_LoggingFunctions.emplace_back(debug);
 
@@ -4553,12 +4554,13 @@ CPythonDiagHandler::CPythonDiagHandler()
 void CPythonDiagHandler::Post(const SDiagMessage& mess)
 {
     pythonpp::CStateGuard guard;
-    pythonpp::CTuple args(2);
+    pythonpp::CTuple args(3);
     pythonpp::CString format("%s", 2);
-    args.SetItem(0, format);
+    args.SetItem(0, m_Logger.GetItem(0));
+    args.SetItem(1, format);
 #if PY_VERSION_HEX >= 0x03020000
     if ( !m_IsConfigured ) {
-        m_IsConfigured = m_HasHandlers.Apply(m_RootLogger);
+        m_IsConfigured = m_HasHandlers.Apply(m_Logger);
         if ( !m_IsConfigured ) {
             if (mess.m_BufferLen <= 0
                 ||  CompareDiagPostLevel(mess.m_Severity, eDiag_Warning) < 0) {
@@ -4566,7 +4568,7 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
             }
             pythonpp::CString warning
                 ("python_ncbi_dbapi: Allowing automatic logging.basicConfig");
-            args.SetItem(1, warning);
+            args.SetItem(2, warning);
             m_LoggingFunctions[eDiag_Warning].Apply(args);
         }
     }
@@ -4583,7 +4585,7 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
         // attempting to determine whether applog is in use.
         buffer = NStr::Replace(s, "\v", "\n");
     }
-    args.SetItem(1, buffer);
+    args.SetItem(2, buffer);
     if (mess.m_ExtraArgs.empty()) {
         m_LoggingFunctions[mess.m_Severity].Apply(args);
     } else {
