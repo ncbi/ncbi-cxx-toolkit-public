@@ -645,7 +645,7 @@ public:
         }
         IncRefCount(obj);
     }
-    CObject GetItem(int offset)
+    CObject GetItem(int offset) const
     {
         PyObject* obj = PyTuple_GetItem(Get(), offset);
         if ( !obj ) {
@@ -663,7 +663,7 @@ public:
         }
     }
     // Fast version. Does not increment a counter ...
-    PyObject* GetItemFast(int offset)
+    PyObject* GetItemFast(int offset) const
     {
         return PyTuple_GetItem(Get(), offset);
     }
