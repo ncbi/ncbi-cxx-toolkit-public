@@ -103,6 +103,7 @@ public:
         e416_RangeNotSatisfiable    = CRequestStatus::e416_RangeNotSatisfiable,
         e417_ExpectationFailed      = CRequestStatus::e417_ExpectationFailed,
         e422_UnprocessableEntity    = CRequestStatus::e422_UnprocessableEntity,
+        e451_Unavailable_For_Legal_Reasons = CRequestStatus::e451_Unavailable_For_Legal_Reasons,
 
         e500_InternalServerError    = CRequestStatus::e500_InternalServerError,
         e501_NotImplemented         = CRequestStatus::e501_NotImplemented,
