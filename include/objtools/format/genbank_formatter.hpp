@@ -136,8 +136,10 @@ private:
     typedef std::map< std::string, int > TFeatureKeyCountMap;
     TFeatureKeyCountMap m_FeatureKeyToLocMap;
 
-    // used
+    // Initialization of javascript array used for feature hightlighting
     bool m_bHavePrintedSourceFeatureJavascript;
+    // ID-7962 : Source descriptor is not hyperlinked, but features are.
+    bool m_bSourceDescriptorDone;
 };
 
 

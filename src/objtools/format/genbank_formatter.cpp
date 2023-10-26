@@ -1464,14 +1464,11 @@ bool s_GetLinkFeatureKey(
     {
         return false;
     }
-    if ( strRawKey == "source" ) {
-        const string& loc = feat.GetLoc().GetString();
-        if (NStr::StartsWith(loc, "1..") && NStr::Find(loc, ",") == NPOS) {
-            return false;
-        }
-        if (NStr::Find(loc, "order") != NPOS || NStr::Find(loc, "join") != NPOS) {
-            return false;
-        }
+
+    // ID-7962 : The first "source" item comes from a descriptor, not a feature, and
+    // hyperlink for it is not created.
+    if ( strRawKey == "source" && uItemNumber == 0) {
+        return false;
     }
 
     TGi iGi = ZERO_GI;
@@ -1606,6 +1603,7 @@ void CGenbankFormatter::FormatFeature
 {
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream* text_os = nullptr;
+
     {
         // this works differently from the others because we have to check
         // the underlying type
@@ -1629,9 +1627,12 @@ void CGenbankFormatter::FormatFeature
 
     CConstRef<CFlatFeature> feat = f.Format();
 
-    if ( feat->GetKey() != "source" ) {
-        ++ m_uFeatureCount;
-    }
+    // ID-7962 : Do not increment feature count for the source descriptor - this would tell the
+    // s_GetLinkFeatureKey function below to not create a hyperlink.
+    if ( feat->GetKey() != "source" || m_uFeatureCount > 0 || m_bSourceDescriptorDone)
+        ++m_uFeatureCount;
+    else
+        m_bSourceDescriptorDone = true;
 
     const string& strKey = feat->GetKey();
     string fkey = strKey;
@@ -1658,7 +1659,7 @@ void CGenbankFormatter::FormatFeature
     // on the already generated flat file view (which itself can be either a full sequence,
     // or a location on it).
     // In case 2, the absolute offsets included in the link are adjusted to the relative offsets
-    // by the Javascript responsible for howing the highlights.
+    // by the Javascript responsible for showing the highlights.
     string strFeatKey;
     if (s_GetLinkFeatureKey(f, *feat, fkey, strFeatKey, m_uFeatureCount))
     {
