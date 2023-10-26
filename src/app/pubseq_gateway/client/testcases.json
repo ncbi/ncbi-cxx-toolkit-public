@@ -5,12 +5,18 @@
         },
         "on-deploy": {
             "timeout": 20,
-            "sub-runs": ["fast", "fast-nocache-noretries"]
+            "sub-runs": ["fast", "fast-nocache-noretries", "hup-bad-cookie", "hup-no-cookie"]
+        },
+        "on-deploy-hup": {
+            "timeout": 20,
+            "sub-runs": ["fast", "fast-nocache-noretries", "hup-ok", "hup-bad-cookie", "hup-no-cookie"]
         },
         "on-ci": {
-            "sub-runs": ["", "nocache", "noretries", "nocache-noretries"]
+            "sub-runs": ["", "nocache", "noretries", "nocache-noretries", "hup-bad-cookie", "hup-no-cookie"]
         },
-
+        "all-fast": {
+            "sub-runs": ["fast", "fast-nocache", "fast-nocache-noretries", "hup-bad-cookie", "hup-no-cookie"]
+        },
         "noretries": {
             "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
         },
@@ -18,9 +24,6 @@
             "exclude": ["lmdb"],
             "user_args": "use_cache=no",
             "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
-        },
-        "all-fast": {
-            "sub-runs": ["fast", "fast-nocache", "fast-nocache-noretries"]
         },
         "fast": {
             "exclude": ["slow"]
@@ -41,6 +44,15 @@
             "exclude": ["slow", "lmdb"],
             "user_args": "use_cache=no",
             "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
+        },
+        "hup-ok" : {
+            "require": ["hup-ok"]
+        },
+        "hup-bad-cookie": {
+            "require": ["hup-bad-cookie"]
+        },
+        "hup-no-cookie": {
+            "require": ["hup-no-cookie"]
         }
     },
 
@@ -4727,6 +4739,7 @@
         },
         "Biodata of 115952497": {
             "description": "Biodata of 115952497",
+            "tags": ["id-get", "cassandra", "200"],
             "requests": [
                 [
                     {
@@ -20843,6 +20856,7 @@
         },
         "Extra chunk 44 info size 1": {
             "description": "Extra chunk 44 info size 1",
+            "tags": ["id-get", "cassandra", "200"],
             "requests": [
                 [
                     {
@@ -25543,6 +25557,811 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Success"
+                    }
+                }
+            ]
+        },
+        "HUP biodata of gb|WMV97217| (ok)": {
+            "description": "HUP biodata of gb|WMV97217| (ok)",
+            "tags": ["id-get", "cassandra", "200", "hup-ok"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "biodata",
+                        "params": {
+                            "bio_id": [
+                                "gb|WMV97217|",
+                                "5"
+                            ],
+                            "user_args": "resend_timeout=0&disable_processor=WGS"
+                        },
+                        "id": "biodata_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|WMV97217.1|",
+                            "type": 5
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2574876738",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 232,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "20.37295152"
+                        },
+                        "tax_id": 0,
+                        "hash": 987162254,
+                        "date_changed": "09/08/2023 11:54:03",
+                        "gi": 2574876738
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id": "20.37295152",
+                            "last_modified": 1694174043360
+                        },
+                        "length": 30295,
+                        "hash": "48A4074D412D9AD8",
+                        "preview": "eJztnX2AXUV5//MGAioKBg=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id": "20.37295152",
+                            "last_modified": 1694174043360
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 30295,
+                        "size": 614857,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_withdrawn": false,
+                        "hup_release_date": "09/04/2024 04:00:00",
+                        "owner": 13,
+                        "original_load_date": "09/08/2023 11:54:03",
+                        "class": "pop-set",
+                        "division": "PRI",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "HUP biodata of 2574876738 (ok)": {
+            "description": "HUP biodata of 2574876738 (ok)",
+            "tags": ["id-get", "cassandra", "200", "hup-ok"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "biodata",
+                        "params": {
+                            "bio_id": [
+                                "2574876738",
+                                "12"
+                            ],
+                            "user_args": "resend_timeout=0&disable_processor=WGS"
+                        },
+                        "id": "biodata_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|WMV97217.1|",
+                            "type": 5
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2574876738",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 232,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "20.37295152"
+                        },
+                        "tax_id": 0,
+                        "hash": 987162254,
+                        "date_changed": "09/08/2023 11:54:03",
+                        "gi": 2574876738
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id": "20.37295152",
+                            "last_modified": 1694174043360
+                        },
+                        "length": 30295,
+                        "hash": "48A4074D412D9AD8",
+                        "preview": "eJztnX2AXUV5//MGAioKBg=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id": "20.37295152",
+                            "last_modified": 1694174043360
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 30295,
+                        "size": 614857,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_withdrawn": false,
+                        "hup_release_date": "09/04/2024 04:00:00",
+                        "owner": 13,
+                        "original_load_date": "09/08/2023 11:54:03",
+                        "class": "pop-set",
+                        "division": "PRI",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "HUP blob (ok)": {
+            "description": "HUP blob (ok)",
+            "tags": ["id-getblob", "cassandra", "200", "hup-ok"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "blob",
+                        "params": {
+                            "blob_id": [
+                                "20.29692260"
+                            ]
+                        },
+                        "id": "blob_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobData",
+                        "id": {
+                            "id": "20.29692260",
+                            "last_modified": 1587034622010
+                        },
+                        "length": 2740,
+                        "hash": "AE0C3CBC129C5143",
+                        "preview": "eJztV31sHMUVP68dcnGcsw=="
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id": "20.29692260",
+                            "last_modified": 1587034622010
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 2740,
+                        "size": 5173,
+                        "is_dead": true,
+                        "is_suppressed": false,
+                        "is_withdrawn": false,
+                        "hup_release_date": "04/21/2020 04:00:00",
+                        "owner": 13,
+                        "original_load_date": "04/16/2020 10:57:02",
+                        "class": "nuc-prot",
+                        "division": "VRL",
+                        "username": "gbupdate",
+                        "id2_info": "",
+                        "n_chunks": 1
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "HUP blob does not exist (ok)": {
+            "description": "HUP blob does not exist (ok)",
+            "tags": ["id-getblob", "cassandra", "404", "hup-ok"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "blob",
+                        "params": {
+                            "blob_id": [
+                                "20.11"
+                            ]
+                        },
+                        "id": "blob_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                  "jsonrpc": "2.0",
+                  "id": "blob_1",
+                  "result": {
+                    "reply": "BlobInfo",
+                    "status": "NotFound",
+                    "errors": [
+                      "Blob 20.11 properties are not found (last modified: -1)"
+                    ]
+                  }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "status": "NotFound"
+                    }
+                }
+            ]
+        },
+        "HUP biodata of gb|WMV97217| (bad cookie)": {
+            "description": "HUP biodata of gb|WMV97217| (bad cookie)",
+            "tags": ["id-get", "cassandra", "400", "hup-bad-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": "No-HUP-Allowed"},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "biodata",
+                        "params": {
+                            "bio_id": [
+                                "gb|WMV97217|",
+                                "5"
+                            ],
+                            "user_args": "resend_timeout=0&disable_processor=WGS"
+                        },
+                        "id": "biodata_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|WMV97217.1|",
+                            "type": 5
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2574876738",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 232,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "20.37295152"
+                        },
+                        "tax_id": 0,
+                        "hash": 987162254,
+                        "date_changed": "09/08/2023 11:54:03",
+                        "gi": 2574876738
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-get processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "HUP biodata of 2574876738 (bad cookie)": {
+            "description": "HUP biodata of 2574876738 (bad cookie)",
+            "tags": ["id-get", "cassandra", "400", "hup-bad-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": "No-HUP-Allowed"},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "biodata",
+                        "params": {
+                            "bio_id": [
+                                "2574876738",
+                                "12"
+                            ],
+                            "user_args": "resend_timeout=0&disable_processor=WGS"
+                        },
+                        "id": "biodata_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|WMV97217.1|",
+                            "type": 5
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2574876738",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 232,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "20.37295152"
+                        },
+                        "tax_id": 0,
+                        "hash": 987162254,
+                        "date_changed": "09/08/2023 11:54:03",
+                        "gi": 2574876738
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-get processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "HUP blob (bad cookie)": {
+            "description": "HUP blob (bad cookie)",
+            "tags": ["id-getblob", "cassandra", "400", "hup-bad-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": "No-HUP-Allowed"},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "blob",
+                        "params": {
+                            "blob_id": [
+                                "20.29692260"
+                            ]
+                        },
+                        "id": "blob_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-getblob processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "HUP blob does not exist (bad cookie)": {
+            "description": "HUP blob does not exist (bad cookie)",
+            "tags": ["id-getblob", "cassandra", "400", "hup-bad-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": "No-HUP-Allowed"},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "blob",
+                        "params": {
+                            "blob_id": [
+                                "20.11"
+                            ]
+                        },
+                        "id": "blob_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-getblob processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+
+
+        "HUP biodata of gb|WMV97217| (no cookie)": {
+            "description": "HUP biodata of gb|WMV97217| (no cookie)",
+            "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "biodata",
+                        "params": {
+                            "bio_id": [
+                                "gb|WMV97217|",
+                                "5"
+                            ],
+                            "user_args": "resend_timeout=0&disable_processor=WGS"
+                        },
+                        "id": "biodata_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|WMV97217.1|",
+                            "type": 5
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2574876738",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 232,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "20.37295152"
+                        },
+                        "tax_id": 0,
+                        "hash": 987162254,
+                        "date_changed": "09/08/2023 11:54:03",
+                        "gi": 2574876738
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "HUP biodata of 2574876738 (no cookie)": {
+            "description": "HUP biodata of 2574876738 (no cookie)",
+            "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "biodata",
+                        "params": {
+                            "bio_id": [
+                                "2574876738",
+                                "12"
+                            ],
+                            "user_args": "resend_timeout=0&disable_processor=WGS"
+                        },
+                        "id": "biodata_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|WMV97217.1|",
+                            "type": 5
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2574876738",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 232,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "20.37295152"
+                        },
+                        "tax_id": 0,
+                        "hash": 987162254,
+                        "date_changed": "09/08/2023 11:54:03",
+                        "gi": 2574876738
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "biodata_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "HUP blob (no cookie)": {
+            "description": "HUP blob (no cookie)",
+            "tags": ["id-getblob", "cassandra", "400", "hup-no-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "blob",
+                        "params": {
+                            "blob_id": [
+                                "20.29692260"
+                            ]
+                        },
+                        "id": "blob_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "HUP blob does not exist (no cookie)": {
+            "description": "HUP blob does not exist (no cookie)",
+            "tags": ["id-getblob", "cassandra", "400", "hup-no-cookie"],
+            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "blob",
+                        "params": {
+                            "blob_id": [
+                                "20.11"
+                            ]
+                        },
+                        "id": "blob_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "status": "Error",
+                        "errors": [
+                            "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "status": "Error"
                     }
                 }
             ]
