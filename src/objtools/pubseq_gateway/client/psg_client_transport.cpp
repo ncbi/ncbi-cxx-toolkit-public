@@ -603,7 +603,10 @@ EPSG_Status SPSG_Reply::SState::FromRequestStatus(int status)
     switch (status) {
         case CRequestStatus::e200_Ok:               return EPSG_Status::eSuccess;
         case CRequestStatus::e202_Accepted:         return EPSG_Status::eSuccess;
+        case CRequestStatus::e401_Unauthorized:     return EPSG_Status::eForbidden;
         case CRequestStatus::e403_Forbidden:        return EPSG_Status::eForbidden;
+        case CRequestStatus::e407_ProxyAuthRequired:                return EPSG_Status::eForbidden;
+        case CRequestStatus::e451_Unavailable_For_Legal_Reasons:    return EPSG_Status::eForbidden;
         case CRequestStatus::e404_NotFound:         return EPSG_Status::eNotFound;
         default:                                    return EPSG_Status::eError;
     }

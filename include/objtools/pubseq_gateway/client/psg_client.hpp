@@ -985,6 +985,7 @@ public:
         eCanceled,
         eTimeout,
         eError,
+        eUnauthorized,
         eUnknown,
     };
 
