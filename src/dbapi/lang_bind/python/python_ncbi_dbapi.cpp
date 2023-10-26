@@ -94,6 +94,8 @@ bool g_PythonStrDefToUnicode = false;
 namespace python
 {
 
+static PyObject* SetLogger(PyObject *self, PyObject *args);
+
 // A striped version of IResultSet because it is hard to implement all member
 // functions from IResultSet in case of cached data.
 class CVariantSet : public CObject
@@ -4251,6 +4253,12 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
         "-- connect to the "
         "driver_name; db_type; server_name; database_name; userid; password;"
     },
+    {(char*)"set_logger", (PyCFunction) python::SetLogger, METH_VARARGS,
+     (char*)"set_logger(logger) "
+     "-- log through the specified logger.  (This module otherwise defaults "
+     "to going directly through the root logger.) "
+     "NOTE:  This is not a part of the Python Database API Specification "
+     "v2.0."},
     {(char*)"Date", (PyCFunction) python::Date, METH_VARARGS, (char*)"Date"},
     {(char*)"Time", (PyCFunction) python::Time, METH_VARARGS, (char*)"Time"},
     {(char*)"Timestamp", (PyCFunction) python::Timestamp, METH_VARARGS, (char*)"Timestamp"},
@@ -4490,6 +4498,7 @@ class CPythonDiagHandler : public CDiagHandler
 public:
     CPythonDiagHandler();
     void Post(const SDiagMessage& mess) override;
+    void SetLogger(pythonpp::CObject logger);
 
 private:
     pythonpp::CModule          m_LoggingModule;
@@ -4599,6 +4608,31 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
             buffer = "-";
         }
         m_LoggingFunctions[mess.m_Severity].Apply(args, kwargs);        
+    }
+}
+
+void CPythonDiagHandler::SetLogger(pythonpp::CObject logger)
+{
+    if (PyObject_IsInstance(logger.Get(), m_LoggerClass.Get())) {
+        m_Logger.SetItem(0, logger);
+    } else {
+        pythonpp::CObject type((PyObject*) logger.GetObjType());
+        pythonpp::CString type_name(type.GetAttr("__qualname__"));
+        throw python::CInterfaceError(
+            "set_logger: expected logging.logger but got " + type_name);
+    }
+}
+
+static PyObject* python::SetLogger(PyObject *self, PyObject *args)
+{
+    try {
+        auto handler = dynamic_cast<CPythonDiagHandler*>(GetDiagHandler());
+        _ASSERT(handler != nullptr);
+        const pythonpp::CTuple func_args(args);
+        handler->SetLogger(func_args.GetItem(0));
+        return pythonpp::CNone();
+    } catch (pythonpp::CError&) {
+        return nullptr;
     }
 }
 
