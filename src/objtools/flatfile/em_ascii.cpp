@@ -404,7 +404,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
 {
     const char** b;
 
-    char* drline;
+    const char* drline;
 
     char* bptr;
     char* eptr;
@@ -506,7 +506,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
                 if (! drline)
                     drline = "[Empty]";
                 else {
-                    q = StringChr(drline, '\n');
+                    q = StringChr(const_cast<char*>(drline), '\n');
                     if (q)
                         *q = '\0';
                 }
@@ -538,7 +538,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
                 if (! drline)
                     drline = "[Empty]";
                 else {
-                    q = StringChr(drline, '\n');
+                    q = StringChr(const_cast<char*>(drline), '\n');
                     if (q)
                         *q = '\0';
                 }
