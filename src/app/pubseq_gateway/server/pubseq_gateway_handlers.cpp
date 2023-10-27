@@ -1776,7 +1776,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
                         reply, now, msg,
                         CRequestStatus::e404_NotFound,
                         ePSGS_MalformedParameter, eDiag_Error);
-                PSG_ERROR(msg);
+                PSG_WARNING(msg);
                 x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                    CRequestStatus::e404_NotFound,
                                    reply->GetBytesSent());
