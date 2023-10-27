@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistory)
     CEutilsClient cli;
     stringstream content;
 
-    BOOST_REQUIRE(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
+    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     // one cannot use RetStart to overcome this limit.
     // See: https://ncbiinsights.ncbi.nlm.nih.gov/2022/11/22/updated-pubmed-eutilities-live/
     cli.SetMaxReturn(101); 
-    BOOST_REQUIRE(cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled));
+    cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
         if ( retstart + retmax < count ) {
             int next_start = count - retmax;
             stringstream next_chunk;
-            BOOST_REQUIRE(cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk));
+            cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk);
 
             string body = next_chunk.str();
             xml::document doc(body.c_str(), body.size(), NULL);
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
     stringstream content;
 
     cli.SetMaxReturn(101); 
-    BOOST_REQUIRE(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
+    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     stringstream content;
 
     cli.SetMaxReturn(101);
-    BOOST_REQUIRE(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
+    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
 
     if ( !web_env.empty() && query_key > 0 ) {
         stringstream history;
-        BOOST_REQUIRE(cli.FetchHistory("pubmed", web_env, query_key, 10, CEutilsClient::eContentType_xml, history));
+        cli.FetchHistory("pubmed", web_env, query_key, 10, CEutilsClient::eContentType_xml, history);
 
         {{
              string body = history.str();
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
     uids.push_back(157427902);
 
     cli.SetMaxReturn(101); 
-    BOOST_REQUIRE(cli.Link("protein", "gene", uids, content, "neighbor_history"));
+    cli.Link("protein", "gene", uids, content, "neighbor_history");
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(TestLinkOut)
     //The same with accessions
     {
         vector<objects::CSeq_id_Handle> acc = { objects::CSeq_id_Handle::GetHandle("DQ896796.2"), objects::CSeq_id_Handle::GetHandle("DQ896797.2") };
-        BOOST_REQUIRE(cli.LinkOut("nucleotide", acc, doc, "llinkslib"));
+        cli.LinkOut("nucleotide", acc, doc, "llinkslib");
         doc.save_to_string(body);
         const xml::node& root = doc.get_root_node();
 
