@@ -153,7 +153,7 @@ public:
             auto parent_stream = parent[_enum].get();
             if (parent_stream) {
                 if (m_use_mt)
-                    m_writers[index].Open(*parent_stream);
+                    m_writers[i].Open(*parent_stream);
                 else
                     m_simple_files[_enum].reset(parent_stream);
             }
