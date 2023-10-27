@@ -82,7 +82,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CGenbankFormatter::CGenbankFormatter(void) :
-    m_uFeatureCount( 0 ), m_bHavePrintedSourceFeatureJavascript(false)
+    m_uFeatureCount( 0 ), m_bHavePrintedSourceFeatureJavascript(false),
+    m_bSourceDescriptorDone(false)
 {
     SetIndent(string(12, ' '));
     SetFeatIndent(string(21, ' '));
@@ -323,6 +324,7 @@ void CGenbankFormatter::EndSection
     // New record, so reset
     m_FeatureKeyToLocMap.clear();
     m_bHavePrintedSourceFeatureJavascript = false;
+    m_bSourceDescriptorDone = false;
 }
 
 
