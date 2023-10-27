@@ -75,4 +75,9 @@ extern bool         g_Trace;
         ERR_POST(Message << message);               \
     } while (0)
 
+#define PSG_NOTE(message)                           \
+    do {                                            \
+        ERR_POST(Note << message);                  \
+    } while (0)
+
 #endif
