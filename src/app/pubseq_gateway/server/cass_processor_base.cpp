@@ -571,9 +571,9 @@ void CPSGS_CassProcessorBase::ReportNoWebCubbyUser(void)
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(), GetName(),
             err_msg, CRequestStatus::e401_Unauthorized,
-            ePSGS_NoWebCubbyUserCookieError, eDiag_Error);
+            ePSGS_NoWebCubbyUserCookieError, eDiag_Warning);
     UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
-    PSG_ERROR(err_msg);
+    PSG_NOTE(err_msg);
 }
 
 
@@ -606,9 +606,9 @@ void CPSGS_CassProcessorBase::ReportMyNCBINotFound(void)
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(), GetName(),
             err_msg, CRequestStatus::e401_Unauthorized,
-            ePSGS_MyNCBINotFound, eDiag_Error);
+            ePSGS_MyNCBINotFound, eDiag_Warning);
     UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
-    PSG_ERROR(err_msg);
+    PSG_NOTE(err_msg);
 }
 
 
