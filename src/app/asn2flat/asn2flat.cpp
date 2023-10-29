@@ -450,18 +450,18 @@ int CAsn2FlatApp::Run()
         m_HugeFileMode = false;
     }
 
-    m_use_mt = args["use_mt"] && ( args["batch"] || m_HugeFileMode);
+    m_use_mt = args["use_mt"] && (args["batch"] || m_HugeFileMode);
 
     m_writers.SetUseMT(m_use_mt);
     m_writers.SetDepth(20);
 
     // open the output streams
     bool has_o_args =
-        SetFlatfileOstream(eFlatFileCodes::all, "o") |
-        SetFlatfileOstream(eFlatFileCodes::nuc, "on") |
-        SetFlatfileOstream(eFlatFileCodes::gen, "og") |
-        SetFlatfileOstream(eFlatFileCodes::rna, "or") |
-        SetFlatfileOstream(eFlatFileCodes::prot, "op") |
+        SetFlatfileOstream(eFlatFileCodes::all, "o") ||
+        SetFlatfileOstream(eFlatFileCodes::nuc, "on") ||
+        SetFlatfileOstream(eFlatFileCodes::gen, "og") ||
+        SetFlatfileOstream(eFlatFileCodes::rna, "or") ||
+        SetFlatfileOstream(eFlatFileCodes::prot, "op") ||
         SetFlatfileOstream(eFlatFileCodes::unk, "ou");
 
     if (! has_o_args) {
@@ -1393,7 +1393,7 @@ int main(int argc, const char** argv)
             if (rec.front()=='\'' && rec.back()=='\'')
                 rec=rec.substr(1, rec.length()-2);
         }
-        argc = 1 + split_args.size();
+        argc = 1 + int(split_args.size());
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
         for (const string& s : split_args)
