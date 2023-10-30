@@ -545,7 +545,7 @@ s_VDBSRC_SrcNew(BlastSeqSrc* seqSrc, void* args)
 BlastSeqSrc* 
 SRABlastSeqSrcInit(const char** vdbRunAccessions, Uint4 numRuns,
 		           Boolean isProtein, Boolean * excluded_runs,
-		           Uint4* status, Boolean isCSRA)
+		           Uint4* status, Boolean isCSRA, Boolean include_filtered_reads)
 {
     BlastSeqSrcNewInfo bssNewInfo;
     BlastSeqSrc* seqSrc = NULL;
@@ -557,6 +557,7 @@ SRABlastSeqSrcInit(const char** vdbRunAccessions, Uint4 numRuns,
     vdbArgs.isRunExcluded = excluded_runs;
     vdbArgs.status = 0;
     vdbArgs.isCSRA = isCSRA;
+    vdbArgs.includeFilteredReads = include_filtered_reads;
 
     bssNewInfo.constructor = &s_VDBSRC_SrcNew;
     bssNewInfo.ctor_argument = (void*)&vdbArgs;

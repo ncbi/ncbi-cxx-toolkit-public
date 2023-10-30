@@ -128,6 +128,8 @@ struct SVDBSRC_NewArgs
 
     // Make a seqsrc for CSRA if set to true
     Boolean isCSRA;
+
+    Boolean includeFilteredReads;
 };
 typedef struct SVDBSRC_NewArgs TVDBNewArgs;
 

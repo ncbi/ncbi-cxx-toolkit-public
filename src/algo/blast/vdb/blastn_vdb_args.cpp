@@ -43,6 +43,7 @@ BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 const string kArgSRASearchMode("sra_mode");
+const string kArgIncludeFilteredReads("include_filtered_reads");
 
 void
 CBlastVDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
@@ -77,10 +78,10 @@ CSRASearchModeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     	"2 = both unaligned reads and aligned reference seqs n");
     arg_desc.AddDefaultKey(kArgSRASearchMode, "SRA_search_mode", kSRASearchMode,
     		               CArgDescriptions::eInteger, "0");
+
+    string kIncludeFilteredReads = string ("Include filtered reads\n");
+    arg_desc.AddFlag(kArgIncludeFilteredReads, kIncludeFilteredReads, true);
 }
-
-
-
 
 CBlastnVdbAppArgs::CBlastnVdbAppArgs()
 {
