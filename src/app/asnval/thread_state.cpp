@@ -725,6 +725,11 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process)
         ValidateBlobAsync(loader_name, process);
     else
         ValidateBlobSequential(loader_name, process);
+
+    /*
+    cerr << "NumGenes " << NStr::IntToString((int) m_pContext->NumGenes) << endl;
+    cerr << "NumGeneXrefs " << NStr::IntToString((int) m_pContext->NumGeneXrefs) << endl;
+    */
 }
 
 void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process)
