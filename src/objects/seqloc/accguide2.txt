@@ -1325,7 +1325,7 @@ version  2 # of file format
 2+6  OS  gb_other_nuc
 2+8  OS  gb_other_nuc
 2+10 OS  gb_other_nuc
-2+6  OT  gb_other_nuc
+2+6  OT  gb_patent
 2+8  OT  gb_other_nuc
 2+10 OT  gb_other_nuc
 2+6  O?  embl_other_nuc
