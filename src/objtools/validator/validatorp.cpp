@@ -1537,11 +1537,12 @@ bool CValidError_imp::Validate
                  "There is 1 mispackaged feature in this small genome set record.",
                  *(seh.GetCompleteSeq_entry()));
     }
-    if ( m_NumGenes == 0  &&
-         m_NumGeneXrefs > 0 ) {
+    if ( !GetContext().PreprocessHugeFile ) {
+        if ( m_NumGenes == 0 && m_NumGeneXrefs > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
             "There are " + NStr::SizetToString(m_NumGeneXrefs) +
             " gene xrefs and no gene features in this record.", *m_TSE);
+        }
     }
     ValidateCitations (seh);
 
