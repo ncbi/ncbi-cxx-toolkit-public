@@ -260,15 +260,6 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
-//LCOV_EXCL_START
-//not used by asnvalidate
-CConstRef<CValidError> CValidator::Validate
-(const CSeq_feat& feat,
- Uint4 options)
-{
-    return Validate(feat, nullptr, options);
-}
-//LCOV_EXCL_STOP
 CConstRef<CValidError> CValidator::Validate
 (const CBioSource& src,
  CScope *scope,
@@ -280,16 +271,6 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
-//LCOV_EXCL_START
-//not used by asnvalidate
-CConstRef<CValidError> CValidator::Validate
-(const CBioSource& src,
- Uint4 options)
-{
-    return Validate(src, nullptr, options);
-}
-//LCOV_EXCL_STOP
-
 CConstRef<CValidError> CValidator::Validate
 (const CPubdesc& pubdesc,
  CScope *scope,
@@ -300,16 +281,6 @@ CConstRef<CValidError> CValidator::Validate
     imp.Validate(pubdesc, scope);
     return errors;
 }
-
-//LCOV_EXCL_START
-//not used by asnvalidate
-CConstRef<CValidError> CValidator::Validate
-(const CPubdesc& pubdesc,
- Uint4 options)
-{
-    return Validate(pubdesc, nullptr, options);
-}
-//LCOV_EXCL_STOP
 
 CConstRef<CValidError> CValidator::Validate
 (const CSeqdesc& desc,
