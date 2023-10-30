@@ -263,6 +263,7 @@ int CVDBBlastnApp::Run(void)
                }
                input.SetBatchSize(mixer.GetBatchSize());
         }
+        bool bIncludeFilteredReads = args[kArgIncludeFilteredReads].AsBoolean();
 
         // Process the input
         for (; !input.End(); formatter.ResetScopeHistory()) {
@@ -272,7 +273,7 @@ int CVDBBlastnApp::Run(void)
 
             // Run local Blast
             CRef<CSearchResultSet> results;
-            CLocalVDBBlast  local_vdb_blast(query_batch, optsHandle, m_localVDBStruct);
+            CLocalVDBBlast  local_vdb_blast(query_batch, optsHandle, m_localVDBStruct, bIncludeFilteredReads);
             results = local_vdb_blast.Run();
             if (!batch_size)
             	 input.SetBatchSize(mixer.GetBatchSize(local_vdb_blast.GetNumExtensions()));

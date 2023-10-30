@@ -236,7 +236,7 @@ CVDBBlastUtil::x_MakeVDBSeqSrc()
     Uint4 rc;
     // Construct the BlastSeqSrc object
     BlastSeqSrc* seqSrc =
-        SRABlastSeqSrcInit((const char**)vdbRunAccessions, numRuns, false, isRunExcluded, &rc, m_isCSRAUtil);
+        SRABlastSeqSrcInit((const char**)vdbRunAccessions, numRuns, false, isRunExcluded, &rc, m_isCSRAUtil, m_IncludeFilteredReads);
 
     string excluded_runs= kEmptyStr;
     // Clean up
@@ -279,8 +279,10 @@ CVDBBlastUtil::x_MakeVDBSeqSrc()
 
 CVDBBlastUtil::CVDBBlastUtil(const string& strAllRuns,
                              bool bOwnSeqSrc,
-                             bool bCSRA):
-                             m_bOwnSeqSrc(bOwnSeqSrc), m_strAllRuns(strAllRuns), m_isCSRAUtil(bCSRA)
+                             bool bCSRA,
+                             bool bIncludeFilteredReads):
+                             m_bOwnSeqSrc(bOwnSeqSrc), m_strAllRuns(strAllRuns), m_isCSRAUtil(bCSRA),
+                             m_IncludeFilteredReads(bIncludeFilteredReads)
 {
     m_seqSrc = x_MakeVDBSeqSrc();
     if( VDBSRC_OVERFLOW_RV == BlastSeqSrcGetNumSeqs(m_seqSrc)) {
@@ -709,7 +711,7 @@ void CVDBBlastUtil::CheckVDBs(const vector<string> & vdbs)
     AutoPtr<Boolean, ArrayDeleter<Boolean> > isRunExcluded(new Boolean[numRuns]);
 	Uint4 rc;
 	// Construct the BlastSeqSrc object
-    SRABlastSeqSrcInit((const char**)vdbRunAccessions, numRuns, false, isRunExcluded.get(), &rc, false);
+    SRABlastSeqSrcInit((const char**)vdbRunAccessions, numRuns, false, isRunExcluded.get(), &rc, false, false);
 
 	// Clean up
 	string cannot_open= kEmptyStr;

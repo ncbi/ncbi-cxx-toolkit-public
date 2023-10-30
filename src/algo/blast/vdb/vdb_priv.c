@@ -214,6 +214,8 @@ VDBSRC_InitData(TVDBData* vdbData,
     	return;
     }
 
+    status = VdbBlastRunSetIgnoreReadFilter( vdbData->runSet, vdbArgs->includeFilteredReads);
+
     {
     	char tmp[1];
     	uint32_t tmp_s = 0;
