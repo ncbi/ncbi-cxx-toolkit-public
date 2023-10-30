@@ -190,7 +190,8 @@ static CRef<CSearchResultSet>  s_CombineSearchSets(vector<CRef<CSearchResultSet>
 
 CRef<CSearchResultSet> s_RunLocalVDBSearch(const string & dbs,
 		                                   CRef<IQueryFactory> query_factory,
-										   CRef<CBlastOptionsHandle> opt_handle, Int4 & num_extensions)
+										   CRef<CBlastOptionsHandle> opt_handle, Int4 & num_extensions,
+										   bool include_filtered_reads)
 {
 	bool isCSRA = false;
 	string csras = kEmptyStr;
@@ -199,8 +200,7 @@ CRef<CSearchResultSet> s_RunLocalVDBSearch(const string & dbs,
 		csras = dbs.substr(k_CSRA_CHUNK.size());
 	}
 
-    //CRef<CVDBBlastUtil> vdbUtil(new CVDBBlastUtil(isCSRA?csras:dbs, true, isCSRA));
-    CVDBBlastUtil vdbUtil(isCSRA?csras:dbs, true, isCSRA);
+    CVDBBlastUtil vdbUtil(isCSRA?csras:dbs, true, isCSRA, include_filtered_reads);
 
     BlastSeqSrc* seqSrc = vdbUtil.GetSRASeqSrc();
     CRef<IBlastSeqInfoSrc> seqInfoSrc = vdbUtil.GetSRASeqInfoSrc();
@@ -223,7 +223,8 @@ CRef<CSearchResultSet> s_RunLocalVDBSearch(const string & dbs,
 
 CRef<CSearchResultSet> s_RunPsiVDBSearch(const string & dbs,
 		                                   CRef<CPssmWithParameters> pssm,
-										   CRef<CBlastOptionsHandle> opt_handle)
+										   CRef<CBlastOptionsHandle> opt_handle,
+										   bool include_filtered_reads)
 {
 	bool isCSRA = false;
 	string csras = kEmptyStr;
@@ -232,7 +233,7 @@ CRef<CSearchResultSet> s_RunPsiVDBSearch(const string & dbs,
 		csras = dbs.substr(k_CSRA_CHUNK.size());
 	}
 
-    CRef<CVDBBlastUtil> vdbUtil(new CVDBBlastUtil(isCSRA?csras:dbs, false, isCSRA));
+    CRef<CVDBBlastUtil> vdbUtil(new CVDBBlastUtil(isCSRA?csras:dbs, false, isCSRA, include_filtered_reads));
 	CRef<CSearchResultSet> results;
     BlastSeqSrc* seqSrc = vdbUtil->GetSRASeqSrc();
     CRef<IBlastSeqInfoSrc> seqInfoSrc = vdbUtil->GetSRASeqInfoSrc();
@@ -266,11 +267,11 @@ class CVDBThread : public CThread
 public:
 	CVDBThread(CRef<IQueryFactory>  query_factory,
 			   vector<string> & chunks,
-	           CRef<CBlastOptions> options);
+	           CRef<CBlastOptions> options, bool include_filtered_reads);
 
 	CVDBThread(CRef<CPssmWithParameters> pssm,
 	   	       vector<string> & chunks,
-	   	       CRef<CBlastOptions>  options);
+	   	       CRef<CBlastOptions>  options, bool include_filtered_reads);
 
 	void * Main(void);
 private:
@@ -282,6 +283,7 @@ private:
     CRef<IQueryFactory>			m_query_factory;
     vector<string> 				m_chunks;
     CRef<CBlastOptionsHandle>	m_opt_handle;
+    bool                        m_include_filtered_reads;
     Int4						m_num_extensions;
     CRef<CPssmWithParameters>	m_pssm;
 };
@@ -289,8 +291,10 @@ private:
 /* CVDBThread */
 CVDBThread::CVDBThread(CRef<CPssmWithParameters> pssm,
 		   	   	       vector<string> & chunks,
-		   	   	       CRef<CBlastOptions>  options):
-		   	   	       m_chunks(chunks), m_num_extensions(0), m_pssm(pssm)
+		   	   	       CRef<CBlastOptions>  options,
+		   	   	       bool include_filtered_reads):
+		   	   	       m_chunks(chunks), m_include_filtered_reads(include_filtered_reads),
+		   	   	       m_num_extensions(0), m_pssm(pssm)
 
 {
 	m_opt_handle.Reset(new  CPSIBlastOptionsHandle(options));
@@ -299,8 +303,10 @@ CVDBThread::CVDBThread(CRef<CPssmWithParameters> pssm,
 
 CVDBThread::CVDBThread(CRef<IQueryFactory>  query_factory,
 		   	   	       vector<string> & chunks,
-		   	   	       CRef<CBlastOptions>  options):
-		   	   	       m_query_factory(query_factory), m_chunks(chunks), m_num_extensions(0)
+		   	   	       CRef<CBlastOptions>  options,
+		   	   	       bool include_filtered_reads):
+		   	   	       m_query_factory(query_factory), m_chunks(chunks),
+		   	   	       m_include_filtered_reads(include_filtered_reads), m_num_extensions(0)
 
 {
 	if(options->GetProgramType() == eBlastTypeBlastn)
@@ -316,10 +322,10 @@ void* CVDBThread::Main(void)
 	if(m_chunks.size() == 1) {
 		if(m_pssm.Empty()) {
 			result->thread_result_set = s_RunLocalVDBSearch(m_chunks[0], m_query_factory,
-				 	 	 	 	 	                        m_opt_handle, m_num_extensions);
+				 	 	 	 	 	                        m_opt_handle, m_num_extensions, m_include_filtered_reads);
 		}
 		else {
-			result->thread_result_set = s_RunPsiVDBSearch(m_chunks[0], m_pssm, m_opt_handle);
+			result->thread_result_set = s_RunPsiVDBSearch(m_chunks[0], m_pssm, m_opt_handle, m_include_filtered_reads);
 		}
 	}
 	else {
@@ -340,10 +346,10 @@ CRef<CSearchResultSet> CVDBThread::RunTandemSearches(void)
 		Int4 num_exts = 0;
 		if(m_pssm.Empty()){
 			results.push_back(s_RunLocalVDBSearch(m_chunks[i], m_query_factory,
-					                              m_opt_handle, num_exts));
+					                              m_opt_handle, num_exts, m_include_filtered_reads));
 		}
 		else {
-			results.push_back(s_RunPsiVDBSearch(m_chunks[i], m_pssm, m_opt_handle));
+			results.push_back(s_RunPsiVDBSearch(m_chunks[i], m_pssm, m_opt_handle, m_include_filtered_reads));
 		}
 		m_num_extensions +=num_exts;
 	}
@@ -358,27 +364,31 @@ CRef<CSearchResultSet> CVDBThread::RunTandemSearches(void)
 /* CLocalVDBBlast */
 CLocalVDBBlast::CLocalVDBBlast(CRef<CBlastQueryVector> query_vector,
               	  	  	  	   CRef<CBlastOptionsHandle> options,
-              	  	  	  	   SLocalVDBStruct & local_vdb):
+              	  	  	  	   SLocalVDBStruct & local_vdb,
+              	  	  	  	   bool include_filtered_reads):
               	  	  	  	   m_query_vector(query_vector),
               	  	  	  	   m_opt_handle(options),
               	  	  	  	   m_total_num_seqs(local_vdb.total_num_seqs),
               	  	  	  	   m_total_length(local_vdb.total_length),
 							   m_chunks_for_thread(local_vdb.chunks_for_thread),
 							   m_num_threads(local_vdb.chunks_for_thread.size()),
-							   m_num_extensions(0)
+							   m_num_extensions(0),
+							   m_include_filtered_reads(include_filtered_reads)
 {
 }
 
 /* CLocalVDBBlast */
 CLocalVDBBlast::CLocalVDBBlast(CRef<objects::CPssmWithParameters> pssm,
               	  	  	  	   CRef<CBlastOptionsHandle> options,
-              	  	  	  	   SLocalVDBStruct & local_vdb):
+              	  	  	  	   SLocalVDBStruct & local_vdb,
+              	  	  	  	   bool include_filtered_reads):
               	  	  	  	   m_opt_handle(options),
               	  	  	  	   m_total_num_seqs(local_vdb.total_num_seqs),
               	  	  	  	   m_total_length(local_vdb.total_length),
 							   m_chunks_for_thread(local_vdb.chunks_for_thread),
 							   m_num_threads(local_vdb.chunks_for_thread.size()),
 							   m_num_extensions(0),
+							   m_include_filtered_reads(include_filtered_reads),
 							   m_pssm(pssm)
 {
 }
@@ -704,10 +714,10 @@ CRef<CSearchResultSet> CLocalVDBBlast::Run(void)
 			CRef<CSearchResultSet> retval;
 			if(m_pssm.Empty()){
 				CRef<IQueryFactory> 	queries(new CObjMgr_QueryFactory(*m_query_vector));
-				retval = s_RunLocalVDBSearch(chunks[0], queries, m_opt_handle, m_num_extensions);
+				retval = s_RunLocalVDBSearch(chunks[0], queries, m_opt_handle, m_num_extensions, m_include_filtered_reads);
 			}
 			else {
-				retval = s_RunPsiVDBSearch(chunks[0], m_pssm, m_opt_handle);
+				retval = s_RunPsiVDBSearch(chunks[0], m_pssm, m_opt_handle, m_include_filtered_reads);
 			}
 			m_opt_handle->SetOptions().SetHitlistSize(hls);
 			s_TrimResults(*retval, hls);
@@ -721,11 +731,11 @@ CRef<CSearchResultSet> CLocalVDBBlast::Run(void)
 				if(m_pssm.Empty()){
 					Int4 num_exts = 0;
 					CRef<IQueryFactory> 	queries(new CObjMgr_QueryFactory(*m_query_vector));
-					results.push_back(s_RunLocalVDBSearch(chunks[i], queries, m_opt_handle, num_exts));
+					results.push_back(s_RunLocalVDBSearch(chunks[i], queries, m_opt_handle, num_exts, m_include_filtered_reads));
 					m_num_extensions += num_exts;
 				}
 				else {
-					results.push_back(s_RunPsiVDBSearch(chunks[i], m_pssm, m_opt_handle));
+					results.push_back(s_RunPsiVDBSearch(chunks[i], m_pssm, m_opt_handle, m_include_filtered_reads));
 				}
 			}
 
@@ -809,10 +819,10 @@ CRef<CSearchResultSet> CLocalVDBBlast::RunThreadedSearch(void)
    	{
    		// CThread destructor is protected, all threads destory themselves when terminated
   		if (isPSI) {
-  			thread[t] = (new CVDBThread(pssm[t], m_chunks_for_thread[t], m_opt_handle->SetOptions().Clone()));
+  			thread[t] = (new CVDBThread(pssm[t], m_chunks_for_thread[t], m_opt_handle->SetOptions().Clone(), m_include_filtered_reads));
   		}
   		else {
-  			thread[t] = (new CVDBThread(query_factory[t], m_chunks_for_thread[t], m_opt_handle->SetOptions().Clone()));
+  			thread[t] = (new CVDBThread(query_factory[t], m_chunks_for_thread[t], m_opt_handle->SetOptions().Clone(), m_include_filtered_reads));
   		}
    		thread[t]->Run();
    	}

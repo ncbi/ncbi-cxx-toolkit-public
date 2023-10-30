@@ -68,7 +68,7 @@ extern "C" {
 BlastSeqSrc*
 SRABlastSeqSrcInit(const char** sraRunAccessions, Uint4 numRuns,
 		           Boolean isProtein,  Boolean* excluded_runs, Uint4 * status,
-		           Boolean isCSRA);
+		           Boolean isCSRA, Boolean include_filtered_reads);
 
 // ==========================================================================//
 

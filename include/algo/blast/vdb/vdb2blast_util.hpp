@@ -74,7 +74,8 @@ public:
     /// @throws CException
     CVDBBlastUtil(const string& strAllRuns,
                   bool bOwnSeqSrc = false,
-                  bool bCSRA = false);
+                  bool bCSRA = false,
+                  bool bIncludeFilteredReads = false);
 
     /// Destructor
     virtual ~CVDBBlastUtil();
@@ -217,6 +218,8 @@ private:
     /// Pointer to a properly initialized SRA BlastSeqSrc.
     BlastSeqSrc* m_seqSrc;
     bool m_isCSRAUtil;
+    bool m_IncludeFilteredReads;
+
 
 };
 

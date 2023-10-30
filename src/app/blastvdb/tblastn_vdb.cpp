@@ -218,6 +218,7 @@ int CVDBTblastnApp::Run(void)
         vector< CBlastFormatUtil::SDbInfo > vecDbInfo(1);
         x_FillVDBInfo(vecDbInfo[0]);
 
+        bool bIncludeFilteredReads = args[kArgIncludeFilteredReads].AsBoolean();
         // Get the formatting options and initialize the formatter
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
         CBlastFormat formatter(opt, vecDbInfo,
@@ -263,7 +264,7 @@ int CVDBTblastnApp::Run(void)
 
             	// Run local Blast
             	CRef<CSearchResultSet> results;
-            	CLocalVDBBlast  local_vdb_blast(query_batch, optsHandle, m_localVDBStruct);
+            	CLocalVDBBlast  local_vdb_blast(query_batch, optsHandle, m_localVDBStruct, bIncludeFilteredReads);
             	results = local_vdb_blast.Run();
 
 
@@ -298,7 +299,7 @@ int CVDBTblastnApp::Run(void)
         	 SaveSearchStrategy(args, m_CmdLineArgs, queries, optsHandle, pssm);
 
            	 CRef<CSearchResultSet> results;
-           	 CLocalVDBBlast local_vdb_blast(pssm, optsHandle, m_localVDBStruct);
+           	 CLocalVDBBlast local_vdb_blast(pssm, optsHandle, m_localVDBStruct, bIncludeFilteredReads);
              results = local_vdb_blast.Run();
 
         	 if (fmt_args->ArchiveFormatRequested(args)){

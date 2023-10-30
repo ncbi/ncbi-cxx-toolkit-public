@@ -59,6 +59,7 @@ private:
     vector<vector<string> >		&	m_chunks_for_thread;
     unsigned int					m_num_threads;
     Int4							m_num_extensions;
+    bool                            m_include_filtered_reads;
     CRef<objects::CPssmWithParameters> m_pssm;
 
 public:
@@ -83,11 +84,13 @@ public:
 	 */
     CLocalVDBBlast(CRef<CBlastQueryVector> query_vector,
               	   CRef<CBlastOptionsHandle> options,
-              	   CLocalVDBBlast::SLocalVDBStruct	& local_vdb);
+              	   CLocalVDBBlast::SLocalVDBStruct	& local_vdb,
+              	   bool include_filtered_reads = false);
 
     CLocalVDBBlast(CRef<objects::CPssmWithParameters> pssm,
                    CRef<CBlastOptionsHandle> options,
-                   SLocalVDBStruct & local_vdb);
+                   SLocalVDBStruct & local_vdb,
+                   bool include_filtered_reads = false);
 
     /*
      * Run Local VDB Search
