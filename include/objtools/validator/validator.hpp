@@ -167,27 +167,15 @@ public:
     CConstRef<CValidError> Validate(const CSeq_feat& feat,
         CScope *scope = nullptr,
         Uint4 options = 0);
-    // old call
-    NCBI_DEPRECATED
-    CConstRef<CValidError> Validate(const CSeq_feat& feat,
-        Uint4 options = 0);
 
     // Validate BioSource
     CConstRef<CValidError> Validate(const CBioSource& src,
         CScope *scope = nullptr,
         Uint4 options = 0);
-    // old call
-    NCBI_DEPRECATED
-    CConstRef<CValidError> Validate(const CBioSource& src,
-        Uint4 options = 0);
 
     // Validate Pubdesc
     CConstRef<CValidError> Validate(const CPubdesc& pubdesc,
         CScope *scope = nullptr,
-        Uint4 options = 0);
-    // old call
-    NCBI_DEPRECATED
-    CConstRef<CValidError> Validate(const CPubdesc& pubdesc,
         Uint4 options = 0);
 
     // Validate Seqdesc
