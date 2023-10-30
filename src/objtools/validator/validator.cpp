@@ -110,6 +110,9 @@ CRef<CValidError> CValidator::Validate
         errors.Reset();
     }
     x_SetEntryInfo(imp.GetEntryInfo());
+    SValidatorContext& ctx = imp.SetContext();
+    ctx.NumGenes += imp.GetGeneCount();
+    ctx.NumGeneXrefs += imp.GetGeneXrefCount();
     return errors;
 }
 
@@ -128,6 +131,9 @@ CRef<CValidError> CValidator::Validate
         errors.Reset();
     }
     x_SetEntryInfo(imp.GetEntryInfo());
+    SValidatorContext& ctx = imp.SetContext();
+    ctx.NumGenes += imp.GetGeneCount();
+    ctx.NumGeneXrefs += imp.GetGeneXrefCount();
     return errors;
 }
 
