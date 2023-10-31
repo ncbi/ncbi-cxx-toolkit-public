@@ -721,15 +721,17 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process)
         }
     }
 
-    if (use_mt)
+    if (use_mt) {
         ValidateBlobAsync(loader_name, process);
-    else
+    } else {
         ValidateBlobSequential(loader_name, process);
+    }
 
-    /*
-    cerr << "NumGenes " << NStr::IntToString((int) m_pContext->NumGenes) << endl;
-    cerr << "NumGeneXrefs " << NStr::IntToString((int) m_pContext->NumGeneXrefs) << endl;
-    */
+    CRef<CValidError> pEval;
+    hugeFileValidator.ReportPostErrors(m_GlobalInfo, pEval, *m_pContext);
+    if (pEval) {
+        PrintValidError(pEval);
+    }
 }
 
 void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process)

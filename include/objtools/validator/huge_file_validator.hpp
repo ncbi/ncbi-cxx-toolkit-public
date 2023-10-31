@@ -106,6 +106,9 @@ public:
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
             CRef<CValidError>& pErrors) const;
 
+    void ReportPostErrors(const TGlobalInfo& globalInfo,
+            CRef<CValidError>& pErrors, SValidatorContext& context) const;
+
     void PostprocessErrors(const TGlobalInfo& globalInfo,
             const string& genbankSetId,
             CRef<CValidError>& pErrors) const;
