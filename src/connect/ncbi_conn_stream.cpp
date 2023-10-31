@@ -47,8 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static const STimeout s_ZeroTimeout = { 0, 0 };
-const STimeout* CConn_IOStream::kZeroTimeout = &s_ZeroTimeout;
+const STimeout CConn_IOStream::kZeroTimeout = { 0, 0 };
 
 
 typedef AutoPtr< char, CDeleter<char> >  TTempCharPtr;

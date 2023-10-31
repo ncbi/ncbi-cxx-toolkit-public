@@ -719,7 +719,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CConn_Streambuf::showmanyc(void)
 {
-#define POLLING  CConn_IOStream::kZeroTimeout
+#define POLLING  &CConn_IOStream::kZeroTimeout
 
     _ASSERT(gptr() >= egptr());
 
