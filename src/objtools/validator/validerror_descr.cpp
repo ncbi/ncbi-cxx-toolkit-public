@@ -166,9 +166,9 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
 }
 
 
-bool CValidError_descr::ValidateStructuredComment (const CUser_object& usr, const CSeqdesc& desc, bool report)
+bool CValidError_descr::ValidateStructuredComment(const CSeqdesc& desc, bool report)
 {
-    return m_DescValidator.ValidateStructuredComment (usr, desc, report);
+    return m_DescValidator.ValidateStructuredCommentInternal(desc, report);
 }
 
 
