@@ -134,8 +134,8 @@ class NCBI_XCONNECT_EXPORT CConn_IOStream : public            CNcbiIostream,
                                             virtual protected CConnIniter
 {
 public:
-    /// Polling timeout (non-NULL), with 0.0 time in it
-    static const STimeout* kZeroTimeout;
+    /// Polling timeout with the 0.0 time in it
+    static const STimeout kZeroTimeout;
 
     /// The values below must be compatible with TCONN_Flags
     enum {
@@ -349,7 +349,7 @@ public:
     /// @sa
     ///   CONN_Wait
     EIO_Status         Wait(EIO_Event event,
-                            const STimeout* timeout = kZeroTimeout);
+                            const STimeout* timeout = &kZeroTimeout);
 
 protected:
     EIO_Status x_Pushback(const CT_CHAR_TYPE* data, streamsize size,
