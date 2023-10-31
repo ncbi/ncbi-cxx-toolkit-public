@@ -172,11 +172,7 @@ esac
 
 : ${BACKWARD_CPP_PATH=$NCBI/backward-cpp-1.6-ncbi1}
 
-case "$ncbi_platform" in
-    FreeBSD*   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
-    Linux*     ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
-    *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-5.3.28-ncbi1} ;;
-esac
+: ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-5.3.28-ncbi1}
 
 : ${BOOST_PATH=$NCBI/boost-1.76.0-ncbi1}
 
