@@ -64,8 +64,8 @@ public:
 
     void ValidateSeqDesc(const CSeqdesc& desc, const CSeq_entry& ctx);
 
-    bool IsValidStructuredComment(const CSeqdesc& desc); 
-    NCBI_DEPRECATED bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
+    bool IsValidStructuredComment(const CSeqdesc& desc);
+    bool ValidateStructuredCommentInternal(const CSeqdesc& desc, bool report = true);
     bool ValidateDblink(const CUser_object& usr, const CSeqdesc& desc, bool report = true);
 
     void ResetModifCounters();
