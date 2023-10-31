@@ -66,8 +66,8 @@ class CPipeHandle;
 ///
 /// Spawn a child process (command) with pipes attached to its standard I/O.
 ///
-/// The application can then read from stdin/stderr and write to stdin of the
-/// launched child process using the Read/Write methods of the pipe object.
+/// The application can then read from stdout/stderr and write to stdin of the
+/// launched child process using the Read / Write methods of the pipe object.
 ///
 /// @sa
 ///   CNamedPipe, CExec
@@ -76,8 +76,8 @@ class NCBI_XCONNECT_EXPORT CPipe : protected CConnIniter
 {
 public:
     /// Flags for creating standard I/O handles of the child process.
-    /// @note@  Flags pertaining to the same stdio handle processed in the
-    ///         order of their appearance in the definition below.
+    /// @note  Flags pertaining to the same stdio handle are processed in the
+    ///        order of their appearances in the definitions below.
     ///
     /// Default is 0:
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose

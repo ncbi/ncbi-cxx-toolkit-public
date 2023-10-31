@@ -932,7 +932,7 @@ protected:
 /// kDefaultTimeout (which is infinite for this class by default).
 ///
 /// @sa
-///   PIPE_CreateConnector, CPipe
+///   PIPE_CreateConnector, CPipe::ECreateFlag, CPipe
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_PipeStream : public CConn_IOStream
