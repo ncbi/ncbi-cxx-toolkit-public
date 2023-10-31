@@ -705,7 +705,7 @@ static string s_OffsetAsString(size_t offset)
 static bool memcchr(const char* s, char c, size_t len)
 {
     for (size_t i = 0;  i < len;  ++i) {
-        if (s[i] != c)
+        if (*s++ != c)
             return true;
     }
     return false;
