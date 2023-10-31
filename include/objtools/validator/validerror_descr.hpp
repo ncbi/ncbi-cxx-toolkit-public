@@ -59,7 +59,7 @@ public:
     ~CValidError_descr() override;
 
     void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
-    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report);
+    bool ValidateStructuredComment(const CSeqdesc& desc, bool report);
 private:
 
     CValidError_desc m_DescValidator;

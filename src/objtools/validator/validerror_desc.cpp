@@ -470,12 +470,11 @@ bool CValidError_desc::IsValidStructuredComment(const CSeqdesc& desc)
 }
 
 
-bool CValidError_desc::ValidateStructuredComment
-(const CUser_object& usr,
- const CSeqdesc& desc,
- bool report) 
+bool CValidError_desc::ValidateStructuredCommentInternal(
+    const CSeqdesc& desc,
+    bool  report)
 {
-    return x_ValidateStructuredComment(usr, desc, report);
+    return x_ValidateStructuredComment(desc.GetUser(), desc, report);
 }
 
 bool CValidError_desc::x_ValidateStructuredCommentPrefix(

@@ -9017,7 +9017,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             }
                         }
                         // is structured comment valid for this keyword?
-                        if (!m_DescrValidator.ValidateStructuredComment(desc.GetUser(), desc, false)) {
+                        if (! m_DescrValidator.ValidateStructuredComment(desc, false)) {
                             // error if keyword is present
                             if (found) {
                                 PostErr(eDiag_Info, eErr_SEQ_DESCR_BadKeywordForStrucComm,
