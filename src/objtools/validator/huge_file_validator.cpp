@@ -383,12 +383,18 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
             " TPAs without history in this record where the record has a gi number assignment.",
             x_GetHugeSetLabel(), pErrors);
     }
+}
 
-    /*
-    cerr << "globalInfo.JustTpaAssembly " << NStr::IntToString(globalInfo.JustTpaAssembly) << endl;
-    cerr << "globalInfo.TpaAssemblyHist " << NStr::IntToString(globalInfo.TpaAssemblyHist) << endl;
-    cerr << "globalInfo.TpaNoHistYesGI " << NStr::IntToString(globalInfo.TpaNoHistYesGI) << endl;
-    */
+
+void CHugeFileValidator::ReportPostErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors,
+                                          SValidatorContext& context) const
+{
+    if (context.NumGenes == 0 && context.NumGeneXrefs > 0) {
+        s_PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
+            "There are " + NStr::SizetToString(context.NumGeneXrefs) +
+            " gene xrefs and no gene features in this record.",
+            x_GetHugeSetLabel(), pErrors);
+    }
 }
 
 
