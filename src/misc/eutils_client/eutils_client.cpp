@@ -983,7 +983,17 @@ void CEutilsClient::x_Get(string const& path,
             m_Url.push_back(x_BuildUrl(hostname, path, extra_params));
             istr << extra_params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
+            ostringstream reply;
+            if (NcbiStreamCopy(reply, istr)  &&  200 == istr.GetStatusCode()) {
+                string reply_str = reply.str();
+                istringstream reply_istr(reply.str());
+                vector<TEntrezId> uids;
+                /// We don't actually need the uids, but parse the reply anyway
+                /// in order to catch errors
+                ParseSearchResults(reply_istr, uids);
+
+                /// No errors found in reply; copy to output stream
+                ostr << reply_str;
                 success = true;
                 break;
             }
