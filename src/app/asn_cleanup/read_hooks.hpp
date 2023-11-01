@@ -9,38 +9,36 @@ BEGIN_NCBI_SCOPE
 class ISubmitBlockHandler
 {
 public:
-	/// user code for handling a Submit-block goes here.
-	/// The return value indicates whethear to continue (true),
-	/// or abort (false) the read.
-	virtual bool HandleSubmitBlock(CSubmit_block& block) = 0;
-	virtual ~ISubmitBlockHandler(void) {};
+    /// user code for handling a Submit-block goes here.
+    /// The return value indicates whethear to continue (true),
+    /// or abort (false) the read.
+    virtual bool HandleSubmitBlock(CSubmit_block& block) = 0;
+    virtual ~ISubmitBlockHandler(void) {}
 };
 
 class CReadSubmitBlockHook : public CReadClassMemberHook
 {
 public:
     CReadSubmitBlockHook(ISubmitBlockHandler& handler, CObjectOStream& out);
-
-    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member);
+    void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member) override;
 
 private:
     CObjectOStream& m_out;
-	ISubmitBlockHandler& m_handler;
+    ISubmitBlockHandler& m_handler;
 };
 
 class CReadEntryHook : public CReadObjectHook
 {
 public:
     CReadEntryHook(CGBReleaseFile::ISeqEntryHandler& handler, CObjectOStream& out);
-
-    virtual void ReadObject(CObjectIStream &in, const CObjectInfo& obj);
+    void ReadObject(CObjectIStream& in, const CObjectInfo& obj) override;
 
 private:
     CGBReleaseFile::ISeqEntryHandler& m_handler;
     CObjectOStream& m_out;
     bool m_isGenbank;
 
-    void x_SetBioseqsetHook(CObjectIStream &in, bool isSet);
+    void x_SetBioseqsetHook(CObjectIStream& in, bool isSet);
 
     friend class CReadBioseqsetClassHook;
 };

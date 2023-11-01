@@ -1,34 +1,34 @@
 /*===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Alexey Dobronadezhdin, NCBI
-*
-* File Description:
-*   hooks reading Bioseq_set from ASN.1 files containing Seq-submit
-*
-* ===========================================================================
-*/
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Alexey Dobronadezhdin, NCBI
+ *
+ * File Description:
+ *   hooks reading Bioseq_set from ASN.1 files containing Seq-submit
+ *
+ * ===========================================================================
+ */
 
 #include <ncbi_pch.hpp>
 
@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static void WriteClassMember(CObjectOStream& out, const CObjectInfoMI &member)
+static void WriteClassMember(CObjectOStream& out, const CObjectInfoMI& member)
 {
     out.BeginClassMember(member.GetMemberInfo()->GetId());
     out.WriteObject(member.GetMember().GetObjectPtr(), member.GetMemberInfo()->GetTypeInfo());
@@ -55,23 +55,23 @@ static void WriteClassMember(CObjectOStream& out, const CObjectInfoMI &member)
 // class CReadSubmitBlockHook
 CReadSubmitBlockHook::CReadSubmitBlockHook(ISubmitBlockHandler& handler, CObjectOStream& out) :
     m_out(out),
-	m_handler(handler)
+    m_handler(handler)
 {
 }
 
-void CReadSubmitBlockHook::ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+void CReadSubmitBlockHook::ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member)
 {
-	ncbi::TTypeInfo seqSubmitType = CType<CSeq_submit>::GetTypeInfo();
-	m_out.WriteFileHeader(seqSubmitType);
+    ncbi::TTypeInfo seqSubmitType = CType<CSeq_submit>::GetTypeInfo();
+    m_out.WriteFileHeader(seqSubmitType);
 
-	const CClassTypeInfo* classTypeInfo = CTypeConverter<CClassTypeInfo>::SafeCast(seqSubmitType);
-	m_out.BeginClass(classTypeInfo);
+    const CClassTypeInfo* classTypeInfo = CTypeConverter<CClassTypeInfo>::SafeCast(seqSubmitType);
+    m_out.BeginClass(classTypeInfo);
 
-	// writing 'sub' member
-	in.ReadClassMember(member);
+    // writing 'sub' member
+    in.ReadClassMember(member);
 
     // Is there another way to get pointer to object?
-	CSeq_submit* submit = reinterpret_cast<CSeq_submit*>(member.GetClassObject().GetObjectPtr());
+    CSeq_submit* submit = reinterpret_cast<CSeq_submit*>(member.GetClassObject().GetObjectPtr());
 
     if (submit && submit->IsSetSub()) {
         m_handler.HandleSubmitBlock(submit->SetSub());
@@ -110,18 +110,15 @@ static void MidWritingSet(CObjectOStream& out, const CObjectInfo& obj)
 {
     // Skip all members before 'class' member - they have been already written by 'class' hook function
     CObjectInfoMI item = obj.BeginMembers();
-    for (; item; ++item)
-    {
+    for (; item; ++item) {
         if (item.GetItemInfo()->GetId().GetName() == "class")
             break;
     }
 
     // Write all members after ''class' member and before 'seq-set' member
-    for (++item; item; ++item)
-    {
+    for (++item; item; ++item) {
         if (item.GetItemInfo()->GetId().GetName() == "seq-set")
             break;
-
         if (item.IsSet())
             WriteClassMember(out, item);
     }
@@ -136,13 +133,13 @@ public:
         m_handler(handler),
         m_out(out),
         m_level(0)
-    {}
+    {
+    }
 
-    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+    void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member) override
     {
         ++m_level;
-        if (m_level == 1)
-        {
+        if (m_level == 1) {
             MidWritingSet(m_out, member.GetClassObject());
 
             // Start writing 'set'
@@ -168,9 +165,7 @@ public:
             // Complete writing 'set'
             m_out.EndContainer();
             m_out.EndClassMember();
-        }
-        else
-        {
+        } else {
             // standard read
             in.ReadClassMember(member);
         }
@@ -210,15 +205,13 @@ static void EndWritingSet(CObjectOStream& out, const CObjectInfo& obj)
 {
     // Skip all members before 'seq-set' member - they have been already written by 'class' hook function
     CObjectInfoMI item = obj.BeginMembers();
-    for (; item; ++item)
-    {
+    for (; item; ++item) {
         if (item.GetItemInfo()->GetId().GetName() == "seq-set")
             break;
     }
 
     // Write all members after 'seq-set' member
-    for (++item; item; ++item)
-    {
+    for (++item; item; ++item) {
         if (item.IsSet())
             WriteClassMember(out, item);
     }
@@ -236,40 +229,34 @@ public:
         m_inside(false),
         m_entryHook(entryHook),
         m_out(out)
-    {}
+    {
+    }
 
-    virtual void ReadClassMember(CObjectIStream &in, const CObjectInfoMI &member)
+    void ReadClassMember(CObjectIStream& in, const CObjectInfoMI& member) override
     {
         in.ReadClassMember(member);
 
-        if (!m_inside)
-        {
+        if (! m_inside) {
             m_inside = true;
 
             int val = member.GetMember().GetPrimitiveValueInt();
-            if (val == CBioseq_set::eClass_genbank)
-            {
+            if (val == CBioseq_set::eClass_genbank) {
                 StartWritingSet(m_out);
-
                 const CObjectInfo& oi = member.GetClassObject();
-                for (CObjectInfoMI item = oi.BeginMembers(); item; ++item)
-                {
+                for (CObjectInfoMI item = oi.BeginMembers(); item; ++item) {
                     if (item.GetItemInfo()->GetId().GetName() == "class")
                         break;
-
                     if (item.IsSet())
                         WriteClassMember(m_out, item);
                 }
-
                 m_entryHook.x_SetBioseqsetHook(in, true);
-
                 WriteClassMember(m_out, member);
             }
         }
     }
 
 private:
-    bool m_inside;
+    bool            m_inside;
     CReadEntryHook& m_entryHook;
     CObjectOStream& m_out;
 };
@@ -281,26 +268,22 @@ CReadEntryHook::CReadEntryHook(CGBReleaseFile::ISeqEntryHandler& handler, CObjec
 {
 }
 
-void CReadEntryHook::ReadObject(CObjectIStream &in, const CObjectInfo& obj)
+void CReadEntryHook::ReadObject(CObjectIStream& in, const CObjectInfo& obj)
 {
     CObjectTypeInfoMI bioseqsetClassInfo = GetBioseqsetClassTypeInfo();
 
-    for (CIStreamContainerIterator i(in, obj); i; ++i)
-    {
+    for (CIStreamContainerIterator i(in, obj); i; ++i) {
         m_isGenbank = false;
         bioseqsetClassInfo.SetLocalReadHook(in, new CReadBioseqsetClassHook(*this, m_out));
 
         CRef<CSeq_entry> entry(new CSeq_entry);
         i >> *entry;
 
-        if (m_isGenbank)
-        {
+        if (m_isGenbank) {
             CBioseq_set& bio_set = entry->SetSet();
             EndWritingSet(m_out, CObjectInfo(&bio_set, bio_set.GetThisTypeInfo()));
             x_SetBioseqsetHook(in, false);
-        }
-        else
-        {
+        } else {
             m_handler.HandleSeqEntry(entry);
 
             m_out.BeginContainerElement(entry->GetThisTypeInfo());
@@ -312,7 +295,7 @@ void CReadEntryHook::ReadObject(CObjectIStream &in, const CObjectInfo& obj)
     }
 }
 
-void CReadEntryHook::x_SetBioseqsetHook(CObjectIStream &in, bool isSet)
+void CReadEntryHook::x_SetBioseqsetHook(CObjectIStream& in, bool isSet)
 {
     CObjectTypeInfo bioseqsetTypeInfo = CType<CBioseq_set>();
 
