@@ -2312,7 +2312,7 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
         error_flags |= fError_no_data;
         break;
     case CID2_Error::eSeverity_restricted_data:
-        error_flags |= fError_no_data;
+        error_flags |= fError_restricted | fError_no_data;
         break;
     case CID2_Error::eSeverity_unsupported_command:
         m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
@@ -2347,6 +2347,12 @@ CId2ReaderBase::x_GetMessageError(const CID2_Error& error)
                               fError_suppressed_perm, "superceded"); // temp?
             sx_CheckErrorFlag(error, error_flags,
                               fError_suppressed_temp, "superseded"); // perm?
+            sx_CheckErrorFlag(error, error_flags,
+                              fError_restricted,
+                              "Unknown satellite number 20 for bioseq info");
+            if ( error_flags & fError_restricted ) {
+                error_flags |= fError_no_data;
+            }
         }
         break;
     case CID2_Error::eSeverity_failed_command:
