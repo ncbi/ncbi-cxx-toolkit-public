@@ -841,6 +841,11 @@ bool CPSG_Task::CheckReplyStatus(void)
             m_Status = eCompleted;
             return false;
         }
+        if ( status == EPSG_Status::eForbidden ) {
+            m_GotForbidden = true;
+            m_Status = eCompleted;
+            return false;
+        }
         m_Status = eFailed;
         return false;
     }
