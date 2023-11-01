@@ -1239,7 +1239,10 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
 {
     bool authorized;
     string user_name = CSystemInfo::GetUserName();
-    if ( user_name == "vasilche" ) {
+    if ( CGBDataLoader::IsUsingPSGLoader() ) {
+        authorized = false;
+    }
+    else if ( user_name == "vasilche" ) {
         authorized = true;
     }
     else if ( user_name == "coremake" ) {
