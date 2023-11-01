@@ -62,8 +62,8 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     int         JustTpaAssembly{0};
     int         TpaAssemblyHist{0};
     int         TpaNoHistYesGI{0};
-    SIZE_TYPE   NumGenes{0};
-    SIZE_TYPE   NumGeneXrefs{0};
+    std::atomic<size_t> NumGenes{0};
+    std::atomic<size_t> NumGeneXrefs{0};
     once_flag   DescriptorsOnceFlag;
     once_flag   SubmitBlockOnceFlag;
     once_flag   WgsSetInSeqSubmitOnceFlag;
