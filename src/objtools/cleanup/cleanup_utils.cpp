@@ -156,7 +156,7 @@ bool CleanVisStringJunk( string &str, bool allow_ellipses )
     // while we're at it, also check if the junk contains a tilde and/or period
     bool isPeriod = false;
     bool isTilde = false;
-    int start_of_junk_pos = str.length() - 1;
+    int start_of_junk_pos = (int)str.length() - 1;
     for( ; start_of_junk_pos >= 0 ; --start_of_junk_pos ) {
         const char ch = str[start_of_junk_pos];
         if (ch <= ' ' || ch == '.' || ch == ',' || ch == '~' || ch == ';') {
@@ -184,7 +184,7 @@ bool CleanVisStringJunk( string &str, bool allow_ellipses )
         // holds the suffix to add after we remove the junk
         const char * suffix = ""; // by default, just remove junk
 
-        const int chars_in_junk = ( str.length() - start_of_junk_pos );
+        const int chars_in_junk = ( (int)str.length() - start_of_junk_pos );
         _ASSERT( chars_in_junk >= 1 );
         // allow one period at end
         if (isPeriod) {
@@ -340,7 +340,6 @@ bool Asn2gnbkCompressSpaces(string& val)
     curr = *in;
     in++;
 
-    next = 0;
     two_chars = curr;
 
     while (curr != '\0') {
