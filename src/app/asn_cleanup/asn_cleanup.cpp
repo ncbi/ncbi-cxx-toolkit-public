@@ -1,35 +1,35 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Aaron Ucko, Mati Shomrat, Colleen Bollin, NCBI
-*
-* File Description:
-*   runs ExtendedCleanup on ASN.1 files
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Aaron Ucko, Mati Shomrat, Colleen Bollin, NCBI
+ *
+ * File Description:
+ *   runs ExtendedCleanup on ASN.1 files
+ *
+ * ===========================================================================
+ */
 #include <ncbi_pch.hpp>
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
@@ -37,9 +37,7 @@
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
-
 #include <serial/objectio.hpp>
-
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -71,27 +69,25 @@
 #include <common/ncbi_revision.h>
 
 #ifndef NCBI_SC_VERSION
-#   define THIS_IS_TRUNK_BUILD
+#    define THIS_IS_TRUNK_BUILD
 #elif (NCBI_SC_VERSION == 0)
-#   define THIS_IS_TRUNK_BUILD
+#    define THIS_IS_TRUNK_BUILD
 #endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 static const CDataLoadersUtil::TLoaders default_loaders =
-  CDataLoadersUtil::fGenbank | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fVDB;
+    CDataLoadersUtil::fGenbank | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fVDB;
 
-enum EProcessingMode
-{
+enum EProcessingMode {
     eModeRegular,
     eModeBatch,
     eModeBigfile,
     eModeHugefile,
 };
 
-struct TThreadState
-{
+struct TThreadState {
     CRef<CScope>                m_Scope;
     bool                        m_IsMultiSeq = false;
     CCleanupChangeCore          m_changes;
@@ -106,12 +102,12 @@ class CCleanupApp :
 public:
     CCleanupApp();
     void Init() override;
-    int Run() override;
+    int  Run() override;
 
     bool HandleSubmitBlock(CSubmit_block& block) override;
     bool HandleSeqEntry(CRef<CSeq_entry>& se) override;
     bool HandleSeqEntry(CSeq_entry_Handle entry);
-    bool HandleSeqID( const string& seqID );
+    bool HandleSeqID(const string& seqID);
 
     // IProcessorCallback interface functionality
     void Process(CRef<CSerialObject>& obj) override;
@@ -133,7 +129,7 @@ private:
 
     void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
-    //bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
+    // bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
     bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, TTypeInfo asn_type);
     void x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, TTypeInfo asn_type, bool first_only);
     void x_ProcessOneFile(const string& filename);
@@ -153,8 +149,8 @@ private:
     bool x_GFF3Batch(CSeq_entry_Handle seh);
     enum EFixCDSOptions {
         eFixCDS_FrameFromLoc = 0x1,
-        eFixCDS_Retranslate = 0x2,
-        eFixCDS_ExtendToStop = 0x4
+        eFixCDS_Retranslate  = 0x2,
+        eFixCDS_ExtendToStop = 0x4,
     };
     const Uint4 kGFF3CDSFixOptions = eFixCDS_FrameFromLoc | eFixCDS_Retranslate | eFixCDS_ExtendToStop;
 
@@ -164,10 +160,11 @@ private:
 
     bool x_ReportChanges(const string_view prefix, CCleanupChangeCore changes);
 
-    //template<typename T> void x_WriteToFile(const T& s);
+    // template<typename T> void x_WriteToFile(const T& s);
 
     // data
     unique_ptr<edit::CRemoteUpdater> m_remote_updater;
+
     unique_ptr<CObjectOStream>  m_Out;          // output
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     bool                        m_do_basic = false;
@@ -188,7 +185,7 @@ void CCleanupApp::Init()
     arg_desc->SetUsageContext("", "Perform ExtendedCleanup on an ASN.1 Seq-entry into a flat report");
 
     // input
-    {{
+    {
         // name
         arg_desc->AddOptionalKey("i", "InputFile",
             "Input file name", CArgDescriptions::eInputFile);
@@ -219,10 +216,10 @@ void CCleanupApp::Init()
 
         // results
         arg_desc->AddOptionalKey("outdir", "results", "Path for Results", CArgDescriptions::eDirectory);
-    }}
+    }
 
     // batch processing
-    {{
+    {
         arg_desc->AddFlag("batch", "Process NCBI release file");
         // compression
         arg_desc->AddFlag("c", "Obsolete - do not use",
@@ -230,32 +227,32 @@ void CCleanupApp::Init()
 
         // imitate limitation of C Toolkit version
         arg_desc->AddFlag("firstonly", "Process only first element");
-    }}
+    }
 
     // big file processing
-    {{
+    {
         arg_desc->AddFlag("bigfile", "Process big files containing many bioseqs");
-    }}
+    }
 
     // output
-    {{
+    {
         // name
         arg_desc->AddOptionalKey("o", "OutputFile",
             "Output file name", CArgDescriptions::eOutputFile);
-    }}
+    }
 
     // normal cleanup options (will replace -nocleanup and -basic)
-    {{
+    {
         arg_desc->AddOptionalKey("K", "Cleanup", "Systemic Cleaning Options\n"
                                  "\tb Basic\n"
                                  "\ts Extended\n"
                                  "\tn Normalize Descriptor Order\n"
                                  "\tu Remove Cleanup User-object\n",
                                  CArgDescriptions::eString);
-    }}
+    }
 
     // extra cleanup options
-    {{
+    {
         arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options\n"
                                  "\tr Remove Redundant Gene xref\n"
                                  "\ta Adjust for Missing Stop Codon\n"
@@ -275,33 +272,32 @@ void CCleanupApp::Init()
             CArgDescriptions::eString);
 
         arg_desc->AddFlag("T", "TaxonomyLookup");
-    }}
+    }
 
     // misc
-    {{
+    {
         // no-cleanup
         arg_desc->AddFlag("nocleanup",
-            "Do not perform extended data cleanup prior to formatting");
+                          "Do not perform extended data cleanup prior to formatting");
         arg_desc->AddFlag("basic",
-            "Perform basic data cleanup prior to formatting");
+                          "Perform basic data cleanup prior to formatting");
         arg_desc->AddFlag("noobj",
-            "Do not create Ncbi_cleanup object");
+                          "Do not create Ncbi_cleanup object");
 
         // show progress
         arg_desc->AddFlag("showprogress",
-            "List ID for which cleanup is occuring");
+                          "List ID for which cleanup is occuring");
         arg_desc->AddFlag("debug", "Save before.sqn");
 
-        arg_desc->AddFlag("huge",
-            "Process file in huge files mode");
-
         // huge mode
+        arg_desc->AddFlag("huge",
+                          "Process file in huge files mode");
         arg_desc->AddFlag("disable-huge",
-            "Explicitly disable huge files mode");
+                          "Explicitly disable huge files mode");
         arg_desc->SetDependency("disable-huge",
                                 CArgDescriptions::eExcludes,
                                 "huge");
-    }}
+    }
 
     // remote
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
@@ -312,12 +308,12 @@ void CCleanupApp::Init()
 
 void CCleanupApp::x_FeatureOptionsValid(const string& opt)
 {
-    if (NStr::IsBlank(opt)){
+    if (NStr::IsBlank(opt)) {
         return;
     }
     string unrecognized;
     for (char c : opt) {
-        if (!isspace(c)) {
+        if (! isspace(c)) {
             if (c != 'r' && c != 'a' && c != 'p' && c != 'z' && c != 'd') {
                 unrecognized += c;
             }
@@ -331,12 +327,12 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
 
 void CCleanupApp::x_KOptionsValid(const string& opt)
 {
-    if (NStr::IsBlank(opt)){
+    if (NStr::IsBlank(opt)) {
         return;
     }
     string unrecognized;
     for (char c : opt) {
-        if (!isspace(c)) {
+        if (! isspace(c)) {
             if (c != 'b' && c != 's' && c != 'u' && c != 'n') {
                 unrecognized += c;
             }
@@ -350,12 +346,12 @@ void CCleanupApp::x_KOptionsValid(const string& opt)
 
 void CCleanupApp::x_XOptionsValid(const string& opt)
 {
-    if (NStr::IsBlank(opt)){
+    if (NStr::IsBlank(opt)) {
         return;
     }
     string unrecognized;
     for (char c : opt) {
-        if (!isspace(c)) {
+        if (! isspace(c)) {
             if (c != 'w' && c != 'r' && c != 'b' && c != 'a' &&
                 c != 'i' && c != 'f' && c != 'd') {
                 unrecognized += c;
@@ -418,8 +414,8 @@ bool CCleanupApp::x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is)
         NCBI_THROW(CFlatException, eInternal,
             "Could not allocate Seq-submit object");
     }
-    try {
 
+    try {
         CObjectTypeInfoMI submitBlockObj = GetSubmitBlockTypeInfo();
         submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*this, *m_Out));
 
@@ -432,19 +428,16 @@ bool CCleanupApp::x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is)
         submitBlockObj.ResetLocalReadHook(*is);
 
         CompleteOutputFile(*m_Out);
-    }
-    catch (const CEofException&) {
+    } catch (const CEofException&) {
         is->SetFailFlags(CObjectIStream::eEOF);
         return false;
-    }
-    catch (...) {
+    } catch (...) {
         return false;
     }
 
-    if (!sub->IsSetSub() || !sub->IsSetData()) {
+    if (! sub->IsSetSub() || !sub->IsSetData()) {
         NCBI_THROW(CFlatException, eInternal, "No data in Seq-submit");
-    }
-    else if (!sub->GetData().IsEntrys()) {
+    } else if (! sub->GetData().IsEntrys()) {
         NCBI_THROW(CFlatException, eInternal, "Wrong data in Seq-submit");
     }
 
@@ -457,11 +450,9 @@ bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, TTypeInfo asn
     EBigFileContentType content_type = eContentUndefined;
     if (asn_type == CSeq_entry::GetTypeInfo()) {
         content_type = eContentSeqEntry;
-    }
-    else if (asn_type == CBioseq_set::GetTypeInfo()) {
+    } else if (asn_type == CBioseq_set::GetTypeInfo()) {
         content_type = eContentBioseqSet;
-    }
-    else if (asn_type == CSeq_submit::GetTypeInfo()) {
+    } else if (asn_type == CSeq_submit::GetTypeInfo()) {
         content_type = eContentSeqSubmit;
     } else {
         _ASSERT(0);
@@ -479,8 +470,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
             return HandleSeqEntry(entry);
         });
         in.Read();  // HandleSeqEntry will be called from this function
-    }
-    else if (mode == eModeBigfile) {
+    } else if (mode == eModeBigfile) {
         x_ProcessBigFile(is, asn_type);
     }
 #if 0
@@ -518,8 +508,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                     HandleSeqEntry(se);
                     if (se->IsSeq()) {
                         x_WriteToFile(se->GetSeq());
-                    }
-                    else {
+                    } else {
                         x_WriteToFile(se->GetSet());
                     }
                 }
@@ -533,8 +522,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
                     HandleSeqEntry(se);
                     if (se->IsSet()) {
                         x_WriteToFile(se->GetSet());
-                    }
-                    else {
+                    } else {
                         x_WriteToFile(se->GetSeq());
                     }
                 }
@@ -553,7 +541,7 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
             }
         }
 
-        if (num_cleaned == 0 || (!first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
+        if (num_cleaned == 0 || (! first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
             NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
         }
     }
@@ -577,7 +565,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     m_state.m_Scope.Reset(new CScope(*m_Objmgr));
     m_state.m_Scope->AddDefaults();
 
-    _ASSERT(!NStr::IsBlank(filename));
+    _ASSERT(! NStr::IsBlank(filename));
 
     if (args["type"]) {
         cerr << "Warning: -type argument should not be used; ASN.1 object type is now autodetected." << endl;
@@ -586,8 +574,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         cerr << "Warning: -serial argument should not be used; Input file format is now autodetected." << endl;
     }
 
-
-    CCleanupHugeAsnReader::TOptions options{0};
+    CCleanupHugeAsnReader::TOptions options{ 0 };
     if (m_do_extended) {
         options |= CCleanupHugeAsnReader::eExtendedCleanup;
     }
@@ -603,8 +590,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     huge_process.OpenFile(filename);
 
     TTypeInfo asn_type = huge_process.GetFile().m_content;
-
-    if (asn_type == nullptr) {
+    if (! asn_type) {
         string msg = "Unable to open input file " + filename + ". Content not recognized.";
         NCBI_THROW(CArgException, eInvalidArg, msg);
     }
@@ -612,7 +598,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     // need to set output if -o not specified
     bool opened_output = false;
 
-    if (!args["o"] && args["outdir"]) {
+    if (! args["o"] && args["outdir"]) {
         x_OpenOStream(filename, args["outdir"].AsString());
         opened_output = true;
     }
@@ -623,7 +609,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         // always regular mode
         mode = eModeRegular;
     } else if (s_IsHugeMode(args, GetConfig())) {
-            mode = eModeHugefile;
+        mode = eModeHugefile;
     } else if (args["batch"]) {
         mode = eModeBatch;
     } else if (args["bigfile"]) {
@@ -633,8 +619,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     if (mode == eModeHugefile) {
         huge_process.OpenReader();
         x_ProcessHugeFile(huge_process, args["firstonly"]);
-    } else
-    if (mode == eModeRegular) {
+    } else if (mode == eModeRegular) {
         huge_process.OpenReader();
         x_ProcessTraditionally(huge_process, args["firstonly"]);
     } else {
@@ -652,9 +637,9 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
 void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process, bool first_only)
 {
-    bool proceed = true;
+    bool   proceed = true;
     size_t num_cleaned = 0;
-    auto reader = process.GetReader();
+    auto   reader = process.GetReader();
 
     while (proceed) {
 
@@ -674,9 +659,9 @@ void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process, bool f
         }
     }
 
-    //if (num_cleaned == 0 || (!first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
-    //    NCBI_THROW(CArgException, eInvalidArg, "Unable to construct Seq-entry object");
-    //}
+    // if (num_cleaned == 0 || (! first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
+    //     NCBI_THROW(CArgException, eInvalidArg, "Unable to construct Seq-entry object");
+    // }
 }
 
 CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReader& reader)
@@ -692,8 +677,7 @@ CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReade
         topentry.Reset(CTypeConverter<CSeq_entry>::SafeCast(anytop));
         HandleSeqEntry(topentry);
         topobject = topentry;
-    } else
-    if (anytop->GetThisTypeInfo() == CSeq_submit::GetTypeInfo()) {
+    } else if (anytop->GetThisTypeInfo() == CSeq_submit::GetTypeInfo()) {
         auto submit = Ref(CTypeConverter<CSeq_submit>::SafeCast(anytop));
         if (submit->IsEntrys()) {
             topentry = submit->SetData().SetEntrys().front();
@@ -705,8 +689,7 @@ CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReade
             submit->SetData().SetEntrys().push_back(topentry);
         }
         topobject = submit;
-    } else
-    if (anytop->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
+    } else if (anytop->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
         auto bioset = Ref(CTypeConverter<CBioseq_set>::SafeCast(anytop));
         topentry = Ref(new CSeq_entry);
         topentry->SetSet(*bioset);
@@ -716,8 +699,7 @@ CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReade
             topobject.Reset(&topentry->GetSet());
         else
             topobject.Reset(&topentry->GetSeq());
-    } else
-    if (anytop->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
+    } else if (anytop->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
         auto bioseq = Ref(CTypeConverter<CBioseq>::SafeCast(anytop));
         topentry = Ref(new CSeq_entry);
         topentry->SetSeq(*bioseq);
@@ -738,6 +720,7 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
     CGenBankAsyncWriterEx<CConstRef<CSeq_entry>> writer(m_Out.get());
 
     CConstRef<CSerialObject> topobject; // top object is used to write output, can be submit, entry, bioseq, bioseq_set
+
     CRef<CSeq_submit> submit;
     CRef<CSeq_entry>  topentry;
 
@@ -754,16 +737,13 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
     }
     m_IsHugeSet = (topentry->GetSet().GetClass() == CBioseq_set::eClass_genbank);
 
-    if (reader.GetSubmitBlock())
-    {
+    if (reader.GetSubmitBlock()) {
         submit.Reset(new CSeq_submit);
         submit->SetSub().Assign(*reader.GetSubmitBlock());
-
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(topentry);
         HandleSubmitBlock(submit->SetSub());
     }
-
 
     if (submit)
         topobject = submit;
@@ -771,46 +751,36 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
         topobject = topentry;
 
     writer.StartWriter(topobject);
-    try
-    {
-
-        bool proceed = process.ForEachEntry (m_state.m_Scope,
-            [this, &writer] (CSeq_entry_Handle seh) -> bool
-            {
+    try {
+        bool proceed = process.ForEachEntry(
+            m_state.m_Scope,
+            [this, &writer](CSeq_entry_Handle seh) -> bool {
                 HandleSeqEntry(seh.GetEditHandle());
                 writer.PushNextEntry(seh.GetCompleteSeq_entry());
                 return true;
             });
         writer.FinishWriter();
-
         return proceed;
-    }
-    catch(...)
-    {
+    } catch(...) {
         writer.CancelWriter();
         throw;
     }
-
-
 }
 
 bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_only)
 {
-    return process.ForEachBlob([this, first_only](edit::CHugeFileProcess& p_process) -> bool
-    {
+    return process.ForEachBlob([this, first_only](edit::CHugeFileProcess& p_process) -> bool {
         m_state.m_IsMultiSeq = p_process.GetReader().IsMultiSequence();
         if (m_state.m_IsMultiSeq) {
-
             bool proceed = x_ProcessHugeFileBlob(p_process);
-            if (!proceed)
+            if (! proceed)
                 return false;
         } else {
             auto topobject = x_ProcessTraditionally(p_process.GetReader());
             m_Out->ResetLocalHooks();
             *m_Out << *topobject;
         }
-
-        return !first_only;
+        return ! first_only;
     });
 }
 
@@ -868,11 +838,10 @@ int CCleanupApp::Run()
             m_do_basic = true;
             m_do_extended = true;
         }
-    }
-    else if (args["X"]) {
+    } else if (args["X"]) {
         m_do_basic = true;
         if (NStr::Find(args["X"].AsString(), "w") != string::npos) {
-            //Extended Cleanup is part of -X w
+            // Extended Cleanup is part of -X w
             m_do_extended = false;
         }
     } else if (args["F"]) {
@@ -881,7 +850,7 @@ int CCleanupApp::Run()
         if (args["basic"]) {
             m_do_basic = true;
         }
-        if (!args["nocleanup"]) {
+        if (! args["nocleanup"]) {
             m_do_extended = true;
         }
     }
@@ -914,7 +883,7 @@ int CCleanupApp::Run()
                       args["outdir"] ? args["outdir"].AsString() : kEmptyStr,
                       false);
         opened_output = true;
-    } else if (!args["outdir"] || args["id"]) {
+    } else if (! args["outdir"] || args["id"]) {
         x_OpenOStream(kEmptyStr);
         opened_output = true;
     }
@@ -954,7 +923,7 @@ int CCleanupApp::Run()
 #if 0
 bool CCleanupApp::ObtainSeqEntryFromSeqEntry(
     unique_ptr<CObjectIStream>& is,
-    CRef<CSeq_entry>& se )
+    CRef<CSeq_entry>& se)
 {
     try {
         *is >> *se;
@@ -962,47 +931,43 @@ bool CCleanupApp::ObtainSeqEntryFromSeqEntry(
             return false;
         }
         return true;
-    }
-    catch(const CEofException&) {
+    } catch(const CEofException&) {
         is->SetFailFlags(CObjectIStream::eEOF);
         return false;
-    }
-    catch( ... ) {
+    } catch( ... ) {
         return false;
     }
 }
 
 bool CCleanupApp::ObtainSeqEntryFromBioseq(
     unique_ptr<CObjectIStream>& is,
-    CRef<CSeq_entry>& se )
+    CRef<CSeq_entry>& se)
 {
     try {
-        CRef<CBioseq> bs( new CBioseq );
-        if ( ! bs ) {
+        CRef<CBioseq> bs(new CBioseq);
+        if (! bs ) {
             NCBI_THROW(CFlatException, eInternal,
             "Could not allocate Bioseq object");
         }
         *is >> *bs;
 
-        se->SetSeq( bs.GetObject() );
+        se->SetSeq(bs.GetObject());
         return true;
-    }
-    catch (const CEofException&) {
+    } catch (const CEofException&) {
         is->SetFailFlags(CObjectIStream::eEOF);
         return false;
-    }
-    catch( ... ) {
+    } catch(...) {
         return false;
     }
 }
 
 bool CCleanupApp::ObtainSeqEntryFromBioseqSet(
     unique_ptr<CObjectIStream>& is,
-    CRef<CSeq_entry>& se )
+    CRef<CSeq_entry>& se)
 {
     try {
         CRef<CBioseq_set> bss( new CBioseq_set );
-        if ( ! bss ) {
+        if (! bss) {
             NCBI_THROW(CFlatException, eInternal,
             "Could not allocate Bioseq object");
         }
@@ -1010,18 +975,16 @@ bool CCleanupApp::ObtainSeqEntryFromBioseqSet(
 
         se->SetSet( bss.GetObject() );
         return true;
-    }
-    catch (const CEofException&) {
+    } catch (const CEofException&) {
         is->SetFailFlags(CObjectIStream::eEOF);
         return false;
-    }
-    catch( ... ) {
+    } catch(...  {
         return false;
     }
 }
 #endif
 
-bool CCleanupApp::HandleSeqID( const string& seq_id )
+bool CCleanupApp::HandleSeqID(const string& seq_id)
 {
     CRef<CScope> scope(new CScope(*m_Objmgr));
     scope->AddDefaults();
@@ -1030,12 +993,11 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     try {
         CSeq_id SeqId(seq_id);
         bsh = scope->GetBioseqHandle(SeqId);
-    }
-    catch ( CException& ) {
-        ERR_FATAL("The ID " << seq_id << " is not a valid seq ID." );
+    } catch (CException&) {
+        ERR_FATAL("The ID " << seq_id << " is not a valid seq ID.");
     }
 
-    if (!bsh) {
+    if (! bsh) {
         ERR_FATAL("Sequence for " << seq_id << " cannot be retrieved.");
         return false;
     }
@@ -1079,7 +1041,7 @@ bool CCleanupApp::x_RemoveDuplicateFeatures(CSeq_entry_Handle seh)
     if (deleted_feats.empty()) {
         return false;
     }
-    set< CBioseq_Handle > orphans = validator::ListOrphanProteins(seh);
+    set<CBioseq_Handle> orphans = validator::ListOrphanProteins(seh);
     for (auto df : deleted_feats) {
         CSeq_feat_EditHandle eh(df);
         eh.Remove();
@@ -1114,7 +1076,7 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Ui
     if (NStr::Find(opt, "a") != string::npos) {
         any_changes |= CCleanup::ConvertDeltaSeqToRaw(seh);
     }
-    if (!m_IsHugeSet && (NStr::Find(opt, "i") != string::npos)) {
+    if (! m_IsHugeSet && (NStr::Find(opt, "i") != string::npos)) {
         if (CCleanup::MakeSmallGenomeSet(seh) > 0) {
             any_changes = true;
         }
@@ -1134,7 +1096,7 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Ui
 
 bool CCleanupApp::x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b)
 {
-    if (!sf.GetData().IsCdregion()) {
+    if (! sf.GetData().IsCdregion()) {
         // not coding region
         return false;
     }
@@ -1154,7 +1116,7 @@ bool CCleanupApp::x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b)
         return false;
     }
     if (NStr::EndsWith(translation, "*")) {
-        //already has stop codon
+        // already has stop codon
         return false;
     }
 
@@ -1212,8 +1174,8 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
                 ofh.Replace(*sf);
                 any_changes = true;
             }
-            //also set protein name if missing, change takes place on protein bioseq
-            if (!NStr::IsBlank(missing_prot_name)) {
+            // also set protein name if missing, change takes place on protein bioseq
+            if (! NStr::IsBlank(missing_prot_name)) {
                 string current_name = CCleanup::GetProteinName(*sf, seh);
                 if (NStr::IsBlank(current_name)) {
                     CCleanup::SetProteinName(*sf, missing_prot_name, false, seh.GetScope());
@@ -1233,9 +1195,9 @@ bool CCleanupApp::x_GFF3Batch(CSeq_entry_Handle seh)
     cleanup.SetScope(&(seh.GetScope()));
     Uint4 options = CCleanup::eClean_NoNcbiUserObjects;
     auto changes = cleanup.BasicCleanup(seh, options);
-    any_changes |= (!changes.Empty());
+    any_changes |= (! changes.Empty());
     changes = cleanup.ExtendedCleanup(seh, options);
-    any_changes |= (!changes.Empty());
+    any_changes |= (! changes.Empty());
     any_changes |= x_FixCDS(seh, 0, "unnamed protein product");
 
     return any_changes;
@@ -1244,7 +1206,7 @@ bool CCleanupApp::x_GFF3Batch(CSeq_entry_Handle seh)
 
 bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, Uint4 options)
 {
-    if (!m_do_basic && !m_do_extended) {
+    if (! m_do_basic && ! m_do_extended) {
         return false;
     }
 
@@ -1253,19 +1215,18 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
     cleanup.SetScope(&(entry.GetScope()));
 
     if (m_state.m_IsMultiSeq) {
-        options |= ( CCleanup::eClean_KeepTopSet | CCleanup::eClean_KeepSingleSeqSet);
-        //if (submit)
-        //options |= CCleanup::eScope_UseInPlace; // RW-1070 - CCleanup::eScope_UseInPlace is essential
+        options |= (CCleanup::eClean_KeepTopSet | CCleanup::eClean_KeepSingleSeqSet);
+        // if (submit)
+        // options |= CCleanup::eScope_UseInPlace; // RW-1070 - CCleanup::eScope_UseInPlace is essential
     }
 
-    if (m_do_basic && !m_do_extended) {
+    if (m_do_basic && ! m_do_extended) {
         // perform BasicCleanup
         try {
             auto changes = *cleanup.BasicCleanup(entry, options);
             m_state.m_changes += changes;
-            any_changes = !changes.Empty();
-        }
-        catch (CException& e) {
+            any_changes = ! changes.Empty();
+        } catch (CException& e) {
             LOG_POST(Error << "error in basic cleanup: " << e.GetMsg() << label);
         }
     }
@@ -1275,15 +1236,13 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
         try {
             auto changes = *cleanup.ExtendedCleanup(entry, options);
             m_state.m_changes += changes;
-            any_changes = !changes.Empty();
-        }
-        catch (CException& e) {
+            any_changes = ! changes.Empty();
+        } catch (CException& e) {
             LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
         }
     }
     return any_changes;
 }
-
 
 
 bool CCleanupApp::HandleSubmitBlock(CSubmit_block& block)
@@ -1328,7 +1287,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     }
 
     if (args["K"] && NStr::Find(args["K"].AsString(), "u") != string::npos) {
-        CRef<CSeq_entry> se(const_cast<CSeq_entry *>(entry.GetCompleteSeq_entry().GetPointer()));
+        CRef<CSeq_entry> se(const_cast<CSeq_entry*>(entry.GetCompleteSeq_entry().GetPointer()));
         any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);
     }
 
@@ -1348,7 +1307,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     if (args["X"]) {
         any_changes |= x_ProcessXOptions(args["X"].AsString(), entry, options);
     }
-    if (args["K"] && NStr::Find(args["K"].AsString(), "n") != string::npos && !m_do_extended) {
+    if (args["K"] && NStr::Find(args["K"].AsString(), "n") != string::npos && ! m_do_extended) {
         any_changes |= CCleanup::NormalizeDescriptorOrder(entry);
     }
 
@@ -1357,12 +1316,12 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
 
 bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
-    if (!se) {
+    if (! se) {
         return false;
     }
 
     auto entryHandle = m_state.m_Scope->AddTopLevelSeqEntry(*se);
-    if (!entryHandle) {
+    if (! entryHandle) {
         NCBI_THROW(CArgException, eInvalidArg, "Failed to insert entry to scope.");
     }
 
@@ -1385,18 +1344,16 @@ void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool 
     if (args["outformat"]) {
         if (args["outformat"].AsString() == "binary") {
             outFormat = eSerial_AsnBinary;
-        }
-        else if (args["outformat"].AsString() == "XML") {
+        } else if (args["outformat"].AsString() == "XML") {
             outFormat = eSerial_Xml;
-        }
-        else if (args["outformat"].AsString() == "JSON") {
+        } else if (args["outformat"].AsString() == "JSON") {
             outFormat = eSerial_Json;
         }
     }
 
     if (NStr::IsBlank(filename)) {
         m_Out.reset(CObjectOStream::Open(outFormat, cout));
-    } else if (!NStr::IsBlank(dir)) {
+    } else if (! NStr::IsBlank(dir)) {
         string base = filename;
         if (remove_orig_dir) {
             const char buf[2] = { CDirEntry::GetPathSeparator(), 0 };
@@ -1422,8 +1379,8 @@ void CCleanupApp::x_CloseOStream()
 // IProcessorCallback interface functionality
 void CCleanupApp::Process(CRef<CSerialObject>& obj)
 {
-    //static long long cnt;
-    //cerr << ++cnt << ' ' << obj->GetThisTypeInfo()->GetName() << '\n';
+    // static long long cnt;
+    // cerr << ++cnt << ' ' << obj->GetThisTypeInfo()->GetName() << '\n';
     if (obj->GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
         CRef<CSeq_entry> entry(dynamic_cast<CSeq_entry*>(obj.GetPointer()));
         HandleSeqEntry(entry);
@@ -1436,8 +1393,7 @@ bool CCleanupApp::x_ReportChanges(const string_view prefix, CCleanupChangeCore c
     auto changes_str = changes.GetDescriptions();
     if (changes_str.empty()) {
         LOG_POST(Error << "No changes from " << prefix << "\n");
-    }
-    else {
+    } else {
         LOG_POST(Error << "Changes from " << prefix << ":\n");
         for (auto it : changes_str) {
             LOG_POST(Error << it);
@@ -1459,34 +1415,24 @@ USING_NCBI_SCOPE;
 int main(int argc, const char** argv)
 {
     // scan and replace deprecated arguments; RW-1324
-    for (int i = 1; i < argc; ++i)
-    {
+    for (int i = 1; i < argc; ++i) {
         string a = argv[i];
-        if (a == "-r")
-        {
-            if ((i+1) < argc)
-            {
+        if (a == "-r") {
+            if ((i+1) < argc) {
                 string param = argv[i+1];
-                if (!param.empty() && param[0] != '-')
-                {
+                if (!param.empty() && param[0] != '-') {
                     argv[i] = "-outdir";
                     ++i; // skip parameter
                     cerr << "Warning: deprecated use of -r argument. Please use -outdir instead." << endl;
                 }
             }
-        }
-        else if (a == "-p")
-        {
+        } else if (a == "-p") {
             argv[i] = "-indir";
             cerr << "Warning: argument -p is deprecated. Please use -indir instead." << endl;
-        }
-        else if (a == "-R")
-        {
+        } else if (a == "-R") {
             argv[i] = "-r";
             cerr << "Warning: argument -R is deprecated. Please use -r instead." << endl;
-        }
-        else if (a == "-gbload")
-        {
+        } else if (a == "-gbload") {
             argv[i] = "-genbank";
             cerr << "Warning: argument -gbload is deprecated. Please use -genbank instead." << endl;
         }
@@ -1497,13 +1443,11 @@ int main(int argc, const char** argv)
     list<string> split_args;
     vector<const char*> new_argv;
 
-    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
-    {
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' ')) {
         NStr::Split(argv[1], " ", split_args);
 
         auto it = split_args.begin();
-        while (it != split_args.end())
-        {
+        while (it != split_args.end()) {
             auto next = it; ++next;
             if (next != split_args.end() &&
                 ((it->front() == '"' && it->back() != '"') ||
@@ -1511,23 +1455,21 @@ int main(int argc, const char** argv)
             {
                 it->append(" "); it->append(*next);
                 next = split_args.erase(next);
-            } else it = next;
+            } else
+                it = next;
         }
-        for (auto& rec: split_args)
-        {
+        for (auto& rec: split_args) {
             if (rec.front()=='\'' && rec.back()=='\'')
                 rec=rec.substr(1, rec.length()-2);
         }
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
-        for (const string& s : split_args)
-        {
+        for (const string& s : split_args) {
             new_argv.push_back(s.c_str());
             std::cerr << s.c_str() << " ";
         }
         std::cerr << "\n";
-
 
         argv = new_argv.data();
     }
