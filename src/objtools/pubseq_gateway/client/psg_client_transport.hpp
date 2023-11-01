@@ -211,7 +211,7 @@ struct SPSG_Params
     TPSG_RefusedStreamRetries refused_stream_retries;
     TPSG_UserRequestIds user_request_ids;
     TPSG_AuthTokenName auth_token_name;
-    TPSG_AuthToken auth_token;
+    string auth_token;
     TPSG_PsgClientMode client_mode;
 
     SPSG_Params() :
@@ -226,20 +226,21 @@ struct SPSG_Params
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         auth_token_name(TPSG_AuthTokenName::eGetDefault),
-        auth_token(TPSG_AuthToken::eGetDefault),
+        auth_token(s_GetAuthToken()),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
     template <class TGet>
     string GetCookie(TGet get)
     {
-        auto rv = auth_token.Get().empty() ? get() : auth_token.Get();
+        auto rv = auth_token.empty() ? get() : auth_token;
         return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::Quote(rv);
     }
 
 private:
     static unsigned s_GetRequestTimeout(double io_timer_period);
     static unsigned s_GetCompetitiveAfter(double io_timer_period, double timeout);
+    static string s_GetAuthToken();
 };
 
 struct SDebugPrintout
