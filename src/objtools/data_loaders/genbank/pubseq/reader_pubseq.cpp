@@ -211,6 +211,7 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_EXCL_WGS_MASTER,
         CConfig::eErr_NoThrow,
         DEFAULT_EXCL_WGS_MASTER);
+    /*
     bool set_cubby_user = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_SET_CUBBY_USER,
@@ -219,6 +220,7 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
     if ( set_cubby_user ) {
         SetIncludeHUP(set_cubby_user);
     }
+    */
     CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
 
