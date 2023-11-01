@@ -178,7 +178,6 @@ public:
     operator bool() const                { return !m_Changes.empty(); }
 
     vector<EChanges>    GetAllChanges() const;
-    NCBI_DEPRECATED vector<string> GetAllDescriptions() const;
     vector<string_view> GetDescriptions() const;
 
     static string_view  GetDescription(EChanges e);

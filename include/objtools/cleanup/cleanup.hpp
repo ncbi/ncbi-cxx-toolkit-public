@@ -318,7 +318,6 @@ public:
     static void SetMrnaName(CSeq_feat& mrna, const string& protein_name);
     static const string& GetProteinName(const CProt_ref& prot);
     static const string& GetProteinName(const CSeq_feat& cds, CSeq_entry_Handle seh);
-    NCBI_DEPRECATED static const string& GetProteinName(const CSeq_feat& cds, CScope& scope);
 
 /// Sets MolInfo::tech for a sequence
 /// @param seq Bioseq to edit

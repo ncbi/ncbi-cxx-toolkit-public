@@ -297,23 +297,12 @@ vector<CCleanupChangeCore::EChanges> CCleanupChangeCore::GetAllChanges() const
     return m_Changes;
 }
 
-
-vector<string> CCleanupChangeCore::GetAllDescriptions() const
-{
-    vector<string>  result;
-    result.reserve(m_Changes.size());
-    for (auto it: m_Changes) {
-        result.push_back( string( GetDescription(it) ) );
-    }
-    return result;
-}
-
 vector<string_view> CCleanupChangeCore::GetDescriptions() const
 {
-    vector<string_view>  result;
+    vector<string_view> result;
     result.reserve(m_Changes.size());
-    for (auto it: m_Changes) {
-        result.push_back( GetDescription(it) );
+    for (auto it : m_Changes) {
+        result.push_back(GetDescription(it));
     }
     return result;
 }
@@ -1509,22 +1498,6 @@ const string& CCleanup::GetProteinName(const CSeq_feat& cds, CSeq_entry_Handle s
 {
     if (cds.IsSetProduct() && cds.GetProduct().GetId()) {
         CBioseq_Handle prot = seh.GetBioseqHandle(*(cds.GetProduct().GetId()));
-        if (prot) {
-            CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
-            if (f) {
-                return GetProteinName(f->GetData().GetProt());
-            }
-        }
-    }
-
-    return s_GetProteinNameFromXrefOrQual(cds);
-}
-
-
-const string& CCleanup::GetProteinName(const CSeq_feat& cds, CScope& scope)
-{
-    if (cds.IsSetProduct()) {
-        CBioseq_Handle prot = scope.GetBioseqHandle(cds.GetProduct());
         if (prot) {
             CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
             if (f) {
