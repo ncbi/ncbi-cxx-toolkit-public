@@ -171,6 +171,12 @@ unsigned SPSG_Params::s_GetCompetitiveAfter(double io_timer_period, double timeo
     return static_cast<unsigned>(timeout / io_timer_period);
 }
 
+string SPSG_Params::s_GetAuthToken()
+{
+    string rv = TPSG_AuthToken(TPSG_AuthToken::eGetDefault);
+    return rv.empty() ? CNcbiEnvironment().Get("HTTP_COOKIE") : rv;
+}
+
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
 {
     ostringstream os;
