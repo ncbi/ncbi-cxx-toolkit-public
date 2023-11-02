@@ -54,7 +54,7 @@ while true; do
 done
 
 methods=""
-if test "$only_id2_test" == 0 -a "$only_vdb_wgs_test" == 0; then
+if test "$only_id2_test" = 0 -a "$only_vdb_wgs_test" = 0; then
     if disabled PubSeqOS; then
         echo "Skipping PUBSEQOS loader test (loader unavailable)"
         methods="$methods ID1"
@@ -65,10 +65,10 @@ if test "$only_id2_test" == 0 -a "$only_vdb_wgs_test" == 0; then
         methods="$methods PUBSEQOS ID1"
     fi
 fi
-if test "$no_id2_test" == 0 -a "$no_vdb_wgs_test" == 0; then
+if test "$no_id2_test" = 0 -a "$no_vdb_wgs_test" = 0; then
     methods="$methods ID2"
 fi
-if test "$no_id2_test" == 1 -o "$no_vdb_wgs_test" == 1 || disabled PSGLoader || disabled in-house-resources; then
+if test "$no_id2_test" = 1 -o "$no_vdb_wgs_test" = 1 || disabled PSGLoader || disabled in-house-resources; then
     echo "Skipping PSG loader test"
 else
     methods="$methods PSG"
@@ -171,7 +171,7 @@ for method in $methods; do
 	unset GENBANK_LOADER_METHOD_BASE
     else
 	GENBANK_LOADER_PSG=0
-	if test "$no_cache" == 0; then
+	if test "$no_cache" = 0; then
 	    caches="1 2 3"
 	fi
     fi
