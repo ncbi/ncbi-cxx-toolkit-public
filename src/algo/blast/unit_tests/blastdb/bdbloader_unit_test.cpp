@@ -307,10 +307,10 @@ BOOST_AUTO_TEST_CASE(RetrievePartsOfLargeChromosome_Remote)
     RetrievePartsOfLargeChromosome(true);
 }
 
-#ifndef _DEBUG
-/* Only execute this in release mode as debug might be too slow */
 void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
 {
+#ifndef _DEBUG
+/* Only execute this in release mode as debug might be too slow */
     const string kAccession("NC_060943");
 
     const string db("9606_genomic");
@@ -329,6 +329,7 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
     CRef<CBioseq> retval(const_cast<CBioseq*>(&*bh.GetCompleteBioseq()));
     BOOST_REQUIRE_EQUAL(kLength, retval->GetLength());
     TestCSeq_inst(*retval);
+#endif /* _DEBUG */
 }
 
 BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Local)
@@ -342,7 +343,6 @@ BOOST_AUTO_TEST_CASE(RetrieveLargeChromosomeWithTimeOut_Remote)
     RetrieveLargeChromosomeWithTimeOut(true);
 }
 BOOST_AUTO_TEST_CASE_TIMEOUT(RetrieveLargeChromosomeWithTimeOut_Remote, 330);
-#endif /* _DEBUG */
 
 #if 0 /* Boost doesn't support MT unit tests */
 #ifdef NCBI_THREADS
