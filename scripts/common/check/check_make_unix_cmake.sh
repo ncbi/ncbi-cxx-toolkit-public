@@ -529,7 +529,7 @@ is_max_debug=false
 if test -f "\${conf_dir}/status/MaxDebug.enabled"; then
    is_max_debug=true
 fi
-if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  ! \$is_max_debug; then
+if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  \$is_max_debug = false; then
    ulimit -c 1000000
    ulimit -n 8192
    if [ \$cygwin = false ]; then
