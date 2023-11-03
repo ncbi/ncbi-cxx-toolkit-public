@@ -22961,7 +22961,7 @@
                         "jsonrpc": "2.0",
                         "method": "raw",
                         "params": {
-                            "abs_path_ref": "/ADMIN/statistics?time_series=1:333 1:22"
+                            "abs_path_ref": "/ADMIN/statistics?time_series=1:333%201:22"
                         },
                         "id": "raw_1"
                     }
@@ -22989,7 +22989,7 @@
                         "jsonrpc": "2.0",
                         "method": "raw",
                         "params": {
-                            "abs_path_ref": "/ADMIN/statistics?time_series=7:17 1:"
+                            "abs_path_ref": "/ADMIN/statistics?time_series=7:17%201:"
                         },
                         "id": "raw_1"
                     }
