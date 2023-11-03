@@ -795,8 +795,8 @@ const char* s_GetBioIdResolution(EPSG_BioIdResolution value)
 }
 
 
-template <typename TIterator, class TGet>
-void s_DelimitedOutput(TIterator from, TIterator to, ostream& os, const char* prefix, char delimiter, TGet get)
+template <typename TIterator, class TDelimiter, class TGet>
+void s_DelimitedOutput(TIterator from, TIterator to, ostream& os, const char* prefix, TDelimiter delimiter, TGet get)
 {
     if (from != to) {
         os << prefix << get(*from++);
@@ -890,7 +890,7 @@ void CPSG_Request_NamedAnnotInfo::x_GetAbsPathRef(ostream& os) const
 
     os << "/ID/get_na?" << *bio_id++;
 
-    s_DelimitedOutput(bio_id, m_BioIds.end(), os, "&seq_ids=", ' ', s_GetFastaString);
+    s_DelimitedOutput(bio_id, m_BioIds.end(), os, "&seq_ids=", "%20", s_GetFastaString);
     s_DelimitedOutput(m_AnnotNames, os, "&names=", ',', [](const auto& name) { return name; });
 
     if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
