@@ -12,9 +12,11 @@ CGI_INIFILE_NAME="test_stat_ext.cgi.ini"
 SVN_LOGS_NAME="svn_logs.cgi"
 
 
-if [[ "$(uname -s)" == CYGWIN* ]]; then
+case "$(uname -s)" in
+  CYGWIN* )
     CGI_NAME="${CGI_NAME}.exe"
-fi
+    ;;
+esac
 
 
 if [ ! -d "$BIN_DIR" -o ! -d "$SRC_DIR" -o ! -d "$INSTALL_DIR" ]; then
