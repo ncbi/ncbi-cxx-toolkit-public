@@ -43,9 +43,9 @@ if test -z "$1"; then
   echo
   echo The following project types are available:
   svn list -R $repository/$rep_src/$rep_sample | while IFS= read -r line; do
-    if [[ $line =~ .*/$ ]]; then
+    case "$line" in */ )
       count=`echo $line | tr -cd '/' | wc -c`
-      if [[ $count -eq 2 ]]; then
+      if [ $count -eq 2 ]; then
         prj=${line%?}
         case "$prj" in 
         app/alnmgr)         echo "  app/alnmgr          an application that uses Alignment Manager";;
@@ -77,7 +77,8 @@ if test -z "$1"; then
         *)                  echo "  $prj";;
         esac 
       fi
-    fi
+      ;;
+    esac
   done
 fi
 echo " "
