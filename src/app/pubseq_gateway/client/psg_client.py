@@ -96,6 +96,9 @@ class PsgClient:
         if service := args_dict.get('service'):
             self._cmd += ['-service', service]
 
+        if args_dict.get('https'):
+            self._cmd += ['-https']
+
         if data_limit := args_dict.get('data_limit'):
             self._cmd += ['-data-limit', data_limit]
 
@@ -1199,6 +1202,7 @@ if __name__ == '__main__':
     parser_syntest = subparsers.add_parser('syntest', help='Perform synthetic psg_client tests', description='Perform synthetic psg_client tests', aliases=['test'])
     parser_syntest.set_defaults(func=syntest_cmd)
     parser_syntest.add_argument('-service', help='PSG service/server to use')
+    parser_syntest.add_argument('-https', help='Enable HTTPS', action='store_true')
     parser_syntest.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_syntest.add_argument('-bio-file', help='CSV file with bio IDs "BioID[,Type]" (default: some hard-coded IDs)', type=argparse.FileType())
     parser_syntest.add_argument('-na-file', help='CSV file with named annotations "BioID,NamedAnnotID[,NamedAnnotID]..." (default: some hard-coded IDs)', type=argparse.FileType())
@@ -1211,6 +1215,7 @@ if __name__ == '__main__':
     group1_testcases = parser_testcases.add_mutually_exclusive_group()
     group2_testcases = parser_testcases.add_mutually_exclusive_group()
     parser_testcases.add_argument('-service', help='PSG service/server to use')
+    parser_testcases.add_argument('-https', help='Enable HTTPS', action='store_true')
     parser_testcases.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_testcases.add_argument('-input-file', help='JSON file with testcases" (default: ./testcases.json)', metavar='FILE', type=argparse.FileType(), default='./testcases.json')
     group1_testcases.add_argument('-output-file', help='Output updated testcases file (e.g. if they need updating)', metavar='FILE')
