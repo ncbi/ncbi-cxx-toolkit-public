@@ -1,7 +1,7 @@
 #!/bin/sh
 errors=''
 ok=""
-function run () {
+run () {
 	test="$1"
 	shift
 	echo -e "\n\e[33m$test\t\e[34m" "$@" "\e[0m" >&2
@@ -34,12 +34,12 @@ run "Orientation diff" diff test3.pairs.ref test3.pairs.out > test3.pairs.diff
 x=$(run "Pairs Length" ./oligofar -i test4.pairs -d NM_012345.fa -Ou -w10 -D80 -m 9|awk '($6==100)'|wc -l)
 run "Pairs Length result" test "$x" = '4'
 
-if test "$errors" == "$ok" ; then
+if test "$errors" = "$ok" ; then
 	rm NM_012345.reads.{out,diff} NM_012345.pairs.{out,diff}
 else
 	head NM_012345.{reads,pairs}.diff
 fi
 
 echo -e "\x1b[31m$errors\x1b[0m" | tr ';' "\n"
-if test "$errors" == "$ok" ; then echo -e "\x1b[32mOK\x1b[0m" ; fi
-test "$errors" == "$ok"
+if test "$errors" = "$ok" ; then echo -e "\x1b[32mOK\x1b[0m" ; fi
+test "$errors" = "$ok"
