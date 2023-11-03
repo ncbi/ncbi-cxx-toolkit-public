@@ -34,17 +34,6 @@
 #include <common/ncbi_source_ver.h>
 #include <corelib/ncbiapp.hpp>
 #include <connect/ncbi_core_cxx.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistr.hpp>
-#include <serial/serial.hpp>
-#include <serial/objectio.hpp>
-
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/submit/Seq_submit.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
@@ -88,9 +77,9 @@ enum EProcessingMode {
 };
 
 struct TThreadState {
-    CRef<CScope>                m_Scope;
-    bool                        m_IsMultiSeq = false;
-    CCleanupChangeCore          m_changes;
+    CRef<CScope>       m_Scope;
+    bool               m_IsMultiSeq = false;
+    CCleanupChangeCore m_changes;
 };
 
 class CCleanupApp :
@@ -112,26 +101,13 @@ public:
     // IProcessorCallback interface functionality
     void Process(CRef<CSerialObject>& obj) override;
 
-#if 0
-    bool ObtainSeqEntryFromSeqEntry(
-        unique_ptr<CObjectIStream>& is,
-        CRef<CSeq_entry>& se);
-    bool ObtainSeqEntryFromBioseq(
-        unique_ptr<CObjectIStream>& is,
-        CRef<CSeq_entry>& se);
-    bool ObtainSeqEntryFromBioseqSet(
-        unique_ptr<CObjectIStream>& is,
-        CRef<CSeq_entry>& se);
-#endif
-
 private:
     // types
 
     void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
-    // bool x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is);
     bool x_ProcessBigFile(unique_ptr<CObjectIStream>& is, TTypeInfo asn_type);
-    void x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, TTypeInfo asn_type, bool first_only);
+    void x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, TTypeInfo asn_type);
     void x_ProcessOneFile(const string& filename);
     void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
@@ -319,7 +295,7 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
             }
         }
     }
-    if (unrecognized.length() > 0) {
+    if (! unrecognized.empty()) {
         NCBI_THROW(CArgException, eInvalidArg, "Invalid -F arguments:" + unrecognized);
     }
 }
@@ -338,7 +314,7 @@ void CCleanupApp::x_KOptionsValid(const string& opt)
             }
         }
     }
-    if (unrecognized.length() > 0) {
+    if (! unrecognized.empty()) {
         NCBI_THROW(CArgException, eInvalidArg, "Invalid -K arguments:" + unrecognized);
     }
 }
@@ -358,92 +334,11 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
             }
         }
     }
-    if (unrecognized.length() > 0) {
+    if (! unrecognized.empty()) {
         NCBI_THROW(CArgException, eInvalidArg, "Invalid -X arguments:" + unrecognized);
     }
 }
 
-
-#if 0
-
-static unique_ptr<CObjectTypeInfo> GetEntryTypeInfo()
-{
-    // 'data' member of CSeq_submit ...
-    CObjectTypeInfo submitTypeInfo = CType<CSeq_submit>();
-    CObjectTypeInfoMI data = submitTypeInfo.FindMember("data");
-
-    // points to a container (pointee may has different types) ...
-    const CPointerTypeInfo* dataPointerType = CTypeConverter<CPointerTypeInfo>::SafeCast(data.GetMemberType().GetTypeInfo());
-    const CChoiceTypeInfo* dataChoiceType = CTypeConverter<CChoiceTypeInfo>::SafeCast(dataPointerType->GetPointedType());
-
-    // that is a list of pointers to 'CSeq_entry' (we process only that case)
-    const CItemInfo* entries = dataChoiceType->GetItemInfo("entrys");
-
-    return unique_ptr<CObjectTypeInfo>(new CObjectTypeInfo(entries->GetTypeInfo()));
-}
-
-
-static CObjectTypeInfoMI GetSubmitBlockTypeInfo()
-{
-    CObjectTypeInfo submitTypeInfo = CType<CSeq_submit>();
-    return submitTypeInfo.FindMember("sub");
-}
-
-
-static void CompleteOutputFile(CObjectOStream& out)
-{
-    out.EndContainer(); // ends the list of entries
-
-    out.EndChoiceVariant(); // ends 'entrys'
-    out.PopFrame();
-    out.EndChoice(); // ends 'data'
-    out.PopFrame();
-
-    out.EndClass(); // ends 'CSeq_submit'
-
-    Separator(out);
-
-    fflush(NULL);
-}
-
-// returns false if fails to read object of expected type, throws for all other errors
-bool CCleanupApp::x_ProcessSeqSubmit(unique_ptr<CObjectIStream>& is)
-{
-    CRef<CSeq_submit> sub(new CSeq_submit);
-    if (sub.Empty()) {
-        NCBI_THROW(CFlatException, eInternal,
-            "Could not allocate Seq-submit object");
-    }
-
-    try {
-        CObjectTypeInfoMI submitBlockObj = GetSubmitBlockTypeInfo();
-        submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*this, *m_Out));
-
-        unique_ptr<CObjectTypeInfo> entryObj = GetEntryTypeInfo();
-        entryObj->SetLocalReadHook(*is, new CReadEntryHook(*this, *m_Out));
-
-        *is >> *sub;
-
-        entryObj->ResetLocalReadHook(*is);
-        submitBlockObj.ResetLocalReadHook(*is);
-
-        CompleteOutputFile(*m_Out);
-    } catch (const CEofException&) {
-        is->SetFailFlags(CObjectIStream::eEOF);
-        return false;
-    } catch (...) {
-        return false;
-    }
-
-    if (! sub->IsSetSub() || !sub->IsSetData()) {
-        NCBI_THROW(CFlatException, eInternal, "No data in Seq-submit");
-    } else if (! sub->GetData().IsEntrys()) {
-        NCBI_THROW(CFlatException, eInternal, "Wrong data in Seq-submit");
-    }
-
-    return true;
-}
-#endif
 
 bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, TTypeInfo asn_type)
 {
@@ -461,7 +356,7 @@ bool CCleanupApp::x_ProcessBigFile(unique_ptr<CObjectIStream>& is, TTypeInfo asn
     return ProcessBigFile(*is, *m_Out, *this, content_type);
 }
 
-void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, TTypeInfo asn_type, bool first_only)
+void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMode mode, TTypeInfo asn_type)
 {
     if (mode == eModeBatch) {
         CGBReleaseFile in(*is.release());
@@ -473,79 +368,6 @@ void CCleanupApp::x_ProcessOneFile(unique_ptr<CObjectIStream>& is, EProcessingMo
     } else if (mode == eModeBigfile) {
         x_ProcessBigFile(is, asn_type);
     }
-#if 0
-    else {
-        bool proceed = true;
-        size_t num_cleaned = 0;
-
-        while (proceed) {
-
-            // clean exit
-            if (is->EndOfData()) {
-                is->SetFailFlags(CObjectIStream::eEOF);
-                break;
-            }
-
-            CRef<CSeq_entry> se(new CSeq_entry);
-
-            if (asn_type == CSeq_entry::GetTypeInfo() ) {
-                //
-                //  Straight through processing: Read a seq_entry, then process
-                //  a seq_entry:
-                //
-                proceed = ObtainSeqEntryFromSeqEntry(is, se);
-                if (proceed) {
-                    HandleSeqEntry(se);
-                    x_WriteToFile(*se);
-                }
-            } else if (asn_type == CBioseq::GetTypeInfo()) {
-                //
-                //  Read object as a bioseq, wrap it into a seq_entry, then process
-                //  the wrapped bioseq as a seq_entry:
-                //
-                proceed = ObtainSeqEntryFromBioseq(is, se);
-                if (proceed) {
-                    HandleSeqEntry(se);
-                    if (se->IsSeq()) {
-                        x_WriteToFile(se->GetSeq());
-                    } else {
-                        x_WriteToFile(se->GetSet());
-                    }
-                }
-            } else if (asn_type == CBioseq_set::GetTypeInfo()) {
-                //
-                //  Read object as a bioseq_set, wrap it into a seq_entry, then
-                //  process the wrapped bioseq_set as a seq_entry:
-                //
-                proceed = ObtainSeqEntryFromBioseqSet(is, se);
-                if (proceed) {
-                    HandleSeqEntry(se);
-                    if (se->IsSet()) {
-                        x_WriteToFile(se->GetSet());
-                    } else {
-                        x_WriteToFile(se->GetSeq());
-                    }
-                }
-            } else if (asn_type == CSeq_submit::GetTypeInfo()) {
-                proceed = x_ProcessSeqSubmit(is);
-            } else {
-                proceed = false;
-            }
-
-            if (proceed) {
-                ++num_cleaned;
-            }
-
-            if (first_only) {
-                break;
-            }
-        }
-
-        if (num_cleaned == 0 || (! first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
-            NCBI_THROW(CFlatException, eInternal, "Unable to construct Seq-entry object");
-        }
-    }
-#endif
 }
 
 static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
@@ -624,7 +446,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         x_ProcessTraditionally(huge_process, args["firstonly"]);
     } else {
         unique_ptr<CObjectIStream> is = huge_process.GetFile().MakeObjStream(0);
-        x_ProcessOneFile(is, mode, asn_type, args["firstonly"]);
+        x_ProcessOneFile(is, mode, asn_type);
     }
 
     m_state.m_changes += dynamic_cast<CCleanupHugeAsnReader&>(huge_process.GetReader()).GetChanges();
@@ -919,70 +741,6 @@ int CCleanupApp::Run()
 
     return 0;
 }
-
-#if 0
-bool CCleanupApp::ObtainSeqEntryFromSeqEntry(
-    unique_ptr<CObjectIStream>& is,
-    CRef<CSeq_entry>& se)
-{
-    try {
-        *is >> *se;
-        if (se->Which() == CSeq_entry::e_not_set) {
-            return false;
-        }
-        return true;
-    } catch(const CEofException&) {
-        is->SetFailFlags(CObjectIStream::eEOF);
-        return false;
-    } catch( ... ) {
-        return false;
-    }
-}
-
-bool CCleanupApp::ObtainSeqEntryFromBioseq(
-    unique_ptr<CObjectIStream>& is,
-    CRef<CSeq_entry>& se)
-{
-    try {
-        CRef<CBioseq> bs(new CBioseq);
-        if (! bs ) {
-            NCBI_THROW(CFlatException, eInternal,
-            "Could not allocate Bioseq object");
-        }
-        *is >> *bs;
-
-        se->SetSeq(bs.GetObject());
-        return true;
-    } catch (const CEofException&) {
-        is->SetFailFlags(CObjectIStream::eEOF);
-        return false;
-    } catch(...) {
-        return false;
-    }
-}
-
-bool CCleanupApp::ObtainSeqEntryFromBioseqSet(
-    unique_ptr<CObjectIStream>& is,
-    CRef<CSeq_entry>& se)
-{
-    try {
-        CRef<CBioseq_set> bss( new CBioseq_set );
-        if (! bss) {
-            NCBI_THROW(CFlatException, eInternal,
-            "Could not allocate Bioseq object");
-        }
-        *is >> *bss;
-
-        se->SetSet( bss.GetObject() );
-        return true;
-    } catch (const CEofException&) {
-        is->SetFailFlags(CObjectIStream::eEOF);
-        return false;
-    } catch(...  {
-        return false;
-    }
-}
-#endif
 
 bool CCleanupApp::HandleSeqID(const string& seq_id)
 {
@@ -1438,7 +1196,6 @@ int main(int argc, const char** argv)
         }
     }
 
-    #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing
     list<string> split_args;
     vector<const char*> new_argv;
@@ -1462,7 +1219,7 @@ int main(int argc, const char** argv)
             if (rec.front()=='\'' && rec.back()=='\'')
                 rec=rec.substr(1, rec.length()-2);
         }
-        argc = 1 + split_args.size();
+        argc = 1 + int(split_args.size());
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
         for (const string& s : split_args) {
@@ -1473,7 +1230,6 @@ int main(int argc, const char** argv)
 
         argv = new_argv.data();
     }
-    #endif
 
     return CCleanupApp().AppMain(argc, argv);
 }
