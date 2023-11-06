@@ -1889,7 +1889,7 @@ static void s_MakePubLabelString (const CPubdesc& pd, string& label)
             && (*it)->GetGen().IsSetSerial_number()) {
             // skip over just serial number
         } else {
-            (*it)->GetLabel (&label, CPub::eContent, true);
+            (*it)->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique);
             break;
         }
     }
