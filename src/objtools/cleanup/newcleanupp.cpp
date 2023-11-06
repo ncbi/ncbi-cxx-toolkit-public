@@ -2344,7 +2344,7 @@ void CNewCleanup_imp::PubdescBC (
     if (pubdesc.IsSetPub()) {
         for (auto p : pubdesc.SetPub().Set()) {
             string new_label;
-            p->GetLabel(&new_label, CPub::eContent, true);
+            p->GetLabel(&new_label, CPub::eContent, CPub::fLabel_Unique);
             m_PubToNewPubLabelMap[p] = new_label;
         }
     }
@@ -2404,7 +2404,7 @@ void CNewCleanup_imp::PubSetBC( CPub_set &pub_set )
     TCitSet cit_set;
     for (auto cit_it : pub_set.GetPub()) {
         string label;
-        cit_it->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1 );
+        cit_it->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1);
         // the following line may fail due to dups
         // (that's okay; it lets us automatically remove dups)
         cit_set.insert( TCit(label, cit_it) );
@@ -8717,8 +8717,8 @@ void CNewCleanup_imp::x_NotePubdescOrAnnotPubs_RecursionHelper(
                 const CCit_gen &gen = pub.GetGen();
                 if( gen.IsSetCit() || gen.IsSetJournal() || gen.IsSetDate() || gen.IsSetSerial_number() ) {
                     m_PubdescCitGenLabelVec.push_back( kEmptyStr );
-                    string &label = m_PubdescCitGenLabelVec.back();
-                    pub.GetLabel( &label, CPub::eContent, true );
+                    string& label = m_PubdescCitGenLabelVec.back();
+                    pub.GetLabel(&label, CPub::eContent, CPub::fLabel_Unique);
                 }
             }
             break;
@@ -8734,7 +8734,7 @@ void CNewCleanup_imp::x_NotePubdescOrAnnotPubs_RecursionHelper(
 void CNewCleanup_imp::x_RememberPubOldLabel( CPub &pub )
 {
     string old_label;
-    pub.GetLabel( &old_label, CPub::eContent, true);
+    pub.GetLabel(&old_label, CPub::eContent, CPub::fLabel_Unique);
 
     m_OldLabelToPubMap.insert( TOldLabelToPubMap::value_type(old_label, CRef<CPub>(&pub)) );
 }
