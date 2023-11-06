@@ -3187,7 +3187,7 @@ vector<string>& unpublished_labels)
         }
         if (need_label && NStr::IsBlank(label)) {
             // create unique label
-            (*it)->GetLabel(&label, CPub::eContent, true);
+            (*it)->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique);
             string auth_str;
             s_GetAuthorsString(&auth_str, pd);
             label += "; ";
