@@ -268,7 +268,7 @@ class Collector(object):
     def get_vcs_info(self, srcdir, rest = (), fallback = None):
         if os.path.isdir(os.path.join(srcdir, '.svn')):
             return self.get_svn_info(srcdir, rest)
-        elif os.path.isdir(os.path.join(srcdir, '.git')):
+        elif os.path.exists(os.path.join(srcdir, '.git')):
             return self.get_git_info(srcdir, rest)
         elif len(rest) == 0 and os.path.isdir(os.path.join(srcdir, 'CVS')):
             return self.get_cvs_info(srcdir)
@@ -306,11 +306,11 @@ class Collector(object):
                     break
         if 'vcs_path' not in info:
             # Maybe controlled by git after all, in a hybrid layout?
-            if os.path.isdir(os.path.join(srcdir, '.git')):
+            if os.path.exists(os.path.join(srcdir, '.git')):
                 return self.get_git_info(srcdir, rest)
             while srcdir != '/':
                 (srcdir, child) = os.path.split(srcdir)
-                if os.path.isdir(os.path.join(srcdir, '.git')):
+                if os.path.exists(os.path.join(srcdir, '.git')):
                     return self.get_git_info(srcdir, (child,) + rest)
             return None
         return info
