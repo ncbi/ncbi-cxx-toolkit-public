@@ -333,10 +333,8 @@ class Collector(object):
                                       universal_newlines = True,
                                       cwd = srcdir) as remote:
                     for l in remote.stdout:
-                        (k, v) = l.strip().split(': ', 1)
-                        if k == 'Fetch URL':
-                            url = v
-                            break
+                        if 'Fetch URL: ' in l:
+                            url = l.strip()[11:]
             except subprocess.CalledProcessError:
                 pass
             if url is None:
