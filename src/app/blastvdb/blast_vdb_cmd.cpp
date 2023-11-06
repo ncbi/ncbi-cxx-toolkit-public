@@ -89,12 +89,13 @@ private:
     string m_allDbs;
     string m_origDbs;
     bool m_isRef;
+    bool m_includeFilteredReads;
     CBlastUsageReport m_UsageReport;
     CStopWatch m_StopWatch;
 };
 
 
-CBlastVdbCmdApp::CBlastVdbCmdApp(): m_allDbs(kEmptyStr), m_origDbs(kEmptyStr), m_isRef(false) {
+CBlastVdbCmdApp::CBlastVdbCmdApp(): m_allDbs(kEmptyStr), m_origDbs(kEmptyStr), m_isRef(false), m_includeFilteredReads(false) {
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
@@ -473,6 +474,10 @@ CBlastVdbCmdApp::x_InitApplicationData()
     else {
     	m_isRef = false;
     }
+
+    if (args["include_filtered_reads"]) {
+    	m_includeFilteredReads = true;
+    }
 }
 
 void
@@ -499,14 +504,14 @@ CBlastVdbCmdApp::x_GetVDBBlastUtil(bool isCSRA)
 
 		CStopWatch sw;
 		sw.Start();
-		util.Reset(new CVDBBlastUtil(csra_list, true, true));
+		util.Reset(new CVDBBlastUtil(csra_list, true, true, m_includeFilteredReads));
 		sw.Stop();
 		LOG_POST(Info << "PERF: blast_vdb library csra initialization: " << x_FormatRuntime(sw));
 	}
 	else {
 		CStopWatch sw;
     	sw.Start();
-    	util.Reset(new CVDBBlastUtil(m_allDbs, true, false));
+    	util.Reset(new CVDBBlastUtil(m_allDbs, true, false, m_includeFilteredReads));
     	sw.Stop();
     	LOG_POST(Info << "PERF: blast_vdb library initialization: " << x_FormatRuntime(sw));
 	}
@@ -682,6 +687,9 @@ void CBlastVdbCmdApp::Init()
     arg_desc->SetConstraint("line_length", 
                             new CArgAllowValuesGreaterThanOrEqual(1));
 
+    arg_desc->AddFlag("include_filtered_reads", "Include Filtered reads", true);
+    arg_desc->SetDependency("include_filtered_reads", CArgDescriptions::eExcludes, "info");
+
     const char* exclusions[]  = { "entry", "entry_batch"};
     for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
         arg_desc->SetDependency(exclusions[i], CArgDescriptions::eExcludes, "info");
@@ -692,10 +700,11 @@ void CBlastVdbCmdApp::Init()
                       "Dump reference seqs", true);
     arg_desc->SetDependency("ref", CArgDescriptions::eExcludes, "info");
     arg_desc->SetDependency("ref", CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency("ref", CArgDescriptions::eExcludes, "include_filtered_reads");
 
     arg_desc->AddFlag("paths", "Get top level paths", true);
     arg_desc->AddFlag("paths_all", "Get all vdb and alias paths", true);
-    const char* exclude_paths[]  = { "scan_uncompressed", "scan_compressed", "info", "entry", "entry_batch"};
+    const char* exclude_paths[]  = { "scan_uncompressed", "scan_compressed", "info", "entry", "entry_batch", "include_filtered_reads"};
     for (size_t i = 0; i < sizeof(exclude_paths)/sizeof(*exclude_paths); i++) {
         arg_desc->SetDependency("paths", CArgDescriptions::eExcludes, exclude_paths[i]);
         arg_desc->SetDependency("paths_all", CArgDescriptions::eExcludes, exclude_paths[i]);
