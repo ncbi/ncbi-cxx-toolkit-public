@@ -226,7 +226,7 @@ struct SPSG_Params
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         auth_token_name(TPSG_AuthTokenName::eGetDefault),
-        auth_token(s_GetAuthToken()),
+        auth_token(GetAuthToken()),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
@@ -234,13 +234,14 @@ struct SPSG_Params
     string GetCookie(TGet get)
     {
         auto rv = auth_token.empty() ? get() : auth_token;
-        return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::Quote(rv);
+        return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::URLEncode(rv);
     }
 
 private:
     static unsigned s_GetRequestTimeout(double io_timer_period);
     static unsigned s_GetCompetitiveAfter(double io_timer_period, double timeout);
-    static string s_GetAuthToken();
+
+    string GetAuthToken();
 };
 
 struct SDebugPrintout
