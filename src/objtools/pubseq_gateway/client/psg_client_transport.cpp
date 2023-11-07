@@ -51,6 +51,7 @@
 #define __STDC_FORMAT_MACROS
 
 #include <corelib/request_status.hpp>
+#include <corelib/ncbi_cookies.hpp>
 
 #include "psg_client_transport.hpp"
 
@@ -171,10 +172,22 @@ unsigned SPSG_Params::s_GetCompetitiveAfter(double io_timer_period, double timeo
     return static_cast<unsigned>(timeout / io_timer_period);
 }
 
-string SPSG_Params::s_GetAuthToken()
+string SPSG_Params::GetAuthToken()
 {
     string rv = TPSG_AuthToken(TPSG_AuthToken::eGetDefault);
-    return rv.empty() ? CNcbiEnvironment().Get("HTTP_COOKIE") : rv;
+
+    if (rv.empty()) {
+        CHttpCookies cookies;
+        cookies.Add(CHttpCookies::eHeader_Cookie, CNcbiEnvironment().Get("HTTP_COOKIE"), nullptr);
+
+        for (const auto& cookie : cookies) {
+            if (cookie.GetName() == auth_token_name.Get()) {
+                return NStr::URLDecode(cookie.GetValue());
+            }
+        }
+    }
+
+    return rv;
 }
 
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
