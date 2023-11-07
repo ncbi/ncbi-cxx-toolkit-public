@@ -1,35 +1,35 @@
 /*
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Robert Smith, Jonathan Kans, Michael Kornbluh
-*
-* File Description:
-*   Basic and Extended Cleanup of CSeq_entries, etc.
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Robert Smith, Jonathan Kans, Michael Kornbluh
+ *
+ * File Description:
+ *   Basic and Extended Cleanup of CSeq_entries, etc.
+ *
+ * ===========================================================================
+ */
 
 // All this functionality is packed into this one file for ease of
 // searching.  If it gets big enough, it will be broken up in the future.
@@ -86,8 +86,8 @@ BEGIN_SCOPE(objects)
 // we prefer our own version
 #define CompressSpaces x_CompressSpaces
 
-namespace {
-
+namespace
+{
     // a CRegexp that has lock and unlock methods,
     // and also inherits from CObject
     class CRegexpWithLock : public CObject, public CRegexp {
@@ -419,8 +419,6 @@ void CNewCleanup_imp::BasicCleanup(CSeqdesc& desc)
 }
 
 
-
-
 // Implementation methods
 
 void CNewCleanup_imp::SetGeneticCode (
@@ -464,21 +462,21 @@ void CNewCleanup_imp::EnteringEntry (
     // for cleanup Seq-entry and Seq-submit, set scope and parentize.
     // We use exceptions for AddTopLevelSeqEntry because we need to detect
     // if we've already processed the given Seq-entry.
-    {{
-         CSeq_entry_Handle seh =
-             m_Scope->GetSeq_entryHandle(se, CScope::eMissing_Null);
-         if (seh) {
+    {
+        CSeq_entry_Handle seh =
+            m_Scope->GetSeq_entryHandle(se, CScope::eMissing_Null);
+        if (seh) {
 #if 0
-             // all code paths in this function must result
-             // in m_SeqEntryInfoStack getting a "push"
-             m_SeqEntryInfoStack.push( m_SeqEntryInfoStack.top() );
+            // all code paths in this function must result
+            // in m_SeqEntryInfoStack getting a "push"
+            m_SeqEntryInfoStack.push( m_SeqEntryInfoStack.top() );
 #endif
-             return;
-         }
+            return;
+        }
 
-         m_Scope->AddTopLevelSeqEntry (se);
-         se.Parentize();
-     }}
+        m_Scope->AddTopLevelSeqEntry(se);
+        se.Parentize();
+    }
 
 #if 0
     // a few differences based on sequence identifier type
@@ -489,42 +487,42 @@ void CNewCleanup_imp::EnteringEntry (
         FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bs) {
             const CSeq_id& sid = **sid_itr;
             SWITCH_ON_SEQID_CHOICE (sid) {
-                case NCBI_SEQID(Genbank):
-                case NCBI_SEQID(Tpg):
-                    {
-                        const CTextseq_id& tsid = *GET_FIELD (sid, Textseq_Id);
-                        if (FIELD_IS_SET (tsid, Accession)) {
-                            const string& acc = GET_FIELD (tsid, Accession);
-                            if (acc.length() == 6) {
-                                seqEntryInfo.m_StripSerial = false;
-                            }
+            case NCBI_SEQID(Genbank):
+            case NCBI_SEQID(Tpg):
+                {
+                    const CTextseq_id& tsid = *GET_FIELD (sid, Textseq_Id);
+                    if (FIELD_IS_SET (tsid, Accession)) {
+                        const string& acc = GET_FIELD (tsid, Accession);
+                        if (acc.length() == 6) {
+                            seqEntryInfo.m_StripSerial = false;
                         }
                     }
-                    break;
-                case NCBI_SEQID(Embl):
-                case NCBI_SEQID(Ddbj):
-                    seqEntryInfo.m_StripSerial = false;
-                    seqEntryInfo.m_IsEmblOrDdbj = true;
-                    break;
-                case NCBI_SEQID(not_set):
-                case NCBI_SEQID(Local):
-                case NCBI_SEQID(Other):
-                case NCBI_SEQID(General):
-                    break;
-                case NCBI_SEQID(Gibbsq):
-                case NCBI_SEQID(Gibbmt):
-                case NCBI_SEQID(Pir):
-                case NCBI_SEQID(Swissprot):
-                case NCBI_SEQID(Patent):
-                case NCBI_SEQID(Prf):
-                case NCBI_SEQID(Pdb):
-                case NCBI_SEQID(Gpipe):
-                case NCBI_SEQID(Tpe):
-                case NCBI_SEQID(Tpd):
-                    seqEntryInfo.m_StripSerial = false;
-                    break;
-                default:
-                    break;
+                }
+                break;
+            case NCBI_SEQID(Embl):
+            case NCBI_SEQID(Ddbj):
+                seqEntryInfo.m_StripSerial = false;
+                seqEntryInfo.m_IsEmblOrDdbj = true;
+                break;
+            case NCBI_SEQID(not_set):
+            case NCBI_SEQID(Local):
+            case NCBI_SEQID(Other):
+            case NCBI_SEQID(General):
+                break;
+            case NCBI_SEQID(Gibbsq):
+            case NCBI_SEQID(Gibbmt):
+            case NCBI_SEQID(Pir):
+            case NCBI_SEQID(Swissprot):
+            case NCBI_SEQID(Patent):
+            case NCBI_SEQID(Prf):
+            case NCBI_SEQID(Pdb):
+            case NCBI_SEQID(Gpipe):
+            case NCBI_SEQID(Tpe):
+            case NCBI_SEQID(Tpd):
+                seqEntryInfo.m_StripSerial = false;
+                break;
+            default:
+                break;
             }
         }
     }
@@ -908,46 +906,46 @@ const string &s_GenomeToPlastidName( const CBioSource& biosrc )
 {
     SWITCH_ON_BIOSOURCE_GENOME (biosrc) {
     case NCBI_GENOME(apicoplast):
-        {
-            const static string apicoplast("apicoplast");
-            return apicoplast;
-        }
+    {
+        const static string apicoplast("apicoplast");
+        return apicoplast;
+    }
         break;
     case NCBI_GENOME(chloroplast):
-        {
-            const static string chloroplast("chloroplast");
-            return chloroplast;
-        }
+    {
+        const static string chloroplast("chloroplast");
+        return chloroplast;
+    }
         break;
     case NCBI_GENOME(chromoplast):
-        {
-            const static string chromoplast("chromoplast");
-            return chromoplast;
-        }
+    {
+        const static string chromoplast("chromoplast");
+        return chromoplast;
+    }
         break;
     case NCBI_GENOME(kinetoplast):
-        {
-            const static string kinetoplast("kinetoplast");
-            return kinetoplast;
-        }
+    {
+        const static string kinetoplast("kinetoplast");
+        return kinetoplast;
+    }
         break;
     case NCBI_GENOME(leucoplast):
-        {
-            const static string leucoplast("leucoplast");
-            return leucoplast;
-        }
+    {
+        const static string leucoplast("leucoplast");
+        return leucoplast;
+    }
         break;
     case NCBI_GENOME(plastid):
-        {
-            const static string plastid("plastid");
-            return plastid;
-        }
+    {
+        const static string plastid("plastid");
+        return plastid;
+    }
         break;
     case NCBI_GENOME(proplastid):
-        {
-            const static string proplastid("proplastid");
-            return proplastid;
-        }
+    {
+        const static string proplastid("proplastid");
+        return proplastid;
+    }
         break;
     default:
         return kEmptyStr;
@@ -985,24 +983,24 @@ SIZE_TYPE s_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos )
     SIZE_TYPE pos = open_paren_pos + 1;
     for( ; pos < str.length(); ++pos ) {
         switch( str[pos] ) {
-            case '(':
-                // nesting deeper
-                ++level;
-                break;
-            case ')':
-                // closed a level of nesting
-                --level;
-                if( 0 == level ) {
-                    // reached the top: we're closing the initial paren,
-                    // so we return our position
-                    return pos;
-                }
-                break;
-            default:
-                // ignore other characters.
-                // maybe in the future we'll handle ignoring parens in quotes or
-                // things like that.
-                break;
+        case '(':
+            // nesting deeper
+            ++level;
+            break;
+        case ')':
+            // closed a level of nesting
+            --level;
+            if( 0 == level ) {
+                // reached the top: we're closing the initial paren,
+                // so we return our position
+                return pos;
+            }
+            break;
+        default:
+            // ignore other characters.
+            // maybe in the future we'll handle ignoring parens in quotes or
+            // things like that.
+            break;
         }
     }
     return NPOS;
@@ -1869,8 +1867,6 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
 }
 
 
-
-
 static bool s_DbtagIsBad (
     CDbtag& dbt
 )
@@ -2656,89 +2652,83 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
     case CSeq_loc::e_Int :
         x_SeqIntervalBC( GET_MUTABLE(loc, Int) );
         break;
-    case CSeq_loc::e_Packed_int :
-        {
-            CSeq_loc::TPacked_int::Tdata& ints = loc.SetPacked_int().Set();
-            NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
-                x_SeqIntervalBC(**interval_it);
-            }
-            if (ints.size() == 1) {
-                CRef<CSeq_interval> int_ref = ints.front();
-                loc.SetInt(*int_ref);
-                ChangeMade(CCleanupChange::eChangeSeqloc);
-            }
+    case CSeq_loc::e_Packed_int: {
+        CSeq_loc::TPacked_int::Tdata& ints = loc.SetPacked_int().Set();
+        NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
+            x_SeqIntervalBC(**interval_it);
         }
-        break;
-    case CSeq_loc::e_Pnt :
-        {
-            CSeq_loc::TPnt& pnt = loc.SetPnt();
+        if (ints.size() == 1) {
+            CRef<CSeq_interval> int_ref = ints.front();
+            loc.SetInt(*int_ref);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        }
+    } break;
+    case CSeq_loc::e_Pnt: {
+        CSeq_loc::TPnt& pnt = loc.SetPnt();
 
-            if (pnt.IsSetStrand()) {
-                if (pnt.GetStrand() == eNa_strand_unknown) {
-                    pnt.SetStrand(eNa_strand_plus);
-                    ChangeMade(CCleanupChange::eChangeStrand);
-                }
-            }
-            else {
+        if (pnt.IsSetStrand()) {
+            if (pnt.GetStrand() == eNa_strand_unknown) {
                 pnt.SetStrand(eNa_strand_plus);
                 ChangeMade(CCleanupChange::eChangeStrand);
             }
+        }
+        else {
+            pnt.SetStrand(eNa_strand_plus);
+            ChangeMade(CCleanupChange::eChangeStrand);
+        }
 
-            // normalize Seq-point fuzz tl to tr and decrement position
-            if (pnt.IsSetFuzz() && pnt.GetFuzz().IsLim() &&
-                pnt.GetFuzz().GetLim() == CInt_fuzz::eLim_tl) {
-                TSeqPos pos = pnt.GetPoint();
-                if (pos > 0) {
-                    pnt.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
-                    pnt.SetPoint(pos - 1);
-                    ChangeMade(CCleanupChange::eChangeSeqloc);
-                }
+        // normalize Seq-point fuzz tl to tr and decrement position
+        if (pnt.IsSetFuzz() && pnt.GetFuzz().IsLim() &&
+            pnt.GetFuzz().GetLim() == CInt_fuzz::eLim_tl) {
+            TSeqPos pos = pnt.GetPoint();
+            if (pos > 0) {
+                pnt.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+                pnt.SetPoint(pos - 1);
+                ChangeMade(CCleanupChange::eChangeSeqloc);
             }
         }
-        break;
-    case CSeq_loc::e_Mix :
-        {
-            typedef CSeq_loc::TMix::Tdata TMixList;
-            // delete Null type Seq-locs from beginning and end of Mix list.
+    } break;
+    case CSeq_loc::e_Mix: {
+        typedef CSeq_loc::TMix::Tdata TMixList;
+        // delete Null type Seq-locs from beginning and end of Mix list.
 
-            // deleting from beginning:
-            TMixList& sl_list = loc.SetMix().Set();
-            TMixList::iterator sl_it = sl_list.begin();
-            while (sl_it != sl_list.end()) {
-                if ((*sl_it)->IsNull()) {
-                    sl_it = sl_list.erase(sl_it);
-                    ChangeMade(CCleanupChange::eChangeSeqloc);
-                } else {
+        // deleting from beginning:
+        TMixList& sl_list = loc.SetMix().Set();
+        TMixList::iterator sl_it = sl_list.begin();
+        while (sl_it != sl_list.end()) {
+            if ((*sl_it)->IsNull()) {
+                sl_it = sl_list.erase(sl_it);
+                ChangeMade(CCleanupChange::eChangeSeqloc);
+            } else {
+                break;
+            }
+        }
+
+        // deleting from end:
+        if( sl_list.size() > 0 ) {
+            sl_it = sl_list.end();
+            while (sl_it != sl_list.begin()) {
+                --sl_it;
+                if ( ! (*sl_it)->IsNull()) {
                     break;
                 }
             }
-
-            // deleting from end:
-            if( sl_list.size() > 0 ) {
-                sl_it = sl_list.end();
-                while (sl_it != sl_list.begin()) {
-                    --sl_it;
-                    if ( ! (*sl_it)->IsNull()) {
-                        break;
-                    }
-                }
-                ++sl_it;
-                if (sl_it != sl_list.end()) {
-                    sl_list.erase(sl_it, sl_list.end());
-                    ChangeMade(CCleanupChange::eChangeSeqloc);
-                }
-            }
-
-            if (sl_list.size() == 0) {
-                loc.SetNull();
-                ChangeMade(CCleanupChange::eChangeSeqloc);
-            } else if (sl_list.size() == 1) {
-                CRef<CSeq_loc> only_sl = sl_list.front();
-                loc.Assign(*only_sl);
+            ++sl_it;
+            if (sl_it != sl_list.end()) {
+                sl_list.erase(sl_it, sl_list.end());
                 ChangeMade(CCleanupChange::eChangeSeqloc);
             }
         }
-        break;
+
+        if (sl_list.size() == 0) {
+            loc.SetNull();
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        } else if (sl_list.size() == 1) {
+            CRef<CSeq_loc> only_sl = sl_list.front();
+            loc.Assign(*only_sl);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        }
+    } break;
     default:
         break;
     }
@@ -2759,7 +2749,6 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
             ChangeMade(CCleanupChange::eChangeStrand);
         }
     }
-
 }
 
 void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
@@ -3020,108 +3009,108 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
     const CSeqFeatData& fdata = feat.GetData();
 
     switch (fdata.Which()) {
-        case NCBI_SEQFEAT(Gene):
-            return "Gene";
-        case NCBI_SEQFEAT(Org):
-            return "Org";
-        case NCBI_SEQFEAT(Cdregion):
-            return "CDS";
-        case NCBI_SEQFEAT(Prot):
-            if(fdata.GetProt().IsSetProcessed() ) {
-                switch( feat.GetData().GetProt().GetProcessed() ) {
-                case NCBI_PROTREF(not_set):
-                    return "Protein";
-                case NCBI_PROTREF(preprotein):
-                    return "proprotein";
-                case NCBI_PROTREF(mature):
-                    return "mat_peptide";
-                case NCBI_PROTREF(signal_peptide):
-                    return "sig_peptide";
-                case NCBI_PROTREF(transit_peptide):
-                    return "transit_peptide";
-                case NCBI_PROTREF(propeptide):
-                    return "propeptide";
-                default:
-                    return kFeatBad;
-                }
+    case NCBI_SEQFEAT(Gene):
+        return "Gene";
+    case NCBI_SEQFEAT(Org):
+        return "Org";
+    case NCBI_SEQFEAT(Cdregion):
+        return "CDS";
+    case NCBI_SEQFEAT(Prot):
+        if(fdata.GetProt().IsSetProcessed() ) {
+            switch( feat.GetData().GetProt().GetProcessed() ) {
+            case NCBI_PROTREF(not_set):
+                return "Protein";
+            case NCBI_PROTREF(preprotein):
+                return "proprotein";
+            case NCBI_PROTREF(mature):
+                return "mat_peptide";
+            case NCBI_PROTREF(signal_peptide):
+                return "sig_peptide";
+            case NCBI_PROTREF(transit_peptide):
+                return "transit_peptide";
+            case NCBI_PROTREF(propeptide):
+                return "propeptide";
+            default:
+                return kFeatBad;
             }
-            return "Protein";
-        case NCBI_SEQFEAT(Rna):
-            if(fdata.GetRna().IsSetType() ) {
-                const auto& rna = fdata.GetRna();
-                switch (rna.GetType() )
-                {
-                case NCBI_RNAREF(unknown):
-                        return "misc_RNA"; // unknownrna mapped to otherrna
-                case NCBI_RNAREF(premsg):
-                    return "precursor_RNA";
-                case NCBI_RNAREF(mRNA):
-                    return "mRNA";
-                case NCBI_RNAREF(tRNA):
-                    return "tRNA";
-                case NCBI_RNAREF(rRNA):
-                    return "rRNA";
-                case NCBI_RNAREF(snRNA):
-                    return "snRNA";
-                case NCBI_RNAREF(scRNA):
-                    return "scRNA";
-                case NCBI_RNAREF(snoRNA):
-                    return "snoRNA";
-                case NCBI_RNAREF(ncRNA):
-                    return "ncRNA";
-                case NCBI_RNAREF(tmRNA):
-                    return "tmRNA";
-                case NCBI_RNAREF(miscRNA):
-                    return "misc_RNA";
-                case NCBI_RNAREF(other):
-                    if ( FIELD_IS_SET_AND_IS(rna, Ext, Name) ) {
-                        const string &name = rna.GetExt().GetName();
-                        if ( NStr::EqualNocase(name, "misc_RNA")) return "misc_RNA";
-                        if ( NStr::EqualNocase(name, "ncRNA") ) return "ncRNA";
-                        if ( NStr::EqualNocase(name, "tmRNA") ) return "tmRNA";
-                    }
-                    return "misc_RNA";
-                default:
-                    return kFeatBad;
+        }
+        return "Protein";
+    case NCBI_SEQFEAT(Rna):
+        if(fdata.GetRna().IsSetType() ) {
+            const auto& rna = fdata.GetRna();
+            switch (rna.GetType() )
+            {
+            case NCBI_RNAREF(unknown):
+                return "misc_RNA"; // unknownrna mapped to otherrna
+            case NCBI_RNAREF(premsg):
+                return "precursor_RNA";
+            case NCBI_RNAREF(mRNA):
+                return "mRNA";
+            case NCBI_RNAREF(tRNA):
+                return "tRNA";
+            case NCBI_RNAREF(rRNA):
+                return "rRNA";
+            case NCBI_RNAREF(snRNA):
+                return "snRNA";
+            case NCBI_RNAREF(scRNA):
+                return "scRNA";
+            case NCBI_RNAREF(snoRNA):
+                return "snoRNA";
+            case NCBI_RNAREF(ncRNA):
+                return "ncRNA";
+            case NCBI_RNAREF(tmRNA):
+                return "tmRNA";
+            case NCBI_RNAREF(miscRNA):
+                return "misc_RNA";
+            case NCBI_RNAREF(other):
+                if ( FIELD_IS_SET_AND_IS(rna, Ext, Name) ) {
+                    const string &name = rna.GetExt().GetName();
+                    if ( NStr::EqualNocase(name, "misc_RNA")) return "misc_RNA";
+                    if ( NStr::EqualNocase(name, "ncRNA") ) return "ncRNA";
+                    if ( NStr::EqualNocase(name, "tmRNA") ) return "tmRNA";
                 }
+                return "misc_RNA";
+            default:
+                return kFeatBad;
             }
-            return kFeatBad;
-        case NCBI_SEQFEAT(Pub):
-            return "Cit";
-        case NCBI_SEQFEAT(Seq):
-            return "Xref";
-        case NCBI_SEQFEAT(Imp):
-            return s_FindImpFeatType( fdata.GetImp() );
-        case NCBI_SEQFEAT(Region):
-            return "Region";
-        case NCBI_SEQFEAT(Comment):
-            return "Comment";
-        case NCBI_SEQFEAT(Bond):
-            return "Bond";
-        case NCBI_SEQFEAT(Site):
-            return "Site";
-        case NCBI_SEQFEAT(Rsite):
-            return "Rsite";
-        case NCBI_SEQFEAT(User):
-            return "User";
-        case NCBI_SEQFEAT(Txinit):
-            return "TxInit";
-        case NCBI_SEQFEAT(Num):
-            return "Num";
-        case NCBI_SEQFEAT(Psec_str):
-            return "SecStr";
-        case NCBI_SEQFEAT(Non_std_residue):
-            return "NonStdRes";
-        case NCBI_SEQFEAT(Het):
-            return "Het";
-        case NCBI_SEQFEAT(Biosrc):
-            return "Src";
-        case NCBI_SEQFEAT(Clone):
-            return "CloneRef";
-        case NCBI_SEQFEAT(Variation):
-            return "VariationRef";
-        default:
-            return kFeatBad;
+        }
+        return kFeatBad;
+    case NCBI_SEQFEAT(Pub):
+        return "Cit";
+    case NCBI_SEQFEAT(Seq):
+        return "Xref";
+    case NCBI_SEQFEAT(Imp):
+        return s_FindImpFeatType( fdata.GetImp() );
+    case NCBI_SEQFEAT(Region):
+        return "Region";
+    case NCBI_SEQFEAT(Comment):
+        return "Comment";
+    case NCBI_SEQFEAT(Bond):
+        return "Bond";
+    case NCBI_SEQFEAT(Site):
+        return "Site";
+    case NCBI_SEQFEAT(Rsite):
+        return "Rsite";
+    case NCBI_SEQFEAT(User):
+        return "User";
+    case NCBI_SEQFEAT(Txinit):
+        return "TxInit";
+    case NCBI_SEQFEAT(Num):
+        return "Num";
+    case NCBI_SEQFEAT(Psec_str):
+        return "SecStr";
+    case NCBI_SEQFEAT(Non_std_residue):
+        return "NonStdRes";
+    case NCBI_SEQFEAT(Het):
+        return "Het";
+    case NCBI_SEQFEAT(Biosrc):
+        return "Src";
+    case NCBI_SEQFEAT(Clone):
+        return "CloneRef";
+    case NCBI_SEQFEAT(Variation):
+        return "VariationRef";
+    default:
+        return kFeatBad;
     }
     return kFeatBad;
 }
@@ -4732,32 +4721,27 @@ void CNewCleanup_imp::x_BothStrandBC( CSeq_loc &loc )
     case CSeq_loc::e_Int :
         x_BothStrandBC( GET_MUTABLE(loc, Int) );
         break;
-    case CSeq_loc::e_Packed_int :
-        {
-            CSeq_loc::TPacked_int::Tdata& ints = loc.SetPacked_int().Set();
-            NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
-                x_BothStrandBC(**interval_it);
+    case CSeq_loc::e_Packed_int: {
+        CSeq_loc::TPacked_int::Tdata& ints = loc.SetPacked_int().Set();
+        NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
+            x_BothStrandBC(**interval_it);
+        }
+    } break;
+    case CSeq_loc::e_Pnt: {
+        CSeq_loc::TPnt& pnt = loc.SetPnt();
+
+        // change both and both-rev to plus and minus, respectively
+        if (pnt.CanGetStrand()) {
+            ENa_strand strand = pnt.GetStrand();
+            if (strand == eNa_strand_both) {
+                pnt.SetStrand(eNa_strand_plus);
+                ChangeMade(CCleanupChange::eChangeStrand);
+            } else if (strand == eNa_strand_both_rev) {
+                pnt.SetStrand(eNa_strand_minus);
+                ChangeMade(CCleanupChange::eChangeStrand);
             }
         }
-        break;
-    case CSeq_loc::e_Pnt :
-        {
-            CSeq_loc::TPnt& pnt = loc.SetPnt();
-
-            // change both and both-rev to plus and minus, respectively
-            if (pnt.CanGetStrand()) {
-                ENa_strand strand = pnt.GetStrand();
-                if (strand == eNa_strand_both) {
-                    pnt.SetStrand(eNa_strand_plus);
-                    ChangeMade(CCleanupChange::eChangeStrand);
-                } else if (strand == eNa_strand_both_rev) {
-                    pnt.SetStrand(eNa_strand_minus);
-                    ChangeMade(CCleanupChange::eChangeStrand);
-                }
-            }
-        }
-        break;
-
+    } break;
     default:
         break;
     }
@@ -6494,27 +6478,27 @@ CConstRef<CUser_object> s_FindUserObjectTypeRecursive_helper( const CUser_field 
 {
     if( FIELD_IS_SET(field, Data) ) {
         switch( GET_FIELD(field, Data).Which() ) {
-            case CUser_field::C_Data::e_Object:
-                return s_FindUserObjectTypeRecursive( GET_FIELD(field, Data).GetObject(), sought_type_label );
-                break;
-            case CUser_field::C_Data::e_Fields:
-                ITERATE( CUser_field::C_Data::TFields, field_iter, GET_FIELD(field, Data).GetFields() ) {
-                    CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive_helper( **field_iter, sought_type_label );
-                    if( result ) {
-                        return result;
-                    }
+        case CUser_field::C_Data::e_Object:
+            return s_FindUserObjectTypeRecursive( GET_FIELD(field, Data).GetObject(), sought_type_label );
+            break;
+        case CUser_field::C_Data::e_Fields:
+            ITERATE( CUser_field::C_Data::TFields, field_iter, GET_FIELD(field, Data).GetFields() ) {
+                CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive_helper( **field_iter, sought_type_label );
+                if( result ) {
+                    return result;
                 }
-                break;
-            case CUser_field::C_Data::e_Objects:
-                ITERATE( CUser_field::C_Data::TObjects, obj_iter, GET_FIELD(field, Data).GetObjects() ) {
-                    CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive( **obj_iter, sought_type_label );
-                    if( result ) {
-                        return result;
-                    }
+            }
+            break;
+        case CUser_field::C_Data::e_Objects:
+            ITERATE( CUser_field::C_Data::TObjects, obj_iter, GET_FIELD(field, Data).GetObjects() ) {
+                CConstRef<CUser_object> result = s_FindUserObjectTypeRecursive( **obj_iter, sought_type_label );
+                if( result ) {
+                    return result;
                 }
-                break;
-            default:
-                break;
+            }
+            break;
+        default:
+            break;
         }
     }
 
@@ -7214,147 +7198,131 @@ void CNewCleanup_imp::RnarefBC (
         CRNA_ref::C_Ext& ext = GET_MUTABLE (rr, Ext);
         const TRNAREF_EXT chs = ext.Which();
         switch (chs) {
-            case NCBI_RNAEXT(Name):
-                {
-                    string& name = GET_MUTABLE (ext, Name);
-                    if (NStr::IsBlank (name)) {
-                        RESET_FIELD (rr, Ext);
-                        ChangeMade(CCleanupChange::eChangeRNAref);
-                        break;
-                    }
-
-                    static const string rRNA = " rRNA";
-                    static const string rRNA2 = "_rRNA";
-                    static const string kRibosomal_Rna = " ribosomal RNA";
-                    static const string kRibosomal_r_Rna = " ribosomal rRNA";
-
-                    if (rr.IsSetType()) {
-                        switch (rr.GetType()) {
-                            case CRNA_ref::eType_rRNA:
-                            {{
-                                size_t len = name.length();
-                                if (len >= rRNA.length() ) {
-                                    if( NStr::EndsWith(name, rRNA, NStr::eNocase) || NStr::EndsWith(name, rRNA2, NStr::eNocase) ) {
-                                        if( NStr::EndsWith(name, kRibosomal_r_Rna, NStr::eNocase) ) {
-                                            name.replace(len - kRibosomal_r_Rna.length(), name.size(), kRibosomal_Rna);
-                                        } else {
-                                            name.replace(len - rRNA.length(), name.size(), kRibosomal_Rna);
-                                        }
-                                        ChangeMade(CCleanupChange::eChangeQualifiers);
-                                    }
-                                }
-
-                                x_RRNANameBC( name );
-
-                                break;
-                            }}
-                            case CRNA_ref::eType_other:
-                            case CRNA_ref::eType_miscRNA:
-                                {{
-                                    x_TranslateITSNameAndFlag(name);
-
-                                    // convert to RNA-gen
-                                    string name_copy; // copy because name is about to be destroyed
-                                    name_copy.swap( name );
-                                    ext.SetGen().SetProduct( name_copy );
-                                    ChangeMade(CCleanupChange::eChangeRNAref);
-                                }}
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                }
+        case NCBI_RNAEXT(Name): {
+            string& name = GET_MUTABLE (ext, Name);
+            if (NStr::IsBlank (name)) {
+                RESET_FIELD (rr, Ext);
+                ChangeMade(CCleanupChange::eChangeRNAref);
                 break;
-            case NCBI_RNAEXT(TRNA):
+            }
+
+            static const string rRNA = " rRNA";
+            static const string rRNA2 = "_rRNA";
+            static const string kRibosomal_Rna = " ribosomal RNA";
+            static const string kRibosomal_r_Rna = " ribosomal rRNA";
+
+            if (rr.IsSetType()) {
+                switch (rr.GetType()) {
+                case CRNA_ref::eType_rRNA:
                 {
-                    CTrna_ext& tRNA = GET_MUTABLE (ext, TRNA);
-                    if (FIELD_IS_SET (tRNA, Aa)) {
-                        const CTrna_ext::C_Aa& aa = GET_FIELD (tRNA, Aa);
-                        if (aa.Which() == CTrna_ext::C_Aa::e_not_set) {
-                            RESET_FIELD (tRNA, Aa);
-                            ChangeMade(CCleanupChange::eChangeRNAref);
+                    size_t len = name.length();
+                    if (len >= rRNA.length() ) {
+                        if( NStr::EndsWith(name, rRNA, NStr::eNocase) || NStr::EndsWith(name, rRNA2, NStr::eNocase) ) {
+                            if( NStr::EndsWith(name, kRibosomal_r_Rna, NStr::eNocase) ) {
+                                name.replace(len - kRibosomal_r_Rna.length(), name.size(), kRibosomal_Rna);
+                            } else {
+                                name.replace(len - rRNA.length(), name.size(), kRibosomal_Rna);
+                            }
+                            ChangeMade(CCleanupChange::eChangeQualifiers);
                         }
                     }
 
-                    if (! CODON_ON_TRNAEXT_IS_SORTED(tRNA, s_CodonCompare)) {
-                        SORT_CODON_ON_TRNAEXT(tRNA, s_CodonCompare);
-                        ChangeMade(CCleanupChange::eChange_tRna);
-                    }
-
-                    if( ! CODON_ON_TRNAEXT_IS_UNIQUE(tRNA, s_CodonEqual) ) {
-                        UNIQUE_CODON_ON_TRNAEXT(tRNA, s_CodonEqual);
-                        ChangeMade(CCleanupChange::eChange_tRna);
-                    }
-
-                    REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(tRNA);
-
+                    x_RRNANameBC( name );
                 }
-                break;
-            case NCBI_RNAEXT(Gen):
+                    break;
+                case CRNA_ref::eType_other:
+                case CRNA_ref::eType_miscRNA:
                 {
-                    RnarefGenBC(rr);
+                    x_TranslateITSNameAndFlag(name);
+
+                    // convert to RNA-gen
+                    string name_copy; // copy because name is about to be destroyed
+                    name_copy.swap( name );
+                    ext.SetGen().SetProduct( name_copy );
+                    ChangeMade(CCleanupChange::eChangeRNAref);
                 }
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
+                }
+            }
+        } break;
+        case NCBI_RNAEXT(TRNA): {
+            CTrna_ext& tRNA = GET_MUTABLE (ext, TRNA);
+            if (FIELD_IS_SET (tRNA, Aa)) {
+                const CTrna_ext::C_Aa& aa = GET_FIELD (tRNA, Aa);
+                if (aa.Which() == CTrna_ext::C_Aa::e_not_set) {
+                    RESET_FIELD (tRNA, Aa);
+                    ChangeMade(CCleanupChange::eChangeRNAref);
+                }
+            }
+
+            if (! CODON_ON_TRNAEXT_IS_SORTED(tRNA, s_CodonCompare)) {
+                SORT_CODON_ON_TRNAEXT(tRNA, s_CodonCompare);
+                ChangeMade(CCleanupChange::eChange_tRna);
+            }
+
+            if( ! CODON_ON_TRNAEXT_IS_UNIQUE(tRNA, s_CodonEqual) ) {
+                UNIQUE_CODON_ON_TRNAEXT(tRNA, s_CodonEqual);
+                ChangeMade(CCleanupChange::eChange_tRna);
+            }
+
+            REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(tRNA);
+        } break;
+        case NCBI_RNAEXT(Gen): {
+            RnarefGenBC(rr);
+        } break;
+        default:
+            break;
         }
     }
 
     if (FIELD_IS_SET (rr, Type)) {
         TRNAREF_TYPE typ = GET_FIELD (rr, Type);
         switch (typ) {
-            case NCBI_RNAREF(mRNA):
-                {
-                }
-                break;
-            case NCBI_RNAREF(tRNA):
-                {
-                }
-                break;
-            case NCBI_RNAREF(rRNA):
-                {
-                }
-                break;
-            case NCBI_RNAREF(other):
-                {
-                    if (FIELD_IS_SET (rr, Ext)) {
-                        CRNA_ref::C_Ext& ext = GET_MUTABLE (rr, Ext);
-                        const TRNAREF_EXT chs = ext.Which();
-                        if (chs == NCBI_RNAEXT(Name)) {
-                            string& str = GET_MUTABLE (ext, Name);
-                            if ( str.empty() || NStr::EqualNocase (str, "misc_RNA")) {
-                                SET_FIELD( rr, Type, NCBI_RNAREF(miscRNA) );
-                                RESET_FIELD(rr, Ext);
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            } else if (NStr::EqualNocase (str, "ncRNA")) {
-                                SET_FIELD( rr, Type, NCBI_RNAREF(ncRNA) );
-                                RESET_FIELD(rr, Ext);
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            } else if (NStr::EqualNocase (str, "tmRNA")) {
-                                SET_FIELD( rr, Type, NCBI_RNAREF(tmRNA) );
-                                RESET_FIELD(rr, Ext);
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            } else if (s_IsNcrnaName (str)) {
-                                SET_FIELD( rr, Type, NCBI_RNAREF(ncRNA) );
-                                const string new_class = str;
-                                SET_FIELD( rr.SetExt().SetGen(), Class, new_class );
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            } else {
-                                SET_FIELD( rr, Type, NCBI_RNAREF(miscRNA) );
-                                const string new_product = str;
-                                SET_FIELD( rr.SetExt().SetGen(), Product, new_product );
-                                ChangeMade(CCleanupChange::eChangeRNAref);
-                            }
-                        }
+        case NCBI_RNAREF(mRNA):
+            break;
+        case NCBI_RNAREF(tRNA):
+            break;
+        case NCBI_RNAREF(rRNA):
+            break;
+        case NCBI_RNAREF(other): {
+            if (FIELD_IS_SET (rr, Ext)) {
+                CRNA_ref::C_Ext& ext = GET_MUTABLE (rr, Ext);
+                const TRNAREF_EXT chs = ext.Which();
+                if (chs == NCBI_RNAEXT(Name)) {
+                    string& str = GET_MUTABLE (ext, Name);
+                    if ( str.empty() || NStr::EqualNocase (str, "misc_RNA")) {
+                        SET_FIELD( rr, Type, NCBI_RNAREF(miscRNA) );
+                        RESET_FIELD(rr, Ext);
+                        ChangeMade(CCleanupChange::eChangeRNAref);
+                    } else if (NStr::EqualNocase (str, "ncRNA")) {
+                        SET_FIELD( rr, Type, NCBI_RNAREF(ncRNA) );
+                        RESET_FIELD(rr, Ext);
+                        ChangeMade(CCleanupChange::eChangeRNAref);
+                    } else if (NStr::EqualNocase (str, "tmRNA")) {
+                        SET_FIELD( rr, Type, NCBI_RNAREF(tmRNA) );
+                        RESET_FIELD(rr, Ext);
+                        ChangeMade(CCleanupChange::eChangeRNAref);
+                    } else if (s_IsNcrnaName (str)) {
+                        SET_FIELD( rr, Type, NCBI_RNAREF(ncRNA) );
+                        const string new_class = str;
+                        SET_FIELD( rr.SetExt().SetGen(), Class, new_class );
+                        ChangeMade(CCleanupChange::eChangeRNAref);
                     } else {
                         SET_FIELD( rr, Type, NCBI_RNAREF(miscRNA) );
+                        const string new_product = str;
+                        SET_FIELD( rr.SetExt().SetGen(), Product, new_product );
                         ChangeMade(CCleanupChange::eChangeRNAref);
                     }
                 }
-                break;
-            default:
-                break;
+            } else {
+                SET_FIELD( rr, Type, NCBI_RNAREF(miscRNA) );
+                ChangeMade(CCleanupChange::eChangeRNAref);
+            }
+        } break;
+        default:
+            break;
         }
     }
 }
@@ -7601,9 +7569,7 @@ bool s_FixncRNA(CSeq_feat& feat)
     switch (rna_type) {
     case CRNA_ref::eType_snRNA:
     case CRNA_ref::eType_scRNA:
-    case CRNA_ref::eType_snoRNA:
-      {{
-
+    case CRNA_ref::eType_snoRNA: {
         string rna_type_name = CRNA_ref::GetRnaTypeName(rna_type);
         if (rna.IsSetExt() && rna.GetExt().IsName() &&
             !NStr::EqualNocase(rna.GetExt().GetName(), rna_type_name))
@@ -7614,8 +7580,7 @@ bool s_FixncRNA(CSeq_feat& feat)
         rna.SetType(CRNA_ref::eType_ncRNA);
         rna.SetExt().SetGen().SetClass(rna_type_name);
         any_change = true;
-        break;
-      }}
+    } break;
     default:
         break;
     }
@@ -8712,16 +8677,14 @@ void CNewCleanup_imp::x_NotePubdescOrAnnotPubs_RecursionHelper(
         case NCBI_PUB(Pmid):
             pmid = ENTREZ_ID_TO(int, pub.GetPmid().Get());
             break;
-        case NCBI_PUB(Gen):
-            {
-                const CCit_gen &gen = pub.GetGen();
-                if( gen.IsSetCit() || gen.IsSetJournal() || gen.IsSetDate() || gen.IsSetSerial_number() ) {
-                    m_PubdescCitGenLabelVec.push_back( kEmptyStr );
-                    string& label = m_PubdescCitGenLabelVec.back();
-                    pub.GetLabel(&label, CPub::eContent, CPub::fLabel_Unique);
-                }
+        case NCBI_PUB(Gen): {
+            const CCit_gen &gen = pub.GetGen();
+            if( gen.IsSetCit() || gen.IsSetJournal() || gen.IsSetDate() || gen.IsSetSerial_number() ) {
+                m_PubdescCitGenLabelVec.push_back( kEmptyStr );
+                string& label = m_PubdescCitGenLabelVec.back();
+                pub.GetLabel(&label, CPub::eContent, CPub::fLabel_Unique);
             }
-            break;
+        } break;
         case NCBI_PUB(Equiv):
             x_NotePubdescOrAnnotPubs_RecursionHelper( pub.GetEquiv(), muid, pmid );
             break;
@@ -9572,42 +9535,42 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
 CMolInfo::TBiomol s_BiomolFromGIBBMolType(EGIBB_mol mol)
 {
     switch (mol) {
-        case eGIBB_mol_genomic:
-            return CMolInfo::eBiomol_genomic;
-            break;
-        case eGIBB_mol_genomic_mRNA:
-            return CMolInfo::eBiomol_genomic_mRNA;
-            break;
-        case eGIBB_mol_mRNA:
-            return CMolInfo::eBiomol_mRNA;
-            break;
-        case eGIBB_mol_other:
-            return CMolInfo::eBiomol_other;
-            break;
-        case eGIBB_mol_other_genetic:
-            return CMolInfo::eBiomol_other_genetic;
-            break;
-        case eGIBB_mol_peptide:
-            return CMolInfo::eBiomol_peptide;
-            break;
-        case eGIBB_mol_pre_mRNA:
-            return CMolInfo::eBiomol_pre_RNA;
-            break;
-        case eGIBB_mol_rRNA:
-            return CMolInfo::eBiomol_rRNA;
-            break;
-        case eGIBB_mol_scRNA:
-            return CMolInfo::eBiomol_scRNA;
-            break;
-        case eGIBB_mol_snRNA:
-            return CMolInfo::eBiomol_snRNA;
-            break;
-        case eGIBB_mol_tRNA:
-            return CMolInfo::eBiomol_tmRNA;
-            break;
-        case eGIBB_mol_unknown:
-            return CMolInfo::eBiomol_unknown;
-            break;
+    case eGIBB_mol_genomic:
+        return CMolInfo::eBiomol_genomic;
+        break;
+    case eGIBB_mol_genomic_mRNA:
+        return CMolInfo::eBiomol_genomic_mRNA;
+        break;
+    case eGIBB_mol_mRNA:
+        return CMolInfo::eBiomol_mRNA;
+        break;
+    case eGIBB_mol_other:
+        return CMolInfo::eBiomol_other;
+        break;
+    case eGIBB_mol_other_genetic:
+        return CMolInfo::eBiomol_other_genetic;
+        break;
+    case eGIBB_mol_peptide:
+        return CMolInfo::eBiomol_peptide;
+        break;
+    case eGIBB_mol_pre_mRNA:
+        return CMolInfo::eBiomol_pre_RNA;
+        break;
+    case eGIBB_mol_rRNA:
+        return CMolInfo::eBiomol_rRNA;
+        break;
+    case eGIBB_mol_scRNA:
+        return CMolInfo::eBiomol_scRNA;
+        break;
+    case eGIBB_mol_snRNA:
+        return CMolInfo::eBiomol_snRNA;
+        break;
+    case eGIBB_mol_tRNA:
+        return CMolInfo::eBiomol_tmRNA;
+        break;
+    case eGIBB_mol_unknown:
+        return CMolInfo::eBiomol_unknown;
+        break;
     }
     return CMolInfo::eBiomol_unknown;
 }
@@ -9617,28 +9580,27 @@ CMolInfo::TTech s_TechFromGIBBMethod(EGIBB_method method)
 {
     switch (method)
     {
-        case eGIBB_method_concept_trans:
-            return CMolInfo::eTech_concept_trans;
-            break;
-        case eGIBB_method_seq_pept:
-            return CMolInfo::eTech_seq_pept;
-            break;
-        case eGIBB_method_both:
-            return CMolInfo::eTech_both;
-            break;
-        case eGIBB_method_seq_pept_overlap:
-            return CMolInfo::eTech_seq_pept_overlap;
-            break;
-        case eGIBB_method_seq_pept_homol:
-            return CMolInfo::eTech_seq_pept;
-            break;
-        case eGIBB_method_concept_trans_a:
-            return CMolInfo::eTech_concept_trans_a;
-            break;
-        case eGIBB_method_other:
-            return CMolInfo::eTech_other;
-            break;
-
+    case eGIBB_method_concept_trans:
+        return CMolInfo::eTech_concept_trans;
+        break;
+    case eGIBB_method_seq_pept:
+        return CMolInfo::eTech_seq_pept;
+        break;
+    case eGIBB_method_both:
+        return CMolInfo::eTech_both;
+        break;
+    case eGIBB_method_seq_pept_overlap:
+        return CMolInfo::eTech_seq_pept_overlap;
+        break;
+    case eGIBB_method_seq_pept_homol:
+        return CMolInfo::eTech_seq_pept;
+        break;
+    case eGIBB_method_concept_trans_a:
+        return CMolInfo::eTech_concept_trans_a;
+        break;
+    case eGIBB_method_other:
+        return CMolInfo::eTech_other;
+        break;
     }
     return CMolInfo::eTech_other;
 }
@@ -9648,36 +9610,36 @@ bool SetMolinfoFromGIBBMod(CMolInfo& mi, EGIBB_mod mod)
 {
     bool changed = false;
     switch (mod) {
-        case eGIBB_mod_partial:
-            mi.SetCompleteness(CMolInfo::eCompleteness_partial);
-            changed = true;
-            break;
-        case eGIBB_mod_complete:
-            mi.SetCompleteness(CMolInfo::eCompleteness_complete);
-            changed = true;
-            break;
-        case eGIBB_mod_no_left:
-            mi.SetCompleteness(CMolInfo::eCompleteness_no_left);
-            changed = true;
-            break;
-        case eGIBB_mod_no_right:
-            mi.SetCompleteness(CMolInfo::eCompleteness_no_right);
-            changed = true;
-            break;
-        case eGIBB_mod_est:
-            mi.SetTech(CMolInfo::eTech_est);
-            changed = true;
-            break;
-        case eGIBB_mod_sts:
-            mi.SetCompleteness(CMolInfo::eTech_sts);
-            changed = true;
-            break;
-        case eGIBB_mod_survey:
-            mi.SetCompleteness(CMolInfo::eTech_survey);
-            changed = true;
-            break;
-        default:
-            break;
+    case eGIBB_mod_partial:
+        mi.SetCompleteness(CMolInfo::eCompleteness_partial);
+        changed = true;
+        break;
+    case eGIBB_mod_complete:
+        mi.SetCompleteness(CMolInfo::eCompleteness_complete);
+        changed = true;
+        break;
+    case eGIBB_mod_no_left:
+        mi.SetCompleteness(CMolInfo::eCompleteness_no_left);
+        changed = true;
+        break;
+    case eGIBB_mod_no_right:
+        mi.SetCompleteness(CMolInfo::eCompleteness_no_right);
+        changed = true;
+        break;
+    case eGIBB_mod_est:
+        mi.SetTech(CMolInfo::eTech_est);
+        changed = true;
+        break;
+    case eGIBB_mod_sts:
+        mi.SetCompleteness(CMolInfo::eTech_sts);
+        changed = true;
+        break;
+    case eGIBB_mod_survey:
+        mi.SetCompleteness(CMolInfo::eTech_survey);
+        changed = true;
+        break;
+    default:
+        break;
     }
     return changed;
 }
@@ -9751,14 +9713,14 @@ void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
 {
     EDIT_EACH_SEQDESC_ON_SEQDESCR( d, seq_descr ) {
         switch ((*d)->Which()) {
-            case CSeqdesc::e_Mol_type:
-            case CSeqdesc::e_Method:
-            case CSeqdesc::e_Org:
-                ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
-ChangeMade(CCleanupChange::eRemoveDescriptor);
-break;
-            default:
-                break;
+        case CSeqdesc::e_Mol_type:
+        case CSeqdesc::e_Method:
+        case CSeqdesc::e_Org:
+            ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -10150,18 +10112,18 @@ bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
                     const auto& titles = jour.GetTitle().Get();
                     for (auto title : titles) {
                         switch (title->Which()) {
-                            CHECK_TITLE(Name)
-                            CHECK_TITLE(Tsub)
-                            CHECK_TITLE(Trans)
-                            CHECK_TITLE(Jta)
-                            CHECK_TITLE(Iso_jta)
-                            CHECK_TITLE(Ml_jta)
-                            CHECK_TITLE(Coden)
-                            CHECK_TITLE(Issn)
-                            CHECK_TITLE(Abr)
-                            CHECK_TITLE(Isbn)
-                            default:
-                                break;
+                        CHECK_TITLE(Name)
+                        CHECK_TITLE(Tsub)
+                        CHECK_TITLE(Trans)
+                        CHECK_TITLE(Jta)
+                        CHECK_TITLE(Iso_jta)
+                        CHECK_TITLE(Ml_jta)
+                        CHECK_TITLE(Coden)
+                        CHECK_TITLE(Issn)
+                        CHECK_TITLE(Abr)
+                        CHECK_TITLE(Isbn)
+                        default:
+                            break;
                         }
                     }
                 }
@@ -10223,22 +10185,22 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature(const CSeq_feat& feat)
         return false;
     }
     switch (feat.GetData().Which()) {
-        case CSeqFeatData::e_Gene:
-            is_empty = x_ShouldRemoveEmptyGene(feat.GetData().GetGene(), feat);
-            break;
-        case CSeqFeatData::e_Prot:
-            is_empty = x_ShouldRemoveEmptyProt(feat.GetData().GetProt());
-            break;
-        case CSeqFeatData::e_Pub:
-            is_empty = x_ShouldRemoveEmptyPub(feat.GetData().GetPub());
-            break;
-        case CSeqFeatData::e_Comment:
-            if (!feat.IsSetComment() || NStr::IsBlank(feat.GetComment())) {
-                is_empty = true;
-            }
-            break;
-        default:
-            break;
+    case CSeqFeatData::e_Gene:
+        is_empty = x_ShouldRemoveEmptyGene(feat.GetData().GetGene(), feat);
+        break;
+    case CSeqFeatData::e_Prot:
+        is_empty = x_ShouldRemoveEmptyProt(feat.GetData().GetProt());
+        break;
+    case CSeqFeatData::e_Pub:
+        is_empty = x_ShouldRemoveEmptyPub(feat.GetData().GetPub());
+        break;
+    case CSeqFeatData::e_Comment:
+        if (!feat.IsSetComment() || NStr::IsBlank(feat.GetComment())) {
+            is_empty = true;
+        }
+        break;
+    default:
+        break;
     }
     return is_empty;
 }
@@ -10607,25 +10569,25 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
     switch( GET_FIELD_OR_DEFAULT(
         bioseq_set, Class, NCBI_BIOSEQSETCLASS(not_set)) )
     {
-        case CBioseq_set::eClass_nuc_prot:
-            x_BioseqSetNucProtEC( bioseq_set );
-            break;
-        case CBioseq_set::eClass_genbank:
-            x_BioseqSetGenBankEC(bioseq_set);
-            x_RemovePopPhyMolInfo(bioseq_set);
-            break;
-        case CBioseq_set::eClass_mut_set:
-        case CBioseq_set::eClass_pop_set:
-        case CBioseq_set::eClass_phy_set:
-        case CBioseq_set::eClass_eco_set:
-        case CBioseq_set::eClass_wgs_set:
-        case CBioseq_set::eClass_small_genome_set:
-            x_RemovePopPhyBioSource(bioseq_set);
-            x_RemovePopPhyMolInfo(bioseq_set);
-            break;
-        default:
-            // no special logic for other bioseq-set classes
-            break;
+    case CBioseq_set::eClass_nuc_prot:
+        x_BioseqSetNucProtEC( bioseq_set );
+        break;
+    case CBioseq_set::eClass_genbank:
+        x_BioseqSetGenBankEC(bioseq_set);
+        x_RemovePopPhyMolInfo(bioseq_set);
+        break;
+    case CBioseq_set::eClass_mut_set:
+    case CBioseq_set::eClass_pop_set:
+    case CBioseq_set::eClass_phy_set:
+    case CBioseq_set::eClass_eco_set:
+    case CBioseq_set::eClass_wgs_set:
+    case CBioseq_set::eClass_small_genome_set:
+        x_RemovePopPhyBioSource(bioseq_set);
+        x_RemovePopPhyMolInfo(bioseq_set);
+        break;
+    default:
+        // no special logic for other bioseq-set classes
+        break;
     }
 }
 
@@ -12457,8 +12419,6 @@ void CNewCleanup_imp::SetGlobalFlags(const CSeq_submit& ss)
 //LCOV_EXCL_STOP
 
 
-
-
 void CNewCleanup_imp::SetGlobalFlags(const CSeq_entry& se, bool reset)
 {
     if (reset) {
@@ -12499,12 +12459,12 @@ void CNewCleanup_imp::SetGlobalFlags(const CBioseq& bs, bool reset)
     ITERATE(CBioseq::TId, id, bs.GetId()) {
         const CSeq_id& sid = **id;
         switch (sid.Which()) {
-            case NCBI_SEQID(Embl):
-            case NCBI_SEQID(Ddbj):
-                m_IsEmblOrDdbj = true;
-                break;
-            default:
-                break;
+        case NCBI_SEQID(Embl):
+        case NCBI_SEQID(Ddbj):
+            m_IsEmblOrDdbj = true;
+            break;
+        default:
+            break;
         }
     }
 }
