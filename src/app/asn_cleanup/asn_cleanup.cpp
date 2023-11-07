@@ -111,10 +111,10 @@ private:
     void x_ProcessOneFile(const string& filename);
     void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
-    bool x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_only);
+    bool x_ProcessHugeFile(edit::CHugeFileProcess& process);
     bool x_ProcessHugeFileBlob(edit::CHugeFileProcess& process);
     CConstRef<CSerialObject> x_ProcessTraditionally(edit::CHugeAsnReader& reader);
-    void x_ProcessTraditionally(edit::CHugeFileProcess& process, bool first_only);
+    void x_ProcessTraditionally(edit::CHugeFileProcess& process);
 
     void x_FeatureOptionsValid(const string& opt);
     void x_KOptionsValid(const string& opt);
@@ -197,12 +197,6 @@ void CCleanupApp::Init()
     // batch processing
     {
         arg_desc->AddFlag("batch", "Process NCBI release file");
-        // compression
-        arg_desc->AddFlag("c", "Obsolete - do not use",
-                          CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
-
-        // imitate limitation of C Toolkit version
-        arg_desc->AddFlag("firstonly", "Process only first element");
     }
 
     // big file processing
@@ -440,10 +434,10 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 
     if (mode == eModeHugefile) {
         huge_process.OpenReader();
-        x_ProcessHugeFile(huge_process, args["firstonly"]);
+        x_ProcessHugeFile(huge_process);
     } else if (mode == eModeRegular) {
         huge_process.OpenReader();
-        x_ProcessTraditionally(huge_process, args["firstonly"]);
+        x_ProcessTraditionally(huge_process);
     } else {
         unique_ptr<CObjectIStream> is = huge_process.GetFile().MakeObjStream(0);
         x_ProcessOneFile(is, mode, asn_type);
@@ -457,7 +451,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     }
 }
 
-void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process, bool first_only)
+void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process)
 {
     bool   proceed = true;
     size_t num_cleaned = 0;
@@ -474,10 +468,6 @@ void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process, bool f
 
         if (proceed) {
             ++num_cleaned;
-        }
-
-        if (first_only) {
-            break;
         }
     }
 
@@ -589,9 +579,9 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
     }
 }
 
-bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_only)
+bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
 {
-    return process.ForEachBlob([this, first_only](edit::CHugeFileProcess& p_process) -> bool {
+    return process.ForEachBlob([this](edit::CHugeFileProcess& p_process) -> bool {
         m_state.m_IsMultiSeq = p_process.GetReader().IsMultiSequence();
         if (m_state.m_IsMultiSeq) {
             bool proceed = x_ProcessHugeFileBlob(p_process);
@@ -602,7 +592,7 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process, bool first_
             m_Out->ResetLocalHooks();
             *m_Out << *topobject;
         }
-        return ! first_only;
+        return true;
     });
 }
 
