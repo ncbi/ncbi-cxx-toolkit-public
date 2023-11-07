@@ -754,7 +754,7 @@ class Processor:
         runs = self.data.get('runs', {})
 
         for name in filter(_should_run, set(runs.keys()) | set(('',))):
-            for simple_name in set(_simple_runs(name)):
+            for simple_name in sorted(set(_simple_runs(name))):
                 yield self.Run(simple_name, runs.get(simple_name, {}))
 
     def get_testcases(self, run):
