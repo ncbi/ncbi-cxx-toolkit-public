@@ -494,13 +494,13 @@ bool CHttpCookie::Parse(const CTempString& str)
         return false;
     }
     m_Value = NStr::TruncateSpaces(nv.substr(pos + 1));
-    if ( !IsValidValue(m_Value, eField_Value, &err_msg) ) {
-        ERR_POST_X(3, Info << err_msg);
-        return false;
-    }
     // Remove dquotes if any.
     if (m_Value.size() > 2  &&  m_Value[0] == '"'  &&  m_Value[m_Value.size() - 1] == '"') {
         m_Value = m_Value.substr(1, m_Value.size() - 2);
+    }
+    if ( !IsValidValue(m_Value, eField_Value, &err_msg) ) {
+        ERR_POST_X(3, Info << err_msg);
+        return false;
     }
 
     if ( attr_str.empty() ) {
