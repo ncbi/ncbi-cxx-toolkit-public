@@ -1075,6 +1075,10 @@ void CMakeBlastDBApp::x_BuildDatabase()
             GetEnvironment().Get("NCBI_MAKEBLASTDB_SKIP_UNVERIFIED_BIOSEQS");
     m_SkipUnver = (env_skip.empty() == false);
 
+    const string dont_scan_bioseq =
+        GetEnvironment().Get("NCBI_MAKEBLASTDB_DONT_SCAN_BIOSEQ_FOR_CFASTAREADER_USER_OBJECTS");
+    const bool scan_bioseq_4_cfastareader_usrobj = static_cast<bool>(dont_scan_bioseq.empty());
+
     const CArgs & args = GetArgs();
 
     // Get arguments to the CBuildDatabase constructor.
@@ -1173,7 +1177,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
                                   long_seqids,
                                   dbver,
                                   limit_defline,
-                                  oid_masks));
+                                  oid_masks,
+                                  scan_bioseq_4_cfastareader_usrobj));
 
 #if _BLAST_DEBUG
     if (args["verbose"]) {

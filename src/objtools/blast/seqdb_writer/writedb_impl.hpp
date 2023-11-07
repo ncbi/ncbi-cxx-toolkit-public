@@ -76,6 +76,9 @@ public:
     /// @param long_ids If true, assume long sequence ids (database|accession)
     /// when parsing strings ids
     /// @param use_gi_mask If true generate GI-based mask files.
+    /// @param scan_bioseq_4_cfastareader_usrobj [in]
+    ///   If true, scan the Bioseq objects for a CFastaReader-created User-object
+    ///   containing a defline
     CWriteDB_Impl(const string     & dbname,
                   bool               protein,
                   const string     & title,
@@ -85,7 +88,8 @@ public:
                   bool               use_gi_mask,
                   EBlastDbVersion    dbver = eBDB_Version4,
                   bool               limit_defline = false,
-                  Uint8              oid_masks = EOidMaskType::fNone);
+                  Uint8              oid_masks = EOidMaskType::fNone,
+                  bool               scan_bioseq_4_cfastareader_usrobj = false);
 
     /// Destructor.
     ~CWriteDB_Impl();
@@ -221,9 +225,13 @@ public:
     /// @param bs Bioseq from which to construct the defline set.
     /// @param parse_ids If we should parse seq_ids.
     /// @param long_seqids If true use long sequence ids (database|accession)
+    /// @param scan_bioseq_4_cfastareader_usrobj [in]
+    ///   If true, scan the Bioseq objects for a CFastaReader-created User-object
+    ///   containing a defline
     /// @return The blast defline set.
     static CRef<CBlast_def_line_set>
-    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids, bool long_seqids);
+    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids, bool long_seqids,
+            bool scan_bioseq_4_cfastareader_usrobj = false);
 
     /// Set bases that should not be used in sequences.
     ///
@@ -489,6 +497,7 @@ private:
     /// @param parse_ids Whether seq_id should not be parsed. [in]
     /// @param long_seqids If true, use long sequence ids (database|accession)
     /// [in]
+    /// @param scan_bioseq_4_cfastareader_usrobj if true, scan the Bioseq objects for a [in]
     static void
     x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                              CConstRef<CBlast_def_line_set> & deflines,
@@ -497,7 +506,8 @@ private:
                              int                              pig,
                              bool                             accept_gt,
                              bool                             parse_ids,
-                             bool                             long_seqids);
+                             bool                             long_seqids,
+                             bool                             scan_bioseq_4_cfastareader_usrobj = false);
 
     /// Returns true if we have unwritten sequence data.
     bool x_HaveSequence() const;
@@ -535,7 +545,8 @@ private:
                                   int                              OID=-1,
                                   bool                             parse_ids=true,
                                   bool                             long_seqid=false,
-                                  bool							   limit_defline = false);
+                                  bool							   limit_defline = false,
+                                  bool                             scan_bioseq_4_cfastareader_usrobj = false);
 
     /// Compute the hash of a (raw) sequence.
     ///
@@ -645,6 +656,8 @@ private:
 
     bool m_limitDefline;
     Uint8 m_OidMasks;
+
+    bool m_ScanBioseq4CFastaReaderUsrObjct;
 };
 
 END_NCBI_SCOPE

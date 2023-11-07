@@ -62,7 +62,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              bool           use_gi_mask,
                              EBlastDbVersion    dbver,
                              bool           limit_defline,
-                             Uint8          oid_masks)
+                             Uint8          oid_masks,
+                             bool           scan_bioseq_4_cfastareader_usrobj)
     : m_Dbname           (dbname),
       m_Protein          (protein),
       m_Title            (title),
@@ -81,7 +82,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_LongSeqId        (long_ids),
       m_LmdbOid          (0),
       m_limitDefline     (protein? limit_defline: false),
-      m_OidMasks         (oid_masks)
+      m_OidMasks         (oid_masks),
+      m_ScanBioseq4CFastaReaderUsrObjct(scan_bioseq_4_cfastareader_usrobj)
 {
     CTime now(CTime::eCurrent);
 
@@ -770,7 +772,8 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  int                              OID,
                                  bool                             parse_ids,
                                  bool                             long_ids,
-                                 bool                             limit_defline)
+                                 bool                             limit_defline,
+                                 bool scan_bioseq_4_cfastareader_usrobj)
 {
     bool use_bin = (deflines.Empty() && pig == 0);
 
@@ -805,7 +808,8 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                      pig,
                                      false,
                                      parse_ids,
-                                     long_ids);
+                                     long_ids,
+                                     scan_bioseq_4_cfastareader_usrobj);
 	      } catch ( const CSeqIdException&e ) {
 		//LOG_POST(Info << "x_GetFastaReaderDeflines " << e.GetMsg() );
 	    }
@@ -912,7 +916,8 @@ void CWriteDB_Impl::x_CookHeader()
                       OID,
                       m_ParseIDs,
                       m_LongSeqId,
-                      m_limitDefline);
+                      m_limitDefline,
+                      m_ScanBioseq4CFastaReaderUsrObjct);
 
     x_CookIds();
 }
@@ -1567,7 +1572,8 @@ void CWriteDB_Impl::SetMaxVolumeLetters(Uint8 sz)
 
 CRef<CBlast_def_line_set>
 CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
-                                     bool long_seqids)
+                                     bool long_seqids,
+                                     bool scan_bioseq_4_cfastareader_usrobj)
 {
     // Get information
 
@@ -1575,10 +1581,11 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
     string binary_header;
     vector< vector<int> > v1, v2;
     set<TTaxId> t;
+    const bool kLimitDefline = false;
 
     CConstRef<CBioseq> bsref(& bs);
     x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, t, -1, parse_ids,
-                      long_seqids);
+                      long_seqids, kLimitDefline, scan_bioseq_4_cfastareader_usrobj);
 
     // Convert to return type
 
@@ -1716,7 +1723,8 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                          int                              pig,
                          bool                             accept_gt,
                          bool                             parse_ids,
-                         bool                             long_seqids)
+                         bool                             long_seqids,
+                         bool                             scan_bioseq_4_cfastareader_usrobj)
 {
     if (! bioseq.CanGetDescr()) {
         return;
@@ -1726,33 +1734,35 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 
     // Scan the CBioseq for the CFastaReader user object.
 
-    ITERATE(list< CRef< CSeqdesc > >, iter, bioseq.GetDescr().Get()) {
-        const CSeqdesc & desc = **iter;
+    if (scan_bioseq_4_cfastareader_usrobj) {
+        ITERATE(list< CRef< CSeqdesc > >, iter, bioseq.GetDescr().Get()) {
+            const CSeqdesc & desc = **iter;
 
-        if (desc.IsUser() &&
-            desc.GetUser().CanGetType() &&
-            desc.GetUser().GetType().IsStr() &&
-            desc.GetUser().GetType().GetStr() == "CFastaReader" &&
-            desc.GetUser().CanGetData()) {
+            if (desc.IsUser() &&
+                desc.GetUser().CanGetType() &&
+                desc.GetUser().GetType().IsStr() &&
+                desc.GetUser().GetType().GetStr() == "CFastaReader" &&
+                desc.GetUser().CanGetData()) {
 
-            const vector< CRef< CUser_field > > & D = desc.GetUser().GetData();
+                const vector< CRef< CUser_field > > & D = desc.GetUser().GetData();
 
-            ITERATE(vector< CRef< CUser_field > >, iter, D) {
-                const CUser_field & f = **iter;
+                ITERATE(vector< CRef< CUser_field > >, iter, D) {
+                    const CUser_field & f = **iter;
 
-                if (f.CanGetLabel() &&
-                    f.GetLabel().IsStr() &&
-                    f.GetLabel().GetStr() == "DefLine" &&
-                    f.CanGetData() &&
-                    f.GetData().IsStr()) {
-                    fasta = NStr::Replace(f.GetData().GetStr(), "\\t", TAB_REPLACEMENT);
-                    fasta = NStr::ParseEscapes(fasta);
-                    break;
+                    if (f.CanGetLabel() &&
+                        f.GetLabel().IsStr() &&
+                        f.GetLabel().GetStr() == "DefLine" &&
+                        f.CanGetData() &&
+                        f.GetData().IsStr()) {
+                        fasta = NStr::Replace(f.GetData().GetStr(), "\\t", TAB_REPLACEMENT);
+                        fasta = NStr::ParseEscapes(fasta);
+                        break;
+                    }
                 }
             }
         }
-    }
 
+    }
     if (fasta.empty())
         return;
 

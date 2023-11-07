@@ -152,6 +152,9 @@ public:
     ///   If true, generate GI-based mask files [in]
     /// @param dbver
     ///   version of BLAST database to generate [in]
+    /// @param scan_bioseq_4_cfastareader_usrobj [in]
+    ///   If true, scan the Bioseq objects for a CFastaReader-created User-object
+    ///   containing a defline
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
@@ -161,7 +164,8 @@ public:
              bool           use_gi_mask = false,
              EBlastDbVersion    dbver = eBDB_Version4,
              bool			limit_defline = false,
-             Uint8          oid_masks = EOidMaskType::fNone);
+             Uint8          oid_masks = EOidMaskType::fNone,
+             bool           scan_bioseq_4_cfastareader_usrobj = false);
 
     /// Destructor.
     ///
@@ -356,10 +360,14 @@ public:
     /// @param bs The bioseq from which to extract a defline set. [in]
     /// @param parse_ids If seqid should be parsed [in]
     /// @param long_ids It true, use long sequence ids (database|accession) [in]
+    /// @param scan_bioseq_4_cfastareader_usrobj [in]
+    ///   If true, scan the Bioseq objects for a CFastaReader-created User-object
+    ///   containing a defline
     /// @return A set of deflines for this CBioseq.
     static CRef<CBlast_def_line_set>
     ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids=true,
-                          bool long_ids=false);
+                          bool long_ids=false,
+                          bool scan_bioseq_4_cfastareader_usrobj=false);
 
     /// Set letters that should not be used in sequences.
     ///
