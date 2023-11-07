@@ -153,6 +153,9 @@ public:
     /// @param long_seqids if true, requires long sequence ids
     /// (database|accession) when parsing fasta sequences [in]
     /// @param dbver version of BLAST database to generate [in]
+    /// @param scan_bioseq_4_cfastareader_usrobj [in]
+    ///   If true, scan the Bioseq objects for a CFastaReader-created User-object
+    ///   containing a defline
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
@@ -162,7 +165,8 @@ public:
                    bool                   long_seqids = false,
                    EBlastDbVersion        dbver = eBDB_Version4,
                    bool                   limit_defline = false,
-                   Uint8                  oid_masks = EOidMaskType::fNone);
+                   Uint8                  oid_masks = EOidMaskType::fNone,
+                   bool scan_bioseq_4_cfastareader_usrobj = true);
 
     // Note -- should deprecate (or just remove) the following one:
     // - sparse does nothing
@@ -185,6 +189,9 @@ public:
     /// @param indexing index fields to add to database. [in]
     /// @param long_seqids if true, requires long sequence ids
     /// (database|accession) when parsing fasta sequences [in]
+    /// @param scan_bioseq_4_cfastareader_usrobj [in]
+    ///   If true, scan the Bioseq objects for a CFastaReader-created User-object
+    ///   containing a defline
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
@@ -195,7 +202,8 @@ public:
                    bool                   long_seqids = false,
                    EBlastDbVersion dbver = eBDB_Version4,
                    bool                   limit_defline = false,
-                   Uint8                  oid_masks = EOidMaskType::fNone);
+                   Uint8                  oid_masks = EOidMaskType::fNone,
+                   bool scan_bioseq_4_cfastareader_usrobj = true);
 
     ~CBuildDatabase();
 
@@ -659,6 +667,8 @@ private:
     bool m_SkipLargeGis;
 
     string m_OutputDbName;
+
+    bool m_ScanBioseq4CFastaReaderUsrObjct;
 };
 
 END_NCBI_SCOPE

@@ -471,7 +471,8 @@ bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                                         bool						  add_pig)
 {
     CRef<CBlast_def_line_set> headers =
-        CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs, m_LongIDs);
+        CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs, m_LongIDs, 
+                m_ScanBioseq4CFastaReaderUsrObjct);
 
     x_EditHeaders(headers);
 
@@ -1078,7 +1079,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                bool                   long_seqids,
                                EBlastDbVersion        dbver,
                                bool                   limit_defline,
-                               Uint8                  oid_masks)
+                               Uint8                  oid_masks,
+                               bool scan_bioseq_4_cfastareader_usrobj)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1094,7 +1096,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_FoundMatchingMasks(false),
       m_SkipCopyingGis(false),
       m_SkipLargeGis(true),
-      m_OutputDbName(kEmptyStr)
+      m_OutputDbName(kEmptyStr),
+      m_ScanBioseq4CFastaReaderUsrObjct(scan_bioseq_4_cfastareader_usrobj)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
@@ -1140,7 +1143,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                bool           long_seqids,
                                EBlastDbVersion        dbver,
                                bool           limit_defline,
-                               Uint8          oid_masks)
+                               Uint8          oid_masks,
+                               bool scan_bioseq_4_cfastareader_usrobj)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1155,7 +1159,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false),
       m_SkipCopyingGis(false),
-      m_SkipLargeGis(true)
+      m_SkipLargeGis(true),
+      m_ScanBioseq4CFastaReaderUsrObjct(scan_bioseq_4_cfastareader_usrobj)
 {
     CreateDirectories(dbname);
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
@@ -1187,7 +1192,8 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                   use_gi_mask,
                                   dbver,
                                   limit_defline,
-                                  oid_masks));
+                                  oid_masks,
+                                  scan_bioseq_4_cfastareader_usrobj));
 
     // Standard 1 GB limit
 
