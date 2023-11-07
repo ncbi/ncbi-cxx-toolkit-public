@@ -144,20 +144,6 @@ CLZOCompression::CLZOCompression(ELevel level)
     return;
 }
 
-// @deprecated
-CLZOCompression::CLZOCompression(ELevel level, size_t blocksize)
-    : CCompression(level)
-{
-    if (blocksize > kMax_UInt) {
-        ERR_COMPRESS(41, FormatErrorMessage("CLZOCompression:: block size is too big"));
-        return;
-    }
-    m_BlockSize = blocksize;
-    m_Param.reset(new SCompressionParam);
-    m_Param->workmem = 0;
-    return;
-}
-
 
 CLZOCompression::~CLZOCompression(void)
 {
@@ -900,33 +886,6 @@ CLZOCompressionFile::CLZOCompressionFile(ELevel level)
     return;
 }
 
-// @deprecated
-CLZOCompressionFile::CLZOCompressionFile(
-    const string& file_name, EMode mode, ELevel level, size_t blocksize)
-    : CLZOCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
-{
-    SetBlockSize(blocksize);
-    if ( !Open(file_name, mode) ) {
-        const string smode = (mode == eMode_Read) ? "reading" : "writing";
-        NCBI_THROW(CCompressionException, eCompressionFile, 
-                   "[CLZOCompressionFile]  Cannot open file '" + file_name +
-                   "' for " + smode + ".");
-    }
-    return;
-}
-
-// @deprecated
-CLZOCompressionFile::CLZOCompressionFile(
-    ELevel level, size_t blocksize)
-    : CLZOCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
-{
-    // Set advanced compression parameters
-    SetBlockSize(blocksize);
-    return;
-}
-
 
 CLZOCompressionFile::~CLZOCompressionFile(void)
 {
@@ -1150,15 +1109,6 @@ CLZOCompressor::CLZOCompressor(ELevel level, TLZOFlags flags)
 {
     SetFlags(flags | fStreamFormat);
 }
-
-// @deprecated
-CLZOCompressor::CLZOCompressor(ELevel level, size_t blocksize, TLZOFlags flags)
-    : CLZOCompression(level), m_NeedWriteHeader(true)
-{
-    SetFlags(flags | fStreamFormat);
-    SetBlockSize(blocksize);
-}
-
 
 CLZOCompressor::~CLZOCompressor()
 {
@@ -1391,17 +1341,6 @@ CLZODecompressor::CLZODecompressor(TLZOFlags flags)
 
 {
     SetFlags(flags | fStreamFormat);
-}
-
-
-// @deprecated
-CLZODecompressor::CLZODecompressor(size_t blocksize, TLZOFlags flags)
-    : CLZOCompression(eLevel_Default),
-      m_BlockLen(0), m_HeaderLen(kMaxHeaderSize), m_HeaderFlags(0)
-
-{
-    SetFlags(flags | fStreamFormat);
-    SetBlockSize(blocksize);
 }
 
 
@@ -1688,40 +1627,6 @@ bool CLZODecompressor::DecompressCache(void)
     m_BlockLen = 0;
     return true;
 }
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CLZOStreamCompressor /  CLZOStreamDecompressor -- deprecated constructors
-//
-
-// @deprecated
-CLZOStreamCompressor::CLZOStreamCompressor(
-    CLZOCompression::ELevel    level,
-    streamsize                 in_bufsize,
-    streamsize                 out_bufsize,
-    size_t                     blocksize,
-    CLZOCompression::TLZOFlags flags
-    )
-    : CCompressionStreamProcessor(
-            new CLZOCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
-{
-    GetCompressor()->SetBlockSize(blocksize);
-}
-
-// @deprecated
-CLZOStreamDecompressor::CLZOStreamDecompressor(
-    streamsize                 in_bufsize,
-    streamsize                 out_bufsize,
-    size_t                     blocksize,
-    CLZOCompression::TLZOFlags flags
-    )
-    : CCompressionStreamProcessor(
-            new CLZODecompressor(flags), eDelete, in_bufsize, out_bufsize)
-{
-    GetDecompressor()->SetBlockSize(blocksize);
-}
-
 
 
 

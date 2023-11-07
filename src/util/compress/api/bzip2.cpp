@@ -89,23 +89,6 @@ CBZip2Compression::CBZip2Compression(ELevel level)
     return;
 }
 
-// @deprecated
-CBZip2Compression::CBZip2Compression(ELevel level, int /*verbosity*/,
-                                     int work_factor, int small_decompress)
-    : CCompression(level)
-{
-    // Set advanced compression parameters
-    SetWorkFactor(work_factor);
-    SetSmallDecompress(small_decompress != 0);
-
-    // Initialize the compressor stream structure
-    m_Stream = new bz_stream;
-    if ( m_Stream ) {
-        memset(m_Stream, 0, sizeof(bz_stream));
-    }
-    return;
-}
-
 
 CBZip2Compression::~CBZip2Compression(void)
 {
@@ -441,40 +424,6 @@ CBZip2CompressionFile::CBZip2CompressionFile(ELevel level)
 }
 
 
-// @deprecated
-CBZip2CompressionFile::CBZip2CompressionFile(
-    const string& file_name, EMode mode,
-    ELevel level, int /*verbosity*/, int work_factor, int small_decompress)
-    : CBZip2Compression(level), 
-      m_FileStream(0), m_EOF(true), m_HaveData(false)
-{
-    // Set advanced compression parameters
-    SetWorkFactor(work_factor);
-    SetSmallDecompress(small_decompress != 0);
-
-    if ( !Open(file_name, mode) ) {
-        const string smode = (mode == eMode_Read) ? "reading" : "writing";
-        NCBI_THROW(CCompressionException, eCompressionFile, 
-                   "[CBZip2CompressionFile]  Cannot open file '" + file_name +
-                   "' for " + smode + ".");
-    }
-    return;
-}
-
-// @deprecated
-CBZip2CompressionFile::CBZip2CompressionFile(
-    ELevel level, int /*verbosity*/ , int work_factor, int small_decompress)
-    : CBZip2Compression(level), 
-      m_FileStream(0), m_EOF(true), m_HaveData(false)
-{
-    // Set advanced compression parameters
-    SetWorkFactor(work_factor);
-    SetSmallDecompress(small_decompress != 0);
-
-    return;
-}
-
-
 CBZip2CompressionFile::~CBZip2CompressionFile(void)
 {
     try {
@@ -615,17 +564,6 @@ CBZip2Compressor::CBZip2Compressor(ELevel level, TBZip2Flags flags)
     : CBZip2Compression(level)
 {
     SetFlags(flags);
-}
-
-
-// @deprecated
-CBZip2Compressor::CBZip2Compressor(
-                  ELevel level, int /*verbosity*/, int work_factor, TBZip2Flags flags)
-    : CBZip2Compression(level)
-{
-    SetFlags(flags);
-    // Set advanced compression parameters
-    SetWorkFactor(work_factor);
 }
 
 
@@ -801,16 +739,6 @@ CBZip2Decompressor::CBZip2Decompressor(TBZip2Flags flags)
 }
 
 
-// @deprecated
-CBZip2Decompressor::CBZip2Decompressor(int /*verbosity*/, int small_decompress, TBZip2Flags flags)
-    : CBZip2Compression(eLevel_Default)
-{
-    SetFlags(flags);
-    // Set advanced compression parameters
-    SetSmallDecompress(small_decompress > 0);
-}
-
-
 CBZip2Decompressor::~CBZip2Decompressor()
 {
 }
@@ -951,43 +879,6 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(int abandon)
     }
     ERR_COMPRESS(33, FormatErrorMessage("CBZip2Decompressor::End"));
     return eStatus_Error;
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CBZip2StreamCompressor /  CBZip2StreamDecompressor -- deprecated constructors
-//
-
-// @deprecated
- CBZip2StreamCompressor::CBZip2StreamCompressor(
-        CBZip2Compression::ELevel level,
-        streamsize                     in_bufsize,
-        streamsize                     out_bufsize,
-        int                            /*verbosity*/,
-        int                            work_factor,
-        CBZip2Compression::TBZip2Flags flags
-    )
-    : CCompressionStreamProcessor(
-        new CBZip2Compressor(level,flags), eDelete, in_bufsize, out_bufsize)
-{
-    GetCompressor()->SetWorkFactor(work_factor);
-}
-
-
- // @deprecated
- CBZip2StreamDecompressor::CBZip2StreamDecompressor(
-        streamsize                     in_bufsize,
-        streamsize                     out_bufsize,
-        int                            /*verbosity*/,
-        int                            small_decompress,
-        CBZip2Compression::TBZip2Flags flags
-        )
-        : CCompressionStreamProcessor(
-             new CBZip2Decompressor(flags), eDelete, in_bufsize, out_bufsize)
-{
-    GetDecompressor()->SetSmallDecompress(small_decompress > 0);
 }
 
 

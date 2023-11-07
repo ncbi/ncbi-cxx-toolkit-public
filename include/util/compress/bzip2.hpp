@@ -75,17 +75,6 @@ public:
     /// Constructor.
     CBZip2Compression(ELevel level = eLevel_Default);
 
-    /// Constructor.
-    /// @deprecated 
-    ///   Use CBZip2Compression(ELevel) constructor without advanced parameters, 
-    ///   that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CBZip2Compression(
-        ELevel level,
-        int    verbosity,                 // this parameter is ignored
-        int    work_factor      = 0,      // [0..250] 
-        int    small_decompress = 0       // [0,1]
-    ));
-
     /// Destructor.
     virtual ~CBZip2Compression(void);
 
@@ -352,27 +341,6 @@ public:
         ELevel        level = eLevel_Default
     );
 
-    /// @deprecated 
-    ///   Use CBZip2CompressionFile(const string&, EMode, ELevel) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CBZip2CompressionFile(
-        const string& file_name,
-        EMode         mode,
-        ELevel        level,
-        int           verbosity,
-        int           work_factor      = 0,
-        int           small_decompress = 0 
-    ));
-    /// @deprecated 
-    ///   Use CBZip2CompressionFile(ELevel) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CBZip2CompressionFile(
-        ELevel        level,
-        int           verbosity,
-        int           work_factor      = 0,
-        int           small_decompress = 0 
-    ));
-
     /// Destructor.
     ~CBZip2CompressionFile(void);
 
@@ -469,17 +437,6 @@ public:
         TBZip2Flags flags = 0
     );
 
-    /// @deprecated 
-    ///   Use CBZip2Compressor(ELevel = eLevel_Default, TBZip2Flags = 0) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(
-    CBZip2Compressor(
-        ELevel      level,
-        int         verbosity,
-        int         work_factor = 0,
-        TBZip2Flags flags       = 0
-    ));
-
     /// Destructor.
     virtual ~CBZip2Compressor(void);
 
@@ -517,15 +474,6 @@ class NCBI_XUTIL_EXPORT CBZip2Decompressor : public CBZip2Compression,
 public:
     /// Constructor.
     CBZip2Decompressor(TBZip2Flags flags = 0 );
-
-    /// @deprecated 
-    ///   Use CZipDecompressor(TZipFlags = 0) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CBZip2Decompressor(
-        int         verbosity,
-        int         small_decompress,
-        TBZip2Flags flags = 0
-    ));
 
     /// Destructor.
     virtual ~CBZip2Decompressor(void);
@@ -574,18 +522,6 @@ public:
               new CBZip2Compressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// @deprecated 
-    ///   Use CBZip2StreamCompressor() constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CBZip2StreamCompressor(
-        CBZip2Compression::ELevel level,
-        streamsize                in_bufsize,
-        streamsize                out_bufsize,
-        int                       verbosity,
-        int                       work_factor,
-        CBZip2Compression::TBZip2Flags flags
-    ));
-        
     /// Conventional constructor
     CBZip2StreamCompressor(
         CBZip2Compression::ELevel level,
@@ -631,17 +567,6 @@ public:
         : CCompressionStreamProcessor(
              new CBZip2Decompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
-
-   /// @deprecated 
-    ///   Use CBZip2StreamDecompressor() constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CBZip2StreamDecompressor(
-        streamsize                     in_bufsize,
-        streamsize                     out_bufsize,
-        int                            verbosity,
-        int                            small_decompress,
-        CBZip2Compression::TBZip2Flags flags
-    ));
 
     /// Conventional constructor
     CBZip2StreamDecompressor(CBZip2Compression::TBZip2Flags flags = 0)

@@ -131,17 +131,6 @@ public:
     ///   For setting up advanced compression parameters see Set*() methods.
     CZipCompression(ELevel level = eLevel_Default);
 
-    /// Constructor.
-    /// @deprecated 
-    ///   Use CZipCompression(ELevel) constructor without advanced parameters, 
-    ///   that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CZipCompression(
-        ELevel level,
-        int    window_bits,
-        int    mem_level   = kZlibDefaultMemLevel,
-        int    strategy    = kZlibDefaultStrategy
-    ));
-
     /// Destructor.
     virtual ~CZipCompression(void);
 
@@ -543,27 +532,6 @@ public:
         ELevel        level = eLevel_Default
     );
 
-    /// @deprecated 
-    ///   Use CZipCompressionFile(const string&, EMode, ELevel) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CZipCompressionFile(
-        const string& file_name,
-        EMode         mode,
-        ELevel        level,
-        int           window_bits,
-        int           mem_level   = kZlibDefaultMemLevel,
-        int           strategy    = kZlibDefaultStrategy
-    ));
-    /// @deprecated 
-    ///   Use CZipCompressionFile(ELevel) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CZipCompressionFile(
-        ELevel        level,
-        int           window_bits,
-        int           mem_level   = kZlibDefaultMemLevel,
-        int           strategy    = kZlibDefaultStrategy
-    ));
-
     /// Destructor
     ~CZipCompressionFile(void);
 
@@ -697,17 +665,6 @@ public:
         TZipFlags flags = 0
     );
 
-    /// @deprecated 
-    ///   Use CZipCompressor(ELevel = eLevel_Default, TZipFlags = 0) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CZipCompressor(
-        ELevel    level,
-        int       window_bits,
-        int       mem_level   = kZlibDefaultMemLevel,
-        int       strategy    = kZlibDefaultStrategy,
-        TZipFlags flags       = 0
-    ));
-
     /// Destructor.
     virtual ~CZipCompressor(void);
 
@@ -758,11 +715,6 @@ class NCBI_XUTIL_EXPORT CZipDecompressor : public CZipCompression,
 public:
     /// Constructor.
     CZipDecompressor(TZipFlags flags = 0);
-
-    /// @deprecated 
-    ///   Use CZipDecompressor(TZipFlags = 0) constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CZipDecompressor(int window_bits, TZipFlags flags));
 
     /// Destructor.
     virtual ~CZipDecompressor(void);
@@ -823,19 +775,6 @@ public:
               new CZipCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// @deprecated 
-    ///   Use CZipStreamCompressor() constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR( CZipStreamCompressor(
-        CZipCompression::ELevel    level,
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
-        int                        window_bits,
-        int                        mem_level,
-        int                        strategy,
-        CZipCompression::TZipFlags flags = 0
-    ));
-
     /// Conventional constructor
     CZipStreamCompressor(
         CZipCompression::ELevel    level,
@@ -886,16 +825,6 @@ public:
         : CCompressionStreamProcessor( 
               new CZipDecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
-
-    /// @deprecated 
-    ///   Use CZipStreamDecompressor() constructor
-    ///   without advanced parameters, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CZipStreamDecompressor(
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
-        int                        window_bits,
-        CZipCompression::TZipFlags flags
-    ));
 
     /// Conventional constructor
     CZipStreamDecompressor(CZipCompression::TZipFlags flags = 0)

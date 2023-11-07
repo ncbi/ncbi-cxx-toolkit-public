@@ -167,13 +167,6 @@ public:
     /// Constructor.
     CLZOCompression(ELevel level = eLevel_Default);
 
-    /// @deprecated 
-    ///   Use CLZOCompression(ELevel) constructor without block size, that can be set separately
-    NCBI_DEPRECATED_CTOR(CLZOCompression(
-        ELevel level,
-        size_t blocksize
-    ));
-
     /// Destructor.
     virtual ~CLZOCompression(void);
 
@@ -501,18 +494,6 @@ public:
     CLZOCompressionFile(
         ELevel        level = eLevel_Default
     );
-    /// @deprecated Use CLZOCompressionFile(const string&, EMode, ELevel) construtor instead.
-    NCBI_DEPRECATED_CTOR(CLZOCompressionFile(
-        const string& file_name,
-        EMode         mode,
-        ELevel        level,
-        size_t        blocksize
-    ));
-    /// @deprecated Use CLZOCompressionFile(ELevel) construtor instead.
-    NCBI_DEPRECATED_CTOR(CLZOCompressionFile(
-        ELevel        level,
-        size_t        blocksize
-    ));
 
     /// Destructor
     ~CLZOCompressionFile(void);
@@ -689,14 +670,6 @@ public:
         ELevel    level = eLevel_Default,
         TLZOFlags flags = 0
     );
-    /// @deprecated 
-    ///   Use CLZOCompressor(ELevel = eLevel_Default, TLZOFlags = 0) constructor
-    ///   without block size parameter, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CLZOCompressor(
-        ELevel    level,
-        size_t    blocksize,
-        TLZOFlags flags
-    ));
 
     /// Destructor.
     virtual ~CLZOCompressor(void);
@@ -747,14 +720,6 @@ class NCBI_XUTIL_EXPORT CLZODecompressor : public CLZOCompression,
 public:
     /// Constructor.
     CLZODecompressor(TLZOFlags flags);
-
-    /// @deprecated 
-    ///   Use CLZODecompressor(TLZOFlags = 0) constructor
-    ///   without block size parameter, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CLZODecompressor(
-        size_t    blocksize,
-        TLZOFlags flags
-    ));
 
     /// Destructor.
     virtual ~CLZODecompressor(void);
@@ -819,17 +784,6 @@ public:
               new CLZOCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// @deprecated 
-    ///   Use CLZOStreamCompressor() constructor
-    ///   without block size parameter, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CLZOStreamCompressor(
-        CLZOCompression::ELevel    level,
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
-        size_t                     blocksize,
-        CLZOCompression::TLZOFlags flags
-    ));
-
     /// Conventional constructor
     CLZOStreamCompressor(
         CLZOCompression::ELevel    level,
@@ -878,16 +832,6 @@ public:
         : CCompressionStreamProcessor(
              new CLZODecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
-
-    /// @deprecated 
-    ///   Use CLZOStreamDecompressor() constructor
-    ///   without block size parameter, that can be set separately if necessary.
-    NCBI_DEPRECATED_CTOR(CLZOStreamDecompressor(
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
-        size_t                     blocksize,
-        CLZOCompression::TLZOFlags flags
-    ));
 
     /// Conventional constructor
     CLZOStreamDecompressor(CLZOCompression::TLZOFlags flags = 0)
