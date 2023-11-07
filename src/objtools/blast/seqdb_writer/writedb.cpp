@@ -55,7 +55,8 @@ CWriteDB::CWriteDB(const string       & dbname,
                    bool                 use_gi_mask,
                    EBlastDbVersion      dbver,
                    bool                 limit_defline,
-                   Uint8			    oid_masks)
+                   Uint8			    oid_masks,
+                   bool                 scan_bioseq_4_cfastareader_usrobj)
     : m_Impl(0)
 {
     m_Impl = new CWriteDB_Impl(dbname,
@@ -126,9 +127,10 @@ void CWriteDB::SetMaxVolumeLetters(Uint8 sz)
 
 CRef<CBlast_def_line_set>
 CWriteDB::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
-                                bool long_ids)
+                                bool long_ids,
+                                bool scan_bioseq_4_cfastareader_usrobj)
 {
-    return CWriteDB_Impl::ExtractBioseqDeflines(bs, parse_ids, long_ids);
+    return CWriteDB_Impl::ExtractBioseqDeflines(bs, parse_ids, long_ids, scan_bioseq_4_cfastareader_usrobj);
 }
 
 void CWriteDB::SetMaskedLetters(const string & masked)
