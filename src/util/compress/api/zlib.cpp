@@ -121,24 +121,6 @@ CZipCompression::CZipCompression(ELevel level)
     return;
 }
 
-// @deprecated
-CZipCompression::CZipCompression(ELevel level,  int window_bits,
-                                 int mem_level, int strategy)
-    : CCompression(level)
-{
-    // Set advanced compression parameters
-    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
-    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
-    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
-
-    // Initialize the compressor stream structure
-    m_Stream = new z_stream;
-    if ( m_Stream ) {
-        memset(m_Stream, 0, sizeof(z_stream));
-    }
-    return;
-}
-
 
 CZipCompression::~CZipCompression()
 {
@@ -883,47 +865,6 @@ CZipCompressionFile::CZipCompressionFile(ELevel level)
     return;
 }
 
-// @deprecated
-CZipCompressionFile::CZipCompressionFile(
-    const string& file_name, EMode mode,
-    ELevel level, int window_bits, int mem_level, int strategy)
-    : CZipCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
-{
-    // For backward compatibility -- use gzip file format by default
-    SetFlags(GetFlags() | fGZip);
-
-    // Set advanced compression parameters
-    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
-    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
-    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
-
-    if ( !Open(file_name, mode) ) {
-        const string smode = (mode == eMode_Read) ? "reading" : "writing";
-        NCBI_THROW(CCompressionException, eCompressionFile, 
-                   "[CZipCompressionFile]  Cannot open file '" + file_name +
-                   "' for " + smode + ".");
-    }
-    return;
-}
-
-// @deprecated
-CZipCompressionFile::CZipCompressionFile(
-    ELevel level, int window_bits, int mem_level, int strategy)
-    : CZipCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
-{
-    // For backward compatibility -- use gzip file format by default
-    SetFlags(GetFlags() | fGZip);
-
-    // Set advanced compression parameters
-    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
-    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
-    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
-
-    return;
-}
-
 
 CZipCompressionFile::~CZipCompressionFile(void)
 {
@@ -1116,19 +1057,6 @@ CZipCompressor::CZipCompressor(ELevel level, TZipFlags flags)
       m_CRC32(0), m_NeedWriteHeader(true)
 {
     SetFlags(flags);
-}
-
-// @deprecated
-CZipCompressor::CZipCompressor(ELevel level,  int window_bits,
-                               int mem_level, int strategy, TZipFlags flags)
-    : CZipCompression(level),
-      m_CRC32(0), m_NeedWriteHeader(true)
-{
-    SetFlags(flags);
-    // Set advanced compression parameters
-    SetWindowBits  (( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
-    SetMemoryLevel (( mem_level == kZlibDefaultMemLevel ) ? GetMemoryLevelDefault() : mem_level);
-    SetStrategy    (( strategy == kZlibDefaultStrategy )  ? GetStrategyDefault()    : strategy);
 }
 
 
@@ -1365,17 +1293,6 @@ CZipDecompressor::CZipDecompressor(TZipFlags flags)
       m_NeedCheckHeader(true), m_IsGZ(false), m_SkipInput(0)
 {
     SetFlags(flags);
-}
-
-
-// @deprecated
-CZipDecompressor::CZipDecompressor(int window_bits, TZipFlags flags)
-    : CZipCompression(eLevel_Default),
-      m_NeedCheckHeader(true), m_IsGZ(false), m_SkipInput(0)
-{
-    SetFlags(flags);
-    // Set advanced compression parameters
-    SetWindowBits(( window_bits == kZlibDefaultWbits )  ? GetWindowBitsDefault()  : window_bits);
 }
 
 
@@ -1707,50 +1624,6 @@ CCompressionProcessor::EStatus CZipDecompressor::End(int abandon)
     }
     ERR_COMPRESS(71, FormatErrorMessage("CZipDecompressor::End", GetProcessedSize()));
     return eStatus_Error;
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// CZipStreamCompressor /  CZipStreamDecompressor -- deprecated constructors
-//
-
-
-// @deprecated
-CZipStreamCompressor::CZipStreamCompressor(
-        CZipCompression::ELevel    level,
-        streamsize                 in_bufsize,
-        streamsize                 out_bufsize,
-        int                        window_bits,
-        int                        mem_level,
-        int                        strategy ,
-        CZipCompression::TZipFlags flags
-        ) 
-        : CCompressionStreamProcessor(
-              new CZipCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
-{
-    // Set advanced parameters
-    CZipCompressor* c = GetCompressor();
-    c->SetWindowBits (( window_bits == kZlibDefaultWbits )  ? c->GetWindowBitsDefault()  : window_bits);
-    c->SetMemoryLevel(( mem_level == kZlibDefaultMemLevel ) ? c->GetMemoryLevelDefault() : mem_level);
-    c->SetStrategy   (( strategy == kZlibDefaultStrategy )  ? c->GetStrategyDefault()    : strategy);
-
-}
-
-// @deprecated
-CZipStreamDecompressor::CZipStreamDecompressor(
-    streamsize                 in_bufsize,
-    streamsize                 out_bufsize,
-    int                        window_bits,
-    CZipCompression::TZipFlags flags
-    )
-    : CCompressionStreamProcessor( 
-            new CZipDecompressor(flags), eDelete, in_bufsize, out_bufsize)
-{
-    // Set advanced parameters
-    CZipDecompressor* d = GetDecompressor();
-    d->SetWindowBits(( window_bits == kZlibDefaultWbits ) ? d->GetWindowBitsDefault() : window_bits);
 }
 
 
