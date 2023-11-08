@@ -1967,29 +1967,6 @@ void CFlatGatherer::x_CollectSourceDescriptors
 }
 
 
-void CFlatGatherer::x_CollectSourceFeatures
-(const CBioseq_Handle& bh,
- const TRange& range,
- CBioseqContext& ctx,
- TSourceFeatSet& srcs) const
-{
-    SAnnotSelector as;
-    as.SetFeatType(CSeqFeatData::e_Biosrc)
-      .SetOverlapIntervals()
-      .SetResolveDepth(1) // in case segmented
-      .SetNoMapping(false)
-      .SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
-
-    for ( CFeat_CI fi(bh, range, as); fi; ++fi ) {
-        TSeqPos start = fi->GetLocation().GetTotalRange().GetFrom();
-        TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
-        if ( start >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
-            CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx, m_Feat_Tree));
-            srcs.push_back(sf);
-        }
-    }
-}
-
 /* moved to sequence:: (RW-1446)
 static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
     const CBioseq_Handle& bsh
@@ -3528,6 +3505,52 @@ CRef<CSeq_loc_Mapper> s_MakeSliceMapper(const CSeq_loc& loc, CBioseqContext& ctx
     return slice_mapper;
 }
 
+
+void CFlatGatherer::x_CollectSourceFeatures
+(const CBioseq_Handle& bh,
+ const TRange& range,
+ CBioseqContext& ctx,
+ TSourceFeatSet& srcs) const
+{
+    SAnnotSelector as;
+    as.SetFeatType(CSeqFeatData::e_Biosrc)
+      .SetOverlapIntervals()
+      .SetResolveDepth(1) // in case segmented
+      .SetNoMapping(false)
+      .SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
+
+    bool isWhole = ctx.GetLocation().IsWhole();
+    
+    CSeq_loc loc;
+    if (ctx.GetMasterLocation()) {
+        loc.Assign(*ctx.GetMasterLocation());
+    } else {
+        loc.Assign(*ctx.GetHandle().GetRangeSeq_loc(0, 0));
+    }
+    CScope& scope = ctx.GetScope();
+    CRef<CSeq_loc_Mapper> slice_mapper = s_MakeSliceMapper(loc, ctx);
+
+    for ( CFeat_CI fi(bh, range, as); fi; ++fi ) {
+        TSeqPos start = fi->GetLocation().GetTotalRange().GetFrom();
+        TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
+        if ( start >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
+            if (isWhole) {
+                CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx, m_Feat_Tree));
+                srcs.push_back(sf);
+                continue;
+            }
+            CConstRef<CSeq_loc> feat_loc(&fi->GetLocation());
+            // Map the feat_loc if we're using a slice (the "-from" and "-to" command-line options)
+            CRange<TSeqPos> range = loc.GetTotalRange();
+            const CSeq_feat& ft = fi->GetMappedFeature();
+            CMappedFeat mapped_feat = s_GetTrimmedMappedFeat(ft, range, scope);
+            feat_loc.Reset( slice_mapper->Map( mapped_feat.GetLocation() ) );
+            feat_loc = s_NormalizeNullsBetween( feat_loc );
+            CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx, m_Feat_Tree, feat_loc.GetPointer()));
+            srcs.push_back(sf);
+        }
+    }
+}
 
 void CFlatGatherer::x_GatherFeaturesOnRangeIdx
 (const CSeq_loc& loc,
