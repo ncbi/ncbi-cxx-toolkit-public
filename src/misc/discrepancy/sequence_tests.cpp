@@ -1895,7 +1895,7 @@ DISCREPANCY_SUMMARIZE(ALL_SEQS_CIRCULAR)
 
 static bool SuspiciousId(const string& s)
 {
-    static CRegexp regexp("chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bNW_|\\bNZ_|\\bNM_|\\bNC_|\\bAC_|CP\\d\\d\\d\\d\\d\\d|X|Y|Z|W|MT|PLTD|CHL", CRegexp::fCompile_ignore_case);
+    static CRegexp regexp("chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bNW_|\\bNZ_|\\bNM_|\\bNC_|\\bAC_|CP\\d\\d\\d\\d\\d\\d|^X$|^Y$|^Z$|^W$|^MT$|^PLTD$|^CHL$", CRegexp::fCompile_ignore_case);
     return regexp.IsMatch(s);
 }
 
