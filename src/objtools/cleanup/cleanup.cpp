@@ -4141,7 +4141,7 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
         { "#8710",    "delta"  },
         { "#64257",   "fi"     },
         { "#64258",   "fl"     },
-        { "#65292",   ","      }
+        { "#65292",   ","      },
     };
 
     // Collisions should be rare enough that the CFastMutex is
@@ -4153,13 +4153,10 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
         // the searcher at the same time.
         static CFastMutex searcher_mtx;
         CFastMutexGuard searcher_mtx_guard( searcher_mtx );
-        if( ! searcher.IsPrimed() ) {
-            for( int idx = 0;
-                idx < sizeof(transformations)/sizeof(transformations[0]);
-                ++idx )
-            {
+        if (! searcher.IsPrimed()) {
+            for (unsigned idx = 0; idx < ArraySize(transformations); ++idx) {
                 // match type is index into transformations array
-                searcher.AddWord( transformations[idx].src_word, idx );
+                searcher.AddWord(transformations[idx].src_word, idx);
             }
             searcher.Prime();
         }
