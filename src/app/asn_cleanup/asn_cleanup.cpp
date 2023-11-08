@@ -196,7 +196,8 @@ void CCleanupApp::Init()
 
     // batch processing
     {
-        arg_desc->AddFlag("batch", "Process NCBI release file");
+        arg_desc->AddFlag("batch", "Process NCBI release file (Deprecated)",
+            CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     }
 
     // big file processing
