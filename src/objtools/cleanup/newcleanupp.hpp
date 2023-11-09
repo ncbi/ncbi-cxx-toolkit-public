@@ -319,7 +319,6 @@ private:
 
     void MoveDbxrefs(CSeq_feat& sf);
     void MoveStandardName(CSeq_feat& sf);
-    void CreatePubFromFeat(CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
     void ResynchPeptidePartials( CBioseq& seq );
     void x_SetPartialsForProtein(CBioseq& prot, bool partial5, bool partial3, bool feat_partial);
@@ -463,13 +462,11 @@ private:
     // string cleanup funcs
     void x_CleanupStringMarkChanged( std::string &str );
     void x_CleanupStringJunkMarkChanged( std::string &str );
-    void x_CleanupVisStringMarkChanged( std::string &str );
     void x_ConvertDoubleQuotesMarkChanged( std::string &str );
     bool x_CompressSpaces( string &str );
     void x_CompressStringSpacesMarkChanged( std::string &str );
     void x_StripSpacesMarkChanged( std::string& str );
     void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
-    void X_CommentTildeFixes( std::string & str );
     void x_TruncateSpacesMarkChanged( std::string & str );
     void x_TrimInternalSemicolonsMarkChanged( std::string & str );
 
