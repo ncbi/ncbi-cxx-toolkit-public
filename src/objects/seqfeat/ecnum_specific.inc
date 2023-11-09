@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Sep 14 15:30:29 EDT 2023
-; formally
+/* time_t value corresponding to Thu Nov  9 13:25:26 EST 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1694719829UL;
+static const unsigned long kECNum_specific_Timestamp = 1699554326UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -65,7 +64,6 @@ static const char* const kECNum_specific[] = {
     "1.1.1.29\tglycerate dehydrogenase",
     "1.1.1.30\t3-hydroxybutyrate dehydrogenase",
     "1.1.1.31\t3-hydroxyisobutyrate dehydrogenase",
-    "1.1.1.32\tmevaldate reductase",
     "1.1.1.33\tmevaldate reductase (NADPH)",
     "1.1.1.34\thydroxymethylglutaryl-CoA reductase (NADPH)",
     "1.1.1.35\t3-hydroxyacyl-CoA dehydrogenase",
@@ -902,7 +900,7 @@ static const char* const kECNum_specific[] = {
     "1.4.1.28\tsecondary-alkyl amine dehydrogenase [NAD(P)(+)]",
     "1.4.2.1\tglycine dehydrogenase (cytochrome)",
     "1.4.2.2\tnicotine dehydrogenase",
-    "1.4.2.3\tTEMPLATE: pseudooxynicotine oxidase",
+    "1.4.2.3\tpseudooxynicotine oxidase",
     "1.4.3.1\tD-aspartate oxidase",
     "1.4.3.2\tL-amino-acid oxidase",
     "1.4.3.3\tD-amino-acid oxidase",
@@ -1018,7 +1016,7 @@ static const char* const kECNum_specific[] = {
     "1.5.98.2\t5,10-methylenetetrahydromethanopterin reductase",
     "1.5.98.3\tcoenzyme F420:methanophenazine dehydrogenase",
     "1.5.99.3\tL-pipecolate dehydrogenase",
-    "1.5.99.4\tnicotine hydroxylase",
+    "1.5.99.4\tnicotine 6-hydroxylase",
     "1.5.99.5\tmethylglutamate dehydrogenase",
     "1.5.99.6\tspermidine dehydrogenase",
     "1.5.99.12\tcytokinin dehydrogenase",
