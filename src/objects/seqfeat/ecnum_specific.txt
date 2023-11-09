@@ -28,7 +28,6 @@
 1.1.1.29	glycerate dehydrogenase
 1.1.1.30	3-hydroxybutyrate dehydrogenase
 1.1.1.31	3-hydroxyisobutyrate dehydrogenase
-1.1.1.32	mevaldate reductase
 1.1.1.33	mevaldate reductase (NADPH)
 1.1.1.34	hydroxymethylglutaryl-CoA reductase (NADPH)
 1.1.1.35	3-hydroxyacyl-CoA dehydrogenase
@@ -865,7 +864,7 @@
 1.4.1.28	secondary-alkyl amine dehydrogenase [NAD(P)(+)]
 1.4.2.1	glycine dehydrogenase (cytochrome)
 1.4.2.2	nicotine dehydrogenase
-1.4.2.3	TEMPLATE: pseudooxynicotine oxidase
+1.4.2.3	pseudooxynicotine oxidase
 1.4.3.1	D-aspartate oxidase
 1.4.3.2	L-amino-acid oxidase
 1.4.3.3	D-amino-acid oxidase
@@ -981,7 +980,7 @@
 1.5.98.2	5,10-methylenetetrahydromethanopterin reductase
 1.5.98.3	coenzyme F420:methanophenazine dehydrogenase
 1.5.99.3	L-pipecolate dehydrogenase
-1.5.99.4	nicotine hydroxylase
+1.5.99.4	nicotine 6-hydroxylase
 1.5.99.5	methylglutamate dehydrogenase
 1.5.99.6	spermidine dehydrogenase
 1.5.99.12	cytokinin dehydrogenase
