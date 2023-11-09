@@ -531,10 +531,7 @@ void CNewCleanup_imp::EnteringEntry (
 #endif
 }
 
-void CNewCleanup_imp::LeavingEntry (
-    CSeq_entry& se
-)
-
+void CNewCleanup_imp::LeavingEntry(CSeq_entry&)
 {
 #if 0
     m_SeqEntryInfoStack.pop();
@@ -556,30 +553,6 @@ void CNewCleanup_imp::x_RemoveSpacesBetweenTildesMarkChanged( std::string & str 
     if( RemoveSpacesBetweenTildes(str) ) {
         ChangeMade(CCleanupChange::eTrimSpaces);
     }
-}
-
-void CNewCleanup_imp::X_CommentTildeFixes(std::string & str)
-{
-/*
-#ifndef NCBI_OS_MSWIN
-    string orig = str;
-    NStr::ReplaceInPlace(str, "based on SOLiD3 (Applied Biosystems)~~", "based on SOLiD3 (Applied Biosystems)", false, false);
-    NStr::ReplaceInPlace(str, "Biological resourse center, NITE (NRBC)~~", "Biological resourse center, NITE (NRBC)", false, false);
-    NStr::ReplaceInPlace(str, "developmental01.html~~", "developmental01.html", false, false);
-    NStr::ReplaceInPlace(str, "http://bionano.toyo.ac.jp/~~", "http://bionano.toyo.ac.jp/", false, false);
-    NStr::ReplaceInPlace(str, "http://dictycdb1.biol.tsukuba.ac.jp/acytodb/~~", "http://dictycdb1.biol.tsukuba.ac.jp/acytodb/", false, false);
-    NStr::ReplaceInPlace(str, "http://egg.umh.es~~", "http://egg.umh.es", false, false);
-    NStr::ReplaceInPlace(str, "http://www.aist.go.jp/~~", "http://www.aist.go.jp/", false, false);
-    NStr::ReplaceInPlace(str, "http://www.bio.nite.go.jp/~~", "http://www.bio.nite.go.jp/", false, false);
-    NStr::ReplaceInPlace(str, "http://www.bio.nite.go.jp/ngac/e/~~", "http://www.bio.nite.go.jp/ngac/e/", false, false);
-    NStr::ReplaceInPlace(str, "http://www.brs.kyushu-u.ac.jp/~fcmic/~~", "http://www.brs.kyushu-u.ac.jp/~fcmic/", false, false);
-    NStr::ReplaceInPlace(str, "http://www.miyazaki-u.ac.jp/ir/english/index.html~~", "http://www.miyazaki-u.ac.jp/ir/english/index.html", false, false);
-    NStr::ReplaceInPlace(str, "URL:http://www.bio.nite.go.jp/ngac/e/~~", "URL:http://www.bio.nite.go.jp/ngac/e/", false, false);
-    if (!NStr::Equal(orig, str)) {
-        ChangeMade(CCleanupChange::eTrimSpaces);
-    }
-#endif //NCBI_OS_MSWIN
-*/
 }
 
 void CNewCleanup_imp::x_TruncateSpacesMarkChanged( std::string & str )
@@ -636,12 +609,12 @@ static void s_ScanWhilePossibleNPSet(const CBioseq_set& bioseqSet,
                 if (pSubEntry->IsSeq()) {
                     s_IncrementSeqCount(pSubEntry->GetSeq(), num_nucs, num_prots);
                 } else {
-                    const auto& bioseqSet = pSubEntry->GetSet();
-                    if (!s_IsValidNPSubset(bioseqSet)) {
+                    const auto& bioseqSet2 = pSubEntry->GetSet();
+                    if (! s_IsValidNPSubset(bioseqSet2)) {
                         hasInvalidSubset = true;
                         return;
                     }
-                    s_ScanWhilePossibleNPSet(bioseqSet, num_nucs, num_prots, hasInvalidSubset);     
+                    s_ScanWhilePossibleNPSet(bioseqSet2, num_nucs, num_prots, hasInvalidSubset);     
                 }  
                 if (num_nucs > 1) {
                     return;
@@ -2234,10 +2207,10 @@ void CNewCleanup_imp::DbtagBC (
     CObject_id& oid = GET_MUTABLE (dbtag, Tag);
 
     if (FIELD_IS (oid, Id)) {
-        const string& db = dbtag.GetDb();
-        if (NStr::EqualNocase (db, "HGNC") || NStr::EqualNocase (db, "VGNC") || NStr::EqualNocase (db, "MGI") ) {
+        const string& db2 = dbtag.GetDb();
+        if (NStr::EqualNocase(db2, "HGNC") || NStr::EqualNocase(db2, "VGNC") || NStr::EqualNocase(db2, "MGI") ) {
             int val = dbtag.GetTag().GetId();
-            string str = db + ":" + NStr::IntToString(val);
+            string str = db2 + ":" + NStr::IntToString(val);
             dbtag.SetTag().SetStr(str);
             ChangeMade(CCleanupChange::eChangeDbxrefs);
         }
@@ -3517,9 +3490,9 @@ static bool s_IsCompoundRptTypeValue(
 
 static
 void s_ExpandThisQual(
-    CSeq_feat::TQual& quals,        // the list of CGb_qual's.
+    CSeq_feat::TQual& /*quals*/,    // the list of CGb_qual's.
     CSeq_feat::TQual::iterator& it, // points to the one qual we might expand.
-    CSeq_feat::TQual& new_quals )    // new quals that will need to be inserted
+    CSeq_feat::TQual& new_quals)    // new quals that will need to be inserted
 //
 //  Rules for "rpt_type" qualifiers (as of 2006-03-07):
 //
@@ -4233,7 +4206,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
 }
 
 
-CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& standard_name)
+CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_feat&, CRNA_ref&, const string&)
 {
     return eAction_Nothing;
 }
@@ -5843,7 +5816,7 @@ void CNewCleanup_imp::x_RemoveFlankingQuotes( string &val )
     }
     // holds the first and last pos that we will keep
     // (have to use "ints" since might be negative)
-    int first_pos = 0;
+    size_t first_pos = 0;
     size_t last_pos = ( val.length() - 1 );
 
     // move inwards until there are no more quotes to trim
@@ -6579,12 +6552,11 @@ void CNewCleanup_imp::GeneFeatBC (
         while (xr_itr != seq_feat.SetXref().end()) {
             CSeqFeatXref& sfx = **xr_itr;
             if (sfx.IsSetData() && sfx.GetData().IsGene()) {
-                CGene_ref& gene_ref = sfx.SetData().SetGene();
-                if (s_CopyDbToFeat(gene_ref, seq_feat)) {
+                CGene_ref& gene_ref2 = sfx.SetData().SetGene();
+                if (s_CopyDbToFeat(gene_ref2, seq_feat)) {
                     ChangeMade(CCleanupChange::eChangeDbxrefs);
                 }
-
-                if (s_IsEmptyGeneRef(gene_ref)) {
+                if (s_IsEmptyGeneRef(gene_ref2)) {
                     xr_itr = seq_feat.SetXref().erase(xr_itr);
                     ChangeMade(CCleanupChange::eChangeDbxrefs);
                     continue;
@@ -8298,7 +8270,7 @@ void s_CopyProtXrefToProtFeat( CProt_ref &prot_ref, CProt_ref &cds_prot_ref )
     }
 }
 
-void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat)
+void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion&, CSeq_feat& seqfeat)
 {
     if( !seqfeat.IsSetXref() || ! seqfeat.IsSetProduct() ) {
         return;
@@ -11313,11 +11285,11 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& set)
                 if (seh && s_HasRefSeqPGAPStructuredComment(seh)) {
                     continue;
                 }
-                auto& set = (*it)->SetSet();
-                auto& dset = set.SetDescr();
-                x_MoveNpPub(set, dset);
+                auto& set2 = (*it)->SetSet();
+                auto& dset = set2.SetDescr();
+                x_MoveNpPub(set2, dset);
                 if (dset.Set().empty()) {
-                    set.ResetDescr();
+                    set2.ResetDescr();
                 }
             }
         }
@@ -11910,11 +11882,6 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
     if (sf.GetQual().empty()) {
         sf.ResetQual();
     }
-}
-
-
-void CNewCleanup_imp::CreatePubFromFeat(CSeq_feat& feat)
-{
 }
 
 
