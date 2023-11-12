@@ -81,6 +81,7 @@ struct SBase : TParams
     SBase(const SPsgCgiEntries& entries, TInitArgs&&... init_args) :
         TParams{
             GetService(),
+            CPSG_Request::eDefaultFlags,
             SPSG_UserArgs(),
             forward<TInitArgs>(init_args)...
         }
@@ -176,6 +177,7 @@ struct SRequestBuilder::SReader<SPsgCgiEntries>
     auto GetNucleotide() const { return input.Get("nucleotide", [](const auto& v) { return CPSG_Request_IpgResolve::TNucleotide(v); }, null); }
     auto GetSNPScaleLimit() const { return objects::CSeq_id::GetSNPScaleLimit_Value(input.GetString("snp-scale-limit")); }
     auto GetAbsPathRef() const { NCBI_THROW(CPSG_Exception, eParameterMissing, "request cannot be empty"); return string(); } // Imitating unknown request
+    void SetRequestFlags(shared_ptr<CPSG_Request> request) const;
     SPSG_UserArgs GetUserArgs() const { return NStr::URLDecode(input.GetString("user-args")); }
 };
 
@@ -220,6 +222,13 @@ void SRequestBuilder::SReader<SPsgCgiEntries>::ForEachTSE(TExclude exclude) cons
 
     for (const auto& blob_id : blob_ids) {
         exclude(blob_id);
+    }
+}
+
+void SRequestBuilder::SReader<SPsgCgiEntries>::SetRequestFlags(shared_ptr<CPSG_Request> request) const
+{
+    if (input.Has("include-hup")) {
+        request->SetFlags(CPSG_Request::fIncludeHUP);
     }
 }
 
