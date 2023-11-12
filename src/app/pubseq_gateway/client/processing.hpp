@@ -159,12 +159,14 @@ private:
 struct SParams
 {
     const string service;
+    const CPSG_Request::TFlags request_flags;
     const SPSG_UserArgs user_args;
 
     static bool verbose;
 
-    SParams(string s, SPSG_UserArgs ua) :
+    SParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua) :
         service(move(s)),
+        request_flags(rf),
         user_args(move(ua))
     {}
 };
@@ -187,8 +189,8 @@ struct SOneRequestParams : SParams
     SLatency latency;
     SDataOnly data_only;
 
-    SOneRequestParams(string s, SPSG_UserArgs ua, CLogLatencies::EWhich lw, bool ld, bool de, bool dm, ESerialDataFormat df) :
-        SParams(move(s), move(ua)),
+    SOneRequestParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, CLogLatencies::EWhich lw, bool ld, bool de, bool dm, ESerialDataFormat df) :
+        SParams(move(s), rf, move(ua)),
         latency{lw, ld},
         data_only{de, dm, df}
     {}
@@ -201,8 +203,8 @@ struct SParallelProcessingParams : SParams
     const bool pipe;
     const bool server;
 
-    SParallelProcessingParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv) :
-        SParams(move(s), move(ua)),
+    SParallelProcessingParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv) :
+        SParams(move(s), rf, move(ua)),
         rate(r),
         worker_threads(wt),
         pipe(p),
@@ -220,8 +222,8 @@ struct SResolveParams
 
 struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
 {
-    SBatchResolveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, SResolveParams resolve_params) :
-        SParallelProcessingParams(move(s), move(ua), r, wt, p, srv),
+    SBatchResolveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, SResolveParams resolve_params) :
+        SParallelProcessingParams(move(s), rf, move(ua), r, wt, p, srv),
         SResolveParams(move(resolve_params))
     {}
 };
@@ -235,8 +237,8 @@ struct SInteractiveParams : SParallelProcessingParams
     const bool echo;
     const bool testing;
 
-    SInteractiveParams(string s, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
-        SParallelProcessingParams(GetService(move(s), os), move(ua), r, wt, p, srv),
+    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
+        SParallelProcessingParams(GetService(move(s), os), rf, move(ua), r, wt, p, srv),
         data_limit(dl),
         preview_size(ps),
         echo(e),
@@ -253,8 +255,8 @@ struct SPerformanceParams : SParams
     const bool local_queue;
     const bool report_immediately;
 
-    SPerformanceParams(string s, SPSG_UserArgs ua, size_t ut, double d, bool lq, bool ri) :
-        SParams(move(s), move(ua)),
+    SPerformanceParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, size_t ut, double d, bool lq, bool ri) :
+        SParams(move(s), rf, move(ua)),
         user_threads(ut),
         delay(d),
         local_queue(lq),
@@ -425,6 +427,7 @@ struct SRequestBuilder::SReader<CJson_ConstObject>
     auto GetNucleotide() const { return input.has("nucleotide") ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].GetValue().GetString()) : null; }
     auto GetSNPScaleLimit() const { return input.has("snp_scale_limit") ? objects::CSeq_id::GetSNPScaleLimit_Value(input["snp_scale_limit"].GetValue().GetString()) : CPSG_Request_NamedAnnotInfo::ESNPScaleLimit::eSNPScaleLimit_Default; }
     auto GetAbsPathRef() const { return input["abs_path_ref"].GetValue().GetString(); }
+    void SetRequestFlags(shared_ptr<CPSG_Request> request) const;
     SPSG_UserArgs GetUserArgs() const { return input.has("user_args") ? input["user_args"].GetValue().GetString() : SPSG_UserArgs(); }
 
 private:
@@ -493,6 +496,7 @@ shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args
 {
     SReader<TInput> reader(input);
     auto rv = SImpl<TRequest>(forward<TArgs>(args)...).Build(reader);
+    reader.SetRequestFlags(rv);
     rv->SetUserArgs(reader.GetUserArgs());
     return rv;
 }

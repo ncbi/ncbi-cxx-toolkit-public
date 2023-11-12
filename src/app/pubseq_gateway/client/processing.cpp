@@ -1140,6 +1140,7 @@ CParallelProcessing<TParams>::CParallelProcessing(const TParams& params) :
     for (int n = params.worker_threads; n > 0; --n) {
         m_PsgQueues.emplace_back(params.service, item_complete, reply_complete, new_item);
         auto& queue = m_PsgQueues.back();
+        queue.SetRequestFlags(params.request_flags);
         queue.SetUserArgs(params.user_args);
         m_Threads.emplace_back(&CPSG_EventLoop::Run, ref(queue), CDeadline::eInfinite);
         m_Threads.emplace_back(&SImpl::Submitter, &m_Impl, ref(queue));
@@ -1317,6 +1318,7 @@ int CProcessing::Performance(const SPerformanceParams& params)
 
     for (size_t i = 0; i < (params.local_queue ? params.user_threads : 1); ++i) {
         queues.emplace_back(params.service);
+        queues.back().SetRequestFlags(params.request_flags);
         queues.back().SetUserArgs(params.user_args);
     }
 
@@ -1629,6 +1631,22 @@ void SRequestBuilder::SReader<CJson_ConstObject>::ForEachTSE(TExclude exclude) c
     }
 }
 
+void SRequestBuilder::SReader<CJson_ConstObject>::SetRequestFlags(shared_ptr<CPSG_Request> request) const
+{
+    if (!input.has("request_flags")) return;
+
+    for (const auto& request_flag : input["request_flags"].GetArray()) {
+        const auto value = request_flag.GetValue().GetString();
+
+        if (value == "exclude-hup") {
+            request->SetFlags(CPSG_Request::fExcludeHUP);
+
+        } else if (value == "include-hup") {
+            request->SetFlags(CPSG_Request::fIncludeHUP);
+        }
+    }
+}
+
 const initializer_list<SDataFlag> kDataFlags =
 {
     { "no-tse",    "Return only the info",                                  CPSG_Request_Biodata::eNoTSE    },
@@ -1817,6 +1835,18 @@ CJson_Document CProcessing::RequestSchema()
                 }
             }
         },
+        "request_flags": {
+            "$id": "#request_flags",
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": [
+                    "exclude-hup",
+                    "include-hup"
+                ]
+            },
+            "uniqueItems": true
+        },
         "biodata": {
             "$id": "#biodata",
             "type": "object",
@@ -1852,6 +1882,9 @@ CJson_Document CProcessing::RequestSchema()
                         },
                         "context": {
                             "$ref": "#/definitions/context"
+                        },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
                         },
                         "user_args": {
                             "type": "string"
@@ -1895,6 +1928,9 @@ CJson_Document CProcessing::RequestSchema()
                         },
                         "context": {
                             "$ref": "#/definitions/context"
+                        },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
                         },
                         "user_args": {
                             "type": "string"
@@ -1944,6 +1980,9 @@ CJson_Document CProcessing::RequestSchema()
                         },
                         "context": {
                             "$ref": "#/definitions/context"
+                        },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
                         },
                         "user_args": {
                             "type": "string"
@@ -2000,6 +2039,9 @@ CJson_Document CProcessing::RequestSchema()
                         "context": {
                             "$ref": "#/definitions/context"
                         },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
+                        },
                         "user_args": {
                             "type": "string"
                         }
@@ -2052,6 +2094,9 @@ CJson_Document CProcessing::RequestSchema()
                         "context": {
                             "$ref": "#/definitions/context"
                         },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
+                        },
                         "user_args": {
                             "type": "string"
                         }
@@ -2097,6 +2142,9 @@ CJson_Document CProcessing::RequestSchema()
                         },
                         "context": {
                             "$ref": "#/definitions/context"
+                        },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
                         },
                         "user_args": {
                             "type": "string"
@@ -2151,6 +2199,9 @@ CJson_Document CProcessing::RequestSchema()
                         },
                         "context": {
                             "$ref": "#/definitions/context"
+                        },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
                         },
                         "user_args": {
                             "type": "string"

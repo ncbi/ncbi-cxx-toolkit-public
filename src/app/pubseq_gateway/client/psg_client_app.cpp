@@ -181,6 +181,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
+    arg_desc.AddFlag("include-hup", "Include HUP data");
     arg_desc.AddFlag("https", "Enable HTTPS");
     s_AddLatencyOptions(arg_desc);
     arg_desc.AddFlag("verbose", "Verbose output");
@@ -357,6 +358,7 @@ struct SBase : TParams
     SBase(const CArgs& args, TInitArgs&&... init_args) :
         TParams{
             args["service"].AsString(),
+            args["include-hup"].HasValue() ? CPSG_Request::fIncludeHUP : CPSG_Request::eDefaultFlags,
             args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs(),
             forward<TInitArgs>(init_args)...
         }
@@ -499,6 +501,7 @@ struct SRequestBuilder::SReader<CArgs>
     auto GetIpg() const { return input["ipg"].HasValue() ? input["ipg"].AsInt8() : 0; }
     auto GetNucleotide() const { return input["nucleotide"].HasValue() ? CPSG_Request_IpgResolve::TNucleotide(input["nucleotide"].AsString()) : null; }
     auto GetSNPScaleLimit() const { return input["snp-scale-limit"].HasValue() ? objects::CSeq_id::GetSNPScaleLimit_Value(input["snp-scale-limit"].AsString()) : CPSG_Request_NamedAnnotInfo::ESNPScaleLimit::eSNPScaleLimit_Default; }
+    void SetRequestFlags(shared_ptr<CPSG_Request> request) const;
     SPSG_UserArgs GetUserArgs() const { return input["user-args"].HasValue() ? input["user-args"].AsString() : SPSG_UserArgs(); }
 };
 
@@ -546,6 +549,13 @@ void SRequestBuilder::SReader<CArgs>::ForEachTSE(TExclude exclude) const
 
     for (const auto& blob_id : blob_ids) {
         exclude(blob_id);
+    }
+}
+
+void SRequestBuilder::SReader<CArgs>::SetRequestFlags(shared_ptr<CPSG_Request> request) const
+{
+    if (input["include-hup"].HasValue()) {
+        request->SetFlags(CPSG_Request::fIncludeHUP);
     }
 }
 

@@ -164,6 +164,7 @@
     },
     "flags": {
       "https": "Enable HTTPS",
+      "include-hup": "Include HUP data",
       "verbose": "Verbose output"
     }
   }
