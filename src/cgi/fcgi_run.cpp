@@ -162,6 +162,22 @@ extern "C" void SignalHandler(int)
 }
 
 
+struct SEnvSetter : private CNcbiEnvironment
+{
+    SEnvSetter()
+    {
+        Unset("HTTP_COOKIE");
+    }
+
+    void operator()(const string& name, const string& value)
+    {
+        if (name == "HTTP_COOKIE") {
+            Set(name, value);
+        }
+    }
+};
+
+
 bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 {
     // Reset the result (which is in fact an error counter here)
@@ -357,8 +373,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CRequestContext& rctx = CDiagContext::GetRequestContext();
             list<string> names;
             env.Enumerate(names);
+            SEnvSetter env_setter;
             ITERATE(list<string>, it, names) {
                 rctx.AddPassThroughProperty(*it, env.Get(*it));
+                env_setter(*it, env.Get(*it));
             }
 
             PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
