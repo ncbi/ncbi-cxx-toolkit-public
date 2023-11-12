@@ -124,6 +124,7 @@ struct CPSG_Queue::SImpl
     bool WaitForEvents(CDeadline deadline);
 
     bool RejectsRequests() const { return m_Service.ioc.RejectsRequests(); }
+    void SetRequestFlags(CPSG_Request::TFlags request_flags) { m_RequestFlags = request_flags; }
     void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgsBuilder.GetLock()->SetQueueArgs(move(user_args)); }
 
     static TApiLock GetApiLock() { return CService::GetMap(); }
@@ -150,6 +151,7 @@ private:
     string x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request);
 
     CService m_Service;
+    CPSG_Request::TFlags m_RequestFlags = CPSG_Request::eDefaultFlags;
     SThreadSafe<SPSG_UserArgsBuilder> m_UserArgsBuilder;
 };
 

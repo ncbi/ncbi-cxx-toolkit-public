@@ -932,11 +932,12 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue, stats);
     auto abs_path_ref = x_GetAbsPathRef(user_request);
+    const auto request_flags = r->m_Flags.IsNull() ? m_RequestFlags : r->m_Flags.GetValue();
     const auto& request_context = user_request->m_RequestContext;
 
     _ASSERT(request_context);
 
-    auto request = make_shared<SPSG_Request>(move(abs_path_ref), reply, request_context->Clone(), params);
+    auto request = make_shared<SPSG_Request>(move(abs_path_ref), request_flags, reply, request_context->Clone(), params);
 
     if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
         if (stats) stats->IncCounter(SPSG_Stats::eRequest, user_request->GetType());
@@ -1463,6 +1464,13 @@ bool CPSG_Queue::RejectsRequests() const
 {
     _ASSERT(m_Impl);
     return m_Impl->RejectsRequests();
+}
+
+
+void CPSG_Queue::SetRequestFlags(CPSG_Request::TFlags request_flags)
+{
+    _ASSERT(m_Impl);
+    m_Impl->SetRequestFlags(request_flags);
 }
 
 
