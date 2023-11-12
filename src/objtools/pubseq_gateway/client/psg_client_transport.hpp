@@ -231,8 +231,9 @@ struct SPSG_Params
     {}
 
     template <class TGet>
-    string GetCookie(TGet get)
+    string GetCookie(const CPSG_Request::TFlags& request_flags, TGet get)
     {
+        if (auto include_hup = request_flags & CPSG_Request::fIncludeHUP; !include_hup) return {};
         auto rv = auth_token.empty() ? get() : auth_token;
         return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::URLEncode(rv);
     }
@@ -497,12 +498,13 @@ struct SPSG_Request
     };
 
     const string full_path;
+    CPSG_Request::TFlags flags;
     shared_ptr<SPSG_Reply> reply;
     SContext context;
     SPSG_Submitter submitted_by;
     SPSG_Processor processed_by;
 
-    SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
+    SPSG_Request(string p, CPSG_Request::TFlags f, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
     enum EStateResult { eContinue, eStop, eRetry };
     EStateResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)

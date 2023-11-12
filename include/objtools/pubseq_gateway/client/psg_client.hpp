@@ -107,6 +107,14 @@ public:
         eIpgResolve,
     };
 
+    enum EFlags {
+        fExcludeHUP         = (0 << 0),
+        fIncludeHUP         = (1 << 0),
+        eDefaultFlags       = fExcludeHUP
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+    using TOptionalFlags = CNullable<TFlags>;
+
     /// Get the user-provided context
     template<typename TUserContext>
     shared_ptr<TUserContext> GetUserContext() const
@@ -123,6 +131,9 @@ public:
 
     // Get request ID
     string GetId() const { return x_GetId(); }
+
+    /// Set flags
+    void SetFlags(TOptionalFlags flags) { m_Flags = move(flags); }
 
     /// Set arbitrary URL arguments to add to this request.
     /// @code
@@ -149,6 +160,7 @@ private:
 
     shared_ptr<void> m_UserContext;
     CRef<CRequestContext> m_RequestContext;
+    TOptionalFlags m_Flags;
     SPSG_UserArgs m_UserArgs;
 
     friend class CPSG_Queue;
@@ -1199,6 +1211,10 @@ public:
     bool RejectsRequests() const;
 
 
+    /// Set request flags
+    void SetRequestFlags(CPSG_Request::TFlags request_flags);
+
+
     /// Set arbitrary URL arguments to add to every request.
     /// @code
     /// queue.SetUserArgs("param1=value1&param1=value2&param2=value3");
@@ -1331,6 +1347,7 @@ inline bool CPSG_EventLoop::Run(CDeadline deadline)
 }
 
 
+DECLARE_SAFE_FLAGS(CPSG_Request::EFlags);
 DECLARE_SAFE_FLAGS(CPSG_Request_Resolve::EIncludeInfo);
 
 END_NCBI_SCOPE

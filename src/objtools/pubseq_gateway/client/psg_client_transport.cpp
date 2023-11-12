@@ -730,8 +730,9 @@ shared_ptr<void> SPSG_Request::SContext::Set()
     return guard;
 }
 
-SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
+SPSG_Request::SPSG_Request(string p, CPSG_Request::TFlags f, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
     full_path(move(p)),
+    flags(f),
     reply(r),
     context(c),
     m_State(&SPSG_Request::StatePrefix),
@@ -1220,7 +1221,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
     const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
-    const auto& cookie = m_Params.GetCookie([&]() { return context.GetProperty("auth_token"); });
+    const auto& cookie = m_Params.GetCookie(req->flags, [&]() { return context.GetProperty("auth_token"); });
     const auto& client_ip = context.GetClientIP();
     auto headers_size = m_Headers.size();
 
