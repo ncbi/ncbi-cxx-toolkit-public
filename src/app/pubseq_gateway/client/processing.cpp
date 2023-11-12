@@ -1847,6 +1847,8 @@ CJson_Document CProcessing::RequestSchema()
             },
             "uniqueItems": true
         },
+    )REQUEST_SCHEMA"
+    R"REQUEST_SCHEMA(
         "biodata": {
             "$id": "#biodata",
             "type": "object",
