@@ -267,6 +267,19 @@ bool s_HaveVDBSNP()
 }
 
 
+
+static string s_HUPToken;
+
+bool s_HaveHUPToken()
+{
+    // check if HUP token is defined
+    if ( !s_HUPToken.empty() ) {
+        return true;
+    }
+    return false;
+}
+
+
 bool s_RelaxGpipeCheck(void)
 {
     return true;
@@ -1141,7 +1154,7 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     bool authorized;
     string user_name = CSystemInfo::GetUserName();
     if ( CGBDataLoader::IsUsingPSGLoader() ) {
-        authorized = false;
+        authorized = s_HaveHUPToken();
     }
     else if ( user_name == "vasilche" ) {
         authorized = true;
@@ -1164,8 +1177,9 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     string gb_main = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
     BOOST_REQUIRE_EQUAL(gb_main, "GBLOADER");
-    string gb_hup = CGBDataLoader::RegisterInObjectManager(*objmgr, CGBDataLoader::eIncludeHUP).GetLoader()->GetName();
-    BOOST_REQUIRE_EQUAL(gb_hup, "GBLOADER-HUP");
+    string gb_hup = CGBDataLoader::RegisterInObjectManager(*objmgr, CGBDataLoader::eIncludeHUP, s_HUPToken).GetLoader()->GetName();
+#define EXPECTED_LOADER_NAME "GBLOADER-HUP"
+    BOOST_CHECK_EQUAL(gb_hup.substr(0, strlen(EXPECTED_LOADER_NAME)), EXPECTED_LOADER_NAME);
 
     CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NT_077402");
     CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
@@ -2359,6 +2373,9 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
     arg_descrs->AddOptionalKey("id2-service", "ID2Service",
                                "Service name for ID2 connection.",
                                CArgDescriptions::eString);
+    arg_descrs->AddOptionalKey("HUP-token", "HUPToken",
+                               "Authorizatoin token for HUP access.",
+                               CArgDescriptions::eString);
 }
 
 
@@ -2376,6 +2393,9 @@ NCBITEST_INIT_TREE()
     }
     if ( args["id2-service"] ) {
         app->GetConfig().Set("genbank/id2", "service", args["id2-service"].AsString());
+    }
+    if ( args["HUP-token"] ) {
+        s_HUPToken = args["HUP-token"].AsString();
     }
     
     NCBITEST_DISABLE(CheckAll);
