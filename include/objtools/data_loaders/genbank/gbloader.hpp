@@ -70,7 +70,6 @@ class CReader;
 class CSeqref;
 class CReadDispatcher;
 class CGBInfoManager;
-class CReaderParams;
 
 // Parameter names used by loader factory
 
@@ -159,8 +158,7 @@ public:
                         const string& web_cookie = NcbiEmptyString)
         {
             m_HasHUPIncluded = include_hup;
-            if (include_hup && !web_cookie.empty())
-                m_WebCookie = web_cookie;
+            m_WebCookie = web_cookie;
         }
     bool HasHUPIncluded(void) const
         {
@@ -180,6 +178,13 @@ public:
     void SetPSGServiceName(const string& service_name)
     {
         m_PSGServiceName = service_name;
+    }
+
+    bool GetUsePSG() const;
+    void SetUsePSG(bool use_psg = true)
+    {
+        m_UsePSG = true;
+        m_UsePSGInitialized = true;
     }
 
     bool GetPSGNoSplit(void) const
@@ -211,14 +216,18 @@ private:
     CRef<CReader> m_ReaderPtr;
     const TParamTree* m_ParamTree;
     EPreopenConnection m_Preopen;
+    mutable bool m_UsePSGInitialized; // can be changed in GetUsePSG()
+    mutable bool m_UsePSG;
+    bool m_PSGNoSplit;
     bool m_HasHUPIncluded;
     string m_WebCookie;
     string m_LoaderName;
     string m_PSGServiceName;
-    bool m_PSGNoSplit;
+    CNullable<bool> m_EnableSNP;
+    CNullable<bool> m_EnableWGS;
+    CNullable<bool> m_EnableCDD;
 
     friend class CGBDataLoader_Native;
-    unique_ptr<CReaderParams> m_ReaderParams;
 };
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
@@ -271,13 +280,15 @@ public:
         EIncludeHUP     include_hup,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(EIncludeHUP     include_hup);
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         EIncludeHUP     include_hup,
         const string& web_cookie,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs(EIncludeHUP     include_hup);
+    static string GetLoaderNameFromArgs(EIncludeHUP     include_hup,
+                                        const string& web_cookie);
 
     // GBLoader with HUP data included.
     // The reader can be either pubseqos or pubseqos2.
@@ -288,6 +299,8 @@ public:
         EIncludeHUP     include_hup,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const string&   reader_name, // pubseqos or pubseqos2
+                                        EIncludeHUP     include_hup);
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string&   reader_name, // pubseqos or pubseqos2
@@ -296,7 +309,8 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const string&   reader_name, // pubseqos or pubseqos2
-                                        EIncludeHUP     include_hup);
+                                        EIncludeHUP     include_hup,
+                                        const string&   web_cookie);
 
     // Setup loader using param tree. If tree is null or failed to find params,
     // use environment or select default reader.
@@ -423,7 +437,7 @@ protected:
     CGBDataLoader(const string&     loader_name,
                   const CGBLoaderParams& params);
 
-    static void SetLoaderMethod(CGBLoaderParams& params);
+    static string x_GetLoaderMethod(const TParamTree* params);
 
     TExpirationTimeout      m_IdExpirationTimeout;
 
