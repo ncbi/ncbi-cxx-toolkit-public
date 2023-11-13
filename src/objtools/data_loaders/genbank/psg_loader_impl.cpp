@@ -1142,7 +1142,13 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     m_BioseqCache.reset(new CPSGBioseqCache(m_CacheLifespan, cache_max_size));
     m_AnnotCache.reset(new CPSGAnnotCache(m_CacheLifespan, cache_max_size));
     m_BlobMap.reset(new CPSGBlobMap(m_CacheLifespan, cache_max_size));
-    m_Queue = make_shared<CPSG_Queue>(service_name);
+
+    {{
+        //SPSG_Service::TFlags flags = params.HasHUPIncluded()? SPSG_Service::eDefault: SPSG_Service::fIncludeHUP;
+        // TODO: params.GetWebCookie()
+        //m_Queue = make_shared<CPSG_Queue>(SPSG_Service(service_name, flags));
+        m_Queue = make_shared<CPSG_Queue>(service_name);
+    }}
 
     if (TPSG_PrefetchCDD::GetDefault()) {
         m_CDDInfoCache.reset(new CPSGCDDInfoCache(m_CacheLifespan, cache_max_size));

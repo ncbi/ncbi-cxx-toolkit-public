@@ -50,22 +50,22 @@ class CReaderAllocatedConnection;
 struct SAnnotSelector;
 
 
-class NCBI_XREADER_EXPORT CReaderParams
+class CReaderParams
 {
 public:
-    CReaderParams(void) {}
-    ~CReaderParams(void) {}
-
     bool IsSetEnableSNP(void) const { return !m_EnableSNP.IsNull(); }
     bool GetEnableSNP(void) const { return m_EnableSNP.GetValue(); }
+    void SetEnableSNP(CNullable<bool> enable) { m_EnableSNP = enable; }
     void SetEnableSNP(bool enable) { m_EnableSNP = enable; }
 
     bool IsSetEnableWGS(void) const { return !m_EnableWGS.IsNull(); }
     bool GetEnableWGS(void) const { return m_EnableWGS.GetValue(); }
+    void SetEnableWGS(CNullable<bool> enable) { m_EnableWGS = enable; }
     void SetEnableWGS(bool enable) { m_EnableWGS = enable; }
 
     bool IsSetEnableCDD(void) const { return !m_EnableCDD.IsNull(); }
     bool GetEnableCDD(void) const { return m_EnableCDD.GetValue(); }
+    void SetEnableCDD(CNullable<bool> enable) { m_EnableCDD = enable; }
     void SetEnableCDD(bool enable) { m_EnableCDD = enable; }
 
 private:
