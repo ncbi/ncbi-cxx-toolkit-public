@@ -68,6 +68,8 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
+#include <util/md5.hpp>
+
 #include <algorithm>
 
 
@@ -89,99 +91,46 @@ CGBLoaderParams::CGBLoaderParams(void)
     : m_ReaderPtr(0),
       m_ParamTree(0),
       m_Preopen(ePreopenByConfig),
-      m_HasHUPIncluded(false),
+      m_UsePSGInitialized(false),
+      m_UsePSG(false),
       m_PSGNoSplit(false),
-      m_ReaderParams(new CReaderParams)
-
+      m_HasHUPIncluded(false)
 {
 }
 
 
 CGBLoaderParams::CGBLoaderParams(const string& reader_name)
-    : m_ReaderName(reader_name),
-      m_ReaderPtr(0),
-      m_ParamTree(0),
-      m_Preopen(ePreopenByConfig),
-      m_HasHUPIncluded(false),
-      m_PSGNoSplit(false),
-      m_ReaderParams(new CReaderParams)
+    : CGBLoaderParams()
 {
+    m_ReaderName = reader_name;
 }
 
 
 CGBLoaderParams::CGBLoaderParams(CReader* reader_ptr)
-    : m_ReaderPtr(reader_ptr),
-      m_ParamTree(0),
-      m_Preopen(ePreopenByConfig),
-      m_HasHUPIncluded(false),
-      m_PSGNoSplit(false),
-      m_ReaderParams(new CReaderParams)
+    : CGBLoaderParams()
 {
+    m_ReaderPtr = reader_ptr;
 }
 
 
 CGBLoaderParams::CGBLoaderParams(const TParamTree* param_tree)
-    : m_ReaderPtr(0),
-      m_ParamTree(param_tree),
-      m_Preopen(ePreopenByConfig),
-      m_HasHUPIncluded(false),
-      m_PSGNoSplit(false),
-      m_ReaderParams(new CReaderParams)
+    : CGBLoaderParams()
 {
+    m_ParamTree = param_tree;
 }
 
 
 CGBLoaderParams::CGBLoaderParams(EPreopenConnection preopen)
-    : m_ReaderPtr(0),
-      m_ParamTree(0),
-      m_Preopen(preopen),
-      m_HasHUPIncluded(false),
-      m_PSGNoSplit(false),
-      m_ReaderParams(new CReaderParams)
+    : CGBLoaderParams()
 {
+    m_Preopen = preopen;
 }
 
 
-CGBLoaderParams::~CGBLoaderParams(void)
-{
-}
+CGBLoaderParams::~CGBLoaderParams(void) = default;
 
-
-CGBLoaderParams::CGBLoaderParams(const CGBLoaderParams& params)
-    : m_ReaderName(params.m_ReaderName),
-      m_WriterName(params.m_WriterName),
-      m_LoaderMethod(params.m_LoaderMethod),
-      m_ReaderPtr(params.m_ReaderPtr),
-      m_ParamTree(params.m_ParamTree),
-      m_Preopen(params.m_Preopen),
-      m_HasHUPIncluded(params.m_HasHUPIncluded),
-      m_WebCookie(params.m_WebCookie),
-      m_LoaderName(params.m_LoaderName),
-      m_PSGServiceName(params.m_PSGServiceName),
-      m_PSGNoSplit(params.m_PSGNoSplit),
-      m_ReaderParams(new CReaderParams(*params.m_ReaderParams))
-{
-}
-
-
-CGBLoaderParams& CGBLoaderParams::operator=(const CGBLoaderParams& params)
-{
-    if ( this != &params ) {
-        m_ReaderName = params.m_ReaderName;
-        m_WriterName = params.m_WriterName;
-        m_LoaderMethod = params.m_LoaderMethod;
-        m_ReaderPtr = params.m_ReaderPtr;
-        m_ParamTree = params.m_ParamTree;
-        m_Preopen = params.m_Preopen;
-        m_HasHUPIncluded = params.m_HasHUPIncluded;
-        m_WebCookie = params.m_WebCookie;
-        m_LoaderName = params.m_LoaderName;
-        m_PSGServiceName = params.m_PSGServiceName;
-        m_PSGNoSplit = params.m_PSGNoSplit;
-        m_ReaderParams.reset(new CReaderParams(*params.m_ReaderParams));
-    }
-    return *this;
-}
+CGBLoaderParams::CGBLoaderParams(const CGBLoaderParams&) = default;
+CGBLoaderParams& CGBLoaderParams::operator=(const CGBLoaderParams&) = default;
 
 
 void CGBLoaderParams::SetReaderPtr(CReader* reader_ptr)
@@ -204,47 +153,47 @@ void CGBLoaderParams::SetParamTree(const TPluginManagerParamTree* param_tree)
 
 bool CGBLoaderParams::IsSetEnableSNP(void) const
 {
-    return m_ReaderParams->IsSetEnableSNP();
+    return !m_EnableSNP.IsNull();
 }
 
 bool CGBLoaderParams::GetEnableSNP(void) const
 {
-    return m_ReaderParams->GetEnableSNP();
+    return m_EnableSNP.GetValue();
 }
 
 void CGBLoaderParams::SetEnableSNP(bool enable)
 {
-    m_ReaderParams->SetEnableSNP(enable);
+    m_EnableSNP = enable;
 }
 
 bool CGBLoaderParams::IsSetEnableWGS(void) const
 {
-    return m_ReaderParams->IsSetEnableWGS();
+    return !m_EnableWGS.IsNull();
 }
 
 bool CGBLoaderParams::GetEnableWGS(void) const
 {
-    return m_ReaderParams->GetEnableWGS();
+    return m_EnableWGS.GetValue();
 }
 
 void CGBLoaderParams::SetEnableWGS(bool enable)
 {
-    m_ReaderParams->SetEnableWGS(enable);
+    m_EnableWGS = enable;
 }
 
 bool CGBLoaderParams::IsSetEnableCDD(void) const
 {
-    return m_ReaderParams->IsSetEnableCDD();
+    return !m_EnableCDD.IsNull();
 }
 
 bool CGBLoaderParams::GetEnableCDD(void) const
 {
-    return m_ReaderParams->GetEnableCDD();
+    return m_EnableCDD.GetValue();
 }
 
 void CGBLoaderParams::SetEnableCDD(bool enable)
 {
-    m_ReaderParams->SetEnableCDD(enable);
+    m_EnableCDD = enable;
 }
 
 
@@ -252,6 +201,120 @@ NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, "",
                   eParam_NoThread, GENBANK_LOADER_METHOD);
 typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
 
+#define NCBI_GBLOADER_PARAM_LOADER_PSG = "loader_psg"
+#define NCBI_PSG_READER_NAME "psg"
+
+
+string CGBDataLoader::x_GetLoaderMethod(const TParamTree* params)
+{
+    string method = GetParam(params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+    if ( method.empty() ) {
+        // try config first
+        method = TGenbankLoaderMethod::GetDefault();
+    }
+    return method;
+}
+
+
+static bool s_CheckPSGMethod(const string& loader_method)
+{
+    bool use_psg = false;
+    if ( NStr::FindNoCase(loader_method, NCBI_PSG_READER_NAME) != NPOS ) {
+        vector<string> str_list;
+        NStr::Split(loader_method, ";", str_list);
+        for (auto s : str_list) {
+            if ( NStr::EqualNocase(s, NCBI_PSG_READER_NAME) ) {
+#ifdef HAVE_PSG_LOADER
+                if (str_list.size() == 1) {
+                    use_psg = true;
+                    break;
+                }
+                // PSG method can not be combined with any other methods.
+                NCBI_THROW(CLoaderException, eBadConfig,
+                           "'PSG' loader method can not be combined with other methods: '" + loader_method + "'");
+#else
+                // PSG method is not available
+                NCBI_THROW(CLoaderException, eBadConfig,
+                           "'PSG' loader method is not available: '" + loader_method + "'");
+#endif
+            }
+        }
+    }
+    return use_psg;
+}    
+
+
+static bool s_GetDefaultUsePSG()
+{
+    static atomic<bool> initialized;
+    static atomic<bool> loader_psg;
+    if ( !initialized.load(memory_order_acquire) ) {
+        bool new_value = false;
+#ifdef HAVE_PSG_LOADER
+        if ( TGenbankLoaderPsg::GetDefault() ) {
+            new_value = true;
+        }
+#endif
+        if ( !new_value ) {
+            new_value = s_CheckPSGMethod(TGenbankLoaderMethod::GetDefault());
+        }
+        loader_psg.store(new_value, memory_order_relaxed);
+        initialized.store(true, memory_order_release);
+    }
+    return loader_psg.load(memory_order_relaxed);
+}
+
+
+static bool s_GetDefaultUsePSG(const CGBLoaderParams::TParamTree* param_tree)
+{
+    if ( param_tree ) {
+        if ( const CGBLoaderParams::TParamTree* gb_params = CGBDataLoader::GetLoaderParams(param_tree) ) {
+#ifdef HAVE_LOADER_PSG
+            auto loader_psg_param = CGBDataLoader::GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_PSG);
+            if ( !loader_psg_param.empty() ) {
+                try {
+                    return NStr::StringToBool(loader_psg_param);
+                }
+                catch (CStringException& ex) {
+                    NCBI_THROW_FMT(CConfigException, eInvalidParameter,
+                                   "Cannot init GenBank loader, incorrect parameter format: "
+                                   << NCBI_GBLOADER_PARAM_LOADER_PSG << " : " << loader_psg_param
+                                   << ". " << ex.what());
+                }
+            }
+#endif
+            string loader_method = CGBDataLoader::GetParam(gb_params, NCBI_GBLOADER_PARAM_LOADER_METHOD);
+            if ( !loader_method.empty() ) {
+                return s_CheckPSGMethod(loader_method);
+            }
+        }
+    }
+    return s_GetDefaultUsePSG();
+}
+
+
+bool CGBLoaderParams::GetUsePSG() const
+{
+    if ( m_UsePSGInitialized ) {
+        return m_UsePSG;
+    }
+    
+    string loader_method = GetLoaderMethod();
+    if (loader_method.empty()) {
+        loader_method = GetReaderName();
+    }
+    if (loader_method.empty()) {
+        // use default settings from config
+        m_UsePSG = s_GetDefaultUsePSG(GetParamTree());
+    }
+    else {
+        m_UsePSG = s_CheckPSGMethod(loader_method);
+    }
+    m_UsePSGInitialized = true;
+    return m_UsePSG;
+}
+
+/*
 void CGBDataLoader::SetLoaderMethod(CGBLoaderParams& params)
 {
     string loader_method = params.GetLoaderMethod();
@@ -298,7 +361,7 @@ void CGBDataLoader::SetLoaderMethod(CGBLoaderParams& params)
             "'PSG' loader method can not be combined with other methods: '" + loader_method + "'");
     }
 }
-
+*/
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
@@ -307,19 +370,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::TPriority  priority)
 {
     CGBLoaderParams params(reader_ptr);
-    SetLoaderMethod(params);
-
-    if (TGenbankLoaderPsg::GetDefault()) {
-#if defined(HAVE_PSG_LOADER)
-        return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
-#else
-        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
-        TRegisterLoaderInfo info;
-        info.Set(nullptr, false);
-        return info;
-#endif
-    }
-    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
+    return RegisterInObjectManager(om, params, is_default, priority);
 }
 
 
@@ -336,19 +387,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::TPriority  priority)
 {
     CGBLoaderParams params(reader_name);
-    SetLoaderMethod(params);
-
-    if (TGenbankLoaderPsg::GetDefault()) {
-#if defined(HAVE_PSG_LOADER)
-        return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
-#else
-        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
-        TRegisterLoaderInfo info;
-        info.Set(nullptr, false);
-        return info;
-#endif
-    }
-    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
+    return RegisterInObjectManager(om, params, is_default, priority);
 }
 
 
@@ -368,6 +407,10 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
                                    priority);
 }
 
+string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP include_hup)
+{
+    return GBLOADER_HUP_NAME;
+}
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
@@ -376,27 +419,18 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    CGBLoaderParams params("PUBSEQOS2:PUBSEQOS");
+    CGBLoaderParams params;
     params.SetHUPIncluded(true, web_cookie);
-    SetLoaderMethod(params);
-
-    if (TGenbankLoaderPsg::GetDefault()) {
-#if defined(HAVE_PSG_LOADER)
-        return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
-#else
-        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
-        TRegisterLoaderInfo info;
-        info.Set(nullptr, false);
-        return info;
-#endif
-    }
-    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
+    return RegisterInObjectManager(om, params, is_default, priority);
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP /*include_hup*/)
+string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP include_hup,
+                                            const string& web_cookie)
 {
-    return GBLOADER_HUP_NAME;
+    CGBLoaderParams params;
+    params.SetHUPIncluded(true, web_cookie);
+    return GetLoaderNameFromArgs(params);
 }
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
@@ -410,6 +444,13 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
                                    is_default, priority);
 }
 
+string CGBDataLoader::GetLoaderNameFromArgs(const string& reader_name,
+                                            EIncludeHUP include_hup)
+{
+    return GBLOADER_HUP_NAME;
+}
+
+
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string&   reader_name,
@@ -420,26 +461,17 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 {
     CGBLoaderParams params(reader_name);
     params.SetHUPIncluded(true, web_cookie);
-    SetLoaderMethod(params);
-
-    if (TGenbankLoaderPsg::GetDefault()) {
-#if defined(HAVE_PSG_LOADER)
-        return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
-#else
-        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
-        TRegisterLoaderInfo info;
-        info.Set(nullptr, false);
-        return info;
-#endif
-    }
-    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
+    return RegisterInObjectManager(om, params, is_default, priority);
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/,
-                                            EIncludeHUP /*include_hup*/)
+string CGBDataLoader::GetLoaderNameFromArgs(const string& reader_name,
+                                            EIncludeHUP include_hup,
+                                            const string& web_cookie)
 {
-    return GBLOADER_HUP_NAME;
+    CGBLoaderParams params(reader_name);
+    params.SetHUPIncluded(true, web_cookie);
+    return GetLoaderNameFromArgs(params);
 }
 
 
@@ -450,23 +482,11 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::TPriority  priority)
 {
     CGBLoaderParams params(&param_tree);
-    SetLoaderMethod(params);
-
-    if (TGenbankLoaderPsg::GetDefault()) {
-#if defined(HAVE_PSG_LOADER)
-        return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
-#else
-        ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
-        TRegisterLoaderInfo info;
-        info.Set(nullptr, false);
-        return info;
-#endif
-    }
-    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
+    return RegisterInObjectManager(om, params, is_default, priority);
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& /* params */)
+string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& param_tree)
 {
     return GBLOADER_NAME;
 }
@@ -478,12 +498,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    CGBLoaderParams params_nc(params);
-    SetLoaderMethod(params_nc);
-
-    if (TGenbankLoaderPsg::GetDefault()) {
+    if ( params.GetUsePSG() ) {
 #if defined(HAVE_PSG_LOADER)
-        return CPSGDataLoader::RegisterInObjectManager(om, params_nc, is_default, priority);
+        return CPSGDataLoader::RegisterInObjectManager(om, params, is_default, priority);
 #else
         ERR_POST_X(3, Critical << "PSG Loader is requested but not available");
         TRegisterLoaderInfo info;
@@ -491,7 +508,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
         return info;
 #endif
     }
-    return CGBDataLoader_Native::RegisterInObjectManager(om, params_nc, is_default, priority);
+    return CGBDataLoader_Native::RegisterInObjectManager(om, params, is_default, priority);
 }
 
 
@@ -502,10 +519,14 @@ string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& params)
     }
     if (params.HasHUPIncluded()) {
         const string& web_cookie = params.GetWebCookie();
-        if (web_cookie.empty())
+        if (web_cookie.empty()) {
             return GBLOADER_HUP_NAME;
-        else
-            return GBLOADER_HUP_NAME + string("-") + web_cookie;
+        }
+        else {
+            CMD5 md5;
+            md5.Update(web_cookie.data(), web_cookie.size());
+            return GBLOADER_HUP_NAME + string("-") + md5.GetHexSum();
+        }
     } else {
         return GBLOADER_NAME;
     }
@@ -515,7 +536,8 @@ string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& params)
 CGBDataLoader::CGBDataLoader(const string& loader_name,
                              const CGBLoaderParams& params)
     : CDataLoader(loader_name),
-      m_HasHUPIncluded(params.HasHUPIncluded())
+      m_HasHUPIncluded(params.HasHUPIncluded()),
+      m_WebCookie(params.GetWebCookie())
 {
 }
 
@@ -711,11 +733,7 @@ CGBDataLoader::GetRealBlobId(const CTSE_Info& tse_info) const
 
 bool CGBDataLoader::IsUsingPSGLoader(void)
 {
-#if defined(HAVE_PSG_LOADER)
-    return TGenbankLoaderPsg::GetDefault();
-#else
-    return false;
-#endif
+    return s_GetDefaultUsePSG();
 }
 
 

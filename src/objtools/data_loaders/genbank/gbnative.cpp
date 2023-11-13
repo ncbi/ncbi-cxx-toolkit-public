@@ -98,6 +98,7 @@ static const char* const DEFAULT_DRV_ORDER = "id2:pubseqos";
 #else
 static const char* const DEFAULT_DRV_ORDER = "id2";
 #endif
+static const char* const DEFAULT_HUP_DRV_ORDER = "pubseqos2:pubseqos";
 
 #define GBLOADER_NAME "GBLOADER"
 #define GBLOADER_HUP_NAME "GBLOADER-HUP"
@@ -342,7 +343,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
         if ( NStr::StartsWith(reader_name, "pubseqos") )
             m_WebCookie = params.GetWebCookie();
     
-        if ( x_CreateReaders(reader_name, gb_params, *params.m_ReaderParams, preopen) ) {
+        if ( x_CreateReaders(reader_name, gb_params, params, preopen) ) {
             if ( reader_name == "cache" ||
                  NStr::StartsWith(reader_name, "cache;") ) {
                 x_CreateWriters("cache", gb_params);
@@ -351,7 +352,7 @@ void CGBDataLoader_Native::x_CreateDriver(const CGBLoaderParams& params)
     }
     else {
         pair<string, string> rw_name = GetReaderWriterName(gb_params, params);
-        if ( x_CreateReaders(rw_name.first, gb_params, *params.m_ReaderParams, preopen) ) {
+        if ( x_CreateReaders(rw_name.first, gb_params, params, preopen) ) {
             x_CreateWriters(rw_name.second, gb_params);
         }
     }
@@ -362,6 +363,11 @@ pair<string, string>
 CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params, const CGBLoaderParams& loader_params) const
 {
     pair<string, string> ret;
+    if ( HasHUPIncluded() ) {
+        // use default HUP readers
+        ret.first = DEFAULT_HUP_DRV_ORDER;
+        return ret;
+    }
     ret.first = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
     if ( ret.first.empty() ) {
         ret.first = TGenbankReaderName::GetDefault();
@@ -375,6 +381,9 @@ CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params, const CGBLoa
     }
     if ( ret.first.empty() || ret.second.empty() ) {
         string method = loader_params.GetLoaderMethod();
+        if ( method.empty() ) {
+            method = x_GetLoaderMethod(params);
+        }
         if ( method.empty() ) {
             // fall back default reader list
             method = DEFAULT_DRV_ORDER;
@@ -395,14 +404,14 @@ CGBDataLoader_Native::GetReaderWriterName(const TParamTree* params, const CGBLoa
 
 bool CGBDataLoader_Native::x_CreateReaders(const string& str,
                                            const TParamTree* params,
-                                           const CReaderParams& reader_params,
+                                           const CGBLoaderParams& gb_params,
                                            CGBLoaderParams::EPreopenConnection preopen)
 {
     vector<string> str_list;
     NStr::Split(str, ";", str_list);
     size_t reader_count = 0;
     for ( size_t i = 0; i < str_list.size(); ++i ) {
-        CRef<CReader> reader(x_CreateReader(str_list[i], reader_params, params));
+        CRef<CReader> reader(x_CreateReader(str_list[i], gb_params, params));
         if( reader ) {
             if ( HasHUPIncluded() ) {
                 reader->SetIncludeHUP(true, m_WebCookie);
@@ -488,7 +497,7 @@ static bool s_ForceDriver(const string& name)
 
 
 CReader* CGBDataLoader_Native::x_CreateReader(const string& name,
-                                              const CReaderParams& reader_params,
+                                              const CGBLoaderParams& gb_params,
                                               const TParamTree* params)
 {
     CRef<TReaderManager> manager = x_GetReaderManager();
@@ -501,6 +510,10 @@ CReader* CGBDataLoader_Native::x_CreateReader(const string& name,
         }
     }
     else {
+        CReaderParams reader_params;
+        reader_params.SetEnableWGS(gb_params.m_EnableWGS);
+        reader_params.SetEnableSNP(gb_params.m_EnableSNP);
+        reader_params.SetEnableCDD(gb_params.m_EnableCDD);
         ret->SetParams(reader_params);
         ret->InitializeCache(m_CacheManager, params);
     }
