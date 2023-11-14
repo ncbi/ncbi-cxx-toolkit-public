@@ -2294,7 +2294,7 @@ CJson_WalkHandler::GetCurrentJPath(void) const {
     std::vector<CJson_Node::TKeyType>::const_iterator n = m_name.begin();
     CJson_Node::TKeyType path;
     for ( ++t, ++i, ++n; t != te; ++t, ++i, ++n) {
-        if (*t) {
+        if (*t && !n->empty()) {
             path += JSONWRAPP_TO_NCBIUTF8("/");
             path += JSONWRAPP_TO_NCBIUTF8(*n);
         } else  if (*i != size_t(-1)) {
@@ -2303,7 +2303,7 @@ CJson_WalkHandler::GetCurrentJPath(void) const {
             path += JSONWRAPP_TO_NCBIUTF8("]");
         }
     }
-    return path;
+    return path.empty() ? "/" : path;
 }
 
 inline CJson_Node::TKeyType CJson_WalkHandler::GetCurrentJPointer(void) const {
@@ -2313,14 +2313,15 @@ inline CJson_Node::TKeyType CJson_WalkHandler::GetCurrentJPointer(void) const {
     std::vector<CJson_Node::TKeyType>::const_iterator n = m_name.begin();
     CJson_Node::TKeyType path;
     for ( ++t, ++i, ++n; t != te; ++t, ++i, ++n) {
-        path += JSONWRAPP_TO_NCBIUTF8("/");
-        if (*t) {
+        if (*t && !n->empty()) {
+            path += JSONWRAPP_TO_NCBIUTF8("/");
             path += JSONWRAPP_TO_NCBIUTF8(*n);
         } else  if (*i != size_t(-1)) {
+            path += JSONWRAPP_TO_NCBIUTF8("/");
             path += JSONWRAPP_TO_NCBIUTF8(ncbi::NStr::NumericToString(*i));
         }
     }
-    return path;
+    return path.empty() ? "/" : path;
 }
 
 inline bool CJson_WalkHandler::Read(CJson_Document& doc) {
