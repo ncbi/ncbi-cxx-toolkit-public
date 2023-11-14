@@ -1167,10 +1167,12 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     m_BlobMap.reset(new CPSGBlobMap(m_CacheLifespan, cache_max_size));
 
     {{
-        //SPSG_Service::TFlags flags = params.HasHUPIncluded()? SPSG_Service::eDefault: SPSG_Service::fIncludeHUP;
-        // TODO: params.GetWebCookie()
-        //m_Queue = make_shared<CPSG_Queue>(SPSG_Service(service_name, flags));
         m_Queue = make_shared<CPSG_Queue>(service_name);
+        m_Queue->SetRequestFlags(params.HasHUPIncluded()? CPSG_Request::fIncludeHUP: CPSG_Request::fExcludeHUP);
+        if ( !params.GetWebCookie().empty() ) {
+            m_RequestContext = new CRequestContext();
+            m_RequestContext->SetProperty("auth_token", params.GetWebCookie());
+        }
     }}
 
     if (TPSG_PrefetchCDD::GetDefault()) {
@@ -3468,6 +3470,9 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
 
 shared_ptr<CPSG_Reply> CPSGDataLoader_Impl::x_SendRequest(shared_ptr<CPSG_Request> request)
 {
+    if ( m_RequestContext ) {
+        request->SetRequestContext(m_RequestContext);
+    }
     return m_Queue->SendRequestAndGetReply(request, DEFAULT_DEADLINE);
 }
 

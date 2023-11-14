@@ -269,6 +269,7 @@ private:
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
     bool m_AddWGSMasterDescr = true;
     shared_ptr<CPSG_Queue> m_Queue;
+    CRef<CRequestContext> m_RequestContext;
     unique_ptr<CPSGBlobMap> m_BlobMap;
     unique_ptr<CPSGIpgTaxIdMap> m_IpgTaxIdMap;
     unique_ptr<CPSGBioseqCache> m_BioseqCache;
