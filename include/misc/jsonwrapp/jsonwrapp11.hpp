@@ -1115,10 +1115,12 @@ public:
     }
 
     /// Traverse the document contents
-    void Walk(CJson_WalkHandler& walk) const;
+    /// returns TRUE if all the contents was processed
+    bool Walk(CJson_WalkHandler& walk) const;
 
     /// Traverse the JSON data stream contents
-    static void Walk(std::istream& in, CJson_WalkHandler& walk);
+    /// returns TRUE if all the contents was processed
+    static bool Walk(std::istream& in, CJson_WalkHandler& walk);
 
     /// Check that the JSON document is a valid JSON schema
     bool IsSchema(void) const;
@@ -2468,17 +2470,17 @@ inline bool CJson_Document::Write(std::ostream& out, CJson_Schema& schema,
     return res;
 }
 
-inline void CJson_Document::Walk(CJson_WalkHandler& walk) const {
+inline bool CJson_Document::Walk(CJson_WalkHandler& walk) const {
     walk.x_SetSource(0);
-    m_DocImpl.Accept(walk);
+    return m_DocImpl.Accept(walk);
 }
 
-inline void CJson_Document::Walk(std::istream& in,
+inline bool CJson_Document::Walk(std::istream& in,
                                  CJson_WalkHandler& walk) {
     walk.x_SetSource(&in);
     rapidjson::IStreamWrapper ifs(in);
     rapidjson::Reader rdr;
-    rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk);
+    return !rdr.Parse<rapidjson::kParseStopWhenDoneFlag>(ifs,walk).IsError();
 }
 
 inline bool CJson_Document::IsSchema(void) const {
