@@ -1195,6 +1195,12 @@ def cgi_help_cmd(args):
     result = {'request': result_reqs, 'Common Parameters': common_params}
     json.dump(result, args.output_file, indent=2)
 
+def log2json_cmd(args):
+    match = functools.partial(re.match, r'[^/]+:\d+(/(ID|IPG)/\w+\?[^;]+)')
+
+    for i, m in enumerate(filter(None, map(match, sys.stdin)), start=1):
+        print('{"jsonrpc": "2.0", "method": "raw", "params": {"abs_path_ref": "' + m[1] + '"}, "id": "raw_' + str(i) + '"}')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='available commands', metavar='COMMAND', required=True, dest='command')
@@ -1248,6 +1254,9 @@ if __name__ == '__main__':
     parser_cgi_help.set_defaults(func=cgi_help_cmd)
     parser_cgi_help.add_argument('-binary', help='psg_client binary to run (default: tries ./psg_client, then $PATH/psg_client)')
     parser_cgi_help.add_argument('-output-file', help='Output file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
+
+    parser_log2json = subparsers.add_parser('log2json', help='Create JSON-RPC requests from parsed debug printout', description='Create JSON-RPC requests from parsed debug printout')
+    parser_log2json.set_defaults(func=log2json_cmd)
 
     args = parser.parse_args()
     args.func(args)
