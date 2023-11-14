@@ -699,7 +699,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// Generic macro to throw an exception, given the exception class,
 /// error code and message string.
 /// The err_code argument may include manipulators to set additional
-/// options, e.g. eMyErrCode | Console | Severity(eDiag_Info). In any
+/// options, e.g. eMyErrCode | Console | Info. In any
 /// case the error code value must be the first in the combination.
 #define NCBI_THROW(exception_class, err_code, message)                  \
     do {                                                                \
