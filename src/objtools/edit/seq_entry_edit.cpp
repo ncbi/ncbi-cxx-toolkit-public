@@ -203,7 +203,7 @@ CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq_
       return CConstRef <CDelta_seq>();
    }
 
-   size_t offset = 0;
+   unsigned offset = 0;
 
    int len = 0;
    ITERATE (list <CRef <CDelta_seq> >, it, seq_hl.GetInst_Ext().GetDelta().Get()) {
@@ -1140,7 +1140,7 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Denseg(
 
     // figure out what input entry each row belongs to
     const CDense_seg::TIds & ids = align.GetSegs().GetDenseg().GetIds();
-    for( size_t iRow = 0; iRow < ids.size(); ++iRow ) {
+    for(unsigned iRow = 0; iRow < ids.size(); ++iRow) {
         CBioseq_Handle id_bioseq = scope.GetBioseqHandle(*ids[iRow]);
         CSeq_entry_Handle id_bioseq_entry =
             ( id_bioseq ?
@@ -1749,7 +1749,7 @@ void s_AddLiteral(CSeq_inst& inst, const string& element)
 {
     CRef<CDelta_seq> ds(new CDelta_seq());
     ds->SetLiteral().SetSeq_data().SetIupacna().Set(element);
-    ds->SetLiteral().SetLength(element.length());
+    ds->SetLiteral().SetLength(TSeqPos(element.length()));
 
     inst.SetExt().SetDelta().Set().push_back(ds);
 }
@@ -3082,16 +3082,13 @@ void TrimSeqAlign(CBioseq_Handle bsh,
             TSignedSeqPos seg_start = denseg.GetStarts()[index];
             if (seg_start < 0) {
                 // This indicates a gap, no change needed
-            }
-            else if (seg_start < cut_from) {
+            } else if (TSeqPos(seg_start) < cut_from) {
                 // This is before the cut, no change needed
-            }
-            else if (seg_start >= cut_from &&
-                     seg_start + denseg.GetLens()[curseg] <= cut_from + cut_len) {
+            } else if (TSeqPos(seg_start) >= cut_from &&
+                       TSeqPos(seg_start) + denseg.GetLens()[curseg] <= cut_from + cut_len) {
                 // This is in the gap, indicate it with a -1
                 align->SetSegs().SetDenseg().SetStarts()[index] = -1;
-            }
-            else {
+            } else {
                 // This is after the cut - subtract the cut_len
                 align->SetSegs().SetDenseg().SetStarts()[index] -= cut_len;
             }
