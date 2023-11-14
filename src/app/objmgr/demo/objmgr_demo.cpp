@@ -1054,12 +1054,18 @@ int CDemoApp::Run(void)
             GenBankReaders_Register_Pubseq();
             GenBankReaders_Register_Pubseq2();
 #endif
-            CGBLoaderParams params(genbank_readers);
-            if ( args["WebCubbyUser"] ) {
-                params.SetHUPIncluded(true, args["WebCubbyUser"].AsString());
+            gb_loader = CGBDataLoader::RegisterInObjectManager(*pOm, genbank_readers).GetLoader();
+        }
+        if ( args["WebCubbyUser"] ) {
+#ifdef HAVE_PUBSEQ_OS
+            DBAPI_RegisterDriver_FTDS();
+            GenBankReaders_Register_Pubseq();
+            GenBankReaders_Register_Pubseq2();
+#endif
+            if ( genbank_readers == "psg" ) {
+                CNcbiApplication::Instance()->GetConfig().Set("genbank", "loader_psg", "1");
             }
-            gb_loader = CGBDataLoader::RegisterInObjectManager
-                (*pOm, params).GetLoader();
+            other_loaders.push_back(CGBDataLoader::RegisterInObjectManager(*pOm, CGBDataLoader::eIncludeHUP, args["WebCubbyUser"].AsString()).GetLoader()->GetName());
         }
     }
     else {
