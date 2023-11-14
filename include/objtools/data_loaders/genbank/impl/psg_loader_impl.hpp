@@ -61,6 +61,7 @@ struct SPsgBioseqInfo
     CSeq_inst::TMol molecule_type;
     Uint8 length;
     CPSG_BioseqInfo::TState state;
+    CPSG_BioseqInfo::TState chain_state;
     TTaxId tax_id;
     int hash;
     TGi gi;
@@ -72,6 +73,7 @@ struct SPsgBioseqInfo
 
     TIncludedInfo Update(const CPSG_BioseqInfo& bioseq_info);
     CBioseq_Handle::TBioseqStateFlags GetBioseqStateFlags() const;
+    CBioseq_Handle::TBioseqStateFlags GetChainStateFlags() const;
 
 private:
     SPsgBioseqInfo(const SPsgBioseqInfo&);
@@ -261,6 +263,7 @@ private:
                            CDataLoader::TTSE_LockSet& locks);
     TTaxId x_GetIpgTaxId(const CSeq_id_Handle& idh);
     void x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    void x_AdjustBlobState(SPsgBlobInfo& blob_info, const CSeq_id_Handle idh);
 
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
