@@ -1,15 +1,17 @@
 #! /bin/sh
 #$Id$
-
+#set -xe
 src_services=$@
 
 # You can add or remove variants in the following two lists in your local
 # version of this script to reduce or to extend the test sets
-builds="P T"
-#builds="P S T"
+builds="T"
 #builds="S T"
+#builds="P T"
+#builds="P S T"
 #builds="O P S T"
 projects="objtools/test/objmgr app/objmgr/test app/pubseq_gateway/client"
+
 
 # Input: host:port[/suffix]
 # Output:
@@ -104,7 +106,7 @@ do_check() {
             split_parsed_service $s
             echo "Testing $build / $service..."
             export PSG_LOADER_SERVICE_NAME="$service"
-            if echo "$service" | grep '^[a-zA-Z0-9_-][a-zA-Z0-9_-]*:[0-9][0-9]*$' ; then
+            if echo "$service" | grep '^[a-zA-Z0-9_-][a-zA-Z0-9._-]*:[0-9][0-9]*$' ; then
                 export PSG2_CONN_LOCAL_ENABLE=1
                 export PSG2_CONN_LOCAL_SERVER_1="STANDALONE $service S=yes"
                 unset PSG2_CONN_SERVICE_NAME
