@@ -358,7 +358,8 @@ may be implemented in the future; RW-1253
     arg_desc->AddFlag("euk", "Assume eukaryote, and create missing mRNA features");
     arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
     arg_desc->AddFlag("allow-acc", "Allow accession recognition in sequence IDs. Default is local");
-    arg_desc->AddFlag("augustus-fix", "Special handling of unusual problems in Augustus annotations");
+    arg_desc->AddFlag("augustus-fix", "(Deprecated) Special handling of unusual problems in Augustus annotations",
+                      CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc->AddFlag("intronless", "Intronless alignments");
     arg_desc->AddFlag("refine-prt-alignments", "Refine ProSplign aligments when processing .prt input");
     arg_desc->AddOptionalKey("prt-alignment-filter-query", "String", 
@@ -543,11 +544,10 @@ int CTbl2AsnApp::Run()
     m_context.m_asn1_suffix = args["out-suffix"].AsString();
 
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
-    m_context.m_augustus_fix = args["augustus-fix"].AsBoolean();
     m_context.prtAlnOptions.intronless = args["intronless"].AsBoolean();
     m_context.prtAlnOptions.refineAlignment = args["refine-prt-alignments"].AsBoolean();
     if (args["prt-alignment-filter-query"]) {
-        m_context.prtAlnOptions.filterQueryString = args["prt-alignment-filter-query"].AsString(); 
+        m_context.prtAlnOptions.filterQueryString = args["prt-alignment-filter-query"].AsString();
     }
     //   if (args["taxname"])
     //       m_context.m_OrganismName = args["taxname"].AsString();

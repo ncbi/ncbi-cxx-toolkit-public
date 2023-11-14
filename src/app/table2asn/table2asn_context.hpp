@@ -147,7 +147,6 @@ public:
     bool   m_d_fasta{ false };
     bool   m_allow_accession{ false };
     bool   m_verbose{ false };
-    bool   m_augustus_fix{ false };
 
     struct SPrtAlnOptions {
         bool refineAlignment { false };
