@@ -183,7 +183,7 @@ public:
     bool GetUsePSG() const;
     void SetUsePSG(bool use_psg = true)
     {
-        m_UsePSG = true;
+        m_UsePSG = use_psg;
         m_UsePSGInitialized = true;
     }
 
