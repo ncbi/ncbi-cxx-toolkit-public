@@ -488,6 +488,7 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan)
       molecule_type(CSeq_inst::eMol_not_set),
       length(0),
       state(0),
+      chain_state(0),
       tax_id(INVALID_TAX_ID),
       hash(0),
       deadline(lifespan)
@@ -519,6 +520,9 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
 
     if (new_info & CPSG_Request_Resolve::fState)
         state = bioseq_info.GetState();
+
+    if (new_info & CPSG_Request_Resolve::fChainState)
+        chain_state = bioseq_info.GetChainState();
 
     if (new_info & CPSG_Request_Resolve::fTaxId)
         tax_id = bioseq_info.GetTaxId();
@@ -566,6 +570,25 @@ CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetBioseqStateFlags() const
             return CBioseq_Handle::fState_none;
         default:
             LOG_POST(Warning << "CPSGDataLoader: uknown " << canonical << " state: " << state);
+            return CBioseq_Handle::fState_none;
+        }
+    }
+    return CBioseq_Handle::fState_none;
+}
+
+
+CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetChainStateFlags() const
+{
+    if ( included_info & CPSG_Request_Resolve::fChainState ) {
+        switch ( chain_state ) {
+        case CPSG_BioseqInfo::eDead:
+            return CBioseq_Handle::fState_dead;
+        case CPSG_BioseqInfo::eReserved:
+            return CBioseq_Handle::fState_suppress_perm;
+        case CPSG_BioseqInfo::eLive:
+            return CBioseq_Handle::fState_none;
+        default:
+            LOG_POST(Warning << "CPSGDataLoader: uknown " << canonical << " chain_state: " << state);
             return CBioseq_Handle::fState_none;
         }
     }
@@ -1465,6 +1488,10 @@ int CPSGDataLoader_Impl::GetSequenceStateOnce(CDataSource* data_source, const CS
     CBioseq_Handle::TBioseqStateFlags state = info.first->GetBioseqStateFlags();
     if ( info.second ) {
         state |= info.second->blob_state_flags;
+        if (!(info.first->GetBioseqStateFlags() & CBioseq_Handle::fState_dead) &&
+            !(info.first->GetChainStateFlags() & CBioseq_Handle::fState_dead)) {
+            state &= ~CBioseq_Handle::fState_dead;
+        }
     }
     return state;
 }
@@ -1915,6 +1942,7 @@ void CPSG_Blob_Task::DoExecute(void)
     if ( main_blob_slot && main_blob_slot->first ) {
         // create and save new main blob-info entry
         m_ReplyResult.blob_info = make_shared<SPsgBlobInfo>(*main_blob_slot->first);
+        m_Loader.x_AdjustBlobState(*m_ReplyResult.blob_info, m_Id);
         m_Loader.m_BlobMap->Add(m_ReplyResult.blob_id, m_ReplyResult.blob_info);
     }
     
@@ -3512,6 +3540,9 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessBlobReply(
         }
         else {
             ret = task->m_ReplyResult;
+            if (ret.blob_info) {
+                x_AdjustBlobState(*ret.blob_info, req_idh);
+            }
         }
     }
     else if ( !GetGetBlobByIdShouldFail() &&
@@ -3787,6 +3818,9 @@ CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(CDataSource* data_source,
     if ( bioseq_info && !bioseq_info->blob_id.empty() ) {
         // get by blob id
         blob_info = x_GetBlobInfo(data_source, bioseq_info->blob_id);
+        if (blob_info) {
+            x_AdjustBlobState(*blob_info, idh);
+        }
     }
     else {
         CPSG_BioId bio_id(idh);
@@ -3860,6 +3894,21 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
     request->IncludeData(CPSG_Request_Biodata::eNoTSE);
     auto reply = x_SendRequest(request);
     return x_ProcessBlobReply(reply, nullptr, CSeq_id_Handle(), false).blob_info;
+}
+
+
+void CPSGDataLoader_Impl::x_AdjustBlobState(SPsgBlobInfo& blob_info, const CSeq_id_Handle idh)
+{
+    if (!idh) return;
+    if (!(blob_info.blob_state_flags & CBioseq_Handle::fState_dead)) return;
+    auto seq_info = m_BioseqCache->Get(idh);
+    if (!seq_info) return;
+    auto seq_state = seq_info->GetBioseqStateFlags();
+    auto chain_state = seq_info->GetChainStateFlags();
+    if (seq_state == CBioseq_Handle::fState_none &&
+        chain_state == CBioseq_Handle::fState_none) {
+        blob_info.blob_state_flags &= ~CBioseq_Handle::fState_dead;
+    }
 }
 
 
