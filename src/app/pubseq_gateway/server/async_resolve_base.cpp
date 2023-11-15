@@ -382,8 +382,28 @@ CPSGS_AsyncResolveBase::AdjustBioseqAccession(
         return ePSGS_NotRequired;
     }
 
+    auto    seq_id_type = bioseq_resolution.GetBioseqInfo().GetSeqIdType();
+    auto    version = bioseq_resolution.GetBioseqInfo().GetVersion();
+    if (version == 0) {
+        if (acc_subst_option == SPSGS_RequestBase::ePSGS_DefaultAccSubstitution) {
+            if (seq_id_type == CSeq_id::e_Pdb ||
+                seq_id_type == CSeq_id::e_Pir ||
+                seq_id_type == CSeq_id::e_Prf) {
+                // For them there is no substitution
+                if (m_Request->NeedTrace()) {
+                    m_Reply->SendTrace("Accession adjustment is not required "
+                                       "(It is PDB, PIR or PRF with version == 0 "
+                                       "and substitute option is 'default')",
+                                       m_Request->GetStartTimestamp());
+                }
+                return ePSGS_NotRequired;
+            }
+        }
+    }
+
+
     if (acc_subst_option == SPSGS_RequestBase::ePSGS_LimitedAccSubstitution &&
-        bioseq_resolution.GetBioseqInfo().GetSeqIdType() != CSeq_id::e_Gi) {
+        seq_id_type != CSeq_id::e_Gi) {
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Accession adjustment is not required "
                                "(substitute option is 'limited' and seq_id_type is not gi)",
