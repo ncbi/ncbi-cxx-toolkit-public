@@ -435,7 +435,7 @@ bool CGtfReader::xFeatureSetQualifiersGene(
 //  ----------------------------------------------------------------------------
 {
     set<string> ignoredAttrs = {
-        "locus_tag", "transcript_id"
+        "locus_tag", "transcript_id", "gene"
     };
     return xFeatureSetQualifiers(record, ignoredAttrs, feature);
 }
@@ -610,6 +610,11 @@ bool CGtfReader::xFeatureSetDataGene(
     if (!locusTag.empty()) {
         gene.SetLocus_tag(locusTag);
     }
+	string locus = attributes.ValueOf("gene");
+
+	if (!locus.empty()) {
+		gene.SetLocus(locus);
+	}
     return true;
 }
 
@@ -899,6 +904,7 @@ void CGtfReader::xPostProcessAnnot(
                 CRef<CSeq_feat> pParentGene;
                 if (x_GetFeatureById(parentGeneFeatId, pParentGene)) {
                     xSetAncestorXrefs(*pFeature, *pParentGene);
+
                 }
                 break;
             }
