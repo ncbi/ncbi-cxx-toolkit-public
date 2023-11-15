@@ -354,7 +354,7 @@ void CAnnotWriterApp::Init()
 
     // no-cleanup
 	arg_desc->AddFlag("nocleanup",
-			"Do not perform data cleanup prior to formatting");
+			"Do not perform data cleanup prior to formatting GTF and GFF3");
 
     }}
 
