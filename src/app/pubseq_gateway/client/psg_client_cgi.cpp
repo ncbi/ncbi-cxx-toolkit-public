@@ -80,18 +80,13 @@ struct SBase : TParams
     template <class... TInitArgs>
     SBase(const SPsgCgiEntries& entries, TInitArgs&&... init_args) :
         TParams{
-            GetService(),
+            {},
             CPSG_Request::eDefaultFlags,
             SPSG_UserArgs(),
             forward<TInitArgs>(init_args)...
         }
     {
         TParams::verbose = entries.Has("verbose");
-    }
-
-    static auto GetService()
-    {
-        return CNcbiApplication::Instance()->GetConfig().GetString("PSG", "service", "PSG2");
     }
 };
 

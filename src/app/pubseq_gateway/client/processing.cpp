@@ -536,7 +536,7 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
 string SInteractiveParams::GetService(string service, bool one_server)
 {
     if (one_server) {
-        auto servers = CServiceDiscovery(service)();
+        auto servers = CServiceDiscovery(service.empty() ? TPSG_Service::GetDefault() : service)();
 
         if (!servers.empty()) {
             sort(servers.begin(), servers.end(), [](const auto& l, const auto& r) { return l.second < r.second; });

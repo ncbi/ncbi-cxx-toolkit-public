@@ -173,7 +173,7 @@ void s_AddLatencyOptions(CArgDescriptions& arg_desc)
 
 void s_InitPsgOptions(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "PSG2");
+    arg_desc.AddOptionalKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
@@ -357,7 +357,7 @@ struct SBase : TParams
     template <class... TInitArgs>
     SBase(const CArgs& args, TInitArgs&&... init_args) :
         TParams{
-            args["service"].AsString(),
+            args["service"].HasValue() ? args["service"].AsString() : string(),
             args["include-hup"].HasValue() ? CPSG_Request::fIncludeHUP : CPSG_Request::eDefaultFlags,
             args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs(),
             forward<TInitArgs>(init_args)...
