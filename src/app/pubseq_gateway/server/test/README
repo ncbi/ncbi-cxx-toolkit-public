@@ -66,3 +66,10 @@ HUP
 HUP records need a cookie. This is how to send cookie with h2load
 ./h2load -n 100 "http://tonka1:2180/ID/get?seq_id=gb|MF358689|&seq_id_type=5" -H 'cookie: WebCubbyUser="...;...;...;..."'
 
+curl -s --cookie 'WebCubbyUser="...;...;...;..."' "http://psg11:12000/ID/get?seq_id=gb|MF358689|&seq_id_type=5"
+
+Using psg_client:
+export NCBI_PSG_AUTH_TOKEN='"...;...;...;..."'
+echo '{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "gb|WMV97217|", 5 ], "user_args": "disable_processor=WGS" }, "id": "biodata_1" }' | psg_client interactive -server-mode -data-limit 1KB -preview-size 16 -service psg11:12000
+
+
