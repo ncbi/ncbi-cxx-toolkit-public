@@ -157,7 +157,6 @@
   },
   "Common Parameters": {
     "optional": {
-      "service": "PSG service name or host:port pair, (default: PSG2)",
       "timeout": "Set request timeout (in seconds)",
       "use-cache": "Whether to use LMDB cache (no|yes|default)",
       "user-args": "Arbitrary request URL arguments (queue-wide)"
