@@ -544,7 +544,7 @@ string SInteractiveParams::GetService(string service, bool one_server)
         }
     }
 
-    return move(service);
+    return service;
 }
 
 void SMetrics::OutputItems(ostream& os) const
