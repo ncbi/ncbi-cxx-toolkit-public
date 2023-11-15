@@ -2,7 +2,7 @@
 
 NCBI_begin_app(annotwriter)
   NCBI_sources(annotwriter)
-  NCBI_uses_toolkit_libraries(data_loaders_util xobjwrite xalgoseq entrez2)
+  NCBI_uses_toolkit_libraries(data_loaders_util xobjwrite xcleanup xalgoseq entrez2)
   NCBI_requires(-Cygwin)
   NCBI_project_watchers(gotvyans foleyjp)
 NCBI_end_app()
