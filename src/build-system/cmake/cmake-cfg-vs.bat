@@ -31,6 +31,7 @@ REM defaults
 set BUILD_SHARED_LIBS=OFF
 set VISUAL_STUDIO=2019
 set SKIP_ANALYSIS=OFF
+set generator_multi_cfg=
 
 goto :RUN
 REM #########################################################################
@@ -165,8 +166,11 @@ if "%1"=="--help"              (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="-help"               (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="help"                (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="-h"                  (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="/?"                  (set do_help=YES&       goto :CONTINUEPARSEARGS)
 if "%1"=="--rootdir"           (set tree_root=%~2&         shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--caller"            (set script_name=%~2&       shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--without-debug"     (set BUILD_TYPE=Release&           goto :CONTINUEPARSEARGS)
+if "%1"=="--with-debug"        (set BUILD_TYPE=Debug&             goto :CONTINUEPARSEARGS)
 if "%1"=="--without-dll"       (set BUILD_SHARED_LIBS=OFF&        goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"          (set BUILD_SHARED_LIBS=ON&         goto :CONTINUEPARSEARGS)
 if "%1"=="--with-components"   (set PROJECT_COMPONENTS=%~2& shift& goto :CONTINUEPARSEARGS)
@@ -193,7 +197,11 @@ if "%first%"=="-D"             (
         set types=!types:"= !
         set /a cnt=0
         for  %%a in (!types!) do  set /a cnt+=1
-        if "!cnt!"=="1" set BUILD_TYPE=%2
+        if "!cnt!"=="1" set BUILD_TYPE=%2& set generator_multi_cfg=YES
+    ) else if "%1"=="-DCMAKE_BUILD_TYPE" (
+        set BUILD_TYPE=%2
+    ) else if "%1"=="-DBUILD_SHARED_LIBS" (
+        set BUILD_SHARED_LIBS=%2
     )
     shift
     goto :CONTINUEPARSEARGS
@@ -281,14 +289,23 @@ if "%CMAKE_GENERATOR%"=="" (
   )
 )
 set generator_name=%CMAKE_GENERATOR%
-if "%CMAKE_GENERATOR%"=="Visual Studio 16 2019" (
+if "%CMAKE_GENERATOR%"=="Visual Studio 17 2022" (
+  set generator_name=VS2022
+) else if "%CMAKE_GENERATOR%"=="Visual Studio 16 2019" (
   set generator_name=VS2019
-)
-if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017 Win64" (
+) else if "%CMAKE_GENERATOR%"=="Visual Studio 15 2017 Win64" (
   set generator_name=VS2017
-)
-if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
+) else if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
   set generator_name=VS2015
+) else (
+  set generator_name=VS%VISUAL_STUDIO%
+  set generator_multi_cfg=NO
+  if "%BUILD_TYPE%"=="" (
+    set BUILD_TYPE=Debug
+  )
+)
+if "%generator_multi_cfg%"=="" (
+  set BUILD_TYPE=
 )
 
 set ttt=%tree_root%\%PROJECT_LIST%
@@ -351,7 +368,10 @@ if "%BUILD_ROOT%"=="" (
   ) else (
     set BUILD_ROOT=CMake-%generator_name%-%BUILD_TYPE%
     if "%BUILD_SHARED_LIBS%"=="ON" (
-      set BUILD_ROOT=%BUILD_ROOT%DLL
+      set BUILD_ROOT=!BUILD_ROOT!DLL
+    )
+    if "%generator_multi_cfg%"=="NO" (
+      set CMAKE_ARGS=%CMAKE_ARGS% -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
     )
   )
 )

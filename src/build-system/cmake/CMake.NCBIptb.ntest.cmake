@@ -201,13 +201,23 @@ elseif(OFF)
                 add_dependencies(RUN_CHECKS RUN_CREATE_CHECKS)
 else()
 # on every build creates check.sh in one configuration, then runs it.
-                set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${_root} ${_checkdir} check.sh $<CONFIG>)
-                set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
-                if ($ENV{NCBI_AUTOMATED_BUILD})
-                    set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh concat_err)
+                set(_checkname RUN_CHECKS)
+                if(NCBI_GENERATOR_IS_MULTI_CONFIG)
+                    set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${_root} ${_checkdir} check.sh $<CONFIG>)
+                    set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
+                    if ($ENV{NCBI_AUTOMATED_BUILD})
+                        set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh concat_err)
+                    endif()
+                else()
+                    set(_checkname check)
+                    set(_cmd ${_cmdstart}${_script} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${_root} ${_checkdir} check.sh .)
+                    set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/check.sh run)
+                    if ($ENV{NCBI_AUTOMATED_BUILD})
+                        set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/check.sh concat_err)
+                    endif()
                 endif()
                 set(_cmd ${_cmd}')
-                add_custom_target(RUN_CHECKS
+                add_custom_target(${_checkname}
                     COMMAND ${_cmd}
                     DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
                     SOURCES "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
@@ -221,12 +231,22 @@ endif()
         message("NOT FOUND Cygwin")
     elseif(XCODE)
         set(_cmdstart export DIAG_SILENT_ABORT=Y$<SEMICOLON>)
-        set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh $<CONFIG>)
-        set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
-        if ($ENV{NCBI_AUTOMATED_BUILD})
-            set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh concat_err)
+        set(_checkname RUN_CHECKS)
+        if(NCBI_GENERATOR_IS_MULTI_CONFIG)
+            set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh $<CONFIG>)
+            set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh run)
+            if ($ENV{NCBI_AUTOMATED_BUILD})
+                set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/$<CONFIG>/check.sh concat_err)
+            endif()
+        else()
+            set(_checkname check)
+            set(_cmd ${_cmdstart}${SCRIPT_NAME} ${_checkdir}/check.sh.list ${NCBITEST_SIGNATURE} . ${NCBI_TREE_ROOT} ${_checkdir} check.sh .)
+            set(_cmd ${_cmd}$<SEMICOLON>echo Running tests$<SEMICOLON>${_checkroot}/check.sh run)
+            if ($ENV{NCBI_AUTOMATED_BUILD})
+                set(_cmd ${_cmd}$<SEMICOLON>echo Collecting errors$<SEMICOLON>${_checkroot}/check.sh concat_err)
+            endif()
         endif()
-        add_custom_target(RUN_CHECKS
+        add_custom_target(${_checkname}
             COMMAND ${_cmd}
             DEPENDS "${_checkroot}/check.sh.list;${SCRIPT_NAME}"
             SOURCES "${_checkroot}/check.sh.list;${SCRIPT_NAME}"

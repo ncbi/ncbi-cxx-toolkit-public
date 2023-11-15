@@ -140,39 +140,61 @@ function(NCBI_internal_install_target _variable _access)
                 endif()
             endforeach()
         else()
-            foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
-                if(_doexport)
-                    set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg})
-                endif()
-                if (DEFINED _dest_ar)
-                    install(
-                        TARGETS ${NCBI_PROJECT}
-                        ${_exp}
-                        RUNTIME DESTINATION ${_dest}/${_cfg}
-                        CONFIGURATIONS ${_cfg}
-                        ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
-                        CONFIGURATIONS ${_cfg}
-                    )
-                else()
-                    install(
-                        TARGETS ${NCBI_PROJECT}
-                        ${_exp}
-                        DESTINATION ${_dest}/${_cfg}
-                        CONFIGURATIONS ${_cfg}
-                    )
-                endif()
-                if (WIN32 AND NOT NCBI_PTBCFG_PACKAGING)
-                    if (_haspdb)
-                        install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
-                                DESTINATION ${_dest}/${_cfg} OPTIONAL
-                                CONFIGURATIONS ${_cfg})
-                    else()
-                        install(FILES $<TARGET_FILE_DIR:${NCBI_PROJECT}>/${NCBI_PROJECT}.pdb
-                                DESTINATION ${_dest}/${_cfg} OPTIONAL
-                                CONFIGURATIONS ${_cfg})
+            if(NCBI_GENERATOR_IS_MULTI_CONFIG)
+                foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+                    if(_doexport)
+                        set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg})
                     endif()
-                endif()
-            endforeach()
+                    if (DEFINED _dest_ar)
+                        install(
+                            TARGETS ${NCBI_PROJECT}
+                            ${_exp}
+                            RUNTIME DESTINATION ${_dest}/${_cfg}
+                            CONFIGURATIONS ${_cfg}
+                            ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
+                            CONFIGURATIONS ${_cfg}
+                        )
+                    else()
+                        install(
+                            TARGETS ${NCBI_PROJECT}
+                            ${_exp}
+                            DESTINATION ${_dest}/${_cfg}
+                            CONFIGURATIONS ${_cfg}
+                        )
+                    endif()
+                    if (WIN32 AND NOT NCBI_PTBCFG_PACKAGING)
+                        if (_haspdb)
+                            install(FILES $<TARGET_PDB_FILE:${NCBI_PROJECT}>
+                                    DESTINATION ${_dest}/${_cfg} OPTIONAL
+                                    CONFIGURATIONS ${_cfg})
+                        else()
+                            install(FILES $<TARGET_FILE_DIR:${NCBI_PROJECT}>/${NCBI_PROJECT}.pdb
+                                    DESTINATION ${_dest}/${_cfg} OPTIONAL
+                                    CONFIGURATIONS ${_cfg})
+                        endif()
+                    endif()
+                endforeach()
+            else()
+                foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+                    if(_doexport)
+                        set(_exp EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT})
+                    endif()
+                    if (DEFINED _dest_ar)
+                        install(
+                            TARGETS ${NCBI_PROJECT}
+                            ${_exp}
+                            RUNTIME DESTINATION ${_dest}
+                            ARCHIVE DESTINATION ${_dest_ar}
+                        )
+                    else()
+                        install(
+                            TARGETS ${NCBI_PROJECT}
+                            ${_exp}
+                            DESTINATION ${_dest}
+                        )
+                    endif()
+                endforeach()
+            endif()
         endif()
     else()
         if(_doexport)
@@ -274,11 +296,18 @@ function(NCBI_internal_install_root _variable _access)
 
     if (WIN32 OR XCODE)
         foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
-            install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
-                CONFIGURATIONS ${_cfg}
-                DESTINATION ${_dest}
-                FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
-            )
+            if(NCBI_GENERATOR_IS_MULTI_CONFIG)
+                install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+                    CONFIGURATIONS ${_cfg}
+                    DESTINATION ${_dest}
+                    FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
+                )
+            else()
+                install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
+                    DESTINATION ${_dest}
+                    FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
+                )
+            endif()
         endforeach()
     else()
         install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
