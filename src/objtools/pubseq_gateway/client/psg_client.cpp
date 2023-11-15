@@ -683,7 +683,7 @@ const SPSG_UserArgs& SPSG_UserArgsBuilder::s_GetIniArgs()
 
 CPSG_Queue::SImpl::SImpl(const string& service) :
     queue(make_shared<TPSG_Queue>()),
-    m_Service(service)
+    m_Service(service.empty() ? TPSG_Service::GetDefault() : service)
 {
 }
 

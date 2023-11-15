@@ -81,6 +81,7 @@ NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
 NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
+NCBI_PARAM_DEF_EX(string,   PSG, service,               "PSG2",             eParam_Default,     NCBI_PSG_SERVICE);
 NCBI_PARAM_DEF_EX(string,   PSG, auth_token_name,       "WebCubbyUser",     eParam_Default,     NCBI_PSG_AUTH_TOKEN_NAME);
 NCBI_PARAM_DEF_EX(string,   PSG, auth_token,            "",                 eParam_Default,     NCBI_PSG_AUTH_TOKEN);
 

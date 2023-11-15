@@ -1134,6 +1134,7 @@ public:
     /// @param service
     ///  Either a name of service (which can be resolved into a set of PSG
     ///  servers) or a single fixed PSG server (in format "host:port")
+    ///  or empty value to use one from configuration file/environment/default.
     CPSG_Queue(const string& service);
     ~CPSG_Queue();
 
@@ -1285,6 +1286,7 @@ public:
     /// @param service
     ///  Either a name of service (which can be resolved into a set of PSG
     ///  servers) or a single fixed PSG server (in format "host:port")
+    ///  or empty value to use one from configuration file/environment/default.
     /// @param item_complete
     ///  Mandatory user callback to call when an item is complete (i.e. not eInProgress)
     /// @param reply_complete
