@@ -2287,7 +2287,7 @@ const CBioseq_Handle& bsh)
 
     }
 
-    if ( (IsGpipe() || IsIndexerVersion() ) & s_IsBioSample(bsh) ) {
+    if ( (IsGpipe() || IsIndexerVersion() ) && s_IsBioSample(bsh) ) {
         bool is_bact = s_IsBacteria(source);
         bool is_arch = s_IsArchaea(source);
         if ( is_bact || is_arch ) {
