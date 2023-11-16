@@ -91,7 +91,7 @@ void CValidError_graph::x_ValidateMaxValues(const CByte_graph& bg, const CSeq_gr
 }
 
 
-void CValidError_graph::ValidateSeqGraphContext(const CSeq_graph& graph, const CBioseq_set& set)
+void CValidError_graph::ValidateSeqGraphContext(const CSeq_graph&, const CBioseq_set&)
 {
     m_Imp.IncrementMisplacedGraphCount();
 }
@@ -320,7 +320,7 @@ void CValidError_graph::ValidateGraphsOnBioseq(const CBioseq& seq)
 
 
 //look for Seq-graphs out of order
-void CValidError_graph::x_ValidateGraphOrderOnBioseq (const CBioseq& seq, vector <CRef <CSeq_graph> > graph_list)
+void CValidError_graph::x_ValidateGraphOrderOnBioseq(const CBioseq&, vector<CRef<CSeq_graph>> graph_list)
 {
     if (graph_list.size() < 2) {
         return;

@@ -153,7 +153,7 @@ protected:
 
     static size_t x_CalculateLocationGaps(CBioseq_Handle bsh, const CSeq_loc& loc, vector<TSeqPos>& gap_starts);
     static bool x_IsMostlyNs(const CSeq_loc& loc, CBioseq_Handle bsh);
-    static size_t x_FindStartOfGap(CBioseq_Handle bsh, int pos, CScope* scope);
+    static TSeqPos x_FindStartOfGap(CBioseq_Handle bsh, TSeqPos pos, CScope* scope);
 
     void x_ValidateExcept();
     virtual void x_ValidateExceptText(const string& text);
