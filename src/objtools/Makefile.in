@@ -10,7 +10,7 @@ SUB_PROJ = logging unit_test_util readers blast lds2 pubseq_gateway \
            alnmgr cddalignview test manip eutils edit cleanup format validator \
            asniotest align seqmasks_io \
            align_format snputil uudutil variation writers \
-           import flatfile
+           import flatfile huge_asn
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
