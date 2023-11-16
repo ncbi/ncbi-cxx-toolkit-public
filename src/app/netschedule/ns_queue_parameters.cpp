@@ -1690,7 +1690,7 @@ SQueueParameters::ReadClientRegistryTimeoutReader(const IRegistry &  reg,
                                          "client_registry_timeout_reader")
                            + ". It must be > " +
                            to_string(double(reader_timeout)));
-        CNSPreciseTime(calc_default);
+        return CNSPreciseTime(calc_default);
     }
     return CNSPreciseTime(val);
 }
