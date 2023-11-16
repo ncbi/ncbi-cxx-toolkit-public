@@ -386,7 +386,7 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<
 }
 
 
-void CHugeFileValidator::ReportPostErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors,
+void CHugeFileValidator::ReportPostErrors(const TGlobalInfo& /*globalInfo*/, CRef<CValidError>& pErrors,
                                           SValidatorContext& context) const
 {
     if (context.NumGenes == 0 && context.NumGeneXrefs > 0) {
@@ -481,12 +481,11 @@ static void s_UpdateGlobalInfo(const CMolInfo& molInfo, CHugeFileValidator::TGlo
     globalInfo.biomols.insert(molInfo.GetBiomol());
 }
 
-void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHugeAsnReader::TContext& context)
+void CHugeFileValidator::RegisterReaderHooks(CObjectIStream& objStream, CHugeFileValidator::SGlobalInfo& m_GlobalInfo)
 {
-    TParent::x_SetHooks(objStream, context);
     // Set MolInfo skip and read hooks
     SetLocalSkipHook(CType<CMolInfo>(), objStream,
-            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            [&m_GlobalInfo] (CObjectIStream& in, const CObjectTypeInfo& type)
             {
                 auto pMolInfo = Ref(new CMolInfo());
                 type.GetTypeInfo()->DefaultReadData(in, pMolInfo);
@@ -494,7 +493,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
             });
 
     SetLocalReadHook(CType<CMolInfo>(), objStream,
-            [this](CObjectIStream& in, const CObjectInfo& object)
+            [&m_GlobalInfo](CObjectIStream& in, const CObjectInfo& object)
             {
                 auto* pObject = object.GetObjectPtr();
                 object.GetTypeInfo()->DefaultReadData(in, pObject);
@@ -504,7 +503,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
 
     // Set Pubdesc skip and read hooks
     SetLocalSkipHook(CType<CPubdesc>(), objStream,
-            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            [&m_GlobalInfo] (CObjectIStream& in, const CObjectTypeInfo& type)
             {
                 auto pPubdesc = Ref(new CPubdesc());
                 type.GetTypeInfo()->DefaultReadData(in, pPubdesc);
@@ -512,7 +511,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
             });
 
     SetLocalReadHook(CType<CPubdesc>(), objStream,
-            [this](CObjectIStream& in, const CObjectInfo& object)
+            [&m_GlobalInfo](CObjectIStream& in, const CObjectInfo& object)
             {
                 auto* pObject = object.GetObjectPtr();
                 object.GetTypeInfo()->DefaultReadData(in, pObject);
@@ -522,14 +521,14 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
 
     // Set BioSource skip and read hooks
     SetLocalSkipHook(CType<CBioSource>(), objStream,
-            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            [&m_GlobalInfo] (CObjectIStream& in, const CObjectTypeInfo& type)
             {
                 m_GlobalInfo.NoBioSource = false;
                 type.GetTypeInfo()->DefaultSkipData(in);
             });
 
     SetLocalReadHook(CType<CBioSource>(), objStream,
-            [this] (CObjectIStream& in, const CObjectInfo& object)
+            [&m_GlobalInfo] (CObjectIStream& in, const CObjectInfo& object)
             {
                 object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
                 m_GlobalInfo.NoBioSource = false;
@@ -537,7 +536,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
 
 
     SetLocalReadHook(CType<CSeq_id>(), objStream,
-        [this] (CObjectIStream& in, const CObjectInfo& object)
+        [&m_GlobalInfo] (CObjectIStream& in, const CObjectInfo& object)
         {
                 auto* pObject = object.GetObjectPtr();
                 object.GetTypeInfo()->DefaultReadData(in, pObject);
@@ -548,7 +547,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
     
     // Set UserObject read hook
     SetLocalReadHook(CType<CUser_object>(), objStream,
-                     [this] (CObjectIStream& in, const CObjectInfo& object)
+                     [&m_GlobalInfo] (CObjectIStream& in, const CObjectInfo& object)
                      {
         auto* pObject = object.GetObjectPtr();
         object.GetTypeInfo()->DefaultReadData(in, pObject);
@@ -566,7 +565,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
     
     // Set History skip hook
     SetLocalSkipHook(CType<CSeq_hist>(), objStream,
-                     [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+                     [&m_GlobalInfo] (CObjectIStream& in, const CObjectTypeInfo& type)
                      {
         auto pSeqhist = Ref(new CSeq_hist());
         type.GetTypeInfo()->DefaultReadData(in, pSeqhist);
@@ -583,7 +582,7 @@ void CValidatorHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CValidatorHu
 
     // Set Seq-inst skip hook
     SetLocalSkipHook(CType<CSeq_inst>(), objStream,
-            [this] (CObjectIStream& in, const CObjectTypeInfo& type)
+            [&m_GlobalInfo] (CObjectIStream& in, const CObjectTypeInfo& type)
             {
                 type.GetTypeInfo()->DefaultSkipData(in);
                 // clear flags after set by seq-id or user object and after hist examines it

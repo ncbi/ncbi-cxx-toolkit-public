@@ -135,6 +135,10 @@ public:
     unique_ptr<CObjectIStream> MakeObjStream(TFileSize pos) const;
 
     const CBioseq_set::TClass* GetTopLevelClass() const;
+
+    using t_more_hooks = std::function<void(CObjectIStream&)>;
+    void ExtendReadHooks(t_more_hooks hooks);
+
 protected:
     // temporary structure for indexing
     struct TBioseqInfoRec
@@ -172,14 +176,15 @@ private:
     bool x_HasNestedGenbankSets() const;
 
 
-    ILineErrorListener * mp_MessageListener = nullptr;
-    TStreamPos       m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
-    CHugeFile*           m_file             = nullptr;
+    ILineErrorListener *    mp_MessageListener = nullptr;
+    TStreamPos              m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
+    CHugeFile*              m_file             = nullptr;
+    std::list<t_more_hooks> m_more_hooks;
 
 // global lists, readonly after indexing
 protected:
-    TBioseqList               m_bioseq_list;
-    TStreamPos       m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
+    TBioseqList                     m_bioseq_list;
+    TStreamPos                      m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
     int                             m_max_local_id     = 0;
     TBioseqSetList                  m_bioseq_set_list;
     CRef<CSeq_entry>                m_top_entry;
