@@ -15596,8 +15596,8 @@ void CalcBeginMask()
 
         for(unsigned j = i; j < 32; ++j)
         {
-            unsigned nbit  = j; 
-            nbit &= bm::set_word_mask;
+            //unsigned nbit  = j; (void)nbit;
+            //nbit &= bm::set_word_mask;
             bm::word_t  mask1 = (((bm::word_t)1) << j);
 
             mask |= mask1;
@@ -15621,8 +15621,8 @@ void CalcEndMask()
 
         for(unsigned j = i; j > 0; --j)
         {
-            unsigned nbit  = j; 
-            nbit &= bm::set_word_mask;
+            //unsigned nbit  = j;
+            //nbit &= bm::set_word_mask;
             bm::word_t  mask1 = (((bm::word_t)1) << j);
 
             mask |= mask1;
@@ -17161,6 +17161,119 @@ void SetTest()
 
 }
 
+template<class BV>
+void swap_bits(BV& bv, typename BV::size_type i1, typename BV::size_type i2)
+{
+    auto b1 = bv.test(i1);
+    auto b2 = bv.test(i2);
+    bv.set(i1, b2);
+    bv.set(i2, b1);
+}
+
+template<class BV>
+void swap_bits_check(BV& bv1, BV& bv2,
+                     typename BV::size_type i1, typename BV::size_type i2)
+{
+    auto b1 = bv1.test(i1);
+    auto b2 = bv1.test(i2);
+
+    bv1.swap(i1, i2);
+
+    auto b12 = bv1.test(i1);
+    auto b22 = bv1.test(i2);
+    assert(b2 == b12);
+    assert(b1 == b22);
+
+    swap_bits(bv2, i1, i2);
+
+    bool eq = bv1.equal(bv2);
+    assert(eq);
+}
+
+
+static
+void SwapTest()
+{
+    cout << "----------------------- SwapTest()" << endl;
+
+    {
+        bvect bv1, bv2;
+        swap_bits_check(bv1, bv2, 0, 0);
+        bv1.set(10);
+        bv2.set(10);
+        swap_bits_check(bv1, bv2, 0, 11);
+        swap_bits_check(bv1, bv2, 10, 65535);
+        bv1.optimize();
+        swap_bits_check(bv1, bv2, 10, 65535);
+        assert(bv1.count()==1);
+        assert(bv1.test(10)==1);
+    }
+
+    {
+        bvect bv1, bv2;
+        bv1.invert();
+        bv2.invert();
+        swap_bits_check(bv1, bv2, 0, 11);
+        swap_bits_check(bv1, bv2, 10, 65535);
+        swap_bits_check(bv1, bv2, 0, bm::id_max-1);
+        swap_bits_check(bv1, bv2, 10, 65535*2);
+    }
+
+    // gap one block tests
+    {
+        bvect bv1, bv2;
+        bv1.set_range(200, 250);
+        bv2.set_range(200, 250);
+        bv1.optimize();
+        swap_bits_check(bv1, bv2, 11, 1);
+        swap_bits_check(bv1, bv2, 199, 198);
+        swap_bits_check(bv1, bv2, 200, 199);
+        swap_bits_check(bv1, bv2, 200, 199);
+        swap_bits_check(bv1, bv2, 251, 65535);
+        swap_bits_check(bv1, bv2, 250, 251);
+        swap_bits_check(bv1, bv2, 220, 65536);
+        swap_bits_check(bv1, bv2, 221, 65536*2);
+    }
+
+    cout << "Stress test 1" << endl;
+    bvect::size_type max = 10000000;
+    {
+        bvect bv1, bv2;
+        generate_bvector(bv1, max, false);
+        bv2 = bv1;
+        bvect::size_type j = max;
+        bvect::size_type cnt = 0;
+        for (bvect::size_type i = 0; i <= j; i+=unsigned(rand()%16), j--)
+        {
+            swap_bits_check(bv1, bv2, i, j);
+
+            if (!is_silent)
+                if ((++cnt & 0xFFFF) == 0)
+                    cout << "\r" << i << "/" << j << flush;
+        } // for
+    }
+
+    cout << "\nStress test 2" << endl;
+    {
+        bvect bv1, bv2;
+        generate_bvector(bv1, max, true);
+        bv2 = bv1;
+        bvect::size_type j = max;
+        bvect::size_type cnt = 0;
+        for (bvect::size_type i = 0; i <= j; i+=unsigned(rand()%22), j--)
+        {
+            swap_bits_check(bv1, bv2, i, j);
+            if (!is_silent)
+                if ((++cnt & 0xFFFF) == 0)
+                    cout << "\r" << i << "/" << j << flush;
+
+        } // for
+    }
+
+
+
+    cout << "\n----------------------- SwapTest() OK" << endl;
+}
 
 template<class A, class B> void CompareMiniSet(const A& ms,
                                           const B& bvm)
@@ -22025,6 +22138,34 @@ void TestSparseVector()
 
     }
 
+    // swap test
+    {
+        bm::sparse_vector<unsigned, bvect> sv;
+        sv.push_back(1);
+        sv.push_back(8);
+        sv.swap(1, 0);
+        auto v1 = sv.get(0);
+        auto v2 = sv.get(1);
+        assert(v1 == 8);
+        assert(v2 == 1);
+        sv.optimize();
+        sv.swap(0, 1);
+        v1 = sv.get(0);
+        v2 = sv.get(1);
+        assert(v1 == 1);
+        assert(v2 == 8);
+
+        sv.set(128000, 5);
+        sv.swap(128000, 0);
+        v1 = sv.get(0);
+        v2 = sv.get(1);
+        assert(v1 == 5);
+        assert(v2 == 8);
+        v2 = sv.get(128000);
+        assert(v2 == 1);
+
+    }
+
 
     // reference vector construction for XOR serialization
     {{
@@ -22368,7 +22509,7 @@ void TestSparseVector()
         
         sv1.clear();
         assert(!sv1.is_nullable());
-        sv2.clear_all(true);
+        sv2.clear_all(true, 0);
         assert(sv2.is_nullable());
     }}
     
@@ -22380,7 +22521,10 @@ void TestSparseVector()
     cout << "sv[]:";
     for (unsigned i = 0; i < sv.size(); ++i)
     {
-        cout << sv.at(i) << ",";
+        auto v = sv.at(i);
+        cout << v << ",";
+        unsigned u = sv.get_unsigned_bits(i, 2);
+        assert(v == u);
     }
     cout << endl;
 
@@ -22674,7 +22818,7 @@ void TestSparseVector()
             exit(1);
         }
         
-        sv2.clear_all(true);
+        sv2.clear_all(true, 0);
         sv2.import(&vect[0], (unsigned)vect.size());
         res = CompareSparseVector(sv2, vect);
         if (!res)
@@ -22868,6 +23012,16 @@ void TestSparseVector()
            b = sv.is_null(i+1);
            assert(b);
            assert(v == i);
+
+
+            unsigned N_bits = (unsigned)(rand()%31);
+            if (N_bits)
+            {
+                auto u = sv.get_unsigned_bits(i, N_bits);
+                unsigned mask1 = ~0u >> (32 - N_bits);
+                auto v_masked = v & mask1;
+                assert(u == v_masked);
+            }
        } // for
     }
 
@@ -23372,6 +23526,7 @@ void TestSparseVector()
 
     cout << "Test Sparse vector join NULL-able with NULL-able" << endl;
     {
+        bm::sparse_vector<unsigned, bvect> sv0;
         bm::sparse_vector<unsigned, bvect> sv1(bm::use_null);
         bm::sparse_vector<unsigned, bvect> sv2(bm::use_null);
 
@@ -23394,7 +23549,8 @@ void TestSparseVector()
             cerr << "Sparse join size failed:" << sv1.size() << endl;
             exit(1);
         }
-        for (unsigned i = 0; i < sv1.size(); ++i)
+        auto sz = sv1.size();
+        for (unsigned i = 0; i < sz; ++i)
         {
             unsigned v1 = sv1[i];
             if (v1 != i)
@@ -28116,8 +28272,8 @@ void TestStrSparseVector()
             b = str_sv0.equal(str_sv2);
             assert(b);
         }
-
     }
+
 
     {
         using TSparseOptVector = bm::str_sparse_vector<char, bm::bvector<>, 2>;
@@ -28342,8 +28498,8 @@ void TestStrSparseVector()
         auto it = ssv1.begin();
         const char* ch = *it;
         assert(!ch);
-
     }
+
 
     // bulk set_null
     {
@@ -28414,6 +28570,32 @@ void TestStrSparseVector()
         ++it; ++it;
         ch = *it;
         assert(!ch);
+    }
+
+    // swap test
+    {
+        using TSparseOptVector = bm::str_sparse_vector<char, bm::bvector<>, 2>;
+        TSparseOptVector ssv1(bm::use_null);
+
+        ssv1.set(0, "s1");
+        ssv1.set(1, "z1");
+        ssv1.set(4, "s4");
+
+        ssv1.remap();
+        ssv1.optimize();
+
+        ssv1.swap(1, 2);
+        bool b;
+        b = ssv1.is_null(1);
+        assert(b);
+        b = ssv1.is_null(2);
+        assert(!b);
+
+        int cmp;
+        char str[256];
+        ssv1.get(2, str, sizeof(str));
+        cmp = ::strcmp(str, "z1");
+        assert(cmp==0);
     }
 
 
@@ -30544,9 +30726,21 @@ void TestStrSparseVectorSerial()
         auto sz2 = sv_lay1.size();
         (void)sz2;
 
+        bool same_struct;
         sv_deserial.deserialize_structure(sv1o, sv_lay1.buf());
+        same_struct = sv1o.get_bmatrix().is_same_structure(sv1i.get_bmatrix());
+        assert(same_struct);
+
         sv_deserial.deserialize_structure(sv2o, sv_lay2.buf());
-        sv_deserial.deserialize_structure(sv3o, sv_lay3.buf());
+        same_struct = sv2o.get_bmatrix().is_same_structure(sv2i.get_bmatrix());
+        assert(same_struct);
+
+        {
+        auto buff = sv_lay3.buf();
+        sv_deserial.deserialize_structure(sv3o, buff);
+        }
+        same_struct = sv3o.get_bmatrix().is_same_structure(sv3i.get_bmatrix());
+        assert(same_struct);
 
         bv_ref_d.add_vectors(sv3o.get_bmatrix());
         bv_ref_d.add_vectors(sv2o.get_bmatrix());
@@ -31372,6 +31566,142 @@ void TestSparseFindEqStrPipeline()
 }
 
 
+void quicksort2(str_svect_type& strsv, int first, int last)
+{
+    using stype = str_svect_type::size_type;
+    int i, j, pivot;
+
+    // fixed size for simplicity (in prod code needs dynamic buffer handling)
+    static str_svect_type::value_type pivot_buf[128];
+    while (first < last)
+    {
+        pivot = i = first;
+        j = last;
+
+        // save the pivor to re-use it in strsv.compare(..)
+        strsv.get(stype(pivot), pivot_buf, sizeof(pivot_buf));
+
+        while (i < j)
+        {
+            while((i < last) && (strsv.compare(stype(i), pivot_buf) <= 0))
+                ++i;
+            while(strsv.compare(stype(j), pivot_buf) > 0)
+                --j;
+            if (i < j)
+                strsv.swap(stype(i), stype(j));
+        } // while
+        strsv.swap(stype(pivot), stype(j));
+
+        quicksort2(strsv, first, j-1);
+        first = j+1; // tail recursion
+    } // while
+}
+
+static
+void generate_string_set(vector<string>& str_vec,
+                         const unsigned max_coll = 150000,
+                         unsigned repeat = 220,
+                         bool shuffle = true)
+{
+    str_vec.resize(0);
+    string str;
+    for (unsigned i = 10; i < max_coll; i += unsigned(rand() % 3))
+    {
+        switch (rand()%8)
+        {
+        case 0: str = "xnssv"; break;
+        default: str = "xrs";  break;
+        }
+        str.append(to_string(i));
+        str_vec.emplace_back(str);
+
+        for (unsigned k = 0; k < repeat; ++k, ++i) // add more of the same string
+            str_vec.emplace_back(str);
+
+    } // for i
+
+    if (shuffle)
+    {
+        std::random_device rd;
+        std::mt19937       g(rd());
+        std::shuffle(str_vec.begin() + str_vec.size()/2, str_vec.end(), g);
+    }
+}
+
+static
+void TestStrSparseQuickSort()
+{
+   cout << "---------------------------- TestStrSparseQuickSort()" << endl;
+
+    unsigned max_pass = 250;
+    bool shuffle = true;
+    for (unsigned pass = 0; pass < max_pass; pass += (unsigned)rand()%25, shuffle ^= true)
+    {
+        vector<string> str_vec;
+        generate_string_set(str_vec, 350000, pass, shuffle);
+
+        str_svect_type str_sv, str_sv2, str_sv_ref;
+        {
+            auto bi = str_sv.get_back_inserter();
+            for (const string& term : str_vec)
+                bi = term;
+            bi.flush();
+        }
+        str_sv.remap();
+        str_sv.optimize();
+
+        quicksort2(str_sv, 0, (int)str_sv.size()-1);
+
+        std::sort(str_vec.begin(), str_vec.end());
+        {
+            auto bi = str_sv_ref.get_back_inserter();
+            for (const string& term : str_vec)
+                bi = term;
+            bi.flush();
+        }
+        str_sv_ref.remap();
+        str_sv_ref.optimize();
+
+        bool b = str_sv_ref.equal(str_sv);
+        if (!b)
+        {
+            cerr << "vector mismatch detected!" << endl;
+
+            vector<string>::const_iterator sit = str_vec.begin();
+            str_svect_type::const_iterator it = str_sv.begin();
+            str_svect_type::const_iterator it_end = str_sv.end();
+            for (; it != it_end; ++it, ++sit)
+            {
+                string s = *it;
+                if (*sit != s)
+                {
+                    cerr << "Mismatch at:" << s << "!=" << *sit << endl;
+                    assert(0);
+                    exit(1);
+                }
+            } // for
+            assert(0);
+        }
+
+        str_sv2 = str_sv;
+        str_sv.optimize();
+/*cout << "qsort 2         " << flush;
+
+        quicksort2(str_sv, 0, (int)str_sv.size()-1);
+
+        bool eq = str_sv2.equal(str_sv);
+        assert(eq);
+*/
+        if (!is_silent)
+            cout << "\r       " << pass << "/" << max_pass << flush;
+
+
+
+    } // for pass
+
+   cout << "\n---------------------------- TestStrSparseQuickSort() OK" << endl;
+}
+
 static
 void TestStrSparseSort()
 {
@@ -31439,7 +31769,7 @@ void TestStrSparseSort()
         cout << "\n";
     }
 
-    cout << "insertion sort test data generation.." << endl;
+    cout << "sort test data generation.." << endl;
     // insertion sort stress test
     {
        std::vector<string> str_coll;
@@ -31458,6 +31788,9 @@ void TestStrSparseSort()
             std::mt19937       g(rd());
             std::shuffle(str_coll.begin(), str_coll.end(), g);
         }
+
+
+
 
         // insertion sort
         str_svect_type      str_sv_sorted;
@@ -35611,7 +35944,6 @@ void TestCompressSparseVector()
 
     }
 
-
     cout << "    testing count_range_notnull()..." << endl;
     {
         rsc_sparse_vector_u32 csv1;
@@ -35724,7 +36056,7 @@ void TestCompressSparseVector()
         v = csv1.at(2);
         assert(v == 2);
     }
-    
+
     {
         rsc_sparse_vector_u32 csv1;
         {
@@ -35806,7 +36138,7 @@ void TestCompressSparseVector()
             }
         }
     }
-    
+
 
     {
     cout << "decode() tests" << endl;
@@ -35901,7 +36233,18 @@ void TestCompressSparseVector()
 
             for (unsigned i0 = 1; i0 < i; ++i0)
             {
+                unsigned v = csv1.get(i0);
                 assert(csv1.get(i0) == i0*2);
+
+                unsigned N_bits = (unsigned) rand()%31;
+                if (N_bits)
+                {
+                    auto u = csv1.get_unsigned_bits(i0, N_bits);
+                    unsigned mask1 = ~0u >> (32 - N_bits);
+                    auto v_masked = v & mask1;
+                    assert(u == v_masked);
+                }
+
             }
             for (unsigned i1 = i+1; i1 < 65536*2; ++i1)
             {
@@ -38202,6 +38545,395 @@ void BamLoVoTest()
 }
 */
 
+
+#if 0
+
+typedef bm::sparse_vector<uint32_t, bvect> sparse_vector_u32_t;
+typedef bm::rsc_sparse_vector<uint32_t, sparse_vector_u32_t>  rsc_sparse_vector_u32_t;
+
+void case3_read2()
+{
+    std::vector<std::pair<uint32_t, uint32_t >> alleles; // vector of pairs locus_id, allele_id
+
+    std::ifstream is("/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress/case3_salmonella_3min", std::ios::binary);
+    uint8_t flags;
+    uint32_t file_id;
+    size_t sz = 0;
+    std::vector<char> buffer;
+    bvect bvector;
+    rsc_sparse_vector_u32_t rsv;
+    int cnt = 0;
+
+    bm::sparse_vector_deserializer<rsc_sparse_vector_u32_t> sv_deserializer;
+
+    do {
+        bvector.clear(true);
+
+        is.read((char*)&flags, sizeof(flags));
+        if (!is.good())
+            break;
+        is.read((char*)&file_id, sizeof(file_id));
+        is.read((char*)&sz, sizeof(sz));
+        buffer.resize(sz);
+        is.read(buffer.data(), sz);
+        bm::deserialize(bvector, (unsigned char*)buffer.data());
+/*
+        {
+            auto cnt = bvector.count();
+            alleles.resize(0);
+            alleles.reserve(cnt);
+
+            bm::bvector<>::enumerator en = bvector.first();
+            for ( ;en.valid(); ++en) {
+                auto locus_id = *en;
+                alleles.emplace_back(locus_id, 666); // allele from reference
+            }
+        }
+*/
+        is.read((char*)&sz, sizeof(sz));
+        buffer.resize(sz);
+        is.read(buffer.data(), sz);
+
+        sv_deserializer.deserialize(rsv, (const unsigned char*)&buffer[0]);
+        rsv.sync();
+
+        {
+            auto it = rsv.begin();
+            if (it.valid())
+            do {
+                if (!it.is_null())
+                    alleles.emplace_back(it.pos(), it.value());
+            } while (it.advance());
+        }
+
+        if (++cnt % 10000 == 0)
+            std::cout << "Process: " << cnt << std::endl;
+    } while (is.good());
+    std::cout << "Total: " << cnt << " files, " << alleles.size() << " alleles" << std::endl;
+}
+
+
+#endif
+
+// Test contributed by Andrea Asztalos
+//
+void VCF_des_test()
+{
+        const string filename = "/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress/sample_serialized_XOR.bin";
+
+//const string filename = "sample_serialized_XOR.bin";
+        ifstream istr(filename, std::ios::in | std::ios::binary);
+        if (!istr.good()) {
+            return;
+        }
+
+        istr.seekg(0, std::ios_base::end);
+        unsigned length = (unsigned)istr.tellg();
+        cout << "Length: " << length << endl;
+
+        istr.seekg(0, std::ios::beg);
+        char* buffer = new char[length];
+
+        istr.read(buffer, length);
+
+        using bvector_type = bvect;
+        using TSparseOptVector = bm::str_sparse_vector<char, bvector_type, 200>;
+
+        // reference vector for XOR deserialization
+        bm::sparse_vector_deserializer<TSparseOptVector> sample_deserializer;
+        bm::sparse_vector_deserializer<TSparseOptVector>::bv_ref_vector_type  bitvector_ref;
+
+        TSparseOptVector sample_data(bm::use_null);
+        sample_deserializer.deserialize_structure(sample_data, (unsigned char*)buffer);    // this will run into an assertion
+}
+
+void test_str_sv_des_fnc()
+{
+    cout << "Serialize and deserialize a vector of size 11" << endl;
+
+    using bvector_type = bvect;
+    using TSparseOptVector = bm::str_sparse_vector<char, bvector_type, 8>;
+
+    TSparseOptVector str_vector(bm::use_null);
+    auto in_iter = str_vector.get_back_inserter();
+
+    in_iter = "0/0:40,11,0:0.216:51:16,6,0:24,5,0:11:24,0,34,324,1277,358:204,0,255:39,0:3.437e-01,1.119e+01,4.819e+01,3.348e+02,4.500e+02,3.718e+02:0.00,34.77,37.77,34.77,69.54,37.77:17,23,7,4:19,21,6,5";
+    in_iter = "0/1:1,3,0:0.750:4:1,2,0:0,1,0:9:46,0,9,116,39,85:107,0,107:3,0:1.159e+01,5.942e-01,1.232e+01,1.169e+02,7.413e+01,8.813e+01:0.00,34.77,37.77,34.77,69.54,37.77:0,1,0,3:0,1,1,2";
+    in_iter = "2/2:0,0,7,0:0.000,1.000:7:0,0,3,0:0,0,4,0:18:98,233,98,21,21,0,222,233,21,98:224,21,0:0,0:5.983e+01,2.306e+02,9.789e+01,1.808e+01,5.314e+01,6.815e-02,2.188e+02,2.647e+02,5.285e+01,9.760e+01:0.00,35.00,38.00,34.77,69.77,37.77,34.77,69.54,69.54,37.77:0,0,5,2:0,0,3,4";
+    in_iter = "0/0:89,24,0:0.212:113:51,4,0:38,20,0:6:30,0,23,578,2085,601:255,0,255:40,0:1.185e+00,6.231e+00,3.223e+01,4.500e+02,4.500e+02,4.500e+02:0.00,34.77,37.77,34.77,69.54,37.77:45,44,14,10:45,44,12,12";
+    in_iter = "0/0:15,6,0:0.286:21:8,3,0:7,3,0:4:34,0,10,200,547,210:161,0,255:10,0:2.521e+00,3.774e+00,1.677e+01,2.040e+02,4.500e+02,2.170e+02:0.00,34.77,37.77,34.77,69.54,37.77:5,10,1,5:6,9,2,4";
+    in_iter = "0/0:15,4,0:0.211:19:7,1,0:8,3,0:23:12,0,10,155,581,165:110,0,255:15,0:2.299e-02,2.299e+01,3.599e+01,1.780e+02,4.500e+02,1.910e+02:0.00,34.77,37.77,34.77,69.54,37.77:6,9,4,0:6,9,1,3";
+    in_iter = "0/0:16,3,0:0.158:19:6,1,0:10,2,0:24:11,0,10,116,588,126:68,0,255:15,0:1.874e-02,2.387e+01,3.687e+01,1.401e+02,4.500e+02,1.531e+02:0.00,34.77,37.77,34.77,69.54,37.77:10,6,0,3:6,10,2,1";
+    in_iter = "0/0:10,2,0:0.167:12:4,0,0:6,2,0:9:26,0,27,78,376,105:47,0,255:10,0:5.850e-01,9.000e+00,3.900e+01,8.652e+01,4.194e+02,1.165e+02:0.00,34.77,37.77,34.77,69.54,37.77:3,7,0,2:7,3,2,0";
+    in_iter = "0/1:3,2,0:0.400:5:0,1,0:3,1,0:5:39,0,5,66,116,71:56,0,110:3,0:6.346e+00,1.785e+00,9.785e+00,6.732e+01,1.529e+02,7.532e+01:0.00,34.77,37.77,34.77,69.54,37.77:2,1,1,1:1,2,2,0";
+    in_iter = "1/1:0,6,0:1.000:6:0,2,0:0,4,0:14:58,18,0,251,18,58:251,18,0:0,0:2.023e+01,1.523e+01,1.748e-01,2.478e+02,5.000e+01,5.800e+01:0.00,34.77,37.77,34.77,69.54,37.77:0,0,3,3:0,0,3,3";
+    in_iter = "0/1:7,4,0:0.364:11:0,3,0:7,1,0:20:58,0,20,121,203,144:100,0,191:6,0:2.325e+01,4.233e-02,2.304e+01,1.211e+02,2.382e+02,1.471e+02:0.00,34.77,37.77,34.77,69.54,37.77:4,3,2,2:3,4,1,3";
+    in_iter.flush();
+
+    BM_DECLARE_TEMP_BLOCK(tb);
+    str_vector.remap();
+    str_vector.optimize(tb);
+
+    // serialize and store it in - bm::sparse_vector_serial_layout<TSparseOptVector> layout
+
+    bm::sparse_vector_serial_layout<TSparseOptVector> layout;
+
+    {
+        using samples_serializer_type = bm::sparse_vector_serializer<TSparseOptVector>;
+        samples_serializer_type sample_serializer;
+
+        sample_serializer.set_bookmarks(true, 16);
+
+        // create a reference vector and attach it to all serializers
+        samples_serializer_type::bv_ref_vector_type bitvector_ref;
+
+        // add references in reverse order - here, there is only one vector
+        bitvector_ref.add_sparse_vector(str_vector);
+
+        // compute XOR similarity matrix in parallel
+        bm::compute_sim_matrix_plan_builder<bvector_type> pbuilder;
+        bm::compute_sim_matrix_plan_builder<bvector_type>::task_batch tbatch;
+        bm::xor_sim_model<bvector_type> sim_model;
+        bm::xor_sim_params  xor_search_params;
+        pbuilder.build_plan(tbatch, sim_model, bitvector_ref, xor_search_params);
+
+        typedef bm::thread_pool<bm::task_descr*, bm::spin_lock<bm::pad0_struct> > pool_type;
+        pool_type tpool; // our thread pool here (no threads created yet)
+
+        unsigned thread_count = thread::hardware_concurrency();
+        if (thread_count == 0)
+            thread_count = 1;
+
+        tpool.start(thread_count); // start the threads
+        {
+            bm::thread_pool_executor<pool_type> exec;
+            exec.run(tpool, tbatch, true);
+        }
+        tpool.set_stop_mode(pool_type::stop_when_done);
+        tpool.join();
+
+        // add similarity model to each serializer
+        sample_serializer.set_sim_model(&sim_model);
+
+        // then: serialize
+
+
+        sample_serializer.serialize(str_vector, layout);
+
+        sample_serializer.set_xor_ref(nullptr);
+    }
+
+    // deserialize - and store data in:  TSparseOptVector new_vector(bm::use_null);
+
+    TSparseOptVector new_vector(bm::use_null);
+    {
+        const unsigned char* buf_ptr = layout.buf();
+
+        // reference vector for XOR deserialization
+        bm::sparse_vector_deserializer<TSparseOptVector> sample_deserializer;
+        bm::sparse_vector_deserializer<TSparseOptVector>::bv_ref_vector_type  bitvector_ref;
+
+
+        // first pass: build reference vectors
+
+        sample_deserializer.deserialize_structure(new_vector, buf_ptr);
+    }
+}
+
+
+// Test contributed by Andrea Asztalos
+//
+void NULL_serial_search_test()
+{
+    using bvector_type = bvect;
+    using TSparseStrVector = bm::str_sparse_vector<char, bvector_type, 390>;
+
+    // set up the vector with all null elements:
+    TSparseStrVector str_vector(bm::use_null);
+    auto in_iter = str_vector.get_back_inserter();
+    for (size_t i = 0; i < 10; ++i)
+        in_iter.add_null();
+
+    in_iter.flush();
+
+    BM_DECLARE_TEMP_BLOCK(tb);
+    str_vector.remap();
+    str_vector.optimize(tb);
+
+    // search in it for the string "CBS"
+    bm::sparse_vector_scanner<TSparseStrVector> scanner;
+    TSparseStrVector::bvector_type result;
+    scanner.find_eq_str(str_vector, "CBS", result);
+    assert (result.empty());
+
+    // serialize str_vector
+    bm::sparse_vector_serializer<TSparseStrVector> str_serializer;
+    str_serializer.set_bookmarks(true, 16);
+    str_serializer.enable_xor_compression();
+
+    bm::sparse_vector_serial_layout<TSparseStrVector> layout;
+    str_serializer.serialize(str_vector, layout);
+
+    // deserialize the entire vector int 'new_vector'
+    const unsigned char* buf_ptr = layout.buf();
+    bm::sparse_vector_deserializer<TSparseStrVector> deserializer;
+
+    TSparseStrVector new_vector(bm::use_null);
+    deserializer.deserialize(new_vector, buf_ptr);
+
+    // repeat the same search on 'new_vector'
+    bm::sparse_vector_scanner<TSparseStrVector> scanner_2;
+    TSparseStrVector::bvector_type result_2;
+    scanner_2.find_eq_str(new_vector, "CBS", result_2);
+
+    assert(result_2.empty());
+}
+
+/// submitted by Andreay (GBench)
+///
+void test_chr21()
+{
+    using bvector_type = bvect;
+    using TSparseOptVector = bm::str_sparse_vector<char, bvector_type, 8>;
+
+    cout << "Deserialize chr21 data and then do round_trip" << endl;
+
+    char* buffer = 0;
+
+    {
+        const string filename = "/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress/serialized_sampleCol_chr21.bin";
+        ifstream istr(filename, std::ios::in | std::ios::binary);
+        if (!istr.good()) {
+            return;
+        }
+        istr.seekg(0, std::ios_base::end);
+        unsigned length = (unsigned)istr.tellg();
+        istr.seekg(0, std::ios::beg);
+        buffer = new char[length];
+        istr.read(buffer, length);
+    }
+
+
+    TSparseOptVector str_vector(bm::use_null);
+    bm::sparse_vector_deserializer<TSparseOptVector> deserializer;
+    deserializer.deserialize(str_vector, (unsigned char*)buffer);
+
+    cout << "Vector length:" << str_vector.size() << endl; // expected size = 1776
+
+    // serialize str_vector and store it in - bm::sparse_vector_serial_layout<TSparseOptVector> layout
+
+    bm::sparse_vector_serial_layout<TSparseOptVector> layout;
+
+    {
+        using samples_serializer_type = bm::sparse_vector_serializer<TSparseOptVector>;
+        samples_serializer_type sample_serializer;
+
+        sample_serializer.set_bookmarks(true, 16);
+
+        // create a reference vector and attach it to all serializers
+        samples_serializer_type::bv_ref_vector_type bitvector_ref;
+
+        // add references in reverse order - here, there is only one vector
+        bitvector_ref.add_sparse_vector(str_vector);
+
+        // connect the reference vector to the serializer
+        sample_serializer.set_xor_ref(&bitvector_ref);
+
+        // compute XOR similarity matrix in parallel
+        bm::compute_sim_matrix_plan_builder<bvect> pbuilder;
+        bm::compute_sim_matrix_plan_builder<bvect>::task_batch tbatch;
+        bm::xor_sim_model<bvect> sim_model;
+        bm::xor_sim_params  xor_search_params;
+        pbuilder.build_plan(tbatch, sim_model, bitvector_ref, xor_search_params);
+
+        typedef bm::thread_pool<bm::task_descr*, bm::spin_lock<bm::pad0_struct> > pool_type;
+        pool_type tpool; // our thread pool here (no threads created yet)
+
+        unsigned thread_count = thread::hardware_concurrency();
+        if (thread_count == 0)
+            thread_count = 1;
+
+        tpool.start(thread_count); // start the threads
+        {
+            bm::thread_pool_executor<pool_type> exec;
+            exec.run(tpool, tbatch, true);
+        }
+        tpool.set_stop_mode(pool_type::stop_when_done);
+        tpool.join();
+
+        // add similarity model to each serializer
+        sample_serializer.set_sim_model(&sim_model);
+
+        // then: serialize
+        sample_serializer.serialize(str_vector, layout);
+
+        sample_serializer.set_xor_ref(nullptr);
+    }
+
+    // -----------------------------------------------
+    // deserialize - and store data in:  TSparseOptVector new_vector(bm::use_null);
+    //
+
+    TSparseOptVector new_vector(bm::use_null);
+    {
+        const unsigned char* buf_ptr = layout.buf();
+
+        // reference vector for XOR deserialization
+        bm::sparse_vector_deserializer<TSparseOptVector> sample_deserializer;
+        bm::sparse_vector_deserializer<TSparseOptVector>::bv_ref_vector_type  bitvector_ref;
+
+
+        // first pass: build reference vectors
+
+        const unsigned char* tmp_ptr = buf_ptr;
+        sample_deserializer.deserialize_structure(new_vector, tmp_ptr);
+
+        {
+            const bvect* bv = new_vector.get_bmatrix().row(2976);
+            assert(bv);
+        }
+
+        // construct the reference vector
+        // Add references in reverse order
+        bitvector_ref.add_vectors(new_vector.get_bmatrix());
+
+        sample_deserializer.set_xor_ref(&bitvector_ref);
+
+        // second pass: data deserialization
+
+        sample_deserializer.deserialize(new_vector, buf_ptr, false);
+
+        sample_deserializer.set_xor_ref(nullptr);
+
+/*
+        CompareStrSparseVector(new_vector,
+                            const vector<string>& str_coll)
+*/
+/*
+        {
+            TSparseOptVector::const_iterator it = new_vector.begin();
+            TSparseOptVector::const_iterator it_end = new_vector.end();
+            for (; it != it_end; ++it)
+            {
+                std::cout << *it << std::endl;
+            }
+        }
+*/
+
+        bm::print_svector_stat(cout, str_vector);
+
+cout << "----------------------------\n";
+        bm::print_svector_stat(cout, new_vector);
+
+
+        bool eq = new_vector.equal(str_vector);
+        assert(eq);
+
+    }
+
+}
+
+
 #define BM_EXPAND(x)  x ## 1
 #define EXPAND(x)     BM_EXPAND(x)
 
@@ -38216,6 +38948,11 @@ int main(int argc, char *argv[])
 #endif
 
 //    BamLoVoTest();
+
+
+    //case3_read2();
+    //return 0;
+
 
     {
     auto ret = parse_args(argc, argv);
@@ -38257,6 +38994,15 @@ int main(int argc, char *argv[])
         }
     }
 #endif
+
+/*
+    test_str_sv_des_fnc();
+    test_chr21();
+
+    return 0;
+*/
+    //VCF_des_test();
+
 
 /*
     BrennerTest("/Users/anatoliykuznetsov/Desktop/dev/git/BitMagic/tests/stress/1.i",
@@ -38417,6 +39163,105 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
 */
 //    return main2();
 
+/*
+{
+typedef bm::bvector<> bvector_type1;
+typedef bm::str_sparse_vector<char, bvector_type1, 32> str_sv_type1;
+typedef bm::sparse_vector_scanner<str_sv_type1, 64> scanner_t;
+
+    str_sv_type1 sv;
+    bm::file_load_svector(sv, "/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress/2.batch");
+    scanner_t scanner;
+    scanner.bind(sv, true);
+    str_sv_type1::size_type pos = 0;
+    std::string name = "E00583:350:H5MV3CCX2:4:2113:18203:62663";
+
+    {
+    scanner_t scanner;
+    bvector_type1 bv_out;
+    bool b = scanner.find_eq_str(sv, name.c_str(), bv_out);
+    if (b)
+    {
+        std::cout << "found..." << std::endl;
+    }
+
+    }
+
+    bool found = scanner.bfind_eq_str(name.c_str(), name.size(), pos);
+    if (found)
+    {
+        std::string val;
+        sv.get(pos, val);
+        std::cout << name << std::endl;
+        std::cout << val << std::endl;
+        std::cout << name << " - found '" << val << "' at " << pos << std::endl;
+    }
+return 0;
+}
+*/
+/*
+{
+    typedef bm::sparse_vector<uint16_t, bm::bvector<> > svector_u16;
+    svector_u16 sv, sv_c;
+    std::ifstream input( "/Volumes/DATAFAT32/incs.txt", ios::in);
+    if (!input.good())
+    {
+        cerr << "cannot open file" << endl;
+        return 1;
+    }
+    string line;
+    size_t idx = 0;
+    size_t o_cnt = 0;
+
+    while (getline(input, line))
+    {
+
+        if (line.empty())
+            continue;
+        auto pos = stoi(line);
+        auto v1 = sv.get_no_check(pos);
+
+        sv.inc(pos);
+        sv_c.inc(pos);
+
+
+        auto v2 = sv.get_no_check(pos);
+        if (v1 + 1 != v2) {
+            cerr << "Mismatch!" << endl;
+            cout << "line:" << idx << ", pos: " << pos << ", v1: " << v1 << ", v2: " << v2 << endl;
+            auto v1_c = sv_c.get(pos);
+            cout << "v1_c=" << v1_c << endl;
+
+            return 1;
+        }
+        //if (o_cnt > 1) // start detailed checking
+        if (idx < 23796594)
+        {
+            auto v_c = sv.get(23796594);
+            if (v_c)
+            {
+                cerr << "\n** turned non-zero!" << endl;
+                cerr << "  position match=" << (pos == 23796594) << endl;
+                cout << "line:" << idx << ", pos: " << pos << ", v1: " << v1 << ", v2: " << v2 << endl;
+                auto v1_c = sv_c.get(23796594);
+                cout << "v1_c=" << v1_c << endl;
+                //return 1;
+            }
+        }
+
+        ++idx;
+        if (idx % 8000000 == 0)
+        {
+            svector_u16 sv1(sv);
+            cerr << "O" << flush;
+            sv.optimize();
+            ++o_cnt;
+        }
+    }
+    cout << "processed " << idx << " lines" << endl;
+    return 0;
+}
+*/
 
     if (is_all || is_low_level)
     {
@@ -38535,7 +39380,6 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
 
         if (is_all || is_bvbasic || is_bvb0)
         {
-
              ExportTest();
              CheckAllocLeaks(false);
 
@@ -38546,6 +39390,9 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
              CheckAllocLeaks(false);
 
              SetTest();
+             CheckAllocLeaks(false);
+
+             SwapTest();
              CheckAllocLeaks(false);
 
              ArenaTest();
@@ -38924,15 +39771,20 @@ LoadTestAlignData("/Volumes/DATAFAT32/CGV-131/ser_align_5736.bin");
          TestStrSparseVector_FindEq();
          CheckAllocLeaks(false);
 
+         NULL_serial_search_test();
+         CheckAllocLeaks(false);
+
          TestSparseFindEqStrPipeline();
          CheckAllocLeaks(false);
 
          TestStrSparseSort();
          CheckAllocLeaks(false);
 
-         StressTestStrSparseVector();
+         TestStrSparseQuickSort();
          CheckAllocLeaks(false);
 
+         StressTestStrSparseVector();
+         CheckAllocLeaks(false);
     }
 
     if (is_ser || is_allsvser)

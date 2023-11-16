@@ -41,6 +41,7 @@ For more information please visit:  http://bitmagic.io
 #include <stdarg.h>
 #include <vector>
 #include <chrono>
+#include <functional>
 
 #include <util/bitset/ncbi_bitset.hpp>
 #include <util/bitset/bmrandom.h>
@@ -11635,7 +11636,7 @@ void TestSparseVector()
         
         sv1.clear();
         assert(!sv1.is_nullable());
-        sv2.clear_all(true);
+        sv2.clear_all(true, 0);
         assert(sv2.is_nullable());
     }}
     
@@ -11803,7 +11804,7 @@ void TestSparseVector()
             assert(0);exit(1);
         }
         
-        sv3.clear_all(true);
+        sv3.clear_all(true, 0);
         sv3.import(&vect[0], (unsigned)vect.size());
         res = CompareSparseVector(sv3, vect);
         if (!res)
@@ -15421,7 +15422,16 @@ void TestCompressSparseVector()
 
             for (unsigned i0 = 1; i0 < i; ++i0)
             {
-                assert(csv1.get(i0) == i0*2);
+                auto v = csv1.get(i0);
+                assert(v == i0*2);
+                unsigned N_bits = (unsigned)rand()%32;
+                if (N_bits)
+                {
+                    unsigned u = csv1.get_unsigned_bits(i0, N_bits);
+                    unsigned mask1 = ~0u;
+                    mask1 >>= (32-N_bits);
+                    assert(u == (v & mask1));
+                }
             }
             for (unsigned i1 = i+1; i1 < 65536*2; ++i1)
             {
@@ -15462,6 +15472,15 @@ void TestCompressSparseVector()
             csv.set(pr.first, pr.second);
             unsigned v = csv[pr.first];
             assert(v == pr.second);
+
+            unsigned N_bits = (unsigned)rand()%32;
+            if (N_bits)
+            {
+                unsigned u = csv.get_unsigned_bits(pr.first, N_bits);
+                unsigned mask1 = ~0u;
+                mask1 >>= (32-N_bits);
+                assert(u == (v & mask1));
+            }
 
             if (i % 4096 == 0)
             {
@@ -15696,7 +15715,7 @@ void TestCompressSparseVector()
             cout << "ok" << endl;
 
             cout << "cmp 3...";
-            csv1.clear_all(true);
+            csv1.clear_all(true, 0);
 
             sv.optimize(tb);
             rsc_sparse_vector_u32 csv2;
@@ -19714,12 +19733,95 @@ int parse_args(int argc, char *argv[])
 #define BM_EXPAND(x)  x ## 1
 #define EXPAND(x)     BM_EXPAND(x)
 
+inline
+void test_kmers()
+{
+
+    {
+    bm::bvector<> bv1;
+//bv1.set(bm::id_max-1);
+
+    chrono_taker<std::ostream> ct(cerr, "load bvector");
+    bm::LoadBVector("/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress64/64bv_0.bv", bv1);
+    cout << 1 << endl;
+    }
+return;
+    static const size_t c48_mask = 0x0000FFFFFFFFFFFF; // First 48 bits
+    std::vector<unsigned long long> test_kmers;
+
+    bm::bvector<> bv(bm::BM_GAP); // important to mminimize RAM usage
+    bv.init();
+
+    { // read input
+    chrono_taker<std::ostream> ct(cerr, "read input");
+        ifstream ifs("/Users/anatoliykuznetsov/dev/git/BitMagic/tests/stress64/kmers_15829.txt", ofstream::in );
+        if (!ifs.good())
+        {
+            std::cerr << "cannot open file" << std::endl;
+            exit(1);
+        }
+        size_t kmer;
+        while (!ifs.eof()) {
+            ifs >> kmer;
+            kmer &= c48_mask;
+            test_kmers.push_back(kmer);
+        }
+        cout << test_kmers.size() << " kmers" << endl;
+        std::sort(test_kmers.begin(), test_kmers.end());
+
+        {
+
+        //chrono_taker<std::ostream> ct(cerr, "bv import");
+        bv.import(test_kmers.data(), test_kmers.size(), bm::BM_SORTED);
+
+        }
+        //bv.freeze();
+    }
+    // check 1
+    cout << "check1" << endl;
+    {
+        for (auto kmer : test_kmers) {
+            if (!bv.test(kmer & c48_mask)) {
+                cout << "failed (bv):" << kmer << endl;
+            }
+        }
+    }
+    bm::SaveBVector("bv_15829", bv);
+
+    bm::bvector<> bv1;
+
+    // check 2
+    std::cout << "Load vector" << endl;
+    {
+    chrono_taker<std::ostream> ct(cerr, "load bvector");
+    bm::LoadBVector("bv_15829", bv1);
+    }
+
+
+    std::cout << "check2" << endl;
+    //bv1.freeze();
+    {
+    for (auto kmer : test_kmers) {
+        if (!bv1.test(kmer & c48_mask)) {
+            cout << kmer << " failed (bv1)" << endl;
+        }
+    }
+    }
+    std::cout << "all good" << endl;
+}
+
 
 int main(int argc, char *argv[])
 {
     time_t      start_time = time(0);
     time_t      finish_time;
-
+/*
+    {
+    chrono_taker<std::ostream> ct(cerr, "k-mer test");
+    test_kmers();
+    }
+    return 0;
+*/
 #if !defined(BM_ASSERT) || (EXPAND(BM_ASSERT) == 1)
     cerr << "Build error: Test build with undefined BM_ASSERT" << endl;
     exit(1);
