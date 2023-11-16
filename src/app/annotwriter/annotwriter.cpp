@@ -146,8 +146,8 @@ private:
     bool xTryProcessInputId(
         const CArgs& );
 
-	bool xTryProcessInputId(
-		const string& id, bool skipHeaders);
+    bool xTryProcessInputId(
+        const string& id, bool skipHeaders);
 
     bool xTryProcessInputIdList(
         const CArgs& );
@@ -158,9 +158,9 @@ private:
     bool xProcessInputObject(
         CSeq_entry&);
 
-	bool xProcessInputObject(
+    bool xProcessInputObject(
         CSeq_entry& entry,
-		bool skipHeaders);
+        bool skipHeaders);
 
     bool xProcessInputObject(
         CSeq_submit&);
@@ -175,9 +175,9 @@ private:
     bool xProcessInputObject(
         CSeq_align_set&);
 
-	bool xProcessBioseqHandle(
-		CBioseq_Handle& bsh,
-		bool skipHeaders);
+    bool xProcessBioseqHandle(
+        CBioseq_Handle& bsh,
+        bool skipHeaders);
 
     unsigned int xGffFlags( 
         const CArgs& );
@@ -201,7 +201,7 @@ private:
         CObjectIStream& istr, 
         CSerialObject& object); //throws
 
-	bool m_Cleanup {false};
+    bool m_Cleanup {false};
     CRef<CObjectManager> m_pObjMngr;
     CRef<CScope> m_pScope;
     CRef<CWriterBase> m_pWriter;
@@ -353,8 +353,8 @@ void CAnnotWriterApp::Init()
         true );
 
     // no-cleanup
-	arg_desc->AddFlag("nocleanup",
-			"Do not perform data cleanup prior to formatting GTF and GFF3");
+    arg_desc->AddFlag("nocleanup",
+            "Do not perform data cleanup prior to formatting GTF and GFF3");
 
     }}
 
@@ -367,10 +367,10 @@ int CAnnotWriterApp::Run()
 //  ----------------------------------------------------------------------------
 {
     const CArgs& args = GetArgs();
-	auto format = args["format"].AsString();
-	m_Cleanup = !args["nocleanup"] && (format == "gtf" || format == "gff3");
+    auto format = args["format"].AsString();
+    m_Cleanup = !args["nocleanup"] && (format == "gtf" || format == "gff3");
 
-	CONNECT_Init(&GetConfig());
+    CONNECT_Init(&GetConfig());
     m_pObjMngr = CObjectManager::GetInstance();
 
     CDataLoadersUtil::SetupObjectManager(args, *m_pObjMngr, default_loaders);
@@ -450,7 +450,7 @@ bool CAnnotWriterApp::xTryProcessInputId(
     if(!args["id"]) {
         return false;
     }
-	return xTryProcessInputId(args["id"].AsString(), args["skip-headers"]);
+    return xTryProcessInputId(args["id"].AsString(), args["skip-headers"]);
 }
 
 //  -----------------------------------------------------------------------------
@@ -460,7 +460,7 @@ bool CAnnotWriterApp::xTryProcessInputId(
 {
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
     CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-	xProcessBioseqHandle(bsh, skipHeaders);
+    xProcessBioseqHandle(bsh, skipHeaders);
     return true;
 }    
 
@@ -474,9 +474,9 @@ bool CAnnotWriterApp::xTryProcessInputIdList(
     }
     vector<string> inputIds;
     NStr::Split(args["ids"].AsString(), ",", inputIds);
-	const bool skipHeaders = args["skip-headers"];
+    const bool skipHeaders = args["skip-headers"];
     for (const auto& inputId: inputIds) {
-		xTryProcessInputId(inputId, skipHeaders);
+        xTryProcessInputId(inputId, skipHeaders);
     }
     return true;
 }    
@@ -573,7 +573,7 @@ bool CAnnotWriterApp::xProcessInputObject(
             m_pWriter->WriteHeader();
         }
         for (auto pEntry : data.SetEntrys()) {
-			xProcessInputObject(*pEntry, true);
+            xProcessInputObject(*pEntry, true);
         }
         return true;
     }
@@ -583,10 +583,10 @@ bool CAnnotWriterApp::xProcessInputObject(
             m_pWriter->WriteHeader();
         }
         for (auto pAnnot : data.SetAnnots()) {
-			if (m_Cleanup) {
-				CCleanup cleanup;
-				cleanup.BasicCleanup(*pAnnot);
-			}
+            if (m_Cleanup) {
+                CCleanup cleanup;
+                cleanup.BasicCleanup(*pAnnot);
+            }
             m_pWriter->WriteAnnot(*pAnnot, xAssemblyName(), xAssemblyAccession());
             m_pWriter->WriteFooter();
         }
@@ -601,7 +601,7 @@ bool CAnnotWriterApp::xProcessInputObject(
     CSeq_entry& entry)
 //  -----------------------------------------------------------------------------
 {
-	return xProcessInputObject(entry, GetArgs()["skip-headers"]);
+    return xProcessInputObject(entry, GetArgs()["skip-headers"]);
 }
 
 
@@ -610,14 +610,14 @@ bool CAnnotWriterApp::xProcessInputObject(
     CSeq_entry& entry, bool skipHeaders)
 //  -----------------------------------------------------------------------------
 {
-	CSeq_entry_Handle seh = m_pScope->AddTopLevelSeqEntry(entry);
-	if (m_Cleanup) { // cleanup annotations
-		CCleanup cleanup;
-		for (CSeq_annot_CI cit(seh); cit; ++cit) {
-			CSeq_annot_Handle sah = *cit;
+    CSeq_entry_Handle seh = m_pScope->AddTopLevelSeqEntry(entry);
+    if (m_Cleanup) { // cleanup annotations
+        CCleanup cleanup;
+        for (CSeq_annot_CI cit(seh); cit; ++cit) {
+            CSeq_annot_Handle sah = *cit;
             cleanup.BasicCleanup(sah);
-		}
-	}
+        }
+    }
 
     if (!skipHeaders) {
         m_pWriter->WriteHeader();
@@ -638,10 +638,10 @@ bool CAnnotWriterApp::xProcessInputObject(
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader(annot);
     }
-	if (m_Cleanup) {
-		CCleanup cleanup;
-		cleanup.BasicCleanup(annot);
-	}
+    if (m_Cleanup) {
+        CCleanup cleanup;
+        cleanup.BasicCleanup(annot);
+    }
     m_pWriter->WriteAnnot(annot, xAssemblyName(), xAssemblyAccession());
     m_pWriter->WriteFooter();
     return true;
@@ -653,7 +653,7 @@ bool CAnnotWriterApp::xProcessInputObject(
 //  -----------------------------------------------------------------------------
 {
     CBioseq_Handle bsh = m_pScope->AddBioseq(bioseq);
-	xProcessBioseqHandle(bsh, GetArgs()["skip-headers"]);
+    xProcessBioseqHandle(bsh, GetArgs()["skip-headers"]);
     m_pScope->RemoveBioseq(bsh);
     return true;
 }
@@ -662,13 +662,13 @@ bool CAnnotWriterApp::xProcessInputObject(
 bool CAnnotWriterApp::xProcessBioseqHandle(CBioseq_Handle& bsh, bool skipHeaders)
 //  -----------------------------------------------------------------------------
 {
-	if (m_Cleanup) { // cleanup annotations
-		CCleanup cleanup;
-		for (CSeq_annot_CI cit(bsh); cit; ++cit) {
-			CSeq_annot_Handle sah = *cit;
-			cleanup.BasicCleanup(sah);
-		}
-	}
+    if (m_Cleanup) { // cleanup annotations
+        CCleanup cleanup;
+        for (CSeq_annot_CI cit(bsh); cit; ++cit) {
+            CSeq_annot_Handle sah = *cit;
+            cleanup.BasicCleanup(sah);
+        }
+    }
 
     if (!skipHeaders) {
         m_pWriter->WriteHeader();
@@ -690,7 +690,7 @@ bool CAnnotWriterApp::xProcessInputObject(
 {
     CSeq_entry se;
     se.SetSet(bioset);
-	return xProcessInputObject(se);
+    return xProcessInputObject(se);
 }
 
 
@@ -702,7 +702,7 @@ bool CAnnotWriterApp::xProcessInputObject(
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
-	
+    
     m_pWriter->WriteAlign( align, xAssemblyName(), xAssemblyAccession());
     m_pWriter->WriteFooter();
     return true;
@@ -740,7 +740,7 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
     if (args["i"]) {
-    	const char* infile = args["i"].AsString().c_str();
+        const char* infile = args["i"].AsString().c_str();
         pInputStream = new CNcbiIfstream(infile, ios::binary);
         bDeleteOnClose = true;
     }
