@@ -2762,33 +2762,34 @@ BOOST_AUTO_TEST_CASE(Test_RW_978)
 
 BOOST_AUTO_TEST_CASE(Test_RW_2148)
 {
-	auto pFeat = Ref(new CSeq_feat());
+    auto pFeat = Ref(new CSeq_feat());
     pFeat->SetData().SetGene();
     auto pQual = Ref(new CGb_qual("gene", "locus_field"));
     pFeat->SetQual().push_back(pQual);
-	pFeat->SetLocation().SetWhole().SetLocal().SetStr("id");
+    pFeat->SetLocation().SetWhole().SetLocal().SetStr("id");
     CCleanup cleanup;
     cleanup.BasicCleanup(*pFeat);
 
-	// Check that the qualifier has been used to populate Gene-ref.locus
-	BOOST_CHECK(pFeat->GetData().GetGene().IsSetLocus());
-	BOOST_CHECK_EQUAL(pFeat->GetData().GetGene().GetLocus(), "locus_field");
-	BOOST_CHECK(!pFeat->IsSetQual()); // Check that qualifiers have been cleared
+    // Check that the qualifier has been used to populate Gene-ref.locus
+    BOOST_CHECK(pFeat->GetData().GetGene().IsSetLocus());
+    BOOST_CHECK_EQUAL(pFeat->GetData().GetGene().GetLocus(), "locus_field");
+    BOOST_CHECK(!pFeat->IsSetQual()); // Check that qualifiers have been cleared
 
-	pQual->SetVal("val1");
-	pFeat->SetQual().push_back(pQual);
-	cleanup.BasicCleanup(*pFeat);
+    pQual->SetVal("val1");
+    pFeat->SetQual().push_back(pQual);
+    cleanup.BasicCleanup(*pFeat);
 
-	// Check that the qualifier has been moved to the Gene-ref.desc
-	BOOST_CHECK(pFeat->GetData().GetGene().IsSetDesc());
-	BOOST_CHECK_EQUAL(pFeat->GetData().GetGene().GetDesc(), "gene=val1");
-	BOOST_CHECK(!pFeat->IsSetQual()); // Check that qualifiers have been cleared
+    // Check that the qualifier has been moved to the Gene-ref.desc
+    BOOST_CHECK(pFeat->GetData().GetGene().IsSetDesc());
+    BOOST_CHECK_EQUAL(pFeat->GetData().GetGene().GetDesc(), "gene=val1");
+    BOOST_CHECK(!pFeat->IsSetQual()); // Check that qualifiers have been cleared
 
     pQual->SetVal("val2");
     pFeat->SetQual().push_back(pQual);
-    cleanup.BasicCleanup(*pFeat);
-	
-	// Check that the qualifier has been moved to the Gene-ref.desc
+    cleanup.BasicCleanup(*pFeat)
+
+    
+    // Check that the qualifier has been moved to the Gene-ref.desc
     BOOST_CHECK_EQUAL(pFeat->GetData().GetGene().GetDesc(), "gene=val1; gene=val2");
-	BOOST_CHECK(!pFeat->IsSetQual()); // Check that qualifiers have been cleared
+    BOOST_CHECK(!pFeat->IsSetQual()); // Check that qualifiers have been cleared
 }
