@@ -41,7 +41,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-class NCBI_XOBJEDIT_EXPORT CMacroHugeAsnReader : public CHugeAsnReader
+class NCBI_XHUGEASN_EXPORT CMacroHugeAsnReader : public CHugeAsnReader
 {
 public:
     void ResetTopEntry();

@@ -58,7 +58,7 @@ class CSeqdesc;
 BEGIN_SCOPE(edit)
 
 
-class NCBI_XOBJEDIT_EXPORT CHugeAsnReader: public IHugeAsnSource
+class NCBI_XHUGEASN_EXPORT CHugeAsnReader: public IHugeAsnSource
 {
 public:
     using TFileSize = std::streamoff;

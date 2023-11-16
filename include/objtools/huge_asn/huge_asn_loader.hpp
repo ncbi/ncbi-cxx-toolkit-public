@@ -48,7 +48,7 @@ namespace edit
 
 BEGIN_SCOPE(edit)
 
-class NCBI_XOBJEDIT_EXPORT CHugeAsnDataLoader: public CDataLoader
+class NCBI_XHUGEASN_EXPORT CHugeAsnDataLoader: public CDataLoader
 {
 public:
     typedef SRegisterLoaderInfo<CHugeAsnDataLoader> TRegisterLoaderInfo;

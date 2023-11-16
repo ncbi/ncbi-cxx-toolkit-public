@@ -3,7 +3,7 @@
 NCBI_begin_app(asn2flat)
   NCBI_project_watchers(gotvyans foleyjp)
   NCBI_sources(asn2flat)
-  NCBI_uses_toolkit_libraries(data_loaders_util xformat xobjwrite)
+  NCBI_uses_toolkit_libraries(data_loaders_util xformat xobjwrite xhugeasn)
 
   NCBI_optional_components(GRPC VDB)
 

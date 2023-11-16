@@ -6,4 +6,5 @@ NCBI_add_subdirectory(
   asniotest align seqmasks_io eutils
   align_format snputil uudutil variation writers pubseq_gateway
   logging import flatfile
+  huge_asn
 )

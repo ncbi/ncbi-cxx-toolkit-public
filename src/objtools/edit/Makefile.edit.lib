@@ -12,8 +12,6 @@ SRC = gene_utils seq_entry_edit promote autodef_with_tax \
       parse_text_options publication_edit gap_trim \
       external_annots feature_propagate text_object_description \
       seq_edit pub_fix \
-      huge_asn_reader huge_file huge_file_process huge_asn_loader \
-      huge_asn_macro_reader
 
 
 LIB    = xobjedit
