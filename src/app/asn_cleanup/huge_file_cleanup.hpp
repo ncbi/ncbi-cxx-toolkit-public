@@ -46,8 +46,7 @@ BEGIN_SCOPE(objects)
 
 class CFeat_id;
 
-class NCBI_CLEANUP_EXPORT CCleanupHugeAsnReader :
-    public edit::CHugeAsnReader
+class CCleanupHugeAsnReader: public edit::CHugeAsnReader
 {
 public:
     enum EOptions {
