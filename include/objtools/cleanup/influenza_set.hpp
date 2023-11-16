@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CInfluenzaSet : public CObject {
+class NCBI_CLEANUP_EXPORT CInfluenzaSet : public CObject {
 public:
     CInfluenzaSet(const string& key);
     ~CInfluenzaSet() {}
@@ -69,7 +69,7 @@ protected:
     size_t m_Required;
 };
 
-bool g_FindSegs(const CBioSource& src, size_t numRequired, set<size_t>& segsFound);
+bool NCBI_CLEANUP_EXPORT g_FindSegs(const CBioSource& src, size_t numRequired, set<size_t>& segsFound);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

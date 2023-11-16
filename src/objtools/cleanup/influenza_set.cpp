@@ -30,7 +30,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include "influenza_set.hpp"
+#include <objtools/cleanup/influenza_set.hpp>
 
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
