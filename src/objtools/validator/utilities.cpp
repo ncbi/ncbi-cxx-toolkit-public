@@ -385,7 +385,7 @@ static string s_GetAccessionForSeqdesc (const CSeq_entry_Handle& seh, const CSeq
     return kEmptyStr;
 }
 
-
+static
 bool IsBioseqInSameSeqEntryAsAlign(const CBioseq_Handle& bsh, const CSeq_align& align, CScope& scope)
 {
     CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
@@ -1293,7 +1293,7 @@ CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc)
     return bsh;
 }
 
-
+static
 bool s_PosIsNNotGap(const CSeqVector& vec, unsigned int pos)
 {
     if (pos >= vec.size()) {
@@ -1391,7 +1391,7 @@ bool& end_ambig)
                 check_len = vec.size();
             }
             size_t num_ns = 0;
-            for (size_t i = 0; i < check_len; i++) {
+            for (TSeqPos i = 0; i < check_len; i++) {
                 if (vec[i] == 'N') {
                     num_ns++;
                     if (num_ns >= 5 && i < 10) {
@@ -1404,7 +1404,7 @@ bool& end_ambig)
                 }
             }
             num_ns = 0;
-            for (size_t i = 0; i < check_len; i++) {
+            for (TSeqPos i = 0; i < check_len; i++) {
                 if (vec[vec.size() - i - 1] == 'N') {
                     num_ns++;
                     if (num_ns >= 5 && i < 10) {
@@ -2035,12 +2035,9 @@ static const string sIgnoreHostWordList[] = {
   " nr "
 };
 
-
-static const int kNumIgnoreHostWordList = sizeof (sIgnoreHostWordList) / sizeof (string);
-
 void AdjustSpecificHostForTaxServer (string& spec_host)
 {
-    for (int i = 0; i < kNumIgnoreHostWordList; i++) {
+    for (unsigned i = 0; i < ArraySize(sIgnoreHostWordList); ++i) {
         NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], " ");
     }
     NStr::ReplaceInPlace(spec_host, "  ", " ");
@@ -2284,7 +2281,7 @@ string TranslateCodingRegionForValidation(const CSeq_feat& feat, CScope &scope, 
         if (!bsh) {
             return kEmptyStr;
         }
-        size_t start = 0;
+        CSeq_loc::TPoint start = 0;
         if (cdregion.IsSetFrame()) {
             if (cdregion.GetFrame() == 2) {
                 start = 1;
