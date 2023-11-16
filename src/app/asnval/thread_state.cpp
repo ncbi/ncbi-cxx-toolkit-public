@@ -905,7 +905,13 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename)
     if (filename.empty())
         mpIstr = OpenFile(asninfo, filename);
     else {
-        mpHugeFileProcess.reset(new edit::CHugeFileProcess(new CValidatorHugeAsnReader(m_GlobalInfo)));
+        auto huge_reader = std::make_unique<edit::CHugeAsnReader>();
+        huge_reader->ExtendReadHooks([this](CObjectIStream& istream)
+        {
+            CHugeFileValidator::RegisterReaderHooks(istream, m_GlobalInfo);
+        });
+
+        mpHugeFileProcess.reset(new edit::CHugeFileProcess(huge_reader.release()));
         try {
             mpHugeFileProcess->Open(filename, &s_known_types);
             asninfo = mpHugeFileProcess->GetFile().m_content;

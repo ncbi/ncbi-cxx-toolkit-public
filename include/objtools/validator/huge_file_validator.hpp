@@ -113,6 +113,8 @@ public:
             const string& genbankSetId,
             CRef<CValidError>& pErrors) const;
 
+    static void RegisterReaderHooks(CObjectIStream& objStream, SGlobalInfo& m_GlobalInfo);
+
 private:
     void x_ReportMissingPubs(CRef<CValidError>& pErrors) const;
 
@@ -140,23 +142,6 @@ string NCBI_VALIDATOR_EXPORT g_GetHugeSetIdString(const edit::CHugeAsnReader& re
 void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
         const string& genbankSetId,
         CRef<CValidError>& pErrors);
-
-
-class NCBI_VALIDATOR_EXPORT CValidatorHugeAsnReader : 
-    public edit::CHugeAsnReader 
-{
-public:
-    CValidatorHugeAsnReader(CHugeFileValidator::TGlobalInfo& globalInfo) :
-        m_GlobalInfo(globalInfo) {}
-    virtual ~CValidatorHugeAsnReader(){}
-    using TParent = edit::CHugeAsnReader;
-
-protected:
-    void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
-
-private:
-    CHugeFileValidator::TGlobalInfo& m_GlobalInfo;
-};
 
 END_SCOPE(validator)
 END_SCOPE(objects)
