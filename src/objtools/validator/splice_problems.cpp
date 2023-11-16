@@ -478,9 +478,9 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
         // Validate acceptor site of 5'- most feature
         const CSeq_loc& part = head.GetEmbeddingSeq_loc();
         CSeq_loc::TRange range = head.GetRange();
-        CBioseq_Handle bsh_head = bsh.GetScope().GetBioseqHandle(*head.GetRangeAsSeq_loc());
-        if (bsh_head) {
-            CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+        CBioseq_Handle bsh_head1 = bsh.GetScope().GetBioseqHandle(*head.GetRangeAsSeq_loc());
+        if (bsh_head1) {
+            CSeqVector vec = bsh_head1.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
 
             if (strand == eNa_strand_minus) {
                 start = range.GetTo();
@@ -488,7 +488,7 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
                 start = range.GetFrom();
             }
             if (part.IsPartialStart(eExtreme_Biological) && !ignore_mrna_partial5) {
-                ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head.GetInst_Length());
+                ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head1.GetInst_Length());
                 m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
             }
         }
@@ -558,17 +558,17 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
         // Validate acceptor site of 5'- most feature
         const CSeq_loc& part = head.GetEmbeddingSeq_loc();
         CSeq_loc::TRange range = head.GetRange();
-        CBioseq_Handle bsh_head = bsh.GetScope().GetBioseqHandle(*head.GetRangeAsSeq_loc());
-        if (bsh_head) {
+        CBioseq_Handle bsh_head1 = bsh.GetScope().GetBioseqHandle(*head.GetRangeAsSeq_loc());
+        if (bsh_head1) {
             try {
-                CSeqVector vec = bsh_head.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                CSeqVector vec = bsh_head1.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                 if (part.IsPartialStart(eExtreme_Biological)) {
                     if (strand == eNa_strand_minus) {
                         start = range.GetTo();
                     } else {
                         start = range.GetFrom();
                     }
-                    ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head.GetInst_Length());
+                    ESpliceSiteRead good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, bsh_head1.GetInst_Length());
                     m_AcceptorProblems.push_back(TSpliceProblem(good_acceptor, start));
                 }
             } catch (CSeqVectorException&) {
