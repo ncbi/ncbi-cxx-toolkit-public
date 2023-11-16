@@ -2786,8 +2786,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_2148)
 
     pQual->SetVal("val2");
     pFeat->SetQual().push_back(pQual);
-    cleanup.BasicCleanup(*pFeat)
-
+    cleanup.BasicCleanup(*pFeat);
     
     // Check that the qualifier has been moved to the Gene-ref.desc
     BOOST_CHECK_EQUAL(pFeat->GetData().GetGene().GetDesc(), "gene=val1; gene=val2");
