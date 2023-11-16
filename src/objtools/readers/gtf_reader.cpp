@@ -610,11 +610,11 @@ bool CGtfReader::xFeatureSetDataGene(
     if (!locusTag.empty()) {
         gene.SetLocus_tag(locusTag);
     }
-	string locus = attributes.ValueOf("gene");
+    string locus = attributes.ValueOf("gene");
 
-	if (!locus.empty()) {
-		gene.SetLocus(locus);
-	}
+    if (!locus.empty()) {
+        gene.SetLocus(locus);
+    }
     return true;
 }
 
