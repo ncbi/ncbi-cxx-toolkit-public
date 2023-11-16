@@ -173,13 +173,13 @@ unsigned SPSG_Params::s_GetCompetitiveAfter(double io_timer_period, double timeo
     return static_cast<unsigned>(timeout / io_timer_period);
 }
 
-string SPSG_Params::GetAuthToken()
+string SPSG_Params::s_GetAuthToken(const CNcbiEnvironment& env, const TPSG_AuthTokenName& auth_token_name)
 {
     string rv = TPSG_AuthToken(TPSG_AuthToken::eGetDefault);
 
     if (rv.empty()) {
         CHttpCookies cookies;
-        cookies.Add(CHttpCookies::eHeader_Cookie, CNcbiEnvironment().Get("HTTP_COOKIE"), nullptr);
+        cookies.Add(CHttpCookies::eHeader_Cookie, env.Get("HTTP_COOKIE"), nullptr);
 
         for (const auto& cookie : cookies) {
             if (cookie.GetName() == auth_token_name.Get()) {
