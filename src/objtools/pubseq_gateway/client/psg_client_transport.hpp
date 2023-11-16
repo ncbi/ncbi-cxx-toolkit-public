@@ -214,7 +214,7 @@ struct SPSG_Params
     string auth_token;
     TPSG_PsgClientMode client_mode;
 
-    SPSG_Params() :
+    SPSG_Params(CNcbiEnvironment env = {}) :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
         max_concurrent_requests_per_server(TPSG_MaxConcurrentRequestsPerServer::eGetDefault),
@@ -226,7 +226,7 @@ struct SPSG_Params
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         auth_token_name(TPSG_AuthTokenName::eGetDefault),
-        auth_token(GetAuthToken()),
+        auth_token(s_GetAuthToken(env, auth_token_name)),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
@@ -241,8 +241,7 @@ struct SPSG_Params
 private:
     static unsigned s_GetRequestTimeout(double io_timer_period);
     static unsigned s_GetCompetitiveAfter(double io_timer_period, double timeout);
-
-    string GetAuthToken();
+    static string s_GetAuthToken(const CNcbiEnvironment& env, const TPSG_AuthTokenName& auth_token_name);
 };
 
 struct SDebugPrintout
