@@ -50,7 +50,7 @@
 
 #include <objtools/writers/async_writers.hpp>
 #include <objtools/edit/remote_updater.hpp>
-#include <objtools/cleanup/huge_file_cleanup.hpp>
+#include "huge_file_cleanup.hpp"
 
 #include "read_hooks.hpp"
 #include "bigfile_processing.hpp"

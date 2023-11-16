@@ -74,7 +74,7 @@
 
 #include <objtools/logging/listener.hpp>
 
-#include "influenza_set.hpp"
+#include <objtools/cleanup/influenza_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

@@ -30,7 +30,6 @@
 #include <ncbi_pch.hpp>
 
 #include <objtools/edit/huge_file_process.hpp>
-#include <objtools/cleanup/huge_file_cleanup.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/cleanup/fix_feature_id.hpp>
@@ -42,8 +41,9 @@
 #include <serial/objistr.hpp>
 #include <serial/streamiter.hpp>
 
-#include "newcleanupp.hpp"
-#include "influenza_set.hpp" 
+//#include "newcleanupp.hpp"
+#include <objtools/cleanup/influenza_set.hpp>
+#include "huge_file_cleanup.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -192,7 +192,7 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     }
 
     if (!(m_CleanupOptions & eNoNcbiUserObjects)) {
-        CNewCleanup_imp::AddNcbiCleanupObject(m_top_entry->SetDescr());
+        CCleanup::AddNcbiCleanupObject(1, m_top_entry->SetDescr());
         m_Changes.SetChanged(CCleanupChange::eAddNcbiCleanupObject);
     }
 
