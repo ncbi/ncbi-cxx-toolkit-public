@@ -322,6 +322,11 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 
 }
 
+void CHugeAsnReader::ExtendReadHooks(t_more_hooks hooks)
+{
+    m_more_hooks.push_back(hooks);
+}
+
 void CHugeAsnReader::x_SetBioseqHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
 {
     CObjectTypeInfo bioseq_info = CType<CBioseq>();
