@@ -1035,7 +1035,7 @@ size_t CSingleFeatValidator::x_CalculateLocationGaps(CBioseq_Handle bsh, const C
 }
 
 
-size_t CSingleFeatValidator::x_FindStartOfGap(CBioseq_Handle bsh, int pos, CScope* scope)
+TSeqPos CSingleFeatValidator::x_FindStartOfGap(CBioseq_Handle bsh, TSeqPos pos, CScope* scope)
 {
     if (!bsh || !bsh.IsNa() || !bsh.IsSetInst_Repr()
         || bsh.GetInst_Repr() != CSeq_inst::eRepr_delta
@@ -1043,16 +1043,16 @@ size_t CSingleFeatValidator::x_FindStartOfGap(CBioseq_Handle bsh, int pos, CScop
         || !bsh.GetInst().GetExt().IsDelta()) {
         return bsh.GetInst_Length();
     }
-    size_t offset = 0;
+    TSeqPos offset = 0;
 
     ITERATE(CSeq_inst::TExt::TDelta::Tdata, it, bsh.GetInst_Ext().GetDelta().Get()) {
-        unsigned int len = 0;
+        TSeqPos len = 0;
         if ((*it)->IsLiteral()) {
             len = (*it)->GetLiteral().GetLength();
         } else if ((*it)->IsLoc()) {
             len = sequence::GetLength((*it)->GetLoc(), scope);
         }
-        if ((unsigned int)pos >= offset && (unsigned int)pos < offset + len) {
+        if (pos >= offset && pos < offset + len) {
             return offset;
         } else {
             offset += len;
@@ -2170,8 +2170,8 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
                         }
                     }
                 }
-                string label;
-                if (gene && !CSingleFeatValidator::s_GeneRefsAreEquivalent(*gene_xref, gene->GetData().GetGene(), label)) {
+                string label2;
+                if (gene && !CSingleFeatValidator::s_GeneRefsAreEquivalent(*gene_xref, gene->GetData().GetGene(), label2)) {
                     gene.Reset();
                 }
                 if (gene_xref->IsSetLocus_tag() &&
@@ -3500,17 +3500,17 @@ void CRNAValidator::x_ValidateTrnaCodons()
     switch (trna.GetAa().Which()) {
         case CTrna_ext::C_Aa::e_Iupacaa:
             str = trna.GetAa().GetIupacaa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
             aa = seqData[0];
             break;
         case CTrna_ext::C_Aa::e_Ncbi8aa:
             str = trna.GetAa().GetNcbi8aa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
             aa = seqData[0];
             break;
         case CTrna_ext::C_Aa::e_Ncbistdaa:
             str = trna.GetAa().GetNcbi8aa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
             aa = seqData[0];
             break;
         case CTrna_ext::C_Aa::e_Ncbieaa:
@@ -3716,7 +3716,7 @@ void CRNAValidator::x_ValidateTrnaCodons()
 
             // check that codons recognized match codons predicted from anticodon
             if (recognized_codon_values.size() > 0) {
-                bool ok = false;
+                ok = false;
                 for (size_t i = 0; i < codon_values.size() && !ok; i++) {
                     for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
                         if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
