@@ -129,11 +129,11 @@ private:
     }
 
     template <typename T>
-    void Set(const char* name, T&& v) { Set(m_JsonObj[name], forward<T>(v)); }
+    void Set(const char* name, T&& v) { Set(m_JsonObj[name], std::forward<T>(v)); }
 
     // enable_if required here to avoid recursion as CJson_Value (returned by SetValue) is derived from CJson_Node
     template <class TNode, typename T, typename enable_if<is_same<TNode, CJson_Node>::value, int>::type = 0>
-    static void Set(TNode node, T&& v) { Set(node.SetValue(), forward<T>(v)); }
+    static void Set(TNode node, T&& v) { Set(node.SetValue(), std::forward<T>(v)); }
 
     static void Set(CJson_Node node, const CPSG_BioId& bio_id);
     static void Set(CJson_Node node, const vector<CPSG_BioId>& bio_ids);
@@ -165,9 +165,9 @@ struct SParams
     static bool verbose;
 
     SParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua) :
-        service(move(s)),
+        service(std::move(s)),
         request_flags(rf),
-        user_args(move(ua))
+        user_args(std::move(ua))
     {}
 };
 
@@ -190,7 +190,7 @@ struct SOneRequestParams : SParams
     SDataOnly data_only;
 
     SOneRequestParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, CLogLatencies::EWhich lw, bool ld, bool de, bool dm, ESerialDataFormat df) :
-        SParams(move(s), rf, move(ua)),
+        SParams(std::move(s), rf, std::move(ua)),
         latency{lw, ld},
         data_only{de, dm, df}
     {}
@@ -204,7 +204,7 @@ struct SParallelProcessingParams : SParams
     const bool server;
 
     SParallelProcessingParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv) :
-        SParams(move(s), rf, move(ua)),
+        SParams(std::move(s), rf, std::move(ua)),
         rate(r),
         worker_threads(wt),
         pipe(p),
@@ -223,8 +223,8 @@ struct SResolveParams
 struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
 {
     SBatchResolveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, SResolveParams resolve_params) :
-        SParallelProcessingParams(move(s), rf, move(ua), r, wt, p, srv),
-        SResolveParams(move(resolve_params))
+        SParallelProcessingParams(std::move(s), rf, std::move(ua), r, wt, p, srv),
+        SResolveParams(std::move(resolve_params))
     {}
 };
 
@@ -238,7 +238,7 @@ struct SInteractiveParams : SParallelProcessingParams
     const bool testing;
 
     SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
-        SParallelProcessingParams(GetService(move(s), os), rf, move(ua), r, wt, p, srv),
+        SParallelProcessingParams(GetService(std::move(s), os), rf, std::move(ua), r, wt, p, srv),
         data_limit(dl),
         preview_size(ps),
         echo(e),
@@ -256,7 +256,7 @@ struct SPerformanceParams : SParams
     const bool report_immediately;
 
     SPerformanceParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, size_t ut, double d, bool lq, bool ri) :
-        SParams(move(s), rf, move(ua)),
+        SParams(std::move(s), rf, std::move(ua)),
         user_threads(ut),
         delay(d),
         local_queue(lq),
@@ -271,7 +271,7 @@ public:
     CParallelProcessing(const TParams& params);
     ~CParallelProcessing() { m_Impl.Stop(); }
 
-    void operator()(string line) { m_Impl.Process(move(line)); }
+    void operator()(string line) { m_Impl.Process(std::move(line)); }
 
 private:
     struct SImpl
@@ -280,7 +280,7 @@ private:
 
         SImpl(const TParams& params);
 
-        void Process(string line) { m_InputQueue.Push(move(line)); }
+        void Process(string line) { m_InputQueue.Push(std::move(line)); }
         void Stop() { m_InputQueue.Stop(m_InputQueue.eDrain); }
 
         void Submitter(CPSG_Queue& output);
@@ -303,7 +303,7 @@ private:
     struct SThread
     {
         template <class TMethod, class... TArgs>
-        SThread(TMethod method, TArgs&&... args) : m_Thread(method, forward<TArgs>(args)...) {}
+        SThread(TMethod method, TArgs&&... args) : m_Thread(method, std::forward<TArgs>(args)...) {}
         ~SThread() { m_Thread.join(); }
 
     private:
@@ -349,7 +349,7 @@ inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
 
     while (ReadLine(line, is)) {
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
-        parallel_processing(move(line));
+        parallel_processing(std::move(line));
 
         if ((params.rate > 0) && (++n == params.rate)) {
             n = 0;
@@ -365,8 +365,8 @@ class CRawRequest : public CPSG_Request
 {
 public:
     CRawRequest(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
-        : CPSG_Request(move(user_context), move(request_context)),
-          m_AbsPathRef(move(abs_path_ref))
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_AbsPathRef(std::move(abs_path_ref))
     {}
 
 private:
@@ -441,14 +441,14 @@ struct SRequestBuilder::SImpl
     CRef<CRequestContext> request_context;
 
     SImpl(shared_ptr<void> uc = {}, CRef<CRequestContext> rc = {}) :
-        user_context(move(uc)),
-        request_context(move(rc))
+        user_context(std::move(uc)),
+        request_context(std::move(rc))
     {}
 
     template <class... TArgs>
     auto Create(TArgs&&... args)
     {
-        return make_shared<TRequest>(forward<TArgs>(args)..., move(user_context), move(request_context));
+        return make_shared<TRequest>(std::forward<TArgs>(args)..., std::move(user_context), std::move(request_context));
     }
 
     template <class TReader>
@@ -495,7 +495,7 @@ template <class TRequest, class TInput, class... TArgs>
 shared_ptr<TRequest> SRequestBuilder::Build(const TInput& input, TArgs&&... args)
 {
     SReader<TInput> reader(input);
-    auto rv = SImpl<TRequest>(forward<TArgs>(args)...).Build(reader);
+    auto rv = SImpl<TRequest>(std::forward<TArgs>(args)...).Build(reader);
     reader.SetRequestFlags(rv);
     rv->SetUserArgs(reader.GetUserArgs());
     return rv;
@@ -505,19 +505,19 @@ template <class TInput, class... TArgs>
 shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const TInput& input, TArgs&&... args)
 {
     if (name == "biodata") {
-        return Build<CPSG_Request_Biodata>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Biodata>(input, std::forward<TArgs>(args)...);
     } else if (name == "blob") {
-        return Build<CPSG_Request_Blob>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Blob>(input, std::forward<TArgs>(args)...);
     } else if (name == "resolve") {
-        return Build<CPSG_Request_Resolve>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Resolve>(input, std::forward<TArgs>(args)...);
     } else if (name == "named_annot") {
-        return Build<CPSG_Request_NamedAnnotInfo>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_NamedAnnotInfo>(input, std::forward<TArgs>(args)...);
     } else if (name == "chunk") {
-        return Build<CPSG_Request_Chunk>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_Chunk>(input, std::forward<TArgs>(args)...);
     } else if (name == "ipg_resolve") {
-        return Build<CPSG_Request_IpgResolve>(input, forward<TArgs>(args)...);
+        return Build<CPSG_Request_IpgResolve>(input, std::forward<TArgs>(args)...);
     } else if (name == "raw") {
-        return Build<CRawRequest>(input, forward<TArgs>(args)...);
+        return Build<CRawRequest>(input, std::forward<TArgs>(args)...);
     } else {
         return {};
     }
@@ -529,7 +529,7 @@ shared_ptr<CPSG_Request_Biodata> SRequestBuilder::SImpl<CPSG_Request_Biodata>::B
 {
     auto bio_id = reader.GetBioId();
     auto bio_id_resolution = reader.GetBioIdResolution();
-    auto request = Create(move(bio_id), bio_id_resolution);
+    auto request = Create(std::move(bio_id), bio_id_resolution);
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     auto exclude = [&](string blob_id) { request->ExcludeTSE(blob_id); };
@@ -550,7 +550,7 @@ shared_ptr<CPSG_Request_Resolve> SRequestBuilder::SImpl<CPSG_Request_Resolve>::B
 {
     auto bio_id = reader.GetBioId();
     auto bio_id_resolution = reader.GetBioIdResolution();
-    auto request = Create(move(bio_id), bio_id_resolution);
+    auto request = Create(std::move(bio_id), bio_id_resolution);
     auto specified = GetSpecified(reader);
     const auto include_info = GetIncludeInfo(specified);
     request->IncludeInfo(include_info);
@@ -563,7 +563,7 @@ template <class TReader>
 shared_ptr<CPSG_Request_Blob> SRequestBuilder::SImpl<CPSG_Request_Blob>::Build(const TReader& reader)
 {
     auto blob_id = reader.GetBlobId();
-    auto request = Create(move(blob_id));
+    auto request = Create(std::move(blob_id));
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     return request;
@@ -576,7 +576,7 @@ shared_ptr<CPSG_Request_NamedAnnotInfo> SRequestBuilder::SImpl<CPSG_Request_Name
     auto bio_ids = reader.GetBioIds();
     auto named_annots = reader.GetNamedAnnots();
     auto bio_id_resolution = reader.GetBioIdResolution();
-    auto request = Create(move(bio_ids), move(named_annots), bio_id_resolution);
+    auto request = Create(std::move(bio_ids), std::move(named_annots), bio_id_resolution);
     auto specified = GetSpecified(reader);
     IncludeData(request, specified);
     request->SetAccSubstitution(reader.GetAccSubstitution());
@@ -589,7 +589,7 @@ template <class TReader>
 shared_ptr<CPSG_Request_Chunk> SRequestBuilder::SImpl<CPSG_Request_Chunk>::Build(const TReader& reader)
 {
     auto chunk_id = reader.GetChunkId();
-    return Create(move(chunk_id));
+    return Create(std::move(chunk_id));
 }
 
 template <>
@@ -599,7 +599,7 @@ shared_ptr<CPSG_Request_IpgResolve> SRequestBuilder::SImpl<CPSG_Request_IpgResol
     auto protein = reader.GetProtein();
     auto ipg = reader.GetIpg();
     auto nucleotide = reader.GetNucleotide();
-    return Create(move(protein), ipg, move(nucleotide));
+    return Create(std::move(protein), ipg, std::move(nucleotide));
 }
 
 template <>

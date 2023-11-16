@@ -482,19 +482,19 @@ void SPSG_StatsCounters::Apply(EGroup start_with, TArgs&&... args)
     // This method is always called with start_with == eRequest (so, all cases are run with one call, one by one).
     // This switch usage however makes compilers warn if any enum value is missing/not handled
     switch (start_with) {
-        case eRequest:          TWhat::template Func<eRequest>          (forward<TArgs>(args)...);
-        case eReplyItem:        TWhat::template Func<eReplyItem>        (forward<TArgs>(args)...);
-        case eSkippedBlob:      TWhat::template Func<eSkippedBlob>      (forward<TArgs>(args)...);
-        case eReplyItemStatus:  TWhat::template Func<eReplyItemStatus>  (forward<TArgs>(args)...);
-        case eMessage:          TWhat::template Func<eMessage>          (forward<TArgs>(args)...);
-        case eRetries:          TWhat::template Func<eRetries>          (forward<TArgs>(args)...);
+        case eRequest:          TWhat::template Func<eRequest>          (std::forward<TArgs>(args)...);
+        case eReplyItem:        TWhat::template Func<eReplyItem>        (std::forward<TArgs>(args)...);
+        case eSkippedBlob:      TWhat::template Func<eSkippedBlob>      (std::forward<TArgs>(args)...);
+        case eReplyItemStatus:  TWhat::template Func<eReplyItemStatus>  (std::forward<TArgs>(args)...);
+        case eMessage:          TWhat::template Func<eMessage>          (std::forward<TArgs>(args)...);
+        case eRetries:          TWhat::template Func<eRetries>          (std::forward<TArgs>(args)...);
     }
 }
 
 template <class... TArgs>
 void SPSG_StatsCounters::Report(TArgs&&... args)
 {
-    Apply<SReport>(eRequest, m_Data, forward<TArgs>(args)...);
+    Apply<SReport>(eRequest, m_Data, std::forward<TArgs>(args)...);
 }
 
 SPSG_StatsAvgTime::SPSG_StatsAvgTime() :
@@ -732,7 +732,7 @@ shared_ptr<void> SPSG_Request::SContext::Set()
 }
 
 SPSG_Request::SPSG_Request(string p, CPSG_Request::TFlags f, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
-    full_path(move(p)),
+    full_path(std::move(p)),
     flags(f),
     reply(r),
     context(c),
@@ -806,7 +806,7 @@ SPSG_Request::EStateResult SPSG_Request::StateArgs(const char*& data, size_t& le
     const auto& size_str = args.GetValue("size");
     const auto size = size_str.empty() ? 0ul : stoul(size_str);
 
-    m_Buffer.args = move(args);
+    m_Buffer.args = std::move(args);
 
     if (size) {
         m_State = &SPSG_Request::StateData;
@@ -907,7 +907,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
             }
 
             if (to_create) {
-                item_locked->args = move(args);
+                item_locked->args = std::move(args);
             }
 
             if (update_result == eNewItem) {
@@ -987,7 +987,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
         } else if (const auto status = get_status(); can_retry_503(status, chunk.c_str())) {
             return eRetry503;
         } else {
-            item.state.AddError(move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
+            item.state.AddError(std::move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
         }
 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
@@ -1009,7 +1009,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
         if (item.chunks.size() <= index) item.chunks.resize(index + 1);
 
-        item.chunks[index] = move(chunk);
+        item.chunks[index] = std::move(chunk);
     }
 
     const bool is_not_reply = item_type != SPSG_Args::eReply;
@@ -1045,7 +1045,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
             TPSG_WrBufSize::GetDefault(),
             TPSG_Https::GetDefault(),
             TPSG_MaxConcurrentStreams::GetDefault(),
-            forward<TNgHttp2Cbs>(callbacks)...),
+            std::forward<TNgHttp2Cbs>(callbacks)...),
     server(s),
     m_Params(params),
     m_Headers{{
@@ -1244,7 +1244,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
 
         // Do not reset all requests unless throttling has been activated
         if (RetryFail(processor_id, req, error) && server.throttling.Active()) {
-            Reset(move(error));
+            Reset(std::move(error));
         }
 
         return false;
@@ -1257,7 +1257,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
     req->submitted_by.Set(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
-    m_Requests.emplace(stream_id, move(timed_req));
+    m_Requests.emplace(stream_id, std::move(timed_req));
     return Send();
 }
 
@@ -1373,7 +1373,7 @@ SPSG_ThrottleParams::SPSG_ThrottleParams() :
 
 SPSG_Throttling::SPSG_Throttling(const SSocketAddress& address, SPSG_ThrottleParams p, uv_loop_t* l) :
     m_Address(address),
-    m_Stats(move(p)),
+    m_Stats(std::move(p)),
     m_Active(eOff),
     m_Timer(this, s_OnTimer, Configured(), 0)
 {
@@ -1593,7 +1593,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
             next_server();
 
         // If failed to submit
-        } else if (!session->ProcessRequest(*move(timed_req), processor_id, move(req))) {
+        } else if (!session->ProcessRequest(*std::move(timed_req), processor_id, std::move(req))) {
             PSG_IO_TRACE("Server '" << session->GetId() << "' failed to get request '" << req_id << "' with rate = " << target_rate);
             next_server();
 
@@ -1618,7 +1618,7 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
     if (req) {
         // Do not need to signal here
-        m_Queue.Emplace(*move(timed_req));
+        m_Queue.Emplace(*std::move(timed_req));
     }
 
     if (!remaining_submits) {
@@ -1927,7 +1927,7 @@ bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_b
     }
 
     const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
-    m_Queues[idx].Emplace(move(req));
+    m_Queues[idx].Emplace(std::move(req));
     m_Queues[idx].Signal();
     return true;
 }

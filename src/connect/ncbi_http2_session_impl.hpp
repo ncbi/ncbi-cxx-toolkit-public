@@ -59,13 +59,13 @@ struct SH2S_Event : TBase
     enum EType { eStart, eData, eEof, eError };
 
     template <class ...TArgs>
-    SH2S_Event(TStart start, TArgs&&... args) : TBase(forward<TArgs>(args)...), m_Type(eStart) , m_Start(move(start)) {}
+    SH2S_Event(TStart start, TArgs&&... args) : TBase(std::forward<TArgs>(args)...), m_Type(eStart) , m_Start(std::move(start)) {}
 
     template <class ...TArgs>
-    SH2S_Event(TH2S_Data data, TArgs&&... args) : TBase(forward<TArgs>(args)...), m_Type(eData) , m_Data(move(data)) {}
+    SH2S_Event(TH2S_Data data, TArgs&&... args) : TBase(std::forward<TArgs>(args)...), m_Type(eData) , m_Data(std::move(data)) {}
 
     template <class ...TArgs>
-    SH2S_Event(EType type, TArgs&&... args) : TBase(forward<TArgs>(args)...), m_Type(type) {}
+    SH2S_Event(EType type, TArgs&&... args) : TBase(std::forward<TArgs>(args)...), m_Type(type) {}
 
     SH2S_Event(SH2S_Event&& other);
 
@@ -136,7 +136,7 @@ struct SH2S_Request
 
     TH2S_WeakResponseQueue response_queue;
 
-    SH2S_Request(TH2S_WeakResponseQueue q) : response_queue(move(q)) {}
+    SH2S_Request(TH2S_WeakResponseQueue q) : response_queue(std::move(q)) {}
 
 protected:
     const char* GetBaseName() const { return "request "; }
@@ -205,7 +205,7 @@ private:
         // We can only send event if we still have corresponding queue
         if (auto queue = response_queue.lock()) {
             H2S_SESSION_TRACE(this << '/' << response_queue << " push " << event);
-            queue->GetLock()->emplace(move(event));
+            queue->GetLock()->emplace(std::move(event));
         }
     }
 
@@ -297,7 +297,7 @@ private:
     void Push(TH2S_RequestEvent event)
     {
         H2S_RW_TRACE(m_ResponseQueue.get() << " push " << event);
-        m_Io->request_queue.GetLock()->emplace(move(event));
+        m_Io->request_queue.GetLock()->emplace(std::move(event));
     }
 
     void Process() { m_Io->coordinator.GetLock()->Process(m_Io->request_queue); }

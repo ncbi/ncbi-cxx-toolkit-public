@@ -360,7 +360,7 @@ struct SBase : TParams
             args["service"].HasValue() ? args["service"].AsString() : string(),
             args["include-hup"].HasValue() ? CPSG_Request::fIncludeHUP : CPSG_Request::eDefaultFlags,
             args["user-args"].HasValue() ? args["user-args"].AsString() : SPSG_UserArgs(),
-            forward<TInitArgs>(init_args)...
+            std::forward<TInitArgs>(init_args)...
         }
     {
         TParams::verbose = args["verbose"].HasValue();
@@ -422,7 +422,7 @@ struct SParallelProcessing : SBase<TParams>, SIoRedirector
             max(1, min(10, args["worker-threads"].AsInteger())),
             args["input-file"].AsString() == "-",
             args["server-mode"].AsBoolean(),
-            forward<TInitArgs>(init_args)...
+            std::forward<TInitArgs>(init_args)...
         },
         SIoRedirector(cin, args["input-file"].AsInputFile())
     {
@@ -622,7 +622,7 @@ int CPsgClientApp::RunRequest<SJsonCheck>(const CArgs& args)
 template <class TRequest>
 SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::EFlags flags)
 {
-    return { move(name), move(desc), s_InitRequest<TRequest>, s_RunRequest<TRequest>, flags };
+    return { std::move(name), std::move(desc), s_InitRequest<TRequest>, s_RunRequest<TRequest>, flags };
 }
 
 int main(int argc, const char* argv[])

@@ -83,7 +83,7 @@ struct SBase : TParams
             {},
             CPSG_Request::eDefaultFlags,
             SPSG_UserArgs(),
-            forward<TInitArgs>(init_args)...
+            std::forward<TInitArgs>(init_args)...
         }
     {
         TParams::verbose = entries.Has("verbose");
@@ -128,7 +128,7 @@ struct SParallelProcessing : SBase<TParams>
             1,
             false,
             false,
-            forward<TInitArgs>(init_args)...
+            std::forward<TInitArgs>(init_args)...
         }
     {
     }
@@ -323,7 +323,7 @@ class CPsgCgiApp : public CCgiApplication
     static TChild* NewChild(TParent* parent, TArgs&&... args)
     {
         _ASSERT(parent);
-        auto child = new TChild(forward<TArgs>(args)...);
+        auto child = new TChild(std::forward<TArgs>(args)...);
         parent->AppendChild(child);
         return child;
     }
