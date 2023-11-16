@@ -17,7 +17,7 @@ LIB  = $(OBJREAD_LIBS) $(XFORMAT_LIBS) valerr\
        $(SNP_LIB) $(CDD_LIB)\
        xalnmgr xobjutil entrez2cli entrez2 tables\
        ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB)\
-       xregexp xobjwrite $(PCRE_LIB)  $(SRAREAD_LIBS) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
+       xregexp xobjwrite xhugeasn $(PCRE_LIB)  $(SRAREAD_LIBS) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
 LIBS = $(DATA_LOADERS_UTIL_LIBS) $(VDB_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS)\
 	   $(DL_LIBS) $(ORIG_LIBS)\
        $(GRPC_LIBS) $(GENBANK_THIRD_PARTY_STATIC_LIBS)

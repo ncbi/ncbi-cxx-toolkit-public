@@ -164,6 +164,7 @@
 #  define NCBI_XOBJWRITE_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
 #  define NCBI_XOBJMANIP_EXPORTS
+#  define NCBI_XHUGEASN_EXPORTS
 #endif
 
 
@@ -807,6 +808,14 @@
 #  define NCBI_SEQEDIT_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_SEQEDIT_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library xhugeasn
+ *  */
+#ifdef NCBI_XHUGEASN_EXPORTS
+#  define NCBI_XHUGEASN_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XHUGEASN_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library seqtest

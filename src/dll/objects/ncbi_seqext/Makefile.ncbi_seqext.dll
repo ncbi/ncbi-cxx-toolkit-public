@@ -31,7 +31,8 @@ HOSTED_LIBS    = xalnmgr   \
                  snputil \
                  uudutil \
                  xunittestutil \
-                 variation_utils
+                 variation_utils \
+    			 huge_asn
 
 DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
 

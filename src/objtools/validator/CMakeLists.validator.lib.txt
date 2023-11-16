@@ -11,7 +11,7 @@ NCBI_begin_lib(xvalidate)
     gene_validator go_term_validation_and_cleanup dup_feats huge_file_validator
     entry_info
   )
-  NCBI_uses_toolkit_libraries(taxon1 valerr xformat xobjedit submit taxon3 valerr)
+  NCBI_uses_toolkit_libraries(taxon1 valerr xformat xobjedit submit taxon3 valerr xhugeasn)
   NCBI_project_watchers(stakhovv kans foleyjp asztalos gotvyans)
 NCBI_end_lib()
 

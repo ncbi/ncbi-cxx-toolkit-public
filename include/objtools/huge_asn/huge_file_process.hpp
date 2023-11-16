@@ -52,7 +52,7 @@ BEGIN_SCOPE(edit)
 class CHugeFile;
 class CHugeAsnReader;
 
-class NCBI_XOBJEDIT_EXPORT CHugeFileProcess
+class NCBI_XHUGEASN_EXPORT CHugeFileProcess
 {
 public:
 

@@ -1,0 +1,20 @@
+# $Id$
+
+# Build library "xhugeasn"
+###############################
+
+SRC = huge_asn_reader huge_file huge_file_process huge_asn_loader \
+      huge_asn_macro_reader
+
+
+LIB    = xhugeasn
+
+DLL_LIB = xobjmgr xobjread $(SOBJMGR_LIBS)
+
+#ASN_DEP = 
+
+WATCHERS = gotvyans foleyjp
+
+
+USES_LIBRARIES =  \
+    xobjmgr xobjread

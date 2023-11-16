@@ -52,7 +52,7 @@ class ILineErrorListener;
 
 BEGIN_SCOPE(edit)
 
-class NCBI_XOBJEDIT_EXPORT CHugeFile
+class NCBI_XHUGEASN_EXPORT CHugeFile
 {
 public:
     CHugeFile();
@@ -91,7 +91,7 @@ private:
     bool x_TryOpenMemoryFile(const string& filename, std::streampos filesize);
 };
 
-class NCBI_XOBJEDIT_EXPORT CHugeFileException : public CException
+class NCBI_XHUGEASN_EXPORT CHugeFileException : public CException
 {
 public:
     enum EErrCode
@@ -103,7 +103,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CHugeFileException,CException);
 };
 
-class NCBI_XOBJEDIT_EXPORT IHugeAsnSource
+class NCBI_XHUGEASN_EXPORT IHugeAsnSource
 {
 public:
     virtual void Open(CHugeFile* file, ILineErrorListener * pMessageListener) = 0;
