@@ -3266,19 +3266,19 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         return eAction_Erase;  // mark qual for deletion
     } else if (NStr::EqualNocase(qual, "gene")) {
         if (!NStr::IsBlank(val)) {
-			if (!data.IsGene()) {
-				CRef<CSeqFeatXref> xref(new CSeqFeatXref);
-				xref->SetData().SetGene().SetLocus(val);
-				feat.SetXref().insert(feat.SetXref().begin(), xref);
-				ChangeMade(CCleanupChange::eCopyGeneXref);
-			} else {
+            if (!data.IsGene()) {
+                CRef<CSeqFeatXref> xref(new CSeqFeatXref);
+                xref->SetData().SetGene().SetLocus(val);
+                feat.SetXref().insert(feat.SetXref().begin(), xref);
+                ChangeMade(CCleanupChange::eCopyGeneXref);
+            } else {
                 auto& gene = data.SetGene();
-				if (gene.IsSetDesc() && !NStr::IsBlank(gene.GetDesc())) {
-					gene.SetDesc() += "; ";
-				}
-				gene.SetDesc() += "gene=" + val;
-				ChangeMade(CCleanupChange::eChangeQualifiers);
-			}
+                if (gene.IsSetDesc() && !NStr::IsBlank(gene.GetDesc())) {
+                    gene.SetDesc() += "; ";
+                }
+                gene.SetDesc() += "gene=" + val;
+                ChangeMade(CCleanupChange::eChangeQualifiers);
+            }
             return eAction_Erase;  // mark qual for deletion
         }
     } else if (NStr::EqualNocase(qual, "codon_start")) {
@@ -3605,13 +3605,13 @@ CNewCleanup_imp::x_GeneGBQualBC( CGene_ref& gene, const CGb_qual& gb_qual )
     }
 
     bool change_made = false;
-	if (NStr::EqualNocase(qual, "gene")) {
-		if (!gene.IsSetLocus()) {
-			change_made = true;
-			gene.SetLocus(val);
-		}
-	}
-	else if (NStr::EqualNocase(qual, "map")) {
+    if (NStr::EqualNocase(qual, "gene")) {
+        if (!gene.IsSetLocus()) {
+            change_made = true;
+            gene.SetLocus(val);
+        }
+    }
+    else if (NStr::EqualNocase(qual, "map")) {
         if (! gene.IsSetMaploc() ) {
             change_made = true;
             gene.SetMaploc(val);
@@ -3635,10 +3635,10 @@ CNewCleanup_imp::x_GeneGBQualBC( CGene_ref& gene, const CGb_qual& gb_qual )
 
     if (change_made) {
         ChangeMade(CCleanupChange::eChangeQualifiers);
-		return eAction_Erase;
+        return eAction_Erase;
     }
 
-	return eAction_Nothing;
+    return eAction_Nothing;
 }
 
 CNewCleanup_imp::EAction
