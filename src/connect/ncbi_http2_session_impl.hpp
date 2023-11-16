@@ -231,6 +231,7 @@ private:
 
 struct SH2S_IoCoordinator
 {
+    SH2S_IoCoordinator();
     ~SH2S_IoCoordinator();
 
     void Process(TH2S_RequestQueue& request_queue);
@@ -241,6 +242,7 @@ private:
     SUv_Loop m_Loop;
     multimap<SH2S_Session::TAddrNCred, SUvNgHttp2_Session<SH2S_Session>> m_Sessions;
     TH2S_SessionsByQueues m_SessionsByQueues;
+    SSocketAddress m_Proxy;
 };
 
 struct SH2S_Io

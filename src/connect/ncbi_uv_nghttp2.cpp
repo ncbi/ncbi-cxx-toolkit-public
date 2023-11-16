@@ -199,7 +199,8 @@ SUv_Tcp::SUv_Tcp(uv_loop_t *l, const SSocketAddress& address, size_t rd_buf_size
     data = this;
     m_ReadBuffer.reserve(rd_buf_size);
 
-    NCBI_UV_TCP_TRACE(this << " created");
+    _DEBUG_CODE(address.GetHostName();); // To avoid splitting the trace message below by gethostbyaddr
+    NCBI_UV_TCP_TRACE(this << '/' << address << " created");
 }
 
 int SUv_Tcp::Write()

@@ -500,6 +500,11 @@ int SH2S_Session::OnFrameRecv(nghttp2_session*, const nghttp2_frame *frame)
     return 0;
 }
 
+SH2S_IoCoordinator::SH2S_IoCoordinator() :
+    m_Proxy(SSocketAddress::Parse(CNcbiEnvironment().Get("HTTP_PROXY"), SSocketAddress::SHost::EName::eOriginal))
+{
+}
+
 SH2S_IoCoordinator::~SH2S_IoCoordinator()
 {
     for (auto& session : m_Sessions) {
@@ -614,7 +619,7 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const SH2S_Request::SStart& request
     }
 
     SSocketAddress::SHost host(url.GetHost(), SSocketAddress::SHost::EName::eOriginal);
-    SH2S_Session::TAddrNCred addr_n_cred(SSocketAddress(std::move(host), port), request.cred);
+    SH2S_Session::TAddrNCred addr_n_cred{{SSocketAddress(std::move(host), port), request.cred}, m_Proxy};
     auto https = scheme == "https" || (scheme.empty() && (port == "443"));
     auto range = m_Sessions.equal_range(addr_n_cred);
 

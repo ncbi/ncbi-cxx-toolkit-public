@@ -197,6 +197,7 @@ void SDebugPrintout::Print(SSocketAddress address, const string& path, const str
 
     if (!ip.empty()) os << ";IP=" << ip;
     if (port)        os << ";PORT=" << port;
+    if (m_Params.proxy) os << ";PROXY=" << m_Params.proxy;
 
     ERR_POST(Message << id << ": " << address << path << ";SID=" << sid << ";PHID=" << phid << os.str());
 }
@@ -1040,7 +1041,7 @@ template <class... TNgHttp2Cbs>
 SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_AsyncQueue& queue, uv_loop_t* loop, TNgHttp2Cbs&&... callbacks) :
     SUvNgHttp2_SessionBase(
             loop,
-            TAddrNCred(s.address, SUvNgHttp2_Tls::TCred()),
+            TAddrNCred{{s.address, SUvNgHttp2_Tls::TCred()}, params.proxy},
             TPSG_RdBufSize::GetDefault(),
             TPSG_WrBufSize::GetDefault(),
             TPSG_Https::GetDefault(),
