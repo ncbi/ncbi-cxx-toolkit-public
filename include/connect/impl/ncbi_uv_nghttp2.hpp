@@ -467,7 +467,7 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
         friend ostream& operator<<(ostream& os, const SId& id) { os << id.first; return id.second ? os << "(:" << id.second << ')' : os; }
     };
 
-    using TAddrNCred = SUvNgHttp2_Tls::TAddrNCred;
+    struct TAddrNCred : SUvNgHttp2_Tls::TAddrNCred { SSocketAddress proxy; };
 
     template <class ...TArgs>
     SUvNgHttp2_SessionBase(uv_loop_t* loop, const TAddrNCred& addr_n_cred, size_t rd_buf_size, size_t wr_buf_size, bool https, TArgs&&... args);
@@ -541,7 +541,7 @@ SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const TAddrNCred
     m_Authority(addr_n_cred.first.AsString()),
     m_Tcp(
             loop,
-            addr_n_cred.first,
+            addr_n_cred.proxy ? addr_n_cred.proxy : addr_n_cred.first,
             rd_buf_size,
             wr_buf_size,
             BindThis(&SUvNgHttp2_SessionBase::OnConnect),

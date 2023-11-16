@@ -212,6 +212,7 @@ struct SPSG_Params
     TPSG_UserRequestIds user_request_ids;
     TPSG_AuthTokenName auth_token_name;
     string auth_token;
+    SSocketAddress proxy;
     TPSG_PsgClientMode client_mode;
 
     SPSG_Params(CNcbiEnvironment env = {}) :
@@ -227,6 +228,7 @@ struct SPSG_Params
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         auth_token_name(TPSG_AuthTokenName::eGetDefault),
         auth_token(s_GetAuthToken(env, auth_token_name)),
+        proxy(SSocketAddress::Parse(env.Get("HTTP_PROXY"), SSocketAddress::SHost::EName::eOriginal)),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
