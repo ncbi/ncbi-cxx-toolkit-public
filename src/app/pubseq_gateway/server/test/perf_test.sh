@@ -106,6 +106,7 @@ do_check() {
             split_parsed_service $s
             echo "Testing $build / $service..."
             export PSG_LOADER_SERVICE_NAME="$service"
+            export NCBI_PSG_SERVICE="$service"
             if echo "$service" | grep '^[a-zA-Z0-9_-][a-zA-Z0-9._-]*:[0-9][0-9]*$' ; then
                 export PSG2_CONN_LOCAL_ENABLE=1
                 export PSG2_CONN_LOCAL_SERVER_1="STANDALONE $service S=yes"
