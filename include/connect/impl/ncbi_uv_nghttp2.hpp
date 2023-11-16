@@ -82,7 +82,7 @@ struct SUvNgHttp2_Error
     operator string() const { return m_Value.str(); }
 
     template <typename T>
-    SUvNgHttp2_Error& operator<<(T&& v) { m_Value << forward<T>(v); return *this; }
+    SUvNgHttp2_Error& operator<<(T&& v) { m_Value << std::forward<T>(v); return *this; }
 
     friend ostream& operator<<(ostream& os, const SUvNgHttp2_Error& error) { return os << error.m_Value.str(); }
 
@@ -208,7 +208,7 @@ private:
     static void OnCallback(void (SUv_Tcp::*member)(THandle*, TArgs1...), THandle* handle, TArgs2&&... args)
     {
         auto that = static_cast<SUv_Tcp*>(handle->data);
-        (that->*member)(handle, forward<TArgs2>(args)...);
+        (that->*member)(handle, std::forward<TArgs2>(args)...);
     }
 
     static void s_OnAlloc(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) { OnCallback(&SUv_Tcp::OnAlloc, handle, suggested_size, buf); }
@@ -490,7 +490,7 @@ private:
     template<typename TR, class... TArgs>
     function<TR(TArgs...)> BindThis(TR (SUvNgHttp2_SessionBase::*member)(TArgs...))
     {
-        return [this, member](TArgs&&... args) -> TR { return (this->*member)(forward<TArgs>(args)...); };
+        return [this, member](TArgs&&... args) -> TR { return (this->*member)(std::forward<TArgs>(args)...); };
     };
 
     void OnConnect(int status);
@@ -505,7 +505,7 @@ struct SUvNgHttp2_Session : TImpl
 {
     template <class... TArgs>
     SUvNgHttp2_Session(TArgs&&... args) :
-        TImpl(forward<TArgs>(args)..., s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+        TImpl(std::forward<TArgs>(args)..., s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
     {}
 
 private:
@@ -548,7 +548,7 @@ SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const TAddrNCred
             BindThis(&SUvNgHttp2_SessionBase::OnRead),
             BindThis(&SUvNgHttp2_SessionBase::OnWrite)),
     m_Tls(SUvNgHttp2_Tls::Create(https, addr_n_cred, rd_buf_size, wr_buf_size, [&]() -> vector<char>& { return m_Tcp.GetWriteBuffer(); })),
-    m_Session(this, forward<TArgs>(args)...)
+    m_Session(this, std::forward<TArgs>(args)...)
 {
 }
 

@@ -39,21 +39,21 @@ BEGIN_NCBI_SCOPE
 
 SH2S_Request::SStart::SStart(EReqMethod m, CUrl u, SUvNgHttp2_Tls::TCred c, CHttpHeaders::THeaders h) :
     method(m),
-    url(move(u)),
-    cred(move(c)),
-    headers(move(h))
+    url(std::move(u)),
+    cred(std::move(c)),
+    headers(std::move(h))
 {
 }
 
 template <class TBase>
 SH2S_Event<TBase>::SH2S_Event(SH2S_Event&& other) :
-    TBase(move(other)),
+    TBase(std::move(other)),
     m_Type(other.m_Type)
 {
     switch (m_Type)
     {
-        case eStart: new(&m_Start) TStart(move(other.m_Start)); break;
-        case eData:  new(&m_Data) TH2S_Data(move(other.m_Data)); break;
+        case eStart: new(&m_Start) TStart(std::move(other.m_Start)); break;
+        case eData:  new(&m_Data) TH2S_Data(std::move(other.m_Data)); break;
         case eEof:   break;
         case eError: break;
     }
@@ -87,11 +87,11 @@ const char* SH2S_Event<TBase>::GetTypeName() const
 SH2S_ReaderWriter::SH2S_ReaderWriter(TUpdateResponse update_response, shared_ptr<TH2S_ResponseQueue> response_queue, TH2S_RequestEvent request) :
     m_Io(SH2S_Io::GetInstance()),
     m_UpdateResponse(update_response),
-    m_ResponseQueue(move(response_queue))
+    m_ResponseQueue(std::move(response_queue))
 {
     _ASSERT(m_UpdateResponse);
 
-    Push(move(request));
+    Push(std::move(request));
 
     Process();
 }
@@ -119,7 +119,7 @@ ERW_Result SH2S_ReaderWriter::Flush()
     }
 
     if (!m_OutgoingData.empty()) {
-        Push(TH2S_RequestEvent(move(m_OutgoingData), m_ResponseQueue));
+        Push(TH2S_RequestEvent(std::move(m_OutgoingData), m_ResponseQueue));
 
         Process();
     }
@@ -194,7 +194,7 @@ ERW_Result SH2S_ReaderWriter::Receive(ERW_Result (SH2S_ReaderWriter::*member)(TH
         return eRW_Success;
     }
 
-    TH2S_ResponseEvent incoming(move(queue_locked->front()));
+    TH2S_ResponseEvent incoming(std::move(queue_locked->front()));
     queue_locked->pop();
     queue_locked.Unlock();
     return (this->*member)(incoming);
@@ -207,7 +207,7 @@ ERW_Result SH2S_ReaderWriter::ReceiveData(TH2S_ResponseEvent& incoming)
     switch (incoming.GetType()) {
         case TH2S_ResponseEvent::eData:
             H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
-            m_IncomingData = move(incoming.GetData());
+            m_IncomingData = std::move(incoming.GetData());
             return eRW_Success;
 
         case TH2S_ResponseEvent::eStart:
@@ -236,7 +236,7 @@ ERW_Result SH2S_ReaderWriter::ReceiveResponse(TH2S_ResponseEvent& incoming)
         case TH2S_ResponseEvent::eStart:
             H2S_RW_TRACE(m_ResponseQueue.get() << " pop " << incoming);
             m_State = eReading;
-            m_UpdateResponse(move(incoming.GetStart()));
+            m_UpdateResponse(std::move(incoming.GetStart()));
             return eRW_Success;
 
         case TH2S_ResponseEvent::eData:
@@ -302,7 +302,7 @@ SH2S_Session::SH2S_Session(uv_loop_t* loop, const TAddrNCred& addr_n_cred, bool 
             kWriteBufSize,
             https,
             kMaxStreams,
-            forward<TNgHttp2Cbs>(callbacks)...,
+            std::forward<TNgHttp2Cbs>(callbacks)...,
             s_OnFrameRecv),
     m_SessionsByQueues(sessions_by_queues)
 {
@@ -375,7 +375,7 @@ bool SH2S_Session::Request(TH2S_RequestEvent event)
     H2S_SESSION_TRACE(this << '/' << response_queue << " submit " << event);
     m_StreamsByIds.emplace(it->stream_id, it);
     m_StreamsByQueues.emplace(response_queue, it);
-    m_SessionsByQueues.emplace(move(response_queue), *this);
+    m_SessionsByQueues.emplace(std::move(response_queue), *this);
     return Send();
 }
 
@@ -451,9 +451,9 @@ int SH2S_Session::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const u
             auto hit = headers.find(n);
 
             if (hit == headers.end()) {
-                headers.emplace(piecewise_construct, forward_as_tuple(move(n)), forward_as_tuple(1, move(v)));
+                headers.emplace(piecewise_construct, forward_as_tuple(std::move(n)), forward_as_tuple(1, std::move(v)));
             } else {
-                hit->second.emplace_back(move(v));
+                hit->second.emplace_back(std::move(v));
             }
         }
     }
@@ -488,7 +488,7 @@ int SH2S_Session::OnFrameRecv(nghttp2_session*, const nghttp2_frame *frame)
             auto& response_queue = it->response_queue;
 
             if (is_headers_frame) {
-                Push(response_queue, move(it->headers));
+                Push(response_queue, std::move(it->headers));
             }
 
             if (is_eof) {
@@ -522,7 +522,7 @@ void SH2S_IoCoordinator::Process(TH2S_RequestQueue& request_queue)
             break;
         }
 
-        TH2S_RequestEvent outgoing(move(queue_locked->front()));
+        TH2S_RequestEvent outgoing(std::move(queue_locked->front()));
         queue_locked->pop();
         queue_locked.Unlock();
 
@@ -537,7 +537,7 @@ void SH2S_IoCoordinator::Process(TH2S_RequestQueue& request_queue)
                     auto& request = outgoing.GetStart();
 
                     if (auto new_session = NewSession(request)) {
-                        if (new_session->Request(move(outgoing))) {
+                        if (new_session->Request(std::move(outgoing))) {
                             continue;
                         }
                     }
@@ -552,7 +552,7 @@ void SH2S_IoCoordinator::Process(TH2S_RequestQueue& request_queue)
                 if (!new_request) {
                     H2S_IOC_TRACE(response_queue << " pop " << outgoing);
 
-                    auto l = [&](SH2S_IoStream& stream) { stream.pending.emplace(move(outgoing.GetData())); };
+                    auto l = [&](SH2S_IoStream& stream) { stream.pending.emplace(std::move(outgoing.GetData())); };
 
                     if (session->second.get().Event(outgoing, l)) {
                         continue;
@@ -590,7 +590,7 @@ void SH2S_IoCoordinator::Process(TH2S_RequestQueue& request_queue)
         if (auto queue = response_queue.lock()) {
             TH2S_ResponseEvent event(TH2S_ResponseEvent::eError);
             H2S_IOC_TRACE(response_queue << " push " << event);
-            queue->GetLock()->emplace(move(event));
+            queue->GetLock()->emplace(std::move(event));
         }
     }
 
@@ -614,7 +614,7 @@ SH2S_Session* SH2S_IoCoordinator::NewSession(const SH2S_Request::SStart& request
     }
 
     SSocketAddress::SHost host(url.GetHost(), SSocketAddress::SHost::EName::eOriginal);
-    SH2S_Session::TAddrNCred addr_n_cred(SSocketAddress(move(host), port), request.cred);
+    SH2S_Session::TAddrNCred addr_n_cred(SSocketAddress(std::move(host), port), request.cred);
     auto https = scheme == "https" || (scheme.empty() && (port == "443"));
     auto range = m_Sessions.equal_range(addr_n_cred);
 
@@ -650,7 +650,7 @@ void CHttp2Session::UpdateResponse(CHttpRequest& req, CHttpHeaders::THeaders hea
         headers.erase(status);
     }
 
-    req.x_UpdateResponse(move(headers), status_code, {});
+    req.x_UpdateResponse(std::move(headers), status_code, {});
 }
 
 void CHttp2Session::x_StartRequest(CHttpSession_Base::EProtocol protocol, CHttpRequest& req, bool use_form_data)
@@ -662,19 +662,19 @@ void CHttp2Session::x_StartRequest(CHttpSession_Base::EProtocol protocol, CHttpR
 
     req.x_AdjustHeaders(use_form_data);
 
-    auto update_response = [&](CHttpHeaders::THeaders headers) { UpdateResponse(req, move(headers)); };
+    auto update_response = [&](CHttpHeaders::THeaders headers) { UpdateResponse(req, std::move(headers)); };
     auto response_queue = make_shared<TH2S_ResponseQueue>();
 
     const auto& req_cred = req.m_Credentials;
     SUvNgHttp2_Tls::TCred cred(req_cred ? req_cred->GetCert() : string(), req_cred ? req_cred->GetPKey() : string());
 
     // Cannot just pass req itself (accessing private members here)
-    TH2S_RequestEvent request(SH2S_Request::SStart(req.m_Method, req.m_Url, move(cred), req.m_Headers->Get()), response_queue);
+    TH2S_RequestEvent request(SH2S_Request::SStart(req.m_Method, req.m_Url, std::move(cred), req.m_Headers->Get()), response_queue);
 
-    unique_ptr<IReaderWriter> rw(new SH2S_ReaderWriter(move(update_response), move(response_queue), move(request)));
+    unique_ptr<IReaderWriter> rw(new SH2S_ReaderWriter(std::move(update_response), std::move(response_queue), std::move(request)));
     auto stream = make_shared<CRWStream>(rw.release(), 0, nullptr, CRWStreambuf::fOwnAll);
 
-    req.x_InitConnection2(move(stream));
+    req.x_InitConnection2(std::move(stream));
 }
 
 bool CHttp2Session::x_Downgrade(CHttpResponse& resp, CHttpSession_Base::EProtocol& protocol) const

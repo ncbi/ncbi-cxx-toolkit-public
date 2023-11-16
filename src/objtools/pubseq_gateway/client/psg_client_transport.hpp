@@ -250,7 +250,7 @@ struct SDebugPrintout
     const string id;
 
     SDebugPrintout(string i, const SPSG_Params& params) :
-        id(move(i)),
+        id(std::move(i)),
         m_Params(params)
     {
         if (IsPerf()) m_Events.reserve(20);
@@ -268,11 +268,11 @@ private:
     template <class ...TArgs>
     void Process(TArgs&&... args)
     {
-        if (IsPerf()) return Event(forward<TArgs>(args)...);
+        if (IsPerf()) return Event(std::forward<TArgs>(args)...);
 
         if (m_Params.debug_printout == EPSG_DebugPrintout::eNone) return;
 
-        Print(forward<TArgs>(args)...);
+        Print(std::forward<TArgs>(args)...);
     }
 
     enum EType { eSend = 1000, eReceive, eClose, eRetry, eFail };
@@ -310,14 +310,14 @@ template <class TArg, class ...TRest>
 struct SDebugPrintout::SPack : SPack<TRest...>
 {
     SPack(SPack<TRest...>&& base, const TArg* arg) :
-        SPack<TRest...>(move(base)),
+        SPack<TRest...>(std::move(base)),
         m_Arg(arg)
     {}
 
     template <class TNextArg>
     SPack<TNextArg, TArg, TRest...> operator<<(const TNextArg& next_arg)
     {
-        return { move(*this), &next_arg };
+        return { std::move(*this), &next_arg };
     }
 
     void operator<<(ostream& (*)(ostream&)) { Process(); }
@@ -326,7 +326,7 @@ protected:
     template <class ...TArgs>
     void Process(TArgs&&... args)
     {
-        SPack<TRest...>::Process(*m_Arg, forward<TArgs>(args)...);
+        SPack<TRest...>::Process(*m_Arg, std::forward<TArgs>(args)...);
     }
 
 private:
@@ -344,7 +344,7 @@ struct SDebugPrintout::SPack<TArg>
     template <class TNextArg>
     SPack<TNextArg, TArg> operator<<(const TNextArg& next_arg)
     {
-        return { move(*this), &next_arg };
+        return { std::move(*this), &next_arg };
     }
 
     void operator<<(ostream& (*)(ostream&)) { Process(); }
@@ -353,7 +353,7 @@ protected:
     template <class ...TArgs>
     void Process(TArgs&&... args)
     {
-        m_DebugPrintout->Process(*m_Arg, forward<TArgs>(args)...);
+        m_DebugPrintout->Process(*m_Arg, std::forward<TArgs>(args)...);
     }
 
 private:
@@ -385,7 +385,7 @@ struct SPSG_Reply
 
         void AddError(string message, EPSG_Status status = EPSG_Status::eError)
         {
-            m_Messages.emplace_front(move(message));
+            m_Messages.emplace_front(std::move(message));
             SetStatus(status, false);
         }
 
@@ -423,9 +423,9 @@ struct SPSG_Reply
 
     SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q, weak_ptr<SPSG_Stats> s = weak_ptr<SPSG_Stats>(), bool r = false) :
         raw(r),
-        debug_printout(move(id), params),
-        queue(move(q)),
-        stats(move(s))
+        debug_printout(std::move(id), params),
+        queue(std::move(q)),
+        stats(std::move(s))
     {}
 
     void SetComplete();
@@ -565,7 +565,7 @@ private:
 
 struct SPSG_TimedRequest
 {
-    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Id(SPSG_Processor::GetNextId()), m_Request(move(r)) {}
+    SPSG_TimedRequest(shared_ptr<SPSG_Request> r) : m_Id(SPSG_Processor::GetNextId()), m_Request(std::move(r)) {}
 
     SPSG_TimedRequest(SPSG_TimedRequest&&) = default;
     SPSG_TimedRequest& operator=(SPSG_TimedRequest&&) = default;
@@ -606,10 +606,10 @@ struct SPSG_AsyncQueue : SUv_Async, SPSG_AsyncQueuesRef
 private:
     static auto s_Pop(list<SPSG_TimedRequest>& queue)
     {
-        auto timed_req = move(queue.front());
+        auto timed_req = std::move(queue.front());
         auto p = timed_req.Get();
         queue.pop_front();
-        return tuple_cat(make_tuple(make_optional(move(timed_req))), move(p));
+        return tuple_cat(make_tuple(make_optional(std::move(timed_req))), std::move(p));
     }
 
 public:
@@ -624,7 +624,7 @@ public:
     template <class... TArgs>
     void Emplace(TArgs&&... args)
     {
-        m_Queue.GetLock()->emplace_back(forward<TArgs>(args)...);
+        m_Queue.GetLock()->emplace_back(std::forward<TArgs>(args)...);
     }
 
     auto GetLockedQueue() { return m_Queue.GetLock(); }
@@ -725,11 +725,11 @@ struct SPSG_Server
     SPSG_Throttling throttling;
 
     SPSG_Server(SSocketAddress a, double r, int as, SPSG_ThrottleParams p, uv_loop_t* l) :
-        address(move(a)),
+        address(std::move(a)),
         rate(r),
         available_streams(as),
         stats(0),
-        throttling(address, move(p), l)
+        throttling(address, std::move(p), l)
     {}
 };
 
@@ -785,7 +785,7 @@ struct SPSG_Thread : public TImpl
 {
     template <class... TArgs>
     SPSG_Thread(SUv_Barrier& start_barrier, SUv_Barrier& stop_barrier, uint64_t timeout, uint64_t repeat, TArgs&&... args) :
-        TImpl(forward<TArgs>(args)...),
+        TImpl(std::forward<TArgs>(args)...),
         m_Timer(this, s_OnTimer, timeout, repeat),
         m_Thread(s_Execute, this, ref(start_barrier), ref(stop_barrier))
     {}
@@ -859,7 +859,7 @@ struct SPSG_Servers : protected deque<SPSG_Server>
     template <class... TArgs>
     void emplace_back(TArgs&&... args)
     {
-        TBase::emplace_back(forward<TArgs>(args)...);
+        TBase::emplace_back(std::forward<TArgs>(args)...);
         ++m_Size;
     }
 
@@ -1058,10 +1058,10 @@ struct SPSG_DiscoveryImpl
     SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueuesRef queues_ref) :
         m_Params(params),
         m_NoServers(params, servers),
-        m_Service(move(service)),
-        m_Stats(move(stats)),
+        m_Service(std::move(service)),
+        m_Stats(std::move(stats)),
         m_Servers(servers),
-        m_QueuesRef(move(queues_ref))
+        m_QueuesRef(std::move(queues_ref))
     {}
 
 protected:

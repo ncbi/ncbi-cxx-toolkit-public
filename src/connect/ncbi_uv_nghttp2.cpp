@@ -1021,7 +1021,7 @@ void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType c
     m_Session.Del();
     m_Tls->Close();
     m_Tcp.Close(close_type);
-    OnReset(move(error));
+    OnReset(std::move(error));
 }
 
 END_NCBI_SCOPE

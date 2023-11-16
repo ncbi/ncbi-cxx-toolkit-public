@@ -168,7 +168,7 @@ CJsonResponse::CJsonResponse(EPSG_Status status, TArgs&&... args) :
     m_JsonObj(SetObject())
 {
     try {
-        FillWithRequestID(status, forward<TArgs>(args)...);
+        FillWithRequestID(status, std::forward<TArgs>(args)...);
     }
     catch (exception& e) {
         CJson_Document new_doc;
@@ -211,7 +211,7 @@ CJsonResponse::CJsonResponse(const string& id) :
 template <class TItem>
 void CJsonResponse::FillWithRequestID(EPSG_Status status, TItem item, EDoNotAddRequestID)
 {
-    Fill(status, move(item));
+    Fill(status, std::move(item));
 }
 
 template <class TItem, class... TArgs>
@@ -221,7 +221,7 @@ void CJsonResponse::FillWithRequestID(EPSG_Status status, TItem item, TArgs&&...
         Set("request_id", *request_id);
     }
 
-    Fill(status, move(item), forward<TArgs>(args)...);
+    Fill(status, std::move(item), std::forward<TArgs>(args)...);
 }
 
 const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
@@ -483,7 +483,7 @@ void CJsonResponse::Fill(EPSG_Status status, TItem item, string first_message)
 {
     Set("status", s_StrStatus(status));
 
-    for (auto message = move(first_message); !message.empty(); message = item->GetNextMessage()) {
+    for (auto message = std::move(first_message); !message.empty(); message = item->GetNextMessage()) {
         if (auto errors = m_JsonObj["errors"]; errors.IsNull()) {
             errors.ResetArray().push_back(message);
         } else {
@@ -663,9 +663,9 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobInfo> blob_info)
     auto& p = m_Data[blob_info->GetId()->Repr()];
 
     if (p.second) {
-        Process(move(blob_info), move(p.second));
+        Process(std::move(blob_info), std::move(p.second));
     } else {
-        p.first = move(blob_info);
+        p.first = std::move(blob_info);
     }
 }
 
@@ -674,9 +674,9 @@ void SDataOnlyCopy::Process(shared_ptr<CPSG_BlobData> blob_data)
     auto& p = m_Data[blob_data->GetId()->Repr()];
 
     if (p.first) {
-        Process(move(p.first), move(blob_data));
+        Process(std::move(p.first), std::move(blob_data));
     } else {
-        p.second = move(blob_data);
+        p.second = std::move(blob_data);
     }
 }
 
@@ -867,7 +867,7 @@ template <>
 struct SNonVerboseBase<SBatchResolveParams> : string
 {
     set<EPSG_Status> reported;
-    SNonVerboseBase(string id) : string(move(id)) {}
+    SNonVerboseBase(string id) : string(std::move(id)) {}
 
     void ItemComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item);
     void ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
@@ -887,13 +887,13 @@ void CParallelProcessing<SBatchResolveParams>::SImpl::Submitter(CPSG_Queue& outp
     while (m_InputQueue.Pop(id)) {
         _ASSERT(!id.empty()); // ReadLine makes sure it's not empty
         auto bio_id = CPSG_BioId(id, m_Params.type);
-        auto user_context = make_shared<SNonVerbose<SBatchResolveParams>>(move(id));
-        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id), m_Params.bio_id_resolution, move(user_context));
+        auto user_context = make_shared<SNonVerbose<SBatchResolveParams>>(std::move(id));
+        auto request = make_shared<CPSG_Request_Resolve>(std::move(bio_id), m_Params.bio_id_resolution, std::move(user_context));
 
         request->IncludeInfo(m_Params.include_info);
         request->SetAccSubstitution(m_Params.acc_substitution);
 
-        _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
+        _VERIFY(output.SendRequest(std::move(request), CDeadline::eInfinite));
     }
 
     output.Stop();
@@ -969,10 +969,10 @@ void CParallelProcessing<TIpgBatchResolveParams>::SImpl::Submitter(CPSG_Queue& o
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
 
         auto nucleotide = NStr::SplitInTwo(line, ",", protein, n) ? CPSG_Request_IpgResolve::TNucleotide(n) : null;
-        auto user_context = make_shared<SNonVerbose<SBatchResolveParams>>(move(line));
-        auto request = make_shared<CPSG_Request_IpgResolve>(move(protein), 0, move(nucleotide),  move(user_context));
+        auto user_context = make_shared<SNonVerbose<SBatchResolveParams>>(std::move(line));
+        auto request = make_shared<CPSG_Request_IpgResolve>(std::move(protein), 0, std::move(nucleotide),  std::move(user_context));
 
-        _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
+        _VERIFY(output.SendRequest(std::move(request), CDeadline::eInfinite));
     }
 
     output.Stop();
@@ -1011,8 +1011,8 @@ void CParallelProcessing<SInteractiveParams>::SImpl::Submitter(CPSG_Queue& outpu
             auto user_context = make_shared<string>(id);
             auto request_context = m_Params.testing ? null : SInteractiveNewRequestStart(method, params_obj).Get();
 
-            if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context), move(request_context))) {
-                _VERIFY(output.SendRequest(move(request), CDeadline::eInfinite));
+            if (auto request = SRequestBuilder::Build(method, params_obj, std::move(user_context), std::move(request_context))) {
+                _VERIFY(output.SendRequest(std::move(request), CDeadline::eInfinite));
             }
         }
     }
@@ -1230,8 +1230,8 @@ vector<shared_ptr<CPSG_Request>> CProcessing::ReadCommands(TCreateContext create
 
             if (!user_context) return {};
 
-            if (auto request = SRequestBuilder::Build(method, params_obj, move(user_context))) {
-                requests.emplace_back(move(request));
+            if (auto request = SRequestBuilder::Build(method, params_obj, std::move(user_context))) {
+                requests.emplace_back(std::move(request));
                 if (report_progress_after && (requests.size() % report_progress_after == 0)) cerr << '.';
             }
         }
@@ -1252,7 +1252,7 @@ int CProcessing::Performance(const SPerformanceParams& params)
     using TReplyStorage = deque<shared_ptr<CPSG_Reply>>;
 
     if (SParams::verbose) cerr << "Preparing requests: ";
-    auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(move(id)); }, SParams::verbose ? kReportProgressAfter : 0);
+    auto requests = ReadCommands([](string id, CJson_ConstNode&){ return make_shared<SMetrics>(std::move(id)); }, SParams::verbose ? kReportProgressAfter : 0);
 
     if (requests.empty()) return -1;
 
@@ -1576,7 +1576,7 @@ CPSG_BlobId SRequestBuilder::SReader<CJson_ConstObject>::GetBlobId() const
 {
     auto array = input["blob_id"].GetArray();
     auto id = array[0].GetValue().GetString();
-    return array.size() > 1 ? CPSG_BlobId(move(id), array[1].GetValue().GetInt8()) : move(id);
+    return array.size() > 1 ? CPSG_BlobId(std::move(id), array[1].GetValue().GetInt8()) : std::move(id);
 }
 
 CPSG_ChunkId SRequestBuilder::SReader<CJson_ConstObject>::GetChunkId() const

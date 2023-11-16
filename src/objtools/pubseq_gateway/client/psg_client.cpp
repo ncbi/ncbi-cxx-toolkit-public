@@ -293,7 +293,7 @@ unique_ptr<CPSG_BlobId> SDataId::x_Get<CPSG_BlobId>() const
     }
 
     last_modified = NStr::StringToNumeric<Int8>(last_modified_str);
-    return make_unique<CPSG_BlobId>(blob_id, move(last_modified));
+    return make_unique<CPSG_BlobId>(blob_id, std::move(last_modified));
 }
 
 template <>
@@ -377,7 +377,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(CPSG_SkippedBlob::EReason reason, 
         if (!time_until_resend.IsNull()) stats->AddTime(SPSG_Stats::eTimeUntilResend, time_until_resend);
     }
 
-    return new CPSG_SkippedBlob(move(id), reason, move(sent_seconds_ago), move(time_until_resend));
+    return new CPSG_SkippedBlob(std::move(id), reason, std::move(sent_seconds_ago), std::move(time_until_resend));
 }
 
 CPSG_Processor::EProgressStatus s_GetProgressStatus(const SPSG_Args& args)
@@ -810,7 +810,7 @@ void s_DelimitedOutput(TIterator from, TIterator to, ostream& os, const char* pr
 template <class TValues, class... TArgs>
 void s_DelimitedOutput(const TValues& values, TArgs&&... args)
 {
-    return s_DelimitedOutput(begin(values), end(values), forward<TArgs>(args)...);
+    return s_DelimitedOutput(begin(values), end(values), std::forward<TArgs>(args)...);
 }
 
 void CPSG_Request_Biodata::x_GetAbsPathRef(ostream& os) const
@@ -910,10 +910,10 @@ void CPSG_Request_Chunk::x_GetAbsPathRef(ostream& os) const
 
 
 CPSG_Request_IpgResolve::CPSG_Request_IpgResolve(string protein, Int8 ipg, TNucleotide nucleotide, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
-    : CPSG_Request(move(user_context), move(request_context)),
-        m_Protein(move(protein)),
+    : CPSG_Request(std::move(user_context), std::move(request_context)),
+        m_Protein(std::move(protein)),
         m_Ipg(ipg),
-        m_Nucleotide(move(nucleotide))
+        m_Nucleotide(std::move(nucleotide))
 {
     if (m_Protein.empty()) {
         if (!m_Ipg) {
@@ -962,21 +962,21 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     const auto type = user_request->GetType();
     const auto raw = (type == CPSG_Request::eBlob) && !dynamic_pointer_cast<const CPSG_Request_Blob>(user_request);
-    auto reply = make_shared<SPSG_Reply>(move(request_id), params, queue, stats, raw);
+    auto reply = make_shared<SPSG_Reply>(std::move(request_id), params, queue, stats, raw);
     auto abs_path_ref = x_GetAbsPathRef(user_request, raw);
     const auto request_flags = r->m_Flags.IsNull() ? m_RequestFlags : r->m_Flags.GetValue();
     const auto& request_context = user_request->m_RequestContext;
 
     _ASSERT(request_context);
 
-    auto request = make_shared<SPSG_Request>(move(abs_path_ref), request_flags, reply, request_context->Clone(), params);
+    auto request = make_shared<SPSG_Request>(std::move(abs_path_ref), request_flags, reply, request_context->Clone(), params);
 
     if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
         if (stats) stats->IncCounter(SPSG_Stats::eRequest, type);
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
-        user_reply->m_Impl->reply = move(reply);
+        user_reply->m_Impl->reply = std::move(reply);
         user_reply->m_Impl->user_reply = user_reply;
-        user_reply->m_Request = move(user_request);
+        user_reply->m_Request = std::move(user_request);
         return user_reply;
     }
 
@@ -987,8 +987,8 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline 
 {
     _ASSERT(queue);
 
-    if (auto user_reply = SendRequestAndGetReply(move(request), move(deadline))) {
-        queue->Push(move(user_reply));
+    if (auto user_reply = SendRequestAndGetReply(std::move(request), std::move(deadline))) {
+        queue->Push(std::move(user_reply));
         return true;
     }
 
@@ -999,7 +999,7 @@ bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
 {
     _ASSERT(queue);
 
-    if (queue->WaitUntil(queue->Stopped(), move(deadline), false, true)) {
+    if (queue->WaitUntil(queue->Stopped(), std::move(deadline), false, true)) {
         queue->Reset();
         return true;
     }
@@ -1047,14 +1047,14 @@ CPSG_ReplyItem::CPSG_ReplyItem(EType type) :
 
 CPSG_BlobData::CPSG_BlobData(unique_ptr<CPSG_DataId> id) :
     CPSG_ReplyItem(eBlobData),
-    m_Id(move(id))
+    m_Id(std::move(id))
 {
 }
 
 
 CPSG_BlobInfo::CPSG_BlobInfo(unique_ptr<CPSG_DataId> id) :
     CPSG_ReplyItem(eBlobInfo),
-    m_Id(move(id))
+    m_Id(std::move(id))
 {
 }
 
@@ -1151,10 +1151,10 @@ Uint8 CPSG_BlobInfo::GetNChunks() const
 
 CPSG_SkippedBlob::CPSG_SkippedBlob(unique_ptr<CPSG_DataId> id, EReason reason, TSeconds sent_seconds_ago, TSeconds time_until_resend) :
     CPSG_ReplyItem(eSkippedBlob),
-    m_Id(move(id)),
+    m_Id(std::move(id)),
     m_Reason(reason),
-    m_SentSecondsAgo(move(sent_seconds_ago)),
-    m_TimeUntilResend(move(time_until_resend))
+    m_SentSecondsAgo(std::move(sent_seconds_ago)),
+    m_TimeUntilResend(std::move(time_until_resend))
 {
 }
 
@@ -1270,7 +1270,7 @@ CPSG_Request_Resolve::TIncludeInfo CPSG_BioseqInfo::IncludedInfo() const
 
 CPSG_NamedAnnotInfo::CPSG_NamedAnnotInfo(string name) :
     CPSG_ReplyItem(eNamedAnnotInfo),
-    m_Name(move(name))
+    m_Name(std::move(name))
 {
 }
 
@@ -1346,8 +1346,8 @@ CPSG_NamedAnnotStatus::TId2AnnotStatusList CPSG_NamedAnnotStatus::GetId2AnnotSta
 
 CPSG_PublicComment::CPSG_PublicComment(unique_ptr<CPSG_DataId> id, string text) :
     CPSG_ReplyItem(ePublicComment),
-    m_Id(move(id)),
-    m_Text(move(text))
+    m_Id(std::move(id)),
+    m_Text(std::move(text))
 {
 }
 
@@ -1447,7 +1447,7 @@ CPSG_Queue::CPSG_Queue(const string& service) :
 bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
     _ASSERT(m_Impl);
-    return m_Impl->SendRequest(move(request), move(deadline));
+    return m_Impl->SendRequest(std::move(request), std::move(deadline));
 }
 
 shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
@@ -1462,7 +1462,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
 shared_ptr<CPSG_Reply> CPSG_Queue::SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
     _ASSERT(m_Impl);
-    return m_Impl->SendRequestAndGetReply(move(request), move(deadline));
+    return m_Impl->SendRequestAndGetReply(std::move(request), std::move(deadline));
 }
 
 void CPSG_Queue::Stop()
@@ -1475,7 +1475,7 @@ void CPSG_Queue::Stop()
 bool CPSG_Queue::WaitForEvents(CDeadline deadline)
 {
     _ASSERT(m_Impl);
-    return m_Impl->WaitForEvents(move(deadline));
+    return m_Impl->WaitForEvents(std::move(deadline));
 }
 
 void CPSG_Queue::Reset()
@@ -1508,7 +1508,7 @@ void CPSG_Queue::SetRequestFlags(CPSG_Request::TFlags request_flags)
 
 void CPSG_Queue::SetUserArgs(SPSG_UserArgs user_args)
 {
-    m_Impl->SetUserArgs(move(user_args));
+    m_Impl->SetUserArgs(std::move(user_args));
 }
 
 
@@ -1524,9 +1524,9 @@ CPSG_EventLoop& CPSG_EventLoop::operator=(CPSG_EventLoop&&) = default;
 
 CPSG_EventLoop::CPSG_EventLoop(const string&  service, TItemComplete item_complete, TReplyComplete reply_complete, TNewItem new_item) :
     CPSG_Queue(service),
-    m_ItemComplete(move(item_complete)),
-    m_ReplyComplete(move(reply_complete)),
-    m_NewItem(move(new_item))
+    m_ItemComplete(std::move(item_complete)),
+    m_ReplyComplete(std::move(reply_complete)),
+    m_NewItem(std::move(new_item))
 {
     if (!m_ItemComplete) {
         NCBI_THROW(CPSG_Exception, eParameterMissing, "item_complete cannot be empty");
@@ -1544,7 +1544,7 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
     }
 
     while (auto reply = GetNextReply(CDeadline::eNoWait)) {
-        m_Replies.emplace_back(move(reply), 0);
+        m_Replies.emplace_back(std::move(reply), 0);
     }
 
     for (auto i = m_Replies.begin(); i != m_Replies.end();) {
@@ -1565,7 +1565,7 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
                 m_NewItem(item);
             }
 
-            items.emplace_back(move(item));
+            items.emplace_back(std::move(item));
         }
 
         for (auto j = items.begin(); j != items.end();) {

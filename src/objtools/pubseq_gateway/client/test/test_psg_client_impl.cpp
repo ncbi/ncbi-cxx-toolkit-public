@@ -109,7 +109,7 @@ struct SFixture
         SReceiver(TIncomingData& src, SPSG_TimedRequest request) :
             m_It(src.begin()),
             m_End(src.end()),
-            m_Request(move(request)),
+            m_Request(std::move(request)),
             m_Buf(kSizeMax)
         {
             SetStream();
@@ -413,7 +413,7 @@ void SFixture::MtReading()
                 BOOST_REQUIRE_MESSAGE_MT_SAFE(src_blob != src_blobs.end(), "Unknown blob received");
 
                 thread t = thread(reader_impl, src_blob->second, ref(*item_ts));
-                readers.emplace(item_ts, move(t));
+                readers.emplace(item_ts, std::move(t));
             }
         }
 

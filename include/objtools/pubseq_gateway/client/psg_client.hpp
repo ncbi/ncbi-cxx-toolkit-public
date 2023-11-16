@@ -133,14 +133,14 @@ public:
     string GetId() const { return x_GetId(); }
 
     /// Set flags
-    void SetFlags(TOptionalFlags flags) { m_Flags = move(flags); }
+    void SetFlags(TOptionalFlags flags) { m_Flags = std::move(flags); }
 
     /// Set arbitrary URL arguments to add to this request.
     /// @code
     /// request->SetUserArgs("param1=value1&param1=value2&param2=value3");
     /// request->SetUserArgs({{ "param1", { "value1", "value2" }}, { "param2", { "value3" }}});
     /// @endcode
-    void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgs = move(user_args); }
+    void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgs = std::move(user_args); }
 
 protected:
     template <class T> T GetCtx(T c) { return c ? c : CDiagContext::GetRequestContext().Clone(); }
@@ -148,7 +148,7 @@ protected:
     CPSG_Request(shared_ptr<void> user_context = {},
                  CRef<CRequestContext> request_context = {})
         : m_UserContext(user_context),
-          m_RequestContext(GetCtx(move(request_context)))
+          m_RequestContext(GetCtx(std::move(request_context)))
     {}
 
     virtual ~CPSG_Request() = default;
@@ -178,7 +178,7 @@ public:
 
     /// @param id
     ///  Bio ID (like accession)
-    CPSG_BioId(string id, TType type = {}) : m_Id(move(id)), m_Type(type) {}
+    CPSG_BioId(string id, TType type = {}) : m_Id(std::move(id)), m_Type(type) {}
 
     /// @param seq_id
     ///  Seq ID
@@ -230,8 +230,8 @@ public:
     /// @param id
     ///  Blob ID
     CPSG_BlobId(string id, TLastModified last_modified = {})
-        : m_Id(move(id)),
-          m_LastModified(move(last_modified))
+        : m_Id(std::move(id)),
+          m_LastModified(std::move(last_modified))
     {}
 
     /// Historical blob ID system -- based on the "satellite" and the "key"
@@ -239,7 +239,7 @@ public:
     /// @sa  objects::CID2_Blob_Id::TSat, objects::CID2_Blob_Id::TSat_key
     CPSG_BlobId(int sat, int sat_key, TLastModified last_modified = {})
         : m_Id(to_string(sat) + "." + to_string(sat_key)),
-          m_LastModified(move(last_modified))
+          m_LastModified(std::move(last_modified))
     {}
 
     /// Get tilde-separated string representation of this blob ID (e.g. for logging)
@@ -265,7 +265,7 @@ class CPSG_ChunkId : public CPSG_DataId
 public:
     CPSG_ChunkId(int id2_chunk, string id2_info)
         : m_Id2Chunk(id2_chunk),
-          m_Id2Info(move(id2_info))
+          m_Id2Info(std::move(id2_info))
     {}
 
     /// Get tilde-separated string representation of this chunk ID (e.g. for logging)
@@ -316,15 +316,15 @@ public:
                          EPSG_BioIdResolution   bio_id_resolution,
                          shared_ptr<void>       user_context = {},
                          CRef<CRequestContext>  request_context = {})
-        : CPSG_Request(move(user_context), move(request_context)),
-          m_BioId(move(bio_id)),
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_BioId(std::move(bio_id)),
           m_BioIdResolution(bio_id_resolution)
     {}
 
     CPSG_Request_Biodata(CPSG_BioId             bio_id,
                          shared_ptr<void>       user_context = {},
                          CRef<CRequestContext>  request_context = {})
-        : CPSG_Request_Biodata(move(bio_id), EPSG_BioIdResolution::Resolve, move(user_context), move(request_context))
+        : CPSG_Request_Biodata(std::move(bio_id), EPSG_BioIdResolution::Resolve, std::move(user_context), std::move(request_context))
     {}
 
     const CPSG_BioId& GetBioId() const { return m_BioId; }
@@ -359,7 +359,7 @@ public:
 
     using TExcludeTSEs = vector<CPSG_BlobId>;
 
-    void ExcludeTSE(CPSG_BlobId blob_id) { m_ExcludeTSEs.emplace_back(move(blob_id)); }
+    void ExcludeTSE(CPSG_BlobId blob_id) { m_ExcludeTSEs.emplace_back(std::move(blob_id)); }
 
     const TExcludeTSEs& GetExcludeTSEs() const { return m_ExcludeTSEs; }
 
@@ -367,7 +367,7 @@ public:
     void SetAccSubstitution(EPSG_AccSubstitution acc_substitution) { m_AccSubstitution = acc_substitution; }
 
     /// Set resend timeout
-    void SetResendTimeout(CTimeout resend_timeout) { m_ResendTimeout = move(resend_timeout); }
+    void SetResendTimeout(CTimeout resend_timeout) { m_ResendTimeout = std::move(resend_timeout); }
 
 private:
     EType x_GetType() const override { return eBiodata; }
@@ -398,15 +398,15 @@ public:
                          EPSG_BioIdResolution   bio_id_resolution,
                          shared_ptr<void>       user_context = {},
                          CRef<CRequestContext>  request_context = {})
-        : CPSG_Request(move(user_context), move(request_context)),
-          m_BioId(move(bio_id)),
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_BioId(std::move(bio_id)),
           m_BioIdResolution(bio_id_resolution)
     {}
 
     CPSG_Request_Resolve(CPSG_BioId             bio_id,
                          shared_ptr<void>       user_context = {},
                          CRef<CRequestContext>  request_context = {})
-        : CPSG_Request_Resolve(move(bio_id), EPSG_BioIdResolution::Resolve, move(user_context), move(request_context))
+        : CPSG_Request_Resolve(std::move(bio_id), EPSG_BioIdResolution::Resolve, std::move(user_context), std::move(request_context))
     {}
 
     const CPSG_BioId& GetBioId() const { return m_BioId; }
@@ -463,8 +463,8 @@ public:
     CPSG_Request_Blob(CPSG_BlobId           blob_id,
                       shared_ptr<void>      user_context = {},
                       CRef<CRequestContext> request_context = {})
-        : CPSG_Request(move(user_context), move(request_context)),
-          m_BlobId(move(blob_id))
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_BlobId(std::move(blob_id))
     {}
 
     const CPSG_BlobId& GetBlobId()       const { return m_BlobId; }
@@ -507,9 +507,9 @@ public:
                                 EPSG_BioIdResolution    bio_id_resolution,
                                 shared_ptr<void>        user_context = {},
                                 CRef<CRequestContext>   request_context = {})
-        : CPSG_Request(move(user_context), move(request_context)),
-          m_BioIds(move(bio_ids)),
-          m_AnnotNames(move(annot_names)),
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_BioIds(std::move(bio_ids)),
+          m_AnnotNames(std::move(annot_names)),
           m_BioIdResolution(bio_id_resolution)
     {
         if (m_BioIds.empty()) {
@@ -521,14 +521,14 @@ public:
                                 TAnnotNames             annot_names,
                                 shared_ptr<void>        user_context = {},
                                 CRef<CRequestContext>   request_context = {})
-        : CPSG_Request_NamedAnnotInfo(move(bio_ids), move(annot_names), EPSG_BioIdResolution::Resolve, move(user_context), move(request_context))
+        : CPSG_Request_NamedAnnotInfo(std::move(bio_ids), std::move(annot_names), EPSG_BioIdResolution::Resolve, std::move(user_context), std::move(request_context))
     {}
 
     /// @param bio_id
     ///  ID of the bioseq
     template <class... TArgs>
     CPSG_Request_NamedAnnotInfo(CPSG_BioId bio_id, TArgs&&... args)
-        : CPSG_Request_NamedAnnotInfo(CPSG_BioIds{bio_id}, forward<TArgs>(args)...)
+        : CPSG_Request_NamedAnnotInfo(CPSG_BioIds{bio_id}, std::forward<TArgs>(args)...)
     {}
 
     const CPSG_BioId&  GetBioId()      const { return m_BioIds.front(); }
@@ -574,8 +574,8 @@ public:
     CPSG_Request_Chunk(CPSG_ChunkId          chunk_id,
                        shared_ptr<void>      user_context = {},
                        CRef<CRequestContext> request_context = {})
-        : CPSG_Request(move(user_context), move(request_context)),
-          m_ChunkId(move(chunk_id))
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_ChunkId(std::move(chunk_id))
     {}
 
     const CPSG_ChunkId& GetChunkId() const { return m_ChunkId; }
@@ -1334,7 +1334,7 @@ private:
 
 inline void CPSG_Request::SetRequestContext(CRef<CRequestContext> request_context)
 {
-    m_RequestContext = GetCtx(move(request_context));
+    m_RequestContext = GetCtx(std::move(request_context));
 }
 
 inline bool CPSG_EventLoop::Run(CDeadline deadline)

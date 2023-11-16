@@ -69,7 +69,7 @@ struct SPSG_RStream : private SPSG_BlobReader, public CRStream
 {
     template <class... TArgs>
     SPSG_RStream(TArgs&&... args) :
-        SPSG_BlobReader(forward<TArgs>(args)...),
+        SPSG_BlobReader(std::forward<TArgs>(args)...),
         CRStream(this, size(), data())
     {}
 };
@@ -98,7 +98,7 @@ private:
 struct SPSG_UserArgsBuilder
 {
     SPSG_UserArgsBuilder() { x_UpdateCache(); }
-    void SetQueueArgs(SPSG_UserArgs queue_args) { m_QueueArgs = move(queue_args); x_UpdateCache(); }
+    void SetQueueArgs(SPSG_UserArgs queue_args) { m_QueueArgs = std::move(queue_args); x_UpdateCache(); }
     void Build(ostream& os, const SPSG_UserArgs& request_args);
     void BuildRaw(ostringstream& os, const SPSG_UserArgs& request_args);
 
@@ -126,7 +126,7 @@ struct CPSG_Queue::SImpl
 
     bool RejectsRequests() const { return m_Service.ioc.RejectsRequests(); }
     void SetRequestFlags(CPSG_Request::TFlags request_flags) { m_RequestFlags = request_flags; }
-    void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgsBuilder.GetLock()->SetQueueArgs(move(user_args)); }
+    void SetUserArgs(SPSG_UserArgs user_args) { m_UserArgsBuilder.GetLock()->SetQueueArgs(std::move(user_args)); }
 
     static TApiLock GetApiLock() { return CService::GetMap(); }
 
