@@ -391,6 +391,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                     ctx);
             }
         // Fall thru
+        NCBI_FALLTHROUGH;
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
         case CSeq_id::e_Ddbj:
@@ -413,6 +414,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                 ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Embl);
             }
         // Fall thru
+        NCBI_FALLTHROUGH;
         case CSeq_id::e_Other:
             if ( tsid ) {
                 if ( tsid->IsSetName() ) {
@@ -482,6 +484,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                 }
             }
         // Fall thru
+        NCBI_FALLTHROUGH;
         case CSeq_id::e_Pir:
         case CSeq_id::e_Swissprot:
         case CSeq_id::e_Prf:
@@ -800,6 +803,7 @@ void CValidError_bioseq::ValidateSeqIds
                 }
             }
         // Fall thru
+        NCBI_FALLTHROUGH;
         case CSeq_id::e_Other:
             if ( tsid ) {
 
@@ -1460,8 +1464,8 @@ void CValidError_bioseq::ValidateBioseqContext(
                     const CSeq_loc& loc = matpeptide.GetLocation();
                     const CSeq_loc& prd = matpeptide.GetProduct();
 
-                    int matlen = GetLength(loc, m_Scope);
-                    int prdlen = GetLength(prd, m_Scope);
+                    TSeqPos matlen = GetLength(loc, m_Scope);
+                    TSeqPos prdlen = GetLength(prd, m_Scope);
                     if (matlen != prdlen) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_MisMatchAA,
                                 "Mat_peptide does not match length of instantiated product",
@@ -1471,7 +1475,7 @@ void CValidError_bioseq::ValidateBioseqContext(
                     CSeqVector mat_vec(loc, *m_Scope, CBioseq_Handle::eCoding_Iupac);
                     CSeqVector prd_vec(prd, *m_Scope, CBioseq_Handle::eCoding_Iupac);
 
-                    int len = matlen;
+                    TSeqPos len = matlen;
                     if (len > prdlen) {
                         len = prdlen;
                     }
@@ -3813,8 +3817,8 @@ void CValidError_bioseq::ValidateRawConst(
 
             // only show leading or trailing X if product of NNN in nucleotide
             if (seq.IsAa() && (leading_x || trailingX > 0)) {
-                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
-                const CSeq_feat* cds = GetCDSForProduct(bsh);
+                CBioseq_Handle bsh2 = m_Scope->GetBioseqHandle(seq);
+                const CSeq_feat* cds = GetCDSForProduct(bsh2);
                 if (cds && cds->IsSetLocation()) {
                     const CSeq_loc& cdsloc = cds->GetLocation();
                     size_t dna_len = GetLength (cdsloc, m_Scope);
@@ -3874,11 +3878,11 @@ void CValidError_bioseq::ValidateRawConst(
             if (terminations > 0 || dashes > 0) {
                 // Post error indicating terminations found in protein sequence
                 // if possible, get gene and protein names
-                CBioseq_Handle bsh = m_Scope->GetBioseqHandle (seq);
+                CBioseq_Handle bsh3 = m_Scope->GetBioseqHandle (seq);
                 // First get gene label
                 string gene_label;
                 try {
-                    const CSeq_feat* cds = GetCDSForProduct(bsh);
+                    const CSeq_feat* cds = GetCDSForProduct(bsh3);
                     if (cds) {
                         CConstRef<CSeq_feat> gene = m_Imp.GetCachedGene(cds);
                         if (gene && gene->IsSetData() && gene->GetData().IsGene()) {
@@ -3891,7 +3895,7 @@ void CValidError_bioseq::ValidateRawConst(
                 string protein_label;
                 try {
                     CCacheImpl::SFeatKey prot_key(
-                        CSeqFeatData::e_Prot, CCacheImpl::kAnyFeatSubtype, bsh);
+                        CSeqFeatData::e_Prot, CCacheImpl::kAnyFeatSubtype, bsh3);
                     const CCacheImpl::TFeatValue & prots =
                         GetCache().GetFeatFromCache(prot_key);
                     if( ! prots.empty() ) {
@@ -3934,7 +3938,7 @@ void CValidError_bioseq::ValidateRawConst(
                 if (terminations > 0) {
                     string msg = "[" + NStr::SizetToString(terminations) + "] termination symbols in protein sequence";
                     msg += " (" + gene_label + " - " + protein_label + ")";
-                    const CSeq_feat* cds = GetCDSForProduct(bsh);
+                    const CSeq_feat* cds = GetCDSForProduct(bsh3);
                     if (cds) {
                         PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, *cds);
                     } else {
@@ -3968,6 +3972,7 @@ void CValidError_bioseq::ValidateRawConst(
                     ///////////////////////////////////
                     ////////// FALL-THROUGH! //////////
                     ///////////////////////////////////
+                    NCBI_FALLTHROUGH;
                 default:
                     if (run_len >= run_len_cutoff && start_pos > 1)
                     {
@@ -4335,7 +4340,7 @@ void CValidError_bioseq::ValidateDeltaLoc
 }
 
 
-static size_t s_GetDeltaLen (const CDelta_seq& seg, CScope* scope)
+static TSeqPos s_GetDeltaLen(const CDelta_seq& seg, CScope* scope)
 {
     if (seg.IsLiteral()) {
         return seg.GetLiteral().GetLength();
@@ -4564,7 +4569,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     // Count adjacent Ns in Seq-lit
                     int max_ns = s_MaxNsInSeqLitForTech (tech);
                     size_t adjacent_ns = x_CountAdjacentNs(lit);
-                    if (max_ns > -1 && adjacent_ns > max_ns) {
+                    if (max_ns >= 0 && adjacent_ns > unsigned(max_ns)) {
                         PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
                                 "Run of " + NStr::NumericToString(adjacent_ns) +
                                 " Ns in delta component " + NStr::UIntToString(seg) +
@@ -4744,8 +4749,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 if (delta_i->Empty()) {
                     continue; // Ignore NULLs, reported separately above.
                 }
-                const CDelta_seq& seg = **delta_i;
-                TSeqPos delta_len = (TSeqPos)s_GetDeltaLen (seg, m_Scope);
+                const CDelta_seq& seg2 = **delta_i;
+                TSeqPos delta_len = s_GetDeltaLen(seg2, m_Scope);
                 if (pos > 0) {
                     if (sv.IsInGap (pos)) {
                         CSeqVector::TResidue res = sv [pos - 1];
@@ -5219,9 +5224,9 @@ static bool s_StandaloneProt(const CBioseq_Handle& bsh)
     CSeq_entry_Handle eh = bsh.GetSeq_entry_Handle();
     while ( eh ) {
         if ( eh.IsSet() ) {
-            CBioseq_set_Handle bsh = eh.GetSet();
-            if ( bsh.IsSetClass() ) {
-                CBioseq_set::TClass cls = bsh.GetClass();
+            CBioseq_set_Handle bsh2 = eh.GetSet();
+            if ( bsh2.IsSetClass() ) {
+                CBioseq_set::TClass cls = bsh2.GetClass();
                 switch ( cls ) {
                 case CBioseq_set::eClass_nuc_prot:
                 case CBioseq_set::eClass_mut_set:
@@ -6497,8 +6502,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
             }
         }
 
-        x_ValidateCDSmRNAmatch(
-            m_CurrentHandle, numgene, numcds, nummrna);
+        x_ValidateCDSmRNAmatch(m_CurrentHandle);
 
         if (numcds > 0 && numcrgn + numvseg + numdseg + numjseg > 0 && m_Imp.DoCompareVDJCtoCDS() && m_Imp.IsRefSeq()) {
             /*
@@ -6759,7 +6763,7 @@ bool CMrnaMatchInfo::OkWithoutCds(bool isGenbank) const
         }
     }
     if (m_Mrna->IsSetPartial() && m_Mrna->GetPartial() && isGenbank) {
-    	return true;
+        return true;
     }
     return false;
 }
@@ -7319,10 +7323,7 @@ void CValidError_bioseq::x_ValidateCDSagainstVDJC(const CBioseq_Handle& seq)
 }
 
 
-
-void CValidError_bioseq::x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq,  int numcds,
-                                                int numcrgn, int numvseg,
-                                                int numdseg, int numjseg)
+void CValidError_bioseq::x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq)
 {
     unsigned int lclcds = 0, lclcrgn = 0, lclvseg = 0, lcldseg = 0, lcljseg = 0, lclnone = 0, lclothr = 0;
 
@@ -7396,10 +7397,7 @@ void CValidError_bioseq::x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq,  int 
     */
 }
 
-void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
-                                                int numgene,
-                                                int numcds,
-                                                int nummrna)
+void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
 {
     if (!m_AllFeatIt) {
         return;
@@ -8388,15 +8386,15 @@ void CValidError_bioseq::ValidateTwintrons(
 
             vector<int> intervalpoints = s_LocationToStartStopPairs(loc);
 
-            int len = (int) intervalpoints.size();
+            unsigned len = (unsigned)intervalpoints.size();
             if (len < 4) {
               continue;
             }
-            int max = len - 1;
+            unsigned max = len - 1;
 
             bool twintron = true;
 
-            for (int pos = 1; pos < max; pos += 2) {
+            for (unsigned pos = 1; pos < max; pos += 2) {
                 Int4 intL = intervalpoints[pos];
                 Int4 intR = intervalpoints[pos + 1];
 
@@ -8854,10 +8852,10 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                                       const COrg_ref& orgref = bsrc.GetOrg();
                                       if (orgref.IsSetTaxname()) {
                                           string taxname = orgref.GetTaxname();
-                                          size_t pos = NStr::Find (taxname, "=");
-                                          if (pos != string::npos) {
-                                              pos = NStr::Find (title, taxname);
-                                              if (pos != string::npos) {
+                                          size_t pos2 = NStr::Find (taxname, "=");
+                                          if (pos2 != string::npos) {
+                                              pos2 = NStr::Find (title, taxname);
+                                              if (pos2 != string::npos) {
                                                   report_fasta_brackets = false;
                                               }
                                           }

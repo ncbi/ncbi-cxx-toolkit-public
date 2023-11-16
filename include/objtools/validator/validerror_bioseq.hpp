@@ -213,8 +213,8 @@ private:
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
     void x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq);
-    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
-    void x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq, int numcds, int numcrgn, int numvseg, int numdseg, int numjseg);
+    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq);
+    void x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq);
     void x_ValidateCDSagainstVDJC(const CBioseq_Handle& seq);
     void x_CheckForMultiplemRNAs(CCdsMatchInfo& cds_match, const TmRNAList& unmatched_mrnas);
     void x_CheckMrnaProteinLink(const CCdsMatchInfo& cds_match);
