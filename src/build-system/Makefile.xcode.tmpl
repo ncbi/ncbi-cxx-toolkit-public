@@ -5,7 +5,9 @@
 include ./Makefile.mk
 
 DEVSDK = /Developer/SDKs
-SDKDIR = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+CDPMP  = /Contents/Developer/Platforms/MacOSX.platform
+XCODES = $(wildcard /Applications/Xcode* /Applications/Utilities/Xcode*)
+SDKDIR = $(firstword $(XCODES))$(CDPMP)
 # SDK = $(firstword $(wildcard $(DEVSDK)/*.sdk) $(wildcard $(SDKDIR)/*.sdk))
 SDK = $(SDKDIR)$(DEVSDK)/MacOSX.sdk
 ifneq "" "$(wildcard ${SDK})"
