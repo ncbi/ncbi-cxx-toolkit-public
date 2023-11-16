@@ -1459,14 +1459,14 @@ bool CValidError_imp::Validate
 
     // validate the main data
     if (seh.IsSeq()) {
-        const CBioseq& seq = seh.GetCompleteSeq_entry()->GetSeq();
+        const CBioseq& seq2 = seh.GetCompleteSeq_entry()->GetSeq();
         CValidError_bioseq bioseq_validator(*this);
         try {
-            bioseq_validator.ValidateBioseq(seq);
+            bioseq_validator.ValidateBioseq(seq2);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq. EXCEPTION: ") +
-                e.what(), seq);
+                e.what(), seq2);
             return true;
         }
     } else if (seh.IsSet()) {
@@ -1509,10 +1509,10 @@ bool CValidError_imp::Validate
 
     if (IsIndexerVersion() && DoesAnyProteinHaveGeneralID() && !IsRefSeq() && has_nucleotide_sequence) {
         call_once(SetContext().ProteinHaveGeneralIDOnceFlag,
-            [] (CValidError_imp* imp, CSeq_entry_Handle seh) {
+            [](CValidError_imp* imp, CSeq_entry_Handle seh2) {
                 imp->PostErr (eDiag_Info, eErr_SEQ_INST_ProteinsHaveGeneralID,
                     "INDEXER_ONLY - Protein bioseqs have general seq-id.",
-                    *(seh.GetCompleteSeq_entry()));
+                    *(seh2.GetCompleteSeq_entry()));
             }, this, seh);
     }
 
@@ -3694,7 +3694,6 @@ CCacheImpl::GetFeatFromCache(
     TFeatCache::const_iterator bioseq_find_iter =
         m_featCache.find(bioseq_check_key);
     if( bioseq_find_iter != m_featCache.end() ) {
-        const static TFeatValue kEmptyFeatValue;
         // bioseq was already processed,
         // it just happened to not have an entry here
         return kEmptyFeatValue;

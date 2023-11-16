@@ -117,9 +117,9 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align, int order)
         // call recursively
         {
 
-        int order = 1;
+        int order2 = 1;
         ITERATE(CSeq_align_set::Tdata, sali, segs.GetDisc().Get()) {
-            ValidateSeqAlign(**sali, order++);
+            ValidateSeqAlign(**sali, order2++);
         }
 
         }
@@ -222,13 +222,13 @@ static bool s_AmbiguousMatch (char a, char b)
 }
 
 
-static size_t s_GetNumIdsToUse (const CDense_seg& denseg)
+static unsigned s_GetNumIdsToUse(const CDense_seg& denseg)
 {
-    size_t dim     = denseg.GetDim();
-    if (!denseg.IsSetIds()) {
+    unsigned dim = denseg.GetDim();
+    if (! denseg.IsSetIds()) {
         dim = 0;
     } else if (denseg.GetIds().size() < dim) {
-        dim = denseg.GetIds().size();
+        dim = (unsigned)denseg.GetIds().size();
     }
     return dim;
 }
@@ -333,8 +333,8 @@ void s_CalculateMatchingColumns(const CDense_seg& denseg, TSeqPos &col, size_t &
                     // if we cared about internal gaps, it would have been handled above
                     NStr::ReplaceInPlace(column, "-", "");
                     if (!NStr::IsBlank(column)) {
-                        string::iterator it1 = column.begin();
-                        string::iterator it2 = it1;
+                        string::const_iterator it1 = column.begin();
+                        string::const_iterator it2 = it1;
                         ++it2;
                         while (match && it2 != column.end()) {
                             if (!s_AmbiguousMatch(*it1, *it2)) {
@@ -532,8 +532,8 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                     }
                     if (match) {
                         if (!NStr::IsBlank (column)) {
-                            string::iterator it1 = column.begin();
-                            string::iterator it2 = it1;
+                            string::const_iterator it1 = column.begin();
+                            string::const_iterator it2 = it1;
                             ++it2;
                             while (match && it2 != column.end()) {
                                 if (!s_AmbiguousMatch (*it1, *it2)) {
@@ -1003,7 +1003,7 @@ void CValidError_align::x_ValidateFastaLike
 
     vector<string> fasta_like;
 
-    for ( int id = 0; id < s_GetNumIdsToUse(denseg); ++id ) {
+    for (unsigned id = 0; id < s_GetNumIdsToUse(denseg); ++id) {
         bool gap = false;
 
         const CDense_seg::TStarts& starts = denseg.GetStarts();
@@ -1447,12 +1447,12 @@ void CValidError_align::x_ValidateSeqLength
         numseg = lens.size();
     }
 
-    for ( int id = 0; id < ids.size(); ++id ) {
+    for (unsigned id = 0; id < ids.size(); ++id) {
         TSeqPos bslen = GetLength(*(ids[id]), m_Scope);
-        minus = denseg.IsSetStrands()  &&
+        minus = denseg.IsSetStrands() &&
             denseg.GetStrands()[id] == eNa_strand_minus;
 
-        for ( int seg = 0; seg < numseg; ++seg ) {
+        for (unsigned seg = 0; seg < numseg; ++seg) {
             size_t curr_index =
                 id + (minus ? numseg - seg - 1 : seg) * dim;
             if (curr_index >= starts.size()) {
@@ -1471,7 +1471,7 @@ void CValidError_align::x_ValidateSeqLength
 
             // find the next segment that is present
             size_t next_index = curr_index;
-            int next_seg;
+            size_t next_seg;
             for ( next_seg = seg + 1; next_seg < numseg; ++next_seg ) {
                 next_index =
                     id + (minus ? numseg - next_seg - 1 : next_seg) * dim;
@@ -1541,7 +1541,7 @@ void CValidError_align::x_ValidateSeqLength
 (const TStd& std_segs,
  const CSeq_align& align)
 {
-    int seg = 1;
+    unsigned seg = 1;
     ITERATE( TStd, iter, std_segs ) {
         const CStd_seg& stdseg = **iter;
         const CSeq_id& id_context = *(stdseg.GetLoc().front()->GetId());
