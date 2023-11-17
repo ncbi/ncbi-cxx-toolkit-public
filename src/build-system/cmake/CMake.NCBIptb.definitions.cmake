@@ -147,10 +147,8 @@ endif()
 set(NCBI_CFGINC_ROOT   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC})
 
 get_filename_component(incdir "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC}" ABSOLUTE)
-if(WIN32 OR XCODE)
-    if(NCBI_GENERATOR_IS_MULTI_CONFIG)
-        set(incdir          ${incdir}/$<CONFIG>)
-    endif()
+if(NCBI_GENERATOR_IS_MULTI_CONFIG)
+    set(incdir          ${incdir}/$<CONFIG>)
 endif()
 
 set(NCBI_TREE_CMAKECFG "${CMAKE_CURRENT_LIST_DIR}")
