@@ -561,7 +561,7 @@ void CValidError_bioseqset::ValidateNucProtSet
         if ( set.GetClass() != CBioseq_set::eClass_segset ) {
 
             const CEnumeratedTypeValues* tv =
-                CBioseq_set::GetTypeInfo_enum_EClass();
+                CBioseq_set::ENUM_METHOD_NAME(EClass)();
             const string& set_class = tv->FindName(set.GetClass(), true);
 
             PostErr(eDiag_Critical, eErr_SEQ_PKG_NucProtNotSegSet,
@@ -690,7 +690,7 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
             if ( set.IsSetClass()  &&
                  set.GetClass() != CBioseq_set::eClass_parts ) {
                 const CEnumeratedTypeValues* tv =
-                    CBioseq_set::GetTypeInfo_enum_EClass();
+                    CBioseq_set::ENUM_METHOD_NAME(EClass)();
                 const string& set_class_str =
                     tv->FindName(set.GetClass(), true);
 
@@ -731,7 +731,7 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
         } else if ( (*se_list_it)->IsSet() ) {
             const CBioseq_set& set = (*se_list_it)->GetSet();
             const CEnumeratedTypeValues* tv =
-                CBioseq_set::GetTypeInfo_enum_EClass();
+                CBioseq_set::ENUM_METHOD_NAME(EClass)();
             const string& set_class_str =
                 tv->FindName(set.GetClass(), true);
 

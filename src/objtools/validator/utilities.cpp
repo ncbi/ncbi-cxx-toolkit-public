@@ -1077,10 +1077,10 @@ void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context)
         }
 
         const CEnumeratedTypeValues* tv;
-        tv = CSeq_inst::GetTypeInfo_enum_ERepr();
+        tv = CSeq_inst::ENUM_METHOD_NAME(ERepr)();
         const CSeq_inst& inst = sq.GetInst();
         content += tv->FindName(inst.GetRepr(), true) + ", ";
-        tv = CSeq_inst::GetTypeInfo_enum_EMol();
+        tv = CSeq_inst::ENUM_METHOD_NAME(EMol)();
         content += tv->FindName(inst.GetMol(), true);
         if (inst.IsSetLength()) {
             content += string(" len= ") + NStr::IntToString(inst.GetLength());
