@@ -44,7 +44,6 @@ BEGIN_SCOPE(edit)
 class NCBI_XHUGEASN_EXPORT CMacroHugeAsnReader : public CHugeAsnReader
 {
 public:
-    void ResetTopEntry();
 };
 
 

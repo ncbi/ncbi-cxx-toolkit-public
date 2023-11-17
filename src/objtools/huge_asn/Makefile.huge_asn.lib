@@ -4,7 +4,6 @@
 ###############################
 
 SRC = huge_asn_reader huge_file huge_file_process huge_asn_loader \
-      huge_asn_macro_reader
 
 
 LIB    = xhugeasn
