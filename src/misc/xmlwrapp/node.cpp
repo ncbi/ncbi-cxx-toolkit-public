@@ -91,6 +91,7 @@ struct xml::impl::node_impl : public pimpl_base<xml::impl::node_impl> {
 
     void release (void) {
         if (xmlnode_ && owner_) {
+            owner_ = false;
             xmlFreeNode(xmlnode_);
         }
     }
@@ -698,9 +699,30 @@ void xml::node::swap (node &other) {
     // The name field was unlinked from the document above, if required
     std::swap(pimpl_->xmlnode_->name, other.pimpl_->xmlnode_->name);
 
-    std::swap(pimpl_->xmlnode_->_private, other.pimpl_->xmlnode_->_private);
+    if (pimpl_->xmlnode_->_private != nullptr
+        ||  other.pimpl_->xmlnode_->_private != nullptr) {
+        if (pimpl_->xmlnode_->_private == nullptr) {
+            impl::attach_node_private_data(pimpl_->xmlnode_);
+        }
+        if (other.pimpl_->xmlnode_->_private == nullptr) {
+            impl::attach_node_private_data(other.pimpl_->xmlnode_);
+        }
+        node_private_data
+            *priv = (node_private_data*)pimpl_->xmlnode_->_private,
+            *priv2 = (node_private_data*)other.pimpl_->xmlnode_->_private;
+        std::swap(priv->phantom_attrs_, priv2->phantom_attrs_);
+        std::swap(priv->attr_instances_, priv2->attr_instances_);
+    }
     std::swap(pimpl_->xmlnode_->type, other.pimpl_->xmlnode_->type);
     std::swap(pimpl_->xmlnode_->children, other.pimpl_->xmlnode_->children);
+    for (auto child = pimpl_->xmlnode_->children;  child != nullptr;
+         child = child->next) {
+        child->parent = pimpl_->xmlnode_;
+    }
+    for (auto child = other.pimpl_->xmlnode_->children;  child != nullptr;
+         child = child->next) {
+        child->parent = other.pimpl_->xmlnode_;
+    }
     std::swap(pimpl_->xmlnode_->last, other.pimpl_->xmlnode_->last);
     // parent, next, prev, doc are skipped because the top level xmlNode
     // structure does not change its location
