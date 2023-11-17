@@ -8,7 +8,7 @@ NCBI_begin_app(table2asn)
   )
   NCBI_uses_toolkit_libraries(
     data_loaders_util prosplign xdiscrepancy xflatfile
-    xmlwrapp xvalidate xobjwrite xhugeasn
+    xmlwrapp xvalidate xobjwrite
   )
   NCBI_project_watchers(stakhovv gotvyans foleyjp)
 NCBI_end_app()
