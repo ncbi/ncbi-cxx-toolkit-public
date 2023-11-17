@@ -531,7 +531,7 @@ string UTF8ToAsciiString( const char* src,
     if (result) {
         *result = eConvertedFine;
     }
-    if ( !src ) return 0;
+    if ( !src ) return kEmptyStr;
     string dst;
     size_t srcPos = 0;
     size_t srcLen = strlen( src );
