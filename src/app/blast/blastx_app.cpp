@@ -173,6 +173,7 @@ int CBlastxApp::Run(void)
     if(!m_Bah.GetMessages().empty()) {
     	PrintErrorArchive(args, m_Bah.GetMessages());
     }
+	return status;
 }
 
 int CBlastxApp::x_RunMTBySplitDB()
