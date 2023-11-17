@@ -19,7 +19,7 @@ ASN_DEP = general biblio pub seq seqset submit taxon3 valerr
 
 WATCHERS = stakhovv kans foleyjp asztalos gotvyans
 
-DLL_LIB = $(XFORMAT_LIBS) valerr xalnmgr xobjedit
+DLL_LIB = xhugeasn $(XFORMAT_LIBS) valerr xalnmgr xobjedit
 
 USES_LIBRARIES =  \
     $(XFORMAT_LIBS) valerr xalnmgr xobjedit xhugeasn

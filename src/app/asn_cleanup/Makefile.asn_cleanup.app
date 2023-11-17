@@ -8,7 +8,7 @@
 
 APP = asn_cleanup
 SRC = asn_cleanup read_hooks bigfile_processing huge_file_cleanup
-LIB =  xvalidate $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
+LIB =  xvalidate xhugeasn $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
        valerr taxon1 tables xregexp \
        xobjwrite \
       $(DATA_LOADERS_UTIL_LIB) ncbi_xdbapi_ftds dbapi $(FTDS_LIB) \
