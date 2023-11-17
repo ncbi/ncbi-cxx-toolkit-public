@@ -115,7 +115,7 @@ public:
         m_GetParser = parser;
     }
 
-    bool GetParam(const char *  name, size_t  len, bool  required,
+    bool GetParam(const char *  name, size_t  len,
                   const char **  value, size_t *  value_len);
     bool GetMultipleValuesParam(const char *  name, size_t  len,
                                 vector<string> &  values);
