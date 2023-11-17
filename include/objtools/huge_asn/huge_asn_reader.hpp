@@ -138,6 +138,7 @@ public:
 
     using t_more_hooks = std::function<void(CObjectIStream&)>;
     void ExtendReadHooks(t_more_hooks hooks);
+    void ResetTopEntry();
 
 protected:
     // temporary structure for indexing
@@ -161,7 +162,6 @@ protected:
     virtual void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context);
     virtual void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context);
 
-    void x_ResetTopEntry();
     using TStreamPos = streampos;
     TStreamPos GetCurrentPos() const;
 

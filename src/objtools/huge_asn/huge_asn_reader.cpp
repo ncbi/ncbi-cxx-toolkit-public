@@ -410,7 +410,7 @@ void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, CHugeAsnReader:
     });
 }
 
-void CHugeAsnReader::x_ResetTopEntry()
+void CHugeAsnReader::ResetTopEntry()
 {
     m_top_entry.Reset();
 }
