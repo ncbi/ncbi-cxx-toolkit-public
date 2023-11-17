@@ -3609,7 +3609,7 @@ void CValidError_bioseq::ValidateRawConst(
     const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
-    const CEnumeratedTypeValues* tv = CSeq_inst::GetTypeInfo_enum_ERepr();
+    const CEnumeratedTypeValues* tv = CSeq_inst::ENUM_METHOD_NAME(ERepr)();
     const string& rpr = tv->FindName(inst.GetRepr(), true);
 
     if (inst.IsSetFuzz() && (!inst.IsSetSeq_data() || !inst.GetSeq_data().IsGap())) {
@@ -4901,7 +4901,7 @@ bool CValidError_bioseq::ValidateRepr
  const CBioseq&   seq)
 {
     bool rtn = true;
-    const CEnumeratedTypeValues* tv = CSeq_inst::GetTypeInfo_enum_ERepr();
+    const CEnumeratedTypeValues* tv = CSeq_inst::ENUM_METHOD_NAME(ERepr)();
     string rpr = tv->FindName(inst.GetRepr(), true);
     if (NStr::Equal(rpr, "ref")) {
         rpr = "reference";

@@ -1070,7 +1070,7 @@ string CValidErrorFormat::GetBioseqSetLabel(const string& accession, CBioseq_set
 {
     string str = "BIOSEQ-SET: ";
     if (!suppress_context) {
-        const auto* tv = CBioseq_set::GetTypeInfo_enum_EClass();
+        const auto* tv = CBioseq_set::ENUM_METHOD_NAME(EClass)();
         const string& context = tv->FindName(setClass, true);
         str += context;
         str += ": ";
