@@ -229,7 +229,7 @@ void CHttpRequest::ParseParams(void)
 }
 
 
-bool CHttpRequest::GetParam(const char *  name, size_t  len, bool  required,
+bool CHttpRequest::GetParam(const char *  name, size_t  len,
                             const char **  value, size_t *  value_len)
 {
     if (!m_ParamParsed)
@@ -249,7 +249,7 @@ bool CHttpRequest::GetParam(const char *  name, size_t  len, bool  required,
     if (value_len)
         *value_len = 0;
 
-    return !required;
+    return false;
 }
 
 

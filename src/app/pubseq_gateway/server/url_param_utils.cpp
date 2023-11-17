@@ -42,7 +42,7 @@ CPubseqGatewayApp::x_GetParam(CHttpRequest &  req, const string &  name) const
     size_t                  value_size;
 
     param.m_Found = req.GetParam(name.data(), name.size(),
-                                 true, &value, &value_size);
+                                 &value, &value_size);
     if (param.m_Found)
         param.m_Value.assign(value, value_size);
     return param;
