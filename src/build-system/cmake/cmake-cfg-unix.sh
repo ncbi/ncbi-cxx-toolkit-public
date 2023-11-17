@@ -42,6 +42,7 @@ if [ -z "$CMAKECFGRECURSIONGUARD" ]; then
   USE_CCACHE="OFF"
   USE_DISTCC="ON"
   SKIP_ANALYSIS="OFF"
+  generator_multi_cfg=""
 fi
 
 ############################################################################# 
@@ -173,8 +174,21 @@ cxx_name=""
 cxx_version=""
 unknown=""
 have_toolchain=""
+dest=""
+
 for arg in ${script_args}
 do
+  if test "$dest" = "CMAKE_GENERATOR"; then
+    case "$arg" in 
+       --*)
+         dest=""
+         ;;
+      *) 
+        CMAKE_GENERATOR="$CMAKE_GENERATOR $arg"
+        continue
+        ;; 
+    esac
+  fi
   case "$arg" in 
     --help|-help|help|-h)
       do_help="yes"
@@ -251,6 +265,7 @@ do
       ;; 
     --with-generator=*)
       CMAKE_GENERATOR=${arg#*=}
+      dest="CMAKE_GENERATOR"
       ;; 
     --with-components=*)
       PROJECT_COMPONENTS=${arg#*=}
@@ -285,6 +300,7 @@ do
       ;; 
   esac 
 done 
+
 if [ -n "${CMAKE_TOOLCHAIN_FILE}" ]; then
     have_toolchain="yes"
 fi
@@ -452,6 +468,9 @@ fi
 fi
 
 ############################################################################# 
+if test "$CMAKE_GENERATOR" = "Ninja Multi-Config"; then
+  generator_multi_cfg="yes"
+fi
 if [ -z "$BUILD_ROOT" ]; then
   if test "$CMAKE_GENERATOR" = "Xcode"; then
     BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
@@ -459,9 +478,17 @@ if [ -z "$BUILD_ROOT" ]; then
       BUILD_ROOT="$BUILD_ROOT"-DLL
     fi
   else
-    BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
-    if test "$BUILD_SHARED_LIBS" = "ON"; then
-      BUILD_ROOT="$BUILD_ROOT"DLL
+    if test "$generator_multi_cfg" = "yes"; then
+      BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}
+      if test "$BUILD_SHARED_LIBS" = "ON"; then
+        BUILD_ROOT="$BUILD_ROOT"-DLL
+      fi
+      BUILD_TYPE=""
+    else
+      BUILD_ROOT=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
+      if test "$BUILD_SHARED_LIBS" = "ON"; then
+        BUILD_ROOT="$BUILD_ROOT"DLL
+      fi
     fi
 #BUILD_ROOT="$BUILD_ROOT"64
   fi
@@ -521,7 +548,9 @@ fi
 if [ -n "$INSTALL_PATH" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
-CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+if [ -n "$BUILD_TYPE" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+fi
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -DNCBI_PTBCFG_ALLOW_COMPOSITE=$ALLOW_COMPOSITE"
 if test "$CMAKE_GENERATOR" != "Xcode"; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
