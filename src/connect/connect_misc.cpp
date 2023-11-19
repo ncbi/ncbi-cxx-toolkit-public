@@ -87,14 +87,14 @@ private:
 };
 
 SSocketAddress::SHost::SHost(const string& h, EName n) :
-    name(n == EName::eOriginal ? h : string()),
+    name(n == EName::eOriginal ? h : optional<string>()),
     host(SSocketAddressImpl::GetInstance().GetHost(h))
 {
 }
 
 string SSocketAddress::GetHostName() const
 {
-    return name.empty() ? SSocketAddressImpl::GetInstance().GetName(host) : name;
+    return m_Name ? m_Name.value() : SSocketAddressImpl::GetInstance().GetName(host);
 }
 
 SSocketAddress SSocketAddress::Parse(const string& address, SHost::EName name)
