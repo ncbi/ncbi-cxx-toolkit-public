@@ -1403,6 +1403,8 @@ xgridcgi needs xcgi
 xgridcgi needs xconnserv
 xgridcgi needs xhtml
 xhtml needs xncbi
+xhugeasn needs $(OBJREAD_LIBS)
+xhugeasn needs $(SOBJMGR_LIBS)
 xid_increment needs $(OBJMGR_LIBS)
 xid_increment needs taxon1
 xid_increment needs xid_utils
@@ -1531,6 +1533,7 @@ xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs taxon1
 xvalidate needs valerr
 xvalidate needs xalnmgr
+xvalidate needs xhugeasn
 xxconnect includes connssl
 xxconnect needs xncbi
 xxconnect needs3party $(NCBI_C_ncbi)
