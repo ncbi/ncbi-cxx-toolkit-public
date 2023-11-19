@@ -51,7 +51,6 @@ BEGIN_NCBI_SCOPE
 
 struct NCBI_XCONNECT_EXPORT SSocketAddress
 {
-    string name;
     unsigned host;
     unsigned short port;
 
@@ -59,7 +58,7 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     {
         enum class EName { eResolved, eOriginal };
 
-        string name;
+        optional<string> name;
         unsigned host;
 
         SHost(unsigned h) : host(h) {}
@@ -74,7 +73,7 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
         SPort(CTempString p)    : port(NStr::StringToNumeric<unsigned short>(p)) {}
     };
 
-    SSocketAddress(SHost h, SPort p) : name(h.name), host(h.host), port(p.port) {}
+    SSocketAddress(SHost h, SPort p) : host(h.host), port(p.port), m_Name(h.name) {}
 
     explicit operator bool() const { return host && port; }
     string GetHostName() const;
@@ -83,6 +82,9 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     static SSocketAddress Parse(const string& address, SHost::EName name = SHost::EName::eResolved);
 
     friend ostream& operator<<(ostream& os, const SSocketAddress& address) { return os << address.AsString(); }
+
+private:
+    optional<string> m_Name;
 };
 
 NCBI_XCONNECT_EXPORT bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs);
