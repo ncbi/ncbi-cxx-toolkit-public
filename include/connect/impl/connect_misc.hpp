@@ -58,7 +58,7 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     {
         enum class EName { eResolved, eOriginal };
 
-        optional<string> name;
+        std::optional<string> name;
         unsigned host;
 
         SHost(unsigned h) : host(h) {}
@@ -84,7 +84,7 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     friend ostream& operator<<(ostream& os, const SSocketAddress& address) { return os << address.AsString(); }
 
 private:
-    optional<string> m_Name;
+    std::optional<string> m_Name;
 };
 
 NCBI_XCONNECT_EXPORT bool operator==(const SSocketAddress& lhs, const SSocketAddress& rhs);
