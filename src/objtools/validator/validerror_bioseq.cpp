@@ -399,7 +399,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                 const string& acc = tsid->GetAccession();
                 const char badch = CheckForBadSeqIdChars (acc);
                 if (badch != '\0') {
-                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
                            "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
                 }
                 CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(acc);
@@ -434,7 +434,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                     const string& acc = tsid->GetAccession();
                     const char badch = CheckForBadSeqIdChars (acc);
                     if (badch != '\0') {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
                                 "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
                     }
                     size_t num_letters = 0;
@@ -564,7 +564,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                         }
                     }
                     if (badch != '\0') {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
                                 "Bad character '" + string(1, badch) + "' in sequence ID '" + id.AsFastaString() + "'", ctx);
                     }
                 }
@@ -584,7 +584,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                 const string& acc = id.GetLocal().GetStr();
                 const char badch = CheckForBadLocalIdChars(acc);
                 if (badch != '\0') {
-                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
                             "Bad character '" + string(1, badch) + "' in local ID '" + acc + "'", ctx);
                 }
             }
