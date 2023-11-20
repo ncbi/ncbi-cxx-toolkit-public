@@ -53,37 +53,38 @@ BEGIN_SCOPE(validator)
 using namespace sequence;
 
 
-static bool s_IsLocDirSub(const CSeq_loc& loc,
-    const CTSE_Handle & tse,
-    CCacheImpl & cache,
-    CScope *scope);
+static bool s_IsLocDirSub(
+    const CSeq_loc& loc,
+    const CTSE_Handle& tse,
+    CCacheImpl& cache,
+    CScope* scope);
 
 static const char* const sc_BadGeneSynText [] = {
-  "HLA",
-  "alpha",
-  "alternative",
-  "beta",
-  "cellular",
-  "cytokine",
-  "delta",
-  "drosophila",
-  "epsilon",
-  "gamma",
-  "homolog",
-  "mouse",
-  "orf",
-  "partial",
-  "plasma",
-  "precursor",
-  "pseudogene",
-  "putative",
-  "rearranged",
-  "small",
-  "trna",
-  "unknown",
-  "unknown function",
-  "unknown protein",
-  "unnamed"
+    "HLA",
+    "alpha",
+    "alternative",
+    "beta",
+    "cellular",
+    "cytokine",
+    "delta",
+    "drosophila",
+    "epsilon",
+    "gamma",
+    "homolog",
+    "mouse",
+    "orf",
+    "partial",
+    "plasma",
+    "precursor",
+    "pseudogene",
+    "putative",
+    "rearranged",
+    "small",
+    "trna",
+    "unknown",
+    "unknown function",
+    "unknown protein",
+    "unnamed",
 };
 typedef CStaticArraySet<const char*, PCase_CStr> TBadGeneSynSet;
 DEFINE_STATIC_ARRAY_MAP(TBadGeneSynSet, sc_BadGeneSyn, sc_BadGeneSynText);
@@ -409,10 +410,11 @@ void CGeneValidator::x_ValidateMultiIntervalGene()
 
 // to be DirSub, must not have ID of type other, must not have WGS keyword or tech, and
 // must not be both complete and bacterial
-static bool s_IsLocDirSub (const CSeq_loc& loc,
-                           const CTSE_Handle & tse,
-                           CCacheImpl & cache,
-                           CScope *scope)
+static bool s_IsLocDirSub(
+    const CSeq_loc& loc,
+    const CTSE_Handle& tse,
+    CCacheImpl& cache,
+    CScope* scope)
 {
     if (!loc.GetId()) {
         for ( CSeq_loc_CI si(loc); si; ++si ) {
@@ -474,7 +476,6 @@ static bool s_IsLocDirSub (const CSeq_loc& loc,
     }
     return rval;
 }
-
 
 
 END_SCOPE(validator)

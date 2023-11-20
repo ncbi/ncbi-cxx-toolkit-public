@@ -94,11 +94,10 @@ static string s_AsciiString(const string& src)
 /**
  * Validate descriptors as stand alone objects (no context)
  **/
-void CValidError_desc::ValidateSeqDesc
-(const CSeqdesc& desc,
- const CSeq_entry& ctx)
+void CValidError_desc::ValidateSeqDesc(
+    const CSeqdesc& desc,
+    const CSeq_entry& ctx)
 {
-
     m_Ctx.Reset(&ctx);
 
     // check for non-ascii characters
@@ -121,118 +120,116 @@ void CValidError_desc::ValidateSeqDesc
 
     // switch on type, e.g., call ValidateBioSource, ValidatePubdesc, ...
     switch ( desc.Which() ) {
-        case CSeqdesc::e_Modif:
+    case CSeqdesc::e_Modif: {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+            "Modif descriptor is obsolete", *m_Ctx, desc);
+        CSeqdesc::TModif::const_iterator it = desc.GetModif().begin();
+        while (it != desc.GetModif().end()) {
+            if (*it == eGIBB_mod_other) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_Unknown, "GIBB-mod = other used", ctx, desc);
+            }
+            ++it;
+        }
+    } break;
+
+    case CSeqdesc::e_Mol_type:
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+            "MolType descriptor is obsolete", *m_Ctx, desc);
+        break;
+
+    case CSeqdesc::e_Method:
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+            "Method descriptor is obsolete", *m_Ctx, desc);
+        break;
+
+    case CSeqdesc::e_Comment:
+        ValidateComment(desc.GetComment(), desc);
+        break;
+
+    case CSeqdesc::e_Pub:
+        m_Imp.ValidatePubdesc(desc.GetPub(), desc, &ctx);
+        break;
+
+    case CSeqdesc::e_User:
+        ValidateUser(desc.GetUser(), desc);
+        break;
+
+    case CSeqdesc::e_Source:
+        m_Imp.ValidateBioSource (desc.GetSource(), desc, &ctx);
+        break;
+
+    case CSeqdesc::e_Molinfo:
+        ValidateMolInfo(desc.GetMolinfo(), desc);
+        break;
+
+    case CSeqdesc::e_not_set:
+        break;
+    case CSeqdesc::e_Name:
+        if (NStr::IsBlank (desc.GetName())) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText,
+                        "Name descriptor needs text", ctx, desc);
+        }
+        break;
+    case CSeqdesc::e_Title:
+        ValidateTitle(desc.GetTitle(), desc, ctx);
+        break;
+    case CSeqdesc::e_Org:
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+            "OrgRef descriptor is obsolete", *m_Ctx, desc);
+        break;
+    case CSeqdesc::e_Num:
+        break;
+    case CSeqdesc::e_Maploc:
+        break;
+    case CSeqdesc::e_Pir:
+        break;
+    case CSeqdesc::e_Genbank:
+        break;
+    case CSeqdesc::e_Region:
+        if (NStr::IsBlank (desc.GetRegion())) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_RegionMissingText,
+                        "Region descriptor needs text", ctx, desc);
+        }
+        break;
+    case CSeqdesc::e_Sp:
+        break;
+    case CSeqdesc::e_Dbxref:
+        break;
+    case CSeqdesc::e_Embl:
+        break;
+    case CSeqdesc::e_Create_date:
         {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Modif descriptor is obsolete", *m_Ctx, desc);
-            CSeqdesc::TModif::const_iterator it = desc.GetModif().begin();
-            while (it != desc.GetModif().end()) {
-                if (*it == eGIBB_mod_other) {
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_Unknown, "GIBB-mod = other used", ctx, desc);
-                }
-                ++it;
+            int rval = CheckDate (desc.GetCreate_date(), true);
+            if (rval != eDateValid_valid) {
+                m_Imp.PostBadDateError (eDiag_Error, "Create date has error", rval, desc, &ctx);
             }
         }
-            break;
-
-        case CSeqdesc::e_Mol_type:
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "MolType descriptor is obsolete", *m_Ctx, desc);
-            break;
-
-        case CSeqdesc::e_Method:
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "Method descriptor is obsolete", *m_Ctx, desc);
-            break;
-
-        case CSeqdesc::e_Comment:
-            ValidateComment(desc.GetComment(), desc);
-            break;
-
-        case CSeqdesc::e_Pub:
-            m_Imp.ValidatePubdesc(desc.GetPub(), desc, &ctx);
-            break;
-
-        case CSeqdesc::e_User:
-            ValidateUser(desc.GetUser(), desc);
-            break;
-
-        case CSeqdesc::e_Source:
-            m_Imp.ValidateBioSource (desc.GetSource(), desc, &ctx);
-            break;
-
-        case CSeqdesc::e_Molinfo:
-            ValidateMolInfo(desc.GetMolinfo(), desc);
-            break;
-
-        case CSeqdesc::e_not_set:
-            break;
-        case CSeqdesc::e_Name:
-            if (NStr::IsBlank (desc.GetName())) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingText,
-                         "Name descriptor needs text", ctx, desc);
+        break;
+    case CSeqdesc::e_Update_date:
+        {
+            int rval = CheckDate (desc.GetUpdate_date(), true);
+            if (rval != eDateValid_valid) {
+                m_Imp.PostBadDateError (eDiag_Error, "Update date has error", rval, desc, &ctx);
             }
-            break;
-        case CSeqdesc::e_Title:
-            ValidateTitle(desc.GetTitle(), desc, ctx);
-            break;
-        case CSeqdesc::e_Org:
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                "OrgRef descriptor is obsolete", *m_Ctx, desc);
-            break;
-        case CSeqdesc::e_Num:
-            break;
-        case CSeqdesc::e_Maploc:
-            break;
-        case CSeqdesc::e_Pir:
-            break;
-        case CSeqdesc::e_Genbank:
-            break;
-        case CSeqdesc::e_Region:
-            if (NStr::IsBlank (desc.GetRegion())) {
-                PostErr (eDiag_Error, eErr_SEQ_DESCR_RegionMissingText,
-                         "Region descriptor needs text", ctx, desc);
-            }
-            break;
-        case CSeqdesc::e_Sp:
-            break;
-        case CSeqdesc::e_Dbxref:
-            break;
-        case CSeqdesc::e_Embl:
-            break;
-        case CSeqdesc::e_Create_date:
-            {
-                int rval = CheckDate (desc.GetCreate_date(), true);
-                if (rval != eDateValid_valid) {
-                    m_Imp.PostBadDateError (eDiag_Error, "Create date has error", rval, desc, &ctx);
-                }
-            }
-            break;
-        case CSeqdesc::e_Update_date:
-            {
-                int rval = CheckDate (desc.GetUpdate_date(), true);
-                if (rval != eDateValid_valid) {
-                    m_Imp.PostBadDateError (eDiag_Error, "Update date has error", rval, desc, &ctx);
-                }
-            }
-            break;
-        case CSeqdesc::e_Prf:
-            break;
-        case CSeqdesc::e_Pdb:
-            break;
-        case CSeqdesc::e_Het:
-            break;
-        default:
-            break;
+        }
+        break;
+    case CSeqdesc::e_Prf:
+        break;
+    case CSeqdesc::e_Pdb:
+        break;
+    case CSeqdesc::e_Het:
+        break;
+    default:
+        break;
     }
 
     m_Ctx.Reset();
 }
 
 
-void CValidError_desc::ValidateComment
-(const string& comment,
- const CSeqdesc& desc)
+void CValidError_desc::ValidateComment(
+    const string& comment,
+    const CSeqdesc& desc)
 {
     if ( m_Imp.IsSerialNumberInComment(comment) ) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_SerialInComment,
@@ -283,30 +280,30 @@ void CValidError_desc::ValidateTitle(const string& title, const CSeqdesc& desc, 
 }
 
 
-static EDiagSev s_ErrorLevelFromFieldRuleSev (CField_rule::TSeverity severity)
+static EDiagSev s_ErrorLevelFromFieldRuleSev(CField_rule::TSeverity severity)
 {
-  EDiagSev sev = eDiag_Error;
-  switch (severity) {
+    EDiagSev sev = eDiag_Error;
+    switch (severity) {
     case eSeverity_level_none:
-      sev = eDiag_Info;
-      break;
+        sev = eDiag_Info;
+        break;
     case eSeverity_level_info:
-      sev = eDiag_Info;
-      break;
+        sev = eDiag_Info;
+        break;
     case eSeverity_level_warning:
-      sev = eDiag_Warning;
-      break;
+        sev = eDiag_Warning;
+        break;
     case eSeverity_level_error:
-      sev = eDiag_Error;
-      break;
+        sev = eDiag_Error;
+        break;
     case eSeverity_level_reject:
-      sev = eDiag_Critical;
-      break;
+        sev = eDiag_Critical;
+        break;
     case eSeverity_level_fatal:
-      sev = eDiag_Fatal;
-      break;
-  }
-  return sev;
+        sev = eDiag_Fatal;
+        break;
+    }
+    return sev;
 }
 
 
@@ -341,11 +338,11 @@ EErrType s_GetErrTypeFromString(const string& msg)
 }
 
 
-bool CValidError_desc::ValidateStructuredComment
-(const CUser_object& usr,
- const CSeqdesc& desc,
- const CComment_rule& rule,
- bool  report)
+bool CValidError_desc::ValidateStructuredComment(
+    const CUser_object& usr,
+    const CSeqdesc& desc,
+    const CComment_rule& rule,
+    bool  report)
 {
     bool is_valid = true;
 
@@ -412,27 +409,22 @@ static string s_OfficialPrefixList[] = {
     "MIMS-Data",
     "MIMS:3.0-Data",
     "MIMS:4.0-Data",
-    "MIGS:5.0-Data" ,
-    "MIMAG:5.0-Data" ,
-    "MIMARKS:5.0-Data" ,
-    "MIMS:5.0-Data" ,
-    "MISAG:5.0-Data" ,
-    "MIUVIG:5.0-Data" ,
+    "MIGS:5.0-Data",
+    "MIMAG:5.0-Data",
+    "MIMARKS:5.0-Data",
+    "MIMS:5.0-Data",
+    "MISAG:5.0-Data",
+    "MIUVIG:5.0-Data",
     "RefSeq-Attributes",
     "SIVDataBaseData",
     "SymbiotaSpecimenReference",
-    "Taxonomic-Update-Statistics"
+    "Taxonomic-Update-Statistics",
 };
 
-static bool s_IsAllowedPrefix (
-  const string& val
-)
-
+static bool s_IsAllowedPrefix(const string& val)
 {
-    for ( size_t i = 0;
-          i < sizeof(s_OfficialPrefixList) / sizeof(string);
-          ++i ) {
-        if (NStr::EqualNocase (val, s_OfficialPrefixList[i])) {
+    for (size_t i = 0; i < ArraySize(s_OfficialPrefixList); ++i) {
+        if (NStr::EqualNocase(val, s_OfficialPrefixList[i])) {
             return true;
         }
     }
@@ -478,9 +470,9 @@ bool CValidError_desc::ValidateStructuredCommentInternal(
 }
 
 bool CValidError_desc::x_ValidateStructuredCommentPrefix(
-const string& prefix,
-const CSeqdesc& desc,
-bool report)
+    const string& prefix,
+    const CSeqdesc& desc,
+    bool report)
 {
     if (!s_IsAllowedPrefix(prefix)) {
         if (report) {
@@ -495,10 +487,10 @@ bool report)
 }
 
 bool CValidError_desc::x_ValidateStructuredCommentSuffix(
-const string& prefix,
-const CUser_field& suffix,
-const CSeqdesc& desc,
-bool report)
+    const string& prefix,
+    const CUser_field& suffix,
+    const CSeqdesc& desc,
+    bool report)
 {   // The suffix may be empty. However, If it isn't empty, it must match the prefix.
     if (!suffix.IsSetData() ||  !suffix.GetData().IsStr()) {
         return true;
@@ -528,8 +520,8 @@ bool CValidError_desc::x_ValidateStructuredCommentUsingRule(
 {
     if (rule.GetRequire_order()) {
         return ValidateStructuredComment(desc.GetUser(), desc, rule, report);
-    } 
-                    
+    }
+
     CUser_object tmp;
     tmp.Assign(desc.GetUser());
     auto& fields = tmp.SetData();
@@ -538,27 +530,27 @@ bool CValidError_desc::x_ValidateStructuredCommentUsingRule(
 }
 
 
-bool CValidError_desc::x_ValidateStructuredComment
-(const CUser_object& usr,
- const CSeqdesc& desc,
- bool  report)
+bool CValidError_desc::x_ValidateStructuredComment(
+    const CUser_object& usr,
+    const CSeqdesc& desc,
+    bool  report)
 {
     if (!usr.IsSetType() || !usr.GetType().IsStr()
         || !NStr::EqualCase(usr.GetType().GetStr(), "StructuredComment")) {
         return false;
     }
-    
+
     bool is_valid = true;
     if (!usr.IsSetData() || usr.GetData().size() == 0) {
         if (report) {
             PostErr (eDiag_Warning, eErr_SEQ_DESCR_StrucCommMissingUserObject,
                      "Structured Comment user object descriptor is empty", *m_Ctx, desc);
             is_valid = false;
-        } else{
+        } else {
             return false;
         }
     }
-    
+
     string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
     if (NStr::IsBlank(prefix)) {
         if (report) {
@@ -568,7 +560,7 @@ bool CValidError_desc::x_ValidateStructuredComment
         is_valid &= ValidateStructuredCommentGeneric(usr, desc, report);
         return is_valid;
     }
-    
+
     // Has a prefix
     is_valid &= x_ValidateStructuredCommentPrefix(prefix, desc, report);
     if (!report && !is_valid) {
@@ -592,14 +584,14 @@ bool CValidError_desc::x_ValidateStructuredComment
                 return false;
             }
         }
-        
+
         if (auto pSuffix = usr.GetFieldRef("StructuredCommentSuffix"); pSuffix) {
             is_valid &= x_ValidateStructuredCommentSuffix(prefix, *pSuffix, desc, report);
             if (!report && !is_valid) {
                 return false;
             }
         }
-    } catch (CException& ) {
+    } catch (CException&) {
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
         is_valid = false;
@@ -618,7 +610,7 @@ bool CValidError_desc::x_ValidateStructuredComment
                 "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
         } else {
             return false;
-        }   
+        }
     }
     if (report && !is_valid && !NStr::IsBlank(prefix)) {
         PostErr(eDiag_Info, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue,
@@ -627,10 +619,7 @@ bool CValidError_desc::x_ValidateStructuredComment
     return is_valid;
 }
 
-static bool x_IsBadBioSampleFormat (
-    const string& str
-)
-
+static bool x_IsBadBioSampleFormat(const string& str)
 {
     char  ch;
     unsigned int   i;
@@ -658,10 +647,7 @@ static bool x_IsBadBioSampleFormat (
     return false;
 }
 
-static bool x_IsNotAltBioSampleFormat (
-    const string& str
-)
-
+static bool x_IsNotAltBioSampleFormat(const string& str)
 {
     char  ch;
     unsigned int   i;
@@ -680,10 +666,7 @@ static bool x_IsNotAltBioSampleFormat (
     return false;
 }
 
-static bool x_IsBadSRAFormat (
-    const string& str
-)
-
+static bool x_IsBadSRAFormat(const string& str)
 {
     char  ch;
     unsigned int   i;
@@ -705,9 +688,7 @@ static bool x_IsBadSRAFormat (
     return false;
 }
 
-static bool x_IsBadBioProjectFormat (
-    const string& str
-)
+static bool x_IsBadBioProjectFormat(const string& str)
 
 {
     char  ch;
@@ -738,10 +719,10 @@ static string s_legalDblinkNames [] = {
     "BioProject"
 };
 
-bool CValidError_desc::ValidateDblink
-(const CUser_object& usr,
- const CSeqdesc& desc,
- bool  report)
+bool CValidError_desc::ValidateDblink(
+    const CUser_object& usr,
+    const CSeqdesc& desc,
+    bool  report)
 {
     bool is_valid = true;
     if (!usr.IsSetType() || !usr.GetType().IsStr()
@@ -838,9 +819,9 @@ bool CValidError_desc::ValidateDblink
 }
 
 
-void CValidError_desc::ValidateUser
-(const CUser_object& usr,
- const CSeqdesc& desc)
+void CValidError_desc::ValidateUser(
+    const CUser_object& usr,
+    const CSeqdesc& desc)
 {
     if ( !usr.CanGetType() ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_UserObjectNoType,
@@ -893,9 +874,9 @@ void CValidError_desc::ValidateUser
 
 
 // for MolInfo validation that does not rely on contents of sequence
-void CValidError_desc::ValidateMolInfo
-(const CMolInfo& minfo,
- const CSeqdesc& desc)
+void CValidError_desc::ValidateMolInfo(
+    const CMolInfo& minfo,
+    const CSeqdesc& desc)
 {
     if ( !minfo.IsSetBiomol() || minfo.GetBiomol() == CMolInfo::eBiomol_unknown) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MoltypeUnknown,

@@ -147,8 +147,8 @@ void CCdregionValidator::x_ValidateExceptText(const string& text)
 #define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
 ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
 
-void s_LocIdType(CBioseq_Handle bsh,
-    bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
+static
+void s_LocIdType(CBioseq_Handle bsh, bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
 {
     is_nt = is_ng = is_nw = is_nc = false;
     if (bsh) {
@@ -174,9 +174,9 @@ void s_LocIdType(CBioseq_Handle bsh,
     }
 }
 
-
+static
 void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& tse,
-    bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
+                 bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
 {
     is_nt = is_ng = is_nw = is_nc = false;
     if (!IsOneBioseq(loc, &scope)) {
@@ -199,20 +199,21 @@ void CCdregionValidator::x_ValidateTrans()
     bool is_nt, is_ng, is_nw, is_nc;
     s_LocIdType(m_LocationBioseq, is_nt, is_ng, is_nw, is_nc);
 
-    problems.CalculateTranslationProblems(m_Feat,
-                                    m_LocationBioseq,
-                                    m_ProductBioseq,
-                                    m_Imp.IgnoreExceptions(),
-                                    m_Imp.IsFarFetchCDSproducts(),
-                                    m_Imp.IsStandaloneAnnot(),
-                                    m_Imp.IsStandaloneAnnot() ? false : m_Imp.GetTSE().IsSeq(),
-                                    m_Imp.IsGpipe(),
-                                    m_Imp.IsGenomic(),
-                                    m_Imp.IsRefSeq(),
-                                    (is_nt||is_ng||is_nw),
-                                    is_nc,
-                                    (m_Imp.IsRefSeq() || m_Imp.IsGED() || m_Imp.IsTPE()),
-                                    &m_Scope);
+    problems.CalculateTranslationProblems(
+        m_Feat,
+        m_LocationBioseq,
+        m_ProductBioseq,
+        m_Imp.IgnoreExceptions(),
+        m_Imp.IsFarFetchCDSproducts(),
+        m_Imp.IsStandaloneAnnot(),
+        m_Imp.IsStandaloneAnnot() ? false : m_Imp.GetTSE().IsSeq(),
+        m_Imp.IsGpipe(),
+        m_Imp.IsGenomic(),
+        m_Imp.IsRefSeq(),
+        (is_nt || is_ng || is_nw),
+        is_nc,
+        (m_Imp.IsRefSeq() || m_Imp.IsGED() || m_Imp.IsTPE()),
+        &m_Scope);
     if (!problems.UnableToTranslate() && !problems.HasException()) {
         x_ValidateCodebreak();
     }
@@ -849,27 +850,27 @@ bool CCdregionValidator::x_ReportOrigProteinId()
 }
 
 
-const string s_PlastidTxt[] = {
-  "",
-  "",
-  "chloroplast",
-  "chromoplast",
-  "",
-  "",
-  "plastid",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "cyanelle",
-  "",
-  "",
-  "",
-  "apicoplast",
-  "leucoplast",
-  "proplastid",
-  ""
+const string s_PlastidTxt[20] = {
+    "",
+    "",
+    "chloroplast",
+    "chromoplast",
+    "",
+    "",
+    "plastid",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "cyanelle",
+    "",
+    "",
+    "",
+    "apicoplast",
+    "leucoplast",
+    "proplastid",
+    "",
 };
 
 
@@ -919,33 +920,33 @@ static int s_GetStrictGenCode(const CBioSource& src)
             const COrgName& orn = src.GetOrg().GetOrgname();
 
             switch ( genome ) {
-                case CBioSource::eGenome_kinetoplast:
-                case CBioSource::eGenome_mitochondrion:
-                case CBioSource::eGenome_hydrogenosome:
-                    // bacteria and plant organelle code
-                    if (orn.IsSetMgcode()) {
-                        gencode = orn.GetMgcode();
-                    }
-                    break;
-                case CBioSource::eGenome_chloroplast:
-                case CBioSource::eGenome_chromoplast:
-                case CBioSource::eGenome_plastid:
-                case CBioSource::eGenome_cyanelle:
-                case CBioSource::eGenome_apicoplast:
-                case CBioSource::eGenome_leucoplast:
-                case CBioSource::eGenome_proplastid:
-                    if (orn.IsSetPgcode() && orn.GetPgcode() != 0) {
-                        gencode = orn.GetPgcode();
-                    } else {
-                        // bacteria and plant plastids are code 11.
-                        gencode = 11;
-                    }
-                    break;
-                default:
-                    if (orn.IsSetGcode()) {
-                        gencode = orn.GetGcode();
-                    }
-                    break;
+            case CBioSource::eGenome_kinetoplast:
+            case CBioSource::eGenome_mitochondrion:
+            case CBioSource::eGenome_hydrogenosome:
+                // bacteria and plant organelle code
+                if (orn.IsSetMgcode()) {
+                    gencode = orn.GetMgcode();
+                }
+                break;
+            case CBioSource::eGenome_chloroplast:
+            case CBioSource::eGenome_chromoplast:
+            case CBioSource::eGenome_plastid:
+            case CBioSource::eGenome_cyanelle:
+            case CBioSource::eGenome_apicoplast:
+            case CBioSource::eGenome_leucoplast:
+            case CBioSource::eGenome_proplastid:
+                if (orn.IsSetPgcode() && orn.GetPgcode() != 0) {
+                    gencode = orn.GetPgcode();
+                } else {
+                    // bacteria and plant plastids are code 11.
+                    gencode = 11;
+                }
+                break;
+            default:
+                if (orn.IsSetGcode()) {
+                    gencode = orn.GetGcode();
+                }
+                break;
             }
         }
     } catch (const CException& ) {
