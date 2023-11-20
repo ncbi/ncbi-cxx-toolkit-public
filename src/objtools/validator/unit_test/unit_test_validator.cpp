@@ -3046,7 +3046,7 @@ void TestOneGeneralSeqId(const string& db, const string& tag, const string& errm
 
     string acc_str = "lcl|good";
     if (!errmsg.empty()) {
-        expected_errors.push_back(new CExpectedError(acc_str, eDiag_Warning, "BadSeqIdFormat",
+        expected_errors.push_back(new CExpectedError(acc_str, eDiag_Warning, "BadSeqIdCharacter",
             errmsg));
     }
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -23355,7 +23355,7 @@ void CheckLocalId(const string& id, const string& badchar)
     entry->SetSeq().SetId().front()->SetLocal().SetStr(id);
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|" + id, eDiag_Warning, "BadSeqIdFormat",
+    expected_errors.push_back(new CExpectedError("lcl|" + id, eDiag_Warning, "BadSeqIdCharacter",
            "Bad character '" + badchar + "' in local ID '" + id + "'"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
