@@ -172,9 +172,9 @@ bool IsFarLocation(const CSeq_loc& loc, const CSeq_entry_Handle& seh)
     return false;
 }
 
-string GetSequenceStringFromLoc
-(const CSeq_loc& loc,
- CScope& scope)
+string GetSequenceStringFromLoc(
+    const CSeq_loc& loc,
+    CScope& scope)
 {
     CNcbiOstrstream oss;
     CFastaOstream fasta_ostr(oss);
@@ -200,10 +200,10 @@ string GetSequenceStringFromLoc
 }
 
 
-CSeqVector GetSequenceFromLoc
-(const CSeq_loc& loc,
- CScope& scope,
- CBioseq_Handle::EVectorCoding coding)
+CSeqVector GetSequenceFromLoc(
+    const CSeq_loc& loc,
+    CScope& scope,
+    CBioseq_Handle::EVectorCoding coding)
 {
     CConstRef<CSeqMap> map =
         CSeqMap::CreateSeqMapForSeq_loc(loc, &scope);
@@ -211,11 +211,11 @@ CSeqVector GetSequenceFromLoc
 }
 
 
-CSeqVector GetSequenceFromFeature
-(const CSeq_feat& feat,
- CScope& scope,
- CBioseq_Handle::EVectorCoding coding,
- bool product)
+CSeqVector GetSequenceFromFeature(
+    const CSeq_feat& feat,
+    CScope& scope,
+    CBioseq_Handle::EVectorCoding coding,
+    bool product)
 {
 
     if ( (product   &&  !feat.CanGetProduct())  ||
@@ -299,45 +299,45 @@ static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst)
     }
 
     switch (bsst.GetClass()) {
-        case CBioseq_set::eClass_gen_prod_set:
-            // find the genomic bioseq
-            for (auto pSubEntry : bsst.GetSeq_set()) {
-                if (pSubEntry->IsSeq()) {
-                    const auto& inst = pSubEntry->GetSeq().GetInst();
-                    if (inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_dna) {
-                        return &(pSubEntry->GetSeq());
-                    }
+    case CBioseq_set::eClass_gen_prod_set:
+        // find the genomic bioseq
+        for (auto pSubEntry : bsst.GetSeq_set()) {
+            if (pSubEntry->IsSeq()) {
+                const auto& inst = pSubEntry->GetSeq().GetInst();
+                if (inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_dna) {
+                    return &(pSubEntry->GetSeq());
                 }
             }
-            break;
-        case CBioseq_set::eClass_nuc_prot:
-            // find the nucleotide bioseq
-            for (auto pSubEntry : bsst.GetSeq_set()) {
-                if (pSubEntry->IsSeq() && pSubEntry->GetSeq().IsNa()) {
-                    return &pSubEntry->GetSeq();
-                } else if (pSubEntry->IsSet() &&
-                           pSubEntry->GetSet().IsSetClass() &&
-                           pSubEntry->GetSet().GetClass() == CBioseq_set::eClass_segset) {
-                    return s_GetSeqFromSet(pSubEntry->GetSet());
-                }
+        }
+        break;
+    case CBioseq_set::eClass_nuc_prot:
+        // find the nucleotide bioseq
+        for (auto pSubEntry : bsst.GetSeq_set()) {
+            if (pSubEntry->IsSeq() && pSubEntry->GetSeq().IsNa()) {
+                return &pSubEntry->GetSeq();
+            } else if (pSubEntry->IsSet() &&
+                        pSubEntry->GetSet().IsSetClass() &&
+                        pSubEntry->GetSet().GetClass() == CBioseq_set::eClass_segset) {
+                return s_GetSeqFromSet(pSubEntry->GetSet());
             }
+        }
 
-            for (auto pSubEntry : bsst.GetSeq_set()) {
-                if (pSubEntry->IsSeq()) {
-                    return &pSubEntry->GetSeq();
-                }
+        for (auto pSubEntry : bsst.GetSeq_set()) {
+            if (pSubEntry->IsSeq()) {
+                return &pSubEntry->GetSeq();
             }
-            break;
-        case CBioseq_set::eClass_segset:
-            for (auto pSubEntry : bsst.GetSeq_set()) {
-                if (pSubEntry->IsSeq()) {
-                    return &pSubEntry->GetSeq();
-                }
+        }
+        break;
+    case CBioseq_set::eClass_segset:
+        for (auto pSubEntry : bsst.GetSeq_set()) {
+            if (pSubEntry->IsSeq()) {
+                return &pSubEntry->GetSeq();
             }
-            break;
+        }
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     // In this case, return the first bioseq in the set
@@ -361,8 +361,6 @@ static bool s_IsDescOnSeqEntry (const CSeq_entry& entry, const CSeqdesc& desc)
     }
     return false;
 }
-
-
 
 static string s_GetAccessionForSeqdesc (const CSeq_entry_Handle& seh, const CSeqdesc& desc, int* version)
 {
@@ -424,7 +422,6 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
     }
     return CConstRef<CSeq_id>();
 }
-
 
 
 string GetAccessionFromBioseq(const CBioseq& bioseq, int* version)
@@ -1318,14 +1315,14 @@ bool ShouldCheckForNsAndGap(const CBioseq_Handle& bsh)
 }
 
 
-void CheckBioseqEndsForNAndGap
-(const CSeqVector& vec,
-EBioseqEndIsType& begin_n,
-EBioseqEndIsType& begin_gap,
-EBioseqEndIsType& end_n,
-EBioseqEndIsType& end_gap,
-bool& begin_ambig,
-bool& end_ambig)
+void CheckBioseqEndsForNAndGap(
+    const CSeqVector& vec,
+    EBioseqEndIsType& begin_n,
+    EBioseqEndIsType& begin_gap,
+    EBioseqEndIsType& end_n,
+    EBioseqEndIsType& end_gap,
+    bool& begin_ambig,
+    bool& end_ambig)
 {
     begin_n = eBioseqEndIsType_None;
     begin_gap = eBioseqEndIsType_None;
@@ -1423,14 +1420,14 @@ bool& end_ambig)
 }
 
 
-void CheckBioseqEndsForNAndGap
-(const CBioseq_Handle& bsh,
- EBioseqEndIsType& begin_n,
- EBioseqEndIsType& begin_gap,
- EBioseqEndIsType& end_n,
- EBioseqEndIsType& end_gap,
- bool& begin_ambig,
- bool& end_ambig)
+void CheckBioseqEndsForNAndGap(
+    const CBioseq_Handle& bsh,
+    EBioseqEndIsType& begin_n,
+    EBioseqEndIsType& begin_gap,
+    EBioseqEndIsType& end_n,
+    EBioseqEndIsType& end_gap,
+    bool& begin_ambig,
+    bool& end_ambig)
 {
     begin_n = eBioseqEndIsType_None;
     begin_gap = eBioseqEndIsType_None;
@@ -1807,15 +1804,13 @@ static bool s_AreLinkedToDifferentFeats (const CSeq_feat_Handle& f1, const CSeq_
 }
 
 
-
-
 static bool s_AreCodingRegionsLinkedToDifferentmRNAs (const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
     return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
 }
 
 
-bool s_AremRNAsLinkedToDifferentCodingRegions (const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
+static bool s_AremRNAsLinkedToDifferentCodingRegions(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
     return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_mRNA, CSeqFeatData::eSubtype_cdregion);
 }
@@ -1841,11 +1836,11 @@ bool IsDicistronic(const CSeq_feat_Handle& f)
 
 
 EDuplicateFeatureType
-IsDuplicate
-(const CSeq_feat_Handle& f1,
- const CSeq_feat_Handle& f2,
- bool check_partials,
- bool case_sensitive)
+IsDuplicate(
+    const CSeq_feat_Handle& f1,
+    const CSeq_feat_Handle& f2,
+    bool check_partials,
+    bool case_sensitive)
 {
 
     EDuplicateFeatureType dup_type = eDuplicate_Not;
@@ -2026,13 +2021,13 @@ bool FindMatchInOrgRef (const string& str, const COrg_ref& org)
 
 
 static const string sIgnoreHostWordList[] = {
-  " cf.",
-  " cf ",
-  " aff ",
-  " aff.",
-  " near",
-  " nr.",
-  " nr "
+    " cf.",
+    " cf ",
+    " aff ",
+    " aff.",
+    " near",
+    " nr.",
+    " nr ",
 };
 
 void AdjustSpecificHostForTaxServer (string& spec_host)
@@ -2173,6 +2168,7 @@ bool IsLikelyTaxname(const string& val)
     bool is_species = false;
     bool is_uncultured = false;
     string blast_name;
+
     CConstRef<COrg_ref> org = taxon1.GetOrgRef(taxid, is_species, is_uncultured, blast_name);
     if (org && IsCommon(*org, val.substr(0, pos))) {
         return false;
@@ -2298,9 +2294,10 @@ string TranslateCodingRegionForValidation(const CSeq_feat& feat, CScope &scope, 
         CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
         CSeqTranslator::Translate(*tmp, scope, transl_prot, genetic_code, true, false, &alt_start);
     } else {
-        CSeqTranslator::Translate(*tmp_cds, scope, transl_prot,
-            true,   // include stop codons
-            false,  // do not remove trailing X/B/Z
+        CSeqTranslator::Translate(
+            *tmp_cds, scope, transl_prot,
+            true,  // include stop codons
+            false, // do not remove trailing X/B/Z
             &alt_start);
     }
 
@@ -2873,25 +2870,21 @@ bool IsOrganelle(const CBioseq_Handle& seq)
 
 
 bool ConsistentWithA(Char ch)
-
 {
     return (bool)(strchr("ANRMWHVD", ch) != NULL);
 }
 
 bool ConsistentWithC(Char ch)
-
 {
     return (bool)(strchr("CNYMSHBV", ch) != NULL);
 }
 
 bool ConsistentWithG(Char ch)
-
 {
     return (bool)(strchr("GNRKSBVD", ch) != NULL);
 }
 
 bool ConsistentWithT(Char ch)
-
 {
     return (bool)(strchr("TNYKWHBD", ch) != NULL);
 }
@@ -2908,7 +2901,8 @@ bool DoesCodingRegionHaveUnnecessaryException(const CSeq_feat& feat, const CBios
         prot_handle = scope.GetBioseqHandle(feat.GetProduct());
     }
 
-    problems.CalculateTranslationProblems(feat,
+    problems.CalculateTranslationProblems(
+        feat,
         loc_handle,
         prot_handle,
         false,
@@ -2981,23 +2975,23 @@ static bool s_IsGenbankMasterAccession(const string& acc)
 {
     bool rval = false;
     switch (acc.length()) {
-        case 12:
-            if (NStr::EndsWith(acc, "000000")) {
-                rval = true;
-            }
-            break;
-        case 13:
-            if (NStr::EndsWith(acc, "0000000")) {
-                rval = true;
-            }
-            break;
-        case 14:
-            if (NStr::EndsWith(acc, "00000000")) {
-                rval = true;
-            }
-            break;
-        default:
-            break;
+    case 12:
+        if (NStr::EndsWith(acc, "000000")) {
+            rval = true;
+        }
+        break;
+    case 13:
+        if (NStr::EndsWith(acc, "0000000")) {
+            rval = true;
+        }
+        break;
+    case 14:
+        if (NStr::EndsWith(acc, "00000000")) {
+            rval = true;
+        }
+        break;
+    default:
+        break;
     }
     return rval;
 }
@@ -3007,48 +3001,48 @@ bool g_IsMasterAccession(const CSeq_id& id)
 {
     bool rval = false;
     switch (id.Which()) {
-        case CSeq_id::e_Other:
-            if (id.GetOther().IsSetAccession()) {
-                const string& acc = id.GetOther().GetAccession();
-                switch (acc.length()) {
-                    case 15:
-                        if (NStr::EndsWith(acc, "000000")) {
-                            rval = true;
-                        }
-                        break;
-                    case 16:
-                    case 17:
-                        if (NStr::EndsWith(acc, "0000000")) {
-                            rval = true;
-                        }
-                        break;
-                    default:
-                        break;
+    case CSeq_id::e_Other:
+        if (id.GetOther().IsSetAccession()) {
+            const string& acc = id.GetOther().GetAccession();
+            switch (acc.length()) {
+            case 15:
+                if (NStr::EndsWith(acc, "000000")) {
+                    rval = true;
                 }
+                break;
+            case 16:
+            case 17:
+                if (NStr::EndsWith(acc, "0000000")) {
+                    rval = true;
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        case CSeq_id::e_Genbank:
-            if (id.GetGenbank().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetGenbank().GetAccession());
-            }
-            break;
-        case CSeq_id::e_Ddbj:
-            if (id.GetDdbj().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetDdbj().GetAccession());
-            }
-            break;
-        case CSeq_id::e_Embl:
-            if (id.GetEmbl().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
-            }
-            break;
-        case CSeq_id::e_Tpg:
-            if (id.GetTpg().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetTpg().GetAccession());
-            }
-            break;
-        default:
-            break;
+        }
+        break;
+    case CSeq_id::e_Genbank:
+        if (id.GetGenbank().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetGenbank().GetAccession());
+        }
+        break;
+    case CSeq_id::e_Ddbj:
+        if (id.GetDdbj().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetDdbj().GetAccession());
+        }
+        break;
+    case CSeq_id::e_Embl:
+        if (id.GetEmbl().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
+        }
+        break;
+    case CSeq_id::e_Tpg:
+        if (id.GetTpg().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetTpg().GetAccession());
+        }
+        break;
+    default:
+        break;
     }
 
     return rval;
@@ -3105,7 +3099,6 @@ bool BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope)
     }
     return false;
 }
-
 
 
 END_SCOPE(validator)

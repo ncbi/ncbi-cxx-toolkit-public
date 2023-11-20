@@ -75,21 +75,21 @@ void CCDSTranslationProblems::x_Reset()
 }
 
 
-void CCDSTranslationProblems::CalculateTranslationProblems
-(const CSeq_feat& feat,
-CBioseq_Handle loc_handle,
-CBioseq_Handle prot_handle,
-bool ignore_exceptions,
-bool far_fetch_cds,
-bool standalone_annot,
-bool single_seq,
-bool is_gpipe,
-bool is_genomic,
-bool is_refseq,
-bool is_nt_or_ng_or_nw,
-bool is_nc,
-bool has_accession,
-CScope* scope)
+void CCDSTranslationProblems::CalculateTranslationProblems(
+    const CSeq_feat& feat,
+    CBioseq_Handle   loc_handle,
+    CBioseq_Handle   prot_handle,
+    bool             ignore_exceptions,
+    bool             far_fetch_cds,
+    bool             standalone_annot,
+    bool             single_seq,
+    bool             is_gpipe,
+    bool             is_genomic,
+    bool             is_refseq,
+    bool             is_nt_or_ng_or_nw,
+    bool             is_nc,
+    bool             has_accession,
+    CScope*          scope)
 {
     x_Reset();
     // bail if not CDS
@@ -107,11 +107,11 @@ CScope* scope)
     }
 
     bool has_errors = false, unclassified_except = false,
-        mismatch_except = false, frameshift_except = false,
-        rearrange_except = false, product_replaced = false,
-        mixed_population = false, low_quality = false,
-        report_errors = true, other_than_mismatch = false,
-        rna_editing = false, transcript_or_proteomic = false;
+         mismatch_except = false, frameshift_except = false,
+         rearrange_except = false, product_replaced = false,
+         mixed_population = false, low_quality = false,
+         report_errors = true, other_than_mismatch = false,
+         rna_editing = false, transcript_or_proteomic = false;
     string farstr;
 
     if (!ignore_exceptions &&
@@ -119,7 +119,8 @@ CScope* scope)
         feat.IsSetExcept_text()) {
         const string& except_text = feat.GetExcept_text();
         report_errors = ReportTranslationErrors(except_text);
-        x_GetExceptionFlags(except_text,
+        x_GetExceptionFlags(
+            except_text,
             unclassified_except,
             mismatch_except,
             frameshift_except,
@@ -250,11 +251,9 @@ CScope* scope)
                 m_ProdTerminalX = x_CountTerminalXs(prot_vec);
 
             }
-
         }
 
         x_GetCdTransErrors(feat, prot_handle, show_stop, got_stop, scope);
-
     }
 
     if (x_JustifiesException()) {
@@ -454,17 +453,17 @@ bool CCDSTranslationProblems::x_ProteinHasTooManyXs(const string& transl_prot)
 }
 
 
-void CCDSTranslationProblems::x_GetExceptionFlags
-(const string& except_text,
- bool& unclassified_except,
- bool& mismatch_except,
- bool& frameshift_except,
- bool& rearrange_except,
- bool& product_replaced,
- bool& mixed_population,
- bool& low_quality,
- bool& rna_editing,
- bool& transcript_or_proteomic)
+void CCDSTranslationProblems::x_GetExceptionFlags(
+    const string& except_text,
+    bool& unclassified_except,
+    bool& mismatch_except,
+    bool& frameshift_except,
+    bool& rearrange_except,
+    bool& product_replaced,
+    bool& mixed_population,
+    bool& low_quality,
+    bool& rna_editing,
+    bool& transcript_or_proteomic)
 {
     if (NStr::FindNoCase(except_text, "unclassified translation discrepancy") != NPOS) {
         unclassified_except = true;
@@ -623,17 +622,12 @@ CCDSTranslationProblems::x_GetTranslationMismatches(const CSeq_feat& feat, const
 }
 
 
-
-
-
-static bool x_LeuCUGstart
-(
-    const CSeq_feat& feat
-)
-
+static bool x_LeuCUGstart(const CSeq_feat& feat)
 {
-    if ( ! feat.IsSetExcept()) return false;
-    if ( ! feat.IsSetExcept_text()) return false;
+    if (! feat.IsSetExcept())
+        return false;
+    if (! feat.IsSetExcept_text())
+        return false;
     const string& except_text = feat.GetExcept_text();
     if (NStr::FindNoCase(except_text, "translation initiation by tRNA-Leu at CUG codon") == NPOS) return false;
     if (feat.IsSetQual()) {
@@ -722,9 +716,10 @@ CCDSTranslationProblems::x_GetTranslExceptProblems
             tmp_cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
             string cb_trans;
             try {
-                CSeqTranslator::Translate(*tmp_cds, *scope, cb_trans,
-                    true,   // include stop codons
-                    false,  // do not remove trailing X/B/Z
+                CSeqTranslator::Translate(
+                    *tmp_cds, *scope, cb_trans,
+                    true,  // include stop codons
+                    false, // do not remove trailing X/B/Z
                     &alt_start);
             } catch (CException&) {
             }
@@ -854,46 +849,46 @@ bool CCDSTranslationProblems::x_Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc, CSc
 
     ENa_strand strand = rng->GetStrand();
     if (strand == eNa_strand_minus) {
-          TSeqPos seq_len = bsh.GetBioseqLength();
-          if (end < seq_len - 1) {
-              CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-              if (vec.IsInGap(end + 1)) {
-                  if (vec.IsInGap (end)) {
-                      // not ok - location overlaps gap
-                      return false;
-                  } else {
-                      // ok, location abuts gap
-                  }
-              } else if (end < seq_len - 2 && IsResidue (vec[end + 1]) && ConsistentWithC(vec[end + 1])
-                         && IsResidue (vec[end + 2]) && ConsistentWithT(vec[end + 2])) {
-                  // it's ok, it's abutting the reverse complement of AG
-              } else {
-                  return false;
-              }
-          } else {
-              // it's ok, location endpoint is at the 3' end
-          }
+        TSeqPos seq_len = bsh.GetBioseqLength();
+        if (end < seq_len - 1) {
+            CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+            if (vec.IsInGap(end + 1)) {
+                if (vec.IsInGap (end)) {
+                    // not ok - location overlaps gap
+                    return false;
+                } else {
+                    // ok, location abuts gap
+                }
+            } else if (end < seq_len - 2 && IsResidue (vec[end + 1]) && ConsistentWithC(vec[end + 1])
+                        && IsResidue (vec[end + 2]) && ConsistentWithT(vec[end + 2])) {
+                // it's ok, it's abutting the reverse complement of AG
+            } else {
+                return false;
+            }
+        } else {
+            // it's ok, location endpoint is at the 3' end
+        }
     } else {
-          if (end > 0 && end < bsh.GetBioseqLength()) {
-              CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-              if (vec.IsInGap(end - 1)) {
-                  if (vec.IsInGap (end)) {
-                      // not ok - location overlaps gap
-                      return false;
-                  } else {
-                      // ok, location abuts gap
-                  }
-              } else {
-                  if (end > 1 && IsResidue (vec[end - 1]) && ConsistentWithG(vec[end - 1])
-                      && IsResidue(vec[end - 2]) && ConsistentWithA(vec[end - 2])) {
-                      //it's ok, it's abutting "AG"
-                  } else {
-                      return false;
-                  }
-              }
-          } else {
-              // it's ok, location endpoint is at the 5' end
-          }
+        if (end > 0 && end < bsh.GetBioseqLength()) {
+            CSeqVector vec = bsh.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+            if (vec.IsInGap(end - 1)) {
+                if (vec.IsInGap (end)) {
+                    // not ok - location overlaps gap
+                    return false;
+                } else {
+                    // ok, location abuts gap
+                }
+            } else {
+                if (end > 1 && IsResidue (vec[end - 1]) && ConsistentWithG(vec[end - 1])
+                    && IsResidue(vec[end - 2]) && ConsistentWithA(vec[end - 2])) {
+                    //it's ok, it's abutting "AG"
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            // it's ok, location endpoint is at the 5' end
+        }
     }
     return true;
 }
@@ -920,10 +915,10 @@ int CCDSTranslationProblems::x_CheckForRaggedEnd(const CSeq_feat& feat, CScope* 
 }
 
 
-int CCDSTranslationProblems::x_CheckForRaggedEnd
-(const CSeq_loc& loc,
-const CCdregion& cdregion,
-CScope* scope)
+int CCDSTranslationProblems::x_CheckForRaggedEnd(
+    const CSeq_loc&  loc,
+    const CCdregion& cdregion,
+    CScope*          scope)
 {
     size_t len = GetLength(loc, scope);
     if (cdregion.GetFrame() > CCdregion::eFrame_one) {
@@ -1002,16 +997,16 @@ size_t InterpretMrnaException(const string& except_text)
     return rval;
 }
 
-size_t GetMRNATranslationProblems
-(const CSeq_feat& feat,
- size_t& mismatches,
- bool ignore_exceptions,
- CBioseq_Handle nuc,
- CBioseq_Handle rna,
- bool far_fetch,
- bool is_gpipe,
- bool is_genomic,
- CScope* scope)
+size_t GetMRNATranslationProblems(
+    const CSeq_feat& feat,
+    size_t&          mismatches,
+    bool             ignore_exceptions,
+    CBioseq_Handle   nuc,
+    CBioseq_Handle   rna,
+    bool             far_fetch,
+    bool             is_gpipe,
+    bool             is_genomic,
+    CScope*          scope)
 {
     size_t rval = 0;
     mismatches = 0;
@@ -1151,7 +1146,6 @@ size_t GetMRNATranslationProblems
     }
     return rval;
 }
-
 
 
 END_SCOPE(validator)

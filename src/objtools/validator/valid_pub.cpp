@@ -74,10 +74,10 @@ BEGIN_SCOPE(validator)
 using namespace sequence;
 
 
-void CValidError_imp::ValidatePubdesc
-(const CPubdesc& pubdesc,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidatePubdesc(
+    const CPubdesc&      pubdesc,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     if (!pubdesc.IsSetPub() || pubdesc.GetPub().Get().empty()) {
         PostObjErr(eDiag_Fatal, eErr_SEQ_DESCR_NoPubFound,
@@ -224,10 +224,10 @@ static bool s_CitGenIsJustBackBoneIDNumber (const CCit_gen& gen)
 }
 
 
-void CValidError_imp::ValidatePubGen
-(const CCit_gen& gen,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidatePubGen(
+    const CCit_gen&      gen,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     bool is_unpub = false;
     if ( gen.IsSetCit()  &&  !gen.GetCit().empty() ) {
@@ -318,11 +318,11 @@ static bool IsInpress(const CCit_jour& jour)
 }
 
 
-void CValidError_imp::ValidatePubArticle
-(const CCit_art& art,
- TEntrezId uid,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidatePubArticle(
+    const CCit_art&      art,
+    TEntrezId            uid,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) {
         PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubRequirement,
@@ -353,10 +353,10 @@ void CValidError_imp::ValidatePubArticle
 }
 
 
-void CValidError_imp::ValidatePubArticleNoPMID
-(const CCit_art& art,
-const CSerialObject& obj,
-const CSeq_entry *ctx)
+void CValidError_imp::ValidatePubArticleNoPMID(
+    const CCit_art&      art,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     if (!art.GetFrom().IsJournal()) {
         return;
@@ -490,10 +490,10 @@ bool s_GetDigits(const string& pages, string& digits)
 }
 
 
-void CValidError_imp::x_ValidatePages
-(const string& pages,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::x_ValidatePages(
+    const string&        pages,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     static const string kRoman = "IVXLCDM";
 
@@ -636,101 +636,101 @@ bool CValidError_imp::HasName(const CAuth_list& authors)
     if ( authors.CanGetNames() ) {
         const CAuth_list::TNames& names = authors.GetNames();
         switch ( names.Which() ) {
-            case CAuth_list::TNames::e_Std:
-                ITERATE ( list< CRef< CAuthor > >, auth, names.GetStd() ) {
-                    const CPerson_id& pid = (*auth)->GetName();
-                    if ( pid.IsName() ) {
-                        if ( ! NStr::IsBlank(pid.GetName().GetLast()) ) {
-                            return true;
-                        }
-                    } else if ( pid.IsMl() ) {
-                        if ( ! NStr::IsBlank (pid.GetMl()) ) {
-                            return true;
-                        }
-                    } else if ( pid.IsStr() ) {
-                        if ( ! NStr::IsBlank (pid.GetStr()) ) {
-                            return true;
-                        }
-                    } else if ( pid.IsConsortium() ) {
-                        if ( ! NStr::IsBlank (pid.GetConsortium()) ) {
-                            return true;
-                        }
+        case CAuth_list::TNames::e_Std:
+            ITERATE ( list< CRef< CAuthor > >, auth, names.GetStd() ) {
+                const CPerson_id& pid = (*auth)->GetName();
+                if ( pid.IsName() ) {
+                    if ( ! NStr::IsBlank(pid.GetName().GetLast()) ) {
+                        return true;
+                    }
+                } else if ( pid.IsMl() ) {
+                    if ( ! NStr::IsBlank (pid.GetMl()) ) {
+                        return true;
+                    }
+                } else if ( pid.IsStr() ) {
+                    if ( ! NStr::IsBlank (pid.GetStr()) ) {
+                        return true;
+                    }
+                } else if ( pid.IsConsortium() ) {
+                    if ( ! NStr::IsBlank (pid.GetConsortium()) ) {
+                        return true;
                     }
                 }
-                break;
-            case CAuth_list::TNames::e_Ml:
-                if ( ! IsBlankStringList(names.GetMl()) ) {
-                    return true;
-                }
-                break;
-            case CAuth_list::TNames::e_Str:
-                if ( ! IsBlankStringList(names.GetStr()) ) {
-                    return true;
-                }
-                break;
-            default:
-                break;
+            }
+            break;
+        case CAuth_list::TNames::e_Ml:
+            if ( ! IsBlankStringList(names.GetMl()) ) {
+                return true;
+            }
+            break;
+        case CAuth_list::TNames::e_Str:
+            if ( ! IsBlankStringList(names.GetStr()) ) {
+                return true;
+            }
+            break;
+        default:
+            break;
         }
     }
     return false;
 }
 
 
-void CValidError_imp::ValidatePubHasAuthor
-(const CPubdesc& pubdesc,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidatePubHasAuthor(
+    const CPubdesc&      pubdesc,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     bool has_name = false;
     FOR_EACH_PUB_ON_PUBDESC (pub_iter, pubdesc) {
         const CPub& pub = **pub_iter;
         switch (pub.Which() ) {
-            case CPub::e_Gen:
-                // don't check if just serial number
-                if (!pub.GetGen().IsSetCit()
-                    && !pub.GetGen().IsSetJournal()
-                    && !pub.GetGen().IsSetDate()
-                    && pub.GetGen().IsSetSerial_number()
-                    && pub.GetGen().GetSerial_number() > -1) {
-                    // skip
-                } else if (s_CitGenIsJustBackBoneIDNumber(pub.GetGen())) {
-                    // just BackBoneID, skip
-                } else {
-                    has_name = false;
-                    if ( pub.GetGen().IsSetAuthors()
-                         && HasName(pub.GetGen().GetAuthors())) {
-                         has_name = true;
-                    }
-                    if (!has_name) {
-                        PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
-                                   eErr_GENERIC_MissingPubRequirement,
-                                   "Publication has no author names", obj, ctx);
-                    }
-                }
-                break;
-            case CPub::e_Article:
+        case CPub::e_Gen:
+            // don't check if just serial number
+            if (!pub.GetGen().IsSetCit()
+                && !pub.GetGen().IsSetJournal()
+                && !pub.GetGen().IsSetDate()
+                && pub.GetGen().IsSetSerial_number()
+                && pub.GetGen().GetSerial_number() > -1) {
+                // skip
+            } else if (s_CitGenIsJustBackBoneIDNumber(pub.GetGen())) {
+                // just BackBoneID, skip
+            } else {
                 has_name = false;
-                if ( pub.GetArticle().IsSetAuthors()
-                    && HasName(pub.GetArticle().GetAuthors())) {
-                     has_name = true;
+                if ( pub.GetGen().IsSetAuthors()
+                        && HasName(pub.GetGen().GetAuthors())) {
+                        has_name = true;
                 }
                 if (!has_name) {
                     PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
-                               eErr_GENERIC_MissingPubRequirement,
-                               "Publication has no author names", obj, ctx);
+                                eErr_GENERIC_MissingPubRequirement,
+                                "Publication has no author names", obj, ctx);
                 }
-                break;
-            default:
-                break;
+            }
+            break;
+        case CPub::e_Article:
+            has_name = false;
+            if ( pub.GetArticle().IsSetAuthors()
+                && HasName(pub.GetArticle().GetAuthors())) {
+                    has_name = true;
+            }
+            if (!has_name) {
+                PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
+                            eErr_GENERIC_MissingPubRequirement,
+                            "Publication has no author names", obj, ctx);
+            }
+            break;
+        default:
+            break;
         }
     }
 }
 
 
-void CValidError_imp::ValidateAuthorList
-(const CAuth_list::C_Names& names,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidateAuthorList(
+    const CAuth_list::C_Names& names,
+    const CSerialObject& obj,
+    const CSeq_entry *ctx)
 {
     if (names.IsStd()) {
         list<string> consortium_list;
@@ -831,10 +831,10 @@ void CValidError_imp::ValidateAuthorList
 }
 
 
-void CValidError_imp::ValidateAuthorsInPubequiv
-(const CPub_equiv& pe,
- const CSerialObject& obj,
- const CSeq_entry* ctx)
+void CValidError_imp::ValidateAuthorsInPubequiv(
+    const CPub_equiv&    pe,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     // per VR-19, do not validate authors if PMID specified
     FOR_EACH_PUB_ON_PUBEQUIV(pub_iter, pe) {
@@ -984,10 +984,10 @@ void CValidError_imp::ValidateAffil(const CAffil::TStd& std, const CSerialObject
 }
 
 
-void CValidError_imp::ValidateSubAffil
-(const CAffil::TStd& std,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidateSubAffil(
+    const CAffil::TStd&  std,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     EDiagSev sev = eDiag_Critical;
 
@@ -1045,10 +1045,10 @@ bool CValidError_imp::x_DowngradeForMissingAffil(const CCit_sub& cs)
     return false;
 }
 
-void CValidError_imp::ValidateCitSub
-(const CCit_sub& cs,
- const CSerialObject& obj,
- const CSeq_entry *ctx)
+void CValidError_imp::ValidateCitSub(
+    const CCit_sub&      cs,
+    const CSerialObject& obj,
+    const CSeq_entry*    ctx)
 {
     bool has_name  = false,
          has_affil = false;

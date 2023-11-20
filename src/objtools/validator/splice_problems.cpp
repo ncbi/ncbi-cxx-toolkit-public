@@ -49,14 +49,14 @@ using namespace sequence;
 
 
 
-void CSpliceProblems::ValidateDonorAcceptorPair
-(ENa_strand strand,
- TSeqPos stop,
- const CSeqVector& vec_donor,
- TSeqPos seq_len_donor,
- TSeqPos start,
- const CSeqVector& vec_acceptor,
- TSeqPos seq_len_acceptor)
+void CSpliceProblems::ValidateDonorAcceptorPair(
+    ENa_strand        strand,
+    TSeqPos           stop,
+    const CSeqVector& vec_donor,
+    TSeqPos           seq_len_donor,
+    TSeqPos           start,
+    const CSeqVector& vec_acceptor,
+    TSeqPos           seq_len_acceptor)
 {
     char donor[2];
     char acceptor[2];
@@ -152,14 +152,13 @@ CSpliceProblems::ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeq
 }
 
 
-
 CSpliceProblems::ESpliceSiteRead
-CSpliceProblems::ReadAcceptorSpliceSite
-(ENa_strand strand,
- TSeqPos start,
- const CSeqVector& vec,
- TSeqPos seq_len,
- TSpliceSite& site)
+CSpliceProblems::ReadAcceptorSpliceSite(
+    ENa_strand        strand,
+    TSeqPos           start,
+    const CSeqVector& vec,
+    TSeqPos           seq_len,
+    TSpliceSite&      site)
 {
     try {
         bool in_gap;
@@ -216,11 +215,11 @@ CSpliceProblems::ReadAcceptorSpliceSite
 
 
 CSpliceProblems::ESpliceSiteRead
-CSpliceProblems::ReadAcceptorSpliceSite
-(ENa_strand strand,
-TSeqPos start,
-const CSeqVector& vec,
-TSeqPos seq_len)
+CSpliceProblems::ReadAcceptorSpliceSite(
+    ENa_strand        strand,
+    TSeqPos           start,
+    const CSeqVector& vec,
+    TSeqPos           seq_len)
 {
     char site[2];
     return ReadAcceptorSpliceSite(strand, start, vec, seq_len, site);
@@ -516,10 +515,11 @@ void CSpliceProblems::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Ha
                         start = range_tail.GetFrom();
                         stop = range_head.GetTo();
                     }
-                    ValidateDonorAcceptorPair(strand,
+                    ValidateDonorAcceptorPair(
+                        strand,
                         stop, vec_head, bsh_head.GetInst_Length(),
                         start, vec_tail, bsh_tail.GetInst_Length());
-                } catch (CSeqVectorException& ) {
+                } catch (CSeqVectorException&) {
                 }
             }
         }
@@ -591,7 +591,6 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
                     CSeqVector vec_head = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
                     CSeqVector vec_tail = bsh_tail.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
 
-
                     if (strand == eNa_strand_minus) {
                         start = range_tail.GetTo();
                         stop  = range_head.GetFrom();
@@ -599,9 +598,10 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
                         start = range_tail.GetFrom();
                         stop = range_head.GetTo();
                     }
-                    ValidateDonorAcceptorPair(strand,
-                                               stop, vec_head, bsh_head.GetInst_Length(),
-                                               start, vec_tail, bsh_tail.GetInst_Length());
+                    ValidateDonorAcceptorPair(
+                        strand,
+                        stop, vec_head, bsh_head.GetInst_Length(),
+                        start, vec_tail, bsh_tail.GetInst_Length());
                 } catch (CSeqVectorException&) {
                 }
             }
@@ -630,26 +630,25 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
             }
         }
     }
-
 }
 
 
-bool s_EqualsG(Char c)
+static bool s_EqualsG(Char c)
 {
     return c == 'G';
 }
 
-bool s_EqualsC(Char c)
+static bool s_EqualsC(Char c)
 {
     return c == 'C';
 }
 
-bool s_EqualsA(Char c)
+static bool s_EqualsA(Char c)
 {
     return c == 'A';
 }
 
-bool s_EqualsT(Char c)
+static bool s_EqualsT(Char c)
 {
     return c == 'T';
 }

@@ -235,83 +235,81 @@ void CValidError_bioseqset::ValidateBioseqSet(
         case CBioseq_set::eClass_pop_set:
         case CBioseq_set::eClass_mut_set:
         case CBioseq_set::eClass_phy_set:
-        case CBioseq_set::eClass_eco_set:
-            {
-                CConstRef<CUser_object> first_autodef;
-                CConstRef<CUser_object> second_autodef;
-                for (auto se : seqset.GetSeq_set()) {
-                    bool has_autodef = false;
-                    CConstRef<CUser_object> aduo;
-                    if ( se->IsSet() ) {
-                        const CBioseq_set& bss = se->GetSet();
-                        for (auto sub : bss.GetSeq_set()) {
-                            if (sub->IsSeq()) {
-                                const CBioseq& seq = sub->GetSeq();
-                                if (seq.IsNa() && seq.IsSetDescr()) {
-                                    aduo = s_AutoDefUserObjectFromBioseq (seq);
-                                    if (aduo) {
-                                        has_autodef = true;
-                                        has_any_autodef = true;
-                                        if (! first_autodef) {
-                                            first_autodef = aduo;
-                                        } else if (! first_autodef->Equals(*aduo)) {
-                                            if (! second_autodef) {
-                                                second_autodef = aduo;
-                                                // then make sure they only differ by FeatureTypeList complete or partial genome
-                                                 if (! x_AlmostEquals(first_autodef, second_autodef)) {
-                                                    not_same_autodef = true;
-                                                }
-                                            } else if (! second_autodef->Equals(*aduo)) {
+        case CBioseq_set::eClass_eco_set: {
+            CConstRef<CUser_object> first_autodef;
+            CConstRef<CUser_object> second_autodef;
+            for (auto se : seqset.GetSeq_set()) {
+                bool has_autodef = false;
+                CConstRef<CUser_object> aduo;
+                if ( se->IsSet() ) {
+                    const CBioseq_set& bss = se->GetSet();
+                    for (auto sub : bss.GetSeq_set()) {
+                        if (sub->IsSeq()) {
+                            const CBioseq& seq = sub->GetSeq();
+                            if (seq.IsNa() && seq.IsSetDescr()) {
+                                aduo = s_AutoDefUserObjectFromBioseq (seq);
+                                if (aduo) {
+                                    has_autodef = true;
+                                    has_any_autodef = true;
+                                    if (! first_autodef) {
+                                        first_autodef = aduo;
+                                    } else if (! first_autodef->Equals(*aduo)) {
+                                        if (! second_autodef) {
+                                            second_autodef = aduo;
+                                            // then make sure they only differ by FeatureTypeList complete or partial genome
+                                                if (! x_AlmostEquals(first_autodef, second_autodef)) {
                                                 not_same_autodef = true;
                                             }
-                                        }
-                                    } else {
-                                        has_autodef = false;
-                                    }
-                                }
-                            }
-                        }
-                    } else if (se->IsSeq()) {
-                        const CBioseq& seq = se->GetSeq();
-                        if (seq.IsNa() && seq.IsSetDescr()) {
-                            aduo = s_AutoDefUserObjectFromBioseq (seq);
-                            if (aduo) {
-                                has_autodef = true;
-                                has_any_autodef = true;
-                                if (! first_autodef) {
-                                    first_autodef = aduo;
-                                } else if (! first_autodef->Equals(*aduo)) {
-                                    if (! second_autodef) {
-                                        second_autodef = aduo;
-                                        // then make sure they only differ by FeatureTypeList complete or partial genome
-                                        if (! x_AlmostEquals(first_autodef, second_autodef)) {
+                                        } else if (! second_autodef->Equals(*aduo)) {
                                             not_same_autodef = true;
                                         }
-                                    } else if (! second_autodef->Equals(*aduo)) {
-                                        not_same_autodef = true;
                                     }
+                                } else {
+                                    has_autodef = false;
                                 }
-                            } else {
-                                has_autodef = false;
                             }
                         }
                     }
-                    if (! has_autodef) {
-                        not_all_autodef = true;
+                } else if (se->IsSeq()) {
+                    const CBioseq& seq = se->GetSeq();
+                    if (seq.IsNa() && seq.IsSetDescr()) {
+                        aduo = s_AutoDefUserObjectFromBioseq (seq);
+                        if (aduo) {
+                            has_autodef = true;
+                            has_any_autodef = true;
+                            if (! first_autodef) {
+                                first_autodef = aduo;
+                            } else if (! first_autodef->Equals(*aduo)) {
+                                if (! second_autodef) {
+                                    second_autodef = aduo;
+                                    // then make sure they only differ by FeatureTypeList complete or partial genome
+                                    if (! x_AlmostEquals(first_autodef, second_autodef)) {
+                                        not_same_autodef = true;
+                                    }
+                                } else if (! second_autodef->Equals(*aduo)) {
+                                    not_same_autodef = true;
+                                }
+                            }
+                        } else {
+                            has_autodef = false;
+                        }
                     }
                 }
-                if (not_all_autodef && has_any_autodef) {
-                    PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingAutodef,
-                        "Not all pop/phy/mut/eco set components have an autodef user object",
-                        seqset);
-                }
-                if (not_same_autodef && has_any_autodef) {
-                    PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentAutodef,
-                        "Inconsistent autodef user objects in pop/phy/mut/eco set",
-                        seqset);
+                if (! has_autodef) {
+                    not_all_autodef = true;
                 }
             }
-            break;
+            if (not_all_autodef && has_any_autodef) {
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingAutodef,
+                    "Not all pop/phy/mut/eco set components have an autodef user object",
+                    seqset);
+            }
+            if (not_same_autodef && has_any_autodef) {
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_InconsistentAutodef,
+                    "Inconsistent autodef user objects in pop/phy/mut/eco set",
+                    seqset);
+            }
+        } break;
         default:
             break;
         }
@@ -423,11 +421,11 @@ bool CValidError_bioseqset::IsCDSProductInGPS(const CBioseq& seq, const CBioseq_
 }
 
 
-void CValidError_bioseqset::ValidateNucProtSet
-(const CBioseq_set& seqset,
- int nuccnt,
- int protcnt,
- int segcnt)
+void CValidError_bioseqset::ValidateNucProtSet(
+    const CBioseq_set& seqset,
+    int nuccnt,
+    int protcnt,
+    int segcnt)
 {
     if ( nuccnt == 0 ) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_NucProtProblem,
@@ -846,32 +844,32 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
 {
     string class_name;
     switch (seqset.GetClass()) {
-        case CBioseq_set::eClass_pop_set:
-            class_name = "Pop set";
-            break;
-        case CBioseq_set::eClass_mut_set:
-            class_name = "Mut set";
-            break;
-        case CBioseq_set::eClass_genbank:
-            class_name = "Genbank set";
-            break;
-        case CBioseq_set::eClass_phy_set:
-        case CBioseq_set::eClass_wgs_set:
-        case CBioseq_set::eClass_eco_set:
-            class_name = "Phy/eco/wgs set";
-            break;
-        case CBioseq_set::eClass_gen_prod_set:
-            class_name = "GenProd set";
-            break;
-        case CBioseq_set::eClass_small_genome_set:
-            class_name = "Small genome set";
-            break;
-        case CBioseq_set::eClass_nuc_prot:
-            class_name = "Nuc-prot set";
-            break;
-        default:
-            return;
-            break;
+    case CBioseq_set::eClass_pop_set:
+        class_name = "Pop set";
+        break;
+    case CBioseq_set::eClass_mut_set:
+        class_name = "Mut set";
+        break;
+    case CBioseq_set::eClass_genbank:
+        class_name = "Genbank set";
+        break;
+    case CBioseq_set::eClass_phy_set:
+    case CBioseq_set::eClass_wgs_set:
+    case CBioseq_set::eClass_eco_set:
+        class_name = "Phy/eco/wgs set";
+        break;
+    case CBioseq_set::eClass_gen_prod_set:
+        class_name = "GenProd set";
+        break;
+    case CBioseq_set::eClass_small_genome_set:
+        class_name = "Small genome set";
+        break;
+    case CBioseq_set::eClass_nuc_prot:
+        class_name = "Nuc-prot set";
+        break;
+    default:
+        return;
+        break;
     }
 
     FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
