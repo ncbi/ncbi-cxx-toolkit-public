@@ -369,6 +369,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_InstantiatedGapMismatch,
     { "InstantiatedGapMismatch",
       "Gap misc_feature does not match gap in delta Bioseq" } } ,
+    { eErr_SEQ_INST_BadSeqIdCharacter,
+    { "BadSeqIdCharacter",
+    "An illegal character is present in the sequence identifier." } },
 
     /* SEQ_DESCR */
 
