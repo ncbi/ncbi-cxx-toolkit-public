@@ -87,7 +87,7 @@ private:
 };
 
 SSocketAddress::SHost::SHost(const string& h, EName n) :
-    name(n == EName::eOriginal ? h : optional<string>()),
+    name(n == EName::eOriginal ? h : std::optional<string>()),
     host(SSocketAddressImpl::GetInstance().GetHost(h))
 {
 }
