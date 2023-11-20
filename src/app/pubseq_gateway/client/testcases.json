@@ -25574,6 +25574,9 @@
                                 "gb|WMV97217|",
                                 "5"
                             ],
+                            "request_flags": [
+                                "include-hup"
+                            ],
                             "user_args": "resend_timeout=0&disable_processor=WGS"
                         },
                         "id": "biodata_1"
@@ -25671,6 +25674,9 @@
                                 "2574876738",
                                 "12"
                             ],
+                            "request_flags": [
+                                "include-hup"
+                            ],
                             "user_args": "resend_timeout=0&disable_processor=WGS"
                         },
                         "id": "biodata_1"
@@ -25766,6 +25772,9 @@
                         "params": {
                             "blob_id": [
                                 "20.29692260"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ]
                         },
                         "id": "blob_1"
@@ -25833,6 +25842,9 @@
                         "params": {
                             "blob_id": [
                                 "20.11"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ]
                         },
                         "id": "blob_1"
@@ -25873,6 +25885,9 @@
                             "bio_id": [
                                 "gb|WMV97217|",
                                 "5"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ],
                             "user_args": "resend_timeout=0&disable_processor=WGS"
                         },
@@ -25952,6 +25967,9 @@
                                 "2574876738",
                                 "12"
                             ],
+                            "request_flags": [
+                                "include-hup"
+                            ],
                             "user_args": "resend_timeout=0&disable_processor=WGS"
                         },
                         "id": "biodata_1"
@@ -26028,6 +26046,9 @@
                         "params": {
                             "blob_id": [
                                 "20.29692260"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ]
                         },
                         "id": "blob_1"
@@ -26076,6 +26097,9 @@
                         "params": {
                             "blob_id": [
                                 "20.11"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ]
                         },
                         "id": "blob_1"
@@ -26127,6 +26151,9 @@
                             "bio_id": [
                                 "gb|WMV97217|",
                                 "5"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ],
                             "user_args": "resend_timeout=0&disable_processor=WGS"
                         },
@@ -26206,6 +26233,9 @@
                                 "2574876738",
                                 "12"
                             ],
+                            "request_flags": [
+                                "include-hup"
+                            ],
                             "user_args": "resend_timeout=0&disable_processor=WGS"
                         },
                         "id": "biodata_1"
@@ -26282,6 +26312,9 @@
                         "params": {
                             "blob_id": [
                                 "20.29692260"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ]
                         },
                         "id": "blob_1"
@@ -26330,6 +26363,9 @@
                         "params": {
                             "blob_id": [
                                 "20.11"
+                            ],
+                            "request_flags": [
+                                "include-hup"
                             ]
                         },
                         "id": "blob_1"
