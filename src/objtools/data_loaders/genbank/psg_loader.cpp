@@ -420,6 +420,18 @@ void CPSGDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenc
 }
 
 
+void CPSGDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded, TSequenceStates& ret)
+{
+    m_Impl->GetSequenceStates(GetDataSource(), ids, loaded, ret);
+}
+
+
+void CPSGDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known)
+{
+    m_Impl->GetSequenceHashes(ids, loaded, ret, known);
+}
+
+
 CGBDataLoader::TNamedAnnotNames
 CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
 {
