@@ -197,15 +197,15 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
     if (seq.IsAa()) {
         // protein
         switch (ftype) {
-            case CSeqFeatData::e_Cdregion:
-            case CSeqFeatData::e_Rna:
-            case CSeqFeatData::e_Rsite:
-            case CSeqFeatData::e_Txinit:
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForProtein,
+        case CSeqFeatData::e_Cdregion:
+        case CSeqFeatData::e_Rna:
+        case CSeqFeatData::e_Rsite:
+        case CSeqFeatData::e_Txinit:
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForProtein,
                     "Invalid feature for a protein Bioseq.", feat);
-                break;
-            default:
-                break;
+            break;
+        default:
+            break;
         }
     } else {
         // nucleotide
@@ -594,9 +594,8 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
         if (partial_left && loc.GetStart(eExtreme_Positional) == 0) {
             // partial at beginning of sequence, ok
         } else if (partial_right &&
-            (bsh = x_GetCachedBsh(loc)) &&
-                   loc.GetStop(eExtreme_Positional) == (
-                       bsh.GetBioseqLength() - 1))
+                   (bsh = x_GetCachedBsh(loc)) &&
+                   loc.GetStop(eExtreme_Positional) == (bsh.GetBioseqLength() - 1))
         {
             // partial at end of sequence
         } else {
@@ -609,11 +608,11 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 
 
 bool
-FeaturePairIsTwoTypes
-(const CSeq_feat& feat1,
- const CSeq_feat& feat2,
- CSeqFeatData::ESubtype subtype1,
- CSeqFeatData::ESubtype subtype2)
+FeaturePairIsTwoTypes(
+    const CSeq_feat& feat1,
+    const CSeq_feat& feat2,
+    CSeqFeatData::ESubtype subtype1,
+    CSeqFeatData::ESubtype subtype2)
 {
     if (!feat1.IsSetData() || !feat2.IsSetData()) {
         return false;
@@ -641,10 +640,10 @@ bool GeneXrefConflicts(const CSeq_feat& feat, const CSeq_feat& gene)
 
 
 // does feat have an xref to a feature other than the one specified by id with the same subtype
-bool CValidError_feat::x_HasNonReciprocalXref
-(const CSeq_feat& feat,
- const CFeat_id& id,
- CSeqFeatData::ESubtype subtype)
+bool CValidError_feat::x_HasNonReciprocalXref(
+    const CSeq_feat& feat,
+    const CFeat_id& id,
+    CSeqFeatData::ESubtype subtype)
 {
     if (!feat.IsSetXref()) {
         return false;
@@ -664,7 +663,6 @@ bool CValidError_feat::x_HasNonReciprocalXref
     }
     return false;
 }
-
 
 
 void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref)

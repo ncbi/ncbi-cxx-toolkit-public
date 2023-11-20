@@ -135,20 +135,18 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
 
         case CSeqdesc::e_Het:
             break;
-        case CSeqdesc::e_Source:
-            {
-                num_sources++;
-                last_source = &desc;
-                const CBioSource& src = desc.GetSource();
-                if ( src.IsSetTaxname() ) {
-                    const string& currname = src.GetTaxname();
-                    if ( lastname != kEmptyCStr && NStr::EqualNocase (currname, lastname) ) {
-                        same_taxnames = true;
-                    }
-                    lastname = currname.c_str();
+        case CSeqdesc::e_Source: {
+            num_sources++;
+            last_source = &desc;
+            const CBioSource& src = desc.GetSource();
+            if ( src.IsSetTaxname() ) {
+                const string& currname = src.GetTaxname();
+                if ( lastname != kEmptyCStr && NStr::EqualNocase (currname, lastname) ) {
+                    same_taxnames = true;
                 }
+                lastname = currname.c_str();
             }
-            break;
+        } break;
         case CSeqdesc::e_Org:
             break;
         case CSeqdesc::e_Molinfo:

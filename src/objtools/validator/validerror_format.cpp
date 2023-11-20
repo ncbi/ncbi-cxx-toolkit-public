@@ -81,38 +81,38 @@ ESubmitterFormatErrorGroup CValidErrorFormat::GetSubmitterFormatErrorGroup(CVali
     ESubmitterFormatErrorGroup rval = eSubmitterFormatErrorGroup_Default;
 
     switch(err_code) {
-        case eErr_SEQ_FEAT_NotSpliceConsensus:
-        case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
-        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
-        case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
-        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
-        case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
-            rval = eSubmitterFormatErrorGroup_ConsensusSplice;
-            break;
-        case eErr_SEQ_FEAT_BadEcNumberFormat:
-            rval = eSubmitterFormatErrorGroup_BadEcNumberFormat;
-            break;
-        case eErr_SEQ_FEAT_BadEcNumberValue:
-        case eErr_SEQ_FEAT_DeletedEcNumber:
-        case eErr_SEQ_FEAT_ReplacedEcNumber:
-        case eErr_SEQ_FEAT_SplitEcNumber:
-            rval = eSubmitterFormatErrorGroup_BadEcNumberValue;
-            break;
-        case eErr_SEQ_FEAT_EcNumberProblem:
-            rval = eSubmitterFormatErrorGroup_BadEcNumberProblem;
-            break;
-        case eErr_SEQ_DESCR_BadSpecificHost:
-            rval = eSubmitterFormatErrorGroup_BadSpecificHost;
-            break;
-        case eErr_SEQ_DESCR_BadInstitutionCode:
-            rval = eSubmitterFormatErrorGroup_BadInstitutionCode;
-            break;
-        case eErr_SEQ_DESCR_LatLonCountry:
-        case eErr_SEQ_DESCR_LatLonWater:
-            rval = eSubmitterFormatErrorGroup_LatLonCountry;
-            break;
-        default:
-            break;
+    case eErr_SEQ_FEAT_NotSpliceConsensus:
+    case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
+    case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
+    case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
+    case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
+    case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
+        rval = eSubmitterFormatErrorGroup_ConsensusSplice;
+        break;
+    case eErr_SEQ_FEAT_BadEcNumberFormat:
+        rval = eSubmitterFormatErrorGroup_BadEcNumberFormat;
+        break;
+    case eErr_SEQ_FEAT_BadEcNumberValue:
+    case eErr_SEQ_FEAT_DeletedEcNumber:
+    case eErr_SEQ_FEAT_ReplacedEcNumber:
+    case eErr_SEQ_FEAT_SplitEcNumber:
+        rval = eSubmitterFormatErrorGroup_BadEcNumberValue;
+        break;
+    case eErr_SEQ_FEAT_EcNumberProblem:
+        rval = eSubmitterFormatErrorGroup_BadEcNumberProblem;
+        break;
+    case eErr_SEQ_DESCR_BadSpecificHost:
+        rval = eSubmitterFormatErrorGroup_BadSpecificHost;
+        break;
+    case eErr_SEQ_DESCR_BadInstitutionCode:
+        rval = eSubmitterFormatErrorGroup_BadInstitutionCode;
+        break;
+    case eErr_SEQ_DESCR_LatLonCountry:
+    case eErr_SEQ_DESCR_LatLonWater:
+        rval = eSubmitterFormatErrorGroup_LatLonCountry;
+        break;
+    default:
+        break;
     }
     return rval;
 }
@@ -122,37 +122,37 @@ string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrI
 {
     string rval;
     switch(err_code) {
-        case eErr_SEQ_FEAT_NotSpliceConsensus:
-        case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
-        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
-        case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
-            rval = "Not Splice Consensus";
-            break;
-        case eErr_SEQ_FEAT_BadEcNumberFormat:
-            rval = "EC Number Format";
-            break;
-        case eErr_SEQ_FEAT_BadEcNumberValue:
-        case eErr_SEQ_FEAT_DeletedEcNumber:
-        case eErr_SEQ_FEAT_ReplacedEcNumber:
-        case eErr_SEQ_FEAT_SplitEcNumber:
-            rval = "EC Number Value";
-            break;
-        case eErr_SEQ_FEAT_EcNumberProblem:
-            rval = "EC Number Problem";
-            break;
-        case eErr_SEQ_DESCR_BadSpecificHost:
-            rval = "Bad Specific-host Values";
-            break;
-        case eErr_SEQ_DESCR_BadInstitutionCode:
-            rval = "Bad Institution Codes";
-            break;
-        case eErr_SEQ_DESCR_LatLonCountry:
-        case eErr_SEQ_DESCR_LatLonWater:
-            rval = "LatLonCountry Errors";
-            break;
-        default:
-            rval = CValidErrItem::ConvertErrCode(err_code);
-            break;
+    case eErr_SEQ_FEAT_NotSpliceConsensus:
+    case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
+    case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
+    case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
+        rval = "Not Splice Consensus";
+        break;
+    case eErr_SEQ_FEAT_BadEcNumberFormat:
+        rval = "EC Number Format";
+        break;
+    case eErr_SEQ_FEAT_BadEcNumberValue:
+    case eErr_SEQ_FEAT_DeletedEcNumber:
+    case eErr_SEQ_FEAT_ReplacedEcNumber:
+    case eErr_SEQ_FEAT_SplitEcNumber:
+        rval = "EC Number Value";
+        break;
+    case eErr_SEQ_FEAT_EcNumberProblem:
+        rval = "EC Number Problem";
+        break;
+    case eErr_SEQ_DESCR_BadSpecificHost:
+        rval = "Bad Specific-host Values";
+        break;
+    case eErr_SEQ_DESCR_BadInstitutionCode:
+        rval = "Bad Institution Codes";
+        break;
+    case eErr_SEQ_DESCR_LatLonCountry:
+    case eErr_SEQ_DESCR_LatLonWater:
+        rval = "LatLonCountry Errors";
+        break;
+    default:
+        rval = CValidErrItem::ConvertErrCode(err_code);
+        break;
     }
 
     return rval;
@@ -164,35 +164,35 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
     string rval;
 
     switch (error.GetErrIndex()) {
-        case eErr_SEQ_FEAT_NotSpliceConsensus:
-        case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
-        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
-        case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
-        case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
-        case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
-            rval = x_FormatConsensusSpliceForSubmitterReport(error, scope);
-            break;
-        case eErr_SEQ_FEAT_BadEcNumberFormat:
-        case eErr_SEQ_FEAT_BadEcNumberValue:
-        case eErr_SEQ_FEAT_EcNumberProblem:
-        case eErr_SEQ_FEAT_DeletedEcNumber:
-        case eErr_SEQ_FEAT_ReplacedEcNumber:
-        case eErr_SEQ_FEAT_SplitEcNumber:
-            rval = x_FormatECNumberForSubmitterReport(error, scope);
-            break;
-        case eErr_SEQ_DESCR_BadSpecificHost:
-            rval = x_FormatBadSpecificHostForSubmitterReport(error);
-            break;
-        case eErr_SEQ_DESCR_BadInstitutionCode:
-            rval = x_FormatBadInstCodeForSubmitterReport(error);
-            break;
-        case eErr_SEQ_DESCR_LatLonCountry:
-        case eErr_SEQ_DESCR_LatLonWater:
-            rval = x_FormatLatLonCountryForSubmitterReport(error);
-            break;
-        default:
-            rval = x_FormatGenericForSubmitterReport(error, scope);
-            break;
+    case eErr_SEQ_FEAT_NotSpliceConsensus:
+    case eErr_SEQ_FEAT_NotSpliceConsensusDonor:
+    case eErr_SEQ_FEAT_NotSpliceConsensusAcceptor:
+    case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
+    case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
+    case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
+        rval = x_FormatConsensusSpliceForSubmitterReport(error, scope);
+        break;
+    case eErr_SEQ_FEAT_BadEcNumberFormat:
+    case eErr_SEQ_FEAT_BadEcNumberValue:
+    case eErr_SEQ_FEAT_EcNumberProblem:
+    case eErr_SEQ_FEAT_DeletedEcNumber:
+    case eErr_SEQ_FEAT_ReplacedEcNumber:
+    case eErr_SEQ_FEAT_SplitEcNumber:
+        rval = x_FormatECNumberForSubmitterReport(error, scope);
+        break;
+    case eErr_SEQ_DESCR_BadSpecificHost:
+        rval = x_FormatBadSpecificHostForSubmitterReport(error);
+        break;
+    case eErr_SEQ_DESCR_BadInstitutionCode:
+        rval = x_FormatBadInstCodeForSubmitterReport(error);
+        break;
+    case eErr_SEQ_DESCR_LatLonCountry:
+    case eErr_SEQ_DESCR_LatLonWater:
+        rval = x_FormatLatLonCountryForSubmitterReport(error);
+        break;
+    default:
+        rval = x_FormatGenericForSubmitterReport(error, scope);
+        break;
     }
 
     return rval;
@@ -765,56 +765,54 @@ string CValidErrorFormat::GetFeatureContentLabel (const CSeq_feat& feat, CRef<CS
     string content_label;
 
     switch (feat.GetData().Which()) {
-        case CSeqFeatData::e_Pub:
-            content_label = "Cit: ";
-            feat.GetData().GetPub().GetPub().GetLabel(&content_label);
-            break;
-        case CSeqFeatData::e_Biosrc:
-            content_label = "Src: " + s_GetBioSourceContentLabel (feat.GetData().GetBiosrc());
-            break;
-        case CSeqFeatData::e_Imp:
-            {
-                feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
-                if (feat.GetData().GetImp().IsSetKey()) {
-                    string key = feat.GetData().GetImp().GetKey();
-                    string tmp = "[" + key + "]";
-                    if (NStr::StartsWith(content_label, tmp)) {
-                        content_label = key + content_label.substr(tmp.length());
-                    }
-                }
+    case CSeqFeatData::e_Pub:
+        content_label = "Cit: ";
+        feat.GetData().GetPub().GetPub().GetLabel(&content_label);
+        break;
+    case CSeqFeatData::e_Biosrc:
+        content_label = "Src: " + s_GetBioSourceContentLabel (feat.GetData().GetBiosrc());
+        break;
+    case CSeqFeatData::e_Imp: {
+        feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+        if (feat.GetData().GetImp().IsSetKey()) {
+            string key = feat.GetData().GetImp().GetKey();
+            string tmp = "[" + key + "]";
+            if (NStr::StartsWith(content_label, tmp)) {
+                content_label = key + content_label.substr(tmp.length());
             }
-            break;
-        case CSeqFeatData::e_Rna:
-            feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
-            if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA
-                && NStr::Equal(content_label, "tRNA: tRNA")) {
-                content_label = "tRNA: ";
+        }
+    } break;
+    case CSeqFeatData::e_Rna:
+        feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+        if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA
+            && NStr::Equal(content_label, "tRNA: tRNA")) {
+            content_label = "tRNA: ";
+        }
+        break;
+    case CSeqFeatData::e_Cdregion:
+        content_label = "CDS: " + s_GetCdregionContentLabel(feat, scope);
+        break;
+    case CSeqFeatData::e_Prot:
+        feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+        if (feat.GetData().GetProt().IsSetProcessed()) {
+            switch (feat.GetData().GetProt().GetProcessed()) {
+            case CProt_ref::eProcessed_mature:
+                content_label = "mat_peptide: " + content_label.substr(6);
+                break;
+            case CProt_ref::eProcessed_signal_peptide:
+                content_label = "sig_peptide: " + content_label.substr(6);
+                break;
+            case CProt_ref::eProcessed_transit_peptide:
+                content_label = "trans_peptide: " + content_label.substr(6);
+                break;
+            default:
+                break;
             }
-            break;
-        case CSeqFeatData::e_Cdregion:
-            content_label = "CDS: " + s_GetCdregionContentLabel(feat, scope);
-            break;
-        case CSeqFeatData::e_Prot:
-            feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
-            if (feat.GetData().GetProt().IsSetProcessed()) {
-                switch (feat.GetData().GetProt().GetProcessed()) {
-                    case CProt_ref::eProcessed_mature:
-                        content_label = "mat_peptide: " + content_label.substr(6);
-                        break;
-                    case CProt_ref::eProcessed_signal_peptide:
-                        content_label = "sig_peptide: " + content_label.substr(6);
-                        break;
-                    case CProt_ref::eProcessed_transit_peptide:
-                        content_label = "trans_peptide: " + content_label.substr(6);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            break;
-        default:
-            feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
-            break;
+        }
+        break;
+    default:
+        feature::GetLabel(feat, &content_label, feature::fFGL_Both, scope);
+        break;
     }
     return content_label;
 }
@@ -953,42 +951,42 @@ string CValidErrorFormat::GetDescriptorContent (const CSeqdesc& ds)
     string content;
 
     switch (ds.Which()) {
-        case CSeqdesc::e_Pub:
-            content = "Pub: ";
-            ds.GetPub().GetPub().GetLabel(&content);
-            break;
-        case CSeqdesc::e_Source:
-            content = "BioSource: " + s_GetBioSourceContentLabel(ds.GetSource());
-            break;
-        case CSeqdesc::e_Modif:
-            ds.GetLabel(&content, CSeqdesc::eBoth);
-            if (NStr::StartsWith(content, "modif: ,")) {
-                content = "Modifier: " + content.substr(8);
-            }
-            break;
-        case CSeqdesc::e_Molinfo:
-            ds.GetLabel(&content, CSeqdesc::eBoth);
-            if (NStr::StartsWith(content, "molinfo: ,")) {
-                content = "molInfo: " + content.substr(10);
-            }
-            break;
-        case CSeqdesc::e_Comment:
-            ds.GetLabel(&content, CSeqdesc::eBoth);
-            if (NStr::StartsWith(content, "comment: ") && NStr::IsBlank(content.substr(9))) {
-                content = "comment: ";
-            }
-            break;
-        case CSeqdesc::e_User:
-            content = "UserObj: ";
-            if (ds.GetUser().IsSetClass()) {
-                content += ds.GetUser().GetClass();
-            } else if (ds.GetUser().IsSetType() && ds.GetUser().GetType().IsStr()) {
-                content += ds.GetUser().GetType().GetStr();
-            }
-            break;
-        default:
-            ds.GetLabel(&content, CSeqdesc::eBoth);
-            break;
+    case CSeqdesc::e_Pub:
+        content = "Pub: ";
+        ds.GetPub().GetPub().GetLabel(&content);
+        break;
+    case CSeqdesc::e_Source:
+        content = "BioSource: " + s_GetBioSourceContentLabel(ds.GetSource());
+        break;
+    case CSeqdesc::e_Modif:
+        ds.GetLabel(&content, CSeqdesc::eBoth);
+        if (NStr::StartsWith(content, "modif: ,")) {
+            content = "Modifier: " + content.substr(8);
+        }
+        break;
+    case CSeqdesc::e_Molinfo:
+        ds.GetLabel(&content, CSeqdesc::eBoth);
+        if (NStr::StartsWith(content, "molinfo: ,")) {
+            content = "molInfo: " + content.substr(10);
+        }
+        break;
+    case CSeqdesc::e_Comment:
+        ds.GetLabel(&content, CSeqdesc::eBoth);
+        if (NStr::StartsWith(content, "comment: ") && NStr::IsBlank(content.substr(9))) {
+            content = "comment: ";
+        }
+        break;
+    case CSeqdesc::e_User:
+        content = "UserObj: ";
+        if (ds.GetUser().IsSetClass()) {
+            content += ds.GetUser().GetClass();
+        } else if (ds.GetUser().IsSetType() && ds.GetUser().GetType().IsStr()) {
+            content += ds.GetUser().GetType().GetStr();
+        }
+        break;
+    default:
+        ds.GetLabel(&content, CSeqdesc::eBoth);
+        break;
     }
     // fix descriptor type names
     string first = content.substr(0, 1);

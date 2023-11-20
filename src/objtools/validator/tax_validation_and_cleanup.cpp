@@ -201,17 +201,17 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
 void CSpecificHostRequest::ListErrors(vector<TTaxError>& errs) const
 {
     switch (m_Response) {
-        case eNormal:
-            break;
-        case eAmbiguous:
-            errs.push_back(TTaxError{ eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error });
-            break;
-        case eUnrecognized:
-            errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
-            break;
-        case eAlternateName:
-            errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
-            break;
+    case eNormal:
+        break;
+    case eAmbiguous:
+        errs.push_back(TTaxError{ eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error });
+        break;
+    case eUnrecognized:
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
+        break;
+    case eAlternateName:
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
+        break;
     }
 
     if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
@@ -398,6 +398,7 @@ void CQualLookupMap::AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx
             && mod_it->IsSetSubname()) {
             string qual = mod_it->GetSubname();
             string key = GetKey(qual, org);
+
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
                 m_Map[key] = x_MakeNewRequest(qual, org);
@@ -430,6 +431,7 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
             && mod_it->IsSetSubname()) {
             string qual = mod_it->GetSubname();
             string key = GetKey(qual, feat->GetData().GetBiosrc().GetOrg());
+
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
                 m_Map[key] = x_MakeNewRequest(qual, feat->GetData().GetBiosrc().GetOrg());
@@ -457,6 +459,7 @@ void CQualLookupMap::AddOrg(const COrg_ref& org)
             && mod_it->IsSetSubname()) {
             string qual = mod_it->GetSubname();
             string key = GetKey(qual, org);
+
             TQualifierRequests::iterator find = m_Map.find(key);
             if (find == m_Map.end()) {
                 m_Map[key] = x_MakeNewRequest(qual, org);
@@ -471,6 +474,7 @@ void CQualLookupMap::AddOrg(const COrg_ref& org)
 void CQualLookupMap::AddString(const string& val)
 {
     m_Populated = true;
+
     TQualifierRequests::iterator find = m_Map.find(val);
     if (find == m_Map.end()) {
         CRef<COrg_ref> org(new COrg_ref());
@@ -606,6 +610,7 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
             m->GetSubtype() == COrgMod::eSubtype_nat_host &&
             m->IsSetSubname()) {
             string host_val = x_DefaultSpecificHostAdjustments(m->GetSubname());
+
             TQualifierRequests::const_iterator it = m_Map.find(host_val);
             if (it != m_Map.end()) {
                 const CSpecificHostRequest* rq = dynamic_cast<const CSpecificHostRequest*>(it->second.GetPointer());
@@ -818,13 +823,12 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
                     "Taxonomy lookup does not have expected plastid flag"});
         }
     }
-
 }
 
-void CTaxValidationAndCleanup::ReportTaxLookupErrors
-(const CTaxon3_reply& reply,
- CValidError_imp& imp,
- bool is_insd_patent) const
+void CTaxValidationAndCleanup::ReportTaxLookupErrors(
+    const CTaxon3_reply& reply,
+    CValidError_imp&     imp,
+    bool                 is_insd_patent) const
 {
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
 
@@ -862,15 +866,14 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
         ++reply_it;
         ++feat_it;
     }
-
 }
 
 
-void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
-(const CTaxon3_reply& reply,
-    CValidError_imp& imp,
-    bool is_insd_patent,
-    size_t offset) const
+void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors(
+    const CTaxon3_reply& reply,
+    CValidError_imp&     imp,
+    bool                 is_insd_patent,
+    size_t               offset) const
 {
     // cout << MSerial_AsnText << reply << endl;
 
@@ -927,19 +930,16 @@ void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
         ++reply_it;
         ++feat_it;
     }
-
-
 }
-
 
 
 //LCOV_EXCL_START
 //used by Genome Workbench
-bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
-( const CTaxon3_reply& reply,
- vector<CRef<COrg_ref> > org_refs,
- string& error_message,
- bool use_error_orgrefs) const
+bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply(
+    const CTaxon3_reply&   reply,
+    vector<CRef<COrg_ref>> org_refs,
+    string&                error_message,
+    bool                   use_error_orgrefs) const
 {
     bool changed = false;
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
@@ -951,10 +951,10 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
             cpy.Reset(new COrg_ref());
             cpy->Assign((*reply_it)->GetData().GetOrg());
         } else if (use_error_orgrefs &&
-            (*reply_it)->IsError() &&
-            (*reply_it)->GetError().IsSetOrg() &&
-            (*reply_it)->GetError().GetOrg().IsSetTaxname() &&
-            !NStr::Equal((*reply_it)->GetError().GetOrg().GetTaxname(), "Not valid")) {
+                   (*reply_it)->IsError() &&
+                   (*reply_it)->GetError().IsSetOrg() &&
+                   (*reply_it)->GetError().GetOrg().IsSetTaxname() &&
+                   ! NStr::Equal((*reply_it)->GetError().GetOrg().GetTaxname(), "Not valid")) {
             cpy.Reset(new COrg_ref());
             cpy->Assign((*reply_it)->GetError().GetOrg());
         }
@@ -1057,11 +1057,11 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& rep
 
 //LCOV_EXCL_START
 //only used by cleanup
-bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply
-(vector<CRef<COrg_ref> > requests,
- const CTaxon3_reply& reply,
- vector<CRef<COrg_ref> > org_refs,
- string& error_message)
+bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply(
+    vector<CRef<COrg_ref>> requests,
+    const CTaxon3_reply&   reply,
+    vector<CRef<COrg_ref>> org_refs,
+    string&                error_message)
 {
     if (!m_HostMapForFix.IsUpdateComplete()) {
         // need to calculate requests for this list

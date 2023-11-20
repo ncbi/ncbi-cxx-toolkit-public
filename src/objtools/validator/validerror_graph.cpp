@@ -346,17 +346,17 @@ void CValidError_graph::x_ValidateGraphOrderOnBioseq(const CBioseq&, vector<CRef
 }
 
 
-void CValidError_graph::x_ValidateGraphValues
-(const CSeq_graph& graph,
- const CBioseq& seq,
- int& first_N,
- int& first_ACGT,
- size_t& num_bases,
- size_t& Ns_with_score,
- size_t& gaps_with_score,
- size_t& ACGTs_without_score,
- size_t& vals_below_min,
- size_t& vals_above_max)
+void CValidError_graph::x_ValidateGraphValues(
+    const CSeq_graph& graph,
+    const CBioseq& seq,
+    int& first_N,
+    int& first_ACGT,
+    size_t& num_bases,
+    size_t& Ns_with_score,
+    size_t& gaps_with_score,
+    size_t& ACGTs_without_score,
+    size_t& vals_below_min,
+    size_t& vals_above_max)
 {
     string label;
     seq.GetFirstId()->GetLabel(&label);
@@ -470,76 +470,72 @@ void CValidError_graph::x_ValidateGraphOnDeltaBioseq(const CBioseq& seq)
         const CSeq_graph& graph = grp->GetOriginalGraph();
         ++next;
         switch ( (*curr)->Which() ) {
-            case CDelta_seq::e_Loc:
-                {
-                    const CSeq_loc& loc = (*curr)->GetLoc();
-                    if ( !loc.IsNull() ) {
-                        TSeqPos loclen = sequence::GetLength(loc, m_Scope);
-                        if ( graph.GetNumval() != loclen ) {
-                            PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphSeqLocLen,
-                                "SeqGraph (" + NStr::IntToString(graph.GetNumval()) +
-                                ") and SeqLoc (" + NStr::IntToString(loclen) +
-                                ") length mismatch", graph);
-                        }
-                        offset += loclen;
-                        ++num_delta_seq;
+        case CDelta_seq::e_Loc: {
+            const CSeq_loc& loc = (*curr)->GetLoc();
+            if ( !loc.IsNull() ) {
+                TSeqPos loclen = sequence::GetLength(loc, m_Scope);
+                if ( graph.GetNumval() != loclen ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphSeqLocLen,
+                        "SeqGraph (" + NStr::IntToString(graph.GetNumval()) +
+                        ") and SeqLoc (" + NStr::IntToString(loclen) +
+                        ") length mismatch", graph);
+                }
+                offset += loclen;
+                ++num_delta_seq;
+            }
+            ++grp;
+            while (grp && !IsSupportedGraphType(grp->GetOriginalGraph())) {
+                ++grp;
+            }
+        } break;
+
+        case CDelta_seq::e_Literal: {
+            const CSeq_literal& lit = (*curr)->GetLiteral();
+            TSeqPos litlen = lit.GetLength(),
+                nextlen = 0;
+            if ( lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap() ) {
+                while (next != end  &&  x_GetLitLength(**next, nextlen)) {
+                    litlen += nextlen;
+                    ++next;
+                }
+                if ( graph.GetNumval() != litlen ) {
+                    PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphSeqLitLen,
+                        "SeqGraph (" + NStr::IntToString(graph.GetNumval()) +
+                        ") and SeqLit (" + NStr::IntToString(litlen) +
+                        ") length mismatch", graph);
+                }
+                const CSeq_loc& graph_loc = graph.GetLoc();
+                if ( graph_loc.IsInt() ) {
+                    TSeqPos from = graph_loc.GetTotalRange().GetFrom();
+                    TSeqPos to = graph_loc.GetTotalRange().GetTo();
+                    if (  from != offset ) {
+                        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphStartPhase,
+                            "SeqGraph (" + NStr::IntToString(from) +
+                            ") and SeqLit (" + NStr::IntToString(offset) +
+                            ") start do not coincide",
+                            graph);
                     }
+
+                    if ( to != offset + litlen - 1 ) {
+                        PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphStopPhase,
+                            "SeqGraph (" + NStr::IntToString(to) +
+                            ") and SeqLit (" +
+                            NStr::IntToString(litlen + offset - 1) +
+                            ") stop do not coincide",
+                            graph);
+                    }
+                }
+                ++grp;
+                while (grp && !IsSupportedGraphType(grp->GetOriginalGraph())) {
                     ++grp;
-                    while (grp && !IsSupportedGraphType(grp->GetOriginalGraph())) {
-                        ++grp;
-                    }
                 }
-                break;
+                ++num_delta_seq;
+            }
+            offset += litlen;
+        } break;
 
-            case CDelta_seq::e_Literal:
-                {
-                    const CSeq_literal& lit = (*curr)->GetLiteral();
-                    TSeqPos litlen = lit.GetLength(),
-                        nextlen = 0;
-                    if ( lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap() ) {
-                        while (next != end  &&  x_GetLitLength(**next, nextlen)) {
-                            litlen += nextlen;
-                            ++next;
-                        }
-                        if ( graph.GetNumval() != litlen ) {
-                            PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphSeqLitLen,
-                                "SeqGraph (" + NStr::IntToString(graph.GetNumval()) +
-                                ") and SeqLit (" + NStr::IntToString(litlen) +
-                                ") length mismatch", graph);
-                        }
-                        const CSeq_loc& graph_loc = graph.GetLoc();
-                        if ( graph_loc.IsInt() ) {
-                            TSeqPos from = graph_loc.GetTotalRange().GetFrom();
-                            TSeqPos to = graph_loc.GetTotalRange().GetTo();
-                            if (  from != offset ) {
-                                PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphStartPhase,
-                                    "SeqGraph (" + NStr::IntToString(from) +
-                                    ") and SeqLit (" + NStr::IntToString(offset) +
-                                    ") start do not coincide",
-                                    graph);
-                            }
-
-                            if ( to != offset + litlen - 1 ) {
-                                PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphStopPhase,
-                                    "SeqGraph (" + NStr::IntToString(to) +
-                                    ") and SeqLit (" +
-                                    NStr::IntToString(litlen + offset - 1) +
-                                    ") stop do not coincide",
-                                    graph);
-                            }
-                        }
-                        ++grp;
-                        while (grp && !IsSupportedGraphType(grp->GetOriginalGraph())) {
-                            ++grp;
-                        }
-                        ++num_delta_seq;
-                    }
-                    offset += litlen;
-                }
-                break;
-
-            default:
-                break;
+        default:
+            break;
         }
         curr = next;
     }
@@ -548,32 +544,28 @@ void CValidError_graph::x_ValidateGraphOnDeltaBioseq(const CBioseq& seq)
     while ( curr != end) {
         ++next;
         switch ( (*curr)->Which() ) {
-            case CDelta_seq::e_Loc:
-                {
-                    const CSeq_loc& loc = (*curr)->GetLoc();
-                    if ( !loc.IsNull() ) {
-                        ++num_delta_seq;
-                    }
-                }
-                break;
+        case CDelta_seq::e_Loc: {
+            const CSeq_loc& loc = (*curr)->GetLoc();
+            if ( !loc.IsNull() ) {
+                ++num_delta_seq;
+            }
+        } break;
 
-            case CDelta_seq::e_Literal:
-                {
-                    const CSeq_literal& lit = (*curr)->GetLiteral();
-                    TSeqPos litlen = lit.GetLength(),
-                        nextlen = 0;
-                    if ( lit.IsSetSeq_data() ) {
-                        while (next != end  &&  x_GetLitLength(**next, nextlen)) {
-                            litlen += nextlen;
-                            ++next;
-                        }
-                        ++num_delta_seq;
-                    }
+        case CDelta_seq::e_Literal: {
+            const CSeq_literal& lit = (*curr)->GetLiteral();
+            TSeqPos litlen = lit.GetLength(),
+                nextlen = 0;
+            if ( lit.IsSetSeq_data() ) {
+                while (next != end  &&  x_GetLitLength(**next, nextlen)) {
+                    litlen += nextlen;
+                    ++next;
                 }
-                break;
+                ++num_delta_seq;
+            }
+        } break;
 
-            default:
-                break;
+        default:
+            break;
         }
         curr = next;
     }
@@ -656,9 +648,6 @@ bool CValidError_graph::x_GetLitLength(const CDelta_seq& delta, TSeqPos& len)
     }
     return false;
 }
-
-
-
 
 
 END_SCOPE(validator)

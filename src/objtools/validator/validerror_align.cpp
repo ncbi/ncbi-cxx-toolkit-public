@@ -183,16 +183,17 @@ typedef struct ambchar {
 } AmbCharData;
 
 static const AmbCharData ambiguity_list[] = {
- { 'R', "AG" },
- { 'Y', "CT" },
- { 'M', "AC" },
- { 'K', "GT" },
- { 'S', "CG" },
- { 'W', "AT" },
- { 'H', "ACT" },
- { 'B', "CGT" },
- { 'V', "ACG" },
- { 'D', "AGT" }};
+    { 'R', "AG" },
+    { 'Y', "CT" },
+    { 'M', "AC" },
+    { 'K', "GT" },
+    { 'S', "CG" },
+    { 'W', "AT" },
+    { 'H', "ACT" },
+    { 'B', "CGT" },
+    { 'V', "ACG" },
+    { 'D', "AGT" },
+};
 
 static const int num_ambiguities = sizeof (ambiguity_list) / sizeof (AmbCharData);
 
@@ -578,9 +579,9 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
 }
 
 
-void CValidError_align::x_ValidateDenseg
-(const TDenseg& denseg,
- const CSeq_align& align)
+void CValidError_align::x_ValidateDenseg(
+    const TDenseg& denseg,
+    const CSeq_align& align)
 {
     // assert dim >= 2
     x_ValidateDim(denseg, align);
@@ -637,13 +638,10 @@ void CValidError_align::x_ValidateDenseg
 }
 
 
-
-
-void CValidError_align::x_ValidatePacked
-(const TPacked& packed,
- const CSeq_align& align)
+void CValidError_align::x_ValidatePacked(
+    const TPacked& packed,
+    const CSeq_align& align)
 {
-
     // assert dim >= 2
     x_ValidateDim(packed, align);
 
@@ -675,9 +673,9 @@ void CValidError_align::x_ValidatePacked
 }
 
 
-void CValidError_align::x_ValidateDendiag
-(const TDendiag& dendiags,
- const CSeq_align& align)
+void CValidError_align::x_ValidateDendiag(
+    const TDendiag& dendiags,
+    const CSeq_align& align)
 {
     size_t num_dendiag = 0;
     ITERATE( TDendiag, dendiag_iter, dendiags ) {
@@ -740,9 +738,9 @@ void CValidError_align::x_ValidateDendiag
 }
 
 
-void CValidError_align::x_ValidateStd
-(const TStd& std_segs,
- const CSeq_align& align)
+void CValidError_align::x_ValidateStd(
+    const TStd& std_segs,
+    const CSeq_align& align)
 {
     size_t num_stdseg = 0;
     ITERATE( TStd, stdseg_iter, std_segs) {
@@ -795,10 +793,10 @@ void CValidError_align::x_ValidateStd
 
 
 template <typename T>
-bool CValidError_align::x_ValidateDim
-(T& obj,
- const CSeq_align& align,
- size_t part)
+bool CValidError_align::x_ValidateDim(
+    T& obj,
+    const CSeq_align& align,
+    size_t part)
 {
     bool rval = false;
 
@@ -845,9 +843,9 @@ bool CValidError_align::x_ValidateDim
 //  or partial type.
 //===========================================================================
 
-void CValidError_align::x_ValidateStrand
-(const TDenseg& denseg,
- const CSeq_align& align)
+void CValidError_align::x_ValidateStrand(
+    const TDenseg& denseg,
+    const CSeq_align& align)
 {
     if ( !denseg.IsSetStrands() ) {
         return;
@@ -900,9 +898,9 @@ void CValidError_align::x_ValidateStrand
 }
 
 
-void CValidError_align::x_ValidateStrand
-(const TStd& std_segs,
- const CSeq_align& align)
+void CValidError_align::x_ValidateStrand(
+    const TStd& std_segs,
+    const CSeq_align& align)
 {
     map< string, ENa_strand > strands;
     map< string, bool> reported;
@@ -987,9 +985,9 @@ static size_t s_PercentBioseqMatch (CBioseq_Handle b1, CBioseq_Handle b2)
 //  Alignment is FASTA-like if all gaps are at the end with dimensions > 2.
 //===========================================================================
 
-void CValidError_align::x_ValidateFastaLike
-(const TDenseg& denseg,
- const CSeq_align& align)
+void CValidError_align::x_ValidateFastaLike(
+    const TDenseg& denseg,
+    const CSeq_align& align)
 {
     // check only global or partial type
     if ( (align.GetType() != CSeq_align::eType_global  &&
@@ -1028,6 +1026,7 @@ void CValidError_align::x_ValidateFastaLike
 
     if ( !fasta_like.empty() ) {
         CDense_seg::TIds::const_iterator id_it = denseg.GetIds().begin();
+
         string context = (*id_it)->GetSeqIdString();
         CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(**id_it);
         bool is_fasta_like = false;
@@ -1107,9 +1106,9 @@ void CValidError_align::x_ReportSegmentGaps(const TSegmentGapV& seggaps, const C
 // Check if there is a gap for all sequences in a segment.
 //===========================================================================
 
-void CValidError_align::x_ValidateSegmentGap
-(const TDenseg& denseg,
- const CSeq_align& align)
+void CValidError_align::x_ValidateSegmentGap(
+    const TDenseg& denseg,
+    const CSeq_align& align)
 {
     TSegmentGapV seggaps = FindSegmentGaps(denseg, m_Scope);
     x_ReportSegmentGaps(seggaps, align);
@@ -1234,9 +1233,9 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendia
 }
 
 
-void CValidError_align::x_ValidateSegmentGap
-(const TDendiag& dendiags,
- const CSeq_align& align)
+void CValidError_align::x_ValidateSegmentGap(
+    const TDendiag& dendiags,
+    const CSeq_align& align)
 {
     TSegmentGapV seggaps = FindSegmentGaps(dendiags, m_Scope);
     x_ReportSegmentGaps(seggaps, align);
@@ -1294,9 +1293,9 @@ void CValidError_align::x_ValidateSeqId(const CSeq_align& align)
 }
 
 
-void CValidError_align::x_GetIds
-(const CSeq_align& align,
- vector< CRef< CSeq_id > >& ids)
+void CValidError_align::x_GetIds(
+    const CSeq_align& align,
+    vector<CRef<CSeq_id>>& ids)
 {
     ids.clear();
 
@@ -1347,28 +1346,28 @@ string s_DescribeSegment(const CSeq_id& id, const CSeq_id& id_context, size_t se
 }
 
 
-void CValidError_align::x_ReportAlignErr
-(const CSeq_align& align,
-const CSeq_id& id,
-const CSeq_id& id_context,
-size_t segment,
-size_t pos,
-EErrType et,
-EDiagSev sev,
-const string& prefix,
-const string& message)
+void CValidError_align::x_ReportAlignErr(
+    const CSeq_align& align,
+    const CSeq_id& id,
+    const CSeq_id& id_context,
+    size_t segment,
+    size_t pos,
+    EErrType et,
+    EDiagSev sev,
+    const string& prefix,
+    const string& message)
 {
     PostErr(sev, et, prefix + ": In " + s_DescribeSegment(id, id_context, segment, pos) + ", " + message, align);
 }
 
 static const string kAlignmentTooLong = "the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment";
 
-void CValidError_align::x_ReportSumLenStart
-(const CSeq_align& align,
- const CSeq_id& id,
- const CSeq_id& id_context,
- size_t segment,
- size_t pos)
+void CValidError_align::x_ReportSumLenStart(
+    const CSeq_align& align,
+    const CSeq_id& id,
+    const CSeq_id& id_context,
+    size_t segment,
+    size_t pos)
 {
     x_ReportAlignErr(align, id, id_context, segment, pos,
         eErr_SEQ_ALIGN_SumLenStart, eDiag_Error,
@@ -1376,12 +1375,12 @@ void CValidError_align::x_ReportSumLenStart
 }
 
 
-void CValidError_align::x_ReportStartMoreThanBiolen
-(const CSeq_align& align,
-const CSeq_id& id,
-const CSeq_id& id_context,
-size_t segment,
-size_t pos)
+void CValidError_align::x_ReportStartMoreThanBiolen(
+    const CSeq_align& align,
+    const CSeq_id& id,
+    const CSeq_id& id_context,
+    size_t segment,
+    size_t pos)
 {
     x_ReportAlignErr(align, id, id_context, segment, pos,
         eErr_SEQ_ALIGN_StartMorethanBiolen, eDiag_Error,
@@ -1398,10 +1397,10 @@ size_t pos)
 
 // Make sure that, in Dense_diag alignment, segment length is not greater
 // than Bioseq length
-void CValidError_align::x_ValidateSeqLength
-(const CDense_diag& dendiag,
- size_t dendiag_num,
- const CSeq_align& align)
+void CValidError_align::x_ValidateSeqLength(
+    const CDense_diag& dendiag,
+    size_t dendiag_num,
+    const CSeq_align& align)
 {
     size_t dim = dendiag.GetDim();
     TSeqPos len = dendiag.GetLen();
@@ -1431,15 +1430,17 @@ void CValidError_align::x_ValidateSeqLength
 }
 
 
-void CValidError_align::x_ValidateSeqLength
-(const TDenseg& denseg,
- const CSeq_align& align)
+void CValidError_align::x_ValidateSeqLength(
+    const TDenseg& denseg,
+    const CSeq_align& align)
 {
     int dim     = denseg.GetDim();
     size_t numseg  = denseg.GetNumseg();
+
     const CDense_seg::TIds& ids       = denseg.GetIds();
     const CDense_seg::TStarts& starts = denseg.GetStarts();
     const CDense_seg::TLens& lens      = denseg.GetLens();
+
     bool minus = false;
     const CSeq_id& id_context = *ids[0];
 
@@ -1497,9 +1498,9 @@ void CValidError_align::x_ValidateSeqLength
 }
 
 
-void CValidError_align::x_ValidateSeqLength
-(const TPacked& packed,
- const CSeq_align& align)
+void CValidError_align::x_ValidateSeqLength(
+    const TPacked& packed,
+    const CSeq_align& align)
 {
     static Uchar bits[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 
@@ -1537,9 +1538,9 @@ void CValidError_align::x_ValidateSeqLength
 }
 
 
-void CValidError_align::x_ValidateSeqLength
-(const TStd& std_segs,
- const CSeq_align& align)
+void CValidError_align::x_ValidateSeqLength(
+    const TStd& std_segs,
+    const CSeq_align& align)
 {
     unsigned seg = 1;
     ITERATE( TStd, iter, std_segs ) {

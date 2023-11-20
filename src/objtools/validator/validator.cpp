@@ -97,10 +97,10 @@ taxupdate_func_t CValidator::MakeTaxUpdateFunction(shared_ptr<ITaxon3> taxon)
         };
 }
 
-CRef<CValidError> CValidator::Validate
-(const CSeq_entry& se,
- CScope* scope,
- Uint4 options)
+CRef<CValidError> CValidator::Validate(
+    const CSeq_entry& se,
+    CScope* scope,
+    Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&se));
     CValidErrorFormat::SetSuppressionRules(se, *errors);
@@ -119,9 +119,9 @@ CRef<CValidError> CValidator::Validate
 
 //LCOV_EXCL_START
 // not used by asnvalidate, used by external programs
-CRef<CValidError> CValidator::Validate
-(const CSeq_entry_Handle& seh,
- Uint4 options)
+CRef<CValidError> CValidator::Validate(
+    const CSeq_entry_Handle& seh,
+    Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
     CValidErrorFormat::SetSuppressionRules(seh, *errors);
@@ -218,10 +218,10 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBio
 //LCOV_EXCL_STOP
 
 
-CRef<CValidError> CValidator::Validate
-(const CSeq_submit& ss,
- CScope* scope,
- Uint4 options)
+CRef<CValidError> CValidator::Validate(
+    const CSeq_submit& ss,
+    CScope* scope,
+    Uint4 options)
 {
     options |= CValidator::eVal_seqsubmit_parent;
     CRef<CValidError> errors(new CValidError(&ss));
@@ -235,9 +235,9 @@ CRef<CValidError> CValidator::Validate
 }
 
 
-CConstRef<CValidError> CValidator::Validate
-(const CSeq_annot_Handle& sah,
- Uint4 options)
+CConstRef<CValidError> CValidator::Validate(
+    const CSeq_annot_Handle& sah,
+    Uint4 options)
 {
     auto errors = Ref(new CValidError(&*(sah.GetCompleteSeq_annot())));
     Validate(sah, options, *errors);
@@ -245,19 +245,20 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
-void CValidator::Validate(const CSeq_annot_Handle& sah,
- Uint4 options,
- CValidError& errors)
+void CValidator::Validate(
+    const CSeq_annot_Handle& sah,
+    Uint4 options,
+    CValidError& errors)
 {
     CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
     imp.Validate(sah);
 }
 
 
-CConstRef<CValidError> CValidator::Validate
-(const CSeq_feat& feat,
- CScope *scope,
- Uint4 options)
+CConstRef<CValidError> CValidator::Validate(
+    const CSeq_feat& feat,
+    CScope* scope,
+    Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&feat));
     CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
@@ -266,10 +267,10 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
-CConstRef<CValidError> CValidator::Validate
-(const CBioSource& src,
- CScope *scope,
- Uint4 options)
+CConstRef<CValidError> CValidator::Validate(
+    const CBioSource& src,
+    CScope* scope,
+    Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&src));
     CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
@@ -277,10 +278,10 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
-CConstRef<CValidError> CValidator::Validate
-(const CPubdesc& pubdesc,
- CScope *scope,
- Uint4 options)
+CConstRef<CValidError> CValidator::Validate(
+    const CPubdesc& pubdesc,
+    CScope* scope,
+    Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&pubdesc));
     CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
@@ -288,10 +289,10 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
-CConstRef<CValidError> CValidator::Validate
-(const CSeqdesc& desc,
- const CSeq_entry& ctx,
- Uint4 options)
+CConstRef<CValidError> CValidator::Validate(
+    const CSeqdesc& desc,
+    const CSeq_entry& ctx,
+    Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&desc));
     CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
@@ -301,7 +302,7 @@ CConstRef<CValidError> CValidator::Validate
 
 
 bool CValidator::IsValidStructuredComment(
-        const CSeqdesc& desc) const
+    const CSeqdesc& desc) const
 {
     if (!desc.IsUser()) {
         return false;
@@ -426,12 +427,12 @@ string CValidator::BadCharsInAuthor(const CAuthor& author, bool& last_is_bad)
 
 typedef bool(*CompareConsecutiveIntervalProc) (const CSeq_interval& int1, const CSeq_interval& int2, CScope *scope);
 
-bool x_CompareConsecutiveIntervals
-(const CPacked_seqint& packed_int,
-CConstRef<CSeq_interval>& int_cur,
-CConstRef<CSeq_interval>& int_prv,
-CScope* scope,
-CompareConsecutiveIntervalProc compar)
+bool x_CompareConsecutiveIntervals(
+    const CPacked_seqint& packed_int,
+    CConstRef<CSeq_interval>& int_cur,
+    CConstRef<CSeq_interval>& int_prv,
+    CScope* scope,
+    CompareConsecutiveIntervalProc compar)
 {
     bool ok = true;
     ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
@@ -456,46 +457,40 @@ bool CheckConsecutiveIntervals(const CSeq_loc& loc, CScope& scope, CompareConsec
     for (; lit && ok; ++lit) {
         CSeq_loc::E_Choice loc_choice = lit->Which();
         switch (loc_choice) {
-        case CSeq_loc::e_Int:
-            {{
+        case CSeq_loc::e_Int: {
             int_cur = &lit->GetInt();
             if (int_prv) {
                 ok = compar(*int_cur, *int_prv, &scope);
             }
             int_prv = int_cur;
-            }}
-            break;
+        } break;
         case CSeq_loc::e_Pnt:
             int_prv = nullptr;
             break;
         case CSeq_loc::e_Packed_pnt:
             int_prv = nullptr;
             break;
-        case CSeq_loc::e_Packed_int:
-        {{
+        case CSeq_loc::e_Packed_int: {
             CConstRef<CSeq_interval> this_int_cur(int_cur);
             CConstRef<CSeq_interval> this_int_prv(int_prv);
             ok = x_CompareConsecutiveIntervals
                 (lit->GetPacked_int(), this_int_cur, this_int_prv, &scope, compar);
-        }}
-            break;
+        } break;
         case CSeq_loc::e_Null:
             break;
         default:
             int_prv = nullptr;
             break;
         }
-
     }
     return ok;
 }
 
 
-
-bool x_IsCorrectlyOrdered
-(const CSeq_interval& int_cur,
- const CSeq_interval& int_prv,
- CScope* scope)
+bool x_IsCorrectlyOrdered(
+    const CSeq_interval& int_cur,
+    const CSeq_interval& int_prv,
+    CScope* scope)
 {
     ENa_strand strand_cur = int_cur.IsSetStrand() ?
         int_cur.GetStrand() : eNa_strand_unknown;
@@ -537,10 +532,10 @@ bool CValidator::IsSeqLocCorrectlyOrdered(const CSeq_loc& loc, CScope& scope)
 }
 
 
-bool x_IsNotAdjacent
-(const CSeq_interval& int_cur,
-const CSeq_interval& int_prv,
-CScope* scope)
+bool x_IsNotAdjacent(
+    const CSeq_interval& int_cur,
+    const CSeq_interval& int_prv,
+    CScope* scope)
 {
     ENa_strand strand_cur = int_cur.IsSetStrand() ?
         int_cur.GetStrand() : eNa_strand_unknown;
