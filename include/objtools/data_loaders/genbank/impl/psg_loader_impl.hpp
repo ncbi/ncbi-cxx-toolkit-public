@@ -121,6 +121,10 @@ public:
     typedef CDataLoader::TTaxIds TTaxIds;
     typedef CDataLoader::TSequenceLengths TSequenceLengths;
     typedef CDataLoader::TSequenceTypes TSequenceTypes;
+    typedef CDataLoader::TLabels TLabels;
+    typedef CDataLoader::TSequenceStates TSequenceStates;
+    typedef CDataLoader::TSequenceHashes TSequenceHashes;
+    typedef CDataLoader::THashKnown THashKnown;
     typedef CDataLoader::TLoaded TLoaded;
     typedef CDataLoader::TTSE_LockSets TTSE_LockSets;
 
@@ -192,10 +196,12 @@ public:
     void GetSequenceLengthsOnce(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret);
     void GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret);
     void GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret);
+    void GetSequenceStates(CDataSource* data_source, const TIds& ids, TLoaded& loaded, TSequenceStates& ret);
+    void GetSequenceStatesOnce(CDataSource* data_source, const TIds& ids, TLoaded& loaded, TSequenceStates& ret);
+    void GetSequenceHashes(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known);
+    void GetSequenceHashesOnce(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known);
 
     static CObjectIStream* GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
-
-    typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
 
     struct SReplyResult {
         CTSE_Lock lock;
@@ -243,11 +249,19 @@ private:
         ESplitInfoType split_info_type);
     void x_SetLoaded(CTSE_LoadLock& load_lock, EMainChunkType main_chunk_type);
 
+    typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
+    typedef vector<TBioseqAndBlobInfo> TBioseqAndBlobInfos;
+
     // returns pair(number of loaded infos, number of failed infos)
-    pair<size_t, size_t> x_GetBulkBioseqInfo(CPSG_Request_Resolve::EIncludeInfo info,
+    pair<size_t, size_t> x_GetBulkBioseqInfo(
         const TIds& ids,
         const TLoaded& loaded,
         TBioseqInfos& ret);
+    pair<size_t, size_t> x_GetBulkBioseqAndBlobInfo(
+        CDataSource* data_source,
+        const TIds& ids,
+        const TLoaded& loaded,
+        TBioseqAndBlobInfos& ret);
 
     shared_ptr<CPSG_Request_Blob>
     x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,

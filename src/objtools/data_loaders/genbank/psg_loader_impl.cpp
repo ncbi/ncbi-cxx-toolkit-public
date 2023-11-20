@@ -3361,7 +3361,7 @@ void CPSGDataLoader_Impl::GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds&
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fCanonicalId, ids, loaded, infos);
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
     if ( counts.first ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
@@ -3393,7 +3393,7 @@ void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fGi, ids, loaded, infos);
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
     if ( counts.first ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
@@ -3422,7 +3422,7 @@ void CPSGDataLoader_Impl::GetSequenceLengthsOnce(const TIds& ids, TLoaded& loade
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fLength, ids, loaded, infos);
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
     if ( counts.first ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
@@ -3452,7 +3452,7 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(CPSG_Request_Resolve::fMoleculeType, ids, loaded, infos);
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
     if ( counts.first ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
@@ -3464,6 +3464,72 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
     if ( counts.second ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "failed to load "<<counts.second<<" sequence types in bulk request");
+    }
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceStates(CDataSource* data_source, const TIds& ids, TLoaded& loaded, TSequenceStates& ret)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceStatesOnce, this,
+                       data_source, cref(ids), ref(loaded), ref(ret)),
+                  "GetSequenceStates",
+                  m_BulkRetryCount);
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceStatesOnce(CDataSource* data_source, const TIds& ids, TLoaded& loaded, TSequenceStates& ret)
+{
+    TBioseqAndBlobInfos infos;
+    infos.resize(ret.size());
+    auto counts = x_GetBulkBioseqAndBlobInfo(data_source, ids, loaded, infos);
+    if ( counts.first ) {
+        // have loaded infos
+        for (size_t i = 0; i < infos.size(); ++i) {
+            if (loaded[i] || (!infos[i].first.get() || !infos[i].second.get())) continue;
+            auto bioseq_info = infos[i].first;
+            auto blob_info = infos[i].second;
+            ret[i] = bioseq_info->GetBioseqStateFlags();
+            ret[i] |= blob_info->blob_state_flags;
+            if (!(bioseq_info->GetBioseqStateFlags() & CBioseq_Handle::fState_dead) &&
+                !(bioseq_info->GetChainStateFlags() & CBioseq_Handle::fState_dead)) {
+                ret[i] &= ~CBioseq_Handle::fState_dead;
+            }
+            loaded[i] = true;
+        }
+    }
+    if ( counts.second ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" sequence states in bulk request");
+    }
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceHashes(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceHashesOnce, this,
+                       cref(ids), ref(loaded), ref(ret), ref(known)),
+                  "GetSequenceHashes",
+                  m_BulkRetryCount);
+}
+
+
+void CPSGDataLoader_Impl::GetSequenceHashesOnce(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( counts.first ) {
+        // have loaded infos
+        for (size_t i = 0; i < infos.size(); ++i) {
+            if (loaded[i] || !infos[i].get()) continue;
+            ret[i] = infos[i]->hash;
+            known[i] = infos[i]->hash != 0;
+            loaded[i] = true;
+        }
+    }
+    if ( counts.second ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" sequence hashes in bulk request");
     }
 }
 
@@ -4019,7 +4085,6 @@ CObjectIStream* CPSGDataLoader_Impl::GetBlobDataStream(
 
 
 pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
-    CPSG_Request_Resolve::EIncludeInfo info,
     const TIds& ids,
     const TLoaded& loaded,
     TBioseqInfos& ret)
@@ -4041,7 +4106,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         }
         CPSG_BioId bio_id(ids[i]);
         shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
-        request->IncludeInfo(info|CPSG_Request_Resolve::fAllInfo);
+        request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
         auto reply = x_SendRequest(request);
         CRef<CPSG_BioseqInfo_Task> task(new CPSG_BioseqInfo_Task(reply, group));
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
@@ -4065,6 +4130,104 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         }
         _ASSERT(task->m_BioseqInfo);
         ret[it->second] = m_BioseqCache->Add(*task->m_BioseqInfo, ids[it->second]);
+        counts.first += 1;
+    }
+    return counts;
+}
+
+
+pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(
+    CDataSource* data_source,
+    const TIds& ids,
+    const TLoaded& loaded,
+    TBioseqAndBlobInfos& ret)
+{
+    pair<size_t, size_t> counts(0, 0);
+    CPSG_TaskGroup group(*m_ThreadPool);
+    typedef  map<CRef<CPSG_Task>, size_t> TTasks;
+    TTasks tasks;
+    vector<bool> errors(ids.size());
+    list<shared_ptr<CPSG_Task_Guard>> guards;
+
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (loaded[i]) continue;
+        if (CannotProcess(ids[i])) continue;
+        CPSG_BioId bio_id(ids[i]);
+        shared_ptr<SPsgBioseqInfo> bioseq_info = m_BioseqCache->Get(ids[i]);
+        shared_ptr<SPsgBlobInfo> blob_info;
+        if (bioseq_info && !bioseq_info->blob_id.empty()) {
+            ret[i].first = bioseq_info;
+            blob_info = m_BlobMap->Find(bioseq_info->blob_id);
+            if (blob_info) {
+                ret[i].second = blob_info;
+                counts.first += 1;
+                continue;
+            }
+        }
+        else {
+            auto bioseq_request = make_shared<CPSG_Request_Resolve>(bio_id);
+            bioseq_request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
+            auto bioseq_reply = x_SendRequest(bioseq_request);
+            CRef<CPSG_BioseqInfo_Task> bioseq_task(new CPSG_BioseqInfo_Task(bioseq_reply, group));
+            CPSG_Task_Guard bioseq_guard(*bioseq_task);
+            tasks[bioseq_task] = i;
+            group.AddTask(bioseq_task);
+        }
+        auto blob_request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
+        blob_request->IncludeData(CPSG_Request_Biodata::eNoTSE);
+        auto blob_reply = x_SendRequest(blob_request);
+        CRef<CPSG_Blob_Task> blob_task(new CPSG_Blob_Task(blob_reply, group, ids[i], data_source, *this));
+        CPSG_Task_Guard blob_guard(*blob_task);
+        tasks[blob_task] = i;
+        group.AddTask(blob_task);
+    }
+    while (group.HasTasks()) {
+        CRef<CPSG_Task> task = group.GetTask<CPSG_Task>();
+        _ASSERT(task);
+        TTasks::iterator it = tasks.find(task);
+        _ASSERT(it != tasks.end());
+        size_t i = it->second;
+
+        CRef<CPSG_BioseqInfo_Task> bioseq_task = Ref(dynamic_cast<CPSG_BioseqInfo_Task*>(task.GetNCPointerOrNull()));
+        if (bioseq_task) {
+            _ASSERT(!ret[i].first);
+            if (bioseq_task->GetStatus() == CThreadPool_Task::eFailed) {
+                _TRACE("Failed to load bioseq info for " << ids[i].AsString());
+                errors[i] = true;
+                continue;
+            }
+            if (!bioseq_task->m_BioseqInfo) {
+                _TRACE("No bioseq info for " << ids[i].AsString());
+                // not loaded and no failure
+                continue;
+            }
+            ret[i].first = m_BioseqCache->Add(*bioseq_task->m_BioseqInfo, ids[i]);
+        }
+        else {
+            CRef<CPSG_Blob_Task> blob_task = Ref(dynamic_cast<CPSG_Blob_Task*>(task.GetNCPointerOrNull()));
+            _ASSERT(blob_task);
+            _ASSERT(!ret[i].second);
+            if (blob_task->GetStatus() == CThreadPool_Task::eFailed) {
+                _TRACE("Failed to load blob info for " << ids[i].AsString());
+                errors[i] = true;
+                continue;
+            }
+            if (blob_task->m_Skipped) {
+                ret[i].second = blob_task->WaitForSkipped().blob_info;
+            }
+        }
+    }
+
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (errors[i]) {
+            counts.second += 1;
+            continue;
+        }
+        if (!ret[i].first) continue;
+        if (!ret[i].second) {
+            ret[i].second = x_GetBlobInfo(data_source, ret[i].first->blob_id);
+            if (!ret[i].second) continue;
+        }
         counts.first += 1;
     }
     return counts;
