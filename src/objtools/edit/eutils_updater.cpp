@@ -514,6 +514,11 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
     req->Read(&content);
     try {
         CNcbiIstrstream(content) >> MSerial_Xml >> pas;
+    } catch (const CSerialException&) {
+        if (perr) {
+            *perr = EPubmedError::operational_error;
+        }
+        return {};
     } catch (...) {
         if (perr) {
             *perr = EPubmedError::citation_not_found;
