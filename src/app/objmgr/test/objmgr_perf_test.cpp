@@ -195,7 +195,7 @@ void CPerfTestApp::Init(void)
 
     arg_desc->AddOptionalKey("bulk", "what", "test bulk retrieval", CArgDescriptions::eString);
     arg_desc->SetConstraint("bulk", &(*new CArgAllow_Strings,
-        "gi", "acc", "data", "bioseq", "cdd"));
+        "gi", "acc", "info", "data", "bioseq", "cdd"));
 
     arg_desc->AddOptionalKey("stat", "StatFile",
         "File with performace test outputs",
@@ -380,6 +380,48 @@ int CPerfTestApp::Run(void)
         }
         if ((m_PrintInfo || m_PrintData) && bad_count) {
             ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        }
+    }
+    else if (m_Bulk == "info") {
+        CScope::TIds bulk_ids;
+        bulk_ids.insert(bulk_ids.end(), m_Ids.begin(), m_Ids.end());
+        auto labels = m_Scope->GetLabels(bulk_ids);
+        auto taxids = m_Scope->GetTaxIds(bulk_ids);
+        auto lengths = m_Scope->GetSequenceLengths(bulk_ids);
+        auto types = m_Scope->GetSequenceTypes(bulk_ids);
+        auto states = m_Scope->GetSequenceStates(bulk_ids);
+        auto hashes = m_Scope->GetSequenceHashes(bulk_ids);
+        size_t bad_labels = 0, bad_taxids = 0, bad_lengths = 0, bad_types = 0, bad_states = 0, bad_hashes = 0;
+        for (size_t i = 0; i < bulk_ids.size(); ++i) {
+            if (labels[i].empty()) ++bad_labels; // label may be calculated even if the bioseq fails to load
+            if (taxids[i] == -1) ++bad_taxids;
+            if (lengths[i] == kInvalidSeqPos) ++bad_lengths;
+            if (types[i] == CSeq_inst::eMol_not_set) ++bad_types;
+            if (states[i] == (CBioseq_Handle::fState_not_found | CBioseq_Handle::fState_no_data)) ++bad_states;
+            if (!hashes[i]) ++bad_hashes; // an actual hash can be zero as well, so false errors can be reported.
+            if (m_PrintData) {
+                cout << bulk_ids[i].AsString() << ": "
+                    << labels[i] << ", "
+                    << taxids[i] << ", "
+                    << lengths[i] << ", "
+                    << types[i] << ", "
+                    << states[i] << ", "
+                    << hashes[i] << endl;
+            }
+        }
+        if ((m_PrintInfo || m_PrintData)) {
+            if (bad_labels)
+                ERR_POST(Warning << "Failed to load " << bad_labels << " labels");
+            if (bad_taxids)
+                ERR_POST(Warning << "Failed to load " << bad_taxids << " tax-ids");
+            if (bad_lengths)
+                ERR_POST(Warning << "Failed to load " << bad_lengths << " lengths");
+            if (bad_types)
+                ERR_POST(Warning << "Failed to load " << bad_types << " types");
+            if (bad_states)
+                ERR_POST(Warning << "Failed to load " << bad_states << " states");
+            if (bad_hashes)
+                ERR_POST(Warning << "Failed to load " << bad_hashes << " hashes");
         }
     }
     else if (m_Bulk == "bioseq") {

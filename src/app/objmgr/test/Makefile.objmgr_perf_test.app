@@ -227,4 +227,17 @@ CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -loader gb -pubseqos -no_spl
 CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -loader psg -bulk bioseq
 CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -loader psg -no_split -bulk bioseq
 
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -bulk info -loader psg
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -bulk info -loader gb
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -bulk info -loader gb -pubseqos
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids2_gi -bulk info -loader psg
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids2_gi -bulk info -loader gb
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids2_gi -bulk info -loader gb -pubseqos
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -bulk info -loader psg -no_split
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -bulk info -loader gb -no_split
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids1_gi -bulk info -loader gb -pubseqos -no_split
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids2_gi -bulk info -loader psg -no_split
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids2_gi -bulk info -loader gb -no_split
+CHECK_CMD = objmgr_perf_test -ids data/perf_ids2_gi -bulk info -loader gb -pubseqos -no_split
+
 WATCHERS = grichenk vasilche
