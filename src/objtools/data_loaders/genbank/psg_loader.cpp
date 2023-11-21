@@ -172,10 +172,7 @@ CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    CGBLoaderParams params;
-    TMaker maker(params);
-    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
+    return RegisterInObjectManager(om, CGBLoaderParams(), is_default, priority);
 }
 
 
@@ -185,9 +182,9 @@ CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    TMaker maker(params);
+    CGBLoaderMaker<CPSGDataLoader> maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
+    return maker.GetRegisterInfo();
 }
 
 
@@ -524,14 +521,6 @@ CPSGDataLoader::x_GetRealBlobId(const TBlobId& blob_id) const
     const CBlob_id* gb_blob_id = dynamic_cast<const CBlob_id*>(&*blob_id);
     if (gb_blob_id) return *gb_blob_id;
     return CBlob_id();
-}
-
-
-CGBDataLoader::TRegisterLoaderInfo CPSGDataLoader::ConvertRegInfo(const TMaker::TRegisterInfo& info)
-{
-    TRegisterLoaderInfo ret;
-    ret.Set(info.GetLoader(), info.IsCreated());
-    return ret;
 }
 
 
