@@ -210,8 +210,7 @@ void CValidError_bioseq::x_SetupCommonFlags (CBioseq_Handle bsh)
 }
 
 
-void CValidError_bioseq::ValidateBioseq (
-    const CBioseq& seq)
+void CValidError_bioseq::ValidateBioseq(const CBioseq& seq)
 {
     m_splicing_not_expected = false;
     m_report_missing_chromosome = true;
@@ -381,238 +380,238 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
     const CTextseq_id* tsid = id.GetTextseq_Id();
 
     switch (id.Which()) {
-        case CSeq_id::e_Tpg:
-        case CSeq_id::e_Tpe:
-        case CSeq_id::e_Tpd:
-            if ( IsHistAssemblyMissing(ctx)  &&  ctx.IsNa() ) {
-                PostErr(eDiag_Info, eErr_SEQ_INST_HistAssemblyMissing,
-                    "TPA record " + ctx.GetId().front()->AsFastaString() +
-                    " should have Seq-hist.assembly for PRIMARY block",
-                    ctx);
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+        if ( IsHistAssemblyMissing(ctx)  &&  ctx.IsNa() ) {
+            PostErr(eDiag_Info, eErr_SEQ_INST_HistAssemblyMissing,
+                "TPA record " + ctx.GetId().front()->AsFastaString() +
+                " should have Seq-hist.assembly for PRIMARY block",
+                ctx);
+        }
+    // Fall thru
+    NCBI_FALLTHROUGH;
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Ddbj:
+        if ( tsid  &&  tsid->IsSetAccession() ) {
+            const string& acc = tsid->GetAccession();
+            const char badch = CheckForBadSeqIdChars (acc);
+            if (badch != '\0') {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
+                        "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
             }
-        // Fall thru
-        NCBI_FALLTHROUGH;
-        case CSeq_id::e_Genbank:
-        case CSeq_id::e_Embl:
-        case CSeq_id::e_Ddbj:
-            if ( tsid  &&  tsid->IsSetAccession() ) {
+            CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(acc);
+            if (info == CSeq_id::eAcc_unknown ||
+                (ctx.IsNa() && (info & CSeq_id::fAcc_prot)) ||
+                (ctx.IsAa() && (info & CSeq_id::fAcc_nuc))) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                    "Bad accession " + acc, ctx);
+            }
+            // Check for secondary conflicts
+            ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Genbank);
+            ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Embl);
+        }
+    // Fall thru
+    NCBI_FALLTHROUGH;
+    case CSeq_id::e_Other:
+        if ( tsid ) {
+            if ( tsid->IsSetName() ) {
+                const string& name = tsid->GetName();
+                ITERATE (string, s, name) {
+                    if (isspace((unsigned char)(*s))) {
+                        PostErr(eDiag_Critical,
+                            eErr_SEQ_INST_SeqIdNameHasSpace,
+                            "Seq-id.name '" + name + "' should be a single "
+                            "word without any spaces", ctx);
+                        break;
+                    }
+                }
+            }
+
+            if ( tsid->IsSetAccession()  &&  id.IsOther() ) {
                 const string& acc = tsid->GetAccession();
                 const char badch = CheckForBadSeqIdChars (acc);
                 if (badch != '\0') {
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
-                           "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                            "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
                 }
-                CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(acc);
-                if (info == CSeq_id::eAcc_unknown ||
-                    (ctx.IsNa() && (info & CSeq_id::fAcc_prot)) ||
-                    (ctx.IsAa() && (info & CSeq_id::fAcc_nuc))) {
+                size_t num_letters = 0;
+                size_t num_digits = 0;
+                size_t num_underscores = 0;
+                bool bad_id_chars = false;
+                bool is_NZ = (NStr::CompareNocase(acc, 0, 3, "NZ_") == 0);
+                size_t i = 0;
+                bool letter_after_digit = false;
+
+                if ( is_NZ ) {
+                    i = 3;
+                }
+
+                for ( ; i < acc.length(); ++i ) {
+                    if ( isupper((unsigned char) acc[i]) ) {
+                        num_letters++;
+                    } else if ( isdigit((unsigned char) acc[i]) ) {
+                        num_digits++;
+                    } else if ( acc[i] == '_' ) {
+                        num_underscores++;
+                        if ( num_digits > 0  ||  num_underscores > 1 ) {
+                            letter_after_digit = true;
+                        }
+                    } else {
+                        bad_id_chars = true;
+                    }
+                }
+
+                if ( letter_after_digit  ||  bad_id_chars ) {
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                        "Bad accession " + acc, ctx);
+                } else if ( is_NZ  &&  ( num_letters == 4 || num_letters == 6 )  &&
+                    ( num_digits >= 8 && num_digits <= 11 )  &&  num_underscores == 0 ) {
+                    // valid accession - do nothing!
+                } else if ( is_NZ  &&  ValidateAccessionString (acc, false) == eAccessionFormat_valid ) {
+                    // valid accession - do nothing!
+                } else if ( num_letters == 2  &&
+                    (num_digits == 6  ||  num_digits == 8  || num_digits == 9)  &&
+                    num_underscores == 1 ) {
+                    // valid accession - do nothing!
+                } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
+                } else {
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, ctx);
                 }
-                // Check for secondary conflicts
-                ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Genbank);
-                ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Embl);
             }
-        // Fall thru
-        NCBI_FALLTHROUGH;
-        case CSeq_id::e_Other:
-            if ( tsid ) {
-                if ( tsid->IsSetName() ) {
-                    const string& name = tsid->GetName();
-                    ITERATE (string, s, name) {
-                        if (isspace((unsigned char)(*s))) {
-                            PostErr(eDiag_Critical,
-                                eErr_SEQ_INST_SeqIdNameHasSpace,
-                                "Seq-id.name '" + name + "' should be a single "
-                                "word without any spaces", ctx);
-                            break;
-                        }
-                    }
-                }
-
-                if ( tsid->IsSetAccession()  &&  id.IsOther() ) {
-                    const string& acc = tsid->GetAccession();
-                    const char badch = CheckForBadSeqIdChars (acc);
-                    if (badch != '\0') {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
-                                "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
-                    }
-                    size_t num_letters = 0;
-                    size_t num_digits = 0;
-                    size_t num_underscores = 0;
-                    bool bad_id_chars = false;
-                    bool is_NZ = (NStr::CompareNocase(acc, 0, 3, "NZ_") == 0);
-                    size_t i = 0;
-                    bool letter_after_digit = false;
-
-                    if ( is_NZ ) {
-                        i = 3;
-                    }
-
-                    for ( ; i < acc.length(); ++i ) {
-                        if ( isupper((unsigned char) acc[i]) ) {
-                            num_letters++;
-                        } else if ( isdigit((unsigned char) acc[i]) ) {
-                            num_digits++;
-                        } else if ( acc[i] == '_' ) {
-                            num_underscores++;
-                            if ( num_digits > 0  ||  num_underscores > 1 ) {
-                                letter_after_digit = true;
-                            }
-                        } else {
-                            bad_id_chars = true;
-                        }
-                    }
-
-                    if ( letter_after_digit  ||  bad_id_chars ) {
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Bad accession " + acc, ctx);
-                    } else if ( is_NZ  &&  ( num_letters == 4 || num_letters == 6 )  &&
-                        ( num_digits >= 8 && num_digits <= 11 )  &&  num_underscores == 0 ) {
-                        // valid accession - do nothing!
-                    } else if ( is_NZ  &&  ValidateAccessionString (acc, false) == eAccessionFormat_valid ) {
-                        // valid accession - do nothing!
-                    } else if ( num_letters == 2  &&
-                        (num_digits == 6  ||  num_digits == 8  || num_digits == 9)  &&
-                        num_underscores == 1 ) {
-                        // valid accession - do nothing!
-                    } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
-                    } else {
-                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Bad accession " + acc, ctx);
+        }
+    // Fall thru
+    NCBI_FALLTHROUGH;
+    case CSeq_id::e_Pir:
+    case CSeq_id::e_Swissprot:
+    case CSeq_id::e_Prf:
+        if ( tsid ) {
+            if ( ctx.IsNa()  &&
+                    (!tsid->IsSetAccession() || tsid->GetAccession().empty())) {
+                if ( ctx.GetInst().GetRepr() != CSeq_inst::eRepr_seg  ||
+                    m_Imp.IsGI()) {
+                    if (!id.IsDdbj()  ||
+                        ctx.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
+                        string msg = "Missing accession for " + id.AsFastaString();
+                        PostErr(eDiag_Error,
+                            eErr_SEQ_INST_BadSeqIdFormat,
+                            msg, ctx);
                     }
                 }
             }
-        // Fall thru
-        NCBI_FALLTHROUGH;
-        case CSeq_id::e_Pir:
-        case CSeq_id::e_Swissprot:
-        case CSeq_id::e_Prf:
-            if ( tsid ) {
-                if ( ctx.IsNa()  &&
-                     (!tsid->IsSetAccession() || tsid->GetAccession().empty())) {
-                    if ( ctx.GetInst().GetRepr() != CSeq_inst::eRepr_seg  ||
-                        m_Imp.IsGI()) {
-                        if (!id.IsDdbj()  ||
-                            ctx.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
-                            string msg = "Missing accession for " + id.AsFastaString();
-                            PostErr(eDiag_Error,
-                                eErr_SEQ_INST_BadSeqIdFormat,
-                                msg, ctx);
-                        }
-                    }
-                }
-            } else {
-                PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                    "Seq-id type not handled", ctx);
+        } else {
+            PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                "Seq-id type not handled", ctx);
+        }
+        break;
+    case CSeq_id::e_Gi:
+        if (id.GetGi() <= ZERO_GI) {
+            PostErr(eDiag_Critical, eErr_SEQ_INST_ZeroGiNumber,
+                        "Invalid GI number", ctx);
+        }
+        break;
+    case CSeq_id::e_General:
+        if (!id.GetGeneral().IsSetDb() || NStr::IsBlank(id.GetGeneral().GetDb())) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
+        }
+        if (id.GetGeneral().IsSetDb()) {
+            const CDbtag& dbt = id.GetGeneral();
+            size_t dblen = dbt.GetDb().length();
+            EDiagSev sev = eDiag_Error;
+            if (m_Imp.IsLocalGeneralOnly()) {
+                sev = eDiag_Critical;
+            } else if (m_Imp.IsRefSeq()) {
+                sev = eDiag_Error;
+            } else if (m_Imp.IsINSDInSep()) {
+                sev = eDiag_Error;
+            } else if (m_Imp.IsIndexerVersion()) {
+                sev = eDiag_Error;
             }
-            break;
-        case CSeq_id::e_Gi:
-            if (id.GetGi() <= ZERO_GI) {
-                PostErr(eDiag_Critical, eErr_SEQ_INST_ZeroGiNumber,
-                         "Invalid GI number", ctx);
+            static const auto max_dblen = CSeq_id::kMaxGeneralDBLength;
+            if (dblen > max_dblen) {
+                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General database longer than " + NStr::NumericToString(max_dblen) + " characters", ctx);
             }
-            break;
-        case CSeq_id::e_General:
-            if (!id.GetGeneral().IsSetDb() || NStr::IsBlank(id.GetGeneral().GetDb())) {
-                PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
-            }
-            if (id.GetGeneral().IsSetDb()) {
-                const CDbtag& dbt = id.GetGeneral();
-                size_t dblen = dbt.GetDb().length();
-                EDiagSev sev = eDiag_Error;
-                if (m_Imp.IsLocalGeneralOnly()) {
-                    sev = eDiag_Critical;
-                } else if (m_Imp.IsRefSeq()) {
-                    sev = eDiag_Error;
-                } else if (m_Imp.IsINSDInSep()) {
-                    sev = eDiag_Error;
-                } else if (m_Imp.IsIndexerVersion()) {
-                    sev = eDiag_Error;
-                }
-                static const auto max_dblen = CSeq_id::kMaxGeneralDBLength;
-                if (dblen > max_dblen) {
-                    PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General database longer than " + NStr::NumericToString(max_dblen) + " characters", ctx);
-                }
-                if (! s_IsSkippableDbtag(dbt)) {
-                    if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
-                        size_t idlen = dbt.GetTag().GetStr().length();
-                        static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
-                        if (longer_general) {
-                            if (idlen > 100 && ! m_Imp.IsGI()) {
-                               PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(100) + " characters", ctx);
-                            }
-                        } else {
-                            if (idlen > maxlen && ! m_Imp.IsGI()) {
-                               PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
-                            }
-                        }
-                        if (idlen == 0) {
-                            PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not be an empty string", ctx);
-                        }
-                    }
-                }
+            if (! s_IsSkippableDbtag(dbt)) {
                 if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
-                    const string& acc = dbt.GetTag().GetStr();
-                    char badch;
-                    if (dbt.IsSetDb() && (NStr::Equal(dbt.GetDb(), "NCBIFILE") || NStr::Equal(dbt.GetDb(), "BankIt"))) {
-                        badch = CheckForBadFileIDSeqIdChars(acc);
+                    size_t idlen = dbt.GetTag().GetStr().length();
+                    static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
+                    if (longer_general) {
+                        if (idlen > 100 && ! m_Imp.IsGI()) {
+                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(100) + " characters", ctx);
+                        }
                     } else {
-                        badch = CheckForBadLocalIdChars(acc);
-                        if (badch == '\0' && dbt.IsSetDb()) {
-                            badch = CheckForBadLocalIdChars(dbt.GetDb());
+                        if (idlen > maxlen && ! m_Imp.IsGI()) {
+                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
                         }
                     }
-                    if (badch != '\0') {
-                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
-                                "Bad character '" + string(1, badch) + "' in sequence ID '" + id.AsFastaString() + "'", ctx);
+                    if (idlen == 0) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not be an empty string", ctx);
                     }
                 }
-             }
-           break;
-        case CSeq_id::e_Local:
-            if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > CSeq_id::kMaxLocalIDLength) {
-                EDiagSev sev = eDiag_Error;
-                if (! m_Imp.IsINSDInSep()) {
-                    sev = eDiag_Critical;
-                } else if (! m_Imp.IsIndexerVersion()) {
-                    sev = eDiag_Error;
-                }
-                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than " + NStr::NumericToString(CSeq_id::kMaxLocalIDLength) + " characters", ctx);
             }
-            if (id.IsLocal() && id.GetLocal().IsStr()) {
-                const string& acc = id.GetLocal().GetStr();
-                const char badch = CheckForBadLocalIdChars(acc);
+            if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
+                const string& acc = dbt.GetTag().GetStr();
+                char badch;
+                if (dbt.IsSetDb() && (NStr::Equal(dbt.GetDb(), "NCBIFILE") || NStr::Equal(dbt.GetDb(), "BankIt"))) {
+                    badch = CheckForBadFileIDSeqIdChars(acc);
+                } else {
+                    badch = CheckForBadLocalIdChars(acc);
+                    if (badch == '\0' && dbt.IsSetDb()) {
+                        badch = CheckForBadLocalIdChars(dbt.GetDb());
+                    }
+                }
                 if (badch != '\0') {
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
-                            "Bad character '" + string(1, badch) + "' in local ID '" + acc + "'", ctx);
+                            "Bad character '" + string(1, badch) + "' in sequence ID '" + id.AsFastaString() + "'", ctx);
                 }
             }
-            break;
-        case CSeq_id::e_Pdb:
-            if (id.IsPdb()) {
-                const CPDB_seq_id& pdb = id.GetPdb();
-                if (pdb.IsSetChain() && pdb.IsSetChain_id()) {
-                    int chain = pdb.GetChain();
-                    const string& chain_id = pdb.GetChain_id();
-                    if (chain_id.size() == 1  &&  chain_id[0] == chain) {
-                        break; // OK (straightforward match)
-                    } else if (islower(chain)  &&  chain_id.size() == 2
-                               &&  chain_id[0] == chain_id[1]
-                               &&  chain_id[0] == toupper(chain)) {
-                        break; // OK (historic special case)
-                    } else if (chain == '|'  &&  chain_id == "VB") {
-                        break; // OK (likewise)
-                    } else {
-                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                                "PDB Seq-id contains mismatched \'chain\' and"
-                                " \'chain-id\' slots", ctx);
-                    }
+            }
+        break;
+    case CSeq_id::e_Local:
+        if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > CSeq_id::kMaxLocalIDLength) {
+            EDiagSev sev = eDiag_Error;
+            if (! m_Imp.IsINSDInSep()) {
+                sev = eDiag_Critical;
+            } else if (! m_Imp.IsIndexerVersion()) {
+                sev = eDiag_Error;
+            }
+            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than " + NStr::NumericToString(CSeq_id::kMaxLocalIDLength) + " characters", ctx);
+        }
+        if (id.IsLocal() && id.GetLocal().IsStr()) {
+            const string& acc = id.GetLocal().GetStr();
+            const char badch = CheckForBadLocalIdChars(acc);
+            if (badch != '\0') {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdCharacter,
+                        "Bad character '" + string(1, badch) + "' in local ID '" + acc + "'", ctx);
+            }
+        }
+        break;
+    case CSeq_id::e_Pdb:
+        if (id.IsPdb()) {
+            const CPDB_seq_id& pdb = id.GetPdb();
+            if (pdb.IsSetChain() && pdb.IsSetChain_id()) {
+                int chain = pdb.GetChain();
+                const string& chain_id = pdb.GetChain_id();
+                if (chain_id.size() == 1  &&  chain_id[0] == chain) {
+                    break; // OK (straightforward match)
+                } else if (islower(chain)  &&  chain_id.size() == 2
+                            &&  chain_id[0] == chain_id[1]
+                            &&  chain_id[0] == toupper(chain)) {
+                    break; // OK (historic special case)
+                } else if (chain == '|'  &&  chain_id == "VB") {
+                    break; // OK (likewise)
+                } else {
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                            "PDB Seq-id contains mismatched \'chain\' and"
+                            " \'chain-id\' slots", ctx);
                 }
             }
-            break;
-        default:
-            break;
+        }
+        break;
+    default:
+        break;
     }
 
 #if 0
@@ -638,18 +637,18 @@ static bool x_IsWgsSecondary (const CBioseq& seq)
         const list< string > *extra_acc = nullptr;
         const CSeqdesc& desc = **sd;
         switch (desc.Which()) {
-            case CSeqdesc::e_Genbank:
-                if (desc.GetGenbank().IsSetExtra_accessions()) {
-                    extra_acc = &(desc.GetGenbank().GetExtra_accessions());
-                }
-                break;
-            case CSeqdesc::e_Embl:
-                if (desc.GetEmbl().IsSetExtra_acc()) {
-                    extra_acc = &(desc.GetEmbl().GetExtra_acc());
-                }
-                break;
-            default:
-                break;
+        case CSeqdesc::e_Genbank:
+            if (desc.GetGenbank().IsSetExtra_accessions()) {
+                extra_acc = &(desc.GetGenbank().GetExtra_accessions());
+            }
+            break;
+        case CSeqdesc::e_Embl:
+            if (desc.GetEmbl().IsSetExtra_acc()) {
+                extra_acc = &(desc.GetEmbl().GetExtra_acc());
+            }
+            break;
+        default:
+            break;
         }
         if ( extra_acc ) {
             FOR_EACH_STRING_IN_LIST (acc, *extra_acc) {
@@ -681,8 +680,7 @@ void CValidError_bioseq::x_CheckGeneralIDs(const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateSeqIds
-(const CBioseq& seq)
+void CValidError_bioseq::ValidateSeqIds(const CBioseq& seq)
 {
     // Ensure that CBioseq has at least one CSeq_id
     if ( !seq.IsSetId() || seq.GetId().empty() ) {
@@ -879,22 +877,22 @@ void CValidError_bioseq::ValidateSeqIds
     if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
         if (mi && mi->IsSetBiomol()) {
             switch (mi->GetBiomol()) {
-                case CMolInfo::eBiomol_pre_RNA:
-                case CMolInfo::eBiomol_mRNA:
-                case CMolInfo::eBiomol_rRNA:
-                case CMolInfo::eBiomol_tRNA:
-                case CMolInfo::eBiomol_snRNA:
-                case CMolInfo::eBiomol_scRNA:
-                case CMolInfo::eBiomol_cRNA:
-                case CMolInfo::eBiomol_snoRNA:
-                case CMolInfo::eBiomol_transcribed_RNA:
-                case CMolInfo::eBiomol_ncRNA:
-                case CMolInfo::eBiomol_tmRNA:
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolType,
-                            "Molecule type (DNA) does not match biomol (RNA)", seq);
-                    break;
-                default:
-                    break;
+            case CMolInfo::eBiomol_pre_RNA:
+            case CMolInfo::eBiomol_mRNA:
+            case CMolInfo::eBiomol_rRNA:
+            case CMolInfo::eBiomol_tRNA:
+            case CMolInfo::eBiomol_snRNA:
+            case CMolInfo::eBiomol_scRNA:
+            case CMolInfo::eBiomol_cRNA:
+            case CMolInfo::eBiomol_snoRNA:
+            case CMolInfo::eBiomol_transcribed_RNA:
+            case CMolInfo::eBiomol_ncRNA:
+            case CMolInfo::eBiomol_tmRNA:
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentMolType,
+                        "Molecule type (DNA) does not match biomol (RNA)", seq);
+                break;
+            default:
+                break;
             }
         }
     }
@@ -964,10 +962,10 @@ bool CValidError_bioseq::IsHistAssemblyMissing(const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateSecondaryAccConflict
-(const string &primary_acc,
- const CBioseq &seq,
- int choice)
+void CValidError_bioseq::ValidateSecondaryAccConflict(
+    const string& primary_acc,
+    const CBioseq& seq,
+    int choice)
 {
     CSeqdesc_CI sd(m_Scope->GetBioseqHandle(seq), static_cast<CSeqdesc::E_Choice>(choice));
     for (; sd; ++sd) {
@@ -1046,11 +1044,9 @@ void CValidError_bioseq::x_ValidateBarcode(const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateInst(
-    const CBioseq& seq)
+void CValidError_bioseq::ValidateInst(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
-
 
     // Check representation
     if ( !ValidateRepr(inst, seq) ) {
@@ -1065,55 +1061,55 @@ void CValidError_bioseq::ValidateInst(
         const CSeq_inst::EMol& mol = inst.GetMol();
         switch (mol) {
 
-            case CSeq_inst::eMol_na:
-                PostErr(eDiag_Error, eErr_SEQ_INST_MolNuclAcid,
-                         "Bioseq.mol is type nucleic acid", seq);
-                break;
+        case CSeq_inst::eMol_na:
+            PostErr(eDiag_Error, eErr_SEQ_INST_MolNuclAcid,
+                        "Bioseq.mol is type nucleic acid", seq);
+            break;
 
-            case CSeq_inst::eMol_aa:
-                if ( inst.IsSetTopology()  &&
-                     inst.GetTopology() != CSeq_inst::eTopology_not_set  &&
-                     inst.GetTopology() != CSeq_inst::eTopology_linear ) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_CircularProtein,
-                             "Non-linear topology set on protein", seq);
-                }
-                if ( inst.IsSetStrand()  &&
-                     inst.GetStrand() != CSeq_inst::eStrand_ss &&
-                     inst.GetStrand() != CSeq_inst::eStrand_not_set) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_BadProteinMoltype,
-                             "Protein not single stranded", seq);
-                }
-                break;
+        case CSeq_inst::eMol_aa:
+            if ( inst.IsSetTopology()  &&
+                    inst.GetTopology() != CSeq_inst::eTopology_not_set  &&
+                    inst.GetTopology() != CSeq_inst::eTopology_linear ) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_CircularProtein,
+                            "Non-linear topology set on protein", seq);
+            }
+            if ( inst.IsSetStrand()  &&
+                    inst.GetStrand() != CSeq_inst::eStrand_ss &&
+                    inst.GetStrand() != CSeq_inst::eStrand_not_set) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_BadProteinMoltype,
+                            "Protein not single stranded", seq);
+            }
+            break;
 
-            case CSeq_inst::eMol_dna:
-                if (seq.IsSetInst() && seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
-                    if (m_is_bact_or_arch) {
-                        if (! m_is_plasmid && ! m_is_chromosome  && ! m_is_extrachrom) {
-                            EDiagSev sev = eDiag_Error;
-                            if (IsRefSeq(seq) || m_Imp.IsRefSeqConventions()) {
-                                sev = eDiag_Error;
-                            } else if (IsEmblOrDdbj(seq)) {
-                                sev = eDiag_Warning;
-                            }
-                            PostErr(sev, eErr_SEQ_INST_CircBactGenomeProblem,
-                                     "Circular Bacteria or Archaea should be chromosome, or plasmid, or extrachromosomal", seq);
+        case CSeq_inst::eMol_dna:
+            if (seq.IsSetInst() && seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
+                if (m_is_bact_or_arch) {
+                    if (! m_is_plasmid && ! m_is_chromosome  && ! m_is_extrachrom) {
+                        EDiagSev sev = eDiag_Error;
+                        if (IsRefSeq(seq) || m_Imp.IsRefSeqConventions()) {
+                            sev = eDiag_Error;
+                        } else if (IsEmblOrDdbj(seq)) {
+                            sev = eDiag_Warning;
                         }
+                        PostErr(sev, eErr_SEQ_INST_CircBactGenomeProblem,
+                                    "Circular Bacteria or Archaea should be chromosome, or plasmid, or extrachromosomal", seq);
                     }
                 }
-                break;
+            }
+            break;
 
-            case CSeq_inst::eMol_not_set:
-                PostErr(eDiag_Error, eErr_SEQ_INST_MolNotSet, "Bioseq.mol is 0",
-                    seq);
-                break;
+        case CSeq_inst::eMol_not_set:
+            PostErr(eDiag_Error, eErr_SEQ_INST_MolNotSet, "Bioseq.mol is 0",
+                seq);
+            break;
 
-            case CSeq_inst::eMol_other:
-                PostErr(eDiag_Error, eErr_SEQ_INST_MolinfoOther,
-                         "Bioseq.mol is type other", seq);
-                break;
+        case CSeq_inst::eMol_other:
+            PostErr(eDiag_Error, eErr_SEQ_INST_MolinfoOther,
+                        "Bioseq.mol is type other", seq);
+            break;
 
-            default:
-                break;
+        default:
+            break;
         }
     }
 
@@ -1178,7 +1174,6 @@ void CValidError_bioseq::ValidateInst(
 
 
 bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
-
 {
     bool is_wgs = false;
     bool is_grc = false;
@@ -1220,26 +1215,26 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
     FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, seq) {
         const CSeq_id& sid = **sid_itr;
         switch (sid.Which()) {
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Embl:
-                // is_eb_db = true;
-                // fall through
-            case CSeq_id::e_Ddbj:
-                is_gb = true;
-                break;
-            case CSeq_id::e_Other:
-                {
-                    is_refseq = true;
-                    if (sid.GetOther().IsSetAccession()) {
-                        string acc = sid.GetOther().GetAccession().substr(0, 3);
-                        if (acc == "NG_") {
-                            is_ng = true;
-                        }
-                    }
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+            // is_eb_db = true;
+            // fall through
+        case CSeq_id::e_Ddbj:
+            is_gb = true;
+            break;
+        case CSeq_id::e_Other:
+        {
+            is_refseq = true;
+            if (sid.GetOther().IsSetAccession()) {
+                string acc = sid.GetOther().GetAccession().substr(0, 3);
+                if (acc == "NG_") {
+                    is_ng = true;
                 }
-                break;
-            default:
-                break;
+            }
+        }
+            break;
+        default:
+            break;
         }
     }
 
@@ -1263,8 +1258,7 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
     return true;
 }
 
-void CValidError_bioseq::ValidateBioseqContext(
-    const CBioseq& seq)
+void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
@@ -1750,8 +1744,7 @@ bool s_CheckIntervals(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
 }
 
 
-void CValidError_bioseq::x_ValidateOverlappingRNAFeatures(
-    const CBioseq_Handle& bsh)
+void CValidError_bioseq::x_ValidateOverlappingRNAFeatures(const CBioseq_Handle& bsh)
 {
     // don't bother if can't build all feature iterator
     if (!m_AllFeatIt) {
@@ -1798,8 +1791,7 @@ void CValidError_bioseq::x_ValidateOverlappingRNAFeatures(
 
 
 
-void CValidError_bioseq::x_ValidateSourceFeatures(
-    const CBioseq_Handle& bsh)
+void CValidError_bioseq::x_ValidateSourceFeatures(const CBioseq_Handle& bsh)
 {
     // don't bother if can't build all feature iterator
     if (!m_AllFeatIt) {
@@ -1900,8 +1892,7 @@ static void s_MakePubLabelString (const CPubdesc& pd, string& label)
 }
 
 
-void CValidError_bioseq::x_ValidatePubFeatures(
-    const CBioseq_Handle& bsh)
+void CValidError_bioseq::x_ValidatePubFeatures(const CBioseq_Handle& bsh)
 {
     // don't bother if can't build feature iterator at all
     if (!m_AllFeatIt) {
@@ -1992,7 +1983,7 @@ public:
 };
 
 
-void CValidError_bioseq::x_ReportDuplicatePubLabels (
+void CValidError_bioseq::x_ReportDuplicatePubLabels(
     const CBioseq& seq, const vector<CTempString>& labels)
 {
     if (labels.size() <= 1) {
@@ -2047,8 +2038,7 @@ void CValidError_bioseq::x_ReportDuplicatePubLabels (
 }
 
 
-void CValidError_bioseq::x_ValidateMultiplePubs(
-    const CBioseq_Handle& bsh)
+void CValidError_bioseq::x_ValidateMultiplePubs(const CBioseq_Handle& bsh)
 {
     // used to check for dups.  Currently only deals with cases where
     // there's an otherpub, but check if this comment is out of date.
@@ -2787,7 +2777,7 @@ static bool HasAssemblyOrNullGap (const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ReportBadAssemblyGap (const CBioseq& seq)
+void CValidError_bioseq::ReportBadAssemblyGap(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
     if (inst.CanGetRepr() && inst.GetRepr() == CSeq_inst::eRepr_delta && inst.CanGetExt()  &&  inst.GetExt().IsDelta()) {
@@ -3021,7 +3011,6 @@ static EDiagSev GetBioseqEndWarning (const CBioseq& seq, bool is_circular, EBios
 
 void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CSeqVector& vec, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3)
 {
-
     _ASSERT(vec.GetCoding() == CSeq_data::e_Iupacna);
 
     num_ns = 0;
@@ -3064,7 +3053,6 @@ void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CSeqVector& vec, TSe
 
 bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
 {
-
     bool rval = false;
     if (HasAssemblyOrNullGap(seq)) {
         return rval;
@@ -3128,53 +3116,53 @@ static int CountNs(const CSeq_data& seq_data, TSeqPos len)
 {
     int total = 0;
     switch (seq_data.Which()) {
-        case CSeq_data::e_Ncbi4na:
-            {
-                vector<char>::const_iterator it = seq_data.GetNcbi4na().Get().begin();
-                unsigned char mask = 0xf0;
-                unsigned char shift = 4;
-                for (size_t n = 0; n < len; n++) {
-                    unsigned char c = ((*it) & mask) >> shift;
-                    mask >>= 4;
-                    shift -= 4;
-                    if (!mask) {
-                        mask = 0xf0;
-                        shift = 4;
-                        ++it;
-                    }
-                    if (c == 15) {
-                        total++;
-                    }
-                }
+    case CSeq_data::e_Ncbi4na:
+    {
+        vector<char>::const_iterator it = seq_data.GetNcbi4na().Get().begin();
+        unsigned char mask = 0xf0;
+        unsigned char shift = 4;
+        for (size_t n = 0; n < len; n++) {
+            unsigned char c = ((*it) & mask) >> shift;
+            mask >>= 4;
+            shift -= 4;
+            if (!mask) {
+                mask = 0xf0;
+                shift = 4;
+                ++it;
             }
-            return total;
-        case CSeq_data::e_Iupacna:
-            {
-                const string& s = seq_data.GetIupacna().Get();
-                for (size_t n = 0; n < len && n < s.length(); n++) {
-                    if (s[n] == 'N') {
-                        total++;
-                    }
-                }
+            if (c == 15) {
+                total++;
             }
-            return total;
-        case CSeq_data::e_Ncbi8na:
-        case CSeq_data::e_Ncbipna:
-            {
-                CSeq_data iupacna;
-                if (!CSeqportUtil::Convert(seq_data, &iupacna, CSeq_data::e_Iupacna)) {
-                    return total;
-                }
-                const string& s = iupacna.GetIupacna().Get();
-                for (size_t n = 0; n < len; n++) {
-                    if (s[n] == 'N') {
-                        total++;
-                    }
-                }
+        }
+    }
+        return total;
+    case CSeq_data::e_Iupacna:
+    {
+        const string& s = seq_data.GetIupacna().Get();
+        for (size_t n = 0; n < len && n < s.length(); n++) {
+            if (s[n] == 'N') {
+                total++;
             }
+        }
+    }
+        return total;
+    case CSeq_data::e_Ncbi8na:
+    case CSeq_data::e_Ncbipna:
+    {
+        CSeq_data iupacna;
+        if (!CSeqportUtil::Convert(seq_data, &iupacna, CSeq_data::e_Iupacna)) {
             return total;
-        default:
-            return total;
+        }
+        const string& s = iupacna.GetIupacna().Get();
+        for (size_t n = 0; n < len; n++) {
+            if (s[n] == 'N') {
+                total++;
+            }
+        }
+    }
+        return total;
+    default:
+        return total;
     }
 }
 
@@ -3186,11 +3174,11 @@ int CValidError_bioseq::PctNs(CBioseq_Handle bsh)
     sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap | CSeqMap::fFindLeafRef);
     for (CSeqMap_CI seq_iter(bsh, sel); seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
-            case CSeqMap::eSeqData:
-                count += CountNs(seq_iter.GetData(), seq_iter.GetLength());
-                break;
-            default:
-                break;
+        case CSeqMap::eSeqData:
+            count += CountNs(seq_iter.GetData(), seq_iter.GetLength());
+            break;
+        default:
+            break;
         }
     }
 /*
@@ -3605,8 +3593,7 @@ void CValidError_bioseq::GapByGapInst (const CBioseq& seq)
 }
 
 // Assumes that seq is eRepr_raw or eRepr_inst
-void CValidError_bioseq::ValidateRawConst(
-    const CBioseq& seq)
+void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
     const CEnumeratedTypeValues* tv = CSeq_inst::ENUM_METHOD_NAME(ERepr)();
@@ -4076,39 +4063,39 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
             }
 
             switch ((*sd)->GetMolinfo().GetCompleteness()) {
-                case CMolInfo::eCompleteness_partial:
-                    got_partial = true;
-                    if (!partial) {
-                        PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
-                                 "Complete segmented sequence with MolInfo partial", seq);
-                    }
-                    break;
-                case CMolInfo::eCompleteness_no_left:
-                    if (!(partial & eSeqlocPartial_Start) || (partial & eSeqlocPartial_Stop)) {
-                        PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
-                                 "No-left inconsistent with segmented SeqLoc",
-                                 seq);
-                    }
-                    got_partial = true;
-                    break;
-                case CMolInfo::eCompleteness_no_right:
-                    if (!(partial & eSeqlocPartial_Stop) || (partial & eSeqlocPartial_Start)) {
-                        PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
-                                 "No-right inconsistent with segmented SeqLoc",
-                                 seq);
-                    }
-                    got_partial = true;
-                    break;
-                case CMolInfo::eCompleteness_no_ends:
-                    if (!(partial & eSeqlocPartial_Start) || !(partial & eSeqlocPartial_Stop)) {
-                        PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
-                                 "No-ends inconsistent with segmented SeqLoc",
-                                 seq);
-                    }
-                    got_partial = true;
-                    break;
-                default:
-                    break;
+            case CMolInfo::eCompleteness_partial:
+                got_partial = true;
+                if (!partial) {
+                    PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
+                                "Complete segmented sequence with MolInfo partial", seq);
+                }
+                break;
+            case CMolInfo::eCompleteness_no_left:
+                if (!(partial & eSeqlocPartial_Start) || (partial & eSeqlocPartial_Stop)) {
+                    PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
+                                "No-left inconsistent with segmented SeqLoc",
+                                seq);
+                }
+                got_partial = true;
+                break;
+            case CMolInfo::eCompleteness_no_right:
+                if (!(partial & eSeqlocPartial_Stop) || (partial & eSeqlocPartial_Start)) {
+                    PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
+                                "No-right inconsistent with segmented SeqLoc",
+                                seq);
+                }
+                got_partial = true;
+                break;
+            case CMolInfo::eCompleteness_no_ends:
+                if (!(partial & eSeqlocPartial_Start) || !(partial & eSeqlocPartial_Stop)) {
+                    PostErr (eDiag_Error, eErr_SEQ_INST_PartialInconsistent,
+                                "No-ends inconsistent with segmented SeqLoc",
+                                seq);
+                }
+                got_partial = true;
+                break;
+            default:
+                break;
             }
         }
         if (!got_partial) {
@@ -4125,17 +4112,17 @@ static int s_MaxNsInSeqLitForTech (CMolInfo::TTech tech)
     int max_ns = -1;
 
     switch (tech) {
-        case CMolInfo::eTech_htgs_1:
-        case CMolInfo::eTech_htgs_2:
-        case CMolInfo::eTech_composite_wgs_htgs:
-            max_ns = 80;
-            break;
-        case CMolInfo::eTech_wgs:
-            max_ns = 19;
-            break;
-        default:
-            max_ns = 99;
-            break;
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+    case CMolInfo::eTech_composite_wgs_htgs:
+        max_ns = 80;
+        break;
+    case CMolInfo::eTech_wgs:
+        max_ns = 19;
+        break;
+    default:
+        max_ns = 99;
+        break;
     }
     return max_ns;
 }
@@ -4241,10 +4228,10 @@ bool HasExcludedAnnotation(const CSeq_loc& loc, CBioseq_Handle far_bsh)
 }
 
 
-void CValidError_bioseq::ValidateDeltaLoc
-(const CSeq_loc& loc,
- const CBioseq& seq,
- TSeqPos& len)
+void CValidError_bioseq::ValidateDeltaLoc(
+    const CSeq_loc& loc,
+    const CBioseq& seq,
+    TSeqPos& len)
 {
     if (loc.IsWhole()) {
         PostErr (eDiag_Error, eErr_SEQ_INST_WholeComponent,
@@ -4896,9 +4883,9 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
 }
 
 
-bool CValidError_bioseq::ValidateRepr
-(const CSeq_inst& inst,
- const CBioseq&   seq)
+bool CValidError_bioseq::ValidateRepr(
+    const CSeq_inst& inst,
+    const CBioseq&   seq)
 {
     bool rtn = true;
     const CEnumeratedTypeValues* tv = CSeq_inst::ENUM_METHOD_NAME(ERepr)();
@@ -5043,8 +5030,7 @@ size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& sr
 }
 
 
-void CValidError_bioseq::CheckSourceDescriptor(
-    const CBioseq_Handle& bsh)
+void CValidError_bioseq::CheckSourceDescriptor(const CBioseq_Handle& bsh)
 {
     CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
     if (!di) {
@@ -5132,9 +5118,9 @@ void CValidError_bioseq::x_ReportSuspiciousUseOfComplete(const CBioseq& seq, EDi
 }
 
 
-void CValidError_bioseq::x_ValidateCompletness
-(const CBioseq& seq,
- const CMolInfo& mi)
+void CValidError_bioseq::x_ValidateCompletness(
+    const CBioseq& seq,
+    const CMolInfo& mi)
 {
     if ( !mi.IsSetCompleteness() ) {
         return;
@@ -5282,7 +5268,7 @@ static bool s_SeqIdMatch (const CConstRef<CSeq_id>& q1, const CConstRef<CSeq_id>
 }
 
 
-void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
+void CValidError_bioseq::ValidateMultipleGeneOverlap(const CBioseq_Handle& bsh)
 {
     if (!m_GeneIt) {
         return;
@@ -5511,12 +5497,12 @@ bool s_BeforeIsGap(TSeqPos pos, TSeqPos before, const CSeqVector& vec)
 }
 
 
-bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
-(const CSeq_loc& loc,
- unsigned int tag,
- bool& bad_seq,
- bool& is_gap,
- bool& abuts_n)
+bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap(
+    const CSeq_loc& loc,
+    unsigned int tag,
+    bool& bad_seq,
+    bool& is_gap,
+    bool& abuts_n)
 {
     bad_seq = false;
     is_gap = false;
@@ -5632,27 +5618,26 @@ static bool s_MatchPartialType (const CSeq_loc& loc1, const CSeq_loc& loc2, unsi
     bool rval = false;
 
     switch (partial_type) {
-        case eSeqlocPartial_Nostart:
-            if (loc1.GetStart(eExtreme_Biological) == loc2.GetStart(eExtreme_Biological)) {
-                rval = true;
-            }
-            break;
-        case eSeqlocPartial_Nostop:
-            if (loc1.GetStop(eExtreme_Biological) == loc2.GetStop(eExtreme_Biological)) {
-                rval = true;
-            }
-            break;
-        default:
-            rval = false;
-            break;
+    case eSeqlocPartial_Nostart:
+        if (loc1.GetStart(eExtreme_Biological) == loc2.GetStart(eExtreme_Biological)) {
+            rval = true;
+        }
+        break;
+    case eSeqlocPartial_Nostop:
+        if (loc1.GetStop(eExtreme_Biological) == loc2.GetStop(eExtreme_Biological)) {
+            rval = true;
+        }
+        break;
+    default:
+        rval = false;
+        break;
     }
     return rval;
 }
 
 
 // REQUIRES: feature is either Gene or mRNA
-bool CValidError_bioseq::x_IsSameAsCDS(
-    const CMappedFeat& feat)
+bool CValidError_bioseq::x_IsSameAsCDS(const CMappedFeat& feat)
 {
     EOverlapType overlap_type;
     if ( feat.GetData().IsGene() ) {
@@ -5681,7 +5666,7 @@ bool CValidError_bioseq::x_IsSameAsCDS(
 }
 
 
-bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type)
+bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial(const CMappedFeat& feat, unsigned int partial_type)
 {
     bool rval = false;
 
@@ -5964,7 +5949,7 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool 
 }
 
 
-void CValidError_bioseq::ValidateFeatPartialInContext (
+void CValidError_bioseq::ValidateFeatPartialInContext(
     const CMappedFeat& feat, bool is_complete)
 {
     unsigned int partial_loc  = eSeqlocPartial_Complete;
@@ -6271,18 +6256,18 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                 if ( is_aa ) {                // protein
                     switch ( ftype ) {
                     case CSeqFeatData::e_Prot:
-                        {
-                            if (IsOneBioseq(feat.GetLocation(), m_Scope)) {
-                                CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
-                                if ( (range.IsWhole()  ||
-                                      (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
-                                     (!feat.GetData().GetProt().IsSetProcessed() ||
-                                      (feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ||
-                                      (feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_preprotein))){
-                                     num_full_length_prot_ref++;
-                                }
+                    {
+                        if (IsOneBioseq(feat.GetLocation(), m_Scope)) {
+                            CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
+                            if ( (range.IsWhole()  ||
+                                    (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
+                                    (!feat.GetData().GetProt().IsSetProcessed() ||
+                                    (feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ||
+                                    (feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_preprotein))){
+                                    num_full_length_prot_ref++;
                             }
                         }
+                    }
                         break;
 
                     case CSeqFeatData::e_Gene:
@@ -6307,7 +6292,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                 if ( is_mrna ) {              // mRNA
                     switch ( ftype ) {
                     case CSeqFeatData::e_Cdregion:
-                    {{
+                    {
                         // Test for Multi interval CDS feature
                         if ( NumOfIntervals(feat.GetLocation()) > 1 ) {
                             bool excpet = feat.IsSetExcept()  &&  feat.GetExcept();
@@ -6329,9 +6314,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                             }
                         }
                         break;
-                    }}
+                    }
                     case CSeqFeatData::e_Rna:
-                    {{
+                    {
                         const CRNA_ref& rref = feat.GetData().GetRna();
                         if ( rref.GetType() == CRNA_ref::eType_mRNA ) {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForMRNA,
@@ -6339,16 +6324,16 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                                 feat);
                         }
                         break;
-                    }}
+                    }
                     case CSeqFeatData::e_Imp:
-                    {{
+                    {
                         const CImp_feat& imp = feat.GetData().GetImp();
                         if ( imp.GetKey() == "intron") {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                                 "Invalid feature for an mRNA Bioseq.", feat);
                         }
                         break;
-                    }}
+                    }
                     default:
                         break;
                     }
@@ -6590,7 +6575,7 @@ string s_GetMrnaProteinLink(const CSeq_feat &mrna)
 }
 
 
-unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna)
+unsigned int CValidError_bioseq::x_IdXrefsNotReciprocal(const CSeq_feat &cds, const CSeq_feat &mrna)
 {
     if (!cds.IsSetId() || !cds.GetId().IsLocal()
         || !mrna.IsSetId() || !mrna.GetId().IsLocal()) {
@@ -6681,7 +6666,7 @@ bool s_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna)
     return match;
 }
 
-bool CValidError_bioseq::x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna)
+bool CValidError_bioseq::x_IdXrefsAreReciprocal(const CSeq_feat &cds, const CSeq_feat &mrna)
 {
     return s_IdXrefsAreReciprocal(cds, mrna);
 }
@@ -6974,7 +6959,8 @@ bool CCdsMatchInfo::AssignMatch(TmRNAList& mrna_map, CFeatTree& feat_tree, CScop
 }
 
 
-void CValidError_bioseq::x_CheckForMultiplemRNAs(CCdsMatchInfo& cds_match,
+void CValidError_bioseq::x_CheckForMultiplemRNAs(
+    CCdsMatchInfo& cds_match,
     const TmRNAList& unmatched_mrnas)
 {
     if (!cds_match.HasMatch()) {
@@ -7530,7 +7516,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
     // }
 }
 
-void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
+void CValidError_bioseq::x_ValidateGeneCDSmRNACounts(const CBioseq_Handle& seq)
 {
     if (m_GeneIt && m_AllFeatIt) {
         if (! m_GeneIt->empty()) {
@@ -7560,14 +7546,14 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
                     }
 
                     switch (subtype) {
-                        case CSeqFeatData::eSubtype_cdregion:
-                            cds_count[gene]++;
-                            break;
-                        case CSeqFeatData::eSubtype_mRNA:
-                            mrna_count[gene]++;
-                            break;
-                        default:
-                            break;
+                    case CSeqFeatData::eSubtype_cdregion:
+                        cds_count[gene]++;
+                        break;
+                    case CSeqFeatData::eSubtype_mRNA:
+                        mrna_count[gene]++;
+                        break;
+                    default:
+                        break;
                     }
                 }
             }
@@ -7587,8 +7573,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
 }
 
 
-void CValidError_bioseq::x_ValidateAbuttingUTR(
-    const CBioseq_Handle& seq)
+void CValidError_bioseq::x_ValidateAbuttingUTR(const CBioseq_Handle& seq)
 {
     // note - if we couldn't build the feature iterator, no point
     // in trying this
@@ -7827,7 +7812,7 @@ static ERnaPosition s_RnaPosition (const CSeq_feat& feat)
 }
 
 
-bool CValidError_bioseq::x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop)
+bool CValidError_bioseq::x_IsRangeGap(const CBioseq_Handle& seq, int start, int stop)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()
         || seq.GetInst().GetRepr() != CSeq_inst::eRepr_delta
@@ -8018,13 +8003,13 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
 }
 
 
-EDiagSev CValidError_bioseq::x_DupFeatSeverity
-(const CSeq_feat& curr,
- const CSeq_feat& prev,
- bool is_viral,
- bool is_htgs,
- bool same_annot,
- bool same_label)
+EDiagSev CValidError_bioseq::x_DupFeatSeverity(
+    const CSeq_feat& curr,
+    const CSeq_feat& prev,
+    bool is_viral,
+    bool is_htgs,
+    bool same_annot,
+    bool same_label)
 {
     if (!same_annot && !same_label) {
         return eDiag_Warning;
@@ -8080,7 +8065,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 
 
 // assumption: this would only be called if the feature subtypes are already known to match
-bool CValidError_bioseq::x_SuppressDicistronic(const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly)
+bool CValidError_bioseq::x_SuppressDicistronic(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bool fruit_fly)
 {
     if (!IsDicistronicGene(f1) || !IsDicistronicGene(f2)) {
         return false;
@@ -8095,7 +8080,7 @@ bool CValidError_bioseq::x_SuppressDicistronic(const CSeq_feat_Handle & f1, cons
 }
 
 
-bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs)
+bool CValidError_bioseq::x_ReportDupOverlapFeaturePair(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bool fruit_fly, bool viral, bool htgs)
 {
     if (x_SuppressDicistronic(f1, f2, fruit_fly)) {
         return false;
@@ -8109,61 +8094,61 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
     const CSeq_feat& feat2 = *(f2.GetSeq_feat());
 
     switch (dup_type) {
-        case eDuplicate_Duplicate:
-            {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, true, true);
-                CConstRef <CSeq_feat> g1 =
-                    m_Imp.GetCachedGene(&feat1);
-                CConstRef <CSeq_feat> g2 =
-                    m_Imp.GetCachedGene(&feat2);
-                if (g1 && g2 && g1.GetPointer() != g2.GetPointer()) {
-                    severity = eDiag_Warning;
-                }
-                PostErr (severity, eErr_SEQ_FEAT_FeatContentDup,
-                    "Duplicate feature", feat2);
-                rval = true;
-            }}
-            break;
-        case eDuplicate_SameIntervalDifferentLabel:
-            if (PartialsSame(feat1.GetLocation(), feat2.GetLocation())) {
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, true, false);
-                if (feat1.GetData().IsImp()) {
-                    severity = eDiag_Warning;
-                }
-                PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
-                    "Features have identical intervals, but labels differ",
-                    feat2);
-                rval = true;
+    case eDuplicate_Duplicate:
+    {
+        EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, true, true);
+        CConstRef <CSeq_feat> g1 =
+            m_Imp.GetCachedGene(&feat1);
+        CConstRef <CSeq_feat> g2 =
+            m_Imp.GetCachedGene(&feat2);
+        if (g1 && g2 && g1.GetPointer() != g2.GetPointer()) {
+            severity = eDiag_Warning;
+        }
+        PostErr (severity, eErr_SEQ_FEAT_FeatContentDup,
+            "Duplicate feature", feat2);
+        rval = true;
+    }
+        break;
+    case eDuplicate_SameIntervalDifferentLabel:
+        if (PartialsSame(feat1.GetLocation(), feat2.GetLocation())) {
+            EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, true, false);
+            if (feat1.GetData().IsImp()) {
+                severity = eDiag_Warning;
             }
-            break;
-        case eDuplicate_DuplicateDifferentTable:
-            {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, false, true);
-                PostErr (severity, eErr_SEQ_FEAT_FeatContentDup,
-                    "Duplicate feature (packaged in different feature table)",
-                    feat2);
-                rval = true;
-            }}
-            break;
-        case eDuplicate_SameIntervalDifferentLabelDifferentTable:
-            {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, false, false);
-                PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
-                    "Features have identical intervals, but labels "
-                    "differ (packaged in different feature table)",
-                    feat2);
-                rval = true;
-            }}
-            break;
-        case eDuplicate_Not:
-            // no error
-            break;
+            PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
+                "Features have identical intervals, but labels differ",
+                feat2);
+            rval = true;
+        }
+        break;
+    case eDuplicate_DuplicateDifferentTable:
+    {
+        EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, false, true);
+        PostErr (severity, eErr_SEQ_FEAT_FeatContentDup,
+            "Duplicate feature (packaged in different feature table)",
+            feat2);
+        rval = true;
+    }
+        break;
+    case eDuplicate_SameIntervalDifferentLabelDifferentTable:
+    {
+        EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, false, false);
+        PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
+            "Features have identical intervals, but labels "
+            "differ (packaged in different feature table)",
+            feat2);
+        rval = true;
+    }
+        break;
+    case eDuplicate_Not:
+        // no error
+        break;
     }
     return rval;
 }
 
 
-void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide)
+void CValidError_bioseq::x_ReportOverlappingPeptidePair(CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide)
 {
     const CSeq_feat& feat1 = *(f1.GetSeq_feat());
     const CSeq_feat& feat2 = *(f2.GetSeq_feat());
@@ -8230,8 +8215,7 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
 }
 
 
-void CValidError_bioseq::ValidateDupOrOverlapFeats(
-    const CBioseq& bioseq)
+void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 {
     if (!m_AllFeatIt) {
         return;
@@ -8372,8 +8356,7 @@ static bool s_SubsequentIntron(CFeat_CI feat_ci_dup, Int4 start, Int4 stop, Int4
     return false;
 }
 
-void CValidError_bioseq::ValidateTwintrons(
-    const CBioseq& bioseq)
+void CValidError_bioseq::ValidateTwintrons(const CBioseq& bioseq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
     if (!bsh) return;
@@ -8451,36 +8434,36 @@ static bool s_IsTPAAssemblyOkForBioseq (const CBioseq& seq, bool has_refseq)
 
     FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
         switch ((*it)->Which()) {
-            case CSeq_id::e_Local:
-                has_local = true;
-                break;
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Embl:
-            case CSeq_id::e_Ddbj:
-                has_genbank = true;
-                break;
-            case CSeq_id::e_Other:
-                has_refseq = true;
-                break;
-            case CSeq_id::e_Gi:
-                has_gi = true;
-                break;
-            case CSeq_id::e_Tpg:
-            case CSeq_id::e_Tpe:
-            case CSeq_id::e_Tpd:
-                has_tpa = true;
-                break;
-            case CSeq_id::e_General:
-                if ((*it)->GetGeneral().IsSetDb()) {
-                    if (NStr::Equal((*it)->GetGeneral().GetDb(), "BankIt", NStr::eNocase)) {
-                        has_bankit = true;
-                    } else if (NStr::Equal((*it)->GetGeneral().GetDb(), "TMSMART", NStr::eNocase)) {
-                        has_smart = true;
-                    }
+        case CSeq_id::e_Local:
+            has_local = true;
+            break;
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+            has_genbank = true;
+            break;
+        case CSeq_id::e_Other:
+            has_refseq = true;
+            break;
+        case CSeq_id::e_Gi:
+            has_gi = true;
+            break;
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            has_tpa = true;
+            break;
+        case CSeq_id::e_General:
+            if ((*it)->GetGeneral().IsSetDb()) {
+                if (NStr::Equal((*it)->GetGeneral().GetDb(), "BankIt", NStr::eNocase)) {
+                    has_bankit = true;
+                } else if (NStr::Equal((*it)->GetGeneral().GetDb(), "TMSMART", NStr::eNocase)) {
+                    has_smart = true;
                 }
-                break;
-            default:
-                break;
+            }
+            break;
+        default:
+            break;
         }
     }
 
@@ -8565,23 +8548,23 @@ bool s_IsGenbankMasterAccession(const string& acc)
 {
     bool rval = false;
     switch (acc.length()) {
-        case 12:
-            if (NStr::EndsWith(acc, "000000")) {
-                rval = true;
-            }
-            break;
-        case 13:
-            if (NStr::EndsWith(acc, "0000000")) {
-                rval = true;
-            }
-            break;
-        case 14:
-            if (NStr::EndsWith(acc, "00000000")) {
-                rval = true;
-            }
-            break;
-        default:
-            break;
+    case 12:
+        if (NStr::EndsWith(acc, "000000")) {
+            rval = true;
+        }
+        break;
+    case 13:
+        if (NStr::EndsWith(acc, "0000000")) {
+            rval = true;
+        }
+        break;
+    case 14:
+        if (NStr::EndsWith(acc, "00000000")) {
+            rval = true;
+        }
+        break;
+    default:
+        break;
     }
     return rval;
 }
@@ -8590,48 +8573,48 @@ bool s_IsMasterAccession(const CSeq_id& id)
 {
     bool rval = false;
     switch (id.Which()) {
-        case CSeq_id::e_Other:
-            if (id.GetOther().IsSetAccession()) {
-                const string& acc = id.GetOther().GetAccession();
-                switch (acc.length()) {
-                    case 15:
-                        if (NStr::EndsWith(acc, "000000")) {
-                            rval = true;
-                        }
-                        break;
-                    case 16:
-                    case 17:
-                        if (NStr::EndsWith(acc, "0000000")) {
-                            rval = true;
-                        }
-                        break;
-                    default:
-                        break;
+    case CSeq_id::e_Other:
+        if (id.GetOther().IsSetAccession()) {
+            const string& acc = id.GetOther().GetAccession();
+            switch (acc.length()) {
+            case 15:
+                if (NStr::EndsWith(acc, "000000")) {
+                    rval = true;
                 }
+                break;
+            case 16:
+            case 17:
+                if (NStr::EndsWith(acc, "0000000")) {
+                    rval = true;
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        case CSeq_id::e_Genbank:
-            if (id.GetGenbank().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetGenbank().GetAccession());
-            }
-            break;
-        case CSeq_id::e_Ddbj:
-            if (id.GetDdbj().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetDdbj().GetAccession());
-            }
-            break;
-        case CSeq_id::e_Embl:
-            if (id.GetEmbl().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
-            }
-            break;
-        case CSeq_id::e_Tpg:
-            if (id.GetTpg().IsSetAccession()) {
-                rval = s_IsGenbankMasterAccession(id.GetTpg().GetAccession());
-            }
-            break;
-        default:
-            break;
+        }
+        break;
+    case CSeq_id::e_Genbank:
+        if (id.GetGenbank().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetGenbank().GetAccession());
+        }
+        break;
+    case CSeq_id::e_Ddbj:
+        if (id.GetDdbj().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetDdbj().GetAccession());
+        }
+        break;
+    case CSeq_id::e_Embl:
+        if (id.GetEmbl().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetEmbl().GetAccession());
+        }
+        break;
+    case CSeq_id::e_Tpg:
+        if (id.GetTpg().IsSetAccession()) {
+            rval = s_IsGenbankMasterAccession(id.GetTpg().GetAccession());
+        }
+        break;
+    default:
+        break;
     }
 
     return rval;
@@ -8822,53 +8805,53 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
         switch ( desc.Which() ) {
             case CSeqdesc::e_Title:
-                  {
-                      string title = desc.GetTitle();
-                      size_t pos = NStr::Find(title, "[");
-                      if (pos != string::npos) {
-                          pos = NStr::Find(title, "=", pos + 1);
-                      }
-                      if (pos != string::npos) {
-                          pos = NStr::Find(title, "]", pos + 1);
-                      }
-                      if (pos != string::npos) {
-                          bool report_fasta_brackets = true;
-                          FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-                              if ((*id_it)->IsGeneral()) {
-                                  const CDbtag& dbtag = (*id_it)->GetGeneral();
-                                  if (dbtag.IsSetDb()) {
-                                      if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
-                                          || NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
-                                          report_fasta_brackets = false;
-                                          break;
-                                      }
-                                  }
-                              }
-                          }
-                          if (report_fasta_brackets) {
-                              IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, seq, nullptr) {
-                                  const CBioSource& bsrc = (*bs_ref).GetSource();
-                                  if (bsrc.IsSetOrg()) {
-                                      const COrg_ref& orgref = bsrc.GetOrg();
-                                      if (orgref.IsSetTaxname()) {
-                                          string taxname = orgref.GetTaxname();
-                                          size_t pos2 = NStr::Find (taxname, "=");
-                                          if (pos2 != string::npos) {
-                                              pos2 = NStr::Find (title, taxname);
-                                              if (pos2 != string::npos) {
-                                                  report_fasta_brackets = false;
-                                              }
-                                          }
-                                      }
-                                  }
-                              }
-                          }
-                          if (report_fasta_brackets) {
-                              PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle,
-                                      "Title may have unparsed [...=...] construct",
-                                      ctx, desc);
-                          }
-                      }
+            {
+                string title = desc.GetTitle();
+                size_t pos = NStr::Find(title, "[");
+                if (pos != string::npos) {
+                    pos = NStr::Find(title, "=", pos + 1);
+                }
+                if (pos != string::npos) {
+                    pos = NStr::Find(title, "]", pos + 1);
+                }
+                if (pos != string::npos) {
+                    bool report_fasta_brackets = true;
+                    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+                        if ((*id_it)->IsGeneral()) {
+                            const CDbtag& dbtag = (*id_it)->GetGeneral();
+                            if (dbtag.IsSetDb()) {
+                                if (NStr::EqualNocase(dbtag.GetDb(), "TMSMART")
+                                    || NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
+                                    report_fasta_brackets = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (report_fasta_brackets) {
+                        IF_EXISTS_CLOSEST_BIOSOURCE (bs_ref, seq, nullptr) {
+                            const CBioSource& bsrc = (*bs_ref).GetSource();
+                            if (bsrc.IsSetOrg()) {
+                                const COrg_ref& orgref = bsrc.GetOrg();
+                                if (orgref.IsSetTaxname()) {
+                                    string taxname = orgref.GetTaxname();
+                                    size_t pos2 = NStr::Find (taxname, "=");
+                                    if (pos2 != string::npos) {
+                                        pos2 = NStr::Find (title, taxname);
+                                        if (pos2 != string::npos) {
+                                            report_fasta_brackets = false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (report_fasta_brackets) {
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_FastaBracketTitle,
+                                "Title may have unparsed [...=...] construct",
+                                ctx, desc);
+                    }
+                }
             }
             break;
         default:
@@ -9214,10 +9197,10 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateGBBlock
-(const CGB_block& gbblock,
- const CBioseq& seq,
- const CSeqdesc& desc)
+void CValidError_bioseq::ValidateGBBlock(
+    const CGB_block& gbblock,
+    const CBioseq&   seq,
+    const CSeqdesc&  desc)
 {
     const CSeq_entry& ctx = *seq.GetParentEntry();
 
@@ -9249,13 +9232,13 @@ bool CValidError_bioseq::GetTSAConflictingBiomolTechErrors(const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateMolInfoContext
-(const CMolInfo& minfo,
- int& seq_biomol,
- int& last_tech,
- int& last_completeness,
- const CBioseq& seq,
- const CSeqdesc& desc)
+void CValidError_bioseq::ValidateMolInfoContext(
+    const CMolInfo& minfo,
+    int& seq_biomol,
+    int& last_tech,
+    int& last_completeness,
+    const CBioseq& seq,
+    const CSeqdesc& desc)
 {
     const CSeq_entry& ctx = *seq.GetParentEntry();
 
@@ -9984,7 +9967,7 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
 }
 
 
-void CValidError_bioseq::ReportModifInconsistentError (int new_mod, int& old_mod, const CSeqdesc& desc, const CSeq_entry& ctx)
+void CValidError_bioseq::ReportModifInconsistentError(int new_mod, int& old_mod, const CSeqdesc& desc, const CSeq_entry& ctx)
 {
     if (old_mod >= 0) {
         if (new_mod != old_mod) {
@@ -9998,7 +9981,7 @@ void CValidError_bioseq::ReportModifInconsistentError (int new_mod, int& old_mod
 }
 
 
-void CValidError_bioseq::ValidateModifDescriptors (const CBioseq& seq)
+void CValidError_bioseq::ValidateModifDescriptors(const CBioseq& seq)
 {
     const CSeq_entry& ctx = *seq.GetParentEntry();
 
@@ -10014,46 +9997,45 @@ void CValidError_bioseq::ValidateModifDescriptors (const CBioseq& seq)
         while (it != modif.end()) {
             int modval = *it;
             switch (modval) {
-                case eGIBB_mod_dna:
-                case eGIBB_mod_rna:
-                    if (m_CurrentHandle && m_CurrentHandle.IsAa()) {
-                        PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
-                                 "Nucleic acid GIBB-mod [" + NStr::IntToString (modval) + "] on protein",
-                                 ctx, *desc_ci);
-                    } else {
-                        ReportModifInconsistentError (modval, last_na_mod, *desc_ci, ctx);
-                    }
-                    break;
-                case eGIBB_mod_mitochondrial:
-                case eGIBB_mod_chloroplast:
-                case eGIBB_mod_kinetoplast:
-                case eGIBB_mod_cyanelle:
-                case eGIBB_mod_macronuclear:
-                    ReportModifInconsistentError (modval, last_organelle, *desc_ci, ctx);
-                    break;
-                case eGIBB_mod_partial:
-                case eGIBB_mod_complete:
-                    ReportModifInconsistentError (modval, last_partialness, *desc_ci, ctx);
-                    if (last_left_right >= 0 && modval == eGIBB_mod_complete) {
-                        PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-                                 "Inconsistent GIBB-mod [" + NStr::IntToString (last_left_right) + "] and ["
-                                 + NStr::IntToString (modval) + "]",
-                                 ctx, *desc_ci);
-                    }
-                    break;
-                case eGIBB_mod_no_left:
-                case eGIBB_mod_no_right:
-                    if (last_partialness == eGIBB_mod_complete) {
-                        PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-                                 "Inconsistent GIBB-mod [" + NStr::IntToString (last_partialness) + "] and ["
-                                 + NStr::IntToString (modval) + "]",
-                                 ctx, *desc_ci);
-                    }
-                    last_left_right = modval;
-                    break;
-                default:
-                    break;
-
+            case eGIBB_mod_dna:
+            case eGIBB_mod_rna:
+                if (m_CurrentHandle && m_CurrentHandle.IsAa()) {
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
+                                "Nucleic acid GIBB-mod [" + NStr::IntToString (modval) + "] on protein",
+                                ctx, *desc_ci);
+                } else {
+                    ReportModifInconsistentError (modval, last_na_mod, *desc_ci, ctx);
+                }
+                break;
+            case eGIBB_mod_mitochondrial:
+            case eGIBB_mod_chloroplast:
+            case eGIBB_mod_kinetoplast:
+            case eGIBB_mod_cyanelle:
+            case eGIBB_mod_macronuclear:
+                ReportModifInconsistentError (modval, last_organelle, *desc_ci, ctx);
+                break;
+            case eGIBB_mod_partial:
+            case eGIBB_mod_complete:
+                ReportModifInconsistentError (modval, last_partialness, *desc_ci, ctx);
+                if (last_left_right >= 0 && modval == eGIBB_mod_complete) {
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                                "Inconsistent GIBB-mod [" + NStr::IntToString (last_left_right) + "] and ["
+                                + NStr::IntToString (modval) + "]",
+                                ctx, *desc_ci);
+                }
+                break;
+            case eGIBB_mod_no_left:
+            case eGIBB_mod_no_right:
+                if (last_partialness == eGIBB_mod_complete) {
+                    PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                                "Inconsistent GIBB-mod [" + NStr::IntToString (last_partialness) + "] and ["
+                                + NStr::IntToString (modval) + "]",
+                                ctx, *desc_ci);
+                }
+                last_left_right = modval;
+                break;
+            default:
+                break;
             }
             ++it;
         }
@@ -10062,7 +10044,7 @@ void CValidError_bioseq::ValidateModifDescriptors (const CBioseq& seq)
 }
 
 
-void CValidError_bioseq::ValidateMoltypeDescriptors (const CBioseq& seq)
+void CValidError_bioseq::ValidateMoltypeDescriptors(const CBioseq& seq)
 {
     const CSeq_entry& ctx = *seq.GetParentEntry();
 
@@ -10071,37 +10053,37 @@ void CValidError_bioseq::ValidateMoltypeDescriptors (const CBioseq& seq)
     while (desc_ci) {
         int modval = desc_ci->GetMol_type();
         switch (modval) {
-            case eGIBB_mol_peptide:
-                if (!seq.IsAa()) {
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
-                             "Nucleic acid with GIBB-mol = peptide",
-                             ctx, *desc_ci);
-                }
-                break;
-            case eGIBB_mol_unknown:
-            case eGIBB_mol_other:
+        case eGIBB_mol_peptide:
+            if (!seq.IsAa()) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
-                         "GIBB-mol unknown or other used",
-                         ctx, *desc_ci);
-                break;
-            default:                   // the rest are nucleic acid
-                if (seq.IsAa()) {
-                    PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
-                             "GIBB-mol [" + NStr::IntToString (modval) + "] used on protein",
-                             ctx, *desc_ci);
-                } else {
-                    if (last_na_mol) {
-                        if (last_na_mol != modval) {
-                            PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-                              "Inconsistent GIBB-mol [" + NStr::IntToString (last_na_mol)
-                              + "] and [" + NStr::IntToString (modval) + "]",
-                              ctx, *desc_ci);
-                        }
-                    } else {
-                        last_na_mol = modval;
+                            "Nucleic acid with GIBB-mol = peptide",
+                            ctx, *desc_ci);
+            }
+            break;
+        case eGIBB_mol_unknown:
+        case eGIBB_mol_other:
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
+                        "GIBB-mol unknown or other used",
+                        ctx, *desc_ci);
+            break;
+        default:                   // the rest are nucleic acid
+            if (seq.IsAa()) {
+                PostErr (eDiag_Error, eErr_SEQ_DESCR_InvalidForTypeGIBB,
+                            "GIBB-mol [" + NStr::IntToString (modval) + "] used on protein",
+                            ctx, *desc_ci);
+            } else {
+                if (last_na_mol) {
+                    if (last_na_mol != modval) {
+                        PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                            "Inconsistent GIBB-mol [" + NStr::IntToString (last_na_mol)
+                            + "] and [" + NStr::IntToString (modval) + "]",
+                            ctx, *desc_ci);
                     }
+                } else {
+                    last_na_mol = modval;
                 }
-                break;
+            }
+            break;
         }
         ++desc_ci;
     }
@@ -10150,11 +10132,11 @@ bool CValidError_bioseq::x_IsMicroRNA(const CBioseq& seq) const
 }
 
 
-void CValidError_bioseq::ValidateUpdateDateContext
-(const CDate& update,
- const CDate& create,
- const CBioseq& seq,
- const CSeqdesc& desc)
+void CValidError_bioseq::ValidateUpdateDateContext(
+    const CDate& update,
+    const CDate& create,
+    const CBioseq& seq,
+    const CSeqdesc& desc)
 {
     if ( update.Compare(create) == CDate::eCompare_before && m_Imp.HasGiOrAccnVer() ) {
 
@@ -10176,12 +10158,12 @@ void CValidError_bioseq::ValidateUpdateDateContext
 }
 
 
-void CValidError_bioseq::ValidateOrgContext
-(const CSeqdesc_CI& curr,
- const COrg_ref& this_org,
- const COrg_ref& org,
- const CBioseq& seq,
- const CSeqdesc& desc)
+void CValidError_bioseq::ValidateOrgContext(
+    const CSeqdesc_CI& curr,
+    const COrg_ref& this_org,
+    const COrg_ref& org,
+    const CBioseq& seq,
+    const CSeqdesc& desc)
 {
     if ( this_org.IsSetTaxname()  &&  org.IsSetTaxname() ) {
         if ( this_org.GetTaxname() != org.GetTaxname() ) {
@@ -10229,9 +10211,9 @@ static bool s_ReportableCollision (const CGene_ref& g1, const CGene_ref& g2)
 }
 
 
-void CValidError_bioseq::x_CompareStrings
-(const TStrFeatMap& str_feat_map,
- const string& type)
+void CValidError_bioseq::x_CompareStrings(
+    const TStrFeatMap& str_feat_map,
+    const string& type)
 {
     bool is_gene_locus = NStr::EqualNocase (type, "names");
 
