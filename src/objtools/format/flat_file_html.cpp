@@ -33,7 +33,6 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_html.hpp>
 #include <util/static_map.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
 
 #include <objtools/format/items/accession_item.hpp>
@@ -61,7 +60,6 @@
 #include <objtools/format/flat_expt.hpp>
 
 #include <objmgr/util/objutil.hpp>
-#include <objmgr/scope.hpp>
 
 #include <objects/seqloc/Seq_bond.hpp>
 
@@ -89,7 +87,7 @@ void CHTMLFormatterEx::FormatProteinId(string& str, const CSeq_id& seq_id, const
         }
     }
     str = "<a href=\"";
-    str += strLinkBaseProt;
+    str += m_NcbiURLBase + sLinkBaseProt;
     str += index;
     str += "\">";
     str += prot_id;
@@ -108,17 +106,27 @@ void CHTMLFormatterEx::FormatTranscriptId(string& str, const CSeq_id& seq_id, co
         }
     }
     str = "<a href=\"";
-    str += strLinkBaseNuc;
+    str += m_NcbiURLBase + sLinkBaseNuc;
     str += index;
     str += "\">";
     str += nuc_id;
     str += "</a>";
 }
 
+/// FIXME: Shouldn't gi have type TGi, not TIntId???
 void CHTMLFormatterEx::FormatNucId(string& str, const CSeq_id&, TIntId gi, const string& acc_id) const
 {
+    // ID-5382 : Since gi is not always available (e.g. for VDB-only sequences),
+    // always use accession in the URL, unless accession is unknown.
     str = "<a href=\"";
-    str += strLinkBaseNuc + NStr::NumericToString(gi) + "\">" + acc_id + "</a>";
+    str += m_NcbiURLBase + sLinkBaseNuc;
+    if (!acc_id.empty())
+        str += acc_id + "\">" + acc_id;
+    else {
+        string gi_str = NStr::NumericToString(gi);
+        str += gi_str + "\">" + gi_str;
+    }
+    str += "</a>";
 }
 
 void CHTMLFormatterEx::FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const
@@ -126,7 +134,7 @@ void CHTMLFormatterEx::FormatTaxid(string& str, const TTaxId taxid, const string
     if (! NStr::StartsWith(taxname, "Unknown", NStr::eNocase)) {
         if (taxid > ZERO_TAX_ID) {
             str += "<a href=\"";
-            str += strLinkBaseTaxonomy;
+            str += m_NcbiURLBase + sLinkBaseTaxonomy;
             str += "id=";
             str += NStr::NumericToString(taxid);
             str += "\">";
@@ -134,7 +142,7 @@ void CHTMLFormatterEx::FormatTaxid(string& str, const TTaxId taxid, const string
             string t_taxname = taxname;
             replace(t_taxname.begin(), t_taxname.end(), ' ', '+');
             str += "<a href=\"";
-            str += strLinkBaseTaxonomy;
+            str += m_NcbiURLBase + sLinkBaseTaxonomy;
             str += "name=";
             str += taxname;
             str += "\">";
@@ -150,7 +158,7 @@ void CHTMLFormatterEx::FormatTaxid(string& str, const TTaxId taxid, const string
 
 void CHTMLFormatterEx::FormatNucSearch(CNcbiOstream& os, const string& id) const
 {
-    os << "<a href=\"" << strLinkBaseNucSearch << id << "\">" << id << "</a>";
+    os << "<a href=\"" << m_NcbiURLBase + sLinkBaseNucSearch << id << "\">" << id << "</a>";
 }
 
 static void s_AddSeqIntString(const CSeq_interval& seqint, string& loc_str,
@@ -273,11 +281,12 @@ void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TInt
 
     // link base
     if (is_prot) {
-        strLink += strLinkBaseProt;
-    } else {
-        strLink += strLinkBaseNuc;
+        strLink += m_NcbiURLBase + sLinkBaseProt;
     }
-    // strLink += NStr::NumericToString(gi);
+    else {
+        strLink += m_NcbiURLBase + sLinkBaseNuc;
+    }
+    //strLink += NStr::NumericToString(gi);
     strLink += acc;
 
     // location
@@ -302,7 +311,7 @@ void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TInt
 void CHTMLFormatterEx::FormatModelEvidence(string& str, const SModelEvidance& me) const
 {
     str += "<a href=\"";
-    str += strLinkBaseNuc;
+    str += m_NcbiURLBase + sLinkBaseNuc;
     if (me.gi > ZERO_GI) {
         str += NStr::NumericToString(me.gi);
     } else {
@@ -325,7 +334,7 @@ void CHTMLFormatterEx::FormatModelEvidence(string& str, const SModelEvidance& me
 void CHTMLFormatterEx::FormatTranscript(string& str, const string& name) const
 {
     str += "<a href=\"";
-    str += strLinkBaseNuc;
+    str += m_NcbiURLBase + sLinkBaseNuc;
     str += name;
     str += "\">";
     str += name;
@@ -334,15 +343,15 @@ void CHTMLFormatterEx::FormatTranscript(string& str, const string& name) const
 
 void CHTMLFormatterEx::FormatGeneralId(CNcbiOstream& os, const string& id) const
 {
-    os << "<a href=\"" << strLinkBaseNuc << id << "\">" << id << "</a>";
+    os << "<a href=\"" << m_NcbiURLBase + sLinkBaseNuc << id << "\">" << id << "</a>";
 }
 
 void CHTMLFormatterEx::FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const
 {
-    const string link_base = (is_prot ? strLinkBaseProt : strLinkBaseNuc);
-    const char*  mol_type  = (is_prot ? "aa" : "bp");
-    os << "          [gap " << gap_size << " " << mol_type << "]"
-       << "    <a href=\"" << link_base << id << "?expand-gaps=on\">Expand Ns</a>";
+    const string link_base = (is_prot ? sLinkBaseProt : sLinkBaseNuc);
+    const char *mol_type   = (is_prot ? "aa" : "bp" );
+    os << "          [gap " << gap_size << " " << mol_type << "]" <<
+        "    <a href=\"" << m_NcbiURLBase + link_base << id << "?expand-gaps=on\">Expand Ns</a>";
 }
 
 void CHTMLFormatterEx::FormatUniProtId(string& str, const string& prot_id) const
