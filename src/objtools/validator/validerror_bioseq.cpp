@@ -539,11 +539,11 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
                     static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
                     if (longer_general) {
                         if (idlen > 100 && ! m_Imp.IsGI()) {
-                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(100) + " characters", ctx);
+                            PostErr(sev, eErr_SEQ_INST_BadSeqIdLength, "General identifier longer than " + NStr::NumericToString(100) + " characters", ctx);
                         }
                     } else {
                         if (idlen > maxlen && ! m_Imp.IsGI()) {
-                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
+                            PostErr(sev, eErr_SEQ_INST_BadSeqIdLength, "General identifier longer than " + NStr::NumericToString(maxlen) + " characters", ctx);
                         }
                     }
                     if (idlen == 0) {
