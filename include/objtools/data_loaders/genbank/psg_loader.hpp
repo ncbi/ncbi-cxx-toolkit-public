@@ -155,12 +155,9 @@ public:
     static void SetSNP_Scale_Limit(CSeq_id::ESNPScaleLimit value);
 
 private:
-    typedef CParamLoaderMaker<CPSGDataLoader, CGBLoaderParams> TMaker;
-    friend class CParamLoaderMaker<CPSGDataLoader, CGBLoaderParams>;
+    friend class CGBLoaderMaker<CPSGDataLoader>;
 
     TRealBlobId x_GetRealBlobId(const TBlobId& blob_id) const override;
-
-    static TRegisterLoaderInfo ConvertRegInfo(const TMaker::TRegisterInfo& info);
 
     // default constructor
     CPSGDataLoader(void);
