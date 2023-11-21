@@ -26141,7 +26141,7 @@
         "HUP biodata of gb|WMV97217| (no cookie)": {
             "description": "HUP biodata of gb|WMV97217| (no cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
-            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "env": {"HTTP_COOKIE": ""},
             "requests": [
                 [
                     {
@@ -26222,7 +26222,7 @@
         "HUP biodata of 2574876738 (no cookie)": {
             "description": "HUP biodata of 2574876738 (no cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
-            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "env": {"HTTP_COOKIE": ""},
             "requests": [
                 [
                     {
@@ -26303,7 +26303,7 @@
         "HUP blob (no cookie)": {
             "description": "HUP blob (no cookie)",
             "tags": ["id-getblob", "cassandra", "400", "hup-no-cookie"],
-            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "env": {"HTTP_COOKIE": ""},
             "requests": [
                 [
                     {
@@ -26354,7 +26354,7 @@
         "HUP blob does not exist (no cookie)": {
             "description": "HUP blob does not exist (no cookie)",
             "tags": ["id-getblob", "cassandra", "400", "hup-no-cookie"],
-            "env": {"NCBI_PSG_AUTH_TOKEN": ""},
+            "env": {"HTTP_COOKIE": ""},
             "requests": [
                 [
                     {
