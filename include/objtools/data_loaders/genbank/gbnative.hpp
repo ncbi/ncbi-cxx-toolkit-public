@@ -225,12 +225,9 @@ protected:
 
 private:
     friend class CGBDataLoader;
-    typedef CParamLoaderMaker<CGBDataLoader_Native, const CGBLoaderParams&> TGBMaker;
-    friend class CParamLoaderMaker<CGBDataLoader_Native, const CGBLoaderParams&>;
+    friend class CGBLoaderMaker<CGBDataLoader_Native>;
 
     TRealBlobId x_GetRealBlobId(const TBlobId& blob_id) const override;
-
-    static TRegisterLoaderInfo ConvertRegInfo(const TGBMaker::TRegisterInfo& info);
 
     CGBDataLoader_Native(const string&     loader_name,
                          const CGBLoaderParams& params);

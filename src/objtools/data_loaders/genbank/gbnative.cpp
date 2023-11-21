@@ -144,23 +144,15 @@ private:
 };
 
 
-CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::ConvertRegInfo(const TGBMaker::TRegisterInfo& info)
-{
-    TRegisterLoaderInfo ret;
-    ret.Set(info.GetLoader(), info.IsCreated());
-    return ret;
-}
-
-
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader_Native::RegisterInObjectManager(
     CObjectManager& om,
     const CGBLoaderParams& params,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TGBMaker maker(params);
+    CGBLoaderMaker<CGBDataLoader_Native> maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
-    return ConvertRegInfo(maker.GetRegisterInfo());
+    return maker.GetRegisterInfo();
 }
 
 

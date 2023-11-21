@@ -434,6 +434,32 @@ public:
     virtual bool GetTrackSplitSeq() const override;
 
 protected:
+    template <class TDataLoader>
+        class CGBLoaderMaker : public CLoaderMaker_Base
+    {
+    public:
+        CGBLoaderMaker(const CGBLoaderParams& params)
+            : m_Params(params)
+            {
+                m_Name = CGBDataLoader::GetLoaderNameFromArgs(params);
+            }
+        
+    virtual ~CGBLoaderMaker(void) {}
+
+    virtual CDataLoader* CreateLoader(void) const
+        {
+            return new TDataLoader(m_Name, m_Params);
+        }
+    typedef SRegisterLoaderInfo<CGBDataLoader> TRegisterInfo;
+    TRegisterInfo GetRegisterInfo(void)
+        {
+            TRegisterInfo info;
+            info.Set(m_RegisterInfo.GetLoader(), m_RegisterInfo.IsCreated());
+            return info;
+        }
+    protected:
+        CGBLoaderParams m_Params;
+    };
     CGBDataLoader(const string&     loader_name,
                   const CGBLoaderParams& params);
 
