@@ -33,50 +33,15 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-
-#include <util/icanceled.hpp>
-
 #include <objmgr/scope.hpp>
-#include <objtools/format/flat_file_config.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CArgDescriptions;
-class CArgs;
-
 BEGIN_SCOPE(objects)
 
-class CBioseqContext;
-class CStartSectionItem;
-class CHtmlAnchorItem;
-class CLocusItem;
-class CDeflineItem;
-class CAccessionItem;
-class CVersionItem;
-class CGenomeProjectItem;
-class CDBSourceItem;
-class CKeywordsItem;
-class CSegmentItem;
-class CSourceItem;
-class CReferenceItem;
-class CCacheItem;
-class CCommentItem;
-class CPrimaryItem;
-class CFeatHeaderItem;
-class CSourceFeatureItem;
-class CFeatureItem;
-class CGapItem;
-class CBaseCountItem;
-class COriginItem;
-class CSequenceItem;
-class CContigItem;
-class CWGSItem;
-class CTSAItem;
-class CEndSectionItem;
-class IFlatItem;
-class CSeq_id;
-class CSeq_loc;
-class CScope;
+const string sLinkBaseProt = "/protein/";
+const string sLinkBaseNuc = "/nuccore/";
+const string sLinkBaseNucSearch = "/sites/entrez?db=Nucleotide&amp;cmd=Search&amp;term=";
+const string sLinkBaseTaxonomy = "/Taxonomy/Browser/wwwtax.cgi?";
 struct SModelEvidance;
 
 // --- Flat File HTML configuration class
@@ -98,9 +63,11 @@ public:
     void FormatGeneralId(CNcbiOstream& os, const string& id) const override;
     void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const override;
     void FormatUniProtId(string& str, const string& prot_id) const override;
+    void SetNcbiURLBase(const string& path) { m_NcbiURLBase = path; }
 
 private:
     mutable CRef<CScope> m_scope;
+    string m_NcbiURLBase;
 };
 
 END_SCOPE(objects)

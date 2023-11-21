@@ -103,6 +103,8 @@
 #    include <objtools/data_loaders/cdd/cdd_loader/cdd_loader.hpp>
 #endif
 
+// For command-line app, the URL paths need to be absolute
+#define NCBI_URL_BASE "https://www.ncbi.nlm.nih.gov"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -1041,7 +1043,9 @@ void CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& a
     cfg.BasicCleanup(false);
 
     if (args["html"]) {
-        CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(context.m_Scope));
+        CHTMLFormatterEx* html_fmt_ex = new CHTMLFormatterEx(context.m_Scope);
+        html_fmt_ex->SetNcbiURLBase(NCBI_URL_BASE);
+        CRef<IHTMLFormatter> html_fmt(html_fmt_ex);
         cfg.SetHTMLFormatter(html_fmt);
     }
 
