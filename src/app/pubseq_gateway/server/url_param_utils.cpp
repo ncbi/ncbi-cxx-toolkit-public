@@ -546,6 +546,8 @@ bool CPubseqGatewayApp::x_GetTSEOption(CHttpRequest &  req,
     static string   acceptable = "Acceptable values are '" + none + "', '" +
                                  whole + "', '" + orig + "', '" +
                                  smart + "' and '" + slim + "'.";
+    static string   err_msg = "Malformed '" + kTSEParam + "' parameter. " +
+                              acceptable;
 
     SRequestParameter       tse_param = x_GetParam(req, kTSEParam);
     if (tse_param.m_Found) {
@@ -570,8 +572,7 @@ bool CPubseqGatewayApp::x_GetTSEOption(CHttpRequest &  req,
             return true;
         }
 
-        x_MalformedArguments(reply, now, "Malformed '" + kTSEParam +
-                             "' parameter. " + acceptable);
+        x_MalformedArguments(reply, now, err_msg);
         return false;
     }
 
@@ -594,6 +595,8 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
                                      default_option + "', '" +
                                      limited_option + "', '" +
                                      never_option + "'.";
+    static string       err_msg = "Malformed '" + kAccSubstitutionParam +
+                                  "' parameter. " + acceptable;
 
     SRequestParameter   subst_param = x_GetParam(req, kAccSubstitutionParam);
     if (subst_param.m_Found) {
@@ -610,9 +613,7 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
             return true;
         }
 
-        x_MalformedArguments(reply, now,
-                             "Malformed '" + kAccSubstitutionParam +
-                             "' parameter. " + acceptable);
+        x_MalformedArguments(reply, now, err_msg);
         return false;
     }
     return true;
@@ -629,7 +630,6 @@ CPubseqGatewayApp::x_GetIntrospectionFormat(CHttpRequest &  req,
     static string   json = "json";
     static string   acceptable = "Acceptable values are '" + html +
                                  "' and '" + json + "'";
-
 
     SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
     if (fmt_param.m_Found) {
@@ -666,6 +666,8 @@ CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
                                  protobuf + "' and '" +
                                  json + "' and '" +
                                  native + "'.";
+    static string   err_msg = "Malformed '" + kFmtParam + "' parameter. " +
+                              acceptable;
 
     SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
     if (fmt_param.m_Found) {
@@ -682,9 +684,7 @@ CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
             return true;
         }
 
-        x_MalformedArguments(reply, now,
-                             "Malformed '" + kFmtParam + "' parameter. " +
-                             acceptable);
+        x_MalformedArguments(reply, now, err_msg);
         return false;
     }
     return true;
@@ -727,6 +727,8 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
                                                  int &  send_blob_if_small)
 {
     static string   kSendBlobIfSmallParam = "send_blob_if_small";
+    static string   kInvalidMsg = "Invalid '" + kSendBlobIfSmallParam +
+                                  "' parameter value. It must be an integer >= 0";
 
     send_blob_if_small = 0;   // default
 
@@ -741,9 +743,7 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
         }
 
         if (send_blob_if_small < 0) {
-            x_MalformedArguments(reply, now,
-                                 "Invalid '" + kSendBlobIfSmallParam +
-                                 "' parameter value. It must be an integer >= 0");
+            x_MalformedArguments(reply, now, kInvalidMsg);
             return false;
         }
     }
@@ -758,12 +758,13 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
                               vector<string> &  names)
 {
     static string   kNamesParam = "names";
+    static string   kErrMsg = "The mandatory '" + kNamesParam +
+                              "' parameter is not found";
+    static string   kNoNames = "Named annotation names are not found in the request";
 
     SRequestParameter   names_param = x_GetParam(req, kNamesParam);
     if (!names_param.m_Found) {
-        x_MalformedArguments(reply, now,
-                             "The mandatory '" + kNamesParam +
-                             "' parameter is not found");
+        x_MalformedArguments(reply, now, kErrMsg);
         return false;
     }
 
@@ -786,8 +787,7 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
     }
 
     if (names.empty()) {
-        x_MalformedArguments(reply, now,
-                             "Named annotation names are not found in the request");
+        x_MalformedArguments(reply, now, kNoNames);
         return false;
     }
     return true;
@@ -841,23 +841,27 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
 {
     static string       kSeqIdParam = "seq_id";
     static string       kSeqIdTypeParam = "seq_id_type";
+    static string       kMissingMsg = "Missing the '" +
+                                      kSeqIdParam + "' parameter";
+    static string       kMissingValMsg = "Missing value of the '" +
+                                         kSeqIdParam + "' parameter";
+    static string       kBadValMsg = "The '" + kSeqIdTypeParam +
+                                     "' value must be >= 0 and < " +
+                                     to_string(CSeq_id::e_MaxChoice);
 
     SRequestParameter   seq_id_type_param;
-    string              err_msg;
 
     // Check the mandatory parameter presence
     SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
     if (!seq_id_param.m_Found) {
         if (!seq_id_is_optional) {
-            x_InsufficientArguments(reply, now,
-                                    "Missing the '" + kSeqIdParam + "' parameter");
+            x_InsufficientArguments(reply, now, kMissingMsg);
             return false;
         }
     }
     else if (seq_id_param.m_Value.empty()) {
         if (!seq_id_is_optional) {
-            x_MalformedArguments(reply, now,
-                                 "Missing value of the '" + kSeqIdParam + "' parameter");
+            x_MalformedArguments(reply, now, kMissingValMsg);
             return false;
         }
     }
@@ -875,6 +879,7 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
 
     seq_id_type_param = x_GetParam(req, kSeqIdTypeParam);
     if (seq_id_type_param.m_Found) {
+        string              err_msg;
         if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
             x_MalformedArguments(reply, now, err_msg);
@@ -882,10 +887,7 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
         }
 
         if (seq_id_type < 0 || seq_id_type >= CSeq_id::e_MaxChoice) {
-            err_msg = "The '" + kSeqIdTypeParam +
-                      "' value must be >= 0 and < " +
-                      to_string(CSeq_id::e_MaxChoice);
-            x_MalformedArguments(reply, now, err_msg);
+            x_MalformedArguments(reply, now, kBadValMsg);
             return false;
         }
     } else {
@@ -922,6 +924,7 @@ CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
                             int64_t &  ipg)
 {
     static string       kIPGParam = "ipg";
+    static string       kBadValMsg = "The '" + kIPGParam + "' parameter value must be > 0";
 
     SRequestParameter   ipg_param = x_GetParam(req, kIPGParam);
     if (ipg_param.m_Found) {
@@ -933,8 +936,7 @@ CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
         }
 
         if (ipg <= 0) {
-            x_MalformedArguments(reply, now, "The '" + kIPGParam +
-                                             "' parameter value must be > 0");
+            x_MalformedArguments(reply, now, kBadValMsg);
             return false;
         }
     } else {
@@ -980,6 +982,8 @@ CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
                                      kContig + "' and '" +
                                      kSupercontig + "' and '" +
                                      kUnit + "'.";
+    static string       kBadValMsg = "Malformed '" + kSNPScaleLimitParam +
+                                     "' parameter. " + acceptable;
 
     SRequestParameter   snp_scale_limit_param = x_GetParam(req, kSNPScaleLimitParam);
     if (snp_scale_limit_param.m_Found) {
@@ -1005,9 +1009,7 @@ CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
             return true;
         }
 
-        x_MalformedArguments(reply, now,
-                             "Malformed '" + kSNPScaleLimitParam +
-                             "' parameter. " + acceptable);
+        x_MalformedArguments(reply, now, kBadValMsg);
         return false;
     }
 
