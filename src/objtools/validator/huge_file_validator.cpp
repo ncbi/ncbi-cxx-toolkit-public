@@ -418,9 +418,10 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     context.NoBioSource      = globalInfo.NoBioSource;
     context.NoPubsFound      = globalInfo.NoPubsFound;
     context.NoCitSubsFound   = globalInfo.NoCitSubsFound;
-    context.JustTpaAssembly  = globalInfo.JustTpaAssembly;
-    context.TpaAssemblyHist  = globalInfo.TpaAssemblyHist;
-    context.TpaNoHistYesGI   = globalInfo.TpaNoHistYesGI;
+    context.CurrTpaAssembly  = globalInfo.CurrTpaAssembly;
+    context.JustTpaAssembly  += globalInfo.JustTpaAssembly;
+    context.TpaAssemblyHist  += globalInfo.TpaAssemblyHist;
+    context.TpaNoHistYesGI   += globalInfo.TpaNoHistYesGI;
 
     if (!context.IsIdInBlob) {
         context.IsIdInBlob = [this](const CSeq_id& id) {
