@@ -25930,7 +25930,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -25938,17 +25938,15 @@
                     "id": "biodata_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-get processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "biodata_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26011,7 +26009,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26019,17 +26017,15 @@
                     "id": "biodata_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-get processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "biodata_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26062,7 +26058,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26070,17 +26066,15 @@
                     "id": "blob_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-getblob processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26113,7 +26107,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26121,17 +26115,15 @@
                     "id": "blob_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-getblob processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26196,7 +26188,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26204,17 +26196,15 @@
                     "id": "biodata_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "biodata_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26277,7 +26267,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26285,17 +26275,15 @@
                     "id": "biodata_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-get",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "biodata_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26328,7 +26316,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26336,17 +26324,15 @@
                     "id": "blob_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
@@ -26379,7 +26365,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26387,17 +26373,15 @@
                     "id": "blob_1",
                     "result": {
                         "reply": "Processor",
-                        "status": "Error",
-                        "errors": [
-                            "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                        ]
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown"
                     }
                 },
                 {
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "status": "Error"
+                        "status": "Forbidden"
                     }
                 }
             ]
