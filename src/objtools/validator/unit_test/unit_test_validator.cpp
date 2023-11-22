@@ -3083,7 +3083,7 @@ void TestOneLongGeneral(bool emb, bool err)
 
     if (err) {
         string acc_str = "lcl|good";
-        expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdFormat",
+        expected_errors.push_back(new CExpectedError(acc_str, eDiag_Critical, "BadSeqIdLength",
                                   "General identifier longer than 50 characters"));
     }
 
