@@ -59,6 +59,7 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     bool        NoBioSource{false};
     bool        NoPubsFound{false};
     bool        NoCitSubsFound{false};
+    bool        CurrTpaAssembly{false};
     int         JustTpaAssembly{0};
     int         TpaAssemblyHist{0};
     int         TpaNoHistYesGI{0};
