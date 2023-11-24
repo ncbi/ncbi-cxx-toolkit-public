@@ -253,6 +253,9 @@ static string SkipReasonToString(EPSGS_BlobSkipReason  skip_reason)
 }
 
 
+static string s_AndBioseqInfoItemAndDataChunkAndSize = s_AndBioseqInfoItem +
+                                                       s_AndDataChunk +
+                                                       s_AndSize;
 string  GetBioseqInfoHeader(size_t  item_id,
                             const string &  processor_id,
                             size_t  bioseq_info_size,
@@ -267,9 +270,7 @@ string  GetBioseqInfoHeader(size_t  item_id,
     reply.append(buf, len)
          .append(s_AndProcessorId)
          .append(NStr::URLEncode(processor_id))
-         .append(s_AndBioseqInfoItem)
-         .append(s_AndDataChunk)
-         .append(s_AndSize);
+         .append(s_AndBioseqInfoItemAndDataChunkAndSize);
 
     len = PSGToString(bioseq_info_size, buf);
     reply.append(buf, len);

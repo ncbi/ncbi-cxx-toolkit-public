@@ -145,10 +145,10 @@ CPSGS_AnnotProcessor::x_FilterNames(const vector<string> &  names)
 }
 
 
+static CRegexp  kAnnotNameRegexp("^NA\\d+\\.\\d+$", CRegexp::fCompile_ignore_case);
 bool CPSGS_AnnotProcessor::x_IsNameValid(const string &  name)
 {
-    static CRegexp  regexp("^NA\\d+\\.\\d+$", CRegexp::fCompile_ignore_case);
-    return regexp.IsMatch(name);
+    return kAnnotNameRegexp.IsMatch(name);
 }
 
 

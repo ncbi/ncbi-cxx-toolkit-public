@@ -1049,12 +1049,12 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
 }
 
 
+static string   kHealthSeparator = "==============================================";
+static string   kHealthPrefix = "PSG_HEALTH_ERROR: ";
+
 int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
-    static string   separator = "==============================================";
-    static string   prefix = "PSG_HEALTH_ERROR: ";
-
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
@@ -1064,11 +1064,11 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
         // Something is wrong with access to Cassandra
         // Check if there are any active alerts
         auto        active_alerts = m_Alerts.SerializeActive();
-        string      msg = separator + "\n" +
-                          prefix + "CASSANDRA" "\n" +
+        string      msg = kHealthSeparator + "\n" +
+                          kHealthPrefix + "CASSANDRA" "\n" +
                           GetCassStartupDataStateMessage(startup_data_state) + "\n" +
-                          separator + "\n" +
-                          prefix + "ALERTS" "\n";
+                          kHealthSeparator + "\n" +
+                          kHealthPrefix + "ALERTS" "\n";
         if (active_alerts.GetSize() == 0) {
             msg += "There are no active alerts";
         } else {
@@ -1136,8 +1136,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
 
         if (!resolution.IsValid()) {
             if (!m_Settings.m_TestSeqIdIgnoreError) {
-                string  msg = separator + "\n" +
-                              prefix + "RESOLUTION" "\n";
+                string  msg = kHealthSeparator + "\n" +
+                              kHealthPrefix + "RESOLUTION" "\n";
                 if (resolution.m_Error.HasError()) {
                     msg += resolution.m_Error.m_ErrorMessage;
                 } else {
@@ -1157,8 +1157,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
         }
     } catch (const exception &  exc) {
         if (!m_Settings.m_TestSeqIdIgnoreError) {
-            string  msg = separator + "\n" +
-                          prefix + "RESOLUTION" "\n" +
+            string  msg = kHealthSeparator + "\n" +
+                          kHealthPrefix + "RESOLUTION" "\n" +
                           exc.what();
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->Send500(msg.c_str());
@@ -1173,8 +1173,8 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
                     "', however the configuration is to ignore test errors");
     } catch (...) {
         if (!m_Settings.m_TestSeqIdIgnoreError) {
-            string  msg = separator + "\n" +
-                          prefix + "RESOLUTION" "\n"
+            string  msg = kHealthSeparator + "\n" +
+                          kHealthPrefix + "RESOLUTION" "\n"
                           "Unknown '" + m_Settings.m_TestSeqId + "' resolution error";
             reply->SetContentType(ePSGS_PlainTextMime);
             reply->Send500(msg.c_str());
@@ -1200,12 +1200,12 @@ int CPubseqGatewayApp::OnHealth(CHttpRequest &  http_req,
 }
 
 
+static string   kConfigurationFilePath = "ConfigurationFilePath";
+static string   kConfiguration = "Configuration";
+
 int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
-    static string   kConfigurationFilePath = "ConfigurationFilePath";
-    static string   kConfiguration = "Configuration";
-
     // NOTE: expected to work regardless of the shutdown request
 
     auto                    now = psg_clock_t::now();
@@ -1248,38 +1248,38 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
 }
 
 
+static string   kPID = "PID";
+static string   kExecutablePath = "ExecutablePath";
+static string   kCommandLineArguments = "CommandLineArguments";
+static string   kStartupDataState = "StartupDataState";
+static string   kRealTime = "RealTime";
+static string   kUserTime = "UserTime";
+static string   kSystemTime = "SystemTime";
+static string   kPhysicalMemory = "PhysicalMemory";
+static string   kMemoryUsedTotal = "MemoryUsedTotal";
+static string   kMemoryUsedTotalPeak = "MemoryUsedTotalPeak";
+static string   kMemoryUsedResident = "MemoryUsedResident";
+static string   kMemoryUsedResidentPeak = "MemoryUsedResidentPeak";
+static string   kMemoryUsedShared = "MemoryUsedShared";
+static string   kMemoryUsedData = "MemoryUsedData";
+static string   kMemoryUsedStack = "MemoryUsedStack";
+static string   kMemoryUsedText = "MemoryUsedText";
+static string   kMemoryUsedLib = "MemoryUsedLib";
+static string   kMemoryUsedSwap = "MemoryUsedSwap";
+static string   kProcFDSoftLimit = "ProcFDSoftLimit";
+static string   kProcFDHardLimit = "ProcFDHardLimit";
+static string   kProcFDUsed = "ProcFDUsed";
+static string   kCPUCount = "CPUCount";
+static string   kProcThreadCount = "ProcThreadCount";
+static string   kVersion = "Version";
+static string   kBuildDate = "BuildDate";
+static string   kStartedAt = "StartedAt";
+static string   kExcludeBlobCacheUserCount = "ExcludeBlobCacheUserCount";
+static string   kConcurrentPrefix = "ConcurrentProcCount_";
+
 int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
                               shared_ptr<CPSGS_Reply>  reply)
 {
-    static string   kPID = "PID";
-    static string   kExecutablePath = "ExecutablePath";
-    static string   kCommandLineArguments = "CommandLineArguments";
-    static string   kStartupDataState = "StartupDataState";
-    static string   kRealTime = "RealTime";
-    static string   kUserTime = "UserTime";
-    static string   kSystemTime = "SystemTime";
-    static string   kPhysicalMemory = "PhysicalMemory";
-    static string   kMemoryUsedTotal = "MemoryUsedTotal";
-    static string   kMemoryUsedTotalPeak = "MemoryUsedTotalPeak";
-    static string   kMemoryUsedResident = "MemoryUsedResident";
-    static string   kMemoryUsedResidentPeak = "MemoryUsedResidentPeak";
-    static string   kMemoryUsedShared = "MemoryUsedShared";
-    static string   kMemoryUsedData = "MemoryUsedData";
-    static string   kMemoryUsedStack = "MemoryUsedStack";
-    static string   kMemoryUsedText = "MemoryUsedText";
-    static string   kMemoryUsedLib = "MemoryUsedLib";
-    static string   kMemoryUsedSwap = "MemoryUsedSwap";
-    static string   kProcFDSoftLimit = "ProcFDSoftLimit";
-    static string   kProcFDHardLimit = "ProcFDHardLimit";
-    static string   kProcFDUsed = "ProcFDUsed";
-    static string   kCPUCount = "CPUCount";
-    static string   kProcThreadCount = "ProcThreadCount";
-    static string   kVersion = "Version";
-    static string   kBuildDate = "BuildDate";
-    static string   kStartedAt = "StartedAt";
-    static string   kExcludeBlobCacheUserCount = "ExcludeBlobCacheUserCount";
-    static string   kConcurrentPrefix = "ConcurrentProcCount_";
-
     // NOTE: expected to work regardless of the shutdown request
 
     auto                    now = psg_clock_t::now();
@@ -1540,13 +1540,13 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
 }
 
 
+static const char *     s_Shutdown = "Shutdown request accepted";
+static size_t           s_ShutdownSize = strlen(s_Shutdown);
+
 int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
                                   shared_ptr<CPSGS_Reply>  reply)
 {
     // NOTE: expected to work regardless of the shutdown request
-
-    static const char *     s_Shutdown = "Shutdown request accepted";
-    static size_t           s_ShutdownSize = strlen(s_Shutdown);
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
@@ -2110,16 +2110,17 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
 
 
 
+static string  kShuttingDownMsg = "The server is in process of shutting down";
+
 bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                                          const psg_time_point_t &  create_timestamp)
 {
     if (g_ShutdownData.m_ShutdownRequested) {
-        string      msg = "The server is in process of shutting down";
-        x_SendMessageAndCompletionChunks(reply, create_timestamp, msg,
+        x_SendMessageAndCompletionChunks(reply, create_timestamp, kShuttingDownMsg,
                                          CRequestStatus::e503_ServiceUnavailable,
                                          ePSGS_ShuttingDown,
                                          eDiag_Error);
-        PSG_WARNING(msg);
+        PSG_WARNING(kShuttingDownMsg);
         return true;
     }
     return false;
