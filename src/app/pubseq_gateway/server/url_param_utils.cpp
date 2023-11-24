@@ -49,17 +49,17 @@ CPubseqGatewayApp::x_GetParam(CHttpRequest &  req, const string &  name) const
 }
 
 
+static string  kYes = "yes";
+static string  kNo = "no";
+static string  kBoolAcceptable = "Acceptable values are '" + kYes +
+                                 "' and '" + kNo + "'.";
+
 bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
                                            const CTempString &  param_value,
                                            string &  err_msg) const
 {
-    static string   yes = "yes";
-    static string   no = "no";
-    static string   acceptable = "Acceptable values are '" + yes +
-                                 "' and '" + no + "'.";
-
-    if (param_value != yes && param_value != no) {
-        err_msg = "Malformed '" + param_name + "' parameter. " + acceptable;
+    if (param_value != kYes && param_value != kNo) {
+        err_msg = "Malformed '" + param_name + "' parameter. " + kBoolAcceptable;
         return false;
     }
     return true;
@@ -155,14 +155,14 @@ void CPubseqGatewayApp::x_Finish500(shared_ptr<CPSGS_Reply>  reply,
 }
 
 
+static string  kTraceParam = "trace";
+
 bool
 CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
                                        shared_ptr<CPSGS_Reply>  reply,
                                        const psg_time_point_t &  now,
                                        SPSGS_RequestBase::EPSGS_Trace &  trace)
 {
-    static string  kTraceParam = "trace";
-
     trace = SPSGS_RequestBase::ePSGS_NoTracing;     // default
     SRequestParameter   trace_protocol_param = x_GetParam(req, kTraceParam);
 
@@ -174,7 +174,7 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
             x_MalformedArguments(reply, now, err_msg);
             return false;
         }
-        if (trace_protocol_param.m_Value == "yes")
+        if (trace_protocol_param.m_Value == kYes)
             trace = SPSGS_RequestBase::ePSGS_WithTracing;
         else
             trace = SPSGS_RequestBase::ePSGS_NoTracing;
@@ -183,14 +183,14 @@ CPubseqGatewayApp::x_GetTraceParameter(CHttpRequest &  req,
 }
 
 
+static string  kProcessorEventsParam = "processor_events";
+
 bool
 CPubseqGatewayApp::x_GetProcessorEventsParameter(CHttpRequest &  req,
                                                  shared_ptr<CPSGS_Reply>  reply,
                                                  const psg_time_point_t &  now,
                                                  bool &  processor_events)
 {
-    static string  kProcessorEventsParam = "processor_events";
-
     processor_events = false;   // default
     SRequestParameter   processor_events_param = x_GetParam(req, kProcessorEventsParam);
 
@@ -202,11 +202,13 @@ CPubseqGatewayApp::x_GetProcessorEventsParameter(CHttpRequest &  req,
             x_MalformedArguments(reply, now, err_msg);
             return false;
         }
-        processor_events = processor_events_param.m_Value == "yes";
+        processor_events = processor_events_param.m_Value == kYes;
     }
     return true;
 }
 
+
+static string  kResendTimeoutParam = "resend_timeout";
 
 bool
 CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
@@ -214,8 +216,6 @@ CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
                                       const psg_time_point_t &  now,
                                       double &  resend_timeout)
 {
-    static string  kResendTimeoutParam = "resend_timeout";
-
     resend_timeout = m_Settings.m_ResendTimeoutSec;
     SRequestParameter   resend_timeout_param = x_GetParam(req, kResendTimeoutParam);
 
@@ -239,14 +239,14 @@ CPubseqGatewayApp::x_GetResendTimeout(CHttpRequest &  req,
 }
 
 
+static string kSeqIdResolveParam = "seq_id_resolve";
+
 bool
 CPubseqGatewayApp::x_GetSeqIdResolveParameter(CHttpRequest &  req,
                                               shared_ptr<CPSGS_Reply>  reply,
                                               const psg_time_point_t &  now,
                                               bool &  seq_id_resolve)
 {
-    static string  kSeqIdResolveParam = "seq_id_resolve";
-
     seq_id_resolve = true;      // default
     SRequestParameter   seq_id_resolve_param = x_GetParam(req, kSeqIdResolveParam);
 
@@ -257,11 +257,13 @@ CPubseqGatewayApp::x_GetSeqIdResolveParameter(CHttpRequest &  req,
             x_MalformedArguments(reply, now, err_msg);
             return false;
         }
-        seq_id_resolve = seq_id_resolve_param.m_Value == "yes";
+        seq_id_resolve = seq_id_resolve_param.m_Value == kYes;
     }
     return true;
 }
 
+
+static string  kHopsParam = "hops";
 
 bool
 CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
@@ -269,8 +271,6 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
                              const psg_time_point_t &  now,
                              int &  hops)
 {
-    static string   kHopsParam = "hops";
-
     hops = 0;   // Default value
     SRequestParameter   hops_param = x_GetParam(req, kHopsParam);
 
@@ -306,14 +306,14 @@ CPubseqGatewayApp::x_GetHops(CHttpRequest &  req,
 }
 
 
+static string  kLastModifiedParam = "last_modified";
+
 bool
 CPubseqGatewayApp::x_GetLastModified(CHttpRequest &  req,
                                      shared_ptr<CPSGS_Reply>  reply,
                                      const psg_time_point_t &  now,
                                      int64_t &  last_modified)
 {
-    static string   kLastModifiedParam = "last_modified";
-
     last_modified = INT64_MIN;
 
     SRequestParameter   last_modified_param = x_GetParam(req, kLastModifiedParam);
@@ -329,32 +329,51 @@ CPubseqGatewayApp::x_GetLastModified(CHttpRequest &  req,
 }
 
 
+static string  kBlobIdParam = "blob_id";
+static string  kBlobIdNotFoundMsg = "Mandatory '" + kBlobIdParam +
+                                    "' parameter is not found.";
+static string  kBlobIdValNotFoundMsg = "The '" + kBlobIdParam +
+                                       "' parameter value has not been supplied";
+
 bool
 CPubseqGatewayApp::x_GetBlobId(CHttpRequest &  req,
                                shared_ptr<CPSGS_Reply>  reply,
                                const psg_time_point_t &  now,
                                SPSGS_BlobId &  blob_id)
 {
-    static string   kBlobIdParam = "blob_id";
-
     SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
     if (!blob_id_param.m_Found) {
-        x_InsufficientArguments(reply, now,
-                                "Mandatory '" + kBlobIdParam +
-                                "' parameter is not found.");
+        x_InsufficientArguments(reply, now, kBlobIdNotFoundMsg);
         return false;
     }
 
     blob_id.SetId(blob_id_param.m_Value);
     if (blob_id.GetId().empty()) {
-        x_MalformedArguments(reply, now,
-                             "The '" + kBlobIdParam +
-                             "' parameter value has not been supplied");
+        x_MalformedArguments(reply, now, kBlobIdValNotFoundMsg);
         return false;
     }
     return true;
 }
 
+
+static vector<pair<string, SPSGS_ResolveRequest::EPSGS_BioseqIncludeData>>
+    kResolveFlagParams =
+{
+    make_pair("all_info", SPSGS_ResolveRequest::fPSGS_AllBioseqFields),   // must be first
+
+    make_pair("canon_id", SPSGS_ResolveRequest::fPSGS_CanonicalId),
+    make_pair("seq_ids", SPSGS_ResolveRequest::fPSGS_SeqIds),
+    make_pair("mol_type", SPSGS_ResolveRequest::fPSGS_MoleculeType),
+    make_pair("length", SPSGS_ResolveRequest::fPSGS_Length),
+    make_pair("state", SPSGS_ResolveRequest::fPSGS_State),
+    make_pair("blob_id", SPSGS_ResolveRequest::fPSGS_BlobId),
+    make_pair("tax_id", SPSGS_ResolveRequest::fPSGS_TaxId),
+    make_pair("hash", SPSGS_ResolveRequest::fPSGS_Hash),
+    make_pair("date_changed", SPSGS_ResolveRequest::fPSGS_DateChanged),
+    make_pair("gi", SPSGS_ResolveRequest::fPSGS_Gi),
+    make_pair("name", SPSGS_ResolveRequest::fPSGS_Name),
+    make_pair("seq_state", SPSGS_ResolveRequest::fPSGS_SeqState)
+};
 
 bool
 CPubseqGatewayApp::x_GetResolveFlags(CHttpRequest &  req,
@@ -362,25 +381,6 @@ CPubseqGatewayApp::x_GetResolveFlags(CHttpRequest &  req,
                                      const psg_time_point_t &  now,
                                      SPSGS_ResolveRequest::TPSGS_BioseqIncludeData &  include_data_flags)
 {
-    static vector<pair<string, SPSGS_ResolveRequest::EPSGS_BioseqIncludeData>>
-        kResolveFlagParams =
-    {
-        make_pair("all_info", SPSGS_ResolveRequest::fPSGS_AllBioseqFields),   // must be first
-
-        make_pair("canon_id", SPSGS_ResolveRequest::fPSGS_CanonicalId),
-        make_pair("seq_ids", SPSGS_ResolveRequest::fPSGS_SeqIds),
-        make_pair("mol_type", SPSGS_ResolveRequest::fPSGS_MoleculeType),
-        make_pair("length", SPSGS_ResolveRequest::fPSGS_Length),
-        make_pair("state", SPSGS_ResolveRequest::fPSGS_State),
-        make_pair("blob_id", SPSGS_ResolveRequest::fPSGS_BlobId),
-        make_pair("tax_id", SPSGS_ResolveRequest::fPSGS_TaxId),
-        make_pair("hash", SPSGS_ResolveRequest::fPSGS_Hash),
-        make_pair("date_changed", SPSGS_ResolveRequest::fPSGS_DateChanged),
-        make_pair("gi", SPSGS_ResolveRequest::fPSGS_Gi),
-        make_pair("name", SPSGS_ResolveRequest::fPSGS_Name),
-        make_pair("seq_state", SPSGS_ResolveRequest::fPSGS_SeqState)
-    };
-
     include_data_flags = 0;     // default
 
     SRequestParameter       request_param;
@@ -404,19 +404,20 @@ CPubseqGatewayApp::x_GetResolveFlags(CHttpRequest &  req,
 }
 
 
+static string  kId2InfoParam = "id2_info";
+static string  kId2InfoNotFoundMsg = "Mandatory parameter '" +
+                                     kId2InfoParam + "' is not found.";
+
 bool
 CPubseqGatewayApp::x_GetId2Info(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply,
                                 const psg_time_point_t &  now,
                                 string &  id2_info)
 {
-    static string   kId2InfoParam = "id2_info";
-
     SRequestParameter   id2_info_param = x_GetParam(req, kId2InfoParam);
     if (!id2_info_param.m_Found)
     {
-        x_InsufficientArguments(reply, now, "Mandatory parameter '" +
-                                kId2InfoParam + "' is not found.");
+        x_InsufficientArguments(reply, now, kId2InfoNotFoundMsg);
         return false;
     }
 
@@ -425,19 +426,22 @@ CPubseqGatewayApp::x_GetId2Info(CHttpRequest &  req,
 }
 
 
+static string  kId2ChunkParam = "id2_chunk";
+static string  kId2ChunkNotFoundMsg = "Mandatory '" + kId2ChunkParam +
+                                      "' parameter is not found.";
+static string  kId2ValInvalidMsg = "Invalid '" + kId2ChunkParam +
+                                   "' parameter value. It must be >= 0";
+
 bool
 CPubseqGatewayApp::x_GetId2Chunk(CHttpRequest &  req,
                                  shared_ptr<CPSGS_Reply>  reply,
                                  const psg_time_point_t &  now,
                                  int64_t &  id2_chunk)
 {
-    static string   kId2ChunkParam = "id2_chunk";
-
     id2_chunk = INT64_MIN;
     SRequestParameter   id2_chunk_param = x_GetParam(req, kId2ChunkParam);
     if (!id2_chunk_param.m_Found) {
-        x_InsufficientArguments(reply, now, "Mandatory '" + kId2ChunkParam +
-                                "' parameter is not found.");
+        x_InsufficientArguments(reply, now, kId2ChunkNotFoundMsg);
         return false;
     }
 
@@ -449,9 +453,7 @@ CPubseqGatewayApp::x_GetId2Chunk(CHttpRequest &  req,
     }
 
     if (id2_chunk < 0) {
-        x_MalformedArguments(reply, now,
-                             "Invalid '" + kId2ChunkParam +
-                             "' parameter value. It must be >= 0");
+        x_MalformedArguments(reply, now, kId2ValInvalidMsg);
         return false;
     }
 
@@ -459,11 +461,11 @@ CPubseqGatewayApp::x_GetId2Chunk(CHttpRequest &  req,
 }
 
 
+static string  kExcludeBlobsParam = "exclude_blobs";
+
 vector<string>
 CPubseqGatewayApp::x_GetExcludeBlobs(CHttpRequest &  req) const
 {
-    static string   kExcludeBlobsParam = "exclude_blobs";
-
     vector<string>      result;
     SRequestParameter   exclude_blobs_param = x_GetParam(req, kExcludeBlobsParam);
     if (exclude_blobs_param.m_Found) {
@@ -487,6 +489,9 @@ CPubseqGatewayApp::x_GetExcludeBlobs(CHttpRequest &  req) const
 }
 
 
+static string  kEnableProcessor = "enable_processor";
+static string  kDisableProcessor = "disable_processor";
+
 bool
 CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
                                         CHttpRequest &  req,
@@ -495,9 +500,6 @@ CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
                                         vector<string> &  enabled_processors,
                                         vector<string> &  disabled_processors)
 {
-    static string   kEnableProcessor = "enable_processor";
-    static string   kDisableProcessor = "disable_processor";
-
     req.GetMultipleValuesParam(kEnableProcessor.data(),
                                kEnableProcessor.size(),
                                enabled_processors);
@@ -532,53 +534,64 @@ CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
 }
 
 
+static string  kTSEParam = "tse";
+static string  kNone = "none";
+static string  kWhole = "whole";
+static string  kOrig = "orig";
+static string  kSmart = "smart";
+static string  kSlim = "slim";
+static string  kTSEAcceptable = "Acceptable values are '" + kNone + "', '" +
+                                kWhole + "', '" + kOrig + "', '" +
+                                kSmart + "' and '" + kSlim + "'.";
+static string  kTSEMalformedMsg = "Malformed '" + kTSEParam + "' parameter. " +
+                                  kTSEAcceptable;
+
 bool CPubseqGatewayApp::x_GetTSEOption(CHttpRequest &  req,
                                        shared_ptr<CPSGS_Reply>  reply,
                                        const psg_time_point_t &  now,
                                        SPSGS_BlobRequestBase::EPSGS_TSEOption &  tse_option)
 {
-    static string   kTSEParam = "tse";
-    static string   none = "none";
-    static string   whole = "whole";
-    static string   orig = "orig";
-    static string   smart = "smart";
-    static string   slim = "slim";
-    static string   acceptable = "Acceptable values are '" + none + "', '" +
-                                 whole + "', '" + orig + "', '" +
-                                 smart + "' and '" + slim + "'.";
-    static string   err_msg = "Malformed '" + kTSEParam + "' parameter. " +
-                              acceptable;
-
     SRequestParameter       tse_param = x_GetParam(req, kTSEParam);
     if (tse_param.m_Found) {
-        if (tse_param.m_Value == none) {
+        if (tse_param.m_Value == kNone) {
             tse_option = SPSGS_BlobRequestBase::ePSGS_NoneTSE;
             return true;
         }
-        if (tse_param.m_Value == whole) {
+        if (tse_param.m_Value == kWhole) {
             tse_option = SPSGS_BlobRequestBase::ePSGS_WholeTSE;
             return true;
         }
-        if (tse_param.m_Value == orig) {
+        if (tse_param.m_Value == kOrig) {
             tse_option = SPSGS_BlobRequestBase::ePSGS_OrigTSE;
             return true;
         }
-        if (tse_param.m_Value == smart) {
+        if (tse_param.m_Value == kSmart) {
             tse_option = SPSGS_BlobRequestBase::ePSGS_SmartTSE;
             return true;
         }
-        if (tse_param.m_Value == slim) {
+        if (tse_param.m_Value == kSlim) {
             tse_option = SPSGS_BlobRequestBase::ePSGS_SlimTSE;
             return true;
         }
 
-        x_MalformedArguments(reply, now, err_msg);
+        x_MalformedArguments(reply, now, kTSEMalformedMsg);
         return false;
     }
 
     return true;
 }
 
+
+static string  kAccSubstitutionParam = "acc_substitution";
+static string  kDefaultOption = "default";
+static string  kLimitedOption = "limited";
+static string  kNeverOption = "never";
+static string  kAccSubstAcceptable = "Acceptable values are '" +
+                                     kDefaultOption + "', '" +
+                                     kLimitedOption + "', '" +
+                                     kNeverOption + "'.";
+static string  kMalformedAccSubstMsg = "Malformed '" + kAccSubstitutionParam +
+                                       "' parameter. " + kAccSubstAcceptable;
 
 bool
 CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
@@ -587,70 +600,68 @@ CPubseqGatewayApp::x_GetAccessionSubstitutionOption(
                                         const psg_time_point_t &  now,
                                         SPSGS_RequestBase::EPSGS_AccSubstitutioOption & acc_subst_option)
 {
-    static string       kAccSubstitutionParam = "acc_substitution";
-    static string       default_option = "default";
-    static string       limited_option = "limited";
-    static string       never_option = "never";
-    static string       acceptable = "Acceptable values are '" +
-                                     default_option + "', '" +
-                                     limited_option + "', '" +
-                                     never_option + "'.";
-    static string       err_msg = "Malformed '" + kAccSubstitutionParam +
-                                  "' parameter. " + acceptable;
-
     SRequestParameter   subst_param = x_GetParam(req, kAccSubstitutionParam);
     if (subst_param.m_Found) {
-        if (subst_param.m_Value == default_option) {
+        if (subst_param.m_Value == kDefaultOption) {
             acc_subst_option = SPSGS_RequestBase::ePSGS_DefaultAccSubstitution;
             return true;
         }
-        if (subst_param.m_Value == limited_option) {
+        if (subst_param.m_Value == kLimitedOption) {
             acc_subst_option = SPSGS_RequestBase::ePSGS_LimitedAccSubstitution;
             return true;
         }
-        if (subst_param.m_Value == never_option) {
+        if (subst_param.m_Value == kNeverOption) {
             acc_subst_option = SPSGS_RequestBase::ePSGS_NeverAccSubstitute;
             return true;
         }
 
-        x_MalformedArguments(reply, now, err_msg);
+        x_MalformedArguments(reply, now, kMalformedAccSubstMsg);
         return false;
     }
     return true;
 }
 
+
+static string  kFmtParam = "fmt";
+static string  kJson = "json";
+static string  kHtml = "html";
+static string  kAcceptableIntroFmt = "Acceptable values are '" + kHtml +
+                                     "' and '" + kJson + "'";
 
 bool
 CPubseqGatewayApp::x_GetIntrospectionFormat(CHttpRequest &  req,
                                             string &  fmt,
                                             string &  err_msg)
 {
-    static string   kFmtParam = "fmt";
-    static string   html = "html";
-    static string   json = "json";
-    static string   acceptable = "Acceptable values are '" + html +
-                                 "' and '" + json + "'";
-
     SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
     if (fmt_param.m_Found) {
-        if (fmt_param.m_Value == html) {
-            fmt = html;
+        if (fmt_param.m_Value == kHtml) {
+            fmt = kHtml;
             return true;
         }
-        if (fmt_param.m_Value == json) {
-            fmt = json;
+        if (fmt_param.m_Value == kJson) {
+            fmt = kJson;
             return true;
         }
 
-        err_msg = "Malformed '" + kFmtParam + "' parameter. " + acceptable;
+        err_msg = "Malformed '" + kFmtParam + "' parameter. " + kAcceptableIntroFmt;
         return false;
     }
 
-    fmt = html;     // default
+    fmt = kHtml;     // default
     return true;
 }
 
 
+
+static string  kProtobuf = "protobuf";
+static string  kNative = "native";
+static string  kAcceptableFmt = "Acceptable values are '" +
+                                kProtobuf + "' and '" +
+                                kJson + "' and '" +
+                                kNative + "'.";
+static string  kMalformedFmtMsg = "Malformed '" + kFmtParam + "' parameter. " +
+                                  kAcceptableFmt;
 
 bool
 CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
@@ -658,38 +669,29 @@ CPubseqGatewayApp::x_GetOutputFormat(CHttpRequest &  req,
                                      const psg_time_point_t &  now,
                                      SPSGS_ResolveRequest::EPSGS_OutputFormat &  output_format)
 {
-    static string   kFmtParam = "fmt";
-    static string   protobuf = "protobuf";
-    static string   json = "json";
-    static string   native = "native";
-    static string   acceptable = "Acceptable values are '" +
-                                 protobuf + "' and '" +
-                                 json + "' and '" +
-                                 native + "'.";
-    static string   err_msg = "Malformed '" + kFmtParam + "' parameter. " +
-                              acceptable;
-
     SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
     if (fmt_param.m_Found) {
-        if (fmt_param.m_Value == protobuf) {
+        if (fmt_param.m_Value == kProtobuf) {
             output_format = SPSGS_ResolveRequest::ePSGS_ProtobufFormat;
             return true;
         }
-        if (fmt_param.m_Value == json) {
+        if (fmt_param.m_Value == kJson) {
             output_format = SPSGS_ResolveRequest::ePSGS_JsonFormat;
             return true;
         }
-        if (fmt_param.m_Value == native) {
+        if (fmt_param.m_Value == kNative) {
             output_format = SPSGS_ResolveRequest::ePSGS_NativeFormat;
             return true;
         }
 
-        x_MalformedArguments(reply, now, err_msg);
+        x_MalformedArguments(reply, now, kMalformedFmtMsg);
         return false;
     }
     return true;
 }
 
+
+static string  kUseCacheParam = "use_cache";
 
 bool
 CPubseqGatewayApp::x_GetUseCacheParameter(CHttpRequest &  req,
@@ -697,8 +699,6 @@ CPubseqGatewayApp::x_GetUseCacheParameter(CHttpRequest &  req,
                                           const psg_time_point_t &  now,
                                           SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache)
 {
-    static string   kUseCacheParam = "use_cache";
-
     use_cache = SPSGS_RequestBase::ePSGS_CacheAndDb;    // default
 
     SRequestParameter   use_cache_param = x_GetParam(req, kUseCacheParam);
@@ -720,16 +720,16 @@ CPubseqGatewayApp::x_GetUseCacheParameter(CHttpRequest &  req,
 }
 
 
+static string  kSendBlobIfSmallParam = "send_blob_if_small";
+static string  kSendBlobIfSmallInvalidMsg = "Invalid '" + kSendBlobIfSmallParam +
+                                            "' parameter value. It must be an integer >= 0";
+
 bool
 CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
                                                  shared_ptr<CPSGS_Reply>  reply,
                                                  const psg_time_point_t &  now,
                                                  int &  send_blob_if_small)
 {
-    static string   kSendBlobIfSmallParam = "send_blob_if_small";
-    static string   kInvalidMsg = "Invalid '" + kSendBlobIfSmallParam +
-                                  "' parameter value. It must be an integer >= 0";
-
     send_blob_if_small = 0;   // default
 
     SRequestParameter   send_blob_if_small_param = x_GetParam(req, kSendBlobIfSmallParam);
@@ -743,7 +743,7 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
         }
 
         if (send_blob_if_small < 0) {
-            x_MalformedArguments(reply, now, kInvalidMsg);
+            x_MalformedArguments(reply, now, kSendBlobIfSmallInvalidMsg);
             return false;
         }
     }
@@ -751,20 +751,20 @@ CPubseqGatewayApp::x_GetSendBlobIfSmallParameter(CHttpRequest &  req,
 }
 
 
+static string   kNamesParam = "names";
+static string   kNamesNotFoundMsg = "The mandatory '" + kNamesParam +
+                                    "' parameter is not found";
+static string   kNoNamesValueMsg = "Named annotation names are not found in the request";
+
 bool
 CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
                               shared_ptr<CPSGS_Reply>  reply,
                               const psg_time_point_t &  now,
                               vector<string> &  names)
 {
-    static string   kNamesParam = "names";
-    static string   kErrMsg = "The mandatory '" + kNamesParam +
-                              "' parameter is not found";
-    static string   kNoNames = "Named annotation names are not found in the request";
-
     SRequestParameter   names_param = x_GetParam(req, kNamesParam);
     if (!names_param.m_Found) {
-        x_MalformedArguments(reply, now, kErrMsg);
+        x_MalformedArguments(reply, now, kNamesNotFoundMsg);
         return false;
     }
 
@@ -787,7 +787,7 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
     }
 
     if (names.empty()) {
-        x_MalformedArguments(reply, now, kNoNames);
+        x_MalformedArguments(reply, now, kNoNamesValueMsg);
         return false;
     }
     return true;
@@ -830,6 +830,16 @@ CPubseqGatewayApp::x_GetCommonIDRequestParams(
 }
 
 
+static string  kSeqIdParam = "seq_id";
+static string  kSeqIdTypeParam = "seq_id_type";
+static string  kSeqIdMissingMsg = "Missing the '" +
+                                  kSeqIdParam + "' parameter";
+static string  kSeqIdMissingValMsg = "Missing value of the '" +
+                                     kSeqIdParam + "' parameter";
+static string  kSeqIdTypeBadValMsg = "The '" + kSeqIdTypeParam +
+                                     "' value must be >= 0 and < " +
+                                     to_string(CSeq_id::e_MaxChoice);
+
 bool
 CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
                                                       shared_ptr<CPSGS_Reply>  reply,
@@ -839,29 +849,19 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
                                                       SPSGS_RequestBase::EPSGS_CacheAndDbUse &  use_cache,
                                                       bool  seq_id_is_optional)
 {
-    static string       kSeqIdParam = "seq_id";
-    static string       kSeqIdTypeParam = "seq_id_type";
-    static string       kMissingMsg = "Missing the '" +
-                                      kSeqIdParam + "' parameter";
-    static string       kMissingValMsg = "Missing value of the '" +
-                                         kSeqIdParam + "' parameter";
-    static string       kBadValMsg = "The '" + kSeqIdTypeParam +
-                                     "' value must be >= 0 and < " +
-                                     to_string(CSeq_id::e_MaxChoice);
-
     SRequestParameter   seq_id_type_param;
 
     // Check the mandatory parameter presence
     SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
     if (!seq_id_param.m_Found) {
         if (!seq_id_is_optional) {
-            x_InsufficientArguments(reply, now, kMissingMsg);
+            x_InsufficientArguments(reply, now, kSeqIdMissingMsg);
             return false;
         }
     }
     else if (seq_id_param.m_Value.empty()) {
         if (!seq_id_is_optional) {
-            x_MalformedArguments(reply, now, kMissingValMsg);
+            x_MalformedArguments(reply, now, kSeqIdMissingValMsg);
             return false;
         }
     }
@@ -887,7 +887,7 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
         }
 
         if (seq_id_type < 0 || seq_id_type >= CSeq_id::e_MaxChoice) {
-            x_MalformedArguments(reply, now, kBadValMsg);
+            x_MalformedArguments(reply, now, kSeqIdTypeBadValMsg);
             return false;
         }
     } else {
@@ -898,14 +898,14 @@ CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(CHttpRequest &  req,
 }
 
 
+static string  kProteinParam = "protein";
+
 bool
 CPubseqGatewayApp::x_GetProtein(CHttpRequest &  req,
                                 shared_ptr<CPSGS_Reply>  reply,
                                 const psg_time_point_t &  now,
                                 optional<string> &  protein)
 {
-    static string       kProteinParam = "protein";
-
     SRequestParameter   protein_param = x_GetParam(req, kProteinParam);
     if (protein_param.m_Found) {
         // Note: it is necessary to distinguish if the url value is "" or not
@@ -917,15 +917,15 @@ CPubseqGatewayApp::x_GetProtein(CHttpRequest &  req,
 }
 
 
+static string  kIPGParam = "ipg";
+static string  kIPGBadValMsg = "The '" + kIPGParam + "' parameter value must be > 0";
+
 bool
 CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
                             shared_ptr<CPSGS_Reply>  reply,
                             const psg_time_point_t &  now,
                             int64_t &  ipg)
 {
-    static string       kIPGParam = "ipg";
-    static string       kBadValMsg = "The '" + kIPGParam + "' parameter value must be > 0";
-
     SRequestParameter   ipg_param = x_GetParam(req, kIPGParam);
     if (ipg_param.m_Found) {
         string              err_msg;
@@ -936,7 +936,7 @@ CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
         }
 
         if (ipg <= 0) {
-            x_MalformedArguments(reply, now, kBadValMsg);
+            x_MalformedArguments(reply, now, kIPGBadValMsg);
             return false;
         }
     } else {
@@ -947,14 +947,14 @@ CPubseqGatewayApp::x_GetIPG(CHttpRequest &  req,
 }
 
 
+static string  kNucleotideParam = "nucleotide";
+
 bool
 CPubseqGatewayApp::x_GetNucleotide(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply,
                                    const psg_time_point_t &  now,
                                    optional<string> &  nucleotide)
 {
-    static string       kNucleotideParam = "nucleotide";
-
     SRequestParameter   nucleotide_param = x_GetParam(req, kNucleotideParam);
     if (nucleotide_param.m_Found) {
         // Note: it is necessary to distinguish if the url value is "" or not
@@ -966,25 +966,25 @@ CPubseqGatewayApp::x_GetNucleotide(CHttpRequest &  req,
 }
 
 
+static string  kSNPScaleLimitParam = "snp_scale_limit";
+static string  kChromosome = "chromosome";
+static string  kContig = "contig";
+static string  kSupercontig = "supercontig";
+static string  kUnit = "unit";
+static string  kSNPScaleacceptable = "Acceptable values are '" +
+                                     kChromosome + "' and '" +
+                                     kContig + "' and '" +
+                                     kSupercontig + "' and '" +
+                                     kUnit + "'.";
+static string  kBadSNPScaleValMsg = "Malformed '" + kSNPScaleLimitParam +
+                                    "' parameter. " + kSNPScaleacceptable;
+
 bool
 CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
                                       shared_ptr<CPSGS_Reply>  reply,
                                       const psg_time_point_t &  now,
                                       optional<CSeq_id::ESNPScaleLimit> &  snp_scale_limit)
 {
-    static string       kSNPScaleLimitParam = "snp_scale_limit";
-    static string       kChromosome = "chromosome";
-    static string       kContig = "contig";
-    static string       kSupercontig = "supercontig";
-    static string       kUnit = "unit";
-    static string       acceptable = "Acceptable values are '" +
-                                     kChromosome + "' and '" +
-                                     kContig + "' and '" +
-                                     kSupercontig + "' and '" +
-                                     kUnit + "'.";
-    static string       kBadValMsg = "Malformed '" + kSNPScaleLimitParam +
-                                     "' parameter. " + acceptable;
-
     SRequestParameter   snp_scale_limit_param = x_GetParam(req, kSNPScaleLimitParam);
     if (snp_scale_limit_param.m_Found) {
         if (snp_scale_limit_param.m_Value.empty()) {
@@ -1009,7 +1009,7 @@ CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
             return true;
         }
 
-        x_MalformedArguments(reply, now, kBadValMsg);
+        x_MalformedArguments(reply, now, kBadSNPScaleValMsg);
         return false;
     }
 
@@ -1019,18 +1019,18 @@ CPubseqGatewayApp::x_GetSNPScaleLimit(CHttpRequest &  req,
 }
 
 
+// It is like "1:59 5:1439 60:"
+// Should return {{1, 59}, {5, 1439}, {60, numeric_limits<int>::max()}}
+static string                   kTimeSeriesParam = "time_series";
+static vector<pair<int, int>>   kDefaultTimeSeries = {{1, 59}, {5, 1439},
+                                                      {60, numeric_limits<int>::max()}};
+
 bool
 CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply,
                                    const psg_time_point_t &  now,
                                    vector<pair<int, int>> &  time_series)
 {
-    // It is like "1:59 5:1439 60:"
-    // Should return {{1, 59}, {5, 1439}, {60, numeric_limits<int>::max()}}
-    static string                   kTimeSeriesParam = "time_series";
-    static vector<pair<int, int>>   kDefaultTimeSeries = {{1, 59}, {5, 1439},
-                                                          {60, numeric_limits<int>::max()}};
-
     SRequestParameter   time_series_param = x_GetParam(req, kTimeSeriesParam);
     if (time_series_param.m_Found) {
         time_series.clear();

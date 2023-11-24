@@ -230,6 +230,8 @@ CPSGS_CassProcessorBase::UpdateOverallStatus(CRequestStatus::ECode  status)
 }
 
 
+static string   kCassandra = "cassandra";
+
 bool
 CPSGS_CassProcessorBase::IsCassandraProcessorEnabled(
                                     shared_ptr<CPSGS_Request> request) const
@@ -243,7 +245,6 @@ CPSGS_CassProcessorBase::IsCassandraProcessorEnabled(
     //            request it is impossible to say if a processor was enabled or
     //            disabled at the time of request if enable/disable options are
     //            not in the request.
-    static string   kCassandra = "cassandra";
 
     auto *      app = CPubseqGatewayApp::GetInstance();
     bool        enabled = app->GetCassandraProcessorsEnabled();

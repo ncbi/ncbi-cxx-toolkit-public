@@ -42,21 +42,21 @@ static string           kTimeRangeEnd("TimeRangeEnd");
 const unsigned long     kMaxBlobSize = 1024L*1024L*1024L*8L;   // 8 GB
 
 
+static string   kBins("Bins");
+static string   kStart("Start");
+static string   kEnd("End");
+static string   kCount("Count");
+static string   kLowerAnomaly("LowerAnomaly");
+static string   kUpperAnomaly("UpperAnomaly");
+static string   kTotalCount("TotalCount");
+static string   kValueSum("ValueSum");
+static string   kName("name");
+static string   kDescription("description");
+
 CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
                              const string  &  name,
                              const string  &  description)
 {
-    static string   kBins("Bins");
-    static string   kStart("Start");
-    static string   kEnd("End");
-    static string   kCount("Count");
-    static string   kLowerAnomaly("LowerAnomaly");
-    static string   kUpperAnomaly("UpperAnomaly");
-    static string   kTotalCount("TotalCount");
-    static string   kValueSum("ValueSum");
-    static string   kName("name");
-    static string   kDescription("description");
-
     CJsonNode       ret(CJsonNode::NewObjectNode());
     ret.SetString(kName, name);
     ret.SetString(kDescription, description);
@@ -295,8 +295,6 @@ CJsonNode CBlobRetrieveTiming::SerializeSeries(int  most_ancient_time,
                                                const string &  name,
                                                const string &  description) const
 {
-    static string   kBins("Bins");
-
     CJsonNode   ret(CJsonNode::NewObjectNode());
     ret.SetByKey(kBins, CPSGTimingBase::SerializeSeries(most_ancient_time,
                                                         most_recent_time,
@@ -1423,6 +1421,8 @@ void COperationTiming::Reset(void)
 }
 
 
+static string   kSecondsCovered("SecondsCovered");
+
 CJsonNode
 COperationTiming::Serialize(int  most_ancient_time,
                             int  most_recent_time,
@@ -1430,8 +1430,6 @@ COperationTiming::Serialize(int  most_ancient_time,
                             const vector<pair<int, int>> &  time_series,
                             unsigned long  tick_span) const
 {
-    static string   kSecondsCovered("SecondsCovered");
-
     CJsonNode       ret(CJsonNode::NewObjectNode());
 
     // All the histograms have the same number of covered ticks

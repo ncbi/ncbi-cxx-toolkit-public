@@ -160,7 +160,6 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
     string              json;
     bool                some = false;
 
-    // Up to two values per block are used so use two buffers
     char                buf[64];
     long                len;
 

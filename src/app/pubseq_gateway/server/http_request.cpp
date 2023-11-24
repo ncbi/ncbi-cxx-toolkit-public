@@ -272,9 +272,9 @@ bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
 }
 
 
+static string   kPeerSocketPort = "peer_socket_port";
 CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
 {
-    static string   kPeerSocketPort = "peer_socket_port";
     if (!m_ParamParsed)
         ParseParams();
 
@@ -338,22 +338,21 @@ string CHttpRequest::GetHeaderValue(const string &  name)
 }
 
 
+static string       kWebCubbyUser = "WebCubbyUser";
+static string       kCookie = "cookie";
+static size_t       kCookieSize = kCookie.size();
 optional<string> CHttpRequest::GetWebCubbyUser(void)
 {
-    static string       webCubbyUser = "WebCubbyUser";
-    static string       cookie = "cookie";
-    static size_t       cookie_size = cookie.size();
     optional<string>    ret;
 
-
     for (size_t  index = 0; index < m_Req->headers.size; ++index) {
-        if (m_Req->headers.entries[index].name->len == cookie_size) {
+        if (m_Req->headers.entries[index].name->len == kCookieSize) {
             if (strncasecmp(m_Req->headers.entries[index].name->base,
-                            cookie.data(), cookie_size) == 0) {
+                            kCookie.data(), kCookieSize) == 0) {
                 try {
                     CCgiCookies     cookies(string(m_Req->headers.entries[index].value.base,
                                                    m_Req->headers.entries[index].value.len));
-                    const CCgiCookie *  wcu = cookies.Find(webCubbyUser,
+                    const CCgiCookie *  wcu = cookies.Find(kWebCubbyUser,
                                                            "", "");
                     if (wcu != NULL) {
                         ret = wcu->GetValue();

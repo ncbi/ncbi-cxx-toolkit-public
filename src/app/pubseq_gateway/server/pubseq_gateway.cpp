@@ -694,7 +694,7 @@ void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
                                            CPSGS_Request::EPSGS_Type  request_type,
                                            CRequestStatus::ECode  status, size_t  bytes_sent)
 {
-    GetCounters().IncrementRequestStopCounter(status);
+    m_Counters->IncrementRequestStopCounter(status);
 
     if (request_type != CPSGS_Request::ePSGS_UnknownRequest)
         GetTiming().RegisterForTimeSeries(request_type, status);
