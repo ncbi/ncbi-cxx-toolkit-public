@@ -25590,13 +25590,13 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gb|WMV97217.1|",
-                            "type": 5
+                            "id": "gi|2574876738",
+                            "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gi|2574876738",
-                                "type": 12
+                                "id": "gb|WMV97217",
+                                "type": 5
                             }
                         ],
                         "molecule_type": "aa",
@@ -25690,13 +25690,13 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gb|WMV97217.1|",
-                            "type": 5
+                            "id": "gi|2574876738",
+                            "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gi|2574876738",
-                                "type": 12
+                                "id": "gb|WMV97217",
+                                "type": 5
                             }
                         ],
                         "molecule_type": "aa",
@@ -25902,13 +25902,13 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gb|WMV97217.1|",
-                            "type": 5
+                            "id": "gi|2574876738",
+                            "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gi|2574876738",
-                                "type": 12
+                                "id": "gb|WMV97217",
+                                "type": 5
                             }
                         ],
                         "molecule_type": "aa",
@@ -25981,13 +25981,13 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gb|WMV97217.1|",
-                            "type": 5
+                            "id": "gi|2574876738",
+                            "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gi|2574876738",
-                                "type": 12
+                                "id": "gb|WMV97217",
+                                "type": 5
                             }
                         ],
                         "molecule_type": "aa",
@@ -26160,13 +26160,13 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gb|WMV97217.1|",
-                            "type": 5
+                            "id": "gi|2574876738",
+                            "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gi|2574876738",
-                                "type": 12
+                                "id": "gb|WMV97217",
+                                "type": 5
                             }
                         ],
                         "molecule_type": "aa",
@@ -26239,13 +26239,13 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gb|WMV97217.1|",
-                            "type": 5
+                            "id": "gi|2574876738",
+                            "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gi|2574876738",
-                                "type": 12
+                                "id": "gb|WMV97217",
+                                "type": 5
                             }
                         ],
                         "molecule_type": "aa",
