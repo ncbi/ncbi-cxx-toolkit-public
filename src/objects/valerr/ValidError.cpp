@@ -69,7 +69,7 @@ void CValidError::AddValidErrItem
     if (ShouldSuppress(ec)) {
         return;
     }
-    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, seq_offset));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, &obj, nullptr, acc, ver, seq_offset));
     if (!NStr::IsBlank(location)) {
         item->SetLocation(location);
     }
@@ -90,7 +90,7 @@ void CValidError::AddValidErrItem
     if (ShouldSuppress(ec)) {
         return;
     }
-    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, acc, ver, seq_offset));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, nullptr, nullptr, acc, ver, seq_offset));
     if (!NStr::IsBlank(location)) {
         item->SetLocation(location);
     }
@@ -113,7 +113,7 @@ void CValidError::AddValidErrItem
     if (ShouldSuppress(ec)) {
         return;
     }
-    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, seqdesc, ctx, acc, ver, seq_offset));
+    CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, &seqdesc, &ctx, acc, ver, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
 }

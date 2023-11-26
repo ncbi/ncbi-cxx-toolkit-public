@@ -846,26 +846,8 @@ private:
                   unsigned int         ec,        // error code
                   const string&        msg,       // message
                   const string&        obj_desc,  // object description
-                  const CSerialObject& obj,       // offending object
-                  const string&        acc,       // accession
-                  const int            ver,       // version of object.
-                  const int            seq_offset = 0); // sequence offset
-
-    CValidErrItem(EDiagSev             sev,       // severity
-                  unsigned int         ec,        // error code
-                  const string&        msg,       // message
-                  const string&        obj_desc,  // object description
-                  const string&        acc,       // accession
-                  const int            ver,       // version of object.
-                  const int            seq_offset = 0); // sequence offset
-
-    // constructor
-    CValidErrItem(EDiagSev             sev,       // severity
-                  unsigned int         ec,        // error code
-                  const string&        msg,       // message
-                  const string&        obj_desc,  // object description
-                  const CSerialObject& obj,       // offending object
-                  const CSeq_entry&    context,   // desc's context.
+                  const CSerialObject* obj,       // offending object
+                  const CSeq_entry*    context,   // desc's context.
                   const string&        acc,       // accession
                   const int            ver,       // version of object.
                   const int            seq_offset = 0); // sequence offset
