@@ -2476,40 +2476,6 @@ CValidErrItem::CValidErrItem
     SetErrorGroup(ConvertErrGroup(ec));
 }
 
-
-
-
-
-
-CValidErrItem::CValidErrItem
-(EDiagSev             sev,
- unsigned int         ec,
- const string&        msg,
- const string&        desc,
- const CSerialObject& obj,
- const string&        acc,
- const int            ver,
- const string&        feature_id,
- const int            seq_offset)
-  : m_Object(&obj)
-{
-    SetSev(sev);
-    SetErrIndex(ec);
-    SetMsg(msg);
-    SetObjDesc(desc);
-    SetAccession(acc);
-    SetFeatureId(feature_id);
-    SetSeqOffset(seq_offset);
-    if (ver > 0) {
-        SetAccnver(acc + "." + NStr::IntToString(ver));
-    } else {
-        SetAccnver(acc);
-    }
-    SetVersion(ver);
-    SetErrorName(ConvertErrCode(ec));
-    SetErrorGroup(ConvertErrGroup(ec));
-}
-
 CValidErrItem::CValidErrItem
 (EDiagSev             sev,
  unsigned int         ec,
