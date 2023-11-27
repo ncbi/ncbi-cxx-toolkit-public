@@ -1,0 +1,15 @@
+Note:
+
+1) 
+
+inlude\util\compress\zlib-cloudflare\zconf.h have an extra line added:
+
+    #define Z_PREFIX
+
+to add "z_" prefix to all zlib functions. This is necessary to avoid linking conflicts with an original zlib.
+
+2) The currect version of Cloudflare zlib is based on outdated zlib, it missses some necessary redefines. 
+See "_patch" file. It should be checked / applied after upgrading Cloudflare zlib in the current directory.
+
+
+3) zutil.h also have "z_errmsg" symbol that conflicts with zlib, need to be renamed to "zcf_errmsg" for example in the .h/.c files.
