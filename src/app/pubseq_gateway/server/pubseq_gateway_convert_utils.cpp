@@ -309,7 +309,7 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_TaxId) {
         if (some)   json.append(kSep);
-        else        some = true;
+        // else        some = true;     // suppress dead assignment warning
 
         len = PSGToString(bioseq_info.GetTaxId(), buf);
         json.append(kTaxIdItem)
