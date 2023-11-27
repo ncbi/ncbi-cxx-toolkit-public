@@ -89,6 +89,11 @@ Location: {src,include}/util/compress/zlib
 Authors:  Jean-loup Gailly and Mark Adler
 License:  BSDish [include/util/compress/zlib/zlib.h]
 
+Location: {src,include}/util/compress/zlib_cloudflare
+Authors:  Jean-loup Gailly and Mark Adler
+License:  BSDish [include/util/compress/zlib_cloudflare/zlib.h]
+          https://github.com/cloudflare/zlib/blob/gcc.amd64/LICENSE
+
 Location: src/util/compress/api/miniz
 Authors:  RAD Game Tools and Valve Software, Rich Geldreich and Tenacious Software LLC
 License:  MIT [src/util/compress/api/miniz/LICENSE]
