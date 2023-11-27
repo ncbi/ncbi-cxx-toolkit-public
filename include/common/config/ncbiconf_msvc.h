@@ -100,6 +100,7 @@ typedef   int   ssize_t;
 
 /* Next libs always exists, in external or embedded variants, so define them directly */
 #define HAVE_LIBZ                       1
+#define HAVE_LIBZCF                     1
 #define HAVE_LIBBZ2                     1
 
 /* FreeTDS */
