@@ -352,6 +352,9 @@
 /* Define to 1 if libbz2 is available. */
 #define HAVE_LIBBZ2 1
 
+/* Define to 1 if Cloudflare zlib is available (embedded). */
+#define HAVE_LIBZCF 1
+
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #define HAVE_LIBCRYPT 1
