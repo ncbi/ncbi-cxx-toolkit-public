@@ -1,0 +1,3 @@
+# $Id$
+
+deflate.o: CFLAGS += $(SSE4_1_FLAG:%1=%2)
