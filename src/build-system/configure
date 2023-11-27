@@ -17786,6 +17786,12 @@ $as_echo "$as_me: using local zlib copy in $zlocal" >&6;}
              WithPackages="$WithPackages${WithPackagesSep}Z"; WithPackagesSep=" "
              WithPackages="$WithPackages${WithPackagesSep}LocalZ"; WithPackagesSep=" "
 fi
+# Cloudflare fork, always present in practice
+if test -d "$real_srcdir/include/util/compress/zlib_cloudflare"; then
+
+$as_echo "#define HAVE_LIBZCF 1" >>confdefs.h
+
+fi
 
 if test "$with_bz2" != "no"; then
     case "$BZ2_PATH:$with_bz2" in
