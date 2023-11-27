@@ -1,13 +1,13 @@
 # $Id$
 
-SRC = compress stream streambuf stream_util bzip2 lzo zlib zstd \
+SRC = compress stream streambuf stream_util bzip2 lzo zstd zlib zlib_cloudflare \
       reader_zlib tar archive archive_ archive_zip
 
 LIB = xcompress
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
 
-DLL_LIB =  $(BZ2_LIB)  $(LZO_LIB)  $(Z_LIB)  $(ZSTD_LIB)
+DLL_LIB =  $(BZ2_LIB)  $(LZO_LIB)  $(Z_LIB)  $(ZSTD_LIB) zcf
 LIBS    =  $(BZ2_LIBS) $(LZO_LIBS) $(Z_LIBS) $(ZSTD_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ivanov

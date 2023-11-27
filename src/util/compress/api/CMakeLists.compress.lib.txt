@@ -2,11 +2,11 @@
 
 NCBI_begin_lib(xcompress)
   NCBI_sources(
-    compress stream streambuf stream_util bzip2 lzo zlib zstd 
-    reader_zlib tar  archive archive_ archive_zip
+    compress stream streambuf stream_util bzip2 lzo zstd zlib zlib_cloudflare
+    reader_zlib tar archive archive_ archive_zip
   )
   NCBI_uses_toolkit_libraries(xutil)
-  NCBI_optional_components(BZ2 LZO Z ZSTD)
+  NCBI_optional_components(BZ2 LZO Z LocalZCF ZSTD)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()
 

@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbifile.hpp>
-#include <util/compress/lzo.hpp>
 #include <util/error_codes.hpp>
 
 
@@ -45,6 +44,7 @@
 
 #if defined(HAVE_LIBLZO)
 
+#include <util/compress/lzo.hpp>
 #include <lzo/lzo1x.h>
 
 

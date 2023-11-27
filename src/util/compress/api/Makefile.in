@@ -1,8 +1,5 @@
 # $Id$
 
-# Meta-makefile ("UTIL/COMPRESS/API" project)
-#############################################
-
 LIB_PROJ = compress
 PROJ_TAG = core
 

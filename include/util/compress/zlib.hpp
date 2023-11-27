@@ -32,7 +32,7 @@
 
 /// @file zlib.hpp
 ///
-/// ZLib Compression API.
+/// ZLib Compression API
 ///
 /// CZipCompression        - base methods for compression/decompression
 ///                          memory buffers and files.

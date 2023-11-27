@@ -31,9 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
-#include <util/compress/bzip2.hpp>
 #include <util/error_codes.hpp>
-#include <bzlib.h>
 
 
 /// Error codes for ERR_COMPRESS and OMPRESS_HANDLE_EXCEPTIONS are really
@@ -42,6 +40,11 @@
 /// For new values use 'max'+1 and update it there.
 ///
 #define NCBI_USE_ERRCODE_X   Util_Compress
+
+#if defined(HAVE_LIBBZ2)
+
+#include <util/compress/bzip2.hpp>
+#include <bzlib.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -882,5 +885,6 @@ CCompressionProcessor::EStatus CBZip2Decompressor::End(int abandon)
 }
 
 
-
 END_NCBI_SCOPE
+
+#endif  /* HAVE_LIBBZ2 */
