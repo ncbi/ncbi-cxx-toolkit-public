@@ -318,6 +318,9 @@
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 
+/* Define to 1 if Cloudflare zlib is available (embedded). */
+#undef HAVE_LIBZCF
+
 /* Define to 1 if libcassandra is available. */
 #undef HAVE_LIBCASSANDRA
 

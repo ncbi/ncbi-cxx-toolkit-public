@@ -383,7 +383,7 @@ ZSTD_LIB    =
 CMPRS_INCLUDE = $(Z_INCLUDE) $(BZ2_INCLUDE) $(LZO_INCLUDE) $(ZSTD_INCLUDE)
 CMPRS_LIBS    = $(Z_LIBS) $(BZ2_LIBS) $(LZO_LIBS) $(ZSTD_LIBS)
 CMPRS_STATIC_LIBS = $(Z_LIBS) $(BZ2_LIBS) $(LZO_LIBS) $(ZSTD_STATIC_LIBS)
-CMPRS_LIB     = $(Z_LIB) $(BZ2_LIB) $(ZSTD_LIB)
+CMPRS_LIB     = $(Z_LIB) $(BZ2_LIB) $(ZSTD_LIB) zcf
 
 # Perl-Compatible Regular Expressions
 # For historical reasons, the bundled (LIB) version contains the POSIX
