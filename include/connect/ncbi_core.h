@@ -469,7 +469,7 @@ extern NCBI_XCONNECT_EXPORT LOG LOG_Delete(LOG lg);
  * @param raw_size
  *  Size of the raw data (can be zero)
  * @sa
- *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_WriteInternal
+ *  LOG_Create, ELOG_Level, LOG_WriteInternal, LOG_WRITE, LOG_DATA
  */
 extern NCBI_XCONNECT_EXPORT void LOG_Write
 (LOG         lg,
@@ -495,6 +495,10 @@ extern NCBI_XCONNECT_EXPORT void LOG_Write
  *  This call free()s "mess->message" when "mess->dynamic" is set non-zero!
  * @param lg
  *  A log handle previously obtained from LOG_Create
+ * @note
+ *  In case of a fatal error (eLOG_Fatal found in mess->code), it calls abort()
+ *  (in Debug builds) or _exit(-1) (in Release builds).  Note that no exit
+ *  handlers are run or any other normal process run-down procedure performed.
  * @sa
  *  LOG_Create, ELOG_Level, FLOG_Handler, LOG_Write
  */
