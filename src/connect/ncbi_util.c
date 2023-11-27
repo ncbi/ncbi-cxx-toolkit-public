@@ -77,6 +77,9 @@
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 
+static const char kOutOfMemory[] = "Ouch! Out of memory";
+
+
 #if 0
 static char* x_getenv(const char* name)
 {
@@ -389,7 +392,7 @@ extern const char* NcbiMessagePlusError
             UTIL_ReleaseBuffer(descr);
         else if (release < 0)
             UTIL_ReleaseBufferOnHeap(descr);
-        return "Ouch! Out of memory";
+        return kOutOfMemory;
     }
 
     if (message) {
@@ -595,13 +598,17 @@ static void s_LOG_FileHandler(void* data, const SLOG_Message* mess)
     if (mess->level >= logdata->cut_off  ||
         mess->level >= logdata->fatal_err) {
         char* str = LOG_ComposeMessage(mess, s_LogFormatFlags);
+        FILE* log = logdata->fp;
         if (str) {
             size_t len = strlen(str);
             str[len++] = '\n';
-            fwrite(str, len, 1, logdata->fp);
-            fflush(logdata->fp);
+            fwrite(str, len, 1, log);
             free(str);
+        } else {
+            fputs(kOutOfMemory, log);
+            fputc('\n', log);
         }
+        fflush(log);
         if (mess->level >= logdata->fatal_err) {
 #ifdef NDEBUG
             fflush(0);
