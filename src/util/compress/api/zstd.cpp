@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbifile.hpp>
-#include <util/compress/zstd.hpp>
 #include <util/error_codes.hpp>
 
 
@@ -45,6 +44,7 @@
 
 #if defined(HAVE_LIBZSTD)
 
+#include <util/compress/zstd.hpp>
 #include <zstd.h>
 #include <zstd_errors.h>
 

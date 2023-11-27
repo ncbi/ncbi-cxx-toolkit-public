@@ -54,6 +54,8 @@ const size_t  kBufLen = size_t(41 KB * 1.2);
 /// Number of tests.
 const size_t  kTestCount = sizeof(kTests)/sizeof(kTests[0]);
 
+/// Method type for more compact representation
+typedef CCompressStream M;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -74,7 +76,7 @@ public:
              class TCompressionFile,
              class TStreamCompressor,
              class TStreamDecompressor>
-    void TestMethod(int idx, const char* src_buf, size_t src_len, size_t buf_len);
+    void TestMethod(M::EMethod, int idx, const char* src_buf, size_t src_len, size_t buf_len);
 
     // Print out compress/decompress status
     enum EPrintType { 
@@ -91,7 +93,7 @@ private:
 
 private:
     // Available tests
-    bool bz2, lzo, z, zstd;
+    bool bz2, lzo, z, zcf, zstd;
 
     // MT test doesn't use "big data" test, so we have next members
     // for compatibility with ST test only
@@ -121,6 +123,7 @@ bool CTest::TestApp_Init()
     bz2  = (test == "all" || test == "bz2");
     lzo  = (test == "all" || test == "lzo");
     z    = (test == "all" || test == "z");
+    zcf  = (test == "all" || test == "zcf");
     zstd = (test == "all" || test == "zstd");
 
     if (bz2) {
@@ -141,10 +144,18 @@ bool CTest::TestApp_Init()
     }
     if (z) {
         #if !defined(HAVE_LIBZ)
-            ERR_POST(Warning << "Z is not available on this platform, ignored.");
+            ERR_POST(Warning << "ZLIB is not available on this platform, ignored.");
             z = false;
         #else
             CZipCompression::Initialize();
+        #endif
+    }
+    if (zcf) {
+        #if !defined(HAVE_LIBZCF)
+            ERR_POST(Warning << "Cloudflare ZLIB is not available on this platform, ignored.");
+            zcf = false;
+        #else
+            CZipCloudflareCompression::Initialize();
         #endif
     }
     if (zstd) {
@@ -171,7 +182,7 @@ bool CTest::TestApp_Args(CArgDescriptions& args)
     args.AddDefaultPositional
         ("lib", "Compression library to test", CArgDescriptions::eString, "all");
     args.SetConstraint
-        ("lib", &(*new CArgAllow_Strings, "all", "bz2", "lzo", "z", "zstd"));
+        ("lib", &(*new CArgAllow_Strings, "all", "bz2", "lzo", "z", "zcf", "zstd"));
     return true;
 }
 
@@ -212,36 +223,49 @@ bool CTest::Thread_Run(int idx)
         ERR_POST(Trace << "====================================");
         ERR_POST(Trace << "Data size = " << len);
 
+#if defined(HAVE_LIBBZ2)
         if ( bz2 ) {
             ERR_POST(Trace << "-------------- BZip2 ---------------");
             TestMethod<CBZip2Compression,
                        CBZip2CompressionFile,
                        CBZip2StreamCompressor,
-                       CBZip2StreamDecompressor> (idx, src_buf, len, kBufLen);
+                       CBZip2StreamDecompressor> (M::eBZip2, idx, src_buf, len, kBufLen);
         }
+#endif
 #if defined(HAVE_LIBLZO)
         if ( lzo ) {
             ERR_POST(Trace << "-------------- LZO -----------------");
             TestMethod<CLZOCompression,
                        CLZOCompressionFile,
                        CLZOStreamCompressor,
-                       CLZOStreamDecompressor> (idx, src_buf, len, kBufLen);
+                       CLZOStreamDecompressor> (M::eLZO, idx, src_buf, len, kBufLen);
         }
 #endif
+#if defined(HAVE_LIBZ)
         if ( z ) {
             ERR_POST(Trace << "-------------- Zlib ----------------");
             TestMethod<CZipCompression,
                        CZipCompressionFile,
                        CZipStreamCompressor,
-                       CZipStreamDecompressor> (idx, src_buf, len, kBufLen);
+                       CZipStreamDecompressor> (M::eZip, idx, src_buf, len, kBufLen);
         }
+#endif
+#if defined(HAVE_LIBZCF)
+        if ( zcf ) {
+            ERR_POST(Trace << "-------------- Zlib Cloudflare -----");
+            TestMethod<CZipCompression,
+                       CZipCompressionFile,
+                       CZipStreamCompressor,
+                       CZipStreamDecompressor> (M::eZipCloudflare, idx, src_buf, len, kBufLen);
+        }
+#endif
 #if defined(HAVE_LIBZSTD)
         if ( zstd ) {
-            ERR_POST(Trace << "-------------- Zstd -----------------");
+            ERR_POST(Trace << "-------------- Zstd ----------------");
             TestMethod<CZstdCompression,
                        CZstdCompressionFile,
                        CZstdStreamCompressor,
-                       CZstdStreamDecompressor>(idx, src_buf, len, kBufLen);
+                       CZstdStreamDecompressor>(M::eZstd, idx, src_buf, len, kBufLen);
         }
 #endif
 
@@ -272,10 +296,12 @@ template<class TCompression,
          class TCompressionFile,
          class TStreamCompressor,
          class TStreamDecompressor>
-void CTest::TestMethod(int idx, const char* src_buf, size_t src_len, size_t buf_len)
+void CTest::TestMethod(M::EMethod method, 
+                       int idx, const char* src_buf, size_t src_len, size_t buf_len)
 {
     const string kFileName_str = "test_compress.compressed.file." + NStr::IntToString(idx);
     const char*  kFileName = kFileName_str.c_str();
+
 #   include "test_compress_run.inl"
 }
 
@@ -302,10 +328,6 @@ void CTest::PrintResult(EPrintType type, int last_errcode,
 
 int main(int argc, const char* argv[])
 {
-    // Initialize LZO compression
-#  if defined(HAVE_LIBLZO)
-    assert(CLZOCompression::Initialize());
-#  endif
     // Execute main application function
     return CTest().AppMain(argc, argv);
 }

@@ -44,6 +44,8 @@
 ///     MCompress_Zip,      MDecompress_Zip
 ///     MCompress_GZipFile, MDecompress_GZipFile,
 ///                         MDecompress_ConcatenatedGZipFile
+///     MCompress_ZipCloudflare, MDecompress_ZipCloudflare
+///     MCompress_GZipCloudflareFile, MDecompress_GZipCloudflareFile,
 ///     MCompress_Zstd,     MDecompress_Zstd
 ///
 /// @note
@@ -55,9 +57,11 @@
 
 
 #include <util/compress/stream.hpp>
+#include <ncbiconf.h>
 #include <util/compress/bzip2.hpp>
 #include <util/compress/lzo.hpp>
 #include <util/compress/zlib.hpp>
+#include <util/compress/zlib_cloudflare.hpp>
 #include <util/compress/zstd.hpp>
 
 
@@ -97,7 +101,9 @@ public:
         eLZO,                  ///< LZO (LZO1X)
         eZip,                  ///< ZLIB (raw zip data / DEFLATE method)
         eGZipFile,             ///< .gz file (including concatenated files)
-        eConcatenatedGZipFile, ///< Synonym for eGZipFile (for backward compatibility)
+        eConcatenatedGZipFile, ///< Synonym for eGZipFile (for backward compatibility) - deprecated
+        eZipCloudflare,        ///< ZLIB (raw zip data / DEFLATE method) Cloudflare fork
+        eGZipCloudflareFile,   ///< .gz file (including concatenated files) Cloudflare fork
         eZstd                  ///< ZStandard (raw zstd data)
     };
 
@@ -478,17 +484,21 @@ typedef CManipulatorOProxy <CDecompressIStream, CDecompressOStream> TDecompressO
 /// We need to have different types for each possible method and 
 /// compression/decompression action to call "right" version of operators >> and << 
 /// (see operator>> and operator<< for each class).
-class MCompress_Proxy_BZip2      {};
-class MCompress_Proxy_LZO        {};
-class MCompress_Proxy_Zip        {};
-class MCompress_Proxy_GZipFile   {};
-class MCompress_Proxy_Zstd       {};
-class MDecompress_Proxy_BZip2    {};
-class MDecompress_Proxy_LZO      {};
-class MDecompress_Proxy_Zip      {};
-class MDecompress_Proxy_GZipFile {};
+class MCompress_Proxy_BZip2                  {};
+class MCompress_Proxy_LZO                    {};
+class MCompress_Proxy_Zip                    {};
+class MCompress_Proxy_GZipFile               {};
+class MCompress_Proxy_ZipCloudflare          {};
+class MCompress_Proxy_GZipCloudflareFile     {};
+class MCompress_Proxy_Zstd                   {};
+class MDecompress_Proxy_BZip2                {};
+class MDecompress_Proxy_LZO                  {};
+class MDecompress_Proxy_Zip                  {};
+class MDecompress_Proxy_GZipFile             {};
 class MDecompress_Proxy_ConcatenatedGZipFile {};
-class MDecompress_Proxy_Zstd     {};
+class MDecompress_Proxy_ZipCloudflare        {};
+class MDecompress_Proxy_GZipCloudflareFile   {};
+class MDecompress_Proxy_Zstd                 {};
 
 
 /// Manipulator definitions.
@@ -497,12 +507,16 @@ class MDecompress_Proxy_Zstd     {};
 #define  MCompress_LZO                     MCompress_Proxy_LZO()
 #define  MCompress_Zip                     MCompress_Proxy_Zip()
 #define  MCompress_GZipFile                MCompress_Proxy_GZipFile()
+#define  MCompress_ZipCloudflare           MCompress_Proxy_ZipCloudflare()
+#define  MCompress_GZipCloudflareFile      MCompress_Proxy_GZipCloudflareFile()
 #define  MCompress_Zstd                    MCompress_Proxy_Zstd()
 #define  MDecompress_BZip2                 MDecompress_Proxy_BZip2()
 #define  MDecompress_LZO                   MDecompress_Proxy_LZO()
 #define  MDecompress_Zip                   MDecompress_Proxy_Zip()
 #define  MDecompress_GZipFile              MDecompress_Proxy_GZipFile()
 #define  MDecompress_ConcatenatedGZipFile  MDecompress_Proxy_ConcatenatedGZipFile()
+#define  MDecompress_ZipCloudflare         MDecompress_Proxy_ZipCloudflare()
+#define  MDecompress_GZipCloudflareFile    MDecompress_Proxy_GZipCloudflareFile()
 #define  MDecompress_Zstd                  MDecompress_Proxy_Zstd()
 
 
@@ -551,6 +565,18 @@ TCompressIProxy operator>>(istream& is, MCompress_Proxy_Zip const& /*obj*/)
 }
 
 inline
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_ZipCloudflare const& /*obj*/)
+{
+    return TCompressOProxy(os, CCompressStream::eZipCloudflare);
+}
+
+inline
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_ZipCloudflare const& /*obj*/)
+{
+    return TCompressIProxy(is, CCompressStream::eZipCloudflare);
+}
+
+inline
 TCompressOProxy operator<<(ostream& os, MCompress_Proxy_GZipFile const& /*obj*/)
 {
     return TCompressOProxy(os, CCompressStream::eGZipFile);
@@ -560,6 +586,18 @@ inline
 TCompressIProxy operator>>(istream& is, MCompress_Proxy_GZipFile const& /*obj*/)
 {
     return TCompressIProxy(is, CCompressStream::eGZipFile);
+}
+
+inline
+TCompressOProxy operator<<(ostream& os, MCompress_Proxy_GZipCloudflareFile const& /*obj*/)
+{
+    return TCompressOProxy(os, CCompressStream::eGZipCloudflareFile);
+}
+
+inline
+TCompressIProxy operator>>(istream& is, MCompress_Proxy_GZipCloudflareFile const& /*obj*/)
+{
+    return TCompressIProxy(is, CCompressStream::eGZipCloudflareFile);
 }
 
 inline
@@ -613,6 +651,18 @@ TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_Zip const& /*obj*/)
 }
 
 inline
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_ZipCloudflare const& /*obj*/)
+{
+    return TDecompressOProxy(os, CCompressStream::eZipCloudflare);
+}
+
+inline
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_ZipCloudflare const& /*obj*/)
+{
+    return TDecompressIProxy(is, CCompressStream::eZipCloudflare);
+}
+
+inline
 TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_GZipFile const& /*obj*/)
 {
     return TDecompressOProxy(os, CCompressStream::eGZipFile);
@@ -622,6 +672,18 @@ inline
 TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_GZipFile const& /*obj*/)
 {
     return TDecompressIProxy(is, CCompressStream::eGZipFile);
+}
+
+inline
+TDecompressOProxy operator<<(ostream& os, MDecompress_Proxy_GZipCloudflareFile const& /*obj*/)
+{
+    return TDecompressOProxy(os, CCompressStream::eGZipCloudflareFile);
+}
+
+inline
+TDecompressIProxy operator>>(istream& is, MDecompress_Proxy_GZipCloudflareFile const& /*obj*/)
+{
+    return TDecompressIProxy(is, CCompressStream::eGZipCloudflareFile);
 }
 
 inline

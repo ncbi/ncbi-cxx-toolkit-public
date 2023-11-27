@@ -1,3 +1,66 @@
+
+//============================================================================
+// NOTE:
+// 
+// Some tests using same code to tests eZip / eZipCloudflare.
+// This is not technically correct, but should works for the test purposes.
+//
+//============================================================================
+
+    // Check allowed compression methods
+
+    switch(method) {
+    case M::eBZip2:
+    case M::eLZO:
+    case M::eZip:
+    case M::eZipCloudflare:
+    case M::eZstd:
+        break;
+    default:
+        _TROUBLE;
+    }
+
+    // Check flags
+
+    // The fAllowTransparentRead / fAllowEmptyData should be the same for all compressors.
+#if defined(HAVE_LIBBZ2)  &&  defined(HAVE_LIBZ)
+    _VERIFY(static_cast<int>(CZipCompression::fAllowTransparentRead) == 
+            static_cast<int>(CBZip2Compression::fAllowTransparentRead));
+    _VERIFY(static_cast<int>(CZipCompression::fAllowEmptyData) == 
+            static_cast<int>(CBZip2Compression::fAllowEmptyData));
+#endif
+#if defined(HAVE_LIBLZO)  &&  defined(HAVE_LIBZ)
+    _VERIFY(static_cast<int>(CZipCompression::fAllowTransparentRead) == 
+            static_cast<int>(CLZOCompression::fAllowTransparentRead));
+    _VERIFY(static_cast<int>(CZipCompression::fAllowEmptyData) == 
+            static_cast<int>(CLZOCompression::fAllowEmptyData));
+#endif
+#if defined(HAVE_LIBZSTD)  &&  defined(HAVE_LIBZ)
+    _VERIFY(static_cast<int>(CZipCompression::fAllowTransparentRead) == 
+            static_cast<int>(CZstdCompression::fAllowTransparentRead));
+    _VERIFY(static_cast<int>(CZipCompression::fAllowEmptyData) == 
+            static_cast<int>(CZstdCompression::fAllowEmptyData));
+#endif
+
+    // Regular/Cloudflare zlib flags should be the same.
+#if defined(HAVE_LIBZCF)  &&  defined(HAVE_LIBZ)
+    _VERIFY(static_cast<int>(CZipCompression::fAllowTransparentRead) == 
+            static_cast<int>(CZipCloudflareCompression::fAllowTransparentRead));
+    _VERIFY(static_cast<int>(CZipCompression::fAllowEmptyData) == 
+            static_cast<int>(CZipCloudflareCompression::fAllowEmptyData));
+    _VERIFY(static_cast<int>(CZipCompression::fCheckFileHeader) == 
+            static_cast<int>(CZipCloudflareCompression::fCheckFileHeader));
+    _VERIFY(static_cast<int>(CZipCompression::fWriteGZipFormat) == 
+            static_cast<int>(CZipCloudflareCompression::fWriteGZipFormat));
+    _VERIFY(static_cast<int>(CZipCompression::fAllowConcatenatedGZip) == 
+            static_cast<int>(CZipCloudflareCompression::fAllowConcatenatedGZip));
+    _VERIFY(static_cast<int>(CZipCompression::fGZip) == 
+            static_cast<int>(CZipCloudflareCompression::fGZip));
+    _VERIFY(static_cast<int>(CZipCompression::fRestoreFileAttr) == 
+            static_cast<int>(CZipCloudflareCompression::fRestoreFileAttr));
+#endif
+
+
 //============================================================================
 //
 // Common code to test compression methods for ST and MT tests
@@ -17,13 +80,6 @@
     size_t dst_len, out_len;
     bool result;
 
-    // The fAllowTransparentRead should be the same for all compressors.
-    _VERIFY((unsigned int)CZipCompression::fAllowTransparentRead == 
-            (unsigned int)CBZip2Compression::fAllowTransparentRead);
-#if defined(HAVE_LIBLZO)
-    _VERIFY((unsigned int)CZipCompression::fAllowTransparentRead == 
-            (unsigned int)CLZOCompression::fAllowTransparentRead);
-#endif
 
     //------------------------------------------------------------------------
     // Version info
@@ -35,12 +91,12 @@
     // zlib v1.2.2 and earlier have a bug in decoding. In some cases
     // decompressor can produce output data on invalid compressed data.
     // So, we do not run "transparent read" tests if zlib version < 1.2.3.
-    string test_name = version.GetName();
-    bool allow_transparent_read_test = 
-            test_name != "zlib"  || 
-            version.IsUpCompatible(CVersionInfo(1,2,3));
 
-    if (!allow_transparent_read_test) {
+    bool allow_transparent_read_test = true;
+    if ( (method == M::eZip  ||  method == M::eZipCloudflare)
+         &&  version.IsUpCompatible(CVersionInfo(1, 2, 3)) ) 
+    {
+        allow_transparent_read_test = false;
         ERR_POST(Info << "Transparent read tests are not allowed for this test and library version.");
     }
 
@@ -54,7 +110,7 @@
         // Compress data
         TCompression c(CCompression::eLevel_Medium);
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo"  &&  buf_len > LZO_kMaxBlockSize) {
+        if (method == M::eLZO  &&  buf_len > LZO_kMaxBlockSize) {
             // Automatically use stream format for LZO if buffer size is too big for a single block
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
         }
@@ -75,7 +131,8 @@
         OK;
     }}
 
-    if (test_name == "zlib")
+#if defined(HAVE_LIBZ)  &&  defined(HAVE_LIBZCF)
+    if (method == M::eZip  ||  method == M::eZipCloudflare)
     {{
         ERR_POST(Trace << "Compress/decompress buffer test (GZIP)...");
         INIT_BUFFERS;
@@ -98,13 +155,14 @@
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
         OK;
     }}
+#endif
 
     //------------------------------------------------------------------------
     // Compress/decompress buffer with CRC32 checksum (LZO only)
     //------------------------------------------------------------------------
 
 #if defined(HAVE_LIBLZO)
-    if (test_name == "lzo")
+    if (method == M::eLZO)
     {{
         ERR_POST(Trace << "Compress/decompress buffer test (LZO, CRC32, default level)...");
         INIT_BUFFERS;
@@ -373,7 +431,7 @@
         // Decompress data back, and compare
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             // For LZO we should use fStreamFormat flag for DecompressBuffer()
             // method to decompress data, compressed using streams.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
@@ -401,7 +459,7 @@
         // Compress data and use it to create input stream
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method, because we will decompress it using decompression
             // stream.
@@ -494,7 +552,7 @@
         // Try to decompress data
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             // For LZO we should use fStreamFormat flag for DecompressBuffer()
             // method to decompress data compressed inside compression stream.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
@@ -524,7 +582,7 @@
         // Compress the data
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method for following decompress of data using compression
             // stream.
@@ -809,27 +867,34 @@
         // Compress data using manipulator.
         // The 'src_buf' is zero-terminated and have only printable characters.
 
-        if (test_name == "bzip2") {
+#if defined(HAVE_LIBBZ2)
+        if (method == M::eBZip2) {
             os_str << MCompress_BZip2 << src_buf;
-        } else
+        }
+#endif
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             os_str << MCompress_LZO << src_buf;
             // For LZO we should use fStreamFormat flag for DecompressBuffer()
             // method to decompress data compressed using streams/manipulators.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
-        } else 
-#endif
-        if (test_name == "zlib") {
-            os_str << MCompress_Zip << src_buf;
-        } else {
-#if defined(HAVE_LIBZSTD)
-        if (test_name == "zstd") {
-            os_str << MCompress_Zstd << src_buf;
-        } else 
-#endif
-            _TROUBLE;
         }
+#endif
+#if defined(HAVE_LIBZ)
+        if (method == M::eZip) {
+            os_str << MCompress_Zip << src_buf;
+        }
+#endif
+#if defined(HAVE_LIBZCF)
+        if (method == M::eZipCloudflare) {
+            os_str << MCompress_ZipCloudflare << src_buf;
+        }
+#endif
+#if defined(HAVE_LIBZSTD)
+        if (method == M::eZstd) {
+            os_str << MCompress_Zstd << src_buf;
+        }
+#endif
         string str = CNcbiOstrstreamToString(os_str);
         PrintResult(eCompress, kUnknownErr, src_len, kUnknown, str.size());
         // Decompress data and compare with original
@@ -843,24 +908,31 @@
         CNcbiIstrstream is_cmp(str);
         string str_cmp;
         INIT_BUFFERS;
-        if (test_name == "bzip2") {
+#if defined(HAVE_LIBBZ2)
+        if (method == M::eBZip2) {
             is_cmp >> MDecompress_BZip2 >> str_cmp;
-        } else 
-#if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
-            is_cmp >> MDecompress_LZO >> str_cmp;
-        } else 
-#endif
-        if (test_name == "zlib") {
-            is_cmp >> MDecompress_Zip >> str_cmp;
-        } else {
-#if defined(HAVE_LIBZSTD)
-        if (test_name == "zstd") {
-            is_cmp >> MDecompress_Zstd >> str_cmp;
-        } else 
-#endif
-            _TROUBLE;
         }
+#endif
+#if defined(HAVE_LIBLZO)
+        if (method == M::eLZO) {
+            is_cmp >> MDecompress_LZO >> str_cmp;
+        }
+#endif
+#if defined(HAVE_LIBZ)
+        if (method == M::eZip) {
+            is_cmp >> MDecompress_Zip >> str_cmp;
+        }
+#endif
+#if defined(HAVE_LIBZCF)
+        if (method == M::eZipCloudflare) {
+            is_cmp >> MDecompress_ZipCloudflare >> str_cmp;
+        }
+#endif
+#if defined(HAVE_LIBZSTD)
+        if (method == M::eZstd) {
+            is_cmp >> MDecompress_Zstd >> str_cmp;
+        }
+#endif
         str = str_cmp.data();
         out_len = str_cmp.length();
         PrintResult(eDecompress, kUnknownErr, str.size(), kUnknown, out_len);
@@ -885,7 +957,7 @@
 
         TCompression c;
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method, because we will decompress it using decompression
             // stream.
@@ -898,24 +970,32 @@
             string src(src_buf, src_len);
             CNcbiIstrstream is_str(src);
             CNcbiOstrstream os_str;
-            if (test_name == "bzip2") {
+
+#if defined(HAVE_LIBBZ2)
+            if (method == M::eBZip2) {
                 os_str << MCompress_BZip2 << is_str;
-            } else 
-#if defined(HAVE_LIBLZO)
-            if (test_name == "lzo") {
-                os_str << MCompress_LZO << is_str;
-            } else 
-#endif
-            if (test_name == "zlib") {
-                os_str << MCompress_Zip << is_str;
-            } else {
-#if defined(HAVE_LIBZSTD)
-            if (test_name == "zstd") {
-                os_str << MCompress_Zstd << is_str;
-            } else 
-#endif
-                _TROUBLE;
             }
+#endif
+#if defined(HAVE_LIBLZO)
+            if (method == M::eLZO) {
+                os_str << MCompress_LZO << is_str;
+            }
+#endif
+#if defined(HAVE_LIBZ)
+            if (method == M::eZip) {
+                os_str << MCompress_Zip << is_str;
+            }
+#endif
+#if defined(HAVE_LIBZCF)
+            if (method == M::eZipCloudflare) {
+                os_str << MCompress_ZipCloudflare << is_str;
+            }
+#endif
+#if defined(HAVE_LIBZSTD)
+            if (method == M::eZstd) {
+                os_str << MCompress_Zstd << is_str;
+            }
+#endif
             string str = CNcbiOstrstreamToString(os_str);
             size_t os_str_len = str.size();
             PrintResult(eCompress, kUnknownErr, src_len, kUnknown, os_str_len);
@@ -930,24 +1010,31 @@
             INIT_BUFFERS;
             CNcbiIstrstream is_cmp(str);
             CNcbiOstrstream os_cmp;
-            if (test_name == "bzip2") {
+#if defined(HAVE_LIBBZ2)
+            if (method == M::eBZip2) {
                 os_cmp << MDecompress_BZip2 << is_cmp;
-            } else 
-#if defined(HAVE_LIBLZO)
-            if (test_name == "lzo") {
-                os_cmp << MDecompress_LZO << is_cmp;
-            } else 
-#endif
-            if (test_name == "zlib") {
-                os_cmp << MDecompress_Zip << is_cmp;
-            } else {
-#if defined(HAVE_LIBZSTD)
-            if (test_name == "zstd") {
-                os_cmp << MDecompress_Zstd << is_cmp;
-            } else 
-#endif
-                _TROUBLE;
             }
+#endif
+#if defined(HAVE_LIBLZO)
+            if (method == M::eLZO) {
+                os_cmp << MDecompress_LZO << is_cmp;
+            }
+#endif
+#if defined(HAVE_LIBZ)
+            if (method == M::eZip) {
+                os_cmp << MDecompress_Zip << is_cmp;
+            }
+#endif
+#if defined(HAVE_LIBZCF)
+            if (method == M::eZipCloudflare) {
+                os_cmp << MDecompress_ZipCloudflare << is_cmp;
+            }
+#endif
+#if defined(HAVE_LIBZSTD)
+            if (method == M::eZstd) {
+                os_cmp << MDecompress_Zstd << is_cmp;
+            }
+#endif
             str = CNcbiOstrstreamToString(os_cmp);
             out_len = str.size();
             PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
@@ -962,24 +1049,31 @@
             string src(src_buf, src_len);
             CNcbiIstrstream is_str(src);
             CNcbiOstrstream os_str;
-            if (test_name == "bzip2") {
+#if defined(HAVE_LIBBZ2)
+            if (method == M::eBZip2) {
                 is_str >> MCompress_BZip2 >> os_str;
-            } else 
-#if defined(HAVE_LIBLZO)
-            if (test_name == "lzo") {
-                is_str >> MCompress_LZO >> os_str;
-            } else 
-#endif
-            if (test_name == "zlib") {
-                is_str >> MCompress_Zip >> os_str;
-            } else {
-#if defined(HAVE_LIBZSTD)
-            if (test_name == "zstd") {
-                is_str >> MCompress_Zstd >> os_str;
-            } else 
-#endif
-                _TROUBLE;
             }
+#endif
+#if defined(HAVE_LIBLZO)
+            if (method == M::eLZO) {
+                is_str >> MCompress_LZO >> os_str;
+            }
+#endif
+#if defined(HAVE_LIBZ)
+            if (method == M::eZip) {
+                is_str >> MCompress_Zip >> os_str;
+            }
+#endif
+#if defined(HAVE_LIBZCF)
+            if (method == M::eZipCloudflare) {
+                is_str >> MCompress_ZipCloudflare >> os_str;
+            }
+#endif
+#if defined(HAVE_LIBZSTD)
+            if (method == M::eZstd) {
+                is_str >> MCompress_Zstd >> os_str;
+            }
+#endif
             string str = CNcbiOstrstreamToString(os_str);
             size_t os_str_len = str.size();
             PrintResult(eCompress, kUnknownErr, src_len, kUnknown, os_str_len);
@@ -994,24 +1088,31 @@
             INIT_BUFFERS;
             CNcbiIstrstream is_cmp(str);
             CNcbiOstrstream os_cmp;
-            if (test_name == "bzip2") {
+#if defined(HAVE_LIBBZ2)
+            if (method == M::eBZip2) {
                 is_cmp >> MDecompress_BZip2 >> os_cmp;
-            } else 
-#if defined(HAVE_LIBLZO)
-            if (test_name == "lzo") {
-                is_cmp >> MDecompress_LZO >> os_cmp;
-            } else 
-#endif
-            if (test_name == "zlib") {
-                is_cmp >> MDecompress_Zip >> os_cmp;
-            } else {
-#if defined(HAVE_LIBZSTD)
-            if (test_name == "zstd") {
-                is_cmp >> MDecompress_Zstd >> os_cmp;
-            } else 
-#endif
-                _TROUBLE;
             }
+#endif
+#if defined(HAVE_LIBLZO)
+            if (method == M::eLZO) {
+                is_cmp >> MDecompress_LZO >> os_cmp;
+            }
+#endif
+#if defined(HAVE_LIBZ)
+            if (method == M::eZip) {
+                is_cmp >> MDecompress_Zip >> os_cmp;
+            }
+#endif
+#if defined(HAVE_LIBZCF)
+            if (method == M::eZipCloudflare) {
+                is_cmp >> MDecompress_ZipCloudflare >> os_cmp;
+            }
+#endif
+#if defined(HAVE_LIBZSTD)
+            if (method == M::eZstd) {
+                is_cmp >> MDecompress_Zstd >> os_cmp;
+            }
+#endif
             str = CNcbiOstrstreamToString(os_cmp);
             out_len = str.size();
             PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
@@ -1040,41 +1141,50 @@
         // Preparation
 
 #if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
+        if (method == M::eLZO) {
             // For LZO we should use fStreamFormat flag for CompressBuffer()
             // method, because we will decompress it using decompression
             // stream.
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
-        } else
+        }
 #endif
-        if (test_name == "zlib") {
+#if defined(HAVE_LIBZ)
+        if (method == M::eZip || method == M::eZipCloudflare) {
             /// Set of flags for gzip file format support
             c.SetFlags(c.GetFlags() | CZipCompression::fGZip);
         }
-
+#endif
         // Compress data into the file
         string src(src_buf, src_len);
         CNcbiIstrstream is_str(src);
         CNcbiOfstream os(kFileName, ios::out | ios::binary);
         assert(os.good());
-        if (test_name == "bzip2") {
+
+#if defined(HAVE_LIBBZ2)
+        if (method == M::eBZip2) {
             os << MCompress_BZip2 << is_str;
-        } else 
-#if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
-            os << MCompress_LZO << is_str;
-        } else 
-#endif
-        if (test_name == "zlib") {
-            os << MCompress_GZipFile << is_str;
-        } else {
-#if defined(HAVE_LIBZSTD)
-        if (test_name == "zstd") {
-            os << MCompress_Zstd << is_str;
-        } else 
-#endif
-            _TROUBLE;
         }
+#endif
+#if defined(HAVE_LIBLZO)
+        if (method == M::eLZO) {
+            os << MCompress_LZO << is_str;
+        }
+#endif
+#if defined(HAVE_LIBZ)
+        if (method == M::eZip) {
+            os << MCompress_GZipFile << is_str;
+        }
+#endif
+#if defined(HAVE_LIBZCF)
+        if (method == M::eZipCloudflare) {
+            os << MCompress_GZipCloudflareFile << is_str;
+        }
+#endif
+#if defined(HAVE_LIBZSTD)
+        if (method == M::eZstd) {
+            os << MCompress_Zstd << is_str;
+        }
+#endif
         os.close();
         dst_len = (size_t)CFile(kFileName).GetLength();
         assert(dst_len > 0);
@@ -1084,24 +1194,32 @@
         CNcbiOstrstream os_cmp;
         CNcbiIfstream is(kFileName, ios::in | ios::binary);
         assert(is.good());
-        if (test_name == "bzip2") {
+
+#if defined(HAVE_LIBBZ2)
+        if (method == M::eBZip2) {
             is >> MDecompress_BZip2 >> os_cmp;
-        } else 
-#if defined(HAVE_LIBLZO)
-        if (test_name == "lzo") {
-            is >> MDecompress_LZO >> os_cmp;
-        } else 
-#endif
-        if (test_name == "zlib") {
-            is >> MDecompress_GZipFile >> os_cmp;
-        } else {
-#if defined(HAVE_LIBZSTD)
-        if (test_name == "zstd") {
-            is >> MDecompress_Zstd >> os_cmp;
-        } else 
-#endif
-            _TROUBLE;
         }
+#endif
+#if defined(HAVE_LIBLZO)
+        if (method == M::eLZO) {
+            is >> MDecompress_LZO >> os_cmp;
+        }
+#endif
+#if defined(HAVE_LIBZ)
+        if (method == M::eZip) {
+            is >> MDecompress_GZipFile >> os_cmp;
+        }
+#endif
+#if defined(HAVE_LIBZCF)
+        if (method == M::eZipCloudflare) {
+            is >> MDecompress_GZipCloudflareFile >> os_cmp;
+        }
+#endif
+#if defined(HAVE_LIBZSTD)
+        if (method == M::eZstd) {
+            is >> MDecompress_Zstd >> os_cmp;
+        }
+#endif
         string str = CNcbiOstrstreamToString(os_cmp);
         out_len = str.size();
         PrintResult(eDecompress, kUnknownErr, dst_len, kUnknown, out_len);

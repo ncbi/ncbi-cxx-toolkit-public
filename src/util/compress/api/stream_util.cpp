@@ -35,15 +35,13 @@ BEGIN_NCBI_SCOPE
 
 
 // Algorithm-specific default flags
-const ICompression::TFlags kDefault_BZip2    = 0;
-#if defined(HAVE_LIBLZO)
-const ICompression::TFlags kDefault_LZO      = 0;
-#endif
-const ICompression::TFlags kDefault_Zip      = 0;
-const ICompression::TFlags kDefault_GZipFile = CZipCompression::fGZip;
-#if defined(HAVE_LIBZSTD)
-const ICompression::TFlags kDefault_Zstd     = 0;
-#endif
+const ICompression::TFlags kDefault_BZip2               = 0;
+const ICompression::TFlags kDefault_LZO                 = 0;
+const ICompression::TFlags kDefault_Zip                 = 0;
+const ICompression::TFlags kDefault_ZipCloudflare       = 0;
+const ICompression::TFlags kDefault_GZipFile            = CZipCompression::fGZip;
+const ICompression::TFlags kDefault_GZipCloudflareFile  = CZipCloudflareCompression::fGZip;
+const ICompression::TFlags kDefault_Zstd                = 0;
 
 
 bool CCompressStream::HaveSupport(EMethod method)
@@ -65,6 +63,12 @@ bool CCompressStream::HaveSupport(EMethod method)
     case CCompressStream::eGZipFile:
     case CCompressStream::eConcatenatedGZipFile:
         #if defined(HAVE_LIBZ)
+            return true;
+        #endif 
+        break;
+    case CCompressStream::eZipCloudflare:
+    case CCompressStream::eGZipCloudflareFile:
+        #if defined(HAVE_LIBZCF)
             return true;
         #endif 
         break;
@@ -98,6 +102,7 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         break;
 
     case CCompressStream::eBZip2:
+#if defined(HAVE_LIBBZ2)
         if (flags == CCompressStream::fDefault) {
             flags = kDefault_BZip2;
         } else {
@@ -108,6 +113,9 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         } else {
             processor = new CBZip2StreamDecompressor(flags);
         }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "BZIP2 compression is not available");
+#endif 
         break;
 
     case CCompressStream::eLZO:
@@ -123,11 +131,12 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
             processor = new CLZOStreamDecompressor(flags);
         }
 #else
-         NCBI_THROW(CCompressionException, eCompression, "LZO compression is not available on this platform");
+         NCBI_THROW(CCompressionException, eCompression, "LZO compression is not available");
 #endif 
         break;
 
     case CCompressStream::eZip:
+#if defined(HAVE_LIBZ)
         if (flags == CCompressStream::fDefault) {
             flags = kDefault_Zip;
         } else {
@@ -138,10 +147,14 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         } else {
             processor = new CZipStreamDecompressor(flags);
         }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "ZLIB compression is not available");
+#endif 
         break;
 
     case CCompressStream::eGZipFile:
     case CCompressStream::eConcatenatedGZipFile:
+#if defined(HAVE_LIBZ)
         if (flags == CCompressStream::fDefault) {
             flags = kDefault_GZipFile;
         } else {
@@ -152,6 +165,43 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
         } else {
             processor = new CZipStreamDecompressor(flags);
         }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "ZLIB compression is not available");
+#endif 
+        break;
+
+    case CCompressStream::eZipCloudflare:
+#if defined(HAVE_LIBZCF)
+        if (flags == CCompressStream::fDefault) {
+            flags = kDefault_ZipCloudflare;
+        } else {
+            flags |= kDefault_ZipCloudflare;
+        }
+        if (type == eCompress) {
+            processor = new CZipCloudflareStreamCompressor(level, flags);
+        } else {
+            processor = new CZipCloudflareStreamDecompressor(flags);
+        }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "Cloudflare ZLIB compression is not available");
+#endif
+        break;
+
+    case CCompressStream::eGZipCloudflareFile:
+#if defined(HAVE_LIBZCF)
+        if (flags == CCompressStream::fDefault) {
+            flags = kDefault_GZipCloudflareFile;
+        } else {
+            flags |= kDefault_GZipCloudflareFile;
+        }
+        if (type == eCompress) {
+            processor = new CZipCloudflareStreamCompressor(level, flags);
+        } else {
+            processor = new CZipCloudflareStreamDecompressor(flags);
+        }
+#else
+         NCBI_THROW(CCompressionException, eCompression, "Cloudflare ZLIB compression is not available");
+#endif
         break;
 
     case CCompressStream::eZstd:
@@ -167,12 +217,12 @@ CCompressionStreamProcessor* s_Init(EInitType                type,
             processor = new CZstdStreamDecompressor(flags);
         }
 #else
-         NCBI_THROW(CCompressionException, eCompression, "ZSTD compression is not available on this platform");
+         NCBI_THROW(CCompressionException, eCompression, "ZSTD compression is not available");
 #endif
         break;
 
     default:
-        NCBI_THROW(CCompressionException, eCompression, "Unknown compression/decompression method");
+        NCBI_THROW(CCompressionException, eCompression, "Unknown compression method");
     }
 
     return processor;

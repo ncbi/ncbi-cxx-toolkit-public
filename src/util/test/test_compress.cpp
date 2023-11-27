@@ -57,6 +57,8 @@ const size_t kRegDataLen = 101 KB;
 /// Output buffer length. ~20% more than kRegDataLen.
 const size_t kRegBufLen = size_t(kRegDataLen * 1.2);
 
+/// Method type for more compact representation
+typedef CCompressStream M;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -76,7 +78,7 @@ public:
              class TCompressionFile,
              class TStreamCompressor,
              class TStreamDecompressor>
-    void TestMethod(const char* src_buf, size_t src_len, size_t buf_len);
+    void TestMethod(CCompressStream::EMethod, const char* src_buf, size_t src_len, size_t buf_len);
 
     // Print out compress/decompress status
     enum EPrintType { 
@@ -97,7 +99,7 @@ private:
   
 private:
     // Available tests
-    bool bz2, lzo, z, zstd;
+    bool bz2, lzo, z, zcf, zstd;
 
     // Path to store working files,see -path command line argument;
     // current directory by default.
@@ -126,7 +128,6 @@ void CTest::Init(void)
     UnsetDiagTraceFlag(eDPF_All);
     CDiagContext::SetOldPostFormat(true);
 #endif
-
     // Create command-line argument descriptions
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -134,7 +135,7 @@ void CTest::Init(void)
     arg_desc->AddDefaultPositional
         ("lib", "Compression library to test", CArgDescriptions::eString, "all");
     arg_desc->SetConstraint
-        ("lib", &(*new CArgAllow_Strings, "all", "bz2", "lzo", "z", "zstd"));
+        ("lib", &(*new CArgAllow_Strings, "all", "bz2", "lzo", "z", "zcf", "zstd"));
     arg_desc->AddDefaultKey
         ("size", "SIZE",
          "Test data size. If not specified, default set of tests will be used. "
@@ -178,6 +179,7 @@ int CTest::Run(void)
     bz2  = (test == "all" || test == "bz2");
     lzo  = (test == "all" || test == "lzo");
     z    = (test == "all" || test == "z");
+    zcf  = (test == "all" || test == "zcf");
     zstd = (test == "all" || test == "zstd");
 
     if (bz2) {
@@ -198,10 +200,18 @@ int CTest::Run(void)
     }
     if (z) {
         #if !defined(HAVE_LIBZ)
-            ERR_POST(Warning << "Z is not available on this platform, ignored.");
+            ERR_POST(Warning << "ZLIB is not available on this platform, ignored.");
             z = false;
         #else
             CZipCompression::Initialize();
+        #endif
+    }
+    if (zcf) {
+        #if !defined(HAVE_LIBZCF)
+            ERR_POST(Warning << "Cloudflare ZLIB is not available on this platform, ignored.");
+            zcf = false;
+        #else
+            CZipCloudflareCompression::Initialize();
         #endif
     }
     if (zstd) {
@@ -272,36 +282,49 @@ int CTest::Run(void)
         ERR_POST(Trace << "====================================");
         ERR_POST(Trace << "Data size = " << len);
 
+#if defined(HAVE_LIBBZ2)
         if ( bz2 ) {
             ERR_POST(Trace << "-------------- BZip2 ---------------");
             TestMethod<CBZip2Compression,
                        CBZip2CompressionFile,
                        CBZip2StreamCompressor,
-                       CBZip2StreamDecompressor> (src_buf, len, kBufLen);
+                       CBZip2StreamDecompressor> (M::eBZip2, src_buf, len, kBufLen);
         }
+#endif
 #if defined(HAVE_LIBLZO)
         if ( lzo ) {
             ERR_POST(Trace << "-------------- LZO -----------------");
             TestMethod<CLZOCompression,
                        CLZOCompressionFile,
                        CLZOStreamCompressor,
-                       CLZOStreamDecompressor> (src_buf, len, kBufLen);
+                       CLZOStreamDecompressor> (M::eLZO, src_buf, len, kBufLen);
         }
 #endif
+#if defined(HAVE_LIBZ)
         if ( z ) {
             ERR_POST(Trace << "-------------- Zlib ----------------");
             TestMethod<CZipCompression,
                        CZipCompressionFile,
                        CZipStreamCompressor,
-                       CZipStreamDecompressor> (src_buf, len, kBufLen);
+                       CZipStreamDecompressor> (M::eZip, src_buf, len, kBufLen);
         }
+#endif
+#if defined(HAVE_LIBZCF)
+        if ( zcf ) {
+            ERR_POST(Trace << "-------------- Zlib Cloudflare -----");
+            TestMethod<CZipCloudflareCompression,
+                       CZipCloudflareCompressionFile,
+                       CZipCloudflareStreamCompressor,
+                       CZipCloudflareStreamDecompressor> (M::eZipCloudflare, src_buf, len, kBufLen);
+        }
+#endif
 #if defined(HAVE_LIBZSTD)
         if (zstd) {
-            ERR_POST(Trace << "-------------- Zstd -----------------");
+            ERR_POST(Trace << "-------------- Zstd ----------------");
             TestMethod<CZstdCompression,
-                CZstdCompressionFile,
-                CZstdStreamCompressor,
-                CZstdStreamDecompressor>(src_buf, len, kBufLen);
+                       CZstdCompressionFile,
+                       CZstdStreamCompressor,
+                       CZstdStreamDecompressor>(M::eZstd, src_buf, len, kBufLen);
         }
 #endif
 
@@ -316,20 +339,29 @@ int CTest::Run(void)
     if ( !custom_size ) {
         ERR_POST(Trace << "====================================");
         ERR_POST(Trace << "Data size = 0");
+#if defined(HAVE_LIBBZ2)
         if (bz2) {
-            TestEmptyInputData(CCompressStream::eBZip2);
-        }
-#if defined(HAVE_LIBLZO)
-        if (lzo) {
-            TestEmptyInputData(CCompressStream::eLZO);
+            TestEmptyInputData(M::eBZip2);
         }
 #endif
-        if (z) {
-            TestEmptyInputData(CCompressStream::eZip);
+#if defined(HAVE_LIBLZO)
+        if (lzo) {
+            TestEmptyInputData(M::eLZO);
         }
+#endif
+#if defined(HAVE_LIBZ)
+        if (z) {
+            TestEmptyInputData(M::eZip);
+        }
+#endif
+#if defined(HAVE_LIBZCF)
+        if (zcf) {
+            TestEmptyInputData(M::eZipCloudflare);
+        }
+#endif
 #if defined(HAVE_LIBZSTD)
         if (zstd) {
-            TestEmptyInputData(CCompressStream::eZstd);
+            TestEmptyInputData(M::eZstd);
         }
 #endif
     }
@@ -357,13 +389,10 @@ template<class TCompression,
          class TCompressionFile,
          class TStreamCompressor,
          class TStreamDecompressor>
-    void CTest::TestMethod(const char* src_buf, size_t src_len, size_t buf_len)
+    void CTest::TestMethod(M::EMethod method, const char* src_buf, size_t src_len, size_t buf_len)
 {
     const string kFileName_str = CFile::ConcatPath(m_Dir, "test_compress.compressed.file");
     const char* kFileName = kFileName_str.c_str();
-
-    // Initialize compression
-    assert(TCompression::Initialize());
 
 #   include "test_compress_run.inl"
 }
@@ -393,7 +422,7 @@ void CTest::PrintResult(EPrintType type, int last_errcode,
 
 struct SEmptyInputDataTest
 {
-    CCompressStream::EMethod method;
+    M::EMethod method;
     unsigned int flags;
     // Result of CompressBuffer()/DecompressBuffer() methods for specified
     // set of flags. Stream's Finalize() also should set badbit if FALSE.
@@ -405,56 +434,50 @@ struct SEmptyInputDataTest
     unsigned int stream_output_size;
 };
 
+
+// fAllowEmptyData should be the same for all compressions
+//
+#define f_AllowEmptyData CZipCompression::fAllowEmptyData 
+
 static const SEmptyInputDataTest s_EmptyInputDataTests[] = 
 {
-    { CCompressStream::eBZip2, 0 /* default flags */,              false,  0,  0 },
-    { CCompressStream::eBZip2, CBZip2Compression::fAllowEmptyData, true,  14, 14 },
+#if defined(HAVE_LIBBZ2)
+    { M::eBZip2, 0 /* default flags */,                             false,  0,  0 },
+    { M::eBZip2, f_AllowEmptyData,                                  true,  14, 14 },
+#endif
 #if defined(HAVE_LIBLZO)
     // LZO's CompressBuffer() method do not use fStreamFormat that add header
     //  and footer to the output, streams always use it.
-    { CCompressStream::eLZO,   0 /* default flags */,              false,  0,  0 },
-    { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData,   true,   0, 15 },
-    { CCompressStream::eLZO,   CLZOCompression::fAllowEmptyData |
-                               CLZOCompression::fStreamFormat,     true,  15, 15 },
+    { M::eLZO,   0 /* default flags */,                             false,  0,  0 },
+    { M::eLZO,   f_AllowEmptyData,                                  true,   0, 15 },
+    { M::eLZO,   f_AllowEmptyData | CLZOCompression::fStreamFormat, true,  15, 15 },
+#endif
+#if defined(HAVE_LIBZ)
+    { M::eZip,   0 /* default flags */,                             false,  0,  0 },
+    { M::eZip,   CZipCompression::fGZip,                            false,  0,  0 },
+    { M::eZip,   f_AllowEmptyData,                                  true,   8,  8 },
+    { M::eZip,   f_AllowEmptyData | CZipCompression::fGZip,         true,  20, 20 },
 #endif
 #if defined(HAVE_LIBZSTD)
-    { CCompressStream::eZstd,  0 /* default flags */,              false,  0,  0 },
-    { CCompressStream::eZstd,  CZstdCompression::fAllowEmptyData,  true,   9,  9 },
-    { CCompressStream::eZstd,  CZstdCompression::fAllowEmptyData |
-                               CZstdCompression::fChecksum,        true,  13, 13 },
+    { M::eZstd,  0 /* default flags */,                             false,  0,  0 },
+    { M::eZstd,  f_AllowEmptyData,  true,   9,  9 },
+    { M::eZstd,  f_AllowEmptyData | CZstdCompression::fChecksum,    true,  13, 13 },
 #endif
-    { CCompressStream::eZip,   0 /* default flags */,              false,  0,  0 },
-    { CCompressStream::eZip,   CZipCompression::fGZip,             false,  0,  0 },
-    { CCompressStream::eZip,   CZipCompression::fAllowEmptyData,   true,   8,  8 },
-    { CCompressStream::eZip,   CZipCompression::fAllowEmptyData |
-                               CZipCompression::fGZip,             true,  20, 20 }
+#if defined(HAVE_LIBZCF)
+    { M::eZipCloudflare,   0 /* default flags */,                               false,  0,  0 },
+    { M::eZipCloudflare,   CZipCloudflareCompression::fGZip,                    false,  0,  0 },
+    { M::eZipCloudflare,   f_AllowEmptyData,                                    true,   8,  8 },
+    { M::eZipCloudflare,   f_AllowEmptyData | CZipCloudflareCompression::fGZip, true,  20, 20 },
+#endif
 };
 
-void CTest::TestEmptyInputData(CCompressStream::EMethod method)
+void CTest::TestEmptyInputData(M::EMethod method)
 {
     const size_t kLen = 1024;
     char   src_buf[kLen];
     char   dst_buf[kLen];
     char   cmp_buf[kLen];
     size_t n;
-
-    // fAllowEmptyData flag should be the same for all compression methods
-    assert(
-        static_cast<int>(CZipCompression::fAllowEmptyData) == 
-        static_cast<int>(CBZip2Compression::fAllowEmptyData)
-    );
-#ifdef HAVE_LIBLZO
-    assert(
-        static_cast<int>(CZipCompression::fAllowEmptyData) == 
-        static_cast<int>(CLZOCompression::fAllowEmptyData)
-    );
-#endif
-#ifdef HAVE_LIBZSTD
-    assert(
-        static_cast<int>(CZipCompression::fAllowEmptyData) == 
-        static_cast<int>(CZstdCompression::fAllowEmptyData)
-    );
-#endif
 
     const size_t count = ArraySize(s_EmptyInputDataTests);
 
@@ -473,37 +496,46 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
         unique_ptr<CCompressionStreamProcessor> stream_compressor;
         unique_ptr<CCompressionStreamProcessor> stream_decompressor;
 
-        if (method == CCompressStream::eBZip2) {
+#if defined(HAVE_LIBBZ2)
+        if (method == M::eBZip2) {
             compression.reset(new CBZip2Compression());
             compression->SetFlags(test.flags);
             stream_compressor.reset(new CBZip2StreamCompressor(test.flags));
             stream_decompressor.reset(new CBZip2StreamDecompressor(test.flags));
-        } else 
-        if (method == CCompressStream::eLZO) {
+        }
+#endif
 #if defined(HAVE_LIBLZO)
+        if (method == M::eLZO) {
             compression.reset(new CLZOCompression());
             compression->SetFlags(test.flags);
             stream_compressor.reset(new CLZOStreamCompressor(test.flags));
             stream_decompressor.reset(new CLZOStreamDecompressor(test.flags));
+        }
 #endif
-        } else 
-        if (method == CCompressStream::eZip) {
+#if defined(HAVE_LIBZ)
+        if (method == M::eZip) {
             compression.reset(new CZipCompression());
             compression->SetFlags(test.flags);
             stream_compressor.reset(new CZipStreamCompressor(test.flags));
             stream_decompressor.reset(new CZipStreamDecompressor(test.flags));
         } else
-        if (method == CCompressStream::eZstd) {
+#endif
+#if defined(HAVE_LIBZCF)
+        if (method == M::eZipCloudflare) {
+            compression.reset(new CZipCloudflareCompression());
+            compression->SetFlags(test.flags);
+            stream_compressor.reset(new CZipCloudflareStreamCompressor(test.flags));
+            stream_decompressor.reset(new CZipCloudflareStreamDecompressor(test.flags));
+        } else
+#endif
 #if defined(HAVE_LIBZSTD)
+        if (method == M::eZstd) {
             compression.reset(new CZstdCompression());
             compression->SetFlags(test.flags);
             stream_compressor.reset(new CZstdStreamCompressor(test.flags));
             stream_decompressor.reset(new CZstdStreamDecompressor(test.flags));
-#endif
-        } else 
-        {
-            _TROUBLE;
         }
+#endif
 
         // ---- Run tests ----
 
