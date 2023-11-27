@@ -1,9 +1,6 @@
 # $Id$
 
-# Meta-makefile ("UTIL/COMPRESS" project)
-#########################################
-
-SUB_PROJ = bzip2 zlib api
+SUB_PROJ = bzip2 zlib zlib_cloudflare api
 PROJ_TAG = core
 
 srcdir = @srcdir@
