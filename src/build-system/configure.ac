@@ -4779,6 +4779,11 @@ if test -z "$Z_LIBS"; then
    NCBI_PACKAGE(Z)
    NCBI_PACKAGE(LocalZ)
 fi
+# Cloudflare fork, always present in practice
+if test -d "$real_srcdir/include/util/compress/zlib_cloudflare"; then
+   AC_DEFINE(HAVE_LIBZCF, 1,
+      [Define to 1 if Cloudflare zlib is available (embedded).])
+fi
 
 NCBI_CHECK_THIRD_PARTY_LIB(bz2,
  [AC_LANG_PROGRAM([@%:@include <bzlib.h>],
