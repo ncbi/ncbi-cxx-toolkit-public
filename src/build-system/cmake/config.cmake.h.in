@@ -1032,6 +1032,9 @@
 /* Define to 1 if libz is available. */
 #cmakedefine HAVE_LIBZ 1
 
+/* Define to 1 if Cloudflare zlib is available (embedded). */
+#cmakedefine HAVE_LIBZCF 1
+
 /* Define to 1 if libzstd is available. */
 #cmakedefine HAVE_LIBZSTD 1
 

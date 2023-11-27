@@ -185,6 +185,16 @@ endif()
 NCBIcomponent_report(LocalZ)
 
 #############################################################################
+# LocalZCF
+if (NOT NCBI_COMPONENT_LocalZCF_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib_cloudflare)
+    set(NCBI_COMPONENT_LocalZCF_FOUND YES)
+    set(NCBI_COMPONENT_LocalZCF_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib_cloudflare)
+    set(NCBI_COMPONENT_LocalZCF_NCBILIB zcf)
+endif()
+set(HAVE_LIBZCF ${NCBI_COMPONENT_LocalZCF_FOUND})
+NCBIcomponent_report(LocalZCF)
+
+#############################################################################
 # LocalBZ2
 if (NOT NCBI_COMPONENT_LocalBZ2_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2 AND NOT NCBI_PTBCFG_PACKAGING)
     set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
