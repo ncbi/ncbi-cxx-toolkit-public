@@ -320,6 +320,12 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
         m_submit_block = submit_block;
     });
 
+
+    for(auto hook: m_more_hooks)
+    {
+        hook(objStream);
+    }
+
 }
 
 void CHugeAsnReader::ExtendReadHooks(t_more_hooks hooks)
