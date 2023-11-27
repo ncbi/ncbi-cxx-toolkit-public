@@ -1,0 +1,12 @@
+# $Id$
+
+NCBI_begin_lib(zcf)
+  NCBI_sources(
+    adler32 adler32_simd crc32 deflate infback inffast inflate inftrees trees zutil
+    ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
+  )
+  NCBI_disable_pch()
+  NCBI_requires(LocalZCF)
+  NCBI_project_watchers(ivanov)
+NCBI_end_lib()
+

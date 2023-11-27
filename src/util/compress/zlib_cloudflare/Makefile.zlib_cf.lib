@@ -1,0 +1,16 @@
+# $Id$
+
+SRC = adler32 adler32_simd crc32 deflate infback inffast inflate inftrees trees zutil \
+      ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
+
+LIB = zcf
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(includedir)/util/compress/zlib_cloudflare
+
+CFLAGS   = $(FAST_CFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
+
+WATCHERS = ivanov
+
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)
