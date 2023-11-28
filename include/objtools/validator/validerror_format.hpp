@@ -115,17 +115,16 @@ public:
     static void SetSuppressionRules(const CSeq_entry_Handle& se, CValidError& errors);
     static void SetSuppressionRules(const CSeq_submit& ss, CValidError& errors);
     static void SetSuppressionRules(const CBioseq& seq, CValidError& errors);
-    static void AddSuppression(CUser_object& user, unsigned int error_code);
+    static void AddSuppression(CUser_object& user, EErrType error_code);
 
     static void AddLocusTags(CValidError& errors, CScope& scope);
 
 private:
     // Prohibit copy constructor & assignment operator
-    CValidErrorFormat(const CValidErrorFormat&);
-    CValidErrorFormat& operator= (const CValidErrorFormat&);
+    CValidErrorFormat(const CValidErrorFormat&) = delete;
+    CValidErrorFormat& operator=(const CValidErrorFormat&) = delete;
 
-
-    string x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
+    string x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatECNumberForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
     string x_FormatBadSpecificHostForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatBadInstCodeForSubmitterReport(const CValidErrItem& error) const;

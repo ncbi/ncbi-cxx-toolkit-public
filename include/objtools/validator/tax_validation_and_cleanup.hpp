@@ -328,10 +328,10 @@ public:
     bool IsSpecificHostMapUpdateComplete() const;
     void ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp);
     void ReportSpecificHostErrors(CValidError_imp& imp);
-    bool AdjustOrgRefsWithSpecificHostReply(vector<CRef<COrg_ref> > requests,
-                                            const CTaxon3_reply& reply,
-                                            vector<CRef<COrg_ref> > org_refs,
-                                            string& error_message);
+    bool AdjustOrgRefsWithSpecificHostReply(
+          vector<CRef<COrg_ref>> requests,
+          const CTaxon3_reply& reply,
+          vector<CRef<COrg_ref>> org_refs);
     bool AdjustOrgRefsForSpecificHosts(vector<CRef<COrg_ref> > org_refs);
 
     // for strain validation

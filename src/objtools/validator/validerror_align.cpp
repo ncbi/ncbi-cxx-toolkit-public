@@ -1052,7 +1052,7 @@ void CValidError_align::x_ValidateFastaLike(
 }
 
 
-CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg& denseg, CScope* scope)
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg& denseg)
 {
     TSegmentGapV seggaps;
     size_t align_pos = 0;
@@ -1110,12 +1110,12 @@ void CValidError_align::x_ValidateSegmentGap(
     const TDenseg& denseg,
     const CSeq_align& align)
 {
-    TSegmentGapV seggaps = FindSegmentGaps(denseg, m_Scope);
+    TSegmentGapV seggaps = FindSegmentGaps(denseg);
     x_ReportSegmentGaps(seggaps, align);
 }
 
 
-CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked& packed, CScope* scope)
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked& packed)
 {
     TSegmentGapV seggaps;
 
@@ -1158,7 +1158,7 @@ void CValidError_align::x_ValidateSegmentGap
 (const TPacked& packed,
  const CSeq_align& align)
 {
-    TSegmentGapV seggaps = FindSegmentGaps(packed, m_Scope);
+    TSegmentGapV seggaps = FindSegmentGaps(packed);
     x_ReportSegmentGaps(seggaps, align);
 }
 
@@ -1206,7 +1206,7 @@ void CValidError_align::x_ValidateSegmentGap
 }
 
 
-CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendiag& dendiags, CScope* scope)
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendiag& dendiags)
 {
     TSegmentGapV seggaps;
 
@@ -1237,7 +1237,7 @@ void CValidError_align::x_ValidateSegmentGap(
     const TDendiag& dendiags,
     const CSeq_align& align)
 {
-    TSegmentGapV seggaps = FindSegmentGaps(dendiags, m_Scope);
+    TSegmentGapV seggaps = FindSegmentGaps(dendiags);
     x_ReportSegmentGaps(seggaps, align);
 }
 

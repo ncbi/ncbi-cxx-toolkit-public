@@ -22425,7 +22425,6 @@ void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
         cpy->Assign(*org);
         original.push_back(cpy);
     }
-    string error_message;
 
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
@@ -22435,7 +22434,7 @@ void TestBulkSpecificHostFixList(const THostStringsVector& test_values)
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
     BOOST_CHECK_EQUAL(reply->GetReply().size(), org_rq_list.size());
 
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust), true);
 
     vector<CRef<COrg_ref>>::const_iterator org = to_adjust.begin();
     vector<CRef<COrg_ref>>::const_iterator cpy = original.begin();
@@ -22526,7 +22525,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
 
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust), true);
 
     vector<CRef<COrg_ref>>::const_iterator org = to_adjust.begin();
     vector<CRef<COrg_ref>>::const_iterator cpy = original.begin();
@@ -22551,7 +22550,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
 
     to_adjust.clear();
     to_adjust.push_back(test_src);
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust), true);
     COrgName::TMod::const_iterator m = test_src->GetOrgname().GetMod().begin();
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Conservemos nuestros");
     ++m;
@@ -22559,7 +22558,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     ++m;
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Escherichia coli");
     // already fixed all problems, don't fix again
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust, error_message), false);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *reply, to_adjust), false);
     m = test_src->GetOrgname().GetMod().begin();
     BOOST_CHECK_EQUAL((*m)->GetSubname(), "Conservemos nuestros");
     ++m;
@@ -22576,9 +22575,9 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*lookup_reply, edited_orgs, error_message), false);
     vector<CRef<COrg_ref>> spec_host_rq = tval.GetSpecificHostLookupRequest(true);
     CRef<CTaxon3_reply> spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs, error_message), true);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs), true);
     // second time should produce no additional changes
-    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs, error_message), false);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(org_rq_list, *spec_host_reply, edited_orgs), false);
 
     size_t num_descs = tval.NumDescs();
     size_t num_updated_descs = 0;

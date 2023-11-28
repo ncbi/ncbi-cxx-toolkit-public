@@ -67,52 +67,19 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_entry;
-class CCit_sub;
-class CCit_art;
-class CCit_gen;
 class CSeq_feat;
-class CBioseq;
-class CSeqdesc;
-class CSeq_annot;
-class CTrna_ext;
-class CProt_ref;
 class CSeq_loc;
-class CFeat_CI;
-class CPub_set;
-class CAuth_list;
-class CTitle;
-class CMolInfo;
-class CUser_object;
-class CSeqdesc_CI;
-class CDense_diag;
-class CDense_seg;
-class CSeq_align_set;
-class CPubdesc;
-class CBioSource;
-class COrg_ref;
-class CDelta_seq;
 class CGene_ref;
-class CCdregion;
-class CRNA_ref;
-class CImp_feat;
-class CSeq_literal;
 class CBioseq_Handle;
-class CSeq_feat_Handle;
-class CCountries;
-class CInferencePrefixList;
-class CComment_set;
-class CTaxon3_reply;
-class ITaxon3;
-class CT3Error;
 
 BEGIN_SCOPE(validator)
 
 
-class CGeneCache {
+class CGeneCache
+{
 public:
-    CGeneCache() {};
-    ~CGeneCache() {};
+    CGeneCache() {}
+    ~CGeneCache() {}
 
     CConstRef<CSeq_feat> GetGeneFromCache(const CSeq_feat* feat, CScope& scope);
     CConstRef<CSeq_feat> GetmRNAFromCache(const CSeq_feat* feat, CScope& scope);
@@ -120,12 +87,11 @@ public:
     CRef<feature::CFeatTree> GetFeatTreeFromCache(const CSeq_feat& feat, CScope& scope);
     CRef<feature::CFeatTree> GetFeatTreeFromCache(CBioseq_Handle bh);
     void Clear() { m_FeatGeneMap.clear(); m_SeqTreeMap.clear(); }
-    bool IsPseudo(const CSeq_feat& feat, CScope& scope);
+    static bool IsPseudo(const CSeq_feat& feat);
 
 private:
-
     typedef map<const CSeq_feat*, CConstRef<CSeq_feat> > TFeatGeneMap;
-    TFeatGeneMap            m_FeatGeneMap;
+    TFeatGeneMap m_FeatGeneMap;
 
     typedef map<CBioseq_Handle, CRef<feature::CFeatTree> > TSeqTreeMap;
     TSeqTreeMap m_SeqTreeMap;
@@ -133,8 +99,6 @@ private:
     static bool x_IsPseudo(const CGene_ref& gref);
     static bool x_HasNamedQual(const CSeq_feat& feat, const string& qual);
 };
-
-
 
 
 END_SCOPE(validator)
