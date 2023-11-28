@@ -513,9 +513,12 @@ namespace xslt {
             case XPATH_NUMBER:      return type_number;
             case XPATH_STRING:      return type_string;
 
+            #ifdef LIBXML_XPTR_LOCS_ENABLED
             case XPATH_POINT:       return type_not_implemented;
             case XPATH_RANGE:       return type_not_implemented;
             case XPATH_LOCATIONSET: return type_not_implemented;
+            #endif
+
             case XPATH_USERS:       return type_not_implemented;
             case XPATH_XSLT_TREE:   return type_not_implemented;
             default:

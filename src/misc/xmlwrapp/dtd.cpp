@@ -51,6 +51,7 @@
 
 // libxml includes
 #include <libxml/valid.h>
+#include <libxml/parser.h>
 
 
 using namespace xml;

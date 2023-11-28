@@ -57,6 +57,7 @@
 
 // libxml2 includes
 #include <libxml/tree.h>
+#include <libxml/valid.h>
 
 using namespace xml;
 using namespace xml::impl;

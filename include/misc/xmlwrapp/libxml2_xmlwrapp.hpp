@@ -42,6 +42,7 @@
 
 // Forward declaration
 #include <libxml/tree.h>
+#include <libxml/parser.h>
 
 
 namespace xml {
