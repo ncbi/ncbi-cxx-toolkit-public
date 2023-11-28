@@ -172,7 +172,6 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME_Ex
                           ("Cannot open \"%s\"", logfile));
         return 0/*false*/;
     }
-
     CORE_SetLOGFILE_Ex(fp, cut_off, fatal_err, 1/*auto_close*/);
     return 1/*true*/;
 }
@@ -504,6 +503,8 @@ extern char* LOG_ComposeMessage
         file_line_len = 12 + strlen(mess->file) + 11;
     if (mess->message  &&  *mess->message)
         message_len = strlen(mess->message);
+    else if (!mess->message)
+        message_len = sizeof(kOutOfMemory) - 1;
     if (mess->raw_size) {
         if (mess->raw_data) {
             data_len = UTIL_PrintableStringSize((const char*)
@@ -552,7 +553,7 @@ extern char* LOG_ComposeMessage
         *s++ = ' ';
     }
     if (message_len) {
-        memcpy(s, mess->message, message_len);
+        memcpy(s, mess->message ? mess->message : kOutOfMemory, message_len);
         s += message_len;
     }
     if (data_len) {
@@ -662,7 +663,7 @@ extern void LOG_ToFILE_Ex
     if (logdata) {
         logdata->fp         = fp;
         logdata->cut_off    = cut_off;
-        logdata->fatal_err  = fatal_err;
+        logdata->fatal_err  = fatal_err < eLOG_Fatal ? fatal_err : eLOG_Fatal;
         logdata->auto_close = auto_close;
         LOG_Reset(lg, logdata, s_LOG_FileHandler, s_LOG_FileCleanup);
     } else {
