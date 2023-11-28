@@ -7,7 +7,7 @@ SRC = test_gather_items
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = $(XFORMAT_LIBS) xunittestutil xobjutil xconnect $(PCRE_LIB) test_boost \
+LIB = $(XFORMAT_LIBS) xunittestutil xobjutil xconnect xregexp $(PCRE_LIB) test_boost \
       $(SOBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
