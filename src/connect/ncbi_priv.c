@@ -107,20 +107,26 @@ extern int g_NCBI_CoreCheckUnlock(void)
 extern const char* g_CORE_Sprintf(const char* fmt, ...)
 {
     static const size_t buf_size = 4096;
-    char*   buf;
     va_list args;
+    char*   buf;
+    int     len;
 
     if (!(buf = (char*) malloc(buf_size)))
         return 0;
     *buf = '\0';
 
     va_start(args, fmt);
-#ifdef HAVE_VSNPRINTF
-    vsnprintf(buf, buf_size, fmt, args);
+#ifndef HAVE_VSNPRINTF
+    len = vsprintf (buf,           fmt, args);
 #else
-    vsprintf (buf,           fmt, args);
+    len = vsnprintf(buf, buf_size, fmt, args);
+    if (len < 0  ||  buf_size <= len)
+        memcpy(&buf[buf_size - 4], "...", 4), len = buf_size - 1;
+    else
 #endif /*HAVE_VSNPRINTF*/
-    assert(strlen(buf) < buf_size);
+    if (len <= 0)
+        *buf = '\0', len = 0;
+    assert(len < buf_size);
     va_end(args);
     return buf;
 }
