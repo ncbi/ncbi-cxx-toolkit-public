@@ -2139,7 +2139,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     if (!(s = (char*) malloc(len))) {
         LOG_WRITE(lg, NCBI_C_ERRCODE_X, 11,
                   sev == eLOG_Fatal ? eLOG_Fatal : eLOG_Error,
-                  "ConnNetInfo_Log: Cannot allocate temporary buffer");
+                  "ConnNetInfo_Log: Cannot allocate memory");
         return;
     }
 
