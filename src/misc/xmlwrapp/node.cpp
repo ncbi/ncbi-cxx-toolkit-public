@@ -1395,8 +1395,8 @@ xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
     xmlXPathContextPtr  xpath_context(xmlXPathNewContext(
                                                     pimpl_->xmlnode_->doc));
     if (!xpath_context) {
-        xmlErrorPtr     last_error(xmlGetLastError());
-        std::string     message("cannot create xpath context");
+        const xmlError *    last_error(xmlGetLastError());
+        std::string         message("cannot create xpath context");
 
         if (last_error && last_error->message)
             message += " : " + std::string(last_error->message);
@@ -1414,9 +1414,9 @@ xml::node::create_xpath_context (const xml::xpath_expression& expr) const {
                 xpath_context,
                 reinterpret_cast<const xmlChar*>(prefix),
                 reinterpret_cast<const xmlChar*>(k->get_uri())) != 0) {
-            xmlErrorPtr     last_error(xmlGetLastError());
-            std::string     message("cannot create xpath context "
-                                    "(namespace registering error)");
+            const xmlError *    last_error(xmlGetLastError());
+            std::string         message("cannot create xpath context "
+                                        "(namespace registering error)");
 
             if (last_error && last_error->message)
                 message += " : " + std::string(last_error->message);
@@ -1447,8 +1447,8 @@ xml::node::evaluate_xpath_expression (const xml::xpath_expression& expr,
                     reinterpret_cast<xmlXPathContextPtr>(context));
     }
     if (!object) {
-        xmlErrorPtr     last_error(xmlGetLastError());
-        std::string     message("error evaluating xpath expression");
+        const xmlError *    last_error(xmlGetLastError());
+        std::string         message("error evaluating xpath expression");
 
         if (last_error && last_error->message)
             message += " : " + std::string(last_error->message);

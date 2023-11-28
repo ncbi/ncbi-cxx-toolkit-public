@@ -207,8 +207,8 @@ void xpath_expression::compile_expression ()
         compiled_expression_ = xmlXPathCompile(
             reinterpret_cast<const xmlChar*>(expression_.c_str()));
         if (!compiled_expression_) {
-            xmlErrorPtr     last_error(xmlGetLastError());
-            std::string     message("xpath expression compilation error");
+            const xmlError *    last_error(xmlGetLastError());
+            std::string         message("xpath expression compilation error");
 
             if (last_error && last_error->message)
                 message += " : " + std::string(last_error->message);
