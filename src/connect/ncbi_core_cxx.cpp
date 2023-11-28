@@ -107,7 +107,7 @@ static string x_Reg(const char* section, const char* name,
             x_storage = ", <Persistent>";
             break;
         default:
-            x_storage = ", <" + NStr::IntToString(int(storage)) + '>';
+            x_storage = ", <#" + NStr::IntToString(int(storage)) + '>';
             break;
         }
     }
@@ -124,7 +124,7 @@ static int s_REG_Get(void* user_data,
         _TRACE("s_REG_Get(" + NStr::PtrToString(user_data) + ", "
                + x_Reg(section, name) + ')');
     }
-    int result = 0/*assume error, including truncation*/;
+    int result = 0/*assume failure, including truncation*/;
     try {
         string item
             = static_cast<const IRegistry*> (user_data)->Get(section, name);
@@ -142,11 +142,10 @@ static int s_REG_Get(void* user_data,
                        + (result ? "\"" : "\" <Truncated>"));
             }
         } else
-            result = -1/*unmodified*/;
+            result = -1/*success,unmodified*/;
     }
     NCBI_CATCH_ALL_X(1, "s_REG_Get(" + NStr::PtrToString(user_data) + ", "
-                     + x_Reg(section, name)
-                     + ") failed");
+                     + x_Reg(section, name) + ") failed");
     return result;
 }
 }
@@ -162,7 +161,7 @@ static int s_REG_Set(void* user_data,
                + NStr::PtrToString(user_data) + ", "
                + x_Reg(section, name, value ? value : "", storage) + ')');
     }
-    int result = 0;
+    int result = 0/*assume failure*/;
     try {
         IRWRegistry* reg = static_cast<IRWRegistry*> (user_data);
         result = value
@@ -256,7 +255,7 @@ static string x_Log(ELOG_Level level)
             x_level = "Fatal";
             break;
         default:
-            x_level = NStr::IntToString(int(level));
+            x_level = '#' + NStr::IntToString(int(level));
             break;
     }
     return x_level;
@@ -367,7 +366,7 @@ static string x_Lock(EMT_Lock how)
         x_how = "TryLockRead";
         break;
     default:
-        x_how = NStr::IntToString(int(how));
+        x_how = '#' + NStr::IntToString(int(how));
         break;
     }
     return x_how;
@@ -386,30 +385,29 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
         switch (int(how)) {
         case eMT_Lock:
             lock->WriteLock();
-            break;
+            return 1/*success*/;
         case eMT_LockRead:
             lock->ReadLock();
-            break;
+            return 1/*success*/;
         case eMT_Unlock:
             lock->Unlock();
-            break;
+            return 1/*success*/;
         case eMT_TryLock:
-            if (!lock->TryWriteLock())
-                return 0/*false*/;
+            if (lock->TryWriteLock())
+                return 1/*success*/;
             break;
         case eMT_TryLockRead:
-            if (!lock->TryReadLock())
-                return 0/*false*/;
+            if (lock->TryReadLock())
+                return 1/*success*/;
             break;
         default:
-            NCBI_THROW(CCoreException, eCore, "Lock used with unknown op #" +
-                       NStr::UIntToString((unsigned int) how));
+            NCBI_THROW(CCoreException, eCore, "Lock used with unknown op #"
+                       + NStr::IntToString(int(how)));
         }
-        return 1/*true*/;
     }
     NCBI_CATCH_ALL_X(5, "s_LOCK_Handler(" + NStr::PtrToString(user_data) + ", "
                      + x_Lock(how) + ") failed");
-    return 0/*false*/;
+    return 0/*failure*/;
 }
 }
 
@@ -605,6 +603,7 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
         g_MONKEY_SockHasSocket = s_MonkeySockHasSocket;
         break;
     default:
+        _VERIFY(0);
         break;
     }
 }
