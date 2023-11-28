@@ -310,9 +310,6 @@ string GetProcessorMessageHeader(size_t  item_id,
                                  CRequestStatus::ECode  status,
                                  int  code,
                                  EDiagSev  severity);
-string GetProcessorMessageCompletionHeader(size_t  item_id,
-                                           const string &  processor_id,
-                                           size_t  chunk_count);
 
 // Public comments
 string GetPublicCommentHeader(size_t  item_id,

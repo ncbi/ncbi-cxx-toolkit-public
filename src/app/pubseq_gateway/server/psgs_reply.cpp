@@ -1044,9 +1044,6 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
     string      header = GetProcessorMessageHeader(item_id, processor_id,
                                                    msg.size(),
                                                    status, err_code, severity);
-    string      completion = GetProcessorMessageCompletionHeader(item_id,
-                                                                 processor_id,
-                                                                 2);
 
     lock_guard<mutex>       guard(m_ChunksLock);
     x_UpdateLastActivity();
@@ -1055,10 +1052,6 @@ void CPSGS_Reply::PrepareProcessorMessage(size_t                 item_id,
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
-    ++m_TotalSentReplyChunks;
-
-    m_Chunks.push_back(m_Reply->PrepareChunk(
-                (const unsigned char *)(completion.data()), completion.size()));
     ++m_TotalSentReplyChunks;
 }
 

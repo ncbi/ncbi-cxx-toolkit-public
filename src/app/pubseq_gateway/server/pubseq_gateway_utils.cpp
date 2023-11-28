@@ -1300,6 +1300,11 @@ string GetProcessorMessageHeader(size_t  item_id,
                                  int  code,
                                  EDiagSev  severity)
 {
+    // item_id=2&processor_id=Cassandra-get&item_type=processor&
+    // chunk_type=message_and_meta&size=94&status=401&code=340&
+    // severity=warning&n_chunks=1&progress=inprogress
+    // <message text>
+
     char        buf[64];
     long        len;
     string      reply(s_ReplyBegin);
@@ -1309,7 +1314,7 @@ string GetProcessorMessageHeader(size_t  item_id,
          .append(s_AndProcessorId)
          .append(NStr::URLEncode(processor_id))
          .append(s_AndProcessorItem)
-         .append(s_AndMessageChunk)
+         .append(s_AndMessageAndMetaChunk)
          .append(s_AndSize);
 
     len = PSGToString(msg_size, buf);
@@ -1324,29 +1329,10 @@ string GetProcessorMessageHeader(size_t  item_id,
     reply.append(buf, len)
          .append(s_AndSeverity)
          .append(SeverityToLowerString(severity))
-         .append(1, '\n');
-    return reply;
-}
-
-
-string GetProcessorMessageCompletionHeader(size_t  item_id,
-                                           const string &  processor_id,
-                                           size_t  chunk_count)
-{
-    char        buf[64];
-    long        len;
-    string      reply(s_ReplyBegin);
-
-    len = PSGToString(item_id, buf);
-    reply.append(buf, len)
-         .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
-         .append(s_AndProcessorItem)
-         .append(s_AndMetaChunk)
-         .append(s_AndNChunks);
-
-    len = PSGToString(chunk_count, buf);
-    reply.append(buf, len)
+         .append(s_AndNChunks)
+         .append(1, '1')            // Always one chunk
+         .append(s_AndProgress)
+         .append(s_InProgress)
          .append(1, '\n');
     return reply;
 }
