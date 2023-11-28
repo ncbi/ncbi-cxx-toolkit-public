@@ -603,7 +603,7 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
         g_MONKEY_SockHasSocket = s_MonkeySockHasSocket;
         break;
     default:
-        _VERIFY(0);
+        _TROUBLE;
         break;
     }
 }
