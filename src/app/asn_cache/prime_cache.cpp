@@ -1232,7 +1232,7 @@ int CPrimeCacheApplication::Run(void)
             } else if (NStr::StartsWith(line, "#Completed run ")) {
                 previous_execution_runs.insert(line.substr(15));
             }
-            if (resuming_from_clean_wrapup = (line == "#Clean wrapup")) {
+            if ((resuming_from_clean_wrapup = (line == "#Clean wrapup"))) {
                 /// Execution ended in a clean wrapup, so the ids and runs that
                 /// it completed have been successfully cached
                 m_PreviousExecutionIds = previous_execution_ids;
