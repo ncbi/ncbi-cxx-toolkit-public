@@ -1977,8 +1977,11 @@ static EIO_Status s_VT_Open
     assert(!xxx->what  &&  !xxx->data  &&  !xxx->cntl);
     do {
         assert(!BUF_Size(xxx->wbuf)  &&  !BUF_Size(xxx->rbuf));
-        if (xxx->info->debug_printout)
+        if (xxx->info->debug_printout) {
+            CORE_LOCK_READ;
             ConnNetInfo_Log(xxx->info, eLOG_Note, CORE_GetLOG());
+            CORE_UNLOCK;
+        }
         status = SOCK_CreateEx(xxx->info->host, xxx->info->port, timeout,
                                &xxx->cntl, 0, 0, fSOCK_KeepAlive
                                | (xxx->flag & fFTP_LogControl

@@ -503,7 +503,9 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                 free((void*) net_info->http_referer);
                 net_info->http_referer = 0;
             }
+            CORE_LOCK_READ;
             ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+            CORE_UNLOCK;
         }
         memset(&init, 0, sizeof(init));
         init.data = data;

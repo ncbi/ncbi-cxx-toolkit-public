@@ -1041,9 +1041,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 reset_user_header = 0;
 
             if (uuu->net_info->debug_printout) {
+                CORE_LOCK_READ;
                 ConnNetInfo_Log(uuu->net_info,
                                 uuu->retry ? eLOG_Trace : eLOG_Note,
                                 CORE_GetLOG());
+                CORE_UNLOCK;
             }
             uuu->retry = 0;
 
