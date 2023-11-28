@@ -121,7 +121,7 @@ int CWalkAsnCacheApplication::Run(void)
     CNcbiIfstream   chunk_stream( chunk_file_name.c_str() );
     CObjectIStreamAsnBinary chunk_object_stream( chunk_stream );
     
-    Uint4   count = 0;
+    int   count = 0;
 
     CCache_blob  the_blob;
     CSeq_id id;
