@@ -160,10 +160,8 @@ private:
     static bool HasNonReciprocalXref(const CSeq_feat& feat,
                                      const CFeat_id& id, CSeqFeatData::ESubtype subtype,
                                      const CTSE_Handle& tse);
-    void ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref);
-
-    bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
-
+    void ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat);
+    bool IsOverlappingGenePseudo(const CSeq_feat& feat);
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
 
 };

@@ -170,7 +170,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
     case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
     case eErr_SEQ_FEAT_NotSpliceConsensusAcceptorTerminalIntron:
     case eErr_SEQ_FEAT_NotSpliceConsensusDonorTerminalIntron:
-        rval = x_FormatConsensusSpliceForSubmitterReport(error, scope);
+        rval = x_FormatConsensusSpliceForSubmitterReport(error);
         break;
     case eErr_SEQ_FEAT_BadEcNumberFormat:
     case eErr_SEQ_FEAT_BadEcNumberValue:
@@ -199,7 +199,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
 }
 
 
-string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error, CScope& scope) const
+string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValidErrItem& error) const
 {
     string rval;
     if (!error.IsSetMsg() || NStr::IsBlank(error.GetMsg())) {
@@ -1126,7 +1126,7 @@ bool s_IsSuppressField (const CUser_field& field)
 }
 
 
-void CValidErrorFormat::AddSuppression(CUser_object& user, unsigned int error_code)
+void CValidErrorFormat::AddSuppression(CUser_object& user, EErrType error_code)
 {
     bool found = false;
     if (user.IsSetData()) {
@@ -1134,7 +1134,7 @@ void CValidErrorFormat::AddSuppression(CUser_object& user, unsigned int error_co
             if (s_IsSuppressField(**it)) {
                 if ((*it)->IsSetData()) {
                     if ((*it)->GetData().IsInt()) {
-                        unsigned int old_val = (*it)->GetData().GetInt();
+                        auto old_val = (*it)->GetData().GetInt();
                         if (old_val == error_code) {
                             // do nothing, already there
                         } else {

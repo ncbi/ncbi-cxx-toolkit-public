@@ -551,7 +551,7 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 }
 
 
-bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *scope)
+bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
 {
     const CGene_ref* grp = feat.GetGeneXref();
     if ( grp  && CSingleFeatValidator::s_IsPseudo(*grp)) {
@@ -574,7 +574,7 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
         || feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_intron
         || !feat.IsSetLocation()
         || feat.IsSetPseudo()
-        || IsOverlappingGenePseudo(feat, m_Scope)) {
+        || IsOverlappingGenePseudo(feat)) {
         return false;
     }
 
@@ -665,7 +665,7 @@ bool CValidError_feat::x_HasNonReciprocalXref(
 }
 
 
-void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref)
+void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat)
 {
     if (!feat.IsSetId()) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal,
@@ -786,7 +786,7 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                     feat);
             } else {
                 for (auto ff = far_feats.begin(); ff != far_feats.end(); ff++) {
-                    ValidateOneFeatXrefPair(feat, **ff, xref);
+                    ValidateOneFeatXrefPair(feat, **ff);
                     if (xref.IsSetData()) {
                         // Check that feature with ID matches data
                         if (xref.GetData().Which() != (*ff)->GetData().Which()) {
