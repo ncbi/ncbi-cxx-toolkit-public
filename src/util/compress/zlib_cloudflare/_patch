@@ -26,3 +26,20 @@ diff -ur zconf.h.orig zconf.h
  #  define inflate_copyright     z_inflate_copyright
  #  define inflate_fast          z_inflate_fast
  #  define inflate_table         z_inflate_table
+
+
+
+
+--- gzguts.h.orig       2023-11-27 10:02:01.338347000 -0500
++++ gzguts.h    2023-11-28 09:34:08.212815700 -0500
+@@ -3,6 +3,10 @@
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+
++#ifndef _WIN32
++#  include <unistd.h>
++#endif
++
+ #ifdef _LARGEFILE64_SOURCE
+ #  ifndef _LARGEFILE_SOURCE
+ #    define _LARGEFILE_SOURCE 1
