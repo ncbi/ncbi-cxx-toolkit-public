@@ -270,7 +270,12 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
 static void s_NewHandler(void)
 {
     s_ExitCode = eLEC_Memory;
-    exit(-1);
+    // _exit() does not go over atexit() chain, so just call registered
+    // handler directly.
+    if (s_ExitHandlerIsSet) {
+        s_ExitHandler();
+    }
+    _exit(-1);
 }
 
 
