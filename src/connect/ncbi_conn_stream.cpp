@@ -35,12 +35,12 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
+#include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include "ncbi_socketp.h"
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
-#include <connect/ncbi_util.h>
 #include <stdlib.h>
 
 
@@ -442,7 +442,9 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 }
                 x_net_info->timeout = timeout;
             }
+            CORE_LOCK_READ;
             ConnNetInfo_Log(x_net_info.get(), eLOG_Note, CORE_GetLOG());
+            CORE_UNLOCK;
         }
         SSOCK_Init init;
         memset(&init, 0, sizeof(init));
@@ -1581,7 +1583,9 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                     free((void*) net_info->http_referer);
                     net_info->http_referer = 0;
                 }
+                CORE_LOCK_READ;
                 ConnNetInfo_Log(net_info.get(), eLOG_Note, CORE_GetLOG());
+                CORE_UNLOCK;
             }
             return new CConn_FileStream(net_info->path);
         case eURL_Ftp:
