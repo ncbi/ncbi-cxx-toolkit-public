@@ -123,12 +123,12 @@ void CValidError_desc::ValidateSeqDesc(
     case CSeqdesc::e_Modif: {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
             "Modif descriptor is obsolete", *m_Ctx, desc);
-        CSeqdesc::TModif::const_iterator it = desc.GetModif().begin();
-        while (it != desc.GetModif().end()) {
-            if (*it == eGIBB_mod_other) {
+        CSeqdesc::TModif::const_iterator it2 = desc.GetModif().begin();
+        while (it2 != desc.GetModif().end()) {
+            if (*it2 == eGIBB_mod_other) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_Unknown, "GIBB-mod = other used", ctx, desc);
             }
-            ++it;
+            ++it2;
         }
     } break;
 

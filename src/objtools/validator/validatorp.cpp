@@ -1932,7 +1932,7 @@ void CValidError_imp::x_CheckPackedInt
 {
     ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
         lc.int_cur = (*it);
-        lc.chk &= x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
+        lc.chk &= x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur);
 
         x_CheckForStrandChange(lc);
 
@@ -1943,11 +1943,10 @@ void CValidError_imp::x_CheckPackedInt
 }
 
 
-bool CValidError_imp::x_CheckSeqInt
-(CConstRef<CSeq_id>& id_cur,
- const CSeq_interval * int_cur,
- ENa_strand& strand_cur,
- const CSerialObject& obj)
+bool CValidError_imp::x_CheckSeqInt(
+    CConstRef<CSeq_id>& id_cur,
+    const CSeq_interval* int_cur,
+    ENa_strand& strand_cur)
 {
     strand_cur = int_cur->IsSetStrand() ?
         int_cur->GetStrand() : eNa_strand_unknown;
@@ -2157,7 +2156,7 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
         switch (loc.Which()) {
             case CSeq_loc::e_Int:
                 lc.int_cur = &loc.GetInt();
-                lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
+                lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur);
                 if (lc.strand_cur == eNa_strand_other) {
                     lc.has_other = true;
                 }

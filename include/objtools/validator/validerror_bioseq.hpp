@@ -212,7 +212,7 @@ private:
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
-    void x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq);
+    void x_ValidateGeneCDSmRNACounts();
     void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq);
     void x_ValidateCDSVDJCmatch(const CBioseq_Handle& seq);
     void x_ValidateCDSagainstVDJC(const CBioseq_Handle& seq);
@@ -267,7 +267,7 @@ private:
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateUpdateDateContext(const CDate& update,const CDate& create,
         const CBioseq& seq, const CSeqdesc& desc);
-    void ValidateOrgContext(const CSeqdesc_CI& iter, const COrg_ref& this_org,
+    void ValidateOrgContext(const COrg_ref& this_org,
         const COrg_ref& org, const CBioseq& seq, const CSeqdesc& desc);
     void ReportModifInconsistentError (int new_mod, int& old_mod, const CSeqdesc& desc, const CSeq_entry& ctx);
     void ValidateModifDescriptors (const CBioseq& seq);
@@ -301,18 +301,18 @@ private:
     CRef<CSeq_loc> GetLocFromSeq(const CBioseq& seq);
     bool IsHistAssemblyMissing(const CBioseq& seq);
     bool IsFlybaseDbxrefs(const TDbtags& dbxrefs);
-    bool GraphsOnBioseq(const CBioseq& seq) const;
-    bool IsSynthetic(const CBioseq& seq) const;
+    bool GraphsOnBioseq() const;
+    bool IsSynthetic() const;
     bool x_IsArtificial(const CBioseq& seq) const;
-    bool x_IsActiveFin(const CBioseq& seq) const;
-    bool x_IsMicroRNA(const CBioseq& seq) const;
+    bool x_IsActiveFin() const;
+    bool x_IsMicroRNA() const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
     bool x_ShowBioProjectWarning(const CBioseq& seq);
     bool x_HasCitSub(CBioseq_Handle bsh) const;
     static bool x_HasCitSub(const CPub_equiv& pub);
     static bool x_HasCitSub(const CPub& pub);
 
-    void ValidateCDSUTR(const CBioseq& seq);
+    void ValidateCDSUTR();
     bool x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat& utr3);
 
     size_t x_CountAdjacentNs(const CSeq_literal& lit);

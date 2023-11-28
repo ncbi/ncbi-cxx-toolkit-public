@@ -3619,8 +3619,8 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
         }
         CMolInfo::TTech tech = mi ? mi->GetTech() : CMolInfo::eTech_unknown;
         if (tech == CMolInfo::eTech_htgs_2  &&
-            !GraphsOnBioseq(seq)  &&
-            !x_IsActiveFin(seq)) {
+            ! GraphsOnBioseq() &&
+            ! x_IsActiveFin()) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_BadHTGSeq,
                 "HTGS 2 raw seq has no gaps and no graphs", seq);
         }
@@ -4692,8 +4692,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     // Validate technique
     if (num_gaps == 0  &&  mi) {
         if ( tech == CMolInfo::eTech_htgs_2  &&
-             !GraphsOnBioseq(seq)  &&
-             !x_IsActiveFin(seq) ) {
+             ! GraphsOnBioseq() &&
+             ! x_IsActiveFin()) {
             PostErr(eDiag_Warning, eErr_SEQ_INST_BadHTGSeq,
                 "HTGS 2 delta seq has no gaps and no graphs", seq);
         }
@@ -6022,7 +6022,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext(
                 x_PartialAdjacentToIntron(feat.GetLocation())) {
                 // suppress
             } else if ( x_IsPartialAtSpliceSiteOrGap(feat.GetLocation(), errtype, bad_seq, is_gap, abuts_n) ) {
-                if (is_gap || m_Imp.GetGeneCache().IsPseudo(*(feat.GetOriginalSeq_feat()), *m_Scope)) {
+                if (is_gap || CGeneCache::IsPseudo(*feat.GetOriginalSeq_feat())) {
                     // suppress for everything
                 } else {
                     x_ReportStartStopPartialProblem(j, true, abuts_n, *(feat.GetSeq_feat()));
@@ -6072,7 +6072,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext(
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem3Prime,
                         "Stop does not include first/last residue of sequence", *(feat.GetSeq_feat()));
                 }
-            } else if (m_Imp.GetGeneCache().IsPseudo(*(feat.GetSeq_feat()), *m_Scope)) {
+            } else if (CGeneCache::IsPseudo(*feat.GetSeq_feat())) {
                 // suppress
             } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA &&
                 j == 0 && x_PartialAdjacentToIntron(feat.GetLocation())) {
@@ -6388,7 +6388,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
 
         if (mixedcdsgencodes) {
             EDiagSev sev = eDiag_Error;
-            if (IsSynthetic(seq)) {
+            if (IsSynthetic()) {
                 sev = eDiag_Warning;
             }
             PostErr (sev, eErr_SEQ_FEAT_MultipleGenCodes,
@@ -6445,7 +6445,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
             x_ValidateAbuttingUTR(m_CurrentHandle);
 
             // validate coding regions between UTRs
-            ValidateCDSUTR(seq);
+            ValidateCDSUTR();
         }
 
         // validate abutting RNA features
@@ -7422,7 +7422,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
     }
 
     if (!mrna_map.empty()) {
-        x_ValidateGeneCDSmRNACounts(seq);
+        x_ValidateGeneCDSmRNACounts();
     }
 
     const size_t num_mrna = mrna_map.size();
@@ -7516,7 +7516,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq)
     // }
 }
 
-void CValidError_bioseq::x_ValidateGeneCDSmRNACounts(const CBioseq_Handle& seq)
+void CValidError_bioseq::x_ValidateGeneCDSmRNACounts()
 {
     if (m_GeneIt && m_AllFeatIt) {
         if (! m_GeneIt->empty()) {
@@ -8876,7 +8876,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             if ( !org ) {
                 org = &(desc.GetOrg());
             }
-            ValidateOrgContext(di, desc.GetOrg(), *org, seq, desc);
+            ValidateOrgContext(desc.GetOrg(), *org, seq, desc);
             break;
 
         case CSeqdesc::e_Pir:
@@ -8887,7 +8887,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         case CSeqdesc::e_Genbank:
             num_gb++;
             last_gb = &desc;
-                  ValidateGBBlock (desc.GetGenbank(), seq, desc);
+            ValidateGBBlock(desc.GetGenbank(), seq, desc);
             break;
 
         case CSeqdesc::e_Sp:
@@ -8959,7 +8959,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                     if ( !org ) {
                         org = &orgref;
                     }
-                    ValidateOrgContext(di, orgref, *org, seq, desc);
+                    ValidateOrgContext(orgref, *org, seq, desc);
                 }
             }
             break;
@@ -9282,8 +9282,8 @@ void CValidError_bioseq::ValidateMolInfoContext(
 
         case CMolInfo::eBiomol_other:
             if ( !m_Imp.IsXR() ) {
-                if ( !IsSynthetic(seq) ) {
-                    if ( !x_IsMicroRNA(seq)) {
+                if (! IsSynthetic()) {
+                    if (! x_IsMicroRNA()) {
                         PostErr(eDiag_Warning, eErr_SEQ_DESCR_MoltypeOther,
                             "Molinfo-biomol other used", ctx, desc);
                     }
@@ -10090,7 +10090,7 @@ void CValidError_bioseq::ValidateMoltypeDescriptors(const CBioseq& seq)
 }
 
 
-bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
+bool CValidError_bioseq::IsSynthetic() const
 {
     if ( m_CurrentHandle ) {
         CSeqdesc_CI sd(m_CurrentHandle, CSeqdesc::e_Source);
@@ -10114,7 +10114,7 @@ bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
 }
 
 
-bool CValidError_bioseq::x_IsMicroRNA(const CBioseq& seq) const
+bool CValidError_bioseq::x_IsMicroRNA() const
 {
     SAnnotSelector selector(CSeqFeatData::e_Rna);
     selector.SetFeatSubtype(CSeqFeatData::eSubtype_otherRNA);
@@ -10159,7 +10159,6 @@ void CValidError_bioseq::ValidateUpdateDateContext(
 
 
 void CValidError_bioseq::ValidateOrgContext(
-    const CSeqdesc_CI& curr,
     const COrg_ref& this_org,
     const COrg_ref& org,
     const CBioseq& seq,
@@ -10572,13 +10571,13 @@ void CValidError_bioseq::ValidateIDSetAgainstDb(const CBioseq& seq)
 }
 
 
-bool CValidError_bioseq::GraphsOnBioseq(const CBioseq& seq) const
+bool CValidError_bioseq::GraphsOnBioseq() const
 {
     return CGraph_CI(m_CurrentHandle);
 }
 
 
-bool CValidError_bioseq::x_IsActiveFin(const CBioseq& seq) const
+bool CValidError_bioseq::x_IsActiveFin() const
 {
     CSeqdesc_CI gb_desc(m_CurrentHandle, CSeqdesc::e_Genbank);
     if ( gb_desc ) {
@@ -10711,7 +10710,7 @@ bool CValidError_bioseq::x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat&
 }
 
 
-void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
+void CValidError_bioseq::ValidateCDSUTR()
 {
     if (!m_AllFeatIt) {
         return;

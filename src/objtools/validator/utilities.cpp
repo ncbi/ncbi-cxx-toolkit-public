@@ -978,8 +978,7 @@ string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
 }
 
 
-
-string GetBioseqIdLabel(const CBioseq& sq, bool limited)
+string GetBioseqIdLabel(const CBioseq& sq)
 {
     string content;
     int num_ids_found = 0;
@@ -2613,7 +2612,7 @@ void CalculateEffectiveTranslationLengths(const string& transl_prot, const CSeqV
 
     // ignore terminal 'X' from partial last codon if present
     while (prot_len > 0) {
-        if (prot_vec[prot_len - 1] == 'X') {  //remove terminal X
+        if (prot_vec[(TSeqPos)prot_len - 1] == 'X') {  //remove terminal X
             --prot_len;
         } else {
             break;

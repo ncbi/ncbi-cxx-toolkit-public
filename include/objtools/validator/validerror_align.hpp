@@ -79,10 +79,10 @@ public:
     typedef CSeq_align::C_Segs::TPacked     TPacked;
     typedef CSeq_align::C_Segs::TStd        TStd;
 
-    static TSegmentGapV FindSegmentGaps(const TPacked& packed, CScope* scope);
-    static TSegmentGapV FindSegmentGaps(const TDenseg& std_segs, CScope* scope);
+    static TSegmentGapV FindSegmentGaps(const TPacked& packed);
+    static TSegmentGapV FindSegmentGaps(const TDenseg& std_segs);
     static TSegmentGapV FindSegmentGaps(const TStd& denseg, CScope* scope);
-    static TSegmentGapV FindSegmentGaps(const TDendiag& dendiags, CScope* scope);
+    static TSegmentGapV FindSegmentGaps(const TDendiag& dendiags);
 
 private:
     typedef CSeq_align::C_Segs::TDisc       TDisc;

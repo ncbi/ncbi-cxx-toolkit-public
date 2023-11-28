@@ -1079,8 +1079,7 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& rep
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply(
     vector<CRef<COrg_ref>> requests,
     const CTaxon3_reply&   reply,
-    vector<CRef<COrg_ref>> org_refs,
-    string&                error_message)
+    vector<CRef<COrg_ref>> org_refs)
 {
     if (!m_HostMapForFix.IsUpdateComplete()) {
         // need to calculate requests for this list

@@ -1761,7 +1761,7 @@ void CSingleFeatValidator::ValidateSplice(bool gene_pseudo, bool check_all)
     splice_problems.CalculateSpliceProblems(m_Feat, check_all, gene_pseudo, m_LocationBioseq);
 
     if (splice_problems.AreErrorsUnexpected()) {
-        string label = GetBioseqIdLabel(*(m_LocationBioseq.GetCompleteBioseq()), true);
+        string label = GetBioseqIdLabel(*m_LocationBioseq.GetCompleteBioseq());
         x_ReportSpliceProblems(splice_problems, label);
     }
 
