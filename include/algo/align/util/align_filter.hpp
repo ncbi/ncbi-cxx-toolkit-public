@@ -201,6 +201,12 @@ public:
     void AddExcludeNotInQueryId(const objects::CSeq_id_Handle& idh);
     void AddExcludeNotInSubjectId(const objects::CSeq_id_Handle& idh);
 
+    /// Add a specific query/subject range restriction.
+    /// The restriction acts on the subject range for a given query
+    void AddQSRangeRestriction(const objects::CSeq_id_Handle& qid,
+                               const objects::CSeq_id_Handle& sid,
+                               TSeqRange subj_range);
+
     /// Match a single alignment
     bool Match(const objects::CSeq_align& align);
 
@@ -280,6 +286,13 @@ private:
     set<objects::CSeq_id_Handle> m_SubjectBlacklist;
     set<objects::CSeq_id_Handle> m_SubjectWhitelist;
     set<objects::CSeq_id_Handle> m_SubjectExcludeNotIn;
+
+    /// Range restriction infrastructure
+    /// For some query/subject pairs, we will restrict the alignments to lie
+    /// within a specified range
+    typedef map<objects::CSeq_id_Handle, CRangeCollection<TSeqPos> > TSubjCompartments;
+    typedef map<objects::CSeq_id_Handle, TSubjCompartments> TQuerySubjCompartments;
+    TQuerySubjCompartments m_QSComparts;
 
     typedef set<string> TUniqueAligns;
     TUniqueAligns m_UniqueAligns;
