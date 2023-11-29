@@ -27,6 +27,7 @@
  *
  */
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include "seqdblmdbset.hpp"
 
 
@@ -326,7 +327,7 @@ void CSeqDBLMDBSet::TaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::TOid>& rv
 		}
 	}
 	if(rv.size() == 0) {
-		NCBI_THROW(CSeqDBException, eTaxidErr, "Taxonomy ID(s) not found. This could be because the ID(s) provided are not at or below the species level. Please use get_species_taxids.sh to get taxids for nodes higher than species (see https://www.ncbi.nlm.nih.gov/books/NBK546209/).");
+		NCBI_THROW(CSeqDBException, eTaxidErr, "Taxonomy ID(s) not found in the " + GetDBFileNames() + " database" + (m_LMDBEntrySet.size()>1?"s":"")+ ".");
 	}
 	tax_ids.swap(rv_tax_ids);
 }
@@ -346,7 +347,7 @@ void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::T
 		}
 	}
 	if(rv.size() == 0) {
-		NCBI_THROW(CSeqDBException, eTaxidErr, "Taxonomy ID(s) not found.Taxonomy ID(s) not found. This could be because the ID(s) provided are not at or below the species level. Please use get_species_taxids.sh to get taxids for nodes higher than species (see https://www.ncbi.nlm.nih.gov/books/NBK546209/).");
+		NCBI_THROW(CSeqDBException, eTaxidErr, "Taxonomy ID(s) not found in the " + GetDBFileNames() + " database" + (m_LMDBEntrySet.size()>1?"s":"")+ ".");
 	}
 
 	tax_ids.swap(rv_tax_ids);
@@ -401,5 +402,27 @@ void CSeqDBLMDBSet::GetLMDBFileNames(vector<string> & lmdb_list) const
 	for(unsigned int i=0; i < m_LMDBEntrySet.size(); i++) {
 		lmdb_list.push_back(m_LMDBEntrySet[i]->GetLMDBFileName());
 	}
+}
+// get list of LMDB files for each BLAST DB w/o extentions. 
+// This is basically approximation for a list of opened databases after resolving aliases.
+// default: with_dir_path == false. return w/o leading pathes.
+string  CSeqDBLMDBSet::GetDBFileNames( bool with_dir_path ) const
+{
+	string actual_db_list;
+	for(unsigned int i=0; i < m_LMDBEntrySet.size(); i++) {
+	        string full_name = m_LMDBEntrySet[i]->GetLMDBFileName();
+		string short_name , dir_part,  out_name;
+		CDirEntry::SplitPath( full_name, &dir_part , &short_name , 0 );
+		// 
+		if( with_dir_path ) {
+		    out_name = dir_part + short_name ;
+		}
+		else {
+		    out_name = short_name;
+		}
+		if( !actual_db_list.empty() ) actual_db_list.append(" ");
+		actual_db_list.append(  out_name ) ;
+	}
+	return actual_db_list ;
 }
 END_NCBI_SCOPE

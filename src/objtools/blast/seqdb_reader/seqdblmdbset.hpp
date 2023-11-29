@@ -181,6 +181,8 @@ public:
 
     void GetLMDBFileNames(vector<string> & lmdb_list) const;
 
+    std::string  GetDBFileNames(bool with_dir_path  = false ) const;
+
 private:
     vector<CRef<CSeqDBLMDBEntry> >  m_LMDBEntrySet;
 
