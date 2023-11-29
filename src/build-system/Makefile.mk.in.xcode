@@ -23,6 +23,10 @@ OTHER_CPLUSPLUSFLAGS = -std=gnu++17 -stdlib=libc++ -Wno-deprecated-register
 FRAMEWORK_SEARCH_PATHS = /System/Library/Frameworks/CoreServices.framework/Frameworks
 USE_HEADERMAP = NO
 
+[Compiler.x86_64]
+PtbExtensions = OTHER_CFLAGS
+OTHER_CFLAGS = -msse4.2
+
 [Compiler.debug]
 COPY_PHASE_STRIP = NO
 GCC_OPTIMIZATION_LEVEL = 0
