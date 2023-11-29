@@ -189,6 +189,9 @@ void CAlignFilter::SetFilter(const string& filter)
     // effectively.  this grouping permist easier tree evaluation
     x_ParseTree_Flatten(*m_ParseTree, *m_ParseTree->GetQueryTree());
 
+    // debugging output
+    //m_ParseTree->Print(cerr);
+
     m_Scope.Reset(new CScope(*CObjectManager::GetInstance()));
     m_Scope->AddDefaults();
 
@@ -240,6 +243,35 @@ void CAlignFilter::AddWhitelistSubjectId(const CSeq_id_Handle& idh)
 void CAlignFilter::AddExcludeNotInSubjectId(const CSeq_id_Handle& idh)
 {
     m_SubjectExcludeNotIn.insert(idh);
+}
+
+
+void CAlignFilter::AddQSRangeRestriction(const objects::CSeq_id_Handle& query,
+                                         const objects::CSeq_id_Handle& subj,
+                                         TSeqRange subj_range)
+{
+    CSeq_id_Handle qid = query;
+    if (m_Scope) {
+        CSeq_id_Handle idh =
+            sequence::GetId(query, *m_Scope,
+                            sequence::eGetId_Canonical);
+        if (idh) {
+            qid = idh;
+        }
+    }
+
+    CSeq_id_Handle sid = subj;
+    if (m_Scope) {
+        CSeq_id_Handle idh =
+            sequence::GetId(sid, *m_Scope,
+                            sequence::eGetId_Canonical);
+        if (idh) {
+            sid = idh;
+        }
+    }
+
+    //cerr << "add range: " << qid << " / " << sid << " / " << subj_range << endl;
+    m_QSComparts[qid][sid] += subj_range;
 }
 
 
@@ -342,6 +374,62 @@ bool CAlignFilter::Match(const CSeq_align& align)
                 m_ScoreLookup.UpdateState(align);
                 return true;
             }
+        }
+
+        // check against our compartments
+        // we screen iff the query is in the list
+        if ( !m_QSComparts.empty() ) {
+            //cerr << "...not empty" << endl;
+            bool compart_match = true;
+
+            CSeq_id_Handle query =
+                CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+            if (m_Scope) {
+                CSeq_id_Handle idh =
+                    sequence::GetId(query, *m_Scope,
+                                    sequence::eGetId_Canonical);
+                if (idh) {
+                    query = idh;
+                }
+            }
+            //cerr << "query = " << query << endl;
+
+            TQuerySubjCompartments::const_iterator qit =
+                m_QSComparts.find(query);
+            if (qit != m_QSComparts.end()) {
+                // query is in our list
+                // we must intersect our compartment
+                compart_match = false;
+                //cerr << "...query found, check subject" << endl;
+
+                CSeq_id_Handle subject =
+                    CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+                if (m_Scope) {
+                    CSeq_id_Handle idh =
+                        sequence::GetId(subject, *m_Scope,
+                                        sequence::eGetId_Canonical);
+                    if (idh) {
+                        subject = idh;
+                    }
+                }
+                //cerr << "subject = " << subject << endl;
+
+                TSubjCompartments::const_iterator cit =
+                    qit->second.find(subject);
+                if (cit != qit->second.end()) {
+                    // check containment within the compartment
+                    TSeqRange r = align.GetSeqRange(1);
+                    compart_match = cit->second.IntersectingWith(r);
+                    //cerr << "...subject found, check range " << r << " = " << compart_match << endl;
+                }
+            }
+
+            /// accept: subject sequence found in white list
+            if (compart_match) {
+                m_ScoreLookup.UpdateState(align);
+            }
+            //cerr << "...match = " << compart_match << endl;
+            return compart_match;
         }
     }
 
