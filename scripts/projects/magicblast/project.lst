@@ -38,10 +38,7 @@ util$
 util/creaders$
 util/tables$
 util/checksum
-util/compress$
-util/compress/bzip2$
-util/compress/zlib$
-util/compress/api
+util/compress
 util/regexp
 util/xregexp
 util/sequtil$
