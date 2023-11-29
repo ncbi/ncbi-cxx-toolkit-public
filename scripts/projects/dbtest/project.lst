@@ -8,6 +8,7 @@ util/compress$
 util/compress/api$
 util/compress/api/miniz$
 util/compress/zlib$
+util/compress/zlib_cloudflare$
 util/regexp$
 util/xregexp$
 serial$
