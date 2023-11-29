@@ -90,7 +90,7 @@ public:
     string FormatForSubmitterReport(const CValidErrItem& error, CScope& scope) const;
     string FormatForSubmitterReport(const CValidError& errors, CScope& scope, CValidErrItem::TErrIndex err_code) const;
     string FormatCategoryForSubmitterReport(const CValidError& errors, CScope& scope, ESubmitterFormatErrorGroup grp) const;
-    vector<unsigned int> GetListOfErrorCodes(const CValidError& errors) const;
+    vector<CValidErrItem::TErrIndex> GetListOfErrorCodes(const CValidError& errors) const;
     vector<string> FormatCompleteSubmitterReport(const CValidError& errors, CScope& scope) const;
 
     // for formatting the objects as presented by the validator
@@ -115,7 +115,7 @@ public:
     static void SetSuppressionRules(const CSeq_entry_Handle& se, CValidError& errors);
     static void SetSuppressionRules(const CSeq_submit& ss, CValidError& errors);
     static void SetSuppressionRules(const CBioseq& seq, CValidError& errors);
-    static void AddSuppression(CUser_object& user, EErrType error_code);
+    static void AddSuppression(CUser_object& user, CValidErrItem::TErrIndex err_code);
 
     static void AddLocusTags(CValidError& errors, CScope& scope);
 

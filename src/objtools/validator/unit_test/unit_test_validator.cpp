@@ -712,8 +712,8 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 
     seen.clear();
     expected.clear();
-    vector<unsigned int> codes = format.GetListOfErrorCodes(*eval);
-    for (unsigned int it : codes) {
+    vector<CValidErrItem::TErrIndex> codes = format.GetListOfErrorCodes(*eval);
+    for (CValidErrItem::TErrIndex it : codes) {
         string val = CValidErrItem::ConvertErrCode(it);
         seen.push_back(val);
     }

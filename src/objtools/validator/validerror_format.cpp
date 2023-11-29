@@ -533,11 +533,11 @@ string CValidErrorFormat::x_FormatLatLonCountryForSubmitterReport(const CValidEr
 }
 
 
-vector<unsigned int> CValidErrorFormat::GetListOfErrorCodes(const CValidError& errors) const
+vector<CValidErrItem::TErrIndex> CValidErrorFormat::GetListOfErrorCodes(const CValidError& errors) const
 {
-    vector<unsigned int> list;
+    vector<CValidErrItem::TErrIndex> list;
 
-    for ( CValidError_CI vit(errors); vit; ++vit) {
+    for (CValidError_CI vit(errors); vit; ++vit) {
         list.push_back(vit->GetErrIndex());
     }
     sort(list.begin(), list.end());
@@ -559,8 +559,8 @@ vector<string> CValidErrorFormat::FormatCompleteSubmitterReport(const CValidErro
     }
 
     // now do errors not in special categories
-    vector<unsigned int> codes = GetListOfErrorCodes(errors);
-    ITERATE(vector<unsigned int>, it, codes) {
+    vector<CValidErrItem::TErrIndex> codes = GetListOfErrorCodes(errors);
+    ITERATE(vector<CValidErrItem::TErrIndex>, it, codes) {
         if (GetSubmitterFormatErrorGroup(*it) == eSubmitterFormatErrorGroup_Default) {
             string this_val = FormatForSubmitterReport(errors, scope, *it);
             if (!NStr::IsBlank(this_val)) {
@@ -1126,7 +1126,7 @@ bool s_IsSuppressField (const CUser_field& field)
 }
 
 
-void CValidErrorFormat::AddSuppression(CUser_object& user, EErrType error_code)
+void CValidErrorFormat::AddSuppression(CUser_object& user, CValidErrItem::TErrIndex error_code)
 {
     bool found = false;
     if (user.IsSetData()) {
