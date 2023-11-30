@@ -257,7 +257,7 @@ public:
     /// @note  Do not use this method anywhere else other than when deciding
     ///        whether to proceed with Execute() in this class with more
     ///        thorough connection checks!
-    static bool IsNcbiInhouseClient(void);
+    static bool IsNcbiInhouseClient(void) THROWS_NONE;
 };
 
 
