@@ -3409,6 +3409,35 @@ void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret
 }
 
 
+void CPSGDataLoader_Impl::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetLabelsOnce, this,
+                       cref(ids), ref(loaded), ref(ret)),
+                  "GetLabels",
+                  m_BulkRetryCount);
+}
+
+
+void CPSGDataLoader_Impl::GetLabelsOnce(const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( counts.first ) {
+        // have loaded infos
+        for (size_t i = 0; i < infos.size(); ++i) {
+            if (loaded[i] || !infos[i].get()) continue;
+            ret[i] = objects::GetLabel(infos[i]->ids);
+            if (!ret[i].empty()) loaded[i] = true;
+        }
+    }
+    if ( counts.second ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" labels in bulk request");
+    }
+}
+
+
 void CPSGDataLoader_Impl::GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceLengthsOnce, this,

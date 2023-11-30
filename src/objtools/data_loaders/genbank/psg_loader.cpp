@@ -405,6 +405,12 @@ void CPSGDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 }
 
 
+void CPSGDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
+{
+    m_Impl->GetLabels(ids, loaded, ret);
+}
+
+
 void CPSGDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret)
 {
     m_Impl->GetSequenceLengths(ids, loaded, ret);
