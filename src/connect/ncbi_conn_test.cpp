@@ -121,6 +121,9 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
         reason->clear();
     m_CheckPoint.clear();
 
+    if (stage == eNone)
+        return eIO_InvalidArg;
+
     int s = eNone + 1;
     EIO_Status status;
     do {
@@ -302,7 +305,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, eDebugPrintout_Data));
     if (!net_info) {
         PostCheck(eNone, 0/*main*/,
-                  eIO_Unknown, "Unable to create network info structure");
+                  eIO_Unknown, "Unable to build connection parameters");
         return eIO_Unknown;
     }
 
@@ -383,19 +386,41 @@ EIO_Status CConnTest::DnsOkay(string* reason)
 {
     EIO_Status status;
     string result;
+    int step = 0;
 
-    PreCheck(eDns, 0/*main*/,
+    PreCheck(eDns, step/*main*/,
              "Checking whether NCBI is known to DNS");
 
     if (CSocketAPI::gethostbyname(NCBI_WWW) == 0) {
-        result = "Unable to resolve " NCBI_WWW;
         status = eIO_Unknown;
+        PreCheck(eDns, ++step/*sub*/,
+                 "Unable to resolve " NCBI_WWW "\n"
+                 "Checking for a proxy...");
+        AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, m_DebugPrintout));
+        if (!net_info  ||  !net_info->http_proxy_host[0]) {
+            result = "No proxy detected in configuration";
+            // status = eIO_Unknown;
+        } else {
+            PreCheck(eDns, ++step/*sub*/,
+                     "Resolving \"" + string(net_info->http_proxy_host) + '"');
+            if (CSocketAPI::gethostbyname(net_info->http_proxy_host) == 0) {
+                result = "Unable to resolve proxy host \""
+                    + string(net_info->http_proxy_host) + '"';
+                // status = eIO_Unknown;
+            } else {
+                result = "OK";
+                status = eIO_Success;
+            }
+        }
     } else {
         result = "OK";
         status = eIO_Success;
     }
 
-    PostCheck(eDns, 0/*main*/, status, result);
+    PostCheck(eDns, step, status, result);
+
+    if (reason)
+        reason->swap(result);
     return status;
 }
 
@@ -408,7 +433,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, m_DebugPrintout));
     if (!net_info) {
         PostCheck(eHttp, 0/*main*/,
-                  eIO_Unknown, "Unable to create network info structure");
+                  eIO_Unknown, "Unable to build connection parameters");
         return eIO_Unknown;
     }
 
