@@ -61,10 +61,8 @@ public:
 
     // virtual constructor
     static CFlatGatherer* New(CFlatFileConfig::TFormat format);
-// LCOV_EXCL_START
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
                         bool doNuc = true, bool doProt = true) const;
-// LCOV_EXCL_STOP
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
                         const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing,
                         bool doNuc = true, bool doProt = true, bool fasterSets = false) const;
