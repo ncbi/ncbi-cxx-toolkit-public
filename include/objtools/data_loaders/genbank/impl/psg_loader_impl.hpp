@@ -192,6 +192,8 @@ public:
     void GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     void GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret);
+    void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
+    void GetLabelsOnce(const TIds& ids, TLoaded& loaded, TLabels& ret);
     void GetSequenceLengths(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret);
     void GetSequenceLengthsOnce(const TIds& ids, TLoaded& loaded, TSequenceLengths& ret);
     void GetSequenceTypes(const TIds& ids, TLoaded& loaded, TSequenceTypes& ret);
