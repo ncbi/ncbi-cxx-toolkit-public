@@ -3417,6 +3417,7 @@ static const char* s_tpaPrefixList [] = {
   "MAG ",
   "MAG:",
   "MULTISPECIES:",
+  "TLS:",
   "TPA:",
   "TPA_exp:",
   "TPA_inf:",
