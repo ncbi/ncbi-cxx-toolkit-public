@@ -177,7 +177,7 @@ void CTestApp::Init(void)
 #endif // !NCBI_OS_MSWIN
                   );
     args->AddExtra(0/*no mandatory*/, 1/*single timeout argument allowed*/,
-                   "Timeout", CArgDescriptions::eDouble);
+                   "Timeout (in seconds)", CArgDescriptions::eDouble);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "NCBI Connectivity Test Suite");
     SetupArgDescriptions(args.release());
@@ -203,10 +203,17 @@ int CTestApp::Run(void)
     } else if ((timeout = args[1].AsDouble()) < 0.0)
         timeout = DEF_CONN_TIMEOUT;
 
+    string client("unknown client");
+    try {
+        client = CConnTest::IsNcbiInhouseClient()
+            ? "local client"
+            : "non-local client";
+    }
+    catch (...) {
+        ;
+    }
     m_Tee << NcbiEndl << "NCBI Connectivity Test Suite (Timeout = "
-          << setprecision(6) << timeout << "s, "
-          << (CConnTest::IsNcbiInhouseClient() ? "" : "non-")
-          << "local client)" << NcbiEndl;
+          << setprecision(6) << timeout << "s, " << client << ')' << NcbiEndl;
 
     STimeout tmo;
     tmo.sec  = (unsigned int)  timeout;
