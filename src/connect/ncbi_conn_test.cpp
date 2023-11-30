@@ -1506,16 +1506,24 @@ EIO_Status CConnTest::x_CheckTrap(string* reason)
 }
 
 
-bool CConnTest::IsNcbiInhouseClient(void)
+bool CConnTest::IsNcbiInhouseClient(void) THROWS_NONE
 {
     static const STimeout kFast = { 2, 0 };
-    CConn_HttpStream http("https:///Service/getenv.cgi",
-                          fHTTP_KeepHeader | fHTTP_NoAutoRetry, &kFast);
-    char line[256];
-    if (!http  ||  !http.getline(line, sizeof(line)))
-        return false;
-    int code;
-    return !(::sscanf(line, "HTTP/%*d.%*d %d ", &code) < 1  ||  code != 200);
+    try {
+        CConn_HttpStream http("https:///Service/getenv.cgi",
+                              fHTTP_KeepHeader | fHTTP_NoAutoRetry, &kFast);
+        char line[256];
+        int  code;
+        if (http.getline(line, sizeof(line))
+            &&  ::sscanf(line, "HTTP/%*d.%*d %d ", &code) >= 1
+            &&  code == 200) {
+            return true;
+        }
+    }
+    catch (...) {
+        ;
+    }
+    return false;
 }
 
 
