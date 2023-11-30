@@ -546,8 +546,9 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                                      : ConnNetInfo_CreateInternal(0));
     if (!x_net_info) {
         NCBI_THROW(CIO_Exception, eUnknown,
-                   "CConn_HttpStream::CConn_HttpStream(): "
-                   " Out of memory");
+                   string("CConn_HttpStream::CConn_HttpStream(): ")
+                   + (net_info ? " Out of memory"
+                      : " Unable to build connection parameters"));
     }
     x_req_method = (EReqMethod)(method & ~eReqMethod_v1);
     if (x_req_method == eReqMethod_Connect) {
@@ -860,8 +861,9 @@ s_ServiceConnectorBuilder(const char*           service,
                                      : ConnNetInfo_Create(service));
     if (!x_net_info) {
         NCBI_THROW(CIO_Exception, eUnknown,
-                   "CConn_ServiceStream::CConn_ServiceStream(): "
-                   " Out of memory");
+                   string("CConn_ServiceStream::CConn_ServiceStream(): ")
+                   + (net_info ? " Out of memory"
+                      : " Unable to build connection parameters"));
     }
     if (user_header  &&  *user_header
         &&  !ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header)) {
