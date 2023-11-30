@@ -546,6 +546,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         memcpy(info->http_proxy_pass, x_info->pass, strlen(x_info->pass) + 1);
         memcpy(info->http_proxy_host, x_info->host, strlen(x_info->host) + 1);
         info->http_proxy_port = x_info->port;
+        info->http_proxy_only = 1/*true*/;
         assert(!NCBI_HasSpaces(info->http_proxy_host,
                                strlen(info->http_proxy_host)));
         CORE_TRACEF(("ConnNetInfo(%s%s%s$%s): \"%s\"", &"\""[!*info->svc],
@@ -844,7 +845,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
                       DEF_CONN_HTTP_PROXY_PASS);
         }
     } else
-        info->http_proxy_only = 1/*true*/;
+        assert(info->http_proxy_only);
     return info;
 
  err:
