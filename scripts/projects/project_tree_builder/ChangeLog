@@ -402,3 +402,8 @@ Fixed definition of POST-BUILD step on XCode.
 March 30, 2022
 version 4.12.2, CXX-12418
 Extended features_and_packages lists to include all potentially required packages.
+
+November 30, 2023
+version 4.12.3, CXX-13323
+Ehanced support of Git and Subversion revision information.
+Support PTB extensions in XCode metamakefile.
