@@ -203,7 +203,6 @@ CFlatGatherer* CFlatGatherer::New(CFlatFileConfig::TFormat format)
     return nullptr;
 }
 
-// LCOV_EXCL_START
 void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, bool doNuc, bool doProt) const
 {
     m_ItemOS.Reset(&os);
@@ -228,7 +227,6 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, bool doN
     item.Reset( new CEndItem() );
     os << item;
 }
-// LCOV_EXCL_STOP
 
 void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, CBioseq_Handle bsh, bool useSeqEntryIndexing, bool doNuc, bool doProt, bool fasterSets) const
 {
