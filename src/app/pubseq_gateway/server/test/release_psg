@@ -1078,7 +1078,86 @@ def memcheck(commands, options, args):
     saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-https.sanitizer.log')
     SRV1 = None
 
-    # Round up 3: integration smoke test using psg_client
+    # Round up 3: Prepare the config file for stress test (http)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': f'{PORT1}',
+                       'ssl_enable': 'false',
+                       'ssl_cert': '',
+                       'ssl_key': ''})
+
+    # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-memcheck-stress-http.log'
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', logFile]
+    safeRemove(logFile)
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(AFTER_START_DELAY)
+
+    # Run the tests
+    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --server localhost:{PORT1} > {artefactDir}memcheck-stress-http.log 2>&1'
+    print_verbose(f'Running http stress tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'http stress tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing http stress tests. Return code: {ret}')
+        print_verbose('http stress tests failed')
+    else:
+        print_verbose('http stress tests succeeded')
+
+    stopServer(SRV1, False)
+    saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-stress-http.sanitizer.log')
+    SRV1 = None
+
+
+
+
+
+
+    # Round up 4: Prepare the config file for stress tests (https)
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini',
+                      {'si2csi.db': artefactDir + 'si2csi.db',
+                       'bioseq_info.db': artefactDir +'bioseq_info.db',
+                       'blob_prop.db': artefactDir + 'blob_prop.db',
+                       'port': '10999',
+                       'ssl_enable': 'true',
+                       'ssl_cert': artefactDir + 'psg.crt',
+                       'ssl_key': artefactDir + 'psg.key'})
+
+    # Run the server
+    logFile = f'{artefactDir}pubseq_gateway-memcheck-stress-https.log'
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', logFile]
+    safeRemove(logFile)
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    time.sleep(AFTER_START_DELAY)
+
+    # Run the tests
+
+    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --server localhost:{PORT1} > {artefactDir}memcheck-stress-https.log 2>&1'
+    print_verbose(f'Running https stress tests: {cmdLine}')
+    ret = os.system(cmdLine)
+    print_verbose(f'https stress tests return code: {ret}')
+    if ret != 0:
+        errors.append(f'Error executing https stress tests. Return code: {ret}')
+        print_verbose('https stress tests failed')
+    else:
+        print_verbose('https stress tests succeeded')
+
+    stopServer(SRV1, False)
+    saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-stress-https.sanitizer.log')
+    SRV1 = None
+
+
+    # Round up 5: integration smoke test using psg_client
 
     prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
                       artefactDir + 'pubseq_gateway.ini',
