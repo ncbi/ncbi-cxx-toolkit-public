@@ -216,10 +216,14 @@ int CTestApp::Run(void)
     CConnTest test(&tmo, &m_Tee);
     test.SetCanceledCallback(&canceled);
     CSocketAPI::SetInterruptOnSignal(eOn);
-
     test.SetDebugPrintout(eDebugPrintout_Data);
     CConnTest::EStage everything = CConnTest::eStatefulService;
-    EIO_Status status = test.Execute(everything);
+
+    EIO_Status status = eIO_Reserved;
+    try {
+        status = test.Execute(everything);
+    }
+    NCBI_CATCH_ALL("Test failed");
 
     test.SetOutput(0);
 
