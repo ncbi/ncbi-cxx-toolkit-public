@@ -1062,26 +1062,24 @@ void CValidError_imp::ValidateCitSub(
 
             switch ( affil.Which() ) {
             case CAffil::e_Str:
-                {{
-                    if ( !NStr::IsBlank(affil.GetStr()) ) {
-                        has_affil = true;
-                    }
-                }}
+                if ( !NStr::IsBlank(affil.GetStr()) ) {
+                    has_affil = true;
+                }
                 break;
 
             case CAffil::e_Std:
-                {{
-                    const CAffil::TStd& std = affil.GetStd();
-#define HAS_VALUE(x) (std.CanGet##x()  &&  !NStr::IsBlank(std.Get##x()))
-                    if ( HAS_VALUE(Affil)    ||  HAS_VALUE(Div)      ||
-                         HAS_VALUE(City)     ||  HAS_VALUE(Sub)      ||
-                         HAS_VALUE(Country)  ||  HAS_VALUE(Street)   ||
-                         HAS_VALUE(Email)    ||  HAS_VALUE(Fax)      ||
-                         HAS_VALUE(Phone)    ||  HAS_VALUE(Postal_code) ) {
-                        has_affil = true;
-                        ValidateSubAffil (std, obj, ctx);
-                    }
-                }}
+            {
+                const CAffil::TStd& std = affil.GetStd();
+#define HAS_VALUE(x) (std.CanGet##x() && ! NStr::IsBlank(std.Get##x()))
+                if (HAS_VALUE(Affil)    ||  HAS_VALUE(Div)      ||
+                    HAS_VALUE(City)     ||  HAS_VALUE(Sub)      ||
+                    HAS_VALUE(Country)  ||  HAS_VALUE(Street)   ||
+                    HAS_VALUE(Email)    ||  HAS_VALUE(Fax)      ||
+                    HAS_VALUE(Phone)    ||  HAS_VALUE(Postal_code)) {
+                    has_affil = true;
+                    ValidateSubAffil(std, obj, ctx);
+                }
+            }
 #undef HAS_VALUE
                 break;
 
