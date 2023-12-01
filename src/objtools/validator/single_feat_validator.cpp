@@ -1412,76 +1412,76 @@ void CSingleFeatValidator::x_ValidateGbquals()
                 const string& val = gbq->GetVal();
                 switch (gbqual) {
 
-                    case CSeqFeatData::eQual_rpt_type:
-                        if (NStr::Find(val, ",") != NPOS) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                "Compound '" + val + "' must be split into separate instances of qualifier " + qual_str);
-                        }
-                        if (!CGb_qual::IsValidRptTypeValue(val)) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                case CSeqFeatData::eQual_rpt_type:
+                    if (NStr::Find(val, ",") != NPOS) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "Compound '" + val + "' must be split into separate instances of qualifier " + qual_str);
+                    }
+                    if (!CGb_qual::IsValidRptTypeValue(val)) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            val + " is not a legal value for qualifier " + qual_str);
+                    }
+                    break;
+
+                case CSeqFeatData::eQual_rpt_unit:
+                    x_ValidateRptUnitVal (val, key);
+                    break;
+
+                case CSeqFeatData::eQual_rpt_unit_seq:
+                    x_ValidateRptUnitSeqVal (val, key);
+                    break;
+
+                case CSeqFeatData::eQual_rpt_unit_range:
+                    x_ValidateRptUnitRangeVal (val);
+                    break;
+
+                case CSeqFeatData::eQual_label:
+                    x_ValidateLabelVal (val);
+                    break;
+
+                case CSeqFeatData::eQual_replace:
+                    if (is_imp) {
+                        x_ValidateReplaceQual(key, qual_str, val);
+                    }
+                    break;
+
+                case CSeqFeatData::eQual_mobile_element:
+                case CSeqFeatData::eQual_mobile_element_type:
+                    if (is_imp && !CGb_qual::IsLegalMobileElementValue(val)) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MobileElementInvalidQualifier,
                                 val + " is not a legal value for qualifier " + qual_str);
+                    }
+                    break;
+
+                case CSeqFeatData::eQual_compare:
+                    x_ValidateCompareVal (val);
+                    break;
+
+                case CSeqFeatData::eQual_standard_name:
+                    if (is_imp && ftype == CSeqFeatData::eSubtype_misc_feature
+                        && NStr::EqualCase (val, "Vector Contamination")) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_VectorContamination,
+                                    "Vector Contamination region should be trimmed from sequence");
+                    }
+                    break;
+
+                case CSeqFeatData::eQual_product:
+                    if (!is_imp) {
+                        CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
+                        if (chs == CSeqFeatData::e_Gene) {
+                            PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidProductOnGene,
+                                "A product qualifier is not used on a gene feature");
                         }
-                        break;
+                    }
+                    break;
 
-                    case CSeqFeatData::eQual_rpt_unit:
-                        x_ValidateRptUnitVal (val, key);
-                        break;
-
-                    case CSeqFeatData::eQual_rpt_unit_seq:
-                        x_ValidateRptUnitSeqVal (val, key);
-                        break;
-
-                    case CSeqFeatData::eQual_rpt_unit_range:
-                        x_ValidateRptUnitRangeVal (val);
-                        break;
-
-                    case CSeqFeatData::eQual_label:
-                        x_ValidateLabelVal (val);
-                        break;
-
-                    case CSeqFeatData::eQual_replace:
-                        if (is_imp) {
-                            x_ValidateReplaceQual(key, qual_str, val);
-                        }
-                        break;
-
-                    case CSeqFeatData::eQual_mobile_element:
-                    case CSeqFeatData::eQual_mobile_element_type:
-                        if (is_imp && !CGb_qual::IsLegalMobileElementValue(val)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MobileElementInvalidQualifier,
-                                  val + " is not a legal value for qualifier " + qual_str);
-                        }
-                        break;
-
-                    case CSeqFeatData::eQual_compare:
-                        x_ValidateCompareVal (val);
-                        break;
-
-                    case CSeqFeatData::eQual_standard_name:
-                        if (is_imp && ftype == CSeqFeatData::eSubtype_misc_feature
-                            && NStr::EqualCase (val, "Vector Contamination")) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_VectorContamination,
-                                     "Vector Contamination region should be trimmed from sequence");
-                        }
-                        break;
-
-                    case CSeqFeatData::eQual_product:
-                        if (!is_imp) {
-                            CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
-                            if (chs == CSeqFeatData::e_Gene) {
-                                PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidProductOnGene,
-                                    "A product qualifier is not used on a gene feature");
-                            }
-                        }
-                        break;
-
-                    // for VR-825
-                    case CSeqFeatData::eQual_locus_tag:
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
-                            "locus-tag values should be on genes");
-                        break;
-                    default:
-                        break;
+                // for VR-825
+                case CSeqFeatData::eQual_locus_tag:
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "locus-tag values should be on genes");
+                    break;
+                default:
+                    break;
                 } // end of switch statement
             }
         }
@@ -2899,29 +2899,29 @@ void CProtValidator::x_ValidateECNumbers()
             CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
             x_ReportECNumFileStatus();
             switch (status) {
-                case CProt_ref::eEC_deleted:
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
-                             "EC_number " + ec_number + " was deleted");
-                    break;
-                case CProt_ref::eEC_replaced:
-                    PostErr (eDiag_Warning,
-                             CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber,
-                             "EC_number " + ec_number + " was transferred and is no longer valid");
-                    break;
-                case CProt_ref::eEC_unknown:
-                  {
-                      size_t pos = NStr::Find (ec_number, "n");
-                      if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue,
-                                   ec_number + " is not a legal value for qualifier EC_number");
-                      } else {
-                            PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue,
-                                   ec_number + " is not a legal preliminary value for qualifier EC_number");
-                      }
-                  }
-                    break;
-                default:
-                    break;
+            case CProt_ref::eEC_deleted:
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
+                            "EC_number " + ec_number + " was deleted");
+                break;
+            case CProt_ref::eEC_replaced:
+                PostErr (eDiag_Warning,
+                            CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber,
+                            "EC_number " + ec_number + " was transferred and is no longer valid");
+                break;
+            case CProt_ref::eEC_unknown:
+                {
+                    size_t pos = NStr::Find (ec_number, "n");
+                    if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue,
+                                ec_number + " is not a legal value for qualifier EC_number");
+                    } else {
+                        PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue,
+                                ec_number + " is not a legal preliminary value for qualifier EC_number");
+                    }
+                }
+                break;
+            default:
+                break;
             }
         }
     }
@@ -3498,28 +3498,28 @@ void CRNAValidator::x_ValidateTrnaCodons()
     string str;
 
     switch (trna.GetAa().Which()) {
-        case CTrna_ext::C_Aa::e_Iupacaa:
-            str = trna.GetAa().GetIupacaa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
-            aa = seqData[0];
-            break;
-        case CTrna_ext::C_Aa::e_Ncbi8aa:
-            str = trna.GetAa().GetNcbi8aa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
-            aa = seqData[0];
-            break;
-        case CTrna_ext::C_Aa::e_Ncbistdaa:
-            str = trna.GetAa().GetNcbi8aa();
-            CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
-            aa = seqData[0];
-            break;
-        case CTrna_ext::C_Aa::e_Ncbieaa:
-            seqData.push_back(trna.GetAa().GetNcbieaa());
-            aa = seqData[0];
-            break;
-        default:
-            NCBI_THROW (CCoreException, eCore, "Unrecognized tRNA aa coding");
-            break;
+    case CTrna_ext::C_Aa::e_Iupacaa:
+        str = trna.GetAa().GetIupacaa();
+        CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
+        aa = seqData[0];
+        break;
+    case CTrna_ext::C_Aa::e_Ncbi8aa:
+        str = trna.GetAa().GetNcbi8aa();
+        CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
+        aa = seqData[0];
+        break;
+    case CTrna_ext::C_Aa::e_Ncbistdaa:
+        str = trna.GetAa().GetNcbi8aa();
+        CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, TSeqPos(str.size()), seqData, CSeqUtil::e_Ncbieaa);
+        aa = seqData[0];
+        break;
+    case CTrna_ext::C_Aa::e_Ncbieaa:
+        seqData.push_back(trna.GetAa().GetNcbieaa());
+        aa = seqData[0];
+        break;
+    default:
+        NCBI_THROW (CCoreException, eCore, "Unrecognized tRNA aa coding");
+        break;
     }
 
     // make sure the amino acid is valid
@@ -3654,20 +3654,20 @@ void CRNAValidator::x_ValidateTrnaCodons()
 
             char ch = anticodon.c_str()[0];
             switch (ch) {
-                case 'A' :
-                    wobble = "ACT";
-                    break;
-                case 'C' :
-                    wobble = "G";
-                    break;
-                case 'G' :
-                    wobble = "CT";
-                    break;
-                case 'T' :
-                    wobble = "AG";
-                    break;
-                default :
-                    break;
+            case 'A' :
+                wobble = "ACT";
+                break;
+            case 'C' :
+                wobble = "G";
+                break;
+            case 'G' :
+                wobble = "CT";
+                break;
+            case 'T' :
+                wobble = "AG";
+                break;
+            default :
+                break;
             }
             if (!NStr::IsBlank(wobble)) {
                 string::iterator str_it = wobble.begin();
@@ -4155,28 +4155,28 @@ void CPeptideValidator::x_ValidatePeptideOnCodonBoundary()
         return;
     }
     switch (in_frame) {
-        case feature::eLocationInFrame_NotIn:
-            if (NStr::Equal(key, "sig_peptide")) {
-                // ignore
-            } else {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
-                    "Start and stop of " + key + " are out of frame with CDS codons");
-            }
-            break;
-        case feature::eLocationInFrame_BadStartAndStop:
+    case feature::eLocationInFrame_NotIn:
+        if (NStr::Equal(key, "sig_peptide")) {
+            // ignore
+        } else {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
                 "Start and stop of " + key + " are out of frame with CDS codons");
-            break;
-        case feature::eLocationInFrame_BadStart:
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
-                "Start of " + key + " is out of frame with CDS codons");
-            break;
-        case feature::eLocationInFrame_BadStop:
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
-                "Stop of " + key + " is out of frame with CDS codons");
-            break;
-        case feature::eLocationInFrame_InFrame:
-            break;
+        }
+        break;
+    case feature::eLocationInFrame_BadStartAndStop:
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+            "Start and stop of " + key + " are out of frame with CDS codons");
+        break;
+    case feature::eLocationInFrame_BadStart:
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+            "Start of " + key + " is out of frame with CDS codons");
+        break;
+    case feature::eLocationInFrame_BadStop:
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+            "Stop of " + key + " is out of frame with CDS codons");
+        break;
+    case feature::eLocationInFrame_InFrame:
+        break;
     }
 }
 
@@ -4833,18 +4833,18 @@ CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope,
     } else if (feat.GetData().IsImp()) {
         CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
         switch (subtype) {
-            case CSeqFeatData::eSubtype_mat_peptide:
-            case CSeqFeatData::eSubtype_propeptide:
-            case CSeqFeatData::eSubtype_sig_peptide:
-            case CSeqFeatData::eSubtype_transit_peptide:
-                return new CPeptideValidator(feat, scope, imp);
-                break;
-            case CSeqFeatData::eSubtype_gap:
-                return new CGapFeatValidator(feat, scope, imp);
-                break;
-            default:
-                return new CImpFeatValidator(feat, scope, imp);
-                break;
+        case CSeqFeatData::eSubtype_mat_peptide:
+        case CSeqFeatData::eSubtype_propeptide:
+        case CSeqFeatData::eSubtype_sig_peptide:
+        case CSeqFeatData::eSubtype_transit_peptide:
+            return new CPeptideValidator(feat, scope, imp);
+            break;
+        case CSeqFeatData::eSubtype_gap:
+            return new CGapFeatValidator(feat, scope, imp);
+            break;
+        default:
+            return new CImpFeatValidator(feat, scope, imp);
+            break;
         }
     } else {
         return new CSingleFeatValidator(feat, scope, imp);

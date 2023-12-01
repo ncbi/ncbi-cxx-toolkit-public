@@ -1676,38 +1676,38 @@ void CValidError_imp::Validate(
     annot_validator.ValidateSeqAnnot(sah);
 
     switch (sah.Which()) {
-    case CSeq_annot::TData::e_Ftable :
-        {
-            CValidError_feat feat_validator(*this);
-            for (CFeat_CI fi (sah); fi; ++fi) {
-                const CSeq_feat& sf = fi->GetOriginalFeature();
-                feat_validator.ValidateSeqFeat(sf);
-            }
+    case CSeq_annot::TData::e_Ftable:
+    {
+        CValidError_feat feat_validator(*this);
+        for (CFeat_CI fi (sah); fi; ++fi) {
+            const CSeq_feat& sf = fi->GetOriginalFeature();
+            feat_validator.ValidateSeqFeat(sf);
         }
+    }
         break;
 
-    case CSeq_annot::TData::e_Align :
-        {
-            if (IsValidateAlignments()) {
-                CValidError_align align_validator(*this);
-                int order = 1;
-                for (CAlign_CI ai(sah); ai; ++ai) {
-                    const CSeq_align& sa = ai.GetOriginalSeq_align();
-                    align_validator.ValidateSeqAlign(sa, order++);
-                }
+    case CSeq_annot::TData::e_Align:
+    {
+        if (IsValidateAlignments()) {
+            CValidError_align align_validator(*this);
+            int order = 1;
+            for (CAlign_CI ai(sah); ai; ++ai) {
+                const CSeq_align& sa = ai.GetOriginalSeq_align();
+                align_validator.ValidateSeqAlign(sa, order++);
             }
         }
+    }
         break;
 
-    case CSeq_annot::TData::e_Graph :
-        {
-            CValidError_graph graph_validator(*this);
-            // for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
-            for (CGraph_CI gi(sah); gi; ++gi) {
-                const CSeq_graph& sg = gi->GetOriginalGraph();
-                graph_validator.ValidateSeqGraph(sg);
-            }
+    case CSeq_annot::TData::e_Graph:
+    {
+        CValidError_graph graph_validator(*this);
+        // for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
+        for (CGraph_CI gi(sah); gi; ++gi) {
+            const CSeq_graph& sg = gi->GetOriginalGraph();
+            graph_validator.ValidateSeqGraph(sg);
         }
+    }
         break;
     default:
         break;
@@ -2154,60 +2154,60 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
 {
     try {
         switch (loc.Which()) {
-            case CSeq_loc::e_Int:
-                lc.int_cur = &loc.GetInt();
-                lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur);
-                if (lc.strand_cur == eNa_strand_other) {
-                    lc.has_other = true;
+        case CSeq_loc::e_Int:
+            lc.int_cur = &loc.GetInt();
+            lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur);
+            if (lc.strand_cur == eNa_strand_other) {
+                lc.has_other = true;
+            }
+            if ((!lc.chk) && lowerSev) {
+                TSeqPos length = GetLength(loc.GetInt().GetId(), m_Scope);
+                TSeqPos fr = loc.GetInt().GetFrom();
+                TSeqPos to = loc.GetInt().GetTo();
+                if (fr < length && to >= length) {
+                    // RefSeq variation feature with dbSNP xref and interval flanking the length is ERROR
+                } else {
+                    // otherwise keep severity at REJECT
+                    lowerSev = false;
                 }
-                if ((!lc.chk) && lowerSev) {
-                    TSeqPos length = GetLength(loc.GetInt().GetId(), m_Scope);
-                    TSeqPos fr = loc.GetInt().GetFrom();
-                    TSeqPos to = loc.GetInt().GetTo();
-                    if (fr < length && to >= length) {
-                        // RefSeq variation feature with dbSNP xref and interval flanking the length is ERROR
-                    } else {
-                        // otherwise keep severity at REJECT
-                        lowerSev = false;
-                    }
-                }
-                break;
-            case CSeq_loc::e_Pnt:
-                lc.strand_cur = loc.GetPnt().IsSetStrand() ?
-                    loc.GetPnt().GetStrand() : eNa_strand_unknown;
-                if (lc.strand_cur == eNa_strand_other) {
-                    lc.has_other = true;
-                }
-                lc.id_cur = &loc.GetPnt().GetId();
-                lc.chk = IsValid(loc.GetPnt(), m_Scope);
-                lc.int_prv = nullptr;
-                break;
-            case CSeq_loc::e_Packed_pnt:
-                lc.strand_cur = loc.GetPacked_pnt().IsSetStrand() ?
-                    loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
-                if (lc.strand_cur == eNa_strand_other) {
-                    lc.has_other = true;
-                }
-                lc.id_cur = &loc.GetPacked_pnt().GetId();
-                lc.chk = IsValid(loc.GetPacked_pnt(), m_Scope);
-                lc.int_prv = nullptr;
-                break;
-            case CSeq_loc::e_Packed_int:
-                x_CheckPackedInt(loc.GetPacked_int(), lc, obj);
-                break;
-            case CSeq_loc::e_Null:
-                break;
-            case CSeq_loc::e_Mix:
-                for (auto l : loc.GetMix().Get()) {
-                    x_CheckLoc(*l, obj, lc, lowerSev);
-                    x_CheckForStrandChange(lc);
-                }
-                break;
-            default:
-                lc.strand_cur = eNa_strand_other;
-                lc.id_cur = nullptr;
-                lc.int_prv = nullptr;
-                break;
+            }
+            break;
+        case CSeq_loc::e_Pnt:
+            lc.strand_cur = loc.GetPnt().IsSetStrand() ?
+                loc.GetPnt().GetStrand() : eNa_strand_unknown;
+            if (lc.strand_cur == eNa_strand_other) {
+                lc.has_other = true;
+            }
+            lc.id_cur = &loc.GetPnt().GetId();
+            lc.chk = IsValid(loc.GetPnt(), m_Scope);
+            lc.int_prv = nullptr;
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            lc.strand_cur = loc.GetPacked_pnt().IsSetStrand() ?
+                loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
+            if (lc.strand_cur == eNa_strand_other) {
+                lc.has_other = true;
+            }
+            lc.id_cur = &loc.GetPacked_pnt().GetId();
+            lc.chk = IsValid(loc.GetPacked_pnt(), m_Scope);
+            lc.int_prv = nullptr;
+            break;
+        case CSeq_loc::e_Packed_int:
+            x_CheckPackedInt(loc.GetPacked_int(), lc, obj);
+            break;
+        case CSeq_loc::e_Null:
+            break;
+        case CSeq_loc::e_Mix:
+            for (auto l : loc.GetMix().Get()) {
+                x_CheckLoc(*l, obj, lc, lowerSev);
+                x_CheckForStrandChange(lc);
+            }
+            break;
+        default:
+            lc.strand_cur = eNa_strand_other;
+            lc.id_cur = nullptr;
+            lc.int_prv = nullptr;
+            break;
         }
         if (!lc.chk) {
             string lbl = GetValidatorLocationLabel (loc, *m_Scope);
@@ -2986,97 +2986,97 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
             const CTextseq_id* tsid = sid.GetTextseq_Id();
             CSeq_id::E_Choice typ = sid.Which();
             switch (typ) {
-                case CSeq_id::e_not_set:
-                    break;
-                case CSeq_id::e_Local:
-                    break;
-                case CSeq_id::e_Gibbsq:
-                    break;
-                case CSeq_id::e_Gibbmt:
-                    break;
-                case CSeq_id::e_Giim:
-                    break;
-                case CSeq_id::e_Genbank:
-                    x_SetEntryInfo().SetINSDInSep();
-                    x_SetEntryInfo().SetGenbank();
-                    x_SetEntryInfo().SetGED();
-                    break;
-                case CSeq_id::e_Embl:
-                    x_SetEntryInfo().SetINSDInSep();
-                    x_SetEntryInfo().SetGED();
-                    x_SetEntryInfo().SetEmbl();
-                    break;
-                case CSeq_id::e_Pir:
-                    break;
-                case CSeq_id::e_Swissprot:
-                    break;
-                case CSeq_id::e_Patent:
-                    x_SetEntryInfo().SetPatent();
-                    break;
-                case CSeq_id::e_Other:
-                    x_SetEntryInfo().SetRefSeq();
-                    // and do RefSeq subclasses up front as well
-                    if (sid.GetOther().IsSetAccession()) {
-                        string acc = sid.GetOther().GetAccession().substr(0, 3);
-                        if (acc == "NC_") {
-                            m_IsNC = true;
-                        } else if (acc == "NG_") {
-                            m_IsNG = true;
-                        } else if (acc == "NM_") {
-                            m_IsNM = true;
-                        } else if (acc == "NP_") {
-                            m_IsNP = true;
-                        } else if (acc == "NR_") {
-                            m_IsNR = true;
-                          } else if (acc == "NZ_") {
-                            m_IsNZ = true;
-                        } else if (acc == "NS_") {
-                            m_IsNS = true;
-                        } else if (acc == "NT_") {
-                            m_IsNT = true;
-                        } else if (acc == "NW_") {
-                            m_IsNW = true;
-                        } else if (acc == "WP_") {
-                            m_IsWP = true;
-                        } else if (acc == "XR_") {
-                            m_IsXR = true;
-                        }
+            case CSeq_id::e_not_set:
+                break;
+            case CSeq_id::e_Local:
+                break;
+            case CSeq_id::e_Gibbsq:
+                break;
+            case CSeq_id::e_Gibbmt:
+                break;
+            case CSeq_id::e_Giim:
+                break;
+            case CSeq_id::e_Genbank:
+                x_SetEntryInfo().SetINSDInSep();
+                x_SetEntryInfo().SetGenbank();
+                x_SetEntryInfo().SetGED();
+                break;
+            case CSeq_id::e_Embl:
+                x_SetEntryInfo().SetINSDInSep();
+                x_SetEntryInfo().SetGED();
+                x_SetEntryInfo().SetEmbl();
+                break;
+            case CSeq_id::e_Pir:
+                break;
+            case CSeq_id::e_Swissprot:
+                break;
+            case CSeq_id::e_Patent:
+                x_SetEntryInfo().SetPatent();
+                break;
+            case CSeq_id::e_Other:
+                x_SetEntryInfo().SetRefSeq();
+                // and do RefSeq subclasses up front as well
+                if (sid.GetOther().IsSetAccession()) {
+                    string acc = sid.GetOther().GetAccession().substr(0, 3);
+                    if (acc == "NC_") {
+                        m_IsNC = true;
+                    } else if (acc == "NG_") {
+                        m_IsNG = true;
+                    } else if (acc == "NM_") {
+                        m_IsNM = true;
+                    } else if (acc == "NP_") {
+                        m_IsNP = true;
+                    } else if (acc == "NR_") {
+                        m_IsNR = true;
+                        } else if (acc == "NZ_") {
+                        m_IsNZ = true;
+                    } else if (acc == "NS_") {
+                        m_IsNS = true;
+                    } else if (acc == "NT_") {
+                        m_IsNT = true;
+                    } else if (acc == "NW_") {
+                        m_IsNW = true;
+                    } else if (acc == "WP_") {
+                        m_IsWP = true;
+                    } else if (acc == "XR_") {
+                        m_IsXR = true;
                     }
-                    break;
-                case CSeq_id::e_General:
-                    if ((*bi).IsAa() && !sid.GetGeneral().IsSkippable()) {
-                        x_SetEntryInfo().SetProteinHasGeneralID();
-                    }
-                    break;
-                case CSeq_id::e_Gi:
-                    x_SetEntryInfo().SetGI();
-                    x_SetEntryInfo().SetGiOrAccnVer();
-                    break;
-                case CSeq_id::e_Ddbj:
-                    x_SetEntryInfo().SetINSDInSep();
-                    x_SetEntryInfo().SetGED();
-                    x_SetEntryInfo().SetDdbj();
-                    break;
-                case CSeq_id::e_Prf:
-                    break;
-                case CSeq_id::e_Pdb:
-                    x_SetEntryInfo().SetPDB();
-                    break;
-                case CSeq_id::e_Tpg:
-                    x_SetEntryInfo().SetINSDInSep();
-                    break;
-                case CSeq_id::e_Tpe:
-                    x_SetEntryInfo().SetTPE();
-                    x_SetEntryInfo().SetINSDInSep();
-                    break;
-                case CSeq_id::e_Tpd:
-                    x_SetEntryInfo().SetINSDInSep();
-                    break;
-                case CSeq_id::e_Gpipe:
-                    x_SetEntryInfo().SetGpipe();
-                    break;
-                default:
-                    break;
+                }
+                break;
+            case CSeq_id::e_General:
+                if ((*bi).IsAa() && !sid.GetGeneral().IsSkippable()) {
+                    x_SetEntryInfo().SetProteinHasGeneralID();
+                }
+                break;
+            case CSeq_id::e_Gi:
+                x_SetEntryInfo().SetGI();
+                x_SetEntryInfo().SetGiOrAccnVer();
+                break;
+            case CSeq_id::e_Ddbj:
+                x_SetEntryInfo().SetINSDInSep();
+                x_SetEntryInfo().SetGED();
+                x_SetEntryInfo().SetDdbj();
+                break;
+            case CSeq_id::e_Prf:
+                break;
+            case CSeq_id::e_Pdb:
+                x_SetEntryInfo().SetPDB();
+                break;
+            case CSeq_id::e_Tpg:
+                x_SetEntryInfo().SetINSDInSep();
+                break;
+            case CSeq_id::e_Tpe:
+                x_SetEntryInfo().SetTPE();
+                x_SetEntryInfo().SetINSDInSep();
+                break;
+            case CSeq_id::e_Tpd:
+                x_SetEntryInfo().SetINSDInSep();
+                break;
+            case CSeq_id::e_Gpipe:
+                x_SetEntryInfo().SetGpipe();
+                break;
+            default:
+                break;
             }
             if ( tsid && tsid->IsSetAccession() && tsid->IsSetVersion() && tsid->GetVersion() >= 1 ) {
                 x_SetEntryInfo().SetGiOrAccnVer();
