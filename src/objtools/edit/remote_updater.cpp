@@ -393,7 +393,6 @@ void CRemoteUpdater::ClearCache()
 
     if (m_pm_use_cache && m_pubmed) {
         switch (m_pm_source) {
-        case EPubmedSource::eMLA:
         case EPubmedSource::eEUtils: {
             auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
             if (upd) {
@@ -686,7 +685,6 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
 
     if (m_pm_use_cache && m_pubmed) {
         switch (m_pm_source) {
-        case EPubmedSource::eMLA:
         case EPubmedSource::eEUtils: {
             auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
             if (upd && ! dynamic_cast<CEUtilsUpdater*>(m_pubmed.get())) {
