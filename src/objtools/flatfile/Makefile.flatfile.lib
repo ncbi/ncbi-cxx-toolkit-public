@@ -47,7 +47,7 @@ LIB     = xflatfile
 
 DLL_LIB = xlogging 
 
-ASN_DEP = genome_collection mla submit taxon1
+ASN_DEP = genome_collection submit taxon1
 
 USES_LIBRARIES = xlogging
 
