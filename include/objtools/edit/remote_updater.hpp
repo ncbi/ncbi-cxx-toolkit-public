@@ -38,7 +38,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <functional>
 #include <objtools/edit/edit_error.hpp>
-#include <objtools/edit/pubmed_updater.hpp>
+#include <objtools/edit/eutils_updater.hpp>
 #include <objects/taxon3/itaxon3.hpp>
 #include <mutex>
 
@@ -65,7 +65,6 @@ enum class EPubmedSource
 {
     eNone,
     eEUtils,
-    eMLA, // deprecated; same as eEUtils
 };
 
 class CCachedTaxon3_impl;
@@ -99,8 +98,18 @@ public:
     // With this constructor, failure to retrieve
     // a publication for a PMID is logged with the supplied message listener.
     // If no message listener is supplied, an exception is thrown.
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource = EPubmedSource::eEUtils, bool bNormalize = false);
-    CRemoteUpdater(FLogger logger, EPubmedSource = EPubmedSource::eEUtils, bool bNormalize = false);
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, bool bNormalize = false) :
+        CRemoteUpdater(pMessageListener, EPubmedSource::eEUtils, bNormalize)
+    {
+    }
+    CRemoteUpdater(FLogger logger, bool bNormalize = false) :
+        CRemoteUpdater(logger, EPubmedSource::eEUtils, bNormalize)
+    {
+    }
+    // NCBI_DEPRECATED
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, bool bNormalize = false);
+    // NCBI_DEPRECATED
+    CRemoteUpdater(FLogger logger, EPubmedSource, bool bNormalize = false);
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
