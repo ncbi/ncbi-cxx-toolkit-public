@@ -149,7 +149,7 @@ set(NCBI_PTBCFG_KNOWN_FEATURES
     Symbols
     StaticComponents
     BinRelease
-    SSE
+    AVX2
     OpenMP
     CfgMT
     CfgProps
@@ -161,23 +161,6 @@ set(NCBI_PTBCFG_KNOWN_FEATURES
 if(NOT "${NCBI_PTBCFG_PROJECT_FEATURES}" STREQUAL "")
     string(REPLACE "," ";" NCBI_PTBCFG_PROJECT_FEATURES "${NCBI_PTBCFG_PROJECT_FEATURES}")
     string(REPLACE " " ";" NCBI_PTBCFG_PROJECT_FEATURES "${NCBI_PTBCFG_PROJECT_FEATURES}")
-
-    set(_all)
-    foreach(_f IN LISTS NCBI_PTBCFG_PROJECT_FEATURES)
-        if("${_f}" STREQUAL "noSSE")
-            message("WARNING: Feature noSSE is deprecated, use -SSE instead")
-            list(APPEND _all -SSE)
-        elseif("${_f}" STREQUAL "noOpenMP")
-            message("WARNING: Feature noOpenMP is deprecated, use -OpenMP instead")
-            list(APPEND _all -OpenMP)
-        elseif("${_f}" STREQUAL "noUNICODE")
-            message("WARNING: Feature noUNICODE is deprecated, use -UNICODE instead")
-            list(APPEND _all -UNICODE)
-        elseif(NOT "${_f}" STREQUAL "")
-            list(APPEND _all ${_f})
-        endif()
-    endforeach()
-    set(NCBI_PTBCFG_PROJECT_FEATURES ${_all})
 endif()
 
 set(NCBI_PTBCFG_INSTALL_SUFFIX "")
@@ -214,10 +197,6 @@ if(BinRelease IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_COMPONENT_BACKWARD_DISABLED TRUE)
     set(NCBI_COMPONENT_UNWIND_DISABLED TRUE)
     set(NCBI_COMPONENT_PCRE_DISABLED TRUE)
-    if(NOT  SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
-       NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        list(APPEND NCBI_PTBCFG_PROJECT_FEATURES -SSE)
-    endif()
     if(NOT  OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND
        NOT -OpenMP IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
         list(APPEND NCBI_PTBCFG_PROJECT_FEATURES -OpenMP)
@@ -229,8 +208,8 @@ if(CustomRPath IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 endif()
 
 # see also
-#    CfgMT, CfgProps in WIN32
-#    MaxDebug, Coverage, SSE, OpenMP in UNIX
+#    CfgMT, CfgProps, AVX2 in WIN32
+#    MaxDebug, Coverage, OpenMP in UNIX
 
 #----------------------------------------------------------------------------
 function(NCBI_util_FindToolchain _version _result)
@@ -328,9 +307,9 @@ if (WIN32)
             set(CMAKE_EXE_LINKER_FLAGS "/DEBUG ${CMAKE_EXE_LINKER_FLAGS}")
             set(CMAKE_SHARED_LINKER_FLAGS "/DEBUG ${CMAKE_SHARED_LINKER_FLAGS}")
         endif()
-        if(SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-            add_compile_options("/arch:AVX2")
-        endif()
+    endif()
+    if(AVX2 IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        add_compile_options("/arch:AVX2")
     endif()
 
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
@@ -383,6 +362,10 @@ elseif (XCODE)
         set(CMAKE_C_FLAGS_RELEASEMT  "-Os -DNDEBUG")
 
         add_link_options(-stdlib=libc++ -framework CoreServices)
+    endif()
+
+    if("${HOST_CPU}" MATCHES "x86")
+        add_compile_options("-msse4.2")
     endif()
 
     add_compile_definitions(NCBI_XCODE_BUILD _LARGEFILE_SOURCE _FILE_OFFSET_BITS=64)
@@ -553,14 +536,10 @@ if(Symbols IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     endif()
 endif()
 
-if(NOT NCBI_PTBCFG_PACKAGING AND NOT -SSE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-    if(DEFINED NCBI_COMPILER_FLAGS_SSE)
-        set(CMAKE_C_FLAGS    "${CMAKE_C_FLAGS} ${NCBI_COMPILER_FLAGS_SSE}")
-        set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${NCBI_COMPILER_FLAGS_SSE}")
-    elseif("${HOST_CPU}" MATCHES "x86")
-	    NCBI_util_set_cxx_compiler_flag_optional("-msse4.2")
-	    NCBI_util_set_c_compiler_flag_optional  ("-msse4.2")
-    endif()
+if(DEFINED NCBI_COMPILER_FLAGS_SSE)
+    add_compile_options(${NCBI_COMPILER_FLAGS_SSE})
+elseif("${HOST_CPU}" MATCHES "x86")
+    add_compile_options("-msse4.2")
 endif()
 
 if(Coverage IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
