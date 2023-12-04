@@ -61,7 +61,7 @@ public:
             output = &NcbiCout;
         }
 
-        CRemoteUpdater upd(nullptr, EPubmedSource::eEUtils, bNormalize);
+        CRemoteUpdater upd(nullptr, bNormalize);
         CRef<CPub>     pub(new CPub);
         pub->SetPmid().Set(pmid);
         CRef<CSeqdesc> desc(new CSeqdesc);
