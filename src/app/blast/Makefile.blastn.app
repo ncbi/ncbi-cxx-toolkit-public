@@ -4,7 +4,7 @@ WATCHERS = camacho madden fongah2
 
 APP = blastn
 SRC = blastn_node blastn_app
-LIB_ = xformat xcleanup valid gbseq mlacli mla medlars pubmed submit xregexp $(PCRE_LIB) \
+LIB_ = xformat xcleanup valid gbseq medlars pubmed submit xregexp $(PCRE_LIB) \
        $(BLAST_INPUT_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS) 
 LIB = blast_app_util $(LIB_:%=%$(STATIC))
 
