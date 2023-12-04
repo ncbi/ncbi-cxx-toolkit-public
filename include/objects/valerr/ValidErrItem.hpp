@@ -806,33 +806,33 @@ class NCBI_VALERR_EXPORT CValidErrItem : public CValidErrItem_Base
 public:
 
     // destructor
-    CValidErrItem(void);
-    ~CValidErrItem(void);
+    CValidErrItem();
+    ~CValidErrItem();
 
     // severity with proper type.
-    EDiagSev                GetSeverity  (void) const;
+    EDiagSev                GetSeverity() const;
     // Error code
-    const string            GetErrCode  (void) const;
-    static size_t           GetErrCount(void);
+    const string            GetErrCode() const;
+    static size_t           GetErrCount();
     // Error group (SEQ_FEAT, SEQ_INST etc.)
-    const string            GetErrGroup (void) const;
+    const string            GetErrGroup() const;
     // Verbose message
-    const string            GetVerbose  (void) const;
+    const string            GetVerbose() const;
     // Offending object
-    const CSerialObject&    GetObject   (void) const;
-    bool                    IsSetObject (void) const;
+    const CSerialObject&    GetObject() const;
+    bool                    IsSetObject() const;
     void                    SetObject(const CSerialObject& obj);
 
     // Convert Severity from enum to a string representation
-    static const string    ConvertSeverity(EDiagSev sev);
-    static const string    ConvertErrCode(unsigned int);
-    static const string    ConvertErrGroup(unsigned int);
+    static const string&    ConvertSeverity(EDiagSev sev);
+    static const string&    ConvertErrCode(unsigned int);
+    static const string&    ConvertErrGroup(unsigned int);
 
     // Convert error code from string to unsigned int
     static unsigned int    ConvertToErrCode(const string& str);
 
-    bool IsSetContext(void) const;
-    const CSeq_entry& GetContext(void) const;
+    bool IsSetContext() const;
+    const CSeq_entry& GetContext() const;
     void SetContext(CConstRef<CSeq_entry> ctx) { m_Ctx = ctx; }
     
     // use previously populated fields to construct the "standard" description
@@ -842,19 +842,20 @@ private:
     friend class CValidError;
 
     // constructor
-    CValidErrItem(EDiagSev             sev,       // severity
-                  unsigned int         ec,        // error code
-                  const string&        msg,       // message
-                  const string&        obj_desc,  // object description
-                  const CSerialObject* obj,       // offending object
-                  const CSeq_entry*    context,   // desc's context.
-                  const string&        acc,       // accession
-                  const int            ver,       // version of object.
-                  const int            seq_offset = 0); // sequence offset
+    CValidErrItem(
+        EDiagSev             sev,       // severity
+        unsigned int         ec,        // error code
+        const string&        msg,       // message
+        const string&        obj_desc,  // object description
+        const CSerialObject* obj,       // offending object
+        const CSeq_entry*    context,   // desc's context.
+        const string&        acc,       // accession
+        const int            ver,       // version of object.
+        const int            seq_offset = 0); // sequence offset
 
     // Prohibit default & copy constructor and assignment operator
-    CValidErrItem(const CValidErrItem& value);
-    CValidErrItem& operator=(const CValidErrItem& value);
+    CValidErrItem(const CValidErrItem& value) = delete;
+    CValidErrItem& operator=(const CValidErrItem& value) = delete;
 
     // member data values that are not serialized.
     CConstRef<CSerialObject>        m_Object;     // offending object
@@ -868,13 +869,13 @@ private:
 
 // constructor
 inline
-CValidErrItem::CValidErrItem(void)
+CValidErrItem::CValidErrItem()
 {
 }
 
 
 inline
-EDiagSev CValidErrItem::GetSeverity(void) const
+EDiagSev CValidErrItem::GetSeverity() const
 {
     // convert from internal integer to external enum type.
     return static_cast<EDiagSev>(GetSev());
@@ -882,15 +883,15 @@ EDiagSev CValidErrItem::GetSeverity(void) const
 
 
 inline
-bool CValidErrItem::IsSetContext(void) const 
-{ 
-    return m_Ctx.NotEmpty(); 
+bool CValidErrItem::IsSetContext() const
+{
+    return m_Ctx.NotEmpty();
 }
 
 inline
-const CSeq_entry& CValidErrItem::GetContext(void) const 
-{ 
-    return *m_Ctx; 
+const CSeq_entry& CValidErrItem::GetContext() const
+{
+    return *m_Ctx;
 }
 
 
