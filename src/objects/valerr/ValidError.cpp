@@ -55,16 +55,16 @@ CValidError::CValidError(const CSerialObject* obj) :
 {
 }
 
-void CValidError::AddValidErrItem
-(EDiagSev             sev,
- unsigned int         ec,
- const string&        msg,
- const string&        desc,
- const CSerialObject& obj,
- const string&        acc,
- const int            ver,
- const string&        location,
- const int            seq_offset)
+void CValidError::AddValidErrItem(
+    EDiagSev             sev,
+    unsigned int         ec,
+    const string&        msg,
+    const string&        desc,
+    const CSerialObject& obj,
+    const string&        acc,
+    const int            ver,
+    const string&        location,
+    const int            seq_offset)
 {
     if (ShouldSuppress(ec)) {
         return;
@@ -77,15 +77,15 @@ void CValidError::AddValidErrItem
     m_Stats[item->GetSeverity()]++;
 }
 
-void CValidError::AddValidErrItem
-(EDiagSev             sev,
- unsigned int         ec,
- const string&        msg,
- const string&        desc,
- const string&        acc,
- const int            ver,
- const string&        location,
- const int            seq_offset)
+void CValidError::AddValidErrItem(
+    EDiagSev      sev,
+    unsigned int  ec,
+    const string& msg,
+    const string& desc,
+    const string& acc,
+    const int     ver,
+    const string& location,
+    const int     seq_offset)
 {
     if (ShouldSuppress(ec)) {
         return;
@@ -99,16 +99,16 @@ void CValidError::AddValidErrItem
 }
 
 
-void CValidError::AddValidErrItem
-(EDiagSev          sev,
- unsigned int      ec,
- const string&     msg,
- const string&     desc,
- const CSeqdesc&   seqdesc,
- const CSeq_entry& ctx,
- const string&     acc,
- const int         ver,
- const int         seq_offset)
+void CValidError::AddValidErrItem(
+    EDiagSev          sev,
+    unsigned int      ec,
+    const string&     msg,
+    const string&     desc,
+    const CSeqdesc&   seqdesc,
+    const CSeq_entry& ctx,
+    const string&     acc,
+    const int         ver,
+    const int         seq_offset)
 {
     if (ShouldSuppress(ec)) {
         return;
@@ -215,18 +215,18 @@ CValidError_CI::CValidError_CI(void) :
 }
 
 
-CValidError_CI::CValidError_CI
-(const CValidError& ve,
- const string& errcode,
- EDiagSev           minsev,
- EDiagSev           maxsev) :
+CValidError_CI::CValidError_CI(
+    const CValidError& ve,
+    const string&      errcode,
+    EDiagSev           minsev,
+    EDiagSev           maxsev) :
     m_Validator(&ve),
     m_Current(ve.GetErrs().begin()),
     m_ErrCodeFilter(errcode),
     m_MinSeverity(minsev),
     m_MaxSeverity(maxsev)
 {
-    if ( IsValid()  &&  !Filter(**m_Current) ) {
+    if (IsValid() && ! Filter(**m_Current)) {
         Next();
     }
 }

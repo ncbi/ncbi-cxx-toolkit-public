@@ -58,57 +58,61 @@ class NCBI_VALERR_EXPORT CValidError : public CValidError_Base
     typedef CValidError_Base Tparent;
 public:
     // constructor
-    CValidError(const CSerialObject* obj = NULL);
+    CValidError(const CSerialObject* obj = nullptr);
     // destructor
-    ~CValidError(void);
+    ~CValidError();
 
-    void AddValidErrItem(EDiagSev             sev,     // severity
-                         unsigned int         ec,      // error code
-                         const string&        msg,     // specific error message
-                         const string&        desc,    // offending object's description
-                         const CSerialObject& obj,     // offending object
-                         const string&        acc,     // accession of object.
-                         const int            ver,     // version of object.
-                         const string&        location = kEmptyStr, // formatted location of object
-                         const int            seq_offset = 0);
+    void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg,     // specific error message
+        const string&        desc,    // offending object's description
+        const CSerialObject& obj,     // offending object
+        const string&        acc,     // accession of object.
+        const int            ver,     // version of object.
+        const string&        location = kEmptyStr, // formatted location of object
+        const int            seq_offset = 0);
 
-    void AddValidErrItem(EDiagSev             sev,     // severity
-                         unsigned int         ec,      // error code
-                         const string&        msg,     // specific error message
-                         const string&        desc,    // offending object's description
-                         const string&        acc,     // accession of object.
-                         const int            ver,     // version of object.
-                         const string&        location = kEmptyStr, // formatted location of object
-                         const int            seq_offset = 0);
+    void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg,     // specific error message
+        const string&        desc,    // offending object's description
+        const string&        acc,     // accession of object.
+        const int            ver,     // version of object.
+        const string&        location = kEmptyStr, // formatted location of object
+        const int            seq_offset = 0);
 
-     void AddValidErrItem(EDiagSev            sev,     // severity
-                         unsigned int         ec,      // error code
-                         const string&        msg,     // specific error message
-                         const string&        desc,    // offending object's description
-                         const CSeqdesc&      seqdesc, // offending object
-                         const CSeq_entry&    ctx,     // place of packaging
-                         const string&        acc,     // accession of object or context.
-                         const int            ver,     // version of object.
-                         const int            seq_offset = 0);
+     void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg,     // specific error message
+        const string&        desc,    // offending object's description
+        const CSeqdesc&      seqdesc, // offending object
+        const CSeq_entry&    ctx,     // place of packaging
+        const string&        acc,     // accession of object or context.
+        const int            ver,     // version of object.
+        const int            seq_offset = 0);
 
-     void AddValidErrItem(EDiagSev            sev,     // severity
-                          unsigned int         ec,      // error code
-                          const string&        msg);     // specific error message
+     void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg);     // specific error message
 
      void AddValidErrItem(CRef<CValidErrItem> item);
 
     // Statistics
-    SIZE_TYPE TotalSize(void)    const;
+    SIZE_TYPE TotalSize() const;
     SIZE_TYPE Size(EDiagSev sev) const;
 
-    SIZE_TYPE InfoSize    (void) const;
-    SIZE_TYPE WarningSize (void) const;
-    SIZE_TYPE ErrorSize   (void) const;
-    SIZE_TYPE CriticalSize(void) const;
-    SIZE_TYPE FatalSize   (void) const;
+    SIZE_TYPE InfoSize () const;
+    SIZE_TYPE WarningSize () const;
+    SIZE_TYPE ErrorSize () const;
+    SIZE_TYPE CriticalSize() const;
+    SIZE_TYPE FatalSize () const;
 
     // Get the validated object (Seq-entry, Seq-submit or Seq-align)
-    const CSerialObject* GetValidated(void) const;
+    const CSerialObject* GetValidated() const;
 
     // for suppressing errors by type. Suppression list
     // will be checked at the time that a AddValidErrItem
@@ -122,9 +126,9 @@ public:
 protected:
     friend class CValidError_CI;
 
-    typedef map<EDiagSev, SIZE_TYPE>               TSevStats;
-    typedef CConstRef<CSerialObject>               TValidated;
-    typedef CConstRef<CSeq_entry>                  TContext;
+    typedef map<EDiagSev, SIZE_TYPE> TSevStats;
+    typedef CConstRef<CSerialObject> TValidated;
+    typedef CConstRef<CSeq_entry>    TContext;
 
     // data
     TSevStats   m_Stats;     // severity statistics
@@ -133,36 +137,36 @@ protected:
 
 private:
     // Prohibit copy constructor & assignment operator
-    CValidError(const CValidError&);
-    CValidError& operator= (const CValidError&);
-
+    CValidError(const CValidError&) = delete;
+    CValidError& operator=(const CValidError&) = delete;
 };
 
 
 class NCBI_VALERR_EXPORT CValidError_CI
 {
 public:
-    CValidError_CI(void);
-    CValidError_CI(const CValidError& ve,
-                   const string& errcode = kEmptyStr,
-                   EDiagSev minsev  = eDiagSevMin,
-                   EDiagSev maxsev  = eDiagSevMax);
+    CValidError_CI();
+    CValidError_CI(
+        const CValidError& ve,
+        const string& errcode = kEmptyStr,
+        EDiagSev minsev  = eDiagSevMin,
+        EDiagSev maxsev  = eDiagSevMax);
     CValidError_CI(const CValidError_CI& iter);
-    virtual ~CValidError_CI(void);
+    virtual ~CValidError_CI();
 
     CValidError_CI& operator=(const CValidError_CI& iter);
-    CValidError_CI& operator++(void);
+    CValidError_CI& operator++();
 
-    bool IsValid(void) const;
+    bool IsValid() const;
     DECLARE_OPERATOR_BOOL(IsValid());
 
-    const CValidErrItem& operator* (void) const;
-    const CValidErrItem* operator->(void) const;
+    const CValidErrItem& operator*() const;
+    const CValidErrItem* operator->() const;
 
 private:
     bool Filter(const CValidErrItem& item) const;
-    bool AtEnd(void) const;
-    void Next(void);
+    bool AtEnd() const;
+    void Next();
 
     CConstRef<CValidError>               m_Validator;
     CValidError::TErrs::const_iterator   m_Current;
@@ -179,55 +183,55 @@ private:
 // constructor
 
 inline
-SIZE_TYPE CValidError::TotalSize(void) const 
+SIZE_TYPE CValidError::TotalSize() const
 {
     return GetErrs().size();
 }
 
 
 inline
-SIZE_TYPE CValidError::Size(EDiagSev sev) const 
+SIZE_TYPE CValidError::Size(EDiagSev sev) const
 {
-    return const_cast<CValidError*>(this)->m_Stats[sev]; 
+    return const_cast<CValidError*>(this)->m_Stats[sev];
 }
 
 
 inline
-SIZE_TYPE CValidError::InfoSize(void) const
+SIZE_TYPE CValidError::InfoSize() const
 {
     return Size(eDiag_Info);
 }
 
 
 inline
-SIZE_TYPE CValidError::WarningSize(void) const
+SIZE_TYPE CValidError::WarningSize() const
 {
     return Size(eDiag_Warning);
 }
 
 
 inline
-SIZE_TYPE CValidError::ErrorSize(void) const
+SIZE_TYPE CValidError::ErrorSize() const
 {
     return Size(eDiag_Error);
 }
 
 
 inline
-SIZE_TYPE CValidError::CriticalSize(void) const
+SIZE_TYPE CValidError::CriticalSize() const
 {
     return Size(eDiag_Critical);
 }
 
 
 inline
-SIZE_TYPE CValidError::FatalSize(void) const
+SIZE_TYPE CValidError::FatalSize() const
 {
     return Size(eDiag_Fatal);
 }
 
 inline
-const CSerialObject* CValidError::GetValidated(void) const
+const CSerialObject* CValidError::GetValidated() const
 {
     return m_Validated.GetPointerOrNull();
 }
