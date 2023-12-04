@@ -5,8 +5,6 @@ DLL = ncbi_pub
 HOSTED_LIBS    = biblio  \
                  medline \
                  medlars \
-                 mla     \
-                 mlacli  \
                  pub     \
                  pubmed
 
