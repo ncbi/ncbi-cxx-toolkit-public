@@ -780,6 +780,8 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
         bool is_unidentified = false;
         bool force_consult = false;
         bool has_nucleomorphs = false;
+        bool is_cyanobacteria = false;
+        bool has_metagenome_source = false;
         if (reply.GetData().IsSetOrg()) {
             const COrg_ref& orp_rep = reply.GetData().GetOrg();
             if (org.IsSetTaxname() && orp_rep.IsSetTaxname()) {
@@ -798,6 +800,20 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
                         + "' but is '" + NStr::NumericToString(taxid_request) + "'" });
                 }
             }
+            if (org.IsSetOrgMod()) {
+                for (const auto& it : org.GetOrgname().GetMod()) {
+                    if (it->IsSetSubtype() && it->IsSetSubname() &&
+                        it->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                        has_metagenome_source = true;
+                    }
+                }
+            }
+            if (org.IsSetLineage()) {
+                string org_lineage = org.GetLineage();
+                if (! NStr::IsBlank(org_lineage) && NStr::Find(org_lineage, "Bacteria; Cyanobacteriota") != NPOS) {
+                    is_cyanobacteria = true;
+                }
+            }
         }
         reply.GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
         if (!is_species_level && !is_wp) {
@@ -806,6 +822,9 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
         }
         if (force_consult) {
             if (is_insd_patent && is_unidentified) {
+                force_consult = false;
+            }
+            if (is_cyanobacteria && has_metagenome_source) {
                 force_consult = false;
             }
         }
