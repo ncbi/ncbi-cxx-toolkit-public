@@ -29,7 +29,6 @@ NCBI_add_subdirectory(
   medlars
   medline
   mim
-  mla
   mmdb
   ncbimime
   objprt
