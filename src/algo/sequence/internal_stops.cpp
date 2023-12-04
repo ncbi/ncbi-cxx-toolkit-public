@@ -161,10 +161,11 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
                 query_loc->SetInt().SetFrom(k-3);
                 query_loc->SetInt().SetTo(k-1);
             }
-            TSeqPos mapped_pos = mapper.Map(*query_loc)->GetStart(eExtreme_Biological);
+            CConstRef<CSeq_loc> mapped_loc = mapper.Map(*query_loc);
+            TSeqPos mapped_pos = mapped_loc->GetStart(eExtreme_Biological);
             if (mapped_pos == kInvalidSeqPos)
                 continue;
-            TSeqPos mapped_pos2 = mapper.Map(*query_loc)->GetStop(eExtreme_Biological);
+            TSeqPos mapped_pos2 = mapped_loc->GetStop(eExtreme_Biological);
 
             if (tbl.IsOrfStart(state)) {
                 starts[TSeqRange(mapped_pos, mapped_pos2)] = codon;
