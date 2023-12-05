@@ -923,7 +923,7 @@ R"(Pub ::= equiv {
     CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
     CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
-    CEUtilsUpdater upd_eutils(true);
+    CEUtilsUpdater upd_eutils(CEUtilsUpdater::ENormalize::On);
     CPubFix pub_fixing(true, true, true, nullptr, &upd_eutils);
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);
@@ -1232,7 +1232,7 @@ R"(Pub ::= equiv {
     CNcbiIstrstream(TEST_PUB) >> MSerial_AsnText >> pub;
     CNcbiIstrstream(TEST_PUB_GOOD) >> MSerial_AsnText >> pub_good;
 
-    CEUtilsUpdater upd_eutils(true);
+    CEUtilsUpdater upd_eutils(CEUtilsUpdater::ENormalize::On);
     CPubFix pub_fixing(true, true, true, nullptr, &upd_eutils);
     pub_fixing.FixPub(pub);
     BOOST_CHECK_EQUAL(pub.Equals(pub_good), true);

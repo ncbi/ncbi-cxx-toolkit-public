@@ -76,8 +76,9 @@ static unique_ptr<edit::IPubmedUpdater> s_updater;
 /**********************************************************/
 void InitPubmedClient(bool normalize)
 {
+    using TUpd = edit::CEUtilsUpdaterWithCache;
     if (! s_updater) {
-        s_updater.reset(new edit::CEUtilsUpdaterWithCache(normalize));
+        s_updater.reset(new TUpd(normalize ? TUpd::ENormalize::On : TUpd::ENormalize::Off));
     }
 }
 

@@ -350,8 +350,8 @@ public:
 };
 
 
-CEUtilsUpdaterBase::CEUtilsUpdaterBase(bool bNorm) :
-    m_Ctx(new CEUtils_ConnContext), m_bNorm(bNorm)
+CEUtilsUpdaterBase::CEUtilsUpdaterBase(ENormalize norm) :
+    m_Ctx(new CEUtils_ConnContext), m_Norm(norm)
 {
 }
 
@@ -421,7 +421,7 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 }
 
 
-void IPubmedUpdater::Normalize(CPub& pub)
+void CEUtilsUpdaterBase::Normalize(CPub& pub)
 {
     if (pub.IsArticle()) {
         CCit_art& A = pub.SetArticle();
@@ -544,8 +544,9 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
             if (mle.IsSetCit()) {
                 CRef<CPub> pub(new CPub);
                 pub->SetArticle().Assign(mle.GetCit());
-                if (m_bNorm)
+                if (m_Norm == ENormalize::On) {
                     Normalize(*pub);
+                }
                 if (m_pub_interceptor)
                     m_pub_interceptor(pub);
                 return pub;
