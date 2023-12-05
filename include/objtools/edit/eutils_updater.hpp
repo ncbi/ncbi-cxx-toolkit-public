@@ -49,6 +49,8 @@ class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterWithCache
 public:
     CEUtilsUpdater(ENormalize norm = ENormalize::Off) :
         CEUtilsUpdaterWithCache(norm) {}
+    NCBI_DEPRECATED CEUtilsUpdater(bool norm) :
+        CEUtilsUpdaterWithCache(norm ? ENormalize::On : ENormalize::Off) {}
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 };
 
