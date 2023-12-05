@@ -189,6 +189,14 @@ while [ $# != 0 ]; do
         BUILD_TYPE=$types
       fi
       ;; 
+    -DNCBI_PTBCFG_CONFIGURATION_TYPES* )
+      types=${1#*=}
+      CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_CONFIGURATION_TYPES=$(Quote "${types}")"
+      cnt=`echo $types | tr ";" " " | wc -w | tr -d " "`
+      if [ "$cnt" = "1" ]; then
+        BUILD_TYPE=$types
+      fi
+      ;; 
     -D* | --debug-* | --log-* | --trace* )
       CMAKE_ARGS="$CMAKE_ARGS $1"
       ;; 
