@@ -683,6 +683,11 @@ RunTest() {
                 $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
                 ;;
            esac
+           if test \$? -ne 0;  then
+              echo "ERR: error loading results for [\$build_tree/\$build_cfg] \$x_name \n" >> "\$build_dir/test_stat_load.log" 2>&1
+           else 
+              echo "OK\n" >> "\$build_dir/test_stat_load.log" 2>&1
+           fi           
            echo >> "\$build_dir/test_stat_load.log" 2>&1
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then

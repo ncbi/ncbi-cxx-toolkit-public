@@ -95,7 +95,7 @@ result=$?
 if test -n "$NCBI_AUTOMATED_BUILD" -a -z "$TEAMCITY_VERSION"; then
    # Report test_stat_load errors if any
    if [ -f "$build_dir/test_stat_load.log" ]; then
-      grep "test_stat_load Error" $build_dir/test_stat_load.log > /tmp/$$.mail_stat
+      grep "ERR: " $build_dir/test_stat_load.log > /tmp/$$.mail_stat
       if [ $? -eq 0 ] ; then
          cat <<-EOF >> /tmp/$$.mail_stat
 
