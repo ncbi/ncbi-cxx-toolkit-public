@@ -71,7 +71,7 @@ class CPubmedUpdater_THROW : public CEUtilsUpdater
 {
 public:
     CPubmedUpdater_THROW() :
-        CEUtilsUpdater(true)
+        CEUtilsUpdater(CEUtilsUpdater::ENormalize::On)
     {
     }
 

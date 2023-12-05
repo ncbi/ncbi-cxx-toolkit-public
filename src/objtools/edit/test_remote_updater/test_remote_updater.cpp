@@ -52,7 +52,7 @@ public:
             CEUtils_Request::SetBaseURL(url);
         }
 
-        bool bNormalize = args["normalize"].AsBoolean();
+        auto normalize = args["normalize"].AsBoolean() ? CEUtilsUpdater::ENormalize::On : CEUtilsUpdater::ENormalize::Off;
 
         ostream* output = nullptr;
         if (args["o"]) {
@@ -61,7 +61,7 @@ public:
             output = &NcbiCout;
         }
 
-        CRemoteUpdater upd(nullptr, bNormalize);
+        CRemoteUpdater upd(nullptr, normalize);
         CRef<CPub>     pub(new CPub);
         pub->SetPmid().Set(pmid);
         CRef<CSeqdesc> desc(new CSeqdesc);

@@ -98,18 +98,18 @@ public:
     // With this constructor, failure to retrieve
     // a publication for a PMID is logged with the supplied message listener.
     // If no message listener is supplied, an exception is thrown.
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, bool bNormalize = false) :
-        CRemoteUpdater(pMessageListener, EPubmedSource::eEUtils, bNormalize)
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
+        CRemoteUpdater(pMessageListener, EPubmedSource::eEUtils, norm)
     {
     }
-    CRemoteUpdater(FLogger logger, bool bNormalize = false) :
-        CRemoteUpdater(logger, EPubmedSource::eEUtils, bNormalize)
+    CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
+        CRemoteUpdater(logger, EPubmedSource::eEUtils, norm)
     {
     }
     // NCBI_DEPRECATED
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, bool bNormalize = false);
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
     // NCBI_DEPRECATED
-    CRemoteUpdater(FLogger logger, EPubmedSource, bool bNormalize = false);
+    CRemoteUpdater(FLogger logger, EPubmedSource, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
@@ -159,7 +159,7 @@ private:
     string                     m_pm_url;
     unique_ptr<IPubmedUpdater> m_pubmed;
     bool                       m_pm_use_cache = true;
-    bool                       m_pm_normalize = false;
+    CEUtilsUpdater::ENormalize m_pm_normalize = CEUtilsUpdater::ENormalize::Off;
     TPubInterceptor            m_pm_interceptor = nullptr;
 
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
