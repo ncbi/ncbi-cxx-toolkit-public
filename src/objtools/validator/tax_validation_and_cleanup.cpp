@@ -1410,7 +1410,7 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
 //LCOV_EXCL_STOP
 
 
-void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CValidError_imp& imp)
+void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, CBioSource::TGenome genome, CValidError_imp& imp)
 {
     x_ClearMaps();
 
