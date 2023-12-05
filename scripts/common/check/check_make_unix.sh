@@ -897,11 +897,15 @@ EOF_launch
                 test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
               * )
                 test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
-            esac
-           echo >> "$x_build_dir/test_stat_load.log" 2>&1
+           esac
+           if test \$? -ne 0;  then
+              echo "ERR: error loading results for [\$x_work_dir_tail] \$x_name \n" >> "$x_build_dir/test_stat_load.log" 2>&1
+           else 
+              echo "OK\n" >> "$x_build_dir/test_stat_load.log" 2>&1
+           fi
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
-            rm -f \$saved_phid* > /dev/null 2>&1
+           rm -f \$saved_phid* > /dev/null 2>&1
         fi
         
     done  # Run test under all specified check tools   
