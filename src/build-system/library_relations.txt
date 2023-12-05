@@ -621,11 +621,6 @@ medlars needs biblio
 medline needs biblio
 mghbn needs connect
 mim needs xser
-mla needs medlars
-mla needs pub
-mla needs pubmed
-mlacli needs mla
-mlacli needs xconnect
 mmapi needs $(Z_LIB)
 mmapi needs connect
 mmapi needs objmmail
