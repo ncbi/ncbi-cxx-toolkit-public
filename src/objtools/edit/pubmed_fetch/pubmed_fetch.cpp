@@ -120,7 +120,7 @@ public:
             CEUtils_Request::SetBaseURL(url);
         }
 
-        bool bNormalize = args["normalize"].AsBoolean();
+        auto normalize = args["normalize"].AsBoolean() ? CEUtilsUpdater::ENormalize::On : CEUtilsUpdater::ENormalize::Off;
 
         ostream* output = nullptr;
         if (args["o"]) {
@@ -129,7 +129,7 @@ public:
             output = &NcbiCout;
         }
 
-        unique_ptr<CEUtilsUpdater> upd(new CEUtilsUpdater(bNormalize));
+        unique_ptr<CEUtilsUpdater> upd(new CEUtilsUpdater(normalize));
 
         bool       bstats = args["stats"];
         unsigned   nruns  = 0;

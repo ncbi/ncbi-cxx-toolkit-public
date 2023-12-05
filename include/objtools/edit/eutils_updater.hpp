@@ -11,17 +11,21 @@ BEGIN_SCOPE(edit)
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterBase : public IPubmedUpdater
 {
 public:
-    CEUtilsUpdaterBase(bool bNorm);
+    enum class ENormalize { Off, On };
+
+public:
+    CEUtilsUpdaterBase(ENormalize);
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
     TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
     CRef<CPub> x_GetPub(TEntrezId pmid, EPubmedError*);
 
     // Hydra replacement using citmatch api; RW-1918,RW-1999
     static bool DoPubSearch(const std::vector<string>& query, std::vector<TEntrezId>& pmids);
+    static void Normalize(CPub&);
 
 private:
     CRef<CEUtils_ConnContext> m_Ctx;
-    bool                      m_bNorm;
+    ENormalize                m_Norm;
 };
 
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdaterBase
@@ -29,8 +33,8 @@ class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdaterBase
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 
 public:
-    CEUtilsUpdaterWithCache(bool bNorm = false) :
-        CEUtilsUpdaterBase(bNorm) {}
+    CEUtilsUpdaterWithCache(ENormalize norm = ENormalize::Off) :
+        CEUtilsUpdaterBase(norm) {}
     void ReportStats(std::ostream&);
     void ClearCache();
 
@@ -43,8 +47,8 @@ private:
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterWithCache
 {
 public:
-    CEUtilsUpdater(bool bNorm = false) :
-        CEUtilsUpdaterWithCache(bNorm) {}
+    CEUtilsUpdater(ENormalize norm = ENormalize::Off) :
+        CEUtilsUpdaterWithCache(norm) {}
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 };
 
