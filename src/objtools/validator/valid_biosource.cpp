@@ -602,7 +602,7 @@ const CSeq_entry *ctx)
             }
         }
 
-        int subtype = (*ssit)->GetSubtype();
+        CSubSource::TSubtype subtype = (*ssit)->GetSubtype();
         count[subtype]++;
 
         switch (subtype) {
@@ -1244,7 +1244,7 @@ const bool isViral)
         sname = subsrc.GetName();
     }
 
-    int subtype = subsrc.GetSubtype();
+    CSubSource::TSubtype subtype = subsrc.GetSubtype();
     switch (subtype) {
 
     case CSubSource::eSubtype_country:
@@ -1720,7 +1720,7 @@ const bool is_single_cell_amplification)
         if (!(*it)->IsSetSubtype() || !(*it)->IsSetSubname()) {
             continue;
         }
-        int subtype = (*it)->GetSubtype();
+        COrgMod::TSubtype subtype = (*it)->GetSubtype();
         const string& subname = (*it)->GetSubname();
         string orgmod_name = COrgMod::GetSubtypeName(subtype);
         if (orgmod_name.length() > 0) {
@@ -1857,7 +1857,7 @@ const CSeq_entry *ctx)
         FOR_EACH_ORGMOD_ON_ORGNAME(omd_itr, orgname)
         {
             const COrgMod& omd = **omd_itr;
-            int subtype = omd.GetSubtype();
+            COrgMod::TSubtype subtype = omd.GetSubtype();
 
             if (omd.IsSetSubname()) {
                 string str = omd.GetSubname();
@@ -2905,7 +2905,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 }
 
 
-void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
+void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, CBioSource::TGenome genome)
 {
     auto pTval = x_CreateTaxValidator();
     pTval->CheckOneOrg(org, genome, *this);

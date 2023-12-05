@@ -129,7 +129,7 @@ class CTaxValidationAndCleanup;
 class NCBI_VALIDATOR_EXPORT CValidError_imp
 {
 public:
-    typedef map<int, int> TCount;
+    typedef map<CSubSource::TSubtype, int> TCount;
 
     CValidError_imp(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext,
@@ -262,7 +262,7 @@ public:
     void ValidateStrain(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
-    void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
+    void ValidateTaxonomy(const COrg_ref& org, CBioSource::TGenome genome = CBioSource::eGenome_unknown);
     void ValidateMultipleTaxIds(const CSeq_entry_Handle& seh);
     void ValidateCitations (const CSeq_entry_Handle& seh);
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
