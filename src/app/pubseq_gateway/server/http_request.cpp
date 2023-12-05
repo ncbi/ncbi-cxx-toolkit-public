@@ -286,15 +286,9 @@ CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
     // Print peer socket port
     struct sockaddr     sock_addr;
     if (m_Req->conn->callbacks->get_peername(m_Req->conn, &sock_addr) != 0) {
-        switch (sock_addr.sa_family) {
-            case AF_INET:
-                extra.Print(kPeerSocketPort, ((struct sockaddr_in *)&sock_addr)->sin_port);
-                break;
-            case AF_INET6:
-                extra.Print(kPeerSocketPort, ((struct sockaddr_in6 *)&sock_addr)->sin6_port);
-                break;
-            default:
-                break;
+        auto    port = GetPort(&sock_addr);
+        if (port > 0) {
+            extra.Print(kPeerSocketPort, port);
         }
     }
 
@@ -417,17 +411,23 @@ string CHttpRequest::GetPeerIP(void)
     if (m_Req->conn->callbacks->get_peername(m_Req->conn, &sock_addr) == 0)
         return kEmptyStr;
 
+    return GetIPAddress(&sock_addr);
+}
+
+
+string  GetIPAddress(struct sockaddr *  sock_addr)
+{
     char                buf[256];
-    switch (sock_addr.sa_family) {
+    switch (sock_addr->sa_family) {
         case AF_INET:
             if (inet_ntop(AF_INET,
-                          &(((struct sockaddr_in *)&sock_addr)->sin_addr),
+                          &(((struct sockaddr_in *)sock_addr)->sin_addr),
                           buf, 256) == NULL)
                 return kEmptyStr;
             break;
         case AF_INET6:
             if (inet_ntop(AF_INET6,
-                          &(((struct sockaddr_in6 *)&sock_addr)->sin6_addr),
+                          &(((struct sockaddr_in6 *)sock_addr)->sin6_addr),
                           buf, 256) == NULL)
                 return kEmptyStr;
             break;
@@ -436,5 +436,19 @@ string CHttpRequest::GetPeerIP(void)
     }
 
     return buf;
+}
+
+
+in_port_t  GetPort(struct sockaddr *  sock_addr)
+{
+    switch (sock_addr->sa_family) {
+        case AF_INET:
+            return ((struct sockaddr_in *)sock_addr)->sin_port;
+        case AF_INET6:
+            return ((struct sockaddr_in6 *)sock_addr)->sin6_port;
+        default:
+            break;
+    }
+    return 0;
 }
 

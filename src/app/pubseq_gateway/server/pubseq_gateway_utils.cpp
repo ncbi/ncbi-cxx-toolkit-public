@@ -1522,18 +1522,22 @@ string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state)
 }
 
 
-CRef<CRequestContext> CreateErrorRequestContext(void)
+CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
+                                                in_port_t  client_port)
 {
     CRef<CRequestContext>   context;
-    if (g_Log) {
-        context.Reset(new CRequestContext());
-        context->SetRequestID();
-        context->SetSessionID();
-        context->SetHitID();
-        CDiagContext::SetRequestContext(context);
-        GetDiagContext().PrintRequestStart();
-        context->SetReadOnly(true);
-    }
+
+    // NOTE: the context is created regardless if the logging is switched on or
+    // off. This request context is created in case of serious errors which
+    // should go to applog unconditionally
+    context.Reset(new CRequestContext());
+    context->SetRequestID();
+    if (!client_ip.empty())
+        context->SetClientIP(client_ip);
+    CDiagContext::SetRequestContext(context);
+    CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
+    if (client_port > 0)
+        extra.Print("peer_socket_port", client_port);
     return context;
 }
 

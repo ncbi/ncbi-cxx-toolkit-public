@@ -34,6 +34,8 @@
 #include "tcp_daemon.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "http_request.hpp"
+
 
 #include "shutdown_data.hpp"
 extern SShutdownData        g_ShutdownData;
@@ -527,7 +529,18 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     int         err_code = uv_tcp_init(m_internal->m_loop.Handle(), tcp);
 
     if (err_code != 0) {
-        CRef<CRequestContext>   context = CreateErrorRequestContext();
+        string      client_ip;
+        in_port_t   client_port = 0;
+
+        struct sockaddr     sock_addr;
+        int                 sock_addr_size = sizeof(sock_addr);
+        if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
+            client_ip = GetIPAddress(&sock_addr);
+            client_port = GetPort(&sock_addr);
+        }
+
+        CRef<CRequestContext>   context = CreateErrorRequestContext(client_ip,
+                                                                    client_port);
 
         PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
@@ -547,7 +560,17 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     err_code = uv_accept(listener, reinterpret_cast<uv_stream_t*>(tcp));
     if (err_code != 0) {
-        CRef<CRequestContext>   context = CreateErrorRequestContext();
+        string      client_ip;
+        in_port_t   client_port = 0;
+
+        struct sockaddr     sock_addr;
+        int                 sock_addr_size = sizeof(sock_addr);
+        if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
+            client_ip = GetIPAddress(&sock_addr);
+            client_port = GetPort(&sock_addr);
+        }
+        CRef<CRequestContext>   context = CreateErrorRequestContext(client_ip,
+                                                                    client_port);
 
         PSG_ERROR("TCP connection accept failed; uv_accept() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
@@ -565,7 +588,18 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     bool b = m_daemon->ClientConnected();
     if (!b) {
-        CRef<CRequestContext>   context = CreateErrorRequestContext();
+        string      client_ip;
+        in_port_t   client_port = 0;
+
+        struct sockaddr     sock_addr;
+        int                 sock_addr_size = sizeof(sock_addr);
+        if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
+            client_ip = GetIPAddress(&sock_addr);
+            client_port = GetPort(&sock_addr);
+        }
+
+        CRef<CRequestContext>   context = CreateErrorRequestContext(client_ip,
+                                                                    client_port);
 
         PSG_ERROR("TCP Connection accept failed; "
                   "too many connections (maximum: " <<

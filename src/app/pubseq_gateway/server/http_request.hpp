@@ -39,6 +39,7 @@ using namespace std;
 
 #include <h2o.h>
 
+#include <netinet/in.h>
 #include <connect/ncbi_ipv6.h>
 #include <corelib/tempstr.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -55,6 +56,9 @@ struct CQueryParam
     size_t          m_NameLen;
     size_t          m_ValLen;
 };
+
+string  GetIPAddress(struct sockaddr *  sock_addr);
+in_port_t  GetPort(struct sockaddr *  sock_addr);
 
 
 class CHttpRequest;
