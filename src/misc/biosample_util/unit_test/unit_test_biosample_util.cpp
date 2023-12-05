@@ -54,6 +54,7 @@
 
 #include <common/ncbi_export.h>
 
+#include <misc/xmlwrapp/xml_init.hpp>
 #include <misc/biosample_util/biosample_util.hpp>
 
 
