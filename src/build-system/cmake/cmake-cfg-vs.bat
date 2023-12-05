@@ -198,6 +198,13 @@ if "%first%"=="-D"             (
         set /a cnt=0
         for  %%a in (!types!) do  set /a cnt+=1
         if "!cnt!"=="1" set BUILD_TYPE=%2& set generator_multi_cfg=YES
+    ) else if "%1"=="-DNCBI_PTBCFG_CONFIGURATION_TYPES" (
+        set types=%2
+        set types=!types:;= !
+        set types=!types:"= !
+        set /a cnt=0
+        for  %%a in (!types!) do  set /a cnt+=1
+        if "!cnt!"=="1" set BUILD_TYPE=%2& set generator_multi_cfg=YES
     ) else if "%1"=="-DCMAKE_BUILD_TYPE" (
         set BUILD_TYPE=%2
     ) else if "%1"=="-DBUILD_SHARED_LIBS" (
