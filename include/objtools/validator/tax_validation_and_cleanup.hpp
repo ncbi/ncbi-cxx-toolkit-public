@@ -356,7 +356,7 @@ public:
     void FixOneSpecificHost(string& val);
     bool IsOneSpecificHostValid(const string& val, string& err_msg);
 
-    void CheckOneOrg(const COrg_ref& org, int genome, CValidError_imp& imp);
+    void CheckOneOrg(const COrg_ref& org, CBioSource::TGenome genome, CValidError_imp& imp);
 
 protected:
     void x_InterpretTaxonomyError(const CT3Error& error, const COrg_ref& org, const EErrType type, vector<TTaxError>& errs) const;
