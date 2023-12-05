@@ -968,21 +968,25 @@ EOF_launch
         if \$is_run && \$is_db_load; then
             while ! mkdir "\$checkdir/~test_stat_load.lock" 2>/dev/null
             do
-	            sleep 1
+               sleep 1
             done
-           if test -n "\$saved_phid";  then
-              NCBI_LOG_HIT_ID=\$saved_phid
-              export NCBI_LOG_HIT_ID
-           fi
-           case \`uname -s\` in
-              CYGWIN* )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
-              IRIX* )
-                test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
-              * )
-                test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
+            if test -n "\$saved_phid";  then
+               NCBI_LOG_HIT_ID=\$saved_phid
+               export NCBI_LOG_HIT_ID
+            fi
+            case \`uname -s\` in
+               CYGWIN* )
+                 test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
+               IRIX* )
+                 test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
+               * )
+                 test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
             esac
-            echo >> "\${checkdir}/test_stat_load.log" 2>&1
+            if test \$? -ne 0;  then
+               echo "ERR: error loading results for [\$x_work_dir_tail] \$x_name \n" >> "\${checkdir}/test_stat_load.log" 2>&1
+            else 
+               echo "OK\n" >> "\${checkdir}/test_stat_load.log" 2>&1
+            fi
             rm -rf "\$checkdir/~test_stat_load.lock"
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
