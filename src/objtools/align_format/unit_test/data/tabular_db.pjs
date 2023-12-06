@@ -1,0 +1,27 @@
+{
+  "version": "1.2",
+  "dbname": "tabular_db",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "All non-redundant GenBank CDS translations+PDB+SwissProt+PIR+PRF excluding environmental samples from WGS projects",
+  "number-of-letters": 1344,
+  "number-of-sequences": 10,
+  "last-updated": "2023-12-05T16:42:00",
+  "number-of-volumes": 1,
+  "number-of-taxids": 15,
+  "bytes-total": 56641,
+  "bytes-to-cache": 1635,
+  "files": [
+    "tabular_db.pdb",
+    "tabular_db.phr",
+    "tabular_db.pin",
+    "tabular_db.pog",
+    "tabular_db.pos",
+    "tabular_db.pot",
+    "tabular_db.ppd",
+    "tabular_db.ppi",
+    "tabular_db.psq",
+    "tabular_db.ptf",
+    "tabular_db.pto"
+  ]
+}
