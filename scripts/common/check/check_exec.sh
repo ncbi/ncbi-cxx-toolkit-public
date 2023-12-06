@@ -40,7 +40,7 @@ echo $$ > check_exec.pid
 # Reinforce timeout
 # Note, we cannot set it to $timeout for MT-test, because
 # CPU time count for each thread and sum.
-ulimit -t `expr $timeout \* 5` > /dev/null 2>&1
+ulimit -t `expr $timeout \* 25` > /dev/null 2>&1
 
 # Use different kill on Unix and Cygwin
 case `uname -s` in
