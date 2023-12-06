@@ -26,7 +26,7 @@
  * Author: Vitaly Stakhovsky, NCBI
  *
  * File Description:
- *  PubMed Citation Match test application: MedArch vs EUtils
+ *  PubMed Citation Match test application using EUtils
  *
  */
 
@@ -145,15 +145,14 @@ public:
     void Init() override
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-        arg_desc->SetUsageContext("", "Match publications from medarch/eutils and print PubMed Ids");
+        arg_desc->SetUsageContext("", "Match publications from PubMed and print Ids");
         arg_desc->AddKey("i", "InFile", "Data to match", CArgDescriptions::eInputFile);
-        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "eutils");
-        arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
+        arg_desc->AddOptionalKey("pubmed", "source", "Always eutils", CArgDescriptions::eString, CArgDescriptions::fHidden);
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         arg_desc->AddFlag("stats", "Also print execution statistics");
         SetupArgDescriptions(arg_desc.release());
-        }
+    }
 
     int Run() override
     {
