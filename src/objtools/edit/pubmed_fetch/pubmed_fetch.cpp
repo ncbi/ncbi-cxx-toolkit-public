@@ -26,7 +26,7 @@
  * Author: Vitaly Stakhovsky, NCBI
  *
  * File Description:
- *  Test PubMed test application: MedArch vs EUtils
+ *  PubMed Fetch test application: using EUtils
  *
  */
 
@@ -53,12 +53,11 @@ public:
     void Init() override
     {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-        arg_desc->SetUsageContext("", "Retrieve publications data from medarch/eutils and display in ASN");
+        arg_desc->SetUsageContext("", "Retrieve publications data from PubMed and display in ASN");
         arg_desc->AddOptionalKey("id", "pmid", "PubMed ID to fetch", CArgDescriptions::eIntId);
         arg_desc->AddOptionalKey("ids", "pmids", "PubMed IDs", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("idfile", "pmids", "File containing PubMed IDs", CArgDescriptions::eInputFile);
-        arg_desc->AddDefaultKey("pubmed", "source", "Source of data", CArgDescriptions::eString, "eutils");
-        arg_desc->SetConstraint("pubmed", &(*new CArgAllow_Strings, "medarch", "eutils"));
+        arg_desc->AddOptionalKey("pubmed", "source", "Always eutils", CArgDescriptions::eString, CArgDescriptions::fHidden);
         arg_desc->AddOptionalKey("url", "url", "eutils base URL (http://eutils.ncbi.nlm.nih.gov/entrez/eutils/ by default)", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("o", "OutFile", "Output File", CArgDescriptions::eOutputFile);
         arg_desc->AddFlag("normalize", "Normalize output deterministically for tests", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
