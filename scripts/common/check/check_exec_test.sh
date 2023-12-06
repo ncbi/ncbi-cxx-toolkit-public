@@ -46,7 +46,7 @@ trap "rm -f $tmp $timestamp_file" 0 1 2 15
 # Reinforce timeout
 # Note, we cannot set it to $timeout for MT-test, because
 # CPU time count for each thread and sum.
-ulimit -t `expr $timeout \* 5` > /dev/null 2>&1 || true
+ulimit -t `expr $timeout \* 25` > /dev/null 2>&1 || true
 
 # Use different kill on Unix and Cygwin
 case `uname -s` in
