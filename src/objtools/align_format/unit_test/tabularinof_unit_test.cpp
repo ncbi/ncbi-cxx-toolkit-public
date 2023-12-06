@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
 
     const list<CRef<CSeq_align> > & seqalign_list = sa->Get();
 
-    const string kDbName("nr");
+    const string kDbName("data/tabular_db");
     const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 
     const list<CRef<CSeq_align> > & seqalign_list = sa->Get();
 
-    const string kDbName("nr");
+    const string kDbName("data/tabular_db");
     const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
@@ -317,7 +317,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
         const string ref[5] = {
         		"O19910,NP_045082,phycocyanin alpha subunit [Cyanidium caldarium]<>RecName: Full=C-phycocyanin alpha subunit [Cyanidium caldarium]",
         		"O19910,AAB01593,cpcA [Cyanidium caldarium]",
-        		"O19910,P00306,RecName: Full=C-phycocyanin alpha chain [Galdieria sulphuraria]<>C-phycocyanin alpha chain [validated] - red alga (Cyanidium caldarium) [Cyanidium caldarium]<>phycocyanin alpha subunits [Cyanidium caldarium]<>Structure Of Phycocyanin From Cyanidium Caldarium At 1.65a Resolution [Cyanidium caldarium]",
+        		"O19910,P00306,RecName: Full=C-phycocyanin alpha chain [Galdieria sulphuraria]<>C-phycocyanin alpha chain [validated] - red alga (Cyanidium caldarium) [Cyanidium caldarium]<>phycocyanin alpha subunits [Cyanidium caldarium]<>Chain A, Phycocyanin [Cyanidium caldarium]",
         		"O19910,YP_009051179,phycocyanin alpha subunit [Galdieria sulphuraria]<>[pt] C-phycocyanin alpha chain [Galdieria sulphuraria]<>Chain A, C-phycocyanin alpha chain [unidentified]<>Chain A, C-phycocyanin alpha chain [Galdieria sulphuraria]<>phycocyanin alpha subunit [Galdieria sulphuraria]<>[pt] C-phycocyanin alpha chain [Galdieria sulphuraria]",
         		"O19910,YP_009297463,phycocyanin alpha subunit [Erythrotrichia carnea]<>phycocyanin alpha subunit [Erythrotrichia carnea]"};
     	for(unsigned int i=0; i < 5; i++) {
