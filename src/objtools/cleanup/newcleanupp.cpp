@@ -3275,6 +3275,8 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
                 auto& gene = data.SetGene();
                 if (gene.IsSetDesc() && !NStr::IsBlank(gene.GetDesc())) {
                     gene.SetDesc() += "; ";
+                } else {
+                    gene.SetDesc(kEmptyStr);
                 }
                 gene.SetDesc() += "gene=" + val;
                 ChangeMade(CCleanupChange::eChangeQualifiers);
