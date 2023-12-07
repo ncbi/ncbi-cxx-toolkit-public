@@ -979,44 +979,53 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
         char*  line;
         size_t off;
 
-        /* line & taglen */
+        /* line (tag) & taglen */
         newlinelen = (size_t)
             (eol ? eol - newline + 1 : newhdr + newhdrlen - newline);
-        if (!eot  ||  eot >= newline + newlinelen)
-            goto ignore;
+        if (!eot  ||  eot >= newline + newlinelen) {
+            if (op != eUserHeaderOp_Delete)
+                goto ignore;
+            if (eol) {
+                eot = eol;
+                if (eot > newline  &&  eot[-1] == '\r')
+                    eot--;
+            } else
+                eot = newhdr + newhdrlen;
+        }
         if (!(newtaglen = (size_t)(eot - newline)))
             goto ignore;
 
         /* tag value */
         newtagval = newline + newtaglen;
-        while (++newtagval < newline + newlinelen) {
-            if (!isspace((unsigned char)(*newtagval)))
+        if (op != eUserHeaderOp_Delete) {
+            assert(*newtagval == ':');
+            while (++newtagval < newline + newlinelen) {
+                if (!isspace((unsigned char)(*newtagval)))
+                    break;
+            }
+            switch (op) {
+            case eUserHeaderOp_Override:
+                newlen = newtagval < newline + newlinelen ? newlinelen : 0;
                 break;
-        }
-        switch (op) {
-        case eUserHeaderOp_Override:
-            newlen = newtagval < newline + newlinelen ? newlinelen : 0;
-            break;
-        case eUserHeaderOp_Delete:
+            case eUserHeaderOp_Extend:
+                /* NB: how much _additional_ space would be required */
+                if (!(newlen = newlinelen - (size_t)(newtagval - newline)))
+                    goto ignore;
+                break;
+            default:
+                retval = 0/*failure*/;
+                assert(0);
+                goto out;
+            }
+            if (newlen  &&  eol) {
+                if (eol[-1] == '\r')
+                    newlen -= 2;
+                else
+                    newlen--;
+                assert(newlen);
+            }
+        } else
             newlen = 0;
-            break;
-        case eUserHeaderOp_Extend:
-            /* NB: how much additional space is required */
-            if (!(newlen = newlinelen - (size_t)(newtagval - newline)))
-                goto ignore;
-            break;
-        default:
-            retval = 0/*failure*/;
-            assert(0);
-            goto out;
-        }
-        if (newlen  &&  eol) {
-            if (eol[-1] == '\r')
-                newlen -= 2;
-            else
-                newlen--;
-            assert(newlen);
-        }
 
         for (line = hdr;  *line;  line += linelen) {
             size_t taglen;
@@ -1054,8 +1063,9 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
             } else
                 len = 0/*==newlen*/;
 
-            off  = (size_t)(line - hdr);
+            off = (size_t)(line - hdr);
             if (len < newlen) {
+                assert(op != eUserHeaderOp_Delete);
                 len = newlen - len;
                 if (!(temp = (char*) realloc(hdr, hdrlen + len + 1))) {
                     retval = 0/*failure*/;
