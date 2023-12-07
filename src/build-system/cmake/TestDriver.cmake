@@ -79,6 +79,8 @@ set(ENV{FEATURES} ${_x})
 #endif()
 
 set(NCBITEST_CHECK_SCRIPTDIR ${NCBITEST_SCRIPTDIR}/common/check)
+set(NCBITEST_LOADER_LOGDIR ${NCBITEST_OUTDIR})
+
 if(NCBI_GENERATOR_IS_MULTI_CONFIG)
     set(NCBITEST_BINDIR ${NCBITEST_BINDIR}/${NCBITEST_CONFIG})
     set(NCBITEST_LIBDIR ${NCBITEST_LIBDIR}/${NCBITEST_CONFIG})
@@ -476,7 +478,10 @@ endif()
 
 if (IS_AUTOMATED AND IS_DB_LOAD)
     set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}")
-    set(_test_stat_load_log  "${NCBITEST_OUTDIR}/test_stat_load.log")
+    set(_test_stat_load_log  "${NCBITEST_LOADER_LOGDIR}/test_stat_load.log")
+    file(APPEND ${_test_stat_load_log} "======================================================================\n")
+    file(APPEND ${_test_stat_load_log} "${NCBITEST_NAME}\n")
+    file(APPEND ${_test_stat_load_log} "======================================================================\n\n")
     execute_process(
         COMMAND sh -c "test_stat_load ${_test_rep} ${_test_out} ${_boost_rep} ${NCBITEST_TREE_ROOT}/build_info >> ${_test_stat_load_log} 2>&1"
         RESULT_VARIABLE _retcode
