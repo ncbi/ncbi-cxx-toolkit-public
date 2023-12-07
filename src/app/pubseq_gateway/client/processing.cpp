@@ -376,18 +376,8 @@ void CJsonResponse::Fill(shared_ptr<CPSG_SkippedBlob> skipped_blob)
 {
     Set("id",     skipped_blob);
     Set("reason", s_ReasonToString(skipped_blob->GetReason()));
-
-    const auto& sent_seconds_ago = skipped_blob->GetSentSecondsAgo();
-
-    if (!sent_seconds_ago.IsNull()) {
-        Set("sent_seconds_ago", sent_seconds_ago.GetValue());
-    }
-
-    const auto& time_until_resend = skipped_blob->GetTimeUntilResend();
-
-    if (!time_until_resend.IsNull()) {
-        Set("time_until_resend", time_until_resend.GetValue());
-    }
+    Set("sent_seconds_ago", skipped_blob->GetSentSecondsAgo());
+    Set("time_until_resend", skipped_blob->GetTimeUntilResend());
 }
 
 void CJsonResponse::Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info)
@@ -511,12 +501,7 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_BlobId& blob_id)
 {
     auto obj = node.ResetObject();
     Set(obj["id"], blob_id.GetId());
-
-    const auto& last_modified = blob_id.GetLastModified();
-
-    if (!last_modified.IsNull()) {
-        Set(obj["last_modified"], last_modified.GetValue());
-    }
+    Set(obj["last_modified"], blob_id.GetLastModified());
 }
 
 void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)

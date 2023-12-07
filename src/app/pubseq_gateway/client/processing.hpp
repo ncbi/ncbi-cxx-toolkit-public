@@ -140,6 +140,9 @@ private:
     static void Set(CJson_Node node, const CPSG_BlobId& blob_id);
     static void Set(CJson_Node node, const CPSG_ChunkId& chunk_id);
 
+    template <typename T>
+    static void Set(CJson_Value value, const CNullable<T>& v) { if (!v.IsNull()) Set(value, v.GetValue()); }
+
     static void Set(CJson_Value value, const string& v) { value.SetString(v); }
     static void Set(CJson_Value value, const char* v)   { value.SetString(v); }
     static void Set(CJson_Value value, Int4 v)          { value.SetInt4(v);   }
