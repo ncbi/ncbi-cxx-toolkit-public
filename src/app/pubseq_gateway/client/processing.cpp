@@ -163,12 +163,13 @@ SJsonOut::~SJsonOut()
     }
 }
 
-template <class... TArgs>
-CJsonResponse::CJsonResponse(EPSG_Status status, TArgs&&... args) :
+template <class TItem, class... TArgs>
+CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, TArgs&&... args) :
     m_JsonObj(SetObject())
 {
     try {
-        FillWithRequestID(status, std::forward<TArgs>(args)...);
+        AddRequestID(item, std::forward<TArgs>(args)...);
+        Fill(status, item);
     }
     catch (exception& e) {
         CJson_Document new_doc;
@@ -208,20 +209,12 @@ CJsonResponse::CJsonResponse(const string& id) :
     }
 }
 
-template <class TItem>
-void CJsonResponse::FillWithRequestID(EPSG_Status status, TItem item, EDoNotAddRequestID)
-{
-    Fill(status, std::move(item));
-}
-
 template <class TItem, class... TArgs>
-void CJsonResponse::FillWithRequestID(EPSG_Status status, TItem item, TArgs&&... args)
+void CJsonResponse::AddRequestID(TItem item, TArgs&&...)
 {
     if (auto request_id = s_GetReply(item)->GetRequest()->template GetUserContext<string>()) {
         Set("request_id", *request_id);
     }
-
-    Fill(status, std::move(item), std::forward<TArgs>(args)...);
 }
 
 const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
