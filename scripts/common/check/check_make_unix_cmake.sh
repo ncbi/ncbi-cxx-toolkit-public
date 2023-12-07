@@ -970,6 +970,10 @@ EOF_launch
             do
                sleep 1
             done
+            echo "======================================================================" >> "\${checkdir}/test_stat_load.log" 2>&1
+            echo "[\$x_work_dir_tail] \$x_name"                                           >> "\${checkdir}/test_stat_load.log" 2>&1
+            echo "======================================================================" >> "\${checkdir}/test_stat_load.log" 2>&1
+            echo                                                                          >> "\${checkdir}/test_stat_load.log" 2>&1
             if test -n "\$saved_phid";  then
                NCBI_LOG_HIT_ID=\$saved_phid
                export NCBI_LOG_HIT_ID
