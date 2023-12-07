@@ -62,7 +62,7 @@ public:
     template <class... TArgs>
     bool WaitUntil(TArgs&&... args) volatile
     {
-        return GetThis().x_WaitUntil(forward<TArgs>(args)...);
+        return GetThis().x_WaitUntil(std::forward<TArgs>(args)...);
     }
 
     bool Reset() volatile { return GetThis().x_Reset(); }
@@ -115,7 +115,7 @@ private:
     {
         unique_lock<mutex> lock(SThreadSafe<TType>::m_Mutex);
 
-        if (!x_CvWait(lock, forward<TArgs>(args)...)) return false;
+        if (!x_CvWait(lock, std::forward<TArgs>(args)...)) return false;
 
         m_Signal--;
         return true;
@@ -159,7 +159,7 @@ struct CPSG_WaitingQueue : SPSG_CV<deque<TValue>>
     {
         if (m_Stopped) return;
 
-        this->GetLock()->push_back(move(value));
+        this->GetLock()->push_back(std::move(value));
         this->NotifyOne();
     }
 
@@ -168,7 +168,7 @@ struct CPSG_WaitingQueue : SPSG_CV<deque<TValue>>
         do {
             if (auto locked = this->GetLock()) {
                 if (!locked->empty()) {
-                    value = move(locked->front());
+                    value = std::move(locked->front());
                     locked->pop_front();
                     return true;
                 }
