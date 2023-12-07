@@ -170,6 +170,7 @@ int CTblastnApp::Run(void)
     if(!m_Bah.GetMessages().empty()) {
     	PrintErrorArchive(args, m_Bah.GetMessages());
     }
+    return status;
 }
 
 int CTblastnApp::x_RunMTBySplitDB()
