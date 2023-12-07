@@ -127,7 +127,16 @@ private:
     }
 
     template <typename T>
-    void Set(const char* name, T&& v) { Set(m_JsonObj[name], std::forward<T>(v)); }
+    void Set(const char* name, T&& v) { Set(m_JsonObj, name, std::forward<T>(v)); }
+
+    template <typename T>
+    static void Set(CJson_Object& obj, const char* name, T&& v) { Set(obj[name], std::forward<T>(v)); }
+
+    template <typename T>
+    static void Set(CJson_Object& obj, const char* name, const CNullable<T>& v) { if (!v.IsNull()) Set(obj[name], v.GetValue()); }
+
+    template <typename T>
+    static void Set(CJson_Object& obj, const char* name, const optional<T>& v) { if (v) Set(obj[name], *v); }
 
     // enable_if required here to avoid recursion as CJson_Value (returned by SetValue) is derived from CJson_Node
     template <class TNode, typename T, typename enable_if<is_same<TNode, CJson_Node>::value, int>::type = 0>
@@ -137,12 +146,6 @@ private:
     static void Set(CJson_Node node, const vector<CPSG_BioId>& bio_ids);
     static void Set(CJson_Node node, const CPSG_BlobId& blob_id);
     static void Set(CJson_Node node, const CPSG_ChunkId& chunk_id);
-
-    template <typename T>
-    static void Set(CJson_Value value, const CNullable<T>& v) { if (!v.IsNull()) Set(value, v.GetValue()); }
-
-    template <typename T>
-    static void Set(CJson_Value value, const optional<T>& v) { if (v) Set(value, *v); }
 
     static void Set(CJson_Value value, const string& v) { value.SetString(v); }
     static void Set(CJson_Value value, const char* v)   { value.SetString(v); }
