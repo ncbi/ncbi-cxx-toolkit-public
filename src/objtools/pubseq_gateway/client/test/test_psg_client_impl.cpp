@@ -94,7 +94,7 @@ private:
 
 struct SFixture
 {
-    using TData = vector<char>;
+    using TData = pair<vector<char>, vector<SPSG_Message>>;
     using TIncomingData = deque<string>;
 
     constexpr static size_t kSizeMin = 100 * 1024;
@@ -198,8 +198,9 @@ vector<string> s_GetBlobDataArgs(size_t item_id, const string& blob_id, size_t c
     };
 }
 
-vector<string> s_GetBlobMessageArgs(size_t item_id, const string& blob_id, const string& severity, size_t size)
+vector<string> s_GetBlobMessageArgs(size_t item_id, const string& blob_id, string severity, size_t size)
 {
+    NStr::ToLower(severity);
     return {
         "item_type=blob",
         "chunk_type=message",
@@ -275,7 +276,8 @@ SFixture::SFixture()
         // Blob ID already taken
         if (!rv.second) continue;
 
-        auto& blob_data = rv.first->second;
+        auto& blob_data = rv.first->second.first;
+        auto& blob_messages = rv.first->second.second;
         auto chunks_number = r.Get(kChunksMin, kChunksMax);
         auto messages_number = r.Get(kMessagesMin, kMessagesMax);
         auto n_chunks = chunks_number + messages_number + 1;
@@ -298,16 +300,24 @@ SFixture::SFixture()
             src_chunks.emplace_back();
             auto& message_stream = src_chunks.back();
             auto message_size = r.Get(kMessageSizeMin, kMessageSizeMax);
-            string severity;
+            auto message = r.GetString(message_size);
+            auto severity = EDiagSev((r.Get(0, 8) + 5) % 6); // eDiag_Info, eDiag_Warning or eDiag_Trace are twice as probable
+            auto code = r.Get(0, 1) ? int(r.Get(300, 350)) : optional<int>{};
 
-            switch (r.Get(0, 2)) {
-                case 0:  severity = "info";    break;
-                case 1:  severity = "warning"; break;
-                default: severity = "trace";
+            auto blob_message = s_GetBlobMessageArgs(blobs_number, blob_id, CNcbiDiag::SeverityName(severity), message_size);
+
+            if (code) {
+                blob_message.emplace_back("code=" + to_string(*code));
             }
 
-            s_OutputArgs(src_chunks.back(), r, s_GetBlobMessageArgs(blobs_number, blob_id, severity, message_size));
-            message_stream += r.GetString(message_size);
+            if (severity == eDiag_Trace) {
+                _DEBUG_CODE(blob_messages.emplace_back(SPSG_Message{message, severity, code}););
+            } else {
+                blob_messages.emplace_back(SPSG_Message{message, severity, code});
+            }
+
+            s_OutputArgs(src_chunks.back(), r, blob_message);
+            message_stream += message;
         }
 
         --blobs_number;
@@ -341,7 +351,7 @@ SFixture::SFixture()
 
     auto message_size = r.Get(kMessageSizeMin, kMessageSizeMax);
     auto blob_message = s_GetBlobMessageArgs(1, blob_id, "error", message_size);
-    blob_message.emplace_back("status=503");
+    blob_message.emplace_back("status=503&code=310");
     error_503_chunks.emplace_back();
     s_OutputArgs(error_503_chunks.back(), r, blob_message);
     error_503_chunks.back() += r.GetString(message_size);
@@ -369,11 +379,11 @@ void SFixture::MtReading()
 
     // Reading
 
-    auto reader_impl = [&](const vector<char>& src, SPSG_Reply::SItem::TTS& dst) {
+    auto reader_impl = [&](const TData& src, SPSG_Reply::SItem::TTS& dst) {
         TReadImpl read_impl(dst);
         vector<char> received(kSizeMax);
-        auto expected = src.data();
-        size_t expected_to_read = src.size();
+        auto expected = src.first.data();
+        size_t expected_to_read = src.first.size();
         CDeadline deadline(kReadingDeadline, 0);
 
         while (!deadline.IsExpired()) {
@@ -388,7 +398,20 @@ void SFixture::MtReading()
             expected += read;
             expected_to_read -= read;
 
-            if (reading_result == 0) break;
+            if (reading_result == 0) {
+                const auto& src_messages = src.second;
+                size_t messages = 0;
+
+                while (auto message = dst.GetLock()->state.GetMessage(eDiag_Trace)) {
+                    ++messages;
+                    auto it = find(src_messages.begin(), src_messages.end(), message);
+                    BOOST_REQUIRE_MESSAGE_MT_SAFE(it != src_messages.end(), "Received message does not match expected");
+                }
+
+                BOOST_REQUIRE_MESSAGE_MT_SAFE(messages >= src_messages.size(), "Received less messages than expected");
+                BOOST_REQUIRE_MESSAGE_MT_SAFE(messages <= src_messages.size(), "Received more messages than expected");
+                break;
+            }
 
             auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
             this_thread::sleep_for(ms);
@@ -523,8 +546,8 @@ BOOST_AUTO_TEST_CASE(Request)
         BOOST_REQUIRE_MESSAGE(src_blob != src_blobs.end(), "Unknown blob received");
 
         {
-            auto src_current = src_blob->second.begin();
-            auto src_end = src_blob->second.end();
+            auto src_current = src_blob->second.first.begin();
+            auto src_end = src_blob->second.first.end();
 
             for (auto& chunk : chunks) {
                 auto dst_current = chunk.begin();
