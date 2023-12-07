@@ -263,7 +263,6 @@ static void TEST_ConnNetInfo(void)
 {
     size_t n;
     char* str;
-    char buf[256];
     SConnNetInfo* net_info;
 
     CORE_LOG(eLOG_Note, "ConnNetInfo test started");
@@ -425,13 +424,7 @@ static void TEST_ConnNetInfo(void)
 
     ConnNetInfo_SetUserHeader(net_info, "");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after set:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
-    assert(!net_info->http_user_header  &&  !str);
+    assert(!net_info->http_user_header);
 
     ConnNetInfo_AppendUserHeader(net_info,
                                  "T0: V0\n"
@@ -442,12 +435,6 @@ static void TEST_ConnNetInfo(void)
                                  "T1: V6\n"
                                  "T2:V2.2");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after append:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"
                   "T1:V1\r\n"
@@ -463,12 +450,6 @@ static void TEST_ConnNetInfo(void)
                                    "T2:V2.1\r\n"
                                    "T3:V3\r\n");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after override 1:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
                   "T0: V0\n"
                   "T2:V2.1\r\n"
@@ -476,18 +457,13 @@ static void TEST_ConnNetInfo(void)
                   "T4: V4\r\n") == 0);
 
     ConnNetInfo_OverrideUserHeader(net_info,
+                                   "T0: V00\n"
                                    "T5: V5\n"
                                    "T6: V6\r\n"
                                    "T4: W4 X4 Z4\r\n");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after override 2:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
-                  "T0: V0\n"
+                  "T0: V00\n"
                   "T2:V2.1\r\n"
                   "T3:V3\n"
                   "T4: W4 X4 Z4\r\n"
@@ -495,21 +471,15 @@ static void TEST_ConnNetInfo(void)
                   "T6: V6\r\n") == 0);
 
     ConnNetInfo_ExtendUserHeader(net_info,
-                                 "T0: V0\n"
+                                 "T0: V00\n"
                                  "T1:V1\r\n"
                                  "T2:V2\n"
                                  "T3: T3:V3\n"
                                  "T4: X4\n"
                                  "T5");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after extend:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
-                  "T0: V0\n"
+                  "T0: V00\n"
                   "T2:V2.1 V2\r\n"
                   "T3:V3 T3:V3\n"
                   "T4: W4 X4 Z4\r\n"
@@ -518,20 +488,24 @@ static void TEST_ConnNetInfo(void)
                   "T1:V1\r\n") == 0);
 
     ConnNetInfo_ExtendUserHeader(net_info,
+                                 "T1  \n"
                                  "T2: V2\n"
                                  "T3: V3\r\n"
                                  "T4:X4\r\n"
                                  "T4: Z4");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after no-op extend:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(strcmp(net_info->http_user_header,
-                  "T0: V0\n"
+                  "T0: V00\n"
                   "T2:V2.1 V2\r\n"
+                  "T3:V3 T3:V3\n"
+                  "T4: W4 X4 Z4\r\n"
+                  "T5: V5\n"
+                  "T6: V6\r\n"
+                  "T1:V1\r\n") == 0);
+
+    ConnNetInfo_DeleteUserHeader(net_info, "T5\t\nT2: \r\n T6:\nT0");
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(strcmp(net_info->http_user_header,
                   "T3:V3 T3:V3\n"
                   "T4: W4 X4 Z4\r\n"
                   "T5: V5\n"
@@ -541,23 +515,11 @@ static void TEST_ConnNetInfo(void)
     ConnNetInfo_DeleteUserHeader(net_info,
                                  net_info->http_user_header);
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after self-delete:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
-    assert(!net_info->http_user_header  &&  !str);
+    assert(!net_info->http_user_header);
 
     ConnNetInfo_SetUserHeader(net_info, 0);
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
-
-    str = UTIL_PrintableString(net_info->http_user_header, 0, buf, 0);
-    if (str)
-        *str = '\0';
-    printf("HTTP User Header after reset:\n%s%s%s\n",
-           &"\""[!str], str ? buf : "NULL", &"\""[!str]);
-    assert(!net_info->http_user_header  &&  !str);
+    assert(!net_info->http_user_header);
 
     for (n = strcspn(net_info->path, "?")+1;  n < sizeof(net_info->path);  ++n)
         net_info->path[n] = "0123456789"[rand() % 10];
