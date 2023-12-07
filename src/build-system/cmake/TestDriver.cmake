@@ -484,7 +484,9 @@ if (IS_AUTOMATED AND IS_DB_LOAD)
         ERROR_QUIET
     )
     if (NOT ${_retcode} EQUAL 0)
-        file(APPEND ${_test_stat_load_log} "\nError loading results for ${NCBITEST_NAME}\n\n")
+        file(APPEND ${_test_stat_load_log} "\nERR: Error loading results for ${NCBITEST_NAME}\n\n")
+    else()
+        file(APPEND ${_test_stat_load_log} "\nOK: ${NCBITEST_NAME}\n\n")
     endif()
 endif()
 
