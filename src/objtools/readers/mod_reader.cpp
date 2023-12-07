@@ -94,7 +94,8 @@ static const unordered_map<string, string> s_ModNameMap =
  {"db-xref", "dbxref"},
  {"pubmed", "pmid"},
  {"ft-url-mod", "ft-mod"},
- {"ft-url", "ft-map"}
+ {"ft-url", "ft-map"},
+ {"geo-loc-name", "country"}
  };
 //);
 
