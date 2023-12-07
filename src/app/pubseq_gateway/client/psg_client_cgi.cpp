@@ -86,6 +86,8 @@ struct SBase : TParams
             std::forward<TInitArgs>(init_args)...
         }
     {
+        auto l = [](const auto& v) { EDiagSev s; return CNcbiDiag::StrToSeverityLevel(v.c_str(), s) ? s : eDiag_Warning; };
+        TParams::min_severity = entries.Get("min-severity", l, eDiag_Warning);
         TParams::verbose = entries.Has("verbose");
     }
 };
