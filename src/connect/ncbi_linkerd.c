@@ -124,8 +124,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*         net_info = data->net_info;
     char                  hostport[80/*IP:port*/];
+    ESERV_Type            xtype, atype;
     char*                 infostr;
-    ESERV_Type            atype;
     const char*           type;
     unsigned int          host;
     size_t                size;
@@ -148,26 +148,26 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     switch (net_info->req_method) {
     case eReqMethod_Any:
     case eReqMethod_Any11:
-        atype = fSERV_Http;
+        xtype = fSERV_Http;
         break;
     case eReqMethod_Get:
     case eReqMethod_Get11:
-        atype = fSERV_HttpGet;
+        xtype = fSERV_HttpGet;
         break;
     case eReqMethod_Post:
     case eReqMethod_Post11:
-        atype = fSERV_HttpPost;
+        xtype = fSERV_HttpPost;
         break;
     default:
-        atype = SERV_GetImplicitServerTypeInternal(iter->name);
+        xtype = SERV_GetImplicitServerTypeInternal(iter->name);
         break;
     }
     /* make sure the server type matches */
-    if ((data->types  &&  !(atype = (ESERV_Type)(atype & data->types)))
+    if (!(atype = data->types ? (ESERV_Type)(xtype & data->types) : xtype)
         ||  !*(type = SERV_TypeStr(atype))) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Error,
-                    ("[%s]  Cannot match request method (%d)"
-                     " with a server type", iter->name, net_info->req_method));
+                    ("[%s]  Cannot match request method (%d) to server type"
+                     " (%d)", iter->name, net_info->req_method, xtype));
         return 0/*failure*/;
     }
 
