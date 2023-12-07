@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 
+#include <optional>
 #include <unordered_map>
 
 
@@ -643,6 +644,15 @@ enum class EPSG_Status {
 
 
 
+struct SPSG_Message : string
+{
+    EDiagSev severity = eDiag_Error;
+    optional<int> code;
+    explicit operator bool() const { return !empty(); }
+};
+
+
+
 class CPSG_Reply;
 
 
@@ -675,7 +685,9 @@ public:
     /// Unstructured text containing auxiliary info about the result --
     /// such as messages and errors that came from the PSG server or occured
     /// while trying to send request or to read and to process the reply.
-    string GetNextMessage() const;
+    /// @param min_severity
+    ///  Minimum severity level of messages to be retrieved.
+    SPSG_Message GetNextMessage(EDiagSev min_severity = eDiag_Error) const;
 
     /// Get the reply that contains this item
     shared_ptr<CPSG_Reply> GetReply() const { return m_Reply; }
@@ -1069,7 +1081,9 @@ public:
     /// Unstructured text containing auxiliary info about the result --
     /// such as messages and errors that came from the PSG server or occured
     /// while trying to send request or to read and to process the reply.
-    string GetNextMessage() const;
+    /// @param min_severity
+    ///  Minimum severity level of messages to be retrieved.
+    SPSG_Message GetNextMessage(EDiagSev min_severity = eDiag_Error) const;
 
     /// Get the request that resulted in this reply
     shared_ptr<const CPSG_Request> GetRequest() const { return m_Request; }

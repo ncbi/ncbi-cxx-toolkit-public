@@ -375,7 +375,7 @@ struct SPSG_Reply
         SState() : m_InProgress(true), m_Status(EPSG_Status::eSuccess) {}
 
         EPSG_Status GetStatus() const volatile { return m_Status; }
-        string GetError();
+        SPSG_Message GetMessage(EDiagSev min_severity);
         const volatile atomic_bool& InProgress() const volatile { return m_InProgress; }
 
         void SetStatus(EPSG_Status status, bool reset) volatile
@@ -384,10 +384,15 @@ struct SPSG_Reply
             while (((expected < status) || reset) && !m_Status.compare_exchange_weak(expected, status));
         }
 
-        void AddError(string message, EPSG_Status status = EPSG_Status::eError)
+        void AddError(string message, EPSG_Status status = EPSG_Status::eError, EDiagSev severity = eDiag_Error, optional<int> code = nullopt)
         {
-            m_Messages.emplace_front(std::move(message));
+            AddMessage(move(message), severity, code);
             SetStatus(status, false);
+        }
+
+        void AddMessage(string message, EDiagSev severity, optional<int> code)
+        {
+            m_Messages.emplace_back(SPSG_Message{std::move(message), severity, code});
         }
 
         void SetComplete() volatile { if (m_InProgress.exchange(false)) change.NotifyOne(); }
@@ -398,7 +403,7 @@ struct SPSG_Reply
     private:
         atomic_bool m_InProgress;
         atomic<EPSG_Status> m_Status;
-        deque<string> m_Messages;
+        deque<SPSG_Message> m_Messages;
     };
 
     struct SItem
