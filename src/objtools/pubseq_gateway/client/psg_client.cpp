@@ -1028,11 +1028,11 @@ EPSG_Status CPSG_ReplyItem::GetStatus(CDeadline deadline) const
     return s_GetStatus(m_Impl->item, deadline);
 }
 
-string CPSG_ReplyItem::GetNextMessage() const
+SPSG_Message CPSG_ReplyItem::GetNextMessage(EDiagSev min_severity) const
 {
     assert(m_Impl);
 
-    return m_Impl->item.GetLock()->state.GetError();
+    return m_Impl->item.GetLock()->state.GetMessage(min_severity);
 }
 
 CPSG_ReplyItem::~CPSG_ReplyItem()
@@ -1402,12 +1402,12 @@ EPSG_Status CPSG_Reply::GetStatus(CDeadline deadline) const
     return s_GetStatus(m_Impl->reply->reply_item, deadline);
 }
 
-string CPSG_Reply::GetNextMessage() const
+SPSG_Message CPSG_Reply::GetNextMessage(EDiagSev min_severity) const
 {
     assert(m_Impl);
     assert(m_Impl->reply);
 
-    return m_Impl->reply->reply_item.GetLock()->state.GetError();
+    return m_Impl->reply->reply_item.GetLock()->state.GetMessage(min_severity);
 }
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)

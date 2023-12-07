@@ -603,13 +603,15 @@ void SPSG_Stats::Report()
     }
 }
 
-string SPSG_Reply::SState::GetError()
+SPSG_Message SPSG_Reply::SState::GetMessage(EDiagSev min_severity)
 {
-    if (m_Messages.empty()) return {};
+    for (auto& m : m_Messages) {
+        if (m && ((min_severity == eDiag_Trace) || ((m.severity != eDiag_Trace) && (m.severity >= min_severity)))) {
+            return exchange(m, SPSG_Message{});
+        }
+    }
 
-    auto rv = m_Messages.back();
-    m_Messages.pop_back();
-    return rv;
+    return {};
 }
 
 void SPSG_Reply::SState::Reset()
@@ -856,6 +858,11 @@ EDiagSev s_GetSeverity(const string& severity)
     return eDiag_Error;
 }
 
+auto s_GetCode(const string& code)
+{
+    return code.empty() ? optional<int>{} : atoi(code.c_str());
+}
+
 SPSG_Request::EStateResult SPSG_Request::Add()
 {
     auto context_guard = context.Set();
@@ -978,17 +985,16 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
     if (chunk_type.first & SPSG_Args::eMessage) {
         auto severity = s_GetSeverity(args.GetValue("severity"));
+        auto code = s_GetCode(args.GetValue("code"));
 
-        if (severity == eDiag_Warning) {
-            ERR_POST(Warning << chunk);
-        } else if (severity == eDiag_Info) {
-            ERR_POST(Info << chunk);
+        if (severity <= eDiag_Warning) {
+            item.state.AddMessage(std::move(chunk), severity, code);
         } else if (severity == eDiag_Trace) {
-            ERR_POST(Trace << chunk);
+            _DEBUG_CODE(item.state.AddMessage(std::move(chunk), severity, code););
         } else if (const auto status = get_status(); can_retry_503(status, chunk.c_str())) {
             return eRetry503;
         } else {
-            item.state.AddError(std::move(chunk), SPSG_Reply::SState::FromRequestStatus(status));
+            item.state.AddError(std::move(chunk), SPSG_Reply::SState::FromRequestStatus(status), severity, code);
         }
 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
