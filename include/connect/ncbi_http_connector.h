@@ -348,8 +348,11 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  *  allows such use), so they may require separate SOCK I/O calls to write the
  *  data to the tunnel.
  * @return
- *  eIO_Success if the tunnel has been successfully created;
- *  otherwise, return an error code and set "*sock" to NULL upon return.
+ *  eIO_Success if the tunnel (in *sock) has been successfully created;
+ *  otherwise, return an error code and if "*sock" was passed non-NULL and has
+ *     not been used at all in the call (consider: memory allocation errors or
+ *     invalid arguments to the call), do not modify it;  else, "*sock" gets
+ *     closed internally and "*sock" returned cleared as 0.
  * @sa
  *  THTTP_Flags, SOCK_CreateEx, SOCK_Close
  */
