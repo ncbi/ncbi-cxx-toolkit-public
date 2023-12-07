@@ -983,10 +983,11 @@ EOF_launch
                  test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\${checkdir}/test_stat_load.log" 2>&1 ;;
             esac
             if test \$? -ne 0;  then
-               echo "ERR: error loading results for [\$x_work_dir_tail] \$x_name \n" >> "\${checkdir}/test_stat_load.log" 2>&1
+               echo "ERR: Error loading results for [\$x_work_dir_tail] \$x_name" >> "\${checkdir}/test_stat_load.log" 2>&1
             else 
-               echo "OK\n" >> "\${checkdir}/test_stat_load.log" 2>&1
+               echo "OK: [\$x_work_dir_tail] \$x_name" >> "\${checkdir}/test_stat_load.log" 2>&1
             fi
+            echo >> "\${checkdir}/test_stat_load.log" 2>&1
             rm -rf "\$checkdir/~test_stat_load.lock"
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then

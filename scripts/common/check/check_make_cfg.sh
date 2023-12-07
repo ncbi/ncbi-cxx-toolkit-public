@@ -670,7 +670,10 @@ RunTest() {
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
-           echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
+           echo "======================================================================" >> "\$build_dir/test_stat_load.log" 2>&1
+           echo "[\$build_tree/\$build_cfg] \$x_name"                                    >> "\$build_dir/test_stat_load.log" 2>&1
+           echo "======================================================================" >> "\$build_dir/test_stat_load.log" 2>&1
+           echo                                                                          >> "\$build_dir/test_stat_load.log" 2>&1
            if test -n "\$saved_phid";  then
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
@@ -684,9 +687,9 @@ RunTest() {
                 ;;
            esac
            if test \$? -ne 0;  then
-              echo "ERR: error loading results for [\$build_tree/\$build_cfg] \$x_name \n" >> "\$build_dir/test_stat_load.log" 2>&1
+              echo "ERR: Error loading results for [\$build_tree/\$build_cfg] \$x_name" >> "\$build_dir/test_stat_load.log" 2>&1
            else 
-              echo "OK\n" >> "\$build_dir/test_stat_load.log" 2>&1
+              echo "OK: [\$build_tree/\$build_cfg] \$x_name" >> "\$build_dir/test_stat_load.log" 2>&1
            fi           
            echo >> "\$build_dir/test_stat_load.log" 2>&1
         fi
