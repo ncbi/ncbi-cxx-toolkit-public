@@ -878,7 +878,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
             status = HTTP_CreateTunnelEx(net_info, fHTTP_NoUpread,
                                          0, 0, uuu, s_TunnelAdjust, &sock);
-            assert((status == eIO_Success) ^ !sock);
+            if (status != eIO_Success  &&  sock)
+                break;
             ConnNetInfo_Destroy(net_info);
         } else
             status  = eIO_Success;
@@ -2733,7 +2734,7 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                 has_host = 1/*true*/;
             } else if (strncasecmp(s, &"\nCAF"[first], 4 - !!first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - !!first] == ':')) {
-                char* caftag = strndup(s + !first, strcspn(s + !first, " \t"));
+                char* caftag = strndup(s + !first, strcspn(s + !first, ":"));
                 if (caftag) {
                     size_t cafoff = (size_t)(s - net_info->http_user_header);
                     ConnNetInfo_DeleteUserHeader(net_info, caftag);
@@ -2982,10 +2983,10 @@ extern EIO_Status HTTP_CreateTunnelEx
         assert(!uuu);
         return status;
     }
-    uuu->sock = *sock;
-    *sock = 0;
+
     assert(uuu  &&  !BUF_Size(uuu->w_buf));
     if (!init_size  ||  BUF_Prepend(&uuu->w_buf, init_data, init_size)) {
+        uuu->sock = *sock;
         status = s_PreRead(uuu, uuu->net_info->timeout, eEM_Wait);
         if (status == eIO_Success) {
             assert(uuu->conn_state == eCS_ReadBody);
@@ -2994,14 +2995,16 @@ extern EIO_Status HTTP_CreateTunnelEx
             *sock = uuu->sock;
             uuu->sock = 0;
             http_code = 0;
-        } else
+        } else {
             http_code = uuu->http_code;
+            if (uuu->sock)
+                s_DropConnection(uuu, eCS_Eom);
+        }
     } else {
         http_code = 0;
         status = eIO_Unknown;
     }
-    if (uuu->sock)
-        s_DropConnection(uuu, eCS_Eom);
+
     s_DestroyHttpConnector(uuu);
     switch (http_code) {
     case 503:
