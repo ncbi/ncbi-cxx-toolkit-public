@@ -480,7 +480,7 @@ void CJsonResponse::AddMessage(const SPSG_Message& message)
     ar.push_back();
     auto obj = ar.back().ResetObject();
     Set(obj["severity"], CNcbiDiag::SeverityName(message.severity));
-    Set(obj["code"], message.code);
+    Set(obj, "code",     message.code);
     Set(obj["text"], message);
 }
 
@@ -510,7 +510,7 @@ void CJsonResponse::Set(CJson_Node node, const CPSG_BlobId& blob_id)
 {
     auto obj = node.ResetObject();
     Set(obj["id"], blob_id.GetId());
-    Set(obj["last_modified"], blob_id.GetLastModified());
+    Set(obj, "last_modified", blob_id.GetLastModified());
 }
 
 void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
