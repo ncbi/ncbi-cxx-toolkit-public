@@ -82,8 +82,8 @@ class CJsonResponse : public CJson_Document
 public:
     enum EDoNotAddRequestID { eDoNotAddRequestID };
 
-    template <class... TArgs>
-    CJsonResponse(EPSG_Status status, TArgs&&... args);
+    template <class TItem, class... TArgs>
+    CJsonResponse(EPSG_Status status, TItem item, TArgs&&... args);
     CJsonResponse(const string& id, const CJsonResponse& result);
     CJsonResponse(const string& id, int code, const string& message);
 
@@ -98,10 +98,10 @@ private:
     CJsonResponse(const string& id);
 
     template <class TItem>
-    void FillWithRequestID(EPSG_Status status, TItem item, EDoNotAddRequestID);
+    void AddRequestID(TItem item, EDoNotAddRequestID) {}
 
     template <class TItem, class... TArgs>
-    void FillWithRequestID(EPSG_Status status, TItem item, TArgs&&... args);
+    void AddRequestID(TItem item, TArgs&&... args);
 
     template <class TItem>
     void Fill(EPSG_Status status, TItem item, string first_message);
