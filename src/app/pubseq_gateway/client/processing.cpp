@@ -197,8 +197,8 @@ CJsonResponse::CJsonResponse(const string& id, int code, const string& message) 
     CJsonResponse(id)
 {
     CJson_Object error_obj = m_JsonObj.insert_object("error");
-    Set(error_obj["code"],    code);
-    Set(error_obj["message"], message);
+    Set(error_obj, "code",    code);
+    Set(error_obj, "message", message);
 }
 
 CJsonResponse::CJsonResponse(const string& id) :
@@ -423,8 +423,8 @@ void CJsonResponse::Fill(shared_ptr<CPSG_NamedAnnotStatus> named_annot_status)
     for (const auto& status : named_annot_status->GetId2AnnotStatusList()) {
         ar.push_back();
         auto obj = ar.back().ResetObject();
-        Set(obj["name"], status.first);
-        Set(obj["status"], s_StrStatus(status.second));
+        Set(obj, "name",   status.first);
+        Set(obj, "status", s_StrStatus(status.second));
     }
 }
 
@@ -479,20 +479,20 @@ void CJsonResponse::AddMessage(const SPSG_Message& message)
     auto ar = messages.IsNull() ? messages.ResetArray() : messages.SetArray();
     ar.push_back();
     auto obj = ar.back().ResetObject();
-    Set(obj["severity"], CNcbiDiag::SeverityName(message.severity));
+    Set(obj, "severity", CNcbiDiag::SeverityName(message.severity));
     Set(obj, "code",     message.code);
-    Set(obj["text"], message);
+    Set(obj, "text",     message);
 }
 
 void CJsonResponse::Set(CJson_Node node, const CPSG_BioId& bio_id)
 {
     auto obj = node.ResetObject();
-    Set(obj["id"], bio_id.GetId());
+    Set(obj, "id", bio_id.GetId());
 
     const auto& type = bio_id.GetType();
 
     if (type != CPSG_BioId::TType::e_not_set) {
-        Set(obj["type"], type);
+        Set(obj, "type", type);
     }
 }
 
@@ -509,15 +509,15 @@ void CJsonResponse::Set(CJson_Node node, const vector<CPSG_BioId>& bio_ids)
 void CJsonResponse::Set(CJson_Node node, const CPSG_BlobId& blob_id)
 {
     auto obj = node.ResetObject();
-    Set(obj["id"], blob_id.GetId());
+    Set(obj, "id",            blob_id.GetId());
     Set(obj, "last_modified", blob_id.GetLastModified());
 }
 
 void CJsonResponse::Set(CJson_Node node, const CPSG_ChunkId& chunk_id)
 {
     auto obj = node.ResetObject();
-    Set(obj["id2_chunk"], chunk_id.GetId2Chunk());
-    Set(obj["id2_info"],  chunk_id.GetId2Info());
+    Set(obj, "id2_chunk", chunk_id.GetId2Chunk());
+    Set(obj, "id2_info",  chunk_id.GetId2Info());
 }
 
 string SInteractiveParams::GetService(string service, bool one_server)
