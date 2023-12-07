@@ -116,104 +116,104 @@ inline eCitMatchFlags constexpr operator|(eCitMatchFlags a, eCitMatchFlags b)
 }
 
 
+static string GetFirstAuthor(const CAuth_list& authors)
+{
+    if (authors.IsSetNames()) {
+        const auto& N(authors.GetNames());
+        if (N.IsMl()) {
+            if (! N.GetMl().empty()) {
+                return N.GetMl().front();
+            }
+        } else if (N.IsStd()) {
+            // convert to ML
+            if (! N.GetStd().empty()) {
+                const CAuthor& first_author(*N.GetStd().front());
+                if (first_author.IsSetName()) {
+                    const CPerson_id& person(first_author.GetName());
+                    if (person.IsName()) {
+                        const CName_std& name_std(person.GetName());
+                        if (name_std.IsSetLast()) {
+                            string name(name_std.GetLast());
+                            if (name_std.IsSetInitials()) {
+                                name += ' ';
+                                for (char c : name_std.GetInitials()) {
+                                    if (isalpha(c)) {
+                                        if (islower(c)) {
+                                            c = toupper(c);
+                                        }
+                                        name += c;
+                                    }
+                                }
+                            }
+                            return name;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return {};
+}
+
+void SCitMatch::FillFromArticle(const CCit_art& A)
+{
+    if (A.IsSetAuthors()) {
+        this->Author = GetFirstAuthor(A.GetAuthors());
+    }
+
+    if (A.IsSetFrom() && A.GetFrom().IsJournal()) {
+        const CCit_jour& J = A.GetFrom().GetJournal();
+        if (J.IsSetTitle()) {
+            const CTitle& T = J.GetTitle();
+            if (T.IsSet() && ! T.Get().empty()) {
+                this->Journal = T.GetTitle();
+            }
+        }
+        if (J.IsSetImp()) {
+            const CImprint& I = J.GetImp();
+            if (I.IsSetDate()) {
+                const CDate& D = I.GetDate();
+                if (D.IsStd()) {
+                    auto year = D.GetStd().GetYear();
+                    if (year > 0) {
+                        this->Year = to_string(year);
+                    }
+                }
+            }
+            if (I.IsSetVolume()) {
+                this->Volume = I.GetVolume();
+            }
+            if (I.IsSetPages()) {
+                this->Page  = I.GetPages();
+                auto pos = this->Page.find('-');
+                if (pos != string::npos) {
+                    this->Page.resize(pos);
+                }
+            }
+            if (I.IsSetIssue()) {
+                this->Issue = I.GetIssue();
+            }
+            if (I.IsSetPrepub()) {
+                this->InPress = (I.GetPrepub() == CImprint::ePrepub_in_press);
+            }
+        }
+    }
+
+    if (A.IsSetTitle()) {
+        const CTitle& T = A.GetTitle();
+        if (T.IsSet() && ! T.Get().empty()) {
+            this->Title = T.GetTitle();
+        }
+    }
+}
+
 class CECitMatch_Request : public CESearch_Request
 {
 public:
     CECitMatch_Request(CRef<CEUtils_ConnContext>& ctx) :
         CESearch_Request("pubmed", ctx)
     {
-    }
-
-    static string GetFirstAuthor(const CAuth_list& authors)
-    {
-        if (authors.IsSetNames()) {
-            const auto& N(authors.GetNames());
-            if (N.IsMl()) {
-                if (! N.GetMl().empty()) {
-                    return N.GetMl().front();
-                }
-            } else if (N.IsStd()) {
-                // convert to ML
-                if (! N.GetStd().empty()) {
-                    const CAuthor& first_author(*N.GetStd().front());
-                    if (first_author.IsSetName()) {
-                        const CPerson_id& person(first_author.GetName());
-                        if (person.IsName()) {
-                            const CName_std& name_std(person.GetName());
-                            if (name_std.IsSetLast()) {
-                                string name(name_std.GetLast());
-                                if (name_std.IsSetInitials()) {
-                                    name += ' ';
-                                    for (char c : name_std.GetInitials()) {
-                                        if (isalpha(c)) {
-                                            if (islower(c)) {
-                                                c = toupper(c);
-                                            }
-                                            name += c;
-                                        }
-                                    }
-                                }
-                                return name;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return {};
-    }
-
-    static void FillFromArticle(SCitMatch& cm, const CCit_art& A)
-    {
-        if (A.IsSetAuthors()) {
-            cm.Author = GetFirstAuthor(A.GetAuthors());
-        }
-
-        if (A.IsSetFrom() && A.GetFrom().IsJournal()) {
-            const CCit_jour& J = A.GetFrom().GetJournal();
-            if (J.IsSetTitle()) {
-                const CTitle& T = J.GetTitle();
-                if (T.IsSet() && ! T.Get().empty()) {
-                    cm.Journal = T.GetTitle();
-                }
-            }
-            if (J.IsSetImp()) {
-                const CImprint& I = J.GetImp();
-                if (I.IsSetDate()) {
-                    const CDate& D = I.GetDate();
-                    if (D.IsStd()) {
-                        auto year = D.GetStd().GetYear();
-                        if (year > 0) {
-                            cm.Year = to_string(year);
-                        }
-                    }
-                }
-                if (I.IsSetVolume()) {
-                    cm.Volume = I.GetVolume();
-                }
-                if (I.IsSetPages()) {
-                    cm.Page  = I.GetPages();
-                    auto pos = cm.Page.find('-');
-                    if (pos != string::npos) {
-                        cm.Page.resize(pos);
-                    }
-                }
-                if (I.IsSetIssue()) {
-                    cm.Issue = I.GetIssue();
-                }
-                if (I.IsSetPrepub()) {
-                    cm.InPress = (I.GetPrepub() == CImprint::ePrepub_in_press);
-                }
-            }
-        }
-
-        if (A.IsSetTitle()) {
-            const CTitle& T = A.GetTitle();
-            if (T.IsSet() && ! T.Get().empty()) {
-                cm.Title = T.GetTitle();
-            }
-        }
     }
 
     static void NormalizeJournal(string& s)
@@ -359,7 +359,7 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
 {
     if (pub.IsArticle()) {
         SCitMatch cm;
-        CECitMatch_Request::FillFromArticle(cm, pub.GetArticle());
+        cm.FillFromArticle(pub.GetArticle());
         return CitMatch(cm, perr);
     } else {
         if (perr) {

@@ -39,6 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CPub;
+class CCit_art;
 
 BEGIN_SCOPE(edit)
 
@@ -65,6 +66,8 @@ struct NCBI_XOBJEDIT_EXPORT SCitMatch {
     string Title;
     bool   InPress = false;
     bool   Option1 = false;
+
+    void FillFromArticle(const CCit_art&);
 };
 
 using TPubInterceptor = std::function<void(CRef<CPub>&)>;
