@@ -181,6 +181,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
+    arg_desc.AddDefaultKey("min-severity", "SEVERITY", "Minimum severity level of messages to output", CArgDescriptions::eString, "Warning");
     arg_desc.AddFlag("include-hup", "Include HUP data");
     arg_desc.AddFlag("https", "Enable HTTPS");
     s_AddLatencyOptions(arg_desc);
@@ -363,6 +364,10 @@ struct SBase : TParams
             std::forward<TInitArgs>(init_args)...
         }
     {
+        if (!CNcbiDiag::StrToSeverityLevel(args["min-severity"].AsString().c_str(), TParams::min_severity)) {
+            TParams::min_severity = eDiag_Warning;
+        }
+
         TParams::verbose = args["verbose"].HasValue();
     }
 };

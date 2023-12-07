@@ -51,6 +51,7 @@
 BEGIN_NCBI_SCOPE
 
 bool CJsonResponse::sm_SetReplyType = true;
+EDiagSev SParams::min_severity = eDiag_Warning;
 bool SParams::verbose = false;
 
 enum EJsonRpcErrors {
@@ -170,6 +171,11 @@ CJsonResponse::CJsonResponse(EPSG_Status status, TItem item, TArgs&&... args) :
     try {
         AddRequestID(item, std::forward<TArgs>(args)...);
         Fill(status, item);
+        AddMessage(std::forward<TArgs>(args)...);
+
+        for (auto l = [&]() { return item->GetNextMessage(SParams::min_severity); }; auto message = l(); ) {
+            AddMessage(message);
+        }
     }
     catch (exception& e) {
         CJson_Document new_doc;
@@ -244,6 +250,11 @@ CJsonResponse CJsonResponse::NewItem(const shared_ptr<CPSG_ReplyItem>& reply_ite
     return rv;
 }
 
+void CJsonResponse::Fill(EPSG_Status status, shared_ptr<CPSG_Reply>)
+{
+    Set("status", s_StrStatus(status));
+}
+
 void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
 {
     auto reply_item_type = reply_item->GetType();
@@ -257,7 +268,8 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
     }
 
     if (reply_item_status != EPSG_Status::eSuccess) {
-        return Fill(reply_item, reply_item_status);
+        Set("status", s_StrStatus(reply_item_status));
+        return;
     }
 
     switch (reply_item_type) {
@@ -461,18 +473,15 @@ void CJsonResponse::Fill(shared_ptr<CPSG_IpgInfo> ipg_info)
     Set("gb_state",   ipg_info->GetGbState());
 }
 
-template <class TItem>
-void CJsonResponse::Fill(EPSG_Status status, TItem item, string first_message)
+void CJsonResponse::AddMessage(const SPSG_Message& message)
 {
-    Set("status", s_StrStatus(status));
-
-    for (auto message = std::move(first_message); !message.empty(); message = item->GetNextMessage()) {
-        if (auto errors = m_JsonObj["errors"]; errors.IsNull()) {
-            errors.ResetArray().push_back(message);
-        } else {
-            errors.SetArray().push_back(message);
-        }
-    }
+    auto messages = m_JsonObj["messages"];
+    auto ar = messages.IsNull() ? messages.ResetArray() : messages.SetArray();
+    ar.push_back();
+    auto obj = ar.back().ResetObject();
+    Set(obj["severity"], CNcbiDiag::SeverityName(message.severity));
+    Set(obj["code"], message.code);
+    Set(obj["text"], message);
 }
 
 void CJsonResponse::Set(CJson_Node node, const CPSG_BioId& bio_id)
@@ -904,7 +913,7 @@ void s_ReplyComplete<no_verbose>(SJsonOut& json_out, EPSG_Status status, const s
 
 void SNonVerboseBase<SBatchResolveParams>::ReplyComplete(SJsonOut& json_out, EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
-    if (auto first_message = reply->GetNextMessage(); !first_message.empty() || (reported.find(status) == reported.end())) {
+    if (auto first_message = reply->GetNextMessage(SParams::min_severity); first_message || (reported.find(status) == reported.end())) {
         CJsonResponse result_doc(status, reply, first_message);
         json_out << result_doc;
     }

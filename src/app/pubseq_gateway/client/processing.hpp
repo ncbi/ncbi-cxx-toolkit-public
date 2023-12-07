@@ -103,9 +103,7 @@ private:
     template <class TItem, class... TArgs>
     void AddRequestID(TItem item, TArgs&&... args);
 
-    template <class TItem>
-    void Fill(EPSG_Status status, TItem item, string first_message);
-    void Fill(EPSG_Status status, shared_ptr<CPSG_Reply> reply) { Fill(reply, status); }
+    void Fill(EPSG_Status status, shared_ptr<CPSG_Reply>);
     void Fill(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item);
 
     void Fill(shared_ptr<CPSG_BlobData> blob_data);
@@ -118,8 +116,8 @@ private:
     void Fill(shared_ptr<CPSG_Processor> processor);
     void Fill(shared_ptr<CPSG_IpgInfo> ipg_info);
 
-    template <class TItem>
-    void Fill(TItem item, EPSG_Status status) { Fill(status, item, item->GetNextMessage()); }
+    void AddMessage(const SPSG_Message& message);
+    void AddMessage(EDoNotAddRequestID = eDoNotAddRequestID) {}
 
     template <class TReplyItem>
     void Set(const char* name, shared_ptr<TReplyItem>& reply_item)
@@ -143,6 +141,9 @@ private:
     template <typename T>
     static void Set(CJson_Value value, const CNullable<T>& v) { if (!v.IsNull()) Set(value, v.GetValue()); }
 
+    template <typename T>
+    static void Set(CJson_Value value, const optional<T>& v) { if (v) Set(value, *v); }
+
     static void Set(CJson_Value value, const string& v) { value.SetString(v); }
     static void Set(CJson_Value value, const char* v)   { value.SetString(v); }
     static void Set(CJson_Value value, Int4 v)          { value.SetInt4(v);   }
@@ -165,6 +166,7 @@ struct SParams
     const CPSG_Request::TFlags request_flags;
     const SPSG_UserArgs user_args;
 
+    static EDiagSev min_severity;
     static bool verbose;
 
     SParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua) :
