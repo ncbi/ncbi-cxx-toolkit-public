@@ -93,7 +93,7 @@ struct STest {
 //      Form                                    Example
 //      -----------------------------------     -----------------------------------
 //      service-name-only URLs                  foo
-//      host-based URLs                         https://intrawebdev2.ncbi.nlm.nih.gov/Service/bounce.cgi
+//      host-based URLs                         https://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi
 //      special case (test domain) URLs         https://test.ncbi.nlm.nih.gov/Service/bar.cgi
 //      full service-based URLs                 ncbilb://foo/Service/bar.cgi
 //      full service-based URLs with scheme     http+ncbilb://foo/Service/bar.cgi
@@ -107,10 +107,10 @@ static const string s_UrlServicePost_fcgi(NAMERD_SERVICENAME);
 
 // Host-based URLs - i.e. not load-balanced, therefore not using a service mapper,
 // but they should still be accessible via the service mappers (except Linkerd).
-static const string s_UrlHostGetHttp("http://intrawebdev2.ncbi.nlm.nih.gov/Service/test.cgi");
-static const string s_UrlHostGetHttps("https://intrawebdev2.ncbi.nlm.nih.gov/Service/test.cgi");
-static const string s_UrlHostPostHttp("http://intrawebdev2.ncbi.nlm.nih.gov/Service/bounce.cgi");
-static const string s_UrlHostPostHttps("https://intrawebdev2.ncbi.nlm.nih.gov/Service/bounce.cgi");
+static const string s_UrlHostGetHttp("http://intrawebdev8.ncbi.nlm.nih.gov/Service/test.cgi");
+static const string s_UrlHostGetHttps("https://intrawebdev8.ncbi.nlm.nih.gov/Service/test.cgi");
+static const string s_UrlHostPostHttp("http://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi");
+static const string s_UrlHostPostHttps("https://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi");
 
 // Special case: host-based URL that goes to frontend and gets load-balanced to backend
 static const string s_UrlFrontendGet("https://test.ncbi.nlm.nih.gov/Service/test.cgi");
