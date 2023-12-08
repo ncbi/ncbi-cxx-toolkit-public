@@ -51,9 +51,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-const char* CRemapClient::kDefaultUrl =
-    "http://intrawebdev.be-md.ncbi.nlm.nih.gov:6224/"
-    "staff/jcherry/remap/remap_server.cgi";
+const char* CRemapClient::kDefaultUrl = "http://intrawebdev8/staff/jcherry/remap/remap_server.cgi";
 
 
 // destructor
