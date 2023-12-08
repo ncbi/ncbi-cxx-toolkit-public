@@ -6,6 +6,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+class CPubmed_entry;
 BEGIN_SCOPE(edit)
 
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterBase : public IPubmedUpdater
@@ -17,11 +18,13 @@ public:
     CEUtilsUpdaterBase(ENormalize);
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
     TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
-    CRef<CPub> x_GetPub(TEntrezId pmid, EPubmedError*);
 
     // Hydra replacement using citmatch api; RW-1918,RW-1999
     static bool DoPubSearch(const std::vector<string>& query, std::vector<TEntrezId>& pmids);
-    static void Normalize(CPub&);
+
+protected:
+    CRef<CPubmed_entry> x_GetPubmedEntry(TEntrezId pmid, EPubmedError*);
+    CRef<CPub>          x_GetPub(TEntrezId pmid, EPubmedError*);
 
 private:
     CRef<CEUtils_ConnContext> m_Ctx;
