@@ -421,7 +421,7 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 }
 
 
-void CEUtilsUpdaterBase::Normalize(CPub& pub)
+static void Normalize(CPub& pub)
 {
     if (pub.IsArticle()) {
         CCit_art& A = pub.SetArticle();
@@ -499,7 +499,7 @@ void CEUtilsUpdaterBase::Normalize(CPub& pub)
     }
 }
 
-CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
+CRef<CPubmed_entry> CEUtilsUpdaterBase::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
     unique_ptr<CEFetch_Request> req(
         new CEFetch_Literature_Request(CEFetch_Literature_Request::eDB_pubmed, m_Ctx)
@@ -538,20 +538,7 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
             const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
             pme.Reset(article.ToPubmed_entry());
         }
-
-        if (pme && pme->IsSetMedent()) {
-            const CMedline_entry& mle = pme->GetMedent();
-            if (mle.IsSetCit()) {
-                CRef<CPub> pub(new CPub);
-                pub->SetArticle().Assign(mle.GetCit());
-                if (m_Norm == ENormalize::On) {
-                    Normalize(*pub);
-                }
-                if (m_pub_interceptor)
-                    m_pub_interceptor(pub);
-                return pub;
-            }
-        }
+        return pme;
     }
 
     if (perr) {
@@ -560,6 +547,24 @@ CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
     return {};
 }
 
+CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
+{
+    CRef<CPubmed_entry> pme = x_GetPubmedEntry(pmid, perr);
+    if (pme && pme->IsSetMedent()) {
+        const CMedline_entry& mle = pme->GetMedent();
+        if (mle.IsSetCit()) {
+            CRef<CPub> pub(new CPub);
+            pub->SetArticle().Assign(mle.GetCit());
+            if (m_Norm == ENormalize::On) {
+                Normalize(*pub);
+            }
+            if (m_pub_interceptor)
+                m_pub_interceptor(pub);
+            return pub;
+        }
+    }
+    return {};
+}
 
 CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
