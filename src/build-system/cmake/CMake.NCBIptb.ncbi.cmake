@@ -318,7 +318,7 @@ if(NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED
     if(APPLE)
         NCBI_register_hook(TARGET_ADDED NCBI_internal_handle_VDB_rpath)
     endif()
-    if(UNIX AND NOT APPLE)
+    if(UNIX AND NOT APPLE AND NOT NCBI_GENERATOR_IS_MULTI_CONFIG)
         NCBI_register_hook(ALL_ADDED    NCBI_internal_postproc_NCBI_tree)
     endif()
 endif()

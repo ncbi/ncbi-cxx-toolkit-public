@@ -399,22 +399,21 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
         ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++
         ${NCBI_ThirdParty_VDB}/interfaces/os/win)
 
-    if("${NCBI_CONFIGURATION_TYPES_COUNT}" EQUAL 1)
-        NCBI_util_Cfg_ToStd(${NCBI_CONFIGURATION_TYPES} _std_cfg)
+    foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
+        if(${_cfg} IN_LIST NCBI_DEBUG_CONFIGURATION_TYPES)
+            set(NCBI_COMPONENT_VDB_BINPATH_${_cfg}
+                ${NCBI_ThirdParty_VDB}/win/debug/${NCBI_ThirdParty_VDB_ARCH}/bin)
+        else()
+            set(NCBI_COMPONENT_VDB_BINPATH_${_cfg}
+                ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin)
+        endif()
+    endforeach()
+    if(NOT "${NCBI_DEBUG_CONFIGURATION_TYPES}" STREQUAL "")
         set(NCBI_COMPONENT_VDB_BINPATH
-            ${NCBI_ThirdParty_VDB}/win/${_std_cfg}/${NCBI_ThirdParty_VDB_ARCH}/bin)
+            ${NCBI_ThirdParty_VDB}/win/$<IF:$<CONFIG:${NCBI_DEBUG_CONFIGURATION_TYPES_STRING}>,debug,release>/${NCBI_ThirdParty_VDB_ARCH}/bin)
     else()
         set(NCBI_COMPONENT_VDB_BINPATH
-            ${NCBI_ThirdParty_VDB}/win/$<IF:$<OR:$<CONFIG:DebugDLL>,$<CONFIG:DebugMT>,$<CONFIG:Debug>>,debug,release>/${NCBI_ThirdParty_VDB_ARCH}/bin)
-        foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
-            if("${_cfg}" MATCHES "Debug")
-                set(NCBI_COMPONENT_VDB_BINPATH_${_cfg}
-                    ${NCBI_ThirdParty_VDB}/win/debug/${NCBI_ThirdParty_VDB_ARCH}/bin)
-            else()
-                set(NCBI_COMPONENT_VDB_BINPATH_${_cfg}
-                    ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin)
-            endif()
-        endforeach()
+            ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin)
     endif()
     set(NCBI_COMPONENT_VDB_LIBS
         ${NCBI_COMPONENT_VDB_BINPATH}/ncbi-vdb-md.lib)
@@ -449,10 +448,10 @@ endif()
 
 ##############################################################################
 # GRPC/PROTOBUF
-if(NOT DEFINED NCBI_PROTOC_APP)
+if(NOT NCBI_PROTOC_APP)
     set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/protoc.exe")
 endif()
-if(NOT DEFINED NCBI_GRPC_PLUGIN)
+if(NOT NCBI_GRPC_PLUGIN)
     set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe")
 endif()
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
@@ -481,6 +480,12 @@ NCBIcomponent_report(GRPC)
 if(NCBI_COMPONENT_GRPC_FOUND)
     set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
 endif()
+endif()
+if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
+    message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
+endif()
+if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
+    message("NCBI_GRPC_PLUGIN = ${NCBI_GRPC_PLUGIN}")
 endif()
 
 ##############################################################################

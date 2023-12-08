@@ -377,7 +377,8 @@ endif()
 
 #############################################################################
 # MySQL
-NCBI_define_Xcomponent(NAME MySQL PACKAGE Mysql LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
+#NCBI_define_Xcomponent(NAME MySQL PACKAGE Mysql LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
+NCBI_define_Xcomponent(NAME MySQL LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
 NCBIcomponent_report(MySQL)
 
 #############################################################################
@@ -412,13 +413,9 @@ NCBIcomponent_report(PYTHON)
 #############################################################################
 # VDB
 if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
-            LIBPATH_SUFFIX linux/debug/x86_64/lib INCPATH_SUFFIX interfaces)
-    else()
-        NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
-            LIBPATH_SUFFIX linux/release/x86_64/lib INCPATH_SUFFIX interfaces)
-    endif()
+    NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
+        LIBPATH_SUFFIX linux/release/x86_64/lib INCPATH_SUFFIX interfaces)
+#        LIBPATH_SUFFIX linux/$<LOSTDCONFIG>/x86_64/lib INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
         set(NCBI_COMPONENT_VDB_INCLUDE
             ${NCBI_COMPONENT_VDB_INCLUDE} 
@@ -484,7 +481,7 @@ NCBIcomponent_report(XML)
 NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML)
 NCBIcomponent_report(XSLT)
 if(NCBI_COMPONENT_XSLT_FOUND)
-    if(NOT DEFINED NCBI_XSLTPROCTOOL)
+    if(NOT NCBI_XSLTPROCTOOL)
         if(LIBXSLT_XSLTPROC_EXECUTABLE)
             set(NCBI_XSLTPROCTOOL ${LIBXSLT_XSLTPROC_EXECUTABLE})
         elseif(EXISTS ${NCBI_ThirdParty_XSLT}/bin/xsltproc)
@@ -496,6 +493,9 @@ if(NCBI_COMPONENT_XSLT_FOUND)
             set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
         endif()
     endif()
+endif()
+if(NCBI_TRACE_COMPONENT_XSLT OR NCBI_TRACE_ALLCOMPONENTS)
+    message("NCBI_XSLTPROCTOOL = ${NCBI_XSLTPROCTOOL}")
 endif()
 
 #############################################################################
@@ -589,11 +589,11 @@ NCBIcomponent_report(XERCES)
 
 ##############################################################################
 # GRPC/PROTOBUF
-if(NOT DEFINED NCBI_PROTOC_APP)
-    set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/protoc")
+if(NOT NCBI_PROTOC_APP)
+    set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/protoc")
 endif()
-if(NOT DEFINED NCBI_GRPC_PLUGIN)
-    set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/${NCBI_BUILD_TYPE}/bin/grpc_cpp_plugin")
+if(NOT NCBI_GRPC_PLUGIN)
+    set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/grpc_cpp_plugin")
 endif()
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
     set(NCBI_PROTOC_APP)
@@ -604,18 +604,18 @@ if(NOT EXISTS "${NCBI_GRPC_PLUGIN}")
     find_program(NCBI_GRPC_PLUGIN grpc_cpp_plugin)
 endif()
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    NCBI_define_Xcomponent(NAME PROTOBUF LIB protobufd)
-endif()
-if(NOT NCBI_COMPONENT_PROTOBUF_FOUND)
-    NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
-endif()
+#NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
+NCBI_define_Xcomponent(NAME PROTOBUF PACKAGE Protobuf LIB protobuf)
 NCBIcomponent_report(PROTOBUF)
 NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
 NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
-    grpc++ grpc address_sorting upb cares gpr absl_bad_optional_access absl_str_format_internal
-    absl_strings absl_strings_internal absl_base absl_spinlock_wait absl_dynamic_annotations
-    absl_int128 absl_throw_delegate absl_raw_logging_internal absl_log_severity
+    grpc++ grpc address_sorting re2 upb cares
+    absl_raw_hash_set absl_hashtablez_sampler absl_exponential_biased absl_hash
+    absl_city absl_statusor absl_bad_variant_access gpr
+    absl_status absl_cord absl_str_format_internal absl_synchronization absl_graphcycles_internal
+    absl_symbolize absl_demangle_internal absl_stacktrace absl_debugging_internal absl_malloc_internal
+    absl_time absl_time_zone absl_civil_time absl_strings absl_strings_internal absl_throw_delegate
+    absl_int128 absl_base absl_spinlock_wait absl_bad_optional_access absl_raw_logging_internal absl_log_severity
     )
 NCBIcomponent_report(GRPC)
 if(NCBI_COMPONENT_GRPC_FOUND)
@@ -625,6 +625,12 @@ if(NCBI_COMPONENT_GRPC_FOUND)
         NCBI_define_Xcomponent(NAME CGRPC MODULE grpc LIB grpc)
         set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_CGRPC_LIBS})
     endif()
+endif()
+if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
+    message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
+endif()
+if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
+    message("NCBI_GRPC_PLUGIN = ${NCBI_GRPC_PLUGIN}")
 endif()
 
 #############################################################################
@@ -778,13 +784,8 @@ NCBIcomponent_report(NCBICRYPT)
 
 #############################################################################
 # THRIFT
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    NCBI_define_Xcomponent(NAME THRIFT LIB thriftd
-                           ADD_COMPONENT Boost.Test.Included)
-else()
-    NCBI_define_Xcomponent(NAME THRIFT LIB thrift
-                           ADD_COMPONENT Boost.Test.Included)
-endif()
+NCBI_define_Xcomponent(NAME THRIFT LIB thrift
+                        ADD_COMPONENT Boost.Test.Included)
 NCBIcomponent_report(THRIFT)
 
 #############################################################################
