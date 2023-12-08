@@ -99,8 +99,10 @@ enum EFixPubAuthListError
 };
 
 
-NCBI_XOBJEDIT_EXPORT void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* = nullptr);
-NCBI_XOBJEDIT_EXPORT void SplitMedlineEntry(CPub_equiv::Tdata& medlines, IPubmedUpdater* = nullptr);
+NCBI_XOBJEDIT_EXPORT void MedlineToISO(CCit_art& cit_art);
+NCBI_DEPRECATED inline void MedlineToISO(CCit_art& cit_art, void*) { MedlineToISO(cit_art); }
+NCBI_XOBJEDIT_EXPORT void SplitMedlineEntry(CPub_equiv::Tdata& medlines);
+NCBI_DEPRECATED inline void SplitMedlineEntry(CPub_equiv::Tdata& medlines, void*) { SplitMedlineEntry(medlines); }
 NCBI_XOBJEDIT_EXPORT bool IsInpress(const CCit_art& cit_art);
 NCBI_XOBJEDIT_EXPORT bool NeedToPropagateInJournal(const CCit_art& cit_art);
 NCBI_XOBJEDIT_EXPORT bool MULooksLikeISSN(const string& str);

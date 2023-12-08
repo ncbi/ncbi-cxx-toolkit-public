@@ -150,7 +150,7 @@ namespace fix_pub
 //   MedlineToISO(tmp)
 //       converts a MEDLINE citation to ISO/GenBank style
 
-void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
+void MedlineToISO(CCit_art& cit_art)
 {
     if (cit_art.IsSetAuthors()) {
         cit_art.SetAuthors().ConvertMlToStd(true);
@@ -161,23 +161,6 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
 
     // from a journal - get iso_jta
     CCit_jour& journal = cit_art.SetFrom().SetJournal();
-
-#if 0
-    if (journal.IsSetTitle() && journal.GetTitle().IsSet() && upd) {
-        auto& titles = journal.SetTitle().Set();
-        auto is_jta = [](const CRef<CTitle::C_E>& title) -> bool { return title->IsIso_jta(); };
-        if (find_if(titles.begin(), titles.end(), is_jta) == titles.end()) {
-            // no iso_jta
-            CTitle::C_E& first_title = *titles.front();
-            const string& title_str = journal.SetTitle().GetTitle(first_title);
-            const string new_title = upd->GetTitle(title_str);
-            if (!new_title.empty()) {
-                first_title.SetIso_jta(new_title);
-            }
-        }
-    }
-#endif
-
     if (journal.IsSetImp()) {
         // remove Eng language
         if (journal.GetImp().IsSetLanguage() && journal.GetImp().GetLanguage() == "Eng")
@@ -189,7 +172,7 @@ void MedlineToISO(CCit_art& cit_art, IPubmedUpdater* upd)
 //      splits a medline entry into 2 pubs (1 muid, 1 Cit-art)
 //      converts Cit-art to ISO/GenBank style
 //      deletes original medline entry
-void SplitMedlineEntry(CPub_equiv::Tdata& medlines, IPubmedUpdater* upd)
+void SplitMedlineEntry(CPub_equiv::Tdata& medlines)
 {
     if (medlines.size() != 1) {
         return;
@@ -211,7 +194,7 @@ void SplitMedlineEntry(CPub_equiv::Tdata& medlines, IPubmedUpdater* upd)
     if (medline.IsSetCit()) {
         cit_art.Reset(new CPub);
         cit_art->SetArticle(medline.SetCit());
-        MedlineToISO(cit_art->SetArticle(), upd);
+        MedlineToISO(cit_art->SetArticle());
     }
 
     medlines.clear();
@@ -1116,7 +1099,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
             medlines.resize(1);
         }
 
-        SplitMedlineEntry(medlines, m_upd);
+        SplitMedlineEntry(medlines);
         pub_list.splice(pub_list.end(), medlines);
     }
 
@@ -1257,7 +1240,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
                 pmids.front()->SetPmid().Set(pmid);
                 pub_list.splice(pub_list.end(), pmids);
 
-                MedlineToISO(*cit_art, m_upd);
+                MedlineToISO(*cit_art);
 
                 pub_list.splice(pub_list.end(), cit_arts);
             }
@@ -1283,7 +1266,7 @@ void CPubFix::FixPubEquiv(CPub_equiv& pub_equiv)
             pub_list.splice(pub_list.end(), pmids);
 
             if (m_replace_cit) {
-                MedlineToISO(*new_cit_art, m_upd);
+                MedlineToISO(*new_cit_art);
                 CRef<CPub> cit_pub(new CPub);
                 cit_pub->SetArticle(*new_cit_art);
                 pub_list.push_back(cit_pub);
@@ -1315,7 +1298,7 @@ void CPubFix::FixPub(CPub& pub)
         pub_equiv->Set().push_back(CRef<CPub>(new CPub));
         pub_equiv->Set().front()->Assign(pub);
 
-        SplitMedlineEntry(pub_equiv->Set(), m_upd);
+        SplitMedlineEntry(pub_equiv->Set());
         pub.SetEquiv().Assign(*pub_equiv);
     }
     break;
@@ -1358,13 +1341,13 @@ void CPubFix::FixPub(CPub& pub)
                     }
                     else {
                         PrintPub(cit_art, false, true, ENTREZ_ID_TO(long, pmid), m_err_log);
-                        MedlineToISO(cit_art, m_upd);
+                        MedlineToISO(cit_art);
                     }
                 }
             }
             else {
                 PrintPub(cit_art, false, false, ENTREZ_ID_TO(long, pmid), m_err_log);
-                MedlineToISO(cit_art, m_upd);
+                MedlineToISO(cit_art);
             }
         }
     }
@@ -1396,7 +1379,7 @@ CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid, IPubmedUpdater* upd)
         cit_art.Reset(new CCit_art);
         cit_art->Assign(pub->GetArticle());
 
-        MedlineToISO(*cit_art, upd);
+        MedlineToISO(*cit_art);
     }
 
     return cit_art;
