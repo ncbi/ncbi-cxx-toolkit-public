@@ -73,9 +73,9 @@ CSampleSoapClient::CSampleSoapClient(void)
     // This Server URL is valid only within NCBI
 #if 0
     // works either way
-        "http://intrawebdev2:6224/staff/gouriano/samplesoap/samplesoap.cgi",
+        "http://intrawebdev8:6224/staff/gouriano/samplesoap/samplesoap.cgi",
 #else
-        "https://intrawebdev2/staff/gouriano/samplesoap/samplesoap.cgi",
+        "https://intrawebdev8/staff/gouriano/samplesoap/samplesoap.cgi",
 #endif
         "http://ncbi.nlm.nih.gov/")
 {
