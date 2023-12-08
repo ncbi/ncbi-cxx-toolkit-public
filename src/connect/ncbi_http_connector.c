@@ -2995,10 +2995,12 @@ extern EIO_Status HTTP_CreateTunnelEx
             *sock = uuu->sock;
             uuu->sock = 0;
             http_code = 0;
+            assert(*sock);
         } else {
             http_code = uuu->http_code;
             if (uuu->sock)
                 s_DropConnection(uuu, eCS_Eom);
+            *sock = 0;
         }
     } else {
         http_code = 0;
