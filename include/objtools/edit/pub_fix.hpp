@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objtools/edit/pubmed_updater.hpp>
+#include <objtools/edit/eutils_updater.hpp>
 
 BEGIN_NCBI_SCOPE
 

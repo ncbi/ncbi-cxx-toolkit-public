@@ -70,27 +70,6 @@ struct NCBI_XOBJEDIT_EXPORT SCitMatch {
     void FillFromArticle(const CCit_art&);
 };
 
-using TPubInterceptor = std::function<void(CRef<CPub>&)>;
-
-class NCBI_XOBJEDIT_EXPORT IPubmedUpdater
-{
-public:
-    virtual ~IPubmedUpdater() {}
-    virtual bool       Init() { return true; }
-    virtual void       Fini() {}
-    virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr)      = 0;
-    virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) = 0;
-    virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr)     = 0;
-
-    void SetPubInterceptor(TPubInterceptor f)
-    {
-        m_pub_interceptor = f;
-    }
-
-protected:
-    TPubInterceptor m_pub_interceptor = nullptr;
-};
-
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
