@@ -331,8 +331,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         const char* vhost = kTests[n].vhost;
         if (host) {
             _ASSERT(::strlen(host) < sizeof(net_info->host) - 1);
-            unsigned int ip = vhost ? CSocketAPI::gethostbyname(host) : 0;
-            ::strcpy(net_info->host, ip ? CSocketAPI::ntoa(ip).c_str() : host);
+            ::strcpy(net_info->host, host);
         }
         if (vhost) {
             _ASSERT(::strlen(vhost) + 6 < sizeof(user_header) - 1);
