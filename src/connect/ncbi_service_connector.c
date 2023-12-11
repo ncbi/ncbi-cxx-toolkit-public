@@ -480,7 +480,7 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         if (size)
             tempf &= (TSOCK_Flags)(~fSOCK_Secure);
         if (!proxy  &&  net_info->debug_printout) {
-            net_info->scheme = eURL_Unspec;
+            assert(net_info->scheme == eURL_Unspec);
             net_info->req_method = eReqMethod_Any;
             net_info->external = 0;
             net_info->firewall = 0;
@@ -824,6 +824,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             break;
         case fSERV_Standalone:
             if (!net_info->stateless) {
+                net_info->scheme = eURL_Unspec;
                 assert(!uuu->descr);
                 uuu->descr = x_HostPort(net_info->host, net_info->port);
                 return s_SocketConnectorBuilder(net_info, uuu->descr, status,
@@ -994,12 +995,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                          uuu->name, uuu->port));
         }
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
+        net_info->scheme = eURL_Unspec;
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         net_info->port = uuu->port;
         assert(!uuu->descr);
         uuu->descr = x_HostPort(net_info->host, net_info->port);
-        if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
-            net_info->scheme = uuu->net_info->scheme;
         return s_SocketConnectorBuilder(net_info, uuu->descr, status,
                                         &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0,
