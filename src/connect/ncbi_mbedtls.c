@@ -756,11 +756,9 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
                                            buf, sizeof(buf),
                                            DEF_CONN_TLS_LOGLEVEL);
     }
-    CORE_LOCK_READ;
     if (val  &&  *val) {
         ELOG_Level level;
         s_MbedTlsLogLevel = atoi(val);
-        CORE_UNLOCK;
         if (s_MbedTlsLogLevel) {
             mbedtls_debug_set_threshold(s_MbedTlsLogLevel);
             mbedtls_ssl_conf_dbg(&s_MbedTlsConf, x_MbedTlsLogger, 0);
@@ -769,8 +767,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
             level = eLOG_Trace;
         CORE_LOGF_X(6, level, ("%s V%s (LogLevel=%d)",
                                kMbedTls, version, s_MbedTlsLogLevel));
-    } else
-        CORE_UNLOCK;
+    }
 
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
         CORE_TRACE("MbedTlsInit(): Go-on");
@@ -813,7 +810,7 @@ static void s_MbedTlsExit(void)
     CORE_TRACE("MbedTlsExit(): Leave");
 }
 
- 
+
 static const char* s_MbedTlsError(void* session/*unused*/, int error,
                                   char* buf, size_t size)
 {
