@@ -33,6 +33,7 @@ googleapis/*:shared=False
 grpc-proto/*:shared=False
 grpc/*:shared=False
 protobuf/*:shared=False
+protobuf/*:with_zlib=False
 ncbicrypt/*:shared=False
 #
 grpc/*:cpp_plugin = True
@@ -78,5 +79,5 @@ boost/*:without_type_erasure = True
 boost/*:without_wave = True
 
 [generators]
-#CMakeDeps
-cmake_find_package
+CMakeDeps
+#cmake_find_package
