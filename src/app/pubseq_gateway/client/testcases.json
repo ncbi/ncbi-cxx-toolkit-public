@@ -168,8 +168,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Unknown request, the provided URL is not recognized: /nonserving"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 301,
+                                "text": "Unknown request, the provided URL is not recognized: /nonserving"
+                            }
                         ]
                     }
                 }
@@ -196,8 +200,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Missing the 'seq_id' parameter"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 313,
+                                "text": "Missing the 'seq_id' parameter"
+                            }
                         ]
                     }
                 }
@@ -224,8 +232,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Missing value of the 'seq_id' parameter"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Missing value of the 'seq_id' parameter"
+                            }
                         ]
                     }
                 }
@@ -258,8 +270,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'seq_id_type' value must be >= 0 and < 21"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'seq_id_type' value must be >= 0 and < 21"
+                            }
                         ]
                     }
                 }
@@ -292,8 +308,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Error converting 'seq_id_type' parameter to integer (received value: 'abc')"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Error converting 'seq_id_type' parameter to integer (received value: 'abc')"
+                            }
                         ]
                     }
                 }
@@ -320,8 +340,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'fmt' parameter. Acceptable values are 'protobuf' and 'json' and 'native'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'fmt' parameter. Acceptable values are 'protobuf' and 'json' and 'native'."
+                            }
                         ]
                     }
                 }
@@ -354,8 +378,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'all_info' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'all_info' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -388,8 +416,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'canon_id' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'canon_id' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -422,8 +454,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'seq_ids' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'seq_ids' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -456,8 +492,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'mol_type' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'mol_type' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -490,8 +530,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'length' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'length' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -524,8 +568,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'state' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'state' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -558,8 +606,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'blob_id' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'blob_id' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -592,8 +644,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'tax_id' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'tax_id' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -626,8 +682,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'hash' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'hash' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -660,8 +720,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'date_changed' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'date_changed' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -694,8 +758,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -728,8 +796,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id NonExisting"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id NonExisting"
+                            }
                         ]
                     }
                 },
@@ -770,8 +842,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                            }
                         ]
                     }
                 },
@@ -812,8 +888,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                            }
                         ]
                     }
                 },
@@ -3232,8 +3312,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Mandatory 'blob_id' parameter is not found."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 313,
+                                "text": "Mandatory 'blob_id' parameter is not found."
+                            }
                         ]
                     }
                 }
@@ -3260,8 +3344,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'blob_id' parameter value has not been supplied"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'blob_id' parameter value has not been supplied"
+                            }
                         ]
                     }
                 }
@@ -3290,8 +3378,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -3320,8 +3412,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -3351,8 +3447,12 @@
                     "result": {
                         "reply": "Processor",
                         "status": "NotFound",
-                        "errors": [
-                            "Cassandra-getblob processor failed to map sat 999 to a Cassandra keyspace"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 305,
+                                "text": "Cassandra-getblob processor failed to map sat 999 to a Cassandra keyspace"
+                            }
                         ]
                     }
                 },
@@ -3389,8 +3489,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Error converting 'last_modified' parameter to integer (received value: '')"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Error converting 'last_modified' parameter to integer (received value: '')"
+                            }
                         ]
                     }
                 }
@@ -3420,8 +3524,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Error converting 'last_modified' parameter to integer (received value: 'invalid')"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Error converting 'last_modified' parameter to integer (received value: 'invalid')"
+                            }
                         ]
                     }
                 }
@@ -3451,8 +3559,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'tse' parameter. Acceptable values are 'none', 'whole', 'orig', 'smart' and 'slim'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'tse' parameter. Acceptable values are 'none', 'whole', 'orig', 'smart' and 'slim'."
+                            }
                         ]
                     }
                 }
@@ -3482,8 +3594,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -3513,8 +3629,12 @@
                     "result": {
                         "reply": "BlobInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Blob 4.1 properties are not found (last modified: -1)"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 311,
+                                "text": "Blob 4.1 properties are not found (last modified: -1)"
+                            }
                         ]
                     }
                 },
@@ -3754,8 +3874,12 @@
                     "result": {
                         "reply": "BlobInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Blob 4.9994804 properties are not found (last modified: 1146697225362)"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 311,
+                                "text": "Blob 4.9994804 properties are not found (last modified: 1146697225362)"
+                            }
                         ]
                     }
                 },
@@ -3793,8 +3917,12 @@
                     "result": {
                         "reply": "BlobInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Blob 4.9994804 properties are not found (last modified: 1146697225364)"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 311,
+                                "text": "Blob 4.9994804 properties are not found (last modified: 1146697225364)"
+                            }
                         ]
                     }
                 },
@@ -3828,8 +3956,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Missing the 'seq_id' parameter"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 313,
+                                "text": "Missing the 'seq_id' parameter"
+                            }
                         ]
                     }
                 }
@@ -3856,8 +3988,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Missing value of the 'seq_id' parameter"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Missing value of the 'seq_id' parameter"
+                            }
                         ]
                     }
                 }
@@ -3887,8 +4023,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Error converting 'seq_id_type' parameter to integer (received value: 'invalid')"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Error converting 'seq_id_type' parameter to integer (received value: 'invalid')"
+                            }
                         ]
                     }
                 }
@@ -3918,8 +4058,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -3949,8 +4093,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'seq_id_type' value must be >= 0 and < 21"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'seq_id_type' value must be >= 0 and < 21"
+                            }
                         ]
                     }
                 }
@@ -4099,8 +4247,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id nonexisting"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id nonexisting"
+                            }
                         ]
                     }
                 },
@@ -4138,8 +4290,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                            }
                         ]
                     }
                 },
@@ -4177,8 +4333,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 2 while the CSeq_Id detects it as 5"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 2 while the CSeq_Id detects it as 5"
+                            }
                         ]
                     }
                 },
@@ -4215,8 +4375,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -5575,8 +5739,12 @@
                     "result": {
                         "reply": "BlobData",
                         "status": "Forbidden",
-                        "errors": [
-                            "Blob retrieval is not authorized"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 335,
+                                "text": "Blob retrieval is not authorized"
+                            }
                         ]
                     }
                 },
@@ -5684,8 +5852,12 @@
                     "result": {
                         "reply": "BlobData",
                         "status": "Forbidden",
-                        "errors": [
-                            "Blob retrieval is not authorized"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 335,
+                                "text": "Blob retrieval is not authorized"
+                            }
                         ]
                     }
                 },
@@ -10208,8 +10380,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Neither 'seq_id' nor 'seq_ids' are found in the request"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Neither 'seq_id' nor 'seq_ids' are found in the request"
+                            }
                         ]
                     }
                 }
@@ -10243,8 +10419,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Neither 'seq_id' nor 'seq_ids' are found in the request"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Neither 'seq_id' nor 'seq_ids' are found in the request"
+                            }
                         ]
                     }
                 }
@@ -10277,8 +10457,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Error converting 'seq_id_type' parameter to integer (received value: 'invalid')"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Error converting 'seq_id_type' parameter to integer (received value: 'invalid')"
+                            }
                         ]
                     }
                 }
@@ -10311,8 +10495,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'seq_id_type' value must be >= 0 and < 21"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'seq_id_type' value must be >= 0 and < 21"
+                            }
                         ]
                     }
                 }
@@ -10345,8 +10533,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'fmt' parameter. Acceptable values are 'protobuf' and 'json' and 'native'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'fmt' parameter. Acceptable values are 'protobuf' and 'json' and 'native'."
+                            }
                         ]
                     }
                 }
@@ -10379,8 +10571,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'use_cache' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -10407,8 +10603,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Named annotation names are not found in the request"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Named annotation names are not found in the request"
+                            }
                         ]
                     }
                 }
@@ -10740,8 +10940,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -10768,8 +10972,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Missing the 'alert' parameter"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 313,
+                                "text": "Missing the 'alert' parameter"
+                            }
                         ]
                     }
                 }
@@ -10796,8 +11004,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Missing the 'username' parameter"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 313,
+                                "text": "Missing the 'username' parameter"
+                            }
                         ]
                     }
                 }
@@ -10824,8 +11036,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "Alert unknown is not found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Alert unknown is not found"
+                            }
                         ]
                     }
                 }
@@ -10855,8 +11071,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -10886,8 +11106,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -10917,8 +11141,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Invalid 'id2_chunk' parameter value. It must be >= 0"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Invalid 'id2_chunk' parameter value. It must be >= 0"
+                            }
                         ]
                     }
                 }
@@ -10949,8 +11177,12 @@
                     "result": {
                         "reply": "Processor",
                         "status": "Error",
-                        "errors": [
-                            "Invalid chunk requested. The number of available chunks: 5, requested number: 96"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Invalid chunk requested. The number of available chunks: 5, requested number: 96"
+                            }
                         ]
                     }
                 },
@@ -11891,8 +12123,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id nonexisting"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id nonexisting"
+                            }
                         ]
                     }
                 },
@@ -11931,8 +12167,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                            }
                         ]
                     }
                 },
@@ -11971,8 +12211,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                            }
                         ]
                     }
                 },
@@ -13495,8 +13739,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id pdb|1vu9|aa"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id pdb|1vu9|aa"
+                            }
                         ]
                     }
                 },
@@ -13832,8 +14080,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 1vu9|aa"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 1vu9|aa"
+                            }
                         ]
                     }
                 },
@@ -14169,8 +14421,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id pdb|1vu9_aa"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id pdb|1vu9_aa"
+                            }
                         ]
                     }
                 },
@@ -14506,8 +14762,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 1vu9_aa"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 1vu9_aa"
+                            }
                         ]
                     }
                 },
@@ -14547,8 +14807,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Invalid 'hops' parameter value -1. It must be > 0."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Invalid 'hops' parameter value -1. It must be > 0."
+                            }
                         ]
                     }
                 }
@@ -14581,8 +14845,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'hops' parameter value 500 exceeds the server configured value 2."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'hops' parameter value 500 exceeds the server configured value 2."
+                            }
                         ]
                     }
                 }
@@ -14615,8 +14883,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -14649,8 +14921,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -14684,8 +14960,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id nonexisting"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id nonexisting"
+                            }
                         ]
                     }
                 },
@@ -14726,8 +15006,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id nonexisting"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id nonexisting"
+                            }
                         ]
                     }
                 },
@@ -14768,8 +15052,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id nonexisting"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id nonexisting"
+                            }
                         ]
                     }
                 },
@@ -14809,8 +15097,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -14907,8 +15199,12 @@
                     "result": {
                         "reply": "Processor",
                         "status": "Error",
-                        "errors": [
-                            "Invalid chunk requested. The number of available chunks: 30, requested number: 500"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Invalid chunk requested. The number of available chunks: 30, requested number: 500"
+                            }
                         ]
                     }
                 },
@@ -14946,8 +15242,12 @@
                     "result": {
                         "reply": "Processor",
                         "status": "NotFound",
-                        "errors": [
-                            "Split history version 168797069 is not found for the TSE id 2.62442434"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 315,
+                                "text": "Split history version 168797069 is not found for the TSE id 2.62442434"
+                            }
                         ]
                     }
                 },
@@ -15052,8 +15352,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -15083,8 +15387,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -15247,8 +15555,12 @@
                     "result": {
                         "reply": "BlobData",
                         "status": "Forbidden",
-                        "errors": [
-                            "Blob retrieval is not authorized"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 335,
+                                "text": "Blob retrieval is not authorized"
+                            }
                         ]
                     }
                 },
@@ -15324,8 +15636,12 @@
                     "result": {
                         "reply": "BlobData",
                         "status": "Forbidden",
-                        "errors": [
-                            "Blob retrieval is not authorized"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 335,
+                                "text": "Blob retrieval is not authorized"
+                            }
                         ]
                     }
                 },
@@ -15403,8 +15719,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'tse' parameter. Acceptable values are 'none', 'whole', 'orig', 'smart' and 'slim'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'tse' parameter. Acceptable values are 'none', 'whole', 'orig', 'smart' and 'slim'."
+                            }
                         ]
                     }
                 }
@@ -20558,8 +20878,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 9000000000000000001"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 9000000000000000001"
+                            }
                         ]
                     }
                 },
@@ -21613,8 +21937,12 @@
                     "id": "blob_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Invalid 'resend_timeout' parameter value -9.400000. It must be >= 0.0"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Invalid 'resend_timeout' parameter value -9.400000. It must be >= 0.0"
+                            }
                         ]
                     }
                 }
@@ -22710,8 +23038,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"
+                            }
                         ]
                     }
                 },
@@ -22747,8 +23079,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -22821,8 +23157,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'ipg' parameter value must be > 0"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'ipg' parameter value must be > 0"
+                            }
                         ]
                     }
                 }
@@ -22889,8 +23229,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "If a 'nucleotide' parameter is provided then a 'protein' parameter must be provided as well"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 313,
+                                "text": "If a 'nucleotide' parameter is provided then a 'protein' parameter must be provided as well"
+                            }
                         ]
                     }
                 }
@@ -22917,8 +23261,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'time_series' parameter is malformed. One or more items do not have a second value."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'time_series' parameter is malformed. One or more items do not have a second value."
+                            }
                         ]
                     }
                 }
@@ -22945,8 +23293,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'time_series' parameter is malformed. The item which descibes the rest of the series is not found."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'time_series' parameter is malformed. The item which descibes the rest of the series is not found."
+                            }
                         ]
                     }
                 }
@@ -22973,8 +23325,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'time_series' parameter is malformed. One or more last minute <= than the previous one"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'time_series' parameter is malformed. One or more last minute <= than the previous one"
+                            }
                         ]
                     }
                 }
@@ -23001,8 +23357,12 @@
                     "id": "raw_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "The 'time_series' parameter is malformed. The range 0-17 is not divisable by aggregation of 7"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "The 'time_series' parameter is malformed. The range 0-17 is not divisable by aggregation of 7"
+                            }
                         ]
                     }
                 }
@@ -23035,8 +23395,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'snp_scale_limit' parameter. Acceptable values are 'chromosome' and 'contig' and 'supercontig' and 'unit'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'snp_scale_limit' parameter. Acceptable values are 'chromosome' and 'contig' and 'supercontig' and 'unit'."
+                            }
                         ]
                     }
                 }
@@ -23064,8 +23428,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Error",
-                        "errors": [
-                            "Malformed 'seq_id_resolve' parameter. Acceptable values are 'yes' and 'no'."
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 304,
+                                "text": "Malformed 'seq_id_resolve' parameter. Acceptable values are 'yes' and 'no'."
+                            }
                         ]
                     }
                 }
@@ -23329,8 +23697,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23367,8 +23739,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23405,8 +23781,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23443,8 +23823,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23481,8 +23865,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23519,8 +23907,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23635,8 +24027,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23673,8 +24069,12 @@
                     "result": {
                         "reply": "IpgInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 338,
+                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                            }
                         ]
                     }
                 },
@@ -23711,8 +24111,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 4147483647"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 4147483647"
+                            }
                         ]
                     }
                 },
@@ -23749,8 +24153,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 4147483647"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 4147483647"
+                            }
                         ]
                     }
                 },
@@ -23787,8 +24195,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EGB0709986.2"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EGB0709986.2"
+                            }
                         ]
                     }
                 },
@@ -23825,8 +24237,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EGB0709986.2"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EGB0709986.2"
+                            }
                         ]
                     }
                 },
@@ -23863,8 +24279,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 4147483647"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 4147483647"
+                            }
                         ]
                     }
                 },
@@ -23901,8 +24321,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 4147483647"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 4147483647"
+                            }
                         ]
                     }
                 },
@@ -23939,8 +24363,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 4147483648"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 4147483648"
+                            }
                         ]
                     }
                 },
@@ -23977,8 +24405,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id 4147483648"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 4147483648"
+                            }
                         ]
                     }
                 },
@@ -24554,8 +24986,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EAB1000000"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EAB1000000"
+                            }
                         ]
                     }
                 },
@@ -24621,8 +25057,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EAB2056000"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EAB2056000"
+                            }
                         ]
                     }
                 },
@@ -24663,8 +25103,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EAB2056000"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EAB2056000"
+                            }
                         ]
                     }
                 },
@@ -24828,8 +25272,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -24885,8 +25333,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EAB1000000"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EAB1000000"
+                            }
                         ]
                     }
                 },
@@ -25014,8 +25466,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EAB2056000"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EAB2056000"
+                            }
                         ]
                     }
                 },
@@ -25118,8 +25574,12 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Could not resolve seq_id EAB2056000"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id EAB2056000"
+                            }
                         ]
                     }
                 },
@@ -25352,8 +25812,12 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "NotFound",
-                        "errors": [
-                            "No matching processors found"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 321,
+                                "text": "No matching processors found"
+                            }
                         ]
                     }
                 }
@@ -25856,8 +26320,12 @@
                     "result": {
                         "reply": "BlobInfo",
                         "status": "NotFound",
-                        "errors": [
-                            "Blob 20.11 properties are not found (last modified: -1)"
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 311,
+                                "text": "Blob 20.11 properties are not found (last modified: -1)"
+                            }
                         ]
                     }
                 },
@@ -25937,7 +26405,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 342,
+                                "text": "Cassandra-get processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26016,7 +26491,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 342,
+                                "text": "Cassandra-get processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26065,7 +26547,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 342,
+                                "text": "Cassandra-getblob processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26114,7 +26603,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 342,
+                                "text": "Cassandra-getblob processor received a not found report from MyNCBI while checking permissions for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26193,7 +26689,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26272,7 +26775,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26321,7 +26831,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26370,7 +26887,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown"
+                        "progress_status": "unknown",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                            }
+                        ]
                     }
                 },
                 {
@@ -26561,3 +27085,4 @@
         }
     }
 }
+
