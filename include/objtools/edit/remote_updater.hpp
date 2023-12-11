@@ -102,13 +102,14 @@ public:
         CRemoteUpdater(pMessageListener, EPubmedSource::eEUtils, norm)
     {
     }
+    NCBI_DEPRECATED
     CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
         CRemoteUpdater(logger, EPubmedSource::eEUtils, norm)
     {
     }
     // NCBI_DEPRECATED
     CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
-    // NCBI_DEPRECATED
+    NCBI_DEPRECATED
     CRemoteUpdater(FLogger logger, EPubmedSource, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
     ~CRemoteUpdater();
 
@@ -142,7 +143,7 @@ public:
 private:
     void xUpdatePubReferences(CSeq_entry& entry);
     void xUpdatePubReferences(CSeq_descr& descr);
-    void xUpdateOrgTaxname(COrg_ref& org, FLogger logger);
+    void xUpdateOrgTaxname(COrg_ref& org);
     bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
     bool xSetFromConfig();
     void xInitTaxCache();

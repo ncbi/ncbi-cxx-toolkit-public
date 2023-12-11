@@ -318,9 +318,9 @@ bool CRemoteUpdater::xSetFromConfig()
 void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
 {
     if (desc.IsOrg()) {
-        xUpdateOrgTaxname(desc.SetOrg(), m_logger);
+        xUpdateOrgTaxname(desc.SetOrg());
     } else if (desc.IsSource() && desc.GetSource().IsSetOrg()) {
-        xUpdateOrgTaxname(desc.SetSource().SetOrg(), m_logger);
+        xUpdateOrgTaxname(desc.SetSource().SetOrg());
     }
 }
 
@@ -335,8 +335,8 @@ void CRemoteUpdater::xInitTaxCache()
     }
 }
 
-void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
-{ // logger parameter is deprecated and should be removed soon
+void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
+{
     std::lock_guard<std::mutex> guard(m_Mutex);
 
     TTaxId taxid = org.GetTaxId();
@@ -345,7 +345,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
 
     xInitTaxCache();
 
-    CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, logger);
+    CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, m_logger);
     if (new_org.NotEmpty()) {
         org.Assign(*new_org);
     }
