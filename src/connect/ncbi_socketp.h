@@ -145,7 +145,7 @@ typedef struct {
     void*       sess;           /* secure session handle, 0 if none          */
     NCBI_CRED   cred;           /* secure session credential(s), 0 if none   */
     SOCK        sock;           /* sock that the above session handle using  */
-    const char* host;           /* hostname for named SSL extension          */
+    const char* host;           /* hostname for named SSL extension (SNI)    */
 } SNcbiSSLctx;
 
 
