@@ -68,13 +68,13 @@ private:
     size_t                     m_cache_hits   = 0;
 };
 
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterWithCache
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterBase
 {
 public:
     CEUtilsUpdater(ENormalize norm = ENormalize::Off) :
-        CEUtilsUpdaterWithCache(norm) {}
+        CEUtilsUpdaterBase(norm) {}
     NCBI_DEPRECATED CEUtilsUpdater(bool norm) :
-        CEUtilsUpdaterWithCache(norm ? ENormalize::On : ENormalize::Off) {}
+        CEUtilsUpdaterBase(norm ? ENormalize::On : ENormalize::Off) {}
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 };
 
