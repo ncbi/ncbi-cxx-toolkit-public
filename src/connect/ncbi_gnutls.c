@@ -426,7 +426,6 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     gnutls_transport_set_pull_function(session, x_GnuTlsPull);
     gnutls_transport_set_push_function(session, x_GnuTlsPush);
     gnutls_transport_set_ptr(session, ctx);
-    gnutls_session_set_ptr(session, ctx);
 
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
     gnutls_handshake_set_timeout(session, 0);
@@ -770,13 +769,11 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
                                            buf, sizeof(buf),
                                            DEF_CONN_TLS_LOGLEVEL);
     }
-    CORE_LOCK_READ;
     if (!val  ||  !*val)
         val = getenv("GNUTLS_DEBUG_LEVEL"); /* GNUTLS proprietary setting */
     if (val  &&  *val) {
         ELOG_Level level;
         s_GnuTlsLogLevel = atoi(val);
-        CORE_UNLOCK;
         if (s_GnuTlsLogLevel) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
             if (val == buf)
@@ -786,8 +783,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
             level = eLOG_Trace;
         CORE_LOGF_X(27, level, ("GNUTLS V%s (LogLevel=%d)",
                                 version, s_GnuTlsLogLevel));
-    } else
-        CORE_UNLOCK;
+    }
 
     CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
         CORE_TRACE("GnuTlsInit(): Go-on");
