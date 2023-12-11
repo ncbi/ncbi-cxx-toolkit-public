@@ -687,7 +687,7 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
         switch (m_pm_source) {
         case EPubmedSource::eEUtils: {
             auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
-            if (upd && ! dynamic_cast<CEUtilsUpdater*>(m_pubmed.get())) {
+            if (upd) {
                 upd->ReportStats(os);
             }
             break;
