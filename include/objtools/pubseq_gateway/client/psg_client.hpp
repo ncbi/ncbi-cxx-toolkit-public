@@ -1013,6 +1013,7 @@ public:
         eTimeout,
         eError,
         eUnauthorized,
+        eInProgress,
         eUnknown,
     };
 
