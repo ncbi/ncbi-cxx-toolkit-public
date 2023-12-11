@@ -336,8 +336,9 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
  * located at "net_info->http_proxy_host:net_info->http_proxy_port".  Return
  * the tunnel as a socket via the last parameter.  For compatibility with
  * future API extensions, please make sure *sock is NULL when making the call.
- * The proxy gets contacted via HTTPS if "net_info->scheme == eURL_Https", and
- * the resultant socket is returned secure (with the SSL session still active).
+ * "net_info->scheme" is only used to infer the proper default form of the
+ * ":port" part in the "Host:" tag for the proxy request in case of HTTP[S]
+ * (thus, eURL_Unspec forces the ":port" part to be always present in the tag).
  * @note
  *  "net_info" can be passed as NULL to be constructed from the environment.
  * @note
