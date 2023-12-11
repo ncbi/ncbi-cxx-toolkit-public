@@ -117,11 +117,6 @@ public:
     void SetMaxMlaAttempts(int max);
     CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
 
-    // These methods are deprecated, please use CRemoteUpdater constructor to specify logger
-    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry& entry);
-    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeq_entry_EditHandle& obj);
-    NCBI_DEPRECATED void UpdateOrgFromTaxon(FLogger f_logger, CSeqdesc& obj);
-
     void UpdateOrgFromTaxon(CSeq_entry& entry);
     void UpdateOrgFromTaxon(CSeqdesc& desc);
     void SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential);
