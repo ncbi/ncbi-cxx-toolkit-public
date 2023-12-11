@@ -391,6 +391,7 @@ CPSG_Processor::EProgressStatus s_GetProgressStatus(const SPSG_Args& args)
     if (progress == "timeout")    return CPSG_Processor::eTimeout;
     if (progress == "error")      return CPSG_Processor::eError;
     if (progress == "unauthorized")     return CPSG_Processor::eUnauthorized;
+    if (progress == "inprogress")       return CPSG_Processor::eInProgress;
 
     // Should not happen, new server?
     return CPSG_Processor::eUnknown;
