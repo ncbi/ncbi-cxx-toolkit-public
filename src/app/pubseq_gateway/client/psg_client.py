@@ -827,6 +827,10 @@ class Processor:
     def testcase_to_run(self):
         return self._testcase
 
+    @property
+    def deadline(self):
+        return Deadline(self._data.get('timeout', 25))
+
     @staticmethod
     @contextmanager
     def create(args):
@@ -863,14 +867,32 @@ class OutputFileProcessor(Processor):
         self._updated_testcases[self._testcase.name] = self._testcase.data
 
     def _timeout(self):
+        print(f"Error: 'Testcase \"{self._testcase.name}\" timed out'", file=sys.stderr)
         sys.exit(2)
 
     def _close(self):
         self._data['testcases'].update(self._updated_testcases)
+        join = False
 
         with open(args.output_file, 'w') as of:
-            json.dump(self.data, of, indent=4)
+            for line in json.dumps(self.data, indent=4).splitlines():
+                if re.fullmatch(r'\s+"testcases": {', line):
+                    print(file=of)
+                if re.fullmatch(r'\s+"(env|exclude|require|sub-runs|tags)": [\[{]', line):
+                    print(line, end='', file=of)
+                    join = True
+                elif not join:
+                    print(line, file=of)
+                elif re.fullmatch(r'\s+[\]}],?', line):
+                    print(line.lstrip(), file=of)
+                    join = False
+                else:
+                    print(re.sub(r',$', ', ', line.strip()), end='', file=of)
             of.write('\n')
+
+    @property
+    def deadline(self):
+        return Deadline(600)
 
 class ListProcessor(Processor):
     @property
@@ -960,7 +982,7 @@ def testcases_cmd(args):
     args.no_run = set(args.no_run or [])
 
     with Processor.create(args) as processor, PsgClient(args) as psg_client:
-        overall_deadline = Deadline(processor.data.get('timeout', 25)) if args.timeout is None else Deadline(args.timeout)
+        overall_deadline = processor.deadline if args.timeout is None else Deadline(args.timeout)
 
         for run in processor.get_runs():
             run.adjust(overall_deadline)
