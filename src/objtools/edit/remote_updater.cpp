@@ -315,12 +315,12 @@ bool CRemoteUpdater::xSetFromConfig()
     return false;
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeqdesc& desc)
+void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
 {
     if (desc.IsOrg()) {
-        xUpdateOrgTaxname(desc.SetOrg(), logger);
+        xUpdateOrgTaxname(desc.SetOrg(), m_logger);
     } else if (desc.IsSource() && desc.GetSource().IsSetOrg()) {
-        xUpdateOrgTaxname(desc.SetSource().SetOrg(), logger);
+        xUpdateOrgTaxname(desc.SetSource().SetOrg(), m_logger);
     }
 }
 
@@ -349,11 +349,6 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org, FLogger logger)
     if (new_org.NotEmpty()) {
         org.Assign(*new_org);
     }
-}
-
-void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
-{
-    UpdateOrgFromTaxon(m_logger, desc);
 }
 
 CRemoteUpdater& CRemoteUpdater::GetInstance()
@@ -548,7 +543,7 @@ namespace
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry& entry)
+void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 {
     TOrgMap org_to_update;
 
@@ -569,27 +564,13 @@ void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry& entry)
     for (auto& it : org_to_update) {
         vector<CRef<COrg_ref>> reflist;
         reflist.push_back(it.second.org_ref);
-        CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(reflist, logger);
+        CRef<CTaxon3_reply> reply = m_taxClient->SendOrgRefList(reflist, m_logger);
 
         if (reply.NotNull()) {
             auto& reply_it = reply->SetReply().front();
             if (reply_it->IsData() && reply_it->SetData().IsSetOrg()) {
                 xUpdate(it.second.owner, reply_it->SetData().SetOrg());
             }
-        }
-    }
-}
-
-void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
-{
-    UpdateOrgFromTaxon(m_logger, entry);
-}
-
-void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, CSeq_entry_EditHandle& obj)
-{
-    for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it) {
-        for (CSeqdesc_CI desc_it(bioseq_it->GetEditHandle()); desc_it; ++desc_it) {
-            UpdateOrgFromTaxon(logger, (CSeqdesc&)*desc_it);
         }
     }
 }
