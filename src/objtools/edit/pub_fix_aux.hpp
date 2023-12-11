@@ -50,8 +50,6 @@ class CCit_art;
 
 BEGIN_SCOPE(edit)
 
-class IPubmedUpdater;
-
 namespace fix_pub
 {
 
