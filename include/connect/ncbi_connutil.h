@@ -50,7 +50,9 @@
  *       ConnNetInfo_SetupStandardArgs()
  *       ConnNetInfo_SetUserHeader()
  *       ConnNetInfo_AppendUserHeader()
+ *       ConnNetInfo_PrependUserHeader()
  *       ConnNetInfo_OverrideUserHeader()
+ *       ConnNetInfo_PreOverrideUserHeader()
  *       ConnNetInfo_ExtendUserHeader()
  *       ConnNetInfo_DeleteUserHeader()
  *       ConnNetInfo_SetTimeout()
@@ -598,18 +600,49 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
  );
 
 
+/* Prepend to user header (same as ConnNetInfo_SetUserHeader() if no previous
+ * header was set);  do nothing if the provided "header" is NULL or empty.
+ * @warning
+ *   New "header" may not be any part of the header kept in the structure.
+ * Return non-zero if successful;  otherwise, return 0 to indicate an error.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependUserHeader
+(SConnNetInfo*       net_info,
+ const char*         header
+ );
+
+
 /* Override user header.
  * Tags replaced (case-insensitively), and tags with empty values effectively
  * delete all existing occurrences of the matching tags from the old user
  * header, e.g. "My-Tag:\r\n" deletes all appearences of "My-Tag: [<value>]"
  * from the user header, regardless of the "<value>" (if any).
  * Unmatched tags with non-empty values are simply added to the existing user
- * header (as with "Append" above).  No-op if "header" is an empty string ("").
+ * header (as with "Append" above).  No-op if "header" is NULL or empty.
  * @note
  *   New "header" may be part of the current header from the structure.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
+(SConnNetInfo*       net_info,
+ const char*         header
+ );
+
+#define ConnNetInfo_PostOverrideUserHeader  ConnNetInfo_OverrideUserHeader
+
+
+/* Pre-override user header.
+ * Tags replaced (case-insensitively), and tags with empty values effectively
+ * delete all existing occurrences of the matching tags from the old user
+ * header, e.g. "My-Tag:\r\n" deletes all appearences of "My-Tag: [<value>]"
+ * from the user header, regardless of the "<value>" (if any).
+ * Unmatched tags with non-empty values get prepended to the existing user
+ * header (as with "Prepend" above).  No-op if "header" is NULL or empty.
+ * @note
+ *   New "header" may be part of the current header from the structure.
+ * Return non-zero if successful, otherwise return 0 to indicate an error.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PreOverrideUserHeader
 (SConnNetInfo*       net_info,
  const char*         header
  );
@@ -691,6 +724,11 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
  );
 
 
+/** Extra URL_ConnectEx() parameters. */
+typedef struct {
+    NCBI_CRED   cred;  /**< SSL credentials (if any)                       */
+    const char* host;  /**< SSL host id (aka SNI) (if differs from "host") */
+} SURL_Extra;
 
 /* Very low-level HTTP initiation routine.  Regular use is highly discouraged.
  * Instead, please consider using higher level APIs such as HTTP connections
@@ -739,8 +777,8 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
  * header, followed by the header termination sequence of "\r\n\r\n".
  * @note that any interior whitespace in "user_header" is not analyzed/guarded.
  *
- * The "cred" parameter is only used to pass additional connection credentials
- * for secure connections, and is ignored otherwise.
+ * The "extra" parameter is only used to pass additional connection credentials
+ * and server name info for secure connections, and is ignored otherwise.
  *
  * If the request method contains "eReqMethod_Connect", then the connection is
  * assumed to be tunneled via a proxy, so "path" must specify a "host:port"
@@ -780,7 +818,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  const STimeout* o_timeout,       /* timeout for an OPEN stage               */
  const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
  const char*     user_header,     /* should include "Host:" in most cases    */
- NCBI_CRED       cred,            /* connection credentials, if any          */
+ SURL_Extra*     extra,           /* additional connection params, if any    */
  TSOCK_Flags     flags,           /* additional socket requirements          */
  SOCK*           sock             /* returned socket (on eIO_Success only)   */
  );
