@@ -45,7 +45,7 @@
             "user_args": "use_cache=no",
             "env": {"NCBI_CONFIG__PSG__REQUEST_RETRIES": "0"}
         },
-        "hup-ok" : {
+        "hup-ok": {
             "require": ["hup-ok"]
         },
         "hup-bad-cookie": {
@@ -25537,9 +25537,7 @@
                         "gb_state": 2
                     }
                 },
-
                 null,
-
                 {
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
@@ -25853,15 +25851,15 @@
             ],
             "response": [
                 {
-                  "jsonrpc": "2.0",
-                  "id": "blob_1",
-                  "result": {
-                    "reply": "BlobInfo",
-                    "status": "NotFound",
-                    "errors": [
-                      "Blob 20.11 properties are not found (last modified: -1)"
-                    ]
-                  }
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "status": "NotFound",
+                        "errors": [
+                            "Blob 20.11 properties are not found (last modified: -1)"
+                        ]
+                    }
                 },
                 {
                     "jsonrpc": "2.0",
@@ -26128,8 +26126,6 @@
                 }
             ]
         },
-
-
         "HUP biodata of gb|WMV97217| (no cookie)": {
             "description": "HUP biodata of gb|WMV97217| (no cookie)",
             "tags": ["id-get", "cassandra", "400", "hup-no-cookie"],
@@ -26391,12 +26387,58 @@
             "tags": ["id-resolve", "cassandra", "200"],
             "requests": [
                 [
-                    { "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "1603356CL", 14 ], "include_info": [ "all-info-except" ] }, "id": "resolve_1" }
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "1603356CL",
+                                14
+                            ],
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
                 ]
             ],
             "response": [
-                {"jsonrpc": "2.0","id": "resolve_1","result": {"reply": "BioseqInfo","canonical_id": {"id": "prf|1603356CL|","type": 14},"other_ids": [{"id": "gi|226660","type": 12}],"molecule_type": "aa","length": 133,"seq_state": 10,"state": 10,"blob_id": {"id": "5.68768"},"tax_id": 4530,"hash": -1769249802,"date_changed": "03/18/2022 14:15:00","gi": 226660}},
-                {"jsonrpc": "2.0","id": "resolve_1","result": {"status": "Success"}}
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "prf|1603356CL|",
+                            "type": 14
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|226660",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 133,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "5.68768"
+                        },
+                        "tax_id": 4530,
+                        "hash": -1769249802,
+                        "date_changed": "03/18/2022 14:15:00",
+                        "gi": 226660
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
             ]
         },
         "PIR no adjustments (version=0)": {
@@ -26404,12 +26446,58 @@
             "tags": ["id-resolve", "cassandra", "200"],
             "requests": [
                 [
-                    { "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "PC4424", 7 ], "include_info": [ "all-info-except" ] }, "id": "resolve_1" }
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "PC4424",
+                                7
+                            ],
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
                 ]
             ],
             "response": [
-                {"jsonrpc": "2.0","id": "resolve_1","result": {"reply": "BioseqInfo","canonical_id": {"id": "pir|PC4424|","type": 7},"other_ids": [{"id": "gi|7433828","type": 12}],"molecule_type": "aa","length": 171,"seq_state": 10,"state": 10,"blob_id": {"id": "5.2291349"},"tax_id": 1309,"hash": 1065953583,"date_changed": "01/09/2023 16:32:56","gi": 7433828}},
-                {"jsonrpc": "2.0","id": "resolve_1","result": {"status": "Success"}}
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "pir|PC4424|",
+                            "type": 7
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|7433828",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 171,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "5.2291349"
+                        },
+                        "tax_id": 1309,
+                        "hash": 1065953583,
+                        "date_changed": "01/09/2023 16:32:56",
+                        "gi": 7433828
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
             ]
         },
         "PDB no adjustments (version=0)": {
@@ -26417,12 +26505,58 @@
             "tags": ["id-resolve", "cassandra", "200"],
             "requests": [
                 [
-                    { "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "8DCB|A", 15 ], "include_info": [ "all-info-except" ] }, "id": "resolve_1" }
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "8DCB|A",
+                                15
+                            ],
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
                 ]
             ],
             "response": [
-                {"jsonrpc": "2.0","id": "resolve_1","result": {"reply": "BioseqInfo","canonical_id": {"id": "pdb|8DCB|A| ","type": 15},"other_ids": [{"id": "gi|2315896308","type": 12}],"molecule_type": "aa","length": 501,"seq_state": 10,"state": 10,"blob_id": {"id": "5.1069626873"},"tax_id": 70601,"hash": 641871470,"date_changed": "10/19/2023 11:36:00","gi": 2315896308}},
-                {"jsonrpc": "2.0","id": "resolve_1","result": {"status": "Success"}}
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "pdb|8DCB|A| ",
+                            "type": 15
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2315896308",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 501,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "5.1069626873"
+                        },
+                        "tax_id": 70601,
+                        "hash": 641871470,
+                        "date_changed": "10/19/2023 11:36:00",
+                        "gi": 2315896308
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
             ]
         }
     }
