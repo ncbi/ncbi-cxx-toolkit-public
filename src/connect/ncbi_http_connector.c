@@ -132,17 +132,17 @@ typedef struct {
     EBConnState       conn_state:4;   /* connection state per table above    */
     unsigned          auth_done:1;    /* website authorization sent          */
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
-    unsigned          skip_host:1;    /* do *not* add the "Host:" header tag */
     unsigned          keepalive:1;    /* keep-alive connection               */
     unsigned          chunked:1;      /* if writing/reading chunked, HTTP/1.1*/
     unsigned          entity:1;       /* if there's entity payload (body)/1.1*/
     unsigned          reused:1;       /* if connection was re-used           */
     unsigned          retry:1;        /* if the request is being re-tried    */
-    unsigned          reserved:14;
-    unsigned char     unused[3];
+    unsigned          reserved:7;
     unsigned char     minor_fault;    /* incr each minor failure since major */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    http_code;      /* last HTTP response code             */
+
+    const char*       vhost;          /* VHost in the request                */
 
     SOCK              sock;           /* socket;  NULL if not connected      */
     const STimeout*   o_timeout;      /* NULL(infinite), dflt or ptr to next */
@@ -290,7 +290,7 @@ static int/*bool*/ x_SameScheme(EBURLScheme scheme1, EBURLScheme scheme2)
 }
 
 
-static int/*bool*/ x_SameHost(const char* host1, const char* host2)
+static int/*bool*/ x_SameProxyHost(const char* host1, const char* host2)
 {
     char buf1[CONN_HOST_LEN+1], buf2[CONN_HOST_LEN+1];
     unsigned int ip1, ip2;
@@ -311,18 +311,18 @@ static int/*bool*/ x_SameHost(const char* host1, const char* host2)
 
 static unsigned short x_PortForScheme(unsigned port, EBURLScheme scheme)
 {
-    if (port)
-        return port;
-    switch (scheme) {
-    case eURL_Http:
-        break;
-    case eURL_Https:
-        return CONN_PORT_HTTPS;
-    default:
-        assert(!scheme);
-        break;
+    if (!port) {
+        switch (scheme) {
+        case eURL_Http:
+            return CONN_PORT_HTTP;
+        case eURL_Https:
+            return CONN_PORT_HTTPS;
+        default:
+            assert(!scheme);
+            break;
+        }
     }
-    return CONN_PORT_HTTP;
+    return port;
 }
 
 
@@ -346,10 +346,11 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
     retval = uuu->adjust(uuu->net_info, uuu->user_data, arg);
     if (retval/*advisory of no change if < 0 but we don't trust it :-)*/) {
         int same_host = -1/*undef*/;
+        int same_port = -1/*undef*/;
         if (uuu->sock) {
             int/*bool*/ close = 0/*false*/;
-            if (!x_SameHost(uuu->net_info->http_proxy_host,
-                                 net_info->http_proxy_host)
+            if (!x_SameProxyHost(uuu->net_info->http_proxy_host,
+                                      net_info->http_proxy_host)
                 ||  (uuu->net_info->http_proxy_host[0]  &&
                      uuu->net_info->http_proxy_port !=
                           net_info->http_proxy_port)){
@@ -359,25 +360,25 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                 if (net_info->scheme == eURL_Https) {
                     if (uuu->net_info->scheme != eURL_Https)
                         close = 1/*true*/;
-                    else if (!(same_host = !strcasecmp(uuu->net_info->host,
-                                                            net_info->host)) ||
-                             !x_SamePort(uuu->net_info->port,
-                                         uuu->net_info->scheme,
-                                              net_info->port,
-                                              net_info->scheme)) {
+                    else if (!(same_port = x_SamePort(uuu->net_info->port,
+                                                      uuu->net_info->scheme,
+                                                           net_info->port,
+                                                           net_info->scheme))||
+                             !(same_host = !strcasecmp(uuu->net_info->host,
+                                                            net_info->host))) {
                         close = 1/*true*/;
                     }
                 } else if (!net_info->http_proxy_only)
                     close = 1/*true*/;
                 /* connection reused with HTTP and w/CONNECT: HTTP -> HTTPS */
             } else if (!x_SameScheme(uuu->net_info->scheme,
-                                          net_info->scheme)             ||
+                                          net_info->scheme)              ||
+                       !(same_port = x_SamePort(uuu->net_info->port,
+                                                uuu->net_info->scheme,
+                                                     net_info->port,
+                                                     net_info->scheme))  ||
                        !(same_host = !strcasecmp(uuu->net_info->host,
-                                                      net_info->host))  ||
-                       !x_SamePort(uuu->net_info->port,
-                                   uuu->net_info->scheme,
-                                        net_info->port,
-                                        net_info->scheme)) {
+                                                      net_info->host))) {
                 close = 1/*true*/;
             }
             if (close) {
@@ -385,12 +386,16 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                 uuu->sock = 0;
             }
         }
-        if (!same_host  ||  uuu->net_info->port != net_info->port
-            ||  (same_host < 0
-                 &&  strcasecmp(uuu->net_info->host,
-                                     net_info->host) != 0)) {
-            /* drop the flag on host / port replaced */
-            uuu->skip_host = 0/*false*/;
+        if (uuu->vhost
+            &&  (!same_port  ||  !same_host  ||
+                 (same_port < 0  &&  !x_SamePort(uuu->net_info->port,
+                                                 uuu->net_info->scheme,
+                                                      net_info->port,
+                                                      net_info->scheme))  ||
+                 (same_host < 0  &&  strcasecmp(uuu->net_info->host,
+                                                     net_info->host) != 0))) {
+            free((void*) uuu->vhost);
+            uuu->vhost = 0;
         }
     }
     ConnNetInfo_Destroy(net_info);
@@ -465,8 +470,8 @@ typedef enum {
 
 static EHTTP_Redirect x_Redirect(SHttpConnector* uuu, const SRetry* retry)
 {
-    EBURLScheme    scheme = uuu->net_info->scheme;
     EReqMethod     req_method = (EReqMethod) uuu->net_info->req_method;
+    EBURLScheme    scheme = uuu->net_info->scheme;
     char           host[sizeof(uuu->net_info->host)];
     unsigned short port = uuu->net_info->port;
     int/*bool*/    unsafe;
@@ -509,10 +514,14 @@ static EHTTP_Redirect x_Redirect(SHttpConnector* uuu, const SRetry* retry)
     if ((uuu->flags & fHTTP_AdjustOnRedirect)  &&  uuu->adjust) {
         if (!s_CallAdjust(uuu, 0))
             return eHTTP_RedirectError;
-    } else if (port  !=   uuu->net_info->port  ||
-               strcasecmp(uuu->net_info->host, host) != 0) {
-        /* drop the flag on host / port replaced */
-        uuu->skip_host = 0/*false*/;
+    } else if (uuu->vhost
+               &&  (!x_SamePort(uuu->net_info->port,
+                                uuu->net_info->scheme,
+                                               port,
+                                               scheme)  ||
+                    strcasecmp(uuu->net_info->host, host) != 0)) {
+        free((void*) uuu->vhost);
+        uuu->vhost = 0;
     }
 
     return eHTTP_RedirectOK;
@@ -739,10 +748,9 @@ static char* x_HostPort(size_t reserve, const char* host, unsigned short xport)
 }
 
 
-static int/*bool*/ x_SetHttpHostTag(SConnNetInfo* net_info)
+static const char* x_SetHttpHostTag(SConnNetInfo* net_info)
 {
     char*          tag;
-    int/*bool*/    retval;
     unsigned short port = net_info->port;
 
     if (port  &&  port == x_PortForScheme(0, net_info->scheme))
@@ -750,11 +758,18 @@ static int/*bool*/ x_SetHttpHostTag(SConnNetInfo* net_info)
     tag = x_HostPort(sizeof(kHttpHostTag)-1, net_info->host, port);
     if (tag) {
         memcpy(tag, kHttpHostTag, sizeof(kHttpHostTag)-1);
-        retval = ConnNetInfo_OverrideUserHeader(net_info, tag);
-        free(tag);
-    } else
-        retval = 0/*failure*/;
-    return retval;
+        if (ConnNetInfo_PreOverrideUserHeader(net_info, tag)) {
+            char*  v = tag + sizeof(kHttpHostTag)-1;
+            char*  c = strchr(v, ':');
+            size_t s = c ? (size_t)(c - v) : strlen(v);
+            memmove(tag, v, s);
+            tag[s] = '\0';
+        } else {
+            free(tag);
+            tag = 0;
+        }        
+    }
+    return tag;
 }
 
 
@@ -772,7 +787,7 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
             memmove(tag + sizeof(HTTP_NCBI_SID), tag, len);
             memcpy (tag,         HTTP_NCBI_SID, sizeof(HTTP_NCBI_SID) - 1);
             tag[sizeof(HTTP_NCBI_SID) - 1] = ' ';
-            ConnNetInfo_OverrideUserHeader(net_info, tag);
+            ConnNetInfo_PostOverrideUserHeader(net_info, tag);
             free(tag);
         }
     }
@@ -788,7 +803,7 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
             memmove(tag + sizeof(HTTP_NCBI_PHID), tag, len);
             memcpy (tag,         HTTP_NCBI_PHID, sizeof(HTTP_NCBI_PHID) - 1);
             tag[sizeof(HTTP_NCBI_PHID) - 1] = ' ';
-            ConnNetInfo_OverrideUserHeader(net_info, tag);
+            ConnNetInfo_PostOverrideUserHeader(net_info, tag);
             free(tag);
         }
     }
@@ -869,13 +884,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 status = eIO_Unknown;
                 break;
             }
-            net_info->scheme    = eURL_Http;
             net_info->user[0]   = '\0';
             net_info->pass[0]   = '\0';
             if (net_info->port == 0)
                 net_info->port  = CONN_PORT_HTTPS;
             net_info->firewall  = 0/*false*/;
-            ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
             status = HTTP_CreateTunnelEx(net_info, fHTTP_NoUpread,
                                          0, 0, uuu, s_TunnelAdjust, &sock);
             if (status != eIO_Success  &&  sock)
@@ -887,6 +900,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             EReqMethod     req_method = (EReqMethod) uuu->net_info->req_method;
             int/*bool*/    reset_user_header;
             char*          http_user_header;
+            SURL_Extra     extra, *extrap;
             const char*    host;
             unsigned short port;
             const char*    path;
@@ -895,7 +909,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             size_t         len;
 
             /* RFC7230 now requires Host: for CONNECT just as well */
-            if (!uuu->skip_host  &&  !x_SetHttpHostTag(uuu->net_info)) {
+            if (!uuu->vhost
+                &&  !(uuu->vhost = x_SetHttpHostTag(uuu->net_info))) {
                 status = eIO_Unknown;
                 break;
             }
@@ -1051,8 +1066,15 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             uuu->retry = 0;
 
             /* connect & send HTTP header */
-            if (uuu->net_info->scheme == eURL_Https)
+            if (uuu->net_info->req_method != eReqMethod_Connect
+                &&  uuu->net_info->scheme == eURL_Https) {
+                memset(&extra, 0, sizeof(extra));
+                extra.cred = uuu->net_info->credentials;
+                extra.host = uuu->vhost;
                 flags |= fSOCK_Secure;
+                extrap = &extra;
+            } else
+                extrap = 0;
             if (!(uuu->flags & fHTTP_NoUpread))
                 flags |= fSOCK_ReadOnWrite;
 
@@ -1062,8 +1084,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                                                  : 0), len,
                                    uuu->o_timeout, timeout,
                                    uuu->net_info->http_user_header,
-                                   uuu->net_info->credentials,
-                                   flags, &sock);
+                                   extrap, flags, &sock);
             /* FIXME: remember if "sock" reused here; and not cause major fault
              * if failed later;  but simply re-try w/o calling adjust. */
 
@@ -2376,6 +2397,8 @@ static void s_DestroyHttpConnector(SHttpConnector* uuu)
     if (uuu->cleanup)
         uuu->cleanup(uuu->user_data);
     ConnNetInfo_Destroy(uuu->net_info);
+    if (uuu->vhost)
+        free((void*) uuu->vhost);
     BUF_Destroy(uuu->r_buf);
     BUF_Destroy(uuu->w_buf);
     BUF_Destroy(uuu->http);
@@ -2717,13 +2740,12 @@ static void s_Destroy
 
 
 /* NB: per the standard, the HTTP tag name is mis-spelled as "Referer" */
-static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
+static const char* x_FixupUserHeader(SConnNetInfo* net_info,
                                      int  /*bool*/ has_ref,
                                      int* /*bool*/ has_sid)
 {
-    int/*bool*/ has_host = 0/*false*/;
-    const char* s;
-
+    const char* vhost = 0, *s;
+ 
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ first = 1/*true*/;
         while (*s) {
@@ -2731,7 +2753,11 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                 &&  strncasecmp(s, &"\nReferer:"[first], 9 - !!first) == 0) {
                 has_ref = 1/*true*/;
             } else if (strncasecmp(s, &"\nHost:"[first], 6 - !!first) == 0) {
-                has_host = 1/*true*/;
+                if (!vhost) {
+                    vhost = s + 6 - !!first;
+                    vhost = vhost + strspn(vhost, "\t ");
+                    vhost = strndup(vhost, strcspn(vhost, ":\r\n"));
+                }
             } else if (strncasecmp(s, &"\nCAF"[first], 4 - !!first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - !!first] == ':')) {
                 char* caftag = strndup(s + !first, strcspn(s + !first, ":"));
@@ -2741,6 +2767,7 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
                     free(caftag);
                     if (!(s = net_info->http_user_header)  ||  !*(s += cafoff))
                         break;
+                    first = !cafoff;
                     continue;
                 }
             } else if (!*has_sid
@@ -2777,7 +2804,7 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
     }
     if (net_info->external)
         ConnNetInfo_OverrideUserHeader(net_info, NCBI_EXTERNAL ": Y");
-    return has_host;
+    return vhost;
 }
 
 
@@ -2809,15 +2836,14 @@ static EIO_Status s_CreateHttpConnector
     if (xxx->http_version  &&  (flags & fHTTP_PushAuth))
         xxx->http_push_auth = 1;
     if (!tunnel) {
+        if (xxx->scheme == eURL_Unspec)
+            xxx->scheme  = eURL_Http;
         if (xxx->req_method == eReqMethod_Connect
-            ||  (xxx->scheme != eURL_Unspec  && 
-                 xxx->scheme != eURL_Https   &&
+            ||  (xxx->scheme != eURL_Https  &&
                  xxx->scheme != eURL_Http)) {
             ConnNetInfo_Destroy(xxx);
             return eIO_InvalidArg;
         }
-        if (xxx->scheme == eURL_Unspec)
-            xxx->scheme  = eURL_Http;
         ConnNetInfo_SetFrag(xxx, "");
     }
 
@@ -2862,7 +2888,7 @@ static EIO_Status s_CreateHttpConnector
     uuu->cleanup      = 0;
 
     sid = flags & fHTTP_NoAutomagicSID ? 1 : tunnel;
-    uuu->skip_host    = x_FixupUserHeader(xxx, ref, &sid) ? 1 : 0;
+    uuu->vhost        = x_FixupUserHeader(xxx, ref, &sid);
     if (sid)
         flags |= fHTTP_NoAutomagicSID;
     uuu->flags        = flags;
@@ -2871,8 +2897,7 @@ static EIO_Status s_CreateHttpConnector
     uuu->error_header = eDefault;
     uuu->can_connect  = fCC_None;         /* will be properly set at open    */
 
-    uuu->reserved = 0;
-    memset(uuu->unused, 0, sizeof(uuu->unused));
+    uuu->reserved     = 0;
 
     uuu->sock         = 0;
     uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values here... */
