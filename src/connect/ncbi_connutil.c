@@ -75,7 +75,7 @@ static char* x_getenv(const char* name)
 #endif
 
 
-static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src)
+static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src, int/*bool*/ pre)
 {
     char*  dst = *dstp;
     size_t dstlen = dst  &&  *dst ? strlen(dst) : 0;
@@ -102,12 +102,19 @@ static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src)
         if (!(temp = (char*)(dst ? realloc(dst, len) : malloc (len))))
             return 0/*failure*/;
         dst = temp;
+        if (srclen  &&  pre) {
+            memmove(dst + srclen + 2, dst, dstlen);
+            memcpy(temp, src, srclen);
+            temp += srclen;
+            memcpy(temp, "\r\n", 2 + !dstlen);
+            temp += 2;
+        }
         if (dstlen) {
             temp += dstlen;
             memcpy(temp, "\r\n", 3);
             temp += 2;
         }
-        if (srclen) {
+        if (srclen  &&  !pre) {
             memcpy(temp, src, srclen);
             temp += srclen;
             memcpy(temp, "\r\n", 3);
@@ -791,7 +798,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 
     /* HTTP user header */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
-    if (!x_StrcatCRLF((char**) &info->http_user_header, str))
+    if (!x_StrcatCRLF((char**) &info->http_user_header, str, 0))
         goto err;
 
     /* HTTP referer */
@@ -885,7 +892,7 @@ extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
         free((void*) info->http_user_header);
         info->http_user_header = 0;
     }
-    return x_StrcatCRLF((char**) &info->http_user_header, user_header);
+    return x_StrcatCRLF((char**) &info->http_user_header, user_header, 0);
 }
 
 
@@ -894,7 +901,16 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
 {
     if (!s_InfoIsValid(info))
         return 0/*failure*/;
-    return x_StrcatCRLF((char**) &info->http_user_header, user_header);
+    return x_StrcatCRLF((char**) &info->http_user_header, user_header, 0);
+}
+
+
+extern int/*bool*/ ConnNetInfo_PrependUserHeader(SConnNetInfo* info,
+                                                 const char*   user_header)
+{
+    if (!s_InfoIsValid(info))
+        return 0/*failure*/;
+    return x_StrcatCRLF((char**) &info->http_user_header, user_header, 1);
 }
 
 
@@ -927,9 +943,10 @@ static int/*bool*/ x_TagValueMatches(const char* oldval, size_t oldvallen,
 
 
 enum EUserHeaderOp {
-    eUserHeaderOp_Delete,
-    eUserHeaderOp_Extend,
-    eUserHeaderOp_Override
+    eUserHeaderOp_Delete = 0,
+    eUserHeaderOp_Extend,      /* 1 */
+    eUserHeaderOp_Override,    /* 2 */
+    eUserHeaderOp_PreOverride  /* 3 */
 };
 
 
@@ -1005,6 +1022,7 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
             }
             switch (op) {
             case eUserHeaderOp_Override:
+            case eUserHeaderOp_PreOverride:
                 newlen = newtagval < newline + newlinelen ? newlinelen : 0;
                 break;
             case eUserHeaderOp_Extend:
@@ -1083,13 +1101,13 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
                     break;
                 }
             } else if (len > newlen) {
-                assert(op == eUserHeaderOp_Override);
+                assert(op & eUserHeaderOp_Override);
                 hdrlen -= len;
                 memmove(line + newlen, line + len, hdrlen - off + 1);
                 hdrlen += newlen;
             }
             if (newlen) {
-                assert(op == eUserHeaderOp_Override);
+                assert(op & eUserHeaderOp_Override);
                 memcpy(line, newline, newlen);
                 newlen = 0;
                 continue;
@@ -1118,8 +1136,11 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
         hdr = 0;
     }
     info->http_user_header = hdr;
-    if (retval  &&  op != eUserHeaderOp_Delete)
-        retval = ConnNetInfo_AppendUserHeader(info, newhdr);
+    if (retval  &&  op != eUserHeaderOp_Delete) {
+        retval = (op != eUserHeaderOp_PreOverride
+                  ? ConnNetInfo_AppendUserHeader
+                  : ConnNetInfo_PrependUserHeader)(info, newhdr);
+    }
     if (newhdr)
         free(newhdr);
 
@@ -1131,6 +1152,13 @@ extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
                                                   const char*   header)
 {
     return s_ModifyUserHeader(info, header, eUserHeaderOp_Override);
+}
+
+
+extern int/*bool*/ ConnNetInfo_PreOverrideUserHeader(SConnNetInfo* info,
+                                                     const char*   header)
+{
+    return s_ModifyUserHeader(info, header, eUserHeaderOp_PreOverride);
 }
 
 
@@ -2334,7 +2362,7 @@ extern EIO_Status URL_ConnectEx
  const STimeout* o_timeout,
  const STimeout* rw_timeout,
  const char*     user_hdr,
- NCBI_CRED       cred,
+ SURL_Extra*     extra,
  TSOCK_Flags     flags,
  SOCK*           sock)
 {
@@ -2513,10 +2541,12 @@ extern EIO_Status URL_ConnectEx
     memset(&init, 0, sizeof(init));
     init.data = hdr;
     init.size = hdr_len;
-    init.cred = cred;
+    if (extra) {
+        init.cred = extra->cred;
+        init.host = extra->host;
+    }
 
     if (s) {
-        init.host = host;
         /* re-use existing connection */
         status = SOCK_CreateOnTopInternal(s/*old*/, 0, sock/*new*/,
                                           &init, flags);
@@ -2608,7 +2638,7 @@ extern SOCK URL_Connect
                     sprintf(x_host + x_len, ":%hu", port);
                 else
                     x_host[x_len] = '\0';
-                if (!x_StrcatCRLF(&x_host, user_hdr)) {
+                if (!x_StrcatCRLF(&x_host, user_hdr, 1)) {
                     x_hdr = user_hdr;
                     free(x_host);
                 } else
