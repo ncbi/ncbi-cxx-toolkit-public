@@ -4686,11 +4686,7 @@ static EIO_Status s_Create(const char*       hostpath,
         return eIO_Unknown;
     if (flags & fSOCK_Secure) {
         SNcbiSSLctx* sslctx;
-        const char* host = init ? init->host : 0;
-        if (port  &&  !host)
-            host = hostpath;
-        if (SOCK_isip(host))
-            host = 0;
+        const char* host = init  &&  !SOCK_isip(init->host) ? init->host : 0;
         if (!(sslctx = (SNcbiSSLctx*) calloc(1, sizeof(*sslctx)))) {
             free(x_sock);
             return eIO_Unknown;
@@ -5003,9 +4999,12 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         if (!oldctx->sess  &&  init) {
             cred = init->cred;
             host = SOCK_isip(init->host) ? 0 : init->host;
+            if (host  &&  !*host)
+                host = 0;
         } else {
             cred = oldctx->cred;
             host = oldctx->host;
+            assert(!host  ||  *host);
         }
         x_sock->sslctx = oldctx;
         x_sock->sslctx->sock = x_sock;
@@ -5013,14 +5012,10 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         x_orig->sslctx->cred = oldctx->cred;
         x_orig->sslctx->host = oldctx->host;
         x_sock->sslctx->cred = cred;
-        x_sock->sslctx->host = host  &&  *host ? strdup(host) : 0;
+        x_sock->sslctx->host = host ? strdup(host) : 0;
         sslctx = x_sock->sslctx;
     } else if (sslctx) {
-        const char* host;
-        if (init)
-            host = SOCK_isip(init->host) ? 0 : init->host;
-        else
-            host = 0;
+        const char* host = init  &&  !SOCK_isip(init->host) ? init->host : 0;
         x_sock->sslctx = sslctx;
         x_sock->sslctx->sock = x_sock;
         x_sock->sslctx->cred = init ? init->cred : 0;
@@ -6789,10 +6784,9 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
     sock->side      = eSOCK_Client;
     sock->n_read    = 0;
     sock->n_written = 0;
-    if (host  &&  sock->sslctx) {
-        if (sock->sslctx->host)
-            free((void*) sock->sslctx->host);
-        sock->sslctx->host = *host  &&  !SOCK_isip(host) ? strdup(host) : 0;
+    if ((host  ||  port)  &&  sock->sslctx  &&  sock->sslctx->host) {
+        free((void*) sock->sslctx->host);
+        sock->sslctx->host = 0;
     }
     return s_Connect(sock, host, port, timeout);
 }
