@@ -350,12 +350,12 @@ public:
 };
 
 
-CEUtilsUpdaterBase::CEUtilsUpdaterBase(ENormalize norm) :
+CEUtilsUpdater::CEUtilsUpdater(ENormalize norm) :
     m_Ctx(new CEUtils_ConnContext), m_Norm(norm)
 {
 }
 
-TEntrezId CEUtilsUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
+TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 {
     if (pub.IsArticle()) {
         SCitMatch cm;
@@ -369,7 +369,7 @@ TEntrezId CEUtilsUpdaterBase::CitMatch(const CPub& pub, EPubmedError* perr)
     }
 }
 
-TEntrezId CEUtilsUpdaterBase::CitMatch(const SCitMatch& cm, EPubmedError* perr)
+TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
     unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
     req->SetField("title");
@@ -499,7 +499,7 @@ static void Normalize(CPub& pub)
     }
 }
 
-CRef<CPubmed_entry> CEUtilsUpdaterBase::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
+CRef<CPubmed_entry> CEUtilsUpdater::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
     unique_ptr<CEFetch_Request> req(
         new CEFetch_Literature_Request(CEFetch_Literature_Request::eDB_pubmed, m_Ctx)
@@ -547,7 +547,7 @@ CRef<CPubmed_entry> CEUtilsUpdaterBase::x_GetPubmedEntry(TEntrezId pmid, EPubmed
     return {};
 }
 
-CRef<CPub> CEUtilsUpdaterBase::x_GetPub(TEntrezId pmid, EPubmedError* perr)
+CRef<CPub> CEUtilsUpdater::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     CRef<CPubmed_entry> pme = x_GetPubmedEntry(pmid, perr);
     if (pme && pme->IsSetMedent()) {
@@ -653,7 +653,7 @@ static bool ParseJson(const string& json, vector<TEntrezId>& pmids, string& msg)
     return true;
 }
 
-bool CEUtilsUpdaterBase::DoPubSearch(const vector<string>& query, vector<TEntrezId>& pmids)
+bool CEUtilsUpdater::DoPubSearch(const vector<string>& query, vector<TEntrezId>& pmids)
 {
     static const string hostname = "pubmed.ncbi.nlm.nih.gov";
     static const string path     = "/api/citmatch";
