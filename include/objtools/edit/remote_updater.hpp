@@ -63,7 +63,6 @@ BEGIN_SCOPE(edit)
 
 enum class EPubmedSource
 {
-    eNone,
     eEUtils,
 };
 
@@ -98,19 +97,19 @@ public:
     // With this constructor, failure to retrieve
     // a publication for a PMID is logged with the supplied message listener.
     // If no message listener is supplied, an exception is thrown.
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
-        CRemoteUpdater(pMessageListener, EPubmedSource::eEUtils, norm)
-    {
-    }
-    NCBI_DEPRECATED
-    CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
-        CRemoteUpdater(logger, EPubmedSource::eEUtils, norm)
-    {
-    }
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
     // NCBI_DEPRECATED
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
+    CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off);
     NCBI_DEPRECATED
-    CRemoteUpdater(FLogger logger, EPubmedSource, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
+    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
+        CRemoteUpdater(pMessageListener, norm)
+    {
+    }
+    NCBI_DEPRECATED
+    CRemoteUpdater(FLogger logger, EPubmedSource, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
+        CRemoteUpdater(logger, norm)
+    {
+    }
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
@@ -151,7 +150,6 @@ private:
     IObjtoolsListener* m_pMessageListener = nullptr;
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
 
-    EPubmedSource              m_pm_source = EPubmedSource::eNone;
     string                     m_pm_url;
     unique_ptr<IPubmedUpdater> m_pubmed;
     bool                       m_pm_use_cache = true;
