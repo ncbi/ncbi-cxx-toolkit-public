@@ -795,11 +795,11 @@ public:
     {
         NCBI_THROW(CProSplignException, eGenericError, "method relevant only for two stage prosplign");
     }
-    virtual void GetFlanks(bool& lgap, bool& rgap) const
+    virtual void GetFlanks(bool& /*lgap*/, bool& /*rgap*/) const
     {
         NCBI_THROW(CProSplignException, eGenericError, "method relevant only for two stage prosplign");
     }
-    virtual void SetFlanks(bool lgap, bool rgap)
+    virtual void SetFlanks(bool /*lgap*/, bool /*rgap*/)
     {
         NCBI_THROW(CProSplignException, eGenericError, "method relevant only for two stage prosplign");
     }
@@ -1252,6 +1252,15 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     return refined_align;
 }
 
+/// Sets scores expected from execution of ProSplign
+void CProSplign::SetScores(objects::CScope& scope,
+                           objects::CSeq_align& seq_align,
+                           CProSplignOutputOptions output_options)
+{
+    prosplign::SetScores(seq_align, scope, output_options.GetScoreMatrix());
+}
+
+
 
 bool CProSplign::CImplementation::HasStartOnNuc(const CSpliced_seg& sps)
 {
@@ -1282,6 +1291,14 @@ bool CProSplign::CImplementation::HasStartOnNuc(const CSpliced_seg& sps)
     string buf;
     genomic_ci.GetSeqData(buf, 3);
     if(buf.size() != 3) return false;
+
+    /**
+    cerr << "CProSplign::CImplementation::HasStartOnNuc(): codon = "
+        << buf
+        << "  xlate = "
+        << m_matrix.GetTranslationTable().TranslateStartTriplet(buf)
+        << endl;
+        **/
     
     return m_matrix.GetTranslationTable().TranslateStartTriplet(buf) == 'M';
 }

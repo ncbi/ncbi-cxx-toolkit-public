@@ -350,6 +350,12 @@ public:
                     const objects::CSeq_align& seq_align,
                     CProSplignOutputOptions output_options = CProSplignOutputOptions());
 
+    /// Sets scores expected from execution of ProSplign
+    void SetScores(objects::CScope& scope,
+                   objects::CSeq_align& seq_align,
+                   CProSplignOutputOptions output_options = CProSplignOutputOptions());
+
+
     //Use this method to set/change genetic code field in genomic ASN 
     //ProSplign tries to get genetic code from ASN. If fails, standart code (1) is used.
     //Note that when sequence source is fasta or BLAST db, genetic code is not set in ASN

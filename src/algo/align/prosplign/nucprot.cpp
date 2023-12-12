@@ -169,7 +169,7 @@ void CFastIScore::Init(const CSubstMatrix& matrix) {
 
 
 int   FrAlign(const CProSplignInterrupt& interrupt, CBackAlignInfo& bi, const PSEQ& pseq, const CNSeq& nseq, int g/*gap opening*/, int e/*one nuc extension cost*/,
-              int f/*frameshift opening cost*/, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
+              int f/*frameshift opening cost*/, const CProSplignScaledScoring& /*scoring*/, const CSubstMatrix& matrix)
 {
   int ilen = (int)pseq.size() + 1;
   int jlen = nseq.size() + 1;
