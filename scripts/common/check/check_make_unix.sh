@@ -904,8 +904,8 @@ EOF_launch
            else 
               echo "OK: [\$x_work_dir_tail] \$x_name" >> "$x_build_dir/test_stat_load.log" 2>&1
            fi
+           echo >> "$x_build_dir/test_stat_load.log" 2>&1
         fi
-        echo >> "$x_build_dir/test_stat_load.log" 2>&1
         if test \$is_run  -a  -n "\$saved_phid"; then
            rm -f \$saved_phid* > /dev/null 2>&1
         fi
