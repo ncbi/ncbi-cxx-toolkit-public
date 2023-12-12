@@ -30,15 +30,19 @@ protected:
     TPubInterceptor m_pub_interceptor = nullptr;
 };
 
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterBase : public IPubmedUpdater
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public IPubmedUpdater
 {
 public:
     enum class ENormalize { Off, On };
 
 public:
-    CEUtilsUpdaterBase(ENormalize);
+    CEUtilsUpdater(ENormalize = ENormalize::Off);
+    NCBI_DEPRECATED CEUtilsUpdater(bool norm) :
+        CEUtilsUpdater(norm ? ENormalize::On : ENormalize::Off) {}
+
     TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
     TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 
     // Hydra replacement using citmatch api; RW-1918,RW-1999
     static bool DoPubSearch(const std::vector<string>& query, std::vector<TEntrezId>& pmids);
@@ -52,30 +56,21 @@ private:
     ENormalize                m_Norm;
 };
 
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdaterBase
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdater
 {
     CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
 
 public:
     CEUtilsUpdaterWithCache(ENormalize norm = ENormalize::Off) :
-        CEUtilsUpdaterBase(norm) {}
+        CEUtilsUpdater(norm) {}
     void ReportStats(std::ostream&);
     void ClearCache();
 
 private:
     map<TEntrezId, CConstRef<CPub>> m_cache;
-    size_t                     m_num_requests = 0;
-    size_t                     m_cache_hits   = 0;
-};
 
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public CEUtilsUpdaterBase
-{
-public:
-    CEUtilsUpdater(ENormalize norm = ENormalize::Off) :
-        CEUtilsUpdaterBase(norm) {}
-    NCBI_DEPRECATED CEUtilsUpdater(bool norm) :
-        CEUtilsUpdaterBase(norm ? ENormalize::On : ENormalize::Off) {}
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
+    size_t m_num_requests = 0;
+    size_t m_cache_hits   = 0;
 };
 
 END_SCOPE(edit)
