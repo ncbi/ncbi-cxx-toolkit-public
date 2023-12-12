@@ -314,8 +314,8 @@ inline CHIntronScore GetW1(const CSubstMatrix& matrix) {
 
 MGET(GetW2,j-1)
 
-    CIntron(/*int i,*/ int j, char amin, char don11, char don21, char acs11, char acs21, const CAlignInfo& prev,  const CAlignInfo& cur, const CNSeq& nseq, const CProSplignScaledScoring& scoring)
-            : CAnyIntron(/*i, */j, amin, prev, cur, nseq, scoring) {
+    CIntron(/*int i,*/ int j_in, char amin_in, char don11, char don21, char acs11, char acs21, const CAlignInfo& prev,  const CAlignInfo& cur, const CNSeq& nseq_in, const CProSplignScaledScoring& scoring)
+            : CAnyIntron(/*i, */j_in, amin_in, prev, cur, nseq_in, scoring) {
             don1 = CTranslationTable::CharToNuc(don11);
             don2 = CTranslationTable::CharToNuc(don21);
             acs1 = CTranslationTable::CharToNuc(acs11);
