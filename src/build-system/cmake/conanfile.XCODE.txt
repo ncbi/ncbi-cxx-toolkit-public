@@ -33,7 +33,6 @@ googleapis/*:shared=False
 grpc-proto/*:shared=False
 grpc/*:shared=False
 protobuf/*:shared=False
-protobuf/*:with_zlib=False
 ncbicrypt/*:shared=False
 #
 grpc/*:cpp_plugin = True
