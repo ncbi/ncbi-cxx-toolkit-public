@@ -280,13 +280,6 @@ bool CRemoteUpdater::xSetFromConfig()
 
         if (cfg.HasEntry("RemotePubmedUpdate")) {
             const string sect = "RemotePubmedUpdate";
-            string s = cfg.Get(sect, "Source");
-            NStr::ToLower(s);
-            if (s == "eutils") {
-                m_pm_source = EPubmedSource::eEUtils;
-            } else if (s == "none") {
-                m_pm_source = EPubmedSource::eNone;
-            }
 
             if (cfg.HasEntry(sect, "URL")) {
                 m_pm_url = cfg.GetString(sect, "URL", {});
@@ -357,14 +350,14 @@ CRemoteUpdater& CRemoteUpdater::GetInstance()
     return instance;
 }
 
-CRemoteUpdater::CRemoteUpdater(FLogger logger, EPubmedSource pms, CEUtilsUpdater::ENormalize norm) :
-    m_logger{ logger }, m_pm_source(pms), m_pm_normalize(norm)
+CRemoteUpdater::CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm) :
+    m_logger{ logger }, m_pm_normalize(norm)
 {
     xSetFromConfig();
 }
 
-CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource pms, CEUtilsUpdater::ENormalize norm) :
-    m_pMessageListener(pMessageListener), m_pm_source(pms), m_pm_normalize(norm)
+CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
+    m_pMessageListener(pMessageListener), m_pm_normalize(norm)
 {
     if (m_pMessageListener) {
         m_logger = [this](const string& error_message) {
@@ -387,16 +380,9 @@ void CRemoteUpdater::ClearCache()
     }
 
     if (m_pm_use_cache && m_pubmed) {
-        switch (m_pm_source) {
-        case EPubmedSource::eEUtils: {
-            auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
-            if (upd) {
-                upd->ClearCache();
-            }
-            break;
-        }
-        default:
-            break;
+        auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+        if (upd) {
+            upd->ClearCache();
         }
     }
 }
@@ -454,22 +440,16 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 
         auto& arr = pDesc->SetPub().SetPub().Set();
         if (! m_pubmed) {
-            switch (m_pm_source) {
-            case EPubmedSource::eNone:
-                break;
-            default:
-            case EPubmedSource::eEUtils:
-                if (m_pm_use_cache) {
-                    m_pubmed.reset(new CEUtilsUpdaterWithCache(m_pm_normalize));
-                } else {
-                    m_pubmed.reset(new CEUtilsUpdater(m_pm_normalize));
-                }
-                if (! m_pm_url.empty()) {
-                    CEUtils_Request::SetBaseURL(m_pm_url);
-                }
-                if (m_pm_interceptor)
-                    m_pubmed->SetPubInterceptor(m_pm_interceptor);
-                break;
+            if (m_pm_use_cache) {
+                m_pubmed.reset(new CEUtilsUpdaterWithCache(m_pm_normalize));
+            } else {
+                m_pubmed.reset(new CEUtilsUpdater(m_pm_normalize));
+            }
+            if (! m_pm_url.empty()) {
+                CEUtils_Request::SetBaseURL(m_pm_url);
+            }
+            if (m_pm_interceptor) {
+                m_pubmed->SetPubInterceptor(m_pm_interceptor);
             }
         }
 
@@ -479,9 +459,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
             continue;
         }
 
-        for (const auto& pPubEquiv : arr) {
-            if (pPubEquiv->IsArticle()) {
-                id = m_pubmed->CitMatch(*pPubEquiv);
+        for (const auto& pPub : arr) {
+            if (pPub->IsArticle()) {
+                id = m_pubmed->CitMatch(*pPub);
                 if (id > ZERO_ENTREZ_ID && xUpdatePubPMID(arr, id)) {
                     break;
                 }
@@ -665,16 +645,9 @@ void CRemoteUpdater::ReportStats(std::ostream& os)
     }
 
     if (m_pm_use_cache && m_pubmed) {
-        switch (m_pm_source) {
-        case EPubmedSource::eEUtils: {
-            auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
-            if (upd) {
-                upd->ReportStats(os);
-            }
-            break;
-        }
-        default:
-            break;
+        auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
+        if (upd) {
+            upd->ReportStats(os);
         }
     }
 }
