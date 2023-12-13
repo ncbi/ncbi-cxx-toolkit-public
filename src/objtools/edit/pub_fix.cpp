@@ -1361,7 +1361,7 @@ void CPubFix::FixPub(CPub& pub)
     }
 }
 
-CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid, IPubmedUpdater* upd)
+CRef<CCit_art> CPubFix::FetchPubPmId(TEntrezId pmid, CEUtilsUpdater* upd)
 {
     CRef<CCit_art> cit_art;
     if (!upd || pmid < ZERO_ENTREZ_ID) {

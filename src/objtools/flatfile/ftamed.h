@@ -6,13 +6,13 @@
 //#include <objtools/edit/pub_fix.hpp>
 namespace ncbi::objects::edit
 {
-    class IPubmedUpdater;
+    class CEUtilsUpdater;
 }
 
 BEGIN_NCBI_SCOPE
 
 void                           InitPubmedClient(bool normalize);
-objects::edit::IPubmedUpdater* GetPubmedClient();
+objects::edit::CEUtilsUpdater* GetPubmedClient();
 CRef<objects::CCit_art>        FetchPubPmId(TEntrezId pmid);
 
 class CPubFixMessageListener : public CMessageListener_Basic

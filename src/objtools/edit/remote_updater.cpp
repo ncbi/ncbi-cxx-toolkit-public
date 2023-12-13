@@ -91,7 +91,7 @@ static bool s_IsConnectionFailure(EPubmedError errorVal)
     return false;
 }
 
-CRef<CPub> s_GetPubFrompmid(IPubmedUpdater* upd, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
+CRef<CPub> s_GetPubFrompmid(CEUtilsUpdater* upd, TEntrezId id, int maxAttempts, IObjtoolsListener* pMessageListener)
 {
     CRef<CPub> result;
 
@@ -621,7 +621,7 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
     }
 }
 
-void CRemoteUpdater::SetPubmedClient(IPubmedUpdater* pubmedUpdater)
+void CRemoteUpdater::SetPubmedClient(CEUtilsUpdater* pubmedUpdater)
 {
     m_pubmed.reset(pubmedUpdater);
 }

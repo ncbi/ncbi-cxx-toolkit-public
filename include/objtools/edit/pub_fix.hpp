@@ -135,7 +135,7 @@ class NCBI_XOBJEDIT_EXPORT CPubFix
 {
 public:
 
-    CPubFix(bool always_lookup, bool replace_cit, bool merge_ids, IMessageListener* err_log, IPubmedUpdater* upd) :
+    CPubFix(bool always_lookup, bool replace_cit, bool merge_ids, IMessageListener* err_log, CEUtilsUpdater* upd) :
         m_always_lookup(always_lookup),
         m_replace_cit(replace_cit),
         m_merge_ids(merge_ids),
@@ -149,7 +149,7 @@ public:
     void FixPubEquiv(CPub_equiv& pub_equiv);
     const CAuthListValidator& GetValidator() const { return m_authlist_validator; };
 
-    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid, IPubmedUpdater*);
+    static CRef<CCit_art> FetchPubPmId(TEntrezId pmid, CEUtilsUpdater*);
     static string GetErrorId(int code, int subcode);
 
 private:
@@ -159,7 +159,7 @@ private:
 
     IMessageListener* m_err_log;
     CAuthListValidator m_authlist_validator;
-    IPubmedUpdater* m_upd;
+    CEUtilsUpdater* m_upd;
 };
 
 END_SCOPE(edit)
