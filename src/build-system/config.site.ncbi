@@ -180,7 +180,7 @@ esac
 
 : ${CEREAL_PATH=$NCBI/cereal-1.3.0}
 
-: ${CPPKAFKA_PATH=$NCBI/cppkafka-0.3.1+boost-1.76}
+: ${CPPKAFKA_PATH=$NCBI/cppkafka-0.3.1+rdkafka-2.3.0}
 
 : ${CRC32C_PATH=$NCBI/crc32c-1.1.2}
 
@@ -255,7 +255,7 @@ esac
 
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
 
-: ${LIBRDKAFKA_PATH=$NCBI/librdkafka-1.5.0}
+: ${LIBRDKAFKA_PATH=$NCBI/librdkafka-2.3.0}
 
 : ${LIBSSH2_PATH=$NCBI/libssh2-1.7.0}
 
