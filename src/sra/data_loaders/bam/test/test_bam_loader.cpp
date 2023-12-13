@@ -2379,6 +2379,125 @@ BOOST_AUTO_TEST_CASE(FetchSeq1GI64)
     }
 }
 
+enum EGraphFirst {
+    eGraphLast = 0,
+    eGraphFirst = 1
+};
+
+static void s_FetchHugeBin(const string& type,
+                           TSeqPos from, TSeqPos to,
+                           size_t align_count,
+                           EGraphFirst graph_first)
+{
+    LOG_POST("Checking BAM retrieval from a bin with huge number of alignments: "<<type);
+    CBAMDataLoader::SetPileupGraphsParamDefault(true);
+
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CBAMDataLoader::SLoaderParams params;
+    string bam_name =
+        NCBI_FTP "/pub/education/Mod_Workshops/2023/NextGenMagicBlast_Oct/SRR12348966_sorted.bam";
+    params.m_BamFiles.push_back(CBAMDataLoader::SBamFileName(bam_name));
+    
+    string id = "NC_045512.2";
+    size_t graph_count = 1;
+    size_t pileup_graph_count = 5;
+
+    string loader_name =
+        CBAMDataLoader::RegisterInObjectManager(*om, params,
+                                                CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportBamLoaderName(loader_name);
+    string gbloader_name =
+        CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->GetName();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetInt().SetId(*seqid);
+    loc->SetInt().SetFrom(from);
+    loc->SetInt().SetTo(to);
+    string annot_name = CDirEntry(bam_name).GetBase();
+    string pileup_name = annot_name+PILEUP_NAME_SUFFIX;
+    CStopWatch sw;
+    if ( 1 ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(annot_name);
+        sw.Restart();
+        CGraph_CI it(scope, *loc, sel);
+        BOOST_CHECK_EQUAL(graph_count, it.GetSize());
+        LOG_POST("Got overview graph in "<<sw.Elapsed()<<" seconds");
+    }
+    if ( graph_first ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(pileup_name);
+        sw.Restart();
+        CGraph_CI it(scope, *loc, sel);
+        BOOST_CHECK_EQUAL(pileup_graph_count, it.GetSize());
+        LOG_POST("Got pileup graphs in "<<sw.Elapsed()<<" seconds");
+    }
+    vector<CSeq_id_Handle> read_ids;
+    if ( 1 ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(annot_name);
+        sw.Restart();
+        CAlign_CI it(scope, *loc, sel);
+        cout << "Align count: "<<it.GetSize()<<endl;
+        for ( ; it; ++it ) {
+            //LOG_POST("Found align range: "<<it->GetSeqRange(0));
+            read_ids.push_back(CSeq_id_Handle::GetHandle(it->GetSeq_id(1)));
+        }
+        BOOST_CHECK_EQUAL(align_count, it.GetSize());
+        LOG_POST("Got alignments in "<<sw.Elapsed()<<" seconds");
+    }
+    if ( !graph_first ) {
+        SAnnotSelector sel;
+        sel.AddNamedAnnots(pileup_name);
+        sw.Restart();
+        CGraph_CI it(scope, *loc, sel);
+        BOOST_CHECK_EQUAL(pileup_graph_count, it.GetSize());
+        LOG_POST("Got pileup graphs in "<<sw.Elapsed()<<" seconds");
+    }
+    vector<CBioseq_Handle> reads;
+    if ( 1 ) {
+        sw.Restart();
+        for ( auto& id : read_ids ) {
+            if ( auto bh = scope.GetBioseqHandle(id) ) {
+                reads.push_back(bh);
+            }
+        }
+        BOOST_CHECK_EQUAL(read_ids.size(), reads.size());
+        LOG_POST("Got short reads in "<<sw.Elapsed()<<" seconds");
+    }
+}
+
+BOOST_AUTO_TEST_CASE(FetchHugeBinMid)
+{
+    s_FetchHugeBin("middle", 8191, 8192, 8269, eGraphLast);
+}
+
+BOOST_AUTO_TEST_CASE(FetchHugeBinLeft)
+{
+    s_FetchHugeBin("left", 8191, 8191, 8254, eGraphFirst);
+}
+
+BOOST_AUTO_TEST_CASE(FetchHugeBinRight)
+{
+    s_FetchHugeBin("right", 8192, 8192, 8063, eGraphFirst);
+}
+
+BOOST_AUTO_TEST_CASE(FetchHugeBinEnd)
+{
+    s_FetchHugeBin("end", 16382, 16383, 6061, eGraphLast);
+}
+
+BOOST_AUTO_TEST_CASE(FetchHugeBinNext)
+{
+    s_FetchHugeBin("next", 16384, 16384, 6058, eGraphLast);
+}
+
 NCBITEST_INIT_TREE()
 {
 #ifdef NCBI_THREADS
@@ -2386,5 +2505,11 @@ NCBITEST_INIT_TREE()
 #endif
 #ifdef NCBI_INT4_GI
     NCBITEST_DISABLE(FetchSeq1GI64);
+#endif
+#ifdef _DEBUG
+    NCBITEST_DISABLE(FetchHugeBinLeft);
+    NCBITEST_DISABLE(FetchHugeBinRight);
+    NCBITEST_DISABLE(FetchHugeBinEnd);
+    NCBITEST_DISABLE(FetchHugeBinNext);
 #endif
 }

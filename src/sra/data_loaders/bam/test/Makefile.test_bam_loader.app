@@ -16,7 +16,7 @@ POST_LINK = $(VDB_POST_LINK)
 
 CHECK_COPY = mapfile
 CHECK_CMD = test_bam_loader
-CHECK_TIMEOUT  = 500
+CHECK_TIMEOUT  = 1500
 CHECK_REQUIRES = full-test-data
 
 WATCHERS = vasilche ucko

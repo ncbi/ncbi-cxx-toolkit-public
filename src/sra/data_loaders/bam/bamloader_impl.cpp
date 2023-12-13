@@ -77,18 +77,57 @@ static const Uint8 kSingleAlignBytes = 60; // estimated size of a single alignme
 static const size_t kChunkDataSize = 250000; // target chunk size in bytes
 static const size_t kChunkSize = kChunkDataSize/kSingleAlignBytes; // target chunk align count
 static const int kMainChunkId = CTSE_Chunk_Info::kDelayedMain_ChunkId;
+static const size_t kSplitLevelsChunkDataSize = 2*kChunkDataSize; // split >0 index levels if size in bytes is bigger
+
+// With raw index BAM we can position within index bin, so we can split
+// huge bins into smaller pieces.
+// We limit the splitting by both minimal annot chunk range (to avoid
+// too many alignments to overlap with the next chunk), and by expected
+// alignment count in a single chunk.
+// parameters for sub-page splitting, available only with raw BAM index access
+static const Uint8 kDefaultSplitBinDataSize = 4*kChunkDataSize; // split if size in bytes is bigger
+static const TSeqPos kDefaultSplitBinMinLength = 2048; // stop splitting if ref seq range is this small
 
 //#define SKIP_TOO_LONG_ALIGNMENTS
+#define SEPARATE_PILEUP_READS
+
+// Regular chunks have size of one or more whole index bins.
+// Extremely populated bins may be split into smaller regions.
+// The pileup chunk for such smaller regions still covers whole bin.
+// Since the pileup chunk id is smaller than any other chunks for
+// the same region it will be loaded first by OM.
+
+// During the pileup graph generation we remember where each
+// sub-range alignments start in the BAM file, and load all alignments
+// that cross sub-range borders.
+// So, the sub-range chunks have only alignments that are fully within
+// their range for OM to index.
+// All border crossing alignments will be loaded by the pileup chunk so
+// it's reported to OM as having alignments for the whole range.
+
+// When chunks for highly populated bin are generated we first split
+// alignments by their BAM index level, then if necessary split the bin
+// into smaller chunks.
+
+// Regular chunks (eChunk_align) and chunks with alignments from higher
+// index levels (eChunk_align2) are gathered by their starting positions.
+// Their total alignment ranges (for OM indexing) may go beyond their
+// range end.
+
+// The chunks with alignments from BAM index level =0 (eChunk_align1)
+// are gathered only if they end also within the chunk range, so their
+// OM indexing ranges do not need to be extended
 
 enum EChunkIdType {
+    eChunk_pileup_graph, // pileup graphs over the range
     eChunk_align, // all alignments starting in range
-    eChunk_align1, // alignments from the lowest BAM index level starting in range
-    eChunk_align2, // alignments from other BAM index levels starting in range
+    eChunk_align1, // alignments from BAM index level =0 within the range
+    eChunk_align2, // alignments from BAM index levels >0 starting in range
+    eChunk_short_seq_pileup, // reads for alignments loaded with pileup graph
     eChunk_short_seq, // reads corresponding to eChunk_align
     eChunk_short_seq1, // reads corresponding to eChunk_align1
     eChunk_short_seq2, // reads corresponding to eChunk_align2
-    eChunk_pileup_graph,
-    kChunkIdMul = 8
+    kChunkIdMul
 };
 
 #define PILEUP_NAME_SUFFIX "pileup graphs"
@@ -277,6 +316,67 @@ static inline bool GetMinMapQualityParam(void)
 }
 
 
+NCBI_PARAM_DECL(Uint8, BAM_LOADER, SPLIT_BIN_DATA_SIZE);
+NCBI_PARAM_DEF_EX(Uint8, BAM_LOADER, SPLIT_BIN_DATA_SIZE,
+                  kDefaultSplitBinDataSize,
+                  eParam_NoThread, BAM_LOADER_SPLIT_BIN_DATA_SIZE);
+
+static inline Uint8 GetSplitBinDataSize(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, SPLIT_BIN_DATA_SIZE)::GetDefault();
+}
+
+
+NCBI_PARAM_DECL(TSeqPos, BAM_LOADER, SPLIT_BIN_MIN_LENGTH);
+NCBI_PARAM_DEF_EX(TSeqPos, BAM_LOADER, SPLIT_BIN_MIN_LENGTH,
+                  kDefaultSplitBinMinLength,
+                  eParam_NoThread, BAM_LOADER_SPLIT_BIN_MIN_LENGTH);
+
+static inline TSeqPos GetSplitBinMinLength(void)
+{
+    return NCBI_PARAM_TYPE(BAM_LOADER, SPLIT_BIN_MIN_LENGTH)::GetDefault();
+}
+
+
+template<class Call>
+typename std::invoke_result<Call>::type
+CallWithRetry(Call&& call,
+              const char* name,
+              int retry_count = 0)
+{
+    const int kDefaultRetryCount = 4;
+    if ( retry_count == 0 ) {
+        retry_count = kDefaultRetryCount;
+    }
+    for ( int t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CBlobStateException& ) {
+            // no retry
+            throw;
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<name<<"(): waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+#define RETRY(expr) CallWithRetry([&]()->auto{return (expr);}, #expr)
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CBAMBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -432,7 +532,7 @@ bool CBAMDataLoader_Impl::BAMFilesOpened() const
 }
 
 
-void CBAMDataLoader_Impl::OpenBAMFiles()
+void CBAMDataLoader_Impl::OpenBAMFilesOnce()
 {
     CMutexGuard guard(m_Mutex);
     if ( !m_BamFiles.empty() ) {
@@ -468,6 +568,12 @@ void CBAMDataLoader_Impl::OpenBAMFiles()
 }
 
 
+void CBAMDataLoader_Impl::OpenBAMFiles()
+{
+    RETRY(OpenBAMFilesOnce());
+}
+
+
 void CBAMDataLoader_Impl::AddBamFile(const CBAMDataLoader::SBamFileName& bam)
 {
     SDirSeqInfo info;
@@ -492,14 +598,14 @@ CBamRefSeqInfo* CBAMDataLoader_Impl::GetRefSeqInfo(const CBAMBlobId& blob_id)
 void CBAMDataLoader_Impl::LoadBAMEntry(const CBAMBlobId& blob_id,
                                        CTSE_LoadLock& load_lock)
 {
-    GetRefSeqInfo(blob_id)->LoadMainSplit(load_lock);
+    RETRY(GetRefSeqInfo(blob_id)->LoadMainSplit(load_lock));
 }
 
 
 void CBAMDataLoader_Impl::LoadChunk(const CBAMBlobId& blob_id,
                                     CTSE_Chunk_Info& chunk_info)
 {
-    GetRefSeqInfo(blob_id)->LoadChunk(chunk_info);
+    RETRY(GetRefSeqInfo(blob_id)->LoadChunk(chunk_info));
 }
 
 
@@ -1096,6 +1202,13 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     TSeqPos last_pos = 0;
     TSeqPos zero_count = 0;
     Uint8 cur_data_size = 0;
+    bool has_pileup = GetPileupGraphsParam();
+    Uint8 split_bin_data_size = has_pileup? GetSplitBinDataSize(): 0;
+    TSeqPos split_bin_min_length = has_pileup? GetSplitBinMinLength(): 0;
+    if ( split_bin_data_size == 0 || split_bin_min_length == 0 ) {
+        split_bin_data_size = kMax_UI8;
+        split_bin_min_length = kInvalidSeqPos;
+    }
     for ( TSeqPos i = 0; i <= bin_count; ++i ) {
         if ( i < bin_count && !data_sizes[i] ) {
             ++zero_count;
@@ -1158,9 +1271,51 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
         }
         zero_count = 0;
         cur_data_size += data_sizes[i];
-        if ( cur_data_size >= kChunkDataSize || pos+bin_size-last_pos >= kMaxChunkLength ) {
-            // add chunk from last_pos to pos
-            {
+        if ( cur_data_size >= kChunkDataSize ||
+             pos+bin_size-last_pos >= kMaxChunkLength ||
+             (i+1 < bin_count && data_sizes[i+1] > split_bin_data_size) ) {
+            if ( has_pileup && data_sizes[i] > split_bin_data_size ) {
+                // special split to sub-page size
+                _ASSERT(last_pos == pos);
+                _ASSERT(cur_data_size == data_sizes[i]);
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(25, Info << "CBAMDataLoader:"
+                               " Huge Chunk "<<m_Chunks.size()<<
+                               " Range "<<last_pos<<"-"<<
+                               s_GetEnd(over_ends, i, bin_size)<<
+                               " size: "<<cur_data_size);
+                }
+                int split_shift = 0;
+                while ( (cur_data_size >> split_shift) > split_bin_data_size &&
+                        (bin_size >> split_shift) > split_bin_min_length ) {
+                    ++split_shift;
+                }
+                int sub_chunk_count = 1 << split_shift;
+                auto sub_chunk_data_size = cur_data_size >> split_shift;
+                TSeqPos sub_chunk_len = bin_size >> split_shift;
+                TSeqPos ref_end = s_GetEnd(over_ends, i, bin_size);
+                for ( int i = 0; i < sub_chunk_count; ++i ) {
+                    if ( GetDebugLevel() >= 3 ) {
+                        LOG_POST_X(25, Info << "CBAMDataLoader:"
+                                   " Huge Sub Chunk "<<m_Chunks.size()<<
+                                   " Range "<<(last_pos+i*sub_chunk_len)<<"-"<<
+                                   (last_pos+(i+1)*sub_chunk_len-1)<<
+                                   " size: "<<sub_chunk_data_size);
+                    }
+                    CBamRefSeqChunkInfo info;
+                    info.m_DataSize = sub_chunk_data_size;
+                    info.m_RefSeqRange.SetFrom(last_pos+i*sub_chunk_len);
+                    info.m_RefSeqRange.SetTo(ref_end);
+                    _ASSERT(info.m_RefSeqRange.GetLength() > 0);
+                    info.m_MaxRefSeqFrom = pos+(i+1)*sub_chunk_len-1;
+                    info.m_PileupChunkCount = i==0? sub_chunk_count: 0;
+                    m_Chunks.push_back(info);
+                }
+                last_pos = pos+bin_size;
+                cur_data_size = 0;
+            }
+            else {
+                // add chunk from last_pos to pos
                 _ASSERT(last_pos <= pos);
                 _ASSERT(cur_data_size > 0);
                 if ( GetDebugLevel() >= 3 ) {
@@ -1345,9 +1500,16 @@ void CBamRefSeqInfo::x_LoadRangesScan(void)
 
 CRange<TSeqPos> CBamRefSeqInfo::GetChunkGraphRange(size_t range_id)
 {
-    CRange<TSeqPos> range = m_Chunks[range_id].GetRefSeqRange();
-    if ( range_id+1 < m_Chunks.size() ) {
-        range.SetToOpen(m_Chunks[range_id+1].GetRefSeqRange().GetFrom());
+    auto& chunk = m_Chunks[range_id];
+    CRange<TSeqPos> range = chunk.GetRefSeqRange();
+    auto chunk_count = chunk.m_PileupChunkCount;
+    auto last_range_id = range_id;
+    if ( chunk_count ) {
+        last_range_id += chunk_count-1;
+        range.SetToOpen(m_Chunks[last_range_id].GetRefSeqRange().GetToOpen());
+    }
+    if ( last_range_id+1 < m_Chunks.size() ) {
+        range.SetToOpen(m_Chunks[last_range_id+1].GetRefSeqRange().GetFrom());
     }
     return range;
 }
@@ -1391,18 +1553,18 @@ void CBamRefSeqInfo::LoadMainSplit(CTSE_LoadLock& load_lock)
     if ( m_CovEntry || !m_CovFileName.empty() ||
          (m_File->GetBamDb().UsesRawIndex() && GetEstimatedCoverageGraphParam()) ) {
         chunk->x_AddAnnotType(name,
-                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
+                              CSeq_annot::C_Data::e_Graph,
                               GetRefSeq_id(),
                               whole_range);
     }
     if ( has_pileup ) {
         chunk->x_AddAnnotType(pileup_name,
-                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
+                              CSeq_annot::C_Data::e_Graph,
                               GetRefSeq_id(),
                               whole_range);
     }
     chunk->x_AddAnnotType(name,
-                          SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                          CSeq_annot::C_Data::e_Align,
                           GetRefSeq_id(),
                           whole_range);
     split_info.AddChunk(*chunk);
@@ -1451,14 +1613,8 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         refseq_index = raw_db->GetRefIndex(GetRefSeqId());
     }
 
-    //double get_data_seconds = raw_db? raw_db->GetEstimatedSecondsPerByte(): 0;
-    //double graph_seconds = get_data_seconds + k_make_graph_seconds;
-    //double align_seconds = get_data_seconds + k_make_align_seconds;
     // create chunk info for alignments
     for ( size_t range_id = 0; range_id < m_Chunks.size(); ++range_id ) {
-        CRange<TSeqPos> range = GetChunkGraphRange(range_id);
-        CRange<TSeqPos> wide_range = m_Chunks[range_id].GetAlignRange();
-        
         int base_id = int(range_id*kChunkIdMul);
         auto align_count = m_Chunks[range_id].GetAlignCount();
         auto data_size = m_Chunks[range_id].m_DataSize;
@@ -1468,104 +1624,140 @@ void CBamRefSeqInfo::CreateChunks(CTSE_Split_Info& split_info)
         else if ( data_size == 0 && align_count != 0 ) {
             data_size = align_count * kSingleAlignBytes;
         }
-        if ( align_count ) {
-            if ( raw_db ) {
-                if ( align_count < 2*kChunkDataSize ) {
-                    // add single chunk for in-range and overlapping aligns
-                    Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range,
-                                                   CBamIndex::kLevel0, CBamIndex::kMaxLevel,
-                                                   CBamIndex::eSearchByStart).GetFileSize();
-                    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align));
+        CRange<TSeqPos> wide_range = m_Chunks[range_id].GetAlignRange(); // includes overhang after this range
+        if ( has_pileup && m_Chunks[range_id].m_PileupChunkCount ) {
+            _ASSERT(raw_db);
+            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_pileup_graph));
+            CRange<TSeqPos> pileup_range = GetChunkGraphRange(range_id);
+            {{
+                Uint8 bytes = data_size*m_Chunks[range_id].m_PileupChunkCount;
+                chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                chunk->x_AddAnnotType(pileup_name,
+                                      CSeq_annot::C_Data::e_Graph,
+                                      GetRefSeq_id(),
+                                      pileup_range);
+                if ( GetDebugLevel() >= 2 ) {
+                    LOG_POST_X(13, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                               "Pileup Chunk id="<<chunk->GetChunkId()<<": "<<pileup_range<<
+                               " with "<<bytes<<" bytes");
+                }
+                if ( m_Chunks[range_id].m_PileupChunkCount > 1 ) {
+                    // include annots crossing sub-range borders
+                    chunk->x_AddAnnotType(name,
+                                          CSeq_annot::C_Data::e_Align,
+                                          GetRefSeq_id(),
+                                          pileup_range);
+                    if ( GetDebugLevel() >= 2 ) {
+                        LOG_POST_X(13, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                   "Pileup Chunk id="<<chunk->GetChunkId()<<": aligns: "<<pileup_range);
+                    }
+                }
+            }}
+            split_info.AddChunk(*chunk);
+            if ( m_Chunks[range_id].m_PileupChunkCount > 1 ) {
+                // add separate chunk for high index level overlapping aligns
+                if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, pileup_range,
+                                                    CBamIndex::kLevel1, CBamIndex::kMaxLevel,
+                                                    CBamIndex::eSearchByStart).GetFileSize() ) {
+                    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align2));
                     chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
                     //chunk->x_SetLoadSeconds(bytes*align_seconds);
                     chunk->x_AddAnnotType(name,
-                                          SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                          CSeq_annot::C_Data::e_Align,
+                                          GetRefSeq_id(),
+                                          wide_range);
+                    if ( GetDebugLevel() >= 2 ) {
+                        LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                   "Align Chunk id="<<chunk->GetChunkId()<<": "<<wide_range<<
+                                   " with "<<bytes<<" bytes");
+                    }
+                    split_info.AddChunk(*chunk);
+                }
+            }
+        }
+        if ( align_count ) {
+            CRange<TSeqPos> start_range = m_Chunks[range_id].GetAlignStartRange();
+            if ( m_Chunks[range_id].m_PileupChunkCount != 1 ) {
+                // add single sub-page chunk for in-range aligns
+                _ASSERT(raw_db);
+                CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align1));
+                chunk->x_SetLoadBytes(Uint4(min<size_t>(data_size, kMax_UI4)));
+                //chunk->x_SetLoadSeconds(bytes*align_seconds);
+                chunk->x_AddAnnotType(name,
+                                      CSeq_annot::C_Data::e_Align,
+                                      GetRefSeq_id(),
+                                      start_range);
+                if ( GetDebugLevel() >= 2 ) {
+                    LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                               "Align sub-page Chunk id="<<chunk->GetChunkId()<<": "<<start_range<<
+                               " with "<<data_size<<" bytes");
+                }
+                split_info.AddChunk(*chunk);
+            }
+            else if ( raw_db && data_size >= kSplitLevelsChunkDataSize ) {
+                // add two separate chunks for in-range and overlapping aligns
+                if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, start_range,
+                                                    CBamIndex::kLevel0, CBamIndex::kLevel0,
+                                                    CBamIndex::eSearchByStart).GetFileSize() ) {
+                    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align1));
+                    chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                    //chunk->x_SetLoadSeconds(bytes*align_seconds);
+                    chunk->x_AddAnnotType(name,
+                                          CSeq_annot::C_Data::e_Align,
+                                          GetRefSeq_id(),
+                                          start_range);
+                    split_info.AddChunk(*chunk);
+                    if ( GetDebugLevel() >= 2 ) {
+                        LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                   "Align Chunk id="<<chunk->GetChunkId()<<": "<<start_range<<
+                                   " with "<<bytes<<" bytes");
+                    }
+                }
+                if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, start_range,
+                                                    CBamIndex::kLevel1, CBamIndex::kMaxLevel,
+                                                    CBamIndex::eSearchByStart).GetFileSize() ) {
+                    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align2));
+                    chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
+                    //chunk->x_SetLoadSeconds(bytes*align_seconds);
+                    chunk->x_AddAnnotType(name,
+                                          CSeq_annot::C_Data::e_Align,
                                           GetRefSeq_id(),
                                           wide_range);
                     split_info.AddChunk(*chunk);
                     if ( GetDebugLevel() >= 2 ) {
                         LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                                   "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
+                                   "Align Chunk id="<<chunk->GetChunkId()<<": "<<wide_range<<
                                    " with "<<bytes<<" bytes");
-                    }
-                }
-                else {
-                    // add two separate chunks for in-range and overlapping aligns
-                    if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range,
-                                                        CBamIndex::kLevel0, CBamIndex::kLevel0,
-                                                        CBamIndex::eSearchByStart).GetFileSize() ) {
-                        CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align1));
-                        chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                        //chunk->x_SetLoadSeconds(bytes*align_seconds);
-                        chunk->x_AddAnnotType(name,
-                                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
-                                              GetRefSeq_id(),
-                                              range);
-                        split_info.AddChunk(*chunk);
-                        if ( GetDebugLevel() >= 2 ) {
-                            LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                                       "Align Chunk "<<chunk->GetChunkId()<<": "<<range<<
-                                       " with "<<bytes<<" bytes");
-                        }
-                    }
-                    if ( Uint8 bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range,
-                                                        CBamIndex::kLevel1, CBamIndex::kMaxLevel,
-                                                        CBamIndex::eSearchByStart).GetFileSize() ) {
-                        CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align2));
-                        chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                        //chunk->x_SetLoadSeconds(bytes*align_seconds);
-                        chunk->x_AddAnnotType(name,
-                                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
-                                              GetRefSeq_id(),
-                                              wide_range);
-                        split_info.AddChunk(*chunk);
-                        if ( GetDebugLevel() >= 2 ) {
-                            LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                                       "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
-                                       " with "<<bytes<<" bytes");
-                        }
                     }
                 }
             }
             else {
+                // add single chunk for in-range and overlapping aligns
                 CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_align));
+                if ( raw_db ) {
+                    data_size = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, start_range,
+                                                 CBamIndex::kLevel0, CBamIndex::kMaxLevel,
+                                                 CBamIndex::eSearchByStart).GetFileSize();
+                    if ( GetDebugLevel() >= 2 ) {
+                        LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                   "Align Chunk id="<<chunk->GetChunkId()<<": "<<wide_range<<
+                                   " with "<<data_size<<" bytes");
+                    }
+                }
+                else {
+                    if ( GetDebugLevel() >= 2 ) {
+                        LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
+                                   "Align Chunk id="<<chunk->GetChunkId()<<": "<<wide_range<<
+                                   " with "<<align_count<<" aligns");
+                    }
+                }
+                chunk->x_SetLoadBytes(Uint4(min<size_t>(data_size, kMax_UI4)));
+                //chunk->x_SetLoadSeconds(bytes*align_seconds);
                 chunk->x_AddAnnotType(name,
-                                      SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                                      CSeq_annot::C_Data::e_Align,
                                       GetRefSeq_id(),
                                       wide_range);
                 split_info.AddChunk(*chunk);
-                if ( GetDebugLevel() >= 2 ) {
-                    LOG_POST_X(12, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                               "Align Chunk "<<chunk->GetChunkId()<<": "<<wide_range<<
-                               " with "<<align_count<<" aligns");
-                }
-            }
-        }
-
-        if ( has_pileup ) {
-            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(base_id+eChunk_pileup_graph));
-            if ( raw_db ) {
-                Uint8 bytes = data_size;
-                if ( !bytes ) {
-                    // empty sequence span might load tails of previous alignmnets
-                    // get actual data size of the tails
-                    bytes = CBamFileRangeSet(raw_db->GetIndex(), refseq_index, range).GetFileSize();
-                    if ( !bytes ) {
-                        // no overlapping alignments, pileup graph is empty
-                        continue;
-                    }
-                }
-                chunk->x_SetLoadBytes(Uint4(min<size_t>(bytes, kMax_UI4)));
-                //chunk->x_SetLoadSeconds(bytes*graph_seconds);
-            }
-            chunk->x_AddAnnotType(pileup_name,
-                                  CSeq_annot::C_Data::e_Graph,
-                                  GetRefSeq_id(),
-                                  range);
-            split_info.AddChunk(*chunk);
-            if ( GetDebugLevel() >= 2 ) {
-                LOG_POST_X(13, Info << "CBAMDataLoader: "<<GetRefSeq_id()<<": "
-                           "Pileup Chunk "<<chunk->GetChunkId()<<": "<<GetChunkGraphRange(range_id));
             }
         }
     }
@@ -1616,17 +1808,17 @@ double CBamRefSeqInfo::EstimateLoadSeconds(const CTSE_Chunk_Info& chunk_info,
                                            Uint4 bytes) const
 {
     switch ( chunk_info.GetChunkId() % kChunkIdMul ) {
+    case eChunk_pileup_graph:
+        return EstimatePileupLoadSeconds(chunk_info, bytes);
     case eChunk_align:
     case eChunk_align1:
     case eChunk_align2:
         return EstimateAlignLoadSeconds(chunk_info, bytes);
-        break;
+    case eChunk_short_seq_pileup:
     case eChunk_short_seq:
     case eChunk_short_seq1:
     case eChunk_short_seq2:
         return EstimateSeqLoadSeconds(chunk_info, bytes);
-    case eChunk_pileup_graph:
-        return EstimatePileupLoadSeconds(chunk_info, bytes);
     }
     return 0;
 }
@@ -1639,19 +1831,109 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
         return;
     }
     switch ( chunk_info.GetChunkId() % kChunkIdMul ) {
+    case eChunk_pileup_graph:
+        LoadPileupChunk(chunk_info);
+        break;
     case eChunk_align:
     case eChunk_align1:
     case eChunk_align2:
         LoadAlignChunk(chunk_info);
         break;
+    case eChunk_short_seq_pileup:
     case eChunk_short_seq:
     case eChunk_short_seq1:
     case eChunk_short_seq2:
         LoadSeqChunk(chunk_info);
         break;
-    case eChunk_pileup_graph:
-        LoadPileupChunk(chunk_info);
-        break;
+    }
+}
+
+
+void CBamRefSeqInfo::x_InitAlignIterator(CBamAlignIterator& ait,
+                                         TSeqPos& max_end_pos,
+                                         CTSE_Chunk_Info& chunk_info,
+                                         int base_id)
+{
+    int range_id = chunk_info.GetChunkId() / kChunkIdMul;
+    int sub_chunk = (chunk_info.GetChunkId() % kChunkIdMul) - base_id + eChunk_align;
+    _ASSERT(sub_chunk >= eChunk_pileup_graph && sub_chunk <= eChunk_align2);
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
+    max_end_pos = m_File->GetRefSeqLength(GetRefSeqId());
+#else
+    max_end_pos = kInvalidSeqPos;
+#endif
+    if ( sub_chunk == eChunk_align1 ) {
+        auto start_range = m_Chunks[range_id].GetAlignStartRange();
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(),
+                                start_range.GetFrom(), start_range.GetLength(),
+                                CBamIndex::kLevel0, CBamIndex::kLevel0,
+                                CBamAlignIterator::eSearchByStart,
+                                &m_Chunks[range_id].m_FilePosFirstStarting);
+        // we also skip alignments that end beyond current region
+        max_end_pos = min(max_end_pos, start_range.GetToOpen());
+    }
+    else if ( sub_chunk == eChunk_align2 ) {
+        auto start_range = GetChunkGraphRange(range_id);
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(),
+                                start_range.GetFrom(), start_range.GetLength(),
+                                CBamIndex::kLevel1, CBamIndex::kMaxLevel,
+                                CBamAlignIterator::eSearchByStart);
+    }
+    else {
+        _ASSERT(sub_chunk == eChunk_align);
+        auto start_range = m_Chunks[range_id].GetAlignStartRange();
+        ait = CBamAlignIterator(*m_File, GetRefSeqId(),
+                                start_range.GetFrom(), start_range.GetLength(),
+                                CBamAlignIterator::eSearchByStart);
+    }
+    if ( m_SpotIdDetector ) {
+        ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
+    }
+}
+
+
+void CBamRefSeqInfo::x_AddSeqChunk(CTSE_Chunk_Info& chunk_info,
+                                   const vector<CSeq_id_Handle>& short_ids)
+{
+    int range_id = chunk_info.GetChunkId() / kChunkIdMul;
+    int sub_chunk = chunk_info.GetChunkId() % kChunkIdMul;
+    _ASSERT(sub_chunk >= eChunk_pileup_graph && sub_chunk <= eChunk_align2);
+    int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq+(sub_chunk-eChunk_align);
+    vector<CSeq_id_Handle> new_short_ids;
+    {{
+        CMutexGuard guard(m_Seq2ChunkMutex);
+        for ( auto& id : short_ids ) {
+            if ( m_Seq2Chunk.insert(make_pair(id, seq_chunk_id)).first->second == seq_chunk_id ) {
+                new_short_ids.push_back(id);
+            }
+        }
+    }}
+    if ( new_short_ids.empty() ) {
+        return;
+    }
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(seq_chunk_id));
+    for ( auto& id : new_short_ids ) {
+        chunk->x_AddBioseqId(id);
+    }
+    CStopWatch sw_attach;
+    if ( GetDebugLevel() >= 4 ) {
+        sw_attach.Start();
+    }
+    if ( m_File->GetBamDb().UsesRawIndex() ) {
+        chunk->x_SetLoadBytes(Uint4(m_Chunks[range_id].GetAlignCount()));
+    }
+    chunk->x_AddBioseqPlace(kTSEId);
+    CTSE_Split_Info& split_info =
+        const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
+    split_info.AddChunk(*chunk);
+    if ( GetDebugLevel() >= 4 ) {
+        double time = sw_attach.Elapsed();
+        s_AttachTime += time;
+        LOG_POST_X(20, Info<<"CBAMDataLoader: "
+                   "Created short reads chunk "<<
+                   range_id<<"/"<<(seq_chunk_id-range_id*kChunkIdMul)<<" "<<
+                   GetRefSeqId()<<" @ "<<
+                   m_Chunks[range_id].GetRefSeqRange()<<" in "<<time);
     }
 }
 
@@ -1659,62 +1941,38 @@ void CBamRefSeqInfo::LoadChunk(CTSE_Chunk_Info& chunk_info)
 void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
 {
     CStopWatch sw;
-    CStopWatch sw1;
+    CStopWatch sw_create;
     if ( GetDebugLevel() >= 3 ) {
         sw.Start();
     }
-    CTSE_Split_Info& split_info =
-        const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
-    int range_id = chunk_info.GetChunkId()/kChunkIdMul;
-    int sub_chunk = chunk_info.GetChunkId() % kChunkIdMul;
-    const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
-    auto start_range = chunk.GetAlignStartRange();
+    int range_id = chunk_info.GetChunkId() / kChunkIdMul;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
-    _TRACE("Loading aligns "<<GetRefSeqId()<<" @ "<<start_range);
+    _TRACE("Loading aligns "<<GetRefSeqId()<<" @ "<<m_Chunks[range_id].GetRefSeqRange());
     size_t skipped = 0, count = 0, repl_count = 0, fail_count = 0;
     vector<CSeq_id_Handle> short_ids;
     
     CRef<CSeq_annot> annot;
     CSeq_annot::TData::TAlign* align_list = 0;
-    
-#ifdef SKIP_TOO_LONG_ALIGNMENTS
-    TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
-#endif
+
     CBamAlignIterator ait;
-    if ( sub_chunk == eChunk_align1 ) {
-        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
-                                CBamIndex::kLevel0, CBamIndex::kLevel0, CBamAlignIterator::eSearchByStart);
-    }
-    else if ( sub_chunk == eChunk_align2 ) {
-        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
-                                CBamIndex::kLevel1, CBamIndex::kMaxLevel, CBamAlignIterator::eSearchByStart);
-    }
-    else {
-        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
-                                CBamAlignIterator::eSearchByStart);
-    }
-    if ( m_SpotIdDetector ) {
-        ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
-    }
+    TSeqPos max_end_pos;
+    x_InitAlignIterator(ait, max_end_pos, chunk_info, eChunk_align);
     for( ; ait; ++ait ) {
         TSeqPos align_pos = ait.GetRefSeqPos();
-        if ( align_pos < start_range.GetFrom() ) {
-            // the alignments starts before current chunk range
-            ++skipped;
-            continue;
-        }
+        // should be filtered by CBamAlignIterator
+        _ASSERT(align_pos >= m_Chunks[range_id].GetRefSeqRange().GetFrom());
         if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
             ++skipped;
             continue;
         }
-#ifdef SKIP_TOO_LONG_ALIGNMENTS
-        TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
-        if ( align_end > ref_len ) {
-            ++skipped;
-            continue;
+        if ( max_end_pos != kInvalidSeqPos ) {
+            TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+            if ( align_end > max_end_pos ) {
+                ++skipped;
+                continue;
+            }
         }
-#endif
         ++count;
 
         if ( !align_list ) {
@@ -1722,63 +1980,45 @@ void CBamRefSeqInfo::LoadAlignChunk(CTSE_Chunk_Info& chunk_info)
             align_list = &annot->SetData().SetAlign();
         }
         if ( GetDebugLevel() >= 4 ) {
-            sw1.Start();
+            sw_create.Start();
         }
         align_list->push_back(ait.GetMatchAlign());
-        short_ids.push_back(CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id()));
-        if ( GetDebugLevel() >= 4 ) {
-            sw1.Stop();
+        if ( ait.GetShortSequenceLength() != 0 ) {
+            short_ids.push_back(CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id()));
         }
+        if ( GetDebugLevel() >= 4 ) {
+            sw_create.Stop();
+        }
+    }
+    if ( GetDebugLevel() >= 4 ) {
+        double time = sw_create.Elapsed();
+        LOG_POST_X(19, Info<<"CBAMDataLoader: "
+                   "Created alignments "<<GetRefSeqId()<<
+                   " id="<<chunk_info.GetChunkId()<<
+                   " @ "<<m_Chunks[range_id].GetRefSeqRange()<<": "<<
+                   count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
+                   " skipped: "<<skipped<<" in "<<time);
+        s_CreateTime += time;
     }
     if ( annot ) {
+        CStopWatch sw_attach(CStopWatch::eStart);
         chunk_info.x_LoadAnnot(place, *annot);
         chunk_info.x_AddUsedMemory(count*2500+10000);
-    }
-    {{
-        CMutexGuard guard(m_Seq2ChunkMutex);
         if ( GetDebugLevel() >= 4 ) {
-            double time = sw1.Elapsed();
+            double time = sw_attach.Elapsed();
             LOG_POST_X(19, Info<<"CBAMDataLoader: "
-                       "Created alignments "<<GetRefSeqId()<<" @ "<<
-                       chunk.GetRefSeqRange()<<": "<<
-                       count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
-                       " skipped: "<<skipped<<" in "<<time);
-            s_CreateTime += time;
-            sw1.Reset();
-            sw1.Start();
-        }
-        int seq_chunk_id = range_id*kChunkIdMul+eChunk_short_seq+(sub_chunk-eChunk_align);
-        CRef<CTSE_Chunk_Info> seq_chunk;
-        ITERATE ( vector<CSeq_id_Handle>, it, short_ids ) {
-            if ( !m_Seq2Chunk.insert(TSeq2Chunk::value_type(*it, seq_chunk_id)).second ) {
-                continue;
-            }
-            if ( !seq_chunk ) {
-                seq_chunk = new CTSE_Chunk_Info(seq_chunk_id);
-            }
-            seq_chunk->x_AddBioseqId(*it);
-        }
-        if ( seq_chunk ) {
-            if ( m_File->GetBamDb().UsesRawIndex() ) {
-                seq_chunk->x_SetLoadBytes(Uint4(m_Chunks[range_id].GetAlignCount()));
-            }
-            seq_chunk->x_AddBioseqPlace(kTSEId);
-            split_info.AddChunk(*seq_chunk);
-        }
-        if ( GetDebugLevel() >= 4 ) {
-            double time = sw1.Elapsed();
+                       "Attached alignments "<<GetRefSeqId()<<
+                       " id="<<chunk_info.GetChunkId()<<
+                       " @ "<<m_Chunks[range_id].GetRefSeqRange()<<" in "<<time);
             s_AttachTime += time;
-            LOG_POST_X(20, Info<<"CBAMDataLoader: "
-                       "Attached alignments "<<GetRefSeqId()<<" @ "<<
-                       chunk.GetRefSeqRange()<<": "<<
-                       count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
-                       " skipped: "<<skipped<<" in "<<time);
         }
-    }}
+    }
+    x_AddSeqChunk(chunk_info, short_ids);
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(7, Info<<"CBAMDataLoader: "
-                   "Loaded "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<
+                   "Loaded "<<GetRefSeqId()<<
+                   " id="<<chunk_info.GetChunkId()<<
+                   " @ "<<m_Chunks[range_id].GetRefSeqRange()<<": "<<
                    count<<" repl: "<<repl_count<<" fail: "<<fail_count<<
                    " skipped: "<<skipped<<" in "<<sw.Elapsed());
     }
@@ -1803,27 +2043,63 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     size_t count = 0, skipped = 0, dups = 0, far_refs = 0;
     set<CSeq_id_Handle> loaded;
     
-#ifdef SKIP_TOO_LONG_ALIGNMENTS
-    TSeqPos ref_len = m_File->GetRefSeqLength(GetRefSeqId());
+    list< CRef<CBioseq> > bioseqs;
+    
+    if ( sub_chunk == eChunk_short_seq_pileup ) {
+#ifdef SEPARATE_PILEUP_READS
+        int sub_chunk_count = chunk.m_PileupChunkCount;
+        for ( int i = 1; i < sub_chunk_count; ++i ) {
+            TSeqPos split_pos = m_Chunks[range_id+i].GetRefSeqRange().GetFrom();
+            CBamAlignIterator ait(*m_File, GetRefSeqId(),
+                                  start_range.GetFrom(), split_pos-start_range.GetFrom(),
+                                  CBamIndex::kLevel0, CBamIndex::kLevel0,
+                                  CBamAlignIterator::eSearchByStart,
+                                  &m_Chunks[range_id].m_FilePosFirstCrossing);
+            if ( m_SpotIdDetector ) {
+                ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
+            }
+            CMutexGuard guard(m_Seq2ChunkMutex);
+            for ( ; ait; ++ait ) {
+                TSeqPos align_pos = ait.GetRefSeqPos();
+                _ASSERT(align_pos<split_pos);
+                if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+                    ++skipped;
+                    continue;
+                }
+                TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+                if ( align_end <= split_pos ) {
+                    ++skipped;
+                    continue;
+                }
+
+                if ( ait.GetShortSequenceLength() == 0 ) {
+                    // far reference
+                    ++far_refs;
+                    continue;
+                }
+        
+                CSeq_id_Handle seq_id =
+                    CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id());
+                auto iter = m_Seq2Chunk.find(seq_id);
+                if ( iter == m_Seq2Chunk.end() || iter->second != chunk_id ) {
+                    ++skipped;
+                    continue;
+                }
+
+                if ( !loaded.insert(seq_id).second ) {
+                    ++dups;
+                    continue;
+                }
+                bioseqs.push_back(ait.GetShortBioseq());
+                ++count;
+            }
+        }
 #endif
-    CBamAlignIterator ait;
-    if ( sub_chunk == eChunk_short_seq1 ) {
-        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
-                                CBamIndex::kLevel0, CBamIndex::kLevel0, CBamAlignIterator::eSearchByStart);
-    }
-    else if ( sub_chunk == eChunk_short_seq2 ) {
-        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
-                                CBamIndex::kLevel1, CBamIndex::kMaxLevel, CBamAlignIterator::eSearchByStart);
     }
     else {
-        ait = CBamAlignIterator(*m_File, GetRefSeqId(), start_range.GetFrom(), start_range.GetLength(),
-                                CBamAlignIterator::eSearchByStart);
-    }
-    if ( m_SpotIdDetector ) {
-        ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
-    }
-    list< CRef<CBioseq> > bioseqs;
-    {{
+        TSeqPos max_end_pos = kInvalidSeqPos;
+        CBamAlignIterator ait;
+        x_InitAlignIterator(ait, max_end_pos, chunk_info, eChunk_short_seq);
         CMutexGuard guard(m_Seq2ChunkMutex);
         for( ; ait; ++ait ){
             TSeqPos align_pos = ait.GetRefSeqPos();
@@ -1836,14 +2112,14 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
                 ++skipped;
                 continue;
             }
-#ifdef SKIP_TOO_LONG_ALIGNMENTS
-            TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
-            if ( align_end > ref_len ) {
-                ++skipped;
-                continue;
+            if ( max_end_pos != kInvalidSeqPos ) {
+                TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+                if ( align_end > max_end_pos ) {
+                    ++skipped;
+                    continue;
+                }
             }
-#endif
-        
+
             if ( ait.GetShortSequenceLength() == 0 ) {
                 // far reference
                 ++far_refs;
@@ -1865,13 +2141,14 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
             bioseqs.push_back(ait.GetShortBioseq());
             ++count;
         }
-    }}
+    }
     chunk_info.x_LoadBioseqs(place, bioseqs);
 
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(10, Info<<"CBAMDataLoader: "
-                   "Loaded seqs "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<
+                   "Loaded seqs "<<GetRefSeqId()<<
+                   " id="<<chunk_info.GetChunkId()<<
+                   " @ "<<chunk.GetRefSeqRange()<<": "<<
                    count<<" skipped: "<<skipped<<" dups: "<<dups<<" far: "<<far_refs<<" in "<<sw.Elapsed());
     }
 
@@ -1913,9 +2190,11 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
     static const int kNumStat_ACGT = CBamDb::SPileupValues::kNumStat_ACGT;
     static const int kNumStat = CBamDb::SPileupValues::kNumStat;
     typedef CBamDb::SPileupValues::TCount TCount;
-    
+
+    string annot_name;
     CRef<CSeq_id> ref_id;
     CRange<TSeqPos> ref_range;
+    int min_quality;
     bool make_intron;
 
     struct SGraph {
@@ -1932,13 +2211,102 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
         TCount max_value;
     };
     SGraph graphs[kNumStat];
+    struct SSplit {
+        SSplit(TSeqPos seq_pos)
+            : seq_pos(seq_pos),
+              file_pos_first_crossing(),
+              file_pos_first_starting()
+            {
+            }
+        TSeqPos seq_pos;
+        CBGZFPos file_pos_first_crossing;
+        CBGZFPos file_pos_first_starting;
+    };
+
+    typedef vector<SSplit> TSplits;
+    TSplits splits;
+    TSplits::iterator cur_split;
+    CRef<CSeq_annot> annot;
+    CSeq_annot::TData::TAlign* align_list = 0;
+    typedef map<CSeq_id_Handle, int> TSeq2Chunk;
+#ifdef SEPARATE_PILEUP_READS
+    vector<CSeq_id_Handle> short_ids;
+#else
+    TSeq2Chunk* seq2chunk = 0;
+    int seq_chunk_id = 0;
+    size_t seq_skipped = 0;
+    size_t seq_dups = 0;
+    size_t seq_count = 0;
+    set<CSeq_id_Handle> loaded;
+    list<CRef<CBioseq>> bioseqs;
+#endif
     
-    SPileupGraphCreator(const CSeq_id_Handle& ref_id,
-                        CRange<TSeqPos> ref_range)
-        : ref_id(SerialClone(*ref_id.GetSeqId())),
+    SPileupGraphCreator(const string& annot_name,
+                        const CSeq_id_Handle& ref_id,
+                        CRange<TSeqPos> ref_range,
+                        int min_quality)
+        : annot_name(annot_name),
+          ref_id(SerialClone(*ref_id.GetSeqId())),
           ref_range(ref_range),
-          make_intron(s_GetMakeIntronGraph())
+          min_quality(min_quality),
+          make_intron(s_GetMakeIntronGraph()),
+          cur_split(splits.begin())
         {
+        }
+
+    bool AcceptAlign(const CBamAlignIterator& ait)
+        {
+            if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+                return false;
+            }
+            while ( cur_split != splits.end() ) {
+                // skip split points that are before this alignment
+                if ( !cur_split->file_pos_first_starting ) {
+                    cur_split->file_pos_first_starting = ait.GetRawIndexIteratorPtr()->GetFilePos();
+                }
+                TSeqPos pos = ait.GetRefSeqPos();
+                if ( pos >= cur_split->seq_pos ) {
+                    ++cur_split;
+                    continue;
+                }
+                if ( ait.GetRawIndexIteratorPtr()->GetIndexLevel() != CBamIndex::kLevel0 ) {
+                    // ignore non level 0 aligns - they will be collected by eChunk_align2
+                    break;
+                }
+                TSeqPos len = ait.GetCIGARRefSize();
+                TSeqPos end = pos + len;
+                if ( end > cur_split->seq_pos ) {
+                    // alignment crosses the split point
+                    if ( !cur_split->file_pos_first_crossing ) {
+                        cur_split->file_pos_first_crossing = ait.GetRawIndexIteratorPtr()->GetFilePos();
+                    }
+                    if ( !align_list ) {
+                        annot = ait.GetSeq_annot(annot_name);
+                        align_list = &annot->SetData().SetAlign();
+                    }
+                    align_list->push_back(ait.GetMatchAlign());
+                    if ( ait.GetShortSequenceLength() != 0 ) {
+                        CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(*ait.GetShortSeq_id());
+#ifdef SEPARATE_PILEUP_READS
+                        short_ids.push_back(seq_id);
+#else
+                        auto iter = seq2chunk->insert(make_pair(seq_id, seq_chunk_id)).first;
+                        if ( iter->second != seq_chunk_id ) {
+                            ++seq_skipped;
+                        }
+                        else if ( !loaded.insert(seq_id).second ) {
+                            ++seq_dups;
+                        }
+                        else {
+                            bioseqs.push_back(ait.GetShortBioseq());
+                            ++seq_count;
+                        }
+#endif
+                    }
+                }
+                break;
+            }
+            return true;
         }
 
     void x_CreateGraph(SGraph& g)
@@ -2215,26 +2583,52 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     }
     size_t range_id = chunk_info.GetChunkId()/kChunkIdMul;
     const CBamRefSeqChunkInfo& chunk = m_Chunks[range_id];
+    _ASSERT(chunk.m_PileupChunkCount);
     auto graph_range = GetChunkGraphRange(range_id);
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
     _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<chunk.GetRefSeqRange());
+
+    SPileupGraphCreator gg(m_File->GetAnnotName(), GetRefSeq_id(), graph_range, min_quality);
     
-    SPileupGraphCreator gg(GetRefSeq_id(), graph_range);
+    CMutexGuard seq2chunk_guard(eEmptyGuard);
+    if ( chunk.m_PileupChunkCount ) {
+        for ( int i = 1; i < chunk.m_PileupChunkCount; ++i ) {
+            gg.splits.push_back(m_Chunks[range_id+i].GetRefSeqRange().GetFrom());
+        }
+        gg.cur_split = gg.splits.begin();
+#ifndef SEPARATE_PILEUP_READS
+        seq2chunk_guard.Guard(m_Seq2ChunkMutex);
+        gg.seq_chunk_id = chunk_info.GetChunkId();
+        gg.seq2chunk = &m_Seq2Chunk;
+#endif
+    }
+    
     CBamDb::SPileupValues ss;
     CBamDb::SPileupValues::EIntronMode intron_mode =
         s_GetMakeIntronGraph()?
         CBamDb::SPileupValues::eCountIntron:
         CBamDb::SPileupValues::eNoCountIntron;
     TSeqPos gap_to_intron_threshold = s_GetGapToIntronThreshold();
-    size_t count = m_File->GetBamDb().CollectPileup(ss, GetRefSeqId(), graph_range,
-                                                    min_quality, &gg,
+    size_t count = m_File->GetBamDb().CollectPileup(ss, GetRefSeqId(), graph_range, &gg,
                                                     intron_mode, gap_to_intron_threshold);
 
+#ifndef SEPARATE_PILEUP_READS
+    gg.seq2chunk = 0;
+    seq2chunk_guard.Release();
+#endif
+    
+    for ( int i = 1; i < chunk.m_PileupChunkCount; ++i ) {
+        m_Chunks[range_id+i].m_FilePosFirstCrossing = gg.splits[i-1].file_pos_first_crossing;
+        m_Chunks[range_id+i].m_FilePosFirstStarting = gg.splits[i-1].file_pos_first_starting;
+    }
+    
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(11, Info<<"CBAMDataLoader: "
-                   "Collected pileup counts "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<count<<" in "<<sw.Elapsed());
+                   "Collected pileup counts "<<GetRefSeqId()<<
+                   " id="<<chunk_info.GetChunkId()<<
+                   " @ "<<chunk.GetRefSeqRange()<<": "<<
+                   count<<" in "<<sw.Elapsed());
     }
     if ( count == 0 ) {
         // zero pileup graphs
@@ -2266,12 +2660,26 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         }
     }
     chunk_info.x_LoadAnnot(place, *annot);
+    size_t align_count = 0;
+    if ( gg.annot ) {
+        // add alignments that cross sub-ranges borders
+        align_count = gg.annot->GetData().GetAlign().size();
+        //LOG_POST("Pileup align annot: "<<MSerial_AsnText<<*gg.annot);
+        chunk_info.x_LoadAnnot(place, *gg.annot);
+#ifdef SEPARATE_PILEUP_READS
+        x_AddSeqChunk(chunk_info, gg.short_ids);
+#else
+        chunk_info.x_LoadBioseqs(place, gg.bioseqs);
+#endif
+    }
     chunk_info.x_AddUsedMemory(total_bytes);
 
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(11, Info<<"CBAMDataLoader: "
-                   "Loaded pileup "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<count<<" in "<<sw.Elapsed());
+                   "Loaded pileup "<<GetRefSeqId()<<
+                   " id="<<chunk_info.GetChunkId()<<
+                   " @ "<<chunk.GetRefSeqRange()<<": "<<
+                   count<<" ("<<align_count<<" aligns) in "<<sw.Elapsed());
     }
     
     chunk_info.SetLoaded();
@@ -2452,17 +2860,24 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
     if ( CBamRawAlignIterator* rit = ait.GetRawIndexIteratorPtr() ) {
-        for( ; *rit; ++*rit ){
-            if ( min_quality > 0 && rit->GetMapQuality() < min_quality ) {
+        for( ; ait; ++ait ) {
+            if ( !ss.AcceptAlign(ait) ) {
                 ++skipped;
                 continue;
             }
+            TSeqPos align_pos = rit->GetRefSeqPos();
+#ifdef SKIP_TOO_LONG_ALIGNMENTS
+            TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
+            if ( align_end > ref_len ) {
+                ++skipped;
+                continue;
+            }
+#endif            
             ++count;
 
-            CTempString read_raw = rit->GetShortSequenceRaw();
-            TSeqPos align_pos = rit->GetRefSeqPos();
             TSeqPos ss_pos = align_pos - graph_range.GetFrom();
             TSeqPos read_pos = 0;
+            CTempString read_raw = rit->GetShortSequenceRaw();
             for ( Uint2 i = 0, count = rit->GetCIGAROpsCount(); i < count; ++i ) {
                 Uint4 op = rit->GetCIGAROp(i);
                 Uint4 seglen = op >> 4;
@@ -2506,7 +2921,11 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
         }
     }
     else {
-        for( ; ait; ++ait ){
+        for( ; ait; ++ait ) {
+            if ( !ss.AcceptAlign(ait) ) {
+                ++skipped;
+                continue;
+            }
             TSeqPos align_pos = ait.GetRefSeqPos();
 #ifdef SKIP_TOO_LONG_ALIGNMENTS
             TSeqPos align_end = align_pos + ait.GetCIGARRefSize();
@@ -2515,10 +2934,6 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                 continue;
             }
 #endif            
-            if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
-                ++skipped;
-                continue;
-            }
             ++count;
 
             TSignedSeqPos ss_pos = align_pos - graph_range.GetFrom();
@@ -2586,8 +3001,9 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     }
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(11, Info<<"CBAMDataLoader: "
-                   "Collected pileup counts "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<
+                   "Collected pileup counts "<<GetRefSeqId()<<
+                   " id="<<chunk_info.GetChunkId()<<
+                   " @ "<<chunk.GetRefSeqRange()<<": "<<
                    count<<" skipped: "<<skipped<<" in "<<sw.Elapsed());
     }
     if ( count == 0 ) {
@@ -2662,6 +3078,7 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(11, Info<<"CBAMDataLoader: "
                    "Loaded pileup "<<GetRefSeqId()<<" @ "<<
+                   " id="<<chunk_info.GetChunkId()<<
                    chunk.GetRefSeqRange()<<": "<<
                    count<<" skipped: "<<skipped<<" in "<<sw.Elapsed());
     }

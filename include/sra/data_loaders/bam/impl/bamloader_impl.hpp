@@ -106,10 +106,13 @@ public:
             range.SetTo(GetMaxRefSeqFrom());
             return range;
         }
-    TRange GetGraphRangeUnfiltered() const
+    /*
+    tuple<TRange, int> GetGraphRangeUnfiltered() const
         {
-            return GetRefSeqRange();
+            TRange range = GetRefSeqRange();
+            return make_tuple(GetRefSeqRange(), m_PileupChunkCount);
         }
+    */
 
 protected:
     friend class CBamRefSeqInfo;
@@ -118,6 +121,9 @@ protected:
     Uint8 m_DataSize;
     TRange m_RefSeqRange;
     TSeqPos m_MaxRefSeqFrom;
+    int m_PileupChunkCount = 1;
+    CBGZFPos m_FilePosFirstCrossing;
+    CBGZFPos m_FilePosFirstStarting;
 };
 
 
@@ -143,6 +149,10 @@ public:
         }
 
     void LoadRanges(void);
+    // return sequence range covered by range_id pileup chunk
+    // second value is number of covered alignment chunks
+    //   or 0 if the range_id should not be a pileup chunk
+    //tuple<CRange<TSeqPos>, size_t> GetChunkGraphRange(size_t range_id);
     CRange<TSeqPos> GetChunkGraphRange(size_t range_id);
     
     void LoadMainSplit(CTSE_LoadLock& load_lock);
@@ -176,6 +186,10 @@ protected:
     void x_LoadRangesStat(void);
     bool x_LoadRangesCov(void);
     bool x_LoadRangesEstimated(void);
+    void x_InitAlignIterator(CBamAlignIterator& ait, TSeqPos& max_end_pos,
+                             CTSE_Chunk_Info& chunk_info, int base_id);
+    void x_AddSeqChunk(CTSE_Chunk_Info& chunk_info,
+                       const vector<CSeq_id_Handle>& short_ids);
 
     CBamFileInfo* m_File;
     string m_RefSeqId;
@@ -260,6 +274,7 @@ public:
     void AddSrzDef(void);
     void AddBamFile(const CBAMDataLoader::SBamFileName& bam);
     void OpenBAMFiles();
+    void OpenBAMFilesOnce();
     bool BAMFilesOpened() const;
 
     CRef<CBAMBlobId> GetShortSeqBlobId(const CSeq_id_Handle& idh);
