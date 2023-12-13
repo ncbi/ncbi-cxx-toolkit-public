@@ -26,7 +26,8 @@ public:
     virtual void       Fini() {}
     virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr);
     virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr);
-    virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr);
+    virtual CRef<CPub> GetPubmedEntry(TEntrezId pmid, EPubmedError* = nullptr);
+    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr);
 
     TPubInterceptor SetPubInterceptor(TPubInterceptor f)
     {
@@ -52,11 +53,12 @@ using IPubmedUpdater = CEUtilsUpdater;
 
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdater
 {
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
-
 public:
     CEUtilsUpdaterWithCache(ENormalize norm = ENormalize::Off) :
         CEUtilsUpdater(norm) {}
+
+    CRef<CPub> GetPubmedEntry(TEntrezId pmid, EPubmedError* = nullptr) override;
+
     void ReportStats(std::ostream&);
     void ClearCache();
 

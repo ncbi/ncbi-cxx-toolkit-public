@@ -551,27 +551,36 @@ CRef<CPub> CEUtilsUpdater::x_GetPub(TEntrezId pmid, EPubmedError* perr)
 {
     CRef<CPubmed_entry> pme = x_GetPubmedEntry(pmid, perr);
     if (pme && pme->IsSetMedent()) {
-        const CMedline_entry& mle = pme->GetMedent();
-        if (mle.IsSetCit()) {
-            CRef<CPub> pub(new CPub);
-            pub->SetArticle().Assign(mle.GetCit());
-            if (m_Norm == ENormalize::On) {
-                Normalize(*pub);
-            }
-            if (m_pub_interceptor)
-                m_pub_interceptor(pub);
-            return pub;
+        CRef<CPub> pub(new CPub);
+        pub->SetMedline().Assign(pme->GetMedent());
+        if (m_Norm == ENormalize::On) {
+            Normalize(*pub);
         }
+        if (m_pub_interceptor) {
+            m_pub_interceptor(pub);
+        }
+        return pub;
     }
     return {};
 }
 
 CRef<CPub> CEUtilsUpdater::GetPub(TEntrezId pmid, EPubmedError* perr)
 {
+    CConstRef<CPub> pub = GetPubmedEntry(pmid, perr);
+    if (pub && pub->IsMedline() && pub->GetMedline().IsSetCit()) {
+        CRef<CPub> ret(new CPub);
+        ret->SetArticle().Assign(pub->GetMedline().GetCit());
+        return ret;
+    }
+    return {};
+}
+
+CRef<CPub> CEUtilsUpdater::GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
+{
     return x_GetPub(pmid, perr);
 }
 
-CRef<CPub> CEUtilsUpdaterWithCache::GetPub(TEntrezId pmid, EPubmedError* perr)
+CRef<CPub> CEUtilsUpdaterWithCache::GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
     m_num_requests++;
     CConstRef<CPub> pub;
