@@ -343,7 +343,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         }
     }
 
-    const int RepeatMargin = 25;
+    const int RepeatMargin = 75;
     for(int rpta = 0; rpta < len; ) {
         while(rpta < len && isupper(sequence[rpta]))
             ++rpta;
