@@ -37,9 +37,9 @@ function(NCBI_get_component_config_locations _sub _type)
     set(_ncbi_build_type  "$<CONFIG>${NCBI_PlatformBits}")
     set(_ncbi_build_typeMT  "$<CONFIG>${NCBI_BUILD_TYPE_SUFFIX}")
     set(_dirs
-        ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${_ncbi_build_type}/${_type}
-        ${NCBI_COMPILER}-${_ncbi_build_type}/${_type}
+        ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${_ncbi_build_typeMT}/${_type}
         ${NCBI_COMPILER}-${_ncbi_build_typeMT}/${_type}
+        ${_ncbi_build_typeMT}/${_type}
         ${_ncbi_build_type}/${_type}
         ${_type}${NCBI_PlatformBits}
         ${_type}
