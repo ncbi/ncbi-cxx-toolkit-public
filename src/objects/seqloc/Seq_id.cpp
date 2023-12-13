@@ -2744,9 +2744,9 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
                      ||  fasta_pieces.front().size() == 3)
                 &&  ((next_type = WhichInverseSeqId(fasta_pieces.front()))
                      != e_not_set)) {
-                // Likely mid-string optional-field omission;
-                // conservatively treat as such only if unable to
-                // parse the following piece as an ID type, though.
+                // Likely mid-string optional-field omission; look ahead
+                // more to see whether the piece works better as a field
+                // or a tag.
                 list<CTempString>::iterator it = fasta_pieces.begin();
                 ++it;
                 _ASSERT(it != fasta_pieces.end());
@@ -2754,6 +2754,9 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
                 if ((it->size() == 2  ||  it->size() == 3)
                     &&  (next_type_2 = WhichInverseSeqId(*it)) != e_not_set) {
                     next_type = next_type_2;
+                } else if (it->find_first_not_of(" \t\n") == NPOS
+                           &&  ++it == fasta_pieces.end()) {
+                    next_type = e_not_set;
                 } else {
                     break;
                 }
