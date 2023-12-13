@@ -75,7 +75,7 @@ public:
     {
     }
 
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* perr = nullptr) override
+    CRef<CPub> GetPubmedEntry(TEntrezId pmid, EPubmedError* perr = nullptr) override
     {
         if (perr) {
             *perr = error_val;
