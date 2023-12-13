@@ -423,8 +423,8 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 
 static void Normalize(CPub& pub)
 {
-    if (pub.IsArticle()) {
-        CCit_art& A = pub.SetArticle();
+    if (pub.IsMedline() && pub.GetMedline().IsSetCit()) {
+        CCit_art& A = pub.SetMedline().SetCit();
 #if 0
         // Ensure period at title end; RW-1946
         if (A.IsSetTitle() && ! A.GetTitle().Get().empty()) {
