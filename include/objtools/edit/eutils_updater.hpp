@@ -11,26 +11,7 @@ BEGIN_SCOPE(edit)
 
 using TPubInterceptor = std::function<void(CRef<CPub>&)>;
 
-class NCBI_XOBJEDIT_EXPORT IPubmedUpdater
-{
-public:
-    virtual ~IPubmedUpdater() {}
-    virtual bool       Init() { return true; }
-    virtual void       Fini() {}
-    virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr)      = 0;
-    virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) = 0;
-    virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr)     = 0;
-
-    void SetPubInterceptor(TPubInterceptor f)
-    {
-        m_pub_interceptor = f;
-    }
-
-protected:
-    TPubInterceptor m_pub_interceptor = nullptr;
-};
-
-class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater : public IPubmedUpdater
+class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater
 {
 public:
     enum class ENormalize { Off, On };
@@ -39,10 +20,20 @@ public:
     CEUtilsUpdater(ENormalize = ENormalize::Off);
     NCBI_DEPRECATED CEUtilsUpdater(bool norm) :
         CEUtilsUpdater(norm ? ENormalize::On : ENormalize::Off) {}
+    virtual ~CEUtilsUpdater() {}
 
-    TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr) override;
-    TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr) override;
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr) override;
+    virtual bool       Init() { return true; }
+    virtual void       Fini() {}
+    virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr);
+    virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr);
+    virtual CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr);
+
+    TPubInterceptor SetPubInterceptor(TPubInterceptor f)
+    {
+        TPubInterceptor old = m_pub_interceptor;
+        m_pub_interceptor = f;
+        return old;
+    }
 
     // Hydra replacement using citmatch api; RW-1918,RW-1999
     static bool DoPubSearch(const std::vector<string>& query, std::vector<TEntrezId>& pmids);
@@ -51,10 +42,13 @@ protected:
     CRef<CPubmed_entry> x_GetPubmedEntry(TEntrezId pmid, EPubmedError*);
     CRef<CPub>          x_GetPub(TEntrezId pmid, EPubmedError*);
 
-private:
+protected:
     CRef<CEUtils_ConnContext> m_Ctx;
     ENormalize                m_Norm;
+    TPubInterceptor           m_pub_interceptor = nullptr;
 };
+
+using IPubmedUpdater = CEUtilsUpdater;
 
 class NCBI_XOBJEDIT_EXPORT CEUtilsUpdaterWithCache : public CEUtilsUpdater
 {

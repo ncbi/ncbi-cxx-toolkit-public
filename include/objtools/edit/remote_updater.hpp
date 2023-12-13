@@ -127,7 +127,7 @@ public:
     static void PostProcessPubs(CSeq_entry& obj);
     static void PostProcessPubs(CPubdesc& pubdesc);
 
-    void SetPubmedClient(IPubmedUpdater*);
+    void SetPubmedClient(CEUtilsUpdater*);
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
     void ReportStats(std::ostream& str);
@@ -151,7 +151,7 @@ private:
     FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
 
     string                     m_pm_url;
-    unique_ptr<IPubmedUpdater> m_pubmed;
+    unique_ptr<CEUtilsUpdater> m_pubmed;
     bool                       m_pm_use_cache = true;
     CEUtilsUpdater::ENormalize m_pm_normalize = CEUtilsUpdater::ENormalize::Off;
     TPubInterceptor            m_pm_interceptor = nullptr;
