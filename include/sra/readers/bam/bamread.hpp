@@ -72,6 +72,7 @@ class CSeq_id;
 class CBamFileAlign;
 class CBamMgr;
 class CBamDb;
+class CBGZFPos;
 
 
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessMgr, const);
@@ -230,6 +231,8 @@ public:
             return m_IndexName;
         }
 
+    TSeqPos GetPageSize() const;
+
     void SetIdMapper(IIdMapper* idmapper, EOwnership ownership)
         {
             m_IdMapper.reset(idmapper, ownership);
@@ -276,6 +279,9 @@ public:
     public:
         virtual ~ICollectPileupCallback();
 
+        // check if this alignment needs to be processed
+        virtual bool AcceptAlign(const CBamAlignIterator& ait);
+        
         // count and previously added values or zeros are multiple of 16
         virtual void AddZerosBy16(TSeqPos count) = 0;
         // count and previously added values or zeros are multiple of 16
@@ -488,7 +494,6 @@ public:
     size_t CollectPileup(SPileupValues& values,
                          const string& ref_id,
                          CRange<TSeqPos> graph_range,
-                         Uint1 map_quality = 0,
                          ICollectPileupCallback* callback = 0,
                          SPileupValues::EIntronMode intron_mode = SPileupValues::eNoCountIntron,
                          TSeqPos gap_to_intron_threshold = kInvalidSeqPos) const;
@@ -681,19 +686,22 @@ public:
 
     CBamAlignIterator(void);
     explicit
-    CBamAlignIterator(const CBamDb& bam_db);
+    CBamAlignIterator(const CBamDb& bam_db,
+                      const CBGZFPos* file_pos = nullptr);
     CBamAlignIterator(const CBamDb& bam_db,
                       const string& ref_id,
                       TSeqPos ref_pos,
                       TSeqPos window = 0,
-                      ESearchMode search_mode = eSearchByOverlap);
+                      ESearchMode search_mode = eSearchByOverlap,
+                      const CBGZFPos* file_pos = nullptr);
     CBamAlignIterator(const CBamDb& bam_db,
                       const string& ref_id,
                       TSeqPos ref_pos,
                       TSeqPos window,
                       CBamIndex::EIndexLevel min_level,
                       CBamIndex::EIndexLevel max_level,
-                      ESearchMode search_mode = eSearchByOverlap);
+                      ESearchMode search_mode = eSearchByOverlap,
+                      const CBGZFPos* file_pos = nullptr);
     ~CBamAlignIterator();
 
     CBamAlignIterator(const CBamAlignIterator& iter);
@@ -848,19 +856,22 @@ private:
         mutable CBamString m_CIGAR;
 
         explicit
-        SRawImpl(CObjectFor<CBamRawDb>& db);
+        SRawImpl(CObjectFor<CBamRawDb>& db,
+                 const CBGZFPos* file_pos = nullptr);
         SRawImpl(CObjectFor<CBamRawDb>& db,
                  const string& ref_label,
                  TSeqPos ref_pos,
                  TSeqPos window,
-                 ESearchMode search_mode);
+                 ESearchMode search_mode,
+                 const CBGZFPos* file_pos = nullptr);
         SRawImpl(CObjectFor<CBamRawDb>& db,
                  const string& ref_label,
                  TSeqPos ref_pos,
                  TSeqPos window,
                  CBamIndex::EIndexLevel min_level,
                  CBamIndex::EIndexLevel max_level,
-                 ESearchMode search_mode);
+                 ESearchMode search_mode,
+                 const CBGZFPos* file_pos = nullptr);
         
         void x_InvalidateBuffers();
     };

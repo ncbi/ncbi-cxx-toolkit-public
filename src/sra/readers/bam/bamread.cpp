@@ -980,6 +980,18 @@ CBamDb::CBamDb(const CBamMgr& mgr,
 }
 
 
+TSeqPos CBamDb::GetPageSize() const
+{
+    if ( UsesRawIndex() ) {
+        return m_RawDB->GetData().GetIndex().GetPageSize();
+    }
+    else {
+        // assume BAI index
+        return 1<<SBamIndexDefs::kBAI_min_shift;
+    }
+}
+
+
 CRef<CSeq_id> CBamDb::GetRefSeq_id(const string& label) const
 {
     if ( !m_RefSeqIds ) {
@@ -1060,6 +1072,13 @@ string CBamDb::GetHeaderText(void) const
 #ifdef HAVE_NEW_PILEUP_COLLECTOR
 CBamDb::ICollectPileupCallback::~ICollectPileupCallback()
 {
+}
+
+
+// by default all alignment are processed
+bool CBamDb::ICollectPileupCallback::AcceptAlign(const CBamAlignIterator& /*ait*/)
+{
+    return true;
 }
 
 
@@ -1415,7 +1434,6 @@ void CBamDb::SPileupValues::make_split_acgt(TSeqPos len)
 size_t CBamDb::CollectPileup(SPileupValues& values,
                              const string& ref_id,
                              CRange<TSeqPos> graph_range,
-                             Uint1 min_quality,
                              ICollectPileupCallback* callback,
                              SPileupValues::EIntronMode intron_mode,
                              TSeqPos gap_to_intron_threshold) const
@@ -1426,8 +1444,8 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
 
     CBamAlignIterator ait(*this, ref_id, graph_range.GetFrom(), graph_range.GetLength());
     if ( CBamRawAlignIterator* rit = ait.GetRawIndexIteratorPtr() ) {
-        for( ; *rit; ++*rit ){
-            if ( min_quality > 0 && rit->GetMapQuality() < min_quality ) {
+        for( ; ait; ++ait ) {
+            if ( callback && !callback->AcceptAlign(ait) ) {
                 continue;
             }
             ++count;
@@ -1494,8 +1512,8 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
         }
     }
     else {
-        for( ; ait; ++ait ){
-            if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
+        for( ; ait; ++ait ) {
+            if ( callback && !callback->AcceptAlign(ait) ) {
                 continue;
             }
             ++count;
@@ -1830,9 +1848,10 @@ TSeqPos CBamRefSeqIterator::GetLength(void) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db)
+CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
+                                      const CBGZFPos* file_pos)
     : m_RawDB(&db),
-      m_Iter(db)
+      m_Iter(db, file_pos)
 {
 }
 
@@ -1841,9 +1860,11 @@ CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
                                       const string& ref_label,
                                       TSeqPos ref_pos,
                                       TSeqPos window,
-                                      CBamAlignIterator::ESearchMode search_mode)
+                                      CBamAlignIterator::ESearchMode search_mode,
+                                      const CBGZFPos* file_pos)
     : m_RawDB(&db),
-      m_Iter(db, ref_label, ref_pos, window, CBamRawAlignIterator::ESearchMode(search_mode))
+      m_Iter(db, ref_label, ref_pos, window,
+             CBamRawAlignIterator::ESearchMode(search_mode), file_pos)
 {
     m_ShortSequence.reserve(256);
     m_CIGAR.reserve(32);
@@ -1856,9 +1877,11 @@ CBamAlignIterator::SRawImpl::SRawImpl(CObjectFor<CBamRawDb>& db,
                                       TSeqPos window,
                                       CBamIndex::EIndexLevel min_level,
                                       CBamIndex::EIndexLevel max_level,
-                                      CBamAlignIterator::ESearchMode search_mode)
+                                      CBamAlignIterator::ESearchMode search_mode,
+                                      const CBGZFPos* file_pos)
     : m_RawDB(&db),
-      m_Iter(db, ref_label, ref_pos, window, min_level, max_level, CBamRawAlignIterator::ESearchMode(search_mode))
+      m_Iter(db, ref_label, ref_pos, window,
+             min_level, max_level, CBamRawAlignIterator::ESearchMode(search_mode), file_pos)
 {
     m_ShortSequence.reserve(256);
     m_CIGAR.reserve(32);
@@ -1936,16 +1959,20 @@ CBamAlignIterator::CBamAlignIterator(void)
 }
 
 
-CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
+CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
+                                     const CBGZFPos* file_pos)
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
     s_UpdateVDBRequestContext();
     if ( bam_db.UsesRawIndex() ) {
-        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject());
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), file_pos);
         if ( !m_RawImpl->m_Iter ) {
             m_RawImpl.Reset();
         }
+    }
+    else if ( file_pos && *file_pos ) {
+        NCBI_THROW(CBamException, eInvalidArg, "BAM file position is supported only in raw index mode");
     }
     else {
         CMutexGuard guard(bam_db.m_AADB->m_Mutex);
@@ -1969,13 +1996,14 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                                      const string& ref_id,
                                      TSeqPos ref_pos,
                                      TSeqPos window,
-                                     ESearchMode search_mode)
+                                     ESearchMode search_mode,
+                                     const CBGZFPos* file_pos)
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
     s_UpdateVDBRequestContext();
     if ( bam_db.UsesRawIndex() ) {
-        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, search_mode);
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, search_mode, file_pos);
         if ( !m_RawImpl->m_Iter ) {
             m_RawImpl.Reset();
         }
@@ -2024,13 +2052,14 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                                      TSeqPos window,
                                      CBamIndex::EIndexLevel min_level,
                                      CBamIndex::EIndexLevel max_level,
-                                     ESearchMode search_mode)
+                                     ESearchMode search_mode,
+                                     const CBGZFPos* file_pos)
     : m_DB(&bam_db),
       m_BamFlagsAvailability(eBamFlags_NotTried)
 {
     s_UpdateVDBRequestContext();
     if ( bam_db.UsesRawIndex() ) {
-        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, min_level, max_level, search_mode);
+        m_RawImpl = new SRawImpl(bam_db.m_RawDB.GetNCObject(), ref_id, ref_pos, window, min_level, max_level, search_mode, file_pos);
         if ( !m_RawImpl->m_Iter ) {
             m_RawImpl.Reset();
         }
