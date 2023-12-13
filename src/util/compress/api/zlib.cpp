@@ -851,14 +851,19 @@ int CZipCompression::GetMemoryLevelMax(void)     { return MAX_MEM_LEVEL; };
 // CZipCompressionFile
 //
 
-CZipCompressionFile::CZipCompressionFile(const string& file_name, EMode mode, ELevel level)
-    : CZipCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+CZipCompressionFile::CZipCompressionFile(
+        const string& file_name,
+        EMode mode,
+        ELevel level,
+        size_t compression_in_bufsize,
+        size_t compression_out_bufsize
+    )
+    : CZipCompression(level), m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     // For backward compatibility -- use gzip file format by default
     SetFlags(GetFlags() | fGZip);
 
-    if ( !Open(file_name, mode) ) {
+    if ( !Open(file_name, mode, compression_in_bufsize, compression_out_bufsize) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
                    "[CZipCompressionFile]  Cannot open file '" + file_name +

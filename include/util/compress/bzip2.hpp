@@ -318,10 +318,6 @@ class NCBI_XUTIL_EXPORT CBZip2CompressionFile : public CBZip2Compression,
                                                 public CCompressionFile
 {
 public:
-    // TODO: add compression_in_bufsize / compression_out_bufsize parameters after 
-    // removing deprecated constructors only, to avoid conflicts. See zst as example.
-    // JIRA: CXX-12640
-
     /// Constructor.
     ///
     /// Automatically calls Open() with given file name, mode and compression level.
@@ -329,11 +325,16 @@ public:
     ///   This constructor don't allow to use any advanced compression parameters
     ///   or a dictionary. If you need to set any of them, please use simplified
     ///   conventional constructor, set advanced parameters and use Open().
+    /// @note
+    ///   Current implementation uses default bzip2 methods to work with compression
+    ///   files, so in/out buffer sizes are not used, and added for API uniformity only.
     /// 
     CBZip2CompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level = eLevel_Default
+        ELevel        level = eLevel_Default,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
 
     /// Conventional constructor.
@@ -357,6 +358,9 @@ public:
     /// @note
     ///   All advanced compression parameters or a dictionary should be set before
     ///   Open() method, otherwise they will not have any effect.
+    /// @note
+    ///   Current implementation uses default bzip2 methods to work with compression
+    ///   files, so in/out buffer sizes are not used, and added for API uniformity only.
     /// 
     virtual bool Open(
         const string& file_name, 
@@ -522,7 +526,8 @@ public:
               new CBZip2Compressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CBZip2StreamCompressor(
         CBZip2Compression::ELevel level,
         CBZip2Compression::TBZip2Flags flags = 0
@@ -532,7 +537,8 @@ public:
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CBZip2StreamCompressor(CBZip2Compression::TBZip2Flags flags = 0)
         : CCompressionStreamProcessor(
               new CBZip2Compressor(CBZip2Compression::eLevel_Default, flags),
@@ -568,7 +574,8 @@ public:
              new CBZip2Decompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CBZip2StreamDecompressor(CBZip2Compression::TBZip2Flags flags = 0)
         : CCompressionStreamProcessor( 
               new CBZip2Decompressor(flags),
