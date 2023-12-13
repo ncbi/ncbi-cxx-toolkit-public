@@ -510,10 +510,6 @@ class NCBI_XUTIL_EXPORT CZipCompressionFile : public CZipCompression,
                                               public CCompressionFile
 {
 public:
-    // TODO: add compression_in_bufsize / compression_out_bufsize parameters after 
-    // removing deprecated constructors only, to avoid conflicts. See zst as example.
-    // JIRA: CXX-12640
-
     /// Constructor.
     ///
     /// Automatically calls Open() with given file name, mode and compression level.
@@ -525,7 +521,9 @@ public:
     CZipCompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level = eLevel_Default
+        ELevel        level = eLevel_Default,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
     /// Conventional constructor.
     CZipCompressionFile(
@@ -775,7 +773,8 @@ public:
               new CZipCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZipStreamCompressor(
         CZipCompression::ELevel    level,
         CZipCompression::TZipFlags flags = 0
@@ -785,7 +784,8 @@ public:
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZipStreamCompressor(CZipCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor(
               new CZipCompressor(CZipCompression::eLevel_Default, flags),
@@ -826,7 +826,8 @@ public:
               new CZipDecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZipStreamDecompressor(CZipCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor( 
               new CZipDecompressor(flags),

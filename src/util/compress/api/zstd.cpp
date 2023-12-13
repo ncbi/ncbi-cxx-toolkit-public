@@ -547,10 +547,12 @@ bool CZstdCompression::SetDecompressionParameters(void)
 //
 
 CZstdCompressionFile::CZstdCompressionFile(
-    const string& file_name, EMode mode, ELevel level,
-    size_t compression_in_bufsize, size_t compression_out_bufsize)
-        : CZstdCompression(level),
-            m_Mode(eMode_Read), m_File(0), m_Stream(0)
+        const string& file_name,
+        EMode mode, ELevel level,
+        size_t compression_in_bufsize,
+        size_t compression_out_bufsize
+    )
+    : CZstdCompression(level), m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     if ( !Open(file_name, mode, compression_in_bufsize, compression_out_bufsize) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";

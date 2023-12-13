@@ -852,14 +852,19 @@ int CZipCloudflareCompression::GetMemoryLevelMax(void)     { return MAX_MEM_LEVE
 // CZipCloudflareCompressionFile
 //
 
-CZipCloudflareCompressionFile::CZipCloudflareCompressionFile(const string& file_name, EMode mode, ELevel level)
-    : CZipCloudflareCompression(level),
-      m_Mode(eMode_Read), m_File(0), m_Stream(0)
+CZipCloudflareCompressionFile::CZipCloudflareCompressionFile(
+            const string& file_name,
+            EMode mode,
+            ELevel level,
+            size_t compression_in_bufsize,
+            size_t compression_out_bufsize
+        )
+        : CZipCloudflareCompression(level), m_Mode(eMode_Read), m_File(0), m_Stream(0)
 {
     // For backward compatibility -- use gzip file format by default
     SetFlags(GetFlags() | fGZip);
 
-    if ( !Open(file_name, mode) ) {
+    if ( !Open(file_name, mode, compression_in_bufsize, compression_out_bufsize) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
                    "[CZipCloudflareCompressionFile]  Cannot open file '" + file_name +

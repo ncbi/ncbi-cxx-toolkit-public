@@ -620,12 +620,6 @@ protected:
 ///   Compression/decompression flags (CZstdCompression:EFlags) or 
 ///   advanced compression-specific parameters (CZstdCompression::Set*()) can
 ///   greatly affect CZstdStreamCompressor behavior.
-/// @note
-///   Zstandard stream comression API uses the size of internal buffers equal 
-///   to "kCompressionDefaultBufSize", that is the same for all compression algorithms.
-///   If you compress/decompress big chunks of data it will work, but can be not so
-///   efficient and fast as using bigger buffers.
-/// 
 /// @sa CCompressionStreamProcessor
 
 class NCBI_XUTIL_EXPORT CZstdStreamCompressor
@@ -643,7 +637,8 @@ public:
               new CZstdCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZstdStreamCompressor(
         CZstdCompression::ELevel    level,
         CZstdCompression::TZstdFlags flags = 0
@@ -653,7 +648,8 @@ public:
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZstdStreamCompressor(CZstdCompression::TZstdFlags flags = 0)
         : CCompressionStreamProcessor(
               new CZstdCompressor(CZstdCompression::eLevel_Default, flags),

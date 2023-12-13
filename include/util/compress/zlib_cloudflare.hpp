@@ -504,10 +504,6 @@ class NCBI_XUTIL_EXPORT CZipCloudflareCompressionFile : public CZipCloudflareCom
                                                         public CCompressionFile
 {
 public:
-    // TODO: add compression_in_bufsize / compression_out_bufsize parameters after 
-    // removing deprecated constructors only, to avoid conflicts. See zst as example.
-    // JIRA: CXX-12640
-
     /// Constructor.
     ///
     /// Automatically calls Open() with given file name, mode and compression level.
@@ -519,7 +515,9 @@ public:
     CZipCloudflareCompressionFile(
         const string& file_name,
         EMode         mode,
-        ELevel        level = eLevel_Default
+        ELevel        level = eLevel_Default,
+        size_t        compression_in_bufsize  = kCompressionDefaultBufSize,
+        size_t        compression_out_bufsize = kCompressionDefaultBufSize
     );
     /// Conventional constructor.
     CZipCloudflareCompressionFile(
@@ -769,7 +767,8 @@ public:
               new CZipCloudflareCompressor(level, flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZipCloudflareStreamCompressor(
         CZipCloudflareCompression::ELevel    level,
         CZipCloudflareCompression::TZipFlags flags = 0
@@ -779,7 +778,8 @@ public:
               eDelete, kCompressionDefaultBufSize, kCompressionDefaultBufSize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZipCloudflareStreamCompressor(CZipCloudflareCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor(
               new CZipCloudflareCompressor(CZipCloudflareCompression::eLevel_Default, flags),
@@ -820,7 +820,8 @@ public:
               new CZipCloudflareDecompressor(flags), eDelete, in_bufsize, out_bufsize)
     {}
 
-    /// Conventional constructor
+    /// Conventional constructor.
+    /// Uses default buffer sizes for I/O, that can be not ideal for some scenarios.
     CZipCloudflareStreamDecompressor(CZipCloudflareCompression::TZipFlags flags = 0)
         : CCompressionStreamProcessor( 
               new CZipCloudflareDecompressor(flags),

@@ -402,14 +402,15 @@ bool CBZip2Compression::GetSmallDecompressDefault(void) { return false; };
 
 
 CBZip2CompressionFile::CBZip2CompressionFile(
-    const string& file_name, EMode mode, ELevel level)
-    : CBZip2Compression(level),
-      m_FileStream(0), m_EOF(true), m_HaveData(false)
+        const string& file_name,
+        EMode mode,
+        ELevel level,
+        size_t compression_in_bufsize,
+        size_t compression_out_bufsize
+    )
+    : CBZip2Compression(level), m_FileStream(0), m_EOF(true), m_HaveData(false)
 {
-    /* We use bzip2 implementation to work with compression files
-       so in/out internal compression buffer sizes are not used.
-    */
-    if ( !Open(file_name, mode) ) {
+    if ( !Open(file_name, mode, compression_in_bufsize, compression_out_bufsize) ) {
         const string smode = (mode == eMode_Read) ? "reading" : "writing";
         NCBI_THROW(CCompressionException, eCompressionFile, 
                    "[CBZip2CompressionFile]  Cannot open file '" + file_name +
