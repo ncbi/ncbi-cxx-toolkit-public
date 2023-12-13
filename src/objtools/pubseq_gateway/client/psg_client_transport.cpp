@@ -1053,7 +1053,8 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
         { "cookie" },
         { "x-forwarded-for" }
     }},
-    m_Queue(queue)
+    m_Queue(queue),
+    m_Requests(*this)
 {
 }
 
@@ -1131,11 +1132,6 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
 {
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " closed: " << error_code);
 
-    if (!server.available_streams++) {
-        PSG_IO_TRACE("Server '" << server.address << "' became available");
-        m_Queue.SignalAll();
-    }
-
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
         if (auto [processor_id, req] = it->second.Get(); req) {
             auto context_guard = req->context.Set();
@@ -1157,7 +1153,7 @@ int SPSG_IoSession::OnStreamClose(nghttp2_session*, int32_t stream_id, uint32_t 
             }
         }
 
-        EraseAndMoveToNext(it);
+        m_Requests.erase(it);
     }
 
     return 0;
@@ -1230,25 +1226,11 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
         return false;
     }
 
-    if (!--server.available_streams) {
-        PSG_IO_TRACE("Server '" << server.address << "' reached request limit");
-    }
-
     req->submitted_by.Set(GetInternalId());
     req->reply->debug_printout << server.address << path << session_id << sub_hit_id << client_ip << m_Tcp.GetLocalPort() << endl;
     PSG_IO_SESSION_TRACE(this << '/' << stream_id << " submitted");
     m_Requests.emplace(stream_id, move(timed_req));
     return Send();
-}
-
-void SPSG_IoSession::EraseAndMoveToNext(TRequests::iterator& it)
-{
-    if (IsFull()) {
-        // Continue processing of requests in the IO thread queue on next UV loop iteration
-        m_Queue.Signal();
-    }
-
-    it = m_Requests.erase(it);
 }
 
 template <class TOnRetry, class TOnFail>
@@ -1289,7 +1271,7 @@ void SPSG_IoSession::CheckRequestExpiration()
 
     for (auto it = m_Requests.begin(); it != m_Requests.end(); ) {
         if (it->second.CheckExpiration(m_Params, error, on_retry, on_fail)) {
-            EraseAndMoveToNext(it);
+            it = m_Requests.erase(it);
         } else {
             ++it;
         }

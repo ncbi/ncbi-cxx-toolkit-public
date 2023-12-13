@@ -729,6 +729,39 @@ struct SPSG_Server
     {}
 };
 
+template <class TSession>
+struct SPSG_Requests : private unordered_map<int32_t, SPSG_TimedRequest>
+{
+    SPSG_Requests(TSession& session) : m_Session(session) {}
+
+    using unordered_map::begin;
+    using unordered_map::end;
+    using unordered_map::size;
+    using unordered_map::find;
+
+    template <class... TArgs>
+    auto emplace(TArgs&&... args)
+    {
+        m_Session.RemoveStream();
+        return unordered_map::emplace(std::forward<TArgs>(args)...);
+    }
+
+    auto erase(iterator it)
+    {
+        m_Session.AddStreams(1);
+        return unordered_map::erase(it);
+    }
+
+    auto clear()
+    {
+        m_Session.AddStreams(static_cast<int>(size()));
+        return unordered_map::clear();
+    }
+
+private:
+    TSession& m_Session;
+};
+
 struct SPSG_IoSession : SUvNgHttp2_SessionBase
 {
     SPSG_Server& server;
@@ -741,6 +774,24 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     void CheckRequestExpiration();
     bool IsFull() const { return m_Session.GetMaxStreams() <= m_Requests.size(); }
 
+    void RemoveStream()
+    {
+        if (!--server.available_streams) {
+            PSG_IO_TRACE("Server '" << server.address << "' reached request limit");
+        }
+    }
+
+    void AddStreams(int v)
+    {
+        if (auto before = server.available_streams.fetch_add(v); (before <= 0) && (before + v > 0) ) {
+            PSG_IO_TRACE("Server '" << server.address << "' became available");
+            m_Queue.SignalAll();
+
+        } else if (IsFull()) {
+            m_Queue.Signal();
+        }
+    }
+
 protected:
     int OnData(nghttp2_session* session, uint8_t flags, int32_t stream_id, const uint8_t* data, size_t len);
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
@@ -749,8 +800,6 @@ protected:
 
 private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eCookie, eClientIP, eSize };
-
-    using TRequests = unordered_map<int32_t, SPSG_TimedRequest>;
 
     SPSG_Submitter::TId GetInternalId() const { return this; }
 
@@ -766,14 +815,12 @@ private:
         return Fail(processor_id, req, error, refused_stream);
     }
 
-    void EraseAndMoveToNext(TRequests::iterator& it);
-
     void OnReset(SUvNgHttp2_Error error) override;
 
     SPSG_Params m_Params;
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME>, eSize> m_Headers;
     SPSG_AsyncQueue& m_Queue;
-    TRequests m_Requests;
+    SPSG_Requests<SPSG_IoSession> m_Requests;
 };
 
 template <class TImpl>
