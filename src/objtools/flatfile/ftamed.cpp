@@ -71,7 +71,7 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
 }
 
 /**********************************************************/
-static unique_ptr<edit::IPubmedUpdater> s_updater;
+static unique_ptr<edit::CEUtilsUpdater> s_updater;
 
 /**********************************************************/
 void InitPubmedClient(bool normalize)
@@ -83,7 +83,7 @@ void InitPubmedClient(bool normalize)
 }
 
 /**********************************************************/
-edit::IPubmedUpdater* GetPubmedClient()
+edit::CEUtilsUpdater* GetPubmedClient()
 {
     return s_updater.get();
 }
