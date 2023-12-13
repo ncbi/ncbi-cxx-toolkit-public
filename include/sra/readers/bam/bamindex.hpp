@@ -864,68 +864,91 @@ public:
                      ESearchMode search_mode = eSearchByOverlap);
     ~CBamFileRangeSet();
 
-    void Clear()
-        {
-            m_Ranges.clear();
-        }
+    void Clear();
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    TIndexLevel index_level,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel index_level,
-                   ESearchMode search_mode = eSearchByOverlap)
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr)
         {
-            SetRanges(index, ref_index, ref_range, index.ToIndexLevel(index_level), search_mode);
+            SetRanges(index, ref_index, ref_range, index.ToIndexLevel(index_level), search_mode, file_pos);
         }
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    TIndexLevel index_level,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel index_level,
-                   ESearchMode search_mode = eSearchByOverlap)
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr)
         {
-            AddRanges(index, ref_index, ref_range, index.ToIndexLevel(index_level), search_mode);
+            AddRanges(index, ref_index, ref_range, index.ToIndexLevel(index_level), search_mode, file_pos);
         }
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    TIndexLevel min_index_level, TIndexLevel max_index_level,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr);
     void SetRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel min_index_level, EIndexLevel max_index_level,
-                   ESearchMode search_mode = eSearchByOverlap)
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr)
         {
             SetRanges(index, ref_index, ref_range,
                       index.ToIndexLevel(min_index_level),
                       index.ToIndexLevel(max_index_level),
-                      search_mode);
+                      search_mode, file_pos);
         }
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    TIndexLevel min_index_level, TIndexLevel max_index_level,
-                   ESearchMode search_mode = eSearchByOverlap);
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr);
     void AddRanges(const CBamIndex& index,
                    size_t ref_index, COpenRange<TSeqPos> ref_range,
                    EIndexLevel min_index_level, EIndexLevel max_index_level,
-                   ESearchMode search_mode = eSearchByOverlap)
+                   ESearchMode search_mode = eSearchByOverlap,
+                   const CBGZFPos* file_pos = nullptr)
         {
             AddRanges(index, ref_index, ref_range,
                       index.ToIndexLevel(min_index_level),
                       index.ToIndexLevel(max_index_level),
-                      search_mode);
+                      search_mode, file_pos);
         }
-    void SetWhole(const CBamHeader& header);
     void AddWhole(const CBamHeader& header);
+    void SetWhole(const CBamHeader& header)
+        {
+            Clear();
+            AddWhole(header);
+        }
+    void AddFrom(CBGZFPos file_pos);
+    void SetFrom(CBGZFPos file_pos)
+        {
+            Clear();
+            AddFrom(file_pos);
+        }
+    void AddFrom(const CBamHeader& header, const CBGZFPos* file_pos);
+    void SetFrom(const CBamHeader& header, const CBGZFPos* file_pos)
+        {
+            Clear();
+            AddFrom(header, file_pos);
+        }
 
     typedef CRangeUnion<CBGZFPos> TRanges;
     typedef TRanges::const_iterator const_iterator;
@@ -947,7 +970,8 @@ public:
     Uint8 GetFileSize() const;
 
 protected:
-    void AddSortedRanges(const vector<CBGZFRange>& ranges);
+    void AddSortedRanges(const vector<CBGZFRange>& ranges,
+                         const CBGZFPos* file_pos = nullptr);
     
 private:
     TRanges m_Ranges;
@@ -1288,154 +1312,185 @@ public:
         {
         }
     explicit
-    CBamRawAlignIterator(CBamRawDb& bam_db)
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const CBGZFPos* file_pos = nullptr)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db);
+            Select(bam_db, file_pos);
+        }
+    CBamRawAlignIterator(CBamRawDb& bam_db, CBGZFPos file_pos)
+        : m_Reader(bam_db.GetFile())
+        {
+            Select(bam_db, &file_pos);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
-                         ESearchMode search_mode = eSearchByOverlap)
+                         ESearchMode search_mode = eSearchByOverlap,
+                         const CBGZFPos* file_pos = nullptr)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, search_mode);
+            Select(bam_db, ref_label, ref_range, search_mode, file_pos);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
                          TIndexLevel index_level,
-                         ESearchMode search_mode = eSearchByOverlap)
+                         ESearchMode search_mode = eSearchByOverlap,
+                         const CBGZFPos* file_pos = nullptr)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, index_level, search_mode);
+            Select(bam_db, ref_label, ref_range, index_level, search_mode, file_pos);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
                          EIndexLevel index_level,
-                         ESearchMode search_mode)
+                         ESearchMode search_mode,
+                         const CBGZFPos* file_pos = nullptr)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, index_level, search_mode);
+            Select(bam_db, ref_label, ref_range, index_level, search_mode, file_pos);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
                          TIndexLevel min_index_level,
                          TIndexLevel max_index_level,
-                         ESearchMode search_mode = eSearchByOverlap)
+                         ESearchMode search_mode = eSearchByOverlap,
+                         const CBGZFPos* file_pos = nullptr)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode);
+            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode, file_pos);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          CRange<TSeqPos> ref_range,
                          EIndexLevel min_index_level,
                          EIndexLevel max_index_level,
-                         ESearchMode search_mode)
+                         ESearchMode search_mode,
+                         const CBGZFPos* file_pos = nullptr)
         : m_Reader(bam_db.GetFile())
         {
-            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode);
+            Select(bam_db, ref_label, ref_range, min_index_level, max_index_level, search_mode, file_pos);
         }
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          TSeqPos ref_pos,
                          TSeqPos window = 0,
-                         ESearchMode search_mode = eSearchByOverlap);
+                         ESearchMode search_mode = eSearchByOverlap,
+                         const CBGZFPos* file_pos = nullptr);
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          TSeqPos ref_pos,
                          TSeqPos window,
                          TIndexLevel min_index_level,
                          TIndexLevel max_index_level,
-                         ESearchMode search_mode = eSearchByOverlap);
+                         ESearchMode search_mode = eSearchByOverlap,
+                         const CBGZFPos* file_pos = nullptr);
     CBamRawAlignIterator(CBamRawDb& bam_db,
                          const string& ref_label,
                          TSeqPos ref_pos,
                          TSeqPos window,
                          EIndexLevel min_index_level,
                          EIndexLevel max_index_level,
-                         ESearchMode search_mode);
+                         ESearchMode search_mode,
+                         const CBGZFPos* file_pos = nullptr);
     ~CBamRawAlignIterator()
         {
         }
 
     DECLARE_OPERATOR_BOOL(m_CurrentRangeEnd);
 
-    void Select(CBamRawDb& bam_db)
+    void Select(CBamRawDb& bam_db,
+                const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(bam_db.GetHeader());
+            x_Select(bam_db.GetHeader(), file_pos);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, search_mode);
+                     bam_db.GetRefIndex(ref_label), ref_range,
+                     search_mode, file_pos);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
                 TIndexLevel index_level,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, index_level, search_mode);
+                     bam_db.GetRefIndex(ref_label), ref_range,
+                     index_level, search_mode, file_pos);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
                 EIndexLevel index_level,
-                ESearchMode search_mode)
+                ESearchMode search_mode,
+                const CBGZFPos* file_pos = nullptr)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, index_level, search_mode);
+                     bam_db.GetRefIndex(ref_label), ref_range,
+                     index_level, search_mode, file_pos);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
                 TIndexLevel min_index_level,
                 TIndexLevel max_index_level,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, min_index_level, max_index_level, search_mode);
+                     bam_db.GetRefIndex(ref_label), ref_range,
+                     min_index_level, max_index_level, search_mode, file_pos);
         }
     void Select(CBamRawDb& bam_db,
                 const string& ref_label,
                 CRange<TSeqPos> ref_range,
                 EIndexLevel min_index_level,
                 EIndexLevel max_index_level,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
             x_Select(bam_db.GetIndex(),
-                     bam_db.GetRefIndex(ref_label), ref_range, min_index_level, max_index_level, search_mode);
+                     bam_db.GetRefIndex(ref_label), ref_range,
+                     min_index_level, max_index_level, search_mode, file_pos);
         }
     void Select(const CBamIndex& index,
                 size_t ref_index,
                 CRange<TSeqPos> ref_range,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(index, ref_index, ref_range, search_mode);
+            x_Select(index, ref_index, ref_range,
+                     search_mode, file_pos);
         }
     void Select(const CBamIndex& index,
                 size_t ref_index,
                 CRange<TSeqPos> ref_range,
                 TIndexLevel index_level,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(index, ref_index, ref_range, index_level, search_mode);
+            x_Select(index, ref_index, ref_range,
+                     index_level, search_mode, file_pos);
         }
     void Select(const CBamIndex& index,
                 size_t ref_index,
                 CRange<TSeqPos> ref_range,
                 EIndexLevel index_level,
-                ESearchMode search_mode = eSearchByOverlap)
+                ESearchMode search_mode = eSearchByOverlap,
+                const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(index, ref_index, ref_range, index_level, search_mode);
+            x_Select(index, ref_index, ref_range,
+                     index_level, search_mode, file_pos);
         }
     void Next();
 
@@ -1610,40 +1665,46 @@ public:
         }
     
 protected:
-    void x_Select(const CBamHeader& header);
+    void x_Select(const CBamHeader& header,
+                  const CBGZFPos* file_pos = nullptr);
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
                   TIndexLevel min_index_level, TIndexLevel max_index_level,
-                  ESearchMode search_mode);
+                  ESearchMode search_mode,
+                  const CBGZFPos* file_pos = nullptr);
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
                   EIndexLevel min_index_level, EIndexLevel max_index_level,
-                  ESearchMode search_mode)
+                  ESearchMode search_mode,
+                  const CBGZFPos* file_pos = nullptr)
         {
             x_Select(index, ref_index, ref_range,
                      index.ToIndexLevel(min_index_level),
                      index.ToIndexLevel(max_index_level),
-                     search_mode);
+                     search_mode, file_pos);
         }
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
-                  ESearchMode search_mode)
+                  ESearchMode search_mode,
+                  const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(index, ref_index, ref_range, 0, index.GetMaxIndexLevel(), search_mode);
+            x_Select(index, ref_index, ref_range, 0, index.GetMaxIndexLevel(), search_mode, file_pos);
         }
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
                   TIndexLevel index_level,
-                  ESearchMode search_mode)
+                  ESearchMode search_mode,
+                  const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(index, ref_index, ref_range, index_level, index_level, search_mode);
+            x_Select(index, ref_index, ref_range, index_level, index_level, search_mode, file_pos);
         }
     void x_Select(const CBamIndex& index,
                   size_t ref_index, CRange<TSeqPos> ref_range,
                   EIndexLevel index_level,
-                  ESearchMode search_mode)
+                  ESearchMode search_mode,
+                  const CBGZFPos* file_pos = nullptr)
         {
-            x_Select(index, ref_index, ref_range, index_level, index_level, search_mode);
+            x_Select(index, ref_index, ref_range, index_level, index_level, search_mode, file_pos);
         }
     bool x_UpdateRange();
     bool x_NextAnnot()
