@@ -321,6 +321,13 @@ struct SBamIndexParams : public SBamIndexDefs
         }
         return level;
     }
+    bool RangeIsOnMinBinIndexLevel(CRange<TSeqPos> range) const
+    {
+        auto local_min_shift = GetMinLevelBinShift();
+        TSeqPos pos1 = range.GetFrom() >> local_min_shift;
+        TSeqPos pos2 = range.GetTo() >> local_min_shift;
+        return pos1 == pos2;
+    }
 
     COpenRange<TSeqPos> GetSeqRange(TBin bin) const
     {
@@ -1592,13 +1599,21 @@ public:
             return m_AlignInfo.get_cigar();
         }
 
-    Uint2 GetIndexBin() const
+    Uint2 GetBAIIndexBin() const
         {
             return m_AlignInfo.get_bin();
         }
+    NCBI_DEPRECATED Uint2 GetIndexBin() const
+        {
+            return GetBAIIndexBin();
+        }
     TIndexLevel GetIndexLevel() const
         {
-            return Bin2IndexLevel(GetIndexBin());
+            return GetRangeIndexLevel(m_AlignRefRange);
+        }
+    bool IsOnMinBinIndexLevel() const
+        {
+            return RangeIsOnMinBinIndexLevel(m_AlignRefRange);
         }
     
     Uint2 GetFlags() const
