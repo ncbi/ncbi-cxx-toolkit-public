@@ -735,7 +735,7 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
        }
     }
 
-    if (!pNucSeq->IsSetAnnot()) {
+    if (!pNucSeq) { // only occurs if the input is bad
         return false;
     }
     CRef<CScope> pScope;
