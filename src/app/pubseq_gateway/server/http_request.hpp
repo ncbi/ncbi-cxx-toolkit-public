@@ -149,7 +149,8 @@ public:
     }
 
     // Used in PrintRequeststart() to have all the incoming parameters logged
-    CDiagContext_Extra &  PrintParams(CDiagContext_Extra &  extra);
+    CDiagContext_Extra &  PrintParams(CDiagContext_Extra &  extra,
+                                      bool need_peer_ip);
     void  PrintLogFields(const CNcbiLogFields &  log_fields);
 
     string GetHeaderValue(const string &  name);

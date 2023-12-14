@@ -481,8 +481,8 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
             SCounterInfo::ePSGS_Arbitrary);
     m_Counters[ePSGS_NumberOfConnections] =
         new SCounterInfo(
-            "NumberOfConnections", "Cassandra connections counter",
-            "Number of the connections to Cassandra",
+            "NumberOfTCPConnections", "Client TCP connections counter",
+            "Number of the client TCP connections",
             SCounterInfo::ePSGS_Arbitrary);
     m_Counters[ePSGS_ActiveProcessorGroups] =
         new SCounterInfo(

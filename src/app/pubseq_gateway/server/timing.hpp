@@ -317,6 +317,9 @@ class COperationTiming
     public:
         void Rotate(void);
         void RotateRequestStat(void);
+        void CollectMomentousStat(size_t  tcp_conn_count,
+                                  size_t  active_request_count,
+                                  size_t  backlog_count);
         void Reset(void);
         CJsonNode Serialize(int  most_ancient_time,
                             int  most_recent_time,
@@ -439,6 +442,10 @@ class COperationTiming
         CRequestTimeSeries          m_IdGetTSEChunkStat;
         CRequestTimeSeries          m_IdGetNAStat;
         CRequestTimeSeries          m_IpgResolveStat;
+
+        CMomentousCounterSeries     m_TCPConnectionsStat;
+        CMomentousCounterSeries     m_ActiveRequestsStat;
+        CMomentousCounterSeries     m_BacklogStat;
 
         // The items below collect only the fact (per processor) that the
         // processor did something for the request i.e. finished with status

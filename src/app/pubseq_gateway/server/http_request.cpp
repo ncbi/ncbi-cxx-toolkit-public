@@ -273,7 +273,9 @@ bool CHttpRequest::GetMultipleValuesParam(const char *  name, size_t  len,
 
 
 static string   kPeerSocketPort = "peer_socket_port";
-CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
+static string   kPeerSocketIP = "peer_socket_ip";
+CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra,
+                                                bool need_peer_ip)
 {
     if (!m_ParamParsed)
         ParseParams();
@@ -289,6 +291,13 @@ CDiagContext_Extra &  CHttpRequest::PrintParams(CDiagContext_Extra &  extra)
         auto    port = GetPort(&sock_addr);
         if (port > 0) {
             extra.Print(kPeerSocketPort, port);
+        }
+
+        if (need_peer_ip) {
+            auto    peer_ip = GetIPAddress(&sock_addr);
+            if (!peer_ip.empty()) {
+                extra.Print(kPeerSocketIP, peer_ip);
+            }
         }
     }
 
@@ -443,9 +452,9 @@ in_port_t  GetPort(struct sockaddr *  sock_addr)
 {
     switch (sock_addr->sa_family) {
         case AF_INET:
-            return ((struct sockaddr_in *)sock_addr)->sin_port;
+            return ntohs(((struct sockaddr_in *)sock_addr)->sin_port);
         case AF_INET6:
-            return ((struct sockaddr_in6 *)sock_addr)->sin6_port;
+            return ntohs(((struct sockaddr_in6 *)sock_addr)->sin6_port);
         default:
             break;
     }

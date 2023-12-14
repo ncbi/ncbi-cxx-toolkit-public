@@ -34,7 +34,7 @@
 #include "http_connection.hpp"
 #include "http_reply.hpp"
 #include "pubseq_gateway.hpp"
-
+#include "backlog_per_request.hpp"
 
 
 static void IncrementBackloggedCounter(void)
@@ -155,6 +155,7 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
     if (m_RunningRequests.size() < m_HttpMaxRunning) {
         x_Start(request, reply, move(processor_names));
     } else if (m_BacklogRequests.size() < m_HttpMaxBacklog) {
+        RegisterBackloggedRequest(request->GetRequestType());
         m_BacklogRequests.push_back(
                 SBacklogAttributes{request, reply,
                                    move(processor_names),
@@ -297,6 +298,7 @@ void CHttpConnection::x_UnregisterBacklog(backlog_list_iterator_t &  it)
     // They do not have assigned pending requests either. So, just remove the
     // record from the list.
     m_BacklogRequests.erase(it);
+    UnregisterBackloggedRequest(it->m_Request->GetRequestType());
 }
 
 
@@ -340,6 +342,7 @@ void CHttpConnection::x_MaintainBacklog(void)
         psg_time_point_t           backlog_start = backlog_front.m_BacklogStart;
 
         m_BacklogRequests.pop_front();
+        UnregisterBackloggedRequest(request->GetRequestType());
 
         auto *      app = CPubseqGatewayApp::GetInstance();
         uint64_t    mks = app->GetTiming().Register(nullptr, eBacklog,

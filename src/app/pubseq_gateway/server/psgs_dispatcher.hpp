@@ -47,6 +47,153 @@ void request_timer_cb(uv_timer_t *  handle);
 void request_timer_close_cb(uv_handle_t *handle);
 
 
+// From the dispatcher point of view each request corresponds to a group of
+// processors and each processor can be in one of the state:
+// - created and doing what it needs (Up)
+// - the Cancel() was called for a processor (Canceled)
+// - a processor reported that it finished (Finished)
+enum EPSGS_ProcessorStatus {
+    ePSGS_Up,
+    ePSGS_Canceled,
+    ePSGS_Finished
+};
+
+// Auxiliary structure to store a processor properties
+struct SProcessorData
+{
+    // The processor is shared between CPendingOperation and the dispatcher
+    shared_ptr<IPSGS_Processor>     m_Processor;
+    EPSGS_ProcessorStatus           m_DispatchStatus;
+    IPSGS_Processor::EPSGS_Status   m_FinishStatus;
+    bool                            m_DoneStatusRegistered;
+
+    SProcessorData(shared_ptr<IPSGS_Processor>  processor,
+                   EPSGS_ProcessorStatus  dispatch_status,
+                   IPSGS_Processor::EPSGS_Status  finish_status) :
+        m_Processor(processor),
+        m_DispatchStatus(dispatch_status),
+        m_FinishStatus(finish_status),
+        m_DoneStatusRegistered(false)
+    {}
+};
+
+// Auxiliary structure to store the group of processors data
+struct SProcessorGroup
+{
+    size_t                      m_RequestId;
+    vector<SProcessorData>      m_Processors;
+    uv_timer_t                  m_RequestTimer;
+    bool                        m_TimerActive;
+    bool                        m_TimerClosed;
+
+    // During the normal processing (no abrupt connection dropping by the
+    // client) there are three conditions to delete the group. All the
+    // flags below must be true when a group is deleted from memory
+    bool                        m_FinallyFlushed;
+    bool                        m_AllProcessorsFinished;
+    bool                        m_Libh2oFinished;
+
+    // In case of a low level close (abrupt connection dropping) there will
+    // be no lib h2o finish notification and probably there will be no
+    // final flush.
+    bool                        m_LowLevelClose;
+
+    // To control that the request stop is issued for this group
+    bool                        m_RequestStopPrinted;
+
+    // A processor which has started to supply data
+    IPSGS_Processor *           m_StartedProcessing;
+
+    SProcessorGroup(size_t  request_id) :
+        m_RequestId(request_id),
+        m_TimerActive(false), m_TimerClosed(true), m_FinallyFlushed(false),
+        m_AllProcessorsFinished(false), m_Libh2oFinished(false),
+        m_LowLevelClose(false),
+        m_RequestStopPrinted(false),
+        m_StartedProcessing(nullptr)
+    {
+        m_Processors.reserve(MAX_PROCESSOR_GROUPS);
+    }
+
+    ~SProcessorGroup()
+    {
+        if (!m_TimerClosed) {
+            PSG_ERROR("The request timer (request id: " +
+                      to_string(m_RequestId) +
+                      ") must be stopped and its handle closed before the "
+                      "processor group is destroyed");
+        }
+    }
+
+    bool IsSafeToDelete(void) const
+    {
+        return m_TimerClosed &&
+            (
+               // Normal flow safe case
+               (m_FinallyFlushed &&
+                m_AllProcessorsFinished &&
+                m_Libh2oFinished) ||
+               // Abrupt connection drop case
+               (m_LowLevelClose && m_AllProcessorsFinished)
+            );
+    }
+
+    void StartRequestTimer(uv_loop_t *  uv_loop,
+                           uint64_t  timer_millisec)
+    {
+        if (m_TimerActive)
+            NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                       "Request timer cannot be started twice (request id: " +
+                       to_string(m_RequestId) + ")");
+
+        int     ret = uv_timer_init(uv_loop, &m_RequestTimer);
+        if (ret < 0) {
+            NCBI_THROW(CPubseqGatewayException, eInvalidTimerInit,
+                       uv_strerror(ret));
+        }
+        m_RequestTimer.data = (void *)(m_RequestId);
+
+        ret = uv_timer_start(&m_RequestTimer, request_timer_cb,
+                             timer_millisec, 0);
+        if (ret < 0) {
+            NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                       uv_strerror(ret));
+        }
+        m_TimerActive = true;
+        m_TimerClosed = false;
+    }
+
+    void StopRequestTimer(void)
+    {
+        if (m_TimerActive) {
+            m_TimerActive = false;
+
+            int     ret = uv_timer_stop(&m_RequestTimer);
+            if (ret < 0) {
+                PSG_ERROR("Stop request timer error: " +
+                          string(uv_strerror(ret)));
+            }
+
+            uv_close(reinterpret_cast<uv_handle_t*>(&m_RequestTimer),
+                     request_timer_close_cb);
+        }
+    }
+
+    void RestartTimer(uint64_t  timer_millisec)
+    {
+        if (m_TimerActive) {
+            // Consequent call just updates the timer
+            int     ret = uv_timer_start(&m_RequestTimer, request_timer_cb,
+                                         timer_millisec, 0);
+            if (ret < 0) {
+                NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
+                           uv_strerror(ret));
+            }
+        }
+    }
+};
+
+
 /// Based on various attributes of the request: {{seq_id}}; NA name;
 /// {{blob_id}}; etc (or a combination thereof)...
 /// provide a list of Processors to retrieve the requested data
@@ -124,7 +271,6 @@ public:
     void OnRequestTimerClose(size_t  request_id);
 
     map<string, size_t>  GetConcurrentCounters(void);
-    size_t GetActiveProcessorGroups(void);
     bool IsGroupAlive(size_t  request_id);
     void PopulateStatus(CJsonNode &  status);
 
@@ -155,152 +301,6 @@ private:
     list<unique_ptr<IPSGS_Processor>>   m_RegisteredProcessors;
 
 private:
-    // From the dispatcher point of view each request corresponds to a group of
-    // processors and each processor can be in one of the state:
-    // - created and doing what it needs (Up)
-    // - the Cancel() was called for a processor (Canceled)
-    // - a processor reported that it finished (Finished)
-    enum EPSGS_ProcessorStatus {
-        ePSGS_Up,
-        ePSGS_Canceled,
-        ePSGS_Finished
-    };
-
-    // Auxiliary structure to store a processor properties
-    struct SProcessorData
-    {
-        // The processor is shared between CPendingOperation and the dispatcher
-        shared_ptr<IPSGS_Processor>     m_Processor;
-        EPSGS_ProcessorStatus           m_DispatchStatus;
-        IPSGS_Processor::EPSGS_Status   m_FinishStatus;
-        bool                            m_DoneStatusRegistered;
-
-        SProcessorData(shared_ptr<IPSGS_Processor>  processor,
-                       EPSGS_ProcessorStatus  dispatch_status,
-                       IPSGS_Processor::EPSGS_Status  finish_status) :
-            m_Processor(processor),
-            m_DispatchStatus(dispatch_status),
-            m_FinishStatus(finish_status),
-            m_DoneStatusRegistered(false)
-        {}
-    };
-
-    // Auxiliary structure to store the group of processors data
-    struct SProcessorGroup
-    {
-        size_t                      m_RequestId;
-        vector<SProcessorData>      m_Processors;
-        uv_timer_t                  m_RequestTimer;
-        bool                        m_TimerActive;
-        bool                        m_TimerClosed;
-
-        // During the normal processing (no abrupt connection dropping by the
-        // client) there are three conditions to delete the group. All the
-        // flags below must be true when a group is deleted from memory
-        bool                        m_FinallyFlushed;
-        bool                        m_AllProcessorsFinished;
-        bool                        m_Libh2oFinished;
-
-        // In case of a low level close (abrupt connection dropping) there will
-        // be no lib h2o finish notification and probably there will be no
-        // final flush.
-        bool                        m_LowLevelClose;
-
-        // To control that the request stop is issued for this group
-        bool                        m_RequestStopPrinted;
-
-        // A processor which has started to supply data
-        IPSGS_Processor *           m_StartedProcessing;
-
-        SProcessorGroup(size_t  request_id) :
-            m_RequestId(request_id),
-            m_TimerActive(false), m_TimerClosed(true), m_FinallyFlushed(false),
-            m_AllProcessorsFinished(false), m_Libh2oFinished(false),
-            m_LowLevelClose(false),
-            m_RequestStopPrinted(false),
-            m_StartedProcessing(nullptr)
-        {
-            m_Processors.reserve(MAX_PROCESSOR_GROUPS);
-        }
-
-        ~SProcessorGroup()
-        {
-            if (!m_TimerClosed) {
-                PSG_ERROR("The request timer (request id: " +
-                          to_string(m_RequestId) +
-                          ") must be stopped and its handle closed before the "
-                          "processor group is destroyed");
-            }
-        }
-
-        bool IsSafeToDelete(void) const
-        {
-            return m_TimerClosed &&
-                (
-                   // Normal flow safe case
-                   (m_FinallyFlushed &&
-                    m_AllProcessorsFinished &&
-                    m_Libh2oFinished) ||
-                   // Abrupt connection drop case
-                   (m_LowLevelClose && m_AllProcessorsFinished)
-                );
-        }
-
-        void StartRequestTimer(uv_loop_t *  uv_loop,
-                               uint64_t  timer_millisec)
-        {
-            if (m_TimerActive)
-                NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
-                           "Request timer cannot be started twice (request id: " +
-                           to_string(m_RequestId) + ")");
-
-            int     ret = uv_timer_init(uv_loop, &m_RequestTimer);
-            if (ret < 0) {
-                NCBI_THROW(CPubseqGatewayException, eInvalidTimerInit,
-                           uv_strerror(ret));
-            }
-            m_RequestTimer.data = (void *)(m_RequestId);
-
-            ret = uv_timer_start(&m_RequestTimer, request_timer_cb,
-                                 timer_millisec, 0);
-            if (ret < 0) {
-                NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
-                           uv_strerror(ret));
-            }
-            m_TimerActive = true;
-            m_TimerClosed = false;
-        }
-
-        void StopRequestTimer(void)
-        {
-            if (m_TimerActive) {
-                m_TimerActive = false;
-
-                int     ret = uv_timer_stop(&m_RequestTimer);
-                if (ret < 0) {
-                    PSG_ERROR("Stop request timer error: " +
-                              string(uv_strerror(ret)));
-                }
-
-                uv_close(reinterpret_cast<uv_handle_t*>(&m_RequestTimer),
-                         request_timer_close_cb);
-            }
-        }
-
-        void RestartTimer(uint64_t  timer_millisec)
-        {
-            if (m_TimerActive) {
-                // Consequent call just updates the timer
-                int     ret = uv_timer_start(&m_RequestTimer, request_timer_cb,
-                                             timer_millisec, 0);
-                if (ret < 0) {
-                    NCBI_THROW(CPubseqGatewayException, eInvalidTimerStart,
-                               uv_strerror(ret));
-                }
-            }
-        }
-    };
-
     // Note: the data are spread between buckets so that there is less
     // contention on the data protecting mutexes
 

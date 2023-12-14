@@ -47,6 +47,66 @@ USING_NCBI_SCOPE;
 static constexpr size_t    kSeriesIntervals = 60*24*30;
 
 
+// The class collects momentous counters
+class CMomentousCounterSeries
+{
+    public:
+        CMomentousCounterSeries();
+        void Add(uint64_t   value);
+        void Rotate(void);
+        void Reset(void);
+        CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             bool  loop, size_t  current_index) const;
+
+        // This is to be able to sum values from different requests.
+        // Sinse the change of the slot for a minute is almost synchronous for
+        // all the requests the current values can be received from any of them
+        // and then iterate from outside.
+        void GetLoopAndIndex(bool &  loop, size_t &  current_index) const
+        {
+            loop = m_Loop;
+            current_index = m_CurrentIndex.load();
+        }
+
+    protected:
+        CJsonNode x_SerializeOneSeries(const vector<pair<int, int>> &  time_series,
+                                       bool  loop,
+                                       size_t  current_index) const;
+
+    protected:
+        // Accumulated within a minute
+        uint64_t    m_Accumulated;
+        size_t      m_AccumulatedCount;
+
+        // Average per minute
+        double      m_Values[kSeriesIntervals];
+        double      m_TotalValues;
+        double      m_MaxValue;
+
+        // Tells if the current index made a loop
+        bool        m_Loop;
+
+        // Includes the current minute
+        atomic_uint_fast64_t    m_TotalMinutesCollected;
+
+        // Note: there is no any kind of lock to protect the current index.
+        // This is an intention due to a significant performance penalty at
+        // least under a production load. If a lock is used then the blob
+        // retrieval could be up to 25% slower. Most probably it is related to
+        // the fact that the other threads which finished requests are
+        // increasing the counters under a lock so it leads to impossibility to
+        // use these threads to process the blob chunks though they are already
+        // retrieved.
+        // All the precautions were made to prevent data corruption without the
+        // lock. The only possible implication is to have a request registered
+        // under a wrong minute (which can be like harmless timing) and slight
+        // off for the total number of requests sent to the client (which is
+        // almost harmless since the client is interested in a trend but not in
+        // absolutely precise data).
+        atomic_uint_fast64_t    m_CurrentIndex;
+};
+
+
 // The class collects only information when a processor did something for a
 // request
 class CProcessorRequestTimeSeries
@@ -69,13 +129,6 @@ class CProcessorRequestTimeSeries
             loop = m_Loop;
             current_index = m_CurrentIndex.load();
         }
-/*
-        void AppendData(size_t      index,
-                        uint64_t &  requests) const
-        {
-            requests += m_Requests[index];
-        }
-*/
 
     protected:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,

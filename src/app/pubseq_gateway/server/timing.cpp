@@ -1299,6 +1299,7 @@ void COperationTiming::Rotate(void)
 
 void COperationTiming::RotateRequestStat(void)
 {
+    // Once per minute rotate
     m_IdGetStat.Rotate();
     m_IdGetblobStat.Rotate();
     m_IdResolveStat.Rotate();
@@ -1317,6 +1318,21 @@ void COperationTiming::RotateRequestStat(void)
         item->Rotate();
     for (auto &  item : m_IdGetNADoneByProc)
         item->Rotate();
+
+    m_TCPConnectionsStat.Rotate();
+    m_ActiveRequestsStat.Rotate();
+    m_BacklogStat.Rotate();
+}
+
+
+void COperationTiming::CollectMomentousStat(size_t  tcp_conn_count,
+                                            size_t  active_request_count,
+                                            size_t  backlog_count)
+{
+    // Once per 5 seconds collect
+    m_TCPConnectionsStat.Add(tcp_conn_count);
+    m_ActiveRequestsStat.Add(active_request_count);
+    m_BacklogStat.Add(backlog_count);
 }
 
 
@@ -1408,6 +1424,10 @@ void COperationTiming::Reset(void)
     m_IdGetNAStat.Reset();
     m_IpgResolveStat.Reset();
 
+    m_TCPConnectionsStat.Reset();
+    m_ActiveRequestsStat.Reset();
+    m_BacklogStat.Reset();
+
     for (auto &  item : m_IdGetDoneByProc)
         item->Reset();
     for (auto &  item : m_IdGetblobDoneByProc)
@@ -1488,6 +1508,16 @@ COperationTiming::Serialize(int  most_ancient_time,
                          m_IdGetNAStat.Serialize(time_series, loop, current_index));
             ret.SetByKey("IPG_resolve_time_series",
                          m_IpgResolveStat.Serialize(time_series, loop, current_index));
+
+            bool        momentous_cnt_loop;
+            size_t      momentous_cnt_current_index;
+            m_TCPConnectionsStat.GetLoopAndIndex(momentous_cnt_loop, momentous_cnt_current_index);
+            ret.SetByKey("TCP_connections_time_series",
+                         m_TCPConnectionsStat.Serialize(time_series, momentous_cnt_loop, momentous_cnt_current_index));
+            ret.SetByKey("active_requests_time_series",
+                         m_ActiveRequestsStat.Serialize(time_series, momentous_cnt_loop, momentous_cnt_current_index));
+            ret.SetByKey("backlog_time_series",
+                         m_BacklogStat.Serialize(time_series, momentous_cnt_loop, momentous_cnt_current_index));
 
             // Here: need to calculate the max of requests separately for each
             // kind of response: ok, error, warning, not found

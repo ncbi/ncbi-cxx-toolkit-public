@@ -35,6 +35,7 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "http_request.hpp"
+#include "active_proc_per_request.hpp"
 
 
 #include "shutdown_data.hpp"
@@ -75,13 +76,6 @@ void CancelAllProcessors(void)
 {
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     app->CancelAllProcessors();
-}
-
-
-size_t GetActiveProcessorGroups(void)
-{
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    return app->GetProcessorDispatcher()->GetActiveProcessorGroups();
 }
 
 
@@ -143,22 +137,13 @@ void CTcpWorkersList::KillAll(void)
 }
 
 
-uint64_t CTcpWorkersList::NumOfRequests(void)
-{
-    uint64_t        rv = 0;
-    for (auto & it : m_workers)
-        rv += it->m_request_count;
-    return rv;
-}
-
-
 void CTcpWorkersList::s_OnWatchDog(uv_timer_t *  handle)
 {
     CTcpWorkersList *    self =
                     static_cast<CTcpWorkersList*>(handle->data);
 
     if (g_ShutdownData.m_ShutdownRequested) {
-        size_t      proc_groups = GetActiveProcessorGroups();
+        size_t      proc_groups = GetActiveProcGroupCounter();
         if (proc_groups == 0) {
             self->m_daemon->StopDaemonLoop();
         } else {
@@ -213,7 +198,6 @@ void CTcpWorkersList::JoinWorkers(void)
         }
     }
 }
-
 
 
 void CTcpWorker::Stop(void)
@@ -513,12 +497,11 @@ void CTcpWorker::s_LoopWalk(uv_handle_t *  handle, void *  arg)
 void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 {
     if (m_free_list.empty()) {
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-
+        CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
         m_free_list.emplace_back(
-                uv_tcp_t{0},
-                CHttpConnection(app->GetHttpMaxBacklog(),
-                                app->GetHttpMaxRunning()));
+            tuple<uv_tcp_t, CHttpConnection>(uv_tcp_t{0},
+                                             CHttpConnection(app->GetHttpMaxBacklog(),
+                                             app->GetHttpMaxRunning())));
         auto                new_item = m_free_list.rbegin();
         CHttpConnection *   http_connection = & get<1>(*new_item);
         http_connection->SetupMaintainTimer(m_internal->m_loop.Handle());
@@ -692,12 +675,6 @@ bool CTcpDaemon::OnRequest(CHttpProto **  http_proto)
     ++worker->m_request_count;
     *http_proto = &worker->m_protocol;
     return true;
-}
-
-
-uint64_t CTcpDaemon::NumOfRequests(void)
-{
-    return m_workers ? m_workers->NumOfRequests() : 0;
 }
 
 

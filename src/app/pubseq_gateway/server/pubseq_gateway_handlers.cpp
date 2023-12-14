@@ -42,6 +42,7 @@
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "resolve_processor.hpp"
+#include "active_proc_per_request.hpp"
 
 #include "shutdown_data.hpp"
 extern SShutdownData    g_ShutdownData;
@@ -1427,6 +1428,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
             info.SetInteger(kConcurrentPrefix + item.first,
                             item.second);
         }
+        PopulatePerRequestMomentousDictionary(info);
 
         string      content = info.Repr(CJsonNode::fStandardJson);
 
@@ -1498,7 +1500,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
             g_ShutdownData.m_ShutdownRequested);
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_ActiveProcessorGroups,
-            static_cast<uint64_t>(GetProcessorDispatcher()->GetActiveProcessorGroups()));
+            static_cast<uint64_t>(GetActiveProcGroupCounter()));
 
         if (g_ShutdownData.m_ShutdownRequested) {
             auto        now = psg_clock_t::now();
