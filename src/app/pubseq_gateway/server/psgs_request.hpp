@@ -108,7 +108,7 @@ class CPSGS_Request
 {
 public:
     enum EPSGS_Type {
-        ePSGS_ResolveRequest,
+        ePSGS_ResolveRequest = 0,
         ePSGS_BlobBySeqIdRequest,
         ePSGS_BlobBySatSatKeyRequest,
         ePSGS_AnnotationRequest,

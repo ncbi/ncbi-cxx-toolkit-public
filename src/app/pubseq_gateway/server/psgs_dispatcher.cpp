@@ -35,6 +35,7 @@
 #include "http_daemon.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
+#include "active_proc_per_request.hpp"
 
 
 extern bool     g_AllowProcessorTiming;
@@ -101,6 +102,10 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 
     m_RegisteredProcessorGroups.push_back(processor_group_name);
     m_RegisteredProcessors.push_back(move(processor));
+
+    // This is needed to collect momentous counters of the processors per
+    // request
+    RegisterProcessorGroupName(processor_group_name);
 }
 
 
@@ -289,6 +294,10 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         x_PrintRequestStop(request, status_code, reply->GetBytesSent());
     } else {
         auto *  grp = procs.release();
+
+        // This is for collecting momentous counters
+        RegisterActiveProcGroup(request->GetRequestType(), grp);
+
         pair<size_t,
              unique_ptr<SProcessorGroup>>   req_grp = make_pair(request_id,
                                                                 unique_ptr<SProcessorGroup>(grp));
@@ -1194,8 +1203,9 @@ void CPSGS_Dispatcher::OnLibh2oFinished(size_t  request_id)
 
 void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
 {
-    size_t              bucket_index = x_GetBucketIndex(request_id);
-    SProcessorGroup *   group = nullptr;
+    size_t                      bucket_index = x_GetBucketIndex(request_id);
+    SProcessorGroup *           group = nullptr;
+    CPSGS_Request::EPSGS_Type   request_type = CPSGS_Request::ePSGS_UnknownRequest;
 
     m_GroupsLock[bucket_index].lock();
 
@@ -1277,6 +1287,8 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
             }
         }
 
+        auto    first_processor = procs->second->m_Processors.begin()->m_Processor;
+        request_type = first_processor->GetRequest()->GetRequestType();
         group = procs->second.release();
 
         // Without releasing the pointer it may lead to a processor
@@ -1287,6 +1299,7 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
     m_GroupsLock[bucket_index].unlock();
 
     if (group != nullptr) {
+        UnregisterActiveProcGroup(request_type, group);
         delete group;
     }
 }
@@ -1340,19 +1353,6 @@ map<string, size_t>  CPSGS_Dispatcher::GetConcurrentCounters(void)
     }
 
     return ret;
-}
-
-
-size_t CPSGS_Dispatcher::GetActiveProcessorGroups(void)
-{
-    size_t      cnt=0;
-
-    for (size_t  index=0; index < PROC_BUCKETS; ++index) {
-        m_GroupsLock[index].lock();
-        cnt += m_ProcessorGroups[index].size();
-        m_GroupsLock[index].unlock();
-    }
-    return cnt;
 }
 
 

@@ -35,6 +35,206 @@
 #include "time_series_stat.hpp"
 
 
+CMomentousCounterSeries::CMomentousCounterSeries() :
+    m_Accumulated(0), m_AccumulatedCount(0),
+    m_TotalValues(0.0),
+    m_MaxValue(0.0),
+    m_Loop(false),
+    m_TotalMinutesCollected(1),
+    m_CurrentIndex(0)
+{
+    Reset();
+}
+
+
+void CMomentousCounterSeries::Add(uint64_t   value)
+{
+    // Adding happens every 5 seconds and goes to the accumulated values
+    m_Accumulated += value;
+    ++m_AccumulatedCount;
+}
+
+
+void CMomentousCounterSeries::Rotate(void)
+{
+    // Rotate should:
+    // - calculate avarage
+    // - store it in the current index cell
+    // - rotate the current index
+
+    size_t      current_index = m_CurrentIndex.load();
+    m_Values[current_index] = double(m_Accumulated) / double(m_AccumulatedCount);
+    m_TotalValues += m_Values[current_index];
+    if (m_Values[current_index] > m_MaxValue) {
+        m_MaxValue = m_Values[current_index];
+    }
+
+    m_Accumulated = 0;
+    m_AccumulatedCount = 0;
+
+    size_t      new_current_index = m_CurrentIndex.load();
+    if (new_current_index == kSeriesIntervals - 1) {
+        new_current_index = 0;
+    } else {
+        ++new_current_index;
+    }
+
+    m_Values[new_current_index] = 0;
+
+    m_CurrentIndex.store(new_current_index);
+    ++m_TotalMinutesCollected;
+    if (new_current_index == 0) {
+        m_Loop = true;
+    }
+}
+
+
+void CMomentousCounterSeries::Reset(void)
+{
+    for (size_t  k = 0; k < kSeriesIntervals; ++k)
+        m_Values[k] = 0.0;
+    m_TotalValues = 0.0;
+    m_MaxValue = 0.0;
+
+    m_Accumulated = 0;
+    m_AccumulatedCount = 0;
+
+    m_CurrentIndex.store(0);
+    m_TotalMinutesCollected.store(1);
+    m_Loop = false;
+}
+
+
+CJsonNode
+CMomentousCounterSeries::Serialize(const vector<pair<int, int>> &  time_series,
+                                   bool  loop, size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    ret.SetByKey("AverageValues",
+                 x_SerializeOneSeries(time_series, loop, current_index));
+    return ret;
+}
+
+
+CJsonNode  CMomentousCounterSeries::x_SerializeOneSeries(const vector<pair<int, int>> &  time_series,
+                                                         bool  loop,
+                                                         size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    if (current_index == 0 && loop == false) {
+        // There is no data collected yet
+        return ret;
+    }
+
+    CJsonNode   output_series(CJsonNode::NewArrayNode());
+
+    // Index in the array where the data are collected
+    size_t      raw_index;
+    if (current_index == 0) {
+        raw_index = kSeriesIntervals - 1;
+        loop = false;   // to avoid going the second time over
+    } else {
+        raw_index = current_index - 1;
+    }
+
+    size_t      current_accumulated_mins = 0;
+    double      current_accumulated_vals = 0;
+    size_t      output_data_index = 0;
+    double      total_processed_vals = 0.0;
+
+    // The current index in the 'time_series', i.e. a pair of
+    // <mins to accumulate>:<last sequential data index>
+    // It is guaranteed they are both > 0.
+    size_t      range_index = 0;
+    size_t      current_mins_to_accumulate = time_series[range_index].first;
+    size_t      current_last_seq_index = time_series[range_index].second;
+
+    for ( ;; ) {
+        double  val = m_Values[raw_index];
+
+        ++current_accumulated_mins;
+        current_accumulated_vals += val;
+        total_processed_vals += val;
+
+        if (current_accumulated_mins >= current_mins_to_accumulate) {
+            output_series.AppendDouble(double(current_accumulated_vals) /
+                                       double(current_accumulated_mins));
+            current_accumulated_mins = 0;
+            current_accumulated_vals = 0.0;
+        }
+
+        ++output_data_index;
+        if (output_data_index > current_last_seq_index) {
+            ++range_index;
+            current_mins_to_accumulate = time_series[range_index].first;
+            current_last_seq_index = time_series[range_index].second;
+        }
+
+        if (raw_index == 0)
+            break;
+        --raw_index;
+    }
+
+    if (loop) {
+        raw_index = kSeriesIntervals - 1;
+        while (raw_index > current_index + 1) {
+            double    val = m_Values[raw_index];
+            --raw_index;
+
+            ++current_accumulated_mins;
+            current_accumulated_vals += val;
+            total_processed_vals += val;
+
+            if (current_accumulated_mins >= current_mins_to_accumulate) {
+                output_series.AppendDouble(double(current_accumulated_vals) /
+                                           double(current_accumulated_mins));
+                current_accumulated_mins = 0;
+                current_accumulated_vals = 0;
+            }
+
+            ++output_data_index;
+            if (output_data_index > current_last_seq_index) {
+                ++range_index;
+                current_mins_to_accumulate = time_series[range_index].first;
+                current_last_seq_index = time_series[range_index].second;
+            }
+        }
+    }
+
+    if (current_accumulated_mins > 0) {
+        output_series.AppendDouble(double(current_accumulated_vals) /
+                                   double(current_accumulated_mins));
+    }
+
+    if (loop) {
+        // The current minute and the last minute in case of a loop are not
+        // sent to avoid unreliable data
+        uint64_t    rest_mins = m_TotalMinutesCollected.load() - kSeriesIntervals - 2;
+        double      rest_vals = m_TotalValues - total_processed_vals - m_Values[current_index];
+
+        if (rest_mins > 0) {
+            ret.SetDouble("RestAverageValue", rest_vals / double(rest_mins));
+        } else {
+            ret.SetDouble("RestAverageValue", 0.0);
+        }
+    } else {
+        ret.SetDouble("RestAverageValue", 0.0);
+    }
+
+    ret.SetDouble("Max", m_MaxValue);
+    if (m_TotalMinutesCollected == 1) {
+        // That's the very beginning; the first minute is still accumulating
+        ret.SetDouble("Avg", 0.0);
+    } else {
+        ret.SetDouble("Avg", m_TotalValues / (m_TotalMinutesCollected.load() - 1));
+    }
+    ret.SetByKey("time_series", output_series);
+    return ret;
+}
+
+
 CProcessorRequestTimeSeries::CProcessorRequestTimeSeries() :
     m_Loop(false),
     m_TotalMinutesCollected(1),
@@ -207,7 +407,11 @@ CJsonNode  CProcessorRequestTimeSeries::x_SerializeOneSeries(const uint64_t *  v
         uint64_t    rest_reqs = grand_total - values[last_minute_index] - values[current_index];
         uint64_t    rest_mins = m_TotalMinutesCollected.load() - kSeriesIntervals - 2;
 
-        ret.SetDouble("RestAvgReqPerSec", rest_reqs / (rest_mins * 60.0));
+        if (rest_mins > 0) {
+            ret.SetDouble("RestAvgReqPerSec", rest_reqs / (rest_mins * 60.0));
+        } else {
+            ret.SetDouble("RestAvgReqPerSec", 0.0);
+        }
     } else {
         ret.SetDouble("RestAvgReqPerSec", 0.0);
     }

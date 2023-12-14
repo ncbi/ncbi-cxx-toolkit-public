@@ -52,6 +52,8 @@
 #include "shutdown_data.hpp"
 #include "cass_monitor.hpp"
 #include "introspection.hpp"
+#include "backlog_per_request.hpp"
+#include "active_proc_per_request.hpp"
 #include "cass_processor_dispatch.hpp"
 #include "osg_processor.hpp"
 #include "cdd_processor.hpp"
@@ -297,6 +299,10 @@ void CPubseqGatewayApp::CreateMyNCBIFactory(void)
 }
 
 
+static unsigned long    s_TickNo = 0;
+static unsigned long    s_TickNoFor1Min = 0;
+static unsigned long    s_TickNoFor5Sec = 0;
+
 int CPubseqGatewayApp::Run(void)
 {
     srand(time(NULL));
@@ -537,15 +543,22 @@ int CPubseqGatewayApp::Run(void)
                     // This lambda is called once per second.
                     // Earlier implementations printed counters on stdout.
 
-                    static unsigned long   tick_no = 0;
-                    if (++tick_no % m_Settings.m_TickSpan == 0) {
-                        tick_no = 0;
+                    if (++s_TickNo % m_Settings.m_TickSpan == 0) {
+                        s_TickNo = 0;
                         this->m_Timing->Rotate();
                     }
 
-                    static unsigned long    tick_no_for_1_min = 0;
-                    if (++tick_no_for_1_min % 60 == 0) {
-                        tick_no_for_1_min = 0;
+                    if (++s_TickNoFor5Sec % 5 == 0) {
+                        ++s_TickNoFor5Sec = 0;
+                        this->m_Timing->CollectMomentousStat(
+                            m_TcpDaemon->NumOfConnections(),
+                            GetActiveProcGroupCounter(),
+                            GetBacklogSize()
+                                );
+                    }
+
+                    if (++s_TickNoFor1Min % 60 == 0) {
+                        s_TickNoFor1Min = 0;
                         this->m_Timing->RotateRequestStat();
                     }
                 });
@@ -638,6 +651,8 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         else
             context->SetHitID();
 
+        bool    need_peer_ip = false;
+
         // Client IP may come from the headers
         string      client_ip = req.GetHeaderValue(kXForwardedForHeader);
         if (!client_ip.empty()) {
@@ -646,6 +661,8 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
             if (!ip_addrs.empty()) {
                 // Take the first one, there could be many...
                 context->SetClientIP(ip_addrs[0]);
+            } else {
+                need_peer_ip = true;
             }
         } else {
             client_ip = req.GetPeerIP();
@@ -675,7 +692,7 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         if (!user_agent.empty())
             extra.Print(kUserAgentApplog, user_agent);
 
-        req.PrintParams(extra);
+        req.PrintParams(extra, need_peer_ip);
         req.PrintLogFields(m_LogFields);
 
         // If extra is not flushed then it picks read-only even though it is

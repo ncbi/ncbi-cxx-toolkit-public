@@ -82,7 +82,6 @@ public:
 
     bool AnyWorkerIsRunning(void);
     void KillAll(void);
-    uint64_t NumOfRequests(void);
     void JoinWorkers(void);
 
     static void s_OnWatchDog(uv_timer_t *  handle);
@@ -221,7 +220,6 @@ public:
 
     void StopDaemonLoop(void);
     bool OnRequest(CHttpProto **  http_proto);
-    uint64_t NumOfRequests(void);
     uint16_t NumOfConnections(void) const;
     unsigned short GetMaxConnections(void) const
     {
