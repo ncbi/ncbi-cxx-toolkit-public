@@ -896,7 +896,7 @@ int CBamIndexTestApp::Run(void)
                                          << "] = " << ref_size
                                          << " " << it.GetCIGAR()
                                          << " Q: " << int(it.GetMapQuality())
-                                         << " bin: " << it.GetIndexBin()
+                                         << " bin: " << it.GetBAIIndexBin()
                                          << " @: " << it.GetFilePos()
                                          << '\n';
                                     if ( got_level < level1 || got_level > level2 ) {
