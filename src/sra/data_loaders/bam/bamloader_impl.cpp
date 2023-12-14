@@ -1193,6 +1193,10 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
     TSeqPos bin_size = raw_db.GetIndex().GetMinBinSize();
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(26, Info<<"CBAMDataLoader:"
+                   " Bin size: "<<bin_size<<
+                   " count: "<<data_sizes.size()<<
+                   " length: "<<(bin_size*data_sizes.size()));
+        LOG_POST_X(26, Info<<"CBAMDataLoader:"
                    " Total cov: "<<accumulate(data_sizes.begin(), data_sizes.end(), Uint8(0)));
     }
     static const TSeqPos kZeroBlocks = 8;
@@ -2269,7 +2273,7 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                     ++cur_split;
                     continue;
                 }
-                if ( ait.GetRawIndexIteratorPtr()->GetIndexLevel() != CBamIndex::kLevel0 ) {
+                if ( !ait.GetRawIndexIteratorPtr()->IsOnMinBinIndexLevel() ) {
                     // ignore non level 0 aligns - they will be collected by eChunk_align2
                     break;
                 }
