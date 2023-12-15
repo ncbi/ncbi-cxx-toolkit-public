@@ -3361,11 +3361,12 @@ public:
 
     /// Justify the specified string into a series of lines of the same width.
     ///
-    /// Split string "str" into a series of lines, all of which are to
-    /// be "width" characters wide (by adding extra inner spaces between
-    /// words), and store the resulting lines in the list "par".  Normally,
-    /// all lines in "par" will begin with "pfx" (counted against "width"),
-    /// but the first line will instead begin with "pfx1" if provided.
+    /// Split string "str" into a series of lines, all of which (except for the
+    /// final one) are to be exactly "width" characters wide (by adding extra
+    /// inner spaces between words when necessary), and store the resultant
+    /// lines in the list "par".  Normally, all lines in "par" will begin with
+    /// "pfx" (counted against "width"), but the first line can instead begin
+    /// with "pfx1" if provided.
     ///
     /// @note Words exceeding the specified "width" will not be split between
     /// lines but occupy individual lines (which will be wider than "width").

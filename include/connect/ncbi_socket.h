@@ -748,7 +748,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @note
  *  (SOCK_IsClientSide() | SOCK_IsServerSide()) can be used to determine if the
  *  original SOCK was stripped off the underlying handle:  the expression would
- *  evaluate to 0(false) iff the SOCK object does not have the OS handle.
+ *  evaluate to 0(false) iff the SOCK object does no longer have the OS handle.
  * @warning
  *  If a new SOCK is being built from an existing SOCK, then it is assumed that
  *  the underlying OS handle's properies have not been modified outside that
