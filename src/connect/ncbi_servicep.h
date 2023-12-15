@@ -276,6 +276,10 @@ const char* ConnNetInfo_GetValueService(const char* service, const char* param,
                                         const char* def_value);
 
 
+/* Private interface:  drop any cached $http_proxy / $https_proxy */
+void ConnNetInfo_ResetHttpProxyInternal(void);
+
+
 /* Private interface:  using the _DISABLE/_ENABLE key (e.g. CONN_LOCAL_ENABLE),
  * return non-zero if set, zero if not.  NB:  "svc" may not be a mask. */
 int/*bool*/ SERV_IsMapperConfiguredInternal(const char* svc, const char* key);

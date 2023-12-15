@@ -436,7 +436,7 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
     } else
         assert(net_info->scheme);
 
-    /* N.B. Proxy configuration (including 'http_proxy' env. var. detected and
+    /* N.B. Proxy configuration (including $http_proxy environment detected and
        parsed by the toolkit) may be used to override the default host:port for
        Linkerd.  But connections via Linkerd should be made directly to the
        Linkerd's host:port as the authority part of the URL, not by using the
@@ -444,7 +444,7 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
        'net_info->http_proxy_host' (and same for port). */
     if (!net_info->http_proxy_host[0]  ||
         !net_info->http_proxy_port     ||
-        !net_info->http_proxy_only) {
+        net_info->http_proxy_mask != fProxy_Http) {
         int n;
         if ( ! ConnNetInfo_GetValueService(DEF_LINKERD_REG_SECTION,
                                            REG_LINKERD_HOST,

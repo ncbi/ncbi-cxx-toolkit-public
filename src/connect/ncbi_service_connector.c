@@ -443,7 +443,7 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
     flags |= (net_info->debug_printout == eDebugPrintout_Data
               ? fSOCK_LogOn : fSOCK_LogDefault);
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port
-        &&  !net_info->http_proxy_only) {
+        &&  net_info->http_proxy_mask != fProxy_Http) {
         /* NB: ideally, should have pushed data:size here if proxy not buggy */
         *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(*status != eIO_Success));
@@ -490,7 +490,7 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             net_info->http_push_auth = 0;
             net_info->http_proxy_leak = 0;
             net_info->http_proxy_skip = 0;
-            net_info->http_proxy_only = 0;
+            net_info->http_proxy_mask = 0;
             net_info->user[0] = '\0';
             net_info->pass[0] = '\0';
             net_info->path[0] = '\0';
@@ -791,8 +791,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         switch (info->type) {
         case fSERV_Ncbid:
             /* Connection directly to NCBID, add NCBID-specific tags */
-            if (info->mode & fSERV_Secure)
-                net_info->scheme = eURL_Https;
+            net_info->scheme
+                = info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
             req_method  = eReqMethod_Any; /* replaced with GET if aux HTTP */
             user_header = net_info->stateless
                 /* Connection request with data */
@@ -810,10 +810,12 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         case fSERV_HttpGet:
         case fSERV_HttpPost:
             /* Connection directly to a CGI */
-            net_info->stateless = 1/*true*/;
+            net_info->scheme
+                = info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
             req_method  = info->type == fSERV_HttpGet
                 ? eReqMethod_Get : (info->type == fSERV_HttpPost
                                     ? eReqMethod_Post : eReqMethod_Any);
+            net_info->stateless = 1/*true*/;
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                             req_method,
@@ -938,7 +940,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->port = 0;
         uuu->ticket = 0;
         uuu->secure = 0;
-        assert(!net_info->req_method);
+        assert(net_info->scheme == eURL_Https  ||
+               net_info->scheme == eURL_Http);
+        assert(!net_info->req_method/*Any*/);
         net_info->req_method = eReqMethod_Get;
         c = HTTP_CreateConnectorEx(net_info,
                                    fHTTP_Flushable | fHTTP_NoAutoRetry,
@@ -982,8 +986,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
         if (!uuu->host  ||  !uuu->port) {
             /* no connection info found */
-            if (!net_info->scheme)
-                net_info->scheme = eURL_Http;
             ConnNetInfo_SetArgs(net_info, 0);
             assert(!uuu->descr);
             return 0;
@@ -1131,7 +1133,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             net_info->http_proxy_pass[0] = '\0';
             net_info->http_proxy_leak    =   0;
             net_info->http_proxy_skip    =   0;
-            net_info->http_proxy_only    =   1;
+            net_info->http_proxy_mask    =   fProxy_Http;
         }
 
         c = s_Open(uuu, timeout, info, net_info, &status);

@@ -368,8 +368,7 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                                                             net_info->host))) {
                         close = 1/*true*/;
                     }
-                } else if (!net_info->http_proxy_only)
-                    close = 1/*true*/;
+                }
                 /* connection reused with HTTP and w/CONNECT: HTTP -> HTTPS */
             } else if (!x_SameScheme(uuu->net_info->scheme,
                                           net_info->scheme)              ||
@@ -877,7 +876,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             &&  uuu->net_info->scheme == eURL_Https
             &&  uuu->net_info->http_proxy_host[0]
             &&  uuu->net_info->http_proxy_port
-            && !uuu->net_info->http_proxy_only) {
+            &&  uuu->net_info->http_proxy_mask != fProxy_Http) {
             SConnNetInfo* net_info = ConnNetInfo_Clone(uuu->net_info);
             uuu->reused = 0/*false*/;
             if (!net_info) {
@@ -900,7 +899,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             EReqMethod     req_method = (EReqMethod) uuu->net_info->req_method;
             int/*bool*/    reset_user_header;
             char*          http_user_header;
-            SURL_Extra     extra, *extrap;
+            SURLExtra      extra, *extrap;
             const char*    host;
             unsigned short port;
             const char*    path;
@@ -936,7 +935,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             if (req_method == eReqMethod_Connect
                 ||  (uuu->net_info->scheme != eURL_Https
                      &&  uuu->net_info->http_proxy_host[0]
-                     &&  uuu->net_info->http_proxy_port)) {
+                     &&  uuu->net_info->http_proxy_port
+                     &&  uuu->net_info->http_proxy_mask != fProxy_Https)) {
                 if (uuu->net_info->http_push_auth  &&
                     (x_Authenticate(uuu, eRetry_ProxyAuthenticate, 0) > 0
                      ||  (req_method != eReqMethod_Connect  &&
@@ -953,7 +953,6 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 }
                 if (req_method == eReqMethod_Connect) {
                     /* Tunnel (RFC2817) */
-                    assert(!uuu->net_info->http_proxy_only);
                     assert(!uuu->net_info->http_version);
                     if (!len) {
                         args = 0;
@@ -2855,7 +2854,7 @@ static EIO_Status s_CreateHttpConnector
 
     if (tunnel) {
         if (!xxx->http_proxy_host[0]  ||  !xxx->http_proxy_port
-            ||  xxx->http_proxy_only) {
+            ||  xxx->http_proxy_mask == fProxy_Http) {
             ConnNetInfo_Destroy(xxx);
             return eIO_InvalidArg;
         }

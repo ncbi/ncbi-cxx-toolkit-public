@@ -167,6 +167,15 @@ typedef enum {
 typedef unsigned EBDebugPrintout;
 
 
+typedef enum {
+    fProxy_None = 0,  /**< No $http_proxy / $https_proxy used */
+    fProxy_Http,      /**< $http_proxy  used                  */
+    fProxy_Https      /**< $https_proxy used                  */
+} EProxyType;
+
+typedef unsigned EBProxyType;
+
+
 /* Network connection-related configurable informational structure.
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create it,
@@ -195,8 +204,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned        http_push_auth:1; /* push authorize tags even w/o 401/407*/
     unsigned        http_proxy_leak:1;/* TRUE when may fallback to direct    */
     unsigned        http_proxy_skip:1;/* TRUE when *NOT* to read $http_proxy */
-    unsigned        http_proxy_only:1;/* TRUE when proxy is from $http_proxy */
-    unsigned        reserved:12;      /* MBZ                                 */
+    EBProxyType     http_proxy_mask:2;/* $http_proxy / $https_proxy          */
+    unsigned        reserved:11;      /* MBZ                                 */
     char            user[CONN_USER_LEN+1];  /* username (if spec'd or req'd) */
     char            pass[CONN_PASS_LEN+1];  /* password (for non-empty user) */
     char            host[CONN_HOST_LEN+1];  /* host name to connect to       */
@@ -728,7 +737,7 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
 typedef struct {
     NCBI_CRED   cred;  /**< SSL credentials (if any)                       */
     const char* host;  /**< SSL host id (aka SNI) (if differs from "host") */
-} SURL_Extra;
+} SURLExtra;
 
 /* Very low-level HTTP initiation routine.  Regular use is highly discouraged.
  * Instead, please consider using higher level APIs such as HTTP connections
@@ -818,7 +827,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  const STimeout* o_timeout,       /* timeout for an OPEN stage               */
  const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
  const char*     user_header,     /* should include "Host:" in most cases    */
- SURL_Extra*     extra,           /* additional connection params, if any    */
+ SURLExtra*      extra,           /* additional connection params, if any    */
  TSOCK_Flags     flags,           /* additional socket requirements          */
  SOCK*           sock             /* returned socket (on eIO_Success only)   */
  );
