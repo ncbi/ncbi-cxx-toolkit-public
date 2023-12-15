@@ -75,6 +75,12 @@ static char* x_getenv(const char* name)
 #endif
 
 
+
+/****************************************************************************
+ * ConnNetInfo API
+ */
+
+
 static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src, int/*bool*/ pre)
 {
     char*  dst = *dstp;
@@ -500,15 +506,35 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 }
 
 
+static const char* x_ProxyStr(EBProxyType proxy)
+{
+    switch (proxy) {
+    case fProxy_None:
+        break;
+    case fProxy_Http:
+        return "HTTP";
+    case fProxy_Https:
+        return "HTTPS";
+    case fProxy_Http|fProxy_Https:
+        return "HTTP(S)";
+    default:
+        assert(0);
+        break;
+    }
+    return "NONE";
+}
+
+
 /* Return -1 if nothing to do; 0 if failed; 1 if succeeded */
-static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
+static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info,
+                                         const char* env, EBProxyType proxy)
 {
     SConnNetInfo* x_info;
     const char* val;
     int parsed;
 
-    assert(!info->http_proxy_host[0]  &&  !info->http_proxy_port);
-    assert(env  &&  *env);
+    assert(env  &&  *env  &&  proxy  &&  !(info->http_proxy_mask & proxy));
+
     CORE_LOCK_READ;
     if (!(val = x_getenv(env))  ||  !*val
         ||  strcmp(val, "''") == 0  ||  strcmp(val, "\"\"") == 0) {
@@ -520,6 +546,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
         return  0/*failure*/;
     }
     CORE_UNLOCK;
+
     if (!(x_info = ConnNetInfo_CloneInternal(info))) {
         free((void*) val);
         return  0/*failure*/;
@@ -535,6 +562,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
             assert(len);
         }
     }
+
     x_info->req_method = eReqMethod_Any;
     x_info->scheme     = eURL_Unspec;
     x_info->user[0]    = '\0';
@@ -544,26 +572,60 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
     x_info->path[0]    = '\0';
     parsed = ConnNetInfo_ParseURL(x_info, val);
     assert(!(parsed & ~1)); /*0|1*/
-    if (parsed  &&  (!x_info->scheme/*eURL_Unspec*/
-                     ||  x_info->scheme == eURL_Http)
-        &&  x_info->host[0]  &&  x_info->port
-        &&  (!x_info->path[0]
-             ||  (x_info->path[0] == '/'  &&  !x_info->path[1]))) {
-        memcpy(info->http_proxy_user, x_info->user, strlen(x_info->user) + 1);
-        memcpy(info->http_proxy_pass, x_info->pass, strlen(x_info->pass) + 1);
-        memcpy(info->http_proxy_host, x_info->host, strlen(x_info->host) + 1);
-        info->http_proxy_port = x_info->port;
-        info->http_proxy_only = 1/*true*/;
-        assert(!NCBI_HasSpaces(info->http_proxy_host,
-                               strlen(info->http_proxy_host)));
-        CORE_TRACEF(("ConnNetInfo(%s%s%s$%s): \"%s\"", &"\""[!*info->svc],
-                     info->svc, *info->svc ? "\", " : "", env, val));
+
+    if (parsed
+        &&  (!x_info->host[0]  ||  !x_info->port
+             ||  (x_info->path[0]
+                  &&  (x_info->path[0] != '/'  ||  x_info->path[1])))) {
+        parsed = 0/*failure*/;
+    }
+    if (parsed
+        &&  (!x_info->scheme/*eURL_Unspec*/  ||  x_info->scheme == eURL_Http)){
+        assert(!NCBI_HasSpaces(x_info->host, strlen(x_info->host)));
+        if (!info->http_proxy_mask) {
+            /* first time here, just save */
+            info->http_proxy_port = x_info->port;
+            strcpy(info->http_proxy_host, x_info->host);
+            strcpy(info->http_proxy_user, x_info->user);
+            strcpy(info->http_proxy_pass, x_info->pass);
+        } else if (info->http_proxy_port != x_info->port                 ||
+                   strcasecmp(info->http_proxy_host, x_info->host) != 0  ||
+                   strcmp    (info->http_proxy_user, x_info->user) != 0  ||
+                   strcmp    (info->http_proxy_pass, x_info->pass) != 0) {
+            CORE_LOGF_X(14, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
+                        ("ConnNetInfo(%s%s%s$%s): Non-identical proxy setting"
+                         " \"%s\" compared to %s%s",
+                         &"\""[!*info->svc], info->svc,
+                         *info->svc ? "\", " : "", env, val,
+                         x_ProxyStr(info->http_proxy_mask),
+                         info->http_proxy_leak ? ", dropping all" : ""));
+            parsed = info->http_proxy_leak ? -1/*alas*/ : 0/*failure*/;
+        }
+        if (parsed > 0) {
+            info->http_proxy_mask |= proxy;
+            CORE_TRACEF(("ConnNetInfo(%s%s%s$%s): \"%s\" [%s]->[%s]",
+                         &"\""[!*info->svc], info->svc,
+                         *info->svc ? "\", " : "", env, val, x_ProxyStr(proxy),
+                         x_ProxyStr(info->http_proxy_mask)));
+        }
     } else {
+        if (proxy != fProxy_Https  ||  x_info->scheme != eURL_Https)
+            parsed = 0;
         CORE_LOGF_X(10, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
-                    ("ConnNetInfo(%s%s%s$%s): Unrecognized HTTP proxy"
-                     " specification \"%s\"", &"\""[!*info->svc],
-                     info->svc, *info->svc ? "\", " : "", env, val));
-        parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*fail*/;
+                    ("ConnNetInfo(%s%s%s$%s): %s \"%s\"",
+                     &"\""[!*info->svc], info->svc,
+                     *info->svc ? "\", " : "", env, parsed
+                     ? "Unable to utilize secure HTTPS proxy"
+                     : "Unrecognized HTTP proxy specification", val));
+        parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*failure*/;
+    }
+    if (info->http_proxy_mask  &&  parsed < 0) {
+        /* make sure no remnants of a failed parse slip through */
+        info->http_proxy_mask    = fProxy_None/*0*/;
+        info->http_proxy_host[0] = '\0';
+        info->http_proxy_port    =   0;
+        info->http_proxy_user[0] = '\0';
+        info->http_proxy_pass[0] = '\0';
     }
     ConnNetInfo_Destroy(x_info);
     free((void*) val);
@@ -571,14 +633,84 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info, const char* env)
 }
 
 
-/* -1: not set; 0 error; 1 set okay */
+/* -1: not set;  0: error;  1: set okay */
 static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
 {
+    static volatile int   s_ProxySet  = 0/*-1:err; 0:not yet set; 1:set*/;
+    static EProxyType     s_ProxyMask = 0/*!=0 when set non-empty*/;
+    static char           s_ProxyHost[sizeof(info->http_proxy_host)];
+    static unsigned short s_ProxyPort;
+    static char           s_ProxyUser[sizeof(info->http_proxy_user)];
+    static char           s_ProxyPass[sizeof(info->http_proxy_pass)];
     int rv;
+
+    if (!info) {
+        /* A special "reset" entry point for testing */
+        CORE_LOCK_WRITE;
+        s_ProxyPass[0] = '\0';
+        s_ProxyUser[0] = '\0';
+        s_ProxyPort    =   0;
+        s_ProxyHost[0] = '\0';
+        s_ProxyMask    =   0;
+        s_ProxySet     =   0;
+        CORE_UNLOCK;
+        return 0;
+    }
+
+    assert(!info->http_proxy_mask  &&
+           !info->http_proxy_port  &&
+           !info->http_proxy_host[0]);
     if (info->http_proxy_skip)
         return -1;
-    rv = x_SetupHttpProxy(info, "http_proxy");
-    return rv < 0 ? x_SetupHttpProxy(info, "HTTP_PROXY") : rv;
+
+    CORE_LOCK_READ;
+    if (s_ProxySet) {
+        if (s_ProxySet < 0)
+            rv =  0/*error*/;
+        else if (!s_ProxyMask)
+            rv = -1/*noop*/;
+        else {
+            rv =  1/*okay*/;
+            info->http_proxy_mask = s_ProxyMask;
+            info->http_proxy_port = s_ProxyPort;
+            strcpy(info->http_proxy_host, s_ProxyHost);
+            strcpy(info->http_proxy_user, s_ProxyUser);
+            strcpy(info->http_proxy_pass, s_ProxyPass);
+        }
+        CORE_UNLOCK;
+        return rv;
+    }
+    CORE_UNLOCK;
+
+    rv = x_SetupHttpProxy(info, "http_proxy", fProxy_Http);
+    if (rv) {
+        int msk = info->http_proxy_mask;
+        int rvs = x_SetupHttpProxy(info, "https_proxy", fProxy_Https);
+        assert(!(rv <= 0) ^ !msk);
+        if (0 <= rvs  ||  msk != info->http_proxy_mask)
+            rv = rvs;
+    }
+
+    CORE_LOCK_WRITE;
+    if (!s_ProxySet) {
+        if (!rv)
+            s_ProxySet = -1/*error*/;
+        else {
+            if (rv > 0) {
+                strcpy(s_ProxyPass, info->http_proxy_pass);
+                strcpy(s_ProxyUser, info->http_proxy_user);
+                strcpy(s_ProxyHost, info->http_proxy_host);
+                s_ProxyPort = info->http_proxy_port;
+                s_ProxyMask = info->http_proxy_mask;
+                assert(s_ProxyMask);
+            } else
+                assert(!s_ProxyMask);
+            s_ProxySet =  1/*set (incl.none)*/;
+        }
+    }
+    CORE_UNLOCK;
+
+    return rv;
 }
 
 
@@ -631,11 +763,6 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
     return info->magic == CONN_NET_INFO_MAGIC ? 1/*true*/ : 0/*false*/;
 }
 
-
-
-/****************************************************************************
- * ConnNetInfo API
- */
 
 /*fwdecl*/
 static int/*bool*/ x_SetArgs(SConnNetInfo* info, const char* args);
@@ -738,8 +865,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     REG_VALUE(REG_CONN_HTTP_PROXY_SKIP, str, DEF_CONN_HTTP_PROXY_SKIP);
     info->http_proxy_skip = ConnNetInfo_Boolean(str) ? 1 : 0;
 
-    /* HTTP proxy only for HTTP (loaded from "$http_proxy") */
-    info->http_proxy_only = 0/*false*/;
+    /* Which of "$http_proxy" / "$https_proxy" was loaded */
+    info->http_proxy_mask = fProxy_None/*0*/;
 
     /* username */
     REG_VALUE(REG_CONN_USER, info->user, DEF_CONN_USER);
@@ -820,7 +947,9 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
         goto err;
     if (val < 0) {
         /* proxy wasn't defined; try loading it from the registry */
-        assert(!info->http_proxy_host[0]  &&  !info->http_proxy_port);
+        assert(!info->http_proxy_mask  &&
+               !info->http_proxy_port  &&
+               !info->http_proxy_host[0]);
 
         /* HTTP proxy from legacy settings */
         REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
@@ -852,13 +981,19 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
                       DEF_CONN_HTTP_PROXY_PASS);
         }
     } else
-        assert(info->http_proxy_only);
+        assert(info->http_proxy_mask);
     return info;
 
  err:
     x_DestroyNetInfo(info, CONN_NET_INFO_MAGIC);
     return 0;
 #undef REG_VALUE
+}
+
+
+void ConnNetInfo_ResetHttpProxyInternal(void)
+{
+    x_SetupSystemHttpProxy(0);
 }
 
 
@@ -1223,7 +1358,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
     /* "scheme://user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "//")) != 0) {
-        /* Authority portion present */
+        /* the authority portion is present */
         port = -1L/*unassigned*/;
         if (s != url) {
             if (*--s != ':')
@@ -1285,7 +1420,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             }
         }
     } else {
-        /* Authority portion not present */
+        /* the authority portion is not present */
         s = (const char*) strchr(url, ':');
         if (s  &&  s != url  &&
             (scheme = x_ParseScheme(url, (size_t)(s - url))) != eURL_Unspec) {
@@ -1939,7 +2074,7 @@ SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info)
     x_info->http_push_auth        = info->http_push_auth;
     x_info->http_proxy_leak       = info->http_proxy_leak;
     x_info->http_proxy_skip       = info->http_proxy_skip;
-    x_info->http_proxy_only       = info->http_proxy_only;
+    x_info->http_proxy_mask       = info->http_proxy_mask;
     x_info->reserved              = info->reserved;
     strcpy(x_info->user,            info->user);
     strcpy(x_info->pass,            info->pass);
@@ -2236,7 +2371,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
     s_SaveBool      (s, "http_proxy_skip", info->http_proxy_skip);
-    s_SaveBool      (s, "http_proxy_only", info->http_proxy_only);
+    s_SaveKeyval    (s, "http_proxy_mask", x_ProxyStr(info->http_proxy_mask));
     s_SaveULong     (s, "max_try",         info->max_try);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
@@ -2362,7 +2497,7 @@ extern EIO_Status URL_ConnectEx
  const STimeout* o_timeout,
  const STimeout* rw_timeout,
  const char*     user_hdr,
- SURL_Extra*     extra,
+ SURLExtra*      extra,
  TSOCK_Flags     flags,
  SOCK*           sock)
 {

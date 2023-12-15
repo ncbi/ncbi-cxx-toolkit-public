@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>     // This header must go first
 
+#include "../ncbi_servicep.h"
 #include <connect/ncbi_http_session.hpp>
 #include <connect/ncbi_socket.h>
 #include <corelib/ncbi_url.hpp>
@@ -102,6 +103,7 @@ class CProxy
 public:
     void Configure(void)
     {
+        ConnNetInfo_ResetHttpProxyInternal();
         for (auto const& env : m_EnvSet) {
             setenv(env.first.c_str(), env.second.c_str(), 1);
         }
@@ -196,6 +198,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = false;
         proxy.m_EnvSet["http_proxy"] = "Bad host, bad!:54321";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -206,6 +209,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = false;
         proxy.m_EnvSet["http_proxy"] = "host:Bad port, bad!";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -216,6 +220,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = false;
         proxy.m_EnvSet["http_proxy"] = "coremakeproxy:3128";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -226,6 +231,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = false;
         proxy.m_EnvSet["http_proxy"] = "host";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -236,6 +242,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = false;
         proxy.m_EnvSet["http_proxy"] = ":54321";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -246,6 +253,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = false;
         proxy.m_EnvSet["http_proxy"] = "host:";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -256,6 +264,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = true;
         proxy.m_EnvSet["http_proxy"] = "";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -267,6 +276,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = true;
         proxy.m_EnvSet["http_proxy"] = "linkerd:4140";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 #endif /*NCBI_OS_MSWIN*/
@@ -278,6 +288,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = true;
         proxy.m_EnvSet["http_proxy"] = "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4140";
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 
@@ -288,6 +299,7 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = true;
         proxy.m_EnvUnset.push_back("http_proxy");
+        proxy.m_EnvUnset.push_back("https_proxy");
         proxies.push_back(proxy);
     }}
 }

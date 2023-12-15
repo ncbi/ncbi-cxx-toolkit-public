@@ -1396,7 +1396,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
     /* Proxy: $http_proxy not overridden */
     if (!net_info->http_proxy_host[0]  ||
         !net_info->http_proxy_port     ||
-        !net_info->http_proxy_only) {
+        net_info->http_proxy_mask != fProxy_Http) {
         if ( ! ConnNetInfo_GetValueService(DEF_NAMERD_REG_SECTION,
                                            REG_NAMERD_PROXY_HOST,
                                            net_info->http_proxy_host,
@@ -1432,7 +1432,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                          *buf ? "Bad" : "Empty", buf));
             return 0/*failed*/;
         }
-        net_info->http_proxy_only = 1;
+        net_info->http_proxy_mask = fProxy_Http;
     }
 
     /* Lastly, DTABs */

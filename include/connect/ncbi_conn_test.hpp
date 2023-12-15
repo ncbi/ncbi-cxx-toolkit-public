@@ -247,7 +247,8 @@ private:
     /// Return verbal timeout suggestion
     string     x_TimeoutMsg(void);
     /// Obtain and populate FWD connection points from NCBI
-    EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info);
+    EIO_Status x_GetFirewallConfiguration(const SConnNetInfo* net_info,
+                                          bool fwbports);
 
     /// Cancellation support
     CConstIRef<ICanceled> m_Canceled;

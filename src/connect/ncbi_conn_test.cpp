@@ -466,13 +466,17 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             // Redirect to https:// is expected
             temp += "Your HTTP connection appears to work but it does not seem"
                 " to be able to upgrade to secure HTTP (HTTPS), most likely"
-                " because of a malfunctioning HTTP proxy server in the way\n";
+                " because of an incompatibility of the encryption algorithms";
+            if (m_HttpProxy)
+                temp += " or a malfunctioning HTTP proxy server in the way\n";
+            else
+                temp += '\n';
         } else {
             bool host = NStr::CompareNocase(net_info->host, DEF_CONN_HOST) !=0;
             bool port = net_info->port != 0;
             if (host  ||  port) {
                 int n = 0;
-                temp += "Make sure that ";
+                temp += "Please make sure that ";
                 if (host) {
                     n++;
                     temp += "[" DEF_CONN_REG_SECTION "]" REG_CONN_HOST "=\"";
@@ -492,17 +496,47 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         }
         bool auth = true;
         if (m_HttpProxy) {
-            temp += "Make sure that the HTTP proxy server \'";
+            temp += "Please make sure that the HTTP proxy server \'";
             temp += net_info->http_proxy_host;
             temp += ':';
             temp += NStr::UIntToString(net_info->http_proxy_port);
             temp += "' specified with ";
-            if (net_info->http_proxy_only) {
-                temp += "environment variable $http_proxy or $HTTP_PROXY";
+            if (net_info->http_proxy_mask) {
+                temp += "the environment variable";
+                if (net_info->http_proxy_mask == (fProxy_Http | fProxy_Https))
+                    temp += 's';
+                if (net_info->http_proxy_mask & fProxy_Http)
+                    temp += " 'http_proxy'";
+                if (net_info->http_proxy_mask == (fProxy_Http | fProxy_Https))
+                    temp += " and";
+                if (net_info->http_proxy_mask & fProxy_Https)
+                    temp += " 'https_proxy'";
                 auth = false;
             } else
                 temp += "[" DEF_CONN_REG_SECTION "]HTTP_PROXY_{HOST|PORT}";
             temp += " is correct";
+            if (!net_info->http_proxy_mask  &&   net_info->http_proxy_skip
+                &&  (getenv("http_proxy")  ||  getenv("https_proxy"))) {
+                temp += ": the proxy location was loaded this way because "
+                    "[" DEF_CONN_REG_SECTION "]" REG_CONN_HTTP_PROXY_SKIP
+                    " is set, and that prevents reading 'http_proxy' and/or"
+                    " 'https_proxy' from the environment";
+                auth = false;
+            }
+            if (auxdata->m_Redirect
+                &&  net_info->http_proxy_mask == fProxy_Http) {
+                temp += "; also note that (in addition to 'http_proxy') a"
+                    " setting of 'https_proxy' is usually required to properly"
+                    " forward secure HTTP (HTTPS) traffic";
+            }
+            if (net_info->http_proxy_mask) {
+                temp += "\nAlternatively, you can configure your HTTP proxy"
+                    " with [" DEF_CONN_REG_SECTION "]HTTP_PROXY_{HOST|PORT}"
+                    " (both must be set) and by disabling loading it from the"
+                    " environment by setting "
+                    "[" DEF_CONN_REG_SECTION "]" REG_CONN_HTTP_PROXY_SKIP "=1";
+                auth = true;
+            }
         } else {
             if (net_info->http_proxy_host[0]  ||  net_info->http_proxy_port) {
                 temp += "Note that your HTTP proxy seems to have been"
@@ -515,11 +549,20 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                         + string(net_info->http_proxy_host) + '\'';
                 }
                 temp += ")\n";
+            } else if (net_info->http_proxy_skip
+                       &&  (getenv("http_proxy")  ||  getenv("https_proxy"))) {
+                temp += "Even though you seem to have 'http_proxy' and/or"
+                    " 'https_proxy' defined in your environment, "
+                    "[" DEF_CONN_REG_SECTION "]" REG_CONN_HTTP_PROXY_SKIP
+                    " is also set and, thus, prevents reading them";
+                auth = false;
+            } else {
+                temp += "If your network access requires the use of an HTTP"
+                    " proxy server, please contact your network administrator,"
+                    " and set"
+                    " [" DEF_CONN_REG_SECTION "]{HTTP_PROXY_{HOST|PORT}"
+                    " (both must be set) in your configuration accordingly";
             }
-            temp += "If your network access requires the use of an HTTP proxy"
-                " server, please contact your network administrator, and set"
-                " [" DEF_CONN_REG_SECTION "]{HTTP_PROXY_{HOST|PORT} (both must"
-                " be set) in your configuration accordingly";
         }
         if (auth) {
             temp += "; and if your proxy server requires authorization, please"
@@ -530,11 +573,13 @@ EIO_Status CConnTest::HttpOkay(string* reason)
         if (*net_info->user  ||  *net_info->pass) {
             temp += "Make sure there are no stray values for ["
                 DEF_CONN_REG_SECTION "]{" REG_CONN_USER "|" REG_CONN_PASS
-                "} in your configuration -- NCBI services neither require"
-                " nor use them\n";
+                "} in your configuration -- basic NCBI services neither"
+                " require nor use them\n";
         }
-        if (status == eIO_NotSupported)
-            temp += "Your application may also need to have SSL support on\n";
+        if (status == eIO_NotSupported) {
+            temp += "Your application may also need to have the Secure Socket"
+                " Layer (SSL) support turned on\n";
+        }
     }
 
     PostCheck(eHttp, 0/*main*/, status, temp);
@@ -697,7 +742,8 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
 }
 
 
-EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
+EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info,
+                                                 bool fwbports)
 {
     static const char kFWDUrl[] = "/IEB/ToolBox/NETWORK/fwd_check.cgi";
 
@@ -741,10 +787,12 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
              (!m_Firewall  &&  !(4444 <= cp.port  &&  cp.port <= 4544)))) {
             fb = true;
         }
-        if ( fb  &&  net_info  &&  net_info->firewall == eFWMode_Firewall)
+        if (net_info  &&  net_info->firewall == eFWMode_Firewall  &&  fb)
             continue;
-        if (!fb  &&  net_info  &&  net_info->firewall == eFWMode_Fallback)
+        if (net_info  &&  net_info->firewall == eFWMode_Fallback
+            &&  (!fb  ||  (fwbports  &&  !SERV_IsFirewallPort(cp.port)))) {
             continue;
+        }
         cp.status = okay ? eIO_Success : eIO_NotSupported;
         if (!fb)
             m_Fwd.push_back(cp);
@@ -787,36 +835,48 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " " CONN_FWD_URL "\n";
     } else {
         temp += "This is an obsolescent mode that requires keeping a wide port"
-            " range [4444..4544] (inclusive) open to let through connections"
+            " range [4444..4544] (inclusive) open to allow through connections"
             " to the entire NCBI site (130.14.xxx.xxx/165.112.xxx.xxx) -- this"
             " mode was designed for unrestricted networks when firewall port"
             " blocking had not been an issue\n";
     }
+    char fwbset[256] = { '\0' };
     if (m_Firewall) {
         _ASSERT(net_info);
         switch (net_info->firewall) {
         case eFWMode_Adaptive:
-            temp += "Also, there are usually a few additional ports such as "
+            temp += "Also, there usually exist a few additional ports such as "
                 NCBI_AS_STRING(CONN_PORT_SSH) " and "
-                NCBI_AS_STRING(CONN_PORT_HTTPS)
-                " at " NCBI_FWD_BEMD ", which can be used if connections to"
-                " the ports in the range described above, have failed\n";
+                NCBI_AS_STRING(CONN_PORT_HTTPS) " at " NCBI_FWD_BEMD
+                ", which can be used if connections to the ports in the range"
+                " shown above, have failed\n";
             break;
         case eFWMode_Firewall:
             temp += "Furthermore, your configuration explicitly forbids to use"
                 " any fallback firewall ports that may exist to improve"
-                " reliability of connection experience\n";
+                " reliability of the connectivity with NCBI\n";
             break;
         case eFWMode_Fallback:
-            temp += "There are usually a few backup connection ports such as "
-                NCBI_AS_STRING(CONN_PORT_SSH) " and "
-                NCBI_AS_STRING(CONN_PORT_HTTPS)
-                " at " NCBI_FWD_BEMD ", which can be used as a failover if"
-                " connections to the port range above fail.  However, your "
-                " configuration explicitly requests that only those fallback"
-                " firewall ports (if any exist) are to be used for"
-                " connections:  this also implies that no conventional ports"
-                " from the default range will be used\n";
+            temp += "Normally, there are a few additional backup connection"
+                " ports such as " NCBI_AS_STRING(CONN_PORT_SSH) " and "
+                NCBI_AS_STRING(CONN_PORT_HTTPS) " at " NCBI_FWD_BEMD ", which"
+                " can be used as a failover should connections to the above"
+                " port range be unsuccessful.  However, your configuration"
+                " explicitly requests that only";
+            SERV_PrintFirewallPorts(fwbset, sizeof(fwbset), eFWMode_Fallback);
+            if (*fwbset  &&  strcmp(fwbset, "0") != 0) {
+                temp += " the following fallback port(s) may be used for"
+                    " connections: \"";
+                temp += fwbset;
+                temp += "\".";
+            } else {
+                *fwbset = '\0';
+                temp += " those fallback firewall ports (if any active) are to"
+                    " be used for connections.";
+            }
+            temp += " This also implies that no conventional ports from the"
+                " default range need to be configured, and none are going to"
+                " be utilized\n";
             break;
         default:
             temp += "Internal program error, please report!\n";
@@ -828,7 +888,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " firewall imposing a fine-grained control over which hosts and"
             " ports the outbound connections are allowed to use\n";
     }
-    if (m_HttpProxy  &&  net_info  &&  !net_info->http_proxy_only) {
+    if (m_HttpProxy && net_info && net_info->http_proxy_mask != fProxy_Http) {
         temp += "Connections to the aforementioned ports will be made via an"
             " HTTP proxy at '";
         temp += net_info->http_proxy_host;
@@ -837,10 +897,10 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         temp += "'";
         if (net_info->http_proxy_leak) { 
             temp += ".  If that is unsuccessful, a link bypassing the proxy"
-                " will then be attempted";
-        }
+                " will then be attempted\n";
+        } else
+            temp += '\n';
     }
-    temp += '\n';
 
     PreCheck(eFirewallConnPoints, 0/*main*/, temp);
 
@@ -848,7 +908,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
              "Obtaining current NCBI " +
              string(m_Firewall ? "firewall settings" : "service entries"));
 
-    EIO_Status status = x_GetFirewallConfiguration(net_info.get());
+    EIO_Status status = x_GetFirewallConfiguration(net_info.get(), !!*fwbset);
 
     if (status == eIO_Interrupt)
         temp = kCanceled;
@@ -889,7 +949,16 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             empty = true;
         if (empty) {
             status = eIO_Unknown;
-            temp = "No connection ports found, please contact " + HELP_EMAIL;
+            temp = "No connection ports were found";
+            if (*fwbset) {
+                temp += ": it is quite possible that none of the fallback"
+                    " ports supported by NCBI match the restrictive set [";
+                temp += fwbset;
+                temp += "] imposed by your configuration.  Please make sure "
+                    "[" DEF_CONN_REG_SECTION "]" REG_CONN_FIREWALL " lists"
+                    " compatible value(s)";
+            } else
+                temp += ", please contact " + HELP_EMAIL;
         }
     } else if (status == eIO_Timeout) {
         temp = x_TimeoutMsg();
@@ -927,8 +996,8 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         if (status == eIO_Success) {
             if (!m_Firewall  &&  !m_FwdFB.empty()) {
                 status = eIO_Unknown;
-                temp = "Fallback port(s) found in non-firewall mode,"
-                    " please contact " + HELP_EMAIL;
+                temp = "Fallback port(s) found in non-firewall mode, please"
+                    " contact " + HELP_EMAIL;
             } else if (m_Firewall != firewall) {
                 status = eIO_Unknown;
                 temp  = "Firewall ";
@@ -1142,8 +1211,8 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     temp = x_TimeoutMsg();
                 else
                     temp.clear();
-                if (m_HttpProxy  &&  !(net_info->http_proxy_only |
-                                       net_info->http_proxy_leak)) {
+                if (m_HttpProxy  &&  !net_info->http_proxy_leak
+                    &&  net_info->http_proxy_mask != fProxy_Http) {
                     temp += "Your HTTP proxy '";
                     temp += net_info->http_proxy_host;
                     temp += ':';
@@ -1156,7 +1225,10 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         temp += " and let them read: " CONN_FWD_URL;
                         url = true;
                     }
-                    temp += '\n';
+                    temp += "\nYou can also try setting "
+                        "[" DEF_CONN_REG_SECTION "]" REG_CONN_HTTP_PROXY_LEAK
+                        "=1 in your configuration to allow a proxy bypass"
+                        " retry logic for non-HTTP traffic\n";
                 }
                 temp += "The network port required for this connection to"
                     " succeed may be blocked/diverted at your firewall;";
@@ -1217,6 +1289,14 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 m_Fwd.clear();
             } else
                 note = false;
+            char fwbset[256] = { '\0' };
+            SERV_PrintFirewallPorts(fwbset, sizeof(fwbset),
+                                    EFWMode(net_info->firewall));
+            if (*fwbset  &&  strcmp(fwbset, "0") != 0) {
+                temp += " [";
+                temp += fwbset;
+                temp += ']';
+            }
         }
         if (note  &&  status != eIO_Interrupt) {
             temp += "\nYou may want to read this link for more information: "
@@ -1364,9 +1444,8 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                 if (!net_info->firewall)
                     temp += " (Connection Relay)";
                 temp += " Daemon reports negotitation error";
-                if (net_info  &&  m_HttpProxy
-                    &&  !(net_info->http_proxy_only |
-                          net_info->http_proxy_leak)) {
+                if (net_info  &&  m_HttpProxy  &&  !net_info->http_proxy_leak
+                    &&  net_info->http_proxy_mask != fProxy_Http) {
                     temp += ", which usually means that an intermediate HTTP"
                         " proxy '";
                     temp += net_info->http_proxy_host;
