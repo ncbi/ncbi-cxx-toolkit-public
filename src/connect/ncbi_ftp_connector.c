@@ -2411,7 +2411,7 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
     xinfo->stateless = 0;
     xinfo->lb_disable = 0;
     xinfo->http_proxy_leak = 0;
-    if (!(flag & fFTP_UseProxy)  ||  xinfo->http_proxy_only) {
+    if (!(flag & fFTP_UseProxy)  ||  xinfo->http_proxy_mask == fProxy_Http) {
         xinfo->http_proxy_host[0] = '\0';
         xinfo->http_proxy_port    =   0;
         xinfo->http_proxy_user[0] = '\0';
