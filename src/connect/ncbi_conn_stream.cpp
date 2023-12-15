@@ -390,7 +390,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         flgs |=  fSOCK_LogOn;
     }
     if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port
-        &&  !net_info->http_proxy_only) {
+        &&  net_info->http_proxy_mask != fProxy_Http) {
         status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         _ASSERT(!sock ^ !(status != eIO_Success));
         if (status == eIO_Success
@@ -427,7 +427,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 x_net_info->http_push_auth = 0;
                 x_net_info->http_proxy_leak = 0;
                 x_net_info->http_proxy_skip = 0;
-                x_net_info->http_proxy_only = 0;
+                x_net_info->http_proxy_mask = 0;
                 x_net_info->user[0] = '\0';
                 x_net_info->pass[0] = '\0';
                 x_net_info->path[0] = '\0';
@@ -1571,7 +1571,7 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->http_push_auth = 0;
                 net_info->http_proxy_leak = 0;
                 net_info->http_proxy_skip = 0;
-                net_info->http_proxy_only = 0;
+                net_info->http_proxy_mask = 0;
                 net_info->user[0] = '\0';
                 net_info->pass[0] = '\0';
                 net_info->http_proxy_host[0] = '\0';
