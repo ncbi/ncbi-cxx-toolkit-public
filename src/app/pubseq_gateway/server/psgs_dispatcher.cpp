@@ -1013,6 +1013,8 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     vector<IPSGS_Processor *>   to_be_canceled;     // To avoid calling Cancel()
                                                     // under the lock
     IPSGS_Processor *           first_proc = nullptr;
+    size_t                      total_procs = 0;
+    size_t                      cancel_count = 0;
 
     m_GroupsLock[bucket_index].lock();
 
@@ -1027,6 +1029,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
         if (!procs->second->m_FinallyFlushed) {
 
             first_proc = procs->second->m_Processors[0].m_Processor.get();
+            total_procs = procs->second->m_Processors.size();
 
             // Note: it is possible that a processor is on a wait for another
             // processor. This should be taken care of. A Cancel() call will make
@@ -1035,6 +1038,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
                 if (proc.m_DispatchStatus == ePSGS_Up) {
                     if (proc.m_Processor->GetStatus() == IPSGS_Processor::ePSGS_InProgress) {
                         to_be_canceled.push_back(proc.m_Processor.get());
+                        ++cancel_count;
                     }
                 }
             }
@@ -1048,6 +1052,20 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     }
 
     m_GroupsLock[bucket_index].unlock();
+
+    if (total_procs > 0) {
+        if (cancel_count > 0) {
+            PSG_WARNING("The client connection has been closed. " +
+                        to_string(cancel_count) + " out of " +
+                        to_string(total_procs) +
+                        " processors were in progress and will be canceled.");
+        } else {
+            PSG_WARNING("The client connection has been closed. "
+                        "There were 0 processors in progress (out of " +
+                        to_string(total_procs) +
+                        " so no processors will be canceled.");
+        }
+    }
 
     for (auto & proc: to_be_canceled) {
         proc->Cancel();
