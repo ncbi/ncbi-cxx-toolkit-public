@@ -220,7 +220,7 @@ esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
-    *MAC       ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
+    *MAC       ) : ${GMP_PATH=$NCBI/gmp-6.3.0}  ;;
 esac
 
 # NB: now used only when explicitly configured --with-gnutls
