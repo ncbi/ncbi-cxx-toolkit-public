@@ -324,14 +324,14 @@ CRef<CValidError> CAsnvalThreadState::ReportReadFailure(const CException* p_exce
     os << "Unable to read invalid ASN.1";
 
     const CSerialException* p_serial_exception = dynamic_cast<const CSerialException*>(p_exception);
-    if (p_serial_exception) {
+    if (p_serial_exception && mAppConfig.mVerbosity != CAppConfig::eVerbosity_XML) {
         if (mpIstr) {
             os << ": " << mpIstr->GetPosition();
         }
         if (p_serial_exception->GetErrCode() == CSerialException::eEOF) {
             os << ": unexpected end of file";
         }
-        else {
+        else if (mAppConfig.mVerbosity != CAppConfig::eVerbosity_XML) {
             // manually call ReportAll(0) because what() includes a lot of info
             // that's not of interest to the submitter such as stacktraces and
             // GetMsg() doesn't include enough info.
@@ -588,7 +588,9 @@ CConstRef<CValidError> CAsnvalThreadState::ValidateInput(TTypeInfo asninfo)
         serial.Reset(static_cast<CSerialObject*>(obj_info.GetObjectPtr()));
     }
     catch (CException& e) {
-        ERR_POST(Error << e);
+        if (mAppConfig.mVerbosity != CAppConfig::eVerbosity_XML) {
+            ERR_POST(Error << e);
+        }
         return ReportReadFailure(&e);
     }
 
