@@ -49,7 +49,9 @@
 
 #include <util/cache/cache_async.hpp>
 
+#include <chrono>
 #include <random>
+#include <thread>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -319,6 +321,8 @@ static void s_SimpleTest()
         }
     }
 
+    this_thread::sleep_for(chrono::seconds(1));
+
     try {
         using namespace ncbi::grid::netcache::search;
 
@@ -483,6 +487,8 @@ static void s_AsyncTest()
 
         // Actual async write starts here
     }
+
+    this_thread::sleep_for(chrono::seconds(1));
 
     try {
         using namespace ncbi::grid::netcache::search;
