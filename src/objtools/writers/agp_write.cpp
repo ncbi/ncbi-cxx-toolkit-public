@@ -56,9 +56,9 @@ USING_SCOPE(objects);
 
 static char s_DetermineComponentType(const CSeq_id& id, CScope& scope);
 
-// This could be made considerably faster (conversion of enum to string)
-inline string GetGapType(const CSeqMap_CI& iter,
-                         const string* default_gap_type)
+// TODO: This could be made considerably faster (conversion of enum to string)
+static 
+string_view GetGapType(const CSeqMap_CI& iter, const string* default_gap_type)
 {
     try {
         const CSeq_data& data = iter.GetData();
@@ -82,12 +82,14 @@ inline string GetGapType(const CSeqMap_CI& iter,
             return "contig";
         case CSeq_gap::eType_scaffold:
             return "scaffold";
+        case CSeq_gap::eType_unknown:
+            return "unknown";
         default:
             // unknown or other
             // do nothing (will use default_gap_type if non-null)
             ;
         }
-    } catch (CSeqMapException&) {
+    } catch (const CSeqMapException&) {
         // no Seq-data for this gap
     }
     if (default_gap_type) {
@@ -96,13 +98,14 @@ inline string GetGapType(const CSeqMap_CI& iter,
     throw runtime_error("couldn't get gap type");
 }
 
-inline bool GetLinkage(const CSeqMap_CI& iter,
-                       const bool* default_linkage)
+static
+bool GetLinkage(const CSeqMap_CI& iter, const bool* default_linkage)
 {
-    try {
-        return iter.GetData().GetGap().GetLinkage()
-            == CSeq_gap::eLinkage_linked;
-    } catch (CSeqMapException&) {
+    try 
+    {
+        return iter.GetData().GetGap().GetLinkage() == CSeq_gap::eLinkage_linked;
+    } catch (const CSeqMapException&) 
+    {
         // no Seq-data for this gap
     }
     if (default_linkage) {
@@ -112,9 +115,10 @@ inline bool GetLinkage(const CSeqMap_CI& iter,
 }
 
 static
-inline void WriteLinkageEvidence( CNcbiOstream &os, const CSeqMap_CI& iter )
+void WriteLinkageEvidence( CNcbiOstream &os, const CSeqMap_CI& iter )
 {
-    try {
+    try 
+    {
         const CSeq_gap & gap = iter.GetData().GetGap();
         if( gap.IsSetLinkage_evidence() ) {
             string linkage_evidence_str;
@@ -123,7 +127,8 @@ inline void WriteLinkageEvidence( CNcbiOstream &os, const CSeqMap_CI& iter )
                 gap.GetLinkage_evidence() );
             os << linkage_evidence_str;
         }
-    } catch (CSeqMapException&) {
+    } catch (const CSeqMapException&) 
+    {
         // no Seq-data for this gap
     }
 }
