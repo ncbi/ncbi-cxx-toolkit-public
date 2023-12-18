@@ -1904,7 +1904,7 @@ static bool SuspiciousId(const string& s)
 #else
     string id = s;
     NStr::ToLower(id);
-    return ctre::match<suspicious_id_re>(id);
+    return ctre::search<suspicious_id_re>(id);
 #endif
 }
 
