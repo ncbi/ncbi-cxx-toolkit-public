@@ -18,7 +18,7 @@
 #set(NCBI_TRACE_ALLCOMPONENTS ON)
 #set(NCBI_TRACE_COMPONENT_BZ2 ON)
 
-if(NCBI_PTBCFG_USECONAN AND COMMAND conan_define_targets)
+if(COMMAND conan_define_targets)
     set(__silent ${CONAN_CMAKE_SILENT_OUTPUT})	 
     set(CONAN_CMAKE_SILENT_OUTPUT TRUE)	 
     conan_define_targets()
@@ -413,7 +413,7 @@ endfunction()
 #############################################################################
 #############################################################################
 
-if(NCBI_PTBCFG_USECONAN AND NOT COMMAND conan_define_targets)
+if(NOT COMMAND conan_define_targets)
     NCBI_define_Pkgcomponent(NAME OpenSSL PACKAGE openssl FIND OpenSSL)
 endif()
 
