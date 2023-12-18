@@ -45,9 +45,11 @@
 #include <corelib/test_boost.hpp>
 #include <corelib/request_ctx.hpp>
 
+#include <chrono>
 #include <memory>
 #include <vector>
 #include <random>
+#include <thread>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -860,6 +862,8 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
 
         // Removing blob
         api.Remove(key);
+
+        this_thread::sleep_for(chrono::seconds(1));
 
         // Checking removed blob
         BOOST_REQUIRE_MESSAGE(!api.HasBlob(key),
