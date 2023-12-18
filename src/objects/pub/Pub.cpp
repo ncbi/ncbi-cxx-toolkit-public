@@ -149,13 +149,15 @@ bool CPub::GetLabel(string*        label,
 }
 
 
-bool CPub::IsSetAuthors(void) const
+bool CPub::IsSetAuthors() const
 {
     switch (Which()) {
     case CPub::e_Gen :
         return (GetGen().IsSetAuthors());
     case CPub::e_Sub :
         return (GetSub().IsSetAuthors());
+    case CPub::e_Medline :
+        return (GetMedline().GetCit().IsSetAuthors());
     case CPub::e_Article :
         return (GetArticle().IsSetAuthors());
     case CPub::e_Book :
@@ -168,18 +170,20 @@ bool CPub::IsSetAuthors(void) const
         return (GetMan().IsSetCit() && GetMan().GetCit().IsSetAuthors());
     default :
       break;
-  }
-  
-  return false;
+    }
+
+    return false;
 }
 
-const CAuth_list& CPub::GetAuthors (void) const
+const CAuth_list& CPub::GetAuthors() const
 {
-  switch (Which()) {
+    switch (Which()) {
     case CPub::e_Gen :
         return (GetGen().GetAuthors());
     case CPub::e_Sub :
         return (GetSub().GetAuthors());
+    case CPub::e_Medline :
+        return (GetMedline().GetCit().GetAuthors());
     case CPub::e_Article :
         return (GetArticle().GetAuthors());
     case CPub::e_Book :
@@ -194,16 +198,18 @@ const CAuth_list& CPub::GetAuthors (void) const
         NCBI_THROW(CSerialException, eNotImplemented,
                    "CPub::GetAuthors: unsupported entry type "
                    + SelectionName(Which()));
-  }
+    }
 }
 
-CAuth_list& CPub::SetAuthors (void)
+CAuth_list& CPub::SetAuthors()
 {
-  switch (Which()) {
+    switch (Which()) {
     case CPub::e_Gen :
         return (SetGen().SetAuthors());
     case CPub::e_Sub :
         return (SetSub().SetAuthors());
+    case CPub::e_Medline :
+        return (SetMedline().SetCit().SetAuthors());
     case CPub::e_Article :
         return (SetArticle().SetAuthors());
     case CPub::e_Book :
@@ -218,7 +224,7 @@ CAuth_list& CPub::SetAuthors (void)
         NCBI_THROW(CSerialException, eNotImplemented,
                    "CPub::SetAuthors: unsupported entry type "
                    + SelectionName(Which()));
-  }
+    }
 }
 
 void CPub::GetTitles(
@@ -355,9 +361,9 @@ typedef struct {
 } SPubMatchInfo;
 
 
-string s_GetTitleString(const CTitle::C_E& title) 
+string s_GetTitleString(const CTitle::C_E& title)
 {
-    string str = "";
+    string str;
 
     switch (title.Which()) {
         case CTitle::C_E::e_Name:
@@ -399,8 +405,8 @@ string s_GetTitleString(const CTitle::C_E& title)
 
 bool s_TitleMatch(const CTitle& title1, const CTitle& title2, CTitle::C_E::E_Choice title_type)
 {
-    string compare1 = "";
-    string compare2 = "";
+    string compare1;
+    string compare2;
 
     ITERATE(CTitle::Tdata, it, title1.Get()) {
         if ((*it)->Which() == title_type) {

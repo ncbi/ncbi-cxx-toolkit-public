@@ -140,7 +140,7 @@ public:
             ++nruns;
             try {
                 EPubmedError err;
-                CRef<CPub>   pub(upd->GetPubmedEntry(pmid, &err));
+                CRef<CPub>   pub(upd->GetPub(pmid, &err));
                 if (pub) {
                     if (! bstats) {
                         *output << MSerial_AsnText << *pub;
