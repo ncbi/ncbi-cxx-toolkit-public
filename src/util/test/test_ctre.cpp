@@ -47,9 +47,21 @@ static bool match_P94(std::string_view sv) noexcept
     return ctre::match<pattern_P94>(sv);
 }
 
-BOOST_AUTO_TEST_CASE(test_ctre)
+BOOST_AUTO_TEST_CASE(test_ctre_1)
 {
     BOOST_CHECK(!match_P94("AAA"));
     BOOST_CHECK(match_P94("Pseudoalteromonas sp. P94(2023)"));
     BOOST_CHECK(!match_P94("Pseudoalteromonas sp. P94(22023)"));
 }
+
+
+static constexpr auto suspicious_id_re = ctll::fixed_string{ "chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bnw_|\\bnz_|\\bnm_|\\bnc_|\\bac_|cp\\d\\d\\d\\d\\d\\d|^x$|^y$|^z$|^w$|^mt$|^pltd$|^chl$" };
+
+BOOST_AUTO_TEST_CASE(test_ctre_2)
+{
+    BOOST_CHECK(!ctre::search<suspicious_id_re>("AAA"));
+    BOOST_CHECK(ctre::search<suspicious_id_re>("begin chromosome end"));
+    BOOST_CHECK(ctre::search<suspicious_id_re>("chr other"));
+    BOOST_CHECK(ctre::search<suspicious_id_re>("lg other"));
+}
+
