@@ -667,7 +667,8 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                                                 procs->second->m_LowLevelClose);
             } else {
                 // This way is for all the other requests
-                request_status = x_ConcludeRequestStatus(request, reply, proc_statuses);
+                request_status = x_ConcludeRequestStatus(request, reply, proc_statuses,
+                                                         procs->second->m_LowLevelClose);
             }
 
             if (need_trace) {
@@ -832,10 +833,21 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
 CRequestStatus::ECode
 CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
                                           shared_ptr<CPSGS_Reply> reply,
-                                          vector<IPSGS_Processor::EPSGS_Status>  proc_statuses)
+                                          vector<IPSGS_Processor::EPSGS_Status>  proc_statuses,
+                                          bool low_level_close)
 {
     // Used for all requests except ID/get_na (see
     // x_ConcludeIDGetNARequestStatus(...) as well.
+
+    if (low_level_close) {
+        // Here: the request has not been finished yet. There is a final chunk
+        // with the final status and also a flush would need to be done.
+        //
+        // However there was a low level close indicator which means the client
+        // has disconnected before receivng a complete information. So there is
+        // no need to analyze anything, just set the request status as 499.
+        return CRequestStatus::e499_BrokenConnection;
+    }
 
     // The status is based on individual processor statuses
     size_t                  count_200 = 0;
@@ -913,6 +925,16 @@ CPSGS_Dispatcher::x_ConcludeIDGetNARequestStatus(
                             shared_ptr<CPSGS_Reply> reply,
                             bool low_level_close)
 {
+    if (low_level_close) {
+        // Here: the request has not been finished yet. There is a final chunk
+        // with the per-na information and also a flush would need to be done.
+        //
+        // However there was a low level close indicator which means the client
+        // has disconnected before receivng a complete information. So there is
+        // no need to analyze anything, just set the request status as 499.
+        return CRequestStatus::e499_BrokenConnection;
+    }
+
     // The request status is based on per-NA results
     SPSGS_AnnotRequest *    annot_request = & request->GetRequest<SPSGS_AnnotRequest>();
     auto                    processed_names = annot_request->GetProcessedNames();
@@ -1258,7 +1280,8 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
                     for (auto &  proc: procs->second->m_Processors) {
                         proc_statuses.push_back(proc.m_Processor->GetStatus());
                     }
-                    request_status = x_ConcludeRequestStatus(request, reply, proc_statuses);
+                    request_status = x_ConcludeRequestStatus(request, reply, proc_statuses,
+                                                             procs->second->m_LowLevelClose);
                 }
 
                 procs->second->m_RequestStopPrinted = true;

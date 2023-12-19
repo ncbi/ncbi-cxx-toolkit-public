@@ -287,7 +287,8 @@ private:
     CRequestStatus::ECode
     x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
                             shared_ptr<CPSGS_Reply> reply,
-                            vector<IPSGS_Processor::EPSGS_Status>  proc_statuses);
+                            vector<IPSGS_Processor::EPSGS_Status>  proc_statuses,
+                            bool low_level_close);
     void x_SendTrace(const string &  msg,
                      shared_ptr<CPSGS_Request> request,
                      shared_ptr<CPSGS_Reply> reply);
