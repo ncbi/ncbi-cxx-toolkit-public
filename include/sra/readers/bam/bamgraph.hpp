@@ -116,8 +116,13 @@ public:
     
     /// Size of sequence bins in bases corresponding to one graph value
     enum {
+        kGraphBinSizeFromBAI = 1<<14, // bin size of BAI index
+        kGraphBinSizeFromIndex = 0, // bin size determined by used BAM index
         kDefaultGraphBinSize = 1000,
-        kEstimatedGraphBinSize = 1<<14
+        // kEstimatedGraphBinSize is deprecated after adding support
+        // for CSI indexes, because the index bin size becomes variable,
+        // use either kGraphBinSizeFromBAI or kGraphBinSizeFromIndex
+        kEstimatedGraphBinSize NCBI_DEPRECATED = 1<<14
     };
     TSeqPos GetGraphBinSize(void) const;
     void SetGraphBinSize(TSeqPos bin_size);
@@ -133,7 +138,7 @@ public:
     void SetRawAccess(bool raw_access = true);
     
     /// make estimated graph using BAM index only
-    /// the bin size will be always kEstimatedGraphBinSize
+    /// the bin size will be derived from index
     bool GetEstimated(void) const;
     void SetEstimated(bool estimated = true);
     
