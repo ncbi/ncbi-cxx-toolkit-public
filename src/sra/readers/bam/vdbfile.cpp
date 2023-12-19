@@ -37,7 +37,6 @@
 #include <kfs/file.h>
 #include <vfs/manager.h>
 #include <vfs/path.h>
-#include <strstream>
 
 #ifndef NCBI_THROW2_FMT
 # define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \

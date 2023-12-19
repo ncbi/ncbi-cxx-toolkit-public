@@ -42,8 +42,6 @@
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 
-#include <strstream>
-
 #ifndef NCBI_THROW2_FMT
 # define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \
     throw NCBI_EXCEPTION2(exception_class, err_code, FORMAT(message), extra)
