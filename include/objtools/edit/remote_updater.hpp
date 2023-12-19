@@ -1,42 +1,43 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Sergiy Gotvyanskyy, NCBI
-*           Colleen Bolin, NCBI
-*
-* File Description:
-*   Front-end class for making remote request to MLA and taxon
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Sergiy Gotvyanskyy, NCBI
+ *           Colleen Bolin, NCBI
+ *
+ * File Description:
+ *   Front-end class for making remote request to MLA and taxon
+ *
+ * ===========================================================================
+ */
 
 #ifndef __REMOTE_UPDATER_HPP_INCLUDED__
 #define __REMOTE_UPDATER_HPP_INCLUDED__
 
 #include <corelib/ncbimisc.hpp>
 #include <functional>
+#include <objects/pub/Pub.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/edit/eutils_updater.hpp>
 #include <objects/taxon3/itaxon3.hpp>
@@ -55,7 +56,6 @@ class CSeq_descr;
 class COrg_ref;
 class CAuth_list;
 class IObjtoolsListener;
-class CPub;
 class CPubdesc;
 class CTaxon3_reply;
 
@@ -115,6 +115,16 @@ public:
     void UpdatePubReferences(CSerialObject& obj);
     void UpdatePubReferences(CSeq_entry_EditHandle& obj);
     void SetMaxMlaAttempts(int max);
+    // Specify flavor of updated CPub: CMedline_entry or CCit_art
+    void SetPubReturnType(CPub::E_Choice t)
+    {
+        if (t == CPub::e_Medline || t == CPub::e_Article) {
+            m_pm_pub_type = t;
+        } else {
+            throw std::invalid_argument("invalid CPub choice");
+        }
+    }
+
     CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
 
     void UpdateOrgFromTaxon(CSeq_entry& entry);
@@ -155,6 +165,7 @@ private:
     bool                       m_pm_use_cache = true;
     CEUtilsUpdater::ENormalize m_pm_normalize = CEUtilsUpdater::ENormalize::Off;
     TPubInterceptor            m_pm_interceptor = nullptr;
+    CPub::E_Choice             m_pm_pub_type = CPub::e_Article;
 
     unique_ptr<CCachedTaxon3_impl> m_taxClient;
     taxupdate_func_t m_taxon_update;

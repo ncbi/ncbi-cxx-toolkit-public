@@ -157,7 +157,7 @@ bool CPub::IsSetAuthors() const
     case CPub::e_Sub :
         return (GetSub().IsSetAuthors());
     case CPub::e_Medline :
-        return (GetMedline().GetCit().IsSetAuthors());
+        return (GetMedline().IsSetCit() && GetMedline().GetCit().IsSetAuthors());
     case CPub::e_Article :
         return (GetArticle().IsSetAuthors());
     case CPub::e_Book :
