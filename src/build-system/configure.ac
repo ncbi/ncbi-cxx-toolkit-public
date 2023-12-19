@@ -7790,9 +7790,9 @@ if test "$with_vdb" != "no" ; then
          case "$host_os:$host_cpu:$bit64_sfx" in
             darwin*:*86*:64 ) vdb_libpath=mac/$vdb_mode/x86_64/lib   ;;
             darwin*:*86*:* )  vdb_libpath=mac/$vdb_mode/fat86/lib    ;;
-            darwin*:arm*   )  vdb_libpath=mac/$vdb_mode/aarch64/lib  ;;
+            darwin*:arm*   )  vdb_libpath=mac/$vdb_mode/arm64/lib    ;;
             linux*:*86*:64 )  vdb_libpath=linux/$vdb_mode/x86_64/lib ;;
-            linux*:aarch64* ) vdb_libpath=linux/$vdb_mode/aarch64/lib ;;
+            linux*:aarch64* ) vdb_libpath=linux/$vdb_mode/arm64/lib  ;;
             * )
                if test -n "$with_vdb"; then
                   AC_MSG_ERROR([--with-vdb explicitly specified,
@@ -7885,6 +7885,7 @@ if test "$with_ngs" != "no" ; then
    case "$host_cpu:$bit64_sfx" in
       *86*:64 ) extra_inc="-I$NGS_PATH/include/ngs/unix/x86_64" ;;
       *86*:*  ) extra_inc="-I$NGS_PATH/include/ngs/unix/fat86"  ;;
+      a*:64   ) extra_inc="-I$NGS_PATH/include/ngs/unix/arm64"  ;;
       *       ) extra_inc=''                                    ;;
    esac
    NGS_INCLUDE="$NGS_INCLUDE $extra_inc"
