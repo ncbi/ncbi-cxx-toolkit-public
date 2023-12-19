@@ -131,6 +131,8 @@ public:
 
     bool IsValidId(const CSeq_id& id);
 
+    void SetClientTimeout(double timeout) { m_ClientTimeout = timeout; }
+
     static string BlobIdToString(const TBlobId& blob_id);
     static CRef<TBlobId> StringToBlobId(const string& s);
 
@@ -156,6 +158,7 @@ private:
     TClientPool         m_InUse;
     TClientPool         m_NotInUse;
     unique_ptr<CCDDBlobCache> m_Cache;
+    double              m_ClientTimeout;
 };
 
 class NCBI_CDD_ACCESS_EXPORT CCDDClientException : public CException
