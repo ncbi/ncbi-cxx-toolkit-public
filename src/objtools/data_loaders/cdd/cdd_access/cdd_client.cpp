@@ -303,6 +303,22 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
+NCBI_PARAM_DECL(double, CDD, client_timeout);
+NCBI_PARAM_DEF(double, CDD, client_timeout, -1.0); // use default RPC client timeout
+typedef NCBI_PARAM_TYPE(CDD, client_timeout) TClientTimeoutParam;
+
+static const STimeout* s_GetCDDClientTimeout(double timeout)
+{
+    if (timeout > 0) {
+        STimeout* ret = new STimeout();
+        ret->sec = unsigned(timeout);
+        ret->usec = unsigned((timeout - ret->sec) * 1e6);
+        return ret;
+    }
+    return kDefaultTimeout;
+}
+
+
 int CCDDClientPool::x_NextSerialNumber(void)
 {
     static CAtomicCounter_WithAutoInit s_Counter;
@@ -320,6 +336,7 @@ CCDDClientPool::CCDDClientPool(const string& service_name,
     m_PoolAgeLimit = pool_age_limit;
     m_ExcludeNucleotides = exclude_nucleotides;
     m_Cache.reset(new CCDDBlobCache);
+    m_ClientTimeout = TClientTimeoutParam::GetDefault();
 }
 
 
@@ -570,6 +587,9 @@ CCDDClientPool::TClient CCDDClientPool::x_GetClient()
     TClientPool::iterator it = m_NotInUse.lower_bound(cutoff);
     if (it == m_NotInUse.end()) {
         CRef<CCDDClient> client(new CCDDClient(m_ServiceName));
+        if (m_ClientTimeout > 0) {
+            client->SetTimeout(s_GetCDDClientTimeout(m_ClientTimeout));
+        }
         ret = m_InUse.emplace(now, client);
     }
     else {
