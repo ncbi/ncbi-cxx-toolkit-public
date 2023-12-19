@@ -279,7 +279,7 @@ REM create configure script
 
 REM modify CMakeLists.txt
 (
-    echo cmake_minimum_required^(VERSION 3.7^)
+    echo cmake_minimum_required^(VERSION 3.15^)
     echo project^(%prj_name%^)
     echo include^(%builddir:\=/%/src/build-system/cmake/CMake.NCBItoolkit.cmake^)
     echo NCBI_add_subdirectory^(%rep_src%^)
