@@ -36,7 +36,6 @@
 #include <objects/taxon3/taxon3.hpp>
 
 #include <objects/pub/Pub_equiv.hpp>
-#include <objects/pub/Pub.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/medline/Medline_entry.hpp>
 
@@ -236,14 +235,24 @@ protected:
 bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
     auto pub = s_GetPubFrompmid(m_pubmed.get(), id, m_MaxMlaAttempts, m_pMessageListener);
-    if (! pub) {
+    if (! (pub && pub->IsMedline())) {
         return false;
     }
-    if (! (pub->IsMedline() && pub->GetMedline().IsSetCit())) {
-        return false;
-    }
+
     CRef<CPub> new_pub(new CPub);
-    new_pub->SetArticle().Assign(pub->GetMedline().GetCit());
+    switch (m_pm_pub_type) {
+    case CPub::e_Article:
+        if (! pub->GetMedline().IsSetCit()) {
+            return false;
+        }
+        new_pub->SetArticle().Assign(pub->GetMedline().GetCit());
+        break;
+    case CPub::e_Medline:
+        new_pub->SetMedline().Assign(pub->GetMedline());
+        break;
+    default:
+        return false;
+    }
 
     // authors come back in a weird format that we need
     // to convert to ISO
