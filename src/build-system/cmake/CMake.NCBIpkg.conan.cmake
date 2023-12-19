@@ -14,6 +14,7 @@ set( NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED ON)
 ###############################################################################
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0057 NEW)
+cmake_policy(SET CMP0091 NEW)
 
 set(NCBI_PTBCFG_PACKAGED               ON)
 set(NCBI_PTBCFG_ENABLE_COLLECTOR       ON)
