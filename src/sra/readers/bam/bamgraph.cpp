@@ -459,12 +459,13 @@ vector<Uint8> CBam2Seq_graph::CollectRawAccessCoverage(CBamRawDb& bam_raw_db)
 vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(const CBamHeader& header,
                                                        const CBamIndex& bam_index)
 {
-    m_GraphBinSize = kEstimatedGraphBinSize;
+    auto bin_size = bam_index.GetMinBinSize();
+    m_GraphBinSize = bin_size;
     size_t ref_index = header.GetRefIndex(GetRefLabel());
     TSeqPos length = header.GetRefLength(ref_index);
     vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
     if ( length == 0 || length == kInvalidSeqPos ) {
-        length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
+        length = TSeqPos(ret.size())*bin_size;
     }
     m_TotalRange.SetFrom(0).SetToOpen(length);
     m_AlignCount = 0;
