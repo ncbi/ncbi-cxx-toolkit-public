@@ -122,7 +122,7 @@ public:
         // kEstimatedGraphBinSize is deprecated after adding support
         // for CSI indexes, because the index bin size becomes variable,
         // use either kGraphBinSizeFromBAI or kGraphBinSizeFromIndex
-        kEstimatedGraphBinSize = 1<<14
+        kEstimatedGraphBinSize NCBI_STD_DEPRECATED("Use either kGraphBinSizeFromIndex or kGraphBinSizeFromBAI") = 1<<14
     };
     TSeqPos GetGraphBinSize(void) const;
     void SetGraphBinSize(TSeqPos bin_size);
