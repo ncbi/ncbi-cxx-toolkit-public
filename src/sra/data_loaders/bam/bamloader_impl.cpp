@@ -1227,18 +1227,18 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                 _ASSERT(cur_data_size > 0);
                 TSeqPos non_zero_end = pos - zero_count*bin_size;
                 CBamRefSeqChunkInfo info;
-                if ( GetDebugLevel() >= 3 ) {
-                    LOG_POST_X(23, Info << "CBAMDataLoader:"
-                               " Chunk "<<m_Chunks.size()<<
-                               " Range "<<last_pos<<"-"<<
-                               s_GetEnd(over_ends, i-zero_count-1, bin_size)<<
-                               " size: "<<cur_data_size);
-                }
                 info.m_DataSize = cur_data_size;
                 info.m_RefSeqRange.SetFrom(last_pos);
                 info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count-1, bin_size));
-                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
                 info.m_MaxRefSeqFrom = non_zero_end-1;
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(23, Info << "CBAMDataLoader:"
+                               " Chunk "<<m_Chunks.size()<<
+                               " Range "<<info.m_RefSeqRange.GetFrom()<<"-"<<info.m_MaxRefSeqFrom<<
+                               " (.."<<info.m_RefSeqRange.GetTo()<<")"
+                               " size: "<<info.m_DataSize);
+                }
+                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
                 m_Chunks.push_back(info);
                 
                 last_pos = non_zero_end;
@@ -1252,20 +1252,19 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                 _ASSERT(cur_data_size == 0);
                 CBamRefSeqChunkInfo info;
                 info.m_DataSize = 0;
+                info.m_RefSeqRange.SetFrom(last_pos);
+                info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count, bin_size));
+                info.m_MaxRefSeqFrom = last_pos;
                 if ( GetDebugLevel() >= 3 ) {
                     LOG_POST_X(24, Info << "CBAMDataLoader:"
                                " Chunk "<<m_Chunks.size()<<
-                               " Range "<<last_pos<<"-"<<
-                               s_GetEnd(over_ends, i-zero_count, bin_size)<<
-                               " size: "<<0);
+                               " Range "<<info.m_RefSeqRange.GetFrom()<<"-"<<info.m_MaxRefSeqFrom<<
+                               " (.."<<info.m_RefSeqRange.GetTo()<<")"
+                               " size: "<<info.m_DataSize);
                 }
-                info.m_RefSeqRange.SetFrom(last_pos);
-                info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i-zero_count, bin_size));
                 _ASSERT(info.m_RefSeqRange.GetLength() > 0);
-                info.m_MaxRefSeqFrom = last_pos;
                 m_Chunks.push_back(info);
                 
-                cur_data_size = 0;
                 last_pos = pos;
                 zero_count = 0;
             }
@@ -1278,17 +1277,12 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
         if ( cur_data_size >= kChunkDataSize ||
              pos+bin_size-last_pos >= kMaxChunkLength ||
              (i+1 < bin_count && data_sizes[i+1] > split_bin_data_size) ) {
-            if ( has_pileup && data_sizes[i] > split_bin_data_size ) {
+            if ( has_pileup &&
+                 data_sizes[i] > split_bin_data_size &&
+                 bin_size > split_bin_min_length ) {
                 // special split to sub-page size
                 _ASSERT(last_pos == pos);
                 _ASSERT(cur_data_size == data_sizes[i]);
-                if ( GetDebugLevel() >= 3 ) {
-                    LOG_POST_X(25, Info << "CBAMDataLoader:"
-                               " Huge Chunk "<<m_Chunks.size()<<
-                               " Range "<<last_pos<<"-"<<
-                               s_GetEnd(over_ends, i, bin_size)<<
-                               " size: "<<cur_data_size);
-                }
                 int split_shift = 0;
                 while ( (cur_data_size >> split_shift) > split_bin_data_size &&
                         (bin_size >> split_shift) > split_bin_min_length ) {
@@ -1298,21 +1292,28 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                 auto sub_chunk_data_size = cur_data_size >> split_shift;
                 TSeqPos sub_chunk_len = bin_size >> split_shift;
                 TSeqPos ref_end = s_GetEnd(over_ends, i, bin_size);
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(27, Info << "CBAMDataLoader:"
+                               " Huge Chunk "<<m_Chunks.size()<<
+                               " Range "<<last_pos<<"-"<<(pos+bin_size)<<
+                               " (.."<<ref_end<<")"<<
+                               " size: "<<cur_data_size);
+                }
                 for ( int i = 0; i < sub_chunk_count; ++i ) {
-                    if ( GetDebugLevel() >= 3 ) {
-                        LOG_POST_X(25, Info << "CBAMDataLoader:"
-                                   " Huge Sub Chunk "<<m_Chunks.size()<<
-                                   " Range "<<(last_pos+i*sub_chunk_len)<<"-"<<
-                                   (last_pos+(i+1)*sub_chunk_len-1)<<
-                                   " size: "<<sub_chunk_data_size);
-                    }
                     CBamRefSeqChunkInfo info;
                     info.m_DataSize = sub_chunk_data_size;
                     info.m_RefSeqRange.SetFrom(last_pos+i*sub_chunk_len);
-                    info.m_RefSeqRange.SetTo(ref_end);
-                    _ASSERT(info.m_RefSeqRange.GetLength() > 0);
                     info.m_MaxRefSeqFrom = pos+(i+1)*sub_chunk_len-1;
+                    info.m_RefSeqRange.SetTo(i==0? ref_end: info.m_MaxRefSeqFrom);
                     info.m_PileupChunkCount = i==0? sub_chunk_count: 0;
+                    if ( GetDebugLevel() >= 3 ) {
+                        LOG_POST_X(28, Info << "CBAMDataLoader:"
+                                   " Huge Chunk "<<m_Chunks.size()<<
+                                   " Range "<<info.m_RefSeqRange.GetFrom()<<"-"<<info.m_MaxRefSeqFrom<<
+                                   " (.."<<info.m_RefSeqRange.GetTo()<<")"
+                                   " size: "<<info.m_DataSize);
+                    }
+                    _ASSERT(info.m_RefSeqRange.GetLength() > 0);
                     m_Chunks.push_back(info);
                 }
                 last_pos = pos+bin_size;
@@ -1322,19 +1323,19 @@ bool CBamRefSeqInfo::x_LoadRangesEstimated(void)
                 // add chunk from last_pos to pos
                 _ASSERT(last_pos <= pos);
                 _ASSERT(cur_data_size > 0);
-                if ( GetDebugLevel() >= 3 ) {
-                    LOG_POST_X(25, Info << "CBAMDataLoader:"
-                               " Chunk "<<m_Chunks.size()<<
-                               " Range "<<last_pos<<"-"<<
-                               s_GetEnd(over_ends, i, bin_size)<<
-                               " size: "<<cur_data_size);
-                }
                 CBamRefSeqChunkInfo info;
                 info.m_DataSize = cur_data_size;
                 info.m_RefSeqRange.SetFrom(last_pos);
                 info.m_RefSeqRange.SetTo(s_GetEnd(over_ends, i, bin_size));
-                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
                 info.m_MaxRefSeqFrom = pos+bin_size-1;
+                if ( GetDebugLevel() >= 3 ) {
+                    LOG_POST_X(25, Info << "CBAMDataLoader:"
+                               " Chunk "<<m_Chunks.size()<<
+                               " Range "<<info.m_RefSeqRange.GetFrom()<<"-"<<info.m_MaxRefSeqFrom<<
+                               " (.."<<info.m_RefSeqRange.GetTo()<<")"
+                               " size: "<<info.m_DataSize);
+                }
+                _ASSERT(info.m_RefSeqRange.GetLength() > 0);
                 m_Chunks.push_back(info);
                 last_pos = pos+bin_size;
                 cur_data_size = 0;
