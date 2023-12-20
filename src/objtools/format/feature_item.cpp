@@ -6518,7 +6518,11 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(transposon_name);
     DO_QUAL(insertion_seq_name);
 
-    DO_QUAL(country);
+    if ( GetContext()->Config().GeoLocNameCountry() ) {
+        x_FormatQual(eSQ_country, "geo_loc_name", qvec);
+    } else {
+        DO_QUAL(country);
+    }
 
     DO_QUAL(focus);
 
