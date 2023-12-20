@@ -39,7 +39,7 @@ for v in "$BUILD_TREE_ROOT"; do
   fi
 done
 product=$TARGET_BUILD_DIR/$FULL_PRODUCT_NAME
-arch=`uname -m`
+arch=`lipo -archs $product`
 vdbdlib="${NCBI_VDB_LIBPATH}/vdb/vdb-versions/cxx_toolkit/3/mac/release/$arch/lib/libncbi-vdb.3.dylib"
 
 if test "$ACTION" = "build"; then
@@ -47,7 +47,7 @@ if test "$ACTION" = "build"; then
     vdb=`otool -L $product | grep libncbi-vdb | grep dylib`
     if test -n "$vdb"; then
       ref=`echo $vdb | awk 'NR==1{print $1}'`
-      install_name_tool -change $ref $vdbdlib $product
+      install_name_tool -change $ref "$vdbdlib" $product
     fi
   fi
 fi
