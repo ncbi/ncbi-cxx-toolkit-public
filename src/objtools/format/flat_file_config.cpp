@@ -600,7 +600,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "ShowDeflineModifiers (131072) - show definition line modifiers\n"
          DENT "DoNotUseAutoDef      (262144) - suppress automatic defline generator\n"
          DENT "OldTpaDisplay        (542288) - old TPA display with PRIMARY block\n"
-         DENT "DisableDefaultIndex (1048576) - disable SeqEntry indexer",
+         DENT "DisableDefaultIndex (1048576) - disable SeqEntry indexer\n"
+         DENT "GeoLocNameCountry   (1048576) - use geo_loc_name instead of country",
 
                                  CArgDescriptions::eString, "");
 #undef DENT
@@ -951,6 +952,7 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
                     DOFLG(ShowDeflineModifiers),
                     DOFLG(DoNotUseAutoDef),
                     DOFLG(DisableDefaultIndex),
+                    DOFLG(GeoLocNameCountry),
 #undef DOFLG
                 };
 
@@ -987,6 +989,7 @@ CFlatFileConfig::TCustom x_GetCustom(const CArgs& args)
             DOFLG(ShowDeflineModifiers),
             DOFLG(DoNotUseAutoDef),
             DOFLG(DisableDefaultIndex),
+            DOFLG(GeoLocNameCountry),
 #undef DOFLG
         };
         static const size_t kArraySize = ArraySize(kDescrTable);
