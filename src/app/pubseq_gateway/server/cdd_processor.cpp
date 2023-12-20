@@ -64,8 +64,8 @@ const CID2_Blob_Id::TSat kCDDSat = 8087;
 static const string kParamMaxConn = "maxconn";
 static const int kDefaultMaxConn = 64;
 
-static const string kParamCDDClientTimeout = "client_timeout";
-static const double kDefaultCDDClientTimeout = 5.0;
+static const string kParamCDDBackendTimeout = "backend_timeout";
+static const double kDefaultCDDBackendTimeout = 5.0;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -149,9 +149,12 @@ CPSGS_CDDProcessor::CPSGS_CDDProcessor(void)
       m_Unlocked(true)
 {
     const CNcbiRegistry& registry = CPubseqGatewayApp::GetInstance()->GetConfig();
-    double timeout = registry.GetDouble(kCDDProcessorSection, kParamCDDClientTimeout, kDefaultCDDClientTimeout);
-    if (timeout > 0) {
-        m_ClientPool->SetClientTimeout(timeout);
+    double timeout = registry.GetDouble(kCDDProcessorSection, kParamCDDBackendTimeout, kDefaultCDDBackendTimeout);
+    try {
+        m_ClientPool->SetClientTimeout(CTimeout(timeout));
+    }
+    catch (CTimeException&) {
+        m_ClientPool->SetClientTimeout(CTimeout(CTimeout::eDefault));
     }
     unsigned int max_conn = registry.GetInt(kCDDProcessorSection, kParamMaxConn, kDefaultMaxConn);
     if (max_conn == 0) {
