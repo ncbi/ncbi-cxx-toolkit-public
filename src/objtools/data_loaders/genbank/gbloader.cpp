@@ -680,7 +680,7 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
     int sub_sat) const
 {
 #if defined(HAVE_PSG_LOADER)
-    if (TGenbankLoaderPsg::GetDefault()) {
+    if ( IsUsingPSGLoader() ) {
         string str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
         if ( sub_sat != CSeqref::eSubSat_main ) {
             str += '.'+NStr::NumericToString(sub_sat);
