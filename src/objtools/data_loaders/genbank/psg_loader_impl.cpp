@@ -105,7 +105,8 @@ CSeq_id_Handle PsgIdToHandle(const CPSG_BioId& id)
     try {
         return CSeq_id_Handle::GetHandle(sid);
     }
-    catch (...) {
+    catch (exception& exc) {
+        ERR_POST("CPSGDataLoader: cannot parse Seq-id "<<sid<<": "<<exc.what());
     }
     return CSeq_id_Handle();
 }
@@ -569,7 +570,7 @@ CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetBioseqStateFlags() const
         case CPSG_BioseqInfo::eLive:
             return CBioseq_Handle::fState_none;
         default:
-            LOG_POST(Warning << "CPSGDataLoader: uknown " << canonical << " state: " << state);
+            LOG_POST(Warning << "CPSGDataLoader: unknown " << canonical << " state: " << state);
             return CBioseq_Handle::fState_none;
         }
     }
@@ -588,7 +589,7 @@ CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetChainStateFlags() const
         case CPSG_BioseqInfo::eLive:
             return CBioseq_Handle::fState_none;
         default:
-            LOG_POST(Warning << "CPSGDataLoader: uknown " << canonical << " chain_state: " << state);
+            LOG_POST(Warning << "CPSGDataLoader: unknown " << canonical << " chain_state: " << state);
             return CBioseq_Handle::fState_none;
         }
     }
