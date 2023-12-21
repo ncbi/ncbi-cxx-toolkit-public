@@ -348,7 +348,7 @@ bool CStrainRequest::Check(const COrg_ref& org)
 void CStrainRequest::ListErrors(vector<TTaxError>& errs) const
 {
     if (m_IsInvalid) {
-        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo,
+        errs.push_back(TTaxError{ eDiag_Error, eErr_SEQ_DESCR_StrainContainsTaxInfo,
             "Strain '" + m_Strain + "' contains taxonomic name information" });
     }
 }

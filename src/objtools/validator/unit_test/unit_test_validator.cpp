@@ -6957,7 +6957,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_synonym, "synonym value");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_gb_synonym, "synonym value");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
         "OrgModValueInvalid",
         "OrgMod synonym is identical to OrgMod gb_synonym"));
     eval = validator.Validate(seh, options);
@@ -22041,7 +22041,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_616)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrgModValueInvalid", "Orgmod.strain should not be 'yes'"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "OrgModValueInvalid", "Orgmod.strain should not be 'yes'"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -22757,7 +22757,7 @@ void TestOneStrain(const string& taxname, const string& strain, const string& li
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
         "BioSource is missing taxon ID"));
     if (expect_err) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrainContainsTaxInfo",
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StrainContainsTaxInfo",
             "Strain '" + strain + "' contains taxonomic name information"));
     }
 
