@@ -141,6 +141,7 @@ struct SPubseqGatewaySettings
     string                              m_MyNCBIURL;
     string                              m_MyNCBIHttpProxy;
     size_t                              m_MyNCBITimeoutMs;
+    size_t                              m_MyNCBIResolveTimeoutMs;
 
 private:
     void x_ReadServerSection(const CNcbiRegistry &   registry);
