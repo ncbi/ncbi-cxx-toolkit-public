@@ -39,6 +39,7 @@
 #include <string>
 
 #include <objtools/pubseq_gateway/impl/myncbi/myncbi_request.hpp>
+#include <objtools/pubseq_gateway/impl/myncbi/myncbi_exception.hpp>
 
 #include <uv.h>
 
@@ -55,6 +56,9 @@ public:
     void SetRequestTimeout(chrono::milliseconds timeout);
     chrono::milliseconds GetRequestTimeout() const;
 
+    void SetResolveTimeout(chrono::milliseconds timeout);
+    chrono::milliseconds GetResolveTimeout() const;
+
     void SetMyNCBIURL(string url);
     string GetMyNCBIURL() const;
 
@@ -63,6 +67,11 @@ public:
 
     void SetVerboseCURL(bool value);
     bool IsVerboseCURL() const;
+
+    // Performs DNS resolution for HttpProxy if configured
+    //   otherwise performs DNS resolution for MyNCBIURL hostname
+    // @throws CPSG_MyNCBIException
+    void ResolveAccessPoint();
 
     shared_ptr<CPSG_MyNCBIRequest_WhoAmI> CreateWhoAmI(
         uv_loop_t * loop,
@@ -77,6 +86,7 @@ public:
     );
 private:
     chrono::milliseconds m_RequestTimeout{chrono::milliseconds(1000)};
+    chrono::milliseconds m_ResolveTimeout{chrono::milliseconds(300)};
     string m_MyNCBIUrl;
     string m_HttpProxy;
     bool m_VerboseCURL{false};

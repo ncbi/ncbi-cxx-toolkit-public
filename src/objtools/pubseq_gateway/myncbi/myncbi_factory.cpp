@@ -341,11 +341,11 @@ size_t curl_write_data_cv(void *data, size_t size, size_t nmemb, void *clientp)
     return realsize;
 }
 
-void curl_send_request(SCurlMultiContext* multi_context, CPSG_MyNCBIFactory* factory, string request)
+CURL * curl_init_easy_handle(CPSG_MyNCBIFactory* factory, string const& request)
 {
     string url = factory->GetMyNCBIURL();
     string proxy = factory->GetHttpProxy();
-    VLOG("curl_send_request: url - '", url, "' - '", request, "'");
+    VLOG("curl_init_easy_handle: url - '", url, "', proxy - '", proxy, "', request - '", request, "'");
     CURL *handle = curl_easy_init();
     //curl_easy_setopt(handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP);
     //curl_easy_setopt(handle, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
@@ -357,6 +357,12 @@ void curl_send_request(SCurlMultiContext* multi_context, CPSG_MyNCBIFactory* fac
         curl_easy_setopt(handle, CURLOPT_DEBUGFUNCTION, curl_debug_cb);
         curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
     }
+    return handle;
+}
+
+void curl_send_request(SCurlMultiContext* multi_context, CPSG_MyNCBIFactory* factory, string request)
+{
+    CURL *handle = curl_init_easy_handle(factory, request);
     /*multi_context->connect_to = curl_slist_append(nullptr, "::sman110:8306");
     curl_easy_setopt(handle, CURLOPT_CONNECT_TO, multi_context->connect_to);*/
     curl_easy_setopt(handle, CURLOPT_COPYPOSTFIELDS, request.c_str());
@@ -442,6 +448,16 @@ chrono::milliseconds CPSG_MyNCBIFactory::GetRequestTimeout() const
     return m_RequestTimeout;
 }
 
+void CPSG_MyNCBIFactory::SetResolveTimeout(chrono::milliseconds timeout)
+{
+    m_ResolveTimeout = timeout;
+}
+
+chrono::milliseconds CPSG_MyNCBIFactory::GetResolveTimeout() const
+{
+    return m_ResolveTimeout;
+}
+
 void CPSG_MyNCBIFactory::SetMyNCBIURL(string url)
 {
     m_MyNCBIUrl = url;
@@ -471,6 +487,36 @@ void CPSG_MyNCBIFactory::SetVerboseCURL(bool value)
 bool CPSG_MyNCBIFactory::IsVerboseCURL() const
 {
     return m_VerboseCURL;
+}
+
+void CPSG_MyNCBIFactory::ResolveAccessPoint()
+{
+    unique_ptr<CURL, function<void(CURL*)>> handle_ptr(
+        curl_init_easy_handle(this, "::ResolveAccessPoint"),
+        [](CURL* h) {
+            curl_easy_cleanup(h);
+        }
+    );
+    curl_easy_setopt(handle_ptr.get(), CURLOPT_CONNECT_ONLY, 1L);
+    curl_easy_setopt(handle_ptr.get(), CURLOPT_TIMEOUT_MS, GetResolveTimeout().count());
+    auto rc = curl_easy_perform(handle_ptr.get());
+    if (rc == CURLE_OK) {
+        char *ip;
+        rc = curl_easy_getinfo(handle_ptr.get(), CURLINFO_PRIMARY_IP, &ip);
+        if (rc == CURLE_OK) {
+            VLOG("ResolveAccessPoint: resolved address - '", string(ip), "'");
+        }
+        // LCOV_EXCL_START
+        else {
+            string error = "CURL remote address retrieval error: '" + string(curl_easy_strerror(rc)) + "'";
+            NCBI_THROW(CPSG_MyNCBIException, eMyNCBIResolveError, error);
+        }
+        // LCOV_EXCL_STOP
+    }
+    else {
+        string error = "CURL resolution error: '" + string(curl_easy_strerror(rc)) + "'";
+        NCBI_THROW(CPSG_MyNCBIException, eMyNCBIResolveError, error);
+    }
 }
 
 shared_ptr<CPSG_MyNCBIRequest_SignIn> CPSG_MyNCBIFactory::CreateSignIn(

@@ -206,4 +206,64 @@ namespace {
         EXPECT_EQ(0, UvLoopClose(loop)) << "Failed to close uv_loop properly";
     }
 
+    TEST_F(CMyNCBIFactoryTest, ResolveAccessPoint)
+    {
+        string myncbi_url = "http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNCBIAccount";
+        auto factory = make_shared<CPSG_MyNCBIFactory>();
+        factory->SetVerboseCURL(false);
+        // good: configuration
+        {
+            factory->SetResolveTimeout(chrono::milliseconds(400));
+            EXPECT_EQ(chrono::milliseconds(400), factory->GetResolveTimeout());
+        }
+        // good: standard case
+        {
+            factory->SetHttpProxy("linkerd:4140");
+            factory->SetMyNCBIURL(myncbi_url);
+            factory->ResolveAccessPoint();
+        }
+        // good: IP instead of hostname
+        {
+            factory->SetHttpProxy("130.14.191.21:4140");
+            factory->SetMyNCBIURL(myncbi_url);
+            factory->ResolveAccessPoint();
+        }
+        // good: with scheme
+        {
+            factory->SetMyNCBIURL("http://linkerd:4140");
+            factory->SetHttpProxy("");
+            factory->ResolveAccessPoint();
+        }
+        // bad: bad proxy host name
+        try {
+            factory->SetHttpProxy("wrong_host_value,:80");
+            factory->SetMyNCBIURL(myncbi_url);
+            factory->ResolveAccessPoint();
+        }
+        catch(CPSG_MyNCBIException const& ex) {
+            EXPECT_EQ("CURL resolution error: 'Couldn't resolve proxy name'", ex.GetMsg());
+            EXPECT_EQ(CPSG_MyNCBIException::eMyNCBIResolveError, ex.GetErrCode());
+        }
+        // bad: non existent host for proxy
+        try {
+            factory->SetHttpProxy("non.existent.host:80");
+            factory->SetMyNCBIURL(myncbi_url);
+            factory->ResolveAccessPoint();
+        }
+        catch(CPSG_MyNCBIException const& ex) {
+            EXPECT_EQ("CURL resolution error: 'Couldn't resolve proxy name'", ex.GetMsg());
+            EXPECT_EQ(CPSG_MyNCBIException::eMyNCBIResolveError, ex.GetErrCode());
+        }
+        // bad: wrong scheme
+        try {
+            factory->SetHttpProxy("ftp://linkerd:80");
+            factory->SetMyNCBIURL(myncbi_url);
+            factory->ResolveAccessPoint();
+        }
+        catch(CPSG_MyNCBIException const& ex) {
+            EXPECT_EQ("CURL resolution error: 'Couldn't connect to server'", ex.GetMsg());
+            EXPECT_EQ(CPSG_MyNCBIException::eMyNCBIResolveError, ex.GetErrCode());
+        }
+    }
+
 }  // namespace
