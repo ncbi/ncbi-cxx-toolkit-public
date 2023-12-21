@@ -296,6 +296,19 @@ void CPubseqGatewayApp::CreateMyNCBIFactory(void)
         m_MyNCBIFactory->SetHttpProxy(m_Settings.m_MyNCBIHttpProxy);
     }
     m_MyNCBIFactory->SetRequestTimeout(chrono::milliseconds(m_Settings.m_MyNCBITimeoutMs));
+
+    // Initiate a resolution of linkerd. It needs to be done once at the start.
+    // Supposedly the resolved name is ending up in some kind of cache so the
+    // further requests will go faster.
+    m_MyNCBIFactory->SetResolveTimeout(chrono::milliseconds(m_Settings.m_MyNCBIResolveTimeoutMs));
+    try {
+        m_MyNCBIFactory->ResolveAccessPoint();
+    } catch (const exception &  exc) {
+        PSG_ERROR("Error resolving My NCBI access point: " + string(exc.what()) +
+                  ". Ignore and continue.");
+    } catch (...) {
+        PSG_ERROR("Unknown error resolving My NCBI access point. Ignore and continue.");
+    }
 }
 
 

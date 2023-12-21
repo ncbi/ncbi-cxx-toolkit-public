@@ -106,7 +106,8 @@ const size_t            kDefaultMyNCBIErrorCacheSize = 10000;
 const size_t            kDefaultMyNCBIErrorCacheBackOffMs = 1000;
 const string            kDefaultMyNCBIURL = "http://txproxy.linkerd.ncbi.nlm.nih.gov/v1/service/MyNCBIAccount?txsvc=MyNCBIAccount";
 const string            kDefaultMyNCBIHttpProxy = "linkerd:4140";
-size_t                  kDefaultMyNCBITimeoutMs = 100;
+const size_t            kDefaultMyNCBITimeoutMs = 100;
+const size_t            kDefaultMyNCBIResolveTimeoutMs = 300;
 
 
 
@@ -159,7 +160,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_MyNCBIErrorCacheBackOffMs(kDefaultMyNCBIErrorCacheBackOffMs),
     m_MyNCBIURL(kDefaultMyNCBIURL),
     m_MyNCBIHttpProxy(kDefaultMyNCBIHttpProxy),
-    m_MyNCBITimeoutMs(kDefaultMyNCBITimeoutMs)
+    m_MyNCBITimeoutMs(kDefaultMyNCBITimeoutMs),
+    m_MyNCBIResolveTimeoutMs(kDefaultMyNCBIResolveTimeoutMs)
 {}
 
 
@@ -405,6 +407,9 @@ void SPubseqGatewaySettings::x_ReadMyNCBISection(const CNcbiRegistry &   registr
     m_MyNCBITimeoutMs = registry.GetInt(kMyNCBISection,
                                         "timeout_ms",
                                         kDefaultMyNCBITimeoutMs);
+    m_MyNCBIResolveTimeoutMs = registry.GetInt(kMyNCBISection,
+                                               "resolve_timeout_ms",
+                                               kDefaultMyNCBIResolveTimeoutMs);
 }
 
 
@@ -783,6 +788,13 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
                     "The [" + kMyNCBISection + "]/timeout_ms is switched to the "
                     "default value: " + to_string(kDefaultMyNCBITimeoutMs));
         m_MyNCBITimeoutMs = kDefaultMyNCBITimeoutMs;
+    }
+
+    if (m_MyNCBIResolveTimeoutMs <= 0) {
+        PSG_WARNING("The [" + kMyNCBISection + "]/resolve_timeout_ms value must be > 0. "
+                    "The [" + kMyNCBISection + "]/resolve_timeout_ms is switched to the "
+                    "default value: " + to_string(kDefaultMyNCBIResolveTimeoutMs));
+        m_MyNCBIResolveTimeoutMs = kDefaultMyNCBIResolveTimeoutMs;
     }
 }
 
