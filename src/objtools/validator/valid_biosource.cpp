@@ -1878,15 +1878,15 @@ const CSeq_entry *ctx)
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
                     if (NStr::StartsWith(str, "subsp. ")) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.strain should not start with subsp.",
                             obj, ctx);
                     } else if (NStr::StartsWith(str, "serovar ")) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.strain should not start with serovar",
                             obj, ctx);
                     } else if (!COrgMod::IsStrainValid(str)) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.strain should not be '" + str + "'",
                             obj, ctx);
                     }
@@ -1901,11 +1901,11 @@ const CSeq_entry *ctx)
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
                     if (NStr::StartsWith(str, "subsp. ")) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.serovar should not start with subsp.",
                             obj, ctx);
                     } else if (NStr::StartsWith(str, "strain ")) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.serovar should not start with strain",
                             obj, ctx);
                     }
@@ -1915,7 +1915,7 @@ const CSeq_entry *ctx)
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
                     if (NStr::Find(str, "subsp. ") != string::npos) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.sub-species should not contain subsp.",
                             obj, ctx);
                     }
@@ -1949,7 +1949,7 @@ const CSeq_entry *ctx)
                             && (*it2)->GetSubtype() == COrgMod::eSubtype_gb_synonym
                             && (*it2)->IsSetSubname()
                             && NStr::EqualNocase(val, (*it2)->GetSubname())) {
-                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrgModValueInvalid,
+                            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                                 "OrgMod synonym is identical to OrgMod gb_synonym",
                                 obj, ctx);
                         }

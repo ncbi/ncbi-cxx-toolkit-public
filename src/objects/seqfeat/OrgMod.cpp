@@ -820,6 +820,15 @@ const char* sm_BadStrainValues[] = {
     "yes",
     "no",
     "-",
+    "bacteria",
+    "sp.",
+    "sp",
+    "strain",
+    "environmental",
+    "soil",
+    "clinical isolate",
+    "NA",
+    "whole organism",
     "microbial"
 };
 
