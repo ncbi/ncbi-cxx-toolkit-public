@@ -24,15 +24,15 @@ if [ -z "${CMAKE_CMD}" ]; then
        fi    
    done
 fi
-if test ! -x $CMAKE_CMD; then
+if test ! -x "${CMAKE_CMD}"; then
    CMAKE_CMD=`which cmake 2>/dev/null`
    if test $? -ne 0; then
       echo ERROR: CMake is not found 1>&2
       exit 1
    fi
 fi
-echo FOUND CMake: $CMAKE_CMD
-$CMAKE_CMD --version
+echo FOUND CMake: ${CMAKE_CMD}
+${CMAKE_CMD} --version
 
 
 ############################################################################# 
