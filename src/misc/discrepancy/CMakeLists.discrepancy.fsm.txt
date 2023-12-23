@@ -1,10 +1,14 @@
 # $Id$
 
-if(NCBI_PYTHON_EXECUTABLE AND NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
+if(NCBI_FSM_COMPILER_ENABLED)
 
 NCBI_begin_custom_target(discrepancy.fsm)
     NCBI_custom_target_definition(define_discrepancy_fsm_files_target)
-    NCBI_custom_target_dependencies(prt2fsm)
+    if (TARGET host.prt2fsm)
+        NCBI_custom_target_dependencies(host.prt2fsm)
+    else()
+        NCBI_custom_target_dependencies(prt2fsm)
+    endif()
 NCBI_end_custom_target()
 
 function(define_discrepancy_fsm_files_target variable access value current_list_file stack)

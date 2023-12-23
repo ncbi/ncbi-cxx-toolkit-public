@@ -1,7 +1,5 @@
 # $Id$
 
-if (NCBI_PYTHON_EXECUTABLE)
-
 NCBI_begin_custom_target(discrepancy.testnames)
     NCBI_custom_target_definition(define_discrepancy_testnames_target)
 NCBI_end_custom_target()
@@ -20,24 +18,23 @@ function(define_discrepancy_testnames_target variable access value current_list_
        list(APPEND _cpp_files ${_module}.cpp)
     endforeach()
 
+    list(JOIN _cpp_files " " _cpp_files_joined)
+
     add_custom_command(
-        OUTPUT ${_target_dir_int}/testnames.int
+        OUTPUT  ${_target_dir}/testnames.inc ${_target_dir_int}/testnames.int
         COMMAND ${CMAKE_COMMAND} -E make_directory ${_target_dir_int}
-        COMMAND ${NCBI_PYTHON_EXECUTABLE} make_test_names.py ${_target_dir_int}/testnames.int ${_cpp_files}
+        COMMAND ${CMAKE_COMMAND} -P ${_source_dir}/test_names.cmake ${_target_dir_int}/testnames.int "${_cpp_files_joined}"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/testnames.int ${_target_dir}/testnames.inc
         COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
         WORKING_DIRECTORY ${_source_dir}
-        DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/make_test_names.py ${_source_dir}/CMakeLists.txt
+        DEPENDS ${current_list_file} ${_cpp_files} ${_source_dir}/CMakeLists.txt ${_source_dir}/test_names.cmake
+        VERBATIM
         )
 
     add_custom_target(
         discrepancy.testnames
-        DEPENDS ${_target_dir_int}/testnames.int
+        DEPENDS  ${_target_dir}/testnames.inc
+        SOURCES ${current_list_file} ${_source_dir}/CMakeLists.txt ${_source_dir}/test_names.cmake
     )
 
-    unset(_cpp_files)
-    unset(_target_dir)
-    unset(_source_dir)
 endfunction()
-
-endif()
