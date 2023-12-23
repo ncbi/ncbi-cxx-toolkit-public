@@ -91,7 +91,7 @@ private:
     SUvNgHttp2_Error(const char* t, TFunc f, T e, const char* w)
     {
         m_Value << t << f(e) << " (" << e << ") " << w;
-    };
+    }
 
     stringstream m_Value;
 };
@@ -491,7 +491,7 @@ private:
     function<TR(TArgs...)> BindThis(TR (SUvNgHttp2_SessionBase::*member)(TArgs...))
     {
         return [this, member](TArgs&&... args) -> TR { return (this->*member)(std::forward<TArgs>(args)...); };
-    };
+    }
 
     void OnConnect(int status);
     void OnWrite(int status);
