@@ -848,9 +848,12 @@ public:
     string GetText() const override { return m_Ref->GetText(); }
     string GetPath() const override 
     { 
-        for (auto ref = m_Ref; ref; ref = ref->m_Parent) 
-            if (ref->m_Type == CDiscrepancyContext::eFile) 
-                return ref->m_Text; return kEmptyStr; 
+        for (auto ref = m_Ref; ref; ref = ref->m_Parent) {
+            if (ref->m_Type == CDiscrepancyContext::eFile) {
+                return ref->m_Text; 
+            }
+        }
+        return kEmptyStr; 
     }
     string GetFeatureType() const override;
     string GetProductName() const override;
