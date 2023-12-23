@@ -10,12 +10,11 @@ NCBI_begin_lib(xdiscrepancy)
     )
     NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
     NCBI_project_watchers(gotvyans)
+    
+    NCBI_custom_target_dependencies(discrepancy.testnames)
 
-    if(NCBI_PYTHON_EXECUTABLE)
-        if (NOT CMAKE_CROSSCOMPILING AND NCBI_FSM_COMPILER_ENABLED)
-            NCBI_custom_target_dependencies(discrepancy.fsm)
-        endif()
-        NCBI_custom_target_dependencies(discrepancy.testnames)
+    if (NCBI_FSM_COMPILER_ENABLED)
+        NCBI_custom_target_dependencies(discrepancy.fsm)
     endif()
 
 
