@@ -72,7 +72,7 @@ struct SMetrics : string, private SMetricType
     using time_point = chrono::steady_clock::time_point;
     using duration = chrono::duration<double, milli>;
 
-    SMetrics(string id) : string(move(id)) {}
+    SMetrics(string id) : string(std::move(id)) {}
 
     ~SMetrics()
     {
@@ -88,7 +88,7 @@ struct SMetrics : string, private SMetricType
     }
 
     using TItem = pair<CPSG_ReplyItem::EType, EPSG_Status>;
-    void AddItem(TItem item) { m_Items.emplace_back(move(item)); }
+    void AddItem(TItem item) { m_Items.emplace_back(std::move(item)); }
 
 private:
     duration::rep Get(EType t) const { return duration(m_Data[t].time_since_epoch()).count(); }
