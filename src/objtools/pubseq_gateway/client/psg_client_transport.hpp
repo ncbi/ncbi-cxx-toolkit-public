@@ -386,7 +386,7 @@ struct SPSG_Reply
 
         void AddError(string message, EPSG_Status status = EPSG_Status::eError, EDiagSev severity = eDiag_Error, optional<int> code = nullopt)
         {
-            AddMessage(move(message), severity, code);
+            AddMessage(std::move(message), severity, code);
             SetStatus(status, false);
         }
 
