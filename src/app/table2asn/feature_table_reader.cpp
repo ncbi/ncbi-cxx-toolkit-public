@@ -708,6 +708,16 @@ struct SCompareIds {
 };
 
 
+static bool s_TranslateCds(const CSeq_feat& cds, CScope& scope)
+{   
+    if (cds.IsSetExcept_text() &&
+        NStr::FindNoCase(cds.GetExcept_text(), "rearrangement required for product") != NPOS){
+            return false;
+    }
+
+    return !sequence::IsPseudo(cds, scope);
+}
+
 static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
 
     _ASSERT(nuc_prot.IsSet() &&
@@ -757,7 +767,7 @@ static bool s_HasUnprocessedCdregions(const CSeq_entry& nuc_prot) {
                         pScope = Ref(new CScope(*CObjectManager::GetInstance()));
                         pScope->AddTopLevelSeqEntry(nuc_prot);
                     }
-                    if (!sequence::IsPseudo(*pSeqFeat, *pScope)) {
+                    if (s_TranslateCds(*pSeqFeat, *pScope)) {
                         return true;
                     }
                 }
@@ -875,7 +885,7 @@ void CFeatureTableReader::xMoveCdRegions(CSeq_entry_Handle entry_h,
             }
             CCleanup::ParseCodeBreaks(*feature, *token.scope);
 
-            if (!sequence::IsPseudo(*feature, *token.scope)) {
+            if (s_TranslateCds(*feature, *token.scope)) {
 
                 if (feature->IsSetProduct()) {
                     const CSeq_id* pProductId = feature->GetProduct().GetId();
