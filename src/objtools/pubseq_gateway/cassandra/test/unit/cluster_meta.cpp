@@ -51,7 +51,7 @@ USING_IDBLOB_SCOPE;
 class CassandraClusterMetaTest
     : public testing::Test
 {
- public:
+public:
     CassandraClusterMetaTest()
      : m_TestClusterName("ID_CASS_TEST")
      , m_Factory(nullptr)
@@ -75,7 +75,7 @@ class CassandraClusterMetaTest
         m_Connection = nullptr;
         m_Factory = nullptr;
     }
- protected:
+protected:
     const string m_TestClusterName;
     shared_ptr<CCassConnectionFactory> m_Factory;
     shared_ptr<CCassConnection> m_Connection;
@@ -177,6 +177,28 @@ TEST_F(CassandraClusterMetaTest, GetColumnNames) {
         m_Connection->GetClusteringKeyColumnNames(keyspace_name, table_name),
         CCassandraException
     ) << "GetColumnNames should throw on closed connection";
+}
+
+TEST_F(CassandraClusterMetaTest, GetKeyspaces) {
+    vector<string> expected = {
+        "blob_repartition", "dbsnp_rsid_lookup_blue", "dbsnp_rsid_lookup_green",
+        "idmain2", "ipg_storage", "maintenance", "mlst_storage", "nannotg2_2", "nannotg3"};
+    vector<string> actual = m_Connection->GetKeyspaces();
+    sort(begin(expected), end(expected));
+    sort(begin(actual), end(actual));
+    EXPECT_TRUE(includes(begin(actual), end(actual), begin(expected), end(expected)));
+    EXPECT_EQ(63UL, actual.size());
+}
+
+TEST_F(CassandraClusterMetaTest, GetTables) {
+    vector<string> expected = {
+        "blob_chunk", "blob_prop", "blob_prop_change_log", "blob_split_history", "blob_status_history" };
+    vector<string> actual = m_Connection->GetTables("satold_v2");
+    EXPECT_EQ(expected, actual) << "Tables list for 'satold_v2' is not equal to expected";
+    EXPECT_THROW(
+        m_Connection->GetTables("non_existent"),
+        CCassandraException
+    ) << "GetTables should throw for non existent keyspace";
 }
 
 }  // namespace

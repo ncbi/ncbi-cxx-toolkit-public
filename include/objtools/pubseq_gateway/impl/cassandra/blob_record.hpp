@@ -40,12 +40,12 @@ USING_NCBI_SCOPE;
 
 using TBlobFlagBase = int64_t;
 enum class EBlobFlags : TBlobFlagBase {
-    eCheckFailed   = 1 << 0,
-    eGzip          = 1 << 1,
-    eNot4Gbu       = 1 << 2,
-    eWithdrawn     = 1 << 3,
-    eSuppress      = 1 << 4,
-    eDead          = 1 << 5,
+    eCheckFailed   = 1 << 0, // 1
+    eGzip          = 1 << 1, // 2
+    eNot4Gbu       = 1 << 2, // 4
+    eWithdrawn     = 1 << 3, // 8
+    eSuppress      = 1 << 4, // 16
+    eDead          = 1 << 5, // 32
     eBigBlobSchema = 1 << 6,
 };
 
