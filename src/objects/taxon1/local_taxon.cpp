@@ -130,9 +130,12 @@ string CLocalTaxon::GetRank(TTaxid taxid)
         x_Cache(taxid);
         return m_Nodes.find(taxid)->second.rank;
     } else {
-        TTaxRank rank_id = m_TaxonConn->GetTreeIterator(taxid)->GetNode()->GetRank();
         string rank_name;
-        m_TaxonConn->GetRankName(rank_id, rank_name);
+        auto node = m_TaxonConn->GetTreeIterator(taxid)->GetNode();
+        if (node) {
+            TTaxRank rank_id = node->GetRank();
+            m_TaxonConn->GetRankName(rank_id, rank_name);
+        }
         return rank_name;
     }
 }
