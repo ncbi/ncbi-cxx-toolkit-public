@@ -915,25 +915,20 @@ void CTabularFormatter_EValue_Mantissa::Print(CNcbiOstream& ostr,
     }
 
     double mantissa = score;
-    int exponent = 0;
 
     if(score > 0.0) {
         while(mantissa >= 10.0) {
             mantissa /= 10.0;
-            exponent++;
         }
         while(mantissa < 1.0) {
             mantissa *= 10.0;
-            exponent--;
         }
     } else if(score < 0.0) {
         while(mantissa <= -10.0) {
             mantissa /= 10.0;
-            exponent--;
         }
         while(mantissa > -1.0) {
             mantissa *= 10.0;
-            exponent++;
         }
     }
     

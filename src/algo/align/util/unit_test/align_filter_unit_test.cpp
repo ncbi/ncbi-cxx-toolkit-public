@@ -62,10 +62,10 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                      CArgDescriptions::eInputFile);
 }
 
-CNcbiOstream &operator<<(CNcbiOstream &ostr, const set<unsigned int> &t)
+CNcbiOstream &operator<<(CNcbiOstream &ostr, const set<size_t> &t)
 {
     ostr << '{';
-    ITERATE (set<unsigned int>, it, t) {
+    ITERATE (set<size_t>, it, t) {
         if (it != t.begin()) {
             ostr << ',';
         }
@@ -122,11 +122,11 @@ BOOST_AUTO_TEST_CASE(Test_Align_Filter)
         NcbiGetlineEOL(filters, results_string);
         vector<string> tokens;
         NStr::Split(NStr::TruncateSpaces(results_string), " \t", tokens);
-        set<unsigned int> expected_results;
+        set<size_t> expected_results;
         ITERATE (vector<string>, it, tokens) {
             expected_results.insert(NStr::StringToUInt(*it));
         }
-        set<unsigned int> actual_results;
+        set<size_t> actual_results;
         CAlignFilter filter(filter_string);
         filter.SetScope(*scope);
         ITERATE (vector< CRef<CSeq_align> >, it, alignments) {
