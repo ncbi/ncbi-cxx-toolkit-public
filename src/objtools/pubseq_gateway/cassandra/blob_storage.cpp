@@ -423,7 +423,6 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveConnectionByServi
     {
         connection = MakeCassConnection(registry, registry_section, service, true);
         x_AddConnection(connection, registry_section, service, false);
-        return {};
     }
 
     return {};

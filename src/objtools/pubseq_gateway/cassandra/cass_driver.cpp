@@ -110,6 +110,7 @@ BEGIN_SCOPE()
     }
 
     using TSchemaMeta = const CassSchemaMeta;
+    using TKeyspaceMeta = const CassKeyspaceMeta;
     using TTableMeta = const CassTableMeta;
     auto GetMetaPointer(CassSession *m_session)
     {
@@ -128,20 +129,25 @@ BEGIN_SCOPE()
         return schema_meta;
     }
 
-    TTableMeta* GetTableMetaPointer(TSchemaMeta* schema_meta, string const& keyspace, string const& table)
+    TKeyspaceMeta *GetKeyspaceMetaPointer(TSchemaMeta* schema_meta, string const& keyspace)
     {
-        const CassKeyspaceMeta* keyspace_meta = cass_schema_meta_keyspace_by_name_n(
-            schema_meta, keyspace.c_str(), keyspace.size()
+        TKeyspaceMeta* keyspace_meta = cass_schema_meta_keyspace_by_name_n(
+                schema_meta, keyspace.c_str(), keyspace.size()
         );
         if (!keyspace_meta) {
-            NCBI_THROW(CCassandraException, eNotFound, "Keyspace not found");
+            NCBI_THROW(CCassandraException, eNotFound, "Keyspace '" + keyspace + "' not found");
         }
+        return keyspace_meta;
+    }
 
+    TTableMeta* GetTableMetaPointer(TSchemaMeta* schema_meta, string const& keyspace, string const& table)
+    {
+        TKeyspaceMeta* keyspace_meta = GetKeyspaceMetaPointer(schema_meta, keyspace);
         TTableMeta* table_meta = cass_keyspace_meta_table_by_name_n(
             keyspace_meta, table.c_str(), table.size()
         );
         if (!table_meta) {
-            NCBI_THROW(CCassandraException, eNotFound, "Table not found");
+            NCBI_THROW(CCassandraException, eNotFound, "Table '" + keyspace + "." + table + "' not found");
         }
 
         return table_meta;
@@ -729,6 +735,58 @@ string CCassConnection::GetDatacenterName()
         return query->FieldGetStrValue(0);
     }
     return "";
+}
+
+vector<string> CCassConnection::GetKeyspaces() const
+{
+    vector<string> result;
+    const char* name;
+    size_t name_length;
+
+    auto schema_meta = GetMetaPointer(m_session);
+    unique_ptr<CassIterator, function<void(CassIterator*)>> keyspaces_itr(
+        cass_iterator_keyspaces_from_schema_meta(schema_meta.get()),
+        [](CassIterator* itr)-> void {
+            cass_iterator_free(itr);
+        }
+    );
+    if (!keyspaces_itr) {
+        NCBI_THROW(CCassandraException, eNotFound, "Keyspaces meta not resolved");
+    }
+    while(cass_iterator_next(keyspaces_itr.get())) {
+        cass_keyspace_meta_name(
+            cass_iterator_get_keyspace_meta(keyspaces_itr.get()),
+            &name,
+            &name_length
+        );
+        result.push_back(string(name, name_length));
+    }
+    return result;
+}
+
+vector<string> CCassConnection::GetTables(string const& keyspace) const
+{
+    vector<string> result;
+    const char* name;
+    size_t name_length;
+
+    auto schema_meta = GetMetaPointer(m_session);
+    auto keyspace_meta = GetKeyspaceMetaPointer(schema_meta.get(), keyspace);
+    unique_ptr<CassIterator, function<void(CassIterator*)>> tables_itr(
+        cass_iterator_tables_from_keyspace_meta(keyspace_meta),
+        [](CassIterator* itr)-> void {
+            cass_iterator_free(itr);
+        }
+    );
+    while (cass_iterator_next(tables_itr.get())) {
+        cass_table_meta_name(
+            cass_iterator_get_table_meta(tables_itr.get()),
+            &name,
+            &name_length
+        );
+        result.push_back(string(name, name_length));
+    }
+    return result;
 }
 
 vector<string> CCassConnection::GetColumnNames(string const & keyspace, string const & table) const
