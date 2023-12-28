@@ -399,6 +399,11 @@ void CPSGS_WGSProcessor::x_ProcessResolveRequest(void)
         x_Finish(ePSGS_Error);
         return;
     }
+    if ( GetRequest()->NeedTrace() ) {
+        GetReply()->SendTrace(
+            kWGSProcessorName + " processor is resolving seq-id " + m_SeqId->AsFastaString(),
+            GetRequest()->GetStartTimestamp());
+    }
     m_ThreadPool->AddTask(new CWGSThreadPoolTask_ResolveSeqId(*this));
 }
 
@@ -409,6 +414,11 @@ void CPSGS_WGSProcessor::ResolveSeqId(void)
     GetRequest()->SetRequestContext();
     try {
         m_WGSData = m_Client->ResolveSeqId(*m_SeqId);
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor finished resolving seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
+                GetRequest()->GetStartTimestamp());
+        }
         x_WaitForOtherProcessors();
     }
     catch (exception& exc) {
@@ -432,6 +442,11 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
     }
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
         if ( m_WGSDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor could not find info for seq-id " + m_SeqId->AsFastaString(),
+                    GetRequest()->GetStartTimestamp());
+            }
             x_Finish(ePSGS_NotFound);
         }
         else {
@@ -444,6 +459,11 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
         return;
     }
     try {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor resolved seq-id " + m_SeqId->AsFastaString() + " to blob-id " + m_WGSData->m_BlobId,
+                GetRequest()->GetStartTimestamp());
+        }
         x_SendBioseqInfo();
     }
     catch (exception& exc) {
@@ -474,9 +494,19 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
     }
 
     if (get_request.m_TSEOption == SPSGS_BlobRequestBase::ePSGS_NoneTSE) {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor is getting info for seq-id " + m_SeqId->AsFastaString(),
+                GetRequest()->GetStartTimestamp());
+        }
         m_ThreadPool->AddTask(new CWGSThreadPoolTask_ResolveSeqId(*this));
     }
     else {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor is getting blob for seq-id " + m_SeqId->AsFastaString(),
+                GetRequest()->GetStartTimestamp());
+        }
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
         m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobBySeqId(*this));
     }
@@ -489,6 +519,11 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
     GetRequest()->SetRequestContext();
     try {
         m_WGSData = m_Client->GetBlobBySeqId(*m_SeqId, m_ExcludedBlobs);
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor finished getting blob for seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
+                GetRequest()->GetStartTimestamp());
+        }
         x_WaitForOtherProcessors();
     }
     catch (exception& exc) {
@@ -513,6 +548,11 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
     // NOTE: m_Data may be null if the blob was excluded.
     if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
         if ( m_WGSDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor could not find info for seq-id " + m_SeqId->AsFastaString(),
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eBlobRetrieve);
             x_Finish(ePSGS_NotFound);
         }
@@ -526,6 +566,11 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
         return;
     }
     try {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor resolved seq-id " + m_SeqId->AsFastaString() + " to blob-id " + m_WGSData->m_BlobId,
+                GetRequest()->GetStartTimestamp());
+        }
         x_SendBioseqInfo();
         x_SendBlob();
     }
@@ -548,7 +593,12 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
-        m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobByBlobId(*this));
+    if ( GetRequest()->NeedTrace() ) {
+        GetReply()->SendTrace(
+            kWGSProcessorName + " processor is fetching blob " + m_PSGBlobId,
+            GetRequest()->GetStartTimestamp());
+    }
+    m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobByBlobId(*this));
 }
 
 
@@ -558,6 +608,11 @@ void CPSGS_WGSProcessor::GetBlobByBlobId(void)
     GetRequest()->SetRequestContext();
     try {
         m_WGSData = m_Client->GetBlobByBlobId(m_PSGBlobId);
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor finished fetching blob " + m_PSGBlobId,
+                GetRequest()->GetStartTimestamp());
+        }
     }
     catch (exception& exc) {
         m_WGSDataError = "Exception when handling a request: "+string(exc.what());
@@ -580,6 +635,11 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
     }
     if ( !m_WGSData ) {
         if ( m_WGSDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor could not find blob " + m_PSGBlobId,
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eBlobRetrieve);
             x_Finish(ePSGS_NotFound);
         }
@@ -593,6 +653,11 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         return;
     }
     try {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor retrieved blob " + m_PSGBlobId,
+                GetRequest()->GetStartTimestamp());
+        }
         x_SendBlob();
     }
     catch (exception& exc) {
@@ -615,6 +680,11 @@ void CPSGS_WGSProcessor::x_ProcessTSEChunkRequest(void)
     SPSGS_TSEChunkRequest& chunk_request = GetRequest()->GetRequest<SPSGS_TSEChunkRequest>();
     m_Id2Info = chunk_request.m_Id2Info;
     m_ChunkId = chunk_request.m_Id2Chunk;
+    if ( GetRequest()->NeedTrace() ) {
+        GetReply()->SendTrace(
+            kWGSProcessorName + " processor is fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+            GetRequest()->GetStartTimestamp());
+    }
     m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetChunk(*this));
 }
 
@@ -625,6 +695,11 @@ void CPSGS_WGSProcessor::GetChunk(void)
     GetRequest()->SetRequestContext();
     try {
         m_WGSData = m_Client->GetChunk(m_Id2Info, m_ChunkId);
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kWGSProcessorName + " processor finished fetching chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                GetRequest()->GetStartTimestamp());
+        }
     }
     catch (exception& exc) {
         m_WGSDataError = "Exception when handling a request: "+string(exc.what());
@@ -647,6 +722,11 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
     }
     if ( !m_WGSData ) {
         if ( m_WGSDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor could not find chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eTseChunkRetrieve);
             x_Finish(ePSGS_NotFound);
         }
@@ -661,9 +741,19 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
     }
     try {
         if ( m_WGSData->IsForbidden() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor can not send forbidden chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                    GetRequest()->GetStartTimestamp());
+            }
             x_SendForbidden();
         }
         else {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kWGSProcessorName + " processor retrieved chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                    GetRequest()->GetStartTimestamp());
+            }
             x_SendChunk();
         }
     }

@@ -331,7 +331,7 @@ void CPSGS_CDDProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
 
 void CPSGS_CDDProcessor::x_SendError(const string& msg)
 {
-    x_SendError(m_Reply, msg);
+    x_SendError(GetReply(), msg);
 }
 
 
@@ -344,7 +344,7 @@ void CPSGS_CDDProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
 
 void CPSGS_CDDProcessor::x_SendError(const string& msg, const exception& exc)
 {
-    x_SendError(m_Reply, msg+string(exc.what()));
+    x_SendError(GetReply(), msg+string(exc.what()));
 }
 
 
@@ -365,7 +365,7 @@ void CPSGS_CDDProcessor::Process()
             CFastMutexGuard guard(m_Mutex);
             m_Unlocked = false;
         }
-        if (m_Request) m_Request->Lock(kCDDProcessorEvent);
+        if (GetRequest()) GetRequest()->Lock(kCDDProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_AnnotationRequest:
@@ -453,10 +453,20 @@ void CPSGS_CDDProcessor::GetBlobId(void)
     GetRequest()->SetRequestContext();
     for (auto id : m_SeqIds) {
         try {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor trying to get blob-id by seq-id " + id.AsString(),
+                    GetRequest()->GetStartTimestamp());
+            }
             m_CDDBlob.info = m_ClientPool->GetBlobIdBySeq_id(id);
             if (m_CDDBlob.info) break;
         }
         catch (exception& exc) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor failed to get blob-id by seq-id, exception: " + exc.what(),
+                    GetRequest()->GetStartTimestamp());
+            }
             m_Error = "Exception when handling get_na request: " + string(exc.what());
             m_CDDBlob.info.Reset();
             m_CDDBlob.data.Reset();
@@ -472,10 +482,20 @@ void CPSGS_CDDProcessor::GetBlobBySeqId(void)
     GetRequest()->SetRequestContext();
     for (auto id : m_SeqIds) {
         try {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor trying to get blob by seq-id " + id.AsString(),
+                    GetRequest()->GetStartTimestamp());
+            }
             m_CDDBlob = m_ClientPool->GetBlobBySeq_id(id);
             if (m_CDDBlob.info && m_CDDBlob.data) break;
         }
         catch (exception& exc) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor failed to get blob by seq-id, exception: " + exc.what(),
+                    GetRequest()->GetStartTimestamp());
+            }
             m_Error = "Exception when handling get_na request: " + string(exc.what());
             m_CDDBlob.info.Reset();
             m_CDDBlob.data.Reset();
@@ -490,9 +510,19 @@ void CPSGS_CDDProcessor::GetBlobByBlobId(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     try {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kCDDProcessorName + " processor trying to get blob by blob-id " + CCDDClientPool::BlobIdToString(*m_BlobId),
+                GetRequest()->GetStartTimestamp());
+        }
         m_CDDBlob.data = m_ClientPool->GetBlobByBlobId(*m_BlobId);
     }
     catch (exception& exc) {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kCDDProcessorName + " processor failed to get blob by blob-id, exception: " + exc.what(),
+                GetRequest()->GetStartTimestamp());
+        }
         m_Error = "Exception when handling getblob request: " + string(exc.what());
         m_CDDBlob.info.Reset();
         m_CDDBlob.data.Reset();
@@ -520,6 +550,11 @@ void CPSGS_CDDProcessor::OnGotBlobId(void)
             x_Finish(ePSGS_Error);
         }
         else {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor did not find the requested blob-id",
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
@@ -562,6 +597,11 @@ void CPSGS_CDDProcessor::OnGotBlobBySeqId(void)
             x_Finish(ePSGS_Error);
         }
         else {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor did not find the requested blob",
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatus(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
@@ -604,6 +644,11 @@ void CPSGS_CDDProcessor::OnGotBlobByBlobId(void)
             x_Finish(ePSGS_Error);
         }
         else {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor did not find the requested blob",
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eNARetrieve);
             x_Finish(ePSGS_NotFound);
         }
@@ -645,6 +690,11 @@ void CPSGS_CDDProcessor::x_SendAnnotInfo(const CCDD_Reply_Get_Blob_Id& blob_info
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     if ( annot_request.RegisterProcessedName(GetPriority(), kCDDAnnotName) > GetPriority() ) {
         // higher priority processor already processed this request
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kCDDProcessorName + " processor stops sending annot-info because a higher priority processor has already sent it",
+                GetRequest()->GetStartTimestamp());
+        }
         x_Finish(ePSGS_Canceled);
         return;
     }
@@ -747,7 +797,7 @@ void CPSGS_CDDProcessor::x_UnlockRequest(void)
         if (m_Unlocked) return;
         m_Unlocked = true;
     }
-    if (m_Request) m_Request->Unlock(kCDDProcessorEvent);
+    if (GetRequest()) GetRequest()->Unlock(kCDDProcessorEvent);
 }
 
 
@@ -767,6 +817,11 @@ bool CPSGS_CDDProcessor::x_SignalStartProcessing()
         SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
         if ( annot_request.RegisterProcessedName(GetPriority(), kCDDAnnotName) > GetPriority() ) {
             // higher priority processor already processed this request
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kCDDProcessorName + " processor stops processing request because a higher priority processor has already processed it",
+                    GetRequest()->GetStartTimestamp());
+            }
             x_Finish(ePSGS_Canceled);
             return false;
         }
