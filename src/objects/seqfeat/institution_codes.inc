@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Mon Dec  4 11:15:06 EST 2023; formally
+/* time_t value corresponding to Thu Dec 28 05:12:02 EST 2023; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1701706506UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1703758322UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5673,7 +5673,10 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMTT\ts\tNational Museum and Art Gallery, Port-of-Spain\t\t\t",
 "NMU\ts\tNorthern Michigan University Museum of Zoology\t\t\t",
 "NMU:Bird\ts\tNorthern Michigan University Museum of Zoology, NMU Bird Collection\t\t\t",
+"NMU:Herb\ts\tNorthern Michigan University Museum of Zoology, NMU Herbarium collection\t\t\t",
+"NMU:Herp\ts\tNorthern Michigan University Museum of Zoology, NMU Herpetology Collection\t\t\t",
 "NMU:Mamm\ts\tNorthern Michigan University Museum of Zoology, NMU Mammal Collection\t\t\t",
+"NMU:Para\ts\tNorthern Michigan University Museum of Zoology, NMU Parasite collection\t\t\t",
 "NMV<AUS>\ts\tMuseum Victoria\tNMM\t\t",
 "NMV<AUS>:A\ts\tMuseum Victoria, Ichthyology\tNMV:A,NMV<AUS>A\t\t",
 "NMV<AUS>:AV\ts\tMuseum Victoria, Entomology - Australian Voucher Specimens\tNMV:AV,NMV<AUS>AV\t\t",
