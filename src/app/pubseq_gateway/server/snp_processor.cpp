@@ -245,6 +245,8 @@ CPSGS_SNPProcessor::CPSGS_SNPProcessor(
       m_PreResolving(false),
       m_ScaleLimit(CSeq_id::eSNPScaleLimit_Default)
 {
+    m_Request = request;
+    m_Reply = reply;
     if ( request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest ) {
         m_ProcessNAs = m_Client->WhatNACanProcess(request->GetRequest<SPSGS_AnnotRequest>(), priority);
     }
@@ -398,7 +400,7 @@ void CPSGS_SNPProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
 
 void CPSGS_SNPProcessor::x_SendError(const string& msg)
 {
-    x_SendError(m_Reply, msg);
+    x_SendError(GetReply(), msg);
 }
 
 
@@ -411,7 +413,7 @@ void CPSGS_SNPProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
 
 void CPSGS_SNPProcessor::x_SendError(const string& msg, const exception& exc)
 {
-    x_SendError(m_Reply, msg+string(exc.what()));
+    x_SendError(GetReply(), msg+string(exc.what()));
 }
 
 
@@ -425,7 +427,7 @@ void CPSGS_SNPProcessor::Process()
             CFastMutexGuard guard(m_Mutex);
             m_Unlocked = false;
         }
-        if (m_Request) m_Request->Lock(kSNPProcessorEvent);
+        if (GetRequest()) GetRequest()->Lock(kSNPProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_AnnotationRequest:
@@ -472,17 +474,32 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
         try {
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(annot_request.m_SeqId));
         }
-        catch (exception& /*e*/) {
+        catch (exception& e) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor failed to parse seq-id " + annot_request.m_SeqId + ": " + e.what(),
+                    GetRequest()->GetStartTimestamp());
+            }
         }
     }
     for (auto& id : annot_request.m_SeqIds) {
         try {
             m_SeqIds.push_back(CSeq_id_Handle::GetHandle(id));
         }
-        catch (exception& /*e*/) {
+        catch (exception& e) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor failed to parse seq-id " + annot_request.m_SeqId + ": " + e.what(),
+                    GetRequest()->GetStartTimestamp());
+            }
         }
     }
     if (m_SeqIds.empty()) {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kSNPProcessorName + " processor can not process any of the requested seq-ids",
+                GetRequest()->GetStartTimestamp());
+        }
         // no suitable Seq-ids in the request
         x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
         x_Finish(ePSGS_NotFound);
@@ -500,6 +517,11 @@ void CPSGS_SNPProcessor::x_ProcessAnnotationRequest(void)
     if (need_resolve) {
         if (annot_request.m_SeqIdResolve) {
             // No RefSeq id found in request, try to resolve it.
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor is resolving the requested seq-id",
+                    GetRequest()->GetStartTimestamp());
+            }
             m_PreResolving = true;
             ResolveInputSeqId();
             return;
@@ -526,6 +548,11 @@ void CPSGS_SNPProcessor::GetAnnotation(void)
                 if (!m_Client->IsValidSeqId(id)) continue;
                 auto data = m_Client->GetAnnotInfo(id, name, m_ScaleLimit);
                 m_SNPData.insert(m_SNPData.end(), data.begin(), data.end());
+                if ( GetRequest()->NeedTrace() ) {
+                    GetReply()->SendTrace(
+                        kSNPProcessorName + " processor got annotation for " + id.AsString(),
+                        GetRequest()->GetStartTimestamp());
+                }
             }
         }
         catch (exception& exc) {
@@ -558,6 +585,11 @@ void CPSGS_SNPProcessor::OnGotAnnotation(void)
     }
     if (m_SNPData.empty()) {
         if ( m_SNPDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor did not find the requested annotations",
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eNAResolve);
             x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
             x_Finish(ePSGS_NotFound);
@@ -627,9 +659,19 @@ void CPSGS_SNPProcessor::GetBlobByBlobId(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     try {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kSNPProcessorName + " processor trying to get blob " + m_PSGBlobId,
+                GetRequest()->GetStartTimestamp());
+        }
         m_SNPData.push_back(m_Client->GetBlobByBlobId(m_PSGBlobId));
     }
     catch (...) {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kSNPProcessorName + " processor failed to get blob " + m_PSGBlobId,
+                GetRequest()->GetStartTimestamp());
+        }
         m_SNPData.clear();
     }
     PostponeInvoke(s_OnGotBlobByBlobId, this);
@@ -649,6 +691,11 @@ void CPSGS_SNPProcessor::OnGotBlobByBlobId(void)
     }
     if (m_SNPData.empty()) {
         if ( m_SNPDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor did not find the requested blob-id " + m_PSGBlobId,
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eNARetrieve);
             x_Finish(ePSGS_NotFound);
             return;
@@ -693,6 +740,11 @@ void CPSGS_SNPProcessor::GetChunk(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     try {
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kSNPProcessorName + " processor trying to get chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                GetRequest()->GetStartTimestamp());
+        }
         SSNPData data = m_Client->GetChunk(m_Id2Info, m_ChunkId);
         m_SNPData.push_back(data);
     }
@@ -716,6 +768,11 @@ void CPSGS_SNPProcessor::OnGotChunk(void)
     }
     if (m_SNPData.empty()) {
         if ( m_SNPDataError.empty() ) {
+            if ( GetRequest()->NeedTrace() ) {
+                GetReply()->SendTrace(
+                    kSNPProcessorName + " processor did not find chunk " + m_Id2Info + "." + NStr::NumericToString(m_ChunkId),
+                    GetRequest()->GetStartTimestamp());
+            }
             x_RegisterTimingNotFound(eTseChunkRetrieve);
             x_Finish(ePSGS_NotFound);
             return;
@@ -784,6 +841,11 @@ void CPSGS_SNPProcessor::x_SendAnnotInfo(const SSNPData& data)
     SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
     if ( annot_request.RegisterProcessedName(GetPriority(), data.m_Name) > GetPriority() ) {
         // higher priority processor already processed this request
+        if ( GetRequest()->NeedTrace() ) {
+            GetReply()->SendTrace(
+                kSNPProcessorName + " processor stops processing request because a higher priority processor has already processed it",
+                GetRequest()->GetStartTimestamp());
+        }
         return;
     }
     x_RegisterTiming(data.m_Start, eNAResolve, eOpStatusFound, 0);
@@ -934,7 +996,7 @@ void CPSGS_SNPProcessor::x_UnlockRequest(void)
         if (m_Unlocked) return;
         m_Unlocked = true;
     }
-    if (m_Request) m_Request->Unlock(kSNPProcessorEvent);
+    if (GetRequest()) GetRequest()->Unlock(kSNPProcessorEvent);
 }
 
 
@@ -981,6 +1043,11 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveFinished(SBioseqResolution&& bioseq_res
         return;
     }
 
+    if ( GetRequest()->NeedTrace() ) {
+        GetReply()->SendTrace(
+            kSNPProcessorName + " processor finished resolving the requested seq-id",
+            GetRequest()->GetStartTimestamp());
+    }
     try {
         auto& info = bioseq_resolution.GetBioseqInfo();
         if (m_Client->IsValidSeqId(info.GetAccession(), info.GetSeqIdType(), info.GetVersion())) {
@@ -1017,6 +1084,11 @@ void CPSGS_SNPProcessor::x_OnSeqIdResolveError(
     m_PreResolving = false;
     if (x_IsCanceled()) {
         return;
+    }
+    if ( GetRequest()->NeedTrace() ) {
+        GetReply()->SendTrace(
+            kSNPProcessorName + " processor failed to resolve the requested seq-id",
+            GetRequest()->GetStartTimestamp());
     }
     if ( status == CRequestStatus::e404_NotFound ) {
         x_ReportResultStatusForAllNA(SPSGS_AnnotRequest::ePSGS_RS_NotFound);
