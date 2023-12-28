@@ -134,7 +134,7 @@ struct SThreadSafe
     };
 
     template <class... TArgs>
-    SThreadSafe(TArgs&&... args) : m_Object(forward<TArgs>(args)...) {}
+    SThreadSafe(TArgs&&... args) : m_Object(std::forward<TArgs>(args)...) {}
 
     SLock<      TType> GetLock()       { return { &m_Object, m_Mutex }; }
     SLock<const TType> GetLock() const { return { &m_Object, m_Mutex }; }
