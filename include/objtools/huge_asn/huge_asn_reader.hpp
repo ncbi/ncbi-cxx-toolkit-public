@@ -82,7 +82,7 @@ public:
     {
         TFileSize m_pos;
         TBioseqSetList::const_iterator m_parent_set;
-        TSeqPos   m_length  = -1;
+        TSeqPos   m_length  = static_cast<TSeqPos>(-1);
         CConstRef<CSeq_descr> m_descr;
         std::list<CConstRef<CSeq_id>> m_ids;
         CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
