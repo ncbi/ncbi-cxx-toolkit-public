@@ -671,7 +671,7 @@ void CTestWriter::x_WriteObjectError(void)
     Int8 len = str_stream.tellp();
     // Adjust for CR/LF in text mode
     if (m_Case.m_Format != eSerial_AsnBinary) --len;
-    Int8 pos;
+    Int8 pos = 0;
     switch (m_Case.m_ErrPos) {
     case eErrPos_Start:
         pos = 0;
