@@ -553,11 +553,11 @@ void CValidError_graph::x_ValidateGraphOnDeltaBioseq(const CBioseq& seq)
 
         case CDelta_seq::e_Literal: {
             const CSeq_literal& lit = (*curr)->GetLiteral();
-            TSeqPos litlen = lit.GetLength(),
-                nextlen = 0;
+            // TSeqPos litlen = lit.GetLength();
+            TSeqPos nextlen = 0;
             if ( lit.IsSetSeq_data() ) {
                 while (next != end  &&  x_GetLitLength(**next, nextlen)) {
-                    litlen += nextlen;
+                    // litlen += nextlen;
                     ++next;
                 }
                 ++num_delta_seq;
