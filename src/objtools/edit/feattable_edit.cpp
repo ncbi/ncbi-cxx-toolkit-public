@@ -176,59 +176,71 @@ void CFeatTableEdit::GenerateMissingMrnaForCds()
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI it(mHandle, sel);
     for (; it; ++it) {
-        const CSeq_feat& cds = it->GetOriginalFeature();
-        CConstRef<CSeq_feat> pOverlappingRna =
-            sequence::GetBestOverlappingFeat(
-                cds.GetLocation(),
-                CSeqFeatData::e_Rna,
-                sequence::eOverlap_CheckIntRev,
-                *mpScope);
-        if (pOverlappingRna) {
-            continue;
-        }
-        CRef<CSeq_feat> pRna(new CSeq_feat);
-        pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-        pRna->SetLocation().Assign(cds.GetLocation());
-        pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
-        pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
-        pRna->ResetPartial();
-        //product name
-        pRna->SetData().SetRna().SetExt().SetName(
-            sGetCdsProductName(cds, *mpScope));
-
-        //find proper name for rna
-        string rnaId(xNextFeatId());
-        pRna->SetId().SetLocal().SetStr(rnaId);
-
-        //add rna xref to cds
-        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
-        feh.AddFeatXref(rnaId);
-
-        //add cds xref to rna
-        CRef<CFeat_id> pFeatId(new CFeat_id);
-        pFeatId->Assign(cds.GetId());
-        CRef<CSeqFeatXref> pRnaXref(new CSeqFeatXref);
-        pRnaXref->SetId(*pFeatId);
-        pRna->SetXref().push_back(pRnaXref);
-
-        CMappedFeat parentGene = feature::GetBestGeneForFeat(*it, &mTree);
-        if (parentGene) {
-            //if gene exists, add gene xref to rna
-            CSeq_feat_EditHandle geh(mpScope->GetObjectHandle(
-                parentGene.GetOriginalFeature()));
-            geh.AddFeatXref(rnaId);
-            //if gene exists, add rna xref to gene
-            CRef<CFeat_id> pGeneId(new CFeat_id);
-            pGeneId->Assign(parentGene.GetId());
-            CRef<CSeqFeatXref> pRnaXref(new CSeqFeatXref);
-            pRnaXref->SetId(*pGeneId);
-            pRna->SetXref().push_back(pRnaXref);
-        }
-
-        //add new rna to feature table
-        mEditHandle.AddFeat(*pRna);
-        mTree.AddFeature(mpScope->GetObjectHandle(*pRna));
+        xGenerateMissingMrnaForCds(*it);
     }
+}
+
+
+//  -------------------------------------------------------------------------
+void CFeatTableEdit::xGenerateMissingMrnaForCds(const CMappedFeat& mappedCds)
+//  -------------------------------------------------------------------------
+{        
+
+    const CSeq_feat& cds = mappedCds.GetOriginalFeature();
+    CConstRef<CSeq_feat> pOverlappingRna =
+        sequence::GetBestOverlappingFeat(
+            cds.GetLocation(),
+            CSeqFeatData::e_Rna,
+            sequence::eOverlap_CheckIntRev,
+            *mpScope);
+    
+    if (pOverlappingRna) {
+        return;
+    }
+
+    CRef<CSeq_feat> pRna(new CSeq_feat);
+    pRna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    pRna->SetLocation().Assign(cds.GetLocation());
+    pRna->SetLocation().SetPartialStart(false, eExtreme_Positional);
+    pRna->SetLocation().SetPartialStop(false, eExtreme_Positional);
+    pRna->ResetPartial();
+        
+    //product name
+    pRna->SetData().SetRna().SetExt().SetName(
+        sGetCdsProductName(cds, *mpScope));
+
+    //find proper name for rna
+    string rnaId(xNextFeatId());
+    pRna->SetId().SetLocal().SetStr(rnaId);
+
+    //add rna xref to cds
+    CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
+    feh.AddFeatXref(rnaId);
+
+    //add cds xref to rna
+    CRef<CFeat_id> pFeatId(new CFeat_id);
+    pFeatId->Assign(cds.GetId());
+    CRef<CSeqFeatXref> pRnaXref(new CSeqFeatXref);
+    pRnaXref->SetId(*pFeatId);
+    pRna->SetXref().push_back(pRnaXref);
+
+    CMappedFeat parentGene = feature::GetBestGeneForFeat(mappedCds, &mTree);
+    if (parentGene) {
+        //if gene exists, add gene xref to rna
+        CSeq_feat_EditHandle geh(mpScope->GetObjectHandle(
+                    parentGene.GetOriginalFeature()));
+        geh.AddFeatXref(rnaId);
+        //if gene exists, add rna xref to gene
+        CRef<CFeat_id> pGeneId(new CFeat_id);
+        pGeneId->Assign(parentGene.GetId());
+        CRef<CSeqFeatXref> pRnaXref(new CSeqFeatXref);
+        pRnaXref->SetId(*pGeneId);
+        pRna->SetXref().push_back(pRnaXref);
+    }
+
+    //add new rna to feature table
+    mEditHandle.AddFeat(*pRna);
+    mTree.AddFeature(mpScope->GetObjectHandle(*pRna));
 }
 
 //  -------------------------------------------------------------------------
@@ -769,6 +781,16 @@ void CFeatTableEdit::xGenerateMissingGeneForChoice(
 {
     SAnnotSelector sel;
     sel.IncludeFeatType(choice);
+    xGenerateMissingGeneForFeats(sel, pMerger);
+}
+
+
+//  ---------------------------------------------------------------------------
+void CFeatTableEdit::xGenerateMissingGeneForFeats(
+    const SAnnotSelector& sel,
+    const CGff3LocationMerger* pMerger)
+//  ---------------------------------------------------------------------------
+{
     CFeat_CI it(mHandle, sel);
     for (; it; ++it) {
         CMappedFeat mf = *it;
@@ -783,23 +805,25 @@ void CFeatTableEdit::xGenerateMissingGeneForChoice(
 
 
 //  ---------------------------------------------------------------------------
+void CFeatTableEdit::xGenerateMissingGeneForFeat(
+        const CMappedFeat& feat)
+//  ---------------------------------------------------------------------------
+{
+    if (xCreateMissingParentGene(feat, mSequenceSize)) {
+        xAdjustExistingParentGene(feat);
+    }
+}
+
+
+//  ---------------------------------------------------------------------------
 void CFeatTableEdit::xGenerateMissingGeneForSubtype(
     CSeqFeatData::ESubtype subType,
     const CGff3LocationMerger* pMerger)
-    //  ---------------------------------------------------------------------------
+//  ---------------------------------------------------------------------------
 {
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(subType);
-    CFeat_CI it(mHandle, sel);
-    for (; it; ++it) {
-        CMappedFeat mf = *it;
-        auto seqId = mf.GetLocationId().AsString();
-        auto sequenceSize =
-            (pMerger ? pMerger->GetSequenceSize(seqId) : mSequenceSize);
-        if (xCreateMissingParentGene(mf, sequenceSize)) {
-            xAdjustExistingParentGene(mf);
-        }
-    }
+    xGenerateMissingGeneForFeats(sel, pMerger);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1407,11 +1431,35 @@ void CFeatTableEdit::GenerateMissingParentFeatures(
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateMissingParentFeaturesForEukaryote(
     const CGff3LocationMerger* pMerger)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
-    GenerateMissingMrnaForCds();
-    xGenerateMissingGeneForChoice(
-        CSeqFeatData::e_Rna, nullptr); //sequence not circular for eukaryote
+    {
+        SAnnotSelector sel;
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+        for (CFeat_CI it(mHandle, sel); it; ++it) {
+            if (auto parent = mTree.GetParent(*it); parent) {
+                auto subtype = parent.GetOriginalFeature().GetData().GetSubtype();
+                if (subtype == CSeqFeatData::eSubtype_mRNA  ||
+                    subtype == CSeqFeatData::eSubtype_V_segment ||
+                    subtype == CSeqFeatData::eSubtype_D_segment ||
+                    subtype == CSeqFeatData::eSubtype_J_segment ||
+                    subtype == CSeqFeatData::eSubtype_C_region) {
+                        continue;
+                }
+            }
+            xGenerateMissingMrnaForCds(*it);
+        }
+    }
+
+    {
+        SAnnotSelector sel;
+        sel.IncludeFeatType(CSeqFeatData::e_Rna);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_V_segment);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_D_segment);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_J_segment);
+        sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_C_region);
+        xGenerateMissingGeneForFeats(sel, nullptr); //sequence not circular for eukaryote
+    }
 }
 
 

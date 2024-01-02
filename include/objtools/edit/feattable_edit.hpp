@@ -204,7 +204,12 @@ protected:
     void xRenameFeatureId(
         const CObject_id&,
         FeatMap&);
-
+private:
+    void xGenerateMissingMrnaForCds(const CMappedFeat& cds);
+    void xGenerateMissingGeneForFeat(const CMappedFeat& feat);
+    void xGenerateMissingGeneForFeats(const SAnnotSelector& sel, 
+            const CGff3LocationMerger* =nullptr);
+protected:
     CSeq_annot& mAnnot;
     unsigned int mSequenceSize;
     CRef<CScope> mpScope;
