@@ -39,6 +39,7 @@
 #include <algo/blast/blastinput/blastx_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
+#include <util/profile/rtprofile.hpp>
 #include "blast_app_util.hpp"
 #include "blastx_node.hpp"
 
@@ -117,6 +118,9 @@ static void s_GetMT1Cutoffs(const int word_size, Int8 & max_db_size, Int8 & min_
 int CBlastxApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
+    BLAST_PROF_ADD2( PROGRAM, blastx ) ;
+    BLAST_PROF_ADD( THREADS , (int)m_CmdLineArgs->GetNumThreads() );
+    BLAST_PROF_ADD( MT_MODE , (int)m_CmdLineArgs->GetMTMode() );
 	const CArgs& args = GetArgs();
 	//Check to see if search should split by queries
 	try {
@@ -178,8 +182,10 @@ int CBlastxApp::Run(void)
 
 int CBlastxApp::x_RunMTBySplitDB()
 {
-
+    BLAST_PROF_START( APP.MAIN );
+    BLAST_PROF_START( APP.PRE );
     int status = BLAST_EXIT_SUCCESS;
+    int batch_num = 0;
 
     try {
 
@@ -247,15 +253,18 @@ int CBlastxApp::x_RunMTBySplitDB()
         }
         formatter.PrintProlog();
 
+	BLAST_PROF_STOP( APP.PRE );
+	BLAST_PROF_ADD( BATCH_SIZE, (int)input.GetBatchSize() );
         /*** Process the input ***/
         for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
-
+	    BLAST_PROF_START( APP.LOOP.PRE );
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
 
             SaveSearchStrategy(args, m_CmdLineArgs, queries, m_OptsHndl);
 
             CRef<CSearchResultSet> results;
+	    BLAST_PROF_STOP( APP.LOOP.PRE );
 
             if (m_CmdLineArgs->ExecuteRemotely()) {
                 CRef<CRemoteBlast> rmt_blast = 
@@ -264,11 +273,13 @@ int CBlastxApp::x_RunMTBySplitDB()
                           m_CmdLineArgs->GetClientId());
                 results = rmt_blast->GetResultSet();
             } else {
+	        BLAST_PROF_START( APP.LOOP.BLAST );
                 CLocalBlast lcl_blast(queries, m_OptsHndl, db_adapter);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
+	        BLAST_PROF_STOP( APP.LOOP.BLAST );
             }
-
+	    BLAST_PROF_START( APP.LOOP.FMT );
             if (fmt_args->ArchiveFormatRequested(args)) {
                 formatter.WriteArchive(*queries, *m_OptsHndl, *results, 0, m_Bah.GetMessages());
                 m_Bah.ResetMessages();
@@ -279,8 +290,10 @@ int CBlastxApp::x_RunMTBySplitDB()
                	    formatter.PrintOneResultSet(**result, query_batch);
             	}
             }
+	    BLAST_PROF_STOP( APP.LOOP.FMT );
+	    batch_num++;
         }
-
+        BLAST_PROF_START( APP.POST );
         formatter.PrintEpilog(opt);
 
         if (m_CmdLineArgs->ProduceDebugOutput()) {
@@ -289,6 +302,7 @@ int CBlastxApp::x_RunMTBySplitDB()
 
         LogQueryInfo(m_UsageReport, input);
         formatter.LogBlastSearchInfo(m_UsageReport);
+        BLAST_PROF_STOP( APP.POST );
     } CATCH_ALL(status)
     if(!m_Bah.GetMessages().empty()) {
        	const CArgs & a = GetArgs();
@@ -298,12 +312,18 @@ int CBlastxApp::x_RunMTBySplitDB()
     m_UsageReport.AddParam(CBlastUsageReport::eTask, m_CmdLineArgs->GetTask());
 	m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
+    BLAST_PROF_STOP( APP.MAIN );
+    BLAST_PROF_ADD( BATCHES , (int)batch_num );
+    BLAST_PROF_ADD( EXIT_STATUS , (int)status );
+    BLAST_PROF_REPORT ;
     return status;
 }
 
 int CBlastxApp::x_RunMTBySplitQuery()
 {
     int status = BLAST_EXIT_SUCCESS;
+    int chunk_num = 0; // logically this is also batch number
+    BLAST_PROF_START( APP.MAIN );
 
 	try {
     	const CArgs& args = GetArgs();
@@ -318,9 +338,9 @@ int CBlastxApp::x_RunMTBySplitQuery()
    		LogBlastOptions(m_UsageReport, m_OptsHndl->GetOptions());
    		LogCmdOptions(m_UsageReport, *m_CmdLineArgs);
 
-   		int chunk_num = 0;
    	    int batch_size = GetMTByQueriesBatchSize(m_OptsHndl->GetOptions().GetProgram(), kMaxNumOfThreads, m_CmdLineArgs->GetTask());
    		INFO_POST("Batch Size: " << batch_size);
+	        BLAST_PROF_ADD( BATCH_SIZE, (int)batch_size );
    		CBlastNodeInputReader input(m_CmdLineArgs->GetInputStream(), batch_size, 2000);
 		while (master_node.Processing()) {
 			if (!input.AtEOF()) {
@@ -354,7 +374,10 @@ int CBlastxApp::x_RunMTBySplitQuery()
     m_UsageReport.AddParam(CBlastUsageReport::eTask, m_CmdLineArgs->GetTask());
     m_UsageReport.AddParam(CBlastUsageReport::eNumThreads, (int) m_CmdLineArgs->GetNumThreads());
     m_UsageReport.AddParam(CBlastUsageReport::eExitStatus, status);
-
+    BLAST_PROF_STOP( APP.MAIN );
+    BLAST_PROF_ADD( BATCHES , (int)chunk_num );
+    BLAST_PROF_ADD( EXIT_STATUS , (int)status );
+    BLAST_PROF_REPORT ;
     return status;
 }
 
