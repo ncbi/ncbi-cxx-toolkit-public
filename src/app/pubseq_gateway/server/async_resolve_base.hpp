@@ -97,6 +97,8 @@ public:
     virtual ~CPSGS_AsyncResolveBase();
 
 public:
+    using CPSGS_CassProcessorBase::Process;
+
     void Process(int16_t               effective_version,
                  int16_t               effective_seq_id_type,
                  list<string> &&       secondary_id_list,
