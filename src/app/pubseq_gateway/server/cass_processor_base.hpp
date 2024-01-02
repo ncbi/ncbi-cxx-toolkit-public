@@ -65,7 +65,7 @@ public:
     void CallOnData(void);
 
 protected:
-    IPSGS_Processor::EPSGS_Status GetStatus(void) const;
+    IPSGS_Processor::EPSGS_Status GetStatus(void) override;
     bool AreAllFinishedRead(void) const;
     bool IsMyNCBIFinished(void) const;
     void UpdateOverallStatus(CRequestStatus::ECode  status);

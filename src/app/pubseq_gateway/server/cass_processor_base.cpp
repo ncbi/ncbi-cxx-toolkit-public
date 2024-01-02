@@ -106,7 +106,7 @@ void CPSGS_CassProcessorBase::SignalFinishProcessing(void)
             m_Status = CRequestStatus::e500_InternalServerError;
         }
     }
-    
+
     if (m_Status == CRequestStatus::e100_Continue) {
         // That means the processor has not updated the status explicitly and
         // it actually means everything is fine, i.e. 200.
@@ -131,7 +131,7 @@ void CPSGS_CassProcessorBase::UnlockWaitingProcessor(void)
 }
 
 
-IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void) const
+IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void)
 {
     if (m_Canceled)
         return IPSGS_Processor::ePSGS_Canceled;
