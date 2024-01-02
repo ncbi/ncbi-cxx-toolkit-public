@@ -20826,7 +20826,7 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jan-96"), "Jan-1996");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jul-04"), "Jul-2004");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jul-08"), "Jul-2008");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("July 24"), "Jul-1924");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("July 24"), "Jul-2024");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("July 9"), "Jul-2009");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jun-05"), "Jun-2005");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jun-08"), "Jun-2008");
@@ -20860,7 +20860,7 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-12"), "Sep-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-93"), "Sep-1993");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 10"), "Sep-2010");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 24"), "Sep-1924");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 24"), "Sep-2024");
     // fix leading/trailing spaces
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat(" 2010-03-01"), "2010-03-01");
 
