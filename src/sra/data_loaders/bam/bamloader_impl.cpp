@@ -2259,7 +2259,7 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
         {
         }
 
-    bool AcceptAlign(const CBamAlignIterator& ait)
+    bool AcceptAlign(const CBamAlignIterator& ait) override
         {
             if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
                 return false;
