@@ -2568,24 +2568,45 @@ void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
     }
 }
 
-
 int CDisplaySeqalign::x_GetNumGaps()
 {
     int gap = 0;
-    for (int row=0; row<m_AV->GetNumRows(); row++) {
-        CRef<CAlnMap::CAlnChunkVec> chunk_vec
-            = m_AV->GetAlnChunks(row, m_AV->GetSeqAlnRange(0));
-        for (int i=0; i<chunk_vec->size(); i++) {
-            CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
-            if (chunk->IsGap()) {
-                gap += (chunk->GetAlnRange().GetTo()
+    if (m_SeqalignSetRef->Get().front()->CanGetType() &&
+           m_SeqalignSetRef->Get().front()->GetType() == CSeq_align_Base::eType_global)
+    {
+       for (int row=0; row<m_AV->GetNumRows(); row++) {
+       // The row/antirow dance makes sure that we count gaps at the end of a global alignment.
+       // Only two rows for a global (NW) alignment
+           int antirow=1;
+           if (row == 1)
+                antirow = 0;
+           CRef<CAlnMap::CAlnChunkVec> chunk_vec
+                = m_AV->GetAlnChunks(row, m_AV->GetSeqAlnRange(antirow));
+           for (int i=0; i<chunk_vec->size(); i++) {
+               CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
+               if (chunk->IsGap()) {
+                   gap += (chunk->GetAlnRange().GetTo()
                         - chunk->GetAlnRange().GetFrom() + 1);
-            }
-        }
+               }
+           }
+       }
+    }
+    else
+    {
+       for (int row=0; row<m_AV->GetNumRows(); row++) {
+           CRef<CAlnMap::CAlnChunkVec> chunk_vec
+               = m_AV->GetAlnChunks(row, m_AV->GetSeqAlnRange(0));
+           for (int i=0; i<chunk_vec->size(); i++) {
+               CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
+               if (chunk->IsGap()) {
+                   gap += (chunk->GetAlnRange().GetTo()
+                           - chunk->GetAlnRange().GetFrom() + 1);
+               }
+           }
+       }
     }
     return gap;
 }
-
 
 void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
                                         CScope& scope,
