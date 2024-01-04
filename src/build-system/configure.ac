@@ -2172,12 +2172,14 @@ esac
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [@%:@include <iosfwd>])
 
-modern_cxx_stds="-std=gnu++20 -std=gnu++17 -std=gnu++1z"
+modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
 modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x"
 modern_c_stds="$modern_c_stds -std=gnu99 -std=gnu9x"
 
 if test "$want_cxx20" = yes; then
    modern_cxx_stds="-std=gnu++20"
+elif test "$ac_cv_have_decl__LIBCPP_VERSION" = no; then
+   modern_cxx_stds="-std=gnu++20 $modern_cxx_stds"
 fi
 
 if test "$want_c2x" = yes; then
