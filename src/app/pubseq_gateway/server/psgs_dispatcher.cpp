@@ -506,6 +506,14 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 }
             }
 
+            if (source == ePSGS_Processor) {
+                if (proc.m_ProcPerformanceRegistered == false) {
+                    auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
+                    timing.RegisterProcessorPerformance(processor, processor_status);
+                    proc.m_ProcPerformanceRegistered = true;
+                }
+            }
+
             if (source == ePSGS_Fromework) {
                 // This call is when the framework notices that the processor
                 // reports something not InProgress (like error, cancel,
@@ -1304,6 +1312,7 @@ void CPSGS_Dispatcher::EraseProcessorGroup(size_t  request_id)
                                 " [dispatch status: " + to_string(proc_data.m_DispatchStatus) +
                                 "; finish status: " + to_string(proc_data.m_FinishStatus) +
                                 "; done status registered: " + to_string(proc_data.m_DoneStatusRegistered) +
+                                "; proc performance registered: " + to_string(proc_data.m_ProcPerformanceRegistered) +
                                 "]";
                 }
 
