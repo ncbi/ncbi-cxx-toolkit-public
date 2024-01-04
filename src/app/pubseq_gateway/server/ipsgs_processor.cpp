@@ -349,11 +349,14 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
 
 void IPSGS_Processor::OnBeforeProcess(void)
 {
-    // At the moment just memorize the current time
-    if (g_AllowProcessorTiming) {
-        m_ProcessInvokeTimestamp = psg_clock_t::now();
-        m_ProcessInvokeTimestampInitialized = true;
-    }
+    // Memorize the moment when the processor has started
+    // if (g_AllowProcessorTiming) {
+    // Note: it was conditional depending on g_AllowProcessorTiming
+    // Now it is unconditional because it is also used to collect per processor
+    // performance timing.
+
+    m_ProcessInvokeTimestamp = psg_clock_t::now();
+    m_ProcessInvokeTimestampInitialized = true;
 }
 
 

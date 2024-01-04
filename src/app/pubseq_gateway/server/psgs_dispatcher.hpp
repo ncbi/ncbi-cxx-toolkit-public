@@ -66,6 +66,7 @@ struct SProcessorData
     EPSGS_ProcessorStatus           m_DispatchStatus;
     IPSGS_Processor::EPSGS_Status   m_FinishStatus;
     bool                            m_DoneStatusRegistered;
+    bool                            m_ProcPerformanceRegistered;
 
     SProcessorData(shared_ptr<IPSGS_Processor>  processor,
                    EPSGS_ProcessorStatus  dispatch_status,
@@ -73,7 +74,8 @@ struct SProcessorData
         m_Processor(processor),
         m_DispatchStatus(dispatch_status),
         m_FinishStatus(finish_status),
-        m_DoneStatusRegistered(false)
+        m_DoneStatusRegistered(false),
+        m_ProcPerformanceRegistered(false)
     {}
 };
 

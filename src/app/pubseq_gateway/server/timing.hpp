@@ -36,6 +36,7 @@
 #include "pubseq_gateway_types.hpp"
 #include "psgs_request.hpp"
 #include "time_series_stat.hpp"
+#include "ipsgs_processor.hpp"
 
 #include <vector>
 #include <mutex>
@@ -250,6 +251,10 @@ TIMING_CLASS(CResolutionTiming);
 // Time staying in the backlog
 TIMING_CLASS(CBacklogTiming);
 
+// Time staying in the backlog
+TIMING_CLASS(CProcessorPerformanceTiming);
+
+
 // Blob retrieval depends on a blob size
 class CBlobRetrieveTiming : public CPSGTimingBase
 {
@@ -313,6 +318,8 @@ class COperationTiming
                                    CRequestStatus::ECode  status);
         void RegisterProcessorDone(CPSGS_Request::EPSGS_Type  request_type,
                                    IPSGS_Processor *  processor);
+        void RegisterProcessorPerformance(IPSGS_Processor *  processor,
+                                          IPSGS_Processor::EPSGS_Status  proc_finish_status);
 
     public:
         void Rotate(void);
@@ -455,6 +462,13 @@ class COperationTiming
         vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdResolveDoneByProc;
         vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetTSEChunkDoneByProc;
         vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetNADoneByProc;
+
+        // The first index is a request kind
+        // The second index is a processor kind
+        vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_DoneProcPerformance;
+        vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_NotFoundProcPerformance;
+        vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_TimeoutProcPerformance;
+        vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_ErrorProcPerformance;
 };
 
 #endif /* PUBSEQ_GATEWAY_TIMING__HPP */

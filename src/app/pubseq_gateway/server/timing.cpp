@@ -241,6 +241,7 @@ TIMING_CLASS_DEF(CSNPPTISLookupTiming);
 TIMING_CLASS_DEF(CWGSVDBLookupTiming);
 TIMING_CLASS_DEF(CResolutionTiming);
 TIMING_CLASS_DEF(CBacklogTiming);
+TIMING_CLASS_DEF(CProcessorPerformanceTiming);
 
 
 CBlobRetrieveTiming::CBlobRetrieveTiming(size_t  min_blob_size,
@@ -418,13 +419,43 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     }
 
 
-    for (size_t  k=0; k < m_ProcGroupToIndex.size(); ++k) {
+    for (size_t  k = 0; k < m_ProcGroupToIndex.size(); ++k) {
         m_BlobRetrieveTiming.push_back(vector<unique_ptr<CBlobRetrieveTiming>>());
         m_HugeBlobByteCounter.push_back(0);
         m_BlobByteCounters.push_back(vector<uint64_t>());
     }
     reset_to_default |= x_SetupBlobSizeBins(min_stat_value, max_stat_value,
                                             n_bins, scale_type, small_blob_size);
+
+
+    for (size_t  req_index = 0;
+         req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
+         ++req_index) {
+
+        m_DoneProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
+        m_NotFoundProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
+        m_TimeoutProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
+        m_ErrorProcPerformance.push_back(vector<unique_ptr<CProcessorPerformanceTiming>>());
+
+        for (size_t  proc_index = 0; proc_index < m_ProcGroupToIndex.size(); ++proc_index) {
+            m_DoneProcPerformance.back().push_back(
+                unique_ptr<CProcessorPerformanceTiming>(
+                    new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
+                                                    n_bins, scale_type, reset_to_default)));
+            m_NotFoundProcPerformance.back().push_back(
+                unique_ptr<CProcessorPerformanceTiming>(
+                    new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
+                                                    n_bins, scale_type, reset_to_default)));
+            m_TimeoutProcPerformance.back().push_back(
+                unique_ptr<CProcessorPerformanceTiming>(
+                    new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
+                                                    n_bins, scale_type, reset_to_default)));
+            m_ErrorProcPerformance.back().push_back(
+                unique_ptr<CProcessorPerformanceTiming>(
+                    new CProcessorPerformanceTiming(min_stat_value, max_stat_value,
+                                                    n_bins, scale_type, reset_to_default)));
+        }
+    }
 
 
     if (reset_to_default)
@@ -699,11 +730,48 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         }
     };
 
-
     // Per processor timing
     string      proc_group_names[m_ProcGroupToIndex.size()];
     for (const auto &  item : m_ProcGroupToIndex) {
         proc_group_names[item.second] = item.first;
+    }
+
+    for (size_t  req_index = 0;
+         req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
+         ++req_index) {
+
+        for (auto & item : m_ProcGroupToIndex) {
+            size_t      proc_index = item.second;
+            string      req_name = CPSGS_Request::TypeToString(
+                                        static_cast<CPSGS_Request::EPSGS_Type>(req_index));
+            string      prefix = item.first + "_" +
+                                 NStr::Replace(req_name, "Request", "") + "_";
+            string      suffix = "_ProcessorPerformance";
+
+            m_NamesMap[prefix + "Done" + suffix] =
+                SInfo(m_DoneProcPerformance[req_index][proc_index].get(),
+                      item.first + " Done performance for " + req_name,
+                      "The timing of the " + item.first +
+                      " processor when it finished with status Done for " + req_name);
+
+            m_NamesMap[prefix + "NotFound" + suffix] =
+                SInfo(m_NotFoundProcPerformance[req_index][proc_index].get(),
+                      item.first + " NotFound performance for " + req_name,
+                      "The timing of the " + item.first +
+                      " processor when it finished with status NotFound for " + req_name);
+
+            m_NamesMap[prefix + "Timeout" + suffix] =
+                SInfo(m_TimeoutProcPerformance[req_index][proc_index].get(),
+                      item.first + " Timeout performance for " + req_name,
+                      "The timing of the " + item.first +
+                      " processor when it finished with status Timeout for " + req_name);
+
+            m_NamesMap[prefix + "Error" + suffix] =
+                SInfo(m_ErrorProcPerformance[req_index][proc_index].get(),
+                      item.first + " Error performance for " + req_name,
+                      "The timing of the " + item.first +
+                      " processor when it finished with status Error for " + req_name);
+        }
     }
 
     for (const auto &  proc_group : proc_group_names) {
@@ -1227,6 +1295,52 @@ void COperationTiming::RegisterProcessorDone(CPSGS_Request::EPSGS_Type  request_
 }
 
 
+void COperationTiming::RegisterProcessorPerformance(IPSGS_Processor *  processor,
+                                                    IPSGS_Processor::EPSGS_Status  proc_finish_status)
+{
+    bool                valid;
+    psg_time_point_t    start_timestamp = processor->GetProcessInvokeTimestamp(valid);
+
+    if (!valid)
+        return;     // Should not really happened
+                    // the start timestamp is memorized unconditionally
+
+    size_t  request_index = static_cast<size_t>(processor->GetRequest()->GetRequestType());
+    size_t  proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
+
+
+    auto            now = psg_clock_t::now();
+    uint64_t        mks = chrono::duration_cast<chrono::microseconds>(now - start_timestamp).count();
+
+    switch (proc_finish_status) {
+        case IPSGS_Processor::ePSGS_InProgress:
+            // Cannot happened; the processor has not finished yet while this
+            // method is for the moment when a processor is done.
+            break;
+        case IPSGS_Processor::ePSGS_Done:
+            m_DoneProcPerformance[request_index][proc_index]->Add(mks);
+            break;
+        case IPSGS_Processor::ePSGS_NotFound:
+            m_NotFoundProcPerformance[request_index][proc_index]->Add(mks);
+            break;
+        case IPSGS_Processor::ePSGS_Canceled:
+            // Not collected
+            break;
+        case IPSGS_Processor::ePSGS_Timeout:
+            m_TimeoutProcPerformance[request_index][proc_index]->Add(mks);
+            break;
+        case IPSGS_Processor::ePSGS_Error:
+            m_ErrorProcPerformance[request_index][proc_index]->Add(mks);
+            break;
+        case IPSGS_Processor::ePSGS_Unauthorized:
+            // Not collected
+            break;
+        default:
+            break;
+    }
+}
+
+
 void COperationTiming::Rotate(void)
 {
     lock_guard<mutex>   guard(m_Lock);
@@ -1292,6 +1406,17 @@ void COperationTiming::Rotate(void)
     for (size_t  k=0; k < m_BlobRetrieveTiming.size(); ++k) {
         for (auto &  item : m_BlobRetrieveTiming[k]) {
             item->Rotate();
+        }
+    }
+
+    for (size_t  req_index = 0;
+         req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
+         ++req_index) {
+        for (size_t  proc_index = 0; proc_index < m_ProcGroupToIndex.size(); ++proc_index) {
+            m_DoneProcPerformance[req_index][proc_index]->Rotate();
+            m_NotFoundProcPerformance[req_index][proc_index]->Rotate();
+            m_TimeoutProcPerformance[req_index][proc_index]->Rotate();
+            m_ErrorProcPerformance[req_index][proc_index]->Rotate();
         }
     }
 }
@@ -1438,6 +1563,17 @@ void COperationTiming::Reset(void)
         item->Reset();
     for (auto &  item : m_IdGetNADoneByProc)
         item->Reset();
+
+    for (size_t  req_index = 0;
+         req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
+         ++req_index) {
+        for (size_t  proc_index = 0; proc_index < m_ProcGroupToIndex.size(); ++proc_index) {
+            m_DoneProcPerformance[req_index][proc_index]->Reset();
+            m_NotFoundProcPerformance[req_index][proc_index]->Reset();
+            m_TimeoutProcPerformance[req_index][proc_index]->Reset();
+            m_ErrorProcPerformance[req_index][proc_index]->Reset();
+        }
+    }
 }
 
 
