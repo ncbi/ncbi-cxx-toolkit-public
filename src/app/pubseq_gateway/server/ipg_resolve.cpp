@@ -650,13 +650,13 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
 
 string CPSGS_IPGResolveProcessor::x_GetNotFoundMessage(void)
 {
-    string      msg = "No IPG info found for the following criteria";
+    string      msg = "No IPG info found for the following ";
     if (m_NotFoundCriterias.size() > 1) {
-        msg += "s: " + m_NotFoundCriterias[0];
+        msg += "criteria: " + m_NotFoundCriterias[0];
         for (size_t  k=1; k < m_NotFoundCriterias.size(); ++k)
             msg += ", " + m_NotFoundCriterias[k];
     } else {
-        msg += ": " + m_NotFoundCriterias[0];
+        msg += "criterion: " + m_NotFoundCriterias[0];
     }
     return msg;
 }
