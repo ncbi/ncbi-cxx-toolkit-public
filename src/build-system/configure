@@ -10476,11 +10476,15 @@ fi
 
 
 modern_cxx_stds="-std=gnu++20 -std=gnu++17 -std=gnu++1z"
-modern_c_stds="-std=gnu2x -std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x"
+modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x"
 modern_c_stds="$modern_c_stds -std=gnu99 -std=gnu9x"
 
 if test "$want_cxx20" = yes; then
    modern_cxx_stds="-std=gnu++20"
+fi
+
+if test "$want_c2x" = yes; then
+   modern_c_stds="-std=gnu2x $modern_c_stds"
 fi
 
 if dpkg-vendor --is Ubuntu >/dev/null 2>&1; then
