@@ -25232,7 +25232,7 @@
                         },
                         "tax_id": 1329640,
                         "hash": -502653465,
-                        "date_changed": "02/17/2023 11:59:29",
+                        "date_changed": "12/23/2023 07:18:00",
                         "gi": 699058966
                     }
                 },
@@ -25649,8 +25649,8 @@
                         "id": {
                             "id": "1000/69470373.1"
                         },
-                        "length": 21828,
-                        "hash": "3AC08891D2111C96",
+                        "length": 21837,
+                        "hash": "1F4B96C27D62DCE9",
                         "preview": "oYAwgKOACgEBAACmgDGAtg=="
                     }
                 },
@@ -25735,7 +25735,7 @@
                         },
                         "tax_id": 1329640,
                         "hash": -502653465,
-                        "date_changed": "02/17/2023 11:59:29",
+                        "date_changed": "12/23/2023 07:18:00",
                         "gi": 699058966
                     }
                 },
@@ -25746,11 +25746,11 @@
                         "reply": "BlobData",
                         "id": {
                             "id": "37.227981207",
-                            "last_modified": 1676635169943
+                            "last_modified": 1703315863893
                         },
-                        "length": 8448,
-                        "hash": "9C81AA4973D49902",
-                        "preview": "eJzVXAl4TGfbnkyQIIsqoQ=="
+                        "length": 8449,
+                        "hash": "BF426AFCE39A04E0",
+                        "preview": "eJzVXAt4DGfb3myQIAdVQg=="
                     }
                 },
                 {
@@ -25760,12 +25760,12 @@
                         "reply": "BlobInfo",
                         "id": {
                             "id": "37.227981207",
-                            "last_modified": 1676635169943
+                            "last_modified": 1703315863893
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 8448,
-                        "size": 21843,
+                        "storage_size": 8449,
+                        "size": 21837,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_withdrawn": false,
@@ -25902,18 +25902,6 @@
                     }
                 },
                 null,
-                {
-                    "jsonrpc": "2.0",
-                    "id": "resolve_1",
-                    "result": {
-                        "reply": "IpgInfo",
-                        "protein": "WP_001236024.1",
-                        "ipg": 642300,
-                        "nucleotide": "NZ_WXYU01000014.1",
-                        "tax_id": 90371,
-                        "gb_state": 0
-                    }
-                },
                 {
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
@@ -26318,13 +26306,23 @@
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "reply": "BlobInfo",
-                        "status": "NotFound",
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unauthorized"
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "Processor",
+                        "processor_id": "Cassandra-getblob",
+                        "progress_status": "unknown",
                         "messages": [
                             {
-                                "severity": "Error",
-                                "code": 311,
-                                "text": "Blob 20.11 properties are not found (last modified: -1)"
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
                             }
                         ]
                     }
@@ -26333,7 +26331,7 @@
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "status": "NotFound"
+                        "status": "Forbidden"
                     }
                 }
             ]
