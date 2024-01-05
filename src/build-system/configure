@@ -23115,6 +23115,16 @@ else
 #ifdef NCBI_BOOST_NOT_INCLUDED
                 #  include <boost/test/unit_test.hpp>
                 #else
+                #  if __cplusplus > 201703L
+                #    include <boost/version.hpp>
+                #    if BOOST_VERSION < 107300
+                #     include <ostream>
+                namespace std {
+                    ostream& operator<<(ostream& os, const wchar_t*)
+		        { return os; }
+                }
+                #    endif
+                #  endif
                 #  include <boost/test/included/unit_test.hpp>
                 #endif
                 using boost::unit_test::test_suite;
