@@ -100,6 +100,19 @@ NCBI_DEFINE_CTYPE_FUNC(toupper)
 #  pragma warning(disable: 4191)
 #endif
 
+// Avoid a compilation error observed when using a backported GCC 11
+// in C++20 mode with Ubuntu 20.04 (focal)'s system Boost (v1.71).
+#if __cplusplus > 201703L
+#  include <boost/version.hpp>
+#  if BOOST_VERSION < 107300
+namespace std {
+    ostream& operator<<(ostream& os, const wchar_t* ws)
+    {
+        return os << ncbi::CUtf8::AsUTF8(ws);
+    }
+}
+#  endif
+#endif
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
