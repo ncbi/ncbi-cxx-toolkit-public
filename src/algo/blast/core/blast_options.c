@@ -1324,6 +1324,14 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
         Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, 
                   "Word-size must be 4 or greater for nucleotide comparison");
         return BLASTERR_OPTION_VALUE_INVALID;
+    } else if (program_number == eBlastTypeBlastn && 
+               options->word_size > DBSEQ_CHUNK_OVERLAP) {
+        char buffer[256];
+        int bytes_written = snprintf(buffer, DIM(buffer),
+                  "Word-size must be less than or equal to %d", DBSEQ_CHUNK_OVERLAP);
+        ASSERT(bytes_written < DIM(buffer));
+        Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext, buffer);
+        return BLASTERR_OPTION_VALUE_INVALID;
     } else if (program_number != eBlastTypeBlastn &&
                program_number != eBlastTypeMapping && options->word_size > 4)
     {
