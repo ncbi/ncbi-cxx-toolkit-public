@@ -4330,7 +4330,7 @@ LSN	s	Lord Wandsworth College Natural History Museum
 LSP	s	Lake Superior Provincial Park			
 LSR	s	Leicestershire Museums Service			
 LSRFC	s	Leicestershire Flora Committee			
-LSSC	s	Lake Superior State College			
+LSSU	s	Lake Superior State University			
 LSTM	c	Department of Parasitology			
 LSU	s	Louisiana State University, Biological Sciences Department	LSUM		
 LSUA	s	Louisiana State University of Alexandria			
