@@ -629,8 +629,8 @@ public:
                           EDoNotWait do_not_wait = eAllowWaiting)
         {
             TInfoLock lock;
-            _ASSERT(x_Check());
             TCacheMutex::TWriteLockGuard guard(m_CacheMutex);
+            _ASSERT(x_Check());
             CRef<CInfo>& slot = m_Index[key];
             if ( !slot ) {
                 // new slot
