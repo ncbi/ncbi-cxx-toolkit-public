@@ -26306,23 +26306,13 @@
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "reply": "Processor",
-                        "processor_id": "Cassandra-getblob",
-                        "progress_status": "unauthorized"
-                    }
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "blob_1",
-                    "result": {
-                        "reply": "Processor",
-                        "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown",
+                        "reply": "BlobInfo",
+                        "status": "NotFound",
                         "messages": [
                             {
-                                "severity": "Warning",
-                                "code": 340,
-                                "text": "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
+                                "severity": "Error",
+                                "code": 311,
+                                "text": "Blob 20.11 properties are not found (last modified: -1)"
                             }
                         ]
                     }
@@ -26331,7 +26321,7 @@
                     "jsonrpc": "2.0",
                     "id": "blob_1",
                     "result": {
-                        "status": "Forbidden"
+                        "status": "NotFound"
                     }
                 }
             ]
