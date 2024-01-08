@@ -1131,7 +1131,7 @@ CArchiveFile::CArchiveFile(EFormat format, const string& filename)
 void CArchiveFile::Open(EAction action)
 {
     ARCHIVE_CHECK;
-    bool isread = (action & eRO) > 0;
+    bool isread = ((int)action & (int)eRO) > 0;
     if (isread) {
         ARCHIVE->OpenFile(m_FileName);
     } else {
@@ -1181,7 +1181,7 @@ void CArchiveMemory::Create(size_t initial_allocation_size)
 void CArchiveMemory::Open(EAction action)
 {
     ARCHIVE_CHECK;
-    bool isread = (action & eRO) > 0;
+    bool isread = ((int)action & (int)eRO) > 0;
     if (isread) {
         ARCHIVE->OpenMemory(m_Buf, m_BufSize);
     } else {

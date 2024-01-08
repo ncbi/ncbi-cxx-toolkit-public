@@ -437,7 +437,7 @@ struct SEmptyInputDataTest
 
 // fAllowEmptyData should be the same for all compressions
 //
-#define f_AllowEmptyData CZipCompression::fAllowEmptyData 
+#define f_AllowEmptyData (int)CZipCompression::fAllowEmptyData 
 
 static const SEmptyInputDataTest s_EmptyInputDataTests[] = 
 {
