@@ -396,13 +396,10 @@ CInfoCache_Base::~CInfoCache_Base(void)
 bool CInfoCache_Base::x_Check(const vector<const CInfo_Base*>& _DEBUG_ARG(infos)) const
 {
 #ifdef _DEBUG
-    size_t unused_count = 0, used_count = 0;
+    size_t unused_count = 0;
     ITERATE ( vector<const CInfo_Base*>, it, infos ) {
         const CInfo_Base& info = **it;
-        if ( info.m_UseCounter > 0 ) {
-            ++used_count;
-        }
-        else {
+        if ( info.m_UseCounter == 0 ) {
             ++unused_count;
         }
     }
