@@ -678,20 +678,27 @@ RunTest() {
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
            fi
+           stat_out="$x_tmp/test_stat_load.tmp.\$\$
+           retry="${x_check_scripts_dir}/retry_db_load.sh"
            case "$x_compiler" in
              MSVC )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
+                \$retry \$stat_out test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")"
                 ;;        
              XCODE ) 
-                $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
+                \$retry \$stat_out $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info"
                 ;;
            esac
-           if test \$? -ne 0;  then
-              echo "ERR: Error loading results for [\$build_tree/\$build_cfg] \$x_name" >> "\$build_dir/test_stat_load.log" 2>&1
-           else 
-              echo "OK: [\$build_tree/\$build_cfg] \$x_name" >> "\$build_dir/test_stat_load.log" 2>&1
-           fi           
-           echo >> "\$build_dir/test_stat_load.log" 2>&1
+           case \$? in
+             0 )
+               echo "OK: [\$build_tree/\$build_cfg] \$x_name" >> \$stat_out 2>&1 ;;
+             4 )
+               echo "TO: Error loading results for [\$build_tree/\$build_cfg] \$x_name" >> \$stat_out 2>&1 ;;
+             * )
+               echo "ERR: Error loading results for [\$build_tree/\$build_cfg] \$x_name" >> \$stat_out 2>&1 ;;
+           esac
+           cat \$stat_out >> "\$build_dir/test_stat_load.log" 2>&1        
+           echo           >> "\$build_dir/test_stat_load.log" 2>&1
+           rm -f \$stat_out > /dev/null 2>&1
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
             rm -f \$saved_phid* > /dev/null 2>&1
