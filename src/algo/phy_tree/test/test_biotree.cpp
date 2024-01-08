@@ -380,7 +380,7 @@ struct PhyNode
     PhyNode() {}
     PhyNode(int d, const string& l) : distance(d), label(l){}
 
-    int       distance;
+    int       distance = 0;
     string    label;
 };
 
@@ -428,8 +428,8 @@ struct PhyNodeId
     unsigned GetId() const { return id; }
     void SetId(unsigned x_id) { id = x_id; }
 
-    unsigned  id;
-    int       distance;
+    unsigned  id = 0;
+    int       distance = 0;
     string    label;
 };
 
