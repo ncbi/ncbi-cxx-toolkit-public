@@ -891,20 +891,27 @@ EOF_launch
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
            fi
+           stat_out="$x_tmp/test_stat_load.tmp.\$\$"
+           retry="\${script_dir}/common/check/retry_db_load.sh"
            case \`uname -s\` in
               CYGWIN* )
-                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+                \$retry \$stat_out test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" ;;
               IRIX* )
-                test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+                \$retry \$stat_out test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" ;;
               * )
-                test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "$x_build_dir/test_stat_load.log" 2>&1 ;;
+                \$retry \$stat_out test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" ;;
            esac
-           if test \$? -ne 0;  then
-              echo "ERR: Error loading results for [\$x_work_dir_tail] \$x_name" >> "$x_build_dir/test_stat_load.log" 2>&1
-           else 
-              echo "OK: [\$x_work_dir_tail] \$x_name" >> "$x_build_dir/test_stat_load.log" 2>&1
-           fi
-           echo >> "$x_build_dir/test_stat_load.log" 2>&1
+           case \$? in
+             0 )
+               echo "OK: [\$x_work_dir_tail] \$x_name" >> \$stat_out 2>&1 ;;
+             4 )
+               echo "TO: Error loading results for [\$x_work_dir_tail] \$x_name" >> \$stat_out 2>&1 ;;
+             * )
+               echo "ERR: Error loading results for [\$x_work_dir_tail] \$x_name" >> \$stat_out 2>&1 ;;
+           esac
+           cat \$stat_out >> "$x_build_dir/test_stat_load.log" 2>&1      
+           echo           >> "$x_build_dir/test_stat_load.log" 2>&1
+           rm -f \$stat_out > /dev/null 2>&1
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
            rm -f \$saved_phid* > /dev/null 2>&1
