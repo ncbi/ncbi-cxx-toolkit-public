@@ -222,7 +222,7 @@ vector<string> CPSGS_CDDProcessor::WhatCanProcess(shared_ptr<CPSGS_Request> requ
     try {
         vector<string> can_process;
         if ( x_IsEnabled(*request) ) {
-            SPSGS_AnnotRequest& annot_request = GetRequest()->GetRequest<SPSGS_AnnotRequest>();
+            SPSGS_AnnotRequest& annot_request = request->GetRequest<SPSGS_AnnotRequest>();
             if ( x_CanProcessAnnotRequestIds(annot_request) ) {
                 for ( auto& name : annot_request.m_Names ) {
                     if ( name == kCDDAnnotName ) {
@@ -357,6 +357,7 @@ void CPSGS_CDDProcessor::x_ReportResultStatus(SPSGS_AnnotRequest::EPSGS_ResultSt
 
 void CPSGS_CDDProcessor::Process()
 {
+    _ASSERT(GetRequest());
     CRequestContextResetter     context_resetter;
     GetRequest()->SetRequestContext();
 
@@ -365,7 +366,7 @@ void CPSGS_CDDProcessor::Process()
             CFastMutexGuard guard(m_Mutex);
             m_Unlocked = false;
         }
-        if (GetRequest()) GetRequest()->Lock(kCDDProcessorEvent);
+        GetRequest()->Lock(kCDDProcessorEvent);
         auto req_type = GetRequest()->GetRequestType();
         switch (req_type) {
         case CPSGS_Request::ePSGS_AnnotationRequest:
