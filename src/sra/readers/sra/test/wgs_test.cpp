@@ -172,6 +172,41 @@ void CWGSTestApp::Init(void)
 }
 
 
+template<class Call>
+static typename std::invoke_result<Call>::type
+CallWithRetry(Call&& call,
+              const char* name,
+              unsigned retry_count = 0)
+{
+    static const unsigned kDefaultRetryCount = 4;
+    if ( retry_count == 0 ) {
+        retry_count = kDefaultRetryCount;
+    }
+    for ( unsigned t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"WGSTest: "<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"WGSTest: "<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"WGSTest: "<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<"WGSTest: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+#define RETRY(expr) CallWithRetry([&]()->auto{return (expr);}, #expr)
+
+
 string sx_GetSeqData(const CBioseq& seq)
 {
     CScope scope(*CObjectManager::GetInstance());
@@ -696,7 +731,7 @@ int CWGSTestApp::Run(void)
         limit_count = 1;
     }
 
-    CWGSDb wgs_db(mgr, path);
+    CWGSDb wgs_db = RETRY(CWGSDb(mgr, path));
     if ( verbose ) {
         out << "Opened WGS in "<<sw.Restart()
             << NcbiEndl;
@@ -712,7 +747,7 @@ int CWGSTestApp::Run(void)
         if ( args["master-no-filter"] ) {
             filter = CWGSDb::eDescrNoFilter;
         }
-        if ( !wgs_db.LoadMasterDescr(filter) ) {
+        if ( !RETRY(wgs_db.LoadMasterDescr(filter)) ) {
             ERR_POST("No master descriptors found");
         }
     }
@@ -750,13 +785,13 @@ int CWGSTestApp::Run(void)
             // print only one accession
             if ( is_component ) {
                 if ( !args["limit_count"] ) {
-                    it = CWGSSeqIterator(wgs_db, row, include_flags);
+                    it = RETRY(CWGSSeqIterator(wgs_db, row, include_flags));
                 }
                 else if ( row + limit_count < row ) {
-                    it = CWGSSeqIterator(wgs_db, row, kMax_UI8, include_flags);
+                    it = RETRY(CWGSSeqIterator(wgs_db, row, kMax_UI8, include_flags));
                 }
                 else {
-                    it = CWGSSeqIterator(wgs_db, row, row+limit_count-1, include_flags);
+                    it = RETRY(CWGSSeqIterator(wgs_db, row, row+limit_count-1, include_flags));
                 }
                 if ( !it ) {
                     out << "No such row: "<<path
@@ -766,7 +801,7 @@ int CWGSTestApp::Run(void)
         }
         else {
             // otherwise scan all sequences
-            it = CWGSSeqIterator(wgs_db, include_flags);
+            it = RETRY(CWGSSeqIterator(wgs_db, include_flags));
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             if ( contig_version ) {
@@ -856,7 +891,7 @@ int CWGSTestApp::Run(void)
         for ( CWGSGiIterator it(wgs_db, CWGSGiIterator::eNuc); it; ++it ) {
             nuc_idx[it.GetGi()] = it.GetRowId();
         }
-        for ( CWGSSeqIterator it(wgs_db, include_flags); it; ++it ) {
+        for ( CWGSSeqIterator it = RETRY(CWGSSeqIterator(wgs_db, include_flags)); it; ++it ) {
             if ( !it.HasGi() ) {
                 continue;
             }
@@ -881,7 +916,7 @@ int CWGSTestApp::Run(void)
         }
     }
     if ( args["gi-range"] ) {
-        pair<TGi, TGi> gi_range = wgs_db.GetNucGiRange();
+        pair<TGi, TGi> gi_range = RETRY(wgs_db.GetNucGiRange());
         if ( gi_range.second != ZERO_GI ) {
             out << "Nucleotide GI range: "
                 << gi_range.first << " - " << gi_range.second
@@ -890,7 +925,7 @@ int CWGSTestApp::Run(void)
         else {
             out << "Nucleotide GI range is empty" << NcbiEndl;
         }
-        gi_range = wgs_db.GetProtGiRange();
+        gi_range = RETRY(wgs_db.GetProtGiRange());
         if ( gi_range.second != ZERO_GI ) {
             out << "Protein GI range: "
                 << gi_range.first << " - " << gi_range.second
@@ -904,7 +939,7 @@ int CWGSTestApp::Run(void)
     bool check_empty_lookup = args["check_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = GI_FROM(TIntId, args["gi"].AsIntId());
-        CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
+        CRef<CWGSResolver> resolver = RETRY(CWGSResolver_VDB::CreateResolver(mgr));
         if ( resolver ) {
             CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(gi);
             if ( prefixes.empty() ) {
@@ -929,7 +964,7 @@ int CWGSTestApp::Run(void)
             if ( check_empty_lookup ) {
                 ++error_count;
             }
-            CWGSSeqIterator it(wgs_db, gi_it.GetRowId(), include_flags);
+            CWGSSeqIterator it = RETRY(CWGSSeqIterator(wgs_db, gi_it.GetRowId(), include_flags));
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
                 ++error_count;
@@ -949,7 +984,7 @@ int CWGSTestApp::Run(void)
             if ( check_empty_lookup ) {
                 ++error_count;
             }
-            CWGSProteinIterator it(wgs_db, gi_it.GetRowId());
+            CWGSProteinIterator it = RETRY(CWGSProteinIterator(wgs_db, gi_it.GetRowId()));
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
                 ++error_count;
@@ -972,7 +1007,7 @@ int CWGSTestApp::Run(void)
     }
     if ( args["contig_name"] ) {
         string name = args["contig_name"].AsString();
-        uint64_t row_id = wgs_db.GetContigNameRowId(name);
+        uint64_t row_id = RETRY(wgs_db.GetContigNameRowId(name));
         out << "Contig name "<<name<<" is in CONTIG table row " << row_id
             << NcbiEndl;
         if ( !row_id ) {
@@ -984,7 +1019,7 @@ int CWGSTestApp::Run(void)
             if ( check_empty_lookup ) {
                 ++error_count;
             }
-            CWGSSeqIterator it(wgs_db, row_id, include_flags);
+            CWGSSeqIterator it = RETRY(CWGSSeqIterator(wgs_db, row_id, include_flags));
             if ( !it ) {
                 out << "CONTIG: No such row: "<< row_id << NcbiEndl;
                 ++error_count;
@@ -1008,7 +1043,7 @@ int CWGSTestApp::Run(void)
     }
     if ( args["scaffold_name"] ) {
         string name = args["scaffold_name"].AsString();
-        uint64_t row_id = wgs_db.GetScaffoldNameRowId(name);
+        uint64_t row_id = RETRY(wgs_db.GetScaffoldNameRowId(name));
         out << "Scaffold name "<<name<<" is in SCAFFOLD table row " << row_id
             << NcbiEndl;
         if ( !row_id ) {
@@ -1020,7 +1055,7 @@ int CWGSTestApp::Run(void)
             if ( check_empty_lookup ) {
                 ++error_count;
             }
-            CWGSScaffoldIterator it(wgs_db, row_id);
+            CWGSScaffoldIterator it = RETRY(CWGSScaffoldIterator(wgs_db, row_id));
             if ( !it ) {
                 out << "SCAFFOLD: No such row: "<< row_id << NcbiEndl;
                 ++error_count;
@@ -1047,7 +1082,7 @@ int CWGSTestApp::Run(void)
     }
     if ( args["protein_name"] ) {
         string name = args["protein_name"].AsString();
-        uint64_t row_id = wgs_db.GetProteinNameRowId(name);
+        uint64_t row_id = RETRY(wgs_db.GetProteinNameRowId(name));
         out << "Protein name "<<name<<" is in PROTEIN table row " << row_id
             << NcbiEndl;
         if ( !row_id ) {
@@ -1059,7 +1094,7 @@ int CWGSTestApp::Run(void)
             if ( check_empty_lookup ) {
                 ++error_count;
             }
-            CWGSProteinIterator it(wgs_db, row_id);
+            CWGSProteinIterator it = RETRY(CWGSProteinIterator(wgs_db, row_id));
             if ( !it ) {
                 out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
                 ++error_count;
@@ -1113,7 +1148,7 @@ int CWGSTestApp::Run(void)
         }
         unsigned found_count = 0;
         CStopWatch sw(CStopWatch::eStart);
-        CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
+        CRef<CWGSResolver> resolver = RETRY(CWGSResolver_VDB::CreateResolver(mgr));
         if ( resolver ) {
             for ( auto& acc_ver : accs ) {
                 string acc, ver;
@@ -1141,7 +1176,7 @@ int CWGSTestApp::Run(void)
                 string acc, ver;
                 NStr::SplitInTwo(acc_ver, ".", acc, ver);
                 int version = ver.empty()? -1: NStr::StringToNumeric<int>(ver);
-                uint64_t row_id = wgs_db.GetProtAccRowId(acc, version);
+                uint64_t row_id = RETRY(wgs_db.GetProtAccRowId(acc, version));
                 out << "Protein acc "<<acc_ver<<" is in PROTEIN table row " << row_id
                     << NcbiEndl;
                 if ( !row_id ) {
@@ -1153,7 +1188,7 @@ int CWGSTestApp::Run(void)
                     if ( check_empty_lookup ) {
                         ++error_count;
                     }
-                    CWGSProteinIterator it(wgs_db, row_id);
+                    CWGSProteinIterator it = RETRY(CWGSProteinIterator(wgs_db, row_id));
                     if ( !it ) {
                         out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
                         ++error_count;
@@ -1187,7 +1222,7 @@ int CWGSTestApp::Run(void)
         CWGSScaffoldIterator it;
         if ( row ) {
             if ( is_scaffold ) {
-                it = CWGSScaffoldIterator(wgs_db, row);
+                it = RETRY(CWGSScaffoldIterator(wgs_db, row));
                 if ( !it ) {
                     out << "No such scaffold row: "<<path
                         << NcbiEndl;
@@ -1195,7 +1230,7 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            it = CWGSScaffoldIterator(wgs_db);
+            it = RETRY(CWGSScaffoldIterator(wgs_db));
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetScaffoldName() << '\n';
@@ -1213,7 +1248,7 @@ int CWGSTestApp::Run(void)
         CWGSProteinIterator it;
         if ( row ) {
             if ( is_protein ) {
-                it = CWGSProteinIterator(wgs_db, row);
+                it = RETRY(CWGSProteinIterator(wgs_db, row));
                 if ( !it ) {
                     out << "No such protein row: "<<path
                         << NcbiEndl;
@@ -1221,7 +1256,7 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            it = CWGSProteinIterator(wgs_db);
+            it = RETRY(CWGSProteinIterator(wgs_db));
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetProteinName() << '\n';
