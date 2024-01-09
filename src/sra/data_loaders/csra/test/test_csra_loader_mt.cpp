@@ -76,12 +76,6 @@ private:
     Int8 FindMaxSpotId(const string& acc);
     Int8 GetMaxSpotId(size_t index);
 
-    template<class Call>
-    typename std::invoke_result<Call>::type
-    CallWithRetry(Call&& call,
-                  const char* name,
-                  int retry_count);
-    
     void LoadRefSeqs();
     void LoadRefSeqsOnce();
     
@@ -274,10 +268,14 @@ Int8 CCSRATestApp::GetMaxSpotId(size_t index)
 
 template<class Call>
 typename std::invoke_result<Call>::type
-CCSRATestApp::CallWithRetry(Call&& call,
-                            const char* name,
-                            int retry_count)
+CallWithRetry(Call&& call,
+              const char* name,
+              int retry_count = 0)
 {
+    const int kDefaultRetryCount = 4;
+    if ( retry_count == 0 ) {
+        retry_count = kDefaultRetryCount;
+    }
     for ( int t = 1; t < retry_count; ++ t ) {
         try {
             return call();
@@ -304,11 +302,12 @@ CCSRATestApp::CallWithRetry(Call&& call,
     }
     return call();
 }
+#define RETRY(expr) CallWithRetry([&]()->auto{return (expr);}, #expr)
 
 
 void CCSRATestApp::LoadRefSeqs()
 {
-    CallWithRetry(bind(&CCSRATestApp::LoadRefSeqsOnce, this), "LoadRefSeqs", 3);
+    RETRY(LoadRefSeqsOnce());
 }
 
 
