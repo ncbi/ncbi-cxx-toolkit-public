@@ -41,6 +41,10 @@
 #include <objects/seqtable/seqtable__.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
+#include <numeric>
+#if defined(NCBI_THREADS)
+# include <future>
+#endif
 
 #include <corelib/test_boost.hpp>
 
@@ -363,6 +367,21 @@ BOOST_AUTO_TEST_CASE(SNPExplicitNA)
     s_TestNoNA("SNPExplicitNA 2", na_acc2, bh, range_from, range_to);
 }
 
+/*
+BOOST_AUTO_TEST_CASE(SNPExplicitNABad)
+{
+    string na_acc = "NA000193999.1#1";
+    CRef<CScope> scope = s_MakeScope(na_acc);
+    string seq_id = "NC_000001.11";
+    TSeqPos range_from = 0;
+    TSeqPos range_to = 100000;
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    s_TestNoNA("SNPExplicitNA 1", na_acc, bh, range_from, range_to);
+}
+*/
 
 BOOST_AUTO_TEST_CASE(SNPImplicitNA)
 {
@@ -409,6 +428,93 @@ BOOST_AUTO_TEST_CASE(SNPImplicitSNP)
     s_TestPTIS("SNPImplicitSNP 2", eFromSNP, bh2, range_from2, range_to2, snp_count2);
 }
 
+
+#ifdef NCBI_THREADS
+static string get_cip(size_t index)
+{
+    return "1.2.3."+to_string(Uint1(100+index));
+}
+
+static string get_sid(size_t index)
+{
+    return "session_"+to_string(index);
+}
+
+static string get_hid(size_t index)
+{
+    return "hit_"+to_string(index);
+}
+
+static void SetRequestContext(TSeqPos pos)
+{
+    if ( 1 ) {
+        size_t index = pos/200000;
+        auto& ctx = CDiagContext::GetRequestContext();
+        ctx.SetClientIP(get_cip(index));
+        ctx.SetSessionID(get_sid(index));
+        ctx.SetHitID(get_hid(index));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(SNPImplicitSNP_ST)
+{
+    CRef<CScope> scope = s_MakeScope();
+    string seq_id = "NC_000023";
+    const TSeqPos kStep = 200000;
+    const TSeqPos range_from = 0;
+    //const TSeqPos range_to = 10000000;
+    //size_t snp_count = 3163132; // new PTIS version - NA000305581.1#17
+    const TSeqPos range_to = 100000000;
+    size_t snp_count = 28041544; // new PTIS version - NA000305581.1#17
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.IncludeNamedAnnotAccession("SNP");
+    sel.AddNamedAnnots("SNP");
+    vector<future<size_t>> res;
+    for ( TSeqPos pos = range_from; pos < range_to; pos += kStep ) {
+        res.emplace_back(async(launch::deferred, [=]()->size_t {
+            SetRequestContext(pos);
+            return CFeat_CI(bh, COpenRange<TSeqPos>(pos, pos+kStep), sel).GetSize();
+        }));
+    }
+    size_t total_count = accumulate(res.begin(), res.end(), size_t(0),
+                                    [](size_t s, future<size_t>& f) { return s+f.get(); });
+    BOOST_CHECK_EQUAL(total_count, snp_count);
+}
+
+
+BOOST_AUTO_TEST_CASE(SNPImplicitSNP_MT)
+{
+    CRef<CScope> scope = s_MakeScope();
+    string seq_id = "NC_000023";
+    const TSeqPos kStep = 200000;
+    const TSeqPos range_from = 0;
+    //const TSeqPos range_to = 10000000;
+    //size_t snp_count = 3163132; // new PTIS version - NA000305581.1#17
+    const TSeqPos range_to = 100000000;
+    size_t snp_count = 28041544; // new PTIS version - NA000305581.1#17
+    
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(seq_id));
+    BOOST_REQUIRE(bh);
+
+    SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
+    sel.IncludeNamedAnnotAccession("SNP");
+    sel.AddNamedAnnots("SNP");
+    vector<future<size_t>> res;
+    for ( TSeqPos pos = range_from; pos < range_to; pos += kStep ) {
+        res.emplace_back(async(launch::async, [=]()->size_t {
+            SetRequestContext(pos);
+            return CFeat_CI(bh, COpenRange<TSeqPos>(pos, pos+kStep), sel).GetSize();
+        }));
+    }
+    size_t total_count = accumulate(res.begin(), res.end(), size_t(0),
+                                    [](size_t s, future<size_t>& f) { return s+f.get(); });
+    BOOST_CHECK_EQUAL(total_count, snp_count);
+}
+#endif
 
 BOOST_AUTO_TEST_CASE(CheckExtSNPEditChangeId)
 {
@@ -535,6 +641,10 @@ NCBITEST_INIT_TREE()
         NCBITEST_DISABLE(SNPImplicitSNP);
         NCBITEST_DISABLE(SNPImplicitSNP64);
     }
+#ifdef NCBI_THREADS
+    NCBITEST_DISABLE(SNPImplicitSNP_ST);
+    NCBITEST_DISABLE(SNPImplicitSNP_MT);
+#endif
 #if defined(NCBI_INT4_GI) || 1
     NCBITEST_DISABLE(GBImplicitNA64);
     NCBITEST_DISABLE(GBImplicitSNP64);
