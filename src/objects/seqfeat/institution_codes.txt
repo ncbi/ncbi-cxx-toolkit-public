@@ -2150,6 +2150,7 @@ ESS	s	Universitaet Essen
 ESSE	s	Anadolu University			
 ESUW	s	University of Wyoming Insect Museum and Gallery			
 ET	s	East Texas State University			
+ETESTINST	s	Elena test inst			
 ETH<CHE>	c	Kultursammlungen der Eidgenosische Technische Hochschule			
 ETH<ETH>	s	Addis Ababa University			
 ETHZ	s	Eidgenoessische Technische Hochschule-Zentrum			
