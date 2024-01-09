@@ -43,7 +43,7 @@ status=0
 while [ "$attempt" -le "$max_attempts" ]
 do
     # Run build
-    eval $cmdline >> $out 2>&1
+    (eval $cmdline) >> $out 2>&1
     if [ $? -eq 0 ] ; then
         # Success
         exit 0
