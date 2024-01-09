@@ -72,6 +72,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <sra/error_codes.hpp>
+#include <util/random_gen.hpp>
 
 #include <cstring>
 #include <algorithm>
@@ -142,6 +143,11 @@ DEFINE_SRA_REF_TRAITS(VResolver, );
 #define VDB_READ_RANDOM_FAILS_RECOVER 1000
 
 #if defined(VDB_RANDOM_FAILS)
+static bool s_Fails(unsigned frequency)
+{
+    static CSafeStatic<CRandom> s_Random([]()->CRandom*{CRandom* r=new CRandom();r->Randomize();return r;}, nullptr);
+    return s_Random->GetRandIndex(frequency) == 0;
+}
 # define SIMULATE_ERROR(name)                                           \
     if ( !(FAILS_VAR(name, _RANDOM_FAILS)) ) {                          \
     }                                                                   \
@@ -151,7 +157,7 @@ DEFINE_SRA_REF_TRAITS(VResolver, );
             --recover_counter;                                          \
         }                                                               \
         else {                                                          \
-            if ( (rand() % (FAILS_VAR(name, _RANDOM_FAILS_FREQUENCY))) == 0 ) { \
+            if ( s_Fails(FAILS_VAR(name, _RANDOM_FAILS_FREQUENCY)) ) {  \
                 recover_counter = (FAILS_VAR(name, _RANDOM_FAILS_RECOVER)); \
                 ERR_POST("VDB: Simulated " #name " failure: "<<CStackTrace()); \
                 NCBI_THROW(CSraException, eOtherError,                  \
@@ -1536,6 +1542,14 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
 {
     DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
+    if ( !name ) {
+        if ( missing == eMissing_Throw ) {
+            NCBI_THROW_FMT(CSraException, eInvalidArg,
+                           "NULL column name is not allowed"<<cursor<<*this);
+        }
+        m_Index = kInvalidIndex;
+        return;
+    }
     m_Name = name;
     //SIMULATE_SCHEMA_ERROR();
     if ( rc_t rc = VCursorAddColumn(cursor, &m_Index, name) ) {

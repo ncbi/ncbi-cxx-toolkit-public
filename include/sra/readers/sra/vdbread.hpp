@@ -602,6 +602,10 @@ public:
     NCBI_NAME2(m_, name)(m_Cursor, #name, #backup_name, CVDBColumn::eMissing_Allow)
 #define INIT_OPTIONAL_VDB_COLUMN_AS(name, type)                         \
     NCBI_NAME2(m_, name)(m_Cursor, "("#type")"#name, NULL, CVDBColumn::eMissing_Allow)
+#define INIT_CONDITIONAL_VDB_COLUMN(name, condition)                    \
+    NCBI_NAME2(m_, name)(m_Cursor, (condition)? #name: NULL, NULL, CVDBColumn::eMissing_Allow)
+#define INIT_CONDITIONAL_VDB_COLUMN_AS(name, type, condition)           \
+    NCBI_NAME2(m_, name)(m_Cursor, (condition)? "("#type")"#name: NULL, NULL, CVDBColumn::eMissing_Allow)
 
 
 class NCBI_SRAREAD_EXPORT CVDBValue
