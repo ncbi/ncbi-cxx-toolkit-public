@@ -147,6 +147,10 @@ public:
     CRef<CSeq_id> MakeShortReadId(TVDBRowId id1, INSDC_coord_one id2) const;
     void SetShortReadId(string& str, TVDBRowId id1, INSDC_coord_one id2) const;
 
+    bool IsCSRA() const {
+        return m_IsCSRA;
+    }
+
 protected:
     friend class CCSraRefSeqIterator;
     friend class CCSraAlignIterator;
@@ -218,6 +222,7 @@ private:
     CVDBObjectCache<SAlnTableCursor> m_Aln[2];
     CVDBObjectCache<SSeqTableCursor> m_Seq;
 
+    bool m_IsCSRA;
     TSeqPos m_RowSize; // cached size of refseq row in bases
     TRefInfoList m_RefList; // list of cached refseqs' information
     TRefInfoMapByName m_RefMapByName; // index for refseq info lookup
