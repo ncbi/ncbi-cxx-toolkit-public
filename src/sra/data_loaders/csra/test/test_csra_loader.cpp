@@ -2803,6 +2803,95 @@ BOOST_AUTO_TEST_CASE(CheckPrivate1)
 }
 
 
+BOOST_AUTO_TEST_CASE(CheckTrim1)
+{
+    NcbiCout << "Running trim test for non-cSRA VTable" << NcbiEndl;
+    CRef<CObjectManager> om = sx_GetOM();
+
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR227310.1.2"));
+        BOOST_REQUIRE(read);
+        BOOST_CHECK_EQUAL(read.GetBioseqLength(), 56u);
+    }
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR227310.1.4"));
+        BOOST_REQUIRE(read);
+        BOOST_CHECK_EQUAL(read.GetBioseqLength(), 73u);
+    }
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR227310.1.1"));
+        BOOST_CHECK(!read);
+    }
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR227310.1.3"));
+        BOOST_CHECK(!read);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckTrim2)
+{
+    NcbiCout << "Running trim test for non-cSRA VDB" << NcbiEndl;
+    CRef<CObjectManager> om = sx_GetOM();
+
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR749060.3.1"));
+        BOOST_REQUIRE(read);
+        BOOST_CHECK_EQUAL(read.GetBioseqLength(), 150u);
+    }
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR749060.3.2"));
+        BOOST_REQUIRE(read);
+        BOOST_CHECK_EQUAL(read.GetBioseqLength(), 151u);
+    }
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR749060.3.3"));
+        BOOST_CHECK(!read);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckTrim3)
+{
+    NcbiCout << "Running trim test for cSRA VDB" << NcbiEndl;
+    CRef<CObjectManager> om = sx_GetOM();
+
+    string loader_name =
+        CCSRADataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault)
+        .GetLoader()->GetName();
+    sx_ReportCSraLoaderName(loader_name);
+
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR413273.1.1"));
+        BOOST_REQUIRE(read);
+        BOOST_CHECK_EQUAL(read.GetBioseqLength(), 1441u);
+    }
+    if ( 1 ) {
+        CBioseq_Handle read = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("gnl|SRA|SRR413273.1.2"));
+        BOOST_CHECK(!read);
+    }
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(FetchSeq1);
