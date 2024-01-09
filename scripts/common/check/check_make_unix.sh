@@ -734,7 +734,7 @@ EOF_launch
                 exec_time=\`\$build_dir/sysdep.sh tl 7 \$x_log | tr '\n\r' '%%' | tr -d '\000-\037' | tr  -d '\176-\377'\`
                 echo \$exec_time | egrep 'real [0-9]|Maximum execution .* is exceeded' > /dev/null 2>&1 
                 if test \$? -eq 0;  then
-                    exec_time=\`echo \$exec_time |   \\
+                    exec_time=\`echo \$exec_time | tr -d '\n\r' | \\
                                 sed -e 's/%%/%/g'    \\
                                     -e 's/%$//'      \\
                                     -e 's/%/, /g'    \\
