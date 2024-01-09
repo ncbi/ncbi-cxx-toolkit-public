@@ -47,6 +47,7 @@
 #include <sra/readers/sra/kdbread.hpp>
 #include <klib/rc.h>
 #include <insdc/sra.h>
+#include <vdb/vdb-priv.h>
 
 #include <sstream>
 #include <algorithm>
@@ -189,7 +190,7 @@ struct CCSraDb_Impl::SAlnTableCursor : public CObject {
 
 // SSeqTableCursor is helper accessor structure for sequence table
 struct CCSraDb_Impl::SSeqTableCursor : public CObject {
-    SSeqTableCursor(const CVDBTable& table);
+    SSeqTableCursor(const CVDBTable& table, bool is_CSRA);
 
     CVDBCursor m_Cursor;
         
@@ -255,7 +256,7 @@ CCSraDb_Impl::SAlnTableCursor::SAlnTableCursor(const CVDBTable& table,
 }
 
 
-CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
+CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table, bool is_CSRA)
     : m_Cursor(table),
       INIT_VDB_COLUMN(SPOT_GROUP),
       INIT_VDB_COLUMN(READ_TYPE),
@@ -264,8 +265,9 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(READ),
       INIT_VDB_COLUMN(QUALITY),
       INIT_OPTIONAL_VDB_COLUMN(PRIMARY_ALIGNMENT_ID),
-      INIT_VDB_COLUMN(TRIM_LEN),
-      INIT_VDB_COLUMN(TRIM_START),
+      // new cSRA schema's TRIM_START/TRIM_LEN columns are redundant
+      INIT_CONDITIONAL_VDB_COLUMN(TRIM_LEN, !is_CSRA),
+      INIT_CONDITIONAL_VDB_COLUMN(TRIM_START, !is_CSRA),
       INIT_OPTIONAL_VDB_COLUMN(NAME),
       INIT_OPTIONAL_VDB_COLUMN_BACKUP(READ_FILTER, RD_FILTER)
 {
@@ -285,6 +287,7 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
     // to avoid conflict with ref seq ids like gnl|SRA|SRR452437/scaffold_1
     // we replace all slashes ('/') with backslashes ('\\')
     replace(m_SraIdPart.begin(), m_SraIdPart.end(), '/', '\\');
+    m_IsCSRA = false;
     try {
         m_Db = CVDB(mgr, csra_path);
     }
@@ -300,6 +303,10 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
     }
     CRef<SRefTableCursor> ref;
     if ( m_Db ) {
+        m_IsCSRA = VDatabaseIsCSRA(m_Db);
+        if ( !IsCSRA() ) {
+            LOG_POST_X(2, Info<<"CCSraDb: full non-cSRA VDB "<<csra_path);
+        }
         try {
             ref = Ref();
         }
@@ -561,7 +568,7 @@ CRef<CCSraDb_Impl::SSeqTableCursor> CCSraDb_Impl::Seq(void)
     CRef<SSeqTableCursor> curs = m_Seq.Get();
     if ( !curs ) {
         CVDBMgr::CRequestContextUpdater ctx_updater;
-        curs = new SSeqTableCursor(SeqTable());
+        curs = new SSeqTableCursor(SeqTable(), IsCSRA());
     }
     return curs;
 }
@@ -2159,18 +2166,24 @@ INSDC_read_filter CCSraShortReadIterator::GetReadFilter(void) const
 
 TSeqPos CCSraShortReadIterator::GetClipQualityLeft(void) const
 {
-    return *m_Seq->TRIM_START(m_SpotId);
+    // new cSRA schema's TRIM_START/TRIM_LEN columns are redundant
+    return !m_Db->IsCSRA()? *m_Seq->TRIM_START(m_SpotId): m_Seq->READ_START(m_SpotId)[m_ReadId-1];
 }
 
 
 TSeqPos CCSraShortReadIterator::GetClipQualityLength(void) const
 {
-    return *m_Seq->TRIM_LEN(m_SpotId);
+    // new cSRA schema's TRIM_START/TRIM_LEN columns are redundant
+    return !m_Db->IsCSRA()? *m_Seq->TRIM_LEN(m_SpotId): m_Seq->READ_LEN(m_SpotId)[m_ReadId-1];
 }
 
 
 bool CCSraShortReadIterator::HasClippingInfo(void) const
 {
+    if ( m_Db->IsCSRA() ) {
+        // new cSRA schema's TRIM_START/TRIM_LEN columns are redundant
+        return false;
+    }
     TSeqPos pos = m_Seq->READ_START(m_SpotId)[m_ReadId-1];
     TSeqPos trim_pos = GetClipQualityLeft();
     if ( trim_pos > pos ) {
@@ -2196,8 +2209,9 @@ CCSraShortReadIterator::GetReadRange(EClipType clip_type) const
     }
     TSeqPos pos = m_Seq->READ_START(m_SpotId)[m_ReadId-1];
     TSeqPos end = pos + len;
-    bool clip_by_quality = clip_type == eDefaultClip?
-        m_ClipByQuality: clip_type == eClipByQuality;
+    // new cSRA schema's TRIM_START/TRIM_LEN columns are redundant
+    bool clip_by_quality = !m_Db->IsCSRA() &&
+        (clip_type == eDefaultClip? m_ClipByQuality: clip_type == eClipByQuality);
     if ( clip_by_quality ) {
         TSeqPos trim_pos = GetClipQualityLeft();
         pos = max(pos, trim_pos);
