@@ -199,6 +199,41 @@ void CCSRATestApp::Init(void)
 //  Run test
 /////////////////////////////////////////////////////////////////////////////
 
+template<class Call>
+static typename std::invoke_result<Call>::type
+CallWithRetry(Call&& call,
+              const char* name,
+              unsigned retry_count = 0)
+{
+    static const unsigned kDefaultRetryCount = 4;
+    if ( retry_count == 0 ) {
+        retry_count = kDefaultRetryCount;
+    }
+    for ( unsigned t = 1; t < retry_count; ++ t ) {
+        try {
+            return call();
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"WGSTest: "<<name<<"() try "<<t<<" exception: "<<exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"WGSTest: "<<name<<"() try "<<t<<" exception: "<<exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"WGSTest: "<<name<<"() try "<<t<<" exception");
+        }
+        if ( t >= 2 ) {
+            //double wait_sec = m_WaitTime.GetTime(t-2);
+            double wait_sec = 1;
+            LOG_POST(Warning<<"WGSTest: waiting "<<wait_sec<<"s before retry");
+            SleepMilliSec(Uint4(wait_sec*1000));
+        }
+    }
+    return call();
+}
+#define RETRY(expr) CallWithRetry([&]()->auto{return (expr);}, #expr)
+
+
 inline bool Matches(char ac, char rc)
 {
     static int bits[26] = {
@@ -750,7 +785,7 @@ int CCSRATestApp::Run(void)
         CCSraDb csra_db;
         if ( args["no_acc"] ) {
             try {
-                csra_db = CCSraDb(mgr, acc_or_path);
+                csra_db = RETRY(CCSraDb(mgr, acc_or_path));
                 ERR_POST(Fatal<<
                          "CCSraDb succeeded for an absent SRA acc: "<<
                          acc_or_path);
@@ -767,7 +802,7 @@ int CCSRATestApp::Run(void)
             }
         }
         else {
-            csra_db = CCSraDb(mgr, acc_or_path);
+            csra_db = RETRY(CCSraDb(mgr, acc_or_path));
         }
         out << "Opened CSRA in "<<sw.Elapsed()
             << NcbiEndl;
@@ -807,7 +842,10 @@ int CCSRATestApp::Run(void)
                 for ( TSeqPos i = 0; i*step < ref_len; ++i ) {
                     vv_exp.push_back(i*step);
                 }
-                for ( CCSraAlignIterator it(csra_db, query_idh, 0, ref_len, CCSraAlignIterator::eSearchByStart); it; ++it ) {
+                for ( CCSraAlignIterator it =
+                          RETRY(CCSraAlignIterator(csra_db, query_idh, 0, ref_len,
+                                                   CCSraAlignIterator::eSearchByStart));
+                      it; ++it ) {
                     TSeqPos aln_beg = it.GetRefSeqPos();
                     TSeqPos aln_len = it.GetRefSeqLen();
                     _ASSERT(aln_beg+aln_len <= ref_len);
@@ -923,10 +961,11 @@ int CCSRATestApp::Run(void)
                 }
                 size_t count = 0, skipped = 0;
                 size_t limit_count = args["limit_count"].AsInteger();
-                for ( CCSraAlignIterator it(csra_db, query_idh,
-                                            query_range.GetFrom(),
-                                            query_range.GetLength(),
-                                            mode, align_type);
+                for ( CCSraAlignIterator it =
+                          RETRY(CCSraAlignIterator(csra_db, query_idh,
+                                                   query_range.GetFrom(),
+                                                   query_range.GetLength(),
+                                                   mode, align_type));
                       it; ++it ) {
                     if ( it.GetMapQuality() < min_quality ) {
                         ++skipped;
