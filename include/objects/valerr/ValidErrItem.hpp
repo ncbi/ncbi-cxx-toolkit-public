@@ -394,6 +394,7 @@ enum EErrType {
     eErr_GENERIC_DeltaSeqError,
     eErr_GENERIC_DuplicateIDs,
     eErr_GENERIC_MissingPubRequirement,
+    eErr_GENERIC_BadSubmissionAuthorName,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,
