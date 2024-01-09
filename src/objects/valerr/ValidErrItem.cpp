@@ -1098,6 +1098,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_GENERIC_MissingPubRequirement,
     { "MissingPubRequirement",
 "The publication is missing essential information, such as title or authors." } },
+    { eErr_GENERIC_BadSubmissionAuthorName,
+    { "BadSubmissionAuthorName",
+"A submission author name field is invalid." } },
 
 /* SEQ_PKG */
 
