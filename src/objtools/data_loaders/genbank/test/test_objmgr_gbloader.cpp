@@ -90,6 +90,7 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.AddOptionalKey("other_loaders", "OtherLoaders",
                         "Extra data loaders as plugins (comma separated)",
                         CArgDescriptions::eString);
+    args.AddFlag("verbose", "Print extra information");
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "test_objmgr_gbloader", false);
@@ -97,8 +98,9 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
 }
 
 
-bool CTestApplication::TestApp_Init(const CArgs& /*args*/)
+bool CTestApplication::TestApp_Init(const CArgs& args)
 {
+    m_Verbose = args["verbose"];
     return true;
 }
 
@@ -137,15 +139,12 @@ int CTestApplication::Run()
         .GetLoader());
 
     for ( TGi gi = GI_CONST(18565540);  gi < GI_CONST(18565650); gi++ ) {
-        CSeq_id id;
-        id.SetGi(gi);
-        CConstRef<CSeqref> sr = pLoader->GetSatSatkey(id);
+        auto sr = pLoader->GetBlobId(CSeq_id_Handle::GetGiHandle(gi));
         if ( !sr ) {
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
         }
         else if ( m_Verbose ) {
-            LOG_POST("Gi (" << gi << "):: sat="<<sr->GetSat()<<
-                     " satkey="<<sr->GetSatKey());
+            LOG_POST("Gi (" << gi << "):: "<<sr->ToString());
         }
     }
 
