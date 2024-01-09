@@ -10,7 +10,6 @@
 
 
 if(NCBI_PTBCFG_PACKAGING)
-    set(CONAN_CMAKE_CXX_STANDARD 17)
     foreach(_sub IN LISTS CMAKE_BINARY_DIR CMAKE_MODULE_PATH)
         if (EXISTS "${_sub}/conanbuildinfo.cmake")
             include(${_sub}/conanbuildinfo.cmake)
