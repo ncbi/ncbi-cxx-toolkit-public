@@ -1276,12 +1276,17 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     string gb_main = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
     BOOST_REQUIRE_EQUAL(gb_main, "GBLOADER");
+    string gb_main2 = CGBDataLoader::RegisterInObjectManager(*objmgr, "pubseqos").GetLoader()->GetName();
+    BOOST_REQUIRE_EQUAL(gb_main2, "GBLOADER");
+    string gb_main3 = CGBDataLoader::RegisterInObjectManager(*objmgr, "psg").GetLoader()->GetName();
+    BOOST_REQUIRE_EQUAL(gb_main3, "GBLOADER");
     string gb_hup = CGBDataLoader::RegisterInObjectManager(*objmgr, CGBDataLoader::eIncludeHUP, s_HUPToken).GetLoader()->GetName();
 #define EXPECTED_LOADER_NAME "GBLOADER-HUP"
     BOOST_CHECK_EQUAL(gb_hup.substr(0, strlen(EXPECTED_LOADER_NAME)), EXPECTED_LOADER_NAME);
 
     CSeq_id_Handle id_main = CSeq_id_Handle::GetHandle("NT_077402");
-    CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
+    //CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("AY263392");
+    CSeq_id_Handle id_hup = CSeq_id_Handle::GetHandle("OR520476");
     {{
         CScope scope(*objmgr);
         scope.AddDataLoader(gb_hup);
@@ -2470,6 +2475,35 @@ BOOST_AUTO_TEST_CASE(TestStateWithdrawn)
     BOOST_CHECK(bh.GetState() & bh.fState_withdrawn);
     BOOST_CHECK(!(bh.GetState() & bh.fState_dead));
     BOOST_CHECK(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestStateDeadConflict)
+{
+    LOG_POST("Checking live state after loading dead blob");
+    CRef<CScope> scope1 = s_InitScope();
+    CRef<CScope> scope2 = s_InitScope(false);
+    auto gbloader = dynamic_cast<CGBDataLoader*>(CObjectManager::GetInstance()->FindDataLoader("GBLOADER"));
+    BOOST_REQUIRE(gbloader);
+    auto blob_id = gbloader->GetBlobIdFromSatSatKey(17, 111408637);
+    BOOST_REQUIRE(blob_id);
+    auto eh1 = scope1->GetSeq_entryHandle(gbloader, blob_id);
+    BOOST_REQUIRE(eh1);
+    BOOST_CHECK(eh1.GetTSE_Handle().Blob_IsDead());
+    CBioseq_Handle bh2 = scope2->GetBioseqHandle(CSeq_id_Handle::GetHandle("A00002"));
+    BOOST_REQUIRE(bh2);
+    BOOST_CHECK(!(bh2.GetState() & bh2.fState_dead));
+    BOOST_CHECK(!bh2.GetTSE_Handle().Blob_IsDead());
+    BOOST_CHECK_EQUAL(bh2.GetState(), bh2.fState_none);
+    auto bh1 = scope1->GetBioseqHandleFromTSE(CSeq_id_Handle::GetHandle("A00002"), eh1.GetTSE_Handle());
+    BOOST_REQUIRE(bh1);
+    BOOST_CHECK(bh1.GetTSE_Handle().Blob_IsDead());
+    auto id0 = blob_id.ToString();
+    auto id1 = eh1.GetTSE_Handle().GetBlobId().ToString();
+    auto id2 = bh2.GetTSE_Handle().GetBlobId().ToString();
+    BOOST_CHECK_EQUAL(id0, id1);
+    BOOST_CHECK_NE(id0, id2);
+    BOOST_CHECK_NE(id1, id2);
 }
 
 
