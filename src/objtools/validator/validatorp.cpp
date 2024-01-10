@@ -1597,10 +1597,69 @@ void CValidError_imp::ValidateSubmitBlock(const CSubmit_block& block, const CSeq
             "Record release date has already passed", ss);
     }
 
-    if (block.IsSetContact() && block.GetContact().IsSetContact()
-         && block.GetContact().GetContact().IsSetAffil()
-         && block.GetContact().GetContact().GetAffil().IsStd()) {
-        ValidateAffil(block.GetContact().GetContact().GetAffil().GetStd(), ss, nullptr);
+    if (block.IsSetContact() && block.GetContact().IsSetContact()) {
+        const CAuthor& author = block.GetContact().GetContact();
+        if (author.IsSetAffil() && author.GetAffil().IsStd()) {
+            ValidateAffil(author.GetAffil().GetStd(), ss, nullptr);
+        }
+        const CPerson_id& pid = author.GetName();
+        if (pid.IsName()) {
+            const CName_std& nstd = pid.GetName();
+            string first = "";
+            string last = "";
+            if (nstd.IsSetLast()) {
+                last = nstd.GetLast();
+                if (IsBadSubmissionLastName(last)) {
+                    PostErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                            "Bad last name '" + last + "'", ss);
+                }
+            }
+            if (nstd.IsSetFirst()) {
+                first = nstd.GetFirst();
+                if (IsBadSubmissionFirstName(first)) {
+                    PostErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                            "Bad first name '" + first + "'", ss);
+                }
+            }
+            if (first != "" && last != "" && NStr::EqualNocase(last, "last") && NStr::EqualNocase(first, "first")) {
+                PostErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                        "Bad first and last name", ss);
+            }
+        }
+    }
+    if (block.IsSetCit()) {
+        const CCit_sub& sub = block.GetCit();
+        if (sub.IsSetAuthors()) {
+            const CAuth_list& auth_list = sub.GetAuthors();
+            const CAuth_list::TNames& names = auth_list.GetNames();
+            if (names.IsStd()) {
+                ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
+                    if ( (*name)->GetName().IsName() ) {
+                        const CName_std& nstd = (*name)->GetName().GetName();
+                        string first = "";
+                        string last = "";
+                        if (nstd.IsSetLast()) {
+                            last = nstd.GetLast();
+                            if (IsBadSubmissionLastName(last)) {
+                                PostErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                                        "Bad last name '" + last + "'", ss);
+                            }
+                        }
+                        if (nstd.IsSetFirst()) {
+                            first = nstd.GetFirst();
+                            if (IsBadSubmissionFirstName(first)) {
+                                PostErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                                        "Bad first name '" + first + "'", ss);
+                            }
+                        }
+                        if (first != "" && last != "" && NStr::EqualNocase(last, "last") && NStr::EqualNocase(first, "first")) {
+                            PostErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                                    "Bad first and last name", ss);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

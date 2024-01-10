@@ -931,9 +931,9 @@ void SetOrgMod(CRef<CSeq_entry> entry, COrgMod::TSubtype subtype, string val)
 CRef<CAuthor> BuildGoodAuthor()
 {
     CRef<CAuthor> author(new CAuthor());
-    author->SetName().SetName().SetLast("Last");
-    author->SetName().SetName().SetFirst("First");
-    author->SetName().SetName().SetMiddle("M");
+    author->SetName().SetName().SetLast("Darwin");
+    author->SetName().SetName().SetFirst("Charles");
+    author->SetName().SetName().SetMiddle("R");
     return author;
 }
 
