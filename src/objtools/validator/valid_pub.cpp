@@ -847,6 +847,7 @@ void CValidError_imp::ValidateAuthorsInPubequiv(
     FOR_EACH_PUB_ON_PUBEQUIV (pub_iter, pe) {
         const CPub& pub = **pub_iter;
         const CAuth_list* authors = nullptr;
+        bool is_sub = false;
         switch ( pub.Which() ) {
         case CPub::e_Gen:
             if ( pub.GetGen().IsSetAuthors() ) {
@@ -855,6 +856,7 @@ void CValidError_imp::ValidateAuthorsInPubequiv(
             break;
         case CPub::e_Sub:
             authors = &(pub.GetSub().GetAuthors());
+            is_sub = true;
             break;
         case CPub::e_Article:
             if ( pub.GetArticle().IsSetAuthors() ) {
@@ -886,6 +888,34 @@ void CValidError_imp::ValidateAuthorsInPubequiv(
 
         const CAuth_list::C_Names& names = authors->GetNames();
         ValidateAuthorList (names, obj, ctx);
+
+        if ( is_sub && names.IsStd() ) {
+            ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
+                if ( (*name)->GetName().IsName() ) {
+                    const CName_std& nstd = (*name)->GetName().GetName();
+                    string first = "";
+                    string last = "";
+                    if (nstd.IsSetLast()) {
+                        last = nstd.GetLast();
+                        if (IsBadSubmissionLastName(last)) {
+                            PostObjErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                                    "Bad last name '" + last + "'", obj, ctx);
+                        }
+                    }
+                    if (nstd.IsSetFirst()) {
+                        first = nstd.GetFirst();
+                        if (IsBadSubmissionFirstName(first)) {
+                            PostObjErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                                    "Bad first name '" + first + "'", obj, ctx);
+                        }
+                    }
+                    if (first != "" && last != "" && NStr::EqualNocase(last, "last") && NStr::EqualNocase(first, "first")) {
+                        PostObjErr(eDiag_Error, eErr_GENERIC_BadSubmissionAuthorName,
+                                "Bad first and last name", obj, ctx);
+                    }
+                }
+            }
+        }
     }
 }
 

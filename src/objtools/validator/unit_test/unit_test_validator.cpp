@@ -6206,7 +6206,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_CollidingPublications)
     // look for same pub twice
     title2->SetName("First title");
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CollidingPublications",
-        "Multiple equivalent publications annotated on this sequence [Last|Ft; Last]"));
+        "Multiple equivalent publications annotated on this sequence [Darwin|Ft; Darwin]"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
