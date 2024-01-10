@@ -843,7 +843,17 @@ CMultiReaderApp::xProcessSingleFile(
         //m_pErrors->PutError(reader_ex); // duplicate!
         m_pErrors->PutError(*line_error_p);
         retCode = false;
-    } catch(const std::exception & std_ex) {
+    }
+    catch(const CException& e) {
+        AutoPtr<ILineError> line_error_p =
+            sCreateSimpleMessage(
+                eDiag_Fatal,
+                FORMAT(
+                    "Reading aborted due to fatal error: " << e.GetMsg()));
+        m_pErrors->PutError(*line_error_p);
+        retCode = false;
+    } 
+    catch(const std::exception & std_ex) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
                 eDiag_Fatal,
