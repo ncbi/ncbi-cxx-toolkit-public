@@ -285,6 +285,9 @@ bool ConsistentWithC(Char ch);
 bool ConsistentWithG(Char ch);
 bool ConsistentWithT(Char ch);
 
+bool IsBadSubmissionFirstName(const string& first);
+bool IsBadSubmissionLastName(const string& last);
+
 bool NCBI_VALIDATOR_EXPORT g_IsMasterAccession(const CSeq_id& id);
 
 END_SCOPE(validator)
