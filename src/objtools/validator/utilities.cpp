@@ -3099,6 +3099,32 @@ bool BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope)
     return false;
 }
 
+bool IsBadSubmissionFirstName(const string& first)
+{
+    if (NStr::EqualNocase(first, "Firstname") ||
+        NStr::EqualNocase(first, "First") ||
+        NStr::EqualNocase(first, "name") ||
+        NStr::EqualNocase(first, "Please select") ||
+        NStr::EqualNocase(first, "Please") ||
+        NStr::EqualNocase(first, "Select")) {
+            return true;
+    }
+    return false;
+}
+
+
+bool IsBadSubmissionLastName(const string& last)
+{
+    if (NStr::EqualNocase(last, "Lastname") ||
+        NStr::EqualNocase(last, "name") ||
+        NStr::EqualNocase(last, "Please select") ||
+        NStr::EqualNocase(last, "Please") ||
+        NStr::EqualNocase(last, "Select")) {
+            return true;
+    }
+    return false;
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
