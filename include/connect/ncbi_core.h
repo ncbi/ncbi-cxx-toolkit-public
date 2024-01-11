@@ -313,7 +313,7 @@ extern NCBI_XCONNECT_EXPORT const char* LOG_LevelStr(ELOG_Level level);
 
 /** Message and miscellaneous data to pass to log post callback FLOG_Handler.
  * @param dynamic
- *  if non-zero then LOG_WriteInternal() will call free(message) before return
+ *  if non-zero then LOG_WriteInternal() calls free(message) before returning
  * @param message
  *  A message to post, can be NULL
  * @param level
