@@ -3,7 +3,11 @@
 NCBI_begin_app(test_ncbi_pipe)
   NCBI_sources(test_ncbi_pipe)
   NCBI_uses_toolkit_libraries(xconnect)
-  NCBI_add_test()
+  NCBI_begin_test(test_ncbi_pipe)
+    NCBI_set_test_command(test_ncbi_pipe)
+    # Make sure the test directory is non-empty
+    NCBI_set_test_assets(test_ncbi_pipe.cpp)
+  NCBI_end_test()
   NCBI_project_watchers(ivanov lavr)
 NCBI_end_app()
 
