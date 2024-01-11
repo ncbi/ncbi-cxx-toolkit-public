@@ -9,4 +9,7 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD =
 
+# Make sure the test directory is non-empty
+CHECK_COPY = test_ncbi_pipe.cpp
+
 WATCHERS = ivanov lavr
