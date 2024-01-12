@@ -1204,6 +1204,9 @@ case "$host_os:/$CXX" in
          *version\ ?.* | *version\ 1[[0-3]].* )
             gccver=7.3.0
             ;;
+         Intel*\ 201* | Intel*\ 2020.* | Intel*\ 2021.[[0-6]]* )
+            gccver=12.2.0
+            ;;
          * )
             gccver=13.2.0
             ;;
