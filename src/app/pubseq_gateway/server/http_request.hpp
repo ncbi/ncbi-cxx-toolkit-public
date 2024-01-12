@@ -155,6 +155,7 @@ public:
 
     string GetHeaderValue(const string &  name);
     optional<string> GetWebCubbyUser(void);
+    optional<string> GetAdminAuthToken(void);
     TNCBI_IPv6Addr GetClientIP(void);
     string GetPeerIP(void);
 
@@ -169,6 +170,9 @@ public:
         return CTempString(m_Req->entity.base,
                            m_Req->entity.len);
     }
+
+private:
+    optional<string> x_GetCookieValue(const string &  cookie_name);
 
 private:
     h2o_req_t *                 m_Req;
