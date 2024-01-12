@@ -611,25 +611,27 @@ endif()
 #NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
 NCBI_define_Xcomponent(NAME PROTOBUF PACKAGE Protobuf LIB protobuf)
 NCBIcomponent_report(PROTOBUF)
-NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
-NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
-    grpc++ grpc address_sorting re2 upb cares
-    absl_raw_hash_set absl_hashtablez_sampler absl_exponential_biased absl_hash
-    absl_city absl_statusor absl_bad_variant_access gpr
-    absl_status absl_cord absl_str_format_internal absl_synchronization absl_graphcycles_internal
-    absl_symbolize absl_demangle_internal absl_stacktrace absl_debugging_internal absl_malloc_internal
-    absl_time absl_time_zone absl_civil_time absl_strings absl_strings_internal absl_throw_delegate
-    absl_int128 absl_base absl_spinlock_wait absl_bad_optional_access absl_raw_logging_internal absl_log_severity
-    )
-NCBIcomponent_report(GRPC)
-if(NCBI_COMPONENT_GRPC_FOUND)
-    set(NCBI_COMPONENT_GRPC_LIBS  ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
-    if(NOT NCBI_PTBCFG_USECONAN AND NOT NCBI_PTBCFG_HASCONAN AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED AND
-        "${NCBI_COMPONENT_GRPC_VERSION}" STRLESS "1.17.0")
-        NCBI_define_Xcomponent(NAME CGRPC MODULE grpc LIB grpc)
-        set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_CGRPC_LIBS})
+if(NOT NCBI_COMPONENT_GRPC_FOUND)
+    NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
+    NCBI_define_Xcomponent(NAME GRPC MODULE grpc++ LIB
+        grpc++ grpc address_sorting re2 upb cares
+        absl_raw_hash_set absl_hashtablez_sampler absl_exponential_biased absl_hash
+        absl_city absl_statusor absl_bad_variant_access gpr
+        absl_status absl_cord absl_str_format_internal absl_synchronization absl_graphcycles_internal
+        absl_symbolize absl_demangle_internal absl_stacktrace absl_debugging_internal absl_malloc_internal
+        absl_time absl_time_zone absl_civil_time absl_strings absl_strings_internal absl_throw_delegate
+        absl_int128 absl_base absl_spinlock_wait absl_bad_optional_access absl_raw_logging_internal absl_log_severity
+        )
+    if(NCBI_COMPONENT_GRPC_FOUND)
+        set(NCBI_COMPONENT_GRPC_LIBS  ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_Boring_LIBS})
+        if(NOT NCBI_PTBCFG_USECONAN AND NOT NCBI_PTBCFG_HASCONAN AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED AND
+            "${NCBI_COMPONENT_GRPC_VERSION}" STRLESS "1.17.0")
+            NCBI_define_Xcomponent(NAME CGRPC MODULE grpc LIB grpc)
+            set(NCBI_COMPONENT_GRPC_LIBS ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_CGRPC_LIBS})
+        endif()
     endif()
 endif()
+NCBIcomponent_report(GRPC)
 if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
 endif()
