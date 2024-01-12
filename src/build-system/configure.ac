@@ -1205,7 +1205,7 @@ case "$host_os:/$CXX" in
             gccver=7.3.0
             ;;
          * )
-            gccver=12.2.0
+            gccver=13.2.0
             ;;
       esac
       gccdir=/opt/ncbi/gcc/$gccver
