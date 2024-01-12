@@ -451,6 +451,11 @@ private:
                            shared_ptr<CPSGS_Request>  request,
                            shared_ptr<CPSGS_Reply>  reply);
     void x_InitSSL(void);
+    bool x_CheckAuthorization(const string &  request_name,
+                              CRef<CRequestContext>   context,
+                              CHttpRequest &  http_req,
+                              shared_ptr<CPSGS_Reply>  reply,
+                              const psg_time_point_t &  now);
 
 private:
     SPubseqGatewaySettings              m_Settings;

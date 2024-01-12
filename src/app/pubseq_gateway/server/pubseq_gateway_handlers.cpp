@@ -54,7 +54,6 @@ USING_NCBI_SCOPE;
 static string  kTSELastModifiedParam = "tse_last_modified";
 static string  kSeqIdsParam = "seq_ids";
 static string  kClientIdParam = "client_id";
-static string  kAuthTokenParam = "auth_token";
 static string  kTimeoutParam = "timeout";
 static string  kDataSizeParam = "return_data_size";
 static string  kLogParam = "log";
@@ -1214,6 +1213,11 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
+        if (!x_CheckAuthorization("config", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         CNcbiOstrstream             conf;
         CNcbiOstrstreamToString     converter(conf);
 
@@ -1221,7 +1225,36 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
 
         CJsonNode   conf_info(CJsonNode::NewObjectNode());
         conf_info.SetString(kConfigurationFilePath, GetConfigPath());
-        conf_info.SetString(kConfiguration, string(converter));
+
+        // Need to hide the [ADMIN]/auth_token
+        string          conf_file_content = string(converter);
+        vector<string>  lines;
+        NStr::Split(string(converter), "\n", lines);
+        if (!lines.empty()) {
+            for (size_t  k = 0; k < lines.size(); ++k) {
+                auto    pos = lines[k].find_first_not_of(" \n\r\t");
+                string  l_stripped;
+                if (pos == string::npos) {
+                    l_stripped = lines[k];
+                } else {
+                    l_stripped = lines[k].substr(pos);
+                }
+
+                if (strncasecmp(l_stripped.c_str(), "auth_token", 10) == 0) {
+                    lines[k] = "auth_token=*****";
+                }
+                if (k == 0) {
+                    conf_file_content = lines[k];
+                } else {
+                    conf_file_content += lines[k];
+                }
+                if (k != lines.size() - 1) {
+                    conf_file_content += "\n";
+                }
+            }
+        }
+
+        conf_info.SetString(kConfiguration, conf_file_content);
         string      content = conf_info.Repr(CJsonNode::fStandardJson);
 
         reply->SetContentType(ePSGS_JsonMime);
@@ -1287,9 +1320,14 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
-    auto                    app = CPubseqGatewayApp::GetInstance();
     try {
+        if (!x_CheckAuthorization("info", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         CJsonNode   info(CJsonNode::NewObjectNode());
+        auto        app = CPubseqGatewayApp::GetInstance();
 
         info.SetInteger(kPID, CDiagContext::GetPID());
         info.SetString(kExecutablePath, GetProgramExecutablePath());
@@ -1468,6 +1506,11 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
+        if (!x_CheckAuthorization("status", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         CJsonNode                       status(CJsonNode::NewObjectNode());
 
         if (m_CassConnection) {
@@ -1555,40 +1598,17 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
+        if (!x_CheckAuthorization("shutdown", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         string              msg;
         string              username;
         SRequestParameter   username_param = x_GetParam(http_req, kUsernameParam);
         if (username_param.m_Found) {
             username = string(username_param.m_Value.data(),
                               username_param.m_Value.size());
-        }
-
-        if (!m_Settings.m_AuthToken.empty()) {
-            SRequestParameter   auth_token_param = x_GetParam(http_req, kAuthTokenParam);
-
-            bool    auth_good = false;
-            if (auth_token_param.m_Found) {
-                auth_good = m_Settings.m_AuthToken == string(auth_token_param.m_Value.data(),
-                                                             auth_token_param.m_Value.size());
-            }
-
-            if (!auth_good) {
-                msg = "Unauthorized shutdown request: invalid authorization token. ";
-                if (username.empty())
-                    msg += "Unknown user";
-                else
-                    msg += "User: " + username;
-                PSG_MESSAGE(msg);
-
-                x_SendMessageAndCompletionChunks(
-                        reply, now, "Invalid authorization token",
-                        CRequestStatus::e401_Unauthorized,
-                        ePSGS_Unauthorised, eDiag_Error);
-                x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
-                                   CRequestStatus::e401_Unauthorized,
-                                   reply->GetBytesSent());
-                return 0;
-            }
         }
 
         int                 timeout = 10; // Default: 10 sec
@@ -1704,6 +1724,11 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  http_req,
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
 
     try {
+        if (!x_CheckAuthorization("get_alerts", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         string      content = m_Alerts.Serialize().Repr(CJsonNode::fStandardJson);
 
         reply->SetContentType(ePSGS_JsonMime);
@@ -1748,6 +1773,11 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
     string                  msg;
 
     try {
+        if (!x_CheckAuthorization("ack_alert", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         SRequestParameter   alert_param = x_GetParam(http_req, kAlertParam);
         if (!alert_param.m_Found) {
             x_InsufficientArguments(reply, now, "Missing the '" + kAlertParam +
@@ -1835,6 +1865,11 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
     }
 
     try {
+        if (!x_CheckAuthorization("statistics", context, http_req, reply, now)) {
+            // Did not pass authorization
+            return 0;
+        }
+
         // /ADMIN/statistics[?reset=yes(dflt=no)][&most_recent_time=<time>][&most_ancient_time=<time>][histogram_names=name1,name2,...]
         // /ADMIN/statistics[?reset=yes(dflt=no)][&most_recent_time=<time>][&most_ancient_time=<time>]
 
@@ -2150,5 +2185,70 @@ bool CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext>   context,
     auto    http_conn = reply->GetHttpReply()->GetHttpConnection();
     http_conn->Postpone(request, reply, move(processor_names));
     return true;
+}
+
+
+
+bool CPubseqGatewayApp::x_CheckAuthorization(const string &  request_name,
+                                             CRef<CRequestContext>   context,
+                                             CHttpRequest &  http_req,
+                                             shared_ptr<CPSGS_Reply>  reply,
+                                             const psg_time_point_t &  now)
+{
+    if (m_Settings.m_AuthToken.empty()) {
+        // Authorization has not been configured. So all good, nothing to do.
+        return true;
+    }
+
+    if (!m_Settings.IsAuthProtectedCommand(request_name)) {
+        // This command is not protected by the auth token
+        return true;
+    }
+
+
+    optional<string>    auth_token = http_req.GetAdminAuthToken();
+    bool                auth_good = false;
+    if (auth_token.has_value()) {
+        auth_good = m_Settings.m_AuthToken == auth_token.value();
+    }
+
+    if (auth_good) {
+        // Token found and it matches what is in the configuration
+        return true;
+    }
+
+    // Here: authorization token is not found or does not match
+    string              username;
+    SRequestParameter   username_param = x_GetParam(http_req, kUsernameParam);
+    if (username_param.m_Found) {
+        username = string(username_param.m_Value.data(),
+                          username_param.m_Value.size());
+    }
+
+    string  msg = "Unauthorized " + request_name + " request: ";
+    if (auth_token.has_value()) {
+        msg += "invalid authorization token. ";
+    } else {
+        msg += "authorization token not found. ";
+    }
+
+    if (username.empty()) {
+        msg += "Unknown user";
+    } else {
+        msg += "User: " + username;
+    }
+
+    PSG_MESSAGE(msg);
+
+    // The user always receives a fixed message regardless of the reason.
+    // This is an additional security measure.
+    x_SendMessageAndCompletionChunks(
+                        reply, now, "Request is not authorized",
+                        CRequestStatus::e401_Unauthorized,
+                        ePSGS_Unauthorised, eDiag_Error);
+    x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                       CRequestStatus::e401_Unauthorized,
+                       reply->GetBytesSent());
+    return false;
 }
 

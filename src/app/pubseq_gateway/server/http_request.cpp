@@ -342,9 +342,24 @@ string CHttpRequest::GetHeaderValue(const string &  name)
 
 
 static string       kWebCubbyUser = "WebCubbyUser";
+optional<string> CHttpRequest::GetWebCubbyUser(void)
+{
+    return x_GetCookieValue(kWebCubbyUser);
+}
+
+
+
+static string       kAdminAuthToken = "AdminAuthToken";
+optional<string> CHttpRequest::GetAdminAuthToken(void)
+{
+    return x_GetCookieValue(kAdminAuthToken);
+}
+
+
+
 static string       kCookie = "cookie";
 static size_t       kCookieSize = kCookie.size();
-optional<string> CHttpRequest::GetWebCubbyUser(void)
+optional<string> CHttpRequest::x_GetCookieValue(const string &  cookie_name)
 {
     optional<string>    ret;
 
@@ -355,10 +370,10 @@ optional<string> CHttpRequest::GetWebCubbyUser(void)
                 try {
                     CCgiCookies     cookies(string(m_Req->headers.entries[index].value.base,
                                                    m_Req->headers.entries[index].value.len));
-                    const CCgiCookie *  wcu = cookies.Find(kWebCubbyUser,
-                                                           "", "");
-                    if (wcu != NULL) {
-                        ret = wcu->GetValue();
+                    const CCgiCookie *  found = cookies.Find(cookie_name,
+                                                             "", "");
+                    if (found != NULL) {
+                        ret = found->GetValue();
                     }
                 } catch (...) {
                     // Suppress exceptions
@@ -371,6 +386,7 @@ optional<string> CHttpRequest::GetWebCubbyUser(void)
 
     return ret;
 }
+
 
 
 // The method to extract the IP address needs an array of pointers to the

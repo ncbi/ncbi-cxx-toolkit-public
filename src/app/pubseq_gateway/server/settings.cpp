@@ -86,6 +86,8 @@ const size_t            kDefaultSplitInfoBlobCacheSize = 1000;
 const size_t            kDefaultIPGPageSize = 1024;
 const bool              kDefaultEnableHugeIPG = true;
 const string            kDefaultAuthToken = "";
+// All ADMIN/ urls except of 'info'
+const string            kDefaultAuthCommands = "config status shutdown get_alerts ack_alert statistics";
 const bool              kDefaultSSLEnable = false;
 const string            kDefaultSSLCertFile = "";
 const string            kDefaultSSLKeyFile = "";
@@ -459,6 +461,16 @@ void SPubseqGatewaySettings::x_ReadAdminSection(const CNcbiRegistry &   registry
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
                                          kDefaultAuthToken);
+    }
+
+    string  auth_commands = registry.GetString(kAdminSection, "auth_commands",
+                                               kDefaultAuthCommands);
+    NStr::Split(auth_commands, " ", m_AuthCommands);
+    if (!m_AuthCommands.empty()) {
+        for (size_t k = 0; k < m_AuthCommands.size(); ++k) {
+            transform(m_AuthCommands[k].begin(), m_AuthCommands[k].end(),
+                      m_AuthCommands[k].begin(), ::tolower);
+        }
     }
 }
 
@@ -844,5 +856,16 @@ size_t SPubseqGatewaySettings::GetProcessorMaxConcurrency(
 
     // No processor specific value => server wide (or default)
     return m_ProcessorMaxConcurrency;
+}
+
+
+bool SPubseqGatewaySettings::IsAuthProtectedCommand(const string &  cmd) const
+{
+    for (const auto &  item: m_AuthCommands) {
+        if (item == cmd) {
+            return true;
+        }
+    }
+    return false;
 }
 

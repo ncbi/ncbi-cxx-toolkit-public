@@ -49,6 +49,7 @@ struct SPubseqGatewaySettings
     void Validate(CPSGAlerts &  alerts);
     size_t GetProcessorMaxConcurrency(const CNcbiRegistry &   registry,
                                       const string &  processor_id);
+    bool IsAuthProtectedCommand(const string &  cmd) const;
 
     // [SERVER]
     unsigned short                      m_HttpPort;
@@ -102,6 +103,7 @@ struct SPubseqGatewaySettings
 
     // [ADMIN]
     string                              m_AuthToken;
+    vector<string>                      m_AuthCommands;
 
     // [SSL]
     bool                                m_SSLEnable;
