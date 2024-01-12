@@ -678,7 +678,7 @@ RunTest() {
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
            fi
-           stat_out="$x_tmp/test_stat_load.tmp.\$\$
+           stat_out="$x_tmp/test_stat_load.tmp.\$\$"
            retry="${x_check_scripts_dir}/retry_db_load.sh"
            case "$x_compiler" in
              MSVC )
