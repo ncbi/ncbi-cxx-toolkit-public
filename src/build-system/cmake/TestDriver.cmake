@@ -479,20 +479,25 @@ endif()
 if (IS_AUTOMATED AND IS_DB_LOAD)
     set(ENV{NCBI_LOG_HIT_ID} "${NCBI_LOG_HIT_ID}")
     set(_test_stat_load_log  "${NCBITEST_LOADER_LOGDIR}/test_stat_load.log")
-    file(APPEND ${_test_stat_load_log} "======================================================================\n")
-    file(APPEND ${_test_stat_load_log} "${NCBITEST_NAME}\n")
-    file(APPEND ${_test_stat_load_log} "======================================================================\n\n")
+    set(_stat_out "")
+    string(APPEND _stat_out "======================================================================\n")
+    string(APPEND _stat_out "${NCBITEST_NAME}\n")
+    string(APPEND _stat_out "======================================================================\n")
     execute_process(
-        COMMAND sh -c "test_stat_load ${_test_rep} ${_test_out} ${_boost_rep} ${NCBITEST_TREE_ROOT}/build_info >> ${_test_stat_load_log} 2>&1"
+        COMMAND test_stat_load ${_test_rep} ${_test_out} ${_boost_rep} ${NCBITEST_TREE_ROOT}/build_info
+        TIMEOUT 60
         RESULT_VARIABLE _retcode
-        OUTPUT_QUIET
-        ERROR_QUIET
+        OUTPUT_VARIABLE _out
+        ERROR_VARIABLE _out
     )
+    string(APPEND _stat_out "${_out}\n\n")
     if (NOT ${_retcode} EQUAL 0)
-        file(APPEND ${_test_stat_load_log} "\nERR: Error loading results for ${NCBITEST_NAME}\n\n")
+        string(APPEND _stat_out "OK: ${NCBITEST_NAME}")
     else()
-        file(APPEND ${_test_stat_load_log} "\nOK: ${NCBITEST_NAME}\n\n")
+        string(APPEND _stat_out "ERR: Error loading results for ${NCBITEST_NAME}")
     endif()
+    string(APPEND _stat_out "\n\n")
+    file(APPEND ${_test_stat_load_log} ${_stat_out})
 endif()
 
 
