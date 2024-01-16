@@ -72,6 +72,7 @@
 #include <objtools/readers/ucscregion_reader.hpp>
 #include <objtools/readers/rm_reader.hpp>
 #include <objtools/readers/read_util.hpp>
+#include <objtools/readers/mod_error.hpp>
 //#include <misc/hgvs/hgvs_reader.hpp>
 
 #include <objtools/logging/listener.hpp>
@@ -844,15 +845,20 @@ CMultiReaderApp::xProcessSingleFile(
         m_pErrors->PutError(*line_error_p);
         retCode = false;
     }
-    catch(const CException& e) {
+    catch(const CObjReaderException& e) {
+        CNcbiOstrstream os;
+        os << e.GetMsg();
+        CNcbiOstrstream osEx;
+        e.ReportExtra(osEx);
+        if (!IsOssEmpty(osEx)) {
+            os << " (" << CNcbiOstrstreamToString(osEx) << ')';
+        }
         AutoPtr<ILineError> line_error_p =
-            sCreateSimpleMessage(
-                eDiag_Fatal,
-                FORMAT(
-                    "Reading aborted due to fatal error: " << e.GetMsg()));
+            sCreateSimpleMessage(eDiag_Fatal, 
+                CNcbiOstrstreamToString(os));
         m_pErrors->PutError(*line_error_p);
         retCode = false;
-    } 
+    }
     catch(const std::exception & std_ex) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
