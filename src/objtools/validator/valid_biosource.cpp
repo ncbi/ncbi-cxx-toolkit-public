@@ -1851,6 +1851,32 @@ const bool has_taxon,
 const CSerialObject& obj,
 const CSeq_entry *ctx)
 {
+    bool is_viral = false;
+    string lineage;
+    string genus;
+    string species;
+    string strain;
+    string sub_species;
+    string serovar;
+
+    if (orgname.IsSetLineage()) {
+        lineage = orgname.GetLineage();
+        if (NStr::StartsWith(lineage, "Viruses; ") || NStr::StartsWith(lineage, "Viroids; ")) {
+            is_viral = true;
+        }
+    }
+    if (orgname.IsSetName()) {
+        const COrgName::TName& name = orgname.GetName();
+        if (name.Which() == COrgName::C_Name::e_Binomial) {
+            const CBinomialOrgName& bin = name.GetBinomial();
+            if (bin.IsSetGenus()) {
+                genus = bin.GetGenus();
+            }
+            if (bin.IsSetSpecies()) {
+                species = bin.GetSpecies();
+            }
+        }
+    }
     if (orgname.IsSetMod()) {
         bool has_strain = false;
         vector<string> vouchers;
@@ -1877,6 +1903,7 @@ const CSeq_entry *ctx)
             case COrgMod::eSubtype_strain:
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
+                    strain = str;
                     if (NStr::StartsWith(str, "subsp. ")) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.strain should not start with subsp.",
@@ -1900,6 +1927,7 @@ const CSeq_entry *ctx)
             case COrgMod::eSubtype_serovar:
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
+                    serovar = str;
                     if (NStr::StartsWith(str, "subsp. ")) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.serovar should not start with subsp.",
@@ -1914,6 +1942,7 @@ const CSeq_entry *ctx)
             case COrgMod::eSubtype_sub_species:
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
+                    sub_species = str;
                     if (NStr::Find(str, "subsp. ") != string::npos) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.sub-species should not contain subsp.",
@@ -1992,6 +2021,33 @@ const CSeq_entry *ctx)
 
         string err = COrgMod::CheckMultipleVouchers(vouchers);
         if (!err.empty()) PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_IdenticalInstitutionCode, err, obj, ctx);
+    }
+
+    if (is_viral) {
+        return;
+    }
+    if (strain.length() < 1) {
+        return;
+    }
+    if (NStr::EqualNocase(strain, species) && species.length() > 0) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+            "Orgmod.strain should not be species '" + species + "'",
+            obj, ctx);
+    }
+    if (NStr::EqualNocase(strain, sub_species) && sub_species.length() > 0) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+            "Orgmod.strain should not be subspecies '" + sub_species + "'",
+            obj, ctx);
+    }
+    if (NStr::EqualNocase(strain, serovar) && serovar.length() > 0) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+            "Orgmod.strain should not be serovar '" + serovar + "'",
+            obj, ctx);
+    }
+    if (NStr::FindNoCase(strain, genus + " " + species) != string::npos && genus.length() > 0 && species.length() > 0) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+            "Orgmod.strain should not contain '" + genus + " " + species + "'",
+            obj, ctx);
     }
 }
 
