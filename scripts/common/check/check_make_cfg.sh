@@ -670,19 +670,27 @@ RunTest() {
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
-           echo "======================================================================" >> "\$build_dir/test_stat_load.log" 2>&1
-           echo "[\$build_tree/\$build_cfg] \$x_name"                                    >> "\$build_dir/test_stat_load.log" 2>&1
-           echo "======================================================================" >> "\$build_dir/test_stat_load.log" 2>&1
-           echo                                                                          >> "\$build_dir/test_stat_load.log" 2>&1
+           stat_out="\$build_dir/test_stat_load.tmp.\$x_name"
+           retry="${x_check_scripts_dir}/retry_db_load.sh"
+           echo "======================================================================" >> \$stat_out 2>&1
+           echo "[\$build_tree/\$build_cfg] \$x_name"                                    >> \$stat_out 2>&1
+           echo "======================================================================" >> \$stat_out 2>&1
+           echo                                                                          >> \$stat_out 2>&1
            if test -n "\$saved_phid";  then
               NCBI_LOG_HIT_ID=\$saved_phid
               export NCBI_LOG_HIT_ID
            fi
-           stat_out="$x_tmp/test_stat_load.tmp.\$\$"
-           retry="${x_check_scripts_dir}/retry_db_load.sh"
            case "$x_compiler" in
              MSVC )
-                \$retry \$stat_out test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")"
+                # To avoid problems with retry script:
+                # - convert Cygwin paths to Windows paths
+                # - convert back slashes to forward slashes
+                args=""
+                for arg in "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")"; do
+                    args="\$args \$arg"
+                done
+                args=\`echo \$args | tr '\\\\\' '/'\`
+                \$retry \$stat_out test_stat_load \$args
                 ;;        
              XCODE ) 
                 \$retry \$stat_out $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info"
@@ -696,8 +704,8 @@ RunTest() {
              * )
                echo "ERR: Error loading results for [\$build_tree/\$build_cfg] \$x_name" >> \$stat_out 2>&1 ;;
            esac
+           echo >> \$stat_out 2>&1
            cat \$stat_out >> "\$build_dir/test_stat_load.log" 2>&1        
-           echo           >> "\$build_dir/test_stat_load.log" 2>&1
            rm -f \$stat_out > /dev/null 2>&1
         fi
         if test \$is_run  -a  -n "\$saved_phid"; then
