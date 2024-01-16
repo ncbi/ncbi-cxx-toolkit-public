@@ -8780,6 +8780,7 @@ static bool SubSourceHasOtherRules (CSubSource::TSubtype subtype)
 static bool OrgModHasOtherRules (COrgMod::TSubtype subtype)
 {
     if (subtype == COrgMod::eSubtype_variety
+        || subtype == COrgMod::eSubtype_strain
         || subtype == COrgMod::eSubtype_sub_species
         || subtype == COrgMod::eSubtype_forma
         || subtype == COrgMod::eSubtype_forma_specialis
