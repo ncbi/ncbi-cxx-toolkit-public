@@ -1462,7 +1462,7 @@ def production_tests(commands, options, args):
     # Form a command line for testcases.json
     cmdLine = f'{psg_client_py_path} testcases -binary {psg_client_path} ' \
               f'-service {devInstance} -input-file {testcases_json_path} ' \
-               '-run on-ci -data-limit 1KB -preview-size 16 -report'
+               '-run on-ci -data-limit 1KB -preview-size 16 -timeout 60 -report'
 
     # Run
     print_verbose(f'Running production tests: {cmdLine}')
