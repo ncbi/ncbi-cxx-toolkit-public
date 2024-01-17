@@ -35,7 +35,6 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include "set.hpp"
 
 #include <set>
 #include <vector>
@@ -94,7 +93,7 @@ private:
     bool m_core_align;
 }; 
 
-typedef CVectorSet<CSupportInfo> CSupportInfoSet;
+typedef set<CSupportInfo> CSupportInfoSet;
 
 class CAlignModel;
 
@@ -476,7 +475,7 @@ public:
     Int8 ID() const { return m_id; }
     void SetID(Int8 id) { m_id = id; }
     const CSupportInfoSet& Support() const { return m_support; }
-    bool AddSupport(const CSupportInfo& support) { return m_support.insert(support); }
+    bool AddSupport(const CSupportInfo& support) { return m_support.insert(support).second; }
     void ReplaceSupport(const CSupportInfoSet& support_set) {  m_support = support_set; }
     const string& ProteinHit() const { return  m_protein_hit; }
           string& ProteinHit()       { return  m_protein_hit; }
@@ -554,6 +553,7 @@ public:
     
     // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
     
+    int HasCompatibleOverlap(const CGeneModel& a, int min_overlap = 2) const;  // returns 0 for notcompatible or (number of common splices)+1; neither alignment can have holes
     int isCompatible(const CGeneModel& a) const;  // returns 0 for notcompatible or (number of common splices)+1
     bool IsSubAlignOf(const CGeneModel& a) const;
     int MutualExtension(const CGeneModel& a) const;  // returns 0 for notcompatible or (number of introns) + 1
