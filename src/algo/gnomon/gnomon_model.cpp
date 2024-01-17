@@ -949,8 +949,9 @@ int CGeneModel::MutualExtension(const CGeneModel& a) const
     if((Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0 && (a.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0) {
         const int intersection = (limits & alimits).GetLength();
         if(intersection==0 || intersection==limits.GetLength() || intersection==alimits.GetLength()) 
-            return 0;    
-        return isCompatible(a);
+            return 0;
+        return HasCompatibleOverlap(a);
+        //        return isCompatible(a);
     } else if((Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible)) == 0) {
         if(a.Status()&CGeneModel::eRightFlexible) 
             return alimits.GetFrom() < limits.GetFrom() && alimits.GetTo() > limits.GetFrom();
@@ -966,6 +967,104 @@ int CGeneModel::MutualExtension(const CGeneModel& a) const
     } else {
         return limits.IntersectingWith(alimits) && limits != alimits; 
     }                  
+}
+
+pair<int, int> ExonNumsForInterval(const CGeneModel& a, TSignedSeqRange& intersect) {
+    pair<int, int> rslt(-1, -1);
+    int last_exon = a.Exons().size()-1;
+
+    int aleft; // exon containing left intersect point (or to right if in intron)
+    if(last_exon == 0 || a.Limits().GetFrom() == intersect.GetFrom())
+        aleft = 0;
+    else if(last_exon == 1)
+        aleft = intersect.GetFrom() > a.Exons()[0].GetTo() ? 1 : 0; 
+    //    else if(last_exon < 5) 
+    //        for(aleft = 0; a.Exons()[aleft].GetTo() < intersect.GetFrom(); ++aleft);
+    else
+        aleft = std::lower_bound(a.Exons().begin(), a.Exons().end(), intersect.GetFrom(), [](const CModelExon& e, TSignedSeqPos p){ return e.GetTo() < p; })-a.Exons().begin();
+    if(intersect.GetFrom() < a.Exons()[aleft].GetFrom()) // in intron
+        return rslt;
+    
+    int aright; // exon containing right intersect point (or to right if in intron)
+    if(aleft == last_exon || a.Limits().GetTo() == intersect.GetTo())
+        aright = last_exon;
+    else if(aleft == last_exon-1)
+        aright = intersect.GetTo() > a.Exons()[aleft].GetTo() ? last_exon : aleft; 
+    //    else if(last_exon-aleft < 5)
+    //        for(aright = aleft; a.Exons()[aright].GetTo() < intersect.GetTo(); ++aright);
+    else
+        aright = std::lower_bound(a.Exons().begin()+aleft, a.Exons().end(), intersect.GetTo(), [](const CModelExon& e, TSignedSeqPos p){ return e.GetTo() < p; })-a.Exons().begin(); 
+    if(intersect.GetTo() < a.Exons()[aright].GetFrom()) // in intron
+        return rslt;
+
+    rslt.first = aleft;
+    rslt.second = aright;
+    return rslt;
+}
+
+int CGeneModel::HasCompatibleOverlap(const CGeneModel& a, int min_overlap) const {
+    const CGeneModel& b = *this;  // shortcut to this alignment
+
+    if(b.Strand() != a.Strand())
+        return 0;
+
+    TSignedSeqRange alimits = a.Limits();
+    bool aflex = false;    
+    if(a.Status()&CGeneModel::eLeftFlexible) {
+        aflex = true;
+        alimits.SetFrom(alimits.GetTo());
+    }
+    if(a.Status()&CGeneModel::eRightFlexible) {
+        aflex = true;
+        alimits.SetTo(alimits.GetFrom());
+    }
+
+    TSignedSeqRange blimits = b.Limits();
+    bool bflex = false;    
+    if(b.Status()&CGeneModel::eLeftFlexible) {
+        bflex = true;
+        blimits.SetFrom(blimits.GetTo());
+    }
+    if(b.Status()&CGeneModel::eRightFlexible) {
+        bflex = true;
+        blimits.SetTo(blimits.GetFrom()); 
+    }
+
+    TSignedSeqRange intersect(alimits&blimits);
+    if(intersect.GetLength() < min_overlap) 
+        return 0;
+
+    int aleft = 0;  // exon containing left intersect point
+    int aright = 0; // exon containing right intersect point
+    if(!aflex) {    
+        auto rslt =  ExonNumsForInterval(a, intersect);
+        if(rslt.first < 0)
+            return 0;
+        aleft = rslt.first;
+        aright = rslt.second;
+    }
+
+    int bleft = 0;  // exon containing left intersect point
+    int bright = 0; // exon containing right intersect point
+    if(!bflex) {
+        auto rslt =  ExonNumsForInterval(b, intersect);
+        if(rslt.first < 0)
+            return 0;
+        bleft = rslt.first;
+        bright = rslt.second;
+    }
+
+    if(aright-aleft != bright-bleft)  // different number of introns in intersect
+        return 0;
+      
+    for(int ea = aleft, eb = bleft; ea < aright; ++ea, ++eb) {  // check if identical introns in intersect
+        if(a.Exons()[ea].GetTo() != b.Exons()[eb].GetTo())
+            return 0;
+        if(a.Exons()[ea+1].GetFrom() != b.Exons()[eb+1].GetFrom())
+            return 0;        
+    }
+
+    return 2*(aright-aleft)+1;
 }
 
 int CGeneModel::isCompatible(const CGeneModel& a) const
