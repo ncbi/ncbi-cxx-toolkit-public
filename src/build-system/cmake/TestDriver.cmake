@@ -490,8 +490,8 @@ if (IS_AUTOMATED AND IS_DB_LOAD)
         OUTPUT_VARIABLE _out
         ERROR_VARIABLE _out
     )
-    string(APPEND _stat_out "${_out}\n\n")
-    if (NOT ${_retcode} EQUAL 0)
+    string(APPEND _stat_out "\n${_out}\n")
+    if (${_retcode} EQUAL 0)
         string(APPEND _stat_out "OK: ${NCBITEST_NAME}")
     else()
         string(APPEND _stat_out "ERR: Error loading results for ${NCBITEST_NAME}")
