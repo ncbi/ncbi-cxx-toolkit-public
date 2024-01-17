@@ -1051,7 +1051,7 @@ void CAlignCollapser::FilterAlignments() {
     ITERATE(TAlignIntrons, it, m_align_introns) {
         const SIntron& intron = it->first;
 
-        cerr << "Intron: " << m_contig_name << ':' << intron.m_range.GetFrom()+1 << ':' << intron.m_range.GetTo()+1 << '\n'; 
+        //        cerr << "Intron: " << m_contig_name << ':' << intron.m_range.GetFrom()+1 << ':' << intron.m_range.GetTo()+1 << ' ' << it->second.m_weight << ' ' << it->second.m_sr_support << ' ' << it->second.m_est_support << ' ' << it->second.m_other_support << '\n'; 
 
         int a = intron.m_range.GetFrom();
         int b = intron.m_range.GetTo();
@@ -1129,7 +1129,7 @@ void CAlignCollapser::FilterAlignments() {
             }
         }
         for(auto& intron : deleted_introns) {
-            cerr << "Fuzzy intron: " << m_contig_name << ':' << intron.m_range.GetFrom()+1 << ':' << intron.m_range.GetTo()+1 << '\n';
+            //            cerr << "Fuzzy intron: " << m_contig_name << ':' << intron.m_range.GetFrom()+1 << ':' << intron.m_range.GetTo()+1 << '\n';
             m_align_introns.erase(intron);
         }
     }
@@ -1205,8 +1205,10 @@ void CAlignCollapser::FilterAlignments() {
                 bad_intron = true;
         }
 
-        if(bad_intron)
+        if(bad_intron) {
+            //            cerr << "Deleted intron1: " << m_contig_name << ':' << intron->first.m_range.GetFrom()+1 << ':' << intron->first.m_range.GetTo()+1 << '\n'; 
             m_align_introns.erase(intron);
+        }
     }
 
     //filter low expressed splices
@@ -1272,8 +1274,10 @@ void CAlignCollapser::FilterAlignments() {
     
     for(TAlignIntrons::iterator it = m_align_introns.begin(); it != m_align_introns.end(); ) {
         TAlignIntrons::iterator intron = it++;
-        if(intron->second.m_weight < 0)
+        if(intron->second.m_weight < 0) {
+            //            cerr << "Deleted intron2: " << m_contig_name << ':' << intron->first.m_range.GetFrom()+1 << ':' << intron->first.m_range.GetTo()+1 << '\n'; 
             m_align_introns.erase(intron);
+        }
     }
     
     //remove/cut pool alignments with bad introns
@@ -1380,7 +1384,7 @@ void CAlignCollapser::FilterAlignments() {
             if(align.Limits() == lim)
                 continue;
 
-            cerr << "Clipped long read: " << i->m_align_id << " " << lim.GetFrom()+1 << " " << lim.GetTo()+1 << " " << align.Limits().GetFrom()+1 << " " << align.Limits().GetTo()+1 << " " << exnum << " " <<  align.Exons().size() << endl;
+            //            cerr << "Clipped read: " << i->m_align_id << " " << lim.GetFrom()+1 << " " << lim.GetTo()+1 << " " << align.Limits().GetFrom()+1 << " " << align.Limits().GetTo()+1 << " " << exnum << " " <<  align.Exons().size() << endl;
 
             if(align.Limits().Empty()) {
                 i->m_weight = -1;
