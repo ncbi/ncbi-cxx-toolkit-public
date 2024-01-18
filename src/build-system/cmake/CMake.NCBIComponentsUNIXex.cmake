@@ -86,6 +86,8 @@ set(NCBI_ThirdParty_MONGOC        ${NCBI_TOOLS_ROOT}/mongo-c-driver-1.23.2 CACHE
 set(NCBI_ThirdParty_LEVELDB       ${NCBI_TOOLS_ROOT}/leveldb-1.21 CACHE PATH "LEVELDB root")
 set(NCBI_ThirdParty_ROCKSDB       ${NCBI_TOOLS_ROOT}/rocksdb-8.3.2 CACHE PATH "ROCKSDB root")
 set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.2.1-ncbi1 CACHE PATH "wxWidgets root")
+set(NCBI_ThirdParty_PNG           ${NCBI_ThirdParty_wxWidgets} CACHE PATH "PNG root")
+set(NCBI_ThirdParty_TIFF          ${NCBI_ThirdParty_wxWidgets} CACHE PATH "TIFF root")
 set(NCBI_ThirdParty_GLPK          "/usr/local/glpk/4.45" CACHE PATH "GLPK root")
 if(APPLE)
   set(NCBI_ThirdParty_UV            ${NCBI_TOOLS_ROOT}/libuv-1.44.2 CACHE PATH "UV root")
