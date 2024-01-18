@@ -562,16 +562,8 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
 CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetBioseqStateFlags() const
 {
     if ( included_info & CPSG_Request_Resolve::fState ) {
-        switch ( state ) {
-        case CPSG_BioseqInfo::eDead:
+        if ( state != CPSG_BioseqInfo::eLive ) {
             return CBioseq_Handle::fState_dead;
-        case CPSG_BioseqInfo::eReserved:
-            return CBioseq_Handle::fState_suppress_perm;
-        case CPSG_BioseqInfo::eLive:
-            return CBioseq_Handle::fState_none;
-        default:
-            LOG_POST(Warning << "CPSGDataLoader: unknown " << canonical << " state: " << state);
-            return CBioseq_Handle::fState_none;
         }
     }
     return CBioseq_Handle::fState_none;
@@ -581,16 +573,8 @@ CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetBioseqStateFlags() const
 CBioseq_Handle::TBioseqStateFlags SPsgBioseqInfo::GetChainStateFlags() const
 {
     if ( included_info & CPSG_Request_Resolve::fChainState ) {
-        switch ( chain_state ) {
-        case CPSG_BioseqInfo::eDead:
+        if ( chain_state != CPSG_BioseqInfo::eLive ) {
             return CBioseq_Handle::fState_dead;
-        case CPSG_BioseqInfo::eReserved:
-            return CBioseq_Handle::fState_suppress_perm;
-        case CPSG_BioseqInfo::eLive:
-            return CBioseq_Handle::fState_none;
-        default:
-            LOG_POST(Warning << "CPSGDataLoader: unknown " << canonical << " chain_state: " << state);
-            return CBioseq_Handle::fState_none;
         }
     }
     return CBioseq_Handle::fState_none;
