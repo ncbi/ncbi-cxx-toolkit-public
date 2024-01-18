@@ -2242,7 +2242,7 @@ if test "$host_cpu" != x86_64; then
    : ${with_sse42=no}
 fi
 
-if test "${with_sse42-$with_optimization}" = yes; then
+# if test "${with_sse42-$with_optimization}" = yes; then
    orig_CC=$CC
    AC_CACHE_CHECK([whether $CC supports -msse4.2],
       ncbi_cv_prog_c_sse42,
@@ -2262,7 +2262,7 @@ if test "${with_sse42-$with_optimization}" = yes; then
    else
       CC=$orig_CC
    fi
-fi
+# fi
 AC_LANG_POP(C)
 test "$ncbi_cv_prog_modern_c" = no  ||  CC="$CC $ncbi_cv_prog_modern_c"
 

@@ -10589,7 +10589,7 @@ if test "$host_cpu" != x86_64; then
    : ${with_sse42=no}
 fi
 
-if test "${with_sse42-$with_optimization}" = yes; then
+# if test "${with_sse42-$with_optimization}" = yes; then
    orig_CC=$CC
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -msse4.2" >&5
 $as_echo_n "checking whether $CC supports -msse4.2... " >&6; }
@@ -10627,7 +10627,7 @@ $as_echo "$ncbi_cv_prog_c_sse42" >&6; }
    else
       CC=$orig_CC
    fi
-fi
+# fi
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
