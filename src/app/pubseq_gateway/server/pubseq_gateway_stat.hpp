@@ -106,6 +106,7 @@ class CPSGSCounters
             ePSGS_MyNCBIErrorCacheMiss,
             ePSGS_MyNCBIErrorCacheHit,
             ePSGS_MyNCBIOKCacheWaitHit,
+            ePSGS_IncludeHUPSetToNo,
 
             // Request stop statuses
             ePSGS_100,

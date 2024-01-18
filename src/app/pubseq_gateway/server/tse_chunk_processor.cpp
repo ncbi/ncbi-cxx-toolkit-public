@@ -425,7 +425,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
                                       INT64_MIN,
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                                      "", 0, 0, trace_flag,
+                                      "", 0, 0, IPSGS_Processor::m_Request->GetIncludeHUP(),
+                                      trace_flag,
                                       IPSGS_Processor::m_Request->NeedProcessorEvents(),
                                       vector<string>(), vector<string>(),
                                       psg_clock_t::now());
@@ -546,6 +547,7 @@ bool CPSGS_TSEChunkProcessor::x_GetMyNCBIUser(void)
         case CPSGS_CassBlobBase::ePSGS_FoundInOKCache:
             // The user name has been populated
             return true;
+        case CPSGS_CassBlobBase::ePSGS_IncludeHUPSetToNo:
         case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
             CPSGS_CassProcessorBase::SignalFinishProcessing();
             if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -668,7 +670,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
                                       INT64_MIN,
                                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                                      "", 0, 0, trace_flag,
+                                      "", 0, 0, IPSGS_Processor::m_Request->GetIncludeHUP(),
+                                      trace_flag,
                                       IPSGS_Processor::m_Request->NeedProcessorEvents(),
                                       vector<string>(), vector<string>(),
                                       psg_clock_t::now());
@@ -1100,7 +1103,8 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
         chunk_request(SPSGS_BlobId(chunk_blob_id.ToString()), INT64_MIN,
                       SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                       SPSGS_RequestBase::ePSGS_UnknownUseCache,
-                      "", 0, 0, trace_flag,
+                      "", 0, 0, IPSGS_Processor::m_Request->GetIncludeHUP(),
+                      trace_flag,
                       IPSGS_Processor::m_Request->NeedProcessorEvents(),
                       vector<string>(), vector<string>(),
                       psg_clock_t::now());

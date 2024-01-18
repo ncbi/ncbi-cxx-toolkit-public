@@ -162,6 +162,7 @@ void CPSGS_GetBlobProcessor::Process(void)
             case CPSGS_CassBlobBase::ePSGS_FoundInOKCache:
                 // The user name has been populated so just continue
                 break;
+            case CPSGS_CassBlobBase::ePSGS_IncludeHUPSetToNo:
             case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
                 if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -230,7 +231,7 @@ void CPSGS_GetBlobProcessor::x_Process(void)
                                       IPSGS_Processor::m_Reply);
     EPSGS_CacheLookupResult blob_prop_cache_lookup_result = ePSGS_CacheNotHit;
 
-    if (!m_BlobId.m_IsSecureKeyspace) {
+    if (!m_BlobId.m_IsSecureKeyspace.value()) {
         // The secure sat blob props are not cached
         blob_prop_cache_lookup_result = psg_cache.LookupBlobProp(
                                             this,

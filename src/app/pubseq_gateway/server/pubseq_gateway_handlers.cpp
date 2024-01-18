@@ -269,6 +269,14 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
             return 0;
         }
 
+        optional<bool>  include_hup;
+        if (!x_GetIncludeHUPParameter(http_req, reply, now, include_hup)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_BlobBySeqIdRequest(
                         string(seq_id.data(), seq_id.size()),
@@ -278,7 +286,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
                         string(client_id_param.m_Value.data(),
                                client_id_param.m_Value.size()),
                         send_blob_if_small, seq_id_resolve,
-                        hops, trace,
+                        hops, include_hup, trace,
                         processor_events,
                         enabled_processors, disabled_processors,
                         now));
@@ -383,13 +391,21 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
             return 0;
         }
 
+        optional<bool>      include_hup;
+        if (!x_GetIncludeHUPParameter(http_req, reply, now, include_hup)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
         unique_ptr<SPSGS_RequestBase>
                 req(new SPSGS_BlobBySatSatKeyRequest(
                             blob_id, last_modified,
                             tse_option, use_cache,
                             string(client_id_param.m_Value.data(),
                                    client_id_param.m_Value.size()),
-                            send_blob_if_small, hops, trace,
+                            send_blob_if_small, hops, include_hup, trace,
                             processor_events,
                             enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
@@ -587,11 +603,19 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
             return 0;
         }
 
+        optional<bool>      include_hup;
+        if (!x_GetIncludeHUPParameter(http_req, reply, now, include_hup)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
         // All parameters are good
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_TSEChunkRequest(
                         id2_chunk_value, id2_info,
-                        use_cache, hops, trace, processor_events,
+                        use_cache, hops, include_hup, trace, processor_events,
                         enabled_processors, disabled_processors, now));
         shared_ptr<CPSGS_Request>
             request(new CPSGS_Request(http_req, move(req), context));
@@ -775,6 +799,14 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
             return 0;
         }
 
+        optional<bool>      include_hup;
+        if (!x_GetIncludeHUPParameter(http_req, reply, now, include_hup)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
         // Parameters processing has finished
         unique_ptr<SPSGS_RequestBase>
             req(new SPSGS_AnnotRequest(
@@ -786,7 +818,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
                                client_id_param.m_Value.size()),
                         tse_option, send_blob_if_small, seq_id_resolve,
                         snp_scale_limit,
-                        hops, trace, processor_events,
+                        hops, include_hup, trace, processor_events,
                         enabled_processors, disabled_processors,
                         now));
         shared_ptr<CPSGS_Request>
