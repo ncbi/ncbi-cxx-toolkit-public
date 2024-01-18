@@ -221,6 +221,18 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
 #endif
 
 
+bool CValidError_imp::UseGeoLocNameForCountry()
+{
+    if (CNcbiApplication::Instance()) {
+        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
+        if (use_geo_loc == "true") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool CValidError_imp::IsSyntheticConstruct(const CBioSource& src)
 {
     if (!src.IsSetOrg()) {
@@ -1247,33 +1259,55 @@ const bool isViral)
     CSubSource::TSubtype subtype = subsrc.GetSubtype();
     switch (subtype) {
 
-    case CSubSource::eSubtype_country:
-    {
-        string countryname = subsrc.GetName();
-        bool is_miscapitalized = false;
-        if (CCountries::IsValid(countryname, is_miscapitalized)) {
-            if (is_miscapitalized) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCapitalization,
-                    "Bad country capitalization [" + countryname + "]",
-                    obj, ctx);
+        case CSubSource::eSubtype_country:
+        {
+            string countryname = subsrc.GetName();
+            bool is_miscapitalized = false;
+            bool use_geo_loc_name = UseGeoLocNameForCountry();
+            if (CCountries::IsValid(countryname, is_miscapitalized)) {
+                if (is_miscapitalized) {
+                    if (use_geo_loc_name) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadGeoLocNameCapitalization,
+                            "Bad geo_loc_name capitalization [" + countryname + "]",
+                            obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCapitalization,
+                            "Bad country capitalization [" + countryname + "]",
+                            obj, ctx);
+                    }
+                }
+                if (NStr::EndsWith(countryname, ":")) {
+                    if (use_geo_loc_name) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadGeoLocNameCode,
+                            "Colon at end of geo_loc_name [" + countryname + "]", obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                            "Colon at end of country name [" + countryname + "]", obj, ctx);
+                    }
+                }
+                if (CCountries::WasValid(countryname)) {
+                    if (use_geo_loc_name) {
+                        PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ReplacedGeoLocNameCode,
+                            "Replaced geo_loc_name [" + countryname + "]", obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ReplacedCountryCode,
+                            "Replaced country name [" + countryname + "]", obj, ctx);
+                    }
+                }
+            } else {
+                if (countryname.empty()) {
+                    countryname = "?";
+                }
+                if (use_geo_loc_name) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadGeoLocNameCode,
+                        "Bad geo_loc_name [" + countryname + "]", obj, ctx);
+                } else {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadCountryCode,
+                        "Bad country name [" + countryname + "]", obj, ctx);
+                }
             }
-            if (NStr::EndsWith(countryname, ":")) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
-                    "Colon at end of country name [" + countryname + "]", obj, ctx);
-            }
-            if (CCountries::WasValid(countryname)) {
-                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ReplacedCountryCode,
-                    "Replaced country name [" + countryname + "]", obj, ctx);
-            }
-        } else {
-            if (countryname.empty()) {
-                countryname = "?";
-            }
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadCountryCode,
-                "Bad country name [" + countryname + "]", obj, ctx);
         }
-    }
-        break;
+            break;
 
     case CSubSource::eSubtype_lat_lon:
         if (subsrc.IsSetName()) {
@@ -3305,6 +3339,8 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
         return;
     }
 
+    bool use_geo_loc_name = UseGeoLocNameForCountry();
+
     int subtype = orgmod.GetSubtype();
     string val = orgmod.GetSubname();
 
@@ -3344,7 +3380,11 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MissingPersonalCollectionName,
                 *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, "should not be qualified with a <COUNTRY> designation") != string::npos) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, *err, obj, ctx);
+            if (use_geo_loc_name) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionGeoLocName, *err, obj, ctx);
+            } else {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, *err, obj, ctx);
+            }
         } else if (NStr::FindNoCase(*err, "needs to be qualified with a <COUNTRY> designation") != string::npos) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, *err, obj, ctx);
         } else if (NStr::FindNoCase(*err, " exists, but collection ") != string::npos) {
