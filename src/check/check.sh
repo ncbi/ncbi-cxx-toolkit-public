@@ -400,7 +400,7 @@ for dir in \$dirs; do
     rm \$builddir/\$dir/check.success \$builddir/\$dir/check.failed >/dev/null 2>&1
     echo [\`eval \$timestamp\`] Checking \'\$dir\'
     cd \$builddir/\$dir ||  Error "Cannot change directory to:  \$dir"
-    ./check.sh run >/dev/null 2>&1 &
+    (./check.sh run || touch check.failed) >/dev/null 2>&1 &
     tasks_pids="\$tasks_pids \$!"
 
     # Add it into the task list   
