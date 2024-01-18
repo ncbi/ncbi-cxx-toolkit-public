@@ -980,6 +980,21 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_NonViralSegment,
     { "NonViralSegment", 
       "Non-viral taxonomy should not have segment qualifier" } },
+    { eErr_SEQ_DESCR_BadGeoLocNameCode,
+    { "BadGeoLocNameCode",
+    "The geo_loc_name code (up to the first colon) is not on the approved list of countries." } },
+    { eErr_SEQ_DESCR_LatLonGeoLocName,
+    { "LatLonGeoLocName",
+    "The lat_lon coordinate does not map to the indicated geo_loc_name." } },
+    { eErr_SEQ_DESCR_ReplacedGeoLocNameCode,
+    { "ReplacedGeoLocNameCode",
+    "The geo_loc_name code (up to the first colon) is no longer on the approved list of countries." } },
+    { eErr_SEQ_DESCR_BadGeoLocNameCapitalization,
+    { "BadGeoLocNameCapitalization",
+    "The geo_loc_name code does not use the correct capitalization." } },
+    { eErr_SEQ_DESCR_BadInstitutionGeoLocName,
+    { "BadInstitutionGeoLocName",
+    "The institution (or institution: collection) code should not have a <geo_loc_name> modifier." } },
 
 
     /* SEQ_GENERIC */
@@ -1101,6 +1116,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_GENERIC_BadSubmissionAuthorName,
     { "BadSubmissionAuthorName",
 "A submission author name field is invalid." } },
+    { eErr_GENERIC_BarcodeMissingGeoLocName,
+    { "BarcodeMissingGeoLocName",
+    "Barcode sequence is missing geo_loc_name." } },
 
 /* SEQ_PKG */
 
