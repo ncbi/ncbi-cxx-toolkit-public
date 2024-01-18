@@ -670,7 +670,7 @@ RunTest() {
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
-           stat_out="\$build_dir/test_stat_load.tmp.\$x_name"
+           stat_out="\$build_dir/test_stat_load.tmp.\$x_app"
            retry="${x_check_scripts_dir}/retry_db_load.sh"
            echo "======================================================================" >> \$stat_out 2>&1
            echo "[\$build_tree/\$build_cfg] \$x_name"                                    >> \$stat_out 2>&1
