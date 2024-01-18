@@ -1,3 +1,7 @@
 # $Id$
 
-deflate.o: CFLAGS += $(SSE4_1_FLAG:%1=%2)
+ifneq "" "$(findstring --arm,$(signature))$(findstring --aarch64,$(signature))"
+  crc32.o:   CFLAGS += -march=armv8-a+crc
+  deflate.o: CFLAGS += -march=armv8-a+crc
+endif
+
