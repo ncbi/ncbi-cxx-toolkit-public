@@ -35,8 +35,6 @@ max_attempts=3
 
 #---------------- Main -------------------------
 
-rm $out > /dev/null 2>&1
-
 attempt=1
 status=0
 
