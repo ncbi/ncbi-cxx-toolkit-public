@@ -257,8 +257,6 @@ esac
 
 : ${LIBRDKAFKA_PATH=$NCBI/librdkafka-2.3.0}
 
-: ${LIBSSH2_PATH=$NCBI/libssh2-1.7.0}
-
 : ${LIBUNWIND_PATH=$NCBI/libunwind-1.1}
 
 : ${LIBURING_PATH=$NCBI/liburing-2.4}
