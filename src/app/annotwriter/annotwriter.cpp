@@ -169,6 +169,9 @@ private:
     bool xProcessInputObject(
         CBioseq&);
     bool xProcessInputObject(
+        CBioseq& bioseq,
+        bool skipHeaders);
+    bool xProcessInputObject(
         CBioseq_set&);
     bool xProcessInputObject(
         CSeq_align&);
@@ -459,9 +462,18 @@ bool CAnnotWriterApp::xTryProcessInputId(
 //  -----------------------------------------------------------------------------
 {
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-    CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-    xProcessBioseqHandle(bsh, skipHeaders);
-    return true;
+
+    auto pScope = Ref(new CScope(*m_pObjMngr));
+    pScope->AddDefaults();
+    CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
+    if (!bsh) {
+        return false;
+    }
+
+    auto pBioseq = Ref(new CBioseq());
+    pBioseq->Assign(*(bsh.GetCompleteBioseq()));
+
+    return xProcessInputObject(*pBioseq, skipHeaders);
 }    
 
 //  -----------------------------------------------------------------------------
@@ -647,13 +659,21 @@ bool CAnnotWriterApp::xProcessInputObject(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CAnnotWriterApp::xProcessInputObject(CBioseq& bioseq)
+//  ----------------------------------------------------------------------------
+{
+    return xProcessInputObject(bioseq, GetArgs()["skip-headers"]);
+}
+
 //  ----------------------------------------------------------------------------
 bool CAnnotWriterApp::xProcessInputObject(
-    CBioseq& bioseq)
+    CBioseq& bioseq, bool skipHeaders)
 //  -----------------------------------------------------------------------------
 {
     CBioseq_Handle bsh = m_pScope->AddBioseq(bioseq);
-    xProcessBioseqHandle(bsh, GetArgs()["skip-headers"]);
+    xProcessBioseqHandle(bsh, skipHeaders);
     m_pScope->RemoveBioseq(bsh);
     return true;
 }
