@@ -991,6 +991,7 @@ EOF_launch
                  done
                  args=\`echo \$args | tr '\\\\\' '/'\`
                  \$retry \$stat_out test_stat_load \$args
+                 ;;
                IRIX* )
                  \$retry \$stat_out test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" ;;
                * )
@@ -1185,7 +1186,6 @@ AddJob()
     a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
     a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
     if test "\${a_run}" -ne "\${a_run}"; then
-echo "error:  1 a_run = \$a_run"
         a_run=0
     fi
 
@@ -1194,7 +1194,6 @@ echo "error:  1 a_run = \$a_run"
         a_run=\`ls \${checkdir}/*.in_progress 2>/dev/null\`
         a_run=\`echo \$a_run | wc -w | sed -e 's/ //g'\`
         if test "\${a_run}" -ne "\${a_run}"; then
-echo "error:  2 a_run = \$a_run"
             break
         fi
         if test "\${a_run}" -le 0; then
