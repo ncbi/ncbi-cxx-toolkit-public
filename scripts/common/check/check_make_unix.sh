@@ -883,7 +883,7 @@ EOF_launch
         # Always load test results for automated builds on a 'run' command.
         
         if \$is_run && \$is_db_load; then
-           stat_out="\$build_dir/test_stat_load.tmp.\$x_name"
+           stat_out="./test_stat_load.tmp.\$x_app"
            retry="\${script_dir}/common/check/retry_db_load.sh"
            echo "======================================================================" >> \$stat_out 2>&1
            echo "[\$x_work_dir_tail] \$x_name"                                           >> \$stat_out 2>&1
@@ -904,6 +904,7 @@ EOF_launch
                 done
                 args=\`echo \$args | tr '\\\\\' '/'\`
                 \$retry \$stat_out test_stat_load \$args
+                ;;
               IRIX* )
                 \$retry \$stat_out test_stat_load.sh "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" ;;
               * )
