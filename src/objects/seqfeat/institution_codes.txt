@@ -6940,7 +6940,7 @@ SJER	s	United States Forest Service, San Joaquin Experimental Range
 SJFM	s	Fairbanks Museum and Planetarium			
 SJNM	s	San Juan College			
 SJPC	s	Sergei J. Paramonov personal collection -- destroyed			
-SJRP	s	UNESP, Campus Sao Jose Rio Preto, Departamento Zoologia e Botanica			
+SJRP	sc	UNESP, Campus Sao Jose Rio Preto, Departamento Zoologia e Botanica			
 SJSC	s	San Jose State University, J. Gordon Edwards Museum of Entomology			
 SJSU	s	San Jose State University, Biological Sciences Department			
 SJUBC	s	Saint John's University, Biology Collections			
