@@ -208,6 +208,32 @@ CPubseqGatewayApp::x_GetProcessorEventsParameter(CHttpRequest &  req,
 }
 
 
+static string  kIncludeHUPParam = "include_hup";
+
+bool
+CPubseqGatewayApp::x_GetIncludeHUPParameter(CHttpRequest &  req,
+                                            shared_ptr<CPSGS_Reply>  reply,
+                                            const psg_time_point_t &  now,
+                                            optional<bool> &  include_hup)
+{
+    SRequestParameter   include_hup_param = x_GetParam(req, kIncludeHUPParam);
+
+    if (include_hup_param.m_Found) {
+        string      err_msg;
+
+        if (!x_IsBoolParamValid(kIncludeHUPParam,
+                                include_hup_param.m_Value, err_msg)) {
+            x_MalformedArguments(reply, now, err_msg);
+            return false;
+        }
+        include_hup = include_hup_param.m_Value == kYes;
+    }
+
+    // Here: two cases, the optional is set to true/false or not set at all
+    return true;
+}
+
+
 static string  kResendTimeoutParam = "resend_timeout";
 
 bool

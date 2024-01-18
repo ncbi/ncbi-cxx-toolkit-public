@@ -319,6 +319,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
             case CPSGS_CassBlobBase::ePSGS_FoundInOKCache:
                 // The user name has been populated so just continue
                 break;
+            case CPSGS_CassBlobBase::ePSGS_IncludeHUPSetToNo:
             case CPSGS_CassBlobBase::ePSGS_CookieNotPresent:
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
                 return;

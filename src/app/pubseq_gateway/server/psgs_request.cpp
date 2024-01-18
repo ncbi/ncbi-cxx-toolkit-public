@@ -263,6 +263,31 @@ bool CPSGS_Request::NeedProcessorEvents(void)
 }
 
 
+optional<bool> CPSGS_Request::GetIncludeHUP(void)
+{
+    if (m_Request) {
+        switch (m_Request->GetRequestType()) {
+            case ePSGS_BlobBySeqIdRequest:
+            case ePSGS_BlobBySatSatKeyRequest:
+            case ePSGS_AnnotationRequest:
+                return GetRequest<SPSGS_BlobRequestBase>().m_IncludeHUP;
+            case ePSGS_TSEChunkRequest:
+                return GetRequest<SPSGS_TSEChunkRequest>().m_IncludeHUP;
+            case ePSGS_ResolveRequest:
+            case ePSGS_AccessionVersionHistoryRequest:
+            case ePSGS_IPGResolveRequest:
+                break;
+            default:
+                break;
+        }
+
+        return optional<bool>();
+    }
+    NCBI_THROW(CPubseqGatewayException, eLogic,
+               "User request is not initialized");
+}
+
+
 int CPSGS_Request::GetHops(void)
 {
     if (m_Request) {

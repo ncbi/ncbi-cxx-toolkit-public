@@ -23042,7 +23042,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"
+                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"
                             }
                         ]
                     }
@@ -23083,7 +23083,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -23701,7 +23701,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -23743,7 +23743,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -23785,7 +23785,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -23827,7 +23827,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -23869,7 +23869,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -23911,7 +23911,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -24031,7 +24031,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -24073,7 +24073,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterias: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
                             }
                         ]
                     }
@@ -26668,7 +26668,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unauthorized"
+                        "progress_status": "inprogress",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-get processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                            }
+                        ]
                     }
                 },
                 {
@@ -26677,14 +26684,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown",
-                        "messages": [
-                            {
-                                "severity": "Warning",
-                                "code": 340,
-                                "text": "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                            }
-                        ]
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26754,7 +26754,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unauthorized"
+                        "progress_status": "inprogress",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-get processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                            }
+                        ]
                     }
                 },
                 {
@@ -26763,14 +26770,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-get",
-                        "progress_status": "unknown",
-                        "messages": [
-                            {
-                                "severity": "Warning",
-                                "code": 340,
-                                "text": "Cassandra-get processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                            }
-                        ]
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26810,7 +26810,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unauthorized"
+                        "progress_status": "inprogress",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-getblob processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                            }
+                        ]
                     }
                 },
                 {
@@ -26819,14 +26826,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown",
-                        "messages": [
-                            {
-                                "severity": "Warning",
-                                "code": 340,
-                                "text": "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                            }
-                        ]
+                        "progress_status": "unauthorized"
                     }
                 },
                 {
@@ -26866,7 +26866,14 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unauthorized"
+                        "progress_status": "inprogress",
+                        "messages": [
+                            {
+                                "severity": "Warning",
+                                "code": 340,
+                                "text": "Cassandra-getblob processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                            }
+                        ]
                     }
                 },
                 {
@@ -26875,14 +26882,7 @@
                     "result": {
                         "reply": "Processor",
                         "processor_id": "Cassandra-getblob",
-                        "progress_status": "unknown",
-                        "messages": [
-                            {
-                                "severity": "Warning",
-                                "code": 340,
-                                "text": "Cassandra-getblob processor failed to get a web cubby user cookie for a Cassandra secure keyspace."
-                            }
-                        ]
+                        "progress_status": "unauthorized"
                     }
                 },
                 {

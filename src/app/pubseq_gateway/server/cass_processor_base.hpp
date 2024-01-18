@@ -85,6 +85,7 @@ protected:
 
 protected:
     enum EPSGS_MyNCBILookupResult {
+        ePSGS_IncludeHUPSetToNo,
         ePSGS_FoundInOKCache,
         ePSGS_FoundInErrorCache,
         ePSGS_FoundInNotFoundCache,
@@ -95,6 +96,7 @@ protected:
     EPSGS_MyNCBILookupResult PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
                                                 TMyNCBIErrorCB  error_cb);
     void ReportNoWebCubbyUser(void);
+    void ReportExplicitIncludeHUPSetToNo(void);
     void ReportMyNCBIError(const string &  my_ncbi_message);
     void ReportMyNCBINotFound(void);
     void ReportSecureSatUnauthorized(void);

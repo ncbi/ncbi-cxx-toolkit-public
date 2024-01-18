@@ -450,6 +450,16 @@ CPSGS_CassProcessorBase::PopulateMyNCBIUser(TMyNCBIDataCB  data_cb,
         return ePSGS_FoundInOKCache;
     }
 
+    bool    new_client = m_Request->GetIncludeHUP().has_value();
+    if (new_client) {
+        if (!m_Request->GetIncludeHUP().value()) {
+            // The include_hup explicitly tells 'no'
+            ReportExplicitIncludeHUPSetToNo();
+            return ePSGS_IncludeHUPSetToNo;
+        }
+    }
+
+
     // Check for the cookie
     m_MyNCBICookie = IPSGS_Processor::m_Request->GetWebCubbyUser();
     if (!m_MyNCBICookie.has_value()) {
@@ -567,8 +577,35 @@ void CPSGS_CassProcessorBase::ReportNoWebCubbyUser(void)
     app->GetCounters().Increment(this,
                                  CPSGSCounters::ePSGS_NoWebCubbyUserCookie);
 
-    string  err_msg = GetName() + " processor failed to get a "
-                      "web cubby user cookie for a Cassandra secure keyspace.";
+    string  err_msg = GetName() + " processor: ";
+    if (IPSGS_Processor::m_Request->GetIncludeHUP().has_value()) {
+        err_msg += "HUP retrieval is allowed (explicitly set to 'yes') but auth token is missing";
+    } else {
+        err_msg += "HUP retrieval is allowed (implicitly) but auth token is missing";
+    }
+
+    IPSGS_Processor::m_Reply->PrepareProcessorMessage(
+            IPSGS_Processor::m_Reply->GetItemId(), GetName(),
+            err_msg, CRequestStatus::e401_Unauthorized,
+            ePSGS_NoWebCubbyUserCookieError, eDiag_Warning);
+    UpdateOverallStatus(CRequestStatus::e401_Unauthorized);
+    PSG_NOTE(err_msg);
+}
+
+
+void CPSGS_CassProcessorBase::ReportExplicitIncludeHUPSetToNo(void)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_IncludeHUPSetToNo);
+
+    string  err_msg = GetName() + " processor: ";
+    if (IPSGS_Processor::m_Request->GetWebCubbyUser().has_value()) {
+        err_msg += "HUP retrieval is disallowed but auth token is present";
+    } else {
+        err_msg += "HUP retrieval is disallowed and auth token is missing";
+    }
+
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(), GetName(),
             err_msg, CRequestStatus::e401_Unauthorized,

@@ -388,6 +388,10 @@ private:
                                        shared_ptr<CPSGS_Reply>  reply,
                                        const psg_time_point_t &  now,
                                        bool &  processor_events);
+    bool x_GetIncludeHUPParameter(CHttpRequest &  req,
+                                  shared_ptr<CPSGS_Reply>  reply,
+                                  const psg_time_point_t &  now,
+                                  optional<bool> &  include_hup);
     bool x_GetHops(CHttpRequest &  req,
                    shared_ptr<CPSGS_Reply>  reply,
                    const psg_time_point_t &  now,

@@ -293,6 +293,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "MyNCBIOKCacheWaitHitCount", "My NCBI OK cache hit counter when resolution is in progress",
             "Number of times a lookup in the my NCBI user info OK cache found a record in an in progress state");
+    m_Counters[ePSGS_IncludeHUPSetToNo] =
+        new SCounterInfo(
+            "IncludeHUPSetToNo", "Include HUP set to 'no' when a blob in a secure keyspace counter",
+            "Number of times a secure blob was going to be retrieved when include HUP option is explicitly set to 'no'");
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",
