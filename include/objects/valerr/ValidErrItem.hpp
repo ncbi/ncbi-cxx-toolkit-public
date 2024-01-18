@@ -354,6 +354,11 @@ enum EErrType {
     eErr_SEQ_DESCR_ChromosomeWithoutLocation,
     eErr_SEQ_DESCR_TaxonomyBlankSample,
     eErr_SEQ_DESCR_NonViralSegment,
+    eErr_SEQ_DESCR_BadGeoLocNameCode,
+    eErr_SEQ_DESCR_LatLonGeoLocName,
+    eErr_SEQ_DESCR_ReplacedGeoLocNameCode,
+    eErr_SEQ_DESCR_BadGeoLocNameCapitalization,
+    eErr_SEQ_DESCR_BadInstitutionGeoLocName,
     ERR_CODE_END(SEQ_DESCR),
 
 
@@ -395,6 +400,7 @@ enum EErrType {
     eErr_GENERIC_DuplicateIDs,
     eErr_GENERIC_MissingPubRequirement,
     eErr_GENERIC_BadSubmissionAuthorName,
+    eErr_GENERIC_BarcodeMissingGeoLocName,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,
