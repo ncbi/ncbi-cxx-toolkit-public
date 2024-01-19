@@ -6329,7 +6329,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                 @%:@     include <ostream>
                 namespace std {
                     ostream& operator<<(ostream& os, const wchar_t*)
-		        { return os; }
+                        { return os; }
                 }
                 @%:@    endif
                 @%:@  endif
@@ -8299,21 +8299,21 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoapssl++,
         { return NULL; }
         SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultdetail(struct soap*)
         { return NULL; }
-	@%:@if GSOAP_VERSION >= 20871
+        @%:@if GSOAP_VERSION >= 20871
         SOAP_FMAC3 const char* SOAP_FMAC4 soap_fault_subcode(struct soap*)
         { return NULL; }
         SOAP_FMAC3 const char* SOAP_FMAC4 soap_fault_string(struct soap*)
         { return NULL; }
         SOAP_FMAC3 const char* SOAP_FMAC4 soap_fault_detail(struct soap*)
         { return NULL; }
-	@%:@else
+        @%:@else
         SOAP_FMAC3 const char* SOAP_FMAC4 soap_check_faultsubcode(struct soap*)
         { return NULL; }
         SOAP_FMAC3 const char* SOAP_FMAC4 soap_check_faultstring(struct soap*)
         { return NULL; }
         SOAP_FMAC3 const char* SOAP_FMAC4 soap_check_faultdetail(struct soap*)
         { return NULL; }
-	@%:@endif
+        @%:@endif
         SOAP_FMAC3 void SOAP_FMAC4 soap_serializeheader(struct soap*) { }
         SOAP_FMAC3 int SOAP_FMAC4 soap_putheader(struct soap*) { return 0; }
         SOAP_FMAC3 int SOAP_FMAC4 soap_getheader(struct soap*) { return 0; }
