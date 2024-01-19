@@ -75,7 +75,8 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
         converted = NStr::StringToInt(param_value);
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
-                  "to integer (received value: '" + string(param_value) + "')";
+                  "to integer (received value: '" +
+                  NStr::HtmlEncode(param_value) + "')";
         return false;
     }
     return true;
@@ -91,7 +92,8 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
         converted = NStr::StringToLong(param_value);
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
-                  "to integer (received value: '" + string(param_value) + "')";
+                  "to integer (received value: '" +
+                  NStr::HtmlEncode(param_value) + "')";
         return false;
     }
     return true;
@@ -107,7 +109,8 @@ bool CPubseqGatewayApp::x_ConvertDoubleParameter(const string &  param_name,
         converted = NStr::StringToDouble(param_value);
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
-                  "to double (received value: '" + string(param_value) + "')";
+                  "to double (received value: '" +
+                  NStr::HtmlEncode(param_value) + "')";
         return false;
     }
     return true;
