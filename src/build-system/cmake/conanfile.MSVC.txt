@@ -17,7 +17,7 @@ libpng/1.6.39
 #protobuf/3.21.4
 sqlite3/3.42.0
 libtiff/4.5.0
-libxml2/2.11.5
+libxml2/2.11.6
 libxslt/1.1.34
 libuv/1.46.0
 zlib/1.2.13
@@ -31,11 +31,9 @@ ncbicrypt/20230516
 
 [options]
 abseil/*:shared=False
-boost/*:shared=False
-googleapis/*:shared=False
-grpc-proto/*:shared=False
 grpc/*:shared=False
 protobuf/*:shared=False
+boost/*:shared=False
 libxml2/*:shared=False
 pcre/*:shared=False
 ncbicrypt/*:shared=False
