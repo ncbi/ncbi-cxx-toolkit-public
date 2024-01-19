@@ -30,6 +30,9 @@ ncbicrypt/20230516
 #}
 
 [options]
+abseil/*:shared=False
+grpc/*:shared=False
+protobuf/*:shared=False
 ncbicrypt/*:shared=False
 #
 grpc/*:cpp_plugin = True
