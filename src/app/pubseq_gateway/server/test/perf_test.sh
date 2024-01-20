@@ -27,7 +27,7 @@ parse_service() {
         sfx=
     fi
     service=`echo $src_srv | sed 's/\/.*$//'`
-    ver=`curl -s "http://$service/ADMIN/info" | sed '{ s/^.*Version// ; s/\,.*// ; s/[^0-9]*//g }'`
+    ver=`curl -s "http://$service/ADMIN/info" | sed '{ s/^.*Version\"/\"/ ; s/\,.*// ; s/[^0-9]*//g }'`
     if [ "$ver" = "" ]; then
         echo "Warning: failed to get server info"
         ver="000"
