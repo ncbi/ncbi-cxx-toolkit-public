@@ -1389,6 +1389,7 @@ CMUH	s	Central Mindanao University
 CMUT	s	Chiang Mai University			
 CMV	s	Centre Marie-Victorin			
 CMW	c	Forestry and Agricultural Biotechnology Institute, University of Pretoria, Pretoria			
+CMW-IA	c	Culture collection of Innovation Africa at the University of Pretoria			
 CMY	s	R. G. Kar Medical College, Botany Department			
 CN<CHN>	c	China Collection of Anaerobic Microorganisms			
 CN<FR>	s	Universite de Caen			
