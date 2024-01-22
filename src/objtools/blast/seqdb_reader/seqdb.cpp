@@ -1472,6 +1472,7 @@ Int8 CSeqDB::GetDiskUsage() const
     vector<string> extn;
     const bool is_protein(GetSequenceType() == CSeqDB::eProtein);
     SeqDB_GetFileExtensions(is_protein, extn, GetBlastDbVersion());
+    string blastdb_dirname;
 
     ITERATE(vector<string>, path, paths) {
         ITERATE(vector<string>, ext, extn) {
@@ -1480,6 +1481,37 @@ Int8 CSeqDB::GetDiskUsage() const
                 Int8 length = file.GetLength();
                 if (length != -1) {
                     retval += length;
+                    LOG_POST(Trace << "File " << file.GetPath() << " " << length << " bytes");
+                    blastdb_dirname = file.GetDir();
+                } else {
+                    ERR_POST(Error << "Error retrieving file size for "
+                                   << file.GetPath());
+                }
+            }
+        }
+    }
+    // For multi-volume databases, take into account files that apply to the
+    // entire BLASTDB
+    if (paths.size() > 1) {
+        _ASSERT( !blastdb_dirname.empty() );
+        auto dbname = GetDBNameList();
+        vector<string> dblist;
+        NStr::Split(dbname, " ", dblist, NStr::fSplit_Tokenize);
+        if (dblist.size() > 1) {
+            CNcbiOstrstream oss;
+            oss << "Cannot compute disk usage for multiple BLASTDBs (i.e.: '"
+                << dbname << "') at once. Please try again using one BLASTDB "
+                << "at a time.";
+            NCBI_THROW(CSeqDBException, eArgErr, CNcbiOstrstreamToString(oss));
+        }
+
+        for (const auto& ext: extn) {
+            CFile file(CDirEntry::MakePath(blastdb_dirname, dbname, ext));
+            if (file.Exists()) {
+                Int8 length = file.GetLength();
+                if (length != -1) {
+                    retval += length;
+                    LOG_POST(Trace << "File " << file.GetPath() << " " << length << " bytes");
                 } else {
                     ERR_POST(Error << "Error retrieving file size for "
                                    << file.GetPath());
