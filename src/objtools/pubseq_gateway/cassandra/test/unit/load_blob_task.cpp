@@ -82,6 +82,7 @@ class CBlobTaskLoadBlobTest
     static shared_ptr<CCassConnection> m_Connection;
 
     string m_KeyspaceName{"satncbi_extended"};
+    string m_BlobChunkKeyspace{"psg_test_sat_4"};
 };
 
 const char* CBlobTaskLoadBlobTest::m_TestClusterName = "ID_CASS_TEST";
@@ -140,7 +141,7 @@ TEST_F(CBlobTaskLoadBlobTest, ExpiredLastModified) {
 }
 
 TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, true, error_function);
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();

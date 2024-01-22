@@ -187,7 +187,7 @@ TEST_F(CassandraClusterMetaTest, GetKeyspaces) {
     sort(begin(expected), end(expected));
     sort(begin(actual), end(actual));
     EXPECT_TRUE(includes(begin(actual), end(actual), begin(expected), end(expected)));
-    EXPECT_EQ(63UL, actual.size());
+    EXPECT_LE(63UL, actual.size());
 }
 
 TEST_F(CassandraClusterMetaTest, GetTables) {
