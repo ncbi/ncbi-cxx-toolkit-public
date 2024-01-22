@@ -1616,7 +1616,7 @@ if test "$with_mt" != "no" ; then
         ;;
      *:GCC | *:ICC | *Clang | linux*:KCC )
         case "$host_cpu" in
-           i?86 | powerpc* | ppc* | x86_64 | sparc* | aarch64 | arm* )
+           i?86 | powerpc* | ppc* | x86_64 | sparc* | aarch64 | arm*64* )
               NCBIATOMIC_LIB=
               ;;
            * ) NCBIATOMIC_LIB=xncbi ;;
