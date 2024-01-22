@@ -15,6 +15,7 @@ UNIX_SRC = ncbi_lbsm ncbi_lbsm_ipc
 
 LIB      = connect
 
+DLL_LIB  = $(NCBIATOMIC_LIB)
 LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
 LDFLAGS  = $(ORIG_LDFLAGS) $(AS_NEEDED)
 
