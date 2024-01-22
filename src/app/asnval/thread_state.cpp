@@ -918,6 +918,7 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename)
         }
         catch (const CObjReaderParseException&) {
             mpHugeFileProcess.reset();
+            throw;
         }
 
         if (asninfo) {
