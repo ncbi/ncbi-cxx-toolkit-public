@@ -855,7 +855,7 @@ CMultiReaderApp::xProcessSingleFile(
         }
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(eDiag_Fatal, 
-                CNcbiOstrstreamToString(os));
+                "Reading aborted due to fatal error: " + CNcbiOstrstreamToString(os));
         m_pErrors->PutError(*line_error_p);
         retCode = false;
     }
