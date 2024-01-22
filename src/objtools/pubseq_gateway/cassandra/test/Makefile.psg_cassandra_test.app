@@ -15,7 +15,7 @@ MY_LIB=psg_cassandra $(COMPRESS_LIBS) \
     xobjutil id2 seqsplit seqset $(SEQ_LIBS) pub medline biblio general xconnect xser xutil
 LIB=$(MY_LIB:%=%$(STATIC)) $(LOCAL_LIB) xncbi
 
-LIBS = $(NETWORK_LIBS) $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(OPENSSL_STATIC_LIBS) $(ORIG_LIBS)
 
 LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
 
