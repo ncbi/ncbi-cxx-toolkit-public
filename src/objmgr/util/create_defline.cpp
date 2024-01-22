@@ -3413,6 +3413,19 @@ bool CDeflineGenerator::x_IsComplete() const
 }
 
 
+static bool s_UseGeoLocNameForCountry()
+{
+    if (CNcbiApplication::Instance()) {
+        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
+        if (use_geo_loc == "true") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 static const char* s_tpaPrefixList [] = {
   "MAG ",
   "MAG:",
@@ -3734,7 +3747,11 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                             joiner.Add("plastid_name", subname);
                             break;
                         case CSubSource::eSubtype_country:
-                            joiner.Add("country", subname);
+                            if (s_UseGeoLocNameForCountry()) {
+                                joiner.Add("geo_loc_name", subname);
+                            } else {
+                                joiner.Add("country", subname);
+                            }
                             break;
                         case CSubSource::eSubtype_segment:
                             joiner.Add("segment", subname);
