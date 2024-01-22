@@ -1396,6 +1396,80 @@ private:
     CRangeCollection<TSeqPos> m_CoveredRanges;
 };
 
+
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_OverlapBoth : public CScoreLookup::IScore
+{
+public:
+    CScore_OverlapBoth(int row, bool include_gaps)
+    : m_Row(row)
+    , m_IncludeGaps(include_gaps)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        string row_name = m_Row == 0 ? "query" : "subject";
+        string range_type = m_IncludeGaps ? "total aligned range" : "aligned bases";
+        ostr <<
+            "size of overlap of " + range_type + " with any alignments "
+            "over the same " + row_name + " sequence that have previously "
+            "passed this filter. Assumes that input alignments "
+            "are collated by " + row_name + ", and then sorted by priority for "
+            "inclusion in the output.";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope* ) const
+    {
+        CSeq_id_Handle q = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+        CSeq_id_Handle s = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+
+        CRangeCollection<TSeqPos> overlap;
+        TData::const_iterator it =
+            m_CoveredRanges.find(make_pair(q, s));
+
+        if (it != m_CoveredRanges.end()) {
+            if (m_IncludeGaps) {
+                overlap += align.GetSeqRange(m_Row);
+            } else {
+                overlap += align.GetAlignedBases(m_Row);
+            }
+
+            overlap &= it->second;
+        }
+        return overlap.GetCoveredLength();
+    }
+
+    virtual void UpdateState(const objects::CSeq_align& align)
+    {
+        CSeq_id_Handle q = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+        CSeq_id_Handle s = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+
+        TData::iterator it =
+            m_CoveredRanges.insert(TData::value_type
+                                   (make_pair(q, s),
+                                    CRangeCollection<TSeqPos>())).first;
+
+        if (m_IncludeGaps) {
+            it->second += align.GetSeqRange(m_Row);
+        } else {
+            it->second += align.GetAlignedBases(m_Row);
+        }
+    }
+
+private:
+    int m_Row;
+    bool m_IncludeGaps;
+
+    typedef map< pair<CSeq_id_Handle, CSeq_id_Handle>, CRangeCollection<TSeqPos> > TData;
+    TData m_CoveredRanges;
+};
+
 //////////////////////////////////////////////////////////////////////////////
 
 class CScore_OrdinalPos : public CScoreLookup::IScore
@@ -2101,18 +2175,28 @@ void CScoreLookup::x_Init()
 
     m_Scores.insert
         (TScoreDictionary::value_type
-         ("subject_overlap",
-          CIRef<IScore>(new CScore_Overlap(1, true))));
-
-    m_Scores.insert
-        (TScoreDictionary::value_type
          ("query_overlap_nogaps",
           CIRef<IScore>(new CScore_Overlap(0, false))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
+         ("subject_overlap",
+          CIRef<IScore>(new CScore_Overlap(1, true))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
          ("subject_overlap_nogaps",
           CIRef<IScore>(new CScore_Overlap(1, false))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_subject_overlap",
+          CIRef<IScore>(new CScore_OverlapBoth(1, true))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_subject_overlap_nogaps",
+          CIRef<IScore>(new CScore_OverlapBoth(1, false))));
 
     m_Scores.insert
         (TScoreDictionary::value_type
