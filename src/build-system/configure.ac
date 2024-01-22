@@ -8961,10 +8961,18 @@ for d in "$AWS_SDK_PATH/lib$bit64_sfx" "$AWS_SDK_PATH/lib" \
          /usr/local/lib$bit64_sfx /usr/local/lib; do
     if test -f "$d/libaws-cpp-sdk-s3.a"; then
        AWS_SDK_LIBDIR=$d
-       if test -f "$AWS_SDK_LIBDIR/libaws-c-event-stream.a"; then
-          AWS_SDK_LDEP="-laws-c-event-stream -laws-checksums -laws-c-common"
-          AWS_SDK_STATIC_LDEP="-laws-c-event-stream-static -laws-checksums-static -laws-c-common-static"
-       fi
+       AWS_SDK_LDEP=
+       AWS_SDK_STATIC_LDEP=
+       sep=
+       for x in aws-crt-cpp aws-c-s3 aws-c-mqtt aws-c-event-stream aws-c-auth \
+          aws-checksums aws-c-sdkutils aws-c-http aws-c-compression aws-c-io \
+          aws-c-cal s2n aws-c-common; do
+          if test -f "$AWS_SDK_LIBDIR/lib$x.a"; then
+             AWS_SDK_LDEP="$AWS_SDK_LDEP$sep-l$x"
+             AWS_SDK_STATIC_LDEP="$AWS_SDK_STATIC_LDEP$sep-l$x-static"
+             sep=' '
+          fi
+       done
        break
     fi
 done
