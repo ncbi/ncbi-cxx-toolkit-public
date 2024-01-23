@@ -1656,7 +1656,7 @@ static TUnicodePlan s_Plan_20h = {
     { 0, eString },  //                             U+2040
     { "insertion mark", eString },  // old dictionary  U+2041
     { 0, eString },  //                             U+2042
-    { " rectangle", eString },  // old dictionary      U+2043
+    { "-", eString },  // old dictionary            U+2043
     { 0, eString },  //                             U+2044
     { 0, eString },  //                             U+2045
     { 0, eString },  //                             U+2046
