@@ -2,8 +2,12 @@
 {
     "reply": "Processor",
     "status": "Error",
-    "errors": [
-        "Invalid chunk requested. The number of available chunks: 5, requested number: 96"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 304,
+            "text": "Invalid chunk requested. The number of available chunks: 5, requested number: 96"
+        }
     ]
 },
 {

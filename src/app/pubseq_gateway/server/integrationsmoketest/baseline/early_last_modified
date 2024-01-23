@@ -2,8 +2,12 @@
 {
     "reply": "BlobInfo",
     "status": "NotFound",
-    "errors": [
-        "Blob 4.9994804 properties are not found (last modified: 1146697225362)"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 311,
+            "text": "Blob 4.9994804 properties are not found (last modified: 1146697225362)"
+        }
     ]
 },
 {

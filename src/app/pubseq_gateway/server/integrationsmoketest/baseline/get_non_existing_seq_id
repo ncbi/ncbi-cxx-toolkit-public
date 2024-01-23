@@ -2,8 +2,12 @@
 {
     "reply": "BioseqInfo",
     "status": "NotFound",
-    "errors": [
-        "Could not resolve seq_id nonexisting"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 312,
+            "text": "Could not resolve seq_id nonexisting"
+        }
     ]
 },
 {
