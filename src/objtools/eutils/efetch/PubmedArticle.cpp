@@ -913,7 +913,7 @@ CRef<CArticleIdSet> s_GetArticleIdSet(const CArticleIdList& article_id_list, con
     for (auto article_id_it : article_id_list.GetArticleId()) {
         CRef<objects::CArticleId> id(new objects::CArticleId());
         try {
-            const string& str_id = article_id_it->GetArticleId();
+            const string& str_id = utf8_to_string(article_id_it->GetArticleId());
             switch (s_GetArticleIdTypeId(*article_id_it)) {
             case objects::CArticleId::e_Pubmed:
                 id->SetPubmed(CPubMedId(NStr::StringToNumeric<TEntrezId>(str_id)));
