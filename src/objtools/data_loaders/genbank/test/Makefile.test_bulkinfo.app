@@ -8,7 +8,7 @@ LIB = xobjutil ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids all_readers.sh ref
+CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids all_readers.sh ref test_bulkinfo_log.ini
 
 CHECK_CMD = all_readers.sh test_bulkinfo -type gi -reference ref/0.gi.txt /CHECK_NAME=test_bulkinfo_gi
 CHECK_CMD = all_readers.sh test_bulkinfo -type acc -reference ref/0.acc.txt /CHECK_NAME=test_bulkinfo_acc
@@ -16,7 +16,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type label -reference ref/0.label.txt 
 CHECK_CMD = all_readers.sh test_bulkinfo -type taxid -reference ref/0.taxid.txt /CHECK_NAME=test_bulkinfo_taxid
 CHECK_CMD = all_readers.sh test_bulkinfo -type length -reference ref/0.length.txt /CHECK_NAME=test_bulkinfo_length
 CHECK_CMD = all_readers.sh test_bulkinfo -type type -reference ref/0.type.txt /CHECK_NAME=test_bulkinfo_type
-CHECK_CMD = all_readers.sh test_bulkinfo -type state -reference ref/0.state.txt /CHECK_NAME=test_bulkinfo_state
+CHECK_CMD = all_readers.sh test_bulkinfo -conffile test_bulkinfo_log.ini -type state -reference ref/0.state.txt /CHECK_NAME=test_bulkinfo_state
 CHECK_CMD = all_readers.sh test_bulkinfo -type hash -reference ref/0.hash.txt /CHECK_NAME=test_bulkinfo_hash
 
 CHECK_CMD = all_readers.sh test_bulkinfo -type gi -idlist wgs.ids -reference ref/wgs.gi.txt /CHECK_NAME=test_bulkinfo_wgs_gi
