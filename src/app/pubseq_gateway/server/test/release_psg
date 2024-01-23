@@ -41,8 +41,8 @@ SRV2 = None
 
 # Sometimes, especially under valgrind, it takes longer to start.
 # So, wait a bit before running a test suite
-AFTER_START_DELAY = 10
-AFTER_STOP_DELAY = 10
+AFTER_START_DELAY = 30
+AFTER_STOP_DELAY = 30
 
 PRODUCTION_SERVICE = 'PSG2'
 DEV_SERVICE = 'PSG2_DEV'
