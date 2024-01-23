@@ -1,8 +1,12 @@
 [
 {
     "status": "Error",
-    "errors": [
-        "The 'seq_id_type' value must be >= 0 and < 21"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 304,
+            "text": "The 'seq_id_type' value must be >= 0 and < 21"
+        }
     ]
 }
 ]

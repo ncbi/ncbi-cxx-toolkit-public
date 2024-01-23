@@ -2,8 +2,12 @@
 {
     "reply": "BlobInfo",
     "status": "NotFound",
-    "errors": [
-        "Blob 4.1 properties are not found (last modified: -1)"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 311,
+            "text": "Blob 4.1 properties are not found (last modified: -1)"
+        }
     ]
 },
 {

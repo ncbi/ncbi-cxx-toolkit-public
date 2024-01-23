@@ -2,8 +2,12 @@
 {
     "reply": "Processor",
     "status": "NotFound",
-    "errors": [
-        "Cassandra-getblob processor failed to map sat 999 to a Cassandra keyspace"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 305,
+            "text": "Cassandra-getblob processor failed to map sat 999 to a Cassandra keyspace"
+        }
     ]
 },
 {

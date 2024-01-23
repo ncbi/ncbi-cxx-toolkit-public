@@ -1,8 +1,12 @@
 [
 {
     "status": "NotFound",
-    "errors": [
-        "No matching processors found"
+    "messages": [
+        {
+            "severity": "Error",
+            "code": 321,
+            "text": "No matching processors found"
+        }
     ]
 }
 ]
