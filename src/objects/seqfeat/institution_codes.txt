@@ -370,7 +370,7 @@ ASW<AUT>	c	Culture Collection of Algae at the University of Vienna
 ASYA	c	Istanbul Medeniyet University Antarctic Microalgae Culture Collection			
 ATA	s	Atatuerk UEniversitesi			
 ATB	s	Aging Tissue Bank			
-ATCC	bsc	American Type Culture Collection		https://www.atcc.org/Products/All/&spec;.aspx	
+ATCC	scb	American Type Culture Collection		https://www.atcc.org/Products/All/&spec;.aspx	
 ATCH	s	Chinese Academy of Tropical Agricultural Sciences			
 ATH	s	Goulandris Natural History Museum			
 ATHU	s	National and Kapodistrian University of Athens, Biology Department			
