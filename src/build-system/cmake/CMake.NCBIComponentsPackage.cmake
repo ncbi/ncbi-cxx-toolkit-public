@@ -410,6 +410,33 @@ function(NCBI_verify_targets _file)
     endforeach()
 endfunction()
 
+##############################################################################
+macro(NCBI_util_disable_find_use_path)
+    if(DEFINED CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH)
+        set(NCBI_FIND_USE_SYSTEM_ENVIRONMENT_PATH ${CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH})
+    endif()
+    set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH FALSE)
+    if(DEFINED CMAKE_FIND_USE_CMAKE_SYSTEM_PATH)
+        set(NCBI_FIND_USE_CMAKE_SYSTEM_PATH ${CMAKE_FIND_USE_CMAKE_SYSTEM_PATH})
+    endif()
+    set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH FALSE)
+endmacro()
+
+macro(NCBI_util_enable_find_use_path)
+    if(DEFINED NCBI_FIND_USE_SYSTEM_ENVIRONMENT_PATH)
+        set(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH ${NCBI_FIND_USE_SYSTEM_ENVIRONMENT_PATH})
+        unset(NCBI_FIND_USE_SYSTEM_ENVIRONMENT_PATH)
+    else()
+        unset(CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH)
+    endif()
+    if(DEFINED NCBI_FIND_USE_CMAKE_SYSTEM_PATH)
+        set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH ${NCBI_FIND_USE_CMAKE_SYSTEM_PATH})
+        unset(NCBI_FIND_USE_CMAKE_SYSTEM_PATH)
+    else()
+        unset(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH)
+    endif()
+endmacro()
+
 #############################################################################
 #############################################################################
 
@@ -580,6 +607,7 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib FIND libn
 
 ##############################################################################
 # GRPC/PROTOBUF
+NCBI_util_disable_find_use_path()
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib FIND Protobuf)
 if(NOT DEFINED NCBI_PROTOC_APP)
     if(DEFINED CONAN_BIN_DIRS_PROTOBUF)
@@ -603,6 +631,7 @@ endif()
 if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_GRPC_PLUGIN = ${NCBI_GRPC_PLUGIN}")
 endif()
+NCBI_util_enable_find_use_path()
 
 #############################################################################
 # CASSANDRA
