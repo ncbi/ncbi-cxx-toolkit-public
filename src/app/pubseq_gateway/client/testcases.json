@@ -4622,7 +4622,7 @@
                             "bio_id": [
                                 "106779053"
                             ],
-                            "user_args": "use_cache=no"
+                            "user_args": "use_cache=no&resend_timeout=0"
                         },
                         "id": "blob_1"
                     }
@@ -4716,7 +4716,7 @@
                             "bio_id": [
                                 "106779053"
                             ],
-                            "user_args": "use_cache=yes"
+                            "user_args": "use_cache=yes&resend_timeout=0"
                         },
                         "id": "blob_1"
                     }
@@ -4809,7 +4809,8 @@
                         "params": {
                             "bio_id": [
                                 "106779053"
-                            ]
+                            ],
+                            "user_args": "resend_timeout=0"
                         },
                         "id": "blob_1"
                     }
