@@ -65,7 +65,7 @@ public:
     CRef< CStructWrapper<BlastHSPStream> >
     x_GetSampleHspStream(CRef<CBlastOptions> opts, CSeqDB & db)
     {
-        CSeq_id sid("XP_558472");
+        CSeq_id sid("EAL40459");
         
         vector<int> OIDS;
         db.SeqidToOids(sid, OIDS);
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     
     BOOST_REQUIRE_EQUAL((int)use_these.size(), 1);
     if ( CSeq_id::PreferAccessionOverGi() ) {
-        BOOST_REQUIRE(*(use_these.begin()) == "seqid:XP_558472.3");
+        BOOST_REQUIRE(*(use_these.begin()) == "seqid:EAL40459.3");
     }
 }
 
