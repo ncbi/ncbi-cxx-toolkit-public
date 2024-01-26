@@ -333,7 +333,7 @@ void CMyNCBIOKCache::ClearInitiatedRequest(const string &  cookie)
             find_it->second.x_OnError(cookie, CRequestStatus::e503_ServiceUnavailable,
                                       ePSGS_MyNCBIRequestInitiatorDestroyed, eDiag_Error,
                                       "The initiator of the myNCBI request for cookie " +
-                                      cookie + " is destroyed. "
+                                      SanitizeInputValue(cookie) + " is destroyed. "
                                       "So the myNCBI reply will not be delivered. "
                                       "Please try again.");
 

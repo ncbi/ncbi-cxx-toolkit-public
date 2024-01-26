@@ -144,7 +144,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
             string      bad_url = http_req.GetPath();
             x_SendMessageAndCompletionChunks(reply, now,
                                              kBadUrlMessage +
-                                             NStr::HtmlEncode(NStr::PrintableString(bad_url)),
+                                             SanitizeInputValue(NStr::PrintableString(bad_url)),
                                              CRequestStatus::e400_BadRequest,
                                              ePSGS_BadURL,
                                              eDiag_Error);
@@ -1696,7 +1696,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
         if (username.empty())
             msg += "an unknown user";
         else
-            msg += "user " + username;
+            msg += "user " + SanitizeInputValue(username);
 
         auto        now = psg_clock_t::now();
         auto        expiration = now;
@@ -1835,7 +1835,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
 
         switch (m_Alerts.Acknowledge(alert, username)) {
             case ePSGS_AlertNotFound:
-                msg = "Alert " + alert + " is not found";
+                msg = "Alert " + SanitizeInputValue(alert) + " is not found";
                 x_SendMessageAndCompletionChunks(
                         reply, now, msg,
                         CRequestStatus::e404_NotFound,
@@ -1941,11 +1941,11 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
                 most_recent_time = NStr::StringToInt8(most_recent_time_param.m_Value);
                 if (most_recent_time < 0)
                     err_msg = "Invalid " + kMostRecentTimeParam +
-                              " value (" + most_recent_time_param.m_Value +
+                              " value (" + SanitizeInputValue(most_recent_time_param.m_Value) +
                               "). It must be >= 0.";
             } catch (...) {
                 err_msg = "Invalid " + kMostRecentTimeParam +
-                          " value (" + most_recent_time_param.m_Value +
+                          " value (" + SanitizeInputValue(most_recent_time_param.m_Value) +
                           "). It must be an integer >= 0.";
             }
 
@@ -1966,11 +1966,11 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
                 most_ancient_time = NStr::StringToInt8(most_ancient_time_param.m_Value);
                 if (most_ancient_time < 0)
                     err_msg = "Invalid " + kMostAncientTimeParam +
-                              " value (" + most_ancient_time_param.m_Value +
+                              " value (" + SanitizeInputValue(most_ancient_time_param.m_Value) +
                               "). It must be >= 0.";
             } catch (...) {
                 err_msg = "Invalid " + kMostAncientTimeParam +
-                          " value (" + most_ancient_time_param.m_Value +
+                          " value (" + SanitizeInputValue(most_ancient_time_param.m_Value) +
                           "). It must be an integer >= 0.";
             }
 

@@ -916,7 +916,7 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
         .append(1, '"');
 
     if (request.HasProtein())
-        json.append(NStr::JsonEncode(request.GetProtein()));
+        json.append(SanitizeInputValue(NStr::JsonEncode(request.GetProtein())));
     else
         json.append("<null>");
 
@@ -926,7 +926,7 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
         .append(1, '"');
 
     if (request.HasNucleotide())
-        json.append(NStr::JsonEncode(request.GetNucleotide()));
+        json.append(SanitizeInputValue(NStr::JsonEncode(request.GetNucleotide())));
     else
         json.append("<null>");
 
