@@ -76,7 +76,7 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
                   "to integer (received value: '" +
-                  NStr::HtmlEncode(param_value) + "')";
+                  SanitizeInputValue(param_value) + "')";
         return false;
     }
     return true;
@@ -93,7 +93,7 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
                   "to integer (received value: '" +
-                  NStr::HtmlEncode(param_value) + "')";
+                  SanitizeInputValue(param_value) + "')";
         return false;
     }
     return true;
@@ -110,7 +110,7 @@ bool CPubseqGatewayApp::x_ConvertDoubleParameter(const string &  param_name,
     } catch (...) {
         err_msg = "Error converting '" + param_name + "' parameter "
                   "to double (received value: '" +
-                  NStr::HtmlEncode(param_value) + "')";
+                  SanitizeInputValue(param_value) + "')";
         return false;
     }
     return true;
@@ -551,9 +551,9 @@ CPubseqGatewayApp::x_GetEnabledAndDisabledProcessors(
                 x_MalformedArguments(reply, now,
                                      "The same processor name is found "
                                      "in both '" + kEnableProcessor +
-                                     "' (has it as " + en_processor + ") and '" +
+                                     "' (has it as " + SanitizeInputValue(en_processor) + ") and '" +
                                      kDisableProcessor + "' (has it as " +
-                                     dis_processor + ") lists");
+                                     SanitizeInputValue(dis_processor) + ") lists");
                 return false;
             }
         }
@@ -806,7 +806,7 @@ CPubseqGatewayApp::x_GetNames(CHttpRequest &  req,
     for (const auto &  raw_item : raw_names) {
         if (!raw_item.empty()) {
             if (find(names.begin(), names.end(), raw_item) != names.end()) {
-                PSG_WARNING("The annotation name " + raw_item +
+                PSG_WARNING("The annotation name " + SanitizeInputValue(raw_item) +
                             " is found in the list of names more than once "
                             "(case sensitive). The duplicates are ignored.");
             } else {

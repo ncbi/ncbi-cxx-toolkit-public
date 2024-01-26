@@ -1055,14 +1055,14 @@ string CPSGS_AsyncResolveBase::GetCouldNotResolveMessage(void) const
     string      msg = "Could not resolve ";
 
     if (m_SeqIdsToResolve.size() == 1) {
-        msg += "seq_id " + NStr::HtmlEncode(m_SeqIdsToResolve.begin()->seq_id);
+        msg += "seq_id " + SanitizeInputValue(m_SeqIdsToResolve.begin()->seq_id);
     } else {
         msg += "any of the seq_ids: ";
         bool    is_first = true;
         for (const auto &  item : m_SeqIdsToResolve) {
             if (!is_first)
                 msg += ", ";
-            msg += NStr::HtmlEncode(item.seq_id);
+            msg += SanitizeInputValue(item.seq_id);
             is_first = false;
         }
     }

@@ -1535,6 +1535,15 @@ long PSGToString(long  signed_value, char *  buf)
 }
 
 
+// It is used to sanitize string values which are received from a user and are
+// going to be sent out. This to prevent vulnerabilities like XSS when an input
+// value is intentionally malformed as a fragment of a script or so.
+string SanitizeInputValue(const string &  input_val)
+{
+    return NStr::HtmlEncode(input_val);
+}
+
+
 static map<EPSGS_StartupDataState, string> s_CassStartupDataStateMsg =
     { {ePSGS_NoCassConnection, "Cassandra DB connection is not established"},
       {ePSGS_NoValidCassMapping, "Cassandra DB mapping configuration is invalid"},
