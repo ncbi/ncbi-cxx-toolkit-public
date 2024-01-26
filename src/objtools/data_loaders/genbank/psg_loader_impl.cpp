@@ -4183,7 +4183,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(
             bioseq_request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
             auto bioseq_reply = x_SendRequest(bioseq_request);
             CRef<CPSG_BioseqInfo_Task> bioseq_task(new CPSG_BioseqInfo_Task(bioseq_reply, group));
-            CPSG_Task_Guard bioseq_guard(*bioseq_task);
+            guards.push_back(make_shared<CPSG_Task_Guard>(*bioseq_task));
             tasks[bioseq_task] = i;
             group.AddTask(bioseq_task);
         }
@@ -4191,7 +4191,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(
         blob_request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         auto blob_reply = x_SendRequest(blob_request);
         CRef<CPSG_Blob_Task> blob_task(new CPSG_Blob_Task(blob_reply, group, ids[i], data_source, *this));
-        CPSG_Task_Guard blob_guard(*blob_task);
+        guards.push_back(make_shared<CPSG_Task_Guard>(*blob_task));
         tasks[blob_task] = i;
         group.AddTask(blob_task);
     }
