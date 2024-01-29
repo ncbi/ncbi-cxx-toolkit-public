@@ -64,6 +64,6 @@ IntelMAC      : clang : Clang.sh  --without-dll --with-bin-release --without-deb
 
 ArmMAC        : clang : Clang.sh  --without-dll --with-bin-release --without-debug --without-pcre --with-mt --without-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-gnutls --without-gcrypt --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/3 --with-static-vdb --without-lzo --without-zstd
 
-ArmMAC        : clang-x86 : Clang.sh  --host=x86_64-apple-darwin21 --without-dll --with-bin-release --without-debug --without-pcre --with-mt --without-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-gnutls --without-gcrypt --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/3 --with-static-vdb --without-lzo --without-zstd <ENV>CC='clang -arch x86_64' CXX='clang++ -arch x86_64'</ENV>
+ArmMAC        : clang-x86 : Clang.sh  --host=x86_64-apple-darwin21 --without-dll --with-bin-release --without-debug --without-pcre --with-mt --without-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-gnutls --without-gcrypt --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/3 --with-static-vdb --without-lzo --without-zstd <ENV>CC='clang -arch x86_64';CXX='clang++ -arch x86_64'</ENV>
 
 USE_COMPONENTS
