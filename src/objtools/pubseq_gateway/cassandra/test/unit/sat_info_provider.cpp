@@ -70,15 +70,26 @@ class CSatInfoProviderTest
  protected:
     static void SetUpTestCase() {
         m_Registry.Set(m_ConfigSection, "service", string(m_TestClusterName), IRegistry::fPersistent);
+
         m_Registry.Set(m_ConfigSectionSecure, "service", string(m_TestClusterName), IRegistry::fPersistent);
         m_Registry.Set(m_ConfigSectionSecure, "namespace", string(m_SecureKeyspace), IRegistry::fPersistent);
         m_Registry.Set(m_ConfigSectionSecure, "qtimeout", "11111", IRegistry::fPersistent);
+
+        m_Registry.Set(m_ConfigSectionTimeout, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        m_Registry.Set(m_ConfigSectionTimeout, "qtimeout", "1", IRegistry::fPersistent);
+
         m_RegistryPtr = make_shared<CCompoundRegistry>();
         m_RegistryPtr->Add(m_Registry);
+
         m_Factory = CCassConnectionFactory::s_Create();
         m_Factory->LoadConfig(m_RegistryPtr.get(), m_ConfigSection);
         m_Connection = m_Factory->CreateInstance();
         m_Connection->Connect();
+
+        m_FactoryTimeout = CCassConnectionFactory::s_Create();
+        m_FactoryTimeout->LoadConfig(m_RegistryPtr.get(), m_ConfigSectionTimeout);
+        m_ConnectionTimeout = m_FactoryTimeout->CreateInstance();
+        m_ConnectionTimeout->Connect();
     }
 
     static void TearDownTestCase() {
@@ -89,10 +100,13 @@ class CSatInfoProviderTest
 
     static const char* m_TestClusterName;
     static const char * m_ConfigSection;
+    static const char * m_ConfigSectionTimeout;
     static const char * m_ConfigSectionSecure;
     static const char * m_SecureKeyspace;
     static shared_ptr<CCassConnectionFactory> m_Factory;
+    static shared_ptr<CCassConnectionFactory> m_FactoryTimeout;
     static shared_ptr<CCassConnection> m_Connection;
+    static shared_ptr<CCassConnection> m_ConnectionTimeout;
     static CNcbiRegistry m_Registry;
     static shared_ptr<CCompoundRegistry> m_RegistryPtr;
 
@@ -103,8 +117,11 @@ const char* CSatInfoProviderTest::m_TestClusterName = "ID_CASS_TEST";
 const char* CSatInfoProviderTest::m_ConfigSection = "TEST";
 const char* CSatInfoProviderTest::m_ConfigSectionSecure = "TEST_SECURE";
 const char* CSatInfoProviderTest::m_SecureKeyspace = "sat_info_secure";
+const char* CSatInfoProviderTest::m_ConfigSectionTimeout = "TEST_TIMEOUT";
 shared_ptr<CCassConnectionFactory> CSatInfoProviderTest::m_Factory(nullptr);
+shared_ptr<CCassConnectionFactory> CSatInfoProviderTest::m_FactoryTimeout(nullptr);
 shared_ptr<CCassConnection> CSatInfoProviderTest::m_Connection(nullptr);
+shared_ptr<CCassConnection> CSatInfoProviderTest::m_ConnectionTimeout(nullptr);
 CNcbiRegistry CSatInfoProviderTest::m_Registry;
 shared_ptr<CCompoundRegistry> CSatInfoProviderTest::m_RegistryPtr(nullptr);
 
@@ -383,6 +400,17 @@ TEST_F(CSatInfoProviderTest, PsgDomain) {
     EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUnchanged, provider.RefreshSchema(false));
 
     //cout << provider.GetSchema()->ToString() << endl;
+}
+
+TEST_F(CSatInfoProviderTest, SchemaProviderTimeoutOverride) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT1", m_ConnectionTimeout,
+        m_RegistryPtr, m_ConfigSectionTimeout
+    );
+    EXPECT_EQ(1UL, m_ConnectionTimeout->QryTimeoutMs());
+    //EXPECT_THROW(provider.RefreshSchema(true), CCassandraException);
+    provider.SetTimeout(chrono::seconds(1));
+    provider.RefreshSchema(true);
 }
 
 }  // namespace

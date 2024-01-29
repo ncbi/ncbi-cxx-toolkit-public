@@ -283,7 +283,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     // are most likely not available for CQL (e.g. COLO from Bethesda)
     // So maybe there will be necessary to make second level of estimations based on available data
     vector<SCassSizeEstimate> GetSizeEstimates(string const& datacenter, string const& keyspace, string const& table);
-    vector<string> GetLocalPeersAddressList(string const & datacenter);
+    vector<string> GetLocalPeersAddressList(string const & datacenter, unsigned int timeout = 0);
     string GetDatacenterName();
     static string NewTimeUUID();
     static void Perform(

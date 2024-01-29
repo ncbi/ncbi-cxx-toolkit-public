@@ -691,10 +691,14 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
     return estimates;
 }
 
-vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacenter)
+vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacenter, unsigned int timeout)
 {
     set<string> hosts;
     auto query = NewQuery();
+    if (timeout > 0) {
+        query->SetTimeout(timeout);
+        query->UsePerRequestTimeout(true);
+    }
     query->SetSQL("SELECT rpc_address, data_center FROM system.local", 0);
     query->Query(CCassConsistency::kLocalOne, false, false);
     query->NextRow();
@@ -708,6 +712,10 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
     }
     // Second pass to fetch peers list (needs to be executed from the same host)
     query = NewQuery();
+    if (timeout > 0) {
+        query->SetTimeout(timeout);
+        query->UsePerRequestTimeout(true);
+    }
     query->SetHost(rpc_address);
     if (datacenter.empty()) {
         query->SetSQL("SELECT rpc_address FROM system.peers", 0);
