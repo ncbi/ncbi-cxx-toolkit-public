@@ -2909,16 +2909,16 @@ void CProtValidator::x_ValidateECNumbers()
                             "EC_number " + ec_number + " was transferred and is no longer valid");
                 break;
             case CProt_ref::eEC_unknown:
-                {
-                    size_t pos = NStr::Find (ec_number, "n");
-                    if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue,
-                                ec_number + " is not a legal value for qualifier EC_number");
-                    } else {
-                        PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue,
-                                ec_number + " is not a legal preliminary value for qualifier EC_number");
-                    }
+            {
+                size_t pos = NStr::Find (ec_number, "n");
+                if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue,
+                            ec_number + " is not a legal value for qualifier EC_number");
+                } else {
+                    PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue,
+                            ec_number + " is not a legal preliminary value for qualifier EC_number");
                 }
+            }
                 break;
             default:
                 break;
@@ -4850,8 +4850,6 @@ CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope,
         return new CSingleFeatValidator(feat, scope, imp);
     }
 }
-
-
 
 
 END_SCOPE(validator)
