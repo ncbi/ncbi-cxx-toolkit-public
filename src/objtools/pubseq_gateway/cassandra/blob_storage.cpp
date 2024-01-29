@@ -61,17 +61,21 @@ bool CanRetry(CCassandraException const& e, int retries)
 }
 
 vector<SSatInfoEntry>
-ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CCassConnection> connection)
-{
+ReadCassandraSatInfo(
+    string const& keyspace, string const& domain,
+    shared_ptr<CCassConnection> connection,
+    optional<chrono::milliseconds> timeout
+) {
     vector<SSatInfoEntry> result;
     for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
-            auto columns = connection->GetColumnNames(keyspace, "sat2keyspace");
-            bool flags_column_exists = find(cbegin(columns), cend(columns), "flags") != cend(columns);
-            string flags_cql = flags_column_exists ? ", flags" : "";
             auto query = connection->NewQuery();
+            if (timeout) {
+                query->UsePerRequestTimeout(true);
+                query->SetTimeout(timeout.value().count());
+            }
             query->SetSQL(
-                "SELECT sat, keyspace_name, schema_type, service" + flags_cql + " FROM "
+                "SELECT sat, keyspace_name, schema_type, service, flags FROM "
                 + keyspace + ".sat2keyspace WHERE domain = ?", 1);
             query->BindStr(0, domain);
             query->Query(kSatInfoReadConsistency, false, false);
@@ -81,9 +85,7 @@ ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CC
                 row.keyspace = query->FieldGetStrValue(1);
                 row.schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
                 row.service = query->FieldGetStrValueDef(3, "");
-                if (flags_column_exists) {
-                    row.flags = query->FieldGetInt64Value(4, 0);
-                }
+                row.flags = query->FieldGetInt64Value(4, 0);
                 if (row.schema_type <= eUnknownSchema || row.schema_type > eMaxSchema) {
                     // ignoring
                 }
@@ -111,13 +113,20 @@ ReadCassandraSatInfo(string const& keyspace, string const& domain, shared_ptr<CC
 }
 
 shared_ptr<CPSGMessages>
-ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<CCassConnection> connection)
-{
+ReadCassandraMessages(
+    string const& keyspace, string const& domain,
+    shared_ptr<CCassConnection> connection,
+    optional<chrono::milliseconds> timeout
+) {
     auto result = make_shared<CPSGMessages>();
     for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
             result->Clear();
             auto query = connection->NewQuery();
+            if (timeout) {
+                query->UsePerRequestTimeout(true);
+                query->SetTimeout(timeout.value().count());
+            }
             query->SetSQL("SELECT name, value FROM " + keyspace + ".messages WHERE domain = ?", 1);
             query->BindStr(0, domain);
             query->Query(kSatInfoReadConsistency, false, false);
@@ -138,13 +147,20 @@ ReadCassandraMessages(string const& keyspace, string const& domain, shared_ptr<C
     return result;
 }
 
-set<string> ReadSecureSatUsers(string const& keyspace, int32_t sat, shared_ptr<CCassConnection> connection)
-{
+set<string> ReadSecureSatUsers(
+    string const& keyspace, int32_t sat,
+    shared_ptr<CCassConnection> connection,
+    optional<chrono::milliseconds> timeout
+) {
     set<string> result;
     for (int i = kSatInfoReadRetry; i >= 0; --i) {
         try {
             result.clear();
             auto query = connection->NewQuery();
+            if (timeout) {
+                query->UsePerRequestTimeout(true);
+                query->SetTimeout(timeout.value().count());
+            }
             query->SetSQL("SELECT username FROM " + keyspace + ".web_user WHERE sat = ?", 1);
             query->BindInt32(0, sat);
             query->Query(kSatInfoReadConsistency, false, false);
@@ -296,7 +312,8 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddConnection(
     bool is_default
 )
 {
-    for (auto peer : connection->GetLocalPeersAddressList("")) {
+    unsigned int timeout = m_ResolveTimeout ? m_ResolveTimeout.value().count() : 0;
+    for (auto peer : connection->GetLocalPeersAddressList("", timeout)) {
         m_Point2Cluster[GetConnectionPointKey(peer, connection->GetPort(), registry_section)] = connection;
     }
     if (is_default) {
@@ -649,7 +666,7 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
         x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshSchemaResult::eSatInfoKeyspaceUndefined;
     }
-    auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection());
+    auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection(), m_Timeout);
     if (rows.empty()) {
         x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".sat2keyspace info is empty");
         return ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty;
@@ -659,7 +676,9 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
         auto secure_connection = MakeCassConnection(m_Registry, m_SecureSatRegistrySection, "", false);
         for (auto sat_info: rows) {
             if (sat_info.IsSecureSat()) {
-                secure_users[sat_info.sat] = ReadSecureSatUsers(secure_connection->Keyspace(), sat_info.sat, secure_connection);
+                secure_users[sat_info.sat] = ReadSecureSatUsers(
+                    secure_connection->Keyspace(), sat_info.sat, secure_connection, m_Timeout
+                );
             }
         }
     }
@@ -671,6 +690,7 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
         return ESatInfoRefreshSchemaResult::eSatInfoUpdated;
     }
     auto schema = make_shared<CSatInfoSchema>();
+    schema->m_ResolveTimeout = m_Timeout;
     auto old_schema = GetSchema();
     auto result = x_PopulateNewSchema(schema, old_schema, move(rows), move(secure_users));
     if (result.has_value()) {
@@ -738,7 +758,7 @@ ESatInfoRefreshMessagesResult CSatInfoSchemaProvider::RefreshMessages(bool apply
         x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshMessagesResult::eSatInfoKeyspaceUndefined;
     }
-    auto messages = ReadCassandraMessages(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection());
+    auto messages = ReadCassandraMessages(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection(), m_Timeout);
     if (messages->IsEmpty()) {
         x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".messages info is empty");
         return ESatInfoRefreshMessagesResult::eSatInfoMessagesEmpty;

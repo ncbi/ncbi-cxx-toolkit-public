@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include <chrono>
 #include <optional>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -260,6 +261,8 @@ class CSatInfoSchema final
 
     // Default cluster registry section name
     string m_DefaultRegistrySection;
+
+    optional<chrono::milliseconds> m_ResolveTimeout{nullopt};
 };
 
 class CSatInfoSchemaProvider final
@@ -284,6 +287,15 @@ class CSatInfoSchemaProvider final
         shared_ptr<IRegistry const> registry,
         string const& registry_section
     );
+
+    /// Overrides data retrieval timeout
+    ///
+    /// @param timeout
+    ///   Timeout in milliseconds
+    void SetTimeout(chrono::milliseconds timeout)
+    {
+        m_Timeout = timeout;
+    }
 
     /// Changes configuration domain for existing provider
     ///
@@ -433,6 +445,8 @@ class CSatInfoSchemaProvider final
 
     shared_ptr<string> m_RefreshErrorMessage;
     bool m_ResolverKeyspaceRequired{true};
+
+    optional<chrono::milliseconds> m_Timeout{nullopt};
 };
 
 END_IDBLOB_SCOPE
