@@ -89,8 +89,10 @@ def create_new_tarball_name(platform, program, version):
         retval += "-ia32-linux"
     elif platform.startswith("Linux64"):
         retval += "-x64-linux"
-    elif platform.startswith("ArmMAC"):
+    elif platform == "ArmMAC:clang":
         retval += "-aarch64-macosx"
+    elif platform == "ArmMAC:clang-x86":
+        retval += "-x64-macosx"
     elif platform == "SunOSSparc":
         retval += "-sparc64-solaris"
     elif platform == "SunOSx86":
@@ -102,7 +104,9 @@ def create_new_tarball_name(platform, program, version):
 
 def determine_platform():
     """ Determines the platform (as defined in prepare_release) for the current
-    hostname
+    host, i.e.: the output of the one-liner below
+
+    python3 -mplatform 'print platform.platform()'
     """
 
     p = platform.platform().lower()
@@ -122,7 +126,9 @@ def determine_platform():
             return "Win64"
         else:
             return "Win32"
-    elif p.find("darwin") != -1 or p.find("macos") != -1:
-        return "ArmMAC"
+    elif p.find("darwin") != -1 or (p.find("macos") != -1 and p.find("x86_64") == -1):
+        return "ArmMAC:clang"
+    elif p.find("darwin") != -1 or (p.find("macos") != -1 and p.find("x86_64") != -1):
+        return "ArmMAC:clang-x86"
     else:
         raise RuntimeError("Unknown platform: " + p)
