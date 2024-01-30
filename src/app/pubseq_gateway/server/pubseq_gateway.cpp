@@ -243,6 +243,11 @@ bool CPubseqGatewayApp::OpenCass(void)
                                                 registry,
                                                 insecure_cass_section);
 
+        // Debugging: to simulate cassandra timeouts do the following:
+        // - set a very short timeout in the configuration file
+        // - uncomment the line below (to make mapping loaded properly)
+        // m_CassSchemaProvider->SetTimeout(chrono::seconds(15));
+
         // To start using HUP (hold until publication) a secure section needs
         // to be set for the provider. Set the section only if it exists in the
         // configuration file.
