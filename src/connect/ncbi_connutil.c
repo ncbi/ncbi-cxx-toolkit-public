@@ -525,7 +525,8 @@ static const char* x_ProxyStr(EBProxyType proxy)
 }
 
 
-/* Return -1 if nothing to do; 0 if failed; 1 if succeeded */
+/* Return -1 if nothing to do; 0 if failed; 1 if succeeded.
+ * NB: This call must be service-agnostic as the result gets cached for all. */
 static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info,
                                          const char* env, EBProxyType proxy)
 {
@@ -592,40 +593,26 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info,
                    strcasecmp(info->http_proxy_host, x_info->host) != 0  ||
                    strcmp    (info->http_proxy_user, x_info->user) != 0  ||
                    strcmp    (info->http_proxy_pass, x_info->pass) != 0) {
-            CORE_LOGF_X(14, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
-                        ("ConnNetInfo(%s%s%s$%s): Non-identical proxy setting"
-                         " \"%s\" compared to %s%s",
-                         &"\""[!*info->svc], info->svc,
-                         *info->svc ? "\", " : "", env, val,
-                         x_ProxyStr(info->http_proxy_mask),
-                         info->http_proxy_leak ? ", dropping all" : ""));
-            parsed = info->http_proxy_leak ? -1/*alas*/ : 0/*failure*/;
+            CORE_LOGF_X(14, eLOG_Error,
+                        ("ConnNetInfo($%s): Non-identical proxy setting"
+                         " \"%s\" compared to %s", env, val,
+                         x_ProxyStr(info->http_proxy_mask)));
+            parsed = 0/*failure*/;
         }
-        if (parsed > 0) {
+        if (parsed) {
             info->http_proxy_mask |= proxy;
-            CORE_TRACEF(("ConnNetInfo(%s%s%s$%s): \"%s\" [%s]->[%s]",
-                         &"\""[!*info->svc], info->svc,
-                         *info->svc ? "\", " : "", env, val, x_ProxyStr(proxy),
+            CORE_TRACEF(("ConnNetInfo($%s): \"%s\" [%s]->[%s]", env, val,
+                         x_ProxyStr(proxy),
                          x_ProxyStr(info->http_proxy_mask)));
         }
     } else {
         if (proxy != fProxy_Https  ||  x_info->scheme != eURL_Https)
             parsed = 0;
-        CORE_LOGF_X(10, info->http_proxy_leak ? eLOG_Warning : eLOG_Error,
-                    ("ConnNetInfo(%s%s%s$%s): %s \"%s\"",
-                     &"\""[!*info->svc], info->svc,
-                     *info->svc ? "\", " : "", env, parsed
+        CORE_LOGF_X(10, eLOG_Error,
+                    ("ConnNetInfo($%s): %s \"%s\"", env, parsed
                      ? "Unable to utilize secure HTTPS proxy"
                      : "Unrecognized HTTP proxy specification", val));
-        parsed = info->http_proxy_leak ? -1/*noop*/ : 0/*failure*/;
-    }
-    if (info->http_proxy_mask  &&  parsed < 0) {
-        /* make sure no remnants of a failed parse slip through */
-        info->http_proxy_mask    = fProxy_None/*0*/;
-        info->http_proxy_host[0] = '\0';
-        info->http_proxy_port    =   0;
-        info->http_proxy_user[0] = '\0';
-        info->http_proxy_pass[0] = '\0';
+        parsed = 0/*failure*/;
     }
     ConnNetInfo_Destroy(x_info);
     free((void*) val);
@@ -661,12 +648,12 @@ static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
            !info->http_proxy_port  &&
            !info->http_proxy_host[0]);
     if (info->http_proxy_skip)
-        return -1;
+        return -1/*noop*/;
 
     CORE_LOCK_READ;
     if (s_ProxySet) {
         if (s_ProxySet < 0)
-            rv =  0/*error*/;
+            rv = !info->http_proxy_leak ? 0/*error*/ : -1/*noop*/;
         else if (!s_ProxyMask)
             rv = -1/*noop*/;
         else {
@@ -683,11 +670,10 @@ static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
     CORE_UNLOCK;
 
     rv = x_SetupHttpProxy(info, "http_proxy", fProxy_Http);
+    assert(!(rv <= 0) ^ !info->http_proxy_mask);
     if (rv) {
-        int msk = info->http_proxy_mask;
         int rvs = x_SetupHttpProxy(info, "https_proxy", fProxy_Https);
-        assert(!(rv <= 0) ^ !msk);
-        if (0 <= rvs  ||  msk != info->http_proxy_mask)
+        if (0 <= rvs)
             rv = rvs;
     }
 
@@ -710,7 +696,7 @@ static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
     }
     CORE_UNLOCK;
 
-    return rv;
+    return rv  ||  !info->http_proxy_leak ? rv : -1/*noop*/;
 }
 
 
