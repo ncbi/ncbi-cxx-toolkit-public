@@ -436,6 +436,24 @@ void AppendBioseqFlagParameter(CJsonNode &  node, const string &  flag_name)
     node.SetByKey(flag_name, flag);
 }
 
+void AppendIncludeHupParameter(CJsonNode &  node)
+{
+    CJsonNode   include_hup(CJsonNode::NewObjectNode());
+    include_hup.SetBoolean(kMandatory, false);
+    include_hup.SetString(kType, "String");
+    include_hup.SetString(kDescription,
+        "Explicitly tells the server if it should try to retrieve data from HUP keyspaces. "
+        "If data are coming from a secure keyspace then the following logic is used. "
+        "If the include_hup option is provided then the decision is made basing on the provided value. "
+        "Otherwise a decision is made basing on the presence of the WebCubbyUser cookie. "
+        "If it was decided that HUP data needs to be provided then the server uses the "
+        "WebCubbyUser cookie value to perform an authorization check.");
+    include_hup.SetString(kAllowedValues,
+        "yes and no");
+    include_hup.SetString(kDefault, "");
+    node.SetByKey("include_hup", include_hup);
+}
+
 void AppendNamesParameter(CJsonNode &  node)
 {
     CJsonNode   names(CJsonNode::NewObjectNode());
@@ -778,6 +796,7 @@ CJsonNode  GetIdGetblobRequestNode(void)
     AppendTseOptionParameter(id_getblob_params, "orig");
     AppendLastModifiedParameter(id_getblob_params);
     AppendUseCacheParameter(id_getblob_params);
+    AppendIncludeHupParameter(id_getblob_params);
     AppendClientIdParameter(id_getblob_params);
     AppendSendBlobIfSmallParameter(id_getblob_params);
     AppendTraceParameter(id_getblob_params);
@@ -814,6 +833,7 @@ CJsonNode  GetIdGetRequestNode(void)
     AppendSendBlobIfSmallParameter(id_get_params);
     AppendResendTimeoutParameter(id_get_params);
     AppendSeqIdResolveParameter(id_get_params);
+    AppendIncludeHupParameter(id_get_params);
     AppendTraceParameter(id_get_params);
     AppendHopsParameter(id_get_params);
     AppendEnableProcessorParameter(id_get_params);
@@ -840,6 +860,7 @@ CJsonNode  GetIdGetTseChunkRequestNode(void)
     AppendId2ChunkParameter(id_get_tse_chunk_params);
     AppendId2InfoParameter(id_get_tse_chunk_params);
     AppendUseCacheParameter(id_get_tse_chunk_params);
+    AppendIncludeHupParameter(id_get_tse_chunk_params);
     AppendTraceParameter(id_get_tse_chunk_params);
     AppendHopsParameter(id_get_tse_chunk_params);
     AppendEnableProcessorParameter(id_get_tse_chunk_params);
@@ -1003,7 +1024,10 @@ CJsonNode  GetAdminConfigRequestNode(void)
     CJsonNode   admin_config_reply(CJsonNode::NewObjectNode());
     admin_config_reply.SetString(kDescription,
         "The HTTP body is a JSON dictionary with "
-        "the configuration information.");
+        "the configuration information. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_config.SetByKey("reply", admin_config_reply);
 
     return admin_config;
@@ -1021,7 +1045,10 @@ CJsonNode  GetAdminInfoRequestNode(void)
     CJsonNode   admin_info_reply(CJsonNode::NewObjectNode());
     admin_info_reply.SetString(kDescription,
         "The HTTP body is a JSON dictionary with "
-        "the run-time information like resource consumption");
+        "the run-time information like resource consumption. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_info.SetByKey("reply", admin_info_reply);
 
     return admin_info;
@@ -1039,7 +1066,10 @@ CJsonNode  GetAdminStatusRequestNode(void)
     CJsonNode   admin_status_reply(CJsonNode::NewObjectNode());
     admin_status_reply.SetString(kDescription,
         "The HTTP body is a JSON dictionary with "
-        "various event counters");
+        "various event counters. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_status.SetByKey("reply", admin_status_reply);
 
     return admin_status;
@@ -1060,7 +1090,10 @@ CJsonNode  GetAdminShutdownRequestNode(void)
 
     CJsonNode   admin_status_reply(CJsonNode::NewObjectNode());
     admin_status_reply.SetString(kDescription,
-        "The standard HTTP protocol is used");
+        "The standard HTTP protocol is used. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_shutdown.SetByKey("reply", admin_status_reply);
 
     return admin_shutdown;
@@ -1078,7 +1111,10 @@ CJsonNode  GetAdminGetAlertsRequestNode(void)
     CJsonNode   admin_get_alerts_reply(CJsonNode::NewObjectNode());
     admin_get_alerts_reply.SetString(kDescription,
         "The HTTP body is a JSON dictionary with "
-        "the current server alerts");
+        "the current server alerts. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_get_alerts.SetByKey("reply", admin_get_alerts_reply);
 
     return admin_get_alerts;
@@ -1098,7 +1134,10 @@ CJsonNode  GetAdminAckAlertsRequestNode(void)
 
     CJsonNode   admin_ack_alerts_reply(CJsonNode::NewObjectNode());
     admin_ack_alerts_reply.SetString(kDescription,
-        "The standard HTTP protocol is used");
+        "The standard HTTP protocol is used. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_ack_alert.SetByKey("reply", admin_ack_alerts_reply);
 
     return admin_ack_alert;
@@ -1122,7 +1161,10 @@ CJsonNode  GetAdminStatisticsRequestNode(void)
     CJsonNode   admin_statistics_reply(CJsonNode::NewObjectNode());
     admin_statistics_reply.SetString(kDescription,
         "The HTTP body is a JSON dictionary with "
-        "the collected statistics information");
+        "the collected statistics information. "
+        "The request may be configured as protected in the server settings. "
+        "If so then the server will use the value of the AdminAuthToken cookie "
+        "to check permissions.");
     admin_statistics.SetByKey("reply", admin_statistics_reply);
 
     return admin_statistics;
