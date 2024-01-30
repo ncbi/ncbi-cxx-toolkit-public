@@ -368,8 +368,22 @@ static float g_GetSesameStreetCutoff()
     return g_SesameStreetCutoff;
 }
 
+static bool s_UseGeoLocNameForCountry()
+{
+    if (CNcbiApplication::Instance()) {
+        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
+        if (use_geo_loc == "true") {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
+    bool use_geo_loc_name = s_UseGeoLocNameForCountry();
+
     ConvertDuplicates(m_Objs);
 
     CReportNode report, final_report;
@@ -406,7 +420,11 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 capital[upper][jj.first].push_back(o);
             }
         }
-        string diagnosis = OrderQual(it.first);
+        string itfirst = it.first;
+        if (itfirst == "country" && use_geo_loc_name) {
+            itfirst = "geo_loc_name";
+        }
+        string diagnosis = OrderQual(itfirst);
         diagnosis += " (";
         diagnosis += pres == total ? "all present" : "some missing";
         diagnosis += ", ";
@@ -415,8 +433,8 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         report[diagnosis];
 
         if ((num != total || bins != 1)
-                && (it.first == "collection-date" || it.first == "country" || it.first == "isolation-source" || it.first == "strain" || it.first == "isolate"
-                || it.first == "taxname" || it.first == "breed" || it.first == "cultivar" || it.first == "sex")) {
+                && (itfirst == "collection-date" || itfirst == "country" || itfirst == "isolation-source" || itfirst == "strain" || itfirst == "isolate"
+                || itfirst == "taxname" || itfirst == "breed" || itfirst == "cultivar" || itfirst == "sex")) {
             final_report[diagnosis].Fatal();
         }
 
@@ -427,12 +445,12 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 for (auto cap: capital) {
                     const TStringObjVectorMap& objs = cap.second;
                     if (objs.size() < 2) {
-                        AddObjsToReport(diagnosis, objs, it.first, report);
+                        AddObjsToReport(diagnosis, objs, itfirst, report);
                         continue;
                     }
                     size_t best_count = 0;
                     fix.Reset(new CSourseQualsAutofixData);
-                    fix->m_Qualifier = it.first;
+                    fix->m_Qualifier = itfirst;
                     fix->m_User = m_private.m_UserData;
                     for (auto x: objs) {
                         fix->m_Choice.push_back(x.first);
@@ -443,37 +461,37 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     }
                     for (auto x: objs) {
                         for (auto o: x.second) {
-                            report[diagnosis]["[n] source[s] [has] inconsistent capitalization: " + it.first + " (" + x.first + ")"].Add(*((const CDiscrepancyObject&)*o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                            report[diagnosis]["[n] source[s] [has] inconsistent capitalization: " + itfirst + " (" + x.first + ")"].Add(*((const CDiscrepancyObject&)*o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                         }
                     }
                 }
             }
             else {
-                AddObjsToReport(diagnosis, sub, it.first, report);
+                AddObjsToReport(diagnosis, sub, itfirst, report);
             }
 
             if (num < total) { // some missing
                 if (capital.size() == 1 && num / (float)total >= g_GetSesameStreetCutoff()) { // all same and autofixable
                     if (fix.IsNull()) {
                         fix.Reset(new CSourseQualsAutofixData);
-                        fix->m_Qualifier = it.first;
+                        fix->m_Qualifier = itfirst;
                         fix->m_Value = sub.begin()->first;
                         fix->m_User = m_private.m_UserData;
                     }
                     for (auto o: missing) {
-                        report[diagnosis]["[n] source[s] [has] missing " + it.first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o.second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                        report[diagnosis]["[n] source[s] [has] missing " + itfirst + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o.second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
                     }
                 }
                 else {
                     for (auto o: missing) {
                         CRef<CReportObj> r = o.second;
-                        report[diagnosis]["[n] source[s] [has] missing " + it.first].Add(*r);
+                        report[diagnosis]["[n] source[s] [has] missing " + itfirst].Add(*r);
                     }
                 }
             }
         }
         else { // not autofixable
-            AddObjsToReport(diagnosis, sub, it.first, report);
+            AddObjsToReport(diagnosis, sub, itfirst, report);
             for (auto o: missing) {
                 CRef<CReportObj> r = o.second;
                 report[diagnosis]["[n] source[s] [has] missing " + it.first].Add(*r);
