@@ -461,19 +461,24 @@ bool CAnnotWriterApp::xTryProcessInputId(
     const string& id, bool skipHeaders)
 //  -----------------------------------------------------------------------------
 {
-    CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-
     auto pScope = Ref(new CScope(*m_pObjMngr));
     pScope->AddDefaults();
+    
+    CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
     CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
     if (!bsh) {
         return false;
     }
 
-    auto pBioseq = Ref(new CBioseq());
-    pBioseq->Assign(*(bsh.GetCompleteBioseq()));
+    auto pEntry = Ref(new CSeq_entry());
+    pEntry->Assign(*(bsh.GetTopLevelEntry().GetCompleteSeq_entry()));
+    auto tseh = m_pScope->AddTopLevelSeqEntry(*pEntry);
+    
+    bsh = m_pScope->GetBioseqHandle(seqh); // bsh now refers to local record
+    auto result = xProcessBioseqHandle(bsh, skipHeaders);
+    m_pScope->RemoveEntry(*pEntry);
 
-    return xProcessInputObject(*pBioseq, skipHeaders);
+    return result;
 }    
 
 //  -----------------------------------------------------------------------------
