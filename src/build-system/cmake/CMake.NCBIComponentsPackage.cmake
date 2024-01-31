@@ -655,3 +655,8 @@ endif()
 #############################################################################
 # JAEGER
 NCBI_define_Pkgcomponent(NAME JAEGER PACKAGE jaegertracing FIND jaegertracing)
+
+#############################################################################
+# AWS_SDK
+NCBI_define_Pkgcomponent(NAME AWS_SDK PACKAGE AWSSDK FIND AWSSDK)
+
