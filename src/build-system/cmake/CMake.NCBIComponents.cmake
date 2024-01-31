@@ -259,6 +259,9 @@ if(NOT NCBI_PTBCFG_PACKAGING OR NCBI_PTBCFG_USELOCAL)
         include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsUNIXex.cmake)
     endif()
 endif()
+if(EXISTS ${NCBI_TREE_ROOT}/CMake.CustomComponents.cmake)
+    include(${NCBI_TREE_ROOT}/CMake.CustomComponents.cmake)
+endif()
 
 #############################################################################
 # NCBI_PYTHON_EXECUTABLE
