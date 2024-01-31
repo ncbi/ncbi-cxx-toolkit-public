@@ -104,7 +104,7 @@ CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
             "This format is currently not supported");
     }
 
-    return 0;
+    return nullptr;
 }
 
 void CFlatItemFormatter::SetContext(CFlatFileContext& ctx)
@@ -174,7 +174,7 @@ static void s_FormatSecondaryAccessions
     typedef vector<string>      TAccBin;
     typedef vector <TAccBin>    TAccBins;
     TAccBins bins;
-    TAccBin* curr_bin = NULL;
+    TAccBin* curr_bin = nullptr;
 
     // populate the bins
     CAccessionItem::TExtra_accessions::const_iterator prev = xtra.begin();

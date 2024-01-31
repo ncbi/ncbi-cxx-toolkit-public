@@ -258,8 +258,8 @@ void CGenbankGatherer::x_GatherWGS(void) const
 {
     CBioseqContext& ctx = *m_Current;
 
-    const string* first = 0;
-    const string* last  = 0;
+    const string* first = nullptr;
+    const string* last  = nullptr;
 
     bool bFirstWgsItem = true;
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
@@ -296,7 +296,7 @@ void CGenbankGatherer::x_GatherWGS(void) const
             }
         }
 
-        if ( (first != 0)  &&  (last != 0) ) {
+        if (first && last) {
             if( bFirstWgsItem ) {
                 CConstRef<IFlatItem> anchor_item( new CHtmlAnchorItem(ctx, "wgs" ) );
                 ItemOS() << anchor_item;
@@ -312,8 +312,8 @@ void CGenbankGatherer::x_GatherTSA(void) const
 {
     CBioseqContext& ctx = *m_Current;
 
-    const string* first = 0;
-    const string* last  = 0;
+    const string* first = nullptr;
+    const string* last  = nullptr;
 
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
@@ -347,7 +347,7 @@ void CGenbankGatherer::x_GatherTSA(void) const
             }
         }
 
-        if ( (first != 0)  &&  (last != 0) ) {
+        if (first && last) {
             CConstRef<IFlatItem> item( new CTSAItem(tsa_type, *first, *last, uo, ctx) );
             ItemOS() << item;
         }
@@ -358,8 +358,8 @@ void CGenbankGatherer::x_GatherTLS(void) const
 {
     CBioseqContext& ctx = *m_Current;
 
-    const string* first = 0;
-    const string* last  = 0;
+    const string* first = nullptr;
+    const string* last  = nullptr;
 
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
@@ -385,7 +385,7 @@ void CGenbankGatherer::x_GatherTLS(void) const
             }
         }
 
-        if ( (first != 0)  &&  (last != 0) ) {
+        if (first && last) {
             CConstRef<IFlatItem> item( new CTSAItem(CTSAItem::eTLS_Projects, *first, *last, uo, ctx) );
             ItemOS() << item;
         }

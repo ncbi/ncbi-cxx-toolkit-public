@@ -311,12 +311,12 @@ void CGenbankFormatter::EndSection
     else {
         l.push_back("//");
     }
-    text_os.AddParagraph(l, nullptr);
+    text_os.AddParagraph(l);
 
     if( bHtml && cfg.IsModeEntrez() ) {
         text_os.AddLine(
             s_get_anchor_html("slash", end_item.GetContext()),
-            0, IFlatTextOStream::eAddNewline_No );
+            nullptr, IFlatTextOStream::eAddNewline_No);
     }
 
     text_os.Flush();
@@ -606,8 +606,8 @@ void CGenbankFormatter::FormatHtmlAnchor(
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, html_anchor, orig_text_os);
 
-    text_os.AddLine( s_get_anchor_html(html_anchor.GetLabelCore(), html_anchor.GetContext()),
-        0, IFlatTextOStream::eAddNewline_No );
+    text_os.AddLine(s_get_anchor_html(html_anchor.GetLabelCore(), html_anchor.GetContext()),
+        nullptr, IFlatTextOStream::eAddNewline_No);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1261,7 +1261,7 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
     pre_feature_html << ");</script>";
 
     string temp = CNcbiOstrstreamToString(pre_feature_html);
-    text_os.AddLine(temp, 0, IFlatTextOStream::eAddNewline_No);
+    text_os.AddLine(temp, nullptr, IFlatTextOStream::eAddNewline_No);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1418,7 +1418,7 @@ void CGenbankFormatter::FormatFeatHeader
 
     Wrap(l, "FEATURES", "Location/Qualifiers", eFeatHead);
 
-    text_os.AddParagraph(l, nullptr);
+    text_os.AddParagraph(l);
 
     text_os.Flush();
 }
@@ -1679,9 +1679,9 @@ void CGenbankFormatter::FormatFeature
 
     x_SmartWrapQuals(f, *feat, *text_os);
 
-    if( bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans() ) {
+    if (bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans()) {
         // close the <span...>, without an endline
-        text_os->AddLine("</span>", 0, IFlatTextOStream::eAddNewline_No );
+        text_os->AddLine("</span>", nullptr, IFlatTextOStream::eAddNewline_No);
     }
 
     text_os->Flush();
