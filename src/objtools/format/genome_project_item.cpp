@@ -193,8 +193,8 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
 {
     const bool bHtml = ctx.Config().DoHTML();
 
-    const CUser_object *genome_projects_user_obje = NULL;
-    const CUser_object *dblink_user_obj = NULL;
+    const CUser_object* genome_projects_user_obje = nullptr;
+    const CUser_object* dblink_user_obj = nullptr;
 
     // extract all the useful user objects
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
@@ -218,7 +218,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
     }
 
     // process GenomeProjectsDB
-    if( genome_projects_user_obje != NULL ) {
+    if (genome_projects_user_obje) {
         ITERATE (CUser_object::TData, uf_it, genome_projects_user_obje->GetData()) {
             const CUser_field& field = **uf_it;
             if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
@@ -246,7 +246,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
     // ( we have these temporary vectors because we can't push straight to m_DBLinkLines
     //  because we have to sort them in case they're out of order in the ASN.1 )
     vector<string> dblinkLines;
-    if( dblink_user_obj != NULL ) {
+    if (dblink_user_obj) {
         ITERATE (CUser_object::TData, uf_it, dblink_user_obj->GetData()) {
             const CUser_field& field = **uf_it;
             if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && field.CanGetData() ) {
@@ -267,7 +267,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                 if( dbLinkLabelInfo.allow_text &&
                     (field_data.IsStrs() || field_data.IsStr()) )
                 {
-                    const TFieldData::TStrs * pStrs = NULL;
+                    const TFieldData::TStrs* pStrs = nullptr;
 
                     // unique_ptr just used to destroy the pStrs if it's
                     // dynamically created.
@@ -300,7 +300,7 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                     (field_data.IsInts() || field_data.IsInt()) )
                 {
 
-                    const TFieldData::TInts * pInts = NULL;
+                    const TFieldData::TInts* pInts = nullptr;
                     // destroys pInts if it's dynamically created
                     unique_ptr<TFieldData::TInts> pIntsDestroyer;
 

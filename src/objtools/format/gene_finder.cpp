@@ -57,7 +57,7 @@ CGeneFinder::CGeneSearchPlugin::CGeneSearchPlugin(
 {
     ITERATE( CSeq_loc, loc_iter, location ) {
         const CSeq_id *seq_id = loc_iter.GetRangeAsSeq_loc()->GetId();
-        if( seq_id != NULL ) {
+        if (seq_id) {
             m_BioseqHandle = m_Scope->GetBioseqHandle( *seq_id );
             if( m_BioseqHandle ) {
                 break;
@@ -153,9 +153,9 @@ void CGeneFinder::CGeneSearchPlugin::processMainLoop(
     SAnnotSelector::EOverlapType annot_overlap_type )
 {
     // check if given candidate feat matches the filter
-    if( m_Filtering_gene_xref != NULL &&
+    if (m_Filtering_gene_xref &&
         feat.GetOriginalFeature().IsSetData() &&
-        feat.GetOriginalFeature().GetData().IsGene() )
+        feat.GetOriginalFeature().GetData().IsGene())
     {
         if( ! GeneMatchesXref( &feat.GetOriginalFeature().GetData().GetGene(), &*m_Filtering_gene_xref ) ) {
             shouldContinueToNextIteration = true;
@@ -284,7 +284,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
 //  ----------------------------------------------------------------------------
 {
     out_s_feat.Reset();
-    out_g_ref = NULL;
+    out_g_ref = nullptr;
 
     // guard against suppressed gene xrefs
     out_suppression_check_gene_ref = GetSuppressionCheckGeneRef(in_feat);
@@ -311,7 +311,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
     }
 
     if( xref_label.empty() ) {
-        xref_g_ref = NULL;
+        xref_g_ref = nullptr;
     }
 
     bool also_look_at_parent_CDS = false;
@@ -345,7 +345,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
     }
 
     // always use xref_g_ref directly if it's set, but CDS's xref isn't (e.g. NP_041400)
-    if( also_look_at_parent_CDS && NULL != xref_g_ref ) {
+    if (also_look_at_parent_CDS && xref_g_ref) {
         out_g_ref = xref_g_ref;
         out_s_feat.ReleaseOrNull();
         return;
@@ -397,7 +397,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
                 out_s_feat.Reset();
                 if( ! pParentDecidingGeneRef->IsSuppressed() ) {
                     out_g_ref = pParentDecidingGeneRef;
-                    xref_g_ref = NULL; // TODO: is it right to ignore mat_peptide gene xrefs?
+                    xref_g_ref = nullptr; // TODO: is it right to ignore mat_peptide gene xrefs?
                 }
             } else if( ownGeneIsOkay ) {
                 // do nothing; it's already set
@@ -420,7 +420,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
         } // end: if( also_look_at_parent_CDS )
     }
 
-    if ( in_feat && NULL == xref_g_ref ) {
+    if (in_feat && ! xref_g_ref) {
         if (out_s_feat) {
             out_g_ref = &( out_s_feat->GetData().GetGene() );
         }
@@ -436,9 +436,8 @@ void CGeneFinder::GetAssociatedGeneInfo(
         }
 
         // find a gene match using the xref (e.g. match by locus or whatever)
-        if( NULL != xref_g_ref && ! GeneMatchesXref( out_g_ref, xref_g_ref ) )
-        {
-            out_g_ref = NULL;
+        if (xref_g_ref && ! GeneMatchesXref(out_g_ref, xref_g_ref)) {
+            out_g_ref = nullptr;
             out_s_feat.Reset();
 
             CSeq_feat_Handle feat = ResolveGeneXref( xref_g_ref, ctx.GetTopLevelEntry() );
@@ -452,7 +451,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
 
         // we found no match for the gene, but we can fall back on the xref
         // itself (e.g. K03223.1)
-        if( NULL == out_g_ref ) {
+        if (! out_g_ref) {
             out_g_ref = xref_g_ref;
         }
     }
@@ -473,7 +472,7 @@ CSeq_feat_Handle CGeneFinder::ResolveGeneXref(
     };
     CSeq_feat_Handle feat;
 
-    if( xref_g_ref == NULL ) {
+    if (! xref_g_ref) {
         return feat;
     }
 
@@ -699,11 +698,11 @@ CGeneFinder::GetFeatViaSubsetThenExtremesIfPossible_Helper(
             needToAddGbLoaderBack = true;
         } catch(...) {
             // we couldn't remove the GBLOADER temporarily, so we make a temporary substitute CScope
-            scope = NULL;
+            scope = nullptr;
         }
     }
 
-    if (scope == NULL) {
+    if (! scope) {
         // TODO: check if this call is fast
         temp_scope.Reset(new CScope(*CObjectManager::GetInstance()));
         temp_scope->AddDefaults();
@@ -811,7 +810,7 @@ bool CGeneFinder::GeneMatchesXref(
     const CGene_ref * other_ref,
     const CGene_ref * xref )
 {
-    if( NULL == other_ref || NULL == xref ) {
+    if (! other_ref || ! xref) {
         return false;
     }
 

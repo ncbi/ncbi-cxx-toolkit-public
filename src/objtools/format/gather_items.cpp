@@ -444,11 +444,10 @@ void CFlatGatherer::x_GatherBioseq(
          ( !cfg.IsFormatFTable()  ||  cfg.ShowFtablePeptides() ) ) {
          x_DoMultipleSections(seq);
     } else {
-
         // display as a single bioseq (single section)
-        m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, 0,
+        m_Current.Reset(new CBioseqContext(prev_seq, seq, next_seq, *m_Context, nullptr,
             (topLevelSeqEntryContext ? &*topLevelSeqEntryContext : nullptr)));
-        if ( m_Context->UsingSeqEntryIndex() && ! cfg.DisableReferenceCache() ) {
+        if (m_Context->UsingSeqEntryIndex() && ! cfg.DisableReferenceCache()) {
             CRef<CSeqEntryIndex> idx = m_Context->GetSeqEntryIndex();
             if (idx) {
                 if (! idx->DistributedReferences()) {
