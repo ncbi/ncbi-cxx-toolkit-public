@@ -85,8 +85,6 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,
     case CSeq_align::TSegs::e_Denseg:
         sa->SetSegs().SetDenseg(*CreateDensegFromAnchoredAln(anchored_aln, scope));
         break;
-    case CSeq_align::TSegs::e_Std:
-        break;
     case CSeq_align::TSegs::e_Packed:
         sa->SetSegs().SetPacked(*CreatePackedsegFromAnchoredAln(anchored_aln, scope));
         break;
@@ -96,7 +94,13 @@ CreateSeqAlignFromAnchoredAln(const CAnchoredAln& anchored_aln,
     case CSeq_align::TSegs::e_Spliced:
         sa->SetSegs().SetSpliced(*CreateSplicedsegFromAnchoredAln(anchored_aln, scope));
         break;
+    case CSeq_align::TSegs::e_Std:
+        NCBI_THROW(CAlnException, eUnsupported,
+                   "Unsupported alignment type: e_Std.");
+        break;
     case CSeq_align::TSegs::e_Sparse:
+        NCBI_THROW(CAlnException, eUnsupported,
+                   "Unsupported alignment type: e_Sparse.");
         break;
     case CSeq_align::TSegs::e_not_set:
         NCBI_THROW(CAlnException, eInvalidRequest,
