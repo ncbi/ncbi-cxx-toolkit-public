@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jan 24 05:12:02 EST 2024; formally
+/* time_t value corresponding to Thu Feb  1 05:12:02 EST 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1706091122UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1706782322UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1560,7 +1560,11 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CRCA\ts\tInstituto dos Cereais\t\t\t",
 "CRCM\ts\tWashington State University, Charles R. Conner Museum\t\t\t",
 "CRCM:Bird\ts\tWashington State University, Charles R. Conner Museum, bird collection\t\t\t",
-"CRCM:Mammal\ts\tWashington State University, Charles R. Conner Museum, Mammal Collection\t\t\t",
+"CRCM:Fish\ts\tFish collection\t\t\t",
+"CRCM:Herp\ts\tHerpetology Collection\t\t\t",
+"CRCM:Mamm\ts\tWashington State University, Charles R. Conner Museum, Mammal Collection\t\t\t",
+"CRCM:Paleo\ts\tFossil Collection (Misc Vertebrates)\t\t\t",
+"CRCM:Teach\ts\tTeaching Collection (Misc Vertebrates)\t\t\t",
 "CRD\ts\tInstituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (Mexico)\t\t\t",
 "CRE<USA-CA>\ts\tUniversity of Southern California\t\t\t",
 "CREA-AA\tc\tConsiglio per la ricerca in agricoltura e lanalisi delleconomia agraria - Centro di Ricerca Agricoltura e Ambiente\tCRA-CIN\t\t",
