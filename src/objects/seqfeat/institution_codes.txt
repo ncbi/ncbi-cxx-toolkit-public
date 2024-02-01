@@ -1524,7 +1524,11 @@ CRC	c	Chlamydomonas Resource Center
 CRCA	s	Instituto dos Cereais			
 CRCM	s	Washington State University, Charles R. Conner Museum			
 CRCM:Bird	s	Washington State University, Charles R. Conner Museum, bird collection			
-CRCM:Mammal	s	Washington State University, Charles R. Conner Museum, Mammal Collection			
+CRCM:Fish	s	Fish collection			
+CRCM:Herp	s	Herpetology Collection			
+CRCM:Mamm	s	Washington State University, Charles R. Conner Museum, Mammal Collection			
+CRCM:Paleo	s	Fossil Collection (Misc Vertebrates)			
+CRCM:Teach	s	Teaching Collection (Misc Vertebrates)			
 CRD	s	Instituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (Mexico)			
 CRE<USA-CA>	s	University of Southern California			
 CREA-AA	c	Consiglio per la ricerca in agricoltura e lanalisi delleconomia agraria - Centro di Ricerca Agricoltura e Ambiente	CRA-CIN		
