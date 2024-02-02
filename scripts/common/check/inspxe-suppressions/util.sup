@@ -68,3 +68,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "CArchiveZip::AddEntryFromFileSystem / mz_zip_writer_add_file - out of our control"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=archive_zip.cpp,func=AddEntryFromFileSystem;
+		}
+	}
+}
