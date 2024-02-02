@@ -356,7 +356,8 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
     "centromere",
     "short_arm",
     "heterochromatin",
-    "telomere"
+    "telomere",
+    "unknown"
 };
 
 CSafeStatic<CAgpRow::TMapStrEGap> CAgpRow::gap_type_codes(
