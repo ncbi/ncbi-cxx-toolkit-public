@@ -460,55 +460,72 @@ suppression = {
 	}
 }
 suppression = {
-	name = " T_XCSTRING / string.c_str() - 1"
+	name = "_T_XCSTRING / string.c_str() - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			...;
 			func=s_GetEnv,src=ncbi_param.cpp;
 		}
-		allocation={
-			...;
-		}
 	}
 }
 suppression = {
-	name = " T_XCSTRING / string.c_str() - 2"
+	name = "_T_XCSTRING / string.c_str() - 2"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			...;
 			func=s_GetLogConfigString,src=ncbidiag.cpp;
 		}
-		allocation={
-			...;
-		}
 	}
 }
 suppression = {
-	name = " T_XCSTRING / string.c_str() - 3"
+	name = "_T_XCSTRING / string.c_str() - 3"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			...;
-			src=ncbienv.cpp,func=Load;
-		}
-		allocation={
-			...;
+			func=Load,src=ncbienv.cpp;
 		}
 	}
 }
 suppression = {
-	name = " T_XCSTRING / string.c_str() - 4"
+	name = "_T_XCSTRING / string.c_str() - 4"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			...;
 			func=s_GetLogConfigBool,src=ncbidiag.cpp;
 		}
-		allocation={
+	}
+}
+suppression = {
+	name = "_T_XCSTRING / string.c_str() - 5"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
 			...;
+			func=Stat,src=ncbifile.cpp;
 		}
 	}
 }
-
+suppression = {
+	name = "_T_XCSTRING / string.c_str() - 6"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=GetType,src=ncbifile.cpp;
+		}
+	}
+}
+suppression = {
+	name = "_T_XCSTRING / string.c_str() - 7"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=GetLength,src=ncbifile.cpp;
+		}
+	}
+}
