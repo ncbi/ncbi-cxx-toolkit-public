@@ -184,6 +184,7 @@ public:
         eGapShort_arm      ,
         eGapHeterochromatin,
         eGapTelomere       ,
+        eGapUnknown        ,
 
         eGapCount,
         eGapYes_count=eGapContamination+1
