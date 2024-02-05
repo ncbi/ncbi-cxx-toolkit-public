@@ -45,7 +45,6 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
 class ILineErrorListener : public CObject, public IObjtoolsListener
-//  ============================================================================
 {
 public:
     ~ILineErrorListener() override {}
@@ -56,7 +55,8 @@ public:
     ///
     virtual bool PutError(const ILineError&) = 0;
 
-    bool PutMessage(const IObjtoolsMessage& message) override {
+    bool PutMessage(const IObjtoolsMessage& message) override
+    {
         const ILineError* le = dynamic_cast<const ILineError*>(&message);
         if (! le)
             return true;
@@ -114,10 +114,10 @@ public:
 
 //  ============================================================================
 class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public objects::IMessageListener
-//  ============================================================================
 {
 public:
-    CMessageListenerBase() : m_pProgressOstrm(nullptr) {}
+    CMessageListenerBase() :
+        m_pProgressOstrm(nullptr) {}
     ~CMessageListenerBase() override {}
 
 public:
@@ -230,11 +230,8 @@ protected:
 };
 
 //  ============================================================================
-class CMessageListenerLenient :
-//
 //  Accept everything.
-//  ============================================================================
-    public CMessageListenerBase
+class CMessageListenerLenient : public CMessageListenerBase
 {
 public:
     CMessageListenerLenient() {}
@@ -253,11 +250,8 @@ public:
 };
 
 //  ============================================================================
-class CMessageListenerStrict :
-//
 //  Don't accept any errors, at all.
-//  ============================================================================
-    public CMessageListenerBase
+class CMessageListenerStrict : public CMessageListenerBase
 {
 public:
     CMessageListenerStrict() {}
@@ -276,11 +270,8 @@ public:
 };
 
 //  ===========================================================================
-class CMessageListenerCount :
-//
 //  Accept up to <<count>> errors, any level.
-//  ===========================================================================
-    public CMessageListenerBase
+class CMessageListenerCount : public CMessageListenerBase
 {
 public:
     CMessageListenerCount(
@@ -304,11 +295,8 @@ protected:
 };
 
 //  ===========================================================================
-class CMessageListenerLevel :
-//
 //  Accept evrything up to a certain level.
-//  ===========================================================================
-    public CMessageListenerBase
+class CMessageListenerLevel : public CMessageListenerBase
 {
 public:
     CMessageListenerLevel(int iLevel) :
@@ -331,11 +319,8 @@ protected:
 };
 
 //  ===========================================================================
-class CMessageListenerWithLog :
-//
 //  Accept everything, and besides storing all errors, post them.
-//  ===========================================================================
-    public CMessageListenerBase
+class CMessageListenerWithLog : public CMessageListenerBase
 {
 public:
     CMessageListenerWithLog(const CDiagCompileInfo& info) :
@@ -357,14 +342,13 @@ private:
 
 
 //  ===========================================================================
-class NCBI_XOBJREAD_EXPORT CGPipeMessageListener :
-//  ===========================================================================
-    public CMessageListenerBase
+class NCBI_XOBJREAD_EXPORT CGPipeMessageListener : public CMessageListenerBase
 {
 public:
-    CGPipeMessageListener(bool ignoreBadModValue=false);
+    CGPipeMessageListener(bool ignoreBadModValue = false);
 
     bool PutError(const ILineError& err) override final;
+
 private:
     bool m_IgnoreBadModValue;
 };

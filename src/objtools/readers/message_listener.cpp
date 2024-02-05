@@ -38,45 +38,44 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-void
-CMessageListenerBase::PutProgress(
-    const string & sMessage,
-    const Uint8 iNumDone,
-    const Uint8 iNumTotal)
+void CMessageListenerBase::PutProgress(
+    const string& sMessage,
+    const Uint8   iNumDone,
+    const Uint8   iNumTotal)
 {
     // NB: Some other classes rely on the message fitting in one line.
 
     // NB: New attributes or inner elements could be added to the resulting
     //     message at any time, so make no assumptions.
 
-    if( ! m_pProgressOstrm ) {
+    if (! m_pProgressOstrm) {
         // no stream to write to
         return;
     }
 
     *m_pProgressOstrm << "<message severity=\"INFO\" ";
 
-    if( iNumDone > 0 ) {
+    if (iNumDone > 0) {
         *m_pProgressOstrm << "num_done=\"" << iNumDone << "\" ";
     }
 
-    if( iNumTotal > 0 ) {
+    if (iNumTotal > 0) {
         *m_pProgressOstrm << "num_total=\"" << iNumTotal << "\" ";
     }
 
-    if( sMessage.empty() ) {
-        *m_pProgressOstrm  << " />";
+    if (sMessage.empty()) {
+        *m_pProgressOstrm << " />";
     } else {
-        *m_pProgressOstrm  << " >";
+        *m_pProgressOstrm << " >";
 
         string sXMLEncodedMessage = NStr::XmlEncode(sMessage);
 
         // some functionality relies on progress messages fitting into
         // one line, so we escape newlines (just in case) while
         // we write it.
-        ITERATE( string, msg_it, sXMLEncodedMessage ) {
+        ITERATE (string, msg_it, sXMLEncodedMessage) {
             const char ch = *msg_it;
-            switch(ch) {
+            switch (ch) {
             case '\r':
                 *m_pProgressOstrm << "&#xD;";
                 break;
@@ -96,11 +95,12 @@ CMessageListenerBase::PutProgress(
 }
 
 
-CGPipeMessageListener::CGPipeMessageListener(bool ignoreBadModValue)
-    : m_IgnoreBadModValue(ignoreBadModValue) {}
+CGPipeMessageListener::CGPipeMessageListener(bool ignoreBadModValue) :
+    m_IgnoreBadModValue(ignoreBadModValue) {}
 
 
-bool CGPipeMessageListener::PutError(const ILineError& error) {
+bool CGPipeMessageListener::PutError(const ILineError& error)
+{
 
     const auto severity = error.GetSeverity();
 
@@ -119,7 +119,5 @@ bool CGPipeMessageListener::PutError(const ILineError& error) {
 }
 
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
