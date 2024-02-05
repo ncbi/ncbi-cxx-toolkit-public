@@ -36,6 +36,20 @@ suppression = {
 	}
 }
 suppression = {
+	name = "::putenv() - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ncbienv.cpp,func=Set;
+		}
+		allocation={
+			!!!;
+			src=ncbienv.cpp,func=Set;
+		}
+	}
+}
+suppression = {
 	name = "ostrstream::operator<< - memory leak"
 	type = {unreachable_memory_leak}
 	stacks = {

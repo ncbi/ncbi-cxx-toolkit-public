@@ -72,3 +72,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "Boost.Test - getenv"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=fetch.hpp,func=sys_read_var;
+		}
+	}
+}
