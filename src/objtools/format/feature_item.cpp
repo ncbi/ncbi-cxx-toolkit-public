@@ -6447,18 +6447,6 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
     }
 }
 
-static bool s_UseGeoLocNameForCountry()
-{
-    if (CNcbiApplication::Instance()) {
-        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
-        if (use_geo_loc == "true") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 {
     ff.SetQuals().reserve(m_Quals.Size());
@@ -6529,7 +6517,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(transposon_name);
     DO_QUAL(insertion_seq_name);
 
-    if ( GetContext()->Config().GeoLocNameCountry() || s_UseGeoLocNameForCountry() ) {
+    if ( GetContext()->Config().GeoLocNameCountry() || CSubSource::NCBI_UseGeoLocNameForCountry() ) {
         x_FormatQual(eSQ_country, "geo_loc_name", qvec);
     } else {
         DO_QUAL(country);

@@ -368,21 +368,9 @@ static float g_GetSesameStreetCutoff()
     return g_SesameStreetCutoff;
 }
 
-static bool s_UseGeoLocNameForCountry()
-{
-    if (CNcbiApplication::Instance()) {
-        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
-        if (use_geo_loc == "true") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
-    bool use_geo_loc_name = s_UseGeoLocNameForCountry();
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
 
     ConvertDuplicates(m_Objs);
 

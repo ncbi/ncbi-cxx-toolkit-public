@@ -64,6 +64,38 @@ CSubSource::~CSubSource(void)
 {
 }
 
+
+static bool s_init_UseGeoLocNameForCountry(void)
+{
+    if (! CNcbiApplication::Instance()) {
+        return false;
+    }
+
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    string fromConfig = reg.GetString("OrgSubSource", "UseGeoLocNameForCountry", "off");
+    NStr::ToLower(fromConfig);
+    if (fromConfig == "1" || fromConfig == "on" || fromConfig == "true" || fromConfig == "yes") {
+        return true;
+    }
+
+    const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
+    string fromEnv = env.Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
+    NStr::ToLower(fromEnv);
+    if (fromEnv == "true") {
+        return true;
+    }
+
+    return false;
+}
+
+
+bool CSubSource::NCBI_UseGeoLocNameForCountry(void)
+{
+    static bool value = s_init_UseGeoLocNameForCountry();
+    return value;
+}
+
+
 void CSubSource::GetLabel(string* str) const
 {
     *str += '/';
