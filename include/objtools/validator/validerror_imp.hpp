@@ -239,7 +239,6 @@ public:
 
     void ValidateLatLonCountry(string countryname, string lat_lon, const CSerialObject& obj, const CSeq_entry *ctx);
 
-    bool UseGeoLocNameForCountry();
     bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
     bool IsOtherDNA(const CBioseq_Handle& bsh) const;

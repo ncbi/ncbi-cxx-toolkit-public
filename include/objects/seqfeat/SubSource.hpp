@@ -75,6 +75,9 @@ public:
 
     void GetLabel(string* str) const;
 
+    // Allows instant transition when quarantine period ends.
+    static bool NCBI_UseGeoLocNameForCountry(void);
+
     enum EVocabulary {
         eVocabulary_raw, // per ASN.1, except eSubtype_other <-> "note"
         eVocabulary_insdc // per GB/DDBJ/EMBL qualifier names

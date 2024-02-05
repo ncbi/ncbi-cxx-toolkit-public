@@ -221,18 +221,6 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
 #endif
 
 
-bool CValidError_imp::UseGeoLocNameForCountry()
-{
-    if (CNcbiApplication::Instance()) {
-        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
-        if (use_geo_loc == "true") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 bool CValidError_imp::IsSyntheticConstruct(const CBioSource& src)
 {
     if (!src.IsSetOrg()) {
@@ -1263,7 +1251,7 @@ const bool isViral)
         {
             string countryname = subsrc.GetName();
             bool is_miscapitalized = false;
-            bool use_geo_loc_name = UseGeoLocNameForCountry();
+            bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
             if (CCountries::IsValid(countryname, is_miscapitalized)) {
                 if (is_miscapitalized) {
                     if (use_geo_loc_name) {
@@ -3339,7 +3327,7 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
         return;
     }
 
-    bool use_geo_loc_name = UseGeoLocNameForCountry();
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
 
     int subtype = orgmod.GetSubtype();
     string val = orgmod.GetSubname();
