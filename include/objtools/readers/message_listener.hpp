@@ -103,17 +103,8 @@ public:
 };
 
 
-// Compatibility declaration, avoid using objects::IMessageListener -
-// use ncbi::IMessageListener or objects::ILineErrorListener instead.
-class IMessageListener : public ILineErrorListener
-{
-public:
-    ~IMessageListener() override {}
-};
-
-
 //  ============================================================================
-class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public objects::IMessageListener
+class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public ILineErrorListener
 {
 public:
     CMessageListenerBase() :
