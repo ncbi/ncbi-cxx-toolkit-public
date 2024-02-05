@@ -1308,19 +1308,6 @@ string CSrcWriter::xPrimerSetSequences(const CPCRPrimerSet& pset)
 }
 
 
-static bool s_UseGeoLocNameForCountry()
-{
-    if (CNcbiApplication::Instance()) {
-        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
-        if (use_geo_loc == "true") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xFormatTabDelimited(
         const FIELDS& colStubs,
@@ -1359,7 +1346,7 @@ bool CSrcWriter::xFormatTabDelimited(
             cit != colNames.end();  ++cit) {
         const CSeqTable_column& column = mSrcTable->GetColumn(*cit);
         string displayName = column.GetHeader().GetTitle();
-        if (NStr::Equal(displayName, "country") && s_UseGeoLocNameForCountry()) {
+        if (NStr::Equal(displayName, "country") && CSubSource::NCBI_UseGeoLocNameForCountry()) {
             displayName = "geo_loc_name";
         }
         out << displayName << CSrcWriter::mDelimiter;

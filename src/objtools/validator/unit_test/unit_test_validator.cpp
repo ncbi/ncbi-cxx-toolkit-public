@@ -133,19 +133,6 @@ using namespace validator;
 using namespace unit_test_util;
 
 
-static bool s_UseGeoLocNameForCountry()
-{
-    if (CNcbiApplication::Instance()) {
-        const string& use_geo_loc = CNcbiApplication::Instance()->GetEnvironment().Get("NCBI_GEO_LOC_NAME_FOR_COUNTRY");
-        if (use_geo_loc == "true") {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
 CExpectedError::CExpectedError(string accession, EDiagSev severity, string err_code, string err_msg)
 : m_Accession (accession), m_Severity (severity), m_ErrCode(err_code), m_ErrMsg(err_msg)
 {
@@ -8223,7 +8210,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
     old_countries.push_back("Zaire");
     old_countries.push_back("Macedonia");
 
-    if (s_UseGeoLocNameForCountry()) {
+    if (CSubSource::NCBI_UseGeoLocNameForCountry()) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ReplacedGeoLocNameCode", ""));
     } else {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ReplacedCountryCode", ""));
@@ -8232,7 +8219,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
 
     for (const string& it : old_countries) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, it);
-        if (s_UseGeoLocNameForCountry()) {
+        if (CSubSource::NCBI_UseGeoLocNameForCountry()) {
             expected_errors[0]->SetErrMsg("Replaced geo_loc_name [" + it + "]");
         } else {
             expected_errors[0]->SetErrMsg("Replaced country name [" + it + "]");
@@ -8988,7 +8975,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCountryCapitalization)
 
     STANDARD_SETUP
 
-    if (s_UseGeoLocNameForCountry()) {
+    if (CSubSource::NCBI_UseGeoLocNameForCountry()) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadGeoLocNameCapitalization",
             "Bad geo_loc_name capitalization [saint pierre and miquelon]"));
     } else {
