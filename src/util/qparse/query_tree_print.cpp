@@ -51,9 +51,14 @@ public:
     void PrintElement(const string& s, const CQueryParseNode& qnode)
     {
         int i;
+
+        // indent
+        // indent is 2 spaces, adjust here
         for (i = 0; i < m_Level; ++i) {
             m_OStream << "  ";
         }
+        i += m_Level;
+
         m_OStream << s;
         i += (int)s.length();
         for( ;i < 40; i++) {
