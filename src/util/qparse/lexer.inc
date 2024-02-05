@@ -619,7 +619,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         
         *lvalp = qnode = 
             env->QTree().CreateNode(CQueryParseNode::eNot, 0, 0,
-                                    string(ptr-3, 3));
+                                    string(ptr-4, 3));
         env->AttachToPool(qnode);
         qnode->GetValue().SetLoc(line, line_pos);
         return NOT;
