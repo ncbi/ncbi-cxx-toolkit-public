@@ -108,7 +108,7 @@ static const char* ddbj_accpref[] = {
     "FX", "FY", "FZ", "GA", "GB", "HT", "HU", "HV", "HW", "HX", "HY", "HZ",
     "LA", "LB", "LC", "LD", "LE", "LF", "LG", "LH", "LI", "LJ", "LU", "LV",
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
-    "OJ", "PA", "PE", nullptr
+    "OJ", "PA", "PE", "PF", nullptr
 };
 
 static const char* ncbi_accpref[] = {
@@ -1655,7 +1655,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, const char* acc)
              StringEquN(acc, "ME", 2) || StringEquN(acc, "OF", 2) ||
              StringEquN(acc, "OG", 2) || StringEquN(acc, "OI", 2) ||
              StringEquN(acc, "OJ", 2) || StringEquN(acc, "PA", 2) ||
-             StringEquN(acc, "PE", 2)) &&
+             StringEquN(acc, "PE", 2) || StringEquN(acc, "PF", 2)) &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
             return true;
 
