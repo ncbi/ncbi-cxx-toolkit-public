@@ -237,21 +237,25 @@ endif()
 
 ############################################################################
 # Kerberos 5 (via GSSAPI)
-NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err)
+NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err CHECK_INCLUDE gssapi/gssapi_krb5.h)
 NCBIcomponent_report(KRB5)
 if(NCBI_COMPONENT_KRB5_FOUND)
     set(KRB5_INCLUDE ${NCBI_COMPONENT_KRB5_INCLUDE})
     set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
 endif()
-
 ##############################################################################
 # UUID
-NCBI_define_Xcomponent(NAME UUID MODULE uuid LIB uuid)
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+    set(_check uuid.h)
+else()
+    set(_check uuid/uuid.h)
+endif()
+NCBI_define_Xcomponent(NAME UUID MODULE uuid LIB uuid CHECK_INCLUDE ${_check})
 NCBIcomponent_report(UUID)
 
 ##############################################################################
 # CURL
-NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl)
+NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
 NCBIcomponent_report(CURL)
 
 #############################################################################
@@ -267,7 +271,7 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
-NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre)
+NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre CHECK_INCLUDE pcre.h)
 NCBIcomponent_report(PCRE)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -278,7 +282,7 @@ set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 
 #############################################################################
 # Z
-NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z)
+NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
 NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
@@ -289,7 +293,7 @@ set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 
 #############################################################################
 # BZ2
-NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2)
+NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2 CHECK_INCLUDE bzlib.h)
 NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
@@ -300,7 +304,7 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 
 #############################################################################
 # LZO
-NCBI_define_Xcomponent(NAME LZO LIB lzo2)
+NCBI_define_Xcomponent(NAME LZO LIB lzo2 CHECK_INCLUDE lzo/lzo1x.h)
 NCBIcomponent_report(LZO)
 
 #############################################################################
@@ -327,12 +331,12 @@ NCBIcomponent_report(Boost)
 
 #############################################################################
 # JPEG
-NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg)
+NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg CHECK_INCLUDE jpeglib.h)
 NCBIcomponent_report(JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
+NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE png.h)
 NCBIcomponent_report(PNG)
 
 #############################################################################
@@ -342,7 +346,7 @@ NCBIcomponent_report(PNG)
 
 #############################################################################
 # TIFF
-NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
+NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
 NCBIcomponent_report(TIFF)
 
 #############################################################################
@@ -480,12 +484,12 @@ NCBIcomponent_report(GCRYPT)
 
 #############################################################################
 # XML
-NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2)
+NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/parser.h)
 NCBIcomponent_report(XML)
 
 #############################################################################
 # XSLT
-NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML)
+NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
 NCBIcomponent_report(XSLT)
 if(NCBI_COMPONENT_XSLT_FOUND)
     if(NOT NCBI_XSLTPROCTOOL)
@@ -507,7 +511,7 @@ endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT)
+NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
 NCBIcomponent_report(EXSLT)
 if(NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
@@ -666,7 +670,7 @@ NCBIcomponent_report(PERL)
 
 #############################################################################
 # OpenSSL
-NCBI_define_Xcomponent(NAME OpenSSL MODULE openssl PACKAGE OpenSSL LIB ssl crypto)
+NCBI_define_Xcomponent(NAME OpenSSL MODULE openssl PACKAGE OpenSSL LIB ssl crypto CHECK_INCLUDE openssl/ssl.h)
 NCBIcomponent_report(OpenSSL)
 
 #############################################################################
