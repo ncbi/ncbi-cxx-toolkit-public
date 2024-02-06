@@ -322,7 +322,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags,
                              const string&         current_dir,
-                             const char* const     env[],
+                             const char* const     envp[],
                              size_t                pipe_size)
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
@@ -353,19 +353,19 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                       : eTakeOwnership);
         string comspec = env->Get("COMSPEC");
         if (!comspec.empty()
-            &&  !NStr::StartsWith(cmd_line, comspec, NStr::eNoCase)) {
+            &&  !NStr::StartsWith(cmd_line, comspec, NStr::eNocase)) {
             cmd_line = comspec + " /C " + cmd_line;
         }
 
         // Convert environment array to block form
         AutoPtr< TXChar, ArrayDeleter<TXChar> > env_block;
-        if (env) {
+        if (envp) {
             // Count block size:
             // it should have one zero char at least
             size_t size = 1; 
             int    count = 0;
-            while (env[count]) {
-                size += strlen(env[count++]) + 1/*'\0'*/;
+            while (envp[count]) {
+                size += strlen(envp[count++]) + 1/*'\0'*/;
             }
             // Allocate memory
             TXChar* block = new TXChar[size];
@@ -379,8 +379,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 memcpy(block, tmp.data(), n * sizeof(TXChar));
                 block[n++] = _TX('\0');
 #else
-                size_t n = strlen(env[i]) + 1;
-                memcpy(block, env[i], n);
+                size_t n = strlen(envp[i]) + 1;
+                memcpy(block, envp[i], n);
 #endif // NCBI_OS_MSWIN && _UNICODE
                 block += n;
             }
