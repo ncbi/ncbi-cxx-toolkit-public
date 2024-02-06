@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Feb  1 05:12:02 EST 2024; formally
+/* time_t value corresponding to Tue Feb  6 05:12:02 EST 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1706782322UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1707214322UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5222,6 +5222,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MURU\ts\tMurdoch University\t\t\t",
 "MUS\ts\tMuskingum College, Biology Department\t\t\t",
 "MUSA\ts\tUniversidad Nacional de San Agustin, Museo de Historia Natural (Peru)\t\t\t",
+"MUSENUV\ts\tMuseum of Entomology of the University of Valle in Cali\t\t\t",
+"MUSENUV:Anopheles\ts\tMuseum of Entomology of the University of Valle in Cali\t\t\t",
 "MUSK\ts\tMuskegon Community College, Life Science Department\t\t\t",
 "MUSM\ts\tMuseo de Historia Natural de la Universidad Nacional Mayor de San Marcos en Lima\t\t\t",
 "MUSN\ts\tMuseo Universitario di Storia Naturale e della Strumentazione Scientifica\t\t\t",
@@ -7751,6 +7753,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UABCS\ts\tUniversidad Nacional Autonoma de Baja California Sur (Mexico)\t\t\t",
 "UABD\ts\tUniversity of Alabama\t\t\t",
 "UAC\ts\tUniversity of Calgary, Department of Biological Sciences\t\t\t",
+"UAC<PRT>\ts\tUniversity of the Azores\t\t\t",
+"UAC<PRT>:DTP\ts\tUniversity of the Azores\t\t\t",
 "UACC\ts\tUniveridad Autonoma de Chapingo\t\t\t",
 "UACCC\tc\tUniversity of Alabama Chytrid Culture Collection\tUA-SEC\t\t",
 "UADBA\ts\tUniversite d?Antananarivo, Departement de Biologie Animale\t\t\t",
@@ -8040,6 +8044,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UMNH:Bird\ts\tUtah Museum of Natural History, Birds collection\t\t\t",
 "UMNH:HERP\ts\tUtah Museum of Natural History, Herpetology collection\t\t\t",
 "UMNH:Mamm\ts\tUtah Museum of Natural History, Mammal collection\t\t\t",
+"UMNH:UT (Botany)\ts\tUtah Natural History Museum\t\t\t",
+"UMNH:UT-M (Mycology)\ts\tUtah Natural History Museum\t\t\t",
 "UMO<GBR>\ts\tUniversity Museum of Natural History\t\t\t",
 "UMO<USA-ME>\ts\tUniversity of Maine\tUMDE\t\t",
 "UMO<USA-MO>\ts\tDunn-Palmer Herbarium, University of Missouri, Museum Support Center\t\t\t",
