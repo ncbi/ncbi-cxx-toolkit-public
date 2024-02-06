@@ -38,7 +38,6 @@
 #define  _FORTIFY_SOURCE 0
 #include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_util.h>
@@ -185,11 +184,10 @@ int CTest::Run(void)
     // Pipe connector for reading
 #if defined(NCBI_OS_UNIX)
     cmd = "ls";
-    args.push_back("-l");
+    args.push_back("-la");
 #elif defined (NCBI_OS_MSWIN)
-    cmd = GetEnvironment().Get("COMSPEC");
-    args.push_back("/c");
-    args.push_back("dir *.*");
+    cmd = "dir";
+    args.push_back("/L");
 #endif
     connector = PIPE_CreateConnector(cmd, args, (CPipe::fStdIn_Close |
                                                  CPipe::fStdErr_Share));
