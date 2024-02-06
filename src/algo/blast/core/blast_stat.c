@@ -1642,8 +1642,9 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, GET_MATRIX_PATH get_path)
                 if (!full_matrix_path) {
                     return -1;
                 }
-                strncpy(full_matrix_path, matrix_path, buflen);
-                strncat(full_matrix_path, sbp->name, buflen - path_len);
+                strncpy(full_matrix_path, matrix_path, path_len);
+                strncpy(full_matrix_path + path_len, sbp->name, buflen - path_len);
+                full_matrix_path[buflen] = '\0';
 
                 sfree(matrix_path);
 
