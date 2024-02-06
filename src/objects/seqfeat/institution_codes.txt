@@ -5186,6 +5186,8 @@ MURD	s	Murdoch University
 MURU	s	Murdoch University			
 MUS	s	Muskingum College, Biology Department			
 MUSA	s	Universidad Nacional de San Agustin, Museo de Historia Natural (Peru)			
+MUSENUV	s	Museum of Entomology of the University of Valle in Cali			
+MUSENUV:Anopheles	s	Museum of Entomology of the University of Valle in Cali			
 MUSK	s	Muskegon Community College, Life Science Department			
 MUSM	s	Museo de Historia Natural de la Universidad Nacional Mayor de San Marcos en Lima			
 MUSN	s	Museo Universitario di Storia Naturale e della Strumentazione Scientifica			
@@ -7715,6 +7717,8 @@ UABC	s	Universidad Autonoma de Baja California
 UABCS	s	Universidad Nacional Autonoma de Baja California Sur (Mexico)			
 UABD	s	University of Alabama			
 UAC	s	University of Calgary, Department of Biological Sciences			
+UAC<PRT>	s	University of the Azores			
+UAC<PRT>:DTP	s	University of the Azores			
 UACC	s	Univeridad Autonoma de Chapingo			
 UACCC	c	University of Alabama Chytrid Culture Collection	UA-SEC		
 UADBA	s	Universite d?Antananarivo, Departement de Biologie Animale			
@@ -8004,6 +8008,8 @@ UMNH	s	Utah Museum of Natural History
 UMNH:Bird	s	Utah Museum of Natural History, Birds collection			
 UMNH:HERP	s	Utah Museum of Natural History, Herpetology collection			
 UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection			
+UMNH:UT (Botany)	s	Utah Natural History Museum			
+UMNH:UT-M (Mycology)	s	Utah Natural History Museum			
 UMO<GBR>	s	University Museum of Natural History			
 UMO<USA-ME>	s	University of Maine	UMDE		
 UMO<USA-MO>	s	Dunn-Palmer Herbarium, University of Missouri, Museum Support Center			
