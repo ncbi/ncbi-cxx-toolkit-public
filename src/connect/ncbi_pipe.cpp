@@ -344,6 +344,19 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Prepare command line to run
         string cmd_line = x_CommandLine(cmd, args);
 
+        CNcbiApplicationGuard     app = CNcbiApplicationAPI::InstanceGuard();
+        AutoPtr<CNcbiEnvironment> env(app
+                                      ? &app->SetEnvironment()
+                                      : new CNcbiEnvironment,
+                                      app
+                                      ? eNoOwnership
+                                      : eTakeOwnership);
+        string comspec = env->Get("COMSPEC");
+        if (!comspec.empty()
+            &&  !NStr::StartsWith(cmd_line, comspec, NStr::eNoCase)) {
+            cmd_line = comspec + " /C " + cmd_line;
+        }
+
         // Convert environment array to block form
         AutoPtr< TXChar, ArrayDeleter<TXChar> > env_block;
         if (env) {
@@ -1015,21 +1028,26 @@ static void s_Exit(int status, int fd)
 // and errno is set appropriately.
 
 static int s_ExecShell(const char* command,
-                       char *const argv[], char *const envp[])
+                       char *const argv[], char *const envp[],
+                       const CNcbiEnvironment& xenv)
 {
-    static const char kShell[] = "/bin/sh";
+    static const char kDefaultShell[] = "/bin/sh";
 
-    // Count number of arguments
+    // Count the number of arguments
     size_t i;
     for (i = 0;  argv[i];  ++i);
     ++i; // last NULL element
     _ASSERT(i > 1);
 
+    // Figure out the shell first
+    string xshell = xenv.Get("SHELL");
+    const char* shell = xshell.empty() ? kDefaultShell : xshell.c_str();
+
     // Construct argument list for the shell
     const char** args = new const char*[i + 1];
     AutoPtr< const char*, ArrayDeleter<const char*> > args_ptr(args);
 
-    args[0] = kShell;
+    args[0] = shell;
     args[1] = command;
     // NB: skip argv[0]
     for (;  i > 1;  --i) {
@@ -1037,17 +1055,17 @@ static int s_ExecShell(const char* command,
     }
 
     // Execute the shell
-    return ::execve(kShell, (char**) args, envp);
+    return ::execve(shell, (char**) args, envp);
 }
 
 
-// Note this is executing in a separate process: no environment locks necessary
+// Note this is executing in a separate process: no app/env locks necessary
 static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
 {
     // CAUTION (security):  the current directory is in the path on purpose
     //                      (see man execlp), and also to be in-sync with the
     //                      default behavior on MS-Win.
-    static const char* kPathDefault = ":/bin:/usr/bin";
+    static const char kDefaultPath[] = ":/bin:/usr/bin";
 
     // If file name is not specified
     if (!file  ||  *file == '\0') {
@@ -1055,17 +1073,24 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         return -1;
     }
 
+    CNcbiApplication*         app = CNcbiApplication::Instance();
+    AutoPtr<CNcbiEnvironment> env(app
+                                  ? &app->SetEnvironment()
+                                  : new CNcbiEnvironment,
+                                  app
+                                  ? eNoOwnership
+                                  : eTakeOwnership);
+
     // If the file name contains path
     if (strchr(file, '/')) {
         ::execve(file, argv, envp);
-        return errno == ENOEXEC ? s_ExecShell(file, argv, envp) : -1;
+        return errno == ENOEXEC ? s_ExecShell(file, argv, envp, *env) : -1;
     }
 
     // Get the PATH environment variable
-    const char* path = getenv("PATH");
-    if (!path) {
-        path = kPathDefault;
-    }
+    string xpath = env->Get("PATH");
+    const char* path = xpath.empty() ? kDefaultPath : xpath.c_str();
+
     size_t file_len = strlen(file) + 1/*'\0'*/;
     char* buf = new char[strlen(path) + 1/*'/'*/ + file_len];
     AutoPtr< char, ArrayDeleter<char> > buf_ptr(buf);
@@ -1094,11 +1119,12 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         int error;
         ::execve(buf, argv, envp);
         if ((error = errno) == ENOEXEC) {
-            return s_ExecShell(buf, argv, envp);
+            return s_ExecShell(buf, argv, envp, *env);
         }
+        _ASSERT(error);
         switch (error) {
         case EACCES:
-            // Permission denied.  Memorize this fact and try next path.
+            // Access denied.  Memorize this fact and try next path.
             eacces_err = true;
             /*FALLTHRU*/
         case ENOENT:
@@ -1107,7 +1133,6 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
             break;
         default:
             // We found an executable file, but could not execute it
-            _ASSERT(error);
             return -1;
         }
         if (!next) {
@@ -1115,10 +1140,10 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         }
         path = next + 1;
     }
-
     if (eacces_err) {
         errno = EACCES;
     }
+
     return -1;
 }
 
