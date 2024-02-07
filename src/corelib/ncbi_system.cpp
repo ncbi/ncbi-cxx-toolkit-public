@@ -112,8 +112,8 @@ BEGIN_NCBI_SCOPE
 #  define set_new_handler std::set_new_handler
 #else
 extern "C" {
-    static void s_ExitHandler(void);
-    static void s_SignalHandler(int sig);
+                 static void s_ExitHandler(void);
+    [[noreturn]] static void s_SignalHandler(int sig);
 }
 #endif //NCBI_COMPILER_MIPSPRO
 
