@@ -1012,8 +1012,8 @@ CPipeHandle::~CPipeHandle()
 
 
 // Auxiliary function to exit from forked process with reporting errno
-// on errors into the specified file descriptor 
-static void s_Exit(int status, int fd)
+// on errors into the specified file descriptor
+[[noreturn]] static void s_Exit(int status, int fd)
 {
     int errcode = errno;
     (void) ::write(fd, &errcode, sizeof(errcode));
@@ -1102,7 +1102,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         const char* next = strchr(path, ':');
         size_t len = next ? (size_t)(next - path) : strlen(path)/*last part*/;
         if (len) {
-            // Copy directory name into the buffer
+            // Copy the directory name into the buffer
             memmove(buf, path, len);
             // Add slash if needed
             if (buf[len - 1] != '/') {
@@ -1114,7 +1114,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
             buf[1] = '/';
             len = 2;
         }
-        // Add file name
+        // Add the file name
         memcpy(buf + len, file, file_len);
 
         // Try to execute the file by the generated name
@@ -1126,7 +1126,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         _ASSERT(error);
         switch (error) {
         case EACCES:
-            // Access denied.  Memorize this fact and try next path.
+            // Access denied.  Memorize this fact and try next path element.
             eacces_err = true;
             /*FALLTHRU*/
         case ENOENT:
