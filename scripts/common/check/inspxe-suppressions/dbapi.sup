@@ -105,3 +105,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "tds_connect_socket"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=WS2_32.dll,func=getsockopt;
+			func=tds_connect_socket,src=net.c;
+		}
+	}
+}
