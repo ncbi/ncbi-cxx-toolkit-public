@@ -351,7 +351,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                       app
                                       ? eNoOwnership
                                       : eTakeOwnership);
-        string comspec = env->Get("COMSPEC");
+        const string& comspec = env->Get("COMSPEC");
         if (!comspec.empty()  &&  NStr::CompareNocase(comspec, cmd) != 0) {
             cmd_line = CExec::QuoteArg(comspec) + " /C " + cmd_line;
         }
@@ -459,7 +459,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create child process
-        STARTUPINFO sinfo;
+        STARTUPINFO         sinfo;
         PROCESS_INFORMATION pinfo;
         ::ZeroMemory(&pinfo, sizeof(pinfo));
         ::ZeroMemory(&sinfo, sizeof(sinfo));
@@ -473,6 +473,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 #  else
         DWORD dwCreationFlags = 0;
 #  endif // _UNICODE
+        if (create_flags & CPipe::fNewGroup)
+            dwCreationFlags |= CREATE_NEW_PROCESS_GROUP;
         if (!::CreateProcess(NULL,
                              (LPTSTR)(_T_XCSTRING(cmd_line)),
                              NULL, NULL, TRUE,
@@ -1087,7 +1089,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     }
 
     // Get the PATH environment variable
-    string xpath = env->Get("PATH");
+    const string& xpath = env->Get("PATH");
     const char* path = xpath.empty() ? kDefaultPath : xpath.c_str();
     _ASSERT(path[0]); // NB: strlen(path) >= 1
 
