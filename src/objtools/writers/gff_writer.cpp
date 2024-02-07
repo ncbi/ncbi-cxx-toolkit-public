@@ -578,6 +578,104 @@ bool CGff2Writer::xAssignFeatureAttributesFormatSpecific(
     return true;
 }
 
+
+static string s_GetDbxrefFromProduct(const CMappedFeat& mf)
+{
+    string dbxref;
+    if (!mf.IsSetProduct()) {
+        return dbxref;
+    }
+
+    auto idh = sequence::GetId(mf.GetProductId(), mf.GetScope(), sequence::eGetId_ForceAcc);
+    if (idh) {
+        idh.GetSeqId()->GetLabel(&dbxref, CSeq_id::eContent);
+        if (NPOS != dbxref.find('_')) { //nucleotide
+            dbxref = string("GenBank:") + dbxref;
+        }
+        else { //protein
+            dbxref = string("NCBI_GP:") + dbxref;
+        }
+        return dbxref;
+    }
+
+    // else
+    idh = sequence::GetId(mf.GetProductId(), mf.GetScope(), sequence::eGetId_ForceGi);
+    if (idh) {
+        idh.GetSeqId()->GetLabel(&dbxref, CSeq_id::eContent);
+        dbxref = string("NCBI_gi:") + dbxref;
+    }
+
+    return dbxref;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributeDbxref(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const string& label,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (mf.IsSetDbxref()) {
+        for (const auto& pDbxref : mf.GetDbxref()) {
+            string dbxref;
+            if (CWriteUtil::GetDbTag(*pDbxref, dbxref)) {
+                record.AddAttribute(label, dbxref);
+            }
+        }
+    }
+
+    switch (mf.GetData().Which()) {
+        default: {
+            CMappedFeat parent;
+            try {
+                parent = fc.FeatTree().GetParent( mf );
+            }
+            catch(...) {
+            }
+            if (parent) { 
+                if (parent.IsSetData()  &&  parent.GetData().IsGene()) {
+                    const auto& geneRef = mf.GetGeneXref();
+                    if (geneRef  &&  geneRef->IsSuppressed()) {
+                        return true;
+                    }
+                }
+                if (parent.IsSetDbxref()) {
+                    for (const auto& pDbxref : parent.GetDbxref()) {
+                        string dbxref;
+                        if (CWriteUtil::GetDbTag(*pDbxref, dbxref)) {
+                            record.AddAttribute(label, dbxref);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        case CSeq_feat::TData::e_Rna:
+        case CSeq_feat::TData::e_Cdregion: {
+            auto dbxref = s_GetDbxrefFromProduct(mf);
+            if (!dbxref.empty()) {
+                record.AddAttribute(label, dbxref);
+            }
+            auto gene_feat = fc.FeatTree().GetParent(mf, CSeqFeatData::e_Gene);
+            if (gene_feat && gene_feat.IsSetDbxref() && 
+                gene_feat.IsSetData() && !gene_feat.GetData().GetGene().IsSuppressed()) {
+                for (const auto& pDbxref : gene_feat.GetDbxref() ) {
+                    string dbxref;
+                    if (CWriteUtil::GetDbTag(*pDbxref, dbxref)) {
+                        record.AddAttribute(label, dbxref);
+                    }
+                }
+            }
+        }
+        break;
+    }
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributePseudo(
     CGffFeatureRecord& record,
