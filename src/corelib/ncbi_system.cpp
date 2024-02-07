@@ -267,7 +267,7 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
 #ifdef USE_SETMEMLIMIT
 
 // Handler for operator new
-static void s_NewHandler(void)
+[[noreturn]] static void s_NewHandler(void)
 {
     s_ExitCode = eLEC_Memory;
     // _exit() does not go over atexit() chain, so just call registered
@@ -565,7 +565,7 @@ size_t GetVirtualMemoryLimitHard(void)
 
 #ifdef USE_SETCPULIMIT
 
-static void s_SignalHandler(int _DEBUG_ARG(sig))
+[[noreturn]] static void s_SignalHandler(int _DEBUG_ARG(sig))
 {
     _ASSERT(sig == SIGXCPU);
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
