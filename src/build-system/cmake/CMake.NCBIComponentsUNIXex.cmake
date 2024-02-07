@@ -309,7 +309,7 @@ NCBIcomponent_report(LZO)
 
 #############################################################################
 # ZSTD
-NCBI_define_Xcomponent(NAME ZSTD LIB zstd)
+NCBI_define_Xcomponent(NAME ZSTD LIB zstd CHECK_INCLUDE zstd.h)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
     message("ZSTD: Version requirement not met (required at least v1.4)")
@@ -370,7 +370,7 @@ endif()
 
 #############################################################################
 # BerkeleyDB
-NCBI_define_Xcomponent(NAME BerkeleyDB LIB db)
+NCBI_define_Xcomponent(NAME BerkeleyDB LIB db CHECK_INCLUDE db.h)
 NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
@@ -389,7 +389,7 @@ endif()
 #############################################################################
 # MySQL
 #NCBI_define_Xcomponent(NAME MySQL PACKAGE Mysql LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
-NCBI_define_Xcomponent(NAME MySQL LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
+NCBI_define_Xcomponent(NAME MySQL LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql CHECK_INCLUDE mysql.h)
 NCBIcomponent_report(MySQL)
 
 #############################################################################
@@ -478,13 +478,13 @@ NCBIcomponent_report(wxWidgets)
 
 ##############################################################################
 # GCRYPT
-NCBI_define_Xcomponent(NAME GPG    LIB gpg-error)
-NCBI_define_Xcomponent(NAME GCRYPT LIB gcrypt ADD_COMPONENT GPG)
+NCBI_define_Xcomponent(NAME GPG    LIB gpg-error CHECK_INCLUDE gpg-error.h)
+NCBI_define_Xcomponent(NAME GCRYPT LIB gcrypt ADD_COMPONENT GPG CHECK_INCLUDE gcrypt.h)
 NCBIcomponent_report(GCRYPT)
 
 #############################################################################
 # XML
-NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/parser.h)
+NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
 NCBIcomponent_report(XML)
 
 #############################################################################
@@ -534,7 +534,7 @@ endif()
 
 #############################################################################
 # SAMTOOLS
-NCBI_define_Xcomponent(NAME SAMTOOLS LIB bam)
+NCBI_define_Xcomponent(NAME SAMTOOLS LIB bam CHECK_INCLUDE bam.h)
 NCBIcomponent_report(SAMTOOLS)
 
 #############################################################################
@@ -616,7 +616,7 @@ if(NOT EXISTS "${NCBI_GRPC_PLUGIN}")
 endif()
 
 #NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
-NCBI_define_Xcomponent(NAME PROTOBUF PACKAGE Protobuf LIB protobuf)
+NCBI_define_Xcomponent(NAME PROTOBUF PACKAGE Protobuf LIB protobuf CHECK_INCLUDE google/protobuf/stubs/platform_macros.h)
 NCBIcomponent_report(PROTOBUF)
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
     NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
@@ -769,12 +769,12 @@ NCBIcomponent_report(H2O)
 
 #############################################################################
 # GMP
-NCBI_define_Xcomponent(NAME GMP LIB gmp)
+NCBI_define_Xcomponent(NAME GMP LIB gmp CHECK_INCLUDE gmp.h)
 NCBIcomponent_report(GMP)
 
 #############################################################################
 # NETTLE
-NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
+NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP CHECK_INCLUDE nettle/nettle-stdint.h)
 NCBIcomponent_report(NETTLE)
 
 #############################################################################
