@@ -56,6 +56,22 @@ BEGIN_NCBI_SCOPE
 ///
 /// Create new CONNECTOR structure to handle data transfer with a spawned
 /// process (command) over an interprocess pipe.  Return NULL on error.
+///
+/// @param cmd
+///   Command name to execute
+/// @param args
+///   Vector of string arguments for the command (argv[0] excluded)
+/// @param flags
+///   See CPipe::TCreateFlags
+/// @param pipe
+///   The connector is to be built on top of the specified CPipe (otherwise,
+///   a CPipe oobject gets created internally)
+/// @param own_pipe
+///   Disposition of the "pipe" parameter when the connector gets destroyed
+/// @param pipe_size
+///   Internal buffer size (0 uses some reasonable default)
+/// @sa
+///   CPipe
 extern NCBI_XCONNECT_EXPORT CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,

@@ -255,7 +255,7 @@ public:
     EIO_Status Open(const string& cmd, const vector<string>& args,
                     CPipe::TCreateFlags create_flags,
                     const string&       current_dir,
-                    const char* const   env[],
+                    const char* const   envp[],
                     size_t              pipe_size);
     void       OpenSelf(void);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
@@ -352,8 +352,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                       ? eNoOwnership
                                       : eTakeOwnership);
         string comspec = env->Get("COMSPEC");
-        if (!comspec.empty()
-            &&  !NStr::StartsWith(cmd_line, comspec, NStr::eNocase)) {
+        if (!comspec.empty()  &&  NStr::CompareNocase(comspec, cmd) != 0) {
             cmd_line = comspec + " /C " + cmd_line;
         }
 
@@ -942,7 +941,7 @@ public:
                     const vector<string>& args,
                     CPipe::TCreateFlags   create_flags,
                     const string&         current_dir,
-                    const char* const     env[],
+                    const char* const     envp[],
                     size_t                /*pipe_size*/);
     void       OpenSelf(void);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
@@ -1090,6 +1089,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     // Get the PATH environment variable
     string xpath = env->Get("PATH");
     const char* path = xpath.empty() ? kDefaultPath : xpath.c_str();
+    _ASSERT(path[0]); // NB: strlen(path) >= 1
 
     size_t file_len = strlen(file) + 1/*'\0'*/;
     char* buf = new char[strlen(path) + 1/*'/'*/ + file_len];
@@ -1115,7 +1115,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         // Add file name
         memcpy(buf + len, file, file_len);
 
-        // Try to execute file with the generated name
+        // Try to execute the file by the generated name
         int error;
         ::execve(buf, argv, envp);
         if ((error = errno) == ENOEXEC) {
@@ -1180,7 +1180,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags,
                              const string&         current_dir,
-                             const char* const     env[],
+                             const char* const     envp[],
                              size_t                /*unused*/)
 
 {
@@ -1326,13 +1326,13 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
             // Prepare program arguments
             size_t i;
-            const char** x_args = new const char*[args.size() + 2];
-            AutoPtr< const char*, ArrayDeleter<const char*> > p_args(x_args);
-            x_args[i = 0] = cmd.c_str();
+            const char** argv = new const char*[args.size() + 2];
+            AutoPtr< const char*, ArrayDeleter<const char*> > argv_ptr(argv);
+            argv[i = 0] = cmd.c_str();
             for (auto&& arg : args) {
-                x_args[++i] = arg.c_str();
+                argv[++i] = arg.c_str();
             }
-            x_args[++i] = 0;
+            argv[++i] = 0;
 
             // Change current working directory if specified
             if (!current_dir.empty()  &&  current_dir != ".") {
@@ -1340,13 +1340,13 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             }
             // Execute the program
             int status;
-            if (env) {
-                status = execvpe(cmd.c_str(),
-                                 const_cast<char**>(x_args),
-                                 const_cast<char**>(env));
+            if (envp) {
+                status = execvpe(argv[0],
+                                 const_cast<char**>(argv),
+                                 const_cast<char**>(envp));
             } else {
-                status = ::execvp(cmd.c_str(),
-                                  const_cast<char**>(x_args));
+                status = ::execvp(argv[0],
+                                  const_cast<char**>(argv));
             }
             s_Exit(status, status_pipe[1]);
 
@@ -1890,7 +1890,7 @@ CPipe::CPipe(const string&         cmd,
              const vector<string>& args,
              TCreateFlags          create_flags,
              const string&         current_dir,
-             const char* const     env[],
+             const char* const     envp[],
              size_t                pipe_size)
     : m_PipeSize(pipe_size),
       m_PipeHandle(0), m_ReadHandle(eStdOut),
@@ -1899,7 +1899,7 @@ CPipe::CPipe(const string&         cmd,
 {
     unique_ptr<CPipeHandle> pipe_handle_ptr(new CPipeHandle);
     EIO_Status status = pipe_handle_ptr->Open(cmd, args, create_flags,
-                                              current_dir, env, pipe_size);
+                                              current_dir, envp, pipe_size);
     if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen,
                    "[CPipe::CPipe]  Failed: " + string(IO_StatusStr(status)));
@@ -1919,7 +1919,7 @@ EIO_Status CPipe::Open(const string&         cmd,
                        const vector<string>& args,
                        TCreateFlags          create_flags,
                        const string&         current_dir,
-                       const char* const     env[],
+                       const char* const     envp[],
                        size_t                pipe_size)
 {
     _ASSERT(m_PipeHandle);
@@ -1929,7 +1929,7 @@ EIO_Status CPipe::Open(const string&         cmd,
 
     m_ReadHandle = eStdOut;
     EIO_Status status = m_PipeHandle->Open(cmd, args, create_flags,
-                                           current_dir, env, m_PipeSize);
+                                           current_dir, envp, m_PipeSize);
     m_ReadStatus  = status;
     m_WriteStatus = status;
     return status;
@@ -2135,7 +2135,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                CNcbiOstream&           err,
                                int&                    exit_code,
                                const string&           current_dir,
-                               const char* const       env[],
+                               const char* const       envp[],
                                CPipe::IProcessWatcher* watcher,
                                const STimeout*         kill_timeout,
                                size_t                  pipe_size)
@@ -2152,7 +2152,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     EIO_Status status = pipe.Open(cmd, args, 
                                   fStdErr_Open | fSigPipe_Restore
                                   | fNewGroup | fKillOnClose,
-                                  current_dir, env);
+                                  current_dir, envp);
     if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen,
                    "[CPipe::ExecWait]  Cannot execute '"
