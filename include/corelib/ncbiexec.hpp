@@ -162,7 +162,7 @@ public:
     /// @note
     ///   Do not use this function with the Spawn*() methods.  In most cases
     ///   they don't need it, because the arguments are passed to the system
-    ///   disjointly, and hence they can automatically use more a advanced
+    ///   disjointly, and hence they can automatically use a more advanced
     ///   and OS-specific algorithm for quoting if really necessary.
     /// @sa System
     static string QuoteArg(const string& arg);
