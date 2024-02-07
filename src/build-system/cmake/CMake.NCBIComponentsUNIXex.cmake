@@ -389,7 +389,7 @@ endif()
 #############################################################################
 # MySQL
 #NCBI_define_Xcomponent(NAME MySQL PACKAGE Mysql LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
-NCBI_define_Xcomponent(NAME MySQL LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql CHECK_INCLUDE mysql.h)
+NCBI_define_Xcomponent(NAME MySQL LIB mysqlclient LIBPATH_SUFFIX mysql INCLUDE mysql/mysql.h)
 NCBIcomponent_report(MySQL)
 
 #############################################################################
