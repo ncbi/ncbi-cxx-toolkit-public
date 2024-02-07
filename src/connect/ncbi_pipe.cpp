@@ -353,7 +353,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                       : eTakeOwnership);
         string comspec = env->Get("COMSPEC");
         if (!comspec.empty()  &&  NStr::CompareNocase(comspec, cmd) != 0) {
-            cmd_line = comspec + " /C " + cmd_line;
+            cmd_line = CExec::QuoteArg(comspec) + " /C " + cmd_line;
         }
 
         // Convert environment array to block form
