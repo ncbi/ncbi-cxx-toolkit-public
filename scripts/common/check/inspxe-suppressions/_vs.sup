@@ -543,3 +543,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "getenv() - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=s_GetConfigString,src=rpcbase.cpp;
+		}
+	}
+}
+

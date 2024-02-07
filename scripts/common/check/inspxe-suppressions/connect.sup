@@ -112,13 +112,12 @@ suppression = {
 	}
 }
 suppression = {
-	name = "g_CORE_Sprintf/_stdio_common_vsprintf()"
+	name = "g_CORE_Sprintf / vsprintf"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
-			...;
-			mod=ucrtbase.DLL;
-			func=g_CORE_Sprintf,src=ncbi_priv.c;
+			!!!;
+			src=ncbi_priv.c,func=g_CORE_Sprintf;
 		}
 	}
 }
@@ -166,6 +165,44 @@ suppression = {
 		{
 			...;
 			mod=WS2_32.dll,func=gethostbyname;
+		}
+	}
+}
+suppression = {
+	name = "cgitest / putenv - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=cgitest.cpp,func=TestCgi;
+		}
+	}
+}
+suppression = {
+	name = "parson.c / x_json_object_nget_value - false positive on strncmp()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=parson.c,func=x_json_object_nget_value;
+		}
+		allocation={
+			!!!;
+			src=parson.c,func=get_quoted_string;
+		}
+	}
+}
+suppression = {
+	name = "parson.c / parson_strdup - false positive on string duplication"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=parson.c,func=parson_strdup;
+		}
+		allocation={
+			!!!;
+			src=parson.c,func=get_quoted_string;
 		}
 	}
 }

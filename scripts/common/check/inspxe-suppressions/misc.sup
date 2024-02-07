@@ -19,66 +19,16 @@ suppression = {
 	}
 }
 suppression = {
-	name = "Deallocation without allocation in KNgcObjWriteToFile() at ncbi_vdb.dll - False positive"
-	type = {invalid_deallocation}
-	stacks = {
-		{
-			...;
-			func=KNgcObjWriteToFile;
-		}
-	}
-}
-suppression = {
-	name = "Missing allocation in vdbread.cpp:707 - False positive"
-	type = {invalid_deallocation}
-	stacks = {
-		{
-			!!!;
-			src=vdbread.cpp,func=Init;
-		}
-	}
-}
-suppression = {
-	name = "Invalid memory access in vdbread.cpp:477 - False positive"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			...;
-			src=vdbread.cpp,func=CVDB;
-		}
-	}
-}
-suppression = {
-	name = "Invalid partial memory access in libxml - cannot do anything"
+	name = "test_ncbi_clog_templates - putenv() - false positive"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
-			...;
-			func=xmlLoadExternalEntity;
+			!!!;
+			mod=test_ncbi_clog_templates.exe,src=test_ncbi_clog_templates.cpp,func=Init;
 		}
 		allocation={
-			...;
-			func=xmlLoadExternalEntity;
-		}
-	}
-}
-suppression = {
-	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258"
-	type = {invalid_memory_access_partial}
-	stacks = {
-		{
-			...;
-			mod=ncbi-vdb-md.dll,func=parse_decimal;
-		}
-	}
-}
-suppression = {
-	name = "Boost.Test - getenv"
-	type = {invalid_memory_access_partial}
-	stacks = {
-		{
 			!!!;
-			src=fetch.hpp,func=sys_read_var;
+			mod=test_ncbi_clog_templates.exe,src=test_ncbi_clog_templates.cpp,func=Init;
 		}
 	}
 }

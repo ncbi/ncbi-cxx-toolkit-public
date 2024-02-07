@@ -142,3 +142,20 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "CStackTrace::Expand / SymGetSymFromAddr / dbhelp"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=dbghelp.dll,func=SymGetSymFromAddr;
+			func=Expand,src=ncbi_stack_win64.cpp,func_line=31;
+		}
+		allocation={
+			...;
+			mod=dbghelp.dll,func=SymGetSymFromAddr;
+			func=Expand,src=ncbi_stack_win64.cpp,func_line=31;
+		}
+	}
+}
+
