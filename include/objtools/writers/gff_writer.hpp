@@ -252,10 +252,18 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+
+    virtual bool xAssignFeatureAttributeDbxref(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const string& label,
+        const CMappedFeat&);
+
     virtual bool xAssignFeatureAttributeDbxref(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) { return false; };
+
     virtual bool xAssignFeatureAttributeNote(
         CGffFeatureRecord&,
         CGffFeatureContext&,

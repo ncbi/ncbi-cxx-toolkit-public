@@ -815,28 +815,7 @@ bool CGtfWriter::xAssignFeatureAttributeDbxref(
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
-    if (!mf.IsSetDbxref()) {
-        return true;
-    }
-
-    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
-    for (const auto& dbxref: mf.GetDbxref()) {
-        string gffDbxref;
-        if (dbxref->IsSetDb()) {
-            gffDbxref += dbxref->GetDb();
-            gffDbxref += ":";
-        }
-        if (dbxref->IsSetTag()) {
-            if (dbxref->GetTag().IsId()) {
-                gffDbxref += NStr::UIntToString(dbxref->GetTag().GetId());
-            }
-            else if (dbxref->GetTag().IsStr()) {
-                gffDbxref += dbxref->GetTag().GetStr();
-            }
-        }
-        record.AddAttribute("db_xref", gffDbxref);
-    }
-    return true;
+    return CGff2Writer::xAssignFeatureAttributeDbxref(rec, fc, "db_xref", mf);
 }
 
 //  ----------------------------------------------------------------------------
