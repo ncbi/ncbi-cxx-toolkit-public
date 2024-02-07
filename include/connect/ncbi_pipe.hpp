@@ -112,14 +112,14 @@ public:
 
     /// Which of the child I/O handles to use.
     enum EChildIOHandle {
-        fStdIn     = (1 << 0),
-        fStdOut    = (1 << 1),
-        fStdErr    = (1 << 2),
-        fDefault   = (1 << 3),    ///< see Wait()
-        eStdIn     = fStdIn,
-        eStdOut    = fStdOut,
-        eStdErr    = fStdErr,
-        eDefault   = fDefault     ///< see SetReadHandle()
+        fStdIn   = (1 << 0),
+        fStdOut  = (1 << 1),
+        fStdErr  = (1 << 2),
+        fDefault = (1 << 3),    ///< see Wait()
+        eStdIn   = fStdIn,
+        eStdOut  = fStdOut,
+        eStdErr  = fStdErr,
+        eDefault = fDefault     ///< see SetReadHandle()
     };
     typedef unsigned int TChildPollMask;  ///< bitwise OR of "EChildIOHandle"
 
@@ -139,10 +139,10 @@ public:
     ///   Specifies the options to be applied when creating the pipe
     /// @param current_dir
     ///   Current working directory for the new process if specified
-    /// @param env
+    /// @param envp
     ///   An optional pointer to a vector with environment variables to use
-    ///   in the child process.  If not speficied, a copy of the parent's
-    ///   process environment is used.  Note that a new environment completely
+    ///   in the child process.  If not specified, a copy of the parent's
+    ///   process environment is used.  Note that the new environment entirely
     ///   replaces the default environment otherwise inherited from the parent
     ///   process, and so it does not just add / modify some values.
     /// @sa
@@ -151,7 +151,7 @@ public:
           const vector<string>& args,
           TCreateFlags          create_flags = 0,
           const string&         current_dir  = kEmptyStr,
-          const char* const     env[]        = 0,
+          const char* const     envp[]       = 0,
           size_t                pipe_size    = 0/*use default*/);
 
     /// Destructor. 
@@ -186,10 +186,10 @@ public:
     ///   The string must be an absolute path.  On MS Windows it should
     ///   also contain a drive letter. If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
-    /// @param env
+    /// @param envp
     ///   An optional pointer to a vector with environment variables to use
-    ///   in the child process.  If not speficied, a copy of the parent's
-    ///   process environment is used.  Note that a new environment completely
+    ///   in the child process.  If not specified, a copy of the parent's
+    ///   process environment is used.  Note that the new environment entirely
     ///   replaces the default environment otherwise inherited from the parent
     ///   process, and so it does not just add / modify some values.
     /// @return 
@@ -200,7 +200,7 @@ public:
                     const vector<string>& args,
                     TCreateFlags          create_flags = 0,
                     const string&         current_dir  = kEmptyStr,
-                    const char* const     env[]        = 0,
+                    const char* const     envp[]       = 0,
                     size_t                pipe_size    = 0/*use default*/);
 
     /// Open the standard streams of the current process.
@@ -464,10 +464,10 @@ public:
     ///   The string must be an absolute path.  On MS Windows it should
     ///   also contain a drive letter.  If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
-    /// @param env
+    /// @param envp
     ///   An optional pointer to a vector with environment variables to use
-    ///   in the child process.  If not speficied, a copy of the parent's
-    ///   process environment is used.  Note that a new environment completely
+    ///   in the child process.  If not specified, a copy of the parent's
+    ///   process environment is used.  Note that the new environment entirely
     ///   replaces the default environment otherwise inherited from the parent
     ///   process, and so it does not just add / modify some values.
     /// @param watcher
@@ -479,7 +479,7 @@ public:
     ///   the killed process may not be released immediately and continue to
     ///   persist as a zombie process even after this call completes.
     /// @return 
-    ///   eDone if process has finished normally, or eCanceled if a watcher 
+    ///   eDone if process has finished normally, or eCanceled if the watcher 
     ///   decided to stop it
     ///
     /// @sa IProcessWatcher, Open
@@ -490,7 +490,7 @@ public:
                             CNcbiOstream&         err,
                             int&                  exit_code,
                             const string&         current_dir  = kEmptyStr,
-                            const char* const     env[]        = 0,
+                            const char* const     envp[]       = 0,
                             IProcessWatcher*      watcher      = 0,
                             const STimeout*       kill_timeout = 0,
                             size_t                pipe_size    = 0/*default*/);
