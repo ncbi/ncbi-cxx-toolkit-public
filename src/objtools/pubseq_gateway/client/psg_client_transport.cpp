@@ -83,6 +83,8 @@ NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
 NCBI_PARAM_DEF_EX(string,   PSG, service,               "PSG2",             eParam_Default,     NCBI_PSG_SERVICE);
 NCBI_PARAM_DEF_EX(string,   PSG, auth_token_name,       "WebCubbyUser",     eParam_Default,     NCBI_PSG_AUTH_TOKEN_NAME);
 NCBI_PARAM_DEF_EX(string,   PSG, auth_token,            "",                 eParam_Default,     NCBI_PSG_AUTH_TOKEN);
+NCBI_PARAM_DEF_EX(string,   PSG, admin_auth_token_name, "AdminAuthToken",   eParam_Default,     NCBI_PSG_ADMIN_AUTH_TOKEN_NAME);
+NCBI_PARAM_DEF_EX(string,   PSG, admin_auth_token,      "",                 eParam_Default,     NCBI_PSG_ADMIN_AUTH_TOKEN);
 
 NCBI_PARAM_DEF(double,   PSG, throttle_relaxation_period,                  0.0);
 NCBI_PARAM_DEF(unsigned, PSG, throttle_by_consecutive_connection_failures, 0);
@@ -156,9 +158,15 @@ string SPSG_Env::GetCookie(const string& name) const
 
 string SPSG_Params::GetCookie(const CPSG_Request::TFlags& request_flags, function<string()> get_auth_token)
 {
-    if (auto include_hup = request_flags & CPSG_Request::fIncludeHUP; !include_hup) return {};
-    auto rv = auth_token.Get().empty() ? get_auth_token() : auth_token.Get();
-    return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::URLEncode(rv);
+    auto combine = [](auto p, auto v) { return v.empty()? v : p.Get() + '=' + NStr::URLEncode(v); };
+
+    auto admin_cookie = combine(admin_auth_token_name, admin_auth_token.Get());
+
+    if (auto include_hup = request_flags & CPSG_Request::fIncludeHUP; !include_hup) return admin_cookie;
+
+    auto hup_cookie = combine(auth_token_name, auth_token.Get().empty() ? get_auth_token() : auth_token.Get());
+
+    return admin_cookie.empty() ? hup_cookie : hup_cookie.empty() ? admin_cookie : admin_cookie + "; " + hup_cookie;
 }
 
 unsigned SPSG_Params::s_GetRequestTimeout(double io_timer_period)

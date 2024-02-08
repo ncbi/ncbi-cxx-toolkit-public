@@ -349,6 +349,12 @@ using TPSG_AuthTokenName = PSG_PARAM_VALUE_TYPE(PSG, auth_token_name);
 NCBI_PARAM_DECL(string, PSG, auth_token);
 using TPSG_AuthToken = PSG_PARAM_VALUE_TYPE(PSG, auth_token);
 
+NCBI_PARAM_DECL(string, PSG, admin_auth_token_name);
+using TPSG_AdminAuthTokenName = PSG_PARAM_VALUE_TYPE(PSG, admin_auth_token_name);
+
+NCBI_PARAM_DECL(string, PSG, admin_auth_token);
+using TPSG_AdminAuthToken = PSG_PARAM_VALUE_TYPE(PSG, admin_auth_token);
+
 NCBI_PARAM_DECL(bool, PSG, stats);
 typedef NCBI_PARAM_TYPE(PSG, stats) TPSG_Stats;
 
