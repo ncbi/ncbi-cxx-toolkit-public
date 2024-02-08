@@ -51,7 +51,6 @@
 #define __STDC_FORMAT_MACROS
 
 #include <corelib/request_status.hpp>
-#include <corelib/ncbi_cookies.hpp>
 
 #include "psg_client_transport.hpp"
 
@@ -139,6 +138,22 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eChunkType>::TType SPSG_ArgsBase::SArg<SPSG_A
     return { SPSG_ArgsBase::eUnknownChunk, cref(value) };
 };
 
+string SPSG_Env::GetCookie(const string& name) const
+{
+    if (!m_Cookies) {
+        m_Cookies.emplace();
+        m_Cookies->Add(CHttpCookies::eHeader_Cookie, Get("HTTP_COOKIE"), nullptr);
+    }
+
+    for (const auto& cookie : *m_Cookies) {
+        if (cookie.GetName() == name) {
+            return NStr::URLDecode(cookie.GetValue());
+        }
+    }
+
+    return {};
+}
+
 unsigned SPSG_Params::s_GetRequestTimeout(double io_timer_period)
 {
     auto value = TPSG_RequestTimeout::GetDefault();
@@ -173,22 +188,10 @@ unsigned SPSG_Params::s_GetCompetitiveAfter(double io_timer_period, double timeo
     return static_cast<unsigned>(timeout / io_timer_period);
 }
 
-string SPSG_Params::s_GetAuthToken(const CNcbiEnvironment& env, const TPSG_AuthTokenName& auth_token_name)
+string SPSG_Params::s_GetAuthToken(const SPSG_Env& env, string auth_token_name)
 {
     string rv = TPSG_AuthToken(TPSG_AuthToken::eGetDefault);
-
-    if (rv.empty()) {
-        CHttpCookies cookies;
-        cookies.Add(CHttpCookies::eHeader_Cookie, env.Get("HTTP_COOKIE"), nullptr);
-
-        for (const auto& cookie : cookies) {
-            if (cookie.GetName() == auth_token_name.Get()) {
-                return NStr::URLDecode(cookie.GetValue());
-            }
-        }
-    }
-
-    return rv;
+    return !rv.empty() ? rv : env.GetCookie(auth_token_name);
 }
 
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
