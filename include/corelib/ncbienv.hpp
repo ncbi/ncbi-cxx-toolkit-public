@@ -99,6 +99,12 @@ public:
 /// CNcbiEnvironment provides a data structure for storing, accessing and
 /// modifying the environment variables accessed by the C library routine
 /// getenv().
+///
+/// @warning MT-safety:  This class is MT-safe for reading the environment;
+/// but modifying the environment (e.g. calling the Set(name, value) method
+/// with a "name" that exists, or calling the Unset() method) may invalidate
+/// the results (string references) previously obtained from Get(), which is
+/// made to return a string reference for efficiency and performance reasons.
 
 class NCBI_XNCBI_EXPORT CNcbiEnvironment
 {
