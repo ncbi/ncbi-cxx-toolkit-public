@@ -120,13 +120,14 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
     len = vsprintf (buf,           fmt, args);
 #else
     len = vsnprintf(buf, buf_size, fmt, args);
-    if (len < 0  ||  buf_size <= len)
-        memcpy(&buf[buf_size - 4], "...", 4), len = buf_size - 1;
-    else
+    if (len < 0  ||  buf_size <= len) {
+        memcpy(&buf[buf_size - 4], "...", 4);
+        len = (int)(buf_size - 1);
+    } else
 #endif /*HAVE_VSNPRINTF*/
     if (len <= 0)
         *buf = '\0', len = 0;
-    assert(len < buf_size);
+    assert(0 <= len  &&  len < buf_size);
     va_end(args);
     return buf;
 }
