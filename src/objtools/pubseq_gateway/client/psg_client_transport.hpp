@@ -64,6 +64,7 @@
 #include <connect/services/netservice_api.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_url.hpp>
+#include <corelib/ncbi_cookies.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -198,6 +199,14 @@ struct SPSG_Chunk : string
     SPSG_Chunk& operator=(const SPSG_Chunk&) = delete;
 };
 
+struct SPSG_Env : CNcbiEnvironment
+{
+    string GetCookie(const string& name) const;
+
+private:
+    mutable optional<CHttpCookies> m_Cookies;
+};
+
 struct SPSG_Params
 {
     TPSG_DebugPrintout debug_printout;
@@ -215,7 +224,7 @@ struct SPSG_Params
     SSocketAddress proxy;
     TPSG_PsgClientMode client_mode;
 
-    SPSG_Params(CNcbiEnvironment env = {}) :
+    SPSG_Params(SPSG_Env env = {}) :
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
         max_concurrent_requests_per_server(TPSG_MaxConcurrentRequestsPerServer::eGetDefault),
@@ -243,7 +252,7 @@ struct SPSG_Params
 private:
     static unsigned s_GetRequestTimeout(double io_timer_period);
     static unsigned s_GetCompetitiveAfter(double io_timer_period, double timeout);
-    static string s_GetAuthToken(const CNcbiEnvironment& env, const TPSG_AuthTokenName& auth_token_name);
+    static string s_GetAuthToken(const SPSG_Env& env, string auth_token_name);
 };
 
 struct SDebugPrintout
