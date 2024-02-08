@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Nov  9 14:12:52 EST 2023
-; formally
+/* time_t value corresponding to Thu Feb  8 14:41:51 EST 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1699557172UL;
+static const unsigned long kECNum_specific_Timestamp = 1707421311UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -65,7 +64,6 @@ static const char* const kECNum_specific[] = {
     "1.1.1.29\tglycerate dehydrogenase",
     "1.1.1.30\t3-hydroxybutyrate dehydrogenase",
     "1.1.1.31\t3-hydroxyisobutyrate dehydrogenase",
-    "1.1.1.33\tmevaldate reductase (NADPH)",
     "1.1.1.34\thydroxymethylglutaryl-CoA reductase (NADPH)",
     "1.1.1.35\t3-hydroxyacyl-CoA dehydrogenase",
     "1.1.1.36\tacetoacetyl-CoA reductase",
@@ -618,7 +616,7 @@ static const char* const kECNum_specific[] = {
     "1.2.1.79\tsuccinate-semialdehyde dehydrogenase (NADP(+))",
     "1.2.1.80\tlong-chain acyl-[acyl-carrier-protein] reductase",
     "1.2.1.81\tsulfoacetaldehyde dehydrogenase (acylating)",
-    "1.2.1.82\tbeta-apo-4'-carotenal oxygenase",
+    "1.2.1.82\tbeta-apo-4'-carotenal dehydrogenase",
     "1.2.1.83\t3-succinoylsemialdehyde-pyridine dehydrogenase",
     "1.2.1.84\talcohol-forming fatty acyl-CoA reductase",
     "1.2.1.85\t2-hydroxymuconate-6-semialdehyde dehydrogenase",
@@ -1677,7 +1675,6 @@ static const char* const kECNum_specific[] = {
     "1.14.14.137\t(+)-abscisic acid 8'-hydroxylase",
     "1.14.14.138\tlithocholate 6beta-hydroxylase",
     "1.14.14.139\t5beta-cholestane-3alpha,7alpha-diol 12alpha-hydroxylase",
-    "1.14.14.140\tlicodione synthase",
     "1.14.14.141\tpsoralen synthase",
     "1.14.14.142\t8-dimethylallylnaringenin 2'-hydroxylase",
     "1.14.14.143\t(+)-menthofuran synthase",
@@ -2296,7 +2293,7 @@ static const char* const kECNum_specific[] = {
     "2.1.1.295\t2-methyl-6-phytyl-1,4-hydroquinone methyltransferase",
     "2.1.1.296\tmethyltransferase cap2",
     "2.1.1.297\tpeptide chain release factor N(5)-glutamine methyltransferase",
-    "2.1.1.298\tribosomal protein L3 N(5)-glutamine methyltransferase",
+    "2.1.1.298\tribosomal protein uL3 N(5)-glutamine methyltransferase",
     "2.1.1.299\tprotein N-terminal monomethyltransferase",
     "2.1.1.300\tpavine N-methyltransferase",
     "2.1.1.301\tcypemycin N-terminal methyltransferase",
@@ -2385,6 +2382,8 @@ static const char* const kECNum_specific[] = {
     "2.1.1.385\t[methyl-Co(III) methoxylated-aromatic-compound-specific corrinoid protein]--tetrahydrofolate methyltransferase",
     "2.1.1.386\tsmall RNA 2'-O-methyltransferase",
     "2.1.1.387\t5-dehydro-6-demethoxy-6-hydroxyfumagillol O-methyltransferase",
+    "2.1.1.388\tproline betaine--corrinoid protein Co-methyltransferase",
+    "2.1.1.389\t[methyl-Co(III) quaternary-amine-specific corrinoid protein]--tetrahydrofolate methyltransferase",
     "2.1.1.n1\tresorcinol O-methyltransferase",
     "2.1.1.n4\tthiocyanate methyltransferase",
     "2.1.1.n7\t5-pentadecatrienyl resorcinol O-methyltransferase",
@@ -2687,8 +2686,8 @@ static const char* const kECNum_specific[] = {
     "2.3.1.263\t2-amino-4-oxopentanoate thiolase",
     "2.3.1.264\tbeta-lysine N(6)-acetyltransferase",
     "2.3.1.265\tphosphatidylinositol dimannoside acyltransferase",
-    "2.3.1.266\t[ribosomal protein S18]-alanine N-acetyltransferase",
-    "2.3.1.267\t[ribosomal protein S5]-alanine N-acetyltransferase",
+    "2.3.1.266\t[ribosomal protein bS18]-alanine N-acetyltransferase",
+    "2.3.1.267\t[ribosomal protein uS5]-alanine N-acetyltransferase",
     "2.3.1.268\tethanol O-acetyltransferase",
     "2.3.1.269\tapolipoprotein N-acyltransferase",
     "2.3.1.270\tlyso-ornithine lipid O-acyltransferase",
@@ -2733,6 +2732,8 @@ static const char* const kECNum_specific[] = {
     "2.3.1.309\t[beta-tubulin]-L-lysine N-acetyltransferase",
     "2.3.1.310\tbenzoylsuccinyl-CoA thiolase",
     "2.3.1.311\ttRNA carboxymethyluridine synthase",
+    "2.3.1.312\tD-glutamate N-acetyltransferase",
+    "2.3.1.313\tNAD-dependent lipoamidase",
     "2.3.1.n4\t1-acyl-sn-glycerol-3-phosphate acyltransferase",
     "2.3.1.n5\tglycerol-3-phosphate acyltransferase (acyl-[acyl-carrier-protein]-transferring)",
     "2.3.1.n6\t1-acylglycerophosphoserine O-acyltransferase",
@@ -2773,6 +2774,7 @@ static const char* const kECNum_specific[] = {
     "2.3.2.34\tE2 NEDD8-conjugating enzyme",
     "2.3.2.35\tcapsaicin synthase",
     "2.3.2.36\tRING-type E3 ubiquitin transferase (cysteine targeting)",
+    "2.3.2.37\tergosteryl-3beta-O-L-aspartate synthase",
     "2.3.3.1\tcitrate (Si)-synthase",
     "2.3.3.2\tdecylcitrate synthase",
     "2.3.3.3\tcitrate (Re)-synthase",
@@ -3151,6 +3153,7 @@ static const char* const kECNum_specific[] = {
     "2.4.1.390\t4,3-alpha-glucanotransferase",
     "2.4.1.391\tbeta-1,2-glucosyltransferase",
     "2.4.1.392\t3-O-beta-D-glucopyranosyl-beta-D-glucuronide phosphorylase",
+    "2.4.1.393\tMMP alpha-(1->4)-mannosyltransferase",
     "2.4.1.n2\tloliose synthase",
     "2.4.2.1\tpurine-nucleoside phosphorylase",
     "2.4.2.2\tpyrimidine-nucleoside phosphorylase",
@@ -3944,7 +3947,6 @@ static const char* const kECNum_specific[] = {
     "2.7.11.24\tmitogen-activated protein kinase",
     "2.7.11.25\tmitogen-activated protein kinase kinase kinase",
     "2.7.11.26\t[tau protein] kinase",
-    "2.7.11.27\t[acetyl-CoA carboxylase] kinase",
     "2.7.11.28\ttropomyosin kinase",
     "2.7.11.29\t[low-density-lipoprotein receptor] kinase",
     "2.7.11.30\treceptor protein serine/threonine kinase",
@@ -4044,7 +4046,7 @@ static const char* const kECNum_specific[] = {
     "2.8.4.1\tcoenzyme-B sulfoethylthiotransferase",
     "2.8.4.2\tarsenate-mycothiol transferase",
     "2.8.4.3\ttRNA-2-methylthio-N(6)-dimethylallyladenosine synthase",
-    "2.8.4.4\t[ribosomal protein S12] (aspartate(89)-C(3))-methylthiotransferase",
+    "2.8.4.4\t[ribosomal protein uS12] (aspartate(89)-C(3))-methylthiotransferase",
     "2.8.4.5\ttRNA (N(6)-L-threonylcarbamoyladenosine(37)-C(2))-methylthiotransferase",
     "2.8.4.6\tS-methyl-1-thioxylulose 5-phosphate methylthiotransferase",
     "2.8.5.1\tS-sulfo-L-cysteine synthase (3-phospho-L-serine-dependent)",

@@ -30,13 +30,13 @@
  *
  */
 
-/* time_t value corresponding to Thu Nov  9 14:12:52 EST 2023
-; formally
+/* time_t value corresponding to Thu Feb  8 14:41:51 EST 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_replaced_Timestamp = 1699557172UL;
+static const unsigned long kECNum_replaced_Timestamp = 1707421311UL;
 static const char* const kECNum_replaced[] = {
     "1.1.1.5\t1.1.1.303\t1.1.1.304",
     "1.1.1.32\t1.1.1.1",
+    "1.1.1.33\t1.1.1.2",
     "1.1.1.63\t1.1.1.239",
     "1.1.1.68\t1.5.1.20",
     "1.1.1.70\t1.2.1.3",
@@ -457,6 +457,7 @@ static const char* const kECNum_replaced[] = {
     "1.14.14.4\t1.14.15.7",
     "1.14.14.6\t1.14.13.111",
     "1.14.14.7\t1.14.19.9",
+    "1.14.14.140\t1.14.14.162",
     "1.14.14.n1\t1.14.99.46",
     "1.14.15.2\t1.14.14.108",
     "1.14.15.12\t1.14.14.46",
@@ -764,6 +765,7 @@ static const char* const kECNum_replaced[] = {
     "2.7.8.n1\t2.4.2.53",
     "2.7.8.n2\t2.7.8.33",
     "2.7.8.n3\t2.7.8.48",
+    "2.7.11.27\t2.7.11.31",
     "2.7.11.n1\t2.7.11.32",
     "2.7.11.n2\t2.7.11.33",
     "2.8.1.n1\t2.8.1.11",
