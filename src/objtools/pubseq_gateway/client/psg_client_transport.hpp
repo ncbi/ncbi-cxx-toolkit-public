@@ -221,6 +221,8 @@ struct SPSG_Params
     TPSG_UserRequestIds user_request_ids;
     TPSG_AuthTokenName auth_token_name;
     TPSG_AuthToken auth_token;
+    TPSG_AdminAuthTokenName admin_auth_token_name;
+    TPSG_AdminAuthToken admin_auth_token;
     SSocketAddress proxy;
     TPSG_PsgClientMode client_mode;
 
@@ -237,6 +239,8 @@ struct SPSG_Params
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         auth_token_name(TPSG_AuthTokenName::eGetDefault),
         auth_token([&](string v) { return v.empty() ? env.GetCookie(auth_token_name) : v; }),
+        admin_auth_token_name(TPSG_AdminAuthTokenName::eGetDefault),
+        admin_auth_token([&](string v) { return v.empty() ? env.GetCookie(admin_auth_token_name) : v; }),
         proxy(SSocketAddress::Parse(env.Get("HTTP_PROXY"), SSocketAddress::SHost::EName::eOriginal)),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
