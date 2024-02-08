@@ -705,7 +705,8 @@ int CAgpRow::ParseGapCols(bool log_errors)
             gap_type != eGapRepeat &&
             gap_type != eGapFragment &&
             gap_type != eGapScaffold &&
-            gap_type != eGapContamination
+            gap_type != eGapContamination &&
+            gap_type != eGapUnknown
             )
         {
             if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidLinkage, " \"yes\" for gap_type "+GetGapType() );
