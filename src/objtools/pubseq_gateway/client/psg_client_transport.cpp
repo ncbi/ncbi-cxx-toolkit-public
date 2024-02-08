@@ -154,6 +154,13 @@ string SPSG_Env::GetCookie(const string& name) const
     return {};
 }
 
+string SPSG_Params::GetCookie(const CPSG_Request::TFlags& request_flags, function<string()> get_auth_token)
+{
+    if (auto include_hup = request_flags & CPSG_Request::fIncludeHUP; !include_hup) return {};
+    auto rv = auth_token.Get().empty() ? get_auth_token() : auth_token.Get();
+    return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::URLEncode(rv);
+}
+
 unsigned SPSG_Params::s_GetRequestTimeout(double io_timer_period)
 {
     auto value = TPSG_RequestTimeout::GetDefault();
@@ -186,12 +193,6 @@ unsigned SPSG_Params::s_GetCompetitiveAfter(double io_timer_period, double timeo
     }
 
     return static_cast<unsigned>(timeout / io_timer_period);
-}
-
-string SPSG_Params::s_GetAuthToken(const SPSG_Env& env, string auth_token_name)
-{
-    string rv = TPSG_AuthToken(TPSG_AuthToken::eGetDefault);
-    return !rv.empty() ? rv : env.GetCookie(auth_token_name);
 }
 
 void SDebugPrintout::Print(SSocketAddress address, const string& path, const string& sid, const string& phid, const string& ip, SUv_Tcp::TPort port)
