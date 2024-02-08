@@ -220,7 +220,7 @@ struct SPSG_Params
     TPSG_RefusedStreamRetries refused_stream_retries;
     TPSG_UserRequestIds user_request_ids;
     TPSG_AuthTokenName auth_token_name;
-    string auth_token;
+    TPSG_AuthToken auth_token;
     SSocketAddress proxy;
     TPSG_PsgClientMode client_mode;
 
@@ -236,23 +236,16 @@ struct SPSG_Params
         refused_stream_retries(TPSG_RefusedStreamRetries::eGetDefault),
         user_request_ids(TPSG_UserRequestIds::eGetDefault),
         auth_token_name(TPSG_AuthTokenName::eGetDefault),
-        auth_token(s_GetAuthToken(env, auth_token_name)),
+        auth_token([&](string v) { return v.empty() ? env.GetCookie(auth_token_name) : v; }),
         proxy(SSocketAddress::Parse(env.Get("HTTP_PROXY"), SSocketAddress::SHost::EName::eOriginal)),
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
-    template <class TGet>
-    string GetCookie(const CPSG_Request::TFlags& request_flags, TGet get)
-    {
-        if (auto include_hup = request_flags & CPSG_Request::fIncludeHUP; !include_hup) return {};
-        auto rv = auth_token.empty() ? get() : auth_token;
-        return rv.empty() ? rv : auth_token_name.Get() + '=' + NStr::URLEncode(rv);
-    }
+    string GetCookie(const CPSG_Request::TFlags& request_flags, function<string()> get_auth_token);
 
 private:
     static unsigned s_GetRequestTimeout(double io_timer_period);
     static unsigned s_GetCompetitiveAfter(double io_timer_period, double timeout);
-    static string s_GetAuthToken(const SPSG_Env& env, string auth_token_name);
 };
 
 struct SDebugPrintout
