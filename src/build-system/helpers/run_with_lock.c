@@ -172,12 +172,23 @@ void s_ParseOptions(SOptions* options, int* argc, const char* const** argv)
 
 
 static
+const char* s_FindEnd(const char *p, size_t n)
+{
+    while (n > 0  &&  (*p & 0xe0) == 0x20) {
+        ++p;
+        --n;
+    }
+    return n == 0 ? NULL : p;
+}
+
+
+static
 int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
 {
     char    buffer[1024];
     ssize_t n;
     while ((n = read(in, buffer, sizeof(buffer))) > 0) {
-        char* p = buffer;
+        const char* p = buffer;
         if (fwrite(buffer, 1, n, out1) < n) {
             fprintf(stderr, "%s: Error propagating process output: %s.\n",
                     s_AppName, strerror(errno));
@@ -193,7 +204,7 @@ int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
             }
         }
         if (*state == eFS_csi) {
-            p = memchr(buffer, 'm', n);
+            p = s_FindEnd(buffer, n);
             if (p == NULL) {
                 continue;
             } else {
@@ -205,7 +216,7 @@ int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
         if (*state == eFS_on) {
             const char* start   = p;
             const char* src     = p;
-            char*       dest    = p;
+            char*       dest    = (char*) p;
             while (src - p < n
                    &&  (start = memchr(src, '\033', n - (src - p))) != NULL
                    &&  (start == p + n - 1  ||  start[1] == '[')) {
@@ -218,7 +229,7 @@ int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
                     n = dest - p;
                     break;
                 }
-                const char* end = memchr(start + 2, 'm', n - 2 - (start - p));
+                const char* end = s_FindEnd(start + 2, n - 2 - (start - p));
                 if (end == NULL) {
                     *state = eFS_csi;
                     n = dest - p;
