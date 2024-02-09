@@ -178,7 +178,7 @@ NCBIcomponent_report(KRB5)
 
 ##############################################################################
 # CURL
-NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl)
+NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
 NCBIcomponent_report(CURL)
 
 #############################################################################
@@ -209,7 +209,7 @@ set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 set(NCBI_COMPONENT_LocalZ_FOUND NO)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS LocalZ)
 
-NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z)
+NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
 NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
     set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
@@ -223,7 +223,7 @@ set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS LocalBZ2)
 
-NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2)
+NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2 CHECK_INCLUDE bzlib.h)
 NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
@@ -234,12 +234,12 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 
 #############################################################################
 # LZO
-NCBI_define_Xcomponent(NAME LZO LIB lzo2)
+NCBI_define_Xcomponent(NAME LZO LIB lzo2 CHECK_INCLUDE lzo/lzo1x.h)
 NCBIcomponent_report(LZO)
 
 #############################################################################
 # ZSTD
-NCBI_define_Xcomponent(NAME ZSTD LIB zstd)
+NCBI_define_Xcomponent(NAME ZSTD LIB zstd CHECK_INCLUDE zstd.h)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
     message("ZSTD: Version requirement not met (required at least v1.4)")
@@ -295,12 +295,12 @@ NCBIcomponent_report(Boost)
 
 #############################################################################
 # JPEG
-NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg)
+NCBI_define_Xcomponent(NAME JPEG MODULE libjpeg PACKAGE JPEG LIB jpeg CHECK_INCLUDE jpeglib.h)
 NCBIcomponent_report(JPEG)
 
 #############################################################################
 # PNG
-NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png)
+NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE png.h)
 NCBIcomponent_report(PNG)
 
 #############################################################################
@@ -311,7 +311,7 @@ NCBIcomponent_report(PNG)
 
 #############################################################################
 # TIFF
-NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff)
+NCBI_define_Xcomponent(NAME TIFF MODULE libtiff-4 PACKAGE TIFF LIB tiff CHECK_INCLUDE tiffio.h)
 NCBIcomponent_report(TIFF)
 
 #############################################################################
@@ -330,7 +330,7 @@ endif()
 
 #############################################################################
 #BerkeleyDB
-NCBI_define_Xcomponent(NAME BerkeleyDB LIB db)
+NCBI_define_Xcomponent(NAME BerkeleyDB LIB db CHECK_INCLUDE db.h)
 NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
   set(HAVE_BERKELEY_DB 1)
@@ -412,7 +412,7 @@ endif()
 
 #############################################################################
 # XML
-NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2)
+NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
 NCBIcomponent_report(XML)
 if(NCBI_COMPONENT_XML_FOUND)
     string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XML_LIBS}")
@@ -422,7 +422,7 @@ endif()
 
 #############################################################################
 # XSLT
-NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML)
+NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
 NCBIcomponent_report(XSLT)
 if(NCBI_COMPONENT_XSLT_FOUND)
     if(NOT DEFINED NCBI_XSLTPROCTOOL)
@@ -445,7 +445,7 @@ endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT)
+NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
 NCBIcomponent_report(EXSLT)
 if(NCBI_COMPONENT_EXSLT_FOUND)
     set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
@@ -500,13 +500,15 @@ if(NOT NCBI_GRPC_PLUGIN)
     set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/grpc_cpp_plugin")
 endif()
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
+    set(NCBI_PROTOC_APP)
     find_program(NCBI_PROTOC_APP protoc)
 endif()
 if(NOT EXISTS "${NCBI_GRPC_PLUGIN}")
+    set(NCBI_GRPC_PLUGIN)
     find_program(NCBI_GRPC_PLUGIN grpc_cpp_plugin)
 endif()
 
-NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf)
+NCBI_define_Xcomponent(NAME PROTOBUF MODULE protobuf PACKAGE Protobuf LIB protobuf CHECK_INCLUDE google/protobuf/stubs/platform_macros.h)
 NCBIcomponent_report(PROTOBUF)
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
     NCBI_define_Xcomponent(NAME Boring LIB boringssl boringcrypto)
@@ -550,12 +552,12 @@ NCBIcomponent_report(GL2PS)
 
 #############################################################################
 # GMP
-NCBI_define_Xcomponent(NAME GMP LIB gmp)
+NCBI_define_Xcomponent(NAME GMP LIB gmp CHECK_INCLUDE gmp.h)
 NCBIcomponent_report(GMP)
 
 #############################################################################
 # NETTLE
-NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP)
+NCBI_define_Xcomponent(NAME NETTLE LIB hogweed nettle ADD_COMPONENT GMP CHECK_INCLUDE nettle/nettle-stdint.h)
 NCBIcomponent_report(NETTLE)
 
 #############################################################################
