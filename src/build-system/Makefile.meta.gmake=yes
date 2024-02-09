@@ -41,14 +41,10 @@ ifeq "" "$(NCBI_BUILD_SESSION_ID)"
   endif
 endif
 
-# Work around GNU Make's tendency to double its automatic
-# --jobserver-fds=* flag's usage with each level of recursion, by
-# constructing an alternate MFLAGS_NR variable that limits its
-# occurrence to a single instance.  (Stripping it altogether backfires
-# with the patched make Mac OS X 10.5 ships.)
+# Passing MFLAGS as is can interact poorly with -jN.
 
-MFLAGS_NR = $(filter-out -,$(filter-out --jobserver-fds=%,$(MFLAGS))) \
-            $(word 1,$(filter --jobserver-fds=%,$(MFLAGS)))
+MFLAGS_NR = $(filter-out - -j% --jobserver-%,$(MFLAGS)) \
+            $(word 1,$(filter --jobserver-%,$(MFLAGS)))
 
 #ifeq "" "$(filter Makefile.flat %/Makefile.flat,$(MAKEFILE_LIST))"
 ifdef abs_top_srcdir
@@ -68,4 +64,5 @@ else
   ifndef builddir
     include $(top_srcdir)/src/build-system/Makefile.flat_tuneups
   endif
+  MFLAGS := $(MFLAGS_NR)
 endif
