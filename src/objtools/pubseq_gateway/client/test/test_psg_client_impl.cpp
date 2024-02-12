@@ -462,7 +462,7 @@ void SFixture::MtReading()
 
 void SFixture::Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, bool sleep)
 {
-    auto request = make_shared<SPSG_Request>(string(), CPSG_Request::eDefaultFlags, reply, CDiagContext::GetRequestContext().Clone(), params);
+    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
     vector<unique_ptr<SReceiver>> receivers;
 
     auto receive_impl = [&]() {

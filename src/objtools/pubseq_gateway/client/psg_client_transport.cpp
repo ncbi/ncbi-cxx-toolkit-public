@@ -156,14 +156,11 @@ string SPSG_Env::GetCookie(const string& name) const
     return {};
 }
 
-string SPSG_Params::GetCookie(const CPSG_Request::TFlags& request_flags, function<string()> get_auth_token)
+string SPSG_Params::GetCookie(function<string()> get_auth_token)
 {
     auto combine = [](auto p, auto v) { return v.empty()? v : p.Get() + '=' + NStr::URLEncode(v); };
 
     auto admin_cookie = combine(admin_auth_token_name, admin_auth_token.Get());
-
-    if (auto include_hup = request_flags & CPSG_Request::fIncludeHUP; !include_hup) return admin_cookie;
-
     auto hup_cookie = combine(auth_token_name, auth_token.Get().empty() ? get_auth_token() : auth_token.Get());
 
     return admin_cookie.empty() ? hup_cookie : hup_cookie.empty() ? admin_cookie : admin_cookie + "; " + hup_cookie;
@@ -746,9 +743,8 @@ shared_ptr<void> SPSG_Request::SContext::Set()
     return guard;
 }
 
-SPSG_Request::SPSG_Request(string p, CPSG_Request::TFlags f, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
+SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params) :
     full_path(std::move(p)),
-    flags(f),
     reply(r),
     context(c),
     m_State(&SPSG_Request::StatePrefix),
@@ -1237,7 +1233,7 @@ bool SPSG_IoSession::ProcessRequest(SPSG_TimedRequest timed_req, SPSG_Processor:
     const auto& path = req->full_path;
     const auto& session_id = context.GetSessionID();
     const auto& sub_hit_id = context.GetNextSubHitID();
-    const auto& cookie = m_Params.GetCookie(req->flags, [&]() { return context.GetProperty("auth_token"); });
+    const auto& cookie = m_Params.GetCookie([&]() { return context.GetProperty("auth_token"); });
     const auto& client_ip = context.GetClientIP();
     auto headers_size = m_Headers.size();
 
