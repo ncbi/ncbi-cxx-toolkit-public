@@ -553,4 +553,18 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "xlocale/ locale()"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=xlocale,func=locale;
+		}
+		allocation={
+			!!!;
+			src=xlocale,func=locale;
+		}
+	}
+}
 

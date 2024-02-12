@@ -158,4 +158,32 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "CExec::System / system() - out of our control"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ncbiexec.cpp,func=System;
+		}
+		allocation={
+			!!!;
+			src=ncbiexec.cpp,func=System;
+		}
+	}
+}
+suppression = {
+	name = "CDirEntry::GetMode / stat() - out of our control"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ncbifile.cpp,func=GetMode;
+		}
+		allocation={
+			!!!;
+			src=ncbifile.cpp,func=GetMode;
+		}
+	}
+}
 

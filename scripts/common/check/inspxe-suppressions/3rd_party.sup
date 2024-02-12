@@ -53,6 +53,22 @@ suppression = {
 	}
 }
 suppression = {
+	name = "LIBXML - xmlSAXParseFileWithData_Custom - internal filename parse error"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlCheckFilename;
+			...;
+			func=document,src=document.cpp,func_line=24;
+		}
+		allocation={
+			...;
+			func=document,src=document.cpp,func_line=24;
+		}
+	}
+}
+suppression = {
 	name = "Boost.Test - getenv"
 	type = {invalid_memory_access_partial}
 	stacks = {
