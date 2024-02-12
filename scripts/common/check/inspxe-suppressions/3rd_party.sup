@@ -1,4 +1,14 @@
 suppression = {
+	name = "Boost.Test - getenv"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=fetch.hpp,func=sys_read_var;
+		}
+	}
+}
+suppression = {
 	name = "VDB - deallocation without allocation in KNgcObjWriteToFile() at ncbi_vdb.dll - false positive"
 	type = {invalid_deallocation}
 	stacks = {
@@ -60,21 +70,133 @@ suppression = {
 			...;
 			func=xmlCheckFilename;
 			...;
-			func=document,src=document.cpp,func_line=24;
+			func=document,src=document.cpp;
 		}
 		allocation={
 			...;
-			func=document,src=document.cpp,func_line=24;
+			func=document,src=document.cpp;
 		}
 	}
 }
 suppression = {
-	name = "Boost.Test - getenv"
+	name = "LIBXML - xmlParseChunk - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
-			!!!;
-			src=fetch.hpp,func=sys_read_var;
+			...;
+			func=xmlParseChunk;
+			func=document,src=document.cpp;
+		}
+		allocation={
+			...;
+			func=xmlParseChunk;
+			func=document,src=document.cpp;
 		}
 	}
 }
+suppression = {
+	name = "LIBXML - xmlParseChunk - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlParseChunk;
+			func=parse_chunk,src=event_parser.cpp;
+		}
+		allocation={
+			...;
+			func=xmlParseChunk;
+			func=parse_chunk,src=event_parser.cpp;
+		}
+	}
+}
+
+suppression = {
+	name = "LIBXML - xmlXIncludeProcess"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlXIncludeProcess;
+			func=process_xinclude,src=document.cpp;
+		}
+		allocation={
+			...;
+			func=xmlXIncludeProcess;
+			func=process_xinclude,src=document.cpp;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xmlValidateDocument"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlValidateDocument;
+			func=validate,src=document.cpp;
+		}
+		allocation={
+			...;
+			func=xmlParseDocument;
+			func=document,src=document.cpp;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xmlCheckFilename"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlCheckFilename;
+		}
+		allocation={
+			...;
+			func=xmlCheckFilename;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xmlValidateDtd"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlValidateDtd;
+			func=validate,src=dtd.cpp;
+		}
+		allocation={
+			...;
+			func=xmlParseDocument;
+			func=document,src=document.cpp;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xmlGetNodePath"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlGetNodePath;
+		}
+		allocation={
+			...;
+			func=xmlParseDocument;
+		}
+	}
+}
+
+suppression = {
+	name = "LIBUV - uv_loop_init"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			func=uv_loop_init;
+		}
+	}
+}
+
