@@ -405,7 +405,7 @@ bool CBedGraphWriter::xWriteSingleGraphByte(
 
     CBedGraphRecord bedRecord;
     size_t numValues = graph.GetNumval();
-    const vector<char> values = graph.GetGraph().GetByte().GetValues();
+    const CByte_graph::TValues values = graph.GetGraph().GetByte().GetValues();
     for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
         if (IsCanceled()) {
             NCBI_THROW(
@@ -422,7 +422,7 @@ bool CBedGraphWriter::xWriteSingleGraphByte(
         size_t recordEnd = recordStart + chromStep;
         bedRecord.SetChromEnd(recordEnd);
 
-        double value = offset + scale*values[valIndex];
+        double value = offset + scale*(unsigned char)values[valIndex];
         bedRecord.SetChromValue(value);
         bedRecord.Write(m_Os);
     }
