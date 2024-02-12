@@ -206,4 +206,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "ncbi_connutil - x_GetValue - x_strncpy0() -- looks like false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ncbi_connutil.c,func=x_GetValue;
+		}
+	}
+}
 
