@@ -104,7 +104,6 @@ void CTestApp::Init(void)
     arg_desc->AddDefaultKey("seed", "RandomSeed",
                             "Force random seed",
                             CArgDescriptions::eInteger, "0");
-    arg_desc->AddFlag("no_scope", "Use seq vector with null scope");
 
     // Program description
     string prog_description = "Test for CSeqVector_CI\n";
@@ -308,14 +307,7 @@ int CTestApp::Run(void)
     cout << "Testing gi " << gi << endl;
 
     // Create seq-vector
-    if ( !args["no_scope"] ) {
-        m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-    }
-    else {
-        static CScope* no_scope;
-        m_Vect = CSeqVector(handle.GetSeqMap(), *no_scope,
-                            CBioseq_Handle::eCoding_Iupac);
-    }
+    m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     // Prepare reference data
     m_Vect.GetSeqData(0, m_Vect.size(), m_RefBuf);
 
