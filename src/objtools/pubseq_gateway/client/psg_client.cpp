@@ -743,13 +743,14 @@ string s_GetOtherArgs()
     return os.str();
 }
 
-string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request, bool raw)
+string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request, const CPSG_Request::TFlags& flags, bool raw)
 {
     static const string other_args(s_GetOtherArgs());
 
     _ASSERT(user_request);
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
+    os << "&include_hup=" << (flags & CPSG_Request::fIncludeHUP ? "yes" : "no");
 
     if (!raw) {
         os << other_args;
@@ -964,8 +965,8 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     const auto type = user_request->GetType();
     const auto raw = (type == CPSG_Request::eBlob) && !dynamic_pointer_cast<const CPSG_Request_Blob>(user_request);
     auto reply = make_shared<SPSG_Reply>(std::move(request_id), params, queue, stats, raw);
-    auto abs_path_ref = x_GetAbsPathRef(user_request, raw);
     const auto request_flags = r->m_Flags.IsNull() ? m_RequestFlags : r->m_Flags.GetValue();
+    auto abs_path_ref = x_GetAbsPathRef(user_request, request_flags, raw);
     const auto& request_context = user_request->m_RequestContext;
 
     _ASSERT(request_context);
