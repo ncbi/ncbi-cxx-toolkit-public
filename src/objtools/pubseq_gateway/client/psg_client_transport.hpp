@@ -245,7 +245,7 @@ struct SPSG_Params
         client_mode(TPSG_PsgClientMode::eGetDefault)
     {}
 
-    string GetCookie(const CPSG_Request::TFlags& request_flags, function<string()> get_auth_token);
+    string GetCookie(function<string()> get_auth_token);
 
 private:
     static unsigned s_GetRequestTimeout(double io_timer_period);
@@ -510,13 +510,12 @@ struct SPSG_Request
     };
 
     const string full_path;
-    CPSG_Request::TFlags flags;
     shared_ptr<SPSG_Reply> reply;
     SContext context;
     SPSG_Submitter submitted_by;
     SPSG_Processor processed_by;
 
-    SPSG_Request(string p, CPSG_Request::TFlags f, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
+    SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
     enum EStateResult { eContinue, eStop, eRetry };
     EStateResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
