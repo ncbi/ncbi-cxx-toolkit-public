@@ -750,9 +750,9 @@ string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_re
     _ASSERT(user_request);
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
-    os << "&include_hup=" << (flags & CPSG_Request::fIncludeHUP ? "yes" : "no");
 
     if (!raw) {
+        os << "&include_hup=" << (flags & CPSG_Request::fIncludeHUP ? "yes" : "no");
         os << other_args;
         m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
     } else {
