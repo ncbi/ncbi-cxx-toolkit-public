@@ -1,0 +1,14 @@
+suppression = {
+	name = "seqdb_unit_test / system() - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=seqdb_unit_test.cpp,func=test_method;
+		}
+		allocation={
+			!!!;
+			src=seqdb_unit_test.cpp,func=test_method;
+		}
+	}
+}

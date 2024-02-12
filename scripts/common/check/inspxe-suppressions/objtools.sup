@@ -1,0 +1,29 @@
+suppression = {
+	name = "FtaInstallPrefix - strncat() - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ftaerr.cpp,func=FtaInstallPrefix;
+		}
+		allocation={
+			!!!;
+			src=loadfeat.cpp,func=ParseFeatureBlock;
+		}
+	}
+}
+suppression = {
+	name = "Nlm_ErrPostEx / vsnprintf - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ftaerr.cpp,func=Nlm_ErrPostEx;
+		}
+		allocation={
+			!!!;
+			src=xstring,func=assign;
+		}
+	}
+}
+
