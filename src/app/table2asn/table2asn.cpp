@@ -118,7 +118,36 @@ static void s_FailOnBadInput(const string& specifics, IObjtoolsListener& listene
 
 BEGIN_NCBI_SCOPE
 
-class CTable2AsnLogger : public CMessageListenerLenient
+class CObjtoolsDiagMessage : public IObjtoolsMessage
+{
+public:
+    CObjtoolsDiagMessage(const string& txt) :
+        m_txt(txt)
+    {
+    }
+
+    IObjtoolsMessage* Clone() const override { return new CObjtoolsDiagMessage(m_txt); }
+
+    void Write(CNcbiOstream& out) const override { out << m_txt; }
+    void Dump(CNcbiOstream& out) const override { out << m_txt; }
+    void WriteAsXML(CNcbiOstream& out) const override
+    {
+        out << "<message problem=\"" << NStr::XmlEncode(m_txt) << "\" />";
+    }
+    void DumpAsXML(CNcbiOstream& out) const override
+    {
+        WriteAsXML(out);
+    }
+    string   GetText() const override { return m_txt; }
+    EDiagSev GetSeverity() const override { return eDiag_Trace; }
+    int      GetCode() const override { return 0; }
+    int      GetSubCode() const override { return 0; }
+
+private:
+    string m_txt;
+};
+
+class CTable2AsnLogger : public CMessageListenerLenient, public CDiagHandler
 {
 public:
     CTable2AsnLogger() : m_enable_log(false) {}
@@ -143,6 +172,13 @@ public:
         return CMessageListenerLenient::PutMessage(message);
     }
 
+    void Post(const SDiagMessage& mess) override
+    {
+        stringstream ss;
+        mess.Write(ss, SDiagMessage::fNoEndl);
+        string str = ss.str();
+        this->PutMessage(CObjtoolsDiagMessage(str));
+    }
 };
 
 CTbl2AsnApp::CTbl2AsnApp()
@@ -449,10 +485,11 @@ int CTbl2AsnApp::Run()
     }
     m_context.m_verbose = args["verbose"].AsBoolean();
 
-    m_logger.Reset(new CTable2AsnLogger);
+    CTable2AsnLogger* app_logger = new CTable2AsnLogger;
     CNcbiOstream* error_log = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCerr;
-    m_logger->SetProgressOstream(error_log);
-    SetDiagStream(error_log);
+    app_logger->SetProgressOstream(error_log);
+    SetDiagHandler(app_logger);
+    m_logger.Reset(app_logger);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
