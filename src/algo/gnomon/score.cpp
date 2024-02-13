@@ -1550,7 +1550,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
     return best_score;
 }
 
-void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) const
+void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart, bool extend_max_cds) const
 {
     CAlignMap mrnamap(model.Exons(),model.FrameShifts(),model.Strand());
     CEResidueVec mrna;
@@ -1709,8 +1709,13 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart) c
     int upstream_stop = frame-3;
     if(has_start) {
         cds_info.SetStart(TSignedSeqRange(best_start,best_start+2), confirmed_start);
-        if(FindUpstreamStop(stops[frame],best_start,upstream_stop))
-            cds_info.Set5PrimeCdsLimit(best_start);      
+        if(FindUpstreamStop(stops[frame],best_start,upstream_stop)) {
+            int first_start = best_start;
+            if(extend_max_cds)
+                FindFirstStart(starts[frame], upstream_stop, first_start);
+            cds_info.Set5PrimeCdsLimit(first_start);
+            //            cds_info.Set5PrimeCdsLimit(best_start);      
+        }
     }
 
     if ((int)mrna.size() - best_stop >=3)

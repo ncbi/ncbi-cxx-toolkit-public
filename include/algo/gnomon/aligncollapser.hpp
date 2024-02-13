@@ -59,7 +59,7 @@ struct SAlignIndividual {
 
 struct SIntron {
     SIntron(int a, int b, int strand, bool oriented, const string& sig) : m_range(a,b), m_strand(strand), m_oriented(oriented), m_sig(sig) {}
-    bool operator<(const SIntron& i) const {
+    bool operator<(const SIntron& i) const { // m_sig should not be included
         if(m_oriented != i.m_oriented)
             return m_oriented < i.m_oriented;
         else if(m_oriented && m_strand != i.m_strand)
@@ -71,7 +71,7 @@ struct SIntron {
     TSignedSeqRange m_range;
     int m_strand;
     bool m_oriented;
-    string m_sig;
+    string m_sig;    
 };
 
 
@@ -147,8 +147,10 @@ public:
         int m_sr_support = 0;
         int m_est_support = 0;
         int m_other_support = 0;
+        int m_intron_num = 0;
         bool m_keep_anyway = false;
         bool m_selfsp_support = false;
+        bool m_not_cross = false;
     };
     typedef map<SIntron,SIntronData> TAlignIntrons;
 

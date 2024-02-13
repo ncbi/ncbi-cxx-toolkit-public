@@ -85,7 +85,7 @@ public:
     double GetChanceOfIntronLongerThan(int l) const;
 
     // calculate gnomon score for a gene model
-    void GetScore(CGeneModel& model, bool extend5p = false, bool obeystart = false) const;
+    void GetScore(CGeneModel& model, bool extend5p = false, bool obeystart = false, bool extend_max_cds = false) const;
     double SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap,
                                   TIVec starts[3],  TIVec stops[3], int& frame, int& best_start, int& best_stop, bool extend5p = true) const;
 

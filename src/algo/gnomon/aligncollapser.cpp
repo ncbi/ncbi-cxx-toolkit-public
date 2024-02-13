@@ -1139,8 +1139,11 @@ void CAlignCollapser::FilterAlignments() {
     //coverage calculation
     m_coverage.resize(len,0.);
     ITERATE(Tdata, i, m_aligns) {
+        int factor = 1;
+        if(i->first.isEST() && i->first.GetIntrons().size() > 1)
+            factor = i->first.GetIntrons().size();            
         ITERATE(deque<SAlignIndividual>, k, i->second) { // short reads and collapsed EST
-            float weight = k->m_weight;
+            float weight = k->m_weight*factor;
             TSignedSeqRange range = k->m_range;
             for(int l = range.GetFrom(); l <= range.GetTo(); ++l)  // add coverage for all alignment range 
                 m_coverage[l-m_left_end] += weight;
@@ -1197,7 +1200,8 @@ void CAlignCollapser::FilterAlignments() {
         if(intron->first.m_sig == "CTAC" && intron->first.m_oriented)
             bad_intron = true;
 
-        if(intron->first.m_sig == "GTAG") {
+        // if(intron->first.m_sig == "GTAG") {
+        if(intron->first.m_sig == "GTAG" || (intron->second.m_intron_num >= 3 && intron->first.m_sig == "GCAG")) {
             if(id.m_weight < minconsensussupport)
                 bad_intron = true;
         } else {
@@ -1228,14 +1232,14 @@ void CAlignCollapser::FilterAlignments() {
         int number = 0;
         for(TIntronsBySplice::iterator i = a; i != b; ++i) {
             ++number;
-            weight += i->second->second.m_weight;
+            weight += i->second->second.m_weight*i->second->second.m_intron_num;
         }
         double mean = weight/number;
 
         for(TIntronsBySplice::iterator it = a; it != b; ) {
             TIntronsBySplice::iterator i = it++;
             SIntronData& id = i->second->second;
-            if(!id.m_keep_anyway && (id.m_weight < minintronexpression*mean || weight < minspliceexpression*left_coverage[splice-m_left_end])) {
+            if(!id.m_keep_anyway && (id.m_weight*id.m_intron_num < minintronexpression*mean || weight < minspliceexpression*left_coverage[splice-m_left_end])) {
                 id.m_weight = -1;
                 introns_by_left_splice.erase(i);
             }
@@ -1256,14 +1260,14 @@ void CAlignCollapser::FilterAlignments() {
         int number = 0;
         for(TIntronsBySplice::iterator i = a; i != b; ++i) {
             ++number;
-            weight += i->second->second.m_weight;
+            weight += i->second->second.m_weight*i->second->second.m_intron_num;
         }
         double mean = weight/number;
 
         for(TIntronsBySplice::iterator it = a; it != b; ) {
             TIntronsBySplice::iterator i = it++;
             SIntronData& id = i->second->second;
-            if(!id.m_keep_anyway && (id.m_weight < minintronexpression*mean || weight < minspliceexpression*right_coverage[splice-m_left_end])) {
+            if(!id.m_keep_anyway && (id.m_weight*id.m_intron_num < minintronexpression*mean || weight < minspliceexpression*right_coverage[splice-m_left_end])) {
                 id.m_weight = -1;
                 introns_by_right_splice.erase(i);
             }
@@ -1288,7 +1292,7 @@ void CAlignCollapser::FilterAlignments() {
         if((alc.isEST() && !m_filterest) || (alc.isSR() && !m_filtersr))
             continue;
 
-        const CAlignCommon::Tintrons& introns = alc.GetIntrons();  //need copy for old version
+        const CAlignCommon::Tintrons& introns = alc.GetIntrons();
         if(introns.empty())
             continue;
 
@@ -1332,8 +1336,9 @@ void CAlignCollapser::FilterAlignments() {
     TIVec left_minus(len,right_end);      // closest left - strand splice 'on the right' from the current position
     TIVec right_plus(len,m_left_end);       // closest right + strand splice 'on the left' from the current position
     TIVec right_minus(len,m_left_end);      // closest right - strand splice 'on the left' from the current position
-    ITERATE(TAlignIntrons, it, m_align_introns) {
-        const SIntron& intron = it->first;
+    for(auto& intron_data : m_align_introns) {
+        const SIntron& intron = intron_data.first;
+        SIntronData& data = intron_data.second;
         int a = intron.m_range.GetFrom();
         int b = intron.m_range.GetTo();
 
@@ -1341,19 +1346,29 @@ void CAlignCollapser::FilterAlignments() {
 
         //        if(right_coverage[a+1-m_left_end] < mincrossexpression*left_coverage[a-m_left_end]) {
         if(right_coverage[a+1-m_left_end] < mincrossexpression*two_side_exon_coverage) {
-            if(!intron.m_oriented || intron.m_strand == ePlus)
+            if(!intron.m_oriented || intron.m_strand == ePlus) {
+                data.m_not_cross = true;
                 left_plus[a-m_left_end] = a;
-            if(!intron.m_oriented || intron.m_strand == eMinus)
+            }
+            if(!intron.m_oriented || intron.m_strand == eMinus) {
+                data.m_not_cross = true;
                 left_minus[a-m_left_end] = a;
+            }
         }
 
-        //        if(left_coverage[b-1-m_left_end] < mincrossexpression*right_coverage[b-m_left_end]) {
+        //        if(left_coverage[b-1-m_left_end] < mincrossexpression*right_coverage[b-m_left_end]) {        
         if(left_coverage[b-1-m_left_end] < mincrossexpression*two_side_exon_coverage) {
-            if(!intron.m_oriented || intron.m_strand == ePlus)
+            if(!intron.m_oriented || intron.m_strand == ePlus) {
+                data.m_not_cross = true;
                 right_plus[b-m_left_end] = b;
-            if(!intron.m_oriented || intron.m_strand == eMinus)
+            }
+            if(!intron.m_oriented || intron.m_strand == eMinus) {
+                data.m_not_cross = true;
                 right_minus[b-m_left_end] = b;
+            }
         }
+
+        //        cerr << "Intron: " << intron.m_range << " " << data.m_not_cross << " " << right_coverage[a+1-m_left_end] << " " << left_coverage[b-1-m_left_end] << " " << two_side_exon_coverage << endl;
     }
 
     for(int i = 1; i < len; ++i) {
@@ -1377,10 +1392,13 @@ void CAlignCollapser::FilterAlignments() {
         const deque<char>& id_pool = m_target_id_pool[alc];
         NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
             CAlignModel align(alc.GetAlignment(*i, id_pool));
+            int cap_polya0 = align.Status()&(CGeneModel::eCap|CGeneModel::ePolyA);
             TSignedSeqRange lim = align.Limits();
             auto exnum = align.Exons().size();
-            //            ClipESTorSR(align, clip_threshold, 2);
-            ClipESTorSR(align, 0, 2);
+            if(alc.isSR())
+                ClipESTorSR(align, clip_threshold, 2);
+            else
+                ClipESTorSR(align, 0, 2);
             if(align.Limits() == lim)
                 continue;
 
@@ -1390,8 +1408,9 @@ void CAlignCollapser::FilterAlignments() {
                 i->m_weight = -1;
                 continue;
             }
-            if(exnum != align.Exons().size()) {
-                if(align.Exons().size() > 1) {
+            int cap_polya1 = align.Status()&(CGeneModel::eCap|CGeneModel::ePolyA);
+            if(exnum != align.Exons().size() || cap_polya0 != cap_polya1) {
+                if(align.Exons().size() > 1 || exnum == 1) {
                     CAlignCommon c(align);
                     m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c])); 
                 }                   
@@ -1410,13 +1429,16 @@ void CAlignCollapser::FilterAlignments() {
     int minsingleexpression = args["min-edge-coverage"].AsInteger();
     int trim = args["trim"].AsInteger();
     int total = 0;
-    for(Tdata::iterator it = m_aligns.begin(); it != m_aligns.end(); ) {
-        Tdata::iterator data = it++;
-        const CAlignCommon& alc = data->first;
-        deque<SAlignIndividual>& aligns = data->second;
+    if(m_filtersr ) {
+        for(Tdata::iterator it = m_aligns.begin(); it != m_aligns.end(); ) {
+            Tdata::iterator data = it++;
+            const CAlignCommon& alc = data->first;
+            deque<SAlignIndividual>& aligns = data->second;
 
-        if((alc.isEST() && m_filterest) || (alc.isSR() && m_filtersr)) {
-            if(alc.GetIntrons().empty()) { // not spliced
+            if(!alc.isSR())
+                continue;
+
+            if(alc.GetIntrons().empty()) { // not spliced   
                 NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
                     int a = i->m_range.GetFrom()+trim;
                     int b = i->m_range.GetTo()-trim;
@@ -1431,7 +1453,7 @@ void CAlignCollapser::FilterAlignments() {
                         i->m_weight = -1;
                     }
                 }
-            } else {    // spliced  
+            } else {
                 const deque<char>& id_pool = m_target_id_pool[alc];
                 NON_CONST_ITERATE(deque<SAlignIndividual>, i, aligns) {
                     CAlignModel align(alc.GetAlignment(*i, id_pool));
@@ -1439,32 +1461,32 @@ void CAlignCollapser::FilterAlignments() {
                     if(align.Exons().front().Limits().GetLength() > trim) {
                         int a = align.Exons().front().Limits().GetFrom()+trim;
                         int b = align.Exons().front().Limits().GetTo();
-                        if((alc.isUnknown() || alc.isPlus()) && (right_plus[b-m_left_end] > a && !alc.isCap())) // crosses right plus splice      
+                        if((alc.isUnknown() || alc.isPlus()) && (right_plus[b-m_left_end] > a && !alc.isCap())) // crosses right plus splice        
                             new_lim.SetFrom(right_plus[b-m_left_end]);
-                        if((alc.isUnknown() || alc.isMinus()) && (right_minus[b-m_left_end] > a && !alc.isPolyA())) // crosses right minus splice 
+                        if((alc.isUnknown() || alc.isMinus()) && (right_minus[b-m_left_end] > a && !alc.isPolyA())) // crosses right minus splice   
                             new_lim.SetFrom(right_minus[b-m_left_end]);
                         _ASSERT(new_lim.GetFrom() <= align.Exons().front().GetTo());
                     }
                     if(align.Exons().back().Limits().GetLength() > trim) {
                         int a = align.Exons().back().Limits().GetFrom();
                         int b = align.Exons().back().Limits().GetTo()-trim;
-                        if((alc.isUnknown() || alc.isPlus()) && (left_plus[a-m_left_end] < b && !alc.isPolyA())) // crosses left plus splice  
+                        if((alc.isUnknown() || alc.isPlus()) && (left_plus[a-m_left_end] < b && !alc.isPolyA())) // crosses left plus splice    
                             new_lim.SetTo(left_plus[a-m_left_end]);
-                        if((alc.isUnknown() || alc.isMinus()) && (left_minus[a-m_left_end] < b && !alc.isCap())) // crosses left minus splice 
+                        if((alc.isUnknown() || alc.isMinus()) && (left_minus[a-m_left_end] < b && !alc.isCap())) // crosses left minus splice   
                             new_lim.SetTo(left_minus[a-m_left_end]);
                         _ASSERT(new_lim.GetTo() >= align.Exons().back().GetFrom());
                     }
                     i->m_range = new_lim;
 
-                    //delete if retained intron in internal exon    
+                    //delete if retained intron in short reads internal exon    
                     for(int n = 1; n < (int)align.Exons().size()-1 && i->m_weight > 0; ++n) {
                         int a = align.Exons()[n].Limits().GetFrom();
                         int b = align.Exons()[n].Limits().GetTo();
 
                         pair<TIntronsBySplice::iterator,TIntronsBySplice::iterator> eqr(introns_by_right_splice.end(),introns_by_right_splice.end());
-                        if((alc.isUnknown() || alc.isPlus()) && right_plus[b-m_left_end] > a)         // crosses right plus splice    
+                        if((alc.isUnknown() || alc.isPlus()) && right_plus[b-m_left_end] > a)         // crosses right plus splice          
                             eqr = introns_by_right_splice.equal_range(right_plus[b-m_left_end]);
-                        else if((alc.isUnknown() || alc.isMinus()) && right_minus[b-m_left_end] > a)  // crosses right minus splice   
+                        else if((alc.isUnknown() || alc.isMinus()) && right_minus[b-m_left_end] > a)  // crosses right minus splice         
                             eqr = introns_by_right_splice.equal_range(right_minus[b-m_left_end]);
                         for(TIntronsBySplice::iterator ip = eqr.first; ip != eqr.second; ++ip) {
                             if(ip->second->first.m_range.GetFrom() > a)
@@ -1472,16 +1494,161 @@ void CAlignCollapser::FilterAlignments() {
                         }
                     }
                 }
+            }                            
+            aligns.erase(remove_if(aligns.begin(),aligns.end(),AlignmentMarkedForDeletion),aligns.end());        
+            if(aligns.empty()) {
+                m_target_id_pool.erase(data->first);
+                m_aligns.erase(data);
             }
-        
-            aligns.erase(remove_if(aligns.begin(),aligns.end(),AlignmentMarkedForDeletion),aligns.end());
         }
-
-        total += aligns.size();
-        if(aligns.empty())
-            m_aligns.erase(data);
     }
 
+    // remove retained introns in est (keep spliced parts)
+    if(m_filterest) {
+        for(Tdata::iterator it = m_aligns.begin(); it != m_aligns.end(); ) {
+            Tdata::iterator data = it++;
+            const CAlignCommon& alc = data->first;
+            const CAlignCommon::Tintrons& introns = alc.GetIntrons();
+            deque<SAlignIndividual>& aligns_ind = data->second;
+
+            if(!alc.isEST())
+                continue;
+
+            if(introns.empty()) { // one-exon
+                for(SAlignIndividual& ali : aligns_ind) {
+                    int a = ali.m_range.GetFrom();
+                    int b = ali.m_range.GetTo();
+                    if(ali.m_range.GetLength() > 2*trim) {
+                        if((m_coverage[a+trim-m_left_end] < minsingleexpression || m_coverage[b-trim-m_left_end] < minsingleexpression)) // low coverage
+                            ali.m_weight = -1;
+                        else if((alc.isUnknown() || alc.isPlus()) && (right_plus[b-m_left_end] > a || left_plus[a-m_left_end] < b))      // crossing splice
+                            ali.m_weight = -1;
+                        else if((alc.isUnknown() || alc.isMinus()) && (right_minus[b-m_left_end] > a || left_minus[a-m_left_end] < b))   // crossing splice
+                            ali.m_weight = -1;
+                    } else {
+                        ali.m_weight = -1;
+                    }
+                }
+            } else {                    
+                list<int> strands;
+                if(alc.isUnknown()) {
+                    strands.push_back(ePlus);
+                    strands.push_back(eMinus);
+                } else {
+                    strands.push_back(alc.isPlus() ? ePlus : eMinus);
+                }
+                    
+                set<int> bad_exons;
+                for(int strand : strands) {
+                    for(int i = 0; i < (int)introns.size()-1; ++i) { 
+                        TSignedSeqRange exon(introns[i].m_range.GetTo(), introns[i+1].m_range.GetFrom());
+                        SIntron se(exon.GetFrom(), exon.GetTo(), strand, true, "");
+                        for(auto ip = m_align_introns.upper_bound(se); ip != m_align_introns.end() && ip->first.m_strand == strand && ip->first.m_range.GetFrom() < exon.GetTo(); ++ip) {
+                            if(Include(exon, ip->first.m_range) && ip->second.m_not_cross)
+                                bad_exons.insert(i+1);
+                        }
+                    }
+                }
+
+                const deque<char>& id_pool = m_target_id_pool[alc];
+                for(SAlignIndividual& ali : aligns_ind) {
+                    bool save_and_delete = false;
+                    TSignedSeqRange new_lim = ali.m_range;
+                    // first exon
+                    int a = ali.m_range.GetFrom();
+                    int b = introns.front().m_range.GetFrom();
+                    if((alc.isUnknown() || alc.isPlus()) && right_plus[b-m_left_end] > a) { // crosses right plus splice      
+                        new_lim.SetFrom(right_plus[b-m_left_end]);
+                        if(alc.isCap())
+                            save_and_delete = true;
+                    }
+
+                    if((alc.isUnknown() || alc.isMinus()) && right_minus[b-m_left_end] > a) { // crosses right minus splice 
+                        new_lim.SetFrom(right_minus[b-m_left_end]);
+                        if(alc.isPolyA())
+                            save_and_delete = true;
+                    }
+                    _ASSERT(new_lim.GetFrom() <= ali.m_range.GetTo());
+                    // last exon
+                    a = introns.back().m_range.GetTo();
+                    b = ali.m_range.GetTo();
+                    if((alc.isUnknown() || alc.isPlus()) && left_plus[a-m_left_end] < b) { // crosses left plus splice  
+                        new_lim.SetTo(left_plus[a-m_left_end]);
+                        if(alc.isPolyA())
+                           save_and_delete = true;
+                    }
+                    if((alc.isUnknown() || alc.isMinus()) && left_minus[a-m_left_end] < b) { // crosses left minus splice 
+                        new_lim.SetTo(left_minus[a-m_left_end]);
+                        if(alc.isCap())
+                           save_and_delete = true;
+                    } 
+                    _ASSERT(new_lim.GetTo() >= ali.m_range.GetFrom());
+                    if(!save_and_delete) 
+                        ali.m_range = new_lim;
+
+                    // check if first exon still has notspliced intron
+                    for(int strand : strands) {
+                        TSignedSeqRange exon(new_lim.GetFrom(), introns.front().m_range.GetFrom());
+                        SIntron se(exon.GetFrom(), exon.GetTo(), strand, true, "");
+                        for(auto ip = m_align_introns.upper_bound(se); ip != m_align_introns.end() && ip->first.m_strand == strand && ip->first.m_range.GetFrom() < exon.GetTo(); ++ip) {
+                            if(Include(exon, ip->first.m_range) && ip->second.m_not_cross)
+                                bad_exons.insert(0);
+                        }                        
+                    }
+                    // check if last exon still has notspliced intron
+                    for(int strand : strands) {
+                        TSignedSeqRange exon(introns.back().m_range.GetTo(), new_lim.GetTo());
+                        SIntron se(exon.GetFrom(), exon.GetTo(), strand, true, "");
+                        for(auto ip = m_align_introns.upper_bound(se); ip != m_align_introns.end() && ip->first.m_strand == strand && ip->first.m_range.GetFrom() < exon.GetTo(); ++ip) {
+                            if(Include(exon, ip->first.m_range) && ip->second.m_not_cross)
+                                bad_exons.insert(introns.size());
+                        }                        
+                    }
+
+                    if(save_and_delete || !bad_exons.empty()) {
+                        CAlignModel align(alc.GetAlignment(ali, id_pool));
+                        if(new_lim != align.Limits())
+                            align.Clip(new_lim, CGeneModel::eRemoveExons);
+
+                        if(!bad_exons.empty()) {
+                            CGeneModel::TExons& e = align.Exons();
+                            for(unsigned i : bad_exons) {
+                                if(i != 0)
+                                    e[i-1].m_ssplice = false;
+                                e[i].m_fsplice = false;
+                                e[i].m_ssplice = false;
+                                if(i != introns.size())
+                                    e[i+1].m_fsplice = false;
+                            }
+                            TAlignModelList aligns = GetAlignParts(align, false);
+                            for(auto& a : aligns) {
+                                if(a.Exons().size() > 1) {
+                                    a.Status() |= CGeneModel::eChangedByFilter; 
+                                    CAlignCommon c(a);
+                                    m_aligns[c].push_back(SAlignIndividual(a, m_target_id_pool[c]));                    
+                                }
+                            }
+                        } else {
+                            align.Status() |= CGeneModel::eChangedByFilter; 
+                            CAlignCommon c(align);
+                            m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));                                                        
+                        }
+
+                        ali.m_weight = -1;                   
+                    }
+                }
+            }
+
+            aligns_ind.erase(remove_if(aligns_ind.begin(),aligns_ind.end(),AlignmentMarkedForDeletion), aligns_ind.end());
+            if(aligns_ind.empty()) {
+                m_target_id_pool.erase(data->first);
+                m_aligns.erase(data);
+            }
+        }
+    }
+
+    for(auto& a : m_aligns)
+        total += a.second.size();        
 
     //filter other alignments
 
@@ -2622,6 +2789,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
             else
                 id.m_other_support += align.Weight()+0.5;
 
+            id.m_intron_num = max(id.m_intron_num, (int)e.size()-1);
             id.m_weight += align.Weight();
 
             id.m_ident = max(id.m_ident,ident);
