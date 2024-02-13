@@ -284,6 +284,8 @@ bool CCDSInfo::operator== (const CCDSInfo& a) const
 
 CCDSInfo CCDSInfo::MapFromEditedToOrig(const CAlignMap& amap) const
 {
+    _ASSERT(!IsMappedToGenome());
+
     CCDSInfo empty_cds;
     CCDSInfo new_cds(true);
 
@@ -322,11 +324,20 @@ CCDSInfo CCDSInfo::MapFromEditedToOrig(const CAlignMap& amap) const
         else
             return empty_cds;        
     }
+
+    if(HasStart()) {
+        if(Precede(Start(), ReadingFrame()) && MaxCdsLimits().GetFrom() != TSignedSeqRange::GetWhole().GetFrom())
+            new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(MaxCdsLimits().GetFrom()));
+        else if(Precede(ReadingFrame(), Start()) && MaxCdsLimits().GetTo() != TSignedSeqRange::GetWhole().GetTo())         // does it ever happen?
+            new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(MaxCdsLimits().GetTo()));                      
+    }
+    /*
     if(HasStart() && MaxCdsLimits().GetFrom() == Start().GetFrom()) {
         new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(Start().GetFrom()));
     } else if(HasStart() &&  MaxCdsLimits().GetTo() == Start().GetTo()) {
         new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(Start().GetTo()));
     }
+    */
     new_cds.SetScore(Score(), OpenCds());
 
     return new_cds;    
@@ -357,11 +368,19 @@ CCDSInfo CCDSInfo::MapFromOrigToEdited(const CAlignMap& amap) const
         _ASSERT(p.NotEmpty());
         new_cds.AddPStop(p, i->m_status);
     }
+    if(HasStart()) {
+        if(Precede(Start(), ReadingFrame()) && MaxCdsLimits().GetFrom() != TSignedSeqRange::GetWhole().GetFrom())  // 5p limited + strand
+            new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(MaxCdsLimits().GetFrom()));
+        else if(Precede(ReadingFrame(), Start()) && MaxCdsLimits().GetTo() != TSignedSeqRange::GetWhole().GetTo()) // 5p limited - strand
+            new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(MaxCdsLimits().GetTo()));
+    }
+    /*
     if(HasStart() && MaxCdsLimits().GetFrom() == Start().GetFrom()) {
         new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(Start().GetFrom()));
     } else if(HasStart() &&  MaxCdsLimits().GetTo() == Start().GetTo()) {
         new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(Start().GetTo()));
     }
+    */
     new_cds.SetScore(Score(), OpenCds());
 
     return new_cds;
@@ -843,6 +862,34 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
         m_cds_info.Clip(cds_clip_limits);
     }
 
+    unsigned left_determinant = Status()&eCap;
+    unsigned right_determinant = Status()&ePolyA;
+    if(Strand() == eMinus)
+        swap(left_determinant, right_determinant);
+    TSignedSeqRange old_limits = Limits();
+
+    bool remove = false;
+    for(auto& exon : MyExons()) {
+        TSignedSeqRange clip = exon.Limits()&clip_limits;
+        if(clip.NotEmpty()) {
+            if(exon.GetFrom() <= clip_limits.GetFrom()) {
+                exon.m_fsplice = false;
+                exon.m_fsplice_sig.clear(); 	 
+            }
+            if(exon.GetTo() >= clip_limits.GetTo()) {
+                exon.m_ssplice = false;
+                exon.m_ssplice_sig.clear(); 	 
+            }
+            exon.Limits() = clip;
+        } else if(mode == eRemoveExons) {
+            exon.m_ident = -1.;
+            remove = true;
+        }        
+    }
+    if(remove)
+        MyExons().erase(std::remove_if(MyExons().begin(), MyExons().end(), [](CModelExon& e) { return e.m_ident < 0; }), MyExons().end());
+
+    /*
     for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
         TSignedSeqRange clip = e->Limits() & clip_limits;
         if (clip.NotEmpty()) {
@@ -861,6 +908,7 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
         else
             ++e;
     }
+    */
 
     if (Exons().size()>0) {
         MyExons().front().m_fsplice = false;
@@ -871,6 +919,11 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
 
     RecalculateLimits();
     RemoveExtraFShifts(clip_limits.GetFrom(), clip_limits.GetTo());
+
+    if(old_limits.GetFrom() != Limits().GetFrom())
+        Status() &= ~left_determinant;
+    if(old_limits.GetTo() != Limits().GetTo())
+        Status() &= ~right_determinant;
     
     _ASSERT( CdsInvariant(ensure_cds_invariant) );
 }

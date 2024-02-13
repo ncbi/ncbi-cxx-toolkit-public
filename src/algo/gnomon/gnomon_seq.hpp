@@ -101,6 +101,7 @@ void FindAllStops(TIVec codons[], const CEResidueVec& mrna, const CAlignMap& mrn
 void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap,
                      TIVec starts[3],  TIVec stops[3], int& frame, bool obeystart);
 bool FindUpstreamStop(const vector<int>& stops, int start, int& stop);
+bool FindFirstStart(const vector<int>& starts, int stop, int& start);
 
 
 END_SCOPE(gnomon)
