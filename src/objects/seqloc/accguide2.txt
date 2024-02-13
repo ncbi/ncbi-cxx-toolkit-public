@@ -1384,8 +1384,8 @@ version  2 # of file format
 2+8  PP  gb_other_nuc
 2+10 PP  gb_other_nuc
 2+6  PR  gb_patent
-2+8  PP  gb_other_nuc
-2+10 PP  gb_other_nuc
+2+8  PR  gb_other_nuc
+2+10 PR  gb_other_nuc
 2+6  PW  unreserved_nuc # deliberately skipped
 2+8  PW  unreserved_nuc # deliberately skipped
 2+10 PW  unreserved_nuc # deliberately skipped
