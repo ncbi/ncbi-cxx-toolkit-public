@@ -11,5 +11,6 @@ LIB = test_boost $(SOBJMGR_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 CHECK_CMD = unit_test_objmgr
+CHECK_TIMEOUT = 400
 
 WATCHERS = vasilche
