@@ -295,6 +295,16 @@ bool FindUpstreamStop(const vector<int>& stops, int start, int& stop)
         return false;
 }
 
+bool FindFirstStart(const vector<int>& starts, int stop, int& start) {
+    auto it_start = lower_bound(starts.begin(), starts.end(), stop);
+    if(it_start != starts.end()) {
+        start = *it_start;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 /*
 TInDels CAlignMap::GetAllCorrections() const {
 
