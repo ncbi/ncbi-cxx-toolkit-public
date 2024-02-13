@@ -1,35 +1,35 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Jonathan Kans, Clifford Clausen,
-*           Aaron Ucko, Sergiy Gotvyanskyy
-*
-* File Description:
-*   Converter of various files into ASN.1 format, main application function
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Jonathan Kans, Clifford Clausen,
+ *           Aaron Ucko, Sergiy Gotvyanskyy
+ *
+ * File Description:
+ *   Converter of various files into ASN.1 format, main application function
+ *
+ */
 
 #include <ncbi_pch.hpp>
 #include <common/ncbi_source_ver.h>
@@ -98,7 +98,7 @@
 #   define THIS_IS_TRUNK_BUILD
 #endif
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h> /* This header must go last */
 
 using namespace ncbi;
 using namespace objects;
@@ -118,16 +118,16 @@ static void s_FailOnBadInput(const string& specifics, IObjtoolsListener& listene
 
 BEGIN_NCBI_SCOPE
 
-class CTable2AsnLogger: public CMessageListenerLenient
+class CTable2AsnLogger : public CMessageListenerLenient
 {
 public:
-    CTable2AsnLogger(): m_enable_log(false) {}
+    CTable2AsnLogger() : m_enable_log(false) {}
     bool m_enable_log;
 
     void PutProgress(
-        const string & sMessage,
-        const Uint8 iNumDone = 0,
-        const Uint8 iNumTotal = 0) override
+        const string& sMessage,
+        const Uint8   iNumDone = 0,
+        const Uint8   iNumTotal = 0) override
     {
         if (m_enable_log)
             CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
@@ -136,8 +136,7 @@ public:
     bool PutMessage(const IObjtoolsMessage& message) override
     {
         auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
-        if (edit)
-        {
+        if (edit) {
             if (edit->m_error != edit::EPubmedError::citation_not_found)
                 return false;
         }
@@ -158,9 +157,10 @@ void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc)
         "aln-file", "InFile", "Alignment input file",
          CArgDescriptions::eInputFile);
 
-    arg_desc.SetDependency("aln-file",
-            CArgDescriptions::eExcludes,
-            "i");
+    arg_desc.SetDependency(
+        "aln-file",
+        CArgDescriptions::eExcludes,
+        "i");
 
     arg_desc.AddDefaultKey(
         "aln-gapchar", "STRING", "Alignment missing indicator",
@@ -180,36 +180,36 @@ void CTbl2AsnApp::x_SetAlnArgs(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(
         "aln-alphabet",
         &(*new CArgAllow_Strings,
-            "nuc",
-            "prot"));
+          "nuc",
+          "prot"));
 }
 
 
 void CTbl2AsnApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    HideStdArgs(fHideDryRun );
+    HideStdArgs(fHideDryRun);
 
     // Print -h document if no arguments supplied
     arg_desc->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
 
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
-    arg_desc->AddOptionalKey
-        ("indir", "Directory", "Path to input files",
+    arg_desc->AddOptionalKey(
+        "indir", "Directory", "Path to input files",
         CArgDescriptions::eInputFile);
 
-    arg_desc->AddOptionalKey
-        ("outdir", "Directory", "Path to results",
+    arg_desc->AddOptionalKey(
+        "outdir", "Directory", "Path to results",
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddFlag("E", "Recurse");
 
-    arg_desc->AddDefaultKey
-        ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
+    arg_desc->AddDefaultKey(
+        "x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
 
-    arg_desc->AddOptionalKey
-        ("i", "InFile", "Single Input File",
+    arg_desc->AddOptionalKey(
+        "i", "InFile", "Single Input File",
         CArgDescriptions::eInputFile);
 
     x_SetAlnArgs(*arg_desc);
@@ -218,16 +218,16 @@ void CTbl2AsnApp::Init()
         "o", "OutFile", "Single Output File",
         CArgDescriptions::eOutputFile);
 
-    arg_desc->AddDefaultKey
-        ("out-suffix", "String", "ASN.1 files suffix", CArgDescriptions::eString, ".sqn");
+    arg_desc->AddDefaultKey(
+        "out-suffix", "String", "ASN.1 files suffix", CArgDescriptions::eString, ".sqn");
 
     arg_desc->AddFlag("binary", "Output binary ASN.1");
 
     arg_desc->AddOptionalKey("t", "InFile", "Template File",
         CArgDescriptions::eInputFile);
 
-    arg_desc->AddDefaultKey
-        ("a", "String", "File Type\n"
+    arg_desc->AddDefaultKey(
+        "a", "String", "File Type\n"
 "      a Any\n"
 "      s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco,\n"
 "        s9 Small-genome)\n"
@@ -247,28 +247,28 @@ may be implemented in the future; RW-1253
 
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
 
-    arg_desc->AddOptionalKey
-        ("A", "String", "Accession", CArgDescriptions::eString);           // done
-    arg_desc->AddOptionalKey
-        ("C", "String", "Genome Center Tag", CArgDescriptions::eString);   // done
-//    arg_desc->AddOptionalKey
-//        ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
-    arg_desc->AddOptionalKey
-        ("j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)",
+    arg_desc->AddOptionalKey(
+        "A", "String", "Accession", CArgDescriptions::eString);           // done
+    arg_desc->AddOptionalKey(
+        "C", "String", "Genome Center Tag", CArgDescriptions::eString);   // done
+//    arg_desc->AddOptionalKey(
+//        "n", "String", "Organism Name", CArgDescriptions::eString);       // done
+    arg_desc->AddOptionalKey(
+        "j", "String", "Source Qualifiers.\nThese qualifier values override any conflicting values read from a file (See -src-file)",
          CArgDescriptions::eString);   // done
     arg_desc->AddOptionalKey("src-file", "InFile", "Single source qualifiers file. The qualifiers in this file override any conflicting qualifiers automically read from a .src file, which, in turn, take precedence over source qualifiers specified in a fasta defline", CArgDescriptions::eInputFile); //done
     arg_desc->AddFlag("accum-mods", "Accumulate non-conflicting modifier values from different sources. For example, with this option, a 'note' modifier specified on the command line no longer overwrites a 'note' modifier read from a .src file. Both notes will appear in the output ASN.1. If modifier values conflict, the rules of precedence specified above apply");
-    arg_desc->AddOptionalKey
-        ("y", "String", "Comment", CArgDescriptions::eString);             // done
-    arg_desc->AddOptionalKey
-        ("Y", "InFile", "Comment File", CArgDescriptions::eInputFile);     // done
-    arg_desc->AddOptionalKey
-        ("D", "InFile", "Descriptors File", CArgDescriptions::eInputFile); // done
-    arg_desc->AddOptionalKey
-        ("f", "InFile", "Single 5 column table file or other annotations", CArgDescriptions::eInputFile);// done
+    arg_desc->AddOptionalKey(
+        "y", "String", "Comment", CArgDescriptions::eString);             // done
+    arg_desc->AddOptionalKey(
+        "Y", "InFile", "Comment File", CArgDescriptions::eInputFile);     // done
+    arg_desc->AddOptionalKey(
+        "D", "InFile", "Descriptors File", CArgDescriptions::eInputFile); // done
+    arg_desc->AddOptionalKey(
+        "f", "InFile", "Single 5 column table file or other annotations", CArgDescriptions::eInputFile); // done
 
-    arg_desc->AddOptionalKey
-        ("V", "String", "Verification (combine any of the following letters)\n\
+    arg_desc->AddOptionalKey(
+        "V", "String", "Verification (combine any of the following letters)\n\
       v Validate with Normal Stringency\n\
       b Generate GenBank Flatfile\n\
       t Validate with TSA Check", CArgDescriptions::eString);
@@ -321,7 +321,7 @@ may be implemented in the future; RW-1253
       pcr\n\
       proximity-ligation", CArgDescriptions::eString, CArgDescriptions::fAllowMultiple);
 
-    arg_desc->AddOptionalKey("linkage-evidence-file", "InFile", "File listing linkage evidence for gaps of different lengths",  CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("linkage-evidence-file", "InFile", "File listing linkage evidence for gaps of different lengths", CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
       scaffold\n\
@@ -353,7 +353,7 @@ may be implemented in the future; RW-1253
     //arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     //arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
-    arg_desc->AddOptionalKey("locus-tag-prefix", "String",  "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("locus-tag-prefix", "String", "Add prefix to locus tags in annotation files", CArgDescriptions::eString);
     arg_desc->AddFlag("no-locus-tags-needed", "Submission data does not require locus tags");
     arg_desc->AddFlag("euk", "Assume eukaryote, and create missing mRNA features");
     arg_desc->AddOptionalKey("suspect-rules", "String", "Path to a file containing suspect rules set. Overrides environment variable PRODUCT_RULES_LIST", CArgDescriptions::eString);
@@ -390,8 +390,7 @@ may be implemented in the future; RW-1253
     SetupArgDescriptions(arg_desc.release());
 }
 
-static
-void s_PubCleanup(CRef<CPub>& pub)
+static void s_PubCleanup(CRef<CPub>& pub)
 {
     if (pub->IsArticle()) {
         CCitArtCleaner::CleanArticle(pub->SetArticle(), true, true);
@@ -405,11 +404,10 @@ size_t CTbl2AsnApp::xGetNumThreads() const
     string numThreadsConfig;
     if (args["usemt"]) {
         numThreadsConfig = args["usemt"].AsString();
-    }
-    else {
+    } else {
         numThreadsConfig = GetConfig().GetString("table2asn", "UseThreads", "one");
     }
-    static constexpr array<string_view, 3> numThreadsValues{"one", "two", "many"};
+    static constexpr array<string_view, 3> numThreadsValues{ "one", "two", "many" };
     auto numThreads = distance(begin(numThreadsValues),
             find(begin(numThreadsValues), end(numThreadsValues), numThreadsConfig));
     numThreads += 1;
@@ -428,28 +426,24 @@ int CTbl2AsnApp::Run()
     Setup(args);
 
     CTime expires = GetFullVersion().GetBuildInfo().GetBuildTime();
-    if (!expires.IsEmpty())
-    {
+    if (! expires.IsEmpty()) {
         expires.AddYear();
-        if (CTime(CTime::eCurrent) > expires)
-        {
+        if (CTime(CTime::eCurrent) > expires) {
             NcbiCerr << "This copy of " << GetProgramDisplayName()
                      << " is more than 1 year old. Please download the current version if it is newer." << endl;
         }
     }
 
     m_context.m_disable_huge_files = args["disable-huge"];
-    if  (!m_context.m_disable_huge_files) {
+    if (! m_context.m_disable_huge_files) {
         m_context.m_can_use_huge_files = args["huge"] || GetConfig().GetBool("table2asn", "UseHugeFiles", false);
-        if (m_context.m_can_use_huge_files)
-        {
+        if (m_context.m_can_use_huge_files) {
             std::cerr << "Will be using huge files scenario" << std::endl;
         }
     }
 
     m_context.m_split_log_files = args["split-logs"].AsBoolean();
-    if (m_context.m_split_log_files && args["logfile"])
-    {
+    if (m_context.m_split_log_files && args["logfile"]) {
         NCBI_THROW(CArgException, eConstraint,
             "-logfile cannot be used with -split-logs");
     }
@@ -471,10 +465,8 @@ int CTbl2AsnApp::Run()
     m_context.m_accumulate_mods = args["accum-mods"].AsBoolean();
     m_context.m_binary_asn1_output = args["binary"].AsBoolean();
 
-    if (args["c"])
-    {
-        if (args["c"].AsString().find_first_not_of("-befwsdDx") != string::npos)
-        {
+    if (args["c"]) {
+        if (args["c"].AsString().find_first_not_of("-befwsdDx") != string::npos) {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());
         }
@@ -484,8 +476,7 @@ int CTbl2AsnApp::Run()
     else
         m_context.m_cleanup = "b"; // always cleanup
 
-    if (args["M"])
-    {
+    if (args["M"]) {
         m_context.m_master_genome_flag = args["M"].AsString();
         m_context.m_delay_genprodset = true;
         m_context.m_HandleAsSet = true;
@@ -493,8 +484,7 @@ int CTbl2AsnApp::Run()
         m_context.m_validate = "v"; // do we still need that?
         if (m_context.m_master_genome_flag.find('n') != string::npos) {
             m_context.m_discrepancy_group = NDiscrepancy::eSubmitter;
-        }
-        else if (m_context.m_master_genome_flag.find('t') != string::npos) {
+        } else if (m_context.m_master_genome_flag.find('t') != string::npos) {
             m_context.m_discrepancy_group = NDiscrepancy::eTSA;
         }
     }
@@ -503,8 +493,7 @@ int CTbl2AsnApp::Run()
 
     // excluded per RW-589
 #if 0
-    if (args["fcs-file"])
-    {
+    if (args["fcs-file"]) {
         m_fcs_reader.reset(new CForeignContaminationScreenReportReader(m_context));
         CRef<ILineReader> reader(ILineReader::New(args["fcs-file"].AsInputFile()));
 
@@ -521,17 +510,14 @@ int CTbl2AsnApp::Run()
 
     if (args["y"])
         m_context.m_Comment = args["y"].AsString();
-    else
-        if (args["Y"])
-        {
-            CRef<ILineReader> reader(ILineReader::New(args["Y"].AsInputFile()));
-            while (!reader->AtEOF())
-            {
-                reader->ReadLine();
-                m_context.m_Comment += reader->GetCurrentLine();
-                m_context.m_Comment += " ";
-            }
+    else if (args["Y"]) {
+        CRef<ILineReader> reader(ILineReader::New(args["Y"].AsInputFile()));
+        while (! reader->AtEOF()) {
+            reader->ReadLine();
+            m_context.m_Comment += reader->GetCurrentLine();
+            m_context.m_Comment += " ";
         }
+    }
     NStr::TruncateSpacesInPlace(m_context.m_Comment);
 
     if (args["U"] && args["U"].AsBoolean())
@@ -559,15 +545,14 @@ int CTbl2AsnApp::Run()
         m_context.m_ft_url_mod = args["ft-url-mod"].AsString();
     if (args["A"])
         m_context.m_accession.Reset(new CSeq_id(args["A"].AsString()));
-    if (args["j"])
-    {
+    if (args["j"]) {
         m_context.mCommandLineMods = args["j"].AsString();
     }
     if (args["w"])
         m_context.m_single_structure_cmt = args["w"].AsString();
 
     m_context.m_RemotePubLookup = args["P"].AsBoolean();
-    if (!m_context.m_RemotePubLookup) // those are always postprocessed
+    if (! m_context.m_RemotePubLookup) // those are always postprocessed
         m_context.m_postprocess_pubs = args["postprocess-pubs"].AsBoolean();
 
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
@@ -575,41 +560,28 @@ int CTbl2AsnApp::Run()
         m_context.m_cleanup += 'T';
     }
 
-    if (args["a"])
-    {
+    if (args["a"]) {
         const string& a_arg = args["a"].AsString();
-        if (a_arg == "s" || a_arg == "z")
-        {
+        if (a_arg == "s" || a_arg == "z") {
             m_context.m_HandleAsSet = true;
-        }
-        else if (a_arg == "s1") {
+        } else if (a_arg == "s1") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_pop_set;
-        }
-        else if (a_arg == "s2") {
+        } else if (a_arg == "s2") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_phy_set;
-        }
-        else if (a_arg == "s3") {
+        } else if (a_arg == "s3") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_mut_set;
-        }
-        else if (a_arg == "s4") {
+        } else if (a_arg == "s4") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_eco_set;
-        }
-        else if (a_arg == "s9") {
+        } else if (a_arg == "s9") {
             m_context.m_HandleAsSet = true;
             m_context.m_ClassValue = CBioseq_set::eClass_small_genome_set;
-        }
-        else
-        if (a_arg == "di")
-        {
+        } else if (a_arg == "di") {
             m_context.m_di_fasta = true;
-        }
-        else
-        if (a_arg == "d")
-        {
+        } else if (a_arg == "d") {
             m_context.m_d_fasta = true;
         }
     }
@@ -633,109 +605,85 @@ int CTbl2AsnApp::Run()
         m_context.m_gapNmin = m_context.m_gap_Unknown_length;
     }
 
-    if (args["linkage-evidence-file"])
-    {
-        //auto lefile_cstr = args["linkage-evidence-file"].AsString().c_str();
-        //auto pLEStream = make_unique<CNcbiIfstream>(lefile_cstr,ios::binary);
+    if (args["linkage-evidence-file"]) {
+        // auto lefile_cstr = args["linkage-evidence-file"].AsString().c_str();
+        // auto pLEStream = make_unique<CNcbiIfstream>(lefile_cstr,ios::binary);
 
-        g_LoadLinkageEvidence(args["linkage-evidence-file"].AsString(),
-                m_context.m_GapsizeToEvidence,
-                m_context.m_logger);
+        g_LoadLinkageEvidence(
+            args["linkage-evidence-file"].AsString(),
+            m_context.m_GapsizeToEvidence,
+            m_context.m_logger);
         m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
     }
 
-
-    if (args["l"])
-    {
+    if (args["l"]) {
         auto linkage_evidence_to_value = CLinkage_evidence::GetTypeInfo_enum_EType();
-
-        for (auto& arg_it: args["l"].GetStringList())
-        {
-            try
-            {
+        for (auto& arg_it: args["l"].GetStringList()) {
+            try {
                 auto value = linkage_evidence_to_value->FindValue(arg_it);
                 m_context.m_DefaultEvidence.insert(value);
                 m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
-            }
-            catch (...)
-            {
+            } catch (...) {
                 NCBI_THROW(CArgException, eConvert,
                     "Unrecognized linkage evidence " + arg_it);
             }
         }
     }
 
-    if (args["gap-type"])
-    {
+    if (args["gap-type"]) {
         auto gaptype_to_value = CSeq_gap::GetTypeInfo_enum_EType();
-
-        try
-        {
+        try {
             auto value = gaptype_to_value->FindValue(args["gap-type"].AsString());
             m_context.m_gap_type = value;
-        }
-        catch (...)
-        {
+        } catch (...) {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized gap type " + args["gap-type"].AsString());
         }
-
     }
 
-    if (args["H"])
-    {
+    if (args["H"]) {
         string sdate = args["H"].AsString();
         if (sdate == "Y" || sdate == "y") {
             m_context.m_HoldUntilPublish.SetCurrent();
             m_context.m_HoldUntilPublish.SetYear(m_context.m_HoldUntilPublish.Year() + 1);
-        }
-        else
-            try
-        {
-            if (sdate[0] == '\'' && sdate.length() > 0 && sdate[sdate.length() - 1] == '\'')
-            {
-                sdate.erase(0, 1);
-                sdate.erase(sdate.length() - 1, 1);
+        } else {
+            try {
+                if (sdate[0] == '\'' && sdate.length() > 0 && sdate[sdate.length() - 1] == '\'') {
+                    sdate.erase(0, 1);
+                    sdate.erase(sdate.length() - 1, 1);
+                }
+                m_context.m_HoldUntilPublish = CTime(sdate, "M/D/Y");
+            } catch (const CException&) {
+                int years = NStr::StringToInt(args["H"].AsString());
+                m_context.m_HoldUntilPublish.SetCurrent();
+                m_context.m_HoldUntilPublish.SetYear(m_context.m_HoldUntilPublish.Year() + years);
             }
-
-            m_context.m_HoldUntilPublish = CTime(sdate, "M/D/Y");
-        }
-        catch (const CException &)
-        {
-            int years = NStr::StringToInt(args["H"].AsString());
-            m_context.m_HoldUntilPublish.SetCurrent();
-            m_context.m_HoldUntilPublish.SetYear(m_context.m_HoldUntilPublish.Year() + years);
         }
     }
 
     if (args["N"])
         m_context.m_ProjectVersionNumber = args["N"].AsString();
 
-    if (args["C"])
-    {
+    if (args["C"]) {
         m_context.m_genome_center_id = args["C"].AsString();
-        if (!m_context.m_ProjectVersionNumber.empty())
+        if (! m_context.m_ProjectVersionNumber.empty())
             m_context.m_genome_center_id += m_context.m_ProjectVersionNumber;
     }
 
-    if (args["V"])
-    {
+    if (args["V"]) {
         m_context.m_validate += args["V"].AsString();
         size_t p;
-        while ((p = m_context.m_validate.find("b")) != string::npos)
-        {
+        while ((p = m_context.m_validate.find("b")) != string::npos) {
             m_context.m_validate.erase(p, 1);
             m_context.m_make_flatfile = true;
         }
-        while ((p = m_context.m_validate.find("t")) != string::npos)
-        {
+        while ((p = m_context.m_validate.find("t")) != string::npos) {
             //m_context.m_discrepancy = eTriState_False;
             m_context.m_validate.erase(p, 1);
         }
     }
 
-    if (args["Z"])
-    {
+    if (args["Z"]) {
         m_context.m_run_discrepancy = true;
         if (args["split-dr"])
             m_context.m_split_discrepancy = true;
@@ -748,37 +696,31 @@ int CTbl2AsnApp::Run()
                 "-no-locus-tags-needed and -locus-tag-prefix are mutually exclusive");
         }
         if (args["no-locus-tags-needed"]) {
-            m_context.m_locus_tag_prefix = "";
+            m_context.m_locus_tag_prefix  = "";
             m_context.m_locus_tags_needed = false;
-        }
-        else {
-            m_context.m_locus_tag_prefix = args["locus-tag-prefix"].AsString();
+        } else {
+            m_context.m_locus_tag_prefix  = args["locus-tag-prefix"].AsString();
             m_context.m_locus_tags_needed = true;
         }
     }
 
-    if (m_context.m_HandleAsSet)
-    {
+    if (m_context.m_HandleAsSet) {
         if (false)
             NCBI_THROW(CArgException, eConstraint, "-s flag cannot be used with -d, -e, -l or -z");
     }
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["outdir"])
-            m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(args["outdir"].AsString());
+        m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(args["outdir"].AsString());
 
-    if (args["o"])
-    {
+    if (args["o"]) {
         m_context.m_output_filename = args["o"].AsString();
         m_context.m_output = &args["o"].AsOutputFile();
-    }
-    else
-    {
-        if (args["outdir"])
-        {
+    } else {
+        if (args["outdir"]) {
             CDir outputdir(m_context.m_ResultsDirectory);
-            if (!IsDryRun())
-                if (!outputdir.Exists())
+            if (! IsDryRun())
+                if (! outputdir.Exists())
                     outputdir.Create();
         }
     }
@@ -791,37 +733,28 @@ int CTbl2AsnApp::Run()
     if (args["suspect-rules"])
         m_context.m_suspect_rules->SetRulesFilename(args["suspect-rules"].AsString());
 
-    try
-    {
-        if (args["t"])
-        {
+    try {
+        if (args["t"]) {
             m_context.m_t = true;
             m_reader->LoadTemplate(args["t"].AsString());
         }
-    }
-    catch (const CException&)
-    {
+    } catch (const CException&) {
         g_LogGeneralParsingError("Error loading template file", *m_logger);
     }
 
-    try
-    {
-        if (args["D"])
-        {
+    try {
+        if (args["D"]) {
             m_reader->LoadDescriptors(args["D"].AsString(), m_global_files.m_descriptors);
         }
-    }
-    catch (const CException&)
-    {
+    } catch (const CException&) {
         g_LogGeneralParsingError("Error loading descriptors file", *m_logger);
     }
 
     if (m_logger->Count() == 0)
-    try
-    {
+    try {
         if (args["f"]) {
             string annot_file = args["f"].AsString();
-            if (!CFile(annot_file).Exists()) {
+            if (! CFile(annot_file).Exists()) {
                 s_FailOnBadInput(
                     "The specified annotation file \"" + annot_file + "\" does not exist.",
                     *m_logger);
@@ -830,7 +763,7 @@ int CTbl2AsnApp::Run()
         }
         if (args["src-file"]) {
             string src_file = args["src-file"].AsString();
-            if (!CFile(src_file).Exists()) {
+            if (! CFile(src_file).Exists()) {
                 s_FailOnBadInput(
                     "The specified source qualifier file \"" + src_file + "\" does not exist.",
                     *m_logger);
@@ -839,11 +772,10 @@ int CTbl2AsnApp::Run()
         }
 
         // Designate where do we get input: single file or a folder or folder structure
-        if (args["i"])
-        {
+        if (args["i"]) {
             m_context.m_current_file = args["i"].AsString();
             CFile argAsFile(m_context.m_current_file);
-            if (!argAsFile.Exists()) {
+            if (! argAsFile.Exists()) {
                 s_FailOnBadInput(
                     "The specified input file \"" + m_context.m_current_file + "\" does not exist.",
                     *m_logger);
@@ -859,16 +791,12 @@ int CTbl2AsnApp::Run()
                         *m_logger);
                 }
             }
-
             ProcessOneFile(false);
-        }
-        else
-        if (args["indir"])
-        {
+        } else if (args["indir"]) {
             // initiate validator output
             string indir = args["indir"].AsString();
             CDir directory(indir);
-            if (!directory.Exists()) {
+            if (! directory.Exists()) {
                 s_FailOnBadInput(
                     "The specified input directory \"" + indir + "\" does not exist.",
                     *m_logger);
@@ -883,11 +811,9 @@ int CTbl2AsnApp::Run()
             masks.Add("*" + args["x"].AsString());
 
             ProcessOneDirectory(directory, masks, args["E"].AsBoolean());
-        }
-        else
-        if (args["aln-file"]) {
+        } else if (args["aln-file"]) {
             m_context.m_current_file = args["aln-file"].AsString();
-            if (!CFile(m_context.m_current_file).Exists()) {
+            if (! CFile(m_context.m_current_file).Exists()) {
                 s_FailOnBadInput(
                     "The specified alignment file \"" + m_context.m_current_file + "\" does not exist.",
                     *m_logger);
@@ -899,25 +825,20 @@ int CTbl2AsnApp::Run()
         // RW-927
         if (m_context.m_verbose &&
             m_global_files.mp_src_qual_map &&
-            !m_global_files.mp_src_qual_map->Empty()) {
+            ! m_global_files.mp_src_qual_map->Empty()) {
             m_global_files.mp_src_qual_map->ReportUnusedIds();
         }
 
-        if (m_validator->ValTotalErrors() > 0)
-        {
+        if (m_validator->ValTotalErrors() > 0) {
             std::ofstream ostr;
             ostr.exceptions(ios::failbit | ios::badbit);
             ostr.open(m_context.GenerateOutputFilename(eFiles::stats, m_context.m_base_name));
             m_validator->ValReportErrorStats(ostr);
         }
         m_validator->ReportDiscrepancies(m_context.GenerateOutputFilename(eFiles::dr, m_context.m_base_name));
-    }
-    catch (const CMissingInputException&)
-    {
+    } catch (const CMissingInputException&) {
         // Error message has already been logged
-    }
-    catch (const CException& ex)
-    {
+    } catch (const CException& ex) {
         const CException* original = &ex;
         // ASN writer populates exception with all nested exceptions stack which is not neccessary
         // we need the original exception
@@ -928,15 +849,11 @@ int CTbl2AsnApp::Run()
         if (bad_res_exc) {
             int line = 0;
             ILineError::TVecOfLines lines;
-            if (bad_res_exc->GetBadResiduePositions().m_BadIndexMap.size() == 1)
-            {
+            if (bad_res_exc->GetBadResiduePositions().m_BadIndexMap.size() == 1) {
                 line = bad_res_exc->GetBadResiduePositions().m_BadIndexMap.begin()->first;
-            }
-            else
-            {
+            } else {
                 lines.reserve(bad_res_exc->GetBadResiduePositions().m_BadIndexMap.size());
-                for(auto rec: bad_res_exc->GetBadResiduePositions().m_BadIndexMap)
-                {
+                for(auto rec: bad_res_exc->GetBadResiduePositions().m_BadIndexMap) {
                     lines.push_back(rec.first);
                 }
             }
@@ -972,14 +889,14 @@ int CTbl2AsnApp::Run()
         }
 
         size_t errors = m_logger->LevelCount(eDiag_Critical) +
-            m_logger->LevelCount(eDiag_Error) +
-            m_logger->LevelCount(eDiag_Fatal);
+                        m_logger->LevelCount(eDiag_Error) +
+                        m_logger->LevelCount(eDiag_Fatal);
         // all errors reported as failure
         if (errors > 0)
             return 1;
 
         // only warnings reported as 2
-        if (m_logger->LevelCount(eDiag_Warning)>0)
+        if (m_logger->LevelCount(eDiag_Warning) > 0)
             return 2;
 
         // otherwise it's ok
@@ -988,9 +905,9 @@ int CTbl2AsnApp::Run()
 }
 
 void CTbl2AsnApp::ProcessOneEntry(
-        CFormatGuess::EFormat inputFormat,
-        CRef<CSerialObject> obj,
-        CRef<CSerialObject>& result)
+    CFormatGuess::EFormat inputFormat,
+    CRef<CSerialObject>   obj,
+    CRef<CSerialObject>&  result)
 {
     auto scope = Ref(new CScope(*m_context.m_ObjMgr));
     scope->AddDefaults();
@@ -1004,16 +921,14 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     entry->Parentize();
 
-    if (m_context.m_SetIDFromFile)
-    {
+    if (m_context.m_SetIDFromFile) {
         m_context.SetSeqId(*entry);
     }
 
     m_context.ApplyAccession(*entry);
 
-    if (!IsDryRun())
-    {
-        std::function<std::ostream&()> f = [this]()->std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
+    if (! IsDryRun()) {
+        std::function<std::ostream&()> f = [this]() -> std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
         m_context.m_suspect_rules->SetupOutput(f);
     }
     m_context.ApplyFileTracks(*entry);
@@ -1023,12 +938,9 @@ void CTbl2AsnApp::ProcessOneEntry(
         inputFormat == CFormatGuess::eAlignment;
     xProcessSecretFiles1Phase(readModsFromTitle, *entry);
 
-    if (m_context.m_RemoteTaxonomyLookup)
-    {
+    if (m_context.m_RemoteTaxonomyLookup) {
         m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
-    }
-    else
-    {
+    } else {
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
@@ -1044,14 +956,12 @@ void CTbl2AsnApp::ProcessOneEntry(
     if (m_secret_files->m_possible_proteins.NotEmpty())
         m_secret_files->m_feature_table_reader->AddProteins(*m_secret_files->m_possible_proteins, *entry);
 
-    if (m_context.m_HandleAsSet)
-    {
+    if (m_context.m_HandleAsSet) {
         m_secret_files->m_feature_table_reader->ConvertNucSetToSet(entry);
     }
 
     if ((inputFormat == CFormatGuess::eTextASN) ||
-        (inputFormat == CFormatGuess::eBinaryASN))
-    {
+        (inputFormat == CFormatGuess::eBinaryASN)) {
         // if create-date exists apply update date
         m_context.ApplyCreateUpdateDates(*entry);
     }
@@ -1066,35 +976,26 @@ void CTbl2AsnApp::ProcessOneEntry(
     else
         result = m_context.CreateSubmitFromTemplate(entry, submit);
 
-
     m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
 
-
-    if (m_context.m_delay_genprodset)
-    {
-        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
-    }
-    else
-    {
-        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
+    if (m_context.m_delay_genprodset) {
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature) { m_context.RenameProteinIdsQuals(feature); });
+    } else {
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature) { m_context.RemoveProteinIdsQuals(feature); });
     }
 
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
-    if (m_context.m_RemotePubLookup)
-    {
+    if (m_context.m_RemotePubLookup) {
         m_context.m_remote_updater->UpdatePubReferences(*obj);
     }
-    if (m_context.m_postprocess_pubs)
-    {
+    if (m_context.m_postprocess_pubs) {
         edit::CRemoteUpdater::PostProcessPubs(*entry);
     }
 
-
-    if (m_context.m_cleanup.find('-') == string::npos)
-    {
-       m_validator->Cleanup(submit, seh, m_context.m_cleanup);
+    if (m_context.m_cleanup.find('-') == string::npos) {
+        m_validator->Cleanup(submit, seh, m_context.m_cleanup);
     }
 
     // make asn.1 look nicier
@@ -1102,19 +1003,16 @@ void CTbl2AsnApp::ProcessOneEntry(
 
     m_secret_files->m_feature_table_reader->ChangeDeltaProteinToRawProtein(*entry);
 
-    if (!IsDryRun())
-    {
+    if (! IsDryRun()) {
         m_validator->UpdateECNumbers(*entry);
 
-        if (!m_context.m_validate.empty())
-        {
+        if (! m_context.m_validate.empty()) {
             m_validator->ValCollect(submit, entry, m_context.m_validate);
         }
 
         m_validator->CollectDiscrepancies(submit, seh);
 
-        if (m_context.m_make_flatfile)
-        {
+        if (m_context.m_make_flatfile) {
             MakeFlatFile(seh, submit, m_context.GetOstream(eFiles::gbf));
         }
     }
@@ -1130,15 +1028,12 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
     if (m_secret_files->m_descriptors)
         m_reader->ApplyDescriptors(*entry, *m_secret_files->m_descriptors);
 
-    if (need_update_date)
-    {
+    if (need_update_date) {
         m_context.ApplyUpdateDate(*entry);
     }
 
-    if (submit)
-    {
-        if (m_context.m_RemotePubLookup)
-        {
+    if (submit) {
+        if (m_context.m_RemotePubLookup) {
             m_context.m_remote_updater->UpdatePubReferences(*submit);
         }
 
@@ -1147,9 +1042,9 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
     }
 
     bool need_report = (inputFormat == CFormatGuess::eFasta) && !m_context.m_HandleAsSet;
-    if (need_report)
-    {
-        g_LogGeneralParsingError(eDiag_Warning, 
+    if (need_report) {
+        g_LogGeneralParsingError(
+                eDiag_Warning,
                 "File " + m_context.m_current_file + " contains multiple sequences",
                 *(m_context.m_logger));
     }
@@ -1180,13 +1075,11 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     else
         obj = entry;
 
-    if (m_context.m_SetIDFromFile)
-    {
+    if (m_context.m_SetIDFromFile) {
         m_context.SetSeqId(*entry);
     }
 
     m_context.ApplyAccession(*entry);
-
     m_context.ApplyFileTracks(*entry);
 
     const bool readModsFromTitle =
@@ -1194,12 +1087,9 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
         inputFormat == CFormatGuess::eAlignment;
     ProcessSecretFiles1Phase(readModsFromTitle, token);
 
-    if (m_context.m_RemoteTaxonomyLookup)
-    {
+    if (m_context.m_RemoteTaxonomyLookup) {
         m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
-    }
-    else
-    {
+    } else {
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
@@ -1214,8 +1104,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
 
     m_context.CorrectCollectionDates(*entry);
 
-    if (m_context.m_HandleAsSet)
-    {
+    if (m_context.m_HandleAsSet) {
         //m_secret_files->m_feature_table_reader->ConvertNucSetToSet(entry);
     }
 
@@ -1232,13 +1121,10 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
 
     m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
 
-    if (m_context.m_delay_genprodset)
-    {
-        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RenameProteinIdsQuals(feature); });
-    }
-    else
-    {
-        VisitAllFeatures(*entry, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
+    if (m_context.m_delay_genprodset) {
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature) { m_context.RenameProteinIdsQuals(feature); });
+    } else {
+        VisitAllFeatures(*entry, [this](CSeq_feat& feature) { m_context.RemoveProteinIdsQuals(feature); });
     }
 
     seh = scope->AddTopLevelSeqEntry(*entry);
@@ -1246,13 +1132,11 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
 
     // Do not repeat expensive processing of the top-level entry; RW-2107
     if ((inputFormat != CFormatGuess::eFasta) || ! *token.pPubLookupDone) {
-        if (m_context.m_RemotePubLookup)
-        {
+        if (m_context.m_RemotePubLookup) {
             m_context.m_remote_updater->UpdatePubReferences(*obj);
             *token.pPubLookupDone = true;
         }
-        if (m_context.m_postprocess_pubs)
-        {
+        if (m_context.m_postprocess_pubs) {
             m_context.m_remote_updater->PostProcessPubs(*entry);
         }
     }
@@ -1273,8 +1157,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
 
     m_validator->UpdateECNumbers(*entry);
 
-    if (!m_context.m_validate.empty())
-    {
+    if (! m_context.m_validate.empty()) {
         m_validator->ValCollect(submit, entry, m_context.m_validate);
     }
 
@@ -1286,8 +1169,8 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
 void CTbl2AsnApp::MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, std::ostream& ostream)
 {
     CFlatFileGenerator ffgenerator(
-            CFlatFileConfig::eFormat_GenBank,
-            CFlatFileConfig::eMode_Entrez);
+        CFlatFileConfig::eFormat_GenBank,
+        CFlatFileConfig::eMode_Entrez);
 
     if (submit.Empty())
         ffgenerator.Generate(seh, ostream);
@@ -1311,8 +1194,7 @@ void CTbl2AsnApp::SetupAndOpenDataStreams()
 {
     if (m_context.m_output) {
         m_context.SetOutputFile(eFiles::asn, *m_context.m_output);
-    }
-    else {
+    } else {
         m_context.SetOutputFilename(eFiles::asn, m_context.GenerateOutputFilename(eFiles::asn));
     }
     m_context.OpenDataOutputs();
@@ -1345,16 +1227,14 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
         m_context.m_logger->ClearAll();
 
     CFile log_name;
-    if (!IsDryRun() && m_context.m_split_log_files)
-    {
+    if (! IsDryRun() && m_context.m_split_log_files) {
         log_name = m_context.GenerateOutputFilename(eFiles::log);
         CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath());
         m_logger->SetProgressOstream(error_log);
         SetDiagStream(error_log);
     }
 
-    try
-    {
+    try {
         if (manageDiagnosticStreams) {
             SetupAndOpenDiagnosticStreams();
         }
@@ -1363,7 +1243,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
         }
         CNcbiOstream* output = &m_context.GetOstream(eFiles::asn);
 
-        std::function<std::ostream&()> f = [this]()->std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
+        std::function<std::ostream&()> f = [this]() -> std::ostream& { return m_context.GetOstream(eFiles::fixedproducts); };
         m_context.m_suspect_rules->SetupOutput(f);
 
         m_context.m_huge_files_mode = false;
@@ -1372,46 +1252,42 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
 
         if (isAlignment) {
             ProcessAlignmentFile(output);
-        }
-        else {
-
+        } else {
             m_validator->Clear();
 
             edit::CHugeFile hugeFile;
             try {
                 hugeFile.Open(m_context.m_current_file, &CMultiReader::kSupportedTypes);
-            }
-            catch (CObjReaderParseException& e) {
+            } catch (CObjReaderParseException& e) {
                 auto message = e.GetMsg();
                 if (message == "File format not supported") {
                     hugeFile.m_format = CFormatGuess::eFasta;
-                }
-                else {
+                } else {
                     throw;
                 }
             }
 
             if (s_UseHugeFileMode(m_context, hugeFile.m_format)) {
 
-                if (!m_context.m_use_threads) {
+                if (! m_context.m_use_threads) {
                     m_context.m_use_threads = xGetNumThreads();
                 }
 
                 ProcessHugeFile(hugeFile, output);
-            }
-            else {
+            } else {
                 const string objectType =
                     hugeFile.m_content ?
                     hugeFile.m_content->GetName() :
                     "";
-                ProcessOneFile(hugeFile.m_format,
-                        objectType,
-                        //*(hugeFile.m_stream),
-                        hugeFile.m_stream,
-                        output);
+                ProcessOneFile(
+                    hugeFile.m_format,
+                    objectType,
+                    // *(hugeFile.m_stream),
+                    hugeFile.m_stream,
+                    output);
             }
 
-            if (!m_context.m_validate.empty())
+            if (! m_context.m_validate.empty())
                 m_validator->ValReportErrors();
 
             if (m_context.m_split_discrepancy)
@@ -1421,8 +1297,7 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
 
         } // !isAlignment
 
-        if (!log_name.GetPath().empty())
-        {
+        if (! log_name.GetPath().empty()) {
             m_logger->SetProgressOstream(&NcbiCout);
         }
         if (manageDiagnosticStreams) {
@@ -1431,18 +1306,15 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
         if (manageDataStreams) {
             CloseDataStreams();
         }
-    }
-    catch (...)
-    {
-        if (!log_name.GetPath().empty())
-        {
+    } catch (...) {
+        if (! log_name.GetPath().empty()) {
             m_logger->SetProgressOstream(&NcbiCout);
         }
 
         m_context.DeleteOutputs();
         if (m_context.m_output) {
             GetArgs()["o"].CloseFile();
-            _ASSERT(!m_context.m_output_filename.empty());
+            _ASSERT(! m_context.m_output_filename.empty());
             CFile(m_context.m_output_filename).Remove(CDirEntry::fIgnoreMissing);
         }
 
@@ -1450,10 +1322,11 @@ void CTbl2AsnApp::ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams,
     }
 }
 
-void CTbl2AsnApp::ProcessOneFile(CFormatGuess::EFormat format,
-        const string& contentType,
-        unique_ptr<CNcbiIstream>& pIstr,
-        CNcbiOstream* output)
+void CTbl2AsnApp::ProcessOneFile(
+    CFormatGuess::EFormat format,
+    const string& contentType,
+    unique_ptr<CNcbiIstream>& pIstr,
+    CNcbiOstream* output)
 {
     CMultiReader::TAnnotMap annotMap;
     CRef<CSerialObject> pInputObject =
@@ -1475,36 +1348,31 @@ void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
 }
 
 void CTbl2AsnApp::xProcessOneFile(
-        CFormatGuess::EFormat format,
-        CRef<CSerialObject> input_obj,
-        TAnnotMap& annotMap,
-        CNcbiOstream* output)
+    CFormatGuess::EFormat format,
+    CRef<CSerialObject> input_obj,
+    TAnnotMap& annotMap,
+    CNcbiOstream* output)
 {
-
-    if (!annotMap.empty()) {
+    if (! annotMap.empty()) {
         for (auto entry : annotMap) {
             auto it = m_secret_files->m_AnnotMap.find(entry.first);
             if (it == m_secret_files->m_AnnotMap.end()) {
                 m_secret_files->m_AnnotMap.emplace(entry.first, entry.second);
-            }
-            else {
+            } else {
                 it->second.splice(it->second.end(), entry.second);
             }
         }
         annotMap.clear();
     }
-    do
-    {
+
+    do {
         CRef<CSerialObject> result;
         ProcessOneEntry(format, input_obj, result);
 
-        if (!IsDryRun() && result.NotEmpty())
-        {
+        if (!IsDryRun() && result.NotEmpty()) {
             const CSerialObject* to_write = result;
-            if (m_context.m_save_bioseq_set)
-            {
-                if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
-                {
+            if (m_context.m_save_bioseq_set) {
+                if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
                     const CSeq_entry* se = static_cast<const CSeq_entry*>(result.GetPointer());
                     if (se->IsSet())
                         to_write = &se->GetSet();
@@ -1531,10 +1399,9 @@ void CTbl2AsnApp::ProcessAlignmentFile(CNcbiOstream* output)
     CFormatGuess::EFormat inputFormat = CFormatGuess::eAlignment;
     ProcessOneEntry(inputFormat, pEntry, pResult);
 
-    if (IsDryRun() || !pResult) {
+    if (IsDryRun() || ! pResult) {
         return;
     }
-
 
     if (m_context.m_save_bioseq_set &&
         pResult->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
@@ -1555,8 +1422,7 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
     unique_ptr<CDir::TEntries> entries(directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive));
     vector<unique_ptr<CDir::CDirEntry>> vec(entries->size());
     auto vec_it = vec.begin();
-    for (CDir::TEntry& it : *entries)
-    {
+    for (CDir::TEntry& it : *entries) {
         vec_it->reset(it.release());
         ++vec_it;
     }
@@ -1572,17 +1438,15 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, 
 
     for (const auto& it : vec) {
         // first process files and then recursivelly access other folders
-        if (!it->IsDir()) {
+        if (! it->IsDir()) {
             auto pathName = it->GetPath();
             if (mask.Match(pathName)) {
                 m_context.m_current_file = pathName;
-                ProcessOneFile(false, !commonOutputStream, !commonOutputStream);
+                ProcessOneFile(false, ! commonOutputStream, ! commonOutputStream);
             }
+        } else if (recurse) {
+            ProcessOneDirectory(*it, mask, recurse);
         }
-        else
-            if (recurse) {
-                ProcessOneDirectory(*it, mask, recurse);
-            }
     }
     if (commonOutputStream) {
         CloseDataStreams();
@@ -1630,17 +1494,14 @@ void CTbl2AsnApp::xProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& 
         m_logger,
         result);
 
-    if (!m_context.m_huge_files_mode)
-    {
+    if (! m_context.m_huge_files_mode) {
         if (m_global_files.m_descriptors)
             m_reader->ApplyDescriptors(result, *m_global_files.m_descriptors);
-
         if (m_secret_files->m_descriptors)
             m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
     }
 
-    if (!m_global_files.m_AnnotMap.empty() || !m_secret_files->m_AnnotMap.empty())
-    {
+    if (! m_global_files.m_AnnotMap.empty() || ! m_secret_files->m_AnnotMap.empty()) {
         AddAnnots(result);
     }
 }
@@ -1662,21 +1523,17 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, TAsyncToken& 
         m_logger,
         *token.top_entry);
 
-    if (!m_context.m_huge_files_mode)
-    {
+    if (! m_context.m_huge_files_mode) {
         if (m_global_files.m_descriptors)
             m_reader->ApplyDescriptors(*token.top_entry, *m_global_files.m_descriptors);
-
         if (m_secret_files->m_descriptors)
             m_reader->ApplyDescriptors(*token.top_entry, *m_secret_files->m_descriptors);
     }
 
-    if (!m_global_files.m_AnnotMap.empty() || !m_secret_files->m_AnnotMap.empty())
-    {
+    if (! m_global_files.m_AnnotMap.empty() || ! m_secret_files->m_AnnotMap.empty()) {
         AddAnnots(*token.top_entry);
     }
 }
-
 
 
 void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result) const
@@ -1687,8 +1544,8 @@ void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result) const
 void CTbl2AsnApp::LoadDSCFile(const string& pathname)
 {
     CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
-
+    if (! file.Exists() || file.GetLength() == 0)
+        return;
     m_reader->LoadDescriptors(pathname, m_secret_files->m_descriptors);
 }
 
@@ -1703,7 +1560,8 @@ void CTbl2AsnApp::ProcessCMTFiles(CSeq_entry& result) const
 void CTbl2AsnApp::LoadPEPFile(const string& pathname)
 {
     CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
+    if (! file.Exists() || file.GetLength() == 0)
+        return;
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
@@ -1713,13 +1571,15 @@ void CTbl2AsnApp::LoadPEPFile(const string& pathname)
 void CTbl2AsnApp::LoadRNAFile(const string& pathname)
 {
     CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
+    if (! file.Exists() || file.GetLength() == 0)
+        return;
 }
 
 void CTbl2AsnApp::LoadPRTFile(const string& pathname)
 {
     CFile file(pathname);
-    if (!file.Exists() || file.GetLength() == 0) return;
+    if (! file.Exists() || file.GetLength() == 0)
+        return;
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
@@ -1731,7 +1591,8 @@ void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
 {
     CFile file(pathname);
 
-    if (!file.Exists()) return;
+    if (! file.Exists())
+        return;
 
     if (file.IsIdentical(m_context.m_current_file)) {
         LOG_POST("Ignorning annotation " << pathname << " because it was already used as input source");
@@ -1747,7 +1608,6 @@ void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
 }
 
 
-
 void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
 {
     if (entry.IsSeq()) {
@@ -1758,7 +1618,7 @@ void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
         return;
     }
 
-    if (!entry.GetSet().IsSetSeq_set()) {
+    if (! entry.GetSet().IsSetSeq_set()) {
         return;
     }
 
@@ -1783,11 +1643,9 @@ void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
 
 void CTbl2AsnApp::LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments)
 {
-    if (!comments)
-    {
+    if (! comments) {
         CFile file(pathname);
-        if (file.Exists() && file.GetLength())
-        {
+        if (file.Exists() && file.GetLength()) {
             comments.reset(new CTable2AsnStructuredCommentsReader(pathname, m_logger, m_context.m_verbose));
         }
     }
@@ -1807,15 +1665,13 @@ void CTbl2AsnApp::LoadAdditionalFiles()
     m_secret_files->m_feature_table_reader.reset(new CFeatureTableReader(m_context));
 
     const auto& namedSrcFile = m_context.m_single_source_qual_file;
-    if (!NStr::IsBlank(namedSrcFile) && !m_global_files.mp_src_qual_map)
-    {
+    if (! NStr::IsBlank(namedSrcFile) && ! m_global_files.mp_src_qual_map) {
         m_global_files.mp_src_qual_map.reset(new CMemorySrcFileMap(m_logger));
         m_global_files.mp_src_qual_map->MapFile(namedSrcFile, m_context.m_allow_accession);
     }
 
     const string defaultSrcFile = name + ".src";
-    if (CFile(defaultSrcFile).Exists())
-    {
+    if (CFile(defaultSrcFile).Exists()) {
         m_secret_files->mp_src_qual_map.reset(new CMemorySrcFileMap(m_logger));
         m_secret_files->mp_src_qual_map->MapFile(defaultSrcFile, m_context.m_allow_accession);
     }
@@ -1828,19 +1684,17 @@ void CTbl2AsnApp::LoadAdditionalFiles()
     LoadCMTFile(m_context.m_single_structure_cmt, m_global_files.m_struct_comments);
     LoadCMTFile(name + ".cmt", m_secret_files->m_struct_comments);
 
-   // if (m_context.m_can_use_huge_files && !m_context.m_disable_huge_files) {
+    // if (m_context.m_can_use_huge_files && ! m_context.m_disable_huge_files) {
     {
-        if (!m_context.m_single_annot_file.empty() && m_global_files.m_AnnotMap.empty())
+        if (! m_context.m_single_annot_file.empty() && m_global_files.m_AnnotMap.empty())
         { // load only once
             LoadAnnotMap(m_context.m_single_annot_file, m_global_files.m_AnnotMap);
-        }
-        else
-        {
-            for (auto suffix : {".tbl", ".gff", ".gff3", ".gff2", ".gtf"}) {
+        } else {
+            for (auto suffix : { ".tbl", ".gff", ".gff3", ".gff2", ".gtf" }) {
                 LoadAnnotMap(name + suffix, m_secret_files->m_AnnotMap);
             }
 #ifdef THIS_IS_TRUNK_BUILD
-            for (auto suffix : {".gbf"}) {
+            for (auto suffix : { ".gbf" }) {
                 LoadAnnotMap(name + suffix, m_secret_files->m_AnnotMap);
             }
 #endif
@@ -1866,13 +1720,11 @@ int main(int argc, const char* argv[])
     list<string> split_args;
     vector<const char*> new_argv;
 
-    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
-    {
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' ')) {
         NStr::Split(argv[1], " ", split_args);
 
         auto it = split_args.begin();
-        while (it != split_args.end())
-        {
+        while (it != split_args.end()) {
             auto next = it; ++next;
             if (next != split_args.end() &&
                 ((it->front() == '"' && it->back() != '"') ||
@@ -1882,16 +1734,14 @@ int main(int argc, const char* argv[])
                 next = split_args.erase(next);
             } else it = next;
         }
-        for (auto& rec: split_args)
-        {
-            if (rec.front()=='\'' && rec.back()=='\'')
-                rec=rec.substr(1, rec.length()-2);
+        for (auto& rec : split_args) {
+            if (rec.front() == '\'' && rec.back()=='\'')
+                rec = rec.substr(1, rec.length()-2);
         }
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
-        for (const string& s : split_args)
-        {
+        for (const string& s : split_args) {
             new_argv.push_back(s.c_str());
             std::cerr << s.c_str() << " ";
         }
