@@ -670,6 +670,16 @@ static CMolInfo::TCompleteness GetCompletenessFromFlags(bool partial5, bool part
 
 void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
 {
+    // Pre-load segments
+    if ( CBioseq_Handle bh = m_Scope->GetBioseqHandle(bs, CScope::eMissing_Null) ) {
+        // Set up selector to resolve all first level references in delta sequence
+        // SetLinkUsedTSE() is necessary to prevent OM garbage collector to remove
+        // loaded sequences if the segment list is too long
+        SSeqMapSelector sel(CSeqMap::fFindLeafRef, kMax_UInt);
+        sel.SetLinkUsedTSE(bh.GetTSE_Handle());
+        sel.SetResolveCount(0);
+        bh.GetSeqMap().CanResolveRange(m_Scope, sel);
+    }
     // Bail if not protein
     if (!bs.IsSetInst()) {
         return;
