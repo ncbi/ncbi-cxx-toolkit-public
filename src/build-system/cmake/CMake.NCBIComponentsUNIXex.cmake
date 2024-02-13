@@ -828,7 +828,7 @@ NCBI_define_Xcomponent(NAME AWS_SDK LIB
     aws-cpp-sdk-sts aws-cpp-sdk-s3 aws-cpp-sdk-iam aws-cpp-sdk-cognito-identity
     aws-cpp-sdk-core aws-c-event-stream aws-checksums aws-c-common
     crypto ssl ADD_COMPONENT CURL
-    CMAKE_PACKAGE AWSSDK COMPONENTS s3
+#    CMAKE_PACKAGE AWSSDK COMPONENTS s3
 )
 if(NCBI_COMPONENT_AWS_SDK_FOUND AND NOT TARGET ZLIB::ZLIB)
     find_package(ZLIB REQUIRED)
