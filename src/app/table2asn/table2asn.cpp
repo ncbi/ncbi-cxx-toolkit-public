@@ -121,30 +121,33 @@ BEGIN_NCBI_SCOPE
 class CObjtoolsDiagMessage : public IObjtoolsMessage
 {
 public:
-    CObjtoolsDiagMessage(const string& txt) :
-        m_txt(txt)
+    CObjtoolsDiagMessage(const string& txt, EDiagSev sev) :
+        m_txt(txt),
+        m_sev(sev)
     {
     }
 
-    IObjtoolsMessage* Clone() const override { return new CObjtoolsDiagMessage(m_txt); }
+    IObjtoolsMessage* Clone() const override { return new CObjtoolsDiagMessage(m_txt, m_sev); }
 
     void Write(CNcbiOstream& out) const override { out << m_txt; }
     void Dump(CNcbiOstream& out) const override { out << m_txt; }
     void WriteAsXML(CNcbiOstream& out) const override
     {
-        out << "<message problem=\"" << NStr::XmlEncode(m_txt) << "\" />";
+        out << "<message severty=\"" << NStr::XmlEncode(CNcbiDiag::SeverityName(m_sev))
+            << "\" problem=\"" << NStr::XmlEncode(m_txt) << "\" />";
     }
     void DumpAsXML(CNcbiOstream& out) const override
     {
         WriteAsXML(out);
     }
     string   GetText() const override { return m_txt; }
-    EDiagSev GetSeverity() const override { return eDiag_Trace; }
+    EDiagSev GetSeverity() const override { return m_sev; }
     int      GetCode() const override { return 0; }
     int      GetSubCode() const override { return 0; }
 
 private:
     string m_txt;
+    EDiagSev m_sev;
 };
 
 class CTable2AsnLogger : public CMessageListenerLenient, public CDiagHandler
@@ -177,7 +180,7 @@ public:
         stringstream ss;
         mess.Write(ss, SDiagMessage::fNoEndl);
         string str = ss.str();
-        this->PutMessage(CObjtoolsDiagMessage(str));
+        this->PutMessage(CObjtoolsDiagMessage(str, mess.m_Severity));
     }
 };
 
