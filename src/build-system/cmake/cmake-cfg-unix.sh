@@ -16,14 +16,17 @@ prebuilds=""
 
 host_os=`uname`
 if test -z "${CMAKE_CMD}" -a $host_os = "Darwin"; then
-   for i in /usr/local/bin/cmake /Applications/CMake.app/Contents/bin/cmake \
-            /sw/bin/cmake
-   do
-     if test -x $i; then
-       CMAKE_CMD=$i
-       break
-     fi    
-   done
+  CMAKE_CMD=`which cmake 2>/dev/null`
+  if test $? -ne 0; then
+    for i in /usr/local/bin/cmake /Applications/CMake.app/Contents/bin/cmake \
+             /sw/bin/cmake
+    do
+      if test -x $i; then
+        CMAKE_CMD=$i
+        break
+      fi    
+    done
+  fi
 fi
 if [ -z "${CMAKE_CMD}" ]; then
   CMAKE_CMD=`which cmake 2>/dev/null`
@@ -32,6 +35,8 @@ if [ -z "${CMAKE_CMD}" ]; then
     exit 1
   fi
 fi
+echo CMake: ${CMAKE_CMD}
+${CMAKE_CMD} --version
 
 ############################################################################# 
 # defaults
