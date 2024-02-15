@@ -17,11 +17,18 @@ set prebuilds=
 REM #########################################################################
 set VSWHERE="%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere"
 if "%CMAKE_CMD%"=="" (
-  for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -latest -property installationPath`) do (
-    set CMAKE_CMD=%%i\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
+  where cmake >NUL 2>&1
+  if errorlevel 1 (
+    for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -latest -property installationPath`) do (
+      set CMAKE_CMD=%%i\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
+    )
+  ) else (
+    set CMAKE_CMD=cmake
   )
 )
-if not exist "%CMAKE_CMD%" (
+echo CMake: "%CMAKE_CMD%"
+"%CMAKE_CMD%" --version
+if errorlevel 1 (
   echo ERROR: CMake is not found 1>&2
   exit /b 1
 )

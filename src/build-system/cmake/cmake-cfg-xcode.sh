@@ -16,13 +16,16 @@ extension="cmake_configure_ext.sh"
 CMAKE_PREDEFINED_LOC="/usr/local/bin/cmake /Applications/CMake.app/Contents/bin/cmake /sw/bin/cmake"
 
 if [ -z "${CMAKE_CMD}" ]; then
-   for i in $CMAKE_PREDEFINED_LOC
-   do
-       if test -x $i; then
-          CMAKE_CMD=$i
-          break
-       fi    
-   done
+  CMAKE_CMD=`which cmake 2>/dev/null`
+  if test $? -ne 0; then
+    for i in $CMAKE_PREDEFINED_LOC
+    do
+      if test -x $i; then
+        CMAKE_CMD=$i
+        break
+      fi    
+    done
+  fi
 fi
 if test ! -x "${CMAKE_CMD}"; then
    CMAKE_CMD=`which cmake 2>/dev/null`
@@ -31,7 +34,7 @@ if test ! -x "${CMAKE_CMD}"; then
       exit 1
    fi
 fi
-echo FOUND CMake: ${CMAKE_CMD}
+echo CMake: ${CMAKE_CMD}
 ${CMAKE_CMD} --version
 
 
