@@ -34,8 +34,6 @@ if test ! -x "${CMAKE_CMD}"; then
       exit 1
    fi
 fi
-echo CMake: ${CMAKE_CMD}
-${CMAKE_CMD} --version
 
 
 ############################################################################# 
