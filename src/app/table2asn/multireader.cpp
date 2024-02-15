@@ -1168,7 +1168,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     }
     else
     {
-        LOG_POST("Recognized annotation format: " << CFormatGuess::GetFormatName(uFormat));
+        INFO_POST("Recognized annotation format: " << CFormatGuess::GetFormatName(uFormat));
     }
 
     TAnnots annots;
