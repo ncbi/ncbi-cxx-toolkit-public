@@ -286,7 +286,7 @@ int CTest::Run(void)
 
     // Check bad executable
     ERR_POST(Info << "TEST:  Bad executable");
-    assert(pipe.Open("blahblahblah", args) != eIO_Success);
+    assert(pipe.Open("./blahblahblah", args) != eIO_Success);
 
 
     // Unidirectional pipe (read from pipe)
