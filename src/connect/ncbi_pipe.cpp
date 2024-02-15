@@ -343,6 +343,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     try {
         // Prepare command line to run
         string cmd_line = x_CommandLine(cmd, args);
+        string x_cmd_line;
 
         if (cmd.find_first_of(":\\/") == NPOS) {
             CNcbiApplicationGuard app = CNcbiApplicationAPI::InstanceGuard();
@@ -354,8 +355,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                                           : eTakeOwnership);
             const string& comspec = env->Get("COMSPEC");
             if (!comspec.empty()  &&  NStr::CompareNocase(comspec, cmd) != 0) {
-                cmd_line = CExec::QuoteArg(comspec) + " /C " + cmd_line;
+                x_cmd_line = CExec::QuoteArg(comspec) + " /C " + cmd_line;
             }
+        }
+        if (x_cmd_line.empty()) {
+            x_cmd_line = cmd_line;
         }
 
         // Convert environment array to block form
@@ -478,7 +482,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         if (create_flags & CPipe::fNewGroup)
             dwCreationFlags |= CREATE_NEW_PROCESS_GROUP;
         if (!::CreateProcess(NULL,
-                             (LPTSTR)(_T_XCSTRING(cmd_line)),
+                             (LPTSTR)(_T_XCSTRING(x_cmd_line)),
                              NULL, NULL, TRUE,
                              dwCreationFlags, env_block.get(),
                              current_dir.empty()
