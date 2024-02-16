@@ -53,6 +53,8 @@ Win64    : plain : static  64  ReleaseDLL
 
 IntelMAC    : clang : Clang.sh    --without-dll --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/2 --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0 --without-python --without-lzo --without-zstd
 
-ArmMAC      : clang : Clang.sh    --without-dll --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/2 --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0 --without-python --without-lzo --without-zstd
+ArmMAC      : clang : Clang.sh    --without-dll --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/3 --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0 --without-python --without-lzo --without-zstd
+
+ArmMAC        : clang-x86 : ../../configure --host=x86_64-apple-darwin21 --without-dll --with-bin-release --without-debug --without-pcre --without-openmp --with-mt --with-flat-makefile --with-ncbi-public --with-vdb=/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/3 --with-static-vdb --without-gnutls --without-gcrypt --with-libuv=/netopt/ncbi_tools/libuv-1.35.0 --with-nghttp2=/netopt/ncbi_tools/nghttp2-1.40.0 --without-python --without-lzo --without-zstd <ENV>CC='clang -arch x86_64';CXX='clang++ -arch x86_64'</ENV>
 
 USE_COMPONENTS
