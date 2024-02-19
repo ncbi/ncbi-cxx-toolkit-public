@@ -106,6 +106,7 @@ objtools/simple$
 sra$
 sra/data_loaders
 -sra/data_loaders/wgs/test
+-sra/data_loaders/snp/test
 sra/readers$
 sra/readers/sra/impl$
 sra/readers/bam$
