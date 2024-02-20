@@ -12,3 +12,31 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "Blast_ScoreBlkMatrixFill / strncpy() - false positive - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=blast_stat.c,func=Blast_ScoreBlkMatrixFill;
+		}
+		allocation={
+			!!!;
+			src=blast_setup_cxx.cpp,func=BlastFindMatrixPath;
+		}
+	}
+}
+suppression = {
+	name = "Blast_ScoreBlkMatrixFill / strncpy() - false positive - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=blast_stat.c,func=Blast_ScoreBlkMatrixFill;
+		}
+		allocation={
+			!!!;
+			src=blast_setup.c,func=BlastSetup_ScoreBlkInit;
+		}
+	}
+}
