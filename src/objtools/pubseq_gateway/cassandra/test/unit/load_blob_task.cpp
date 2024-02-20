@@ -212,4 +212,33 @@ TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
     EXPECT_TRUE(fetch.HasError());
 }
 
+TEST_F(CBlobTaskLoadBlobTest, CancelFromBlobPropCallbackShouldStop) {
+    bool props_callback_visited{false};
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_function);
+    fetch.SetPropsCallback(
+        [&fetch, &props_callback_visited] (CBlobRecord const & blob, bool isFound)
+        {
+            EXPECT_TRUE(isFound) << "Blob props expected to be found.";
+            EXPECT_EQ(2155365, blob.GetKey());
+            EXPECT_EQ(12553LL, blob.GetSize());
+            EXPECT_GE(1598181382370LL, blob.GetModified());
+            EXPECT_EQ(1, blob.GetNChunks());
+            fetch.Cancel();
+            props_callback_visited = true;
+        }
+    );
+    fetch.SetChunkCallback(
+        [] (CBlobRecord const & blob, const unsigned char * /*data*/, unsigned int size, int chunk_no)
+        {
+            EXPECT_TRUE(false) << "Chunk callback should not be called if operation cancelled (blob - "
+                << blob.GetKey() << ", chunk_no - " << chunk_no << ", size - " << size << ")";
+        }
+    );
+
+    wait_function(fetch);
+    EXPECT_TRUE(props_callback_visited) << "Blob props callback is expected to be visited";
+    EXPECT_TRUE(fetch.Cancelled()) << "Operation should be Cancelled()";
+    EXPECT_FALSE(fetch.HasError()) << "Cancel() should not look like error for now.";
+}
+
 }  // namespace
