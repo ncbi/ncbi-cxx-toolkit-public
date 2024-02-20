@@ -141,6 +141,7 @@ public:
         time_t                access_timeout = 0) override {}
     void CloseCache(void) override {}
 
+    void GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret) override;
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret) override;
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret) override;
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret) override;

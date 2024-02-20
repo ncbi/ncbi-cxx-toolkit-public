@@ -3333,6 +3333,37 @@ void CPSGDataLoader_Impl::DropTSE(const CPsgBlobId& /*blob_id*/)
 }
 
 
+void CPSGDataLoader_Impl::GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetBulkIdsOnce, this,
+                       cref(ids), ref(loaded), ref(ret)),
+                  "GetBulkIds",
+                  m_BulkRetryCount);
+}
+
+
+void CPSGDataLoader_Impl::GetBulkIdsOnce(const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    vector<shared_ptr<SPsgBioseqInfo>> infos;
+    infos.resize(ret.size());
+    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( counts.first ) {
+        // have loaded infos
+        for (size_t i = 0; i < infos.size(); ++i) {
+            if (loaded[i] || !infos[i].get()) continue;
+            ITERATE(SPsgBioseqInfo::TIds, it, infos[i]->ids) {
+                ret[i].push_back(*it);
+            }
+            loaded[i] = true;
+        }
+    }
+    if ( counts.second ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "failed to load "<<counts.second<<" seq-ids in bulk request");
+    }
+}
+
+
 void CPSGDataLoader_Impl::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetAccVersOnce, this,

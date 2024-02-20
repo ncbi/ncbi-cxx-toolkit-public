@@ -117,6 +117,7 @@ public:
     ~CPSGDataLoader_Impl(void) override;
 
     typedef CDataLoader::TIds TIds;
+    typedef CDataLoader::TBulkIds TBulkIds;
     typedef CDataLoader::TGis TGis;
     typedef CDataLoader::TTaxIds TTaxIds;
     typedef CDataLoader::TSequenceLengths TSequenceLengths;
@@ -188,6 +189,8 @@ public:
 
     void DropTSE(const CPsgBlobId& blob_id);
 
+    void GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret);
+    void GetBulkIdsOnce(const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
