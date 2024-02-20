@@ -170,7 +170,7 @@ void CCassBlobTaskLoadBlob::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>
 
 void CCassBlobTaskLoadBlob::Wait1()
 {
-    bool b_need_repeat;
+    bool b_need_repeat{false};
     do {
         b_need_repeat = false;
         switch (m_State) {
@@ -258,6 +258,11 @@ void CCassBlobTaskLoadBlob::Wait1()
             case eFinishedPropsFetch:
                 if (m_PropsCallback) {
                     m_PropsCallback(*m_Blob, m_PropsFound);
+                    // ID-8131 If Cancel() call was performed during blob_prop callback we need to stop processing
+                    // m_State is expected to have a final state value after CCassBlobTaskLoadBlob::Cancel() call
+                    if (m_Cancelled) {
+                        return;
+                    }
                 }
                 if (m_LoadChunks) {
                     if (!m_PropsFound) {
