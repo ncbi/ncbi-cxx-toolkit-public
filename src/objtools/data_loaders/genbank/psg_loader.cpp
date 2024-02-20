@@ -393,6 +393,12 @@ void CPSGDataLoader::DropTSE(CRef<CTSE_Info> tse_info)
 }
 
 
+void CPSGDataLoader::GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    m_Impl->GetBulkIds(ids, loaded, ret);
+}
+
+
 void CPSGDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     m_Impl->GetAccVers(ids, loaded, ret);
