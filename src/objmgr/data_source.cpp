@@ -1691,6 +1691,36 @@ int CDataSource::GetSequenceState(const CSeq_id_Handle& idh)
 }
 
 
+void CDataSource::GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    size_t count = ids.size(), remaining = 0;
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i]);
+        if ( match ) {
+            ret[i] = match.m_Bioseq->GetId();
+            loaded[i] = true;
+        }
+        else {
+            ++remaining;
+        }
+    }
+    if ( remaining && m_Loader ) {
+        try {
+            m_Loader->GetBulkIds(ids, loaded, ret);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetBulkIds", ids));
+            throw;
+        }
+    }
+}
+
+
 void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     size_t count = ids.size(), remaining = 0;

@@ -557,6 +557,25 @@ CDataLoader::GetSequenceHashFound(const CSeq_id_Handle& idh)
 }
 
 
+void CDataLoader::GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    size_t count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TIds seq_ids;
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        ret[i].clear();
+        GetIds(ids[i], ret[i]);
+        if ( !ret[i].empty() ) {
+            loaded[i] = true;
+        }
+    }
+}
+
+
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     size_t count = ids.size();

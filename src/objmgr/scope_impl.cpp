@@ -3393,6 +3393,64 @@ CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& bhs)
 }
 
 
+void CScope_Impl::GetBulkIds(TBulkIds& ret,
+                             const TIds& unsorted_ids,
+                             TGetFlags flags)
+{
+    CSortedSeq_ids sorted_seq_ids(unsorted_ids);
+    TIds ids;
+    sorted_seq_ids.GetSortedIds(ids);
+
+    size_t count = ids.size(), remaining = count;
+    ret.assign(count, TIds());
+    vector<bool> loaded(count);
+    if ( remaining ) {
+        TConfReadLockGuard rguard(m_ConfLock);
+        
+        if ( !(flags & CScope::fForceLoad) ) {
+            for ( size_t i = 0; i < count; ++i ) {
+                if ( loaded[i] ) {
+                    continue;
+                }
+                SSeqMatch_Scope match;
+                CRef<CBioseq_ScopeInfo> info =
+                    x_FindBioseq_Info(ids[i],
+                                      CScope::eGetBioseq_Resolved,
+                                      match);
+                if ( info ) {
+                    if ( info->HasBioseq() ) {
+                        ret[i] = info->GetIds();
+                        loaded[i] = true;
+                        --remaining;
+                    }
+                    else {
+                        ret[i].clear();
+                        loaded[i] = true;
+                        --remaining;
+                    }
+                }
+            }
+        }
+    
+        // Unknown bioseq, try to find in data sources
+        for (CPriority_I it(m_setDataSrc); it; ++it) {
+            if ( !remaining ) {
+                break;
+            }
+            CPrefetchManager::IsActive();
+            it->GetDataSource().GetBulkIds(ids, loaded, ret);
+            remaining = sx_CountFalse(loaded);
+        }
+    }
+    if ( remaining && (flags & CScope::fThrowOnMissingSequence) ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetBulkIds(): some sequences not found");
+    }
+
+    sorted_seq_ids.RestoreOrder(ret);
+}
+
+
 void CScope_Impl::GetAccVers(TIds& ret,
                              const TIds& unsorted_ids,
                              TGetFlags flags)

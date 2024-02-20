@@ -141,6 +141,7 @@ public:
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
     typedef map<CRef<CDataSource>, CRef<CDataSource_ScopeInfo> > TDSMap;
     typedef vector<CSeq_id_Handle>                   TIds;
+    typedef vector<TIds>                             TBulkIds;
     typedef vector<CSeq_entry_Handle>                TTSE_Handles;
 
     CObjectManager& GetObjectManager(void);
@@ -349,6 +350,9 @@ public:
     typedef vector<CTSE_Handle> TCDD_Entries;
     TCDD_Entries GetCDDAnnots(const TIds& idhs);
     TCDD_Entries GetCDDAnnots(const TBioseqHandles& bhs);
+
+    // Get a set of all ids of requested sequences
+    void GetBulkIds(TBulkIds& ret, const TIds& idhs, TGetFlags flags);
 
     // Get a set of accession/version pairs
     void GetAccVers(TIds& ret, const TIds& idhs, TGetFlags flags);

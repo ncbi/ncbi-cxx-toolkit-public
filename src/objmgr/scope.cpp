@@ -661,6 +661,27 @@ void CScope::UpdateAnnotIndex(void)
 
 
 /// Bulk retrieval methods
+CScope::TBulkIds CScope::GetBulkIds(const TSeq_id_Handles& idhs,
+                                    TGetFlags flags)
+{
+    TBulkIds results;
+    GetBulkIds(&results, idhs, flags);
+    return results;
+}
+
+
+void CScope::GetBulkIds(TBulkIds* results,
+                        const TSeq_id_Handles& idhs,
+                        TGetFlags flags)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetBulkIds: null results pointer");
+    }
+    return m_Impl->GetBulkIds(*results, idhs, flags);
+}
+
+
 CScope::TSeq_id_Handles CScope::GetAccVers(const TSeq_id_Handles& idhs,
                                            TGetFlags flags)
 {

@@ -257,6 +257,7 @@ public:
 
     // bulk interface
     typedef vector<bool> TLoaded;
+    typedef vector<TIds> TBulkIds;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<TTaxId> TTaxIds;
@@ -266,6 +267,7 @@ public:
     typedef vector<int> TSequenceHashes;
     typedef vector<bool> THashKnown;
 
+    void GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);

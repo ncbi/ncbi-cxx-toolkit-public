@@ -383,6 +383,7 @@ public:
     /// will be set to true.
     /// Othewise, the 'loaded' element will remain false.
     typedef vector<bool> TLoaded;
+    typedef vector<TIds> TBulkIds;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<TTaxId> TTaxIds;
@@ -395,6 +396,8 @@ public:
     typedef vector<vector<CSeq_id_Handle>> TSeqIdSets;
     typedef vector<CTSE_Lock> TCDD_Locks;
 
+    /// Bulk request for all Seq-ids of a set of sequences.
+    virtual void GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     /// Bulk request for accession.version Seq-ids of a set of sequences.
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     /// Bulk request for gis of a set of sequences.
@@ -496,7 +499,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 8, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 9, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>
