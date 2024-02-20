@@ -8915,18 +8915,17 @@ if test -n "$GRPC_PATH"; then
    done
 fi
 if test -n "$pb_pc"  &&  $grpc_pc grpc++ --exists 2>/dev/null; then
-   GRPC_SED=sed
+   GRPC_SED="sed -e \"$pb_sed\""
    if test -f "$GRPC_PATH/lib/libboringssl.a"; then
-      GRPC_SED="sed -e s/-lssl/-lboringssl/g -e s/-lcrypto/-lboringcrypto/g"
+      GRPC_SED="$GRPC_SED -e s/-lssl/-lboringssl/g"
+      GRPC_SED="$GRPC_SED -e s/-lcrypto/-lboringcrypto/g"
    fi
    if test -f /usr/lib/libssl.dylib -a \
              x"`$grpc_pc grpc++ --variable=prefix`" != x/sw; then
       GRPC_SED="$GRPC_SED -e s,-L/sw/lib,,"
    fi
-   if test "$GRPC_SED" = sed; then
-      GRPC_SED=cat
-   fi
-   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc --libs --static | $GRPC_SED`"
+   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc protobuf --libs --static \
+                      | $GRPC_SED`"
 else
    grpc_pc=
    GRPC_CONFIG_LIBS="-lgrpc -lgpr"
