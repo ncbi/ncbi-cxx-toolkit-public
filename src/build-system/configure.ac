@@ -8828,10 +8828,68 @@ if test -n "$D_SFX"; then
       done
    fi
 fi
+pb_pc=pkg-config
+if test -n "$PROTOBUF_PATH"; then
+   for d in "$PROTOBUF_PATH/lib$bit64_sfx" "$PROTOBUF_PATH/lib"; do
+      if test -d "$d/pkgconfig"; then
+         pb_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
+         break
+      fi
+   done
+fi
+if $pb_pc protobuf --modversion 2>/dev/null; then
+   # Avoid a hang observed with pkg-config 0.27.1 (as on CentOS 7)
+   # and post-2022 Abseil versions.
+   case "`$pb_pc --version`:`$pb_pc protobuf --modversion`" in
+      0.2[[89]]* | 0.[[3-9]][[0-9]]* | 0.[[1-9]][[0-9]][[0-9]]* | [[1-9]]* \
+      | *:20[[01]]* | *:202[[0-2]]* )
+         pb_sed="s/\$/ /; s/\(-lprotobuf\) /\1$PROTOBUF_SFX /; s/ \$//"
+         PROTOBUF_CONFIG_LIBS="`$pb_pc protobuf --libs | sed -e \"$pb_sed\"`"
+         ;;
+      * )
+         pb_pc=
+         ;;
+   esac
+else
+   pb_pc=
+fi
+if test -z "$pb_pc"; then
+   PROTOBUF_CONFIG_LIBS=-lprotobuf$PROTOBUF_SFX
+   for l in absl_log_internal_check_op absl_leak_check absl_die_if_null \
+            absl_log_internal_conditions absl_log_internal_message \
+            absl_examine_stack absl_log_internal_format \
+            absl_log_internal_proto absl_log_internal_nullguard \
+            absl_log_internal_log_sink_set absl_log_sink absl_log_entry \
+            absl_flags absl_flags_internal absl_flags_marshalling \
+            absl_flags_reflection absl_flags_private_handle_accessor \
+            absl_flags_commandlineflag absl_flags_commandlineflag_internal \
+            absl_flags_config absl_flags_program_name absl_log_initialize \
+            absl_log_globals absl_log_internal_globals absl_raw_hash_set \
+            absl_hash absl_city absl_low_level_hash absl_hashtablez_sampler \
+            absl_statusor absl_status absl_cord absl_cordz_info \
+            absl_cord_internal absl_cordz_functions absl_exponential_biased \
+            absl_cordz_handle absl_crc_cord_state absl_crc32c \
+            absl_crc_internal absl_crc_cpu_detect absl_bad_optional_access \
+            absl_str_format_internal absl_strerror absl_synchronization \
+            absl_graphcycles_internal absl_kernel_timeout_internal \
+            absl_stacktrace absl_symbolize absl_debugging_internal \
+            absl_demangle_internal absl_malloc_internal absl_time \
+            absl_civil_time absl_time_zone absl_bad_variant_access \
+            utf8_validity utf8_range absl_strings absl_string_view \
+            absl_strings_internal absl_base absl_spinlock_wait absl_int128 \
+            absl_throw_delegate absl_raw_logging_internal absl_log_severity
+   do
+      if test -f $PROTOBUF_PATH/lib${bit64_sfx}/lib$l.a \
+           -o -f $PROTOBUF_PATH/lib/lib$l.a; then
+         PROTOBUF_CONFIG_LIBS="$PROTOBUF_CONFIG_LIBS -l$l"
+      fi
+   done
+fi
+
 NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$PROTOBUF_SFX],
    [AC_LANG_PROGRAM([[@%:@include <google/protobuf/type.pb.h>]],
        [[google::protobuf::Type t;]])],
-   [], [$Z_LIBS])
+   [$PROTOBUF_CONFIG_LIBS], [$Z_LIBS])
 if test -n "$PROTOBUF_LIBS"; then
    AC_PATH_PROG(PROTOC, protoc, [], [$PROTOBUF_PATH/bin:$PATH])
    if test ! -x "$PROTOC"; then
@@ -8847,12 +8905,16 @@ grpc_pc=pkg-config
 if test -n "$GRPC_PATH"; then
    for d in "$GRPC_PATH/lib$bit64_sfx" "$GRPC_PATH/lib"; do
       if test -d "$d/pkgconfig"; then
-         grpc_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
+         if test -n "$pb_pc" -a "$GRPC_PATH" != "$PROTOBUF_PATH"; then
+            grpc_pc="`echo $pb_pc | sed -e \"s,=,=$d:,\"`"
+         else
+            grpc_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
+         fi
          break
       fi
    done
 fi
-if $grpc_pc grpc++ --exists 2>/dev/null; then
+if test -n "$pb_pc"  &&  $grpc_pc grpc++ --exists 2>/dev/null; then
    GRPC_SED=sed
    if test -f "$GRPC_PATH/lib/libboringssl.a"; then
       GRPC_SED="sed -e s/-lssl/-lboringssl/g -e s/-lcrypto/-lboringcrypto/g"
@@ -8864,9 +8926,30 @@ if $grpc_pc grpc++ --exists 2>/dev/null; then
    if test "$GRPC_SED" = sed; then
       GRPC_SED=cat
    fi
-   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc --libs | $GRPC_SED`"
+   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc --libs --static | $GRPC_SED`"
 else
-   GRPC_CONFIG_LIBS=
+   grpc_pc=
+   GRPC_CONFIG_LIBS="-lgrpc -lgpr"
+   if test "$PROTOBUF_PATH" != "$GRPC_PATH"; then
+      GRPC_CONFIG_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBPATH"
+   fi
+   for l in address_sorting upb upb_textformat_lib upb_json_lib \
+            upb_collections_lib utf8_range_lib absl_random_distributions \
+            absl_random_seed_sequences absl_random_internal_pool_urbg \
+            absl_random_internal_randen absl_random_internal_randen_hwaes \
+            absl_random_internal_randen_hwaes_impl \
+            absl_random_internal_randen_slow absl_random_internal_platform \
+            absl_random_internal_seed_material absl_random_seed_gen_exception
+   do
+      if test -f $GRPC_PATH/lib${bit64_sfx}/lib$l.a \
+           -o -f $GRPC_PATH/lib/lib$l.a \
+           -o -f $PROTOBUF_PATH/lib${bit64_sfx}/lib$l.a \
+           -o -f $PROTOBUF_PATH/lib/lib$l.a; then
+         GRPC_CONFIG_LIBS="$GRPC_CONFIG_LIBS -l$l"
+      fi
+   done
+   GRPC_CONFIG_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_CONFIG_LIBS"
+
    if test -n "$GRPC_PATH"; then
       in_path=" in $GRPC_PATH"
       CPPFLAGS="-I$GRPC_PATH/include $orig_CPPFLAGS"
@@ -8880,7 +8963,21 @@ else
       [AC_LANG_PROGRAM([@%:@include <ares.h>], [ares_library_init(0);])],
       [CARES_LIBS=-lcares; AC_MSG_RESULT([yes])],
       [CARES_LIBS=; AC_MSG_RESULT([no])])
-   
+
+   if test -n "$GRPC_PATH"; then
+      LIBS="$PROTOBUF_LIBPATH -L$GRPC_PATH/lib$bit64_sfx -L$GRPC_PATH/lib -lre2"
+      LIBS="$LIBS $orig_LIBS"
+   else
+      LIBS="-lre2 $orig_LIBS"
+   fi
+   AC_MSG_CHECKING([for libre2$in_path])
+   AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([@%:@include <re2/re2.h>], [re2::RE2 rx("foo");])],
+      [RE2_LIBS=-lre2; AC_MSG_RESULT([yes])],
+      [RE2_LIBS=; AC_MSG_RESULT([no])])
+
+   GRPC_CONFIG_LIBS="$GRPC_CONFIG_LIBS $CARES_LIBS $RE2_LIBS"
+
    if test -f "$GRPC_PATH/lib/libboringssl.a"; then
       GRPC_LDEP="-lboringssl -lboringcrypto"
    else
@@ -8900,25 +8997,27 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [${GRPC_CONFIG_LIBS--lgrpc -lgpr $CARES_LIBS $GRPC_LDEP}],
    [$PROTOBUF_LIBS $Z_LIBS], [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
-   if test -n "$GRPC_CONFIG_LIBS"; then
-      GRPC_LIBS="$GRPC_CONFIG_LIBS $PROTOBUF_LIBS $GRPC_LDEP"
-      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure grpc_unsecure --libs`"
-      for x in address_sorting upb cares; do
-         case " $GRPC_LIBS ::: $GRPC_UNSECURE_LIBS " in
-            *:::*" -l$x "* ) ;;
-            *" -l$x "* ) GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS -l$x" ;;
+   if test -n "$grpc_pc"; then
+      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure --libs --static`"
+   else
+      GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ $GRPC_CONFIG_LIBS $GRPC_LDEP"
+      GRPC_UNSECURE_LIBS=
+      sep=
+      for x in $GRPC_LIBS; do
+         case "$x" in
+            -lgrpc* )
+                GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS$sep${x}_unsecure"
+                sep=' '
+                ;;
+            -lboring* | -lssl | -lcrypto )
+                ;;
+             * )
+                GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS $x"
+                sep=' '
+                ;;
          esac
       done
-      GRPC_UNSECURE_LIBS="$GRPC_UNSECURE_LIBS $PROTOBUF_LIBS $GRPC_LDEP"
-   else
-      LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
-      AC_CHECK_LIB(address_sorting, address_sorting_rfc_6724_sort,
-         [GRPC_LIBS="$GRPC_LIBS -laddress_sorting"], [])
-      LDFLAGS=$orig_LDFLAGS
-      GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS \
-         | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
-      GRPC_LIBS="$GRPC_LIBS $GRPC_LDEP"
-   fi 
+   fi
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
