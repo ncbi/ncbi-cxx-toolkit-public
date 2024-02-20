@@ -158,8 +158,11 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
             continue;
         }
 
-
-        CSeqFeatData::EQualifier qual_type = CSeqFeatData::GetQualifierType(qual_str);
+        string qs = qual_str;
+        if (qs == "geo_loc_name") {
+            qs = "country";
+        }
+        CSeqFeatData::EQualifier qual_type = CSeqFeatData::GetQualifierType(qs);
         fqual                              = CSeqFeatData::IsLegalQualifier(subtype, qual_type);
 
         if (! fqual) {
@@ -176,7 +179,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
                     retval = GB_FEAT_ERR_REPAIRABLE;
                 }
                 if (error_msgs) {
-                    ErrPostStr(SEV_ERROR, ERR_FEATURE_QualWrongThisFeat, qual_str.c_str());
+                    ErrPostStr(SEV_ERROR, ERR_FEATURE_QualWrongThisFeat, qs.c_str());
                 }
                 if (perform_corrections) {
                     cur = quals.erase(cur);
@@ -492,13 +495,17 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
             continue;
         }
 
-        CSeqFeatData::EQualifier qual_type = CSeqFeatData::GetQualifierType(qual_str);
+        string qs = qual_str;
+        if (qs == "geo_loc_name") {
+            qs = "country";
+        }
+        CSeqFeatData::EQualifier qual_type = CSeqFeatData::GetQualifierType(qs);
         if (qual_type == CSeqFeatData::eQual_bad) {
             if (retval < GB_FEAT_ERR_REPAIRABLE) {
                 retval = GB_FEAT_ERR_REPAIRABLE;
             }
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_UnknownSpelling, qual_str.c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_UnknownSpelling, qs.c_str());
             }
             if (perform_corrections) {
                 cur = quals.erase(cur);

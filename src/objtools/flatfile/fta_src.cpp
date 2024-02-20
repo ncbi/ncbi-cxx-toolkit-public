@@ -1995,7 +1995,11 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                 continue;
 
             const string& cur_qual = cur->GetQual();
-            if (cur_qual == "db_xref") {
+            string cq = cur_qual;
+            if (cq == "geo_loc_name") {
+                cq = "country";
+            }
+            if (cq == "db_xref") {
                 CRef<CDbtag> dbtag = GetSourceDbtag(cur, source);
                 if (dbtag.Empty())
                     continue;
@@ -2005,7 +2009,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             }
 
             const Char* val_ptr = cur->IsSetVal() ? cur->GetVal().c_str() : nullptr;
-            if (cur_qual == "organelle") {
+            if (cq == "organelle") {
                 if (! val_ptr || val_ptr[0] == '\0')
                     continue;
 
@@ -2045,9 +2049,9 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             }
 
             if (oldgen < 0)
-                oldgen = StringMatchIcase(GenomicSourceFeatQual, cur_qual.c_str());
+                oldgen = StringMatchIcase(GenomicSourceFeatQual, cq.c_str());
 
-            if (cur_qual != "country" ||
+            if (cq != "country" ||
                 ! val_ptr || val_ptr[0] == '\0')
                 continue;
 
