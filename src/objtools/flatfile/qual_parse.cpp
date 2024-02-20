@@ -369,6 +369,9 @@ bool CQualParser::sIsLegalQual(
     const string& qualKey)
 //  ----------------------------------------------------------------------------
 {
+    if (qualKey == "geo_loc_name") {
+        return true;
+    }
     auto type = objects::CSeqFeatData::GetQualifierType(qualKey);
     return (type != objects::CSeqFeatData::eQual_bad);
 }
