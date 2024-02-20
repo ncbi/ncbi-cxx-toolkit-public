@@ -514,13 +514,24 @@ public:
     TSequenceHash GetSequenceHash(const CSeq_id_Handle& id, TGetFlags flags = 0);
 
     /// Bulk retrieval methods
+    /// Common argument typedef - vector of requested ids
+    typedef vector<CSeq_id_Handle> TSeq_id_Handles;
+    
+    /// Get all ids of sequences
+    /// Returns empty ids if the sequence is not found
+    /// @sa EGetflags
+    typedef vector<TIds> TBulkIds;
+    TBulkIds GetBulkIds(const TSeq_id_Handles& idhs,
+                        TGetFlags flags = 0);
+    void GetBulkIds(TBulkIds* results,
+                    const TSeq_id_Handles& idhs,
+                    TGetFlags flags = 0);
 
     /// Get accession.version Seq-id
     /// Returns null CSeq_id_Handles for sequences that aren't found
     /// or don't have accession id.
     /// @sa GetAccVer
     /// @sa EGetflags
-    typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
                                 TGetFlags flags = 0);
     void GetAccVers(TSeq_id_Handles* results,
