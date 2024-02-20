@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 
 
 CSortableSeq_id::CSortableSeq_id(const CSeq_id_Handle& idh, size_t idx)
-    : m_Id(idh), m_Index(idx)
+    : m_Id(idh), m_Index(idx), m_SortedIndex(0)
 {
     if ( !m_Id ) return;
     switch ( m_Id.Which() ) {
@@ -153,9 +153,12 @@ CSortedSeq_ids::CSortedSeq_ids(const TIds& ids)
 
 void CSortedSeq_ids::GetSortedIds(TIds& ids) const
 {
-    ids.resize(m_SortedIds.size());
-    for (size_t i = 0; i < m_SortedIds.size(); ++i) {
-        ids[i] = m_SortedIds[i]->GetId();
+    ids.clear();
+    for ( auto& sortable_id : m_SortedIds ) {
+        if ( ids.empty() || ids.back() != sortable_id->GetId() ) {
+            ids.push_back(sortable_id->GetId());
+        }
+        sortable_id.GetNCObject().SetSortedIndex(ids.size()-1);
     }
 }
 

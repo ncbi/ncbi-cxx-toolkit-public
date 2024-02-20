@@ -54,6 +54,8 @@ public:
 
     const CSeq_id_Handle& GetId(void) const { return m_Id; }
     size_t GetIndex(void) const { return m_Index; }
+    size_t GetSortedIndex(void) const { return m_SortedIndex; }
+    void SetSortedIndex(size_t index) { m_SortedIndex = index; }
 
 private:
     CSortableSeq_id(const CSortableSeq_id&);
@@ -89,6 +91,7 @@ private:
 
     CSeq_id_Handle m_Id;
     size_t m_Index;
+    size_t m_SortedIndex;
     TIdParts m_Parts;
 };
 
@@ -111,10 +114,10 @@ public:
 
     template<class TValue> void RestoreOrder(vector<TValue>& values) const
     {
-        _ASSERT(values.size() == m_SortedIds.size());
         vector<TValue> tmp = values;
-        for (size_t i = 0; i < m_SortedIds.size(); ++i) {
-            values[m_SortedIds[i]->GetIndex()] = tmp[i];
+        values.resize(m_SortedIds.size());
+        for ( auto& sortable_id : m_SortedIds ) {
+            values[sortable_id->GetIndex()] = tmp[sortable_id->GetSortedIndex()];
         }
     }
 
