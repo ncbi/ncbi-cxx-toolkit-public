@@ -100,6 +100,8 @@ public:
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
 
+    bool LoadBulkIds(CReaderRequestResult& result,
+                     const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     bool LoadAccVers(CReaderRequestResult& result,
                      const TIds& ids, TLoaded& loaded, TIds& ret);
     bool LoadGis(CReaderRequestResult& result,

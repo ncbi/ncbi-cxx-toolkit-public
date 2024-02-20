@@ -131,6 +131,7 @@ public:
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih) override;
     virtual STypeFound GetSequenceTypeFound(const CSeq_id_Handle& sih) override;
 
+    virtual void GetBulkIds(const TIds& ids, TLoaded& loader, TBulkIds& ret) override;
     virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret) override;
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret) override;
     virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret) override;

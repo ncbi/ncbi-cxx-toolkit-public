@@ -122,6 +122,7 @@ public:
     // bulk requests
     typedef vector<CSeq_id_Handle> TIds;
     typedef vector<bool> TLoaded;
+    typedef vector<TIds> TBulkIds;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<TTaxId> TTaxIds;
@@ -130,6 +131,8 @@ public:
     typedef vector<bool> TKnown;
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::EMol> TTypes;
+    virtual bool LoadBulkIds(CReaderRequestResult& result,
+                             const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     virtual bool LoadAccVers(CReaderRequestResult& result,
                              const TIds& ids, TLoaded& loaded, TIds& ret);
     virtual bool LoadGis(CReaderRequestResult& result,
