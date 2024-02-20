@@ -656,6 +656,19 @@ int CGBDataLoader_Native::GetSequenceState(const CSeq_id_Handle& sih)
 }
 
 
+void CGBDataLoader_Native::GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CGBReaderRequestResult result(this, ids[i]);
+        m_Dispatcher->LoadBulkIds(result, ids, loaded, ret);
+        return;
+    }
+}
+
+
 void CGBDataLoader_Native::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     for ( size_t i = 0; i < ids.size(); ++i ) {

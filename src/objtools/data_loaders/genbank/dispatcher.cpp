@@ -727,6 +727,56 @@ namespace {
         return ret;
     }
 
+    class CCommandLoadBulkIds : public CReadDispatcherCommand
+    {
+    public:
+        typedef vector<CSeq_id_Handle> TKey;
+        typedef vector<bool> TLoaded;
+        typedef vector<CSeq_id_Handle> TIds;
+        typedef vector<TIds> TRet;
+        typedef CLoadLockSeqIds CLoadLock;
+        CCommandLoadBulkIds(CReaderRequestResult& result,
+                            const TKey& key, TLoaded& loaded, TRet& ret)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+            {
+            }
+
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadBulkIds(GetResult(), m_Key, m_Loaded, m_Ret);
+            }
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone<CLoadLock>(GetResult(), m_Key, m_Loaded);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadBulkIds("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    "): data not found";
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "bulkids("+
+                    sx_DescribeError<CLoadLock>(GetResult(), m_Key, m_Loaded)+
+                    ")";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Seq_idSeq_ids;
+            }
+        size_t GetStatisticsCount(void) const
+            {
+                return m_Key.size();
+            }
+        
+    private:
+        const TKey& m_Key;
+        TLoaded& m_Loaded;
+        TRet& m_Ret;
+    };
+
     class CCommandLoadAccVers : public CReadDispatcherCommand
     {
     public:
@@ -1768,6 +1818,14 @@ void CReadDispatcher::LoadSequenceType(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id)
 {
     CCommandLoadSequenceType command(result, seq_id);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadBulkIds(CReaderRequestResult& result,
+                                  const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    CCommandLoadBulkIds command(result, ids, loaded, ret);
     Process(command);
 }
 

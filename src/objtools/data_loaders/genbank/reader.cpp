@@ -658,6 +658,30 @@ bool CReader::LoadSequenceType(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadBulkIds(CReaderRequestResult& result,
+                          const TIds& ids, TLoaded& loaded, TBulkIds& ret)
+{
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CLoadLockSeqIds lock(result, ids[i]);
+        if ( !lock.IsLoaded() ) {
+            m_Dispatcher->LoadSeq_idSeq_ids(result, ids[i]);
+        }
+        if ( lock.IsLoaded() ) {
+            CFixedSeq_ids data = lock.GetSeq_ids();
+            if ( data.IsFound() ) {
+                ret[i] = data.Get();
+                loaded[i] = true;
+            }
+        }
+    }
+    return true;
+}
+
+
 bool CReader::LoadAccVers(CReaderRequestResult& result,
                           const TIds& ids, TLoaded& loaded, TIds& ret)
 {
