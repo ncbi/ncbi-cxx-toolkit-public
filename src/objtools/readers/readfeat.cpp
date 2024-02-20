@@ -687,6 +687,7 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
     {  "fwd_primer_name",      CSubSource::eSubtype_fwd_primer_name        },
     {  "fwd_primer_seq",       CSubSource::eSubtype_fwd_primer_seq         },
     {  "genotype",             CSubSource::eSubtype_genotype               },
+    {  "geo_loc_name",         CSubSource::eSubtype_country                },
     {  "germline",             CSubSource::eSubtype_germline               },
     {  "haplotype",            CSubSource::eSubtype_haplotype              },
     {  "identified_by",        CSubSource::eSubtype_identified_by          },
