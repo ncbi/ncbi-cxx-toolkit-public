@@ -16,4 +16,4 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 REQUIRES = objects -Cygwin
 
-WATCHERS = madden camacho
+WATCHERS = camacho

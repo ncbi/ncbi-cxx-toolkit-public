@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = ntlookup_unit_test
 CHECK_COPY = data ntlookup_unit_test.ini
 
-WATCHERS = boratyng morgulis madden camacho fongah2
+WATCHERS = boratyng morgulis camacho fongah2

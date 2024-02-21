@@ -14,4 +14,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = blastextend_unit_test
 CHECK_COPY = blastextend_unit_test.ini
 
-WATCHERS = boratyng morgulis madden camacho fongah2
+WATCHERS = boratyng morgulis camacho fongah2

@@ -21,5 +21,5 @@ CHECK_COPY = data align_format_unit_test.ini
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = zaretska jianye madden camacho boratyng fongah2
+WATCHERS = zaretska jianye camacho boratyng fongah2
 CHECK_TIMEOUT = 900

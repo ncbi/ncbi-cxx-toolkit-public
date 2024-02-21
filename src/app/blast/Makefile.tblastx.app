@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho fongah2
 
 APP = tblastx
 SRC = tblastx_app

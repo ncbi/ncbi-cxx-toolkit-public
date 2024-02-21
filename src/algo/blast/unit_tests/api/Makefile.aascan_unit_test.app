@@ -14,4 +14,4 @@ LDFLAGS = $(FAST_LDFLAGS)
 CHECK_CMD = aascan_unit_test
 CHECK_COPY = aascan_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

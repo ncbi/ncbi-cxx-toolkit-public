@@ -21,7 +21,7 @@ LIB = blast
 #CFLAGS  = $(FAST_CFLAGS)  -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
 CFLAGS  = $(FAST_CFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
-WATCHERS = madden camacho fongah2
+WATCHERS = camacho fongah2
 
 
 USES_LIBRARIES =  \

@@ -10,6 +10,6 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
 ASN_DEP = seqset
 
-WATCHERS = boratyng madden
+WATCHERS = boratyng
 USES_LIBRARIES =  \
     $(DL_LIBS) $(SOBJMGR_LIBS)

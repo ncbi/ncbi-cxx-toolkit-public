@@ -16,4 +16,4 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(CMPRS_LIBS) \
 
 REQUIRES = objects -Cygwin
 
-WATCHERS = camacho madden maning
+WATCHERS = camacho maning

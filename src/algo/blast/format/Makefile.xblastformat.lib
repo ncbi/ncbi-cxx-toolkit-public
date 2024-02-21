@@ -11,7 +11,7 @@ DLL_LIB = $(BLAST_LIBS) align_format blastxml blastxml2 xhtml xcgi
 
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
-WATCHERS = jianye zaretska madden camacho fongah2
+WATCHERS = jianye zaretska camacho fongah2
 
 
 USES_LIBRARIES =  \

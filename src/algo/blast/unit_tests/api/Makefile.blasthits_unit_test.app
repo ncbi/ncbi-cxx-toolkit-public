@@ -15,4 +15,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = blasthits_unit_test
 CHECK_COPY = blasthits_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

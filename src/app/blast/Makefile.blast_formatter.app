@@ -1,4 +1,4 @@
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho fongah2
 
 APP = blast_formatter
 SRC = blast_formatter

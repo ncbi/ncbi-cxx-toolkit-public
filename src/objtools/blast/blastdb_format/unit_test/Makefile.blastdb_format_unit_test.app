@@ -18,4 +18,4 @@ CHECK_COPY = blastdb_format_unit_test.ini data
 REQUIRES = Boost.Test.Included
 
 
-WATCHERS = zaretska jianye madden camacho fongah2
+WATCHERS = zaretska jianye camacho fongah2

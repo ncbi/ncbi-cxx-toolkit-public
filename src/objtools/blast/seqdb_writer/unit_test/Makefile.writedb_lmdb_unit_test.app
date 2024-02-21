@@ -16,4 +16,4 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG
 CHECK_CMD = writedb_lmdb_unit_test
 CHECK_COPY = data
 
-WATCHERS = madden camacho fongah2 boratyng
+WATCHERS = camacho fongah2 boratyng

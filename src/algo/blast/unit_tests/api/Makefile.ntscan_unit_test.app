@@ -14,4 +14,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = ntscan_unit_test
 CHECK_COPY = ntscan_unit_test.ini
 
-WATCHERS = boratyng morgulis madden camacho fongah2
+WATCHERS = boratyng morgulis camacho fongah2

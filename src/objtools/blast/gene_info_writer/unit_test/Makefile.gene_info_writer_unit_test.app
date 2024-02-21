@@ -16,4 +16,4 @@ CHECK_CMD  = gene_info_writer_unit_test
 CHECK_COPY = data gene_info_writer_unit_test.ini
 
 
-WATCHERS = madden camacho
+WATCHERS = camacho

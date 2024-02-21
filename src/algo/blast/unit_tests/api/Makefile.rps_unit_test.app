@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = rps_unit_test
 CHECK_COPY = rps_unit_test.ini data
 
-WATCHERS = madden fongah2
+WATCHERS = fongah2

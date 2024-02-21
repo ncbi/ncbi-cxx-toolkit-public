@@ -1,4 +1,4 @@
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho fongah2
 
 APP = rpstblastn
 SRC = rpstblastn_node rpstblastn_app

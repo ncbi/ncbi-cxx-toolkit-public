@@ -12,7 +12,7 @@ LDFLAGS   = $(FAST_LDFLAGS)
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
        $(ORIG_LIBS)
 
-WATCHERS = madden camacho
+WATCHERS = camacho
 
 CHECK_REQUIRES = full-blastdb
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 4 /CHECK_NAME=scan_blastdb_mt

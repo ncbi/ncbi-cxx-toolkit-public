@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = version_reference_unit_test
 CHECK_COPY = version_reference_unit_test.ini
 
-WATCHERS = madden camacho
+WATCHERS = camacho

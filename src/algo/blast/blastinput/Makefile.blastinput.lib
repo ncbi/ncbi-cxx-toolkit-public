@@ -39,7 +39,7 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
-WATCHERS = madden camacho fongah2 boratyng
+WATCHERS = camacho fongah2 boratyng
 
 
 USES_LIBRARIES =  \

@@ -16,7 +16,7 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 LIBS = $(BLAST_THIRD_PARTY_LIBS) $(ORIG_LIBS)
 
-WATCHERS = madden camacho
+WATCHERS = camacho
 
 
 USES_LIBRARIES =  \

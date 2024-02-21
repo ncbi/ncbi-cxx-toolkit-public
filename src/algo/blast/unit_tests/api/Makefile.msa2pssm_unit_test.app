@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = msa2pssm_unit_test
 CHECK_COPY = msa2pssm_unit_test.ini data
 
-WATCHERS = boratyng madden camacho
+WATCHERS = boratyng camacho

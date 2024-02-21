@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = remote_blast_unit_test
 CHECK_COPY = remote_blast_unit_test.ini data
 
-WATCHERS = madden camacho merezhuk raytseli
+WATCHERS = camacho merezhuk raytseli

@@ -1,4 +1,4 @@
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho fongah2
 
 APP = seedtop
 SRC = seedtop_app

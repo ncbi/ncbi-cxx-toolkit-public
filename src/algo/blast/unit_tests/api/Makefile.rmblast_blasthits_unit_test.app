@@ -14,4 +14,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = rmblast_blasthits_unit_test
 #CHECK_COPY =
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2
