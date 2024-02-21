@@ -843,7 +843,7 @@ for x_arg in "$@" ; do
       fi
       ;;
 
-      [[A-Z]*=*] | -h | --help | --help=* | -V | --version | -q | --quiet \
+      [[A-Za-z]*=*] | -h | --help | --help=* | -V | --version | -q | --quiet \
       | --silent | --cache-file=* | -C | --config-cache | -n | --no-create \
       | --no-recursion | --prefix=* | --exec-prefix=* | --bindir=* \
       | --libdir=* | --includedir=* | --build=* | --host=* | --target=* \
