@@ -117,6 +117,14 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
 }
 
 
+static void PrintMsg(EDiagSev sev, const string& msg)
+{
+    if (sev == eDiag_Error)
+        cerr << "Error: ";
+    cerr << msg << endl;
+}
+
+
 void CDiscRepApp::Init()
 {
     // Prepare command line descriptions
@@ -312,7 +320,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         for (const string& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
-                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+                PrintMsg(eDiag_Info, "Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
             Tests->ParseStrings(fname);
         }
@@ -325,7 +333,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
         for (const string& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
-                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+                PrintMsg(eDiag_Info, "Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
             x_ProcessFile(fname, *Tests);
             severity = Tests->Summarize();
@@ -339,7 +347,7 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
             Tests->SetLineage(m_Lineage);
             ++count;
             if (m_Files.size() > 1) {
-                LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+                PrintMsg(eDiag_Info, "Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
             x_ProcessFile(fname, *Tests);
         }
@@ -374,14 +382,14 @@ int CDiscRepApp::Run()
             }
             else if (c == 'q' || c == 'b' || c == 'u' || c == 'f') {
                 if (m_Group && m_Group != c) {
-                    ERR_POST(string("-P options are not compatible: ") + m_Group + " and " + c);
+                    PrintMsg(eDiag_Error, string("-P options are not compatible: ") + m_Group + " and " + c);
                     return 1;
                 }
                 m_Group = c;
                 m_Fat = true;
             }
             else {
-                ERR_POST(string("Unrecognized character in -P argument: ") + c);
+                PrintMsg(eDiag_Error, string("Unrecognized character in -P argument: ") + c);
                 return 1;
             }
         }
@@ -391,7 +399,7 @@ int CDiscRepApp::Run()
     TTestNamesSet Tests;
     if (args["e"]) {
         if (args["N"]) {
-            ERR_POST("Options -N and -e are mutually exclusive");
+            PrintMsg(eDiag_Error, "Options -N and -e are mutually exclusive");
             return 1;
         }
         list<string> List;
@@ -399,14 +407,14 @@ int CDiscRepApp::Run()
         for (const string& s : List) {
             auto name = GetDiscrepancyCaseName(s);
             if (name == eTestNames::notset) {
-                ERR_POST("Test name not found: " + s);
+                PrintMsg(eDiag_Error, "Test name not found: " + s);
                 return 1;
             } else {
                 Tests.set(name);
             }
         }
         if (m_Group) {
-            LOG_POST(string("Option ignored: -P ") + m_Group);
+            PrintMsg(eDiag_Info, string("Option ignored: -P ") + m_Group);
             m_Group = 0;
         }
     }
@@ -432,7 +440,7 @@ int CDiscRepApp::Run()
     }
     if (args["d"]) {
         if (args["N"]) {
-            ERR_POST("Options -N and -d are mutually exclusive");
+            PrintMsg(eDiag_Error, "Options -N and -d are mutually exclusive");
             return 1;
         }
         list<string> List;
@@ -440,7 +448,7 @@ int CDiscRepApp::Run()
         for (const string& s : List) {
             auto name = GetDiscrepancyCaseName(s);
             if (name == eTestNames::notset) {
-                ERR_POST("Test name not found: " + s);
+                PrintMsg(eDiag_Error, "Test name not found: " + s);
                 return 1;
             } else {
                 Tests.reset(name);
@@ -453,7 +461,7 @@ int CDiscRepApp::Run()
     else {
         m_Tests += Tests;
         if (m_Tests.empty()) {
-            ERR_POST("Empty test list");
+            PrintMsg(eDiag_Error, "Empty test list");
             return 1;
         }
     }
@@ -463,7 +471,7 @@ int CDiscRepApp::Run()
         NStr::Split(args["X"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         for (const string& s : List) {
             if (s != "ALL") {
-                ERR_POST("Unknown option: " + s);
+                PrintMsg(eDiag_Error, "Unknown option: " + s);
                 return 1;
             }
             else {
@@ -487,7 +495,7 @@ int CDiscRepApp::Run()
 
     if (args["indir"]) x_ParseDirectory(args["indir"].AsString(), args["u"].AsBoolean());
     if (m_Files.empty()) {
-        ERR_POST("No input files");
+        PrintMsg(eDiag_Error, "No input files");
         return 1;
     }
 
@@ -516,7 +524,7 @@ int CDiscRepApp::Run()
     try {
         if (args["o"]) {
             if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
-                ERR_POST("Input and output files should be different"); 
+                PrintMsg(eDiag_Error, "Input and output files should be different"); 
                 return 1;
             } 
             severity = x_ProcessAll(args["o"].AsString());
@@ -526,7 +534,7 @@ int CDiscRepApp::Run()
             for (const string& f : m_Files) {
                 ++count;
                 if (m_Files.size() > 1) {
-                    LOG_POST("Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
+                    PrintMsg(eDiag_Info, "Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
                 }
                 unsigned sev = x_ProcessOne(f);
                 severity = sev > severity ? sev : severity;
@@ -534,7 +542,7 @@ int CDiscRepApp::Run()
         }
     }
     catch (const CException& e) {
-        ERR_POST(e.GetMsg());
+        PrintMsg(eDiag_Error, e.GetMsg());
         return 1;
     }   
 
