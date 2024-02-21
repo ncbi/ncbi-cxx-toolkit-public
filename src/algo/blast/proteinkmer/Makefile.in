@@ -7,4 +7,4 @@ REQUIRES = algo
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
-WATCHERS = madden boratyng
+WATCHERS = boratyng

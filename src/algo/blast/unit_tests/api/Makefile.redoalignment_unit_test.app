@@ -14,4 +14,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = redoalignment_unit_test
 CHECK_COPY = redoalignment_unit_test.ini data
 
-WATCHERS = boratyng madden
+WATCHERS = boratyng

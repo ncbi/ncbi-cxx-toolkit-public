@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = uniform_search_unit_test
 CHECK_COPY = uniform_search_unit_test.ini data
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

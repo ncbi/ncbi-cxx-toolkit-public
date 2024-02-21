@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = gapinfo_unit_test
 CHECK_COPY = gapinfo_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT full-blastdb
 CHECK_CMD = tracebacksearch_unit_test
 CHECK_COPY = tracebacksearch_unit_test.ini data
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

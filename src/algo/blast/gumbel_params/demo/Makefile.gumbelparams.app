@@ -7,4 +7,4 @@ CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = boratyng madden camacho
+WATCHERS = boratyng camacho

@@ -16,4 +16,4 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
 
 REQUIRES = VDB objects -Cygwin
 
-WATCHERS = camacho madden maning fongah2
+WATCHERS = camacho maning fongah2

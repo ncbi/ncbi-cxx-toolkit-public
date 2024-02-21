@@ -20,4 +20,4 @@ CHECK_COPY = bdbloader_unit_test.ini data
 CHECK_TIMEOUT = 600
 
 
-WATCHERS = madden camacho
+WATCHERS = camacho

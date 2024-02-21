@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = madden camacho
+WATCHERS = camacho
 
 ASN_DEP = xnetblast
 

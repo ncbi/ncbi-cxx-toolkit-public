@@ -16,4 +16,4 @@ REQUIRES = Boost.Test.Included SQLITE3
 
 CHECK_TIMEOUT = 600
 
-WATCHERS = madden camacho fongah2
+WATCHERS = camacho fongah2

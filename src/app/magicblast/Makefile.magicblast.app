@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = camacho madden fongah2
+WATCHERS = camacho fongah2
 
 APP = magicblast
 SRC = magicblast_app magicblast_util magicblast_thread

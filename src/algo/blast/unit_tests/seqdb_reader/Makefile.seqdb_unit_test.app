@@ -18,4 +18,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_TIMEOUT = 700
 
-WATCHERS = madden camacho fongah2
+WATCHERS = camacho fongah2

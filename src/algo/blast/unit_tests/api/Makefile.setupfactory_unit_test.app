@@ -14,4 +14,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = setupfactory_unit_test
 CHECK_COPY = setupfactory_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

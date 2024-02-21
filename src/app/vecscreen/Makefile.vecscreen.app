@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = camacho madden
+WATCHERS = camacho
 
 APP = vecscreen
 SRC = vecscreen_app

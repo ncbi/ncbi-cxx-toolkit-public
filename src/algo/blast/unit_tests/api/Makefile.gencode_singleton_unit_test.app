@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = gencode_singleton_unit_test
 CHECK_COPY = gencode_singleton_unit_test.ini
 
-WATCHERS = madden camacho
+WATCHERS = camacho

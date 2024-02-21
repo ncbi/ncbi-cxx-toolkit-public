@@ -2,7 +2,7 @@
 # $Id$
 #################################
 
-WATCHERS = camacho madden
+WATCHERS = camacho
 
 APP = blast_sample
 SRC = blast_sample

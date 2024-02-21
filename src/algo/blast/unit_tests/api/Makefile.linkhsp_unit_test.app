@@ -13,4 +13,4 @@ CHECK_REQUIRES = MT
 CHECK_CMD = linkhsp_unit_test
 CHECK_COPY = linkhsp_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2
+WATCHERS = boratyng camacho fongah2

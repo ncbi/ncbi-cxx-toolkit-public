@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = madden camacho fongah2
+WATCHERS = camacho fongah2
 
 APP = blastn_vdb
 SRC = blast_vdb_app_util blastn_vdb

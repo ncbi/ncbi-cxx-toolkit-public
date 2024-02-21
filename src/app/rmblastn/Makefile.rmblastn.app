@@ -1,4 +1,4 @@
-WATCHERS = camacho madden maning
+WATCHERS = camacho maning
 
 APP = rmblastn
 SRC = rmblastn_app
