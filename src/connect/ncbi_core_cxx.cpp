@@ -610,6 +610,7 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
 #endif //NCBI_MONKEY
 
 
+#ifdef NCBI_POSIX_THREADS
 extern "C" {
 static void x_PreFork(void)
 {
@@ -621,6 +622,7 @@ static void x_PostFork(void)
     CORE_UNLOCK;
 }
 } // extern "C"
+#endif // NCBI_POSIX_THREADS
 
 
 enum EConnectInit {
