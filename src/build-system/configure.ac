@@ -8819,7 +8819,7 @@ if test -n "$D_SFX"; then
    if ls $PROTOBUF_PATH/lib*/libprotobuf$D_SFX.* >/dev/null 2>&1; then
       PROTOBUF_SFX=$D_SFX
    else
-      for ext in .a .so .dylib; do
+      for ext in a so dylib; do
          path=`$CXX -B$PROTOBUF_PATH/ -print-file-name=libprotobuf$D_SFX.$ext \
                2>/dev/null`
          case "$path" in
@@ -8915,6 +8915,13 @@ if test -n "$GRPC_PATH"; then
    done
 fi
 if test -n "$pb_pc"  &&  $grpc_pc grpc++ --exists 2>/dev/null; then
+   grpc_b_flags=`$grpc_pc grpc++ --libs-only-L | sed -e 's/^/ /; s/ -L/ -B/'`
+   if test \! -f "`$CXX $grpc_b_flags -print-file-name=libgrpc++.so \
+                   2>/dev/null`" \
+      -a \! -f "`$CXX $grpc_b_flags -print-file-name=libgrpc++.dylib \
+                 2>/dev/null`"; then
+      grpc_pc="$grpc_pc --static"
+   fi
    GRPC_SED="sed -e \"$pb_sed\""
    if test -f "$GRPC_PATH/lib/libboringssl.a"; then
       GRPC_SED="$GRPC_SED -e s/-lssl/-lboringssl/g"
@@ -8924,8 +8931,7 @@ if test -n "$pb_pc"  &&  $grpc_pc grpc++ --exists 2>/dev/null; then
              x"`$grpc_pc grpc++ --variable=prefix`" != x/sw; then
       GRPC_SED="$GRPC_SED -e s,-L/sw/lib,,"
    fi
-   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc protobuf --libs --static \
-                      | $GRPC_SED`"
+   GRPC_CONFIG_LIBS="`$grpc_pc grpc++ grpc protobuf --libs | eval $GRPC_SED`"
 else
    grpc_pc=
    GRPC_CONFIG_LIBS="-lgrpc -lgpr"
@@ -8997,7 +9003,8 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [$PROTOBUF_LIBS $Z_LIBS], [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
    if test -n "$grpc_pc"; then
-      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure --libs --static`"
+      GRPC_UNSECURE_LIBS="`$grpc_pc grpc++_unsecure grpc_unsecure protobuf \
+                           --libs`"
    else
       GRPC_LIBS="$GRPC_LIBPATH -lgrpc++ $GRPC_CONFIG_LIBS $GRPC_LDEP"
       GRPC_UNSECURE_LIBS=
