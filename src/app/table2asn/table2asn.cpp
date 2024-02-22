@@ -518,8 +518,7 @@ int CTbl2AsnApp::Run()
         }
 
         m_context.m_cleanup = args["c"].AsString();
-    }
-    else
+    } else
         m_context.m_cleanup = "b"; // always cleanup
 
     if (args["M"]) {
@@ -664,7 +663,7 @@ int CTbl2AsnApp::Run()
 
     if (args["l"]) {
         auto linkage_evidence_to_value = CLinkage_evidence::GetTypeInfo_enum_EType();
-        for (auto& arg_it: args["l"].GetStringList()) {
+        for (auto& arg_it : args["l"].GetStringList()) {
             try {
                 auto value = linkage_evidence_to_value->FindValue(arg_it);
                 m_context.m_DefaultEvidence.insert(value);
@@ -1087,12 +1086,12 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
         cleanup.ExtendedCleanup(*submit, CCleanup::eClean_NoNcbiUserObjects);
     }
 
-    bool need_report = (inputFormat == CFormatGuess::eFasta) && !m_context.m_HandleAsSet;
+    bool need_report = (inputFormat == CFormatGuess::eFasta) && ! m_context.m_HandleAsSet;
     if (need_report) {
         g_LogGeneralParsingError(
-                eDiag_Warning,
-                "File " + m_context.m_current_file + " contains multiple sequences",
-                *(m_context.m_logger));
+            eDiag_Warning,
+            "File " + m_context.m_current_file + " contains multiple sequences",
+            *(m_context.m_logger));
     }
 }
 
@@ -1155,8 +1154,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     }
 
     if ((inputFormat == CFormatGuess::eTextASN) ||
-        (inputFormat == CFormatGuess::eBinaryASN))
-    {
+        (inputFormat == CFormatGuess::eBinaryASN)) {
         // if create-date exists apply update date
         m_context.ApplyCreateUpdateDates(*entry);
     }
@@ -1415,7 +1413,7 @@ void CTbl2AsnApp::xProcessOneFile(
         CRef<CSerialObject> result;
         ProcessOneEntry(format, input_obj, result);
 
-        if (!IsDryRun() && result.NotEmpty()) {
+        if (! IsDryRun() && result.NotEmpty()) {
             const CSerialObject* to_write = result;
             if (m_context.m_save_bioseq_set) {
                 if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
@@ -1641,7 +1639,10 @@ void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
         return;
 
     if (file.IsIdentical(m_context.m_current_file)) {
-        LOG_POST("Ignorning annotation " << pathname << " because it was already used as input source");
+        g_LogGeneralParsingError(
+            eDiag_Warning,
+            "Ignorning annotation " + pathname + " because it was already used as input source",
+            *m_logger);
         return;
     }
 
