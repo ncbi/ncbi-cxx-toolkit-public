@@ -68,8 +68,34 @@ CPSGS_CassBlobBase::CPSGS_CassBlobBase(shared_ptr<CPSGS_Request>  request,
     m_SplitInfoGzipFlag(false),
     m_BlobPropsCB(blob_props_cb),
     m_BlobChunkCB(blob_chunk_cb),
-    m_BlobErrorCB(blob_error_cb)
-{}
+    m_BlobErrorCB(blob_error_cb),
+    m_NeedFallbackBlob(false),
+    m_FallbackBlobRequested(false)
+{
+    // Detect if a fallback to the original blob is required if there were
+    // problems
+    SPSGS_BlobRequestBase::EPSGS_TSEOption      request_tse_option = SPSGS_BlobRequestBase::ePSGS_UnknownTSE;
+    switch (request->GetRequestType()) {
+        case CPSGS_Request::ePSGS_AnnotationRequest:
+            request_tse_option = request->GetRequest<SPSGS_AnnotRequest>().m_TSEOption;
+            break;
+        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+            request_tse_option = request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_TSEOption;
+            break;
+        case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
+            request_tse_option = request->GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_TSEOption;
+            break;
+        default:
+            // The m_RequestTSEOption is relevant only for the 3 requests above
+            break;
+    }
+
+    if (request_tse_option == SPSGS_BlobRequestBase::ePSGS_SlimTSE ||
+        request_tse_option == SPSGS_BlobRequestBase::ePSGS_SmartTSE ||
+        request_tse_option == SPSGS_BlobRequestBase::ePSGS_WholeTSE) {
+        m_NeedFallbackBlob = true;
+    }
+}
 
 
 CPSGS_CassBlobBase::~CPSGS_CassBlobBase()
@@ -127,15 +153,29 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         }
 
         if (m_NeedToParseId2Info) {
+            m_NeedToParseId2Info = false;
+
             if (!blob.GetId2Info().empty()) {
                 if (!x_ParseId2Info(fetch_details, blob)) {
-                    x_PrepareBlobPropCompletion(fetch_details);
-                    fetch_details->GetLoader()->ClearError();
-                    fetch_details->SetReadFinished();
+                    if (m_NeedFallbackBlob) {
+                        m_NeedFallbackBlob = false;
+                        x_OnBlobPropOrigTSE(fetch_details, blob);
+                    } else {
+                        fetch_details->GetLoader()->ClearError();
+                        fetch_details->SetReadFinished();
+                    }
                     return;
                 }
             }
-            m_NeedToParseId2Info = false;
+        }
+
+        if (fetch_details->GetTSEOption() != SPSGS_BlobRequestBase::ePSGS_UnknownTSE) {
+            // Memorize the fetch details and blob props for the case
+            // if a fallback to the original blob is requested. Only the
+            // initial blob props need to be saved and this is when a TSE
+            // option is known.
+            m_InitialBlobPropFetch = fetch_details;
+            m_InitialBlobProps = blob;
         }
 
         // Note: initially only blob_props are requested and at that moment the
@@ -455,8 +495,9 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // sending completion message, no requesting other blobs)
     // eUnknownUseCache is safe here; no further resolution
     // empty client_id means that later on there will be no exclude blobs cache ops
+    string      info_blob_id_as_str = info_blob_id.ToString();
     SPSGS_BlobBySatSatKeyRequest
-        info_blob_request(SPSGS_BlobId(info_blob_id.ToString()),
+        info_blob_request(SPSGS_BlobId(info_blob_id_as_str),
                           INT64_MIN,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
@@ -469,6 +510,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     // Prepare Id2Info retrieval
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
     cass_blob_fetch.reset(new CCassBlobFetch(info_blob_request, info_blob_id));
+    bool                        info_blob_requested = false;
 
     if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_ProceedRetrieving) {
         unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
@@ -529,13 +571,21 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
-            CGetBlobErrorCallback(this, m_BlobErrorCB, cass_blob_fetch.get()));
+            CGetBlobErrorCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
+                     this, _1, _2, _3, _4, _5),
+                cass_blob_fetch.get()));
         load_task->SetPropsCallback(
-            CBlobPropCallback(this, m_BlobPropsCB,
-                              m_Request, m_Reply, cass_blob_fetch.get(),
-                              blob_prop_cache_lookup_result != ePSGS_CacheHit));
+            CBlobPropCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
+                     this, _1, _2, _3),
+                m_Request, m_Reply, cass_blob_fetch.get(),
+                blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
-            CBlobChunkCallback(this, m_BlobChunkCB, cass_blob_fetch.get()));
+            CBlobChunkCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobChunkCallback,
+                     this, _1, _2, _3, _4, _5),
+                cass_blob_fetch.get()));
 
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Cassandra request: " +
@@ -543,6 +593,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                m_Request->GetStartTimestamp());
         }
 
+        m_RequestedID2BlobChunks.push_back(info_blob_id_as_str);
+        info_blob_requested = true;
         m_FetchDetails.push_back(move(cass_blob_fetch));
     }
 
@@ -560,6 +612,12 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     }
 
     // initiate retrieval: only those which were just created
+    if (!info_blob_requested) {
+        // If the info blob was not retrieved then the to_init_iter points to
+        // the previous fetch for which Wait() has been invoked before
+        ++to_init_iter;
+    }
+
     while (to_init_iter != m_FetchDetails.end()) {
         if (*to_init_iter)
             (*to_init_iter)->GetLoader()->Wait();
@@ -624,8 +682,9 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
         // sending completion message, no requesting other blobs)
         // eUnknownUseCache is safe here; no further resolution required
+        string          chunks_blob_id_as_str = chunks_blob_id.ToString();
         SPSGS_BlobBySatSatKeyRequest
-            chunk_request(SPSGS_BlobId(chunks_blob_id.ToString()),
+            chunk_request(SPSGS_BlobId(chunks_blob_id_as_str),
                           INT64_MIN,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
@@ -702,14 +761,23 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
 
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
-            CGetBlobErrorCallback(this, m_BlobErrorCB, details.get()));
+            CGetBlobErrorCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
+                    this, _1, _2, _3, _4, _5),
+                details.get()));
         load_task->SetPropsCallback(
-            CBlobPropCallback(this, m_BlobPropsCB,
-                              m_Request, m_Reply, details.get(),
-                              blob_prop_cache_lookup_result != ePSGS_CacheHit));
+            CBlobPropCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
+                     this, _1, _2, _3),
+                m_Request, m_Reply, details.get(),
+                blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
-            CBlobChunkCallback(this, m_BlobChunkCB, details.get()));
+            CBlobChunkCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobChunkCallback,
+                     this, _1, _2, _3, _4, _5),
+                details.get()));
 
+        m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         m_FetchDetails.push_back(move(details));
     }
 }
@@ -861,6 +929,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                                        m_Id2Info->GetInfo() - m_Id2Info->GetChunks() - 1 + chunk_no);
         chunks_blob_id.m_Keyspace = m_InfoBlobId.m_Keyspace;
         chunks_blob_id.m_IsSecureKeyspace = m_InfoBlobId.m_IsSecureKeyspace;
+        string          chunks_blob_id_as_str = chunks_blob_id.ToString();
 
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
         // sending completion message, no requesting other blobs)
@@ -868,7 +937,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         // client_id is "" (empty string) so the split blobs do not participate
         // in the exclude blob cache
         SPSGS_BlobBySatSatKeyRequest
-            chunk_request(SPSGS_BlobId(chunks_blob_id.ToString()),
+            chunk_request(SPSGS_BlobId(chunks_blob_id_as_str),
                           INT64_MIN,
                           SPSGS_BlobRequestBase::ePSGS_UnknownTSE,
                           SPSGS_RequestBase::ePSGS_UnknownUseCache,
@@ -981,13 +1050,21 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
         load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
         load_task->SetErrorCB(
-            CGetBlobErrorCallback(this, m_BlobErrorCB, details.get()));
+            CGetBlobErrorCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
+                     this, _1, _2, _3, _4, _5),
+                details.get()));
         load_task->SetPropsCallback(
-            CBlobPropCallback(this, m_BlobPropsCB,
-                              m_Request, m_Reply, details.get(),
-                              blob_prop_cache_lookup_result != ePSGS_CacheHit));
+            CBlobPropCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
+                     this, _1, _2, _3),
+                m_Request, m_Reply, details.get(),
+                blob_prop_cache_lookup_result != ePSGS_CacheHit));
         load_task->SetChunkCallback(
-            CBlobChunkCallback(this, m_BlobChunkCB, details.get()));
+            CBlobChunkCallback(this,
+                bind(&CPSGS_CassBlobBase::x_BlobChunkCallback,
+                     this, _1, _2, _3, _4, _5),
+                details.get()));
 
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Requesting extra chunk from INFO for the 'smart' tse option: " +
@@ -995,6 +1072,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                                m_Request->GetStartTimestamp());
         }
 
+        m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         m_FetchDetails.push_back(move(details));
 
         if (need_wait) {
@@ -1263,11 +1341,25 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
     CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
                                     this,
                                     CPSGSCounters::ePSGS_InvalidId2InfoError);
-    x_PrepareBlobPropMessage(fetch_details, err_msg,
-                             CRequestStatus::e500_InternalServerError,
-                             ePSGS_BadID2Info, eDiag_Error);
-    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-    PSG_ERROR(err_msg);
+
+    if (m_NeedFallbackBlob) {
+        // Since falback is needed there is no need to update the request
+        // status yet.
+        err_msg += "\nFalling back to retrieve the original blob.";
+
+        m_Reply->PrepareProcessorMessage(
+            m_Reply->GetItemId(),
+            m_ProcessorId, err_msg, CRequestStatus::e500_InternalServerError,
+            ePSGS_BadID2Info, eDiag_Warning);
+
+        PSG_WARNING(err_msg);
+    } else {
+        x_PrepareBlobPropMessage(fetch_details, err_msg,
+                                 CRequestStatus::e500_InternalServerError,
+                                 ePSGS_BadID2Info, eDiag_Error);
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+        PSG_ERROR(err_msg);
+    }
     return false;
 }
 
@@ -1670,5 +1762,222 @@ CPSGS_CassBlobBase::OnPublicComment(
     //       this call and at the moment x_Peek() is not available here
     // if (m_Reply->IsOutputReady())
     //     x_Peek(false);
+}
+
+
+void
+CPSGS_CassBlobBase::x_BlobChunkCallback(CCassBlobFetch *  fetch_details,
+                                        CBlobRecord const &  blob,
+                                        const unsigned char *  chunk_data,
+                                        unsigned int  data_size,
+                                        int  chunk_no)
+{
+    if (!m_NeedFallbackBlob) {
+        // As usual; no need to request anything extra or skip
+        m_BlobChunkCB(fetch_details, blob, chunk_data, data_size, chunk_no);
+        return;
+    }
+
+    if (!m_FallbackBlobRequested) {
+        // Chunk came when there were no previous problems; so as usual
+        m_BlobChunkCB(fetch_details, blob, chunk_data, data_size, chunk_no);
+        return;
+    }
+
+    // Here: chunk came when there was an error before and fallback blob has
+    // been already requested. Check if it is an ID2 chunk.
+    string      blob_id_as_str = fetch_details->GetBlobId().ToString();
+    if (find(m_RequestedID2BlobChunks.begin(),
+             m_RequestedID2BlobChunks.end(), blob_id_as_str) ==
+        m_RequestedID2BlobChunks.end()) {
+        // It is not an ID2 chunk; proceed as usual
+        m_BlobChunkCB(fetch_details, blob, chunk_data, data_size, chunk_no);
+        return;
+    }
+
+    if (fetch_details->GetTotalSentBlobChunks() > 0) {
+        // Some chunks of that blob have already been sent. To avoid breaking
+        // the chunks consistency, e.g. the final closing PSG-Chunk, let's let
+        // it be finished as usual
+        m_BlobChunkCB(fetch_details, blob, chunk_data, data_size, chunk_no);
+        return;
+    }
+
+    if (m_Request->NeedTrace()) {
+        string  msg = "Receiving an ID2 blob " + blob_id_as_str +
+                      " chunk " + to_string(chunk_no) +
+                      " when a fallback original blob has been requested. "
+                      "Ignore and continue.";
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+    }
+
+    // Discarding the chunk.
+    fetch_details->RemoveFromExcludeBlobCache();
+    fetch_details->GetLoader()->Cancel();
+    fetch_details->GetLoader()->ClearError();
+    fetch_details->SetReadFinished();
+}
+
+
+void
+CPSGS_CassBlobBase::x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
+                                        CBlobRecord const &  blob,
+                                        bool  is_found)
+{
+    if (!m_NeedFallbackBlob) {
+        // As usual
+        m_BlobPropsCB(fetch_details, blob, is_found);
+        return;
+    }
+
+    string      blob_id_as_str = fetch_details->GetBlobId().ToString();
+    if (find(m_RequestedID2BlobChunks.begin(),
+             m_RequestedID2BlobChunks.end(), blob_id_as_str) ==
+        m_RequestedID2BlobChunks.end()) {
+        // It is not an ID2 chunk; proceed as usual
+        m_BlobPropsCB(fetch_details, blob, is_found);
+        return;
+    }
+
+    string      msg;
+
+    if (!m_FallbackBlobRequested) {
+        if (is_found) {
+            // As usual; blob props are found and everything is going well
+            m_BlobPropsCB(fetch_details, blob, is_found);
+            return;
+        }
+
+        // Here: blob prop not found and falback has not been requested yet.
+        m_FallbackBlobRequested = true;
+        fetch_details->GetLoader()->Cancel();
+        fetch_details->GetLoader()->ClearError();
+        fetch_details->SetReadFinished();
+
+        msg = "Blob " + blob_id_as_str + " properties are not found. "
+              "Falling back to retrieve the original blob.";
+
+        CRequestContextResetter     context_resetter;
+        m_Request->SetRequestContext();
+
+        PSG_WARNING(msg);
+
+        // Request original blob as a fallback
+        x_RequestOriginalBlobChunks(m_InitialBlobPropFetch, m_InitialBlobProps);
+
+        // Send a processor message
+        m_Reply->PrepareProcessorMessage(
+            m_Reply->GetItemId(),
+            m_ProcessorId, msg, CRequestStatus::e500_InternalServerError,
+            ePSGS_NotFoundID2BlobPropWithFallback,
+            eDiag_Warning);
+
+        return;
+    }
+
+    // Here: fallback has already been requested. The blob props are found or
+    // not.
+
+    if (m_Request->NeedTrace()) {
+        if (is_found) {
+            msg = "Blob " + blob_id_as_str + " properties are received when "
+                  "a fallback to request the original blob "
+                  "has already been initiated before.";
+        } else {
+            msg = "Blob " + blob_id_as_str + " properties are not found. "
+                  "Fallback to request the original blob "
+                  "has already been initiated before.";
+        }
+
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+    }
+
+    // To prevent chunks coming, let's cancel the fetch
+    fetch_details->GetLoader()->Cancel();
+    fetch_details->GetLoader()->ClearError();
+    fetch_details->SetReadFinished();
+}
+
+
+void
+CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
+                                        CRequestStatus::ECode  status,
+                                        int  code,
+                                        EDiagSev  severity,
+                                        const string &  message)
+{
+    if (!m_NeedFallbackBlob) {
+        // As usual
+        m_BlobErrorCB(fetch_details, status, code, severity, message);
+        return;
+    }
+
+    string      blob_id_as_str = fetch_details->GetBlobId().ToString();
+    if (find(m_RequestedID2BlobChunks.begin(),
+             m_RequestedID2BlobChunks.end(), blob_id_as_str) ==
+        m_RequestedID2BlobChunks.end()) {
+        // It is not an ID2 chunk; proceed as usual
+        m_BlobErrorCB(fetch_details, status, code, severity, message);
+        return;
+    }
+
+    // Not found chunk is an error here regardless of the reported severity
+    bool    is_error = IsError(severity) || (status == CRequestStatus::e404_NotFound);
+    if (!is_error) {
+        // It is not an error; could be a warning or just information.
+        // Proceed as usual.
+        m_BlobErrorCB(fetch_details, status, code, severity, message);
+        return;
+    }
+
+    // Remove from the already-sent cache if necessary
+    fetch_details->RemoveFromExcludeBlobCache();
+
+    // If it is an error then regardless what stage it was, props or
+    // chunks, there will be no more activity
+    fetch_details->GetLoader()->Cancel();
+    fetch_details->GetLoader()->ClearError();
+    fetch_details->SetReadFinished();
+
+    string      msg;
+    if (!m_FallbackBlobRequested) {
+        // It is an error and fallback has not been requested yet.
+        // Let's initiate it.
+
+        m_FallbackBlobRequested = true;
+
+        msg = "Blob " + blob_id_as_str + " retrieval error. "
+              "Fallback to request the original blob is initiated.\n"
+              "Callback error message: " + message;
+
+        CRequestContextResetter     context_resetter;
+        m_Request->SetRequestContext();
+
+        PSG_WARNING(msg);
+
+        // Request original blob as a fallback
+        x_RequestOriginalBlobChunks(m_InitialBlobPropFetch, m_InitialBlobProps);
+
+        x_PrepareBlobMessage(fetch_details,
+                             msg, CRequestStatus::e500_InternalServerError,
+                             ePSGS_ID2ChunkErrorWithFallback,
+                             eDiag_Warning);
+        return;
+    }
+
+    // It's an error but a fallback has already been requested because of a
+    // different event
+    msg = "Blob " + blob_id_as_str + " retrieval error. "
+          "Fallback to request the original blob has already been initiated before.\n"
+          "Callback error message: " + message;
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
+    }
+
+    x_PrepareBlobMessage(fetch_details,
+                         msg, CRequestStatus::e500_InternalServerError,
+                         ePSGS_ID2ChunkErrorAfterFallbackRequested,
+                         eDiag_Warning);
 }
 

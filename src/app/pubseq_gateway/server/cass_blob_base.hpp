@@ -185,6 +185,28 @@ private:
     TBlobPropsCB                                        m_BlobPropsCB;
     TBlobChunkCB                                        m_BlobChunkCB;
     TBlobErrorCB                                        m_BlobErrorCB;
+
+private:
+    // Support of a fallback to the original blob if a split blob failed
+    bool                                                m_NeedFallbackBlob;
+    bool                                                m_FallbackBlobRequested;
+    vector<string>                                      m_RequestedID2BlobChunks;
+    CCassBlobFetch *                                    m_InitialBlobPropFetch;
+    CBlobRecord                                         m_InitialBlobProps;
+
+    void x_BlobChunkCallback(CCassBlobFetch *  fetch_details,
+                             CBlobRecord const &  blob,
+                             const unsigned char *  chunk_data,
+                             unsigned int  data_size,
+                             int  chunk_no);
+    void x_BlobPropsCallback(CCassBlobFetch *  fetch_details,
+                             CBlobRecord const &  blob,
+                             bool  is_found);
+    void x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
+                             CRequestStatus::ECode  status,
+                             int  code,
+                             EDiagSev  severity,
+                             const string &  message);
 };
 
 #endif  // PSGS_CASSBLOBBASE__HPP

@@ -76,6 +76,7 @@ protected:
                                         const string &  seq_id);
     bool IsTimeoutError(const string &  msg) const;
     bool IsTimeoutError(int  code) const;
+    bool IsError(EDiagSev  severity) const;
     bool CountError(EPSGS_DbFetchType  fetch_type,
                     CRequestStatus::ECode  status,
                     int  code,

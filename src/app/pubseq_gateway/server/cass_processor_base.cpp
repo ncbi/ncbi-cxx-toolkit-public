@@ -321,6 +321,14 @@ bool CPSGS_CassProcessorBase::IsTimeoutError(int  code) const
 }
 
 
+bool CPSGS_CassProcessorBase::IsError(EDiagSev  severity) const
+{
+    return (severity == eDiag_Error ||
+            severity == eDiag_Critical ||
+            severity == eDiag_Fatal);
+}
+
+
 bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
                                          CRequestStatus::ECode  status,
                                          int  code,
@@ -334,9 +342,7 @@ bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
     // from 2000 and the PSG codes start from 300
 
     // It could be a message or an error
-    bool    is_error = (severity == eDiag_Error ||
-                        severity == eDiag_Critical ||
-                        severity == eDiag_Fatal);
+    bool    is_error = IsError(severity);
 
     if (logging_flag == ePSGS_NeedLogging) {
         if (is_error) {
