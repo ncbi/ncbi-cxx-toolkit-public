@@ -1040,6 +1040,71 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 
     CScope& scope = seh.GetScope();
 
+#define PRELOAD_PRODUCTS
+#ifdef PRELOAD_PRODUCTS
+    // 1. For products we need to pre-load either sequences or their ids.
+    vector<CSeq_id_Handle> product_ids; // collected products Seq-ids
+    // 2. For locations we may need to pre-load Seq-data.
+    // For pre-loading we put all sequence ranges into a single mix
+    // Seq-loc, make CSeqMap for it and load all Seq-data in a single call.
+    // We separate proteins and nucleotides since they may cause conflict.
+    CRef<CSeq_loc> all_nuc_loc, all_prot_loc; // collected combined location
+    // Collect information for pre-loading
+    for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
+        CBioseq_Handle bsh = *bioseq_it;
+        if (!bsh)
+            continue;
+        
+        CFeat_CI feat_it(bsh, sel);
+        for ( ; feat_it; ++feat_it) {
+            if (!feat_it->IsSetData() ||
+                (feat_it->GetData().IsCdregion() && !m_CDS) ||
+                (feat_it->GetData().IsGene() && !m_Gene) ||
+                (feat_it->GetData().IsRna() && !m_RNA) ||
+                (x_IsOtherFeat(*feat_it) && !m_OtherFeats)) {
+                continue;
+            }
+            const CSeq_feat& feat = feat_it->GetMappedFeature();
+            if ( feat.IsSetProduct() ) {
+                if ( auto id = feat.GetProduct().GetId() ) {
+                    product_ids.push_back(CSeq_id_Handle::GetHandle(*id));
+                }
+            }
+            if ( !m_DeflineOnly ) {
+                if ( feat.IsSetLocation() ) {
+                    CRef<CSeq_loc>& dst = bsh.IsProtein()? all_prot_loc: all_nuc_loc;
+                    if ( !dst ) {
+                        dst = new CSeq_loc;
+                    }
+                    dst->SetMix().Set().push_back(Ref(SerialClone(feat.GetLocation())));
+                }
+            }
+        }
+    }
+    // Actual pre-loading
+    vector<CBioseq_Handle> product_handles; // keep pre-loaded products to block GC
+    if ( m_DeflineOnly ) {
+        // only product Seq-ids are necessary for defline generation
+        scope.GetBulkIds(product_ids);
+    }
+    else {
+        // we need sequence data
+        // pre-load products
+        product_handles = scope.GetBioseqHandles(product_ids);
+        // Seq-map selector to link loaded segments to the parent TSE to block GC
+        SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
+        sel.SetLinkUsedTSE(seh.GetTSE_Handle());
+        if ( all_nuc_loc ) {
+            CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(*all_nuc_loc, &scope);
+            seq_map->CanResolveRange(&scope, sel); // segment pre-loading call
+        }
+        if ( all_prot_loc ) {
+            CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(*all_prot_loc, &scope);
+            seq_map->CanResolveRange(&scope, sel); // segment pre-loading call
+        }
+    }
+#endif
+    
     for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         if (!bsh)
