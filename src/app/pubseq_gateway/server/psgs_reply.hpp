@@ -312,7 +312,8 @@ public:
                               const string &  id2_info);
     void PrepareReplyMessage(const string &  msg,
                              CRequestStatus::ECode  status, int  err_code,
-                             EDiagSev  severity);
+                             EDiagSev  severity,
+                             bool  need_update_last_activity=true);
     void PrepareNamedAnnotationData(const string &  annot_name,
                                     const string &  processor_id,
                                     const string &  content);

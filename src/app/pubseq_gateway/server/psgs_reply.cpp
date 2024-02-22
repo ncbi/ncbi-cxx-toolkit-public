@@ -1012,7 +1012,8 @@ void CPSGS_Reply::PrepareBlobCompletion(CCassBlobFetch *  fetch_details,
 void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
                                       CRequestStatus::ECode  status,
                                       int                    err_code,
-                                      EDiagSev               severity)
+                                      EDiagSev               severity,
+                                      bool                   need_update_last_activity)
 {
     if (m_ConnectionCanceled || IsFinished())
         return;
@@ -1021,7 +1022,10 @@ void CPSGS_Reply::PrepareReplyMessage(const string &         msg,
                                                status, err_code, severity);
 
     lock_guard<mutex>       guard(m_ChunksLock);
-    x_UpdateLastActivity();
+
+    if (need_update_last_activity) {
+        x_UpdateLastActivity();
+    }
 
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
@@ -1339,6 +1343,7 @@ void CPSGS_Reply::SendTrace(const string &  msg,
     string          timestamp = "Timestamp (mks): " + to_string(mks) + "\n";
 
     PrepareReplyMessage(timestamp + msg,
-                        CRequestStatus::e200_Ok, 0, eDiag_Trace);
+                        CRequestStatus::e200_Ok, 0, eDiag_Trace,
+                        need_update_last_activity);
 }
 

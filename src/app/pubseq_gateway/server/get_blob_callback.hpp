@@ -70,17 +70,18 @@ class CBlobChunkCallback
             m_BlobRetrieveTiming(psg_clock_t::now())
         {}
 
-        void operator()(CBlobRecord const & blob, const unsigned char *  data,
-                        unsigned int  size, int  chunk_no)
+        void operator()(CBlobRecord const & blob,
+                        const unsigned char *  chunk_data,
+                        unsigned int  data_size, int  chunk_no)
         {
             if (chunk_no >= 0)
-                m_BlobSize += size;
+                m_BlobSize += data_size;
             else
                 CPubseqGatewayApp::GetInstance()->GetTiming().
                     Register(m_Processor, m_RetrieveStatistic, eOpStatusFound,
                              m_BlobRetrieveTiming, m_BlobSize);
 
-            m_BlobChunkCB(m_FetchDetails, blob, data, size, chunk_no);
+            m_BlobChunkCB(m_FetchDetails, blob, chunk_data, data_size, chunk_no);
         }
 
     private:
