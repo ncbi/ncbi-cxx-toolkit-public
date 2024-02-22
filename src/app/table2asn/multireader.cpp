@@ -698,7 +698,10 @@ namespace
 
 void CMultiReader::LoadGFF3Fasta(istream& in, TAnnots& annots)
 {
-    LOG_POST("Recognized input file as format: " << CFormatGuess::GetFormatName(CFormatGuess::eGff3));
+    g_LogDiagMessage(
+        m_context.m_logger,
+        EDiagSev::eDiag_Info,
+        string("Recognized input file as format: ") + CFormatGuess::GetFormatName(CFormatGuess::eGff3));
 
     bool post_process = false;
     annots = xReadGFF3(in, post_process); // initializes m_gff3_reader!
@@ -1078,11 +1081,16 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
             uFormat = CFormatGuess::eTextASN;
 
         if (uFormat != CFormatGuess::eUnknown) {
-            LOG_POST("Presuming annotation format by filename suffix: "
-                 << CFormatGuess::GetFormatName(uFormat));
+            g_LogDiagMessage(
+                m_context.m_logger,
+                EDiagSev::eDiag_Info,
+                string("Presuming annotation format by filename suffix: ") + CFormatGuess::GetFormatName(uFormat));
         }
     } else {
-        LOG_POST("Recognized annotation format: " << CFormatGuess::GetFormatName(uFormat));
+        g_LogDiagMessage(
+            m_context.m_logger,
+            EDiagSev::eDiag_Info,
+            string("Recognized annotation format: ") + CFormatGuess::GetFormatName(uFormat));
     }
 
     TAnnots annots;
