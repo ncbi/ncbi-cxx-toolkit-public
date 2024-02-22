@@ -247,6 +247,7 @@ private:
 void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
         objects::CGapsEditor::TCountToEvidenceMap& gapsizeToEvidence,
         objects::ILineErrorListener* pMessageListener);
+void g_LogDiagMessage(objects::ILineErrorListener*, EDiagSev, const string& msg);
 
 END_NCBI_SCOPE
 

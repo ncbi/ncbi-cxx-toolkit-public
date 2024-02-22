@@ -184,6 +184,12 @@ public:
     }
 };
 
+void g_LogDiagMessage(ILineErrorListener* logger, EDiagSev sev, const string& msg)
+{
+    logger->PutMessage(CObjtoolsDiagMessage(msg, sev));
+}
+
+
 CTbl2AsnApp::CTbl2AsnApp()
 {
     SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
