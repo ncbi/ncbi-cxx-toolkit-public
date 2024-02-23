@@ -135,7 +135,7 @@ qpath = html.escape(path, True)
 qurl = html.escape(url, True)
 print("Location:" + url)
 print("Content-type: text/html")
-print
+print()
 # Cover all bases in case the Location header somehow didn't suffice.
 print( """<html>
   <head>
