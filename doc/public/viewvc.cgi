@@ -1,10 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import cgi
+import html
 import os
 import re
 import subprocess
 import sys
 import urllib
+import urllib.parse
 
 # ViewVC proper knows nothing of svn:externals; this wrapper resolves
 # them before handing the user off to it.
@@ -119,23 +121,23 @@ def resolve(base, path):
 form = cgi.FieldStorage()
 path = form.getfirst('p')
 resolved = resolve(base, path)
-url = real_vvc + urllib.quote(resolved[len(viewable):])
+url = real_vvc + urllib.parse.quote(resolved[len(viewable):])
 if not resolved.startswith(viewable):
     print >>sys.stderr, path, "resolved to unsupported URL", resolved
     if public: # Try redirecting to internal side
         url = ('https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/internal'
-               + '/viewvc.cgi?p=' + urllib.quote(path))
+               + '/viewvc.cgi?p=' + urllib.parse.quote(path))
     else:
-        print "Status: 500 Internal error"
+        print("Status: 500 Internal error")
         sys.exit(1)
 
-qpath = cgi.escape(path, True)
-qurl = cgi.escape(url, True)
-print "Location:", url
-print "Content-type: text/html"
+qpath = html.escape(path, True)
+qurl = html.escape(url, True)
+print("Location:" + url)
+print("Content-type: text/html")
 print
 # Cover all bases in case the Location header somehow didn't suffice.
-print """<html>
+print( """<html>
   <head>
     <title>NCBI C++ Toolkit revision history: %s</title>
     <meta http-equiv="refresh" content="0; %s">
@@ -144,3 +146,4 @@ print """<html>
     <a href="%s">View %s's revision history</a>
   </body>
 </html>""" % (qpath, qurl, qurl, qpath)
+)
