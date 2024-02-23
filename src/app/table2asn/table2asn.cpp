@@ -412,6 +412,9 @@ may be implemented in the future; RW-1253
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddOptionalKey("logxml", "LogFile", "XML Error Log File", CArgDescriptions::eOutputFile);
+    arg_desc->SetDependency("logxml",
+                            CArgDescriptions::eExcludes,
+                            "logfile");
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
     arg_desc->AddFlag("verbose", "Be verbose on reporting");
     arg_desc->AddFlag("huge", "Execute in huge-file mode");
