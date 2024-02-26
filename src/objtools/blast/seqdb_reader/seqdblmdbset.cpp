@@ -347,7 +347,7 @@ void CSeqDBLMDBSet::NegativeTaxIdsToOids(set<TTaxId>& tax_ids, vector<blastdb::T
 		}
 	}
 	if(rv.size() == 0) {
-		NCBI_THROW(CSeqDBException, eTaxidErr, "Taxonomy ID(s) not found in the " + GetDBFileNames() + " database" + (m_LMDBEntrySet.size()>1?"s":"")+ ".");
+		LOG_POST(Warning << "Taxonomy ID(s) not found in the " + GetDBFileNames() + " database" + (m_LMDBEntrySet.size()>1?"s":"")+ ".");
 	}
 
 	tax_ids.swap(rv_tax_ids);
