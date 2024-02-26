@@ -962,6 +962,11 @@ public:
         return size;
     }
 
+    bool HasIdFilters() const
+    {
+        return (GetNumGis() || GetNumSis() || GetNumTis());
+    }
+
     /// Return false if there are elements present.
     bool Empty() const
     {
