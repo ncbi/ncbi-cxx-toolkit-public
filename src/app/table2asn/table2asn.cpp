@@ -133,7 +133,7 @@ public:
     void Dump(CNcbiOstream& out) const override { out << m_txt; }
     void WriteAsXML(CNcbiOstream& out) const override
     {
-        out << "<message severty=\"" << NStr::XmlEncode(CNcbiDiag::SeverityName(m_sev))
+        out << "<message severity=\"" << NStr::XmlEncode(CNcbiDiag::SeverityName(m_sev))
             << "\" problem=\"" << NStr::XmlEncode(m_txt) << "\" />";
     }
     void DumpAsXML(CNcbiOstream& out) const override
