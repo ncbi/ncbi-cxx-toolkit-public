@@ -118,8 +118,9 @@ private:
     EPSGS_BlobCacheCheckResult
     x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details);
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
-    bool x_ParseId2Info(CCassBlobFetch *  fetch_details,
-                        CBlobRecord const &  blob);
+    unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>
+        x_CheckId2Info(CCassBlobFetch *  fetch_details,
+                       CBlobRecord &  blob);
     int64_t  x_GetId2ChunkNumber(CCassBlobFetch *  fetch_details);
     void x_PrepareBlobPropData(CCassBlobFetch *  fetch_details,
                                CBlobRecord const &  blob);

@@ -104,9 +104,12 @@ CPSGS_CassBlobBase::~CPSGS_CassBlobBase()
 
 void
 CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
-                                  CBlobRecord const &  blob,
+                                  CBlobRecord const &  in_blob_prop,
                                   bool is_found)
 {
+    // Need a copy because the broken id2 info needs to be overwritten
+    CBlobRecord     blob_prop = in_blob_prop;
+
     CRequestContextResetter     context_resetter;
     m_Request->SetRequestContext();
 
@@ -123,21 +126,25 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         // and id2_info should be present in the reply.
 
         if (m_LastModified == -1)
-            m_LastModified = blob.GetModified();
+            m_LastModified = blob_prop.GetModified();
 
         // If the split info chunks need to be collected then the zip flag
         // needs to be memorized for the further deserialization when all the
         // chunks have been received
         if (m_CollectSplitInfo) {
             if (fetch_details->GetBlobId() == m_InfoBlobId) {
-                m_SplitInfoGzipFlag = blob.GetFlag(EBlobFlags::eGzip);
+                m_SplitInfoGzipFlag = blob_prop.GetFlag(EBlobFlags::eGzip);
             }
         }
 
+        unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>
+                    parsed_id2_info = x_CheckId2Info(fetch_details, blob_prop);
+        x_PrepareBlobPropData(fetch_details, blob_prop);
+
         // Blob may be withdrawn or confidential
-        x_PrepareBlobPropData(fetch_details, blob);
         bool    is_authorized = x_IsAuthorized(ePSGS_RetrieveBlobData,
-                                               fetch_details->GetBlobId(), blob, "");
+                                               fetch_details->GetBlobId(),
+                                               blob_prop, "");
         if (!is_authorized) {
             x_PrepareBlobPropCompletion(fetch_details);
 
@@ -155,16 +162,32 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
         if (m_NeedToParseId2Info) {
             m_NeedToParseId2Info = false;
 
-            if (!blob.GetId2Info().empty()) {
-                if (!x_ParseId2Info(fetch_details, blob)) {
+            // Note: here the id2_info field is taken from the original
+            // incoming blob pros. This is because during checking the id2_info
+            // field above (x_CheckId2Info()) it could be reset if it is broken
+            if (!in_blob_prop.GetId2Info().empty()) {
+                m_Id2Info.reset(parsed_id2_info.release());
+
+                if (m_Id2Info.get() == nullptr) {
                     if (m_NeedFallbackBlob) {
                         m_NeedFallbackBlob = false;
-                        x_OnBlobPropOrigTSE(fetch_details, blob);
-                    } else {
-                        fetch_details->GetLoader()->ClearError();
-                        fetch_details->SetReadFinished();
+
+                        string  err_msg = "Falling back to retrieve "
+                                          "the original blob due to broken id2 info.";
+
+                        m_Reply->PrepareProcessorMessage(
+                            m_Reply->GetItemId(), m_ProcessorId, err_msg,
+                            CRequestStatus::e500_InternalServerError,
+                            ePSGS_BadID2Info, eDiag_Warning);
+
+                        PSG_ERROR(err_msg);
+
+                        x_OnBlobPropOrigTSE(fetch_details, blob_prop);
+                        return;
                     }
-                    return;
+
+                    // Here: basically it is a case of tse=orig or tse=none
+                    // In both cases we just continue.
                 }
             }
         }
@@ -175,7 +198,7 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
             // initial blob props need to be saved and this is when a TSE
             // option is known.
             m_InitialBlobPropFetch = fetch_details;
-            m_InitialBlobProps = blob;
+            m_InitialBlobProps = blob_prop;
         }
 
         // Note: initially only blob_props are requested and at that moment the
@@ -189,16 +212,16 @@ CPSGS_CassBlobBase::OnGetBlobProp(CCassBlobFetch *  fetch_details,
                 x_OnBlobPropNoneTSE(fetch_details);
                 break;
             case SPSGS_BlobRequestBase::ePSGS_SlimTSE:
-                x_OnBlobPropSlimTSE(fetch_details, blob);
+                x_OnBlobPropSlimTSE(fetch_details, blob_prop);
                 break;
             case SPSGS_BlobRequestBase::ePSGS_SmartTSE:
-                x_OnBlobPropSmartTSE(fetch_details, blob);
+                x_OnBlobPropSmartTSE(fetch_details, blob_prop);
                 break;
             case SPSGS_BlobRequestBase::ePSGS_WholeTSE:
-                x_OnBlobPropWholeTSE(fetch_details, blob);
+                x_OnBlobPropWholeTSE(fetch_details, blob_prop);
                 break;
             case SPSGS_BlobRequestBase::ePSGS_OrigTSE:
-                x_OnBlobPropOrigTSE(fetch_details, blob);
+                x_OnBlobPropOrigTSE(fetch_details, blob_prop);
                 break;
             case SPSGS_BlobRequestBase::ePSGS_UnknownTSE:
                 // Used when INFO blobs are asked; i.e. chunks have been
@@ -1322,14 +1345,22 @@ CPSGS_CassBlobBase::x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details)
 }
 
 
-bool
-CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
-                                   CBlobRecord const &  blob)
+unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>
+CPSGS_CassBlobBase::x_CheckId2Info(CCassBlobFetch *  fetch_details,
+                                        CBlobRecord &  blob_prop)
 {
-    string      err_msg;
+    string                                              id2_info = blob_prop.GetId2Info();
+    unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>     parsed_id2_info;
+
+    if (id2_info.empty())
+        return parsed_id2_info;
+
+    string                                              err_msg;
     try {
-        m_Id2Info.reset(new CPSGS_SatInfoChunksVerFlavorId2Info(blob.GetId2Info()));
-        return true;
+        // Note: in case of an error it is already counted in the constructor
+        // which parses id2 info field
+        parsed_id2_info.reset(new CPSGS_SatInfoChunksVerFlavorId2Info(blob_prop.GetId2Info()));
+        return parsed_id2_info;
     } catch (const exception &  exc) {
         err_msg = "Error extracting id2 info for the blob " +
             fetch_details->GetBlobId().ToString() + ": " + exc.what();
@@ -1338,29 +1369,17 @@ CPSGS_CassBlobBase::x_ParseId2Info(CCassBlobFetch *  fetch_details,
             fetch_details->GetBlobId().ToString() + ".";
     }
 
-    CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
-                                    this,
-                                    CPSGSCounters::ePSGS_InvalidId2InfoError);
+    err_msg += "\nThe broken id2 info field content will be discarded "
+               "before sending to the client.";
+    blob_prop.SetId2Info("");
 
-    if (m_NeedFallbackBlob) {
-        // Since falback is needed there is no need to update the request
-        // status yet.
-        err_msg += "\nFalling back to retrieve the original blob.";
+    m_Reply->PrepareProcessorMessage(
+        m_Reply->GetItemId(),
+        m_ProcessorId, err_msg, CRequestStatus::e500_InternalServerError,
+        ePSGS_BadID2Info, eDiag_Warning);
 
-        m_Reply->PrepareProcessorMessage(
-            m_Reply->GetItemId(),
-            m_ProcessorId, err_msg, CRequestStatus::e500_InternalServerError,
-            ePSGS_BadID2Info, eDiag_Warning);
-
-        PSG_WARNING(err_msg);
-    } else {
-        x_PrepareBlobPropMessage(fetch_details, err_msg,
-                                 CRequestStatus::e500_InternalServerError,
-                                 ePSGS_BadID2Info, eDiag_Error);
-        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
-        PSG_ERROR(err_msg);
-    }
-    return false;
+    PSG_ERROR(err_msg);
+    return parsed_id2_info;
 }
 
 
