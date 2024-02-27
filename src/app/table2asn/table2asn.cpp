@@ -180,7 +180,8 @@ public:
         stringstream ss;
         mess.Write(ss, SDiagMessage::fNoEndl);
         string str = ss.str();
-        this->PutMessage(CObjtoolsDiagMessage(str, mess.m_Severity));
+        EDiagSev sev = (mess.m_Flags & eDPF_IsNote) ? eDiag_Info : mess.m_Severity;
+        this->PutMessage(CObjtoolsDiagMessage(str, sev));
     }
 };
 
