@@ -179,7 +179,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "parson.c / x_json_object_nget_value - false positive on strncmp()"
+	name = "parson.c / x_json_object_nget_value - false positive on str[n]cmp() - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -189,6 +189,20 @@ suppression = {
 		allocation={
 			!!!;
 			src=parson.c,func=get_quoted_string;
+		}
+	}
+}
+suppression = {
+	name = "parson.c / x_json_object_nget_value - false positive on str[n]cmp() - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=parson.c,func=x_json_object_nget_value;
+		}
+		allocation={
+			!!!;
+			src=parson.c,func=parson_strdup;
 		}
 	}
 }
@@ -216,4 +230,27 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "test_ncbi_namerd - setenv/unsetenv - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=test_ncbi_namerd.c,func=run_tests;
+		}
+	}
+}
+suppression = {
+	name = "x_FTPRetrieveCB - strncmp - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ncbi_ftp_connector.c,func=x_FTPRetrieveCB;
+		}
+		allocation={
+			!!!;
+			src=ncbi_ftp_connector.c,func=x_FTPRetrieveCB;
+		}
+	}
+}

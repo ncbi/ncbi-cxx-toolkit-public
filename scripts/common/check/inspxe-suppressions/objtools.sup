@@ -26,4 +26,18 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "x_GetVerifyDataDefault() / getenv - false positive"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			mod=ntdll.dll,func=RtlDllShutdownInProgress;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			...;
+			mod=test_bulkinfo_mt.exe,func=CObjectOStream,src=objostr.cpp;
+		}
+	}
+}

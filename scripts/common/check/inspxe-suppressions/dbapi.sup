@@ -116,3 +116,33 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "tds_poll_ver100 / poll_p - false positive"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=mswsock.dll,func=WSPStartup;
+			mod=WS2_32.dll,func=WSAIoctl;
+			mod=WS2_32.dll,func=WSAPoll;
+			func=tds_poll_ver100,src=poll.c;
+		}
+	}
+}
+suppression = {
+	name = "ct_locate_dynamic / strncmp"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			mod=ct100_ct_dynamic.exe,src=ct.c,func=ct_locate_dynamic;
+		}
+		allocation={
+			!!!;
+			mod=ct100_ct_dynamic.exe,src=util.c,func=tds_strndup_ver100;
+		}
+	}
+}
+

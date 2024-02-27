@@ -199,4 +199,36 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "C Toolkit - SeqIdWholeLabel - sprintf -- probably false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=seq_c_compat_unit_test.exe,func=sprintf;
+			mod=seq_c_compat_unit_test.exe,func=SeqIdWrite;
+			mod=seq_c_compat_unit_test.exe,func=SeqIdWholeLabel;
+			mod=seq_c_compat_unit_test.exe,func=s_TestIdFormatting,src=seq_c_compat_unit_test.cpp;
+		}
+		allocation={
+			...;
+			mod=seq_c_compat_unit_test.exe,func=s_TestIdFormatting,src=seq_c_compat_unit_test.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DLL - BerkeleyDB DLL - _os_unique_name/snwprintf"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=libdb.dll,func=snwprintf,src=corecrt_wstdio.h;
+			mod=libdb.dll,func=_os_unique_name,src=os_map.c;
+		}
+		allocation={
+			...;
+			mod=libdb.dll,func=_os_malloc,src=os_alloc.c;
+		}
+	}
+}
 
