@@ -36,5 +36,5 @@ Linux64-Centos : O2gNoH2OPatch  : GCC.sh 7.3.0 --without-debug  --with-symbols -
 Linux64-Centos : MaxDebug            : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.16.0+uv1.42 --with-h2o=$NCBI/h2o-2.2.6-ncbi2 --with-lmdb=$NCBI/lmdb-0.9.24
 Linux64-Centos : MaxDebugNoH2OPatch  : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.16.0+uv1.42 --with-h2o=$NCBI/h2o-2.2.6+uv1.42 --with-lmdb=$NCBI/lmdb-0.9.24
 
-Linux64-Alma   : O2g            : GCC.sh 7.3.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.16.0+uv1.42 --with-h2o=$NCBI/h2o-2.2.6-ncbi2 --with-lmdb=$NCBI/lmdb-0.9.24
+Linux64-Alma   : O2g            : GCC.sh 7.3.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.16.0+uv1.42+a8 --with-h2o=$NCBI/h2o-2.2.6-ncbi2+a8 --with-libssh2=$NCBI/libssh2-1.11.0 --with-lmdb=$NCBI/lmdb-0.9.24
 # USE_COMPONENTS
