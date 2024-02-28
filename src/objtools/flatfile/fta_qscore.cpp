@@ -652,8 +652,8 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         return;
     }
 
-    std::vector<Char> scores_str(big_graph.GetGraph().GetByte().GetValues().begin(),
-                                 big_graph.GetGraph().GetByte().GetValues().end());
+    CByte_graph::TValues scores_str(big_graph.GetGraph().GetByte().GetValues().begin(),
+                                    big_graph.GetGraph().GetByte().GetValues().end());
     if (scores_str.empty()) {
         ErrPostEx(SEV_ERROR, ERR_QSCORE_MissingByteStore, "Seq-graph to be split has a NULL ByteStore for the qscore values : cannot be processed.");
         return;
@@ -693,7 +693,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
             break;
         }
 
-        std::vector<Char> new_scores;
+        CByte_graph::TValues new_scores;
 
         if (! literal.IsSetSeq_data()) {
             /* this Seq-literal contains no data, so it presumably
@@ -934,7 +934,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
     }
 
     CRef<CSeq_graph>  graph;
-    std::vector<Char> scores_str;
+    CByte_graph::TValues scores_str;
 
     while (*qs_buf != '\0') {
         if (! QSbuf_ReadLine(qs_buf, my_buf, QSBUF_MAXLINE, &qs_line)) {
