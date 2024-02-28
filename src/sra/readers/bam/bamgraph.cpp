@@ -609,8 +609,8 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(const vector<Uint8>& cov,
     graph->SetLoc().SetWhole(*SerialClone(*m_RefId));
     graph->SetComp(GetGraphBinSize());
     graph->SetNumval(TSeqPos(cov.size()));
-    vector<char>* vvb = 0;
-    vector<int>* vvi = 0;
+    CByte_graph::TValues* vvb = 0;
+    CInt_graph::TValues* vvi = 0;
     int MAX = 0;
     if ( GetGraphValueType() == eGraphValueType_byte ) {
         MAX = 254;

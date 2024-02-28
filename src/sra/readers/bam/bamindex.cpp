@@ -1514,7 +1514,7 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
     graph->SetComp(bin_size);
     graph->SetNumval(count);
     CByte_graph& bgraph = graph->SetGraph().SetByte();
-    vector<char>& bvalues = bgraph.SetValues();
+    CByte_graph::TValues& bvalues = bgraph.SetValues();
     bvalues.resize(count);
     Uint1 bmax = 0;
     uint64_t max_value = *max_element(vv.begin(), vv.end());
