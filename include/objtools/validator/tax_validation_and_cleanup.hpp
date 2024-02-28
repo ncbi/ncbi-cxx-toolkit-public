@@ -112,7 +112,7 @@ public:
     bool MatchTryValue(const string& val) const;
     size_t NumRemainingReplies() const { return m_ValuesToTry.size() - m_RepliesProcessed; }
 
-    virtual void AddReply(const CT3Reply& reply) = 0;
+    virtual void AddReply(const CT3Reply& reply, int descTaxID) = 0;
     void PostErrors(CValidError_imp& imp);
     virtual void ListErrors(vector<TTaxError>& errs) const = 0;
 
@@ -143,7 +143,7 @@ public:
     };
     typedef int TResponseFlags;
 
-    void AddReply(const CT3Reply& reply) override;
+    void AddReply(const CT3Reply& reply, int descTaxID) override;
     void ListErrors(vector<TTaxError>& errs) const override;
 
     const string& SuggestFix() const;
@@ -164,7 +164,7 @@ public:
     CStrainRequest(const string& strain, const COrg_ref& org);
 //  ~CStrainRequest() override {}
 
-    void AddReply(const CT3Reply& reply) override;
+    void AddReply(const CT3Reply& reply, int descTaxID) override;
     void ListErrors(vector<TTaxError>& errs) const override;
 
     static string MakeKey(const string& strain, const string& taxname);
@@ -224,7 +224,7 @@ public:
     // It is the responsibility of the calling program to chunk the request
     // list and pass the input and reply to the map until all requests
     // have responses
-    string IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
+    string IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, int descTaxID = 0);
 
     // Indicates whether the map is waiting for more responses
     bool IsUpdateComplete() const;
@@ -336,7 +336,7 @@ public:
 
     // for strain validation
     vector<CRef<COrg_ref> > GetStrainLookupRequest();
-    string IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply);
+    string IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, int descTaxID = 0);
     bool IsStrainMapUpdateComplete() const;
     void ReportStrainErrors(CValidError_imp& imp);
 
@@ -358,6 +358,8 @@ public:
 
     void CheckOneOrg(const COrg_ref& org, CBioSource::TGenome genome, CValidError_imp& imp);
 
+    int m_descTaxID;
+    
 protected:
     void x_InterpretTaxonomyError(const CT3Error& error, const COrg_ref& org, const EErrType type, vector<TTaxError>& errs) const;
     void x_GatherSources(const CSeq_entry& se);

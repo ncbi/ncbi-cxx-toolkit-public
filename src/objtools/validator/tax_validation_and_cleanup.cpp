@@ -155,7 +155,7 @@ CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& o
 }
 
 
-void CSpecificHostRequest::AddReply(const CT3Reply& reply)
+void CSpecificHostRequest::AddReply(const CT3Reply& reply, int descTaxID)
 {
     if (m_Response == eAmbiguous) {
         string new_error = InterpretSpecificHostResult(m_ValuesToTry[m_RepliesProcessed], reply, m_Host);
@@ -354,14 +354,18 @@ void CStrainRequest::ListErrors(vector<TTaxError>& errs) const
 }
 
 
-void CStrainRequest::AddReply(const CT3Reply& reply)
+void CStrainRequest::AddReply(const CT3Reply& reply, int descTaxID)
 {
     if (!m_IsInvalid) {
         if (reply.IsData() && reply.GetData().IsSetOrg()) {
             // TODO: if using just a one word input, make sure name is actually in taxname
             if (m_ValuesToTry[m_RepliesProcessed].length() < m_Strain.length()) {
-                if (NStr::EqualNocase(m_ValuesToTry[m_RepliesProcessed], reply.GetData().GetOrg().GetTaxname())) {
-                    m_IsInvalid = true;
+                const COrg_ref& org = reply.GetData().GetOrg();
+                TTaxId taxID = org.GetTaxId();
+                if (NStr::EqualNocase(m_ValuesToTry[m_RepliesProcessed], org.GetTaxname())) {
+                    if (taxID == descTaxID || descTaxID == 0) {
+                        m_IsInvalid = true;
+                    }
                 }
             } else {
                 m_IsInvalid = true;
@@ -512,7 +516,7 @@ CQualLookupMap::TQualifierRequests::iterator CQualLookupMap::x_FindRequest(const
 }
 
 
-string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
+string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, int descTaxID)
 {
     string error_message;
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
@@ -524,7 +528,7 @@ string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, c
             error_message = "Unexpected taxonomy response for " + (*rq_it)->GetTaxname();
             return error_message;
         }
-        map_it->second->AddReply(**reply_it);
+        map_it->second->AddReply(**reply_it, descTaxID);
         ++rq_it;
         ++reply_it;
     }
@@ -652,6 +656,7 @@ CTaxValidationAndCleanup::CTaxValidationAndCleanup(taxupdate_func_t tax_func)
 
 void CTaxValidationAndCleanup::Init(const CSeq_entry& se)
 {
+    m_descTaxID = 0;
     m_SrcDescs.clear();
     m_DescCtxs.clear();
     m_SrcFeats.clear();
@@ -723,6 +728,10 @@ vector< CRef<COrg_ref> > CTaxValidationAndCleanup::GetTaxonomyLookupRequest() co
         CRef<COrg_ref> rq(new COrg_ref);
         const COrg_ref& org = (*desc_it)->GetSource().GetOrg();
         rq->Assign(org);
+        TTaxId taxid = org.GetTaxId();
+        if (m_descTaxID == ZERO_TAX_ID) {
+            const_cast<int&>(m_descTaxID) = taxid;
+        }
         org_rq_list.push_back(rq);
 
         ++desc_it;
@@ -1152,7 +1161,7 @@ void CTaxValidationAndCleanup::x_UpdateSpecificHostMapWithReply(const CTaxon3_re
     TSpecificHostRequests::iterator rq_it = m_SpecificHostRequests.begin();
     while (rq_it != m_SpecificHostRequests.end()) {
         while (rq_it->second.NumRemainingReplies() > 0 && reply_it != reply.GetReply().end()) {
-            rq_it->second.AddReply(**reply_it);
+            rq_it->second.AddReply(**reply_it, 0);
             ++reply_it;
         }
         if (rq_it->second.NumRemainingReplies() > 0) {
@@ -1206,9 +1215,9 @@ string CTaxValidationAndCleanup::x_DefaultSpecificHostAdjustments(const string& 
 }
 
 
-string CTaxValidationAndCleanup::IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
+string CTaxValidationAndCleanup::IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, int descTaxID)
 {
-    return m_StrainMap.IncrementalUpdate(input, reply);
+   return m_StrainMap.IncrementalUpdate(input, reply, descTaxID);
 }
 
 
