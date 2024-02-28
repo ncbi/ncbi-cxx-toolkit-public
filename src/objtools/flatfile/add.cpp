@@ -802,6 +802,12 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
     CTempString primaryAccession(acc);
     SIZE_TYPE   prefixLength = 0;
 
+
+    // bulk load sequences
+    vector<string> candidatesAccs;
+    vector<CRef<CSeq_id>> candidatesIds;
+    vector<CSeq_id_Handle> candidatesIdhs;
+    
     list<CRef<CSeq_id>> replaces;
 
     for (const auto& accessionString : hist) {
@@ -838,7 +844,17 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
         }
 
         CRef<CSeq_id> id(new CSeq_id(idChoice, accessionString));
-        auto          secondaryBsh    = GetScope().GetBioseqHandle(*id);
+        candidatesAccs.push_back(accessionString);
+        candidatesIds.push_back(id);
+        candidatesIdhs.push_back(CSeq_id_Handle::GetHandle(*id));
+    }
+
+    vector<CBioseq_Handle> secondaryBshs = GetScope().GetBioseqHandles(candidatesIdhs);
+    for ( size_t i = 0; i < candidatesIdhs.size(); ++i ) {
+        auto&         accessionString = candidatesAccs[i];
+        auto          id = candidatesIds[i];
+        auto          idChoice = id->Which();
+        auto          secondaryBsh    = secondaryBshs[i];
         bool          IsConOrScaffold = false;
         try {
             IsConOrScaffold = s_IsConOrScaffold(secondaryBsh);
