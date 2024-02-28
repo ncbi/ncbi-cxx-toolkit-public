@@ -131,6 +131,8 @@ CRef<CPub> s_GetPubFrompmid(CEUtilsUpdater* upd, TEntrezId id, int maxAttempts, 
 
 } // end anonymous namespace
 
+static const bool kUseBulkTaxonQuery = true;
+
 class CCachedTaxon3_impl
 {
 public:
@@ -217,11 +219,87 @@ public:
     CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& query, CRemoteUpdater::FLogger logger)
     {
         CRef<CTaxon3_reply> result(new CTaxon3_reply);
-
-        for (const auto& it : query) {
-            result->SetReply().push_back(GetOrgReply(*it, logger));
+        if ( kUseBulkTaxonQuery ) {
+            size_t n = query.size();
+            m_num_requests += n;
+            // lookup cache first
+            vector<string> keys(n);
+            vector<CRef<CT3Reply>*> cache_refs(n);
+            map<string, pair<CRef<COrg_ref>, CRef<CT3Reply>*>> to_ask;
+            for ( size_t i = 0; i < n; ++i ) {
+                std::ostringstream os;
+                os << MSerial_AsnText << *query[i];
+                keys[i] = os.str();
+                CRef<CT3Reply>& reply = (*m_cache)[keys[i]];
+                cache_refs[i] = &reply;
+                if ( reply ) {
+                    m_cache_hits++;
+                }
+                else {
+                    to_ask[keys[i]] = make_pair(query[i], &reply);
+                }
+            }
+            if ( !to_ask.empty() ) { // there are cache misses
+                // prepare request of new orgs
+                vector<pair<CRef<COrg_ref>, CRef<CT3Reply>*>> to_ask_vec;
+                for ( const auto& it : to_ask ) {
+                    to_ask_vec.push_back(it.second);
+                }
+                size_t m = to_ask_vec.size();
+                CTaxon3_request whole_request;
+                auto& requests = whole_request.SetRequest();
+                for ( auto& it : to_ask_vec ) {
+                    CRef<CT3Request> rq(new CT3Request);
+                    rq->SetOrg(*it.first);
+                    requests.push_back(rq);
+                }
+                // invoke request
+                CStopWatch sw(CStopWatch::eStart);
+                CRef<CTaxon3_reply> whole_reply = m_taxon->SendRequest(whole_request);
+                LOG_POST(Info<<"Got "<<m<<" taxonomy in "<<sw.Elapsed()<<" s");
+                auto& replies = whole_reply->SetReply();
+                if ( replies.size() != m ) {
+                    // requests and replies mismatch
+                    if (logger) {
+                        const string& error_message =
+                            "Taxon update: got " + NStr::NumericToString(replies.size()) +
+                            " replies for " + NStr::NumericToString(m) +
+                            " requests";
+                        logger(error_message);
+                    }
+                    return result; // Error?
+                }
+                // store replies into cache
+                size_t i = 0;
+                for ( auto& reply : replies ) {
+                    auto& ask = to_ask_vec[i++];
+                    *ask.second = reply;
+                    if (reply->IsError() && logger) {
+                        auto& in_org = *ask.first;
+                        const string& error_message =
+                            "Taxon update: " +
+                            (in_org.IsSetTaxname() ? in_org.GetTaxname() : NStr::NumericToString(in_org.GetTaxId())) + ": " +
+                            reply->GetError().GetMessage();
+                        
+                        logger(error_message);
+                    } else if (reply->IsData() && reply->SetData().IsSetOrg()) {
+                        reply->SetData().SetOrg().ResetSyn();
+                        // next will reset 'attrib = specified'
+                        // RW-1380 why do we need to reset attrib 'specified' ?
+                        //reply->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
+                    }
+                }
+            }
+            // update results with new cache content
+            for ( size_t i = 0; i < n; ++i ) {
+                result->SetReply().push_back(*cache_refs[i]);
+            }
         }
-
+        else {
+            for (const auto& it : query) {
+                result->SetReply().push_back(GetOrgReply(*it, logger));
+            }
+        }
         return result;
     }
 
@@ -556,6 +634,14 @@ void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
             m_taxClient->InitWithTimeout(m_TaxonTimeout, m_TaxonAttempts, m_TaxonExponential);
         else
             m_taxClient->Init();
+    }
+
+    if ( kUseBulkTaxonQuery ) {
+        vector<CRef<COrg_ref>> reflist;
+        for (auto& it : org_to_update) {
+            reflist.push_back(it.second.org_ref);
+        }
+        m_taxClient->SendOrgRefList(reflist, m_logger);
     }
 
     for (auto& it : org_to_update) {
