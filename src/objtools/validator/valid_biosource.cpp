@@ -2749,7 +2749,7 @@ void CValidError_imp::ValidateSpecificHost
 
 
 void CValidError_imp::ValidateStrain
-(CTaxValidationAndCleanup& tval)
+(CTaxValidationAndCleanup& tval, int descTaxID)
 {
     vector<CRef<COrg_ref> > org_rq_list = tval.GetStrainLookupRequest();
 
@@ -2763,7 +2763,7 @@ void CValidError_imp::ValidateStrain
         size_t len = min(chunk_size, org_rq_list.size() - i);
         vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
         CRef<CTaxon3_reply> tmp_spec_host_reply = m_pContext->m_taxon_update(tmp_rq);
-        string err_msg = tval.IncrementalStrainMapUpdate(tmp_rq, *tmp_spec_host_reply);
+        string err_msg = tval.IncrementalStrainMapUpdate(tmp_rq, *tmp_spec_host_reply, descTaxID);
         if (!NStr::IsBlank(err_msg)) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, *(tval.GetTopReportObject()));
             return;
@@ -2977,7 +2977,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     ValidateSpecificHost(*pTval);
 
     // Commented out until TM-725 is resolved
-    ValidateStrain(*pTval);
+    ValidateStrain(*pTval, pTval->m_descTaxID);
 
     ValidateTentativeName(se);
 }

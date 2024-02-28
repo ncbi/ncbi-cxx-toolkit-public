@@ -22726,28 +22726,33 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
 }
 
 
-void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string& strain, const string& lineage)
+void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string& strain, const string& lineage, int taxID)
 {
     CRef<CSeqdesc> src_desc(new CSeqdesc());
     // should look up
     src_desc->SetSource().SetOrg().SetTaxname(taxname);
     AddOrgmod(src_desc->SetSource().SetOrg(), strain, COrgMod::eSubtype_strain);
     src_desc->SetSource().SetOrg().SetOrgname().SetLineage(lineage);
+    if (taxID != 0) {
+        unit_test_util::SetTaxon(src_desc->SetSource(), taxID);
+    }
     entry.SetDescr().Set().push_back(src_desc);
 }
 
 
-void TestOneStrain(const string& taxname, const string& strain, const string& lineage, bool expect_err)
+void TestOneStrain(const string& taxname, const string& strain, const string& lineage, int taxID, bool expect_err)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CBioseq::TDescr::Tdata& cont = entry->SetSeq().SetDescr().Set();
     cont.remove_if(
         [](CSeqdesc* it) { return (it->IsSource()); });
-    AddStrainDescriptor(*entry, taxname, strain, lineage); // expect no report
+    AddStrainDescriptor(*entry, taxname, strain, lineage, taxID); // expect no report
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
-        "BioSource is missing taxon ID"));
+    if (taxID == 0) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
+            "BioSource is missing taxon ID"));
+    }
     if (expect_err) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StrainContainsTaxInfo",
             "Strain '" + strain + "' contains taxonomic name information"));
@@ -22764,11 +22769,11 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
-    AddStrainDescriptor(*entry, "Gorilla gorilla", "abc", "xyz"); // expect no report
-    AddStrainDescriptor(*entry, "Gorilla gorilla", "Aeromonas punctata", "xyz"); // expect a report
-    AddStrainDescriptor(*entry, "Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz"); // expect a report
-    AddStrainDescriptor(*entry, "Bacillus sp.", "cereus", "xyz");
-    AddStrainDescriptor(*entry, "Hippopotamus amphibius", "giraffe cow", "xyz"); // no error - giraffe looks up but is not in taxname
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "abc", "xyz", 9593); // expect no report
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "Aeromonas punctata", "xyz", 9593); // expect a report
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", 9593); // expect a report
+    AddStrainDescriptor(*entry, "Bacillus sp.", "cereus", "xyz", 1409);
+    AddStrainDescriptor(*entry, "Hippopotamus amphibius", "giraffe cow", "xyz", 9833); // no error - giraffe looks up but is not in taxname
 
     string error_message;
 
@@ -22793,21 +22798,24 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
     BOOST_CHECK_EQUAL(tval.IsStrainMapUpdateComplete(), true);
 
     // commented out until TM-725 is resolved
-    TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", false); // no error - giraffe looks up but is not in taxname
-    TestOneStrain("Gorilla gorilla", "abc", "xyz", false);
-    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", true);
-    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", true);
-    TestOneStrain("Bacillus sp.", "cereus", "xyz", true);
+    TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", 9833, false); // no error - giraffe looks up but is not in taxname
+    TestOneStrain("Gorilla gorilla", "abc", "xyz", 9593, false);
+    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", 9593, true);
 
-    TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", false);
-    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", false);
-    TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", false);
+    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", 9593, false);
+    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", 0, true);
+
+    TestOneStrain("Bacillus sp.", "cereus", "xyz", 1409, true);
+
+    TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", 1980924, false);
+    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", 9593, false);
+    TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", 440, false);
 }
 
 
 BOOST_AUTO_TEST_CASE(VR_762)
 {
-    TestOneStrain("Cystobasidium minutum", "P22", "xyz", false);
+    TestOneStrain("Cystobasidium minutum", "P22", "xyz", 29899, false);
 }
 
 BOOST_AUTO_TEST_CASE(TEST_VR_477)
