@@ -186,7 +186,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
     try {
         transcript_id->Assign(align.GetSeq_id(0));
         CMappedFeat cds = GetCdsOnMrna(*transcript_id, *m_scope);
-        if (cds) {
+        if (cds && cds.IsSetProduct()) {
             mapper_to_cds.Reset(new CSeq_loc_Mapper(*cds.GetSeq_feat(),
                 CSeq_loc_Mapper::eLocationToProduct, m_scope.GetPointer()));
         }
