@@ -519,7 +519,7 @@ CRef<CSeq_graph> CWiggleReader::xMakeGraph()
     b_graph.SetMin(stat.AsByte(stat.m_Min));
     b_graph.SetMax(stat.AsByte(stat.m_Max));
     b_graph.SetAxis(0);
-    vector<char>& bytes = b_graph.SetValues();
+    CByte_graph::TValues& bytes = b_graph.SetValues();
 
     if ( m_Values.empty() ) {
         graph->SetNumval(0);
