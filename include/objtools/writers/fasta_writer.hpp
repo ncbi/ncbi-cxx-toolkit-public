@@ -251,8 +251,6 @@ public:
 private:
     bool x_WriteHeader(const CBioseq& bioseq);
 
-    bool x_GetMaxMin(const CByte_graph::TValues& values, int& max, int& min);
-
     string x_ComposeHeaderEnding(
         const string& graph_title,
         TSeqPos length,
