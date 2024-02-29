@@ -466,7 +466,7 @@ bool GenBankIndex(ParserPtr pp)
                         }
                     }
                     i        = q - p;
-                    line_ver = MemNew(i + 1);
+                    line_ver = StringNew(i);
                     StringNCpy(line_ver, p, i);
                     line_ver[i] = '\0';
                     break;
@@ -480,7 +480,7 @@ bool GenBankIndex(ParserPtr pp)
                                 *q != '\r' && *q != '\n';)
                         q++;
                     i        = q - p;
-                    line_nid = MemNew(i + 1);
+                    line_nid = StringNew(i);
                     StringNCpy(line_nid, p, i);
                     line_nid[i] = '\0';
                     break;

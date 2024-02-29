@@ -40,10 +40,10 @@
 
 BEGIN_NCBI_SCOPE
 
-inline char* MemNew(size_t sz)
+inline char* StringNew(size_t sz)
 {
-    char* p = new char[sz];
-    std::memset(p, 0, sz);
+    char* p = new char[sz + 1];
+    std::memset(p, 0, sz + 1);
     return p;
 }
 inline void MemSet(void* p, int n, size_t sz) { std::memset(p, n, sz); }

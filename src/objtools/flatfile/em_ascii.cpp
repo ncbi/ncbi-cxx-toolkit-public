@@ -773,7 +773,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
     if (i <= 0)
         return false;
 
-    p = MemNew(i + 1);
+    p = StringNew(i);
     StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA_EMBL], i);
     p[i - 1] = '\0';
     for (q = p; *q != '\0'; q++) {

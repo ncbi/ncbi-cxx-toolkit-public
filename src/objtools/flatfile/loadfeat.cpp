@@ -691,7 +691,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
             else
                 ErrPostEx(SEV_WARNING, ERR_LOCATION_RefersToExternalRecord, "Feature location references an interval on another record : %s", pp->buf);
             MemFree(pp->buf);
-            pp->buf  = MemNew(1);
+            pp->buf  = StringNew(0);
             *pp->buf = '\0';
             return (-1);
         }
@@ -3687,7 +3687,7 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
     if (size == 0)
         return (fbp);
 
-    char* note = MemNew(size);
+    char* note = StringNew(size - 1);
     p          = note;
 
     for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {

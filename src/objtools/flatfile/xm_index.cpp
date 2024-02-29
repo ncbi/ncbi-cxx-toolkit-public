@@ -201,7 +201,7 @@ char* XMLGetTagValue(const char* entry, const XmlIndex* xip)
         return nullptr;
 
     size_t i   = xip->end - xip->start;
-    char*  buf = MemNew(i + 1);
+    char*  buf = StringNew(i);
     StringNCpy(buf, entry + xip->start, i);
     buf[i] = '\0';
 
@@ -980,7 +980,7 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
     if (! ibp || ibp->len == 0)
         return nullptr;
 
-    entry = MemNew(ibp->len + 1);
+    entry = StringNew(ibp->len);
     s_SetPointer(*pp, ibp->offset);
 
 
@@ -1565,7 +1565,7 @@ char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char se
     for (i = 0, txip = xip->subtags; txip; txip = txip->next)
         i += (txip->end - txip->start + 2);
 
-    buf    = MemNew(i);
+    buf    = StringNew(i - 1);
     buf[0] = '\0';
     for (q = buf, txip = xip->subtags; txip; txip = txip->next) {
         if (txip->end <= txip->start)
