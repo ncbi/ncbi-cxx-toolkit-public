@@ -155,7 +155,7 @@ CPSGS_GetProcessor::x_OnSeqIdResolveError(
     EPSGS_LoggingFlag           logging_flag = ePSGS_NeedLogging;
     if (status == CRequestStatus::e404_NotFound)
         logging_flag = ePSGS_SkipLogging;
-    CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
+    CountError(nullptr, status, code, severity, message, logging_flag);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kGetProcessorName,

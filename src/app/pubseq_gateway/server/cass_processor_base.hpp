@@ -77,7 +77,7 @@ protected:
     bool IsTimeoutError(const string &  msg) const;
     bool IsTimeoutError(int  code) const;
     bool IsError(EDiagSev  severity) const;
-    bool CountError(EPSGS_DbFetchType  fetch_type,
+    bool CountError(CCassFetch *  fetch_details,
                     CRequestStatus::ECode  status,
                     int  code,
                     EDiagSev  severity,

@@ -329,31 +329,40 @@ bool CPSGS_CassProcessorBase::IsError(EDiagSev  severity) const
 }
 
 
-bool CPSGS_CassProcessorBase::CountError(EPSGS_DbFetchType  fetch_type,
+bool CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
                                          CRequestStatus::ECode  status,
                                          int  code,
                                          EDiagSev  severity,
                                          const string &  message,
                                          EPSGS_LoggingFlag  logging_flag)
 {
-    // Note: the code may come from cassandra error handlers and from the PSG
+    // Note: the 'code' may come from cassandra error handlers and from the PSG
     // internal logic code. It is safe to compare the codes against particular
     // values because they range quite different. The Cassandra codes start
     // from 2000 and the PSG codes start from 300
+
+    EPSGS_DbFetchType       fetch_type = ePSGS_UnknownFetch;
+    string                  message_prefix;
+    if (fetch_details != nullptr) {
+        fetch_type = fetch_details->GetFetchType();
+        message_prefix = "Fetch context: " + fetch_details->Serialize() + "\n";
+    }
+
 
     // It could be a message or an error
     bool    is_error = IsError(severity);
 
     if (logging_flag == ePSGS_NeedLogging) {
         if (is_error) {
-            PSG_ERROR(message);
+            PSG_ERROR(message_prefix + message);
         } else {
-            PSG_WARNING(message);
+            PSG_WARNING(message_prefix + message);
         }
     }
 
     if (m_Request->NeedTrace()) {
-        m_Reply->SendTrace("Error detected. Status: " + to_string(status) +
+        m_Reply->SendTrace(message_prefix +
+                           "Error detected. Status: " + to_string(status) +
                            " Code: " + to_string(code) +
                            " Severity: " + string(CNcbiDiag::SeverityName(severity)) +
                            " Message: " + message,
