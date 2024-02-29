@@ -1302,7 +1302,7 @@ string CQualScoreWriter::x_ComposeHeaderEnding(
 }
 
 
-bool CQualScoreWriter::x_GetMaxMin(const vector<char>& values, int& max, int& min)
+bool CQualScoreWriter::x_GetMaxMin(const CByte_graph::TValues& values, int& max, int& min)
 {
     if (values.empty()) {
         return false;
