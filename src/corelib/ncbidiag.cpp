@@ -3516,7 +3516,7 @@ static string s_GetLogConfigString(const CTempString name,
     string envname = "NCBI_CONFIG__LOG__";
     envname += name;
     const TXChar* val = NcbiSys_getenv(_T_XCSTRING(envname));
-    return val ? _T_STDSTRING(val) : defval;
+    return val ? CTempString(_T_STDSTRING(val)) : defval;
 }
 
 
