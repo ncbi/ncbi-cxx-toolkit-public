@@ -809,7 +809,7 @@ void CPSGS_TSEChunkProcessor::OnGetBlobError(CCassBlobFetch *  fetch_details,
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details->GetFetchType(),
+    bool    is_error = CountError(fetch_details,
                                   status, code, severity, message);
 
     if (fetch_details->IsBlobPropStage()) {
@@ -926,7 +926,7 @@ CPSGS_TSEChunkProcessor::OnGetSplitHistoryError(
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details->GetFetchType(),
+    bool    is_error = CountError(fetch_details,
                                   status, code, severity, message);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(

@@ -542,7 +542,7 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveError(
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details->GetFetchType(),
+    bool    is_error = CountError(fetch_details,
                                   status, code, severity, message);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
@@ -775,7 +775,7 @@ CPSGS_IPGResolveProcessor::x_OnSeqIdResolveError(CRequestStatus::ECode  status,
     EPSGS_LoggingFlag           logging_flag = ePSGS_NeedLogging;
     if (status == CRequestStatus::e404_NotFound)
         logging_flag = ePSGS_SkipLogging;
-    CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
+    CountError(nullptr, status, code, severity, message, logging_flag);
 
     // Send a chunk to the client
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();

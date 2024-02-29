@@ -1211,7 +1211,7 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
     m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details->GetFetchType(),
+    bool    is_error = CountError(fetch_details,
                                   status, code, severity, message);
 
     if (is_error) {
@@ -1713,7 +1713,7 @@ CPSGS_CassBlobBase::OnPublicCommentError(
     m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details->GetFetchType(),
+    bool    is_error = CountError(fetch_details,
                                   status, code, severity, message);
 
     m_Reply->PrepareProcessorMessage(

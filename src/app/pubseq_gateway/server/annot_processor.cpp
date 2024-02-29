@@ -194,7 +194,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     EPSGS_LoggingFlag           logging_flag = ePSGS_NeedLogging;
     if (status == CRequestStatus::e404_NotFound)
         logging_flag = ePSGS_SkipLogging;
-    CountError(ePSGS_UnknownFetch, status, code, severity, message, logging_flag);
+    CountError(nullptr, status, code, severity, message, logging_flag);
 
     // Report all the 'accepted' annotations with the corresponding result code
     SPSGS_AnnotRequest::EPSGS_ResultStatus  rs = SPSGS_AnnotRequest::ePSGS_RS_NotFound;
@@ -494,7 +494,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details->GetFetchType(),
+    bool    is_error = CountError(fetch_details,
                                   status, code, severity, message);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
