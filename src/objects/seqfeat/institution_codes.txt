@@ -3361,7 +3361,7 @@ IID	c	Laboratory Culture Collection
 IIES	s	Instituto Investigaciones Entomologicas Salta			
 IITA	b	International Institute of Tropical Agriculture			
 IJ	s	Institute of Jamaica			
-IJFM	c	Instituto ?Jaime Ferran? de Microbiologia Consejo Superior de Investigaciones Cientificas			
+IJFM	c	Instituto 'Jaime Ferran' de Microbiologia Consejo Superior de Investigaciones Cientificas			
 IJSM	s	Institute of Jamaica, Natural History Museum			
 IK	s	Zoological Institute, Ukrainian Academy of Sciences			
 ILCA	s	International Livestock Research Institute			
