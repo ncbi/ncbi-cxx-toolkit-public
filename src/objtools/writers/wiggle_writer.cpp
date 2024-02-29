@@ -319,7 +319,7 @@ bool CWiggleWriter::xWriteSingleGraphRecordsByte(
     double dA = graph.GetA();
     double dB = graph.GetB();
     size_t uNumVals = graph.GetNumval();
-    const vector<char>& values = graph.GetGraph().GetByte().GetValues();
+    const CByte_graph::TValues& values = graph.GetGraph().GetByte().GetValues();
 
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
 
@@ -422,7 +422,7 @@ bool CWiggleWriter::xContainsDataByte(
         return false;
     }
     size_t uNumVals = graph.GetNumval();
-    const vector<char>& values = graph.GetGraph().GetByte().GetValues();
+    const CByte_graph::TValues& values = graph.GetGraph().GetByte().GetValues();
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
         int iVal = (unsigned char)values[u + uStartRecord];
         if ( 0 != iVal ) {
