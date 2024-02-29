@@ -236,7 +236,7 @@ static char* ParseYear(const char* str)
     if (*str == '\0')
         return nullptr;
 
-    year = MemNew(5);
+    year = StringNew(4);
     for (i = 0; i < 4 && *str != '\0' && isdigit(*str) != 0; str++, i++)
         year[i] = *str;
 

@@ -476,7 +476,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
     if (! name)
         return;
 
-    size_t i = StringLen(name) + 1;
+    size_t i = StringLen(name);
     size_t j = i;
     if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar)
         i += (StringLen(cultivar) + StringLen("cultivar") + 5);
@@ -498,7 +498,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         i += (StringLen(variety) + StringLen("variety") + 5);
     if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
         i += (StringLen(ecotype) + StringLen("ecotype") + 5);
-    sfbp->namstr = MemNew(i);
+    sfbp->namstr = StringNew(i);
     StringCpy(sfbp->namstr, name);
     if (i == j)
         return;

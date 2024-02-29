@@ -154,7 +154,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
     if (i <= 0)
         return false;
 
-    p = MemNew(i + 1);
+    p = StringNew(i);
     StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA], i);
     p[i - 1] = '\0';
     for (q = p, r = p; *q != '\0'; q++)
@@ -953,7 +953,7 @@ static void fta_get_str_user_field(char* line, const Char* tag, CUser_object& us
         *p = '\0';
     }
 
-    res = MemNew(StringLen(line) + 1);
+    res = StringNew(StringLen(line));
     for (q = line; *q == ' ' || *q == '\n';)
         q++;
     for (r = res; *q != '\0';) {
