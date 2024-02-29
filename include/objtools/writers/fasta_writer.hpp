@@ -199,7 +199,7 @@ public:
         eFS_CDS,
         eFS_RNA
     };
-    typedef int TFlags; ///< binary OR of CFastaOstream::EFlags
+    typedef CFastaOstream::TFlags TFlags; ///< binary OR of CFastaOstream::EFlags
 
     void Write(const CSeq_entry_Handle& handle, const CSeq_loc* location = nullptr);
 
@@ -251,7 +251,7 @@ public:
 private:
     bool x_WriteHeader(const CBioseq& bioseq);
 
-    bool x_GetMaxMin(const vector<char>& values, int& max, int& min);
+    bool x_GetMaxMin(const CByte_graph::TValues& values, int& max, int& min);
 
     string x_ComposeHeaderEnding(
         const string& graph_title,
