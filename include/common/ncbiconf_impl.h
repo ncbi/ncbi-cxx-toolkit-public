@@ -222,28 +222,34 @@
 #endif
 #if NCBI_HAS_STD_ATTRIBUTE(nodiscard)
 #  define NCBI_WARN_UNUSED_RESULT [[nodiscard]]
-#elif NCBI_HAS_ATTRIBUTE(gnu::warn_unused_result)
-#  define NCBI_WARN_UNUSED_RESULT [[gnu::warn_unused_result]]
-#elif NCBI_HAS_ATTRIBUTE(clang::warn_unused_result)
-#  define NCBI_WARN_UNUSED_RESULT [[clang::warn_unused_result]]
 #elif __has_attribute(warn_unused_result)
 #  define NCBI_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #elif defined(NCBI_COMPILER_MSVC)
 #  define NCBI_WARN_UNUSED_RESULT _Check_return_
 #else
+#if NCBI_HAS_ATTRIBUTE(gnu::warn_unused_result)
+#  define NCBI_WARN_UNUSED_RESULT [[gnu::warn_unused_result]]
+#elif NCBI_HAS_ATTRIBUTE(clang::warn_unused_result)
+#  define NCBI_WARN_UNUSED_RESULT [[clang::warn_unused_result]]
+#else
 #  define NCBI_WARN_UNUSED_RESULT
+#endif
 #endif
     
 #if NCBI_HAS_STD_ATTRIBUTE(fallthrough)
 #  define NCBI_FALLTHROUGH [[fallthrough]]
-#elif NCBI_HAS_ATTRIBUTE(gnu::fallthrough)
+#elif __has_attribute(fallthrough)
+#  define NCBI_FALLTHROUGH __attribute__ ((fallthrough))
+#elif defined(NCBI_COMPILER_MSVC)
+#  define NCBI_FALLTHROUGH
+#else
+#if NCBI_HAS_ATTRIBUTE(gnu::fallthrough)
 #  define NCBI_FALLTHROUGH [[gnu::fallthrough]]
 #elif NCBI_HAS_ATTRIBUTE(clang::fallthrough)
 #  define NCBI_FALLTHROUGH [[clang::fallthrough]]
-#elif __has_attribute(fallthrough)
-#  define NCBI_FALLTHROUGH __attribute__ ((fallthrough))
 #else
 #  define NCBI_FALLTHROUGH
+#endif
 #endif
 
 #ifdef NCBI_PACKED
@@ -251,12 +257,16 @@
 #endif
 #if 0 // NCBI_HAS_STD_ATTRIBUTE(packed) -- speculative
 #  define NCBI_PACKED [[packed]]
-#elif NCBI_HAS_ATTRIBUTE(gnu::packed)
-#  define NCBI_PACKED [[gnu::packed]]
 #elif __has_attribute(packed)
 #  define NCBI_PACKED __attribute__((packed))
+#elif defined(NCBI_COMPILER_MSVC)
+#  define NCBI_PACKED
+#else
+#if NCBI_HAS_ATTRIBUTE(gnu::packed)
+#  define NCBI_PACKED [[gnu::packed]]
 #else
 #  define NCBI_PACKED
+#endif
 #endif
 
 /* Definition of packed enum type, to save some memory */
@@ -271,12 +281,16 @@
 #ifndef NCBI_UNUSED
 #  if NCBI_HAS_STD_ATTRIBUTE(maybe_unused)
 #    define NCBI_UNUSED [[maybe_unused]]
-#  elif NCBI_HAS_ATTRIBUTE(gnu::unused)
-#    define NCBI_UNUSED [[gnu::unused]]
 #  elif __has_attribute(unused)
 #    define NCBI_UNUSED __attribute__((unused))
+#  elif defined(NCBI_COMPILER_MSVC)
+#    define NCBI_UNUSED
+#  else
+#  if NCBI_HAS_ATTRIBUTE(gnu::unused)
+#    define NCBI_UNUSED [[gnu::unused]]
 #  else
 #    define NCBI_UNUSED
+#  endif
 #  endif
 #endif
 
