@@ -748,7 +748,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
         return nullptr;
 
     size_t size   = eptr - bptr;
-    char*  retstr = MemNew(size + 1);
+    char*  retstr = StringNew(size);
     char*  str    = retstr;
 
     while (bptr < eptr) {
@@ -1522,7 +1522,7 @@ void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, 
     if (! kwds || ! kwds->data || len < 1)
         return;
 
-    line    = MemNew(len + 1);
+    line    = StringNew(len);
     line[0] = '\0';
     for (; kwds; kwds = kwds->next) {
         StringCat(line, kwds->data);

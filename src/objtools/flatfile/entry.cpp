@@ -224,8 +224,8 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     pp->ffbuf.set_offs(offset);
 
     entry          = new DataBlk(nullptr, ParFlat_ENTRYNODE);
-    entry->mpNext  = nullptr;         /* assume no segment at this time */
-    entry->mOffset = MemNew(len + 1); /* plus 1 for null byte */
+    entry->mpNext  = nullptr;        /* assume no segment at this time */
+    entry->mOffset = StringNew(len); /* includes nul byte */
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
 
     if ((size_t)entry->len != len) /* hardware problem */
@@ -308,8 +308,8 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     entry          = new DataBlk(nullptr, ParFlat_ENTRYNODE);
     entry->len     = len;
-    entry->mpNext  = nullptr;         /* assume no segment at this time */
-    entry->mOffset = MemNew(len + 1); /* plus 1 for null byte */
+    entry->mpNext  = nullptr;        /* assume no segment at this time */
+    entry->mOffset = StringNew(len); /* includes nul byte */
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
     entry->mpData  = new EntryBlk();
 
