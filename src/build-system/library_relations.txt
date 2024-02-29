@@ -831,7 +831,6 @@ netstorage needs ncbi_xcache_netcache
 nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
 nlmzip needs3party $(NETWORK_LIBS)
-nsl needs3party $(ORIG_LIBS)
 objannotation needs objspdi
 objcoords needs xser
 objmmail needs3party $(NCBI_C_ncbi)
@@ -918,6 +917,7 @@ remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
 remapcli needs xconnect
+resolv needs3party $(ORIG_LIBS)
 sage_mappings needs xser
 sample_asn needs general
 sasl2 needs3party $(ORIG_LIBS)
