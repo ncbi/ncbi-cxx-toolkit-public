@@ -34,22 +34,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/acc_ver_hist/tasks.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-#include <algorithm>
 #include <mutex>
-#include <atomic>
-#include <fstream>
-#include <vector>
-#include <list>
-#include <utility>
-#include <memory>
 #include <string>
 
 BEGIN_IDBLOB_SCOPE
@@ -70,6 +59,26 @@ END_SCOPE()
 bool CCassBlobWaiter::CheckMaxActive()
 {
     return (m_Conn->GetActiveStatements() < kActiveStatementsMax);
+}
+
+void CCassBlobWaiter::SetQueryTimeout(std::chrono::milliseconds value)
+{
+    m_QueryTimeout = value;
+}
+
+std::chrono::milliseconds CCassBlobWaiter::GetQueryTimeout() const
+{
+    return m_QueryTimeout;
+}
+
+shared_ptr<CCassQuery> CCassBlobWaiter::ProduceQuery() const
+{
+    auto query = m_Conn->NewQuery();
+    if (m_QueryTimeout.count() > 0) {
+        query->SetTimeout(m_QueryTimeout.count());
+        query->UsePerRequestTimeout(true);
+    }
+    return query;
 }
 
 void CCassBlobOp::GetBlobChunkSize(unsigned int timeout_ms, const string & keyspace, int64_t * chunk_size)
