@@ -666,7 +666,7 @@ int CTbl2AsnApp::Run()
     }
 
     if (args["l"]) {
-        auto linkage_evidence_to_value = CLinkage_evidence::GetTypeInfo_enum_EType();
+        auto linkage_evidence_to_value = CLinkage_evidence::ENUM_METHOD_NAME(EType)();
         for (auto& arg_it : args["l"].GetStringList()) {
             try {
                 auto value = linkage_evidence_to_value->FindValue(arg_it);
@@ -680,7 +680,7 @@ int CTbl2AsnApp::Run()
     }
 
     if (args["gap-type"]) {
-        auto gaptype_to_value = CSeq_gap::GetTypeInfo_enum_EType();
+        auto gaptype_to_value = CSeq_gap::ENUM_METHOD_NAME(EType)();
         try {
             auto value = gaptype_to_value->FindValue(args["gap-type"].AsString());
             m_context.m_gap_type = value;

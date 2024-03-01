@@ -3295,7 +3295,7 @@ void CFeatureItem::x_AddQualsPsecStr(
 
     CSeqFeatData_Base::TPsec_str sec_str_type = data.GetPsec_str();
 
-    string sec_str_as_str = CSeqFeatData_Base::GetTypeInfo_enum_EPsec_str()->FindName( sec_str_type, true );
+    string sec_str_as_str = CSeqFeatData_Base::ENUM_METHOD_NAME(EPsec_str)()->FindName(sec_str_type, true);
     x_AddQual( eFQ_sec_str_type, new CFlatStringQVal( sec_str_as_str ) );
 }
 
