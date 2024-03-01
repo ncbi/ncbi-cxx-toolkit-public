@@ -40,6 +40,7 @@
 #include <limits>
 #include <stdexcept>
 #include <array>
+#include <algorithm>
 
 // forward declarations to avoid unnecessary includes
 namespace ncbi
