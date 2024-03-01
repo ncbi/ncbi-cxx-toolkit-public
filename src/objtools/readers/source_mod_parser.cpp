@@ -249,7 +249,7 @@ namespace
         };
 
         return s_InitSmodToEnumMap<COrgMod::ESubtype>(
-            COrgMod::GetTypeInfo_enum_ESubtype(),
+            COrgMod::ENUM_METHOD_NAME(ESubtype)(),
             kDeprecatedOrgSubtypes,
             extra_smod_to_enum_names
         );
@@ -284,9 +284,9 @@ namespace
             { "latitude-longitude", CSubSource::eSubtype_lat_lon  },
         };
         return s_InitSmodToEnumMap<CSubSource::ESubtype>(
-            CSubSource::GetTypeInfo_enum_ESubtype(),
+            CSubSource::ENUM_METHOD_NAME(ESubtype)(),
             skip_enum_names,
-            extra_smod_to_enum_names );
+            extra_smod_to_enum_names);
     }
 
     CSafeStatic<TSModSubSrcSubtype> kSModSubSrcSubtypeMap(
@@ -994,7 +994,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
             bsrc->SetGenome(CBioSource::eGenome_insertion_seq);
         } else {
             try {
-                bsrc->SetGenome(CBioSource::GetTypeInfo_enum_EGenome()
+                bsrc->SetGenome(CBioSource::ENUM_METHOD_NAME(EGenome)()
                                 ->FindValue(mod->value));
             } catch (CSerialException&) {
                 x_HandleBadModValue(*mod);
@@ -1011,7 +1011,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
             } else if( NStr::EqualNocase(mod->value, "mutant") ) {
                 bsrc->SetOrigin( CBioSource::eOrigin_mut );
             } else {
-                bsrc->SetOrigin(CBioSource::GetTypeInfo_enum_EOrigin()
+                bsrc->SetOrigin(CBioSource::ENUM_METHOD_NAME(EOrigin)()
                             ->FindValue(mod->value));
             }
         } catch (CSerialException&) {
@@ -1791,7 +1791,7 @@ CSourceModParser::GetModAllowedValues(const string &mod)
     } else if( key_equal(mod, "origin") ) {
         set_valid_values.insert("natural mutant");
         set_valid_values.insert("mutant");
-        ITERATE( CEnumeratedTypeValues::TValues, enum_iter, CBioSource::GetTypeInfo_enum_EOrigin()->GetValues() ) {
+        ITERATE(CEnumeratedTypeValues::TValues, enum_iter, CBioSource::ENUM_METHOD_NAME(EOrigin)()->GetValues()) {
             set_valid_values.insert( enum_iter->first );
         }
     } else if( key_equal(mod, "tech") ) {

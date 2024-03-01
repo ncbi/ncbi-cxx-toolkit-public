@@ -1185,7 +1185,7 @@ bool CFastaReader::ParseGapLine(
 
     // string to value maps
     const CEnumeratedTypeValues::TNameToValue & linkage_evidence_to_value_map =
-        CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+        CLinkage_evidence::ENUM_METHOD_NAME(EType)()->NameToValue();
 
     // remember if there is a gap-type conflict
     bool bConflictingGapTypes = false;

@@ -953,7 +953,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
                               CBioseqContext&, IFlatQVal::TFlags) const
 {
     const string& organelle
-        = CBioSource::GetTypeInfo_enum_EGenome()->FindName(m_Value, true);
+        = CBioSource::ENUM_METHOD_NAME(EGenome)()->FindName(m_Value, true);
 
     switch (m_Value) {
     case CBioSource::eGenome_chloroplast:

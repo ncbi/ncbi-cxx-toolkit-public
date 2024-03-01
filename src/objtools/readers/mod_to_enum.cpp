@@ -117,7 +117,7 @@ g_InitModNameOrgSubtypeMap(void)
          {"host",COrgMod::eSubtype_nat_host},
          {"specific-host", COrgMod::eSubtype_nat_host}};
     return s_InitModStringToEnumMap(
-        *COrgMod::GetTypeInfo_enum_ESubtype(),
+        *COrgMod::ENUM_METHOD_NAME(ESubtype)(),
         kDeprecatedOrgSubtypes,
         extra_smod_to_enum_names
     );
@@ -146,9 +146,9 @@ g_InitModNameSubSrcSubtypeMap(void)
         {  "note",  CSubSource::eSubtype_other  },
         {  "notes", CSubSource::eSubtype_other  }};
     return s_InitModStringToEnumMap(
-            *CSubSource::GetTypeInfo_enum_ESubtype(),
-            skip_enum_names,
-            extra_smod_to_enum_names);
+        *CSubSource::ENUM_METHOD_NAME(ESubtype)(),
+        skip_enum_names,
+        extra_smod_to_enum_names);
 }
 
 
@@ -164,10 +164,10 @@ g_InitModNameGenomeMap(void)
         { "insertion sequence", CBioSource::eGenome_insertion_seq}};
 
    return s_InitModStringToEnumMap(
-           *CBioSource::GetTypeInfo_enum_EGenome(),
-           skip_enum_names,
-           extra_smod_to_enum_names,
-           g_GetNormalizedModVal);
+        *CBioSource::ENUM_METHOD_NAME(EGenome)(),
+        skip_enum_names,
+        extra_smod_to_enum_names,
+        g_GetNormalizedModVal);
 }
 
 
@@ -181,10 +181,10 @@ g_InitModNameOriginMap(void)
          { "mutant", CBioSource::eOrigin_mut}};
 
     return s_InitModStringToEnumMap(
-            *CBioSource::GetTypeInfo_enum_EOrigin(),
-            skip_enum_names,
-            extra_smod_to_enum_names,
-            g_GetNormalizedModVal);
+        *CBioSource::ENUM_METHOD_NAME(EOrigin)(),
+        skip_enum_names,
+        extra_smod_to_enum_names,
+        g_GetNormalizedModVal);
 }
 
 

@@ -1658,7 +1658,7 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(CBioseq& bioseq, const CSeq_feat& 
             gap_type = gap_type_info->m_eType;
 
             const CEnumeratedTypeValues::TNameToValue&
-                linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+                linkage_evidence_to_value_map = CLinkage_evidence::ENUM_METHOD_NAME(EType)()->NameToValue();
 
             ITERATE(CSeq_feat::TQual, sLE_qual, feature_gap.GetQual()) // we support multiple linkage evidence qualifiers
             {

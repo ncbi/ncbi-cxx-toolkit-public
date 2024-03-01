@@ -326,7 +326,7 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(
         // it's text name gives us something to work with
 
         const CEnumeratedTypeValues * pBiomolEnumInfo =
-            CMolInfo::GetTypeInfo_enum_EBiomol();
+            CMolInfo::ENUM_METHOD_NAME(EBiomol)();
         if( pBiomolEnumInfo ) {
             CEnumeratedTypeValues::TValueToName::const_iterator find_iter =
                 pBiomolEnumInfo->ValueToName().find(eBiomol);
@@ -374,7 +374,7 @@ CGBSeq::TMoltype s_GBSeqMoltype(CMolInfo::TBiomol biomol)
         // For the remaining cases, if the biomol string contains "RNA",
         // return "RNA", otherwise return "DNA".
         string biomol_str =
-            CMolInfo::GetTypeInfo_enum_EBiomol()->FindName(biomol,true);
+            CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindName(biomol, true);
         if (biomol_str.find("RNA") != NPOS)
             return "RNA";
         else
