@@ -259,7 +259,7 @@ public:
     void ValidateTaxonomy(const CSeq_entry& se);
     void ValidateOrgRefs(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost(CTaxValidationAndCleanup& tval);
-    void ValidateStrain(CTaxValidationAndCleanup& tval, TTaxId descTaxID = 0);
+    void ValidateStrain(CTaxValidationAndCleanup& tval, TTaxId descTaxID = ZERO_TAX_ID);
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, CBioSource::TGenome genome = CBioSource::eGenome_unknown);
