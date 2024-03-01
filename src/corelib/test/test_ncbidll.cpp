@@ -178,10 +178,10 @@ static void s_TEST_WinSystemDll(void)
         ERR_FATAL("Error get address of function GetUserProfileDirectory().");
     }
     // Call loaded function
-    TCHAR szProfilePath[1024];
+    TXChar szProfilePath[1024];
     DWORD cchPath = 1024;
     if ( dllGetProfilesDirectory(szProfilePath, &cchPath) ) {
-        cout << "Profile dir: " << szProfilePath << endl;
+        cout << "Profile dir: " << _T_STDSTRING(szProfilePath) << endl;
     } else {
         ERR_FATAL("GetProfilesDirectory() failed");
     }
