@@ -46,7 +46,6 @@ set(NCBI_ThirdParty_XCODE_FRAMEWORKS "/Applications/Xcode.app/Contents/Developer
 set(NCBI_ThirdParty_PYTHON     "${NCBI_ThirdParty_XCODE_FRAMEWORKS}/Python3.framework/Versions/${NCBI_ThirdParty_PYTHON_VERSION}" CACHE PATH "PYTHON root")
 #set(NCBI_ThirdParty_VDB        "/Volumes/trace_software/vdb/vdb-versions/cxx_toolkit/3")
 set(NCBI_ThirdParty_VDB        "/net/snowman/vol/projects/trace_software/vdb/vdb-versions/cxx_toolkit/3" CACHE PATH "VDB root")
-set(NCBI_ThirdParty_VDB_ARCH x86_64)
 #set(NCBI_ThirdParty_XML        ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XML root")
 #set(NCBI_ThirdParty_XSLT       ${NCBI_TOOLS_ROOT}/libxml-2.7.8 CACHE PATH "XSLT root")
 #set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
@@ -368,6 +367,16 @@ NCBIcomponent_report(PYTHON)
 #############################################################################
 # VDB
 if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
+    if("${HOST_CPU}" MATCHES "x86")
+        set(NCBI_ThirdParty_VDB_ARCH x86_64)
+    elseif("${HOST_CPU}" MATCHES "arm" OR "${HOST_CPU}" MATCHES "aarch64")
+        set(NCBI_ThirdParty_VDB_ARCH arm64)
+    endif()
+    if("${NCBI_COMPILER}" MATCHES "CLANG")
+        set(NCBI_ThirdParty_VDB_COMPILER clang)
+    else() # Specifically check for "GCC"?
+        set(NCBI_ThirdParty_VDB_COMPILER gcc)
+    endif()
     NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
         LIBPATH_SUFFIX mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
@@ -375,8 +384,8 @@ if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
             ${NCBI_COMPONENT_VDB_INCLUDE} 
             ${NCBI_COMPONENT_VDB_INCLUDE}/os/mac
             ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc/${NCBI_ThirdParty_VDB_ARCH}
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc
+            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
+            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
         set(NCBI_COMPONENT_VDB_LIBPATH ${NCBI_ThirdParty_VDB}/mac/release/${NCBI_ThirdParty_VDB_ARCH}/lib)
         set(HAVE_NCBI_VDB 1)
