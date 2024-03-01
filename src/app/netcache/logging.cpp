@@ -1099,7 +1099,7 @@ CSrvDiagMsg::StopRequest(CRequestContext* ctx)
         s_AddToLog(m_Data, ctx->GetRequestStatus());
         *m_Data->cur_ptr++ = ' ';
         CTimeSpan span(ctx->GetRequestTimer().Elapsed());
-        s_AddToLog(m_Data, span.GetCompleteSeconds());
+        s_AddToLog(m_Data, (Int8)span.GetCompleteSeconds());
         *m_Data->cur_ptr++ = '.';
         s_AddToLog(m_Data, span.GetNanoSecondsAfterSecond(), 9);
         *m_Data->cur_ptr++ = ' ';
