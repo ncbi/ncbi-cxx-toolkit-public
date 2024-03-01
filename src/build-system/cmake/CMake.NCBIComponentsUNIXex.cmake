@@ -424,16 +424,32 @@ NCBIcomponent_report(PYTHON)
 #############################################################################
 # VDB
 if(NOT NCBI_COMPONENT_VDB_DISABLED AND NOT NCBI_COMPONENT_VDB_FOUND)
+    if("${HOST_OS}" MATCHES "linux")
+        set(NCBI_ThirdParty_VDB_OS linux)
+    elseif("${HOST_OS}" MATCHES "darwin")
+        set(NCBI_ThirdParty_VDB_OS mac)
+    endif()
+    if("${HOST_CPU}" MATCHES "x86")
+        set(NCBI_ThirdParty_VDB_ARCH x86_64)
+    elseif("${HOST_CPU}" MATCHES "arm" OR "${HOST_CPU}" MATCHES "aarch64")
+        set(NCBI_ThirdParty_VDB_ARCH arm64)
+    endif()
+    if("${NCBI_COMPILER}" MATCHES "CLANG")
+        set(NCBI_ThirdParty_VDB_COMPILER clang)
+    else() # Specifically check for "GCC"?
+        set(NCBI_ThirdParty_VDB_COMPILER gcc)
+    endif()
     NCBI_define_Xcomponent(NAME VDB LIB ncbi-vdb
-        LIBPATH_SUFFIX linux/release/x86_64/lib INCPATH_SUFFIX interfaces)
-#        LIBPATH_SUFFIX linux/$<LOSTDCONFIG>/x86_64/lib INCPATH_SUFFIX interfaces)
+        LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/release/${NCBI_ThirdParty_VDB_ARCH}/lib
+#        LIBPATH_SUFFIX ${NCBI_ThirdParty_VDB_OS}/$<LOSTDCONFIG>/${NCBI_ThirdParty_VDB_ARCH}/lib
+        INCPATH_SUFFIX interfaces)
     if(NCBI_COMPONENT_VDB_FOUND)
         set(NCBI_COMPONENT_VDB_INCLUDE
             ${NCBI_COMPONENT_VDB_INCLUDE} 
-            ${NCBI_COMPONENT_VDB_INCLUDE}/os/linux 
+            ${NCBI_COMPONENT_VDB_INCLUDE}/os/${NCBI_ThirdParty_VDB_OS}
             ${NCBI_COMPONENT_VDB_INCLUDE}/os/unix
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc/x86_64
-            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/gcc
+            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}/${NCBI_ThirdParty_VDB_ARCH}
+            ${NCBI_COMPONENT_VDB_INCLUDE}/cc/${NCBI_ThirdParty_VDB_COMPILER}
         )
         set(HAVE_NCBI_VDB 1)
     endif()
