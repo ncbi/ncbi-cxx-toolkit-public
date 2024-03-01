@@ -241,4 +241,22 @@ TEST_F(CBlobTaskLoadBlobTest, CancelFromBlobPropCallbackShouldStop) {
     EXPECT_FALSE(fetch.HasError()) << "Cancel() should not look like error for now.";
 }
 
+TEST_F(CBlobTaskLoadBlobTest, QueryTimeoutOverride) {
+    bool timeout_function_called{false};
+    auto timeout_function =
+    [&timeout_function_called]
+    (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+        timeout_function_called = true;
+        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+        EXPECT_EQ(CCassandraException::eQueryTimeout, code);
+        EXPECT_EQ(eDiag_Error, severity);
+    };
+
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, timeout_function);
+    fetch.SetQueryTimeout(chrono::milliseconds(1));
+    wait_function(fetch);
+    EXPECT_TRUE(timeout_function_called) << "Timeout should happen";
+    EXPECT_TRUE(fetch.HasError()) << "Request should be in failed state";
+}
+
 }  // namespace

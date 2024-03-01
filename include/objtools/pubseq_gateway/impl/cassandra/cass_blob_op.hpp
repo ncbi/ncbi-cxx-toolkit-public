@@ -38,10 +38,11 @@
 #include <corelib/ncbidiag.hpp>
 
 #include <atomic>
-#include <vector>
-#include <utility>
-#include <string>
+#include <chrono>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "cass_driver.hpp"
 #include "cass_exception.hpp"
@@ -102,6 +103,16 @@ class CCassBlobWaiter
             NCBI_THROW(CCassandraException, eFatal, "CCassBlobWaiter() Cassandra connection should not be nullptr");
         }
     }
+
+    // Experimental!!! May conflict with CCassConnection::SetQueryTimeoutRetry() when query timed out
+    //    and CCassQuery::RestartQuery() called to make another attempt
+    //    Currently required to test PubSeqGateway Casandra timeouts handling for multi-stage operations
+    //    (Resolution => Primary blob retrieval => ID2 split blob retrieval) when Cassandra timeout happens at
+    //    later stages of operation
+    //
+    // Setup individual operation timeout instead of using timeout configured for CCassConnection
+    virtual void SetQueryTimeout(std::chrono::milliseconds value);
+    virtual std::chrono::milliseconds GetQueryTimeout() const;
 
     virtual ~CCassBlobWaiter()
     {
@@ -264,6 +275,9 @@ class CCassBlobWaiter
         return !is_out_of_retries && !m_Cancelled;
     }
 
+    // @ToDo Switch all child classes to use this method to produce CCassQuery
+    shared_ptr<CCassQuery> ProduceQuery() const;
+
     bool CanRestart(SQueryRec& it) const
     {
         return CanRestart(it.query, it.restart_count);
@@ -320,6 +334,7 @@ class CCassBlobWaiter
     TDataErrorCallback              m_ErrorCb;
     weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
     shared_ptr<CCassConnection>     m_Conn;
+    std::chrono::milliseconds       m_QueryTimeout{0};
     atomic<int32_t>                 m_State{eInit};
     string                          m_LastError;
     bool                            m_Async;
