@@ -473,7 +473,7 @@ int CTest::Run(void)
                        | CPipe::fKeepOnClose);
     assert(status == eIO_Success);
     handle = pipe.GetProcessHandle();
-    assert(handle > 0);
+    assert(handle > (TProcessHandle)0);
 
     status = pipe.Close(&exitcode);
     double elapsed = sw.Elapsed();
@@ -499,7 +499,7 @@ int CTest::Run(void)
                        | CPipe::fKillOnClose | CPipe::fNewGroup);
     assert(status == eIO_Success);
     handle = pipe.GetProcessHandle();
-    assert(handle > 0);
+    assert(handle > (TProcessHandle)0);
 
     status = pipe.Close(&exitcode); 
     elapsed = sw.Elapsed();
@@ -521,7 +521,7 @@ int CTest::Run(void)
                        | CPipe::fKeepOnClose);
     assert(status == eIO_Success);
     handle = pipe.GetProcessHandle();
-    assert(handle > 0);
+    assert(handle > (TProcessHandle)0);
 
     status = pipe.Close(&exitcode);
     elapsed = sw.Elapsed();
