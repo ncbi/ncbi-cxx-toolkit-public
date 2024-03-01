@@ -363,7 +363,7 @@ void CStrainRequest::AddReply(const CT3Reply& reply, TTaxId descTaxID)
                 const COrg_ref& org = reply.GetData().GetOrg();
                 TTaxId taxID = org.GetTaxId();
                 if (NStr::EqualNocase(m_ValuesToTry[m_RepliesProcessed], org.GetTaxname())) {
-                    if (taxID == descTaxID || descTaxID == 0) {
+                    if (taxID == descTaxID || descTaxID == ZERO_TAX_ID) {
                         m_IsInvalid = true;
                     }
                 }
@@ -656,7 +656,7 @@ CTaxValidationAndCleanup::CTaxValidationAndCleanup(taxupdate_func_t tax_func)
 
 void CTaxValidationAndCleanup::Init(const CSeq_entry& se)
 {
-    m_descTaxID = 0;
+    m_descTaxID = ZERO_TAX_ID;
     m_SrcDescs.clear();
     m_DescCtxs.clear();
     m_SrcFeats.clear();
