@@ -224,7 +224,7 @@ public:
     // It is the responsibility of the calling program to chunk the request
     // list and pass the input and reply to the map until all requests
     // have responses
-    string IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, TTaxId descTaxID = 0);
+    string IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, TTaxId descTaxID = ZERO_TAX_ID);
 
     // Indicates whether the map is waiting for more responses
     bool IsUpdateComplete() const;
@@ -336,7 +336,7 @@ public:
 
     // for strain validation
     vector<CRef<COrg_ref> > GetStrainLookupRequest();
-    string IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, TTaxId descTaxID = 0);
+    string IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, TTaxId descTaxID = ZERO_TAX_ID);
     bool IsStrainMapUpdateComplete() const;
     void ReportStrainErrors(CValidError_imp& imp);
 
