@@ -2749,7 +2749,7 @@ void CValidError_imp::ValidateSpecificHost
 
 
 void CValidError_imp::ValidateStrain
-(CTaxValidationAndCleanup& tval, int descTaxID)
+(CTaxValidationAndCleanup& tval, TTaxId descTaxID)
 {
     vector<CRef<COrg_ref> > org_rq_list = tval.GetStrainLookupRequest();
 
