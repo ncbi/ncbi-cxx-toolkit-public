@@ -109,7 +109,7 @@
 #  define NCBI_HAS_C_ATTRIBUTE(x) 0
 #endif
 
-#ifdef NCBI_COMPILER_MSVC
+#if defined(NCBI_COMPILER_MSVC)  ||  defined(__clang__)
 #  define NCBI_HAS_SCOPED_C_ATTRIBUTE(x) 0
 #else
 #  define NCBI_HAS_SCOPED_C_ATTRIBUTE(x) NCBI_HAS_C_ATTRIBUTE(x)
@@ -124,8 +124,6 @@
 // Likewise, generically.
 #ifdef __cplusplus
 #  define NCBI_HAS_ATTRIBUTE(x) NCBI_HAS_CPP_ATTRIBUTE(x)
-#elif defined(__clang__)
-#  define NCBI_HAS_ATTRIBUTE(x) 0
 #else
 #  define NCBI_HAS_ATTRIBUTE(x) NCBI_HAS_C_ATTRIBUTE(x)
 #endif
@@ -145,7 +143,7 @@
 #else
 #  ifdef __clang__
 #    define NCBI_HAS_STD_ATTRIBUTE(x) \
-    (NCBI_HAS_CPP_ATTRIBUTE(x) >= 201904L  \
+    (NCBI_HAS_C_ATTRIBUTE(x) >= 201904L  \
      &&  NCBI_HAS_C_ATTRIBUTE(x) <= __STDC_VERSION__)
 #  else
 #    define NCBI_HAS_STD_ATTRIBUTE(x) (NCBI_HAS_C_ATTRIBUTE(x) >= 201904L)
