@@ -61,7 +61,7 @@ public:
 	//methods
 	TaxNode();
 	TaxNode(const TaxNode& rhs);
-	bool operator==(const TaxNode& rhs) {return taxId == rhs.taxId;};
+	bool operator==(const TaxNode& rhs) const {return taxId == rhs.taxId;};
 	static bool isSeqLeaf(const TaxNode& node);
 	static bool isSubSeqLeaf(const TaxNode& node);
 	static TaxNode* makeTaxNode(TTaxId taxID, std::string taxName, short rankId=-1);
