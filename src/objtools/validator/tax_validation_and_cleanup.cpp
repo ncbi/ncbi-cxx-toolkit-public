@@ -155,7 +155,7 @@ CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& o
 }
 
 
-void CSpecificHostRequest::AddReply(const CT3Reply& reply, int descTaxID)
+void CSpecificHostRequest::AddReply(const CT3Reply& reply, TTaxId descTaxID)
 {
     if (m_Response == eAmbiguous) {
         string new_error = InterpretSpecificHostResult(m_ValuesToTry[m_RepliesProcessed], reply, m_Host);
@@ -354,7 +354,7 @@ void CStrainRequest::ListErrors(vector<TTaxError>& errs) const
 }
 
 
-void CStrainRequest::AddReply(const CT3Reply& reply, int descTaxID)
+void CStrainRequest::AddReply(const CT3Reply& reply, TTaxId descTaxID)
 {
     if (!m_IsInvalid) {
         if (reply.IsData() && reply.GetData().IsSetOrg()) {
@@ -516,7 +516,7 @@ CQualLookupMap::TQualifierRequests::iterator CQualLookupMap::x_FindRequest(const
 }
 
 
-string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, int descTaxID)
+string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, TTaxId descTaxID)
 {
     string error_message;
     CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
@@ -730,7 +730,7 @@ vector< CRef<COrg_ref> > CTaxValidationAndCleanup::GetTaxonomyLookupRequest() co
         rq->Assign(org);
         TTaxId taxid = org.GetTaxId();
         if (m_descTaxID == ZERO_TAX_ID) {
-            const_cast<int&>(m_descTaxID) = taxid;
+            const_cast<TTaxId&>(m_descTaxID) = taxid;
         }
         org_rq_list.push_back(rq);
 
@@ -1215,7 +1215,7 @@ string CTaxValidationAndCleanup::x_DefaultSpecificHostAdjustments(const string& 
 }
 
 
-string CTaxValidationAndCleanup::IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, int descTaxID)
+string CTaxValidationAndCleanup::IncrementalStrainMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply, TTaxId descTaxID)
 {
    return m_StrainMap.IncrementalUpdate(input, reply, descTaxID);
 }
