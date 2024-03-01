@@ -22726,21 +22726,21 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFixIncremental)
 }
 
 
-void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string& strain, const string& lineage, int taxID)
+void AddStrainDescriptor(CSeq_entry& entry, const string& taxname, const string& strain, const string& lineage, TTaxId taxID)
 {
     CRef<CSeqdesc> src_desc(new CSeqdesc());
     // should look up
     src_desc->SetSource().SetOrg().SetTaxname(taxname);
     AddOrgmod(src_desc->SetSource().SetOrg(), strain, COrgMod::eSubtype_strain);
     src_desc->SetSource().SetOrg().SetOrgname().SetLineage(lineage);
-    if (taxID != 0) {
+    if (taxID != ZERO_TAX_ID) {
         unit_test_util::SetTaxon(src_desc->SetSource(), taxID);
     }
     entry.SetDescr().Set().push_back(src_desc);
 }
 
 
-void TestOneStrain(const string& taxname, const string& strain, const string& lineage, int taxID, bool expect_err)
+void TestOneStrain(const string& taxname, const string& strain, const string& lineage, TTaxId taxID, bool expect_err)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CBioseq::TDescr::Tdata& cont = entry->SetSeq().SetDescr().Set();
@@ -22769,11 +22769,11 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
-    AddStrainDescriptor(*entry, "Gorilla gorilla", "abc", "xyz", 9593); // expect no report
-    AddStrainDescriptor(*entry, "Gorilla gorilla", "Aeromonas punctata", "xyz", 9593); // expect a report
-    AddStrainDescriptor(*entry, "Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", 9593); // expect a report
-    AddStrainDescriptor(*entry, "Bacillus sp.", "cereus", "xyz", 1409);
-    AddStrainDescriptor(*entry, "Hippopotamus amphibius", "giraffe cow", "xyz", 9833); // no error - giraffe looks up but is not in taxname
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "abc", "xyz", TAX_ID_CONST(9593)); // expect no report
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "Aeromonas punctata", "xyz", TAX_ID_CONST(9593)); // expect a report
+    AddStrainDescriptor(*entry, "Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", TAX_ID_CONST(9593)); // expect a report
+    AddStrainDescriptor(*entry, "Bacillus sp.", "cereus", "xyz", TAX_ID_CONST(1409));
+    AddStrainDescriptor(*entry, "Hippopotamus amphibius", "giraffe cow", "xyz", TAX_ID_CONST(9833)); // no error - giraffe looks up but is not in taxname
 
     string error_message;
 
@@ -22798,24 +22798,24 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
     BOOST_CHECK_EQUAL(tval.IsStrainMapUpdateComplete(), true);
 
     // commented out until TM-725 is resolved
-    TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", 9833, false); // no error - giraffe looks up but is not in taxname
-    TestOneStrain("Gorilla gorilla", "abc", "xyz", 9593, false);
-    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", 9593, true);
+    TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", TAX_ID_CONST(9833), false); // no error - giraffe looks up but is not in taxname
+    TestOneStrain("Gorilla gorilla", "abc", "xyz", TAX_ID_CONST(9593), false);
+    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", TAX_ID_CONST(9593), true);
 
-    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", 9593, false);
-    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", 0, true);
+    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", TAX_ID_CONST(9593), false);
+    TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", ZERO_TAX_ID, true);
 
-    TestOneStrain("Bacillus sp.", "cereus", "xyz", 1409, true);
+    TestOneStrain("Bacillus sp.", "cereus", "xyz", TAX_ID_CONST(1409), true);
 
-    TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", 1980924, false);
-    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", 9593, false);
-    TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", 440, false);
+    TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", TAX_ID_CONST(1980924), false);
+    TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", TAX_ID_CONST(9593), false);
+    TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", TAX_ID_CONST(440), false);
 }
 
 
 BOOST_AUTO_TEST_CASE(VR_762)
 {
-    TestOneStrain("Cystobasidium minutum", "P22", "xyz", 29899, false);
+    TestOneStrain("Cystobasidium minutum", "P22", "xyz", TAX_ID_CONST(29899), false);
 }
 
 BOOST_AUTO_TEST_CASE(TEST_VR_477)
