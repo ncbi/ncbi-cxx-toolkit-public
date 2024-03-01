@@ -940,7 +940,7 @@ static CGapsEditor::TEvidenceSet s_ProcessEvidenceString(
         string unnormalized_evidence = evidence;
         s_NormalizeLinkageEvidenceString(evidence);
         try {
-            auto enum_val = CLinkage_evidence::GetTypeInfo_enum_EType()->FindValue(evidence);
+            auto enum_val = CLinkage_evidence::ENUM_METHOD_NAME(EType)()->FindValue(evidence);
             evidenceSet.insert(enum_val);
         }
         catch (...) {
