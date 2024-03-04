@@ -37,5 +37,6 @@ CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_DEV16_16K
 # that should be resolved by NAMERD, but is not present
 # in the interfaces file or DNS.
 CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_MS2019_TEST_LB -conffile namerd.ini
+CHECK_CMD = dbapi_unit_test -dr ftds100    -S DBAPI_MS2022_TEST_LB -conffile namerd.ini
 
 WATCHERS = ucko satskyse
