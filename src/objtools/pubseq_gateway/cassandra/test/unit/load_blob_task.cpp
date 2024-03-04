@@ -311,7 +311,6 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
     mutex wait_mutex;
     condition_variable wait_condition;
 
-    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     struct STestCallbackReceiver
         : public CCassDataCallbackReceiver
     {
