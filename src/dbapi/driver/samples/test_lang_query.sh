@@ -10,10 +10,10 @@ unset LANG LC_ALL LC_CTYPE
 driver_list="ctlib ftds100 ftds100-v74 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-    server_list="DBAPI_MS2019_TEST DBAPI_DEV16_2K DBAPI_DEV16_16K"
+    server_list="DBAPI_MS2019_TEST DBAPI_MS2022_TEST DBAPI_DEV16_2K DBAPI_DEV16_16K"
 else
     # server_list="MSDEV2"
-    server_list="DBAPI_MS2019_TEST_LB DBAPI_DEV16_2K DBAPI_DEV16_16K"
+    server_list="DBAPI_MS2019_TEST_LB DBAPI_MS2022_TEST_LB DBAPI_DEV16_2K DBAPI_DEV16_16K"
 fi
 
 if echo $FEATURES | grep "DLL" > /dev/null ; then
