@@ -38,14 +38,18 @@
 #include <corelib/ncbireg.hpp>
 
 #include <algorithm>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/status_history/get_public_comment.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
@@ -257,6 +261,120 @@ TEST_F(CBlobTaskLoadBlobTest, QueryTimeoutOverride) {
     wait_function(fetch);
     EXPECT_TRUE(timeout_function_called) << "Timeout should happen";
     EXPECT_TRUE(fetch.HasError()) << "Request should be in failed state";
+}
+
+TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
+{
+    bool blob_finished{false}, comment_finished{false}, timeout_called{false}, comment_called{false};
+    bool false_negative{false};
+    auto timeout_function =
+        [&timeout_called, &blob_finished]
+        (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            timeout_called = true;
+            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CCassandraException::eQueryTimeout, code);
+            EXPECT_EQ(eDiag_Error, severity);
+            blob_finished = true;
+        };
+    auto chunk_callback =
+        [&blob_finished, &false_negative]
+        (CBlobRecord const &, const unsigned char *, unsigned int size, int chunk_no) {
+            if (chunk_no == -1) {
+                blob_finished = true;
+                false_negative = true;
+                cout << "CHUNKS RECEIVED: TEST RESULT IS FALSE NEGATIVE" << endl;
+            }
+        };
+    auto comment_callback = [&comment_called](string comment, bool isFound) {
+        comment_called = true;
+        EXPECT_TRUE(isFound) << "Should be found";
+        EXPECT_EQ(comment, "BLOB_STATUS_SUPPRESSED") << "Should be expected comment text";
+    };
+
+
+    auto blob = make_unique<CBlobRecord>();
+    (*blob).SetKey(8091).SetModified(1000412801493).SetNChunks(1).SetSize(1114);
+    CCassBlobTaskLoadBlob blob_fetch(m_Connection, "psg_test_sat_4", move(blob), true, timeout_function);
+    blob_fetch.SetQueryTimeout(chrono::milliseconds(1));
+    blob_fetch.SetUsePrepared(false);
+    blob_fetch.SetChunkCallback(chunk_callback);
+
+    CBlobRecord comment_blob;
+    comment_blob.SetKey(8091).SetModified(1000412801493).SetFlags(22);
+    auto messages_provider = make_shared<CPSGMessages>();
+    messages_provider->Set("BLOB_STATUS_SUPPRESSED", "BLOB_STATUS_SUPPRESSED");
+    CCassStatusHistoryTaskGetPublicComment comment_fetch(m_Connection, "psg_test_sat_4", comment_blob, error_function);
+    comment_fetch.SetCommentCallback(comment_callback);
+    comment_fetch.SetMessages(messages_provider);
+
+    atomic_bool has_events{false};
+    mutex wait_mutex;
+    condition_variable wait_condition;
+
+    void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
+    struct STestCallbackReceiver
+        : public CCassDataCallbackReceiver
+    {
+        void OnData() override {
+            {
+                unique_lock<mutex> wait_lck(*cb_wait_mutex);
+                *cb_has_events = true;
+            }
+            cb_wait_condition->notify_all();
+        }
+
+        atomic_bool* cb_has_events{nullptr};
+        mutex* cb_wait_mutex{nullptr};
+        condition_variable* cb_wait_condition{nullptr};
+    };
+
+    auto event_callback = make_shared<STestCallbackReceiver>();
+    event_callback->cb_has_events = &has_events;
+    event_callback->cb_wait_mutex = &wait_mutex;
+    event_callback->cb_wait_condition = &wait_condition;
+    blob_fetch.SetDataReadyCB(event_callback);
+    comment_fetch.SetDataReadyCB(event_callback);
+
+    auto wait_function =
+    [&has_events, &wait_condition, &wait_mutex, &blob_finished, &comment_finished, &blob_fetch, &comment_fetch, &false_negative]() {
+        while (!blob_finished || !comment_finished) {
+            unique_lock<mutex> wait_lck(wait_mutex);
+            auto predicate = [&has_events]() -> bool
+            {
+                return has_events;
+            };
+            while (!wait_condition.wait_for(wait_lck, chrono::seconds(1), predicate));
+            if (has_events) {
+                has_events = false;
+                if (!comment_finished) {
+                    if (comment_fetch.Wait()) {
+                        EXPECT_TRUE(blob_finished) << "Blob request should be in finished state when Comment->Wait()==true called";
+                        comment_finished = true;
+                        EXPECT_FALSE(comment_fetch.HasError()) << "Comment request should be in success state";
+                    }
+                }
+                if (!blob_finished) {
+                    if (blob_fetch.Wait()) {
+                        blob_finished = true;
+                        EXPECT_TRUE(blob_fetch.HasError() || false_negative) << "Blob request should be in failed state";
+                    }
+                }
+
+            }
+        }
+    };
+
+    EXPECT_FALSE(blob_fetch.Wait()) << "Blob fetch should not finish on Init()";
+    // ??? this_thread::sleep_for(chrono::milliseconds(100));
+    EXPECT_FALSE(comment_fetch.Wait()) << "Comment fetch should not finish on Init()";
+
+    wait_function();
+    event_callback.reset();
+
+    EXPECT_TRUE(comment_called) << "Comment callback should be called";
+    EXPECT_TRUE(timeout_called || false_negative) << "Timeout should happen";
+    EXPECT_TRUE(blob_finished) << "Blob request should finish";
+    EXPECT_TRUE(comment_finished) << "Public comment request should finish";
 }
 
 }  // namespace
