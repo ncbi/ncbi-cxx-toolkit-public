@@ -128,7 +128,7 @@ static const char* ncbi_accpref[] = {
     "KK", "KL", "KM", "KN", "KO", "KP", "KQ", "KR", "KS", "KT", "KU", "KV",
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
     "MO", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "OK", "OL", "OM", "ON",
-    "OO", "OP", "OQ", "OR", "OS", "OT", "PP", "PR", nullptr
+    "OO", "OP", "OQ", "OR", "OS", "OT", "PP", "PR", "PS", nullptr
 };
 
 static const char* refseq_accpref[] = {
@@ -170,7 +170,7 @@ static const set<string> k_WgsScaffoldPrefix = {
     "GG", "GJ", "GK", "GL", "HT", "HU",
     "JH", "KB", "KD", "KE", "KI", "KK",
     "KL", "KN", "KQ", "KV", "KZ", "LD",
-    "ML", "MU"
+    "ML", "MU", "PS"
 };
 
 static const map<Parser::ESource, string> sourceNames = {
