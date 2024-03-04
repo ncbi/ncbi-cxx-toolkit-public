@@ -11,12 +11,9 @@ driver_list="ctlib ftds100 ftds100-v74 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="DBAPI_MS2019_TEST DBAPI_DEV16_2K DBAPI_DEV16_16K"
-    server_mssql="DBAPI_MS2019_TEST"
 else
     # server_list="MSDEV2"
     server_list="DBAPI_MS2019_TEST_LB DBAPI_DEV16_2K DBAPI_DEV16_16K"
-    # server_mssql="MSDEV2"
-    server_mssql="DBAPI_MS2019_TEST_LB"
 fi
 
 if echo $FEATURES | grep "DLL" > /dev/null ; then
@@ -192,20 +189,18 @@ EOF
 
     else
         for server in $server_list ; do
-            case "$v_flag" in
-              -v\ 7?)
-                if test $server != $server_mssql ; then
-                    continue
-                fi
-                ;;
+            case "$v_flag:$server" in
+              *:*[Mm][Ss]* ) server_type=mssql  ;;
+              -v\ 7?:*     ) continue           ;;
+              *            ) server_type=sybase ;;  
             esac
 
-            if test $driver = "ctlib" -a \( $server = $server_mssql \
+            if test $driver = "ctlib" -a \( $server_type = mssql \
                        -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
                 continue
             fi
 
-            if test $driver = "odbc" -a  $server != $server_mssql ; then
+            if test $driver = "odbc" -a  $server_type != mssql ; then
                 continue
             fi
              
@@ -250,7 +245,7 @@ EOF
             cmd="dbapi_cursor -lb on -d $driver -S $server $v_flag"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test $driver = "ftds100" -a $server != $server_mssql ; then
+            elif test $driver = "ftds100" -a $server_type != mssql ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"
