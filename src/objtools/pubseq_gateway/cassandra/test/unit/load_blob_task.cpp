@@ -285,11 +285,13 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
                 cout << "CHUNKS RECEIVED: TEST RESULT IS FALSE NEGATIVE" << endl;
             }
         };
-    auto comment_callback = [&comment_called](string comment, bool isFound) {
-        comment_called = true;
-        EXPECT_TRUE(isFound) << "Should be found";
-        EXPECT_EQ(comment, "BLOB_STATUS_SUPPRESSED") << "Should be expected comment text";
-    };
+    auto comment_callback =
+        [&comment_called]
+        (string comment, bool isFound) {
+            comment_called = true;
+            EXPECT_TRUE(isFound) << "Should be found";
+            EXPECT_EQ(comment, "BLOB_STATUS_SUPPRESSED") << "Should be expected comment text";
+        };
 
 
     auto blob = make_unique<CBlobRecord>();
@@ -319,12 +321,14 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
                 unique_lock<mutex> wait_lck(*cb_wait_mutex);
                 *cb_has_events = true;
             }
+            ++times_called;
             cb_wait_condition->notify_all();
         }
 
         atomic_bool* cb_has_events{nullptr};
         mutex* cb_wait_mutex{nullptr};
         condition_variable* cb_wait_condition{nullptr};
+        atomic_int times_called{0};
     };
 
     auto event_callback = make_shared<STestCallbackReceiver>();
@@ -368,12 +372,13 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
     EXPECT_FALSE(comment_fetch.Wait()) << "Comment fetch should not finish on Init()";
 
     wait_function();
-    event_callback.reset();
 
     EXPECT_TRUE(comment_called) << "Comment callback should be called";
     EXPECT_TRUE(timeout_called || false_negative) << "Timeout should happen";
     EXPECT_TRUE(blob_finished) << "Blob request should finish";
     EXPECT_TRUE(comment_finished) << "Public comment request should finish";
+    EXPECT_EQ(2, event_callback->times_called) << "Error and Data callbacks should be called 2 times in total (Blob (1 data or 1 timeout) and Comment (1 data))";
+    event_callback.reset();
 }
 
 }  // namespace
