@@ -7899,8 +7899,8 @@ UFRJ<herbarium>	sc	Herbario e Colecao Fitopathologica "Verlande Duarte Silveira"
 UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro			
 UFRJ<museum>:POR	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro, Porifera collection	UFRJ:POR,UFRJ<museum>POR		
 UFRJIM	c	Departamento de Microbiologia Medica			
-UFRN 	s	Universidade Federal do Rio Grande do Norte	UFRN		
-UFRN :Fungos	s	Universidade Federal do Rio Grande do Norte , Fungal collection	UFRN :FungosFungos		
+UFRN 	s	Universidade Federal do Rio Grande do Norte			
+UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection	UFRN :FungosFungos		
 UFROH	s	Universidad de La Frontera			
 UFRPE	s	Universidade Federal Rural de Pernambuco			
 UFRR	s	Universidade Federal de Roraima			
