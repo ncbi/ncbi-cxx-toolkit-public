@@ -5,3 +5,4 @@ NCBI_begin_app(blast_demo)
   NCBI_uses_toolkit_libraries(blastinput)
   NCBI_project_watchers(camacho madden)
 NCBI_end_app()
+wrap
