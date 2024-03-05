@@ -155,7 +155,6 @@ blast_unit_test_util needs $(OBJMGR_LIBS)
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
 blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
-blastapi needs3party blast
 blastapi needs3party ncbitool
 blastdb needs $(SEQ_LIBS)
 blastdb needs pub
