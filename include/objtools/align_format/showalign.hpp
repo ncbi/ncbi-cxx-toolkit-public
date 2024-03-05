@@ -492,6 +492,7 @@ protected:
         string feature_string;
         list<TSeqPos> feature_start;
         CRange < TSignedSeqPos > aln_range;
+        int genetic_code;                //genetice code used to this feature if applicable   
     };
     typedef list< CRef<SAlnFeatureInfo> > TSAlnFeatureInfoList;
     
@@ -744,6 +745,7 @@ protected:
     
     ///get feature info
     ///@param feature: where feature info to be filled
+    ///@param custom_genetic_code: use this code (set to -1 if you don't want to use this code)
     ///@param scope: scope to fectch sequence
     ///@param choice: which feature to get
     ///@param row: current row number
@@ -752,7 +754,9 @@ protected:
     ///@param feat_seq_strand: strand to be filled corresponding to feat_seq_range
     ///@param fill_feat_range: to fill feat_seq_range?
     ///
-    void x_GetFeatureInfo(TSAlnFeatureInfoList& feature, objects::CScope & scope,
+    void x_GetFeatureInfo(TSAlnFeatureInfoList& feature, 
+                          int custom_genetic_code,
+                          objects::CScope & scope,
                           objects::CSeqFeatData::E_Choice choice, int row,
                           string& sequence,
                           list<list<CRange<TSeqPos> > >& feat_seq_range,
@@ -814,7 +818,7 @@ protected:
     void x_SetFeatureInfo(CRef<SAlnFeatureInfo> feat_info, const objects::CSeq_loc& seqloc,
                           int aln_from, int aln_to, int aln_stop,
                           char pattern_char,  string pattern_id,
-                          string& alternative_feat_str) const;
+                          string& alternative_feat_str, int genetic_code) const;
 
     ///get insert information
     ///@param insert_list: list to be filled
