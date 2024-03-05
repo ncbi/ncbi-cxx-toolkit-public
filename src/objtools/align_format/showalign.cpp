@@ -692,16 +692,17 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
                                                  feat_strand)));
             }
         }
-        CGenetic_code gc;
-        CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
-        ce->Select(CGenetic_code::C_E::e_Id);
-        ce->SetId(genetic_code);
-        gc.Set().push_back(ce);
-        isolated_loc.SetPartialStart(true, eExtreme_Biological);
-        isolated_loc.SetPartialStop (true, eExtreme_Biological);
-        CSeqTranslator::Translate(isolated_loc, handle.GetScope(),
-                                  raw_cdr_product, &gc);
-
+        if (genetic_code > 0) {
+            CGenetic_code gc;
+            CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
+            ce->Select(CGenetic_code::C_E::e_Id);
+            ce->SetId(genetic_code);
+            gc.Set().push_back(ce);
+            isolated_loc.SetPartialStart(true, eExtreme_Biological);
+            isolated_loc.SetPartialStop (true, eExtreme_Biological);
+            CSeqTranslator::Translate(isolated_loc, handle.GetScope(),
+                                      raw_cdr_product, &gc);
+        }
     }
     return raw_cdr_product;
 }
@@ -1131,7 +1132,7 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
 
         x_SetFeatureInfo(master_featInfo, *master_loc, 0, m_AV->GetAlnStop(),
                          m_AV->GetAlnStop(), ' ',
-                         " ", master_feat);
+                         " ", master_feat, -1);
 
         retval[0].push_back(master_featInfo);
 
@@ -1158,7 +1159,7 @@ void CDisplaySeqalign::x_AddTranslationForLocalSeq(vector<TSAlnFeatureInfoList>&
 
         x_SetFeatureInfo(subject_featInfo, *subject_loc, 0, m_AV->GetAlnStop(),
                          m_AV->GetAlnStop(), ' ',
-                         " ", subject_feat);
+                         " ", subject_feat, -1);
 
         retval[1].push_back(subject_featInfo);
 
@@ -1332,7 +1333,7 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
             if(m_AlignOption & eShowCdsFeature){
                 TGi master_gi = FindGi(m_AV->GetBioseqHandle(0).
                                        GetBioseqCore()->GetId());
-                x_GetFeatureInfo(bioseqFeature[row], *m_featScope,
+                x_GetFeatureInfo(bioseqFeature[row], -1, *m_featScope,
                                  CSeqFeatData::e_Cdregion, row, sequence[row],
                                  feat_seq_range, feat_seq_strand,
                                  row == 1 && !(master_gi > ZERO_GI) ? true : false);
@@ -1343,15 +1344,23 @@ CDisplaySeqalign::SAlnRowInfo *CDisplaySeqalign::x_PrepareRowData(void)
                     CRef<CScope> master_scope_with_feat =
                         s_MakeNewMasterSeq(feat_seq_range, feat_seq_strand,
                                            m_AV->GetBioseqHandle(0));
+                    int custom_genetic_code = -1;
+                    NON_CONST_ITERATE(CDisplaySeqalign::TSAlnFeatureInfoList, iter_feat, bioseqFeature[1]) {
+                        if ((*iter_feat)->genetic_code > 0) {
+                            custom_genetic_code = (*iter_feat)->genetic_code;
+                            break;
+                        }
+                    }
+                   
                     //make feature string for master bioseq
                     list<list<CRange<TSeqPos> > > temp_holder;
-                    x_GetFeatureInfo(bioseqFeature[0], *master_scope_with_feat,
+                    x_GetFeatureInfo(bioseqFeature[0], custom_genetic_code, *master_scope_with_feat,
                                      CSeqFeatData::e_Cdregion, 0, sequence[0],
                                      temp_holder, feat_seq_strand, false);
                 }
             }
             if(m_AlignOption & eShowGeneFeature){
-                x_GetFeatureInfo(bioseqFeature[row], *m_featScope,
+                x_GetFeatureInfo(bioseqFeature[row], -1, *m_featScope,
                                  CSeqFeatData::e_Gene, row, sequence[row],
                                  feat_seq_range, feat_seq_strand, false);
             }
@@ -2609,6 +2618,7 @@ int CDisplaySeqalign::x_GetNumGaps()
 }
 
 void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
+                                        int custom_genetic_code,
                                         CScope& scope,
                                         CSeqFeatData::E_Choice choice,
                                         int row, string& sequence,
@@ -2708,6 +2718,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
                     actual_feat_seq_stop =
                         max(feat_seq_range.GetFrom(), seq_stop);
                 }
+                int genetic_code = -1;
                 //the feature alignment positions
                 feat_aln_from =
                     m_AV->GetAlnPosFromSeqPos(row, actual_feat_seq_start);
@@ -2720,11 +2731,14 @@ void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
                 } else if(choice == CSeqFeatData::e_Cdregion){
 
                     string raw_cdr_product =
-                        s_GetCdsSequence(m_SlaveGeneticCode, feat, scope,
+                        s_GetCdsSequence(custom_genetic_code > 0? custom_genetic_code:m_SlaveGeneticCode, feat, scope,
                                          isolated_range, handle, feat_strand,
                                          featId, other_seqloc_length%3 == 0 ?
                                          0 : 3 - other_seqloc_length%3,
                                          mix_loc);
+                    if (feat->IsSetData() && feat->GetData().IsCdregion() && feat->GetData().GetCdregion().IsSetCode()) {
+                        genetic_code = feat->GetData().GetCdregion().GetCode().GetId();
+                    }
                     if(raw_cdr_product == NcbiEmptyString){
                         continue;
                     }
@@ -2924,7 +2938,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
                 if(featInfo){
                     x_SetFeatureInfo(featInfo, *loc_ref,
                                      feat_aln_from, feat_aln_to, aln_stop,
-                                     feat_char, featId, alternativeFeatStr);
+                                     feat_char, featId, alternativeFeatStr, genetic_code);
                     feature.push_back(featInfo);
                 }
             }
@@ -2937,13 +2951,14 @@ void  CDisplaySeqalign::x_SetFeatureInfo(CRef<SAlnFeatureInfo> feat_info,
                                          const CSeq_loc& seqloc, int aln_from,
                                          int aln_to, int aln_stop,
                                          char pattern_char, string pattern_id,
-                                         string& alternative_feat_str) const
+                                         string& alternative_feat_str,
+                                         int genetic_code) const
 {
     CRef<FeatureInfo> feat(new FeatureInfo);
     feat->seqloc = &seqloc;
     feat->feature_char = pattern_char;
     feat->feature_id = pattern_id;
-
+    
     if(alternative_feat_str != NcbiEmptyString){
         feat_info->feature_string = alternative_feat_str;
     } else {
@@ -2954,7 +2969,7 @@ void  CDisplaySeqalign::x_SetFeatureInfo(CRef<SAlnFeatureInfo> feat_info,
         }
         feat_info->feature_string = line;
     }
-
+    feat_info->genetic_code = genetic_code;
     feat_info->aln_range.Set(aln_from, aln_to);
     feat_info->feature = feat;
 }
@@ -4445,7 +4460,7 @@ CDisplaySeqalign::x_GetQueryFeatureList(int row_num, int aln_stop,
                     if (alnTo - alnFrom >= 0){
                         x_SetFeatureInfo(featInfo, *((*iter)->seqloc), alnFrom,
                                          alnTo,  aln_stop, (*iter)->feature_char,
-                                         (*iter)->feature_id, tempFeat);
+                                         (*iter)->feature_id, tempFeat, -1);
                         retval[i].push_back(featInfo);
                     }
                 }
@@ -4544,7 +4559,7 @@ void CDisplaySeqalign::x_GetDomainInfo(int row_num, int aln_stop,
                                            (CSeq_loc::TPoint) aln_stop));
         x_SetFeatureInfo(featInfo, *(seqloc), 0,
                          aln_stop,  aln_stop, ' ',
-                         " ", final_domain);
+                         " ", final_domain, -1);
         retval[0].push_back(featInfo);
     }
 }
