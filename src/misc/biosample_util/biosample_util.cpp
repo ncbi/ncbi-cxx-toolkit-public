@@ -373,8 +373,13 @@ void CBiosampleFieldDiff::Print(CNcbiOstream& stream, bool show_seq_id) const
     if (blank_sample && blank_src) {
         return;
     }
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
     stream << m_BiosampleID << "\t";
-    stream << m_FieldName << "\t";
+    if (use_geo_loc_name) {
+        stream << "geo_loc_name" << "\t";
+    } else {
+        stream << m_FieldName << "\t";
+    }
     if (show_seq_id) {
         stream << m_SequenceID << "\t";
     }
