@@ -12,7 +12,6 @@ CPPFLAGS = -DFTDS_IN_USE -I$(includedir)/dbapi/driver/ftds100 \
 
 CHECK_REQUIRES = in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100
-CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100 -S DBAPI_MS2019_TEST_LB /CHECK_NAME=ctl_lang_ftds100-MS2019
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100 -S DBAPI_MS2022_TEST_LB /CHECK_NAME=ctl_lang_ftds100-MS2022
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100 -S DBAPI_DEV16_2K -v 50 /CHECK_NAME=ctl_lang_ftds100-SYB16-2K
 CHECK_CMD = run_sybase_app.sh ctl_lang_ftds100 -S DBAPI_DEV16_16K -v 50 /CHECK_NAME=ctl_lang_ftds100-SYB16-16K

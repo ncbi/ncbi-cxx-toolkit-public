@@ -681,7 +681,6 @@ struct SSetup
     size_t  m_ResultExpectedId;
 };
 static SSetup   s_Setups[] = {
-    ///{eSetup_??????????    , "DBAPI_MS2019_TEST_LB", true , eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
     ///{eSetup_??????????    , "DBAPI_MS2022_TEST_LB", true , eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
     ///{eSetup_??????????    , "CXX_TESTSUITE", false, eResLbNm_LB  , eResRev_REV  , eResIdns_I  , eServer_UP  , eServer_NONE, eResult_UP          },
 
