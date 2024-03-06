@@ -381,11 +381,18 @@ CDBConnectionFactory::DispatchServerName(
     Uint2  cur_port = 0;
 
     // Try to connect up to a given number of alternative servers ...
-    unsigned int alternatives = GetMaxNumOfServerAlternatives();
+    unsigned int max_alternatives = GetMaxNumOfServerAlternatives();
     list<TSvrRef> tried_servers;
     bool full_retry_made = false;
     CRef<CDBPoolBalancer> balancer;
     CServiceInfo& service_info = ctx.service_info;
+    unsigned int alternatives
+        = static_cast<unsigned int>(service_info.GetOptions().size());
+    if (alternatives < 1) {
+        alternatives = min(2U, max_alternatives);
+    } else {
+        alternatives = min(alternatives * 2U, max_alternatives);
+    }
 
     if ( !do_not_dispatch  &&  !service_name.empty() ) {
         balancer.Reset(new CDBPoolBalancer
