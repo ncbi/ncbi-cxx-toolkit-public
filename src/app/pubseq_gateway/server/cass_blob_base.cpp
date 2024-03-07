@@ -1231,10 +1231,10 @@ CPSGS_CassBlobBase::OnGetBlobError(CCassBlobFetch *  fetch_details,
         else
             x_PrepareBlobMessage(fetch_details, message, status,
                                  code, severity);
-    }
 
-    // To avoid sending an error in Peek()
-    fetch_details->GetLoader()->ClearError();
+        // To avoid sending an error in Peek()
+        fetch_details->GetLoader()->ClearError();
+    }
 }
 
 

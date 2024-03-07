@@ -559,11 +559,6 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
         return;
     }
 
-    if (m_InPeek)
-        return;
-
-    m_InPeek = true;
-
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
@@ -574,7 +569,12 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
 
         for (auto &  details: m_FetchDetails) {
             if (details) {
+                if (details->InPeek()) {
+                    continue;
+                }
+                details->SetInPeek(true);
                 overall_final_state |= x_Peek(details, need_wait);
+                details->SetInPeek(false);
             }
         }
 
@@ -596,8 +596,6 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
         }
         CPSGS_CassProcessorBase::SignalFinishProcessing();
     }
-
-    m_InPeek = false;
 }
 
 

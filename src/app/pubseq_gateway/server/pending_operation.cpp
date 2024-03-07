@@ -170,17 +170,15 @@ void CPendingOperation::Peek(bool  need_wait)
         return;
     }
 
+    // Previously the ProcessEvent() call was conditional. The invoke was done
+    // only for InProgress and Canceled status. Later it turned out that a
+    // processor can get a timeout for one fetch and still need an event for a
+    // not finished other fetch like public comment. Potentially it is possible
+    // to have similar cases with unauthorized or error states. So it is safer
+    // to deliver an event regardless of the processor status.
     m_InProcess = true;
+    m_Processor->ProcessEvent();
     auto    processor_status = m_Processor->GetStatus();
-    if (processor_status == IPSGS_Processor::ePSGS_InProgress ||
-        processor_status == IPSGS_Processor::ePSGS_Canceled) {
-        // Note: the ProcessEvent() _may_ lead to the situation when a
-        // processor has completed its job. In this case the processor
-        // _may_ call SignalProcessorFinish() which leads to a recursive call
-        // of Peek().
-        m_Processor->ProcessEvent();
-        processor_status = m_Processor->GetStatus();
-    }
     m_InProcess = false;
 
     if (processor_status != IPSGS_Processor::ePSGS_InProgress) {

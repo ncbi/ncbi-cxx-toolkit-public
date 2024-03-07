@@ -518,15 +518,17 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                 // This call is when the framework notices that the processor
                 // reports something not InProgress (like error, cancel,
                 // timeout or found).
-
                 if (need_trace) {
-                    x_SendTrace(
-                        "Dispatcher received signal (from framework)"
-                        " that the processor " + processor->GetName() +
-                        " (priority: " + to_string(processor->GetPriority()) +
-                        ") has changed the status to " +
-                        IPSGS_Processor::StatusToString(processor_status),
-                        request, reply);
+                    if (processor_status != proc.m_LastReportedTraceStatus) {
+                        proc.m_LastReportedTraceStatus = processor_status;
+                        x_SendTrace(
+                            "Dispatcher received signal (from framework)"
+                            " that the processor " + processor->GetName() +
+                            " (priority: " + to_string(processor->GetPriority()) +
+                            ") has changed the status to " +
+                            IPSGS_Processor::StatusToString(processor_status),
+                            request, reply);
+                    }
                 }
 
                 // No changes in the dispatch status to ePSGS_Finished
