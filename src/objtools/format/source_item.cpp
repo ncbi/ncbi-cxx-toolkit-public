@@ -144,6 +144,7 @@ static CConstRef<CSeq_feat> x_GetSourceFeatFromCDS  (
 }
 */
 
+/*
 static const char * legal_organelles[] = {
     "chloroplast",
     "chromoplast",
@@ -158,6 +159,7 @@ static const char * legal_organelles[] = {
     "hydrogenosome",
     "chromatophore"
 };
+*/
 
 void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
