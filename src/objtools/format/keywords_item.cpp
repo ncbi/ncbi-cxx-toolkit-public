@@ -342,7 +342,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
             FOR_EACH_STRING_IN_LIST ( s_itr, keywords ) {
                 x_AddKeyword(*s_itr);
             }
-        } catch (CException) {
+        } catch (CException& e) {
         }
     }
 
