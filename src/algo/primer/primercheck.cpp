@@ -40,7 +40,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
-
+#include <objects/seqalign/Score.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -1914,28 +1914,137 @@ void COligoSpecificityCheck::CheckSpecificity(const vector<SPrimerInfo>& primer_
     x_SortPrimerHit(m_PrimerHit);
 }
 
+static bool SortHitByTopHspScores(TSortedHsp const& info1,
+                                  TSortedHsp const& info2) {
+    vector<double> score1;
+    static const int num_hsp = 2;  
+    if (info1.first.size() > 0) {
+        CRange<TSeqPos> previous_range;
+        for (int i = 0; i < (int)info1.first.size() && i < num_hsp; i ++) {
+            if (i == 0 || (i > 0 && !(info1.first[i]->master_range.IntersectingWith(previous_range)))) {
+                score1.push_back(info1.first[i]->bit_score);
+            }
+             if (i == 0) {
+                 previous_range = info1.first[i]->master_range;  
+             }
+        }
+    }
+    if (info1.second.size() > 0 && (score1.empty() || !(score1[0] > info1.second[0]->bit_score))) {
+        CRange<TSeqPos> previous_range;
+        for (int i = 0; i < (int)info1.second.size() && i < num_hsp; i ++) {
+            if (i == 0 || (i > 0 && !(info1.second[i]->master_range.IntersectingWith(previous_range)))) {
+                score1.push_back(info1.second[i]->bit_score);
+            }
+            if (i == 0) {
+                previous_range = info1.second[i]->master_range;    
+            }
+        }
+    }
+
+    vector<double> score2;
+    
+    if (info2.first.size() > 0) {
+        CRange<TSeqPos> previous_range;
+        for (int i = 0; i < (int)info2.first.size() && i < num_hsp; i ++) {
+            if (i == 0 || (i > 0 && !(info2.first[i]->master_range.IntersectingWith(previous_range)))) {
+                score2.push_back(info2.first[i]->bit_score);
+            } 
+            if (i == 0) {
+                previous_range = info2.first[i]->master_range;
+            }
+        }
+    }
+    if (info2.second.size() > 0 && (score2.empty() || !(score2[0] > info2.second[0]->bit_score))) {
+        CRange<TSeqPos> previous_range;
+        for (int i = 0; i < (int)info2.second.size() && i < num_hsp; i ++) {
+            if (i == 0 || (i > 0 && !(info2.second[i]->master_range.IntersectingWith(previous_range)))) {
+                score2.push_back(info2.second[i]->bit_score);
+            }
+             if (i == 0) {
+                 previous_range = info2.second[i]->master_range;
+             } 
+        }
+    }
+    
+    
+    stable_sort(score1.begin(), score1.end(), greater<double>());
+    
+    stable_sort(score2.begin(), score2.end(), greater<double>());
+    
+    if (score1[0] > score2[0]) {
+        return true;
+    } else if (score1[0] < score2[0]) {
+        return false;
+    } else if (score1.size() > 1 && score2.size() > 1) {
+        
+        return (score1[1] > score2[1]);
+    } else if (score1.size() > 1) {
+        return true;
+    } else if (score2.size() > 1) {
+        return false;
+    } 
+    
+    return true;
+    
+}
+
 
 ///Place alignment from the same id into one holder.  Split the alignment in each holder
 /// into plus or minus strand and sort them by alignment start in ascending order
 void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
 {
+    if(input_hits.Get().empty()) {
+        return;
+    }
+
     CConstRef<CSeq_id> previous_id, subid;
     bool is_first_aln = true;
+    double highest_hit_score = 0;
+    bool last_highest_hit_score_index_found = false;
+    int count = 0;
     TSortedHsp each_hit; //first element for plus strand, second element for minus strand
-   
+    
     NON_CONST_ITERATE(CSeq_align_set::Tdata, iter, input_hits.Set()) {
         subid = &((*iter)->GetSeq_id(1));
+        double cur_bit_score = 0;
+        (*iter)->GetNamedScore(CSeq_align::eScore_BitScore, cur_bit_score); 
+        if (cur_bit_score == 0) {
+            ITERATE(CDense_seg::TScores, iter_score, (*iter)->GetSegs().GetDenseg().GetScores()) {
+                const CObject_id& id=(*iter_score)->GetId();
+                if (id.IsStr() && id.GetStr() == "bit_score") {
+                    cur_bit_score = (*iter_score)->GetValue().GetReal();
+                    break;
+                }
+            }
+        }
+
         if (!is_first_aln && !subid->Match(*previous_id)) {
-            //this aln is a new id, save  for the same seqid
+            //this aln has a new id, compare to previous hit 
+            if (!last_highest_hit_score_index_found) {
+             
+                if (cur_bit_score < highest_hit_score) {
+                    last_highest_hit_score_index_found = true;
+                }
+
+                if (!(each_hit.first.empty())) {
+                    highest_hit_score = max(highest_hit_score, each_hit.first[0]->bit_score);
+                }
+                if (!(each_hit.second.empty())) {
+                    highest_hit_score = max(highest_hit_score, each_hit.second[0]->bit_score);
+                }
+                
+                count ++;
+            }
+            
+            //this aln has a new id, save the previous hit
            
             m_SortHit.push_back(each_hit);
-           
+          
             //reset 
            
             each_hit.first.clear();
             each_hit.second.clear();
-           
-        }
+        }            
         SHspInfo* temp = new SHspInfo;
         if ((*iter)->GetSeqStrand(0) == eNa_strand_minus) {
            
@@ -1949,20 +2058,20 @@ void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
         }
         temp->master_range = temp->hsp->GetSeqRange(0);
         temp->slave_range = temp->hsp->GetSeqRange(1);
-        temp->bit_score = 0;
-        temp ->hsp->GetNamedScore(CSeq_align::eScore_BitScore, temp->bit_score);
-
+        temp->bit_score = cur_bit_score;
         is_first_aln = false;
         previous_id = subid;
        
     }
 
     //save the last ones with the same id
-    if(!(each_hit.first.empty() && each_hit.second.empty())) {
-       
+    if(!(each_hit.first.empty() && each_hit.second.empty())) {    
         m_SortHit.push_back(each_hit);
-        
     }
+
+   //sort hit based on the top two hsp
+    stable_sort(m_SortHit.begin(), m_SortHit.begin() + count, SortHitByTopHspScores);
+    
     int num_hits = (int)m_SortHit.size();
     int num_hsp = (int)input_hits.Get().size();
     int hsp_hit_ratio = 0;
