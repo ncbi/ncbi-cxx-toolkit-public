@@ -4503,14 +4503,14 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     // bool any_modified = false;
     int num_states = 0;
-    int match = -1;
+    size_t match = -1;
 
     // string* first = 0;
     // string* last = 0;
 
     // has multiple components
     // int max = components.size() - 1;
-    for ( int j = 0; j < components.size(); j++ ) {
+    for ( size_t j = 0; j < components.size(); j++ ) {
         bool modified = false;
         if ( s_IsState  ( components[j], modified )) {
             /*
