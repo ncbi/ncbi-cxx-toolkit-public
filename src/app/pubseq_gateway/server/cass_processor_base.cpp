@@ -41,7 +41,6 @@
 
 CPSGS_CassProcessorBase::CPSGS_CassProcessorBase() :
     m_Canceled(false),
-    m_InPeek(false),
     m_Unlocked(false),
     // e100_Continue means that the processor has not updated the status yet
     // explicitly
@@ -54,7 +53,6 @@ CPSGS_CassProcessorBase::CPSGS_CassProcessorBase(
                                             shared_ptr<CPSGS_Reply> reply,
                                             TProcessorPriority  priority) :
     m_Canceled(false),
-    m_InPeek(false),
     m_Unlocked(false),
     // e100_Continue means that the processor has not updated the status yet
     // explicitly
@@ -152,6 +150,52 @@ IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void)
         return IPSGS_Processor::ePSGS_NotFound;
     }
     return IPSGS_Processor::ePSGS_Error;
+}
+
+
+void CPSGS_CassProcessorBase::EnforceWait(void) const
+{
+    if (!m_FetchDetails.empty()) {
+        for (const auto &  details: m_FetchDetails) {
+            if (details) {
+                if (details->Canceled()) {
+                } else {
+                    if (details->ReadFinished()) {
+                    } else {
+                        details->GetLoader()->Wait();
+                    }
+                }
+            } else {
+            }
+        }
+    }
+}
+
+string CPSGS_CassProcessorBase::GetVerboseFetches(void) const
+{
+    string      ret;
+    ret = "Total fetches: " + to_string(m_FetchDetails.size());
+
+    if (!m_FetchDetails.empty()) {
+        for (const auto &  details: m_FetchDetails) {
+            ret += "\n";
+            if (details) {
+                ret += details->Serialize() + " ";
+                if (details->Canceled()) {
+                    ret += "Canceled";
+                } else {
+                    if (details->ReadFinished()) {
+                        ret += "Read has finished";
+                    } else {
+                        ret += "Read has not finished";
+                    }
+                }
+            } else {
+                ret += "No more details available";
+            }
+        }
+    }
+    return ret;
 }
 
 

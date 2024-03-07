@@ -63,6 +63,8 @@ public:
     void SignalFinishProcessing(void);
     void UnlockWaitingProcessor(void);
     void CallOnData(void);
+    string GetVerboseFetches(void) const;
+    void EnforceWait(void) const;
 
 protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) override;
@@ -110,7 +112,6 @@ protected:
     list<unique_ptr<CCassFetch>>    m_FetchDetails;
 
     bool                            m_Canceled;
-    bool                            m_InPeek;
     bool                            m_Unlocked;
 
     // The overall processor status.

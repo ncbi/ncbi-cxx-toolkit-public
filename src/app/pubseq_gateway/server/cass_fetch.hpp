@@ -59,6 +59,7 @@ class CCassFetch
 public:
     CCassFetch() :
         m_FinishedRead(false),
+        m_InPeek(false),
         m_FetchType(ePSGS_UnknownFetch),
         m_Canceled(false),
         m_ExcludeBlobCacheUpdated(false)
@@ -67,6 +68,7 @@ public:
     CCassFetch(const string &  client_id,
                const SCass_BlobId &  blob_id) :
         m_FinishedRead(false),
+        m_InPeek(false),
         m_FetchType(ePSGS_UnknownFetch),
         m_Canceled(false),
         m_ClientId(client_id),
@@ -92,6 +94,12 @@ public:
 
     bool ReadFinished(void) const
     { return m_FinishedRead; }
+
+    void SetInPeek(bool val)
+    { m_InPeek = val; }
+
+    bool InPeek(void) const
+    { return m_InPeek; }
 
     bool Canceled(void) const
     { return m_Canceled; }
@@ -138,6 +146,9 @@ protected:
 
     // Indication that there will be no more data
     bool                            m_FinishedRead;
+
+    // Prevent infinite loop
+    bool                            m_InPeek;
 
     // At the time of a x_Peek() there is a last resort error handling.
     // That code receives a pointer to the base class but it needs to know
