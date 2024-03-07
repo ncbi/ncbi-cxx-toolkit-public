@@ -2218,8 +2218,8 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
                 m_MainTitle.erase (pos + 1);
             }
 
-            int offset = 0;
-            int delta = 0;
+            size_t offset = 0;
+            size_t delta = 0;
             string comma;
             string isoform;
             if (NStr::StartsWith (m_MainTitle, "hypothetical protein")) {
@@ -3078,11 +3078,11 @@ static size_t s_TitleEndsInOrganism (
 )
 
 {
-    size_t  pos;
-    int     len1, len2, idx;
+    size_t  pos, idx;
+    size_t  len1, len2;
 
-    len1 = (int) title.length();
-    len2 = (int) taxname.length();
+    len1 = title.length();
+    len2 = taxname.length();
 
     idx = len1 - len2 - 3;
     if (len1 > len2 + 4 && title [idx] == ' ' && title [idx + 1] == '[' && title [len1 - 1] == ']') {
@@ -4034,7 +4034,7 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // remove TPA or TSA prefix, will rely on other data in record to set
-    for (int i = 0; i < sizeof (s_tpaPrefixList) / sizeof (const char*); i++) {
+    for (size_t i = 0; i < sizeof (s_tpaPrefixList) / sizeof (const char*); i++) {
         string str = s_tpaPrefixList [i];
         if (NStr::StartsWith (m_MainTitle, str, NStr::eNocase)) {
             m_MainTitle.erase (0, str.length());

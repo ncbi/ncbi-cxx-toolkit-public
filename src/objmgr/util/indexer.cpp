@@ -3695,7 +3695,7 @@ static const char* const mixedTags[] = {
 static int SkipMixedContent ( const char* ptr )
 
 {
-    for (int i = 0; i < sizeof (mixedTags); i++) {
+    for (size_t i = 0; i < sizeof (mixedTags); i++) {
         const char* tag = mixedTags[i];
         const char* tmp = ptr;
         int len = 0;
@@ -3772,7 +3772,7 @@ void CWordPairIndexer::PopulateWordPairIndex (string str)
     }
 
     // convert non-alphanumeric punctuation to space
-    for (int i = 0; i < str.length(); i++) {
+    for (size_t i = 0; i < str.length(); i++) {
         char ch = str[i];
         if (ch >= 'A' && ch <= 'Z') {
         } else if (ch >= 'a' && ch <= 'z') {
