@@ -505,11 +505,9 @@ TSeqPos CFastaReader::GetCurrentPos(EPosType pos_type)
     TSeqPos pos = m_CurrentPos;
     switch (pos_type) {
     case ePosWithGapsAndSegs:
-        pos += m_SegmentBase;
-        // FALL THROUGH!!
+        return pos + m_SegmentBase + m_TotalGapLength;
     case ePosWithGaps:
-        pos += m_TotalGapLength;
-        // FALL THROUGH!!
+        return pos + m_TotalGapLength;
     case eRawPos:
         return pos;
     default:

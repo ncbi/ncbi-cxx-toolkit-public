@@ -141,7 +141,7 @@ CHugeFastaReader::~CHugeFastaReader()
 {
 }
 
-void CHugeFastaReader::Open(CHugeFile* file, objects::ILineErrorListener * pMessageListener)
+void CHugeFastaReader::Open(CHugeFile* file, objects::ILineErrorListener * /*pMessageListener*/)
 {
     int m_iFlags = CFastaReader::fNoUserObjs;
 

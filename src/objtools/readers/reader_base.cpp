@@ -327,8 +327,8 @@ CReaderBase::xGetData(
 //  ----------------------------------------------------------------------------
 void
 CReaderBase::xProcessData(
-    const TReaderData& readerData,
-    CSeq_annot& annot)
+    const TReaderData& /*readerData*/,
+    CSeq_annot& /*annot*/)
 //  ----------------------------------------------------------------------------
 {
 }
@@ -471,8 +471,8 @@ CReaderBase::xAddStringFlagsWithMap(
         baseFlags |= flagEntry->second;
     }
 };
-        
-        
+
+
 //  ----------------------------------------------------------------------------
 void CReaderBase::xSetBrowserRegion(
     const string& strRaw,
@@ -593,7 +593,7 @@ bool CReaderBase::xParseTrackLine(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseComment(
     const CTempString& record,
-    CRef<CSeq_annot>& annot )
+    CRef<CSeq_annot>& /*annot*/ )
 //  ----------------------------------------------------------------------------
 {
     if (NStr::StartsWith(record, "#")) {
@@ -664,7 +664,7 @@ bool CReaderBase::xIsReportingProgress() const
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::xReportProgress(
-    ILineErrorListener* pProgress)
+    ILineErrorListener* /*pProgress*/)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsReportingProgress()) { // progress reports disabled
