@@ -845,7 +845,7 @@ CMultiReaderApp::xProcessSingleFile(
         m_pErrors->PutError(*line_error_p);
         retCode = false;
     }
-    catch(const CObjReaderException& e) {
+    catch(const CException& e) {
         CNcbiOstrstream os;
         os << e.GetMsg();
         CNcbiOstrstream osEx;
@@ -854,7 +854,7 @@ CMultiReaderApp::xProcessSingleFile(
             os << " (" << CNcbiOstrstreamToString(osEx) << ')';
         }
         AutoPtr<ILineError> line_error_p =
-            sCreateSimpleMessage(eDiag_Fatal, 
+            sCreateSimpleMessage(eDiag_Fatal,
                 "Reading aborted due to fatal error: " + CNcbiOstrstreamToString(os));
         m_pErrors->PutError(*line_error_p);
         retCode = false;
