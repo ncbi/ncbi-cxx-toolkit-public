@@ -1191,6 +1191,9 @@ CPSGDataLoader_Impl::~CPSGDataLoader_Impl(void)
     if (m_CDDPrefetchTask) {
         m_CDDPrefetchTask->Cancel();
     }
+    // Make sure thread pool is destroyed before any tasks (e.g. CDD prefetch)
+    // and stops them all before the loader is destroyed.
+    m_ThreadPool.reset();
 }
 
 
