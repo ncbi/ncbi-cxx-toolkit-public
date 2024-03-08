@@ -407,7 +407,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                     line = strmodified;
                 }
                 ParseDataLine(line, pMessageListener);
-            } catch(CBadResiduesException & e) {
+            } catch(const CBadResiduesException & e) {
                 // we have to catch this exception so we can build up
                 // information on all lines, not just the first line
                 // with a bad residue
@@ -453,7 +453,7 @@ CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs, ILineErrorListener * pMessa
             }
             if (entry2.NotEmpty())
               entry->SetSet().SetSeq_set().push_back(entry2);
-        } catch (CObjReaderParseException& e) {
+        } catch (const CObjReaderParseException& e) {
             if (e.GetErrCode() == CObjReaderParseException::eEOF) {
                 break;
             } else {
@@ -997,7 +997,7 @@ void CFastaReader::ParseDataLine(
 
     if( ! bad_pos_vec.empty() ) {
         if (TestFlag(fValidate)) {
-            NCBI_THROW2(CBadResiduesException, eBadResidues,
+                        NCBI_THROW2(CBadResiduesException, eBadResidues,
                 "CFastaReader: There are invalid " + x_NucOrProt() + "residue(s) in input sequence",
                 CBadResiduesException::SBadResiduePositions( m_BestID, bad_pos_vec, bad_pos_line_num ) );
         } else {
@@ -1726,7 +1726,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids,
             _ASSERT(lengths.size() == size_t(m_Row) + 1);
             // redundant if there was a trailing gap, but that should be okay
             m_Starts[lengths[m_Row]][m_Row] = CFastaAlignmentBuilder::kNoPos;
-        } catch (CObjReaderParseException&) {
+        } catch (const CObjReaderParseException&) {
             if (GetLineReader().AtEOF()) {
                 break;
             } else {
@@ -1963,7 +1963,7 @@ void ScanFastaFile(IFastaEntryScan* scanner,
             if (se->IsSeq()) {
                 scanner->EntryFound(se, pos);
             }
-        } catch (CObjReaderParseException&) {
+        } catch (const CObjReaderParseException&) {
             if ( !lr->AtEOF() ) {
                 throw;
             }
@@ -2008,7 +2008,7 @@ void CFastaReader::SetPostponedMods(const list<string>& postponed_mods)
 }
 
 
-const CFastaReader::TPostponedModMap& 
+const CFastaReader::TPostponedModMap&
 CFastaReader::GetPostponedModMap() const
 {
     return m_PostponedModMap;
@@ -2046,7 +2046,7 @@ void CFastaReader::x_ApplyMods(
 
 void CFastaReader::x_AddMods(
         TSeqPos line_number,
-        CBioseq& bioseq, 
+        CBioseq& bioseq,
         string& processed_title,
         ILineErrorListener* pMessageListener)
 {
@@ -2060,12 +2060,12 @@ void CFastaReader::x_AddMods(
     const auto* pFirstID = bioseq.GetFirstId();
     _ASSERT(pFirstID);
     const auto idString = pFirstID->AsFastaString();
-    
+
     x_CheckForPostponedMods(idString, line_number, mods);
     if (mods.empty()) {
         return;
     }
-    
+
     CDefaultModErrorReporter
         errorReporter(idString, line_number, pMessageListener);
 
@@ -2086,9 +2086,9 @@ void CFastaReader::x_AddMods(
 }
 
 
-void CFastaReader::x_CheckForPostponedMods(const string& idString, 
+void CFastaReader::x_CheckForPostponedMods(const string& idString,
         TSeqPos line_number,
-        CModHandler::TModList& mods) 
+        CModHandler::TModList& mods)
 {
     if (mods.empty() || m_PostponedMods.empty()) {
         return;
@@ -2099,14 +2099,14 @@ void CFastaReader::x_CheckForPostponedMods(const string& idString,
         if (m_PostponedMods.find(CModHandler::GetCanonicalName(it->GetName()))
             != m_PostponedMods.end()) {
 
-            if (auto mit = m_PostponedModMap.find(idString); 
+            if (auto mit = m_PostponedModMap.find(idString);
                 mit != m_PostponedModMap.end()) {
-                mit->second.second.push_back(*it); 
-            } 
+                mit->second.second.push_back(*it);
+            }
             else {
                 m_PostponedModMap[idString] = {line_number, {*it}};
             }
-            it = mods.erase(it); 
+            it = mods.erase(it);
         } else {
             ++it;
         }
