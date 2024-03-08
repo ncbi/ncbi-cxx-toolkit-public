@@ -4491,7 +4491,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
         return CCountries::e_Valid;
     }
 
-    for ( size_t j = 0; j < components.size(); j++ ) {
+    for ( int j = 0; j < components.size(); j++ ) {
         // remove flanking spaces around components
         NStr::TruncateSpacesInPlace ( components[j] );
         s_CompressRunsOfSpaces ( components[j] );
@@ -4503,14 +4503,14 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
     // bool any_modified = false;
     int num_states = 0;
-    size_t match = -1;
+    int match = -1;
 
     // string* first = 0;
     // string* last = 0;
 
     // has multiple components
     // int max = components.size() - 1;
-    for ( size_t j = 0; j < components.size(); j++ ) {
+    for ( int j = 0; j < components.size(); j++ ) {
         bool modified = false;
         if ( s_IsState  ( components[j], modified )) {
             /*
@@ -4546,7 +4546,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
         pfx = ", ";
     }
 
-    for ( size_t j = 0; j < components.size(); j++ ) {
+    for ( int j = 0; j < components.size(); j++ ) {
         if ( j == match) continue;
         res.append ( pfx );
         res.append ( components[j] );
