@@ -32,18 +32,28 @@
 *   Exceptions for CFastaReader.
 */
 
-#include <objtools/readers/reader_exception.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CBadResiduesException : public CObjReaderException
+class CSeq_id;
+
+class CBadResiduesException : public CException
 {
 public:
     enum EErrCode {
-        eBadResidues
+        eBadResidues,
+        eInvalid = -1
     };
+
+    EErrCode GetErrCode(void) const
+    {
+        return typeid(*this) == typeid(CBadResiduesException) ?
+            (EErrCode) this->x_GetErrCode() :
+            (EErrCode) CException::eInvalid;
+    }
 
     virtual const char* GetErrCodeString(void) const override
     {
@@ -85,27 +95,21 @@ public:
         TBadIndexMap m_BadIndexMap;
     };
 
-    virtual void ReportExtra(ostream& out) const override;
-
-    CBadResiduesException(const CDiagCompileInfo& info,
+    void ReportExtra(ostream& out) const override;
+    CBadResiduesException(
+        const CDiagCompileInfo &info,
         const CException* prev_exception,
-        EErrCode err_code, const string& message,
+        EErrCode err_code,
+        const string& message,
         const SBadResiduePositions& badResiduePositions,
-        EDiagSev /*severity*/ = eDiag_Error) THROWS_NONE
-        : CObjReaderException(info, prev_exception,
-        (CObjReaderException::EErrCode) err_code,
-        message), m_BadResiduePositions(badResiduePositions)
+        EDiagSev severity = eDiag_Error)
+        : CException(info, prev_exception, (CException::EErrCode) err_code, message, severity, 0),
+            m_BadResiduePositions(badResiduePositions)
     {}
 
-    virtual const CException* x_Clone(void) const override
-    {
-        return new CBadResiduesException(*this);
-    }
-
+    CBadResiduesException() = delete;
     CBadResiduesException(const CBadResiduesException&) = default;
 
-
-public:
     // Returns the bad residues found, which might not be complete
     // if we bailed out early.
     const SBadResiduePositions& GetBadResiduePositions(void) const THROWS_NONE
@@ -116,6 +120,12 @@ public:
     bool empty(void) const THROWS_NONE
     {
         return m_BadResiduePositions.m_BadIndexMap.empty();
+    }
+
+protected:
+    const CException* x_Clone(void) const override
+    {
+        return new CBadResiduesException(*this);
     }
 
 private:
