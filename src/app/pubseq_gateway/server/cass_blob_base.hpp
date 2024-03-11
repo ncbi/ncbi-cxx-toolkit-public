@@ -116,7 +116,8 @@ private:
     };
 
     EPSGS_BlobCacheCheckResult
-    x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details);
+    x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
+                            bool  need_add_id2_chunk_id2_info);
     void x_OnBlobPropNotFound(CCassBlobFetch *  fetch_details);
     unique_ptr<CPSGS_SatInfoChunksVerFlavorId2Info>
         x_CheckId2Info(CCassBlobFetch *  fetch_details,
@@ -145,10 +146,12 @@ private:
                               int  err_code,
                               EDiagSev  severity);
     void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
-                               EPSGS_BlobSkipReason  skip_reason);
+                               EPSGS_BlobSkipReason  skip_reason,
+                               bool  need_add_id2_chunk_id2_info);
     void x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                unsigned long  sent_mks_ago,
-                               unsigned long  until_resend_mks);
+                               unsigned long  until_resend_mks,
+                               bool  need_add_id2_chunk_id2_info);
 
     void x_DecideToRequestMoreChunksForSmartTSE(
                                     CCassBlobFetch *  fetch_details,

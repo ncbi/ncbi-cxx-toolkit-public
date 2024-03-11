@@ -421,7 +421,8 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     // Blob props have already been received
     cass_blob_fetch->SetBlobPropSent();
 
-    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_SkipRetrieving)
+    if (x_CheckExcludeBlobCache(cass_blob_fetch.get(),
+                                false) == ePSGS_SkipRetrieving)
         return;
 
     load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
@@ -535,7 +536,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
     cass_blob_fetch.reset(new CCassBlobFetch(info_blob_request, info_blob_id));
     bool                        info_blob_requested = false;
 
-    if (x_CheckExcludeBlobCache(cass_blob_fetch.get()) == ePSGS_ProceedRetrieving) {
+    if (x_CheckExcludeBlobCache(cass_blob_fetch.get(),
+                                true) == ePSGS_ProceedRetrieving) {
         unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
         CPSGCache                   psg_cache(m_Request, m_Reply);
         auto                        blob_prop_cache_lookup_result =
@@ -618,6 +620,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         m_RequestedID2BlobChunks.push_back(info_blob_id_as_str);
         info_blob_requested = true;
+        cass_blob_fetch->SetNeedAddId2ChunkId2Info(true);
         m_FetchDetails.push_back(move(cass_blob_fetch));
     }
 
@@ -722,7 +725,8 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
 
         // Check the already sent cache
-        if (x_CheckExcludeBlobCache(details.get()) == ePSGS_SkipRetrieving) {
+        if (x_CheckExcludeBlobCache(details.get(),
+                                    true) == ePSGS_SkipRetrieving) {
             continue;
         }
 
@@ -801,6 +805,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                 details.get()));
 
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
+        details->SetNeedAddId2ChunkId2Info(true);
         m_FetchDetails.push_back(move(details));
     }
 }
@@ -975,7 +980,8 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         details.reset(new CCassBlobFetch(chunk_request, chunks_blob_id));
 
         // Check the already sent cache
-        if (x_CheckExcludeBlobCache(details.get()) == ePSGS_SkipRetrieving) {
+        if (x_CheckExcludeBlobCache(details.get(),
+                                    true) == ePSGS_SkipRetrieving) {
             continue;
         }
 
@@ -1096,6 +1102,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
         }
 
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
+        details->SetNeedAddId2ChunkId2Info(true);
         m_FetchDetails.push_back(move(details));
 
         if (need_wait) {
@@ -1108,7 +1115,8 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
 
 CPSGS_CassBlobBase::EPSGS_BlobCacheCheckResult
-CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
+CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
+                                            bool  need_add_id2_chunk_id2_info)
 {
     if (!fetch_details->IsBlobFetch())
         return ePSGS_ProceedRetrieving;
@@ -1148,7 +1156,8 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     // In case the blob is in process of sending the reply is the same for
     // ID/get and ID/get_na requests
     if (!completed) {
-        x_PrepareBlobExcluded(fetch_details, ePSGS_BlobInProgress);
+        x_PrepareBlobExcluded(fetch_details, ePSGS_BlobInProgress,
+                              need_add_id2_chunk_id2_info);
         return ePSGS_SkipRetrieving;
     }
 
@@ -1159,7 +1168,8 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details)
     if (sent_mks_ago < resend_timeout_mks) {
         // No sending the blob; it was sent recent enough
         x_PrepareBlobExcluded(fetch_details, sent_mks_ago,
-                              resend_timeout_mks - sent_mks_ago);
+                              resend_timeout_mks - sent_mks_ago,
+                              need_add_id2_chunk_id2_info);
         return ePSGS_SkipRetrieving;
     }
 
@@ -1459,7 +1469,7 @@ void
 CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                                           CBlobRecord const &  blob)
 {
-    bool    need_id2_identification = NeedToAddId2CunkId2Info();
+    bool    need_id2_identification = blob_fetch_details->GetNeedAddId2ChunkId2Info();
 
     // CXX-11547: may be public comments request is needed as well
     if (blob.GetFlag(EBlobFlags::eSuppress) ||
@@ -1557,7 +1567,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
 void
 CPSGS_CassBlobBase::x_PrepareBlobPropCompletion(CCassBlobFetch *  fetch_details)
 {
-    if (NeedToAddId2CunkId2Info()) {
+    if (fetch_details->GetNeedAddId2ChunkId2Info()) {
         m_Reply->PrepareTSEBlobPropCompletion(fetch_details, m_ProcessorId);
     } else {
         // There is no id2info in the originally requested blob
@@ -1573,7 +1583,7 @@ CPSGS_CassBlobBase::x_PrepareBlobData(CCassBlobFetch *  fetch_details,
                                       unsigned int  data_size,
                                       int  chunk_no)
 {
-    if (NeedToAddId2CunkId2Info()) {
+    if (fetch_details->GetNeedAddId2ChunkId2Info()) {
         m_Reply->PrepareTSEBlobData(
             fetch_details, m_ProcessorId,
             chunk_data, data_size, chunk_no,
@@ -1591,7 +1601,7 @@ CPSGS_CassBlobBase::x_PrepareBlobData(CCassBlobFetch *  fetch_details,
 void
 CPSGS_CassBlobBase::x_PrepareBlobCompletion(CCassBlobFetch *  fetch_details)
 {
-    if (NeedToAddId2CunkId2Info()) {
+    if (fetch_details->GetNeedAddId2ChunkId2Info()) {
         m_Reply->PrepareTSEBlobCompletion(fetch_details, m_ProcessorId);
     } else {
         // There is no id2info in the originally requested blob
@@ -1608,7 +1618,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropMessage(CCassBlobFetch *  fetch_details,
                                              int  err_code,
                                              EDiagSev  severity)
 {
-    if (NeedToAddId2CunkId2Info()) {
+    if (fetch_details->GetNeedAddId2ChunkId2Info()) {
         m_Reply->PrepareTSEBlobPropMessage(
             fetch_details, m_ProcessorId,
             x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
@@ -1632,7 +1642,7 @@ CPSGS_CassBlobBase::x_PrepareBlobMessage(CCassBlobFetch *  fetch_details,
                                          int  err_code,
                                          EDiagSev  severity)
 {
-    if (NeedToAddId2CunkId2Info()) {
+    if (fetch_details->GetNeedAddId2ChunkId2Info()) {
         m_Reply->PrepareTSEBlobMessage(
             fetch_details, m_ProcessorId,
             x_GetId2ChunkNumber(fetch_details), m_Id2Info->Serialize(),
@@ -1651,11 +1661,10 @@ CPSGS_CassBlobBase::x_PrepareBlobMessage(CCassBlobFetch *  fetch_details,
 
 void
 CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
-                                          EPSGS_BlobSkipReason  skip_reason)
+                                          EPSGS_BlobSkipReason  skip_reason,
+                                          bool  need_add_id2_chunk_id2_info)
 {
-    bool    need_to_add_id2_chunk_id2_info = NeedToAddId2CunkId2Info();
-
-    if (skip_reason == ePSGS_BlobExcluded || !need_to_add_id2_chunk_id2_info) {
+    if (skip_reason == ePSGS_BlobExcluded || !need_add_id2_chunk_id2_info) {
         m_Reply->PrepareBlobExcluded(fetch_details->GetBlobId().ToString(),
                                      m_ProcessorId, skip_reason,
                                      m_LastModified);
@@ -1674,12 +1683,13 @@ CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
 void
 CPSGS_CassBlobBase::x_PrepareBlobExcluded(CCassBlobFetch *  fetch_details,
                                           unsigned long  sent_mks_ago,
-                                          unsigned long  until_resend_mks)
+                                          unsigned long  until_resend_mks,
+                                          bool  need_add_id2_chunk_id2_info)
 {
     // Note: this version of the method is used only for the ID/get requests so
     // the additional resend related fields need to be supplied
 
-    if (NeedToAddId2CunkId2Info()) {
+    if (need_add_id2_chunk_id2_info) {
         // NOTE: the blob id argument is temporary to satisfy the older clients
         m_Reply->PrepareTSEBlobExcluded(fetch_details->GetBlobId().ToString(),
                                         x_GetId2ChunkNumber(fetch_details),
