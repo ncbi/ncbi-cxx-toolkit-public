@@ -239,7 +239,8 @@ public:
         m_UserProvidedBlobId(false),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
-        m_BlobChunkItemId(0)
+        m_BlobChunkItemId(0),
+        m_NeedAddId2ChunkId2Info(false)
     {
         m_FetchType = ePSGS_BlobBySeqIdFetch;
     }
@@ -252,7 +253,8 @@ public:
         m_UserProvidedBlobId(true),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
-        m_BlobChunkItemId(0)
+        m_BlobChunkItemId(0),
+        m_NeedAddId2ChunkId2Info(false)
     {
         m_FetchType = ePSGS_BlobBySatSatKeyFetch;
     }
@@ -265,7 +267,8 @@ public:
         m_UserProvidedBlobId(true),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
-        m_BlobChunkItemId(0)
+        m_BlobChunkItemId(0),
+        m_NeedAddId2ChunkId2Info(false)
     {
         // Note: this constructor is for the case when a blob is retrieved for
         // an annotation after an annotation record is received.
@@ -292,7 +295,8 @@ public:
         m_UserProvidedBlobId(false),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
-        m_BlobChunkItemId(0)
+        m_BlobChunkItemId(0),
+        m_NeedAddId2ChunkId2Info(false)
     {
         m_FetchType = ePSGS_TSEChunkFetch;
     }
@@ -303,7 +307,8 @@ public:
         m_UserProvidedBlobId(true),
         m_TotalSentBlobChunks(0),
         m_BlobPropItemId(0),
-        m_BlobChunkItemId(0)
+        m_BlobChunkItemId(0),
+        m_NeedAddId2ChunkId2Info(false)
     {}
 
     virtual ~CCassBlobFetch()
@@ -336,6 +341,12 @@ public:
     bool IsBlobPropStage(void) const
     { return !m_BlobPropSent; }
 
+    void SetNeedAddId2ChunkId2Info(bool  val)
+    { m_NeedAddId2ChunkId2Info = val; }
+
+    bool GetNeedAddId2ChunkId2Info(void) const
+    { return m_NeedAddId2ChunkId2Info; }
+
     void SetLoader(CCassBlobTaskLoadBlob *  fetch)
     { m_Loader.reset(fetch); }
 
@@ -367,6 +378,8 @@ private:
 
     size_t                                  m_BlobPropItemId;
     size_t                                  m_BlobChunkItemId;
+
+    bool                                    m_NeedAddId2ChunkId2Info;
 };
 
 
