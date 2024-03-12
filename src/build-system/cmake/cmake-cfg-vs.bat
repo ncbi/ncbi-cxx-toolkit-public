@@ -76,7 +76,7 @@ echo   --with-build-root=name   -- specify a non-default build directory name
 echo   --without-analysis       -- skip source tree analysis
 echo   --with-vs=N              -- use Visual Studio N generator 
 echo                  examples:    --with-vs=2019  (default)
-echo                               --with-vs=2017
+echo                               --with-vs=2022
 echo   --with-generator="X"     -- use generator X
 echo   --with-conan             -- use Conan to install required components
 echo OPTIONAL ENVIRONMENT VARIABLES:
