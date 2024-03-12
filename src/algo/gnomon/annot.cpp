@@ -184,11 +184,13 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 {
     TGeneModelList aligns(il, ir);
 
-    TSignedSeqPos left = llimit;
+    //    TSignedSeqPos left = llimit;
+    int64_t left = llimit;
     bool leftwall = leftmostwall;
     bool leftanchor = leftmostanchor;
 
-    TSignedSeqPos right = llimit+window;
+    //    TSignedSeqPos right = llimit+window;
+    int64_t right = llimit+window;
     bool rightwall = false;
     bool rightanchor = false;
 
