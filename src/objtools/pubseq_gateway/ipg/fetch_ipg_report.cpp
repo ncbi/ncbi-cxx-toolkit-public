@@ -214,7 +214,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
             case eInit:
                 m_Container.reserve(kReadBufferReserveDefault);
                 m_QueryArr.resize(1);
-                m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                m_QueryArr[0] = {ProduceQuery(), 0};
                 // If accession is provided instead of IPG, resolve IPG, then return
                 // to the 'new task' state.
                 if (!m_Request.HasIpgToFetchData() && m_Request.HasProtein()) {
@@ -269,7 +269,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
 
             case eTaskFetchReport:
             {
-                m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                m_QueryArr[0] = {ProduceQuery(), 0};
                 size_t args = 1;
                 string protein_suffix;
                 if (m_Request.HasProtein()) {
@@ -313,7 +313,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                             protein_suffix += " AND nuc_accession = ?";
                         }
                     }
-                    m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                    m_QueryArr[0] = {ProduceQuery(), 0};
                     m_QueryArr[0].query->SetSQL("SELECT " + GetSelectFieldList()
                         + " FROM " + GetKeySpace() + ".ipg_report_huge WHERE ipg = ? and subgroup = ?" + protein_suffix, args);
                     m_QueryArr[0].query->BindInt64(0, m_Request.GetIpgToFetchData());
