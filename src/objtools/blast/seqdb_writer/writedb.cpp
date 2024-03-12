@@ -334,7 +334,8 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                               const string& title,
                               EAliasFileFilterType alias_type /*= eGiList*/)
 {
-    vector<string> db(1, db_name);
+    vector<string> db;    
+    NStr::Split(db_name," ",db);
     CWriteDB_CreateAliasFile(file_name, db, seq_type, gi_file_name, title,
                              alias_type);
 }
