@@ -169,7 +169,7 @@ list(APPEND NCBI_ALL_REQUIRES TLS)
 #############################################################################
 # LocalPCRE
 if (NOT NCBI_COMPONENT_LocalPCRE_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/regexp AND NOT NCBI_PTBCFG_PACKAGING)
-    set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
+    set(NCBI_COMPONENT_LocalPCRE_FOUND LOCAL)
     set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${NCBITK_INC_ROOT}/util/regexp)
     set(NCBI_COMPONENT_LocalPCRE_NCBILIB regexp)
 endif()
@@ -178,7 +178,7 @@ NCBIcomponent_report(LocalPCRE)
 #############################################################################
 # LocalZ
 if (NOT NCBI_COMPONENT_LocalZ_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib AND NOT NCBI_PTBCFG_PACKAGING)
-    set(NCBI_COMPONENT_LocalZ_FOUND YES)
+    set(NCBI_COMPONENT_LocalZ_FOUND LOCAL)
     set(NCBI_COMPONENT_LocalZ_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib)
     set(NCBI_COMPONENT_LocalZ_NCBILIB z)
 endif()
@@ -187,7 +187,7 @@ NCBIcomponent_report(LocalZ)
 #############################################################################
 # LocalZCF
 if (NOT NCBI_COMPONENT_LocalZCF_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/zlib_cloudflare)
-    set(NCBI_COMPONENT_LocalZCF_FOUND YES)
+    set(NCBI_COMPONENT_LocalZCF_FOUND LOCAL)
     set(NCBI_COMPONENT_LocalZCF_INCLUDE ${NCBITK_INC_ROOT}/util/compress/zlib_cloudflare)
     set(NCBI_COMPONENT_LocalZCF_NCBILIB zcf)
 endif()
@@ -197,7 +197,7 @@ NCBIcomponent_report(LocalZCF)
 #############################################################################
 # LocalBZ2
 if (NOT NCBI_COMPONENT_LocalBZ2_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/compress/bzip2 AND NOT NCBI_PTBCFG_PACKAGING)
-    set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
+    set(NCBI_COMPONENT_LocalBZ2_FOUND LOCAL)
     set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${NCBITK_INC_ROOT}/util/compress/bzip2)
     set(NCBI_COMPONENT_LocalBZ2_NCBILIB bz2)
 endif()
@@ -206,7 +206,7 @@ NCBIcomponent_report(LocalBZ2)
 #############################################################################
 # LocalLMDB
 if (NOT NCBI_COMPONENT_LocalLMDB_DISABLED AND EXISTS ${NCBITK_INC_ROOT}/util/lmdb AND NOT CYGWIN AND NOT NCBI_PTBCFG_PACKAGING)
-    set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
+    set(NCBI_COMPONENT_LocalLMDB_FOUND LOCAL)
     set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${NCBITK_INC_ROOT}/util/lmdb)
     set(NCBI_COMPONENT_LocalLMDB_NCBILIB lmdb)
 endif()
@@ -343,7 +343,10 @@ if(NOT "${NCBI_PTBCFG_PROJECT_COMPONENTS}" STREQUAL "")
         NCBI_util_parse_sign( ${_comp} _value _negate)
         if (_negate)
             if(NCBI_COMPONENT_${_value}_FOUND OR NCBI_REQUIRE_${_value}_FOUND)
-                message(SEND_ERROR "Component ${_value} is enabled, but not allowed")
+                if( NOT "${NCBI_COMPONENT_${_value}_FOUND}" STREQUAL "LOCAL" AND
+                    NOT "${NCBI_REQUIRE_${_value}_FOUND}"   STREQUAL "LOCAL")
+                    message(SEND_ERROR "Component ${_value} is enabled, but not allowed")
+                endif()
             elseif(NOT DEFINED NCBI_COMPONENT_${_value}_FOUND AND NOT DEFINED NCBI_REQUIRE_${_value}_FOUND)
                 message(SEND_ERROR "Component ${_value} is unknown")
             endif()
