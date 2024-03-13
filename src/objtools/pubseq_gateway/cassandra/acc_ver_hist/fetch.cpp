@@ -97,7 +97,7 @@ void CCassAccVerHistoryTaskFetch::Wait1()
         case eInit:
         {
             m_QueryArr.resize(1);
-            m_QueryArr[0] = { m_Conn->NewQuery(), 0};
+            m_QueryArr[0] = {ProduceQuery(), 0};
 
             string sql =
                 " SELECT"

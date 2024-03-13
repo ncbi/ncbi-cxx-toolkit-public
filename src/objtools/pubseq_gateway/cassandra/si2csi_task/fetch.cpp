@@ -110,7 +110,7 @@ void CCassSI2CSITaskFetch::Wait1()
             case eInit:
                 {
                     m_QueryArr.resize(1);
-                    m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                    m_QueryArr[0] = {ProduceQuery(), 0};
                     x_InitializeQuery();
                     SetupQueryCB3(m_QueryArr[0].query);
                     m_QueryArr[0].query->Query(kSi2CsiConsistency, m_Async, true, m_PageSize);
