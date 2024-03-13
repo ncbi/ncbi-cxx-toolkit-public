@@ -94,7 +94,7 @@
 
     bool allow_transparent_read_test = true;
     if ( (method == M::eZip  ||  method == M::eZipCloudflare)
-         &&  version.IsUpCompatible(CVersionInfo(1, 2, 3)) ) 
+         &&  !version.IsUpCompatible(CVersionInfo(1, 2, 3)) ) 
     {
         allow_transparent_read_test = false;
         ERR_POST(Info << "Transparent read tests are not allowed for this test and library version.");
