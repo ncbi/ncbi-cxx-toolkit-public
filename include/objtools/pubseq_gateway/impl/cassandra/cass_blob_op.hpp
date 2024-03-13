@@ -64,8 +64,18 @@ using TDataReadyCallback = void(*)(void*);
 
 class CCassBlobWaiter
 {
+protected:
+    CCassBlobWaiter(const CCassBlobWaiter& other)
+        : m_ErrorCb(other.m_ErrorCb)
+        , m_Conn(other.m_Conn)
+        , m_QueryTimeout(other.m_QueryTimeout)
+        , m_Async(other.m_Async)
+        , m_Keyspace(other.m_Keyspace)
+        , m_Key(other.m_Key)
+        , m_MaxRetries(other.m_MaxRetries)
+    {}
 public:
-    CCassBlobWaiter(const CCassBlobWaiter&) = delete;
+
     CCassBlobWaiter& operator=(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter(CCassBlobWaiter&&) = delete;
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = delete;
@@ -333,11 +343,14 @@ protected:
 
     TDataErrorCallback              m_ErrorCb;
     weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
+
+    // @ToDo Make it private with protected accessor
     shared_ptr<CCassConnection>     m_Conn;
+
     std::chrono::milliseconds       m_QueryTimeout{0};
     atomic<int32_t>                 m_State{eInit};
     string                          m_LastError;
-    bool                            m_Async;
+    bool                            m_Async{true};
     atomic_bool                     m_Cancelled{false};
     vector<SQueryRec>               m_QueryArr;
 
