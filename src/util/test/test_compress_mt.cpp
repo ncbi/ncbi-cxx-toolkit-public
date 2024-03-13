@@ -253,10 +253,10 @@ bool CTest::Thread_Run(int idx)
 #if defined(HAVE_LIBZCF)
         if ( zcf ) {
             ERR_POST(Trace << "-------------- Zlib Cloudflare -----");
-            TestMethod<CZipCompression,
-                       CZipCompressionFile,
-                       CZipStreamCompressor,
-                       CZipStreamDecompressor> (M::eZipCloudflare, idx, src_buf, len, kBufLen);
+            TestMethod<CZipCloudflareCompression,
+                       CZipCloudflareCompressionFile,
+                       CZipCloudflareStreamCompressor,
+                       CZipCloudflareStreamDecompressor>(M::eZipCloudflare, idx, src_buf, len, kBufLen);
         }
 #endif
 #if defined(HAVE_LIBZSTD)
