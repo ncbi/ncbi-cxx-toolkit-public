@@ -6146,7 +6146,17 @@ special  CAUPSY000000000-CAUTMV999999999  embl_tpa_wgs_nuc # 6+9
 special  CAUTMX000000000-CAUTMX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAUTNA000000000-CAUTOK999999999  embl_tpa_wgs_nuc # 6+9
 special  CAUTOM000000000-CAUVWA999999999  embl_tpa_wgs_nuc # 6+9
+special  CAWVRH000000000-CAWWDE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAWZYP000000000-CAWZYZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXAAG000000000-CAXACN999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXAFD000000000-CAXAJU999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXASQ000000000-CAXAUW999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXAUY000000000-CAXAXI999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXAXL000000000-CAXAYR999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXAYT000000000-CAXBOQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXBOS000000000-CAXBSW999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXBUO000000000-CAXCFA999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXCFC000000000-CAXCFE999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
