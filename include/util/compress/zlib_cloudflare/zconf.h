@@ -7,6 +7,8 @@
 
 #ifndef ZCONF_H
 #define ZCONF_H
+
+#include <ncbiconf.h>
 #include <stdint.h>
 
 #define Z_PREFIX
