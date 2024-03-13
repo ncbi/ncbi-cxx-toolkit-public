@@ -855,14 +855,21 @@ NCBIcomponent_report(JAEGER)
 
 #############################################################################
 # AWSSDK
-NCBI_define_Xcomponent(NAME AWS_SDK LIB
-    aws-cpp-sdk-identity-management aws-cpp-sdk-access-management aws-cpp-sdk-transfer
-    aws-cpp-sdk-sts aws-cpp-sdk-s3 aws-cpp-sdk-iam aws-cpp-sdk-cognito-identity
-    aws-cpp-sdk-core aws-c-event-stream aws-checksums aws-c-common
-    crypto ssl ADD_COMPONENT CURL
-    CMAKE_PACKAGE AWSSDK COMPONENTS s3
-)
-if(NCBI_COMPONENT_AWS_SDK_FOUND AND NOT TARGET ZLIB::ZLIB)
-    find_package(ZLIB REQUIRED)
+if( NOT NCBI_COMPONENT_Z_DISABLED)
+    cmake_policy(PUSH)
+    if(POLICY CMP0130)
+        cmake_policy(SET CMP0130 OLD)
+    endif()
+    NCBI_define_Xcomponent(NAME AWS_SDK LIB
+        aws-cpp-sdk-identity-management aws-cpp-sdk-access-management aws-cpp-sdk-transfer
+        aws-cpp-sdk-sts aws-cpp-sdk-s3 aws-cpp-sdk-iam aws-cpp-sdk-cognito-identity
+        aws-cpp-sdk-core aws-c-event-stream aws-checksums aws-c-common
+        crypto ssl ADD_COMPONENT CURL
+        CMAKE_PACKAGE AWSSDK COMPONENTS s3
+    )
+    if(NCBI_COMPONENT_AWS_SDK_FOUND AND NOT TARGET ZLIB::ZLIB)
+        find_package(ZLIB REQUIRED)
+    endif()
+    cmake_policy(POP)
 endif()
 NCBIcomponent_report(AWS_SDK)
