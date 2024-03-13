@@ -263,7 +263,7 @@ void CCassBioseqInfoTaskFetch::Wait1()
                     m_Records.clear();
                     m_InheritanceRequired.clear();
                     m_QueryArr.resize(1);
-                    m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                    m_QueryArr[0] = {ProduceQuery(), 0};
                     x_InitializeQuery();
                     x_StartQuery();
                     m_State = eFetchStarted;

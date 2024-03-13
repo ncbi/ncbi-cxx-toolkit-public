@@ -101,7 +101,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1()
 
             case eInit: {
                 m_QueryArr.resize(1);
-                m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                m_QueryArr[0] = {ProduceQuery(), 0};
                 auto query = m_QueryArr[0].query;
                 string sql = "SELECT split_version, last_modified, id2_info FROM " + GetKeySpace() +
                     ".blob_split_history WHERE sat_key = ?";

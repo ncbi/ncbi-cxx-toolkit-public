@@ -76,7 +76,7 @@ void CCassStatusHistoryTaskFetch::Wait1()
 
                 case eInit: {
                     m_QueryArr.resize(1);
-                    m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+                    m_QueryArr[0] = {ProduceQuery(), 0};
                     auto query = m_QueryArr[0].query;
                     string sql =
                         "SELECT done_when, comment, public_comment, flags, replaces, username, replaces_ids, replaced_by_ids "

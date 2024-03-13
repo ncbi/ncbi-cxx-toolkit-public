@@ -123,7 +123,7 @@ void CCassBlobTaskFindChunk::x_IsID2ChunkPacked_Query()
 {
     CloseAll();
     m_QueryArr.clear();
-    m_QueryArr.push_back({m_Conn->NewQuery(), 0});
+    m_QueryArr.push_back({ProduceQuery(), 0});
     auto qry = m_QueryArr[0].query;
     string sql = "SELECT size, size_unpacked FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
     qry->SetSQL( sql, 1);

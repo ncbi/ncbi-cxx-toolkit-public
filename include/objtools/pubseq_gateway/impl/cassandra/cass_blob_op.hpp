@@ -64,7 +64,7 @@ using TDataReadyCallback = void(*)(void*);
 
 class CCassBlobWaiter
 {
- public:
+public:
     CCassBlobWaiter(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter& operator=(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter(CCassBlobWaiter&&) = delete;
@@ -214,7 +214,7 @@ class CCassBlobWaiter
         m_DataReadyCb3 = datareadycb3;
     }
 
- protected:
+protected:
     enum EBlobWaiterState {
         eInit = 0,
         eDone = 10000,
@@ -341,7 +341,7 @@ class CCassBlobWaiter
     atomic_bool                     m_Cancelled{false};
     vector<SQueryRec>               m_QueryArr;
 
- private:
+private:
     string                          m_Keyspace;
     int32_t                         m_Key{0};
     int                             m_MaxRetries{-1};
@@ -349,14 +349,14 @@ class CCassBlobWaiter
 
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
 {
- public:
+public:
     enum EBlopOpFlag {
         eFlagOpOr,
         eFlagOpAnd,
         eFlagOpSet
     };
 
- public:
+public:
     CCassBlobOp(CCassBlobOp&&) = default;
     CCassBlobOp& operator=(CCassBlobOp&&) = default;
     CCassBlobOp(const CCassBlobOp&) = delete;
@@ -402,11 +402,11 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         return m_Conn;
     }
 
- private:
+private:
     shared_ptr<CCassConnection> m_Conn;
     string m_Keyspace;
 };
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // CASSBLOBOP__HPP

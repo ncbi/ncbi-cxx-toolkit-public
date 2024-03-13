@@ -140,7 +140,7 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
             case eStartReading: {
                 CloseAll();
                 m_QueryArr.clear();
-                m_QueryArr.push_back({m_Conn->NewQuery(), 0});
+                m_QueryArr.push_back({ProduceQuery(), 0});
                 auto query = m_QueryArr[0].query;
                 string sql =
                     "SELECT flags, public_comment, replaces "
