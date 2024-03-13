@@ -312,7 +312,8 @@ unsigned long s_UpdateCRC32(uLong crc, const void* buf, size_t len)
 inline
 unsigned long s_GetCRC32(const void* buf, size_t len)
 {
-    return s_UpdateCRC32(0L, buf, len);
+    // Get lower 32-bits only. On some platforms and zlib versions it can get upper bits sets to FFFFFFFF.
+    return s_UpdateCRC32(0L, buf, len) & 0xFFFFFFFFUL;
 }
 
 
@@ -1172,10 +1173,11 @@ CCompressionProcessor::EStatus CZipCloudflareCompressor::Process(
 
     // If we writing in gzip file format
     if ( F_ISSET(fWriteGZipFormat) ) {
-        // Update the CRC32 for processed data
-        m_CRC32 = static_cast<unsigned long> (
+        // Update the CRC32 for processed data. Get lower 32-bits only.
+        // On some platforms and zlib versions it can get upper bits sets to FFFFFFFF.
+        m_CRC32 = static_cast<unsigned long> ( 
                     Z(crc32)(m_CRC32, (unsigned char*)in_buf, (unsigned int)(in_len - *in_avail))
-                  );
+                  ) & 0xFFFFFFFFUL;
     }
     if ( errcode == Z_OK ) {
         return eStatus_Success;
