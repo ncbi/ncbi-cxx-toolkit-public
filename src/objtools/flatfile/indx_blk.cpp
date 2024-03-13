@@ -1686,7 +1686,7 @@ static bool IsTPAAccPrefix(const Parser& parseInfo, const char* acc)
         if (acc[0] == 'D' &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
             return (true);
-        if (acc[0] == 'E' &&
+        if ((acc[0] == 'E' || acc[0] == 'Y') &&
             (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
             return (true);
         return (false);
@@ -1722,7 +1722,8 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
     if (! acc || *acc == '\0')
         return;
 
-    if (parseInfo.source == Parser::ESource::EMBL) {
+    if (parseInfo.source == Parser::ESource::EMBL ||
+        parseInfo.source == Parser::ESource::DDBJ) {
         ibp->tsa_allowed = true;
         return;
     }
