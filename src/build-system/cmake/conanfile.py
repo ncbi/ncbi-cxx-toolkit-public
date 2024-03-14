@@ -74,38 +74,36 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 
         if self.settings.os == "Linux":
             self.requires("backward-cpp/1.6")
-            self.requires("libunwind/1.8.0")
-            self.requires("libdb/5.3.28")
         self.requires("boost/1.82.0")
         self.requires("bzip2/1.0.8")
         if self.settings.os == "Linux":
             self.requires("cassandra-cpp-driver/2.15.3")
         self.requires("giflib/5.2.1")
         self.requires("grpc/1.50.1")
+        if self.settings.os == "Linux" or NCBIfound:
+            self.requires("libdb/5.3.28")
         self.requires("libjpeg/9e")
-        self.requires("lmdb/0.9.29")
-        self.requires("lzo/2.10")
-#libmysqlclient/8.0.30
         self.requires("libnghttp2/1.54.0")
-        self.requires("pcre/8.45")
         self.requires("libpng/1.6.39")
-#protobuf/3.21.4
-        self.requires("sqlite3/3.42.0")
         self.requires("libtiff/4.5.0")
+        if self.settings.os == "Linux":
+            self.requires("libunwind/1.8.0")
+        self.requires("libuv/1.46.0")
         self.requires("libxml2/2.11.6")
         self.requires("libxslt/1.1.34")
-        self.requires("libuv/1.46.0")
+        self.requires("lmdb/0.9.29")
+        self.requires("lzo/2.10")
+        self.requires("openssl/1.1.1s")
+        self.requires("pcre/8.45")
+        self.requires("sqlite3/3.42.0")
         self.requires("zlib/[>=1.2.11 <2]")
         self.requires("zstd/1.5.5")
-        self.requires("openssl/1.1.1s")
 
         if NCBIfound:
-            if self.settings.os != "Linux":
-                self.requires("libdb/5.3.28")
+            self.requires("ncbicrypt/20230516")
             if self.settings.os == "Linux":
                 self.requires("ncbi-fastcgi/2.4.2")
             self.requires("ncbi-vdb/3.0.10")
-            self.requires("ncbicrypt/20230516")
 
     def validate(self):
         if self.settings.compiler.cppstd:
