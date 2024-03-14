@@ -181,7 +181,7 @@ NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCL
 NCBIcomponent_report(CURL)
 
 #############################################################################
-#LMDB
+# LMDB
 NCBI_define_Xcomponent(NAME LMDB LIB lmdb)
 NCBIcomponent_report(LMDB)
 if(NOT NCBI_COMPONENT_LMDB_FOUND)
@@ -193,8 +193,7 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
-#NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre)
-set(NCBI_COMPONENT_PCRE_FOUND NO)
+NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre CHECK_INCLUDE pcre.h)
 NCBIcomponent_report(PCRE)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -205,9 +204,6 @@ set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 
 #############################################################################
 # Z
-set(NCBI_COMPONENT_LocalZ_FOUND NO)
-list(REMOVE_ITEM NCBI_ALL_COMPONENTS LocalZ)
-
 NCBI_define_Xcomponent(NAME Z MODULE zlib PACKAGE ZLIB LIB z CHECK_INCLUDE zlib.h)
 NCBIcomponent_report(Z)
 if(NOT NCBI_COMPONENT_Z_FOUND)
@@ -218,10 +214,7 @@ endif()
 set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 
 #############################################################################
-#BZ2
-set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
-list(REMOVE_ITEM NCBI_ALL_COMPONENTS LocalBZ2)
-
+# BZ2
 NCBI_define_Xcomponent(NAME BZ2 PACKAGE BZip2 LIB bz2 CHECK_INCLUDE bzlib.h)
 NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
