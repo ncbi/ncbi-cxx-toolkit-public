@@ -502,7 +502,8 @@ int CTbl2AsnApp::Run()
     CNcbiOstream* error_log = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCerr;
     app_logger->SetProgressOstream(error_log);
     SetDiagHandler(app_logger);
-    m_logger.Reset(app_logger);
+    m_logger = app_logger;
+    //m_logger.Reset(app_logger);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
