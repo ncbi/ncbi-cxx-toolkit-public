@@ -135,7 +135,7 @@ private:
 
     unique_ptr<CMultiReader> m_reader;
     CRef<CTable2AsnValidator> m_validator;
-    CRef<CTable2AsnLogger> m_logger;
+    CTable2AsnLogger* m_logger{nullptr}; // See RW-2233
     CTable2AsnContext    m_context;
 
     static const Int8 TBL2ASN_MAX_ALLOWED_FASTA_SIZE = INT8_C(0x7FFFFFFF);
