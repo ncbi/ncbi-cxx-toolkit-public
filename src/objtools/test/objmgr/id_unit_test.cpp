@@ -2507,6 +2507,148 @@ BOOST_AUTO_TEST_CASE(TestStateDeadConflict)
 }
 
 
+enum EFallbackFailType {
+    eFallbackFail_none,
+    eFallbackFail_seq,
+    eFallbackFail_na
+};
+
+static
+void s_TestFallback(const string& id_str,
+                    const string& na_str,
+                    EFallbackFailType fail_type = eFallbackFail_none)
+{
+    if ( !CGBDataLoader::IsUsingPSGLoader() ) {
+        LOG_POST("Skipping test for PSG fallback without PSG loader enabled");
+        return;
+    }
+    if ( NeedsOtherLoaders() ) {
+        LOG_POST("Skipping test for PSG fallback without PSG2 loader enabled");
+        return;
+    }
+    LOG_POST("Checking PSG fallback for "<<id_str<<" + "<<na_str);
+    CRef<CScope> scope = s_InitScope();
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id_str);
+    CBioseq_Handle bh;
+    SAnnotSelector base_sel;
+    CRef<CSeq_loc> search_loc(new CSeq_loc());
+    CRef<CSeq_id> seq_id(new CSeq_id(id_str));
+    search_loc->SetWhole(*seq_id);
+    if ( fail_type == eFallbackFail_seq ) {
+        LOG_POST("Expecting to fail loading sequence "<<id_str);
+        BOOST_CHECK_THROW(scope->GetBioseqHandle(idh), CLoaderException);
+        return;
+        LOG_POST("Creating a dummy sequence "<<id_str<<" for NA search.");
+        auto ids = scope->GetIds(idh);
+        BOOST_CHECK(!ids.empty());
+        auto seq_len = scope->GetSequenceLength(idh);
+        BOOST_CHECK(seq_len != kInvalidSeqPos);
+        auto seq_type = scope->GetSequenceType(idh);
+        BOOST_CHECK(seq_type != CSeq_inst::eMol_not_set);
+        CRef<CBioseq> seq(new CBioseq);
+        for ( const auto& id : ids ) {
+            seq->SetId().push_back(Ref(SerialClone(*id.GetSeqId())));
+        }
+        seq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
+        seq->SetInst().SetMol(seq_type);
+        seq->SetInst().SetLength(seq_len);
+        bh = scope->AddBioseq(*seq);
+        BOOST_REQUIRE(bh);
+    }
+    else {
+        bh = scope->GetBioseqHandle(idh);
+        BOOST_REQUIRE(bh);
+    }
+    size_t annot_count_0 = 0;
+    annot_count_0 += CFeat_CI(*scope, *search_loc, base_sel).GetSize();
+    annot_count_0 += CGraph_CI(*scope, *search_loc, base_sel).GetSize();
+    size_t all_annot_count = annot_count_0;
+    vector<string> nas;
+    NStr::Split(na_str, ",", nas);
+    for ( auto& na : nas ) {
+        SAnnotSelector sel = base_sel;
+        sel.IncludeNamedAnnotAccession(na);
+        if ( fail_type == eFallbackFail_na ) {
+            size_t annot_count = 0;
+            LOG_POST("Expecting to fail loading "<<na);
+            BOOST_CHECK_THROW(annot_count += (CFeat_CI(*scope, *search_loc, sel).GetSize()+
+                                              CGraph_CI(*scope, *search_loc, sel).GetSize()),
+                              CLoaderException);
+            BOOST_CHECK_GE(annot_count, annot_count_0);
+        }
+        else {
+            size_t annot_count = 0;
+            annot_count += CFeat_CI(*scope, *search_loc, sel).GetSize();
+            annot_count += CGraph_CI(*scope, *search_loc, sel).GetSize();
+            BOOST_CHECK_GT(annot_count, annot_count_0);
+            all_annot_count += annot_count - annot_count_0;
+        }
+    }
+    if ( nas.size() > 1 ) {
+        SAnnotSelector sel = base_sel;
+        for ( auto& na : nas ) {
+            sel.IncludeNamedAnnotAccession(na);
+        }
+        if ( fail_type == eFallbackFail_na ) {
+            size_t annot_count = 0;
+            LOG_POST("Expecting to fail loading NAs");
+            BOOST_CHECK_THROW(annot_count += (CFeat_CI(*scope, *search_loc, sel).GetSize()+
+                                              CGraph_CI(*scope, *search_loc, sel).GetSize()),
+                              CLoaderException);
+            BOOST_CHECK_GE(annot_count, all_annot_count);
+        }
+        else {
+            size_t annot_count = 0;
+            annot_count += CFeat_CI(*scope, *search_loc, sel).GetSize();
+            annot_count += CGraph_CI(*scope, *search_loc, sel).GetSize();
+            BOOST_CHECK_EQUAL(annot_count, all_annot_count);
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback1)
+{
+    s_TestFallback("NW_004545872.1", "NA000393821.1,NA000393800.1");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback2)
+{
+    s_TestFallback("QEIB01002456.1", "NA000204978.1");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback3)
+{
+    s_TestFallback("LR536440.1", "NA000210082.1,NA000210263.1");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback3g)
+{
+    s_TestFallback("LR536440.1", "NA000210082.1@@1000000");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback3f)
+{
+    s_TestFallback("LR536440.1", "NA000210263.1@@1000000", eFallbackFail_na);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback4)
+{
+    s_TestFallback("NC_026001.1", "NA000214470.1,NA000214465.1");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback5)
+{
+    s_TestFallback("NC_081782.1", "NA000417668.1,NA000417649.1", eFallbackFail_seq);
+}
+
+
 NCBITEST_INIT_CMDLINE(arg_descrs)
 {
     arg_descrs->AddFlag("psg",
@@ -2547,6 +2689,13 @@ NCBITEST_INIT_TREE()
     NCBITEST_DISABLE(CheckExtTRNAEdit);
     NCBITEST_DISABLE(CheckExtMicroRNA);
     NCBITEST_DISABLE(CheckExtExon);
+    NCBITEST_DISABLE(TestFallback1);
+    NCBITEST_DISABLE(TestFallback2);
+    NCBITEST_DISABLE(TestFallback3);
+    NCBITEST_DISABLE(TestFallback3g);
+    NCBITEST_DISABLE(TestFallback3f);
+    NCBITEST_DISABLE(TestFallback4);
+    NCBITEST_DISABLE(TestFallback5);
 
     if ( !SInvertVDB_CDD::IsPossible() ) {
         NCBITEST_DISABLE(CheckExtCDD2);
