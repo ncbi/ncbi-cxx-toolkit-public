@@ -75,7 +75,6 @@ protected:
         , m_MaxRetries(other.m_MaxRetries)
     {}
 public:
-
     CCassBlobWaiter& operator=(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter(CCassBlobWaiter&&) = delete;
     CCassBlobWaiter& operator=(CCassBlobWaiter&&) = delete;
@@ -114,13 +113,13 @@ public:
         }
     }
 
-    // Experimental!!! May conflict with CCassConnection::SetQueryTimeoutRetry() when query timed out
-    //    and CCassQuery::RestartQuery() called to make another attempt
-    //    Currently required to test PubSeqGateway Casandra timeouts handling for multi-stage operations
-    //    (Resolution => Primary blob retrieval => ID2 split blob retrieval) when Cassandra timeout happens at
-    //    later stages of operation
-    //
-    // Setup individual operation timeout instead of using timeout configured for CCassConnection
+    /// Experimental!!! May conflict with CCassConnection::SetQueryTimeoutRetry() when query timed out
+    ///    and CCassQuery::RestartQuery() called to make another attempt
+    ///    Currently required to test PubSeqGateway Casandra timeouts handling for multi-stage operations
+    ///    (Resolution => Primary blob retrieval => ID2 split blob retrieval) when Cassandra timeout happens at
+    ///    later stages of operation
+    ///
+    /// Setup individual operation timeout instead of using timeout configured for CCassConnection
     virtual void SetQueryTimeout(std::chrono::milliseconds value);
     virtual std::chrono::milliseconds GetQueryTimeout() const;
 
@@ -134,6 +133,18 @@ public:
         return m_Cancelled;
     }
 
+    bool Finished() const noexcept
+    {
+        auto state = m_State.load();
+        return state == eDone || state == eError || m_Cancelled;
+    }
+
+    /// Get internal state for debug purposes.
+    int32_t GetStateDebug() const noexcept
+    {
+        return m_State.load(std::memory_order_relaxed);
+    }
+
     virtual void Cancel()
     {
         if (m_State != eDone) {
@@ -144,7 +155,8 @@ public:
 
     bool Wait()
     {
-        while (m_State != eDone && m_State != eError && !m_Cancelled) {
+        bool finished = Finished();
+        while (!finished) {
             try {
                 Wait1();
             } catch (const CCassandraException& e) {
@@ -157,11 +169,12 @@ public:
                 // See ID-6241 There is a requirement to catch all exceptions and continue here
                 Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, "Unknown exception");
             }
+            finished = Finished();
             if (m_Async) {
                 break;
             }
         }
-        return (m_State == eDone || m_State == eError || m_Cancelled);
+        return finished;
     }
 
     bool HasError() const
