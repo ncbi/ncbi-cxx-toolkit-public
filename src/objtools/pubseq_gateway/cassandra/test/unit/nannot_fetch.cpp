@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 
 #include <memory>
+#include <mutex>
+#include <condition_variable>
 #include <string>
 #include <utility>
 #include <vector>
@@ -43,7 +45,6 @@
 #include <corelib/ncbireg.hpp>
 
 #include <serial/serial.hpp>
-#include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
@@ -828,6 +829,101 @@ TEST_F(CNAnnotTaskFetchTest, DuplicateFilterTest)
             }
         }
      );
+}
+
+TEST_F(CNAnnotTaskFetchTest, RetrievalWithShortTimeoutAndRetry)
+{
+    bool fetch_finished{false}, timeout_called{false};
+    bool false_negative{false};
+    auto timeout_function =
+        [&timeout_called, &fetch_finished]
+        (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+        {
+            timeout_called = true;
+            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CCassandraException::eQueryTimeout, code);
+            EXPECT_EQ(eDiag_Error, severity);
+            fetch_finished = true;
+        };
+    auto fetch_callback =
+        [&fetch_finished, &false_negative]
+        (CNAnnotRecord &&, bool last) -> bool {
+            if (last) {
+                fetch_finished = true;
+                false_negative = true;
+                cout << "LAST NANNOT RECEIVED: TEST RESULT IS FALSE NEGATIVE" << endl;
+            }
+            return true;
+        };
+
+    auto old_retry_timeout = m_Connection->QryTimeoutRetryMs();
+    m_Connection->SetQueryTimeoutRetry(1);
+    CCassNAnnotTaskFetch fetch(
+        m_Connection, "psg_test_sat_41", "LS480640", 104, 6,
+        fetch_callback, timeout_function
+    );
+    fetch.SetQueryTimeout(std::chrono::milliseconds(1));
+    fetch.SetMaxRetries(2);
+
+    atomic_bool has_events{false};
+    mutex wait_mutex;
+    condition_variable wait_condition;
+
+    struct STestCallbackReceiver
+        : public CCassDataCallbackReceiver
+    {
+        void OnData() override {
+            {
+                unique_lock<mutex> wait_lck(*cb_wait_mutex);
+                *cb_has_events = true;
+            }
+            ++times_called;
+            cb_wait_condition->notify_all();
+        }
+
+        atomic_bool* cb_has_events{nullptr};
+        mutex* cb_wait_mutex{nullptr};
+        condition_variable* cb_wait_condition{nullptr};
+        atomic_int times_called{0};
+    };
+
+    auto event_callback = make_shared<STestCallbackReceiver>();
+    event_callback->cb_has_events = &has_events;
+    event_callback->cb_wait_mutex = &wait_mutex;
+    event_callback->cb_wait_condition = &wait_condition;
+    fetch.SetDataReadyCB(event_callback);
+
+    auto wait_function =
+    [&has_events, &wait_condition, &wait_mutex, &fetch_finished, &fetch, &false_negative]() {
+        while (!fetch_finished) {
+            unique_lock<mutex> wait_lck(wait_mutex);
+            auto predicate = [&has_events]() -> bool
+            {
+                return has_events;
+            };
+            while (!wait_condition.wait_for(wait_lck, chrono::seconds(1), predicate));
+            if (has_events) {
+                has_events = false;
+                if (fetch.Wait()) {
+                    fetch_finished = true;
+                    EXPECT_TRUE(fetch.HasError() || false_negative) << "Blob request should be in failed state";
+                }
+            }
+        }
+    };
+
+    EXPECT_FALSE(fetch.Wait()) << "Fetch should not finish on Init()";
+    wait_function();
+
+    m_Connection->SetQueryTimeoutRetry(old_retry_timeout);
+    EXPECT_TRUE(timeout_called || false_negative) << "Timeout should happen";
+    EXPECT_TRUE(fetch_finished) << "Fetch should finish";
+    if (!false_negative) {
+        EXPECT_EQ(2, event_callback->times_called)
+            << "Error and Data callbacks should be called 2 times in total (1 for timeout and 1 for timeout after restart)";
+        EXPECT_EQ(fetch.GetRestartCounterDebug(), 1UL);
+    }
+    event_callback.reset();
 }
 
 }  // namespace
