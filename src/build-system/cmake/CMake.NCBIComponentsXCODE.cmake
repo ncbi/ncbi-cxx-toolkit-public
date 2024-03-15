@@ -193,7 +193,7 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
-NCBI_define_Xcomponent(NAME PCRE MODULE libpcre LIB pcre CHECK_INCLUDE pcre.h)
+NCBI_define_Xcomponent(NAME PCRE LIB pcre CHECK_INCLUDE pcre.h)
 NCBIcomponent_report(PCRE)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
