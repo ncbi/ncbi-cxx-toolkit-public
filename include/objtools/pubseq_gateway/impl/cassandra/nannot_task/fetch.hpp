@@ -122,6 +122,11 @@ class CCassNAnnotTaskFetch
         return m_AnnotNames;
     }
 
+    unsigned int GetRestartCounterDebug() const noexcept
+    {
+        return m_RestartCounter;
+    }
+
  protected:
     void Wait1() override;
 
