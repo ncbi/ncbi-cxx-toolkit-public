@@ -20,7 +20,7 @@
   produced, so that this one source file can be compiled to an executable.
  */
 
-#include "zutil.h"
+#include "zutil_cf.h"
 
 #ifdef HAS_PCLMUL
  #include "crc32_simd.h"

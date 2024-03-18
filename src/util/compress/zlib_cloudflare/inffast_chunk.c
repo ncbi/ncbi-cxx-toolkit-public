@@ -26,7 +26,7 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
-#include "zutil.h"
+#include "zutil_cf.h"
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast_chunk.h"

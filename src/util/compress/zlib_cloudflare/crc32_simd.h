@@ -11,8 +11,8 @@
 
 #include <stdint.h>
 
-//#include "zconf.h"
-//#include "zutil.h"
+//#include "zconf_cf.h"
+//#include "zutil_cf.h"
 #include "deflate.h"
 
 //#ifndef local

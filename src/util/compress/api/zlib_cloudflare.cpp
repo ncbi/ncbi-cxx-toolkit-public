@@ -50,7 +50,7 @@
 #if defined(HAVE_LIBZCF)
 
 #include <util/compress/zlib_cloudflare.hpp>
-#include <util/compress/zlib_cloudflare/zlib.h>
+#include <util/compress/zlib_cloudflare/zlib_cf.h>
 #include <stdio.h>
 
 /// Z_PREFIX prefix used to compile zlib. this is necessary to distingquish
