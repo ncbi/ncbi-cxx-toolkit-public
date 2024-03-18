@@ -44,7 +44,7 @@
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objtools/blast/services/blast_services.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
-#include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
+#include <cuCdUpdateParameters.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuCdUpdater.hpp>
 #include <algo/structure/cd_utils/cuUtils.hpp>
@@ -56,6 +56,8 @@
 #include <algo/structure/cd_utils/cuBlockFormater.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
@@ -1085,11 +1087,33 @@ bool CDUpdater::findSeq(CRef<CSeq_id> seqID, vector< CRef< CBioseq > >& bioseqs,
 	return false;
 }
 
+void CDUpdater::getSequencesFromGB(vector< CRef<CSeq_id> > seqids, vector< CRef< CBioseq > >& bioseqs){
+	CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+	auto loader = CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance()).GetLoader();
+	string loaderName = loader->GetName();
+	CScope scope(*objmgr);
+	scope.AddDataLoader(loaderName);
+	scope.AddDefaults();
+	for( CRef< CSeq_id > seqid : seqids ){
+		// Create a bioseq handle for this seqid.
+		CBioseq_Handle handle = scope.GetBioseqHandle(*seqid);
+		if ( !handle ) {
+			LOG_POST("Failed to get bioseq handle for seqid " << seqid->GetSeqIdString() << ".");
+			continue;
+		}
+		CConstRef<CBioseq> const_bioseq = handle.GetBioseqCore();
+		CRef<CBioseq> bioseq(const_cast<CBioseq*>(const_bioseq.GetPointer()));
+		// bioseq.Reset(const_cast<CBioseq&>(*const_bioseq));
+		bioseqs.push_back(bioseq);
+	}
+}
+
 void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< CBioseq > >& bioseqs)
 {
 	vector< CRef<CSeq_id> > seqids;
 	unsigned int batchSize = 500;
 	unsigned int maxBatchSize = 2000;
+
     string dbName = CdUpdateParameters::getBlastDatabaseName(m_config.database);
         
 	list< CRef< CSeq_align > >& seqAligns = alignments.Set();
@@ -1109,8 +1133,13 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
                 //  For Blast v5 databases, not all members of an identical protein group are in the database
                 //  which may cause GetSequences to not find the exact sequence specified from such a group
                 //  if it wasn't one of the representatives (5 as of early 2020).
-				CBlastServices::GetSequences(seqids, dbName, 'p', bioseqBatch, errors,warnings);
-				LOG_POST("Returned from CBlastServices::GetSequences('" << dbName << "') with a batch of " << bioseqBatch.size() << " sequences.");
+				if (m_config.useCustomLocalDB){
+					getSequencesFromGB(seqids, bioseqBatch);
+					LOG_POST("Returned from object manager with a batch of " << bioseqBatch.size() << " sequences.");
+				}else{
+					CBlastServices::GetSequences(seqids, dbName, 'p', bioseqBatch, errors,warnings);
+					LOG_POST("Returned from CBlastServices::GetSequences('" << dbName << "') with a batch of " << bioseqBatch.size() << " sequences.");
+				}
 			}
 			catch (blast::CBlastException& be)
             {
