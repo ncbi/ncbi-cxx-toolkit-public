@@ -1987,10 +1987,17 @@ CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
         // Request original blob as a fallback
         x_RequestOriginalBlobChunks(m_InitialBlobPropFetch, m_InitialBlobProps);
 
-        x_PrepareBlobMessage(fetch_details,
-                             msg, CRequestStatus::e500_InternalServerError,
-                             ePSGS_ID2ChunkErrorWithFallback,
-                             eDiag_Warning);
+        if (fetch_details->GetTotalSentBlobChunks() == 0) {
+            m_Reply->PrepareProcessorMessage(
+                m_Reply->GetItemId(), m_ProcessorId, msg,
+                CRequestStatus::e500_InternalServerError,
+                ePSGS_ID2ChunkErrorWithFallback, eDiag_Warning);
+        } else {
+            x_PrepareBlobMessage(fetch_details,
+                                 msg, CRequestStatus::e500_InternalServerError,
+                                 ePSGS_ID2ChunkErrorWithFallback,
+                                 eDiag_Warning);
+        }
         return;
     }
 
@@ -2004,9 +2011,16 @@ CPSGS_CassBlobBase::x_BlobErrorCallback(CCassBlobFetch *  fetch_details,
         m_Reply->SendTrace(msg, m_Request->GetStartTimestamp());
     }
 
-    x_PrepareBlobMessage(fetch_details,
-                         msg, CRequestStatus::e500_InternalServerError,
-                         ePSGS_ID2ChunkErrorAfterFallbackRequested,
-                         eDiag_Warning);
+    if (fetch_details->GetTotalSentBlobChunks() == 0) {
+        m_Reply->PrepareProcessorMessage(
+            m_Reply->GetItemId(), m_ProcessorId, msg,
+            CRequestStatus::e500_InternalServerError,
+            ePSGS_ID2ChunkErrorWithFallback, eDiag_Warning);
+    } else {
+        x_PrepareBlobMessage(fetch_details,
+                             msg, CRequestStatus::e500_InternalServerError,
+                             ePSGS_ID2ChunkErrorAfterFallbackRequested,
+                             eDiag_Warning);
+    }
 }
 
