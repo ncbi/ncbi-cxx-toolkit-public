@@ -42,6 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_align;
+class CBioseq_Handle;
 
 
 class NCBI_XALGOALIGN_EXPORT CScoreLookup : public CScoreBuilder
@@ -100,6 +101,8 @@ public:
                     const string &score_name);
 
     void UpdateState(const objects::CSeq_align& align);
+
+    static int GetGeneId(const objects::CBioseq_Handle &bsh);
 
 private:
     void x_Init();
