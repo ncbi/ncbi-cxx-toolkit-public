@@ -32,7 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <cuCdUpdateParameters.hpp>
+#include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE

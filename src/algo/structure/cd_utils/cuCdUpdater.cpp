@@ -44,7 +44,7 @@
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objtools/blast/services/blast_services.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
-#include <cuCdUpdateParameters.hpp>
+#include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
 #include <algo/structure/cd_utils/cuCD.hpp>
 #include <algo/structure/cd_utils/cuCdUpdater.hpp>
 #include <algo/structure/cd_utils/cuUtils.hpp>
