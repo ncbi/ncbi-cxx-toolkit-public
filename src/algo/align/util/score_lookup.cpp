@@ -1705,6 +1705,34 @@ private:
     EInfoType m_InfoType;
 };
 
+int CScoreLookup::GetGeneId(const CBioseq_Handle &bsh)
+{
+    CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
+    if (!gene_it) {
+        NCBI_THROW(CException, eUnknown, "No gene feature");
+    }
+
+    CMappedFeat gene = *gene_it;
+    if (++gene_it) {
+        NCBI_THROW(CException, eUnknown, "Multiple gene features");
+    }
+
+    if (gene.GetNamedDbxref("GeneID")) {
+        return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
+    }
+
+    /// Fallback; use LocusID
+    if (gene.GetData().GetGene().IsSetDb()) {
+        for (const CRef<CDbtag> &db : gene.GetData().GetGene().GetDb()) {
+            if (db->GetDb() == "LocusID" && db->GetTag().IsId()) {
+                return db->GetTag().GetId();
+            }
+        }
+    }
+
+    NCBI_THROW(CException, eUnknown, "Gene id not set");
+}
+
 class CScore_GeneID : public CScoreLookup::IScore
 {
 public:
@@ -1730,30 +1758,7 @@ public:
                        "failed to retrieve sequence for " +
                        align.GetSeq_id(m_Row).AsFastaString());
         }
-        CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
-        if (!gene_it) {
-            NCBI_THROW(CException, eUnknown, "No gene feature");
-        }
-
-        CMappedFeat gene = *gene_it;
-        if (++gene_it) {
-            NCBI_THROW(CException, eUnknown, "Multiple gene features");
-        }
-
-        if (gene.GetNamedDbxref("GeneID")) {
-            return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
-        }
-
-        /// Fallback; use LocusID
-        if (gene.GetData().GetGene().IsSetDb()) {
-            for (const CRef<CDbtag> &db : gene.GetData().GetGene().GetDb()) {
-                if (db->GetDb() == "LocusID" && db->GetTag().IsId()) {
-                    return db->GetTag().GetId();
-                }
-            }
-        }
-
-        NCBI_THROW(CException, eUnknown, "Gene id not set");
+        return CScoreLookup::GetGeneId(bsh);
     }
 
 private:
