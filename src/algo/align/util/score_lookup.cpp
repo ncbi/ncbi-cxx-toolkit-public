@@ -1736,11 +1736,20 @@ public:
             NCBI_THROW(CException, eUnknown, "Multiple gene features");
         }
 
-        if (!gene.GetNamedDbxref("GeneID")) {
-            NCBI_THROW(CException, eUnknown, "Gene id not set");
+        if (gene.GetNamedDbxref("GeneID")) {
+            return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
         }
 
-        return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
+        /// Fallback; use LocusID
+        if (gene.GetData().GetGene().IsSetDb()) {
+            for (const CRef<CDbtag> &db : gene.GetData().GetGene().GetDb()) {
+                if (db->GetDb() == "LocusID" && db->GetTag().IsId()) {
+                    return db->GetTag().GetId();
+                }
+            }
+        }
+
+        NCBI_THROW(CException, eUnknown, "Gene id not set");
     }
 
 private:
