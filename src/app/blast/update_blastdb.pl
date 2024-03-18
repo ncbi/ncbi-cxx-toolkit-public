@@ -72,7 +72,6 @@ my $opt_quiet = 0;
 my $opt_force_download = 0;     
 my $opt_help = 0;
 my $opt_passive = 1;
-my $opt_blastdb_ver = undef;
 my $opt_timeout = 120;
 my $opt_showall = undef;
 my $opt_show_version = 0;
@@ -89,7 +88,6 @@ my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "timeout=i"         =>  \$opt_timeout,
                         "showall:s"         =>  \$opt_showall,
                         "version"           =>  \$opt_show_version,
-                        "blastdb_version:i" =>  \$opt_blastdb_ver,
                         "decompress"        =>  \$opt_decompress,
                         "source=s"          =>  \$opt_source,
                         "gcp-project=s"     =>  \$opt_gcp_prj,
@@ -107,12 +105,6 @@ if (length($opt_passive) and ($opt_passive !~ /1|no/i)) {
 pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
                                                   defined($opt_showall) or
                                                   $opt_show_version);
-if (defined $opt_blastdb_ver) {
-    pod2usage({-exitval => 1, -verbose => 0, 
-               -msg => "Invalid BLAST database version: $opt_blastdb_ver. Supported values: 4, 5"}) 
-        unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
-}
-
 pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid number of threads"}) 
     if ($opt_nt < 0);
 my $max_num_cores = &get_num_cores();
@@ -281,7 +273,6 @@ sub get_files_from_json_metadata_1_1($$)
 }
 
 if ($location ne "NCBI") {
-    die "Only BLASTDB version 5 is supported at GCP and AWS\n" if (defined $opt_blastdb_ver and $opt_blastdb_ver != 5);
     my $latest_dir = &get_latest_dir($location);
     my ($json, $url) = &get_blastdb_metadata($location, $latest_dir);
     unless (length($json)) {
@@ -408,16 +399,9 @@ sub connect_to_ftp
     $ftp->login(USER, PASSWORD) 
         or die "Failed to login to " . NCBI_FTP . ": $!\n";
     my $ftp_path = BLAST_DB_DIR;
-    $ftp_path .= "/v$opt_blastdb_ver" if (defined $opt_blastdb_ver);
     $ftp->cwd($ftp_path);
     $ftp->binary();
-    if ($opt_verbose) {
-        if (defined $opt_blastdb_ver) {
-            print "Connected to $location; downloading BLASTDBv$opt_blastdb_ver\n";
-        } else {
-            print "Connected to $location\n";
-        }
-    }
+    print "Connected to $location\n" if ($opt_verbose);
     return $ftp;
 }
 
