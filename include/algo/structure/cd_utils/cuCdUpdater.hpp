@@ -41,7 +41,7 @@
 #include <objects/general/User_field.hpp>
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
-#include <cuCdUpdateParameters.hpp>
+#include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
 #include "objects/seqalign/Seq_align_set.hpp"
 #include "objects/entrez2/entrez2_client.hpp"
 #include <algo/structure/cd_utils/cuBlock.hpp>
