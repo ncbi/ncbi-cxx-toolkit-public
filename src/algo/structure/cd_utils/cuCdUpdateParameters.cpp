@@ -32,7 +32,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
+#include <cuCdUpdateParameters.hpp>
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
@@ -98,7 +98,9 @@ CdUpdateParameters::CdUpdateParameters()
 	noFilter(false),
 	replaceOldAcc(true),
 	identityThreshold(-1),
-	allowedOverlapWithCDRow(0)
+	allowedOverlapWithCDRow(0),
+    useCustomLocalDB(false),
+    customLocalDBPath("")
 {
 }
 
@@ -136,9 +138,18 @@ string CdUpdateParameters::getBlastTypeName(enum BlastType bt)
 string CdUpdateParameters::getBlastDatabaseName(BlastDatabase db)
 {
     if (db >= eBlastDatabaseEnd)
-        return "";
-    else
+        return ""; 
+    else 
         return BlastDatabaseNames[db];
+}
+
+string CdUpdateParameters::getBlastDatabaseName(){
+    if (database >= eBlastDatabaseEnd ){
+        return "";
+    } else if (useCustomLocalDB) {
+        return customLocalDBPath;
+    }
+    return BlastDatabaseNames[database];
 }
 
 string CdUpdateParameters::getOrganismName(Organism org)
