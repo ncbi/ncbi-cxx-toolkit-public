@@ -28,8 +28,8 @@
 
 #include <stdint.h>
 
-#include "zconf.h"
-#include "zutil.h"
+#include "zconf_cf.h"
+#include "zutil_cf.h"
 
 uint32_t ZLIB_INTERNAL adler32_simd_(
     uint32_t adler,

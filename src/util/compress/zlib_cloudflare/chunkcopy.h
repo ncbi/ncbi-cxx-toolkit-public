@@ -31,7 +31,7 @@
 #define CHUNKCOPY_H
 
 #include <stdint.h>
-#include "zutil.h"
+#include "zutil_cf.h"
 
 #define Z_STATIC_ASSERT(name, assert) typedef char name[(assert) ? 1 : -1]
 

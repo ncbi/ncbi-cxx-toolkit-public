@@ -13,7 +13,7 @@
 #ifndef DEFLATE_H
 #define DEFLATE_H
 
-#include "zutil.h"
+#include "zutil_cf.h"
 
 /* ===========================================================================
  * Internal compression state.
