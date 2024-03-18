@@ -1110,8 +1110,6 @@ string CValidErrorFormat::GetObjectLabel(const CObject& obj, const CSeq_entry& c
 //LCOV_EXCL_STOP
 
 
-//LCOV_EXCL_START
-//added for GPIPE, not used for asnvalidate
 const string kSuppressFieldLabel = "Suppress";
 
 bool s_IsSuppressField (const CUser_field& field)
@@ -1250,7 +1248,6 @@ void CValidErrorFormat::SetSuppressionRules(const CBioseq& seq, CValidError& err
         }
     }
 }
-//LCOV_EXCL_STOP
 
 
 //LCOV_EXCL_START
