@@ -182,18 +182,32 @@ public:
 
     virtual string Serialize(void) const
     {
-        return "CCassNamedAnnotFetch";
+        string names;
+        for (const string &  name : m_Names) {
+            if (!names.empty())
+                names += ", ";
+            names += name;
+        }
+        return "CCassNamedAnnotFetch. Keyspace: " + m_Keyspace + " Names: " + names;
     }
 
 public:
     void SetLoader(CCassNAnnotTaskFetch *  fetch)
-    { m_Loader.reset(fetch); }
+    {
+        m_Keyspace = fetch->GetKeySpace();
+        m_Names = fetch->GetAnnotNames();
+        m_Loader.reset(fetch);
+    }
 
     CCassNAnnotTaskFetch * GetLoader(void)
     { return static_cast<CCassNAnnotTaskFetch *>(m_Loader.get()); }
 
 public:
     virtual void ResetCallbacks(void);
+
+private:
+    string          m_Keyspace;
+    vector<string>  m_Names;
 };
 
 
