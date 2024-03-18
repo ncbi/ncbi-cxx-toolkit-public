@@ -41,7 +41,7 @@
 #include <objects/general/User_field.hpp>
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
-#include <algo/structure/cd_utils/cuCdUpdateParameters.hpp>
+#include <cuCdUpdateParameters.hpp>
 #include "objects/seqalign/Seq_align_set.hpp"
 #include "objects/entrez2/entrez2_client.hpp"
 #include <algo/structure/cd_utils/cuBlock.hpp>
@@ -196,6 +196,7 @@ private:
 
     double ComputePercentIdentity(const CRef< CSeq_align >& alignment, const string& queryString, const string& subjectString);
 
+	void getSequencesFromGB(vector< CRef<CSeq_id> > seqids, vector< CRef< CBioseq > >& bioseqs);
 	CdUpdateParameters m_config;
 	CDUpdateStats m_stats;
 	string m_rid;

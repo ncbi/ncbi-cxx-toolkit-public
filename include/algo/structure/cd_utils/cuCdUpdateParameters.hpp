@@ -110,6 +110,8 @@ public:
 	static string getBlastTypeName(BlastType bt);
 
 	static string getBlastDatabaseName(BlastDatabase db);
+	
+	string getBlastDatabaseName();
 
 	static string getOrganismName(Organism org);
 
@@ -135,6 +137,10 @@ public:
     //  == 0 filter out all updates with an overlap to an existing row(s)  [DEFAULT]
     //  == i filter out any update that overlaps an existing row on either termini by > i residues
     int allowedOverlapWithCDRow;  
+
+	//Custom Local Blast DB Options
+	bool useCustomLocalDB;
+	string customLocalDBPath;
 };
 
 END_SCOPE(cd_utils)
