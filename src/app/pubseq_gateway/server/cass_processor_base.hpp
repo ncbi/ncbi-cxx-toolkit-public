@@ -79,12 +79,13 @@ protected:
     bool IsTimeoutError(const string &  msg) const;
     bool IsTimeoutError(int  code) const;
     bool IsError(EDiagSev  severity) const;
-    bool CountError(CCassFetch *  fetch_details,
-                    CRequestStatus::ECode  status,
-                    int  code,
-                    EDiagSev  severity,
-                    const string &  message,
-                    EPSGS_LoggingFlag  logging_flag=ePSGS_NeedLogging);
+    CRequestStatus::ECode  CountError(CCassFetch *  fetch_details,
+                                      CRequestStatus::ECode  status,
+                                      int  code,
+                                      EDiagSev  severity,
+                                      const string &  message,
+                                      EPSGS_LoggingFlag  logging_flag,
+                                      EPSGS_StatusUpdateFlag  status_update_flag);
 
 protected:
     enum EPSGS_MyNCBILookupResult {

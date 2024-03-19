@@ -194,7 +194,8 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     EPSGS_LoggingFlag           logging_flag = ePSGS_NeedLogging;
     if (status == CRequestStatus::e404_NotFound)
         logging_flag = ePSGS_SkipLogging;
-    CountError(nullptr, status, code, severity, message, logging_flag);
+    CountError(nullptr, status, code, severity, message,
+               logging_flag, ePSGS_NeedStatusUpdate);
 
     // Report all the 'accepted' annotations with the corresponding result code
     SPSGS_AnnotRequest::EPSGS_ResultStatus  rs = SPSGS_AnnotRequest::ePSGS_RS_NotFound;
@@ -383,6 +384,10 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
         return false;
     }
 
+    // A responce has been succesfully received. Memorize it so that it can be
+    // considered if some other keyspaces reply finish with errors or timeouts
+    m_AnnotFetchCompletions.push_back(CRequestStatus::e200_Ok);
+
     if (last) {
         fetch_details->GetLoader()->ClearError();
         fetch_details->SetReadFinished();
@@ -494,8 +499,11 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details,
-                                  status, code, severity, message);
+    CRequestStatus::ECode   fetch_completion =
+            CountError(fetch_details, status, code, severity, message,
+                       ePSGS_NeedLogging, ePSGS_SkipStatusUpdate);
+    bool    is_error = IsError(severity);
+    m_AnnotFetchCompletions.push_back(fetch_completion);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),
@@ -507,7 +515,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
     if (is_error) {
         // Report error/timeout to the request
         SPSGS_AnnotRequest::EPSGS_ResultStatus  result_status = SPSGS_AnnotRequest::ePSGS_RS_Error;
-        if (m_Status == CRequestStatus::e504_GatewayTimeout)
+        if (fetch_completion == CRequestStatus::e504_GatewayTimeout)
             result_status = SPSGS_AnnotRequest::ePSGS_RS_Timeout;
         for (const auto &  name: m_ValidNames) {
             if (m_Success.find(name) == m_Success.end()) {
@@ -517,7 +525,19 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotError(CCassNamedAnnotFetch *  fetch_details,
 
         // There will be no more activity
         fetch_details->SetReadFinished();
-        CPSGS_CassProcessorBase::SignalFinishProcessing();
+
+        if (AreAllFinishedRead()) {
+            // At least one completion has just been added to the vector
+            CRequestStatus::ECode   best_status = m_AnnotFetchCompletions[0];
+            for (auto  fetch_completion_status : m_AnnotFetchCompletions) {
+                if (fetch_completion_status < best_status) {
+                    best_status = fetch_completion_status;
+                }
+            }
+
+            UpdateOverallStatus(best_status);
+            CPSGS_CassProcessorBase::SignalFinishProcessing();
+        }
     } else {
         x_Peek(false);
     }
@@ -932,10 +952,11 @@ bool CPSGS_AnnotProcessor::x_Peek(unique_ptr<CCassFetch> &  fetch_details,
         return true;
 
     bool        final_state = false;
-    if (need_wait)
+    if (need_wait) {
         if (!fetch_details->ReadFinished()) {
             final_state = fetch_details->GetLoader()->Wait();
         }
+    }
 
     if (fetch_details->GetLoader()->HasError() &&
             IPSGS_Processor::m_Reply->IsOutputReady() &&
