@@ -2649,6 +2649,18 @@ BOOST_AUTO_TEST_CASE(TestFallback5)
 }
 
 
+BOOST_AUTO_TEST_CASE(TestFallback7)
+{
+    s_TestFallback("2699449663", "");
+}
+
+
+BOOST_AUTO_TEST_CASE(TestFallback8)
+{
+    s_TestFallback("2699449523", "");
+}
+
+
 NCBITEST_INIT_CMDLINE(arg_descrs)
 {
     arg_descrs->AddFlag("psg",
@@ -2696,6 +2708,8 @@ NCBITEST_INIT_TREE()
     NCBITEST_DISABLE(TestFallback3f);
     NCBITEST_DISABLE(TestFallback4);
     NCBITEST_DISABLE(TestFallback5);
+    NCBITEST_DISABLE(TestFallback7);
+    NCBITEST_DISABLE(TestFallback8);
 
     if ( !SInvertVDB_CDD::IsPossible() ) {
         NCBITEST_DISABLE(CheckExtCDD2);
