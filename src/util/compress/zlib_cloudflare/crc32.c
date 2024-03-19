@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-uLong crc32(uLong crc, const Bytef *buf, uInt len) {
+uint32_t crc32_orig(uint32_t crc, const Bytef *buf, uInt len) {
     crc = ~crc;
 
     while (len >= 8) {
@@ -59,6 +59,11 @@ uLong crc32(uLong crc, const Bytef *buf, uInt len) {
 
     return ~crc;
 }
+
+uLong crc32(uLong crc, const Bytef *buf, uInt len) {
+    return crc32_orig(crc, buf, len);
+}
+
 
 #else
 
