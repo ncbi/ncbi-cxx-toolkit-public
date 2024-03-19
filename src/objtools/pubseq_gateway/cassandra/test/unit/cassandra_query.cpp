@@ -42,6 +42,7 @@
 #include <string>
 #include <memory>
 #include <map>
+#include <thread>
 
 namespace {
 
@@ -138,6 +139,72 @@ TEST_F(CCassQueryTest, ParamAsStrForDebug) {
 
     query->BindNull(0);
     EXPECT_EQ("Null", query->ParamAsStrForDebug(0));
+}
+
+TEST_F(CCassQueryTest, CassandraExceptionFormat)
+{
+    auto query = m_Connection->NewQuery();
+    {
+        query->SetSQL("NOQUERY", 1);
+        try {
+            query->Query();
+        }
+        catch (CCassandraException const &ex) {
+            EXPECT_EQ(CCassandraException::eQueryFailed, ex.GetErrCode());
+            EXPECT_EQ("CassandraErrorMessage - \"line 1:0 no viable alternative at input 'NOQUERY' ([NOQUERY])\";"
+                      " CassandraErrorCode - 2002000; SQL: \"NOQUERY\"", ex.GetMsg());
+        }
+    }
+
+    {
+        query->SetSQL("SELECT * FROM system.peers WHERE data_center = ? ALLOW FILTERING", 1);
+        query->BindStr(0, "DC1");
+        //auto timeout = query->GetRequestTimeoutMs();
+        query->SetTimeout(1);
+        query->UsePerRequestTimeout(true);
+        try {
+            query->Query(CCassConsistency::kSerial, true, false);
+            while(!query->IsReady()) {
+                this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        }
+        catch (CCassandraException const &ex) {
+            EXPECT_EQ(CCassandraException::eQueryTimeout, ex.GetErrCode());
+            EXPECT_EQ("CassandraErrorMessage - \"Request timed out\"; CassandraErrorCode - 100000E;"
+                      " SQL: \"SELECT * FROM system.peers WHERE data_center = ? ALLOW FILTERING\";"
+                      " Params - ('DC1'); timeout - 1ms", ex.GetMsg());
+        }
+        query->UsePerRequestTimeout(false);
+    }
+
+    query = m_Connection->NewQuery();
+    {
+        query->SetSQL("SELECT * FROM system.size_estimates WHEREE table_name = ? ALLOW FILTERING", 1);
+        query->BindStr(0, "allele");
+        try {
+            query->Query();
+        }
+        catch (CCassandraException const &ex) {
+            EXPECT_EQ(CCassandraException::eQueryFailed, ex.GetErrCode());
+            EXPECT_EQ("CassandraErrorMessage - \"line 1:36 mismatched input 'WHEREE' expecting EOF "
+                      "(SELECT * FROM system.size_estimates [WHEREE]...)\"; CassandraErrorCode - 2002000;"
+                      " SQL: \"SELECT * FROM system.size_estimates WHEREE table_name = ? ALLOW FILTERING\"", ex.GetMsg());
+        }
+    }
+
+    {
+        query->SetHost("127.0.0.23");
+        query->SetSQL("SELECT * FROM system.peers", 0);
+        try {
+            query->Query();
+        }
+        catch (CCassandraException const &ex) {
+            EXPECT_EQ(CCassandraException::eQueryFailedRestartable, ex.GetErrCode());
+            EXPECT_EQ(
+                    "CassandraErrorMessage - \"All hosts in current policy attempted and were either unavailable or failed\";"
+                    " CassandraErrorCode - 100000A", ex.GetMsg());
+        }
+    }
 }
 
 }  // namespace

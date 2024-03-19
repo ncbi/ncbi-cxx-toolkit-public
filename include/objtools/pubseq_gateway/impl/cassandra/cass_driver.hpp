@@ -638,9 +638,9 @@ class CCassPrm
                 return "Null";
             case CASS_VALUE_TYPE_VARCHAR:
                 if (m_bytes.size() > kMaxVarcharDebugBytes) {
-                    return "'" + m_bytes.substr(0, kMaxVarcharDebugBytes) + "...'";
+                    return NStr::Quote(m_bytes.substr(0, kMaxVarcharDebugBytes) + "...", '\'');
                 } else {
-                    return "'" + m_bytes + "'";
+                    return NStr::Quote(m_bytes, '\'');
                 }
             case CASS_VALUE_TYPE_BLOB: {
                 stringstream s;
@@ -848,6 +848,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     // Switch to use per request timeout. Currently used just for Retry operations
     // @todo Switch to ExecutionProfiles
     void UsePerRequestTimeout(bool value);
+    unsigned int GetRequestTimeoutMs() const;
 
     bool IsReady(void);
     void NewBatch(void);
