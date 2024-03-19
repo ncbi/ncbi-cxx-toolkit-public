@@ -44,10 +44,10 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-
-class CCassandraException: public CException
+class CCassandraException
+    : public CException
 {
- public:
+public:
     enum EErrCode {
         eUnknown = 2000,
         eRsrcFailed,
@@ -72,7 +72,9 @@ class CCassandraException: public CException
         eUserCancelled
     };
 
-    static CCassandraException s_ProduceException(CassFuture * future, CCassandraException::EErrCode error_code) {
+    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024")
+    static CCassandraException s_ProduceException(CassFuture * future, CCassandraException::EErrCode error_code)
+    {
         const char *message;
         size_t message_length;
         CassError rc = cass_future_error_code(future);
@@ -115,40 +117,42 @@ class CCassandraException: public CException
         }
     }
 
+    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024. Use CException::GetMsg()")
     void SetOpTime(int64_t optimeMS)
     {
         m_OpTimeMs = optimeMS;
     }
 
-    int64_t GetOpTime(void) const
+    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024. Use CException::GetMsg()")
+    int64_t GetOpTime() const
     {
         return m_OpTimeMs;
     }
 
-    string TimeoutMsg(void) const
+    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024. Use CException::GetMsg()")
+    string TimeoutMsg() const
     {
-        return "Failed to perform query in " +
-               NStr::NumericToString(m_OpTimeMs) + "ms, timed out";
+        return "Failed to perform query in " + to_string(m_OpTimeMs) + "ms, timed out";
     }
 
     NCBI_EXCEPTION_DEFAULT(CCassandraException, CException);
 
- protected:
-    void x_Init(const CDiagCompileInfo &  info,
-                const string &  message,
-                const CException *  prev_exception,
-                EDiagSev  severity) override
+protected:
+    void x_Init(const CDiagCompileInfo & info,
+                const string & message,
+                const CException * prev_exception,
+                EDiagSev severity) override
     {
         m_OpTimeMs = 0;
         ERR_POST(Info << "CCassandraException: " << message);
         CException::x_Init(info, message, prev_exception, severity);
     }
 
-    void x_Assign(const CException &  src) override
+    void x_Assign(const CException & src) override
     {
-        const CCassandraException* _src = dynamic_cast<const CCassandraException*>(&src);
-        if (_src) {
-            m_OpTimeMs = _src->m_OpTimeMs;
+        const CCassandraException* src_ex = dynamic_cast<const CCassandraException*>(&src);
+        if (src_ex) {
+            m_OpTimeMs = src_ex->m_OpTimeMs;
         }
         CException::x_Assign(src);
     }
@@ -156,74 +160,19 @@ class CCassandraException: public CException
     int64_t m_OpTimeMs{0};
 };
 
-
-
-#define RAISE_CASS_ERROR(errc, dberr, comm)                                 \
-    do {                                                                    \
-        string __msg = comm;                                                \
-        string __c = NStr::NumericToString(static_cast<int>(errc), 0, 16);  \
-        __msg.append(" Cassandra error - (code: " + __c);                   \
-        __msg.append(string(", description: '") +                           \
-            cass_error_desc(errc) + "')");                                  \
-        NCBI_THROW(CCassandraException, dberr, __msg.c_str());              \
+#define RAISE_CASS_ERROR(errc, dberr, comm)                                     \
+    do {                                                                        \
+        string macro_msg = comm;                                                \
+        string macro_c = NStr::NumericToString(static_cast<int>(errc), 0, 16);  \
+        macro_msg.append(" Cassandra error - (code: " + macro_c);               \
+        macro_msg.append(string(", description: '") +                           \
+            cass_error_desc(errc) + "')");                                      \
+        NCBI_THROW(CCassandraException, dberr, macro_msg.c_str());              \
     } while (0)
 
-#define RAISE_CASS_FUT_ERROR(future, errc, comm)                            \
-    do {                                                                    \
-        const char *__message;                                              \
-        size_t __msglen;                                                    \
-        cass_future_error_message(future, &__message, &__msglen);           \
-        CassError rc = cass_future_error_code(future);                      \
-        string __msg;                                                       \
-        __msg.assign(__message);                                            \
-        __msg.append(string(": ") +                                         \
-                     NStr::NumericToString(static_cast<int>(rc), 0, 16));   \
-        if (comm.empty())                                                   \
-            NCBI_THROW(CCassandraException, errc, __msg);                   \
-        else                                                                \
-            NCBI_THROW(CCassandraException, errc, __msg + ": " + comm);     \
-    } while (0)
-
-#define RAISE_CASS_QRY_ERROR(future, comm)                                  \
-    do {                                                                    \
-        CassError rc = cass_future_error_code(future);                      \
-        if (rc == CASS_ERROR_SERVER_UNAVAILABLE ||                          \
-            rc == CASS_ERROR_LIB_REQUEST_QUEUE_FULL ||                      \
-            rc == CASS_ERROR_LIB_NO_HOSTS_AVAILABLE)                        \
-            RAISE_CASS_FUT_ERROR(future, eQueryFailedRestartable, comm);    \
-        else if (rc == CASS_ERROR_LIB_REQUEST_TIMED_OUT ||                  \
-                rc == CASS_ERROR_SERVER_WRITE_TIMEOUT ||                    \
-                rc == CASS_ERROR_SERVER_READ_TIMEOUT)                       \
-            RAISE_CASS_FUT_ERROR(future, eQueryTimeout, comm);              \
-        else                                                                \
-            RAISE_CASS_FUT_ERROR(future, eQueryFailed, comm);               \
-    } while (0)
-
-#define RAISE_CASS_CONN_ERROR(future, comm)                                 \
-    RAISE_CASS_FUT_ERROR(future, eFailedToConn, comm)
-
-#define RAISE_DB_ERROR(errc, comm)                                          \
-    do {                                                                    \
-        string ___msg = comm;                                               \
-        NCBI_THROW(CCassandraException, errc, comm);                        \
-    } while(0)
-
-#define RAISE_DB_QRY_TIMEOUT(tspent, tmargin, msg)                          \
-    do {                                                                    \
-        string ___msg = msg;                                                \
-        if ((tmargin) != 0)                                                 \
-            ___msg.append(string(", timeout ") +                            \
-                          NStr::NumericToString(tmargin) +                  \
-                          "ms (spent: " + NStr::NumericToString(tspent) +   \
-                          "ms)");                                           \
-        NCBI_EXCEPTION_VAR(db_exception, CCassandraException, eQueryTimeout, ___msg); \
-        db_exception.SetOpTime( (tspent) );                                 \
-        NCBI_EXCEPTION_THROW(db_exception);                                 \
-    } while(0)
-
-
-
+#define RAISE_DB_ERROR(errc, comm)                                              \
+    NCBI_THROW(CCassandraException, errc, comm);                                \
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // CASS_EXCEPTION__HPP

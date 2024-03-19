@@ -35,7 +35,6 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
-#include <unistd.h>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_util.hpp>
@@ -45,16 +44,26 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <sstream>
 #include <utility>
 #include <vector>
 
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbitime.hpp>
 #include <corelib/ncbistr.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
+
+#define RAISE_CASS_QUERY_ERROR(error_code, message)                                      \
+    do {                                                                                 \
+        auto macro_error_code = (error_code);                                            \
+        if (macro_error_code == CCassandraException::eQueryFailedRestartable) {      \
+            NCBI_THROW(CCassandraException, eQueryFailedRestartable, message);           \
+        }                                                                                \
+        else if (macro_error_code == CCassandraException::eQueryTimeout) {           \
+            NCBI_THROW(CCassandraException, eQueryTimeout, message);                     \
+        }                                                                                \
+        NCBI_THROW(CCassandraException, eQueryFailed, message);                          \
+    } while(0)                                                                           \
 
 BEGIN_SCOPE()
     constexpr unsigned kDefaultIOThreads = 4;
@@ -132,7 +141,7 @@ BEGIN_SCOPE()
     TKeyspaceMeta *GetKeyspaceMetaPointer(TSchemaMeta* schema_meta, string const& keyspace)
     {
         TKeyspaceMeta* keyspace_meta = cass_schema_meta_keyspace_by_name_n(
-                schema_meta, keyspace.c_str(), keyspace.size()
+            schema_meta, keyspace.c_str(), keyspace.size()
         );
         if (!keyspace_meta) {
             NCBI_THROW(CCassandraException, eNotFound, "Keyspace '" + keyspace + "' not found");
@@ -151,6 +160,85 @@ BEGIN_SCOPE()
         }
 
         return table_meta;
+    }
+
+    inline CCassandraException::EErrCode GetErrorCodeByDriverRC(CassError rc)
+    {
+        if (rc == CASS_ERROR_SERVER_UNAVAILABLE
+            || rc == CASS_ERROR_LIB_REQUEST_QUEUE_FULL
+            || rc == CASS_ERROR_LIB_NO_HOSTS_AVAILABLE
+        ) {
+            return CCassandraException::eQueryFailedRestartable;
+        }
+        else if (rc == CASS_ERROR_LIB_REQUEST_TIMED_OUT
+            || rc == CASS_ERROR_SERVER_WRITE_TIMEOUT
+            || rc == CASS_ERROR_SERVER_READ_TIMEOUT
+        ) {
+            return CCassandraException::eQueryTimeout;
+        }
+        return CCassandraException::eQueryFailed;
+    }
+
+    inline string ProduceSyncTimeoutMessage(string message, unsigned int spent_ms, unsigned int timeout_ms)
+    {
+        if (timeout_ms > 0) {
+            message.append(", timeout " + to_string(timeout_ms) + "ms (spent: " + to_string(spent_ms) + "ms)");
+        }
+        return message;
+    }
+
+    inline string ProduceCassandraFutureErrorMessage(CassFuture * future)
+    {
+        const char *message_ptr{nullptr};
+        size_t message_len{0};
+        cass_future_error_message(future, &message_ptr, &message_len);
+        string message(message_ptr, message_len);
+        CassError rc = cass_future_error_code(future);
+        return "CassandraErrorMessage - " + NStr::Quote(message)
+            + "; CassandraErrorCode - " + NStr::NumericToString(static_cast<int>(rc), 0, 16);
+    }
+
+    string ProduceCassandraConnectionErrorMessage(CassFuture * future, unsigned int connection_timeout)
+    {
+        if (future == nullptr) {
+            return "Unknown Cassandra connection error: future is nullptr";
+        }
+        return ProduceCassandraFutureErrorMessage(future)
+            + "; connection timeout - " + to_string(connection_timeout) + "ms";
+    }
+
+    string ProduceCassandraQueryErrorMessage(CassFuture * future, CCassQuery const * query, string const& sql)
+    {
+        if (future == nullptr) {
+            return "Unknown Cassandra query error: future is nullptr";
+        }
+        string message = ProduceCassandraFutureErrorMessage(future);
+        CassError rc = cass_future_error_code(future);
+        bool is_query_error = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR
+           || rc == CASS_ERROR_SERVER_INVALID_QUERY
+           || rc == CASS_ERROR_LIB_REQUEST_TIMED_OUT);
+        if (query != nullptr) {
+            if (is_query_error) {
+                message.append("; SQL: " + NStr::Quote(query->GetSQL()));
+                if (query->ParamCount() > 0) {
+                    string params;
+                    for (size_t i = 0; i < query->ParamCount(); ++i) {
+                        params += (i > 0 ? "," : "") + query->ParamAsStrForDebug(i);
+                    }
+                    message.append("; Params - (" + params + ")");
+                }
+            }
+            if (rc == CASS_ERROR_LIB_REQUEST_TIMED_OUT
+                || rc == CASS_ERROR_SERVER_WRITE_TIMEOUT
+                || rc == CASS_ERROR_SERVER_READ_TIMEOUT
+            ) {
+                message.append("; timeout - " + to_string(query->GetRequestTimeoutMs()) + "ms");
+            }
+        }
+        else if (is_query_error) {
+            message.append("; SQL: " + NStr::Quote(sql));
+        }
+        return message;
     }
 END_SCOPE()
 
@@ -445,7 +533,8 @@ void CCassConnection::Reconnect()
     cass_future_wait(future.get());
     rc = cass_future_error_code(future.get());
     if (rc != CASS_OK) {
-        RAISE_CASS_CONN_ERROR(future.get(), string(""));
+        NCBI_THROW(CCassandraException, eFailedToConn,
+            ProduceCassandraConnectionErrorMessage(future.get(), m_ctimeoutms));
     }
 
     if (!m_keyspace.empty()) {
@@ -884,15 +973,18 @@ const CassPrepared * CCassConnection::Prepare(const string & sql)
         );
         bool b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
         if (!b) {
-            RAISE_DB_QRY_TIMEOUT(m_qtimeoutms, 0, string("failed to prepare query \"") + sql + "\"");
+            RAISE_CASS_QUERY_ERROR(
+                CCassandraException::eQueryTimeout,
+                ProduceSyncTimeoutMessage("Failed to prepare query: " + NStr::Quote(sql), 0, m_qtimeoutms)
+            );
         }
         CassError rc = cass_future_error_code(future.get());
         if (rc != CASS_OK) {
-            string msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR || rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
-                            string(", sql: ") + sql : string("");
-            RAISE_CASS_QRY_ERROR(future.get(), msg);
+            RAISE_CASS_QUERY_ERROR(
+                GetErrorCodeByDriverRC(rc),
+                ProduceCassandraQueryErrorMessage(future.get(), nullptr, sql)
+            );
         }
-
         rv = cass_future_get_prepared(future.get());
         if (!rv) {
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain prepared handle for sql: ") + sql);
@@ -907,10 +999,10 @@ const CassPrepared * CCassConnection::Prepare(const string & sql)
 
 
 void CCassConnection::Perform(
-                unsigned int optimeoutms,
-                const std::function<bool()> &  PreLoopCB,
-                const std::function<void(const CCassandraException&)> &  DbExceptCB,
-                const std::function<bool(bool)> &  OpCB)
+    unsigned int optimeoutms,
+    const std::function<bool()> & PreLoopCB,
+    const std::function<void(const CCassandraException&)> & DbExceptCB,
+    const std::function<bool(bool)> & OpCB)
 {
     int err_cnt = 0;
     bool is_repeated = false;
@@ -929,17 +1021,17 @@ void CCassConnection::Perform(
             }
 
             if (e.GetErrCode() == CCassandraException::eQueryTimeout && ++err_cnt < 10) {
-                ERR_POST(Info << "CAPTURED TIMEOUT: " << e.TimeoutMsg() << ", RESTARTING OP");
+                ERR_POST(Info << "CAPTURED TIMEOUT: " << e.GetMsg() << ", RESTARTING OP");
             } else if (e.GetErrCode() == CCassandraException::eQueryFailedRestartable) {
-                ERR_POST(Info << "CAPTURED RESTARTABLE EXCEPTION: " << e.what() << ", RESTARTING OP");
+                ERR_POST(Info << "CAPTURED RESTARTABLE EXCEPTION: " << e.GetMsg() << ", RESTARTING OP");
             } else {
                 // timer exceeded (10 times we got timeout and havn't read
                 // anyting, or got another error -> try to reconnect
-                ERR_POST("2. CAPTURED " << e.what());
+                ERR_POST("2. CAPTURED " << e.GetMsg());
                 throw;
             }
 
-            int64_t     op_time_ms = (gettime() - op_begin) / 1000;
+            int64_t op_time_ms = (gettime() - op_begin) / 1000;
             if (optimeoutms != 0 && op_time_ms > optimeoutms) {
                 throw;
             }
@@ -1039,6 +1131,13 @@ unsigned int CCassQuery::Timeout() const
 void CCassQuery::UsePerRequestTimeout(bool value)
 {
     m_use_per_request_timeout = value;
+}
+
+unsigned int CCassQuery::GetRequestTimeoutMs() const
+{
+    return m_use_per_request_timeout
+        ? m_qtimeoutms
+        : m_connection->QryTimeoutMs();
 }
 
 void CCassQuery::Close()
@@ -1459,7 +1558,7 @@ void CCassQuery::Restart(TCassConsistency c)
     if (!params.empty()) {
         params = "; params - (" + params + ")";
     }
-    ERR_POST(Warning << "Cassandra query restarted: SQL - '" << m_sql << "'" << params);
+    ERR_POST(Warning << "Cassandra query restarted: SQL - " << NStr::Quote(m_sql, '\'') << params);
     if (m_results_expected) {
         RestartQuery(c);
     } else {
@@ -1567,7 +1666,10 @@ async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
     if (!rv) {
         if (!m_async && timeoutmks > 0) {
             int64_t t = (gettime() - m_futuretime) / 1000L;
-            RAISE_DB_QRY_TIMEOUT(t, timeoutmks / 1000L, string("failed to perform query \"") + m_sql + "\"");
+            RAISE_CASS_QUERY_ERROR(
+                CCassandraException::eQueryTimeout,
+                ProduceSyncTimeoutMessage("Failed to perform query: " + NStr::Quote(m_sql), t, timeoutmks / 1000L)
+            );
         } else {
             return ar_wait;
         }
@@ -1621,11 +1723,7 @@ void CCassQuery::ProcessFutureResult()
             cass_statement_free(m_statement);
             m_statement = nullptr;
         }
-        string msg;
-        if (rc == CASS_ERROR_SERVER_SYNTAX_ERROR || rc == CASS_ERROR_SERVER_INVALID_QUERY) {
-            msg = ", sql: " + m_sql;
-        }
-        RAISE_CASS_QRY_ERROR(m_future, msg);
+        RAISE_CASS_QUERY_ERROR(GetErrorCodeByDriverRC(rc), ProduceCassandraQueryErrorMessage(m_future, this, ""));
     }
 
     if (m_results_expected) {
