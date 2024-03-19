@@ -586,6 +586,7 @@ sub download($$)
 download_file:
         if ($opt_force_download or $update_available) {
             print "Downloading $file..." if $opt_verbose;
+            my $rv = 0;
             if (defined($ftp)) {
                 # Download errors will be checked later when reading checksum files
                 $ftp->get($file);
@@ -594,19 +595,24 @@ download_file:
                 my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sSR ";
                 $cmd .= "--remote-name-all $file $file.md5";
                 print "$cmd\n" if $opt_verbose > 3;
-                system($cmd);
+                $rv = system($cmd);
             }
-            my $rmt_digest = &read_md5_file($checksum_file);
-            my $lcl_digest = &compute_md5_checksum($file);
+            my ($rmt_digest, $lcl_digest) = (0)x2;
+            if ($rv == 0) {
+                $rmt_digest = &read_md5_file($checksum_file);
+                $lcl_digest = &compute_md5_checksum($file);
+            }
             print "\nRMT $file Digest $rmt_digest" if (DEBUG);
             print "\nLCL $file Digest $lcl_digest\n" if (DEBUG);
-            if ($lcl_digest ne $rmt_digest) {
+            if ($rv != 0 or ($lcl_digest ne $rmt_digest)) {
                 unlink &rm_protocol($file), &rm_protocol($checksum_file);
                 if (++$attempts >= MAX_DOWNLOAD_ATTEMPTS) {
-                    print STDERR "too many failures, aborting download!\n";
-                    return EXIT_FAILURE;
+                    print STDERR "too many failures, aborting download! Please try again later or use the --source aws option\n";
+                    unlink $file, "$file.md5";
+                    return -1;
                 } else {
-                    print "corrupt download, trying again.\n";
+                    print "corrupt $file or $file.md5 download, trying again.\n";
+                    sleep(exponential_delay($attempts));
                     goto download_file;
                 }
             }
@@ -933,6 +939,12 @@ sub get_curl_path
         }
     }
     return undef;
+}
+
+sub exponential_delay {
+    my $attempt = shift;
+    my $delay = 2 ** $attempt;
+    return $delay;
 }
 
 __END__
