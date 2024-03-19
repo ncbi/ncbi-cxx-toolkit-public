@@ -147,7 +147,8 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
     EPSGS_LoggingFlag           logging_flag = ePSGS_NeedLogging;
     if (status == CRequestStatus::e404_NotFound)
         logging_flag = ePSGS_SkipLogging;
-    CountError(nullptr, status, code, severity, message, logging_flag);
+    CountError(nullptr, status, code, severity, message,
+               logging_flag, ePSGS_NeedStatusUpdate);
 
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
 
@@ -316,8 +317,9 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError(
     IPSGS_Processor::m_Request->SetRequestContext();
 
     // It could be a message or an error
-    bool    is_error = CountError(fetch_details,
-                                  status, code, severity, message);
+    CountError(fetch_details, status, code, severity, message,
+               ePSGS_NeedLogging, ePSGS_NeedStatusUpdate);
+    bool    is_error = IsError(severity);
 
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(),

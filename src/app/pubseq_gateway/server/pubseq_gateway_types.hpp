@@ -207,5 +207,11 @@ enum EPSGS_LoggingFlag {
     ePSGS_SkipLogging
 };
 
+
+enum EPSGS_StatusUpdateFlag {
+    ePSGS_NeedStatusUpdate,
+    ePSGS_SkipStatusUpdate
+};
+
 #endif
 

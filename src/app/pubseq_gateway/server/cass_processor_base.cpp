@@ -373,12 +373,14 @@ bool CPSGS_CassProcessorBase::IsError(EDiagSev  severity) const
 }
 
 
-bool CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
-                                         CRequestStatus::ECode  status,
-                                         int  code,
-                                         EDiagSev  severity,
-                                         const string &  message,
-                                         EPSGS_LoggingFlag  logging_flag)
+CRequestStatus::ECode
+CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
+                                    CRequestStatus::ECode  status,
+                                    int  code,
+                                    EDiagSev  severity,
+                                    const string &  message,
+                                    EPSGS_LoggingFlag  logging_flag,
+                                    EPSGS_StatusUpdateFlag  status_update_flag)
 {
     // Note: the 'code' may come from cassandra error handlers and from the PSG
     // internal logic code. It is safe to compare the codes against particular
@@ -417,8 +419,10 @@ bool CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
     if (IsTimeoutError(code)) {
         app->GetCounters().Increment(this,
                                      CPSGSCounters::ePSGS_CassQueryTimeoutError);
-        UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
-        return true;
+        if (status_update_flag == ePSGS_NeedStatusUpdate) {
+            UpdateOverallStatus(CRequestStatus::e504_GatewayTimeout);
+        }
+        return CRequestStatus::e504_GatewayTimeout;
     }
 
     if (status == CRequestStatus::e404_NotFound) {
@@ -471,8 +475,10 @@ bool CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
                 break;
         }
 
-        UpdateOverallStatus(CRequestStatus::e404_NotFound);
-        return true;
+        if (status_update_flag == ePSGS_NeedStatusUpdate) {
+            UpdateOverallStatus(CRequestStatus::e404_NotFound);
+        }
+        return CRequestStatus::e404_NotFound;
     }
 
     if (is_error) {
@@ -480,10 +486,12 @@ bool CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
             app->GetCounters().Increment(this,
                                          CPSGSCounters::ePSGS_ProcUnknownError);
         }
-        UpdateOverallStatus(status);
+        if (status_update_flag == ePSGS_NeedStatusUpdate) {
+            UpdateOverallStatus(status);
+        }
     }
 
-    return is_error;
+    return status;
 }
 
 

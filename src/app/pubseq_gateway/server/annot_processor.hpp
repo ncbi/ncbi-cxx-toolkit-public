@@ -133,7 +133,9 @@ private:
     // The list of names which have been received and (possibly) sent.
     // It is used to calculate not found and error/timeout annotations
     set<string>                 m_Success;
-};
 
+    // Fetches could be made in a few keyspaces and 
+    vector<CRequestStatus::ECode>   m_AnnotFetchCompletions;
+};
 #endif  // PSGS_RESOLVEPROCESSOR__HPP
 
