@@ -136,6 +136,16 @@ if echo $TESTS | grep -w $obasename > /dev/null; then
     exit 0
 fi
 
+# The fallback happens due to various chunks so the only final status is to be
+# checked
+TESTS="no_id2chunk_fallback_whole_7 no_id2chunk_prop_fallback_whole_8"
+if echo $TESTS | grep -w $obasename > /dev/null; then
+    curl "${curl_https}" -s -i "${full_url}" | grep --text 'status=200' | sed -r 's/&n_chunks=[0-9]+//g' | sed  -r 's/chunk=[0-9]+/chunk=/g' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort > $ofile
+    exit 0
+fi
+
+
+
 # Need the fact that it is a fallback
 TESTS="bad_id2chunk_fallback_orig bad_id2chunk_fallback_whole
        bad_id2chunk_fallback_orig_2 bad_id2chunk_fallback_whole_2
@@ -183,7 +193,12 @@ TESTS="bad_id2chunk_prop_fallback_slim bad_id2chunk_prop_fallback_smart
        getna_id2chunk_fallback_none
        getna_id2chunk_fallback_slim_2 getna_id2chunk_fallback_smart_2
        getna_id2chunk_fallback_whole_2 getna_id2chunk_fallback_orig_2
-       getna_id2chunk_fallback_none_2"
+       getna_id2chunk_fallback_none_2
+       no_id2chunk_fallback_slim_7 no_id2chunk_fallback_smart_7
+       no_id2chunk_fallback_none_7
+       no_id2chunk_fallback_orig_7
+       no_id2chunk_prop_fallback_slim_8 no_id2chunk_prop_fallback_smart_8
+       no_id2chunk_prop_fallback_none_8 no_id2chunk_prop_fallback_orig_8"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
     curl "${curl_https}" -s -i "${full_url}" | grep --text -e '^PSG-Reply-Chunk: ' -e 'Falling' -e 'Fallback' -e 'Callback error' -e 'Failed to fetch' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort > $ofile
