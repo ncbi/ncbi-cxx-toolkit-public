@@ -501,9 +501,8 @@ int CTbl2AsnApp::Run()
     CTable2AsnLogger* app_logger = new CTable2AsnLogger;
     CNcbiOstream* error_log = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCerr;
     app_logger->SetProgressOstream(error_log);
-    SetDiagHandler(app_logger);
-    m_logger = app_logger;
-    //m_logger.Reset(app_logger);
+    SetDiagHandler(app_logger, false);
+    m_logger.Reset(app_logger);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
@@ -924,11 +923,11 @@ int CTbl2AsnApp::Run()
         }
     }
 
+    int ret = 0;
     if (m_logger->Count() == 0) {
         #ifdef THIS_IS_TRUNK_BUILD
             m_context.m_remote_updater->ReportStats(std::cerr);
         #endif
-        return 0;
     } else {
         m_logger->Dump();
         if (args["logxml"]) {
@@ -942,16 +941,20 @@ int CTbl2AsnApp::Run()
                         m_logger->LevelCount(eDiag_Error) +
                         m_logger->LevelCount(eDiag_Fatal);
         // all errors reported as failure
-        if (errors > 0)
-            return 1;
-
-        // only warnings reported as 2
-        if (m_logger->LevelCount(eDiag_Warning) > 0)
-            return 2;
-
-        // otherwise it's ok
-        return 0;
+        if (errors > 0) {
+            ret = 1;
+        } else {
+            // only warnings reported as 2
+            if (m_logger->LevelCount(eDiag_Warning) > 0)
+                ret = 2;
+            else // otherwise it's ok
+                ret = 0;
+        }
     }
+
+    // prevent further logging after m_logger is autodestroyed; RW-2219, RW-2233
+    SetDiagHandler(nullptr, false);
+    return ret;
 }
 
 void CTbl2AsnApp::ProcessOneEntry(
