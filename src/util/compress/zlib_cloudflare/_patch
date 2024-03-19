@@ -47,13 +47,13 @@ diff -ur gzguts.h.orig gzguts.h
 
 ================================================================================
 diff -ur crc32.c.orig crc32.c
---- crc32.c.orig        2023-11-27 10:02:01.287481800 -0500
-+++ crc32.c     2023-11-28 13:46:21.970427000 -0500
+--- crc32.c.orig	2024-03-19 09:38:09.492184800 -0400
++++ crc32.c	2024-03-19 10:17:33.177199400 -0400
 @@ -20,6 +20,8 @@
    produced, so that this one source file can be compiled to an executable.
   */
-
-+#include "zutil.h"
+ 
++#include "zutil_cf.h"
 +
  #ifdef HAS_PCLMUL
   #include "crc32_simd.h"
@@ -61,20 +61,32 @@ diff -ur crc32.c.orig crc32.c
 @@ -34,7 +36,7 @@
  #include <stdint.h>
  #include <stddef.h>
-
+ 
 -uint32_t crc32(uint32_t crc, uint8_t *buf, size_t len) {
-+uLong crc32(uLong crc, const Bytef *buf, uInt len) {
++uint32_t crc32_orig(uint32_t crc, const Bytef *buf, uInt len) {
      crc = ~crc;
-
+ 
      while (len >= 8) {
-@@ -67,8 +69,6 @@
+@@ -58,6 +60,11 @@
+     return ~crc;
+ }
+ 
++uLong crc32(uLong crc, const Bytef *buf, uInt len) {
++    return crc32_orig(crc, buf, len);
++}
++
++
+ #else
+ 
+ #ifdef MAKECRCH
+@@ -67,8 +74,6 @@
  #  endif /* !DYNAMIC_CRC_TABLE */
  #endif /* MAKECRCH */
-
+ 
 -#include "zutil.h"      /* for Z_U4, Z_U8, z_crc_t, and FAR definitions */
 -
  #define local static
-
+ 
  /* Definitions for doing the crc four data bytes at a time. */
 
 ================================================================================
