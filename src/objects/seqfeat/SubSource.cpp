@@ -4670,6 +4670,14 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
         }
     }
 
+	// JIRA:RW-2243 Micronesia is the only entry with a comma, special case test here
+	string micronesia = "Micronesia, Federated States of";
+	if (NStr::EqualNocase(test, micronesia)) {
+	    if (! NStr::EqualCase(test, micronesia)) {
+	        return micronesia;
+	    }
+	}
+
     string input = test;
     if (NStr::StartsWith(input, "\"") && NStr::EndsWith(input, "\"")) {
         input = input.substr(1, input.length() - 2);
