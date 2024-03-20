@@ -90,7 +90,7 @@ const char k_PSymbol[ePMatrixSize+1] =
 unique_ptr<CNcbiRegistry> CAlignFormatUtil::m_Reg;
 string CAlignFormatUtil::m_Protocol = "";
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
-unique_ptr<CGeneInfoFileReader> CAlignFormatUtil::m_GeneInfoReader;
+
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
 ///@param score: place to extract the raw score to
@@ -2180,10 +2180,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
     }
     if(linkout & eGene){
       url_link = CAlignFormatUtil::GetURLFromRegistry("GENE");
-      if(textLink) {
-        string geneSym = CAlignFormatUtil::GetGeneInfo(first_gi);
+      if(textLink) {        
         lnk_displ = "Gene";
-        lnkTitleInfo = "gene " + geneSym;
+        lnkTitleInfo = "gene information";
       }
       else {
         lnk_displ = kGeneImg;
@@ -4007,46 +4006,6 @@ string  CAlignFormatUtil::GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
 	    linkUrl = seqUrlInfo->resourcesUrl + rs + "?report=fasta";
     }
     return linkUrl;
-}
-
-string  CAlignFormatUtil::GetGeneInfo(TGi giForGeneLookup)
-{
-    string geneSym;
-    try
-    {
-        CNcbiEnvironment env;
-        if (env.Get(GENE_INFO_PATH_ENV_VARIABLE) != kEmptyStr)
-        {
-
-            if (m_GeneInfoReader.get() == 0)
-            {
-                m_GeneInfoReader.reset(new CGeneInfoFileReader(false));
-            }
-
-
-            CGeneInfoFileReader::TGeneInfoList infoList;
-            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
-
-            CGeneInfoFileReader::TGeneInfoList::const_iterator itInfo = infoList.begin();
-            for (; itInfo != infoList.end(); itInfo++)
-            {
-                CRef<CGeneInfo> info = *itInfo;
-                geneSym = info->GetSymbol();
-                break;//???
-            }
-        }
-    }
-    catch (CException& e)
-    {
-        geneSym = "(Gene info extraction error: "  + e.GetMsg() +  ")";
-        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error: " << e.GetMsg() << endl;
-    }
-    catch (...)
-    {
-        geneSym = "(Gene info extraction error)";
-        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error " << endl;
-    }
-    return geneSym;
 }
 
 
