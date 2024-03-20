@@ -103,7 +103,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             self.requires("ncbicrypt/20230516")
             if self.settings.os == "Linux":
                 self.requires("ncbi-fastcgi/2.4.2")
-            self.requires("ncbi-vdb/3.0.10")
+            self.requires("ncbi-vdb/3.1.0")
 
     def validate(self):
         if self.settings.compiler.cppstd:
