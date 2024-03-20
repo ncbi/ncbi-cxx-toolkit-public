@@ -3329,37 +3329,6 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalignEx2(CSeq_align_set& alnset)
 }
 
 
-bool CDisplaySeqalign::x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info)
-{
-    const CBioseq_Handle& bsp_handle =
-        aln_vec_info->alnvec->GetBioseqHandle(1);
-    if (bsp_handle &&
-        (m_AlignOption&eHtml) &&
-        (m_AlignOption&eLinkout) &&
-        (m_AlignOption&eShowGeneInfo))
-    {
-        CNcbiEnvironment env;
-        if (env.Get(GENE_INFO_PATH_ENV_VARIABLE) == kEmptyStr)
-        {
-            return false;
-        }
-
-        const CRef<CBlast_def_line_set> bdlRef
-            =  CSeqDB::ExtractBlastDefline(bsp_handle);
-        const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
-
-        ITERATE(CBlast_def_line_set::Tdata, iter, bdl)
-        {
-            int linkout = x_GetLinkout(*(*iter)->GetSeqid().front());
-            if (linkout & eGene)
-            {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 
 string CDisplaySeqalign::x_GetGeneLinkUrl(int gene_id)
 {
@@ -3377,51 +3346,6 @@ string CDisplaySeqalign::x_GetGeneLinkUrl(int gene_id)
 
 
 
-string CDisplaySeqalign::x_DisplayGeneInfo(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info)
-{
-    CNcbiOstrstream out;
-    try
-    {
-        if (x_IsGeneInfoAvailable(aln_vec_info))
-        {
-            if (m_GeneInfoReader.get() == 0)
-            {
-                m_GeneInfoReader.reset(new CGeneInfoFileReader(false));
-            }
-
-            TGi giForGeneLookup = FindGi(bsp_handle.GetBioseqCore()->GetId());
-
-            CGeneInfoFileReader::TGeneInfoList infoList;
-            m_GeneInfoReader->GetGeneInfoForGi(giForGeneLookup,infoList);
-
-            CGeneInfoFileReader::TGeneInfoList::const_iterator
-                        itInfo = infoList.begin();
-            if (itInfo != infoList.end())
-                out << "\n";
-            for (; itInfo != infoList.end(); itInfo++)
-            {
-                CRef<CGeneInfo> info = *itInfo;
-                string strUrl = x_GetGeneLinkUrl(info->GetGeneId());
-                string strInfo;
-                info->ToString(strInfo, true, strUrl);
-                out << strInfo << "\n";
-            }
-        }
-    }
-    catch (CException& e)
-    {
-        out << "(Gene info extraction error: "
-        << e.GetMsg() << ")" << "\n";
-        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error: " << e.GetMsg() << endl;
-    }
-    catch (...)
-    {
-        out << "(Gene info extraction error)" << "\n";
-        cerr << "[BLAST FORMATTER EXCEPTION]  Gene info extraction error " << endl;
-    }
-    string formattedString = CNcbiOstrstreamToString(out);
-    return formattedString;
-}
 
 void CDisplaySeqalign::x_DisplayAlignSortInfo(CNcbiOstream& out,string id_label)
 {
@@ -3697,10 +3621,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfo(CNcbiOstream& out,
 			if(!(m_AlignOption & eShowNoDeflineInfo)){
 				//1. Display defline(s),Gene info
 				string deflines = x_PrintDefLine(bsp_handle, aln_vec_info);
-				out<< deflines;
-				//2. Format Gene info
-				string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);
-				out<< geneInfo;
+				out<< deflines;				
 			}
 
 			if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
@@ -3998,10 +3919,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out,
     if(show_defline) {
         const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1);
 		//1. Display defline(s),Gene info
-		string alignHeader = x_FormatDefLinesHeader(bsp_handle, aln_vec_info);
-		/**2. Format Gene info
-		string geneInfo = x_DisplayGeneInfo(bsp_handle,aln_vec_info);
-        alignHeader = CAlignFormatUtil::MapTemplate(alignHeader,"aln_gene_info",geneInfo); **/
+		string alignHeader = x_FormatDefLinesHeader(bsp_handle, aln_vec_info);		
         if(sortOneAln.empty()) {
 
             out<< alignHeader;
