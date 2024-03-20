@@ -833,11 +833,7 @@ protected:
                       objects::CAlnMap::TSeqPosList& insert_length, 
                       int line_aln_stop);
 
-    ///check if Gene info is enabled and a Gene link is present for a hit
-    ///@param aln_vec_info: alnvec list
-    ///
-    bool x_IsGeneInfoAvailable(SAlnInfo* aln_vec_info);
-
+    
     ///get the URL of the Gene info link.
     ///@param gene_id: gene id to link to.
     ///@return: fully formatted URL of the Gene info link.
@@ -896,9 +892,6 @@ protected:
                          CNcbiOstream& out);
 
     CRef<objects::CAlnVec> x_GetAlnVecForSeqalign(const objects::CSeq_align& align); 
-    ///Display Gene Info
-    ///
-    string x_DisplayGeneInfo(const objects::CBioseq_Handle& bsp_handle,SAlnInfo* aln_vec_info);
     
     ///Dipslay Bl2seq TBLASTX link
     ///
