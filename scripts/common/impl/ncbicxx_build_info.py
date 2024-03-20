@@ -327,7 +327,7 @@ class Collector(object):
             url = url.rstrip('\n')
         except subprocess.CalledProcessError:
             try:
-                cmd = [git, 'remote', 'show', 'origin'] 
+                cmd = [git, 'remote', 'show', '-n', 'origin'] 
                 with subprocess.Popen(cmd, stdout = subprocess.PIPE,
                                       stderr = subprocess.DEVNULL,
                                       universal_newlines = True,
