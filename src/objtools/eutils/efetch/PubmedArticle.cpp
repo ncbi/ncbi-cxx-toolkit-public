@@ -346,9 +346,9 @@ static bool s_SetCommentCorrection(
 }
 
 
-static int s_GetPublicationStatusId(const string& publication_status)
+static EPubStatus s_GetPublicationStatusId(const string& publication_status)
 {
-    static const unordered_map<string, int> s_PubStatusId {
+    static const unordered_map<string, EPubStatus> s_PubStatusId {
         { "received", ePubStatus_received },
         { "accepted", ePubStatus_accepted },
         { "epublish", ePubStatus_epublish },
@@ -423,12 +423,15 @@ static CRef<CImprint> s_GetImprint(const CPubmedArticle& pubmed_article)
     {
         CRef<CPubStatusDateSet> date_set(new CPubStatusDateSet());
         for (auto pub_date : pubmed_data.GetHistory().GetPubMedPubDate()) {
-            CRef<CPubStatusDate> pub_stat_date(new CPubStatusDate());
             string pub_status = CPubMedPubDate::C_Attlist::GetTypeInfo_enum_EAttlist_PubStatus()->
                 FindName(pub_date->GetAttlist().GetPubStatus(), false);
-            pub_stat_date->SetPubstatus(s_GetPublicationStatusId(pub_status));
-            pub_stat_date->SetDate(*s_GetDateFromPubMedPubDate(*pub_date));
-            date_set->Set().push_back(pub_stat_date);
+            EPubStatus eps = s_GetPublicationStatusId(pub_status);
+            if (eps != ePubStatus_other) {
+                CRef<CPubStatusDate> pub_stat_date(new CPubStatusDate());
+                pub_stat_date->SetPubstatus(eps);
+                pub_stat_date->SetDate(*s_GetDateFromPubMedPubDate(*pub_date));
+                date_set->Set().push_back(pub_stat_date);
+            }
         }
         imprint->SetHistory(*date_set);
     }
