@@ -1545,16 +1545,10 @@ public:
     ///@return: bool indicating if accession is WGS
     static bool IsWGSPattern(string &wgsAccession);
 
-    ///Get Gene symobol for gi
-    ///@param  giForGeneLookup: gi
-    ///@return: string gene symbol
-    static string  GetGeneInfo(TGi giForGeneLookup);
-    
-
     static unique_ptr<CNcbiRegistry> m_Reg;
     static string m_Protocol;
     static bool   m_geturl_debug_flag;
-    static unique_ptr<CGeneInfoFileReader> m_GeneInfoReader;
+    
 
     /// Calculate the uniq subject query coverage range (blastn only)
     static int GetUniqSeqCoverage(objects::CSeq_align_set & alnset);
