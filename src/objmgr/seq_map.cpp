@@ -1167,7 +1167,7 @@ CConstRef<CSeqMap> CSeqMap::GetSeqMapForSeq_loc(const CSeq_loc& loc,
         if ( loc.IsInt() ) {
             const CSeq_interval& locint = loc.GetInt();
             if ( locint.GetFrom() == 0 &&
-                 (!locint.IsSetStrand() || IsForward(locint.GetStrand())) ) {
+                 (!locint.IsSetStrand() || !IsReverse(locint.GetStrand())) ) {
                 CBioseq_Handle bh = scope->GetBioseqHandle(locint.GetId());
                 if ( bh ) {
                     if ( bh.GetBioseqLength() == locint.GetTo()+1 ) {
