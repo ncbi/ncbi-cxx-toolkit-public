@@ -88,7 +88,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.requires("libjpeg/9e")
         self.requires("libnghttp2/[>=1.51.0 <=1.59.0]")
         self.requires("libpng/[>=1.6.37 <=1.6.43]")
-        self.requires("libtiff/[>=4.3.0 <=4.6.0]")
+        self.requires("libtiff/[>=4.3.0 <=4.5.0]")
         if self.settings.os == "Linux":
             self.requires("libunwind/[>=1.6.2 <=1.8.0]")
         self.requires("libuv/[>=1.45.0 <=1.48.0]")
