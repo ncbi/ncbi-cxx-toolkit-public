@@ -39,7 +39,6 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 #include <util/itree.hpp>
 
 //forward declarations
@@ -612,9 +611,7 @@ private:
     
     vector<map <SSlaveRange, CRange<TSeqPos>, slave_range_sort_order> >m_SlaveRangeCache;
 
-    ///tool to get gene id
-    CGeneInfoFileReader m_FileReader;
-
+   
     SHspIndexInfo* m_HspOverlappingWithLeftPrimer;
     SHspIndexInfo* m_HspOverlappingWithRightPrimer;
     SHspIndexInfo* m_HspOverlappingWithLeftPrimerMinusStrand;
