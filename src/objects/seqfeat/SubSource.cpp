@@ -4677,6 +4677,10 @@ string CCountries::NewFixCountry (const string& test, bool us_territories)
 	        return micronesia;
 	    }
 	}
+	// JIRA:RW-2243 also special case to convert old Micronesia name to new name
+	if (NStr::EqualNocase(test, "Micronesia")) {
+	    return micronesia;
+	}
 
     string input = test;
     if (NStr::StartsWith(input, "\"") && NStr::EndsWith(input, "\"")) {
