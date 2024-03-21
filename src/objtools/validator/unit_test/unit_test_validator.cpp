@@ -21042,6 +21042,7 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mexico. Loreto Bay, Gulf of California."), "Mexico: Loreto Bay, Gulf of California");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Meyendel, the Netherlands"), "Netherlands: Meyendel");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("micronesia, federated States of"), "Micronesia, Federated States of");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Micronesia"), "Micronesia, Federated States of");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mount St. Helena, California"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Nanyuki"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Netherland"), "Netherlands");
