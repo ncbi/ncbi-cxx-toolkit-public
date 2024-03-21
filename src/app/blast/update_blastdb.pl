@@ -431,18 +431,23 @@ sub get_last_modified_date_from_ncbi_ftp
         use Time::Local;
         my %month2int = (Jan=>0, Feb=>1, Mar=>2, Apr=>3, May=>4, Jun=>5,
             Jul=>6, Aug=>8, Sep=>8, Oct=>9, Nov=>10, Dec=>11);
-        my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sI $file | grep ^Last-Modified";
-        chomp(my $date_str = `$cmd`);
-        if ($date_str =~ /Last-Modified:\s+\w+, (\d+) (\w+) (\d+) (\d+):(\d+):(\d+) GMT/) {
-            # Sample output: Wed, 07 Dec 2022 10:37:08 GMT
-            my $mday = int($1);
-            my $mon = $month2int{$2};
-            my $year = int($3) - 1900;
-            my $hour = int($4);
-            my $min = int($5);
-            my $sec = int($6);
-            $retval = Time::Local::timegm($sec, $min, $hour, $mday, $mon, $year);
-            print "$file $retval\n" if DEBUG;
+        my $cmd = "$curl --user " . USER . ":" . PASSWORD . " -sI $file";
+        if (open(my $fh, "-|", $cmd)) {
+            while (<$fh>) {
+                if (/Last-Modified:\s+\w+, (\d+) (\w+) (\d+) (\d+):(\d+):(\d+) GMT/) {
+                    # Sample output: Wed, 07 Dec 2022 10:37:08 GMT
+                    my $mday = int($1);
+                    my $mon = $month2int{$2};
+                    my $year = int($3) - 1900;
+                    my $hour = int($4);
+                    my $min = int($5);
+                    my $sec = int($6);
+                    $retval = Time::Local::timegm($sec, $min, $hour, $mday, $mon, $year);
+                    print "$file $retval\n" if DEBUG;
+                    last;
+                }
+            }
+            close($fh);
         }
     }
     return $retval;
