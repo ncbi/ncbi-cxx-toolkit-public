@@ -897,16 +897,6 @@ R"(Pub ::= equiv {
               hour 9,
               minute 0
             }
-          },
-          {
-            pubstatus other,
-            date std {
-              year 2007,
-              month 7,
-              day 31,
-              hour 9,
-              minute 0
-            }
           }
         }
       }
@@ -1205,16 +1195,6 @@ R"(Pub ::= equiv {
               day 1,
               hour 0,
               minute 1
-            }
-          },
-          {
-            pubstatus other,
-            date std {
-              year 1992,
-              month 5,
-              day 1,
-              hour 0,
-              minute 0
             }
           }
         }
