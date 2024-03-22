@@ -17,6 +17,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["protobuf/*"].shared = False
         self.options["boost/*"].shared = False
         self.options["libxml2/*"].shared = False
+        self.options["libiconv/*"].shared = False
         self.options["pcre/*"].shared = False
         self.options["ncbicrypt/*"].shared = False
 #
@@ -93,7 +94,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             self.requires("libunwind/[>=1.6.2 <=1.8.0]")
         self.requires("libuv/[>=1.45.0 <=1.48.0]")
         self.requires("libxml2/[>=2.11.4 <=2.11.6]")
-        self.requires("libxslt/1.1.34")
+        self.requires("libxslt/[>1.1.34 <=1.1.37]")
         self.requires("lmdb/[>=0.9.29 <=0.9.31]")
         self.requires("lzo/2.10")
         self.requires("openssl/1.1.1s")
