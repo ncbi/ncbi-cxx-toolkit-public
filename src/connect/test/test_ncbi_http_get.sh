@@ -37,7 +37,7 @@ if [ "$ssl" = "1" ]; then
     url='https://www.ncbi.nlm.nih.gov/Service/index.html'
   fi
 elif [ "$m" = "0" -o -n "$CONN_HTTP_USER_HEADER" -o \
-       "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
+       "`echo $FEATURES | grep -c -E '(^| )NCBICRYPT( |$)'`" != "1" ]; then
   : ${CONN_USESSL:=1};  export CONN_USESSL
   url='http://www.ncbi.nlm.nih.gov/Service/index.html'
 else
