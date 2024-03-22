@@ -608,7 +608,7 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info,
     } else {
         if (proxy != fProxy_Https  ||  x_info->scheme != eURL_Https)
             parsed = 0;
-        CORE_LOGF_X(10, eLOG_Error,
+        CORE_LOGF_X(parsed ? 15 : 10, eLOG_Error,
                     ("ConnNetInfo($%s): %s \"%s\"", env, parsed
                      ? "Unable to utilize secure HTTPS proxy"
                      : "Unrecognized HTTP proxy specification", val));
