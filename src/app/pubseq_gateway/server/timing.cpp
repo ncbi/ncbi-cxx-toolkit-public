@@ -1232,6 +1232,16 @@ void COperationTiming::RegisterForTimeSeries(
                             CPSGS_Request::EPSGS_Type  request_type,
                             CRequestStatus::ECode  status)
 {
+    if (status == CRequestStatus::e500_InternalServerError ||
+        status == CRequestStatus::e501_NotImplemented ||
+        status == CRequestStatus::e502_BadGateway ||
+        status == CRequestStatus::e503_ServiceUnavailable ||
+        status == CRequestStatus::e504_GatewayTimeout ||
+        status == CRequestStatus::e505_HTTPVerNotSupported) {
+        // The same condition GRID Dashboard uses
+        m_ErrorTimeSeries.Add();
+    }
+
     if (request_type == CPSGS_Request::ePSGS_UnknownRequest)
         return;
 
@@ -1447,6 +1457,7 @@ void COperationTiming::RotateRequestStat(void)
     m_TCPConnectionsStat.Rotate();
     m_ActiveRequestsStat.Rotate();
     m_BacklogStat.Rotate();
+    m_ErrorTimeSeries.Rotate();
 }
 
 
@@ -1552,6 +1563,7 @@ void COperationTiming::Reset(void)
     m_TCPConnectionsStat.Reset();
     m_ActiveRequestsStat.Reset();
     m_BacklogStat.Reset();
+    m_ErrorTimeSeries.Reset();
 
     for (auto &  item : m_IdGetDoneByProc)
         item->Reset();
@@ -1714,7 +1726,8 @@ COperationTiming::Serialize(int  most_ancient_time,
                              m_IdGetNADoneByProc[item.second]->Serialize(time_series,
                                                                          loop, current_index));
             }
-
+            ret.SetByKey("error_time_series",
+                         m_ErrorTimeSeries.Serialize(time_series, loop, current_index));
         }
     } else {
         lock_guard<mutex>       guard(m_Lock);

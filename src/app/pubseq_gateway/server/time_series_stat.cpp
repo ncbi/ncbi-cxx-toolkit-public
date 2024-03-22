@@ -35,13 +35,17 @@
 #include "time_series_stat.hpp"
 
 
+CTimeSeriesBase::CTimeSeriesBase() :
+    m_TotalMinutesCollected(1),
+    m_Loop(false),
+    m_CurrentIndex(0)
+{}
+
+
 CMomentousCounterSeries::CMomentousCounterSeries() :
     m_Accumulated(0), m_AccumulatedCount(0),
     m_TotalValues(0.0),
-    m_MaxValue(0.0),
-    m_Loop(false),
-    m_TotalMinutesCollected(1),
-    m_CurrentIndex(0)
+    m_MaxValue(0.0)
 {
     Reset();
 }
@@ -235,10 +239,195 @@ CJsonNode  CMomentousCounterSeries::x_SerializeOneSeries(const vector<pair<int, 
 }
 
 
-CProcessorRequestTimeSeries::CProcessorRequestTimeSeries() :
-    m_Loop(false),
-    m_TotalMinutesCollected(1),
-    m_CurrentIndex(0)
+CMonotonicCounterSeries::CMonotonicCounterSeries()
+{
+    Reset();
+}
+
+void CMonotonicCounterSeries::Add(void)
+{
+    size_t      current_index = m_CurrentIndex.load();
+    ++m_Values[current_index];
+    ++m_TotalValues;
+}
+
+
+void CMonotonicCounterSeries::Rotate(void)
+{
+    size_t      new_current_index = m_CurrentIndex.load();
+    if (new_current_index == kSeriesIntervals - 1) {
+        new_current_index = 0;
+    } else {
+        ++new_current_index;
+    }
+
+    m_Values[new_current_index] = 0;
+
+    m_CurrentIndex.store(new_current_index);
+    ++m_TotalMinutesCollected;
+    if (new_current_index == 0) {
+        m_Loop = true;
+    }
+}
+
+
+void CMonotonicCounterSeries::Reset(void)
+{
+    memset(m_Values, 0, sizeof(m_Values));
+    m_TotalValues = 0;
+
+    m_CurrentIndex.store(0);
+    m_TotalMinutesCollected.store(1);
+    m_Loop = false;
+}
+
+
+CJsonNode
+CMonotonicCounterSeries::Serialize(const vector<pair<int, int>> &  time_series,
+                                   bool  loop, size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    ret.SetByKey("Values",
+                 x_SerializeOneSeries(m_Values, m_TotalValues,
+                                      time_series, loop, current_index));
+    return ret;
+}
+
+
+CJsonNode
+CMonotonicCounterSeries::x_SerializeOneSeries(const uint64_t *  values,
+                                              uint64_t  grand_total,
+                                              const vector<pair<int, int>> &  time_series,
+                                              bool  loop,
+                                              size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    if (current_index == 0 && loop == false) {
+        // There is no data collected yet
+        return ret;
+    }
+
+    CJsonNode   output_series(CJsonNode::NewArrayNode());
+
+    // Needed to calculate max and average vals/sec
+    uint64_t    max_n_val_per_min = 0;
+    uint64_t    total_vals = 0;
+    uint64_t    total_mins = 0;
+
+    // Index in the array where the data are collected
+    size_t      raw_index;
+    if (current_index == 0) {
+        raw_index = kSeriesIntervals - 1;
+        loop = false;   // to avoid going the second time over
+    } else {
+        raw_index = current_index - 1;
+    }
+
+    size_t      current_accumulated_mins = 0;
+    uint64_t    current_accumulated_vals = 0;
+    size_t      output_data_index = 0;
+
+    // The current index in the 'time_series', i.e. a pair of
+    // <mins to accumulate>:<last sequential data index>
+    // It is guaranteed they are both > 0.
+    size_t      range_index = 0;
+    size_t      current_mins_to_accumulate = time_series[range_index].first;
+    size_t      current_last_seq_index = time_series[range_index].second;
+
+    for ( ;; ) {
+        uint64_t    vals = values[raw_index];
+
+        ++total_mins;
+        max_n_val_per_min = max(max_n_val_per_min, vals);
+        total_vals += vals;
+
+        ++current_accumulated_mins;
+        current_accumulated_vals += vals;
+
+        if (current_accumulated_mins >= current_mins_to_accumulate) {
+            output_series.AppendInteger(current_accumulated_vals);
+            current_accumulated_mins = 0;
+            current_accumulated_vals = 0;
+        }
+
+        ++output_data_index;
+        if (output_data_index > current_last_seq_index) {
+            ++range_index;
+            current_mins_to_accumulate = time_series[range_index].first;
+            current_last_seq_index = time_series[range_index].second;
+        }
+
+        if (raw_index == 0)
+            break;
+        --raw_index;
+    }
+
+    if (loop) {
+        raw_index = kSeriesIntervals - 1;
+        while (raw_index > current_index + 1) {
+            uint64_t    vals = values[raw_index];
+            --raw_index;
+
+            ++total_mins;
+            max_n_val_per_min = max(max_n_val_per_min, vals);
+            total_vals += vals;
+
+            ++current_accumulated_mins;
+            current_accumulated_vals += vals;
+
+            if (current_accumulated_mins >= current_mins_to_accumulate) {
+                output_series.AppendInteger(current_accumulated_vals);
+                current_accumulated_mins = 0;
+                current_accumulated_vals = 0;
+            }
+
+            ++output_data_index;
+            if (output_data_index > current_last_seq_index) {
+                ++range_index;
+                current_mins_to_accumulate = time_series[range_index].first;
+                current_last_seq_index = time_series[range_index].second;
+            }
+        }
+    }
+
+    if (current_accumulated_mins > 0) {
+        output_series.AppendInteger(current_accumulated_vals);
+    }
+
+    if (loop) {
+        size_t      last_minute_index = current_index + 1;
+        if (last_minute_index >= kSeriesIntervals)
+            last_minute_index = 0;
+
+        // The current minute and the last minute in case of a loop are not
+        // sent to avoid unreliable data
+        uint64_t    rest_vals = grand_total - values[last_minute_index] - values[current_index];
+        uint64_t    rest_mins = m_TotalMinutesCollected.load() - kSeriesIntervals - 2;
+
+        if (rest_mins > 0) {
+            ret.SetDouble("RestAvgValPerSec", rest_vals / (rest_mins * 60.0));
+        } else {
+            ret.SetDouble("RestAvgValPerSec", 0.0);
+        }
+    } else {
+        ret.SetDouble("RestAvgValPerSec", 0.0);
+    }
+
+    ret.SetInteger("TotalValues", total_vals);
+    ret.SetDouble("MaxValPerSec", max_n_val_per_min / 60.0);
+    ret.SetDouble("AvgValPerSec", total_vals / (total_mins * 60.0));
+    ret.SetByKey("time_series", output_series);
+
+    // Just in case: grand total includes everything - sent minutes, not sent
+    // minutes in case of the loops and the rest
+    ret.SetInteger("GrandTotalValues", grand_total);
+    return ret;
+}
+
+
+CProcessorRequestTimeSeries::CProcessorRequestTimeSeries()
 {
     Reset();
 }
