@@ -463,6 +463,8 @@ class COperationTiming
         vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetTSEChunkDoneByProc;
         vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetNADoneByProc;
 
+        CMonotonicCounterSeries                             m_ErrorTimeSeries;
+
         // The first index is a request kind
         // The second index is a processor kind
         vector<vector<unique_ptr<CProcessorPerformanceTiming>>>     m_DoneProcPerformance;
