@@ -91,7 +91,6 @@ affy needs3party $(XERCES_LIBS)
 align_format needs $(OBJMGR_LIBS)
 align_format needs $(OBJREAD_LIBS)
 align_format needs blast_services
-align_format needs gene_info
 align_format needs seqdb
 align_format needs taxon1
 align_format needs xalnmgr
@@ -1490,7 +1489,6 @@ xportal_auth needs connect
 xportal_auth needs txxmldoc
 xportal_auth needs xcgi
 xprimer needs $(OBJMGR_LIBS)
-xprimer needs gene_info
 xprimer needs xalgoalignnw
 xprimer needs xalnmgr
 xprimer needs3party $(GENBANK_THIRD_PARTY_LIBS)
