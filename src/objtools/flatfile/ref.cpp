@@ -899,9 +899,9 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     if ((is_er & 01) == 01) {
         if (er == 1)
-            imp.SetPubstatus(3); /* epublish     */
+            imp.SetPubstatus(ePubStatus_epublish);
         else
-            imp.SetPubstatus(10); /* aheadofprint */
+            imp.SetPubstatus(ePubStatus_aheadofprint);
     }
 
     /* check invalid "in-press"
@@ -988,7 +988,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     char* pages;
     char* press;
 
-    Uint1 ref_fmt;
+    ERefFormat ref_fmt;
     bool  IS_AUTH = false;
     char* tbptr;
     char* p;

@@ -34,12 +34,14 @@
 #ifndef _UTILREF_
 #define _UTILREF_
 
-#define GB_REF   0
-#define EMBL_REF 1
-#define SP_REF   2
-#define PIR_REF  3
-#define PDB_REF  4
-#define ML_REF   5
+enum ERefFormat {
+    GB_REF   = 0,
+    EMBL_REF = 1,
+    SP_REF   = 2,
+    PIR_REF  = 3,
+    PDB_REF  = 4,
+    ML_REF   = 5,
+};
 
 //#include <objtools/flatfile/asci_blk.h>
 
@@ -57,9 +59,9 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp);
 CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title);
 CRef<objects::CDate>    get_date(const Char* year);
 void                    get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
-void                    get_auth(char* pt, Uint1 format, char* jour, CRef<objects::CAuth_list>& auths);
-void                    get_auth_from_toks(ValNodePtr tokens, Uint1 format, CRef<objects::CAuth_list>& auths);
-CRef<objects::CAuthor>  get_std_auth(const Char* token, Uint1 format);
+void                    get_auth(char* pt, ERefFormat format, char* jour, CRef<objects::CAuth_list>& auths);
+void                    get_auth_from_toks(ValNodePtr tokens, ERefFormat format, CRef<objects::CAuth_list>& auths);
+CRef<objects::CAuthor>  get_std_auth(const Char* token, ERefFormat format);
 
 END_NCBI_SCOPE
 
