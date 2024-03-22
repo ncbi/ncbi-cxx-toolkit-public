@@ -124,7 +124,7 @@ static void RemoveSpacesAndCommas(string& str)
 }
 
 /**********************************************************/
-void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
+void get_auth_from_toks(ValNodePtr token, ERefFormat format, CRef<CAuth_list>& auths)
 {
     ValNodePtr  vnp;
     const char* p;
@@ -174,7 +174,7 @@ void get_auth_from_toks(ValNodePtr token, Uint1 format, CRef<CAuth_list>& auths)
 }
 
 /**********************************************************/
-CRef<CAuthor> get_std_auth(const Char* token, Uint1 format)
+CRef<CAuthor> get_std_auth(const Char* token, ERefFormat format)
 {
     const Char* auth;
     const Char* eptr;
@@ -250,7 +250,7 @@ CRef<CAuthor> get_std_auth(const Char* token, Uint1 format)
  *                                              12-4-93
  *
  **********************************************************/
-void get_auth(char* pt, Uint1 format, char* jour, CRef<CAuth_list>& auths)
+void get_auth(char* pt, ERefFormat format, char* jour, CRef<CAuth_list>& auths)
 {
     static const char* delimiter;
     static char*       eptr;
