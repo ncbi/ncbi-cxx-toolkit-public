@@ -22,7 +22,7 @@ rm -f $log
 
 trap 'echo "`date`."' 0 1 2 3 15
 
-if [ "`echo $FEATURES | grep -c -E '(^| )connext( |$)'`" != "1" ]; then
+if [ "`echo $FEATURES | grep -c -E '(^| )NCBICRYPT( |$)'`" != "1" ]; then
   n=5
 else
   n=6
