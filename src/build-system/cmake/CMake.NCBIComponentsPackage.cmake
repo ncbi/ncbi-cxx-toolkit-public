@@ -207,7 +207,9 @@ NCBI_define_Pkgcomponent(NAME NGHTTP2 PACKAGE libnghttp2 REQUIRES zlib FIND libn
 
 ##############################################################################
 # GRPC/PROTOBUF
-NCBI_util_disable_find_use_path()
+if(NOT APPLE)
+    NCBI_util_disable_find_use_path()
+endif()
 NCBI_define_Pkgcomponent(NAME PROTOBUF PACKAGE protobuf REQUIRES zlib FIND Protobuf)
 if(NOT NCBI_PROTOC_APP)
     if(DEFINED CONAN_BIN_DIRS_PROTOBUF)
@@ -241,7 +243,9 @@ endif()
 if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_GRPC_PLUGIN = ${NCBI_GRPC_PLUGIN}")
 endif()
-NCBI_util_enable_find_use_path()
+if(NOT APPLE)
+    NCBI_util_enable_find_use_path()
+endif()
 
 #############################################################################
 # CASSANDRA
