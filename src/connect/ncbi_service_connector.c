@@ -56,16 +56,16 @@ typedef struct SServiceConnectorTag {
     EIO_Status          status;         /* Status of last I/O                */
 
     TSERV_TypeOnly      types;          /* Server types w/o any specials     */
+
     unsigned short      retry;          /* Open retry count since last okay  */
 
     ticket_t            ticket;         /* Network byte order (none if zero) */
-
     unsigned int        host;           /* Parsed connection info... (n.b.o) */
     unsigned short      port;           /*                       ... (h.b.o) */
 
     /* flags */
     unsigned            reset:1;        /* Non-zero if iter was just reset   */
-    unsigned            warned:1;       /* Non-zero when needed adj via HTTP */
+    unsigned            warned:1;       /* Non-zero when adjusted via HTTP   */
     unsigned            unused:5;
     unsigned            secure:1;       /* Set when must start SSL on SOCK   */
 
@@ -154,16 +154,17 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
             return eHTTP_HeaderSuccess;
         header_parse = eHTTP_HeaderError;
     }
-    uuu->retry = 0;
+    if (user_callback_enabled  &&  !uuu->warned)
+        uuu->retry = 0;
 
     while (header  &&  *header) {
         if (strncasecmp(header, HTTP_CONNECTION_INFO,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
-            if (uuu->host)
-                break/*failed - duplicate connection info*/;
+            if (user_callback_enabled  ||  uuu->host)
+                break/*failed - unexpected / duplicate connection info*/;
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
             while (*header  &&  isspace((unsigned char)(*header)))
-                header++;
+                ++header;
             if (strncasecmp(header, kStateless, kSLen) == 0  &&
                 (!header[kSLen]  ||  isspace((unsigned char) header[kSLen]))) {
                 /* Special keyword for switching into stateless mode */
@@ -595,7 +596,6 @@ extern "C" {
 }
 #endif /*__cplusplus*/
 
-/*ARGSUSED*/
 /* NB: This callback is only for services called via direct HTTP */
 static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         data,
@@ -620,7 +620,6 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     if (uuu->retry >= uuu->net_info->max_try)
         return 0/*failure - too many errors*/;
     uuu->retry++;
-
     if (!(info = s_GetNextInfo(uuu, 1/*http*/)))
         return 0/*failure - not adjusted*/;
 
