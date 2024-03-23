@@ -509,6 +509,7 @@ bool CHttpResponse::CanGetContentStream(void) const
 
 void CHttpResponse::x_Update(CHttpHeaders::THeaders headers, int status_code, string status_text)
 {
+    // Prevent collecting multiple headers on redirects.
     m_Headers->m_Headers.swap(headers);
     m_StatusCode = status_code;
     m_StatusText = std::move(status_text);
@@ -824,10 +825,10 @@ void CHttpRequest::x_SetProxy(SConnNetInfo& net_info)
 // Interface for the HTTP connector's adjust callback
 struct SAdjustData {
     CHttpRequest* m_Request;  // NB: don't use after request has been sent!
-    bool          m_IsService;
+    const bool    m_IsService;
 
-    SAdjustData(CHttpRequest* request = 0)
-        : m_Request(request), m_IsService(false)
+    SAdjustData(CHttpRequest* request, bool is_service)
+        : m_Request(request), m_IsService(is_service)
     { }
 };
 
@@ -884,7 +885,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     x_SetProxy(*net_info);
 
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url));
-    unique_ptr<SAdjustData> adjust_data(new SAdjustData(this));
+    unique_ptr<SAdjustData> adjust_data(new SAdjustData(this, is_service));
     if ( !is_service ) {
         // Connect using HTTP.
         m_Stream.reset(new CConn_HttpStream(
@@ -900,7 +901,6 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     else {
         // Try to resolve service name.
-        adjust_data->m_IsService = true;
         SSERVICE_Extra x_extra;
         memset(&x_extra, 0, sizeof(x_extra));
         x_extra.data = adjust_data.get();
@@ -963,7 +963,6 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
         = dynamic_cast<CConn_HttpStream_Base*>(req->m_Stream.get());
     _ASSERT(http);
 
-    // Prevent collecting multiple headers on redirects.
     CHttpHeaders::THeaders headers;
     _ASSERT(http_header == http->GetHTTPHeader());
     s_ParseHttpHeader(http->GetHTTPHeader(), headers);
