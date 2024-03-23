@@ -432,13 +432,15 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         MemFree(protacc);
         return;
     }
-    q   = p + 1;
-    *p  = '\0';
-    cho = GetProtAccOwner(protacc);
+
+    const string protaccStr(protacc, p);
+    const int    protaccVer(atoi(p + 1));
+    MemFree(protacc);
+
+    cho = GetProtAccOwner(protaccStr.c_str());
     if (cho == CSeq_id::e_not_set) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_FATAL, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession \"%s\" for CDS feature: \"%s\".", protacc, loc.c_str());
-        MemFree(protacc);
+        ErrPostEx(SEV_FATAL, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession \"%s\" for CDS feature: \"%s\".", protaccStr.c_str(), loc.c_str());
         return;
     }
 
@@ -466,11 +468,10 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         else
             sev = SEV_WARNING;
         if (r)
-            ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession prefix \"%s\" for source %s for CDS feature: \"%s\".", protacc, r, loc.c_str());
+            ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession prefix \"%s\" for source %s for CDS feature: \"%s\".", protaccStr.c_str(), r, loc.c_str());
         else
-            ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "Found mismatching TPA and non-TPA nucleotides's and protein's accessions in one nuc-prot set. Nuc = \"%s\", prot = \"%s\".", text_id->GetAccession().c_str(), protacc);
+            ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "Found mismatching TPA and non-TPA nucleotides's and protein's accessions in one nuc-prot set. Nuc = \"%s\", prot = \"%s\".", text_id->GetAccession().c_str(), protaccStr.c_str());
         if (pp->ign_prot_src == false) {
-            MemFree(protacc);
             return;
         }
     }
@@ -478,8 +479,8 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     CRef<CSeq_id> seq_id(new CSeq_id);
 
     CRef<CTextseq_id> new_text_id(new CTextseq_id);
-    new_text_id->SetAccession(protacc);
-    new_text_id->SetVersion(atoi(q));
+    new_text_id->SetAccession(protaccStr);
+    new_text_id->SetVersion(protaccVer);
     SetTextId(cho, *seq_id, *new_text_id);
 
     ids.push_back(seq_id);
@@ -490,7 +491,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     }
 
     seq_id.Reset(new CSeq_id);
-    seq_id->SetGeneral().SetTag().SetStr(protacc);
+    seq_id->SetGeneral().SetTag().SetStr(protaccStr);
 
     string& db = seq_id->SetGeneral().SetDb();
     if (pp->entrylist[pp->curindx]->is_tsa != false)
