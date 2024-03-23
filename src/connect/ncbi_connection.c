@@ -650,8 +650,8 @@ extern EIO_Status CONN_Wait
         ELOG_Level level;
         switch (status) {
         case eIO_Timeout:
-            if (!timeout/*impossible*/)
-                level = eLOG_Error;
+            if (!timeout/*==kInfiniteTimeout,impossible*/)
+                level = eLOG_Critical;
             else if (timeout->sec | timeout->usec)
                 level = eLOG_Trace;
             else
