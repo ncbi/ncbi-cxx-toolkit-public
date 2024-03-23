@@ -177,6 +177,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
 
 /** The extended version HTTP_CreateConnectorEx() is able to track the HTTP
  * response chain and also change the URL of the server "on-the-fly":
+ *
  * - FHTTP_ParseHeader() gets called every time a new HTTP response header is
  *   received from the server, and only if fHTTP_KeepHeader is NOT set.
  *   Return code from the parser adjusts the existing server error condition
@@ -201,18 +202,23 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *                           error or not) available for reading.
  *
  * - FHTTP_Adjust() gets invoked every time before starting a new "HTTP
- *   micro-session" to make a hit when a previous hit has failed;  it is passed
- *   "net_info" as stored within the connector, and the number of previously
- *   unsuccessful consecutive attempts (in the least significant word) since
- *   the connector was opened;  it is passed 0 in that parameter if calling for
- *   a redirect (when fHTTP_AdjustOnRedirect was set).  A zero (false) return
- *   value ends the retries;  a non-zero continues with the request:  an
- *   advisory value of greater than 0 means an adjustment was made, and a
- *   negative value indicates no changes.
- *   This very same callback is also invoked when a new request is about to be
- *   made for solicitaiton of new URL for the hit -- in this case return 1 if
- *   the SConnNetInfo was updated with a new parameters;  or -1 of no changes
- *   were made;  or 0 to stop the request with an error.
+ *   micro-session" (e.g. to make a hit when a previous hit has failed, to
+ *   follow a redirect, or to change a URL to hit next).  It is passed the live
+ *   "net_info" exactly as stored within the connector, and:
+ *   1.  a positive number of previously unsuccessful consecutive attempts
+ *       (in the least significant word of "failure_count") since the connector
+ *       was successfully opened;  or
+ *   2.  0 in "failure_count" if being called for a redirect (when
+ *       fHTTP_AdjustOnRedirect was set);  or
+ *   3.  -1 in "failure_count" if the callback is invoked when a new request
+ *       is about to be made (as a solicitaiton of new URL for the hit, if any
+ *       available).
+ *   A zero (false) return value ends the request/retries and issues an error.
+ *   A non-zero continues with the request:  an advisory value of greater than
+ *   0 means an adjustment was made, and a negative value indicates no changes
+ *   (and in case "3" above would not initiate any subsequent new request).
+ *   If a new HTTP request is started as a result of the callback, the updated
+ *   SConnNetInfo parameters ("net_info") are going to be used.
  *
  * - FHTTP_Cleanup() gets called when the connector is about to be destroyed;
  *   "user_data" is guaranteed not to be referenced anymore (so this is a good
@@ -293,22 +299,22 @@ typedef void        (*FHTTP_Cleanup)
  *     @note
  *       Data may depart to the server side earlier if CONN_Flush()'ed in a
  *       fHTTP_Flushable connector, see "flags".
- *  3. After the request has been sent, then the response data from the peer
+ *  3. Once the request has been sent, then the response data from the peer
  *     (usually, a CGI program) can be actually read out.
  *  4. On a CONN_Write() operation, which follows data reading, the connection
- *     to the peer is read out until EOF (the data stored internally) then
+ *     to the peer is read out until EOF (all the data saved internally) then
  *     forcedly closed (the peer CGI process will presumably die if it has not
  *     done so yet on its own), and data to be written again get stored in the
  *     buffer until next "Read" etc, see item 1).  The subsequent read will
- *     first see the leftovers (if any) of data stored previously, then the
- *     new data generated in response to the latest request.  The behavior can
- *     be changed by the fHTTP_DropUnread flag.
+ *     first see the leftovers (if any) of data saved previously, then the new
+ *     data generated in response to the latest request.  The behavior can be
+ *     changed by the fHTTP_DropUnread flag (not to save the unread data).
  *
  *  When fHTTP_WriteThru is set with HTTP/1.1, writing to the connector begins
  *  upon any write operations, and reading from the connector causes the
  *  request body to finalize and response to be fetched from the server.
  *  Request method must be explicitly specified with fHTTP_WriteThru, "ANY"
- *  does not get accepted (the eIO_NotSupported error returned).
+ *  does not get accepted (eIO_NotSupported returned).
  *
  *  @note
  *     If "fHTTP_AutoReconnect" is set in "flags", then the connector makes an
