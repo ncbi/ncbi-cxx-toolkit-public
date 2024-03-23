@@ -606,8 +606,11 @@ static int/*tri-state*/ x_SetupHttpProxy(SConnNetInfo* info,
                          x_ProxyStr(info->http_proxy_mask)));
         }
     } else {
-        if (proxy != fProxy_Https  ||  x_info->scheme != eURL_Https)
-            parsed = 0;
+        if (parsed
+            &&  (proxy != fProxy_Https  ||  x_info->scheme != eURL_Https)) {
+            assert(x_info->scheme  &&  x_info->scheme != eURL_Http);
+            parsed = 0/*failure*/;
+        }
         CORE_LOGF_X(parsed ? 15 : 10, eLOG_Error,
                     ("ConnNetInfo($%s): %s \"%s\"", env, parsed
                      ? "Unable to utilize secure HTTPS proxy"
