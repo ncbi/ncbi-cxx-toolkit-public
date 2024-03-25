@@ -99,8 +99,8 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
 const Char**               GetAccArray(Parser::ESource source);
 bool                       isSupportedAccession(objects::CSeq_id::E_Choice type);
-objects::CSeq_id::E_Choice GetNucAccOwner(const char* accession);
-objects::CSeq_id::E_Choice GetProtAccOwner(const char* acc);
+objects::CSeq_id::E_Choice GetNucAccOwner(const CTempString& acc);
+objects::CSeq_id::E_Choice GetProtAccOwner(const CTempString& acc);
 // void    FreeParser(ParserPtr pp);
 END_NCBI_SCOPE
 
