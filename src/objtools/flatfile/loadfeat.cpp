@@ -2914,9 +2914,6 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
 static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
 {
     FeatBlkPtr fbp;
-    char*      p;
-    char*      q;
-    bool       badcom;
     Char       ch;
     Int4       com_count;
     Int4       cit_count;
@@ -2931,21 +2928,20 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
 
         for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
             const string& qual_str = (*cur)->GetQual();
-            string dummy;
-            string& val_str  = (*cur)->IsSetVal() ? (*cur)->SetVal() : dummy;
+            const string dummy;
+            const string& val_str  = (*cur)->IsSetVal() ? (*cur)->SetVal() : dummy;
 
             if (qual_str == "compare") {
-                badcom = true;
+                bool badcom = true;
                 if (! val_str.empty()) {
-                    q = StringChr(val_str.data(), '.');
+                    const char* q = StringChr(val_str.c_str(), '.');
                     if (q && q[1] != '\0') {
+                        const char* p;
                         for (p = q + 1; *p >= '0' && *p <= '9';)
                             p++;
                         if (*p == '\0') {
-                            *q = '\0';
-                            if (GetNucAccOwner(val_str.c_str()) > CSeq_id::e_not_set)
+                            if (GetNucAccOwner(CTempString(val_str, 0, q - val_str.c_str())) > CSeq_id::e_not_set)
                                 badcom = false;
-                            *q = '.';
                         }
                     }
                 }
@@ -3033,17 +3029,7 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
             }
             if (q == p)
                 continue;
-            if (r)
-                *r = '\0';
-            else
-                *p = '\0';
-            i = GetNucAccOwner(q);
-            if (r)
-                *r = '.';
-            else
-                *p = ':';
-
-
+            i = GetNucAccOwner(CTempString(q, (r ? r : p) - q));
             if (i == CSeq_id::e_Genbank && (q[0] == 'e' || q[0] == 'E') &&
                 (q[1] == 'z' || q[1] == 'Z') && ibp->is_tpa == false)
                 continue;

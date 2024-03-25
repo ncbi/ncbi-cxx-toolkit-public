@@ -1760,8 +1760,8 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
     ValNodePtr vnp;
     ValNodePtr vnpn;
     const char* n;
-    char*      p;
-    char*      q;
+    const char* p;
+    const char* q;
 
     if (! embl_acc_list || ! embl_acc_list->next->next)
         return;
@@ -1780,16 +1780,10 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
         for (vnpn = vnp->next->next; vnpn; vnpn = vnpn->next->next) {
             if (vnp->next->choice != vnpn->next->choice &&
                 StringEqu(p, vnpn->data)) {
-                if (q)
-                    *q = '\0';
-                if (GetProtAccOwner(p) > CSeq_id::e_not_set)
+                if (GetProtAccOwner(q ? CTempString(p, q - p) : CTempString(p)) > CSeq_id::e_not_set)
                     ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"%s\" associated with \"%s\" and \"%s\".", vnpn->data, n, vnpn->next->data);
-                if (q)
-                    *q = '.';
             }
         }
-        if (q)
-            *q = '.';
     }
 }
 
@@ -1957,12 +1951,8 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser
                 spb.SetSeqref().push_back(id);
         } else if (NStr::CompareNocase(token1, "EMBL") == 0) {
             p = StringChr(token2, '.');
-            if (p)
-                *p = '\0';
-            ntype = GetNucAccOwner(token2);
+            ntype = GetNucAccOwner(p ? CTempString(token2, p - token2) : CTempString(token2));
             if (ntype == CSeq_id::e_not_set) {
-                if (p)
-                    *p = '.';
                 ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"%s\". Skipped...", token2);
             } else if (AddToList(&acc_list, token2)) {
                 CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, p ? true : false,
@@ -1978,9 +1968,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser
                 token3[1] >= 'A' && token3[1] <= 'Z') {
                 p = StringChr(token3, '.');
                 if (p) {
-                    *p    = '\0';
-                    ptype = GetProtAccOwner(token3);
-                    *p    = '.';
+                    ptype = GetProtAccOwner(CTempString(token3, p - token3));
                     for (q = p + 1; *q >= '0' && *q <= '9';)
                         q++;
                     if (q == p + 1 || *q != '\0')
@@ -2047,9 +2035,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser
                 token2[1] >= 'A' && token2[1] <= 'Z') {
                 p = StringChr(token2, '.');
                 if (p) {
-                    *p    = '\0';
-                    ptype = GetProtAccOwner(token2);
-                    *p    = '.';
+                    ptype = GetProtAccOwner(CTempString(token2, p - token2));
                     for (q = p + 1; *q >= '0' && *q <= '9';)
                         q++;
                     if (q == p + 1 || *q != '\0')

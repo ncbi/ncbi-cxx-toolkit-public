@@ -2265,7 +2265,7 @@ bool isSupportedAccession(CSeq_id::E_Choice type)
 
 
 /**********************************************************/
-CSeq_id::E_Choice GetNucAccOwner(const char* acc)
+CSeq_id::E_Choice GetNucAccOwner(const CTempString& acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
@@ -2282,7 +2282,7 @@ CSeq_id::E_Choice GetNucAccOwner(const char* acc)
 
 
 /**********************************************************/
-CSeq_id::E_Choice GetProtAccOwner(const Char* acc)
+CSeq_id::E_Choice GetProtAccOwner(const CTempString& acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
