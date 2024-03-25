@@ -314,7 +314,7 @@ CNcbiIstream& CInputStreamSource::operator*()
 }
 
 
-CInputStreamSource& CInputStreamSource::operator++()
+void CInputStreamSource::x_Reset()
 {
     // The next stream can be held in either of two places. Clear both.
 
@@ -349,19 +349,40 @@ CInputStreamSource& CInputStreamSource::operator++()
     // but someday might apply to others, so clear it here rather than
     // inside the above conditionals.
     m_CurrFile.erase();
+}
 
-    // Advance to the next stream, if there is any.
+void CInputStreamSource::x_OpenNextFile()
+{
     if (m_CurrIndex < m_Files.size()) {
         m_CurrFile = m_Files[m_CurrIndex++];
-        m_IstrOwned.reset(new CNcbiIfstream(m_CurrFile.c_str()));
-        if (m_IstrOwned->fail()) {
-            // Do not provide to clients with streams that are already
-            // known not to be good (fail, meaning badbit or failbit).
-            string msg("CInputStreamSource::operator++(): "
-                       "File is not accessible: ");
-            NCBI_THROW(CException, eUnknown, msg + m_CurrFile);
-        }
+        x_OpenOwnedStream(new CNcbiIfstream(m_CurrFile.c_str()));
     }
+}
+
+void CInputStreamSource::x_OpenOwnedStream(CNcbiIstream *is)
+{
+    if (is->fail()) {
+        // Do not provide to clients with streams that are already
+        // known not to be good (fail, meaning badbit or failbit).
+        string msg("CInputStreamSource: File is not accessible: ");
+        NCBI_THROW(CException, eUnknown, msg + m_CurrFile);
+    }
+    m_IstrOwned.reset(is);
+}
+
+CInputStreamSource& CInputStreamSource::operator++()
+{
+    x_Reset();
+    x_OpenNextFile();
+    return *this;
+}
+
+CInputStreamSource& CInputStreamSource::JumpToFile(unsigned index)
+{
+    x_Reset();
+    
+    m_CurrIndex = index;
+    x_OpenNextFile();
     return *this;
 }
 
