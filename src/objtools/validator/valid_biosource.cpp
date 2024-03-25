@@ -1926,11 +1926,11 @@ const CSeq_entry *ctx)
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
                     strain = str;
-                    if (NStr::StartsWith(str, "subsp. ")) {
+                    if (NStr::StartsWith(str, "subsp. ", NStr::eNocase)) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.strain should not start with subsp.",
                             obj, ctx);
-                    } else if (NStr::StartsWith(str, "serovar ")) {
+                    } else if (NStr::StartsWith(str, "serovar ", NStr::eNocase)) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.strain should not start with serovar",
                             obj, ctx);
@@ -1950,11 +1950,11 @@ const CSeq_entry *ctx)
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
                     serovar = str;
-                    if (NStr::StartsWith(str, "subsp. ")) {
+                    if (NStr::StartsWith(str, "subsp. ", NStr::eNocase)) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.serovar should not start with subsp.",
                             obj, ctx);
-                    } else if (NStr::StartsWith(str, "strain ")) {
+                    } else if (NStr::StartsWith(str, "strain ", NStr::eNocase)) {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
                             "Orgmod.serovar should not start with strain",
                             obj, ctx);
