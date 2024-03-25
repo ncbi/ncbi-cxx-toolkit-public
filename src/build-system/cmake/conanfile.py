@@ -5,7 +5,7 @@ import subprocess
 
 class NCBIToolkitWithConanRecipe(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeDeps"
+    generators = "CMakeDeps", "VirtualBuildEnv", "VirtualRunEnv"
 
     @property
     def _min_cppstd(self):
