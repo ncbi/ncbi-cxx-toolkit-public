@@ -189,7 +189,7 @@ public:
     ///
     ///       If these conditions aren't met, throws an exception.
     ///
-    virtual CInputStreamSource& operator++();
+    CInputStreamSource& operator++();
 
     /// Determine if there are any more streams to be processed
     ///
@@ -213,6 +213,9 @@ public:
     ///   the current file index
     size_t GetCurrentStreamIndex(size_t* count = nullptr) const;
 
+    /// Jump to specified file in input list
+    CInputStreamSource& JumpToFile(unsigned index);
+
 protected:
     CArgs m_Args;
     string m_Prefix;
@@ -223,6 +226,13 @@ protected:
     vector<string> m_Files;
     size_t m_CurrIndex;
     string m_CurrFile;
+
+    void x_Reset();
+
+    void x_OpenOwnedStream(CNcbiIstream *is);
+
+    // Advance to the next stream, if there is any.
+    virtual void x_OpenNextFile();
 
 private:
     /// forbidden
