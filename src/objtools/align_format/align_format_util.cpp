@@ -804,13 +804,12 @@ string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id,bool with_version)
     return retval;
 }
 
-void CAlignFormatUtil::AddSpace(CNcbiOstream& out, int number)
+void CAlignFormatUtil::AddSpace(CNcbiOstream& out, size_t number)
 
 {
-    for(int i=0; i<number; i++){
+    for(auto i=0; i<number; i++){
         out<<" ";
     }
-
 }
 
 void CAlignFormatUtil::GetScoreString(double evalue,

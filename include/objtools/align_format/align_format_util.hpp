@@ -811,7 +811,7 @@ public:
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
     ///
-    static void AddSpace(CNcbiOstream& out, int number);
+    static void AddSpace(CNcbiOstream& out, size_t number);
 
     ///Return ID for GNL label
     ///@param dtg: dbtag to build label from
