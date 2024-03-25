@@ -814,11 +814,11 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
         if (accessionString.empty())
             continue;
 
-        const auto idChoice = GetNucAccOwner(accessionString.c_str());
+        const auto idChoice = GetNucAccOwner(accessionString);
         if (idChoice == CSeq_id::e_not_set) {
             continue;
         }
-        sec_acc = fta_if_wgs_acc(accessionString.c_str());
+        sec_acc = fta_if_wgs_acc(accessionString);
         if (sec_acc == 0) { // Project WGS accession
             continue;
         }
