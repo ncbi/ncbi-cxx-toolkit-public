@@ -1613,7 +1613,7 @@ static int get_aa_from_trna(const CTrna_ext& trna)
 }
 
 /**********************************************************/
-static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* product, unsigned char* remove)
+static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& product, unsigned char* remove)
 {
     const char** b;
 
@@ -1633,11 +1633,11 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const Char* pr
 
     CRef<CTrna_ext> ret(new CTrna_ext);
 
-    if (! product || StringLen(product) < 7)
+    if (product.length() < 7)
         return ret;
 
     bool digits = false;
-    prod        = StringSave(product);
+    prod        = StringSave(product.c_str());
     for (p = prod; *p != '\0'; p++) {
         if (*p >= 'a' && *p <= 'z')
             *p &= ~040;
@@ -2013,13 +2013,12 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
         qval = nullptr;
     }
 
-    qval = CpTheQualValue(feat.SetQual(), "product");
+    string qval2 = CpTheQualValue(feat.SetQual(), "product");
 
     CRef<CTrna_ext> trnap;
-    if (qval) {
-        trnap = fta_get_trna_from_product(feat, qval, nullptr);
-        MemFree(qval);
-        qval = nullptr;
+    if (! qval2.empty()) {
+        trnap = fta_get_trna_from_product(feat, qval2, nullptr);
+        qval2.clear();
     }
 
     if (feat.IsSetComment() && feat.GetComment().empty()) {
@@ -2029,7 +2028,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
     remove = 0;
     CRef<CTrna_ext> trnac;
     if (feat.IsSetComment()) {
-        trnac = fta_get_trna_from_product(feat, feat.GetComment().c_str(), &remove);
+        trnac = fta_get_trna_from_product(feat, feat.GetComment(), &remove);
 
         if (get_aa_from_trna(*trnac) == 0) {
             trnac = fta_get_trna_from_comment(feat.GetComment().c_str(), &remove);

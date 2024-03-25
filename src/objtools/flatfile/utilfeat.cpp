@@ -125,7 +125,7 @@ bool SeqLocHaveFuzz(const CSeq_loc& loc)
  *   "qlist"; otherwise, return NULL.
  *
  **********************************************************/
-char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
+string CpTheQualValue(const TQualVector& qlist, const Char* qual)
 {
     string qvalue;
     for (const auto& cur : qlist) {
@@ -142,10 +142,7 @@ char* CpTheQualValue(const TQualVector& qlist, const Char* qual)
         break;
     }
 
-    char* ret = nullptr;
-    if (! qvalue.empty())
-        ret = StringSave(qvalue.c_str());
-    return ret;
+    return qvalue;
 }
 
 /**********************************************************

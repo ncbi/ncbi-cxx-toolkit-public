@@ -2197,44 +2197,32 @@ static void fta_collect_olts(GeneListPtr glp, CSeq_feat& feat)
 static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 length, const CSeq_id& id)
 {
     GeneList* newglp;
-    char*     pseudogene;
-    char*     locus_tag;
 
     if (! gnp)
         return;
 
     for (auto& feat : feats) {
-        string gene;
-        if (char* pGene = CpTheQualValue(feat->GetQual(), "gene")) {
-            gene = pGene;
-            MemFree(pGene);
-        }
-
-        locus_tag = CpTheQualValue(feat->GetQual(), "locus_tag");
+        const string gene = CpTheQualValue(feat->GetQual(), "gene");
+        const string locus_tag = CpTheQualValue(feat->GetQual(), "locus_tag");
 
         const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;
-        if (gene.empty() && ! locus_tag) {
+        if (gene.empty() && locus_tag.empty()) {
             if (GetFeatNameAndLoc(nullptr, *feat, gnp))
-                fta_append_feat_list(gnp, cur_loc, nullptr, locus_tag);
+                fta_append_feat_list(gnp, cur_loc, nullptr, nullptr);
             continue;
         }
 
-        pseudogene = CpTheQualValue(feat->GetQual(), "pseudogene");
-        newglp     = new GeneList;
-        if (! gene.empty()) {
-            newglp->locus = gene;
-        }
-        if (locus_tag) {
-            newglp->locus_tag = locus_tag;
-        }
+        const string pseudogene = CpTheQualValue(feat->GetQual(), "pseudogene");
 
-        if (pseudogene) {
-            newglp->pseudogene = pseudogene;
-        }
+        newglp             = new GeneList;
+        newglp->locus      = gene;
+        newglp->locus_tag  = locus_tag;
+        newglp->pseudogene = pseudogene;
+
         fta_collect_wormbases(newglp, *feat);
         fta_collect_olts(newglp, *feat);
         if (GetFeatNameAndLoc(newglp, *feat, gnp))
-            fta_append_feat_list(gnp, cur_loc, gene.c_str(), locus_tag);
+            fta_append_feat_list(gnp, cur_loc, gene.c_str(), locus_tag.c_str());
 
         newglp->feat.Reset();
         if (gnp->simple_genes == false && cur_loc && cur_loc->IsMix()) {
@@ -2245,8 +2233,6 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         newglp->slibp = GetLowHighFromSeqLoc(cur_loc, length, id);
         if (! newglp->slibp) {
             delete newglp;
-            if (locus_tag)
-                MemFree(locus_tag);
             continue;
         }
         if (gnp->simple_genes == false && feat->IsSetData() &&

@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 bool SeqLocHaveFuzz(const objects::CSeq_loc& loc);
 
-char* CpTheQualValue(const TQualVector& qlist, const char* qual);
+string CpTheQualValue(const TQualVector& qlist, const char* qual);
 char* GetTheQualValue(TQualVector& qlist, const char* qual);
 bool  DeleteQual(TQualVector& qlist, const char* qual);
 
