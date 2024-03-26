@@ -3181,6 +3181,24 @@ protected:
 };
 
 
+static bool x_IsEmptyCDD(const CTSE_Info& tse)
+{
+    // check if delayed TSE chunk is loaded
+    if ( tse.HasSplitInfo() && tse.GetSplitInfo().x_NeedsDelayedMainChunk() ) {
+        // not loaded yet, cannot tell if its empty
+        return false;
+    }
+    // check core Seq-entry content
+    auto core = tse.GetTSECore();
+    if ( !core->IsSet() ) {
+        // wrong entry type
+        return false;
+    }
+    auto& seqset = core->GetSet();
+    return seqset.GetSeq_set().empty() && !seqset.IsSetAnnot();
+}
+
+
 void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
     const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
 {
@@ -3197,6 +3215,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             continue;
         }
         const TIds& ids = id_sets[i];
+        if ( ids.empty() ) {
+            continue;
+        }
         cdd_ids[i] = x_GetCDDIds(ids);
         // Skip if it's known that the bioseq has no CDDs.
         if (m_CDDInfoCache) {
@@ -3224,7 +3245,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         CDataLoader::TTSE_LockSet locks;
         if ( x_CheckAnnotCache(kCDDAnnotName, ids, data_source, nullptr, locks) ) {
             _ASSERT(locks.size() == 1);
-            ret[i] = *locks.begin();
+            if ( !x_IsEmptyCDD(**locks.begin()) ) {
+                ret[i] = *locks.begin();
+            }
             loaded[i] = true;
             continue;
         }
@@ -3279,7 +3302,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
             if (!load_lock) continue;
             if (load_lock.IsLoaded()) {
-                ret[idx] = load_lock;
+                if ( !x_IsEmptyCDD(*load_lock) ) {
+                    ret[idx] = load_lock;
+                }
                 loaded[idx] = true;
                 continue;
             }
@@ -3308,7 +3333,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
                 load_lock->SetSeq_entry(*entry);
                 load_lock.SetLoaded();
             }
-            ret[idx] = load_lock;
+            if ( !x_IsEmptyCDD(*load_lock) ) {
+                ret[idx] = load_lock;
+            }
             loaded[idx] = true;
         }
     }
