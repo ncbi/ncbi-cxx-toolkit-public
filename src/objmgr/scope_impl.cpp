@@ -70,6 +70,7 @@
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/scope_transaction_impl.hpp>
 #include <objmgr/impl/seq_id_sort.hpp>
+#include <objmgr/impl/bioseq_sort.hpp>
 
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/error_codes.hpp>
@@ -3358,8 +3359,12 @@ CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TIds& ids)
 }
 
 
-CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& bhs)
+CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& unsorted_bhs)
 {
+    CSortedBioseqs sorted_bioseqs(unsorted_bhs);
+    TBioseqHandles bhs;
+    sorted_bioseqs.GetSortedBioseqs(bhs);
+
     size_t count = bhs.size(), remaining = count;
     vector<bool> loaded(count);
     CDataSource::TCDD_Locks cdd_locks(count);
@@ -3389,6 +3394,7 @@ CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& bhs)
         }
         ret[i] = *tse_lock;
     }
+    sorted_bioseqs.RestoreOrder(ret);
     return ret;
 }
 
