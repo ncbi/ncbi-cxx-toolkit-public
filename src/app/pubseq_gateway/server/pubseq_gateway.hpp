@@ -506,10 +506,6 @@ private:
     mutex                               m_ThreadToBinderGuard;
     map<uv_thread_t, uv_loop_t *>       m_ThreadToUVLoop;
 
-    // Log sampling support
-    CChecksum                           m_LogSamplingChecksum;
-    mutex                               m_LogSamplingChecksumLock;
-
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;
 };
