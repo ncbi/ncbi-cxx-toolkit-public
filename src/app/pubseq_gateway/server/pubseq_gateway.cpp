@@ -108,6 +108,13 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_LogSamplingChecksum(CChecksum::eCRC32)
 {
     sm_PubseqApp = this;
+
+    // This is a static method which initializes the necessary tables
+    // The method is in the base class CChecksumBase however to highlight that
+    // it is used by m_LogSamplingChecksum the call is made using a syntax of a
+    // regular method.
+    m_LogSamplingChecksum.InitTables();
+
     m_HelpMessageJson = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
     m_HelpMessageHtml =
         "\n\n\n<!DOCTYPE html>\n"
