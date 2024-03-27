@@ -104,7 +104,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeBlobCache(nullptr),
     m_SplitInfoCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
-    m_LogFields("http")
+    m_LogFields("http"),
+    m_LogSamplingChecksum(CChecksum::eCRC32)
 {
     sm_PubseqApp = this;
     m_HelpMessageJson = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
@@ -632,35 +633,57 @@ static string       kUserAgentHeader = "User-Agent";
 static string       kUserAgentApplog = "USER_AGENT";
 static string       kRequestPathApplog = "request_path";
 
-// If log is off, each log_sampling_ratio-th request needs to be logged anyway
-// so there is a sequential request counter
-static uint64_t     s_request_number = 0;
+
 CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
-                                                CHttpRequest &  req) const
+                                                CHttpRequest &  req)
 {
-    bool                    need_log_sampling = false;
-    CRef<CRequestContext>   context;
+    bool                        need_log_sampling = false;
+    CRef<CRequestContext>       context;
+    unique_ptr<CRequestContext> low_level_req_ctx;
 
     if (!g_Log) {
         if (m_Settings.m_LogSamplingRatio > 0) {
-            ++s_request_number;
-            if (s_request_number >= m_Settings.m_LogSamplingRatio) {
+            low_level_req_ctx.reset(new CRequestContext());
+
+            // NCBI SID may come from the header
+            string      sid = req.GetHeaderValue(kNcbiSidHeader);
+            if (!sid.empty()) {
+                low_level_req_ctx->SetSessionID(sid);
+            } else {
+                low_level_req_ctx->SetSessionID();
+            }
+
+            // Check the session ID checksum against the configured log samplig
+            scoped_lock     checksum_lock(m_LogSamplingChecksumLock);
+            m_LogSamplingChecksum.Reset();
+            m_LogSamplingChecksum.AddLine(low_level_req_ctx->GetSessionID());
+            auto    checksum = m_LogSamplingChecksum.GetChecksum();
+
+            if (checksum % m_Settings.m_LogSamplingRatio == 0) {
                 need_log_sampling = true;
-                s_request_number = 0;
             }
         }
     }
 
     if (g_Log || need_log_sampling) {
-        context.Reset(new CRequestContext());
+        if (need_log_sampling) {
+            context.Reset(low_level_req_ctx.release());
+        } else {
+            context.Reset(new CRequestContext());
+        }
         context->SetRequestID();
 
         // NCBI SID may come from the header
-        string      sid = req.GetHeaderValue(kNcbiSidHeader);
-        if (!sid.empty())
-            context->SetSessionID(sid);
-        else
-            context->SetSessionID();
+        if (!need_log_sampling) {
+            // If log sampling is set to true that means the session id has
+            // already been set for the context
+            string      sid = req.GetHeaderValue(kNcbiSidHeader);
+            if (!sid.empty()) {
+                context->SetSessionID(sid);
+            } else {
+                context->SetSessionID();
+            }
+        }
 
         // NCBI PHID may come from the header
         string      phid = req.GetHeaderValue(kNcbiPhidHeader);

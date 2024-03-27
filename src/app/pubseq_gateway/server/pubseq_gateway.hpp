@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <util/checksum.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
@@ -313,7 +314,7 @@ private:
 
 private:
     string  x_GetCmdLineArguments(void) const;
-    CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req) const;
+    CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req);
     void x_PrintRequestStop(CRef<CRequestContext>  context,
                             CPSGS_Request::EPSGS_Type  request_type,
                             CRequestStatus::ECode  status,
@@ -504,6 +505,10 @@ private:
         unique_ptr<CPSGS_UvLoopBinder>> m_ThreadToBinder;
     mutex                               m_ThreadToBinderGuard;
     map<uv_thread_t, uv_loop_t *>       m_ThreadToUVLoop;
+
+    // Log sampling support
+    CChecksum                           m_LogSamplingChecksum;
+    mutex                               m_LogSamplingChecksumLock;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;
