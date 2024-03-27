@@ -525,28 +525,32 @@ static void StripCDSComment(CSeq_feat& feat)
         "Method: conceptual translation supplied by author.",
         nullptr
     };
-    const char** b;
-    char*        pchComment;
-    char*        comment;
+
+    char* pchComment;
+    char* comment;
 
     if (! feat.IsSetComment())
         return;
 
-    comment    = StringSave(feat.GetComment().c_str());
-    pchComment = tata_save(comment);
-    if (comment && *comment != '\0')
-        feat.SetComment(comment);
-    else
-        feat.ResetComment();
+    comment  = StringSave(feat.GetComment().c_str());
+    string s = tata_save(comment);
     MemFree(comment);
 
-    for (b = strA; *b; b++) {
-        pchComment = stripStr(pchComment, *b);
+    pchComment = nullptr;
+    if (! s.empty()) {
+        pchComment = StringSave(s.c_str());
+        s.clear();
+        for (const char** b = strA; *b; b++) {
+            pchComment = stripStr(pchComment, *b);
+        }
     }
-    comment = tata_save(pchComment);
+
+    s = tata_save(pchComment);
+    MemFree(pchComment);
+    comment = s.empty() ? nullptr : StringSave(s.c_str());
+    s.clear();
     if (comment && *comment != '\0')
         ShrinkSpaces(comment);
-    MemFree(pchComment);
 
     if (comment && *comment != '\0')
         feat.SetComment(comment);
