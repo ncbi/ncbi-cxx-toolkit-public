@@ -878,7 +878,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk* entry)
  *                                              10-8-93
  *
  **********************************************************/
-static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
+static string GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
 {
     const char* tag;
     char*       ptr;
@@ -1014,16 +1014,15 @@ static char* GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
         }
     }
 
-    ptr = tata_save(str);
-    p   = ptr + StringLen(ptr) - 1;
-    if (*p == '.') {
-        while (p > ptr && *(p - 1) == ' ')
-            p--;
-        *p   = '.';
-        p[1] = '\0';
-    }
+    string s = tata_save(str);
     MemFree(str);
-    return (ptr);
+    if (! s.empty() && s.back() == '.') {
+        s.pop_back();
+        while (! s.empty() && s.back() == ' ')
+            s.pop_back();
+        s.push_back('.');
+    }
+    return s;
 }
 
 /**********************************************************/
@@ -2582,8 +2581,8 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_DE, &len);
     if (offset) {
-        char* title = GetSPDescrTitle(offset, offset + len, &fragment);
-        if (title) {
+        string title = GetSPDescrTitle(offset, offset + len, &fragment);
+        if (! title.empty()) {
             CRef<CSeqdesc> desc_new(new CSeqdesc);
             desc_new->SetTitle(title);
             descr.Set().push_back(desc_new);
