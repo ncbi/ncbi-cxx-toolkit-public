@@ -72,6 +72,7 @@
 #include "indx_blk.h"
 #include "asci_blk.h"
 #include "utilfun.h"
+#include "add.h"
 
 #ifdef THIS_FILE
 #  undef THIS_FILE
@@ -144,13 +145,13 @@ static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
  *   returns Nlm_StringSave.
  *
  **********************************************************/
-char* tata_save(char* str)
+string tata_save(char* str)
 {
     char* s;
     char* ss;
 
     if (! str)
-        return nullptr;
+        return {};
 
     while (isspace((int)*str) != 0 || *str == ',')
         str++;
@@ -169,9 +170,9 @@ char* tata_save(char* str)
         *s-- = '\0';
 
     if (*str == '\0')
-        return nullptr;
+        return {};
 
-    return (StringSave(str));
+    return string(str);
 }
 
 /**********************************************************/

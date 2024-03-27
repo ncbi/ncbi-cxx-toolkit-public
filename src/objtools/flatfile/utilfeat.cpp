@@ -170,7 +170,9 @@ char* GetTheQualValue(TQualVector& qlist, const Char* qual)
 
         vector<Char> buf(val.begin(), val.end());
         buf.push_back(0);
-        qvalue = tata_save(&buf[0]);
+        string s = tata_save(&buf[0]);
+        if (! s.empty())
+            qvalue = StringSave(s.c_str());
 
         qlist.erase(cur);
         break;
