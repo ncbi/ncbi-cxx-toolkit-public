@@ -104,16 +104,14 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeBlobCache(nullptr),
     m_SplitInfoCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
-    m_LogFields("http"),
-    m_LogSamplingChecksum(CChecksum::eCRC32)
+    m_LogFields("http")
 {
     sm_PubseqApp = this;
 
-    // This is a static method which initializes the necessary tables
-    // The method is in the base class CChecksumBase however to highlight that
-    // it is used by m_LogSamplingChecksum the call is made using a syntax of a
-    // regular method.
-    m_LogSamplingChecksum.InitTables();
+    // The static checksum tables are used when a session id checksum is
+    // calculated. To avoid races later the initialization is called
+    // explicitly once.
+    CChecksumBase::InitTables();
 
     m_HelpMessageJson = GetIntrospectionNode().Repr(CJsonNode::fStandardJson);
     m_HelpMessageHtml =
@@ -661,10 +659,9 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
             }
 
             // Check the session ID checksum against the configured log samplig
-            scoped_lock     checksum_lock(m_LogSamplingChecksumLock);
-            m_LogSamplingChecksum.Reset();
-            m_LogSamplingChecksum.AddLine(low_level_req_ctx->GetSessionID());
-            auto    checksum = m_LogSamplingChecksum.GetChecksum();
+            CChecksum       session_id_checksum(CChecksum::eCRC32);
+            session_id_checksum.AddLine(low_level_req_ctx->GetSessionID());
+            auto            checksum = session_id_checksum.GetChecksum();
 
             if (checksum % m_Settings.m_LogSamplingRatio == 0) {
                 need_log_sampling = true;
