@@ -49,8 +49,7 @@
 USING_SCOPE(objects);
 USING_SCOPE(blast);
 
-CTestObjMgr*         CTestObjMgr::m_Instance = NULL;
-CRef<CObjectManager> CTestObjMgr::m_ObjMgr;
+unique_ptr<CTestObjMgr> CTestObjMgr::m_Instance;
 
 CTestObjMgr::CTestObjMgr()
 {
@@ -64,20 +63,19 @@ CTestObjMgr::CTestObjMgr()
 
 CTestObjMgr::~CTestObjMgr()
 {
-    m_ObjMgr.Reset(NULL);   // all scopes should be gone by now
 }
 
 CTestObjMgr&
 CTestObjMgr::Instance() 
 {
     if (m_Instance == NULL) {
-        m_Instance = new CTestObjMgr();
+        m_Instance.reset(new CTestObjMgr());
     }
     return *m_Instance;
 }
 
 CObjectManager&
-CTestObjMgr::GetObjMgr() const
+CTestObjMgr::GetObjMgr()
 {
     return *m_ObjMgr;
 }
