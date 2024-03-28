@@ -92,7 +92,7 @@ private:
   //void x_LoadLen  (CNcbiIstream& istr, const string& filename);
   void x_LoadLenFa(CNcbiIstream& istr, const string& filename);
 
-  CAltValidator* m_AltValidator;
+  unique_ptr<CAltValidator> m_AltValidator;
   //CAgpContextValidator* m_ContextValidator;
   CAgpValidateReader m_reader;
 
@@ -338,7 +338,7 @@ int CAgpValidateApplication::Run(void)
 
   }
   if(m_ValidationType & VT_Acc) {
-    m_AltValidator= new CAltValidator(m_ValidationType==VT_AccLenTaxid);
+    m_AltValidator.reset(new CAltValidator(m_ValidationType==VT_AccLenTaxid));
     m_AltValidator->Init();
     if( args["species"].HasValue() ) {
       m_AltValidator->SetSpeciesLevelTaxonCheck();
