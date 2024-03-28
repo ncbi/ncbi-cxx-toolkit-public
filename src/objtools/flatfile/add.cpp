@@ -145,34 +145,45 @@ static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
  *   returns Nlm_StringSave.
  *
  **********************************************************/
-string tata_save(char* str)
+string tata_save(string_view t)
 {
-    char* s;
-    char* ss;
-
-    if (! str)
+    if (t.empty())
         return {};
+    string str(t);
 
-    while (isspace((int)*str) != 0 || *str == ',')
-        str++;
-    for (s = str; *s != '\0'; s++) {
-        if (*s != '\n')
-            continue;
-
-        for (ss = s + 1; isspace((int)*ss) != 0;)
-            ss++;
-        *s = ' ';
-        fta_StringCpy(s + 1, ss);
+    // strip from beginning
+    size_t i = 0;
+    for (char c : str) {
+        if (isspace(c) || c == ',')
+            ++i;
+        else
+            break;
     }
-    s = str + StringLen(str) - 1;
-    while (s >= str && (*s == ' ' || *s == ';' || *s == ',' || *s == '\"' ||
-                        *s == '\t'))
-        *s-- = '\0';
+    if (i > 0)
+        str.erase(0, i);
 
-    if (*str == '\0')
-        return {};
+    // strip from beginning of each line
+    for (i = 0; i < str.length(); ++i) {
+        if (str[i] != '\n')
+            continue;
+        size_t j = i + 1;
+        while (j < str.length() && isspace(str[j]))
+            ++j;
+        str[i] = ' ';
+        if (j > 0)
+            str.erase(i + 1, j - (i + 1));
+    }
 
-    return string(str);
+    // strip from end
+    while (! str.empty()) {
+        char c = str.back();
+        if (c == ' ' || c == ';' || c == ',' || c == '\"' || c == '\t')
+            str.pop_back();
+        else
+            break;
+    }
+
+    return str;
 }
 
 /**********************************************************/

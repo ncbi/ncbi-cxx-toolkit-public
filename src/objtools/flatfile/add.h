@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CRef<objects::CSeq_loc> fta_get_seqloc_int_whole(objects::CSeq_id& seq_id, size_t len);
 
-string tata_save(char* str);
+string tata_save(string_view);
 
 bool no_date(Parser::EFormat format, const TSeqdescList& descrs);
 bool no_reference(const objects::CBioseq& bioseq);
