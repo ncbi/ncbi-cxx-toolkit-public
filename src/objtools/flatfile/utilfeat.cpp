@@ -168,9 +168,7 @@ optional<string> GetTheQualValue(TQualVector& qlist, const Char* qual)
             break;
         }
 
-        vector<Char> buf(val.begin(), val.end());
-        buf.push_back(0);
-        string s = tata_save(&buf[0]);
+        string s = tata_save(val);
         if (! s.empty())
             qvalue = s;
 
