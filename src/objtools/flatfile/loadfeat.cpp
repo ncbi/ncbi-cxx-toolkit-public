@@ -1433,15 +1433,14 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     char* q;
     Char  ch;
 
-    qval = GetTheQualValue(feat.SetQual(), "product");
+    auto qval2 = GetTheQualValue(feat.SetQual(), "product");
     if (feat.GetQual().empty())
         feat.ResetQual();
 
     string qval_str;
-    if (qval) {
-        qval_str = qval;
-        MemFree(qval);
-        qval = nullptr;
+    if (qval2) {
+        qval_str = *qval2;
+        qval2.reset();
     }
 
     size_t len = 0;
@@ -1851,8 +1850,7 @@ static int get_first_codon_from_trna(const CTrna_ext& trna)
 /**********************************************************/
 static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, bool accver)
 {
-    char* qval = nullptr;
-    char* p;
+    optional<string> qval;
 
     Uint1 remove;
 
@@ -1884,17 +1882,17 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
     CRef<CRNA_qual_set> rna_quals;
 
     if (type == CRNA_ref::eType_ncRNA) {
-        p = GetTheQualValue(feat.SetQual(), "ncRNA_class");
+        auto p = GetTheQualValue(feat.SetQual(), "ncRNA_class");
         if (p) {
             rna_gen.Reset(new CRNA_gen);
-            rna_gen->SetClass(p);
+            rna_gen->SetClass(*p);
         }
     } else if (type == CRNA_ref::eType_tmRNA) {
-        p = GetTheQualValue(feat.SetQual(), "tag_peptide");
+        auto p = GetTheQualValue(feat.SetQual(), "tag_peptide");
         if (p) {
             CRef<CRNA_qual> rna_qual(new CRNA_qual);
             rna_qual->SetQual("tag_peptide");
-            rna_qual->SetVal(p);
+            rna_qual->SetVal(*p);
 
             rna_quals.Reset(new CRNA_qual_set);
             rna_quals->Set().push_back(rna_qual);
@@ -1908,17 +1906,16 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
     {
         qval = GetTheQualValue(feat.SetQual(), "product"); // may return newly allocated memory!!!
         if (qval) {
-            p = GetTheQualValue(feat.SetQual(), "product");
-            if (p && p[0] != 0) {
+            auto p = GetTheQualValue(feat.SetQual(), "product");
+            if (p && ! p->empty()) {
                 if (! feat.IsSetComment())
-                    feat.SetComment(p);
+                    feat.SetComment(*p);
                 else {
                     string& comment = feat.SetComment();
                     comment += "; ";
-                    comment += p;
+                    comment += *p;
                 }
             }
-            MemFree(p);
         }
 
         if (! qval && type == CRNA_ref::eType_mRNA &&
@@ -1953,31 +1950,28 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
                     ++c_p;
 
                 if (*c_p == '\0') {
-                    qval = StringSave(feat.GetComment().c_str());
+                    qval = feat.GetComment();
                     feat.ResetComment();
                 }
             }
         }
 
         if (qval) {
-            if (StringLen(qval) > 511) {
-                qval[510] = '>';
-                qval[511] = '\0';
-                p         = StringSave(qval);
-                MemFree(qval);
-                qval = p;
+            if (qval->length() > 511) {
+                qval->resize(511);
+                qval->back() = '>';
             }
 
             if (type > CRNA_ref::eType_snoRNA && type <= CRNA_ref::eType_miscRNA) {
                 if (rna_gen.Empty())
                     rna_gen.Reset(new CRNA_gen);
 
-                rna_gen->SetProduct(qval);
+                rna_gen->SetProduct(*qval);
             } else {
-                rna_ref->SetExt().SetName(qval);
+                rna_ref->SetExt().SetName(*qval);
             }
         }
-        MemFree(qval);
+        qval.reset();
     }
 
     if (feat.GetQual().empty())
@@ -1991,26 +1985,24 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
         return;
 
     if (qval) {
-        MemFree(qval);
+        qval.reset();
     }
     qval = GetTheQualValue(feat.SetQual(), "anticodon");
     CRef<CTrna_ext> trnaa;
     if (qval) {
         bioseq.SetInst().SetMol(CSeq_inst::eMol_na);
 
-        CRef<CSeq_loc> anticodon = GetTrnaAnticodon(feat, qval, bioseq.GetId(), accver);
+        CRef<CSeq_loc> anticodon = GetTrnaAnticodon(feat, qval->data(), bioseq.GetId(), accver);
         if (anticodon.NotEmpty()) {
             trnaa.Reset(new CTrna_ext);
 
             /* value has format: (pos:base_range, aa:amino_acid)
              */
-            trnaa->SetAa().SetNcbieaa(GetQualValueAa(qval, true));
+            trnaa->SetAa().SetNcbieaa(GetQualValueAa(qval->data(), true));
             trnaa->SetAnticodon(*anticodon);
             rna_ref->SetExt().SetTRNA(*trnaa);
         }
-
-        MemFree(qval);
-        qval = nullptr;
+        qval.reset();
     }
 
     string qval2 = CpTheQualValue(feat.SetQual(), "product");
@@ -2487,13 +2479,11 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
     }
 
     if (! fbp->quals.empty()) {
-        char* comment = GetTheQualValue(fbp->quals, "note");
-
+        auto comment = GetTheQualValue(fbp->quals, "note");
         if (comment) {
-            if (comment[0]) {
-                feat->SetComment(comment);
+            if (! comment->empty()) {
+                feat->SetComment(*comment);
             }
-            MemFree(comment);
         }
     }
 

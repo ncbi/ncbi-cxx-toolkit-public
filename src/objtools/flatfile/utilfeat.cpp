@@ -154,9 +154,9 @@ string CpTheQualValue(const TQualVector& qlist, const Char* qual)
  *   otherwise, return NULL.
  *
  **********************************************************/
-char* GetTheQualValue(TQualVector& qlist, const Char* qual)
+optional<string> GetTheQualValue(TQualVector& qlist, const Char* qual)
 {
-    char* qvalue = nullptr;
+    optional<string> qvalue;
 
     for (TQualVector::iterator cur = qlist.begin(); cur != qlist.end(); ++cur) {
         if ((*cur)->GetQual() != qual)
@@ -172,13 +172,13 @@ char* GetTheQualValue(TQualVector& qlist, const Char* qual)
         buf.push_back(0);
         string s = tata_save(&buf[0]);
         if (! s.empty())
-            qvalue = StringSave(s.c_str());
+            qvalue = s;
 
         qlist.erase(cur);
         break;
     }
 
-    return (qvalue);
+    return qvalue;
 }
 
 /**********************************************************
