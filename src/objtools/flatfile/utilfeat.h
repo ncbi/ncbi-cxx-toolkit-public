@@ -37,13 +37,14 @@
 #define ftable 1 /* Seq-feat type */
 
 #include "loadfeat.h"
+#include <optional>
 
 BEGIN_NCBI_SCOPE
 
 bool SeqLocHaveFuzz(const objects::CSeq_loc& loc);
 
 string CpTheQualValue(const TQualVector& qlist, const char* qual);
-char* GetTheQualValue(TQualVector& qlist, const char* qual);
+optional<string> GetTheQualValue(TQualVector& qlist, const char* qual);
 bool  DeleteQual(TQualVector& qlist, const char* qual);
 
 Uint1 GetQualValueAa(char* qval, bool checkseq);

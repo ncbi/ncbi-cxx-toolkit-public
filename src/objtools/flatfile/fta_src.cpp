@@ -3139,7 +3139,6 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
     IndexblkPtr ibp;
     char*       res;
     char*       acc;
-    char*       p;
     Int4        i;
     Int4        use_what = USE_ALL;
     bool        err;
@@ -3368,13 +3367,12 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
         }
 
         if (! tsfbp->quals.empty()) {
-            p = GetTheQualValue(tsfbp->quals, "evidence");
+            auto p = GetTheQualValue(tsfbp->quals, "evidence");
             if (p) {
-                if (NStr::CompareNocase(p, "experimental") == 0)
+                if (NStr::CompareNocase(p->c_str(), "experimental") == 0)
                     feat->SetExp_ev(CSeq_feat::eExp_ev_experimental);
-                else if (NStr::CompareNocase(p, "not_experimental") == 0)
+                else if (NStr::CompareNocase(p->c_str(), "not_experimental") == 0)
                     feat->SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
-                MemFree(p);
             }
         }
 

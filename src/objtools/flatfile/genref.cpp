@@ -2241,11 +2241,10 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
 
         newglp->genefeat = IfCDSGeneFeat(*feat, CSeqFeatData::e_Gene, "gene");
 
-        // newglp->maploc = (feat->IsSetQual() ? GetTheQualValue(feat->SetQual(), "map") : nullptr);
         if (feat->IsSetQual()) {
             auto qual = GetTheQualValue(feat->SetQual(), "map");
             if (qual) {
-                newglp->maploc = qual;
+                newglp->maploc = *qual;
             }
         }
         newglp->segnum = gnp->segindex;
@@ -2829,8 +2828,11 @@ static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& g
                 }
             }
 
-            char* gene      = (*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "gene") : nullptr;
-            char* locus_tag = (*feat)->IsSetQual() ? GetTheQualValue((*feat)->SetQual(), "locus_tag") : nullptr;
+            optional<string> gene, locus_tag;
+            if ((*feat)->IsSetQual()) {
+                gene      = GetTheQualValue((*feat)->SetQual(), "gene");
+                locus_tag = GetTheQualValue((*feat)->SetQual(), "locus_tag");
+            }
             if (! gene && ! locus_tag) {
                 ++feat;
                 continue;
@@ -2838,12 +2840,12 @@ static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& g
 
             CRef<CGene_ref> gene_ref(new CGene_ref);
             if (gene)
-                gene_ref->SetLocus(gene);
+                gene_ref->SetLocus(*gene);
             if (locus_tag)
-                gene_ref->SetLocus_tag(locus_tag);
+                gene_ref->SetLocus_tag(*locus_tag);
 
             TSynSet syns;
-            GetGeneSyns((*feat)->GetQual(), gene, syns);
+            GetGeneSyns((*feat)->GetQual(), gene->c_str(), syns);
             if (! syns.empty())
                 gene_ref->SetSyn().assign(syns.begin(), syns.end());
 
@@ -2858,10 +2860,6 @@ static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& g
             if ((*feat)->GetQual().empty())
                 (*feat)->ResetQual();
             ++feat;
-
-            if (gene) {
-                MemFree(gene);
-            }
         }
 
         if (feat_table.empty())
