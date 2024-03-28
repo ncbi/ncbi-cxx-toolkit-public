@@ -146,6 +146,7 @@ CPsiBlastImpl::Run()
                                 seqinfo_src,
                                 search_messages);
     tback.SetResultType(m_ResultType);
+    tback.SetNumberOfThreads(GetNumberOfThreads());
     m_Results = tback.Run();
 
     // Save the K&A values be as they might have been modified in the 
