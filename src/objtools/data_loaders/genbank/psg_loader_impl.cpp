@@ -1152,8 +1152,8 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }}
 
+    m_CDDInfoCache.reset(new CPSGCDDInfoCache(m_CacheLifespan, cache_max_size));
     if (TPSG_PrefetchCDD::GetDefault()) {
-        m_CDDInfoCache.reset(new CPSGCDDInfoCache(m_CacheLifespan, cache_max_size));
         m_CDDPrefetchTask.Reset(new CPSG_PrefetchCDD_Task(*this));
         m_ThreadPool->AddTask(m_CDDPrefetchTask);
     }
@@ -1543,7 +1543,6 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     else {
         locks.insert(tse_lock);
         if (m_CDDPrefetchTask) {
-            _ASSERT(m_CDDInfoCache);
             auto bioseq_info = m_BioseqCache->Get(idh);
             if (bioseq_info) {
                 auto cdd_ids = x_GetCDDIds(bioseq_info->ids);
@@ -2633,7 +2632,6 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
     const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk->GetBlobId());
     _ASSERT(x_IsLocalCDDEntryId(blob_id));
     _ASSERT(!chunk->IsLoaded());
-    
     bool failed = false;
     shared_ptr<CPSG_NamedAnnotInfo> cdd_info;
     shared_ptr<CPSG_NamedAnnotStatus> cdd_status;
@@ -2735,7 +2733,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
             shared_ptr<CPSG_Request_Blob> request;
             if ( x_IsLocalCDDEntryId(blob_id) ) {
-                if (m_CDDInfoCache && m_CDDInfoCache->Find(blob_id.ToPsgId())) {
+                if (m_CDDInfoCache->Find(blob_id.ToPsgId())) {
                     x_CreateEmptyLocalCDDEntry(data_source, *it);
                     continue;
                 }
@@ -3077,7 +3075,6 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
 void CPSGDataLoader_Impl::PrefetchCDD(const TIds& ids)
 {
     if (ids.empty()) return;
-    _ASSERT(m_CDDInfoCache);
     _ASSERT(m_CDDPrefetchTask);
 
     SCDDIds cdd_ids = x_GetCDDIds(ids);
@@ -3185,12 +3182,10 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         const TIds& ids = id_sets[i];
         cdd_ids[i] = x_GetCDDIds(ids);
         // Skip if it's known that the bioseq has no CDDs.
-        if (m_CDDInfoCache) {
-            if (cdd_ids[i].gi && m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
-                // no CDDs for this Seq-id
-                loaded[i] = true;
-                continue;
-            }
+        if (cdd_ids[i].gi && m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
+            // no CDDs for this Seq-id
+            loaded[i] = true;
+            continue;
         }
         // Check if there's a loaded CDD blob.
         for (auto& id : ids) {
@@ -3242,6 +3237,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         auto idx = task->m_Idx;
         if (!task->m_AnnotInfo || !task->m_BlobInfo || !task->m_BlobData) {
             // no CDDs
+            m_CDDInfoCache->Add(x_MakeLocalCDDEntryId(cdd_ids[idx]), true);
             loaded[idx] = true;
             continue;
         }
