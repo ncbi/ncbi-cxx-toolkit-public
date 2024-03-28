@@ -560,7 +560,7 @@ static void StripCDSComment(CSeq_feat& feat)
 
 static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
 {
-    char* qval;
+    optional<string> qval;
     bool  partial5;
     bool  partial3;
 
@@ -571,9 +571,8 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
         if (! qval)
             break;
 
-        string qval_str = qval;
-        MemFree(qval);
-        qval = nullptr;
+        string qval_str = *qval;
+        qval.reset();
 
         if (qval_str[0] == '\'')
             qval_str = qval_str.substr(1, qval_str.size() - 2);
@@ -610,13 +609,11 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
     }
 
     while ((qval = GetTheQualValue(feat.SetQual(), "EC_number"))) {
-        // qval may hold newly allocated memory!!!
-        prot_ref->SetEc().push_back(qval);
-        MemFree(qval);
+        prot_ref->SetEc().push_back(*qval);
     }
 
     while ((qval = GetTheQualValue(feat.SetQual(), "function"))) {
-        prot_ref->SetActivity().push_back(qval);
+        prot_ref->SetActivity().push_back(*qval);
     }
 
     if (feat.GetQual().empty())
@@ -2046,7 +2043,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     ProtBlkPtr  pbp;
     const char* r;
 
-    char* qval = nullptr;
+    optional<string> qval;
     bool  is_pseudo;
     bool  is_stop;
     bool  is_transl;
@@ -2181,8 +2178,8 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
             }
         }
     } else {
-        frame = (Uint1)atoi(qval);
-        MemFree(qval);
+        frame = (Uint1)atoi(qval->c_str());
+        qval.reset();
     }
 
     CRef<CCdregion> cdregion(new CCdregion);
@@ -2193,9 +2190,9 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     qval = GetTheQualValue(cds.SetQual(), "transl_table");
 
     if (qval) {
-        check_gen_code(qval, pbp, pp->taxserver);
+        check_gen_code(qval->c_str(), pbp, pp->taxserver);
         pp->no_code = false;
-        MemFree(qval);
+        qval.reset();
     } else if (pbp && pbp->gcode.IsId())
         pbp->gcode.SetId(pbp->orig_gcode);
 
