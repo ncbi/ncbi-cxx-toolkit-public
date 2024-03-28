@@ -84,14 +84,14 @@ public:
                            objects::ENa_strand s
                            = objects::eNa_strand_unknown);
     
-    objects::CObjectManager& GetObjMgr() const;
+    objects::CObjectManager& GetObjMgr();
 
+    ~CTestObjMgr();
 private:
-    static CRef<objects::CObjectManager>       m_ObjMgr;
-    static CTestObjMgr*                        m_Instance;
+    CRef<objects::CObjectManager>       m_ObjMgr;
+    static unique_ptr<CTestObjMgr>      m_Instance;
 
     CTestObjMgr();
-    ~CTestObjMgr();
     CTestObjMgr(const CTestObjMgr& rhs);
     const CTestObjMgr& operator=(const CTestObjMgr& rhs);
 };
