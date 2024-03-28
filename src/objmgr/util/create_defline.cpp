@@ -2820,7 +2820,23 @@ void CDeflineGenerator::x_SetPrefix (
             prefix = "TPA_inf: ";
         } else if (m_TPAReasm) {
             prefix = "TPA_asm: ";
-        } else {
+        } else if (m_Idx && m_IsAA) {
+            CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+            if (bsx) {
+                CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
+                auto nucx = bsxp.Lock();
+                if (nucx) {
+                    if (nucx->IsTPAExp()) {
+                        prefix = "TPA_exp: ";
+                    } else if (nucx->IsTPAInf()) {
+                        prefix = "TPA_inf: ";
+                    } else if (nucx->IsTPAReasm()) {
+                        prefix = "TPA_asm: ";
+                     }
+                }
+            }
+        }
+        if (prefix.empty()) {
             prefix = "TPA: ";
         }
     } else if (m_IsTSA) {
