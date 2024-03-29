@@ -2078,23 +2078,15 @@ static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
 }
 
 /**********************************************************/
-static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, const char* gene, const char* locus_tag)
+static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, const string& gene, const string& locus_tag)
 {
     if (! gnp || ! location)
         return;
 
     GeneLocsPtr gelop = new GeneLocs();
-    if (gene) {
-        gelop->gene = gene;
-    } else {
-        gelop->gene.clear();
-    }
-    if (locus_tag) {
-        gelop->locus = locus_tag;
-    } else {
-        gelop->locus.clear();
-    }
 
+    gelop->gene    = gene;
+    gelop->locus   = locus_tag;
     gelop->verymin = -1;
     gelop->verymax = -1;
     gelop->ammp    = fta_get_acc_minmax_strand(location, gelop);
@@ -2208,7 +2200,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;
         if (gene.empty() && locus_tag.empty()) {
             if (GetFeatNameAndLoc(nullptr, *feat, gnp))
-                fta_append_feat_list(gnp, cur_loc, nullptr, nullptr);
+                fta_append_feat_list(gnp, cur_loc, gene, locus_tag);
             continue;
         }
 
@@ -2222,7 +2214,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         fta_collect_wormbases(newglp, *feat);
         fta_collect_olts(newglp, *feat);
         if (GetFeatNameAndLoc(newglp, *feat, gnp))
-            fta_append_feat_list(gnp, cur_loc, gene.c_str(), locus_tag.c_str());
+            fta_append_feat_list(gnp, cur_loc, gene, locus_tag);
 
         newglp->feat.Reset();
         if (gnp->simple_genes == false && cur_loc && cur_loc->IsMix()) {
