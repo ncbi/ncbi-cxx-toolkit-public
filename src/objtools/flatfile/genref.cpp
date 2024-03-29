@@ -1842,9 +1842,9 @@ static bool WeDontNeedToJoinThis(const CSeqFeatData& data)
 }
 
 /**********************************************************/
-static void GetGeneSyns(const TQualVector& quals, const char* name, TSynSet& syns)
+static void GetGeneSyns(const TQualVector& quals, const string& name, TSynSet& syns)
 {
-    if (! name)
+    if (name.empty())
         return;
 
     for (const auto& qual : quals) {
@@ -2241,7 +2241,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         }
         newglp->segnum = gnp->segindex;
 
-        GetGeneSyns(feat->GetQual(), gene.c_str(), newglp->syn);
+        GetGeneSyns(feat->GetQual(), gene, newglp->syn);
 
         newglp->loc.Reset();
         if (cur_loc) {
@@ -2836,10 +2836,12 @@ static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& g
             if (locus_tag)
                 gene_ref->SetLocus_tag(*locus_tag);
 
-            TSynSet syns;
-            GetGeneSyns((*feat)->GetQual(), gene->c_str(), syns);
-            if (! syns.empty())
-                gene_ref->SetSyn().assign(syns.begin(), syns.end());
+            if (gene) {
+                TSynSet syns;
+                GetGeneSyns((*feat)->GetQual(), *gene, syns);
+                if (! syns.empty())
+                    gene_ref->SetSyn().assign(syns.begin(), syns.end());
+            }
 
             CRef<CSeqFeatXref> xref = GetXrpForOverlap(acnum, gene_refs, llocs, *(*feat), *gene_ref);
             if (xref.NotEmpty())
