@@ -106,10 +106,22 @@ static bool gs_IsEnabled = NCBI_PARAM_TYPE(USAGE_REPORT, Enabled)::GetDefault();
 bool CUsageReportAPI::IsEnabled(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
-    return gs_IsEnabled;
-#else
-    return false;
+    if (!gs_IsEnabled) {
+        return false;
+    };
+    const char* do_not_track = ::getenv("DO_NOT_TRACK");
+    if (!do_not_track) {
+        return true;
+    }
+    try {
+        if (!NStr::StringToBool(do_not_track)) {
+            return true;
+        }
+    }
+    catch (CStringException&) {
+    }
 #endif
+    return false;
 }
 
 void CUsageReportAPI::SetEnabled(bool enable)
