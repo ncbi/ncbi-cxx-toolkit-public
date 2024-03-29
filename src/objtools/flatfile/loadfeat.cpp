@@ -1780,7 +1780,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
 }
 
 /**********************************************************/
-static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned char* remove)
+static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned char* remove)
 {
     char* comm;
     char* p;
@@ -1789,10 +1789,10 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const Char* comment, unsigned c
     CRef<CTrna_ext> ret(new CTrna_ext);
 
     *remove = 0;
-    if (! comment)
+    if (comment.empty())
         return ret;
 
-    comm = StringSave(comment);
+    comm = StringSave(comment.c_str());
     for (p = comm; *p != '\0'; p++) {
         if (*p >= 'a' && *p <= 'z')
             *p &= ~040;
@@ -2023,7 +2023,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
         trnac = fta_get_trna_from_product(feat, feat.GetComment(), &remove);
 
         if (get_aa_from_trna(*trnac) == 0) {
-            trnac = fta_get_trna_from_comment(feat.GetComment().c_str(), &remove);
+            trnac = fta_get_trna_from_comment(feat.GetComment(), &remove);
         }
 
         if (get_aa_from_trna(*trnac) == 0 && get_first_codon_from_trna(*trnac) == 255) {

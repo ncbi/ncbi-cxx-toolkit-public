@@ -166,12 +166,12 @@ string tata_save(string_view t)
     for (i = 0; i < str.length(); ++i) {
         if (str[i] != '\n')
             continue;
-        size_t j = i + 1;
-        while (j < str.length() && isspace(str[j]))
+        size_t j = 0;
+        for (size_t k = i + 1; k < str.length() && isspace(str[k]); ++k)
             ++j;
         str[i] = ' ';
         if (j > 0)
-            str.erase(i + 1, j - (i + 1));
+            str.erase(i + 1, j);
     }
 
     // strip from end
