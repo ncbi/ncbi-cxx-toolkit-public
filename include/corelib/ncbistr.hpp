@@ -1183,8 +1183,8 @@ public:
     /// @param str
     ///   Boolean string value to be converted.  Can recognize
     ///   case-insensitive version as one of:  
-    ///   TRUE  - 'true, 't', 'yes', 'y', '1';
-    ///   FALSE - 'false', 'f', 'no', 'n', '0'.
+    ///   TRUE  - 'true, 't', 'yes', 'y', '1', 'on';
+    ///   FALSE - 'false', 'f', 'no', 'n', '0', 'off'.
     /// @return
     ///   - If conversion succeeds, set errno to zero and return TRUE or FALSE.
     ///   - Otherwise, set errno to non-zero and throw an exception.
