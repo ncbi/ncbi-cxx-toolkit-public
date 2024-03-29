@@ -31,6 +31,18 @@
  * File Description:
  *   Log usage information to NCBI "pinger".
  *
+ * Enabling/disabling reporting can be done using the global parameter:
+ * Registry file:
+ *    [USAGE_REPORT]
+ *    Enabled = true/false
+ * Environment variable:
+ *    NCBI_USAGE_REPORT_ENABLED=1/0
+ * If DO_NOT_TRACK environment variable is set to any value other than
+ * 0, FALSE, NO, or OFF (case-insensitive), it disables reporting as well.
+ *    DO_NOT_TRACK=1
+ * It have priority over NCBI_USAGE_REPORT_ENABLED. 
+ * See Console Do Not Track standard: https://consoledonottrack.com/
+ * 
  */
 
 #include <corelib/ncbistl.hpp>
@@ -110,15 +122,20 @@ public:
     /// Global settings have a priority over local status of any reporter.
     ///
     /// @note
-    ///   The usage reporting is off by default.
+    ///   The usage reporting is disabled by default.
     /// @note
-    ///   Can be specified thought the global parameter:
+    ///   Enabling/disabling reporting can be done using the global parameter:
     ///   Registry file:
     ///      [USAGE_REPORT]
     ///      Enabled = true/false
     ///   Environment variable:
     ///      NCBI_USAGE_REPORT_ENABLED=1/0
-    ///
+    ///      DO_NOT_TRACK
+    ///   If DO_NOT_TRACK environment variable is set to any value other than
+    ///   0, FALSE, NO, or OFF (case-insensitive), it disables reporting as well.
+    ///      DO_NOT_TRACK=1
+    ///   It have priority over NCBI_USAGE_REPORT_ENABLED. 
+    ///   See Console Do Not Track standard: https://consoledonottrack.com/.
     /// @sa SetEnabled(), CUsageReport
     ///
     static void SetEnabled(bool enable = true);
