@@ -4191,6 +4191,7 @@ LGBG	s	Lewis Ginter Botanical Garden
 LGBH	s	Loughborough Public Library			
 LGC	s	Laboratorio de Genetica da Conservacao			
 LGCC	s	Louis G. Gentner [deceased]			
+LGE	s	Laboratorio de Genetica Evolutiva			
 LGEMA<BRA>	s	Laboratorio de Genetica e Evolucao Molecular de Aves, Universidade de Sao Paulo			
 LGHF	s	Universite de Liege			
 LGICT	s	Laboratoire de Geologie de l'Institut Catholique de Toulouse			
