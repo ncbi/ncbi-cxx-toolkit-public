@@ -1,3 +1,8 @@
+1.4.5 (03/29/2024)
+    Technical release, no any functionality changes
+    - Add Linux64-Alma and ArmMAC platforms, build with --with-bin-release. JIRA:CXX-13509 
+    - Build on Mac with --without-pcre.
+
 1.4.4 (09/29/2022)
     - NcbiLogP_Raw2() – improve choosing correct file handle for a "file" destination. CXX-12534
     - Add a guard on a local file reopening and disable logging on a critical errors. CXX-12534
