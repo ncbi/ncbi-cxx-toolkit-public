@@ -752,8 +752,6 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
         s.append(qual->GetVal());
     }
 
-    p = nullptr;
-
     if (s.empty())
         s = CpTheQualValue(feat.GetQual(), "gene");
     if (s.empty())
@@ -1217,7 +1215,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
 {
     string qval = CpTheQualValue(feat.GetQual(), "translation");
     if (qval.empty())
-        qval = StringSave("no translation qualifier");
+        qval = "no translation qualifier";
 
     if (! feat.IsSetExcept() || feat.GetExcept() == false) {
         string loc = location_to_string(feat.GetLocation());
@@ -1225,7 +1223,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
     }
 
     ErrLogPrintStr(prot.c_str());
-    ErrLogPrintStr((char*)"\n");
+    ErrLogPrintStr("\n");
 }
 
 /**********************************************************
@@ -1241,7 +1239,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
  *      If intercodon = TRUE, then no comparison.
  *
  **********************************************************/
-static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, char* qval, bool intercodon, const char* gcode, unsigned char* method)
+static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, const char* qval, bool intercodon, const char* gcode, unsigned char* method)
 {
     const char* ptr;
 
@@ -1827,7 +1825,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CSeq_feat& feat, 
 
     if (! qval.empty()) /* compare protein sequence */
     {
-        CkProteinTransl(pp, ibp, prot, feat, qval.data(), intercodon, gcode_str.c_str(), &m);
+        CkProteinTransl(pp, ibp, prot, feat, qval.c_str(), intercodon, gcode_str.c_str(), &m);
         *method = m;
         seq_data.swap(prot);
         return;
