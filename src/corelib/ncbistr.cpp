@@ -2813,6 +2813,8 @@ static const char* s_kYesString   = "yes";
 static const char* s_kNoString    = "no";
 static const char* s_kYString     = "y";
 static const char* s_kNString     = "n";
+static const char* s_kOnString    = "on";
+static const char* s_kOffString   = "off";
 
 
 const string NStr::BoolToString(bool value)
@@ -2827,7 +2829,8 @@ bool NStr::StringToBool(const CTempString str)
          AStrEquiv(str, s_kTrueString,  PNocase())  ||
          AStrEquiv(str, s_kTString,     PNocase())  ||
          AStrEquiv(str, s_kYesString,   PNocase())  ||
-         AStrEquiv(str, s_kYString,     PNocase()) ) {
+         AStrEquiv(str, s_kYString,     PNocase())  ||
+         AStrEquiv(str, s_kOnString,    PNocase()) ) {
         errno = 0;
         return true;
     }
@@ -2835,7 +2838,8 @@ bool NStr::StringToBool(const CTempString str)
          AStrEquiv(str, s_kFalseString, PNocase())  ||
          AStrEquiv(str, s_kFString,     PNocase())  ||
          AStrEquiv(str, s_kNoString,    PNocase())  ||
-         AStrEquiv(str, s_kNString,     PNocase()) ) {
+         AStrEquiv(str, s_kNString,     PNocase())  ||
+         AStrEquiv(str, s_kOffString,   PNocase()) ) {
         errno = 0;
         return false;
     }
