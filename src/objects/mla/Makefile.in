@@ -1,4 +1,0 @@
-ASN_PROJ = mla
-LIB_PROJ = mlacli
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

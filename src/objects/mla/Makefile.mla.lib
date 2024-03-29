@@ -1,7 +1,0 @@
-LIB = mla
-SRC = mla__ mla___
-
-DLL_LIB = medlars
-
-USES_LIBRARIES =  \
-    medlars pub pubmed
