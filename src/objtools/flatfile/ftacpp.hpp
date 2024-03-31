@@ -67,6 +67,15 @@ inline char*  StringSave(const char* s)
     std::memcpy(p, s, n);
     return p;
 }
+inline char* StringSave(string_view s)
+{
+    const size_t n = s.length();
+    char*        p = new char[n + 1];
+    std::memcpy(p, s.data(), n);
+    p[n] = '\0';
+    return p;
+}
+
 
 inline const char* StringStr(const char* s1, const char* s2) { return std::strstr(s1, s2); }
 inline char*       StringStr(char* s1, const char* s2) { return std::strstr(s1, s2); }

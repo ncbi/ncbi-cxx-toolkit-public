@@ -889,10 +889,8 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         return false;
     }
 
-    ch    = *++p;
-    *p    = '\0';
-    title = StringSave(ptr);
-    *p    = ch;
+    ++p;
+    title = StringSave(string_view(ptr, p - ptr));
     for (q += 3, p = q; *q >= '0' && *q <= '9';)
         q++;
     if (q == p || (*q != ':' && *q != '-')) {
@@ -901,9 +899,8 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     }
 
     if (*q == ':') {
-        *q     = '\0';
-        volume = StringSave(p);
-        *q++   = ':';
+        volume = StringSave(string_view(p, q - p));
+        q++;
         for (p = q; *q >= '0' && *q <= '9';)
             q++;
         if (q == p || *q != '-') {
@@ -926,10 +923,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         return false;
     }
 
-    ch    = *q;
-    *q    = '\0';
-    pages = StringSave(p);
-    *q    = ch;
+    pages = StringSave(string_view(p, q - p));
     for (p = q; *q == ' ' || *q == ',';)
         q++;
     if (q == p || *q == '\0') {
@@ -965,10 +959,8 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
             MemFree(volume);
         return false;
     }
-    ch        = *++p;
-    *p        = '\0';
-    publisher = StringSave(q);
-    *p        = ch;
+    ++p;
+    publisher = StringSave(string_view(q, p - q));
 
     p = StringChr(q, '(');
     for (p++, q = p; *p >= '0' && *p <= '9';)
@@ -981,10 +973,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
             MemFree(volume);
         return false;
     }
-    ch   = *p;
-    *p   = '\0';
-    year = StringSave(q);
-    *p   = ch;
+    year = StringSave(string_view(q, p - q));
 
     CCit_book& book = article.SetFrom().SetBook();
     CImprint&  imp  = book.SetImp();

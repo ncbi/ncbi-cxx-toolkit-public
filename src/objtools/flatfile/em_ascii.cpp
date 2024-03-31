@@ -2012,7 +2012,6 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 
     char* p;
     char* q;
-    Char  ch;
 
     dbp = TrackNodeType(entry, ParFlat_OS);
     if (! dbp) {
@@ -2056,10 +2055,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
                 subdbp->len < ParFlat_COL_DATA_EMBL)
                 continue;
 
-            ch                           = subdbp->mOffset[subdbp->len];
-            subdbp->mOffset[subdbp->len] = '\0';
-            q                            = StringSave(subdbp->mOffset + ParFlat_COL_DATA_EMBL);
-            subdbp->mOffset[subdbp->len] = ch;
+            q = StringSave(string_view(subdbp->mOffset + ParFlat_COL_DATA_EMBL, subdbp->len - ParFlat_COL_DATA_EMBL));
             for (p = q; p;) {
                 p = StringStr(p, "\nOC   ");
                 if (p)

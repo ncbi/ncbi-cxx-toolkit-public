@@ -262,10 +262,8 @@ static CRef<CPub> get_muid(char* str, Parser::EFormat format)
 /**********************************************************/
 static char* get_embl_str_pub_id(char* str, const Char* tag)
 {
-    char* p;
-    char* q;
-    char* ret;
-    Char  ch;
+    const char* p;
+    const char* q;
 
     if (! str || ! tag)
         return nullptr;
@@ -276,17 +274,12 @@ static char* get_embl_str_pub_id(char* str, const Char* tag)
     for (p += StringLen(tag); *p == ' ';)
         p++;
 
-    ret = nullptr;
     for (q = p; *q != ' ' && *q != '\0';)
         q++;
     q--;
     if (*q != '.')
         q++;
-    ch  = *q;
-    *q  = '\0';
-    ret = StringSave(p);
-    *q  = ch;
-    return (ret);
+    return StringSave(string_view(p, q - p));
 }
 
 /**********************************************************/
@@ -601,16 +594,12 @@ static bool get_parts(char* bptr, char* eptr, CImprint& imp)
     char* parts;
     char* p;
     char* q;
-    Char  ch;
     Int4  bad;
 
     if (! bptr || ! eptr)
         return false;
 
-    ch    = *eptr;
-    *eptr = '\0';
-    parts = StringSave(bptr);
-    *eptr = ch;
+    parts = StringSave(string_view(bptr, eptr - bptr));
 
     for (p = parts; *p != '\0'; p++)
         if (*p == '\t')

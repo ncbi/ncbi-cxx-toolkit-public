@@ -1430,7 +1430,6 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
     char*      p;
     char*      q;
     bool       got;
-    Char       ch;
     TTaxId     taxid;
 
     for (got = false, taxid = ZERO_TAX_ID; dbp; dbp = dbp->mpNext) {
@@ -1441,13 +1440,9 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OX)
                 continue;
-            got                              = true;
-            ch                               = subdbp->mOffset[subdbp->len - 1];
-            subdbp->mOffset[subdbp->len - 1] = '\0';
-            line                             = StringSave(subdbp->mOffset);
-            subdbp->mOffset[subdbp->len - 1] = ch;
-
-            p = StringChr(line, '\n');
+            got  = true;
+            line = StringSave(string_view(subdbp->mOffset, subdbp->len - 1));
+            p    = StringChr(line, '\n');
             if (p)
                 *p = '\0';
             if (! StringEquNI(line, "OX   NCBI_TaxID=", 16)) {
@@ -4278,17 +4273,13 @@ static void SPGetPEValue(DataBlkPtr entry, CSeq_feat& feat)
     char* buf;
     char* p;
     char* q;
-    Char  ch;
 
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_PE, &len);
     if (! offset || len < 1)
         return;
 
-    ch              = offset[len - 1];
-    offset[len - 1] = '\0';
-    buf             = StringSave(offset);
-    offset[len - 1] = ch;
+    buf = StringSave(string_view(offset, len - 1));
 
     for (q = buf + 2; *q == ' ';)
         q++;
