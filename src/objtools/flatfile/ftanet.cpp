@@ -362,7 +362,7 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
         if (status == ePubStatus_epublish ||
             status == ePubStatus_ppublish ||
             status == ePubStatus_aheadofprint) {
-            char* comment = StringSave(pub_descr.GetComment().c_str());
+            char* comment = StringSave(pub_descr.GetComment());
             comment       = fta_strip_pub_comment(comment, PubStatus);
             if (comment && *comment != 0)
                 pub_descr.SetComment(comment);

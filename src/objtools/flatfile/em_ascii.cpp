@@ -1727,7 +1727,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (! str1.empty()) {
                 str1.append(str + 4);
                 MemFree(str);
-                str = StringSave(str1.c_str());
+                str = StringSave(str1);
             }
         }
 
