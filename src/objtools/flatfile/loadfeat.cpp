@@ -1348,7 +1348,6 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
     bool  fake1;
     Int4  range;
     Int4  pars;
-    Char  ch;
     int   fake3;
 
     CRef<CSeq_loc> ret;
@@ -1377,10 +1376,7 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
         }
     }
 
-    ch      = *p;
-    *p      = '\0';
-    loc_str = StringSave(q);
-    *p      = ch;
+    loc_str = StringSave(string_view(q, p - q));
 
     xinstall_gbparse_error_handler(fta_fake_gbparse_err_handler);
     ret = xgbparseint_ver(loc_str, fake1, fake3, seqids, accver);
@@ -1431,7 +1427,6 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     char* qval;
     char* p;
     char* q;
-    Char  ch;
 
     auto qval2 = GetTheQualValue(feat.SetQual(), "product");
     if (feat.GetQual().empty())
@@ -1530,11 +1525,8 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         }
         len = p - qval + 14;
         p += 9;
-        ch = *p;
-        *p = '\0';
-        string s(qval);
+        string s(qval, p);
         s.append(" RNA");
-        *p = ch;
         s.append(p);
         MemFree(qval);
         qval = StringSave(s.c_str());
@@ -3872,7 +3864,6 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
     char* p;
     char* q;
     string loc;
-    Char  ch;
 
     FeatBlkPtr fbp;
     Int4       num;
@@ -3910,7 +3901,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
             fbp->key = StringSave("misc_feature");
         } else
-            fbp->key = StringSave(string(ptr1, ptr2).c_str());
+            fbp->key = StringSave(string_view(ptr1, ptr2 - ptr1));
 
         for (ptr1 = ptr2; *ptr1 == ' ';)
             ptr1++;
@@ -3931,12 +3922,9 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         for (ptr2 = ptr1; *ptr2 != '/' && ptr2 < eptr;)
             ptr2++;
-        ch            = *ptr2;
-        *ptr2         = '\0';
-        fbp->location = StringSave(ptr1);
+        fbp->location = StringSave(string_view(ptr1, ptr2 - ptr1));
         if (ibp->is_prot)
             fta_strip_aa(fbp->location);
-        *ptr2 = ch;
         for (p = fbp->location, q = p; *p != '\0'; p++)
             if (*p != ' ' && *p != '\n')
                 *q++ = *p;

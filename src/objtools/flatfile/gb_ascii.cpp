@@ -990,17 +990,13 @@ static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
     char*  p;
     char*  q;
     char*  r;
-    Char   ch;
     size_t l;
 
     p = xSrchNodeType(entry, ParFlat_USER, &l);
     if (l < ParFlat_COL_DATA)
         return;
 
-    ch       = p[l - 1];
-    p[l - 1] = '\0';
-    q        = StringSave(p);
-    p[l - 1] = ch;
+    q = StringSave(string_view(p, l - 1));
 
     CRef<CUser_object> user_obj(new CUser_object);
     user_obj->SetType().SetStr("RefGeneTracking");
