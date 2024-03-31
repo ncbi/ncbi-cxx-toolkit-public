@@ -177,7 +177,7 @@ static char* CpTheQualValueNext(TQualVector::iterator& cur_qual, const TQualVect
 
     char* ret = nullptr;
     if (! qvalue.empty())
-        ret = StringSave(qvalue.c_str());
+        ret = StringSave(qvalue);
 
     return ret;
 }
@@ -533,7 +533,7 @@ static void StripCDSComment(CSeq_feat& feat)
     string s = tata_save(feat.GetComment());
 
     if (! s.empty()) {
-        char* pchComment = StringSave(s.c_str());
+        char* pchComment = StringSave(s);
         s.clear();
         for (const char** b = strA; *b; b++) {
             pchComment = stripStr(pchComment, *b);
@@ -544,7 +544,7 @@ static void StripCDSComment(CSeq_feat& feat)
 
     comment = nullptr;
     if (! s.empty()) {
-        comment = StringSave(s.c_str());
+        comment = StringSave(s);
         s.clear();
         ShrinkSpaces(comment);
     }
@@ -760,7 +760,7 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
     if (s.empty())
         p = StringSave("unnamed protein product");
     else {
-        p = StringSave(s.c_str());
+        p = StringSave(s);
         for (q = p; *q != '\0';)
             q++;
         if (q > p) {
@@ -779,7 +779,7 @@ static void GetProtRefDescr(CSeq_feat& feat, Uint1 method, const CBioseq& bioseq
         s.append(organism);
         s.append("]");
         MemFree(p);
-        p = StringSave(s.c_str());
+        p = StringSave(s);
     }
 
     if (StringLen(p) > 511) {
@@ -1060,7 +1060,7 @@ static char* SimpleValuePos(const char* qval)
     for (eptr = bptr; *eptr != ',' && *eptr != '\0';)
         eptr++;
 
-    return StringSave(string(bptr, eptr).c_str());
+    return StringSave(string(bptr, eptr));
 }
 
 /**********************************************************

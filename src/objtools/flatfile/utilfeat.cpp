@@ -354,7 +354,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
             break;
 
         CGB_block& gb_block = descr->SetGenbank();
-        char*      p        = StringSave(gb_block.GetSource().c_str());
+        char*      p        = StringSave(gb_block.GetSource());
         char*      pper     = nullptr;
 
         size_t len = StringLen(p);
@@ -417,7 +417,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
             string s = p;
             s.append(".");
             MemFree(pper);
-            pper = StringSave(s.c_str());
+            pper = StringSave(s);
         }
 
         const string& first_name  = names[0];

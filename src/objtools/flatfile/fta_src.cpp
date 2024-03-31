@@ -681,7 +681,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
             if (*b && i != 8) {
                 if (genomename)
                     MemFree(genomename);
-                genomename = StringSave(str_to_find.c_str());
+                genomename = StringSave(str_to_find);
             }
 
             if (p)
@@ -1303,7 +1303,7 @@ static char* CheckSourceOverlap(MinMaxPtr mmp, size_t len)
     stringstream ss;
     ss << "\"" << mmp->orgname << "\" at " << mmp->min << ".." << mmp->max
        << " vs \"" << tmmp->orgname << "\" at " << tmmp->min << ".." << tmmp->max;
-    res = StringSave(ss.str().c_str());
+    res = StringSave(ss.str());
     return res;
 }
 
@@ -1386,7 +1386,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
         else {
             sfbp->lookup = true;
             MemFree(sfbp->name);
-            sfbp->name = StringSave(org_ref->GetTaxname().c_str());
+            sfbp->name = StringSave(org_ref->GetTaxname());
 
             sfbp->orgname.Reset();
 
@@ -2650,7 +2650,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             s.append(":");
                             s.append(q);
                             MemFree(tppp->fwd_name);
-                            tppp->fwd_name = StringSave(s.c_str());
+                            tppp->fwd_name = StringSave(s);
                         }
                         prev = 1;
                     }
@@ -2665,7 +2665,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             s.append(":");
                             s.append(q);
                             MemFree(tppp->fwd_seq);
-                            tppp->fwd_seq = StringSave(s.c_str());
+                            tppp->fwd_seq = StringSave(s);
                             if (prev != 1) {
                                 if (! tppp->fwd_name)
                                     tppp->fwd_name = StringSave(":");
@@ -2673,7 +2673,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                     string s(tppp->fwd_name);
                                     s.append(":");
                                     MemFree(tppp->fwd_name);
-                                    tppp->fwd_name = StringSave(s.c_str());
+                                    tppp->fwd_name = StringSave(s);
                                 }
                             }
                         }
@@ -2690,7 +2690,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             s.append(":");
                             s.append(q);
                             MemFree(tppp->rev_name);
-                            tppp->rev_name = StringSave(s.c_str());
+                            tppp->rev_name = StringSave(s);
                         }
                         prev = 3;
                     }
@@ -2705,7 +2705,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                             s.append(":");
                             s.append(q);
                             MemFree(tppp->rev_seq);
-                            tppp->rev_seq = StringSave(s.c_str());
+                            tppp->rev_seq = StringSave(s);
                             if (prev != 3) {
                                 if (! tppp->rev_name)
                                     tppp->rev_name = StringSave(":");
@@ -2713,7 +2713,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                     string s(tppp->rev_name);
                                     s.append(":");
                                     MemFree(tppp->rev_name);
-                                    tppp->rev_name = StringSave(s.c_str());
+                                    tppp->rev_name = StringSave(s);
                                 }
                             }
                         }

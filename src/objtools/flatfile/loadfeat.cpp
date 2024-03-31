@@ -980,7 +980,7 @@ static char* CheckLocStr(const Char* str)
     while (*eptr == ' ' || *eptr == ')')
         --eptr;
 
-    location = StringSave(string(ptr, eptr + 1).c_str());
+    location = StringSave(string(ptr, eptr + 1));
     return (location);
 }
 
@@ -1194,7 +1194,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                     s.append(location);
                     s.append(")");
                     MemFree(location);
-                    location = StringSave(s.c_str());
+                    location = StringSave(s);
                 }
             }
         } else if (pp->format == Parser::EFormat::GenBank) {
@@ -1213,7 +1213,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                     string s = "join(";
                     s += p;
                     s += ")";
-                    location = StringSave(s.c_str());
+                    location = StringSave(s);
                 } else
                     location = StringSave(p);
                 break;
@@ -1459,7 +1459,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     if (qval_str.empty())
         return;
 
-    qval = StringSave(qval_str.c_str());
+    qval = StringSave(qval_str);
     for (p = qval; p; p += 13) {
         p = StringIStr(p, "ribosomal rrna");
         if (! p)
@@ -1477,7 +1477,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         s.append(p + 12);
         len = p - qval + 13;
         MemFree(qval);
-        qval = StringSave(s.c_str());
+        qval = StringSave(s);
     }
 
     if (qval) {
@@ -1488,7 +1488,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
             s.append(" ribosomal RNA");
             s.append(p + 5);
             MemFree(qval);
-            qval = StringSave(s.c_str());
+            qval = StringSave(s);
         }
     }
 
@@ -1529,7 +1529,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
         s.append(" RNA");
         s.append(p);
         MemFree(qval);
-        qval = StringSave(s.c_str());
+        qval = StringSave(s);
         p    = qval + len;
     }
 
@@ -1628,7 +1628,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
         return ret;
 
     bool digits = false;
-    prod        = StringSave(product.c_str());
+    prod        = StringSave(product);
     for (p = prod; *p != '\0'; p++) {
         if (*p >= 'a' && *p <= 'z')
             *p &= ~040;
@@ -1784,7 +1784,7 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
     if (comment.empty())
         return ret;
 
-    comm = StringSave(comment.c_str());
+    comm = StringSave(comment);
     for (p = comm; *p != '\0'; p++) {
         if (*p >= 'a' && *p <= 'z')
             *p &= ~040;
@@ -2408,7 +2408,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         string s(fbp->key);
         s.append(" : ");
         s.append(loc);
-        pp->buf = StringSave(s.c_str());
+        pp->buf = StringSave(s);
 
         feat.Reset(new CSeq_feat);
         locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
@@ -3932,7 +3932,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         if (fbp->location[0] == '\0' && ibp->is_mga) {
             MemFree(fbp->location);
-            fbp->location = StringSave(loc.c_str());
+            fbp->location = StringSave(loc);
         }
 
         FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location);

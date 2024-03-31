@@ -438,7 +438,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 }
             }
 
-            tempdiv = StringSave(gbb->GetDiv().c_str());
+            tempdiv = StringSave(gbb->GetDiv());
 
             if (fta_check_htg_kwds(gbb->SetKeywords(), pp->entrylist[pp->curindx], mol_info))
                 gbb->ResetDiv();
