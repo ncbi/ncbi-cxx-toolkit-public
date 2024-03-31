@@ -2610,9 +2610,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
         start = q;
 
-        *p  = '\0';
-        tag = StringSave(q);
-        *p  = '-';
+        tag = StringSave(string_view(q, p - q));
 
         for (q = p;;) {
             q = StringStr(q, tag);

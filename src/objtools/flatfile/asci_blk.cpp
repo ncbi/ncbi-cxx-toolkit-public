@@ -2118,7 +2118,7 @@ static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
     }
 
     if (ptr) {
-        str = StringSave(string(title, ptr).c_str());
+        str = StringSave(string_view(title, ptr - title));
         CleanTailNoneAlphaChar(str);
     } else {
         str = StringSave(title);
@@ -2792,18 +2792,13 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     char*        p;
     char*        q;
     char*        r;
-    Char         c;
     Int2         count;
 
     dbp = TrackNodeType(entry, what);
     if (! dbp || ! dbp->mOffset || dbp->len < 1)
         p = nullptr;
     else {
-        q   = dbp->mOffset + dbp->len - 1;
-        c   = *q;
-        *q  = '\0';
-        tmp = StringSave(dbp->mOffset);
-        *q  = c;
+        tmp = StringSave(string_view(dbp->mOffset, dbp->len - 1));
         for (q = tmp; *q != '\0'; q++) {
             if (*q == '\n' && StringEquN(q + 1, "DE   ", 5))
                 fta_StringCpy(q, q + 5);

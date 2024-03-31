@@ -493,7 +493,6 @@ TokenStatBlkPtr TokenString(char* str, Char delimiter)
     char*           curtoken;
     Int2            num;
     TokenStatBlkPtr token;
-    Char            ch;
 
     token = new TokenStatBlk;
 
@@ -507,11 +506,7 @@ TokenStatBlkPtr TokenString(char* str, Char delimiter)
                          *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 
-        ch       = *ptr;
-        *ptr     = '\0';
-        curtoken = StringSave(bptr);
-        *ptr     = ch;
-
+        curtoken = StringSave(string_view(bptr, ptr - bptr));
         InsertTokenVal(&token->list, curtoken);
         num++;
         MemFree(curtoken);
@@ -869,7 +864,6 @@ char* GetTheCurrentToken(char** ptr)
     char* retptr;
     char* bptr;
     char* str;
-    Char  ch;
 
     bptr = retptr = *ptr;
     if (! retptr || *retptr == '\0')
@@ -878,10 +872,7 @@ char* GetTheCurrentToken(char** ptr)
     while (*retptr != '\0' && *retptr != ' ')
         retptr++;
 
-    ch      = *retptr;
-    *retptr = '\0';
-    str     = StringSave(bptr);
-    *retptr = ch;
+    str = StringSave(string_view(bptr, retptr - bptr));
 
     while (*retptr != '\0' && *retptr == ' ') /* skip blanks */
         retptr++;
