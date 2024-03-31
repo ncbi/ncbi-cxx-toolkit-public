@@ -772,7 +772,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
 
     string tstr = NStr::TruncateSpaces(string(retstr), NStr::eTrunc_End);
     MemFree(retstr);
-    retstr = StringSave(tstr.c_str());
+    retstr = StringSave(tstr);
     return (retstr);
 }
 

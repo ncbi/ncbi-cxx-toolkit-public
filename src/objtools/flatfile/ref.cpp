@@ -1824,7 +1824,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
                 string s = p;
                 s.append(".");
                 MemFree(p);
-                p = StringSave(s.c_str());
+                p = StringSave(s);
                 q = nullptr;
             }
         }

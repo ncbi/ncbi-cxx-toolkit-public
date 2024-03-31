@@ -356,7 +356,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
                 }
             }
 
-            tempdiv = StringSave(gbb->GetDiv().c_str());
+            tempdiv = StringSave(gbb->GetDiv());
 
             if (fta_check_htg_kwds(gbb->SetKeywords(), pp->entrylist[pp->curindx], mol_info))
                 gbb->SetDiv("");
@@ -839,7 +839,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
                 string s = str;
                 s += '.';
                 MemFree(str);
-                str = StringSave(s.c_str());
+                str = StringSave(s);
                 p   = nullptr;
             }
         }

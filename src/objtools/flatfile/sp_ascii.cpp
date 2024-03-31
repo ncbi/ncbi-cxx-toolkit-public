@@ -2868,7 +2868,7 @@ static void SPPostProcVarSeq(string& varseq)
     if (varseq.empty())
         return;
 
-    temp = StringSave(varseq.c_str());
+    temp = StringSave(varseq);
     p    = StringStr(temp, "->");
     if (! p || p == temp ||
         (*(p - 1) != ' ' && *(p - 1) != '\n') || (p[2] != ' ' && p[2] != '\n')) {
@@ -4059,7 +4059,7 @@ static void SPValidateEcnum(string& ecnum)
     char* buf;
     Int4  count;
 
-    buf = StringSave(ecnum.c_str());
+    buf = StringSave(ecnum);
     for (count = 0, q = buf;; q = p) {
         p = q;
         count++;
@@ -4417,7 +4417,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
         str1 += ptr;
 
         MemFree(str);
-        str = StringSave(str1.c_str());
+        str = StringSave(str1);
     }
 
     if (symb == ')') {
@@ -4427,7 +4427,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
             NStr::TruncateSpacesInPlace(str1, NStr::eTrunc_End);
 
             MemFree(str);
-            str = StringSave(str1.c_str());
+            str = StringSave(str1);
         }
     }
 

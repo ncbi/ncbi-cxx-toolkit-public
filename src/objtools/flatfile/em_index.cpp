@@ -176,7 +176,7 @@ static char* EmblGetNewIDVersion(char* locus, char* str)
     string s = locus;
     s.append(".");
     s.append(p);
-    res = StringSave(s.c_str());
+    res = StringSave(s);
 
     *q = ';';
     return (res);
