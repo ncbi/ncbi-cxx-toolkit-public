@@ -3060,6 +3060,37 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
         s_SetGapIdxData (gap_data, gaps);
     }
 
+    CScope::TCDD_Entries cdd_entries;
+    bool load_cdd = false;
+    if (!ctx.Config().HideCDDFeatures()) {
+        switch (ctx.Config().GetPolicy()) {
+        case CSeqEntryIndex::eExternal:
+            load_cdd = true;
+            break;
+        case CSeqEntryIndex::eAdaptive:
+            load_cdd = ctx.Config().ShowCDDFeatures();
+            break;
+        case CSeqEntryIndex::eWeb:
+            load_cdd = hdl.GetBioseqLength() <= 1000000 && ctx.Config().ShowCDDFeatures();
+            break;
+        default:
+            load_cdd = false;
+            break;
+        }
+    }
+    if (load_cdd) {
+        CScope::TIds prot_ids;
+        SAnnotSelector sel;
+        sel.SetFeatType(CSeqFeatData::e_Cdregion);
+        for (CFeat_CI cds_it(hdl, sel); cds_it; ++cds_it) {
+            auto id = cds_it->GetProductId();
+            if (id) {
+                prot_ids.push_back(id);
+            }
+        }
+        cdd_entries = hdl.GetScope().GetCDDAnnots(prot_ids);
+    }
+
     bsx->IterateFeatures([this, &ctx, &prev_feat, &loc_len, &item, &out, &slice_mapper,
                           gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
