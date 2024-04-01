@@ -297,8 +297,8 @@ void CHttpConnection::x_UnregisterBacklog(backlog_list_iterator_t &  it)
     // that the request is finished.
     // They do not have assigned pending requests either. So, just remove the
     // record from the list.
-    m_BacklogRequests.erase(it);
     UnregisterBackloggedRequest(it->m_Request->GetRequestType());
+    m_BacklogRequests.erase(it);
 }
 
 
