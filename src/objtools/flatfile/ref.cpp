@@ -194,29 +194,24 @@ static CRef<CDate> get_lanl_date(char* s)
  *   if any.
  *
  **********************************************************/
-static char* clean_up(char* str)
+static string clean_up(const char* str)
 {
-    char* newp;
-    char* s;
-
     if (! str)
-        return nullptr;
+        return {};
 
-    s = str + StringLen(str) - 1;
-    if (*s == ';')
-        *s = '\0';
+    size_t b = 0;
+    size_t e = StringLen(str);
 
-    while (*str == '\"' || *str == '\'')
-        str++;
+    if (b < e && str[e - 1] == ';')
+        --e;
+    while (b < e && (str[b] == '\"' || str[b] == '\''))
+        b++;
+    while (b < e && (str[e - 1] == '\"' || str[e - 1] == '\''))
+        e--;
 
-    newp        = strdup(str);
-    size_t size = StringLen(newp);
-    while (size > 0 && (newp[size - 1] == '\"' || newp[size - 1] == '\'')) {
-        size--;
-        newp[size] = '\0';
-    }
-
-    return (newp);
+    if (b < e)
+        return string(str + b, str + e);
+    return {};
 }
 
 static CRef<CPub> get_num(char* str)
@@ -1770,8 +1765,6 @@ Int4 fta_remark_is_er(const Char* str)
 /**********************************************************/
 static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool& rej)
 {
-    char* title;
-
     char*     p;
     char*     q;
     char*     r;
@@ -1861,10 +1854,9 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     if (p) {
         if (! StringEquN(p, "Direct Submission", 17) &&
             *p != '\0' && *p != ';') {
-            title = clean_up(p);
-            if (title) {
+            string title = clean_up(p);
+            if (! title.empty()) {
                 title_art->SetName(tata_save(title));
-                free(title);
             }
         }
         MemFree(p);
@@ -2035,11 +2027,10 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
         p = ind[ParFlat_TITLE]->mOffset;
         if (! StringEquN(p, "Direct Submission", 17) &&
             *p != '\0' && *p != ';') {
-            q = clean_up(p);
-            if (q) {
+            string title = clean_up(p);
+            if (! title.empty()) {
                 title_art.Reset(new CTitle::C_E);
-                title_art->SetName(NStr::Sanitize(q));
-                free(q);
+                title_art->SetName(NStr::Sanitize(title));
             }
         }
     }
@@ -2114,7 +2105,6 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     static DataBlkPtr ind[MAXKW + 1];
     char*             s;
 
-    char*     title;
     bool      has_muid;
     char*     p;
     char*     q;
@@ -2205,12 +2195,11 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     if (ind[ParFlat_RT]) {
         p = ind[ParFlat_RT]->mOffset;
         if (*p != '\0' && *p != ';') {
-            title = clean_up(p);
-            if (title && title[0]) {
+            string title = clean_up(p);
+            if (! title.empty()) {
                 title_art.Reset(new CTitle::C_E);
                 title_art->SetName(NStr::Sanitize(title));
             }
-            free(title);
         }
     }
 
