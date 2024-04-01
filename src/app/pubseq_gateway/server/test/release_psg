@@ -118,10 +118,18 @@ def getBuildResultsDir(options):
         return None
     return buildResultsDir
 
+def detectFlavor():
+    if os.path.exists("/etc/almalinux-release"):
+        return "Alma"
+    if os.path.exists("/etc/redhat-release"):
+        return "Centos"
+    raise Exception('Linux flavor detect error. Only Centos and Alma are supported.')
+
 def findBuildArchive(buildResultsDir, variant):
     buildArchive = None
+    flavor = detectFlavor()
     for item in os.listdir(buildResultsDir):
-        if item.startswith('Linux64-Centos-pubseq_gateway-'):
+        if item.startswith(f'Linux64-{flavor}-pubseq_gateway-'):
             if item.endswith('.tar.gz'):
                 if not item.endswith('src.tar.gz'):
                     if '-' + variant + '-' in item:
@@ -134,8 +142,9 @@ def findBuildArchive(buildResultsDir, variant):
 
 def findBuildResultDir(buildResultsDir, variant):
     buildResultDir = None
+    flavor = detectFlavor()
     for item in os.listdir(buildResultsDir):
-        if item.startswith('Linux64-Centos-pubseq_gateway-'):
+        if item.startswith(f'Linux64-{flavor}-pubseq_gateway-'):
             if os.path.isdir(buildResultsDir + item):
                 if variant in item:
                     buildResultDir = buildResultsDir + item + os.path.sep
