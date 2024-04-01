@@ -1990,7 +1990,8 @@ void CBioseqIndex::x_DefaultSelector(SAnnotSelector& sel, CSeqEntryIndex::EPolic
     if ( cddOK ) {
         sel.IncludeNamedAnnotAccession("CDD");
     } else {
-        sel.ExcludeNamedAnnotAccession("CDD");
+        sel.ExcludeNamedAnnotAccession("CDD"); // This does not actually help to stop loading CDDs.
+        sel.ExcludeNamedAnnots("CDD"); // This prevents annot-iterator from loading CDDs.
     }
 
     CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
