@@ -1043,6 +1043,7 @@ void CGff3Reader::xPostProcessAnnot(
         return;
     }
 
+    /*
     for (const auto& it: mPendingExons) {
         CReaderMessage warning(
             eDiag_Warning,
@@ -1050,6 +1051,7 @@ void CGff3Reader::xPostProcessAnnot(
             "Bad data line: Record references non-existent Parent=" + it.first);
         m_pMessageHandler->Report(warning);
     }
+    */
 
     //location fixup:
     for (auto itLocation: mpLocations->LocationMap()) {
