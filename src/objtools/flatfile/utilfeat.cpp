@@ -203,12 +203,10 @@ bool DeleteQual(TQualVector& qlist, const Char* qual)
  *   "ParFlat_AA_array".
  *
  **********************************************************/
-Uint1 GetQualValueAa(char* qval, bool checkseq)
+Uint1 GetQualValueAa(const char* qval, bool checkseq)
 {
-    char* str;
-    char* p;
-    Uint1 aa;
-    Char  ch;
+    const char* str;
+    const char* p;
 
     str = StringStr(qval, "aa:");
     if (! str)
@@ -221,12 +219,8 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
 
     if (checkseq && ! StringStr(p, "seq:"))
         ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"%s\" lacks a 'seq' field for the sequence of the anticodon.", qval);
-    ch = *p;
-    *p = '\0';
-    aa = CCleanup::ValidAminoAcid(str);
-    *p = ch;
 
-    return (aa);
+    return CCleanup::ValidAminoAcid(string_view(str, p - str));
 }
 
 /**********************************************************/
