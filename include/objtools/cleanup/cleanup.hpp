@@ -607,7 +607,7 @@ public:
     static void AutodefId(CSeq_entry_Handle seh);
 
     // for finding the correct amino acid letter given an abbreviation
-    static char ValidAminoAcid(const string& abbrev);
+    static char ValidAminoAcid(string_view abbrev);
 
 private:
     CRef<CScope>            m_Scope;
