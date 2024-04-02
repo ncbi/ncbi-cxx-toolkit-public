@@ -9,6 +9,7 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include "ftacpp.hpp"
 
@@ -20,16 +21,7 @@
 #endif
 #define THIS_FILE "xgbfeat.cpp"
 
-// This is the forward declaration for ValidAminoAcid(...). The main declaration located in
-// ../src/objtools/cleanup/cleanup_utils.hpp
-// TODO: it should be removed after ValidAminoAcid(...) will be moved into
-// any of public header file.
-// for finding the correct amino acid letter given an abbreviation
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-char ValidAminoAcid(const string& abbrev);
-END_SCOPE(objects)
-
 USING_SCOPE(objects);
 
 static const Char* this_module = "validatr";
@@ -658,7 +650,7 @@ static int CkQualPosSeqaa(CGb_qual& cur, bool error_msgs, string& aa, const Char
         caa = caa.substr(0, comma);
     }
 
-    if (aa == "OTHER" || objects::ValidAminoAcid(caa) != 'X') {
+    if (aa == "OTHER" || CCleanup::ValidAminoAcid(caa) != 'X') {
         str = eptr;
 
         while (*str != '\0' && (*str == ' ' || *str == ')'))

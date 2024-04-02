@@ -46,6 +46,7 @@
 #include "index.h"
 
 #include <objtools/flatfile/flatdefn.h>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"
@@ -58,16 +59,7 @@
 #endif
 #define THIS_FILE "utilfeat.cpp"
 
-// This is the forward declaration for ValidAminoAcid(...). The main declaration located in
-// ../src/objtools/cleanup/cleanup_utils.hpp
-// TODO: it should be removed after ValidAminoAcid(...) will be moved into
-// any of public header file.
-// for finding the correct amino acid letter given an abbreviation
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-char ValidAminoAcid(const string& abbrev);
-END_SCOPE(objects)
-
 USING_SCOPE(objects);
 
 const char* ParFlat_GImod[] = {
@@ -231,7 +223,7 @@ Uint1 GetQualValueAa(char* qval, bool checkseq)
         ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"%s\" lacks a 'seq' field for the sequence of the anticodon.", qval);
     ch = *p;
     *p = '\0';
-    aa = objects::ValidAminoAcid(str);
+    aa = CCleanup::ValidAminoAcid(str);
     *p = ch;
 
     return (aa);

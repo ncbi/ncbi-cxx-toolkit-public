@@ -629,7 +629,7 @@ static ProteinAbbrevData abbreviation_list[] =
 // or three-letter abbreviation.
 // Use X if the abbreviation is not found.
 
-char ValidAminoAcid (const string& abbrev)
+char x_ValidAminoAcid(const string& abbrev)
 {
     char ch = 'X';
 

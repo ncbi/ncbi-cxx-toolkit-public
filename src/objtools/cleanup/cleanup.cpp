@@ -4463,7 +4463,7 @@ bool CCleanup::ParseCodeBreak(const CSeq_feat& feat,
             len++;
         }
         if (len != 0) {
-            protein_letter = ValidAminoAcid(str.substr(aa_pos, len));
+            protein_letter = x_ValidAminoAcid(str.substr(aa_pos, len));
         }
     }
 
@@ -4968,6 +4968,12 @@ void CCleanup::AutodefId(CSeq_entry_Handle seh)
     eh.AddSeqdesc(*d);
 
     CAutoDef::RegenerateSequenceDefLines(seh);
+}
+
+
+char CCleanup::ValidAminoAcid(const string& abbrev)
+{
+    return x_ValidAminoAcid(abbrev);
 }
 
 END_SCOPE(objects)
