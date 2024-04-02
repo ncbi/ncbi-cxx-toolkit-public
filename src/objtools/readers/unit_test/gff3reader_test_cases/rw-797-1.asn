@@ -13,7 +13,7 @@ Seq-annot ::= {
         },
         {
           label str "warnings",
-          data int 1
+          data int 0
         },
         {
           label str "notes",
