@@ -378,7 +378,7 @@ if ((o).IsSet##x()) { \
 CRef<CSeq_loc> ReadLocFromText(const string& text, const CSeq_id *id, CScope *scope);
 
 // for finding the correct amino acid letter given an abbreviation
-char NCBI_CLEANUP_EXPORT ValidAminoAcid (const string& abbrev);
+char x_ValidAminoAcid(const string& abbrev);
 
 // for sorting and uniquing dbtags
 bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
