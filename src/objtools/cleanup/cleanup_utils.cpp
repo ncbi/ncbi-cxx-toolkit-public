@@ -629,27 +629,25 @@ static ProteinAbbrevData abbreviation_list[] =
 // or three-letter abbreviation.
 // Use X if the abbreviation is not found.
 
-char x_ValidAminoAcid(const string& abbrev)
+char x_ValidAminoAcid(string_view abbrev)
 {
-    char ch = 'X';
-
-    for (unsigned int k = 0; k < sizeof(abbreviation_list) / sizeof (ProteinAbbrevData); k++) {
-        if (NStr::EqualNocase (abbrev, abbreviation_list[k].abbreviation)) {
-            ch = abbreviation_list[k].letter;
-            break;
-        }
-    }
-
-    if (abbrev.length() == 1) {
-        for (unsigned int k = 0; k < sizeof(abbreviation_list) / sizeof (ProteinAbbrevData); k++) {
-            if (abbrev.c_str()[0] == abbreviation_list[k].letter) {
-                ch = abbreviation_list[k].letter;
-                break;
+    if (abbrev.length() >= 3) {
+        for (unsigned k = 0; k < ArraySize(abbreviation_list); ++k) {
+            if (NStr::EqualNocase(abbrev, abbreviation_list[k].abbreviation)) {
+                return abbreviation_list[k].letter;
             }
         }
     }
 
-    return ch;
+    if (abbrev.length() == 1) {
+        for (unsigned k = 0; k < ArraySize(abbreviation_list); ++k) {
+            if (abbrev[0] == abbreviation_list[k].letter) {
+                return abbreviation_list[k].letter;
+            }
+        }
+    }
+
+    return 'X';
 }
 
 

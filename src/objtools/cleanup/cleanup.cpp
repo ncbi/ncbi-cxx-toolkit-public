@@ -4971,7 +4971,7 @@ void CCleanup::AutodefId(CSeq_entry_Handle seh)
 }
 
 
-char CCleanup::ValidAminoAcid(const string& abbrev)
+char CCleanup::ValidAminoAcid(string_view abbrev)
 {
     return x_ValidAminoAcid(abbrev);
 }
