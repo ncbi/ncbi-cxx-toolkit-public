@@ -479,18 +479,20 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "inference")) {
         /* TODO: Validate inference */
-        string val;
-        if (qual.IsSetVal()) {
-            val = qual.GetVal();
-        }
-        CValidError_feat::EInferenceValidCode rsult = CValidError_feat::ValidateInference(val, m_Imp.ValidateInferenceAccessions(), &m_Scope);
-        if (rsult > CValidError_feat::eInferenceValidCode_valid) {
-            if (NStr::IsBlank(val)) {
-                val = "?";
+        if (! m_Imp.IgnoreInferences()) {
+            string val;
+            if (qual.IsSetVal()) {
+                val = qual.GetVal();
             }
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
-                "Inference qualifier problem - " + kInferenceMessage[(int)rsult] + " ("
-                + val + ")");
+            CValidError_feat::EInferenceValidCode rsult = CValidError_feat::ValidateInference(val, m_Imp.ValidateInferenceAccessions(), &m_Scope);
+            if (rsult > CValidError_feat::eInferenceValidCode_valid) {
+                if (NStr::IsBlank(val)) {
+                    val = "?";
+                }
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+                    "Inference qualifier problem - " + kInferenceMessage[(int)rsult] + " ("
+                    + val + ")");
+            }
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
         m_Imp.IncrementPseudogeneCount();

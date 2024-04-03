@@ -65,6 +65,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("collect_locus_tags", "Collect locus tags for formatted reports");
     argdescr->AddFlag("golden_file", "Suppress context part of message");
     argdescr->AddFlag("vdjc", "Compare CDS against VDJC segments");
+    argdescr->AddFlag("g", "Ignore Inferences");
 }
 
 
@@ -161,6 +162,10 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
 
     if (args["vdjc"]) {
         options |= CValidator::eVal_compare_vdjc_to_cds;
+    }
+
+    if (args["g"]) {
+        options |= CValidator::eVal_ignore_inferences;
     }
 
     return options;

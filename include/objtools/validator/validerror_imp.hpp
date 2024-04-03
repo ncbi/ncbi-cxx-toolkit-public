@@ -301,6 +301,7 @@ public:
     bool IsRefSeqConventions()    const { return m_RefSeqConventions; }
     bool GenerateGoldenFile()     const { return m_GenerateGoldenFile; }
     bool DoCompareVDJCtoCDS()     const { return m_CompareVDJCtoCDS; }
+    bool IgnoreInferences()       const { return m_IgnoreInferences; }
 
 
     // flags calculated by examining data in record
@@ -566,6 +567,7 @@ private:
     bool m_SeqSubmitParent; // some errors are suppressed if this is run on a newly created submission
     bool m_GenerateGoldenFile;
     bool m_CompareVDJCtoCDS;
+    bool m_IgnoreInferences;
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;
