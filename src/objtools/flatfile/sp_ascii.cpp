@@ -889,7 +889,7 @@ static string GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
     Int4        shift;
     bool        ret;
 
-    str = GetBlkDataReplaceNewLine(bptr, eptr, ParFlat_COL_DATA_SP);
+    str = StringSave(GetBlkDataReplaceNewLine(bptr, eptr, ParFlat_COL_DATA_SP));
     StripECO(str);
 
     ptr = StringStr(str, "(GENE NAME");
@@ -4034,7 +4034,7 @@ static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     if (! offset)
         return;
 
-    str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_SP);
+    str = StringSave(GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_SP));
     StripECO(str);
     if (! str)
         return;
@@ -4358,7 +4358,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     bptr = offset;
     eptr = bptr + len;
 
-    str = GetBlkDataReplaceNewLine(bptr, eptr, ParFlat_COL_DATA_SP);
+    str = StringSave(GetBlkDataReplaceNewLine(bptr, eptr, ParFlat_COL_DATA_SP));
     StripECO(str);
     s = str + StringLen(str) - 1;
     while (s >= str && (*s == '.' || *s == ';' || *s == ','))
