@@ -473,7 +473,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
          */
         bptr       = subdbp->mOffset;
         eptr       = bptr + subdbp->len;
-        str        = GetBlkDataReplaceNewLine(bptr, eptr, (Int2)col_data);
+        str        = StringSave(GetBlkDataReplaceNewLine(bptr, eptr, (Int2)col_data));
         size_t len = StringLen(str);
         while (len > 0 && str[len - 1] == ';') {
             str[len - 1] = '\0';

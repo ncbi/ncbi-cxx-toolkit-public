@@ -261,7 +261,7 @@ static char* GetGenBankLineage(char* start, char* end)
     if (start >= end)
         return nullptr;
 
-    str = GetBlkDataReplaceNewLine(start, end, ParFlat_COL_DATA);
+    str = StringSave(GetBlkDataReplaceNewLine(start, end, ParFlat_COL_DATA));
     if (! str)
         return nullptr;
 
@@ -307,8 +307,6 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     char*       ptr;
     char*       str;
     Char        msg[4];
-    char*       kw;
-    char*       kwp;
     size_t      len;
     Int2        div;
 
@@ -337,7 +335,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     ibp->wgssec[0] = '\0';
 
     bptr = xSrchNodeType(entry, ParFlat_SOURCE, &len);
-    str  = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
+    str  = StringSave(GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA));
     if (str) {
         p = StringRChr(str, '.');
         if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
@@ -542,17 +540,14 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
             bptr = xSrchNodeType(entry, ParFlat_KEYWORDS, &len);
             if (bptr) {
-                kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
+                string kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
 
-                kwp = StringStr(kw, "EST");
-                if (kwp && est_kwd == false) {
-                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
+                if (! est_kwd && kw.find("EST") != string::npos) {
+                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw.c_str());
                 }
-                kwp = StringStr(kw, "STS");
-                if (kwp && sts_kwd == false) {
-                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
+                if (! sts_kwd && kw.find("STS") != string::npos) {
+                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw.c_str());
                 }
-                MemFree(kw);
             }
 
             if (! ibp->is_contig) {
@@ -1126,7 +1121,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     string title;
     if (offset) {
-        str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA);
+        str = StringSave(GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA));
 
         for (p = str; *p == ' ';)
             p++;
