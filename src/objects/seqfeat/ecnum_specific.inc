@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Feb 27 10:19:23 EST 2024
-; formally
+/* time_t value corresponding to Wed Apr  3 12:30:09 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1709047163UL;
+static const unsigned long kECNum_specific_Timestamp = 1712161809UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -1024,7 +1023,6 @@ static const char* const kECNum_specific[] = {
     "1.5.99.14\t6-hydroxypseudooxynicotine dehydrogenase",
     "1.5.99.15\tdihydromethanopterin reductase (acceptor)",
     "1.6.1.1\tNAD(P)(+) transhydrogenase (Si-specific)",
-    "1.6.1.2\tNAD(P)(+) transhydrogenase (Re/Si-specific)",
     "1.6.1.3\tNAD(P)(+) transhydrogenase",
     "1.6.1.4\tNAD(P)(+) transhydrogenase (ferredoxin)",
     "1.6.2.2\tcytochrome-b5 reductase",
@@ -4168,6 +4166,7 @@ static const char* const kECNum_specific[] = {
     "3.1.1.117\t(4-O-methyl)-D-glucuronate--lignin esterase",
     "3.1.1.118\tphospholipid sn-1 acylhydrolase",
     "3.1.1.120\tL-fucono-1,5-lactonase",
+    "3.1.1.121\tergosteryl-3beta-O-L-aspartate hydrolase",
     "3.1.1.n2\tprotein-S-isoprenylcysteine alpha-carbonyl methylesterase",
     "3.1.2.1\tacetyl-CoA hydrolase",
     "3.1.2.2\tpalmitoyl-CoA hydrolase",
@@ -5163,6 +5162,7 @@ static const char* const kECNum_specific[] = {
     "3.5.1.135\tN(4)-acetylcytidine amidohydrolase",
     "3.5.1.136\tN,N'-diacetylchitobiose non-reducing end deacetylase",
     "3.5.1.137\tN-methylcarbamate hydrolase",
+    "3.5.1.138\tlipoamidase",
     "3.5.1.n3\t4-deoxy-4-formamido-L-arabinose-phosphoundecaprenol deformylase",
     "3.5.2.1\tbarbiturase",
     "3.5.2.2\tdihydropyrimidinase",
@@ -5563,6 +5563,7 @@ static const char* const kECNum_specific[] = {
     "4.1.2.61\tferuloyl-CoA hydratase/lyase",
     "4.1.2.62\t5-deoxyribulose 1-phosphate aldolase",
     "4.1.2.63\t2-hydroxyacyl-CoA lyase",
+    "4.1.2.64\t2-dehydro-3-deoxy-L-fuconate aldolase",
     "4.1.3.1\tisocitrate lyase",
     "4.1.3.3\tN-acetylneuraminate lyase",
     "4.1.3.4\thydroxymethylglutaryl-CoA lyase",
@@ -6162,6 +6163,7 @@ static const char* const kECNum_specific[] = {
     "5.1.1.22\t4-hydroxyproline betaine 2-epimerase",
     "5.1.1.23\tUDP-N-acetyl-alpha-D-muramoyl-L-alanyl-L-glutamate epimerase",
     "5.1.1.24\thistidine racemase",
+    "5.1.1.25\tN-acetyl-D-glutamate racemase",
     "5.1.2.1\tlactate racemase",
     "5.1.2.2\tmandelate racemase",
     "5.1.2.3\t3-hydroxybutyryl-CoA epimerase",

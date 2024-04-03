@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Feb 27 10:19:23 EST 2024
-; formally
+/* time_t value corresponding to Wed Apr  3 12:30:09 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_ambiguous_Timestamp = 1709047163UL;
+static const unsigned long kECNum_ambiguous_Timestamp = 1712161809UL;
 static const char* const kECNum_ambiguous[] = {
     "1.-.-.-\tOxidoreductases",
     "1.n.n.n\tOxidoreductases",
@@ -595,6 +594,8 @@ static const char* const kECNum_ambiguous[] = {
     "3.4.24.n\tMetalloendopeptidases",
     "3.4.25.-\tThreonine endopeptidases",
     "3.4.25.n\tThreonine endopeptidases",
+    "3.4.26.-\tGlutamic endopeptidases",
+    "3.4.26.n\tGlutamic endopeptidases",
     "3.4.99.-\tEndopeptidases of unknown catalytic mechanism",
     "3.4.99.n\tEndopeptidases of unknown catalytic mechanism",
     "3.5.-.-\tActing on carbon-nitrogen bonds, other than peptide bonds",
