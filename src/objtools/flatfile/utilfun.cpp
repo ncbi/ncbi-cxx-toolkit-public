@@ -465,7 +465,7 @@ static TokenBlkPtr TokenNodeNew(TokenBlkPtr tbp)
 }
 
 /**********************************************************/
-static void InsertTokenVal(TokenBlkPtr* tbp, const char* str)
+static void InsertTokenVal(TokenBlkPtr* tbp, string_view str)
 {
     TokenBlkPtr ltbp;
 
@@ -486,11 +486,10 @@ static void InsertTokenVal(TokenBlkPtr* tbp, const char* str)
  *      Return a statistics of link list token.
  *
  **********************************************************/
-TokenStatBlkPtr TokenString(char* str, Char delimiter)
+TokenStatBlkPtr TokenString(const char* str, Char delimiter)
 {
-    char*           bptr;
-    char*           ptr;
-    char*           curtoken;
+    const char*     bptr;
+    const char*     ptr;
     Int2            num;
     TokenStatBlkPtr token;
 
@@ -506,10 +505,8 @@ TokenStatBlkPtr TokenString(char* str, Char delimiter)
                          *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 
-        curtoken = StringSave(string_view(bptr, ptr - bptr));
-        InsertTokenVal(&token->list, curtoken);
+        InsertTokenVal(&token->list, string_view(bptr, ptr - bptr));
         num++;
-        MemFree(curtoken);
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
             ptr++;
@@ -740,7 +737,7 @@ string GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
     char* ptr;
 
     if (bptr + start_col_data >= eptr)
-        return nullptr;
+        return {};
 
     size_t size   = eptr - bptr;
     char*  retstr = StringNew(size);
