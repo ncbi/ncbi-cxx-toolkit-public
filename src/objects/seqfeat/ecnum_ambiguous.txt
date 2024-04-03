@@ -558,6 +558,8 @@
 3.4.24.n	Metalloendopeptidases
 3.4.25.-	Threonine endopeptidases
 3.4.25.n	Threonine endopeptidases
+3.4.26.-	Glutamic endopeptidases
+3.4.26.n	Glutamic endopeptidases
 3.4.99.-	Endopeptidases of unknown catalytic mechanism
 3.4.99.n	Endopeptidases of unknown catalytic mechanism
 3.5.-.-	Acting on carbon-nitrogen bonds, other than peptide bonds
