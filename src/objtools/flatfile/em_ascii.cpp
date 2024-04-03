@@ -943,8 +943,6 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     IndexblkPtr ibp;
     char*       bptr;
-    char*       kw;
-    char*       kwp;
     Char        dataclass[4];
     Char        ch;
 
@@ -1202,21 +1200,17 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     size_t len = 0;
     bptr       = xSrchNodeType(entry, ParFlat_KW, &len);
     if (bptr) {
-        kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA_EMBL);
+        string kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA_EMBL);
 
-        kwp = StringStr(kw, "EST");
-        if (kwp && ! est_kwd) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
+        if (! est_kwd && kw.find("EST") != string::npos) {
+            ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw.c_str());
         }
-        kwp = StringStr(kw, "STS");
-        if (kwp && ! sts_kwd) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
+        if (! sts_kwd && kw.find("STS") != string::npos) {
+            ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw.c_str());
         }
-        kwp = StringStr(kw, "GSS");
-        if (kwp && ! gss_kwd) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw);
+        if (! gss_kwd && kw.find("GSS") != string::npos) {
+            ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw.c_str());
         }
-        MemFree(kw);
     }
 
     if (! ibp->is_contig) {
@@ -1675,7 +1669,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     string title;
 
     if (offset) {
-        str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL);
+        str = StringSave(GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL));
 
         for (p = str, q = p; *q != '\0';) {
             *p++ = *q;

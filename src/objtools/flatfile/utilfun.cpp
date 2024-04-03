@@ -732,7 +732,7 @@ Int2 MatchArrayISubString(const Char** array, const Char* text)
  *   and skip "XX" line data.
  *
  **********************************************************/
-char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
+string GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
 {
     string instr(bptr, eptr - bptr);
     xGetBlkDataReplaceNewLine(instr, start_col_data);
@@ -772,8 +772,7 @@ char* GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
 
     string tstr = NStr::TruncateSpaces(string(retstr), NStr::eTrunc_End);
     MemFree(retstr);
-    retstr = StringSave(tstr);
-    return (retstr);
+    return tstr;
 }
 
 void xGetBlkDataReplaceNewLine(string& instr, int indent)
