@@ -155,7 +155,7 @@ static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
 }
 
 /**********************************************************/
-static void GetSegment(char* str, IndexblkPtr entry)
+static void GetSegment(const char* str, IndexblkPtr entry)
 {
     TokenStatBlkPtr stoken;
     TokenBlkPtr     ptr2;
