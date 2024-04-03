@@ -296,6 +296,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_CollectLocusTags = (options & CValidator::eVal_collect_locus_tags) != 0;
     m_GenerateGoldenFile = (options & CValidator::eVal_generate_golden_file) != 0;
     m_CompareVDJCtoCDS = (options & CValidator::eVal_compare_vdjc_to_cds) != 0;
+    m_IgnoreInferences = (options & CValidator::eVal_ignore_inferences) != 0;
 }
 
 
@@ -1422,7 +1423,7 @@ bool CValidError_imp::Validate
 
     // count inference accessions - if there are too many, temporarily disable inference checking
     bool old_inference_acc_check = m_ValidateInferenceAccessions;
-    if (m_ValidateInferenceAccessions) {
+    if (m_ValidateInferenceAccessions && ! m_IgnoreInferences) {
         size_t num_inferences = 0, num_accessions = 0;
         CFeat_CI feat_inf(seh);
         while (feat_inf) {

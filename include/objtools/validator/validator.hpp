@@ -102,6 +102,7 @@ public:
         eVal_collect_locus_tags      = 0x1000000,
         eVal_generate_golden_file    = 0x2000000,
         eVal_compare_vdjc_to_cds     = 0x4000000,
+        eVal_ignore_inferences       = 0x10000000,
     };
 
     // Constructor / Destructor
