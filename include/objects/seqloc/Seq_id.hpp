@@ -491,7 +491,7 @@ public:
         eAcc_ddbj_tpa_nuc        = e_Tpd | eAcc_other | fAcc_nuc,       // BR
         eAcc_ddbj_tpa_prot       = e_Tpd | eAcc_other | fAcc_prot,      // FAA
         eAcc_ddbj_tpa_tsa_nuc    = e_Tpd | eAcc_tsa        | fAcc_nuc,  // YAAA
-        eAcc_ddbj_tpa_tsa_prot   = e_Tpd | eAcc_tsa        | fAcc_prot, // unused
+        eAcc_ddbj_tpa_tsa_prot   = e_Tpd | eAcc_tsa        | fAcc_prot, // IAA
         eAcc_ddbj_tpa_tsam_nuc   = e_Tpd | eAcc_tsa_master | fAcc_nuc,
         eAcc_ddbj_tpa_tsam_prot  = e_Tpd | eAcc_tsa_master | fAcc_prot,
         eAcc_ddbj_tpa_tsav_nuc   = e_Tpd | eAcc_tsa_vdb_only   | fAcc_nuc,
@@ -500,7 +500,7 @@ public:
         eAcc_ddbj_tpa_tsavm_prot = e_Tpd | eAcc_tsa_vdb_master | fAcc_prot,
         eAcc_ddbj_tpa_con        = e_Tpd | eAcc_con        | fAcc_nuc,  // HT
         eAcc_ddbj_tpa_wgs_nuc    = e_Tpd | eAcc_wgs        | fAcc_nuc,  // EAAA
-        eAcc_ddbj_tpa_wgs_prot   = e_Tpd | eAcc_wgs        | fAcc_prot, // IAA
+        eAcc_ddbj_tpa_wgs_prot   = e_Tpd | eAcc_wgs        | fAcc_prot, // unused
         eAcc_ddbj_tpa_wgsm_nuc   = e_Tpd | eAcc_wgs_master | fAcc_nuc,
         eAcc_ddbj_tpa_wgsm_prot  = e_Tpd | eAcc_wgs_master | fAcc_prot,
         eAcc_ddbj_tpa_wgsv_nuc   = e_Tpd | eAcc_wgs_vdb_only   | fAcc_nuc,
