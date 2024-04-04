@@ -13,14 +13,16 @@ extension="cmake_configure_ext.sh"
 
 ############################################################################# 
 
-CMAKE_PREDEFINED_LOC="/usr/local/bin/cmake /Applications/CMake.app/Contents/bin/cmake /sw/bin/cmake"
+CMAKE_PREDEFINED_LOC="/usr/local/bin/cmake /opt/homebrew/bin/cmake"
+CMAKE_PREDEFINED_LOC="$CMAKE_PREDEFINED_LOC /Applications/CMake.app/Contents/bin/cmake"
+CMAKE_PREDEFINED_LOC="$CMAKE_PREDEFINED_LOC /sw/bin/cmake"
 
 if [ -z "${CMAKE_CMD}" ]; then
   CMAKE_CMD=`which cmake 2>/dev/null`
   if test $? -ne 0; then
     for i in $CMAKE_PREDEFINED_LOC
     do
-      if test -x $i; then
+      if test -x $i  &&  $i --version >/dev/null 2>&1; then
         CMAKE_CMD=$i
         break
       fi    

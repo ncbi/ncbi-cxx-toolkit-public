@@ -18,10 +18,10 @@ host_os=`uname`
 if test -z "${CMAKE_CMD}" -a $host_os = "Darwin"; then
   CMAKE_CMD=`which cmake 2>/dev/null`
   if test $? -ne 0; then
-    for i in /usr/local/bin/cmake /Applications/CMake.app/Contents/bin/cmake \
-             /sw/bin/cmake
+    for i in /usr/local/bin/cmake /opt/homebrew/bin/cmake \
+             /Applications/CMake.app/Contents/bin/cmake /sw/bin/cmake
     do
-      if test -x $i; then
+      if test -x $i  &&  $i --version >/dev/null 2>&1; then
         CMAKE_CMD=$i
         break
       fi    
