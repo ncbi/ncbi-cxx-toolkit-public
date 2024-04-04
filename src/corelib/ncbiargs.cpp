@@ -3021,6 +3021,11 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
 
     if ( s_IsFlag(arg) ) {
         x_CheckAutoHelp(arg1);
+        eq_separator = arg1.length() > name.length()  &&
+            (arg1[name.length() + 1] == '=');
+        if ( eq_separator ) {
+            NCBI_THROW(CArgException,eInvalidArg, "Invalid argument: " + arg1);
+        }
     }
 
     // Check value separated by '='
