@@ -451,8 +451,6 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 {
     DataBlkPtr subdbp;
     char*      str;
-    char*      bptr;
-    char*      eptr;
     char*      s;
     char*      p;
 
@@ -471,9 +469,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
     for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp; subdbp = subdbp->mpNext) {
         /* process REFERENCE subkeywords
          */
-        bptr       = subdbp->mOffset;
-        eptr       = bptr + subdbp->len;
-        str        = StringSave(GetBlkDataReplaceNewLine(bptr, eptr, (Int2)col_data));
+        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), (Int2)col_data));
         size_t len = StringLen(str);
         while (len > 0 && str[len - 1] == ';') {
             str[len - 1] = '\0';
