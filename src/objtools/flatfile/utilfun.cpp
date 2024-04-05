@@ -729,14 +729,7 @@ Int2 MatchArrayISubString(const Char** array, const Char* text)
  *   and skip "XX" line data.
  *
  **********************************************************/
-string GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
-{
-    string instr(bptr, eptr - bptr);
-    xGetBlkDataReplaceNewLine(instr, start_col_data);
-    return instr;
-}
-
-void xGetBlkDataReplaceNewLine(string& instr, int indent)
+string GetBlkDataReplaceNewLine(string_view instr, Int2 indent)
 {
     vector<string> lines;
     NStr::Split(instr, "\n", lines);
@@ -754,7 +747,7 @@ void xGetBlkDataReplaceNewLine(string& instr, int indent)
         }
     }
     NStr::TruncateSpacesInPlace(replaced);
-    instr = replaced;
+    return replaced;
 }
 
 

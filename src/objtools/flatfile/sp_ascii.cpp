@@ -878,7 +878,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk* entry)
  *                                              10-8-93
  *
  **********************************************************/
-static string GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
+static string GetSPDescrTitle(string_view sv, bool* fragment)
 {
     const char* tag;
     char*       ptr;
@@ -889,7 +889,7 @@ static string GetSPDescrTitle(char* bptr, char* eptr, bool* fragment)
     Int4        shift;
     bool        ret;
 
-    str = StringSave(GetBlkDataReplaceNewLine(bptr, eptr, ParFlat_COL_DATA_SP));
+    str = StringSave(GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA_SP));
     StripECO(str);
 
     ptr = StringStr(str, "(GENE NAME");
@@ -2576,7 +2576,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
     size_t len = 0;
     offset     = SrchNodeType(entry, ParFlatSP_DE, &len);
     if (offset) {
-        string title = GetSPDescrTitle(offset, offset + len, &fragment);
+        string title = GetSPDescrTitle(string_view(offset, len), &fragment);
         if (! title.empty()) {
             CRef<CSeqdesc> desc_new(new CSeqdesc);
             desc_new->SetTitle(title);
@@ -4034,7 +4034,7 @@ static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     if (! offset)
         return;
 
-    str = StringSave(GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_SP));
+    str = StringSave(GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP));
     StripECO(str);
     if (! str)
         return;
@@ -4332,8 +4332,6 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     string str1;
 
     char* ptr;
-    char* bptr;
-    char* eptr;
     char* s;
 
     const char* tag;
@@ -4355,10 +4353,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     CRef<CSeq_feat> feat(new CSeq_feat);
     CProt_ref&      prot = feat->SetData().SetProt();
 
-    bptr = offset;
-    eptr = bptr + len;
-
-    str = StringSave(GetBlkDataReplaceNewLine(bptr, eptr, ParFlat_COL_DATA_SP));
+    str = StringSave(GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP));
     StripECO(str);
     s = str + StringLen(str) - 1;
     while (s >= str && (*s == '.' || *s == ';' || *s == ','))
@@ -4395,6 +4390,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
         while (*ptr == ' ')
             ptr++;
 
+        char* bptr;
         for (bptr = ptr; *ptr != '\0' && *ptr != ' ' && *ptr != symb;)
             ptr++;
         if (ptr > bptr) {

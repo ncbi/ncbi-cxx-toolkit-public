@@ -1200,7 +1200,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     size_t len = 0;
     bptr       = xSrchNodeType(entry, ParFlat_KW, &len);
     if (bptr) {
-        string kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA_EMBL);
+        string kw = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA_EMBL);
 
         if (! est_kwd && kw.find("EST") != string::npos) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw.c_str());
@@ -1665,7 +1665,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     string title;
 
     if (offset) {
-        string str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL);
+        string str = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_EMBL);
 
         for (size_t pos = 0; pos < str.size();) {
             pos = str.find(";;", pos);

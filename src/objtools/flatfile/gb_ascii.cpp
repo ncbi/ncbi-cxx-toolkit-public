@@ -253,15 +253,15 @@ static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dn
 }
 
 /**********************************************************/
-static char* GetGenBankLineage(char* start, char* end)
+static char* GetGenBankLineage(string_view sv)
 {
     char* p;
     char* str;
 
-    if (start >= end)
+    if (sv.empty())
         return nullptr;
 
-    str = StringSave(GetBlkDataReplaceNewLine(start, end, ParFlat_COL_DATA));
+    str = StringSave(GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA));
     if (! str)
         return nullptr;
 
@@ -335,7 +335,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     ibp->wgssec[0] = '\0';
 
     bptr = xSrchNodeType(entry, ParFlat_SOURCE, &len);
-    str  = StringSave(GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA));
+    str  = StringSave(GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA));
     if (str) {
         p = StringRChr(str, '.');
         if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
@@ -540,7 +540,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
             bptr = xSrchNodeType(entry, ParFlat_KEYWORDS, &len);
             if (bptr) {
-                string kw = GetBlkDataReplaceNewLine(bptr, bptr + len, ParFlat_COL_DATA);
+                string kw = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA);
 
                 if (! est_kwd && kw.find("EST") != string::npos) {
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw.c_str());
@@ -846,7 +846,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
         taxname         = taxname.substr(0, taxname.size() - 1);
     }
 
-    ptr = GetGenBankLineage(bptr, end);
+    ptr = GetGenBankLineage(string_view(bptr, end - bptr));
     if (ptr) {
         org_ref.SetOrgname().SetLineage(ptr);
         MemFree(ptr);
@@ -1121,7 +1121,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     string title;
     if (offset) {
-        str = StringSave(GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA));
+        str = StringSave(GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA));
 
         for (p = str; *p == ' ';)
             p++;

@@ -94,8 +94,7 @@ Int2 MatchArrayISubString(const Char** array, const Char* text);
 
 /* Return a string which replace newline to blank and skip "XX" line data.
  */
-string GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 col_data);
-void  xGetBlkDataReplaceNewLine(string&, int indent);
+string GetBlkDataReplaceNewLine(string_view, Int2 indent);
 
 /* Delete any tailing ' ', '\n', '\\', ',', ';', '~', '.', ':'
  * characters.
