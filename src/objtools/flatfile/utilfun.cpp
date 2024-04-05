@@ -733,43 +733,7 @@ string GetBlkDataReplaceNewLine(char* bptr, char* eptr, Int2 start_col_data)
 {
     string instr(bptr, eptr - bptr);
     xGetBlkDataReplaceNewLine(instr, start_col_data);
-
-    char* ptr;
-
-    if (bptr + start_col_data >= eptr)
-        return {};
-
-    size_t size   = eptr - bptr;
-    char*  retstr = StringNew(size);
-    char*  str    = retstr;
-
-    while (bptr < eptr) {
-        if (NStr::Equal(bptr, 0, 2, "XX")) /* skip XX line data */
-        {
-            ptr  = SrchTheChar(bptr, eptr, '\n');
-            bptr = ptr + 1;
-            continue;
-        }
-
-        bptr += start_col_data;
-        ptr = SrchTheChar(bptr, eptr, '\n');
-
-        if (ptr) {
-            size = ptr - bptr;
-            MemCpy(str, bptr, size);
-            str += size;
-            if (*(ptr - 1) != '-' || *(ptr - 2) == ' ') {
-                StringCpy(str, " ");
-                str++;
-            }
-            bptr = ptr;
-        }
-        bptr++;
-    }
-
-    string tstr = NStr::TruncateSpaces(string(retstr), NStr::eTrunc_End);
-    MemFree(retstr);
-    return tstr;
+    return instr;
 }
 
 void xGetBlkDataReplaceNewLine(string& instr, int indent)
