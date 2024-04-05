@@ -1647,10 +1647,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     DataBlkPtr  dbp;
 
     char*  offset;
-    char*  str;
     string gbdiv;
-    char*  p;
-    char*  q;
 
     bool is_htg = false;
 
@@ -1663,51 +1660,52 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DE data ==> descr_title
      */
-    str    = nullptr;
     offset = xSrchNodeType(entry, ParFlat_DE, &len);
 
     string title;
 
     if (offset) {
-        str = StringSave(GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL));
+        string str = GetBlkDataReplaceNewLine(offset, offset + len, ParFlat_COL_DATA_EMBL);
 
-        for (p = str, q = p; *q != '\0';) {
-            *p++ = *q;
-            if (*q++ == ';')
-                while (*q == ';')
-                    q++;
+        for (size_t pos = 0; pos < str.size();) {
+            pos = str.find(";;", pos);
+            if (pos == string::npos)
+                break;
+            ++pos;
+            size_t j = 0;
+            for (size_t i = pos; i < str.size() && str[i] == ';'; ++i)
+                ++j;
+            str.erase(pos, j);
         }
 
-        *p = '\0';
-        if (p > str) {
-            for (p--; *p == ' ' || *p == ';'; p--)
-                if (p == str)
-                    break;
-            if (*p != ' ' && *p != ';')
-                p++;
-            *p = '\0';
+        while (! str.empty()) {
+            char c = str.back();
+            if (c == ' ' || c == ';')
+                str.pop_back();
+            else
+                break;
         }
 
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
-            StringEquN(str, "TPA:", 4)) {
+            StringEquN(str.c_str(), "TPA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (ibp->is_tsa == false && StringEquN(str, "TSA:", 4)) {
+        if (ibp->is_tsa == false && StringEquN(str.c_str(), "TSA:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (ibp->is_tls == false && StringEquN(str, "TLS:", 4)) {
+        if (ibp->is_tls == false && StringEquN(str.c_str(), "TLS:", 4)) {
             ErrPostEx(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (StringEquN(str, "TPA:", 4)) {
+        if (StringEquN(str.c_str(), "TPA:", 4)) {
             string str1;
             if (ibp->assembly)
                 str1 = "TPA_asm:";
@@ -1718,11 +1716,8 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             else if (ibp->experimental)
                 str1 = "TPA_exp:";
 
-            if (! str1.empty()) {
-                str1.append(str + 4);
-                MemFree(str);
-                str = StringSave(str1);
-            }
+            if (! str1.empty())
+                str.replace(0, 4, str1);
         }
 
         CRef<CSeqdesc> descr(new CSeqdesc);
@@ -1730,8 +1725,6 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
 
         title = str;
-        MemFree(str);
-        str = nullptr;
     }
 
     offset = xSrchNodeType(entry, ParFlat_PR, &len);
@@ -1928,7 +1921,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     offset = xSrchNodeType(entry, ParFlat_CC, &len);
     if (offset && len > 0) {
-        str = GetDescrComment(offset, len, ParFlat_COL_DATA_EMBL, (pp->xml_comp ? false : is_htg), ibp->is_pat);
+        char* str = GetDescrComment(offset, len, ParFlat_COL_DATA_EMBL, (pp->xml_comp ? false : is_htg), ibp->is_pat);
         if (str) {
             bool           bad = false;
             TUserObjVector user_objs;
@@ -1947,6 +1940,8 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             }
 
             if (pp->xml_comp) {
+                char* p;
+                char* q;
                 for (q = str, p = q; *p != '\0';) {
                     if (*p == ';' && (p[1] == ' ' || p[1] == '~'))
                         *p = ' ';
