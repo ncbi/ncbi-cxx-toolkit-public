@@ -1516,7 +1516,7 @@ void GetSequenceOfKeywords(
     if (keywordData.empty()) {
         return;
     }
-    xGetBlkDataReplaceNewLine(keywordData, col_data);
+    keywordData = GetBlkDataReplaceNewLine(keywordData, col_data);
     if (type == ParFlatSP_KW) {
         xStripECO(keywordData);
     }
