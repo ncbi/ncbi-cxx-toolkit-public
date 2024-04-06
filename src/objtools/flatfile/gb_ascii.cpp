@@ -253,38 +253,22 @@ static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dn
 }
 
 /**********************************************************/
-static char* GetGenBankLineage(string_view sv)
+static string GetGenBankLineage(string_view sv)
 {
-    char* p;
-    char* str;
-
     if (sv.empty())
-        return nullptr;
+        return {};
 
-    str = StringSave(GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA));
-    if (! str)
-        return nullptr;
+    string str = GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA);
 
-    for (p = str; *p != '\0';)
-        p++;
-    if (p == str) {
-        MemFree(str);
-        return nullptr;
-    }
-    for (p--;; p--) {
-        if (*p != ' ' && *p != '\t' && *p != '\n' && *p != '.' && *p != ';') {
-            p++;
-            break;
-        }
-        if (p == str)
+    while (! str.empty()) {
+        char c = str.back();
+        if (c == ' ' || c == '\t' || c == '\n' || c == '.' || c == ';')
+            str.pop_back();
+        else
             break;
     }
-    if (p == str) {
-        MemFree(str);
-        return nullptr;
-    }
-    *p = '\0';
-    return (str);
+
+    return str;
 }
 
 /**********************************************************
@@ -305,7 +289,6 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     char*       bptr;
     char*       eptr;
     char*       ptr;
-    char*       str;
     Char        msg[4];
     size_t      len;
     Int2        div;
@@ -335,14 +318,14 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     ibp->wgssec[0] = '\0';
 
     bptr = xSrchNodeType(entry, ParFlat_SOURCE, &len);
-    str  = StringSave(GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA));
-    if (str) {
-        p = StringRChr(str, '.');
-        if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
-            *p = '\0';
+    string str = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA);
+    if (! str.empty()) {
+        if (str.back() == '.') {
+            if (str.size() >= 2 && *(str.end() - 2) == '.')
+                str.pop_back();
+        }
 
-        gbb->SetSource(str);
-        MemFree(str);
+        gbb->SetSource(std::move(str));
     }
 
     if (! ibp->keywords.empty()) {
@@ -843,13 +826,12 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
 
     if (org_ref.GetTaxname() == "Unknown.") {
         string& taxname = org_ref.SetTaxname();
-        taxname         = taxname.substr(0, taxname.size() - 1);
+        taxname.pop_back();
     }
 
-    ptr = GetGenBankLineage(string_view(bptr, end - bptr));
-    if (ptr) {
-        org_ref.SetOrgname().SetLineage(ptr);
-        MemFree(ptr);
+    string s = GetGenBankLineage(string_view(bptr, end - bptr));
+    if (! s.empty()) {
+        org_ref.SetOrgname().SetLineage(std::move(s));
     }
 
     CRef<CSeqdesc> descr(new CSeqdesc);
@@ -1086,7 +1068,6 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     DataBlkPtr dbp;
 
     char* offset;
-    char* str;
     char* p;
     char* q;
 
@@ -1115,22 +1096,24 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
-    str        = nullptr;
     size_t len = 0;
     offset     = xSrchNodeType(entry, ParFlat_DEFINITION, &len);
 
     string title;
     if (offset) {
-        str = StringSave(GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA));
+        string str = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA);
 
-        for (p = str; *p == ' ';)
-            p++;
-        if (p > str)
-            fta_StringCpy(str, p);
+        size_t i = 0;
+        for (char c : str) {
+            if (c == ' ')
+                ++i;
+            else
+                break;
+        }
+        if (i > 0)
+            str.erase(0, i);
 
-        title = str;
-        MemFree(str);
-        str = nullptr;
+        title.swap(str);
 
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetTitle(title);
@@ -1291,7 +1274,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     offset = xSrchNodeType(entry, ParFlat_COMMENT, &len);
     if (offset && len > 0) {
-        str = GetDescrComment(offset, len, ParFlat_COL_DATA, (pp->xml_comp ? false : is_htg), ibp->is_pat);
+        char* str = GetDescrComment(offset, len, ParFlat_COL_DATA, (pp->xml_comp ? false : is_htg), ibp->is_pat);
         if (str) {
             bool           bad = false;
             TUserObjVector user_objs;
