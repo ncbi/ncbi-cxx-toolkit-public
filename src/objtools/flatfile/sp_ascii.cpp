@@ -889,8 +889,9 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
     Int4        shift;
     bool        ret;
 
-    str = StringSave(GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA_SP));
-    StripECO(str);
+    string str_ = GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA_SP);
+    StripECO(str_);
+    str = StringSave(str_);
 
     ptr = StringStr(str, "(GENE NAME");
     if (ptr) {
@@ -4034,8 +4035,9 @@ static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     if (! offset)
         return;
 
-    str = StringSave(GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP));
-    StripECO(str);
+    string str_ = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP);
+    StripECO(str_);
+    str = StringSave(str_);
     if (! str)
         return;
 
@@ -4353,8 +4355,9 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     CRef<CSeq_feat> feat(new CSeq_feat);
     CProt_ref&      prot = feat->SetData().SetProt();
 
-    str = StringSave(GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP));
-    StripECO(str);
+    string str_ = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP);
+    StripECO(str_);
+    str = StringSave(str_);
     s = str + StringLen(str) - 1;
     while (s >= str && (*s == '.' || *s == ';' || *s == ','))
         *s-- = '\0';
