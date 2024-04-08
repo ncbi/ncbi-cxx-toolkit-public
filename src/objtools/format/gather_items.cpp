@@ -3062,13 +3062,13 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
     bool load_cdd = false;
     if (!ctx.Config().HideCDDFeatures()) {
         switch (ctx.Config().GetPolicy()) {
-        case CSeqEntryIndex::eExternal:
+        case CFlatFileConfig::ePolicy_External:
             load_cdd = true;
             break;
-        case CSeqEntryIndex::eAdaptive:
+        case CFlatFileConfig::ePolicy_Adaptive:
             load_cdd = ctx.Config().ShowCDDFeatures();
             break;
-        case CSeqEntryIndex::eWeb:
+        case CFlatFileConfig::ePolicy_Web:
             load_cdd = hdl.GetBioseqLength() <= 1000000 && ctx.Config().ShowCDDFeatures();
             break;
         default:
