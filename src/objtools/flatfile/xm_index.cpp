@@ -166,31 +166,36 @@ static XmlIndexPtr XMLIndexNew(void)
 }
 
 /**********************************************************/
-static void XMLRestoreSpecialCharacters(char* buf)
+static string XMLRestoreSpecialCharacters(string_view s)
 {
-    char* p;
-    char* q;
+    string buf;
+    buf.reserve(s.size());
 
-    for (p = buf, q = buf; *p != '\0';) {
-        if (StringEquN(p, "&lt;", 4)) {
-            *q++ = '<';
-            p += 4;
-        } else if (StringEquN(p, "&gt;", 4)) {
-            *q++ = '>';
-            p += 4;
-        } else if (StringEquN(p, "&amp;", 5)) {
-            *q++ = '&';
-            p += 5;
-        } else if (StringEquN(p, "&apos;", 6)) {
-            *q++ = '\'';
-            p += 6;
-        } else if (StringEquN(p, "&quot;", 6)) {
-            *q++ = '\"';
-            p += 6;
+    for (size_t i = 0; i < s.size();) {
+        if (s[i] != '&') {
+            buf += s[i++];
+            continue;
+        }
+        if (s.substr(i, 4) == string_view("&lt;", 4)) {
+            buf += '<';
+            i += 4;
+        } else if (s.substr(i, 4) == string_view("&gt;", 4)) {
+            buf += '>';
+            i += 4;
+        } else if (s.substr(i, 5) == string_view("&amp;", 5)) {
+            buf += '&';
+            i += 5;
+        } else if (s.substr(i, 6) == string_view("&apos;", 6)) {
+            buf += '\'';
+            i += 6;
+        } else if (s.substr(i, 6) == string_view("&quot;", 6)) {
+            buf += '\"';
+            i += 6;
         } else
-            *q++ = *p++;
+            buf += s[i++];
     }
-    *q = '\0';
+
+    return buf;
 }
 
 /**********************************************************/
@@ -200,13 +205,9 @@ char* XMLGetTagValue(const char* entry, const XmlIndex* xip)
         xip->start >= xip->end)
         return nullptr;
 
-    size_t i   = xip->end - xip->start;
-    char*  buf = StringNew(i);
-    StringNCpy(buf, entry + xip->start, i);
-    buf[i] = '\0';
+    string_view buf(entry + xip->start, xip->end - xip->start);
 
-    XMLRestoreSpecialCharacters(buf);
-    return (buf);
+    return StringSave(XMLRestoreSpecialCharacters(buf));
 }
 
 /**********************************************************/
@@ -1547,11 +1548,7 @@ void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywor
 /**********************************************************/
 char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep)
 {
-    XmlIndexPtr txip;
-    char*       buf;
-    const char* p;
-    char*       q;
-    size_t      i;
+    const XmlIndex* txip;
 
     if (! entry || ! xip)
         return nullptr;
@@ -1562,24 +1559,22 @@ char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char se
     if (! xip || ! xip->subtags)
         return nullptr;
 
-    for (i = 0, txip = xip->subtags; txip; txip = txip->next)
+    size_t i = 0;
+    for (txip = xip->subtags; txip; txip = txip->next)
         i += (txip->end - txip->start + 2);
 
-    buf    = StringNew(i - 1);
-    buf[0] = '\0';
-    for (q = buf, txip = xip->subtags; txip; txip = txip->next) {
-        if (txip->end <= txip->start)
+    string buf;
+    buf.reserve(i);
+    for (txip = xip->subtags; txip; txip = txip->next) {
+        if (txip->start >= txip->end)
             continue;
-        if (buf[0] != '\0') {
-            *q++ = sep;
-            *q++ = ' ';
+        if (! buf.empty()) {
+            buf += sep;
+            buf += ' ';
         }
-        for (i = txip->start, p = entry + txip->start; i < txip->end; i++)
-            *q++ = *p++;
-        *q = '\0';
+        buf.append(entry + txip->start, txip->end - txip->start);
     }
-    XMLRestoreSpecialCharacters(buf);
-    return (buf);
+    return StringSave(XMLRestoreSpecialCharacters(buf));
 }
 
 END_NCBI_SCOPE
