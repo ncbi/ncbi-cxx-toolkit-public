@@ -236,6 +236,107 @@ const string& CSpecificHostRequest::SuggestFix() const
 }
 //LCOV_EXCL_STOP
 
+// new strain code
+
+/*
+// sample callback function for CStrainRequest::StrainContainsTaxonInfo
+#include <objtools/validator/tax_validation_and_cleanup.hpp>
+
+bool DemoStrainCheckCallback(const string& organism, const string& strain)
+
+{
+     CTaxon3 taxon3(CTaxon3::initialize::yes);
+     auto responder = [&taxon3](const vector<CRef<COrg_ref>>& request)->CRef<CTaxon3_reply>
+     {
+         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(request);
+         return reply;
+     };
+     return CStrainRequest::StrainContainsTaxonInfo(organism, strain, responder);
+ }
+*/
+
+bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const string& strain, std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
+
+{
+    if (NStr::IsBlank(organism)) {
+        return false;
+    }
+    if (NStr::IsBlank(strain)) {
+        return false;
+    }
+    if (! taxoncallback) {
+        return false;
+    }
+
+    // per VR-762, ignore strain if combination of letters and numbers
+    bool has_number = false;
+    bool has_letter = false;
+    bool has_other = false;
+
+    for (char ch : strain) {
+        if (isdigit(ch)) {
+            has_number = true;
+        } else if (isalpha(ch)) {
+            has_letter = true;
+        } else {
+            has_other = true;
+        }
+    }
+
+    if (has_number && has_letter && !has_other) {
+        return false;
+    }
+
+    vector<string> candidates;
+
+    candidates.push_back(strain);
+
+    size_t pos = 0;
+    for (char ch : strain) {
+        if (isalpha(ch)) {
+            ++pos;
+        } else {
+            if (pos >= 5) {
+                candidates.push_back(strain.substr(0, pos));
+            }
+            break;
+        }
+    }
+
+    if (NStr::EndsWith(organism, " sp.")) {
+        candidates.push_back(organism.substr(0, organism.length() - 3) + strain);
+    }
+
+    vector<CRef<COrg_ref>> request;
+
+    for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname(*tax_it);
+        request.push_back(org);
+    }
+
+    CRef<CTaxon3_reply> reply = taxoncallback(request);
+
+    for (CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+         reply_it != reply->GetReply().end();
+         ++reply_it) {
+        CRef<COrg_ref> cpy;
+        if ((*reply_it)->IsData() && (*reply_it)->GetData().IsSetOrg()) {
+            cpy.Reset(new COrg_ref());
+            cpy->Assign((*reply_it)->GetData().GetOrg());
+            if (cpy && cpy->IsSetTaxname()) {
+                string taxname = cpy->GetTaxname();
+                if (NStr::EqualNocase(organism, taxname)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+// old strain code
 
 bool CStrainRequest::x_IgnoreStrain(const string& str)
 {
