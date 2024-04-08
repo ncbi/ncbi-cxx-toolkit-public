@@ -45,7 +45,7 @@ BEGIN_SCOPE(blast)
 
 NCBI_XBLAST_EXPORT
 std::string DbIndexInit( 
-        const string & indexname, bool old_style, bool & partial );
+        const string & indexname, bool old_style, bool & partial, const int word_size);
 
 NCBI_XBLAST_EXPORT
 void SetUpDbIndexCallbacks( void );
@@ -53,8 +53,6 @@ void SetUpDbIndexCallbacks( void );
 NCBI_XBLAST_EXPORT
 void ClearDbIndexCallbacks( void );
 
-/** Get minimal word size accepted by indexing library.
-*/
 NCBI_XBLAST_EXPORT
 int MinIndexWordSize();
 

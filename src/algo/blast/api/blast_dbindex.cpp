@@ -45,6 +45,7 @@
 
 #include <algo/blast/api/blast_dbindex.hpp>
 #include <algo/blast/dbindex/dbindex.hpp>
+#include <algo/blast/dbindex/dbindex_sp.hpp>
 
 #include "algo/blast/core/mb_indexed_lookup.h"
 
@@ -90,10 +91,6 @@ BEGIN_SCOPE( blast )
 
 USING_SCOPE( ncbi::objects );
 USING_SCOPE( ncbi::blastdbindex );
-
-/// Get the minimum acceptable word size to use with indexed search.
-/// @return the minimum acceptable word size
-int MinIndexWordSize() { return 16; }
 
 /** No-op callback for setting concurrency state. 
     @sa DbIndexSetUsingThreadsFnType()
@@ -202,6 +199,8 @@ public:
             CDbIndex::TSeqNum oid,
             CDbIndex::TSeqNum chunk,
             BlastInitHitList * init_hitlist ) const = 0;
+
+    virtual int MinIndexWordSize() = 0;
 };
 
 //------------------------------------------------------------------------------
@@ -269,6 +268,8 @@ public:
 
     /** Not used */
     virtual void EndSearchIndication( Int4 ) {}
+
+    virtual int MinIndexWordSize();
 
 private:
 
@@ -452,6 +453,8 @@ private:
                                has no associated index
     */
     void AddIndexInfo( const std::string & vol_name, bool & idx_not_resolved );
+
+    virtual int MinIndexWordSize();
 
     /** Find a volume containing the given subject ordinal id. */
     TVolList::const_iterator FindVolume( SIZE_TYPE oid ) const
@@ -920,6 +923,18 @@ unsigned long CIndexedDb_New::GetResults(
     }
 }
 
+int CIndexedDb_New::MinIndexWordSize()
+{
+	int rv = 0;
+
+	if (volumes_.size() > 0){
+		CMemoryFile index_map(volumes_[0].name);
+		SIndexHeader header = ReadIndexHeader< false >(index_map.GetPtr());
+		rv = header.hkey_width_ + header.stride_ -1;
+		ERR_POST( Info <<"Min word size is " << rv);
+	}
+	return rv;
+}
 //------------------------------------------------------------------------------
 CIndexedDb_Old::CIndexedDb_Old( const string & indexnames )
 {
@@ -1063,12 +1078,50 @@ unsigned long CIndexedDb_Old::GetResults(
         return 0;
     }
 }
-
-//------------------------------------------------------------------------------
-std::string DbIndexInit( 
-        const string & indexname, bool old_style, bool & partial )
+/// Get the minimum acceptable word size to use with indexed search.
+/// @return the minimum acceptable word size
+int CIndexedDb_Old::MinIndexWordSize()
 {
-    std::string result;
+	int rv = 0;
+
+	if (index_names_.size() > 0){
+		CMemoryFile index_map(index_names_[0]);
+		SIndexHeader header = ReadIndexHeader< false >(index_map.GetPtr());
+		rv = header.hkey_width_ + header.stride_ -1;
+		ERR_POST( Info <<"Min word size is " << rv);
+	}
+	return rv;
+}
+//------------------------------------------------------------------------------
+
+std::string s_CheckMinWordSize(int word_size)
+{
+	string rv = kEmptyStr;
+	if (CIndexedDb::Index_Set_Instance != 0 ) {
+		try {
+	    	int min_ws = CIndexedDb::Index_Set_Instance->MinIndexWordSize() ;
+	    	if (word_size < min_ws) {
+	    		CIndexedDb::Index_Set_Instance.Reset();
+	    		rv = "MegaBLAST database index requires word size greater than ";
+	        	rv += NStr::IntToString(min_ws);
+	        	rv += ".";
+	    	}
+	    }
+	    catch (CException & e) {
+	    	rv = "Failed to read index MegaBLAST db min word size.";
+	    }
+
+    }
+	else {
+		rv = "Empty index db instance";
+	}
+	return rv;
+}
+
+std::string DbIndexInit( 
+        const string & indexname, bool old_style, bool & partial, const int word_size )
+{
+    std::string result=kEmptyStr;
     partial = false;
 
     if( !old_style ) {
@@ -1084,8 +1137,7 @@ std::string DbIndexInit(
                 if( partial ) {
                     ERR_POST( Info << "some volumes are not resolved" );
                 }
-
-                return "";
+                return s_CheckMinWordSize(word_size);
             }
             else return "index allocation error";
         }
@@ -1095,22 +1147,23 @@ std::string DbIndexInit(
         }
     }
 
-    try{
-        ERR_POST( Info << "trying to load old style index at "
-                       << indexname );
-        CIndexedDb::Index_Set_Instance.Reset(
-                new CIndexedDb_Old( indexname ) );
 
-        if( CIndexedDb::Index_Set_Instance != 0 ) {
-            ERR_POST( Info << "old style index loaded" );
-            return "";
-        }
-        else return "index allocation error";
+    try{
+       	ERR_POST( Info << "trying to load old style index at "
+           	           << indexname );
+       	CIndexedDb::Index_Set_Instance.Reset(
+               	new CIndexedDb_Old( indexname ) );
+
+       	if( CIndexedDb::Index_Set_Instance != 0 ) {
+           	ERR_POST( Info << "old style index loaded" );
+            return s_CheckMinWordSize(word_size);
+       	}
+       	else return "index allocation error";
     }
     catch( CException & e ) {
         ERR_POST( Info << "old style index failed to load" );
-        result += "\n"; 
-	result += e.what();
+        result += "\n";
+        result += e.what();
     }
 
     return result;
