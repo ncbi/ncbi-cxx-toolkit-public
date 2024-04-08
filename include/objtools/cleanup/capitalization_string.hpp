@@ -58,6 +58,7 @@ NCBI_CLEANUP_EXPORT void FindOrgNames(objects::CSeq_entry_Handle seh, vector<str
 NCBI_CLEANUP_EXPORT void RemoveFieldNameFromString( const string& field_name, string& str);
 
 NCBI_CLEANUP_EXPORT void GetStateAbbreviation(string& state);
+NCBI_CLEANUP_EXPORT void GetCanadaStateAbbreviation(string& state);
 NCBI_CLEANUP_EXPORT bool FixStateAbbreviationsInCitSub(CCit_sub& sub);
 NCBI_CLEANUP_EXPORT bool FixUSAAbbreviationInAffil(CAffil& affil);
 NCBI_CLEANUP_EXPORT bool FixStateAbbreviationsInAffil(CAffil& affil);
