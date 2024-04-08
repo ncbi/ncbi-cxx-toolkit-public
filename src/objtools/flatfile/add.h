@@ -69,8 +69,7 @@ bool   fta_number_is_huge(const char* s);
 void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num);
 bool fta_if_valid_biosample(const char* id, bool dblink);
 bool fta_if_valid_sra(const char* id, bool dblink);
-void StripECO(char* str);
-void xStripECO(string&);
+void StripECO(string&);
 void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, objects::CSeq_id::E_Choice acctype, bool pricon, const char* acc);
 
 char* StringRStr(char* where, const char* what);

@@ -2839,50 +2839,22 @@ void fta_create_far_fetch_policy_user_object(CBioseq& bsp, Int4 num)
 }
 
 /**********************************************************/
-void xStripECO(
-    string& instr)
+void StripECO(string& str)
 {
-    auto ecoStart = instr.find("{ECO:");
-    while (ecoStart != string::npos) {
-        auto ecoStop = instr.find("}", ecoStart);
-        if (ecoStop == string::npos) {
-            return; // hmmm
-        }
-        string test1 = instr.substr(ecoStop);
-        while (instr[ecoStop + 1] == ' ') {
-            ++ecoStop;
-        }
-        instr    = instr.substr(0, ecoStart) + instr.substr(ecoStop + 1);
-        ecoStart = instr.find("{ECO:", ecoStart);
-    }
-}
-
-void StripECO(char* str)
-{
-    char* p;
-    char* q;
-
-    if (! str || *str == '\0')
-        return;
-
-    p = StringStr(str, "{ECO:");
-    if (! p)
-        return;
-
-    for (;;) {
-        q = StringChr(p + 1, '}');
-        if (! q)
+    for (size_t i = str.find("{ECO:"); i != string::npos; i = str.find("{ECO:", i)) {
+        size_t j = str.find('}', i);
+        if (j == string::npos)
             break;
-        if (p > str && *(p - 1) == ' ')
-            p--;
-        if (p > str)
-            if ((*(p - 1) == '.' && q[1] == '.') ||
-                (*(p - 1) == ';' && q[1] == ';'))
-                p--;
-        fta_StringCpy(p, q + 1);
-        p = StringStr(p, "{ECO:");
-        if (! p)
-            break;
+        ++j;
+        if (i > 0 && str[i - 1] == ' ')
+            --i;
+        if (i > 0 && j < str.size()) {
+            if ((str[i - 1] == '.' && str[j] == '.') ||
+                (str[i - 1] == ';' && str[j] == ';')) {
+                --i;
+            }
+        }
+        str.erase(i, j - i);
     }
 }
 
