@@ -445,26 +445,16 @@ CSetupFactory::InitializeMegablastDbIndex(CRef<CBlastOptions> options)
         errstr = "Database indexing is not available for discontiguous ";
         errstr += "searches.";
     }
-    else if( options->GetWordSize() < MinIndexWordSize() ) {
-        errstr = "MegaBLAST database index requires word size greater than ";
-        errstr += NStr::IntToString(MinIndexWordSize() - 1);
-        errstr += ".";
-    }
     else {
         errstr = DbIndexInit( 
                 options->GetIndexName(), 
-                options->GetIsOldStyleMBIndex(), partial );
+                options->GetIsOldStyleMBIndex(), partial, options->GetWordSize() );
     }
 
     if( errstr != "" ) {
-        if( options->GetForceIndex() ) {
-            NCBI_THROW( CIndexedDbException, eIndexInitError, errstr );
-        }
-        else {
-            ERR_POST_EX(1, 1, Info << errstr << " Database index will not be used." );
+            ERR_POST_EX(1, 1, Warning << errstr << " Database index will not be used." );
             options->SetUseIndex( false );
             return;
-        }
     }
 
     options->SetMBIndexLoaded();
