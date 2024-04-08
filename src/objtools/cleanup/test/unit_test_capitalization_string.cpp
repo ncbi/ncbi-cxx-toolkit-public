@@ -162,6 +162,25 @@ BOOST_AUTO_TEST_CASE(Test_USAAndStateAbbreviations2)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_CanadaStateAbbreviation)
+{
+    string state;
+    GetCanadaStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(NStr::IsBlank(state), true);
+
+    state.assign(" British  Columbia ");
+    GetCanadaStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(state, string("BC"));
+
+    state.assign(" yuKON ");
+    GetCanadaStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(state, string("YT"));
+
+    state.assign("NL");
+    GetCanadaStateAbbreviation(state);
+    BOOST_CHECK_EQUAL(state, string("NL"));
+}
+
 BOOST_AUTO_TEST_CASE(Test_FixupMouseStrain)
 {
     CRef<CBioSource> bsrc(new CBioSource);
