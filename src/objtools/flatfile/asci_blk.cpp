@@ -1518,7 +1518,7 @@ void GetSequenceOfKeywords(
     }
     keywordData = GetBlkDataReplaceNewLine(keywordData, col_data);
     if (type == ParFlatSP_KW) {
-        xStripECO(keywordData);
+        StripECO(keywordData);
     }
     xFixEMBLKeywords(keywordData);
 
