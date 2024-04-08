@@ -454,7 +454,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_UniSTS, "https://www.ncbi.nlm.nih.gov/probe?term=" },
     { CDbtag::eDbtagType_VBASE2, "http://www.vbase2.org/vgene.php?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_VectorBase, "https://www.vectorbase.org/Genome/BRCGene/?feature=" },
+    { CDbtag::eDbtagType_VectorBase, "https://vectorbase.org/gene/" },
     { CDbtag::eDbtagType_Vega, "http://vega.archive.ensembl.org/id/"  },
     { CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search=" },
     { CDbtag::eDbtagType_WormBase, "https://www.wormbase.org/search/gene/" },
