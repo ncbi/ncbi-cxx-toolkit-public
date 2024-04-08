@@ -171,6 +171,9 @@ public:
     static bool RequireTaxname(const string& taxname);
     static bool Check(const COrg_ref& org);
 
+    static bool StrainContainsTaxonInfo(const string& organism, const string& strain,
+        std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
+
 private:
     string m_Strain;
     string m_Taxname;
