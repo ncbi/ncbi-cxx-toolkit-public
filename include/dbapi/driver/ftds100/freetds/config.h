@@ -34,7 +34,7 @@
 #  define ENABLE_EXTRA_CHECKS 1
 #endif
 
-#if defined(NCBI_HAVE_GETHOSTBYADDR_R)
+#ifdef NCBI_HAVE_GETHOSTBYADDR_R
 #  if   NCBI_HAVE_GETHOSTBYADDR_R == 5
 #    define HAVE_FUNC_GETHOSTBYADDR_R_5 1
 #  elif NCBI_HAVE_GETHOSTBYADDR_R == 7
@@ -46,7 +46,7 @@
 #  endif
 #endif
 
-#if defined(NCBI_HAVE_GETHOSTBYNAME_R)
+#ifdef NCBI_HAVE_GETHOSTBYNAME_R
 #  if   NCBI_HAVE_GETHOSTBYNAME_R == 3
 #     define HAVE_FUNC_GETHOSTBYNAME_R_3 1
 #  elif NCBI_HAVE_GETHOSTBYNAME_R == 5
@@ -71,7 +71,7 @@
 #  endif
 #endif
 
-#if defined(NCBI_HAVE_GETSERVBYNAME_R)
+#ifdef NCBI_HAVE_GETSERVBYNAME_R
 #  if NCBI_HAVE_GETSERVBYNAME_R == 4
 #    define HAVE_FUNC_GETSERVBYNAME_R_4 1
 #  elif NCBI_HAVE_GETSERVBYNAME_R == 5
@@ -96,11 +96,11 @@ typedef int socklen_t;
 #endif
 
 #if 0 /* Avoid extra dependencies, not needed in-house */
-#  if defined(HAVE_LIBGNUTLS)
+#  ifdef HAVE_LIBGNUTLS
 #    define HAVE_GNUTLS 1
 #  endif
 
-#  if defined(HAVE_LIBOPENSSL)
+#  ifdef HAVE_LIBOPENSSL
 #    define HAVE_OPENSSL 1
 #  endif
 #endif
@@ -120,7 +120,7 @@ typedef int socklen_t;
 
 #define SIZEOF_VOID_P SIZEOF_VOIDP
 
-#if defined(HAVE_ATTRIBUTE_DESTRUCTOR)
+#ifdef HAVE_ATTRIBUTE_DESTRUCTOR
 #  define TDS_ATTRIBUTE_DESTRUCTOR 1
 #endif
 
@@ -132,11 +132,14 @@ typedef int socklen_t;
 #  define TDS_GETTIMEMILLI_CONST CLOCK_REALTIME
 #endif
 
-#if defined(HAVE_PTHREAD_MUTEX)
+#ifdef NCBI_POSIX_THREADS
+#  define HAVE_PTHREAD 1
+#endif
+#ifdef HAVE_PTHREAD_MUTEX
 #  define TDS_HAVE_PTHREAD_MUTEX 1
 #endif
 
-#if defined(NCBI_HAVE_STDIO_LOCKED)
+#ifdef NCBI_HAVE_STDIO_LOCKED
 #  define TDS_HAVE_STDIO_LOCKED 1
 #endif
 
@@ -144,7 +147,7 @@ typedef int socklen_t;
 #  define TDS_SQLCOLATTRIBUTE_SQLLEN 1
 #endif
 
-#if defined(NCBI_COMPILER_MSVC)
+#ifdef NCBI_COMPILER_MSVC
 #  if _MSC_VER < 1900 /* Visual Studio 2015 */
 #    define snprintf _snprintf
 #  endif

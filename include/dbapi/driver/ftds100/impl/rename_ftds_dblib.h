@@ -36,7 +36,7 @@
 
 #include "../freetds/config.h"
 
-#if defined(NCBI_FTDS_RENAME_SYBDB)
+#if NCBI_FTDS_RENAME_SYBDB
 #  define bcp_batch         bcp_batch_ver100
 #  define bcp_bind          bcp_bind_ver100
 #  define bcp_colfmt        bcp_colfmt_ver100
@@ -56,12 +56,12 @@
 #  define copy_data_to_host_var copy_data_to_host_var_ver100
 #  define dbadata           dbadata_ver100
 #  define dbadlen           dbadlen_ver100
+#  define dbaltbind         dbaltbind_ver100
 #  define dbaltcolid        dbaltcolid_ver100
 #  define dbaltlen          dbaltlen_ver100
 #  define dbaltop           dbaltop_ver100
 #  define dbalttype         dbalttype_ver100
 #  define dbaltutype        dbaltutype_ver100
-#  define dbaltbind         dbaltbind_ver100
 #  define dbanullbind       dbanullbind_ver100
 #  define dbanydatecrack    dbanydatecrack_ver100
 #  define dbbind            dbbind_ver100
