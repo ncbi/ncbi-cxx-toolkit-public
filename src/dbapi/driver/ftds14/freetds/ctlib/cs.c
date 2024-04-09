@@ -137,6 +137,21 @@ _cs_get_user_api_layer_error(int error)
 	case 24:
 		return "The conversion/operation was stopped due to a syntax error in the source field.";
 		break;
+        case 25:
+                return "Data is truncated during conversion.";
+                break;
+        case 26:
+                return "Data-conversion resulted in overflow.";
+                break;
+        case 27:
+                return "Unknown callback %1!.";
+                break;
+        case 32:
+                return "Unknown type: %1!.";
+                break;
+        case 33:
+                return "Out of memory!";
+                break;
 	default:
 		break;
 	}
@@ -158,7 +173,7 @@ _cs_get_msgstr(const char *funcname, int layer, int origin, int severity, int nu
 	return m;
 }
 
-static void
+void
 _csclient_msg(CS_CONTEXT * ctx, const char *funcname, int layer, int origin, int severity, int number, const char *fmt, ...)
 {
 	va_list ap;
@@ -566,6 +581,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 
 			if (src_len > destlen) {
 				tdsdump_log(TDS_DBG_FUNC, "error: src_len > destlen\n");
+                                _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26,
+                                              "");
 				ret = CS_FAIL;
 			} else {
 				switch (destfmt->format) {
@@ -597,6 +614,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 
 			if (src_len > destlen) {
 				tdsdump_log(TDS_DBG_FUNC, "error: src_len > destlen\n");
+                                _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26,
+                                              "");
 				ret = CS_FAIL;
 			} else {
 				switch (destfmt->format) {
@@ -671,6 +690,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 
 			if (src_len > destlen) {
 				tdsdump_log(TDS_DBG_FUNC, "error: src_len > destlen\n");
+                                _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26,
+                                              "");
 				ret = CS_FAIL;
 			} else {
 				ret = CS_SUCCEED;
@@ -739,6 +760,7 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 		ret = CS_SUCCEED;
 		if (len > destlen) {
 			tdsdump_log(TDS_DBG_FUNC, "error_handler: Data-conversion resulted in overflow\n");
+                        _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26, "");
 			ret = CS_FAIL;
 			len = destlen;
 		}
@@ -790,6 +812,7 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 		ret = CS_SUCCEED;
 		if (len > destlen) {
 			tdsdump_log(TDS_DBG_FUNC, "Data-conversion resulted in overflow\n");
+                        _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26, "");
 			len = destlen;
 			ret = CS_FAIL;
 		}
