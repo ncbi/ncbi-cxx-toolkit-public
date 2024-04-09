@@ -3207,7 +3207,8 @@ adjust_character_column_size(TDSSOCKET * tds, TDSCOLUMN * curcol)
 	CHECK_TDS_EXTRA(tds);
 	CHECK_COLUMN_EXTRA(curcol);
 
-	if (is_ascii_type(curcol->on_server.column_type)) {
+        if (is_ascii_type(curcol->on_server.column_type)
+            &&  IS_TDS7_PLUS(tds->conn)) {
 		/* don't override setting from column collation */
 		if (!curcol->char_conv)
 			curcol->char_conv = tds->conn->char_convs[client2server_chardata];
@@ -3237,7 +3238,7 @@ adjust_character_column_size(TDSSOCKET * tds, TDSCOLUMN * curcol)
 
 		/* fallback to UCS-2LE */
 		/* FIXME should be useless. Does not works always */
-		if (!curcol->char_conv)
+                if (!curcol->char_conv  &&  IS_TDS7_PLUS(tds->conn))
 			curcol->char_conv = tds->conn->char_convs[client2ucs2];
 	}
 

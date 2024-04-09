@@ -379,7 +379,7 @@ tds_submit_query_params(TDSSOCKET * tds, const char *query, TDSPARAMINFO * param
 		tds_put_byte(tds, TDS_LANGUAGE_TOKEN);
 		TDS_START_LEN_UINT(tds) {
 			tds_put_byte(tds, params ? 1 : 0);  /* 1 if there are params, 0 otherwise */
-			tds_put_string(tds, query, query_len);
+                        tds_put_n(tds, query, query_len); /* tds_put_string */
 		} TDS_END_LEN
 		if (params) {
 			/* add on parameters */
