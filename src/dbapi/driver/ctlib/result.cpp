@@ -118,6 +118,7 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd, CTL_Connection& conn) :
             }
         }
 #endif
+        m_ColFmt[nof_item].format = CS_FMT_UNUSED;
 
         m_CachedRowInfo.Add(
                 string(m_ColFmt[nof_item].name, m_ColFmt[nof_item].namelen),
