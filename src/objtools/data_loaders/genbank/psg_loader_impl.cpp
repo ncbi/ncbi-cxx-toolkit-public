@@ -3181,7 +3181,7 @@ protected:
 static bool x_IsEmptyCDD(const CTSE_Info& tse)
 {
     // check if delayed TSE chunk is loaded
-    if ( tse.HasSplitInfo() && tse.GetSplitInfo().x_NeedsDelayedMainChunk() ) {
+    if ( tse.x_NeedsDelayedMainChunk() ) {
         // not loaded yet, cannot tell if its empty
         return false;
     }
@@ -3192,7 +3192,7 @@ static bool x_IsEmptyCDD(const CTSE_Info& tse)
         return false;
     }
     auto& seqset = core->GetSet();
-    return seqset.GetSeq_set().empty() && !seqset.IsSetAnnot();
+    return seqset.GetSeq_set().empty() && seqset.GetAnnot().empty();
 }
 
 
