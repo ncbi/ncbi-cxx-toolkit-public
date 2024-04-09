@@ -13,8 +13,13 @@
 
 #if defined(HAVE_VALGRIND_MEMCHECK_H)
 #  include <valgrind/valgrind.h>
-#else
-#  define RUNNING_ON_VALGRIND 0
+#elif defined(MEMORY_TESTS)
+#  define RUNNING_ON_VALGRIND ncbi_running_on_valgrind()
+static bool ncbi_running_on_valgrind(void)
+{
+        const char * s = getenv("NCBI_RUN_UNDER_VALGRIND");
+        return s != NULL  &&  !strcasecmp(s, "yes");
+}
 #endif
 
 #include <freetds/bool.h>
