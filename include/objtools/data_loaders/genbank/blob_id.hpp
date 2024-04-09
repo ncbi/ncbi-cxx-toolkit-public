@@ -115,10 +115,24 @@ public:
             m_SatKey = v;
         }
 
+    const string& GetTSEName() const
+    {
+        return m_TSEName;
+    }
+    bool HasTSEName() const
+    {
+        return !m_TSEName.empty();
+    }
+    void SetTSEName(const string& name)
+    {
+        m_TSEName = name;
+    }
+
 protected:
     TSat m_Sat;
     TSubSat m_SubSat;
     TSatKey m_SatKey;
+    string m_TSEName;
 };
 
 
