@@ -923,17 +923,22 @@ unsigned long CIndexedDb_New::GetResults(
     }
 }
 
+static int s_GetMinimumSupportedWordSizeByIndex(const string& fname)
+{
+    CMemoryFile index_map(fname);
+    SIndexHeader header = ReadIndexHeader< false >(index_map.GetPtr());
+    int rv = header.hkey_width_ + header.stride_ -1;
+    ERR_POST(Info << "Minimal supported word size in " << fname << " is " << rv);
+    return rv;
+}
+
 int CIndexedDb_New::MinIndexWordSize()
 {
-	int rv = 0;
-
-	if (volumes_.size() > 0){
-		CMemoryFile index_map(volumes_[0].name);
-		SIndexHeader header = ReadIndexHeader< false >(index_map.GetPtr());
-		rv = header.hkey_width_ + header.stride_ -1;
-		ERR_POST( Info <<"Min word size is " << rv);
-	}
-	return rv;
+    int rv = 0;
+    if (volumes_.size() > 0){
+        rv = s_GetMinimumSupportedWordSizeByIndex(volumes_[0].name);
+    }
+    return rv;
 }
 //------------------------------------------------------------------------------
 CIndexedDb_Old::CIndexedDb_Old( const string & indexnames )
@@ -1082,15 +1087,11 @@ unsigned long CIndexedDb_Old::GetResults(
 /// @return the minimum acceptable word size
 int CIndexedDb_Old::MinIndexWordSize()
 {
-	int rv = 0;
-
-	if (index_names_.size() > 0){
-		CMemoryFile index_map(index_names_[0]);
-		SIndexHeader header = ReadIndexHeader< false >(index_map.GetPtr());
-		rv = header.hkey_width_ + header.stride_ -1;
-		ERR_POST( Info <<"Min word size is " << rv);
-	}
-	return rv;
+    int rv = 0;
+    if (index_names_.size() > 0){
+        rv = s_GetMinimumSupportedWordSizeByIndex(index_names_[0]);
+    }
+    return rv;
 }
 //------------------------------------------------------------------------------
 
