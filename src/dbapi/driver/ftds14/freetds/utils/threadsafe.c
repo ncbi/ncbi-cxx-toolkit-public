@@ -315,7 +315,7 @@ tds_get_homedir(void)
 			 * invalid memory access is inevitable.
 			 */
 			char path[MAX_PATH] = "";
-			if (SHGetPathFromIDList(pidl, path))
+                        if (SHGetPathFromIDListA(pidl, path))
 				res = strdup(path);
 			(*pMalloc->lpVtbl->Free)(pMalloc, pidl);
 		}
