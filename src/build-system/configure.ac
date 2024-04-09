@@ -3760,12 +3760,15 @@ case "$host_os" in
    cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
 esac
 # for FreeTDS
-AC_CHECK_HEADERS(alloca.h arpa/inet.h dirent.h errno.h fcntl.h getopt.h \
+AC_CHECK_HEADERS(arpa/inet.h dirent.h errno.h fcntl.h getopt.h \
                  langinfo.h libgen.h locale.h malloc.h net/inet/in.h netdb.h \
                  netinet/in.h netinet/tcp.h paths.h select.h signal.h \
                  stdbool.h stddef.h sys/eventfd.h sys/file.h sys/ioctl.h \
                  sys/param.h sys/resource.h sys/select.h sys/socket.h \
                  sys/time.h sys/wait.h valgrind/memcheck.h wchar.h)
+AC_LANG_PUSH(C)
+AC_FUNC_ALLOCA
+AC_LANG_POP(C)
 AC_HEADER_TIME
 
 AC_CHECK_HEADERS(cxxabi.h)
@@ -4021,7 +4024,8 @@ AC_CHECK_FUNCS(accept4 alarm asprintf atoll basename dbopen daemon euidaccess \
                eventfd execvpe fseeko fstat getgrouplist \
                gethrtime getopt getpagesize \
                getpass getpassphrase getpwuid getrusage gettimeofday getuid \
-               lchown lutimes malloc_options memrchr nl_langinfo pipe2 poll \
+               lchown lutimes mallinfo mallinfo2 malloc_options \
+               memrchr nl_langinfo pipe2 poll \
                putenv readpassphrase readv select setenv setitimer setrlimit \
                snprintf statfs statvfs strcasecmp strdup strlcat strlcpy \
                strndup strnlen strsep strtok_r sysmp timegm usleep utimes \
@@ -5764,6 +5768,20 @@ case "$ODBC_PATH" in
          AC_DEFINE(NCBI_SQLCOLATTRIBUTE_SQLLEN, 1,
             [Define to 1 if SQLColAttribute's last argument is an SQLLEN *])
       fi
+
+      AC_CACHE_CHECK([whether SQLParamOptions takes SQLULEN],
+         ncbi_cv_func_sqlparamoptions_sqllen,
+         [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+            [[@%:@include <sql.h>
+              SQLRETURN SQL_API SQLParamOptions
+                (SQLHSTMT hstmt, SQLULEN crow, SQLULEN *pirow);]],
+            [[]])],
+            ncbi_cv_func_sqlparamoptions_sqllen=yes,
+            ncbi_cv_func_sqlparamoptions_sqllen=no)])
+      if test $ncbi_cv_func_sqlparamoptions_sqllen = yes; then
+         AC_DEFINE(NCBI_SQLPARAMOPTIONS_SQLLEN, 1,
+            [Define to 1 if SQLParamOptions takes SQLULEN])
+      fi
    fi
    ;;
 esac
@@ -5782,6 +5800,7 @@ case "$ODBC_PATH" in
    fi
    AC_DEFINE(HAVE_SQLSETPOSIROW, 1)
    AC_DEFINE(NCBI_SQLCOLATTRIBUTE_SQLLEN, 1)
+   AC_DEFINE(NCBI_SQLPARAMOPTIONS_SQLLEN, 1)
    dnl AC_DEFINE(SIZEOF_SQLWCHAR, 2) # depends on SQL_WCHART_CONVERT
    ;;
  *)

@@ -179,6 +179,9 @@
 /* Define to 1 if you have the `alarm' function. */
 #cmakedefine HAVE_ALARM 1
 
+/* Define to 1 if you have `alloca', as a function or macro. */
+#cmakedefine HAVE_ALLOCA 1
+
 /* Define to 1 if you have the <alloca.h> header file. */
 #cmakedefine HAVE_ALLOCA_H 1
 
@@ -382,6 +385,12 @@
 
 /* Define to 1 if you have the `lutimes' function. */
 #cmakedefine HAVE_LUTIMES 1
+
+/* Define to 1 if you have the `mallinfo' function. */
+#cmakedefine HAVE_MALLINFO 1
+
+/* Define to 1 if you have the `mallinfo2' function. */
+#cmakedefine HAVE_MALLINFO2 1
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #cmakedefine HAVE_MALLOC_H 1
@@ -1133,6 +1142,9 @@
 
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
 #define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
+
+/* Define to 1 if SQLParamOptions takes SQLULEN */
+#define NCBI_SQLPARAMOPTIONS_SQLLEN 1
 
 
 /* Define to 1 if prototypes can use exception specifications. */
