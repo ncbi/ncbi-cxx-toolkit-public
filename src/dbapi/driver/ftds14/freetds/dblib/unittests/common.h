@@ -8,7 +8,6 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <assert.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -34,6 +33,8 @@
 #include <sqldb.h>
 
 #include <freetds/sysdep_private.h>
+
+#include <freetds/test_assert.h>
 
 #if !defined(EXIT_FAILURE)
 #define EXIT_FAILURE 1

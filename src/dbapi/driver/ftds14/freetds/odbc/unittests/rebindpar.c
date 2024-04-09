@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <freetds/test_assert.h>
+
 /* Test for executing SQLExecute and rebinding parameters */
 
 static char software_version[] = "$Id$";
