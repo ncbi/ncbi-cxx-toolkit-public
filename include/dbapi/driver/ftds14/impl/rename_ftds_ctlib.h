@@ -54,6 +54,7 @@
 #  define blk_rowxfer_mult  blk_rowxfer_mult_ver14
 #  define blk_sendrow       blk_sendrow_ver14
 #  define blk_sendtext      blk_sendtext_ver14
+#  define blk_sethints      blk_sethints_ver14x
 #  define blk_srvinit       blk_srvinit_ver14
 #  define blk_textxfer      blk_textxfer_ver14
 
