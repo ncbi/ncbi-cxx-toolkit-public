@@ -197,11 +197,11 @@ main(int argc, char **argv)
 	if (IS_TDS7_PLUS(tds->conn)) {
 		char type[32];
 		char buf[1024];
-                size_t i, len;
+                size_t /* i, */ len;
 
 		strcpy(buf, "aaa");
 		len = 0;
-		for (i = 0; strlen(buf) < 980 && len < 200; ++i) {
+                while (strlen(buf) < 980 && len < 200) {
 			char tmp[256];
 
 			strcat(buf, japanese);

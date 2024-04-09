@@ -13,7 +13,7 @@
 
 #include <common/test_assert.h>
 
-static char cmd[512];
+static char cmd[1100];
 static int init(DBPROCESS * dbproc, const char *name);
 static void test_bind(DBPROCESS * dbproc);
 
