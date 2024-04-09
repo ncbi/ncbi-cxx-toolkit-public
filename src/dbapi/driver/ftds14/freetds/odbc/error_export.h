@@ -1,4 +1,5 @@
 #undef tdsdump_log
+#define tdsdump_log tdsdump_do_log
 
 #ifdef ENABLE_ODBC_WIDE
 static SQLRETURN _SQLGetDiagRec(SQLSMALLINT handleType,
@@ -200,4 +201,5 @@ SQLRETURN ODBC_PUBLIC ODBC_API SQLGetDiagField(
 #endif
 }
 
+#undef tdsdump_log
 #define tdsdump_log TDSDUMP_LOG_FAST
