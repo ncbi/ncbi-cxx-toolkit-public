@@ -607,6 +607,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 		case SYBCHAR:
 		case SYBVARCHAR:
 		case SYBTEXT:
+                case SYBNVARCHAR:
+                case SYBNTEXT:
 			tdsdump_log(TDS_DBG_FUNC, "cs_convert() desttype = character\n");
 
 			memcpy(dest, srcdata, minlen);
@@ -809,6 +811,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt, CS_VOID * srcdat
 	case SYBCHAR:
 	case SYBVARCHAR:
 	case SYBTEXT:
+        case SYBNVARCHAR:
+        case SYBNTEXT:
 		ret = CS_SUCCEED;
 		if (len > destlen) {
 			tdsdump_log(TDS_DBG_FUNC, "Data-conversion resulted in overflow\n");
