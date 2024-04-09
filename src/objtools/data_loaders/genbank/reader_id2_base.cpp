@@ -1536,6 +1536,18 @@ static void LoadedChunksPacket(CReaderRequestResult& result,
 }
 
 
+static void LoadedChunksPacket(CReaderRequestResult& result,
+                               CID2_Request_Packet& packet,
+                               CReader::TBlobChunkIds& chunk_ids)
+{
+    for ( auto& blob_chunks : chunk_ids ) {
+        LoadedChunksPacket(result, packet, blob_chunks.second, blob_chunks.first);
+    }
+    packet.Set().clear();
+    chunk_ids.clear();
+}
+
+
 bool CId2ReaderBase::LoadChunks(CReaderRequestResult& result,
                                 const CBlob_id& blob_id,
                                 const TChunkIds& chunk_ids)
@@ -1608,6 +1620,122 @@ bool CId2ReaderBase::LoadChunks(CReaderRequestResult& result,
     if ( !packet.Get().empty() ) {
         x_ProcessPacket(result, packet, 0);
         LoadedChunksPacket(result, packet, ext_chunks, blob_id);
+    }
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadChunks(CReaderRequestResult& result,
+                                const TBlobChunkIds& chunk_ids)
+{
+    size_t max_request_size = GetMaxChunksRequestSize();
+    if ( SeparateChunksRequests(max_request_size) ) {
+        return CReader::LoadChunks(result, chunk_ids);
+    }
+    CID2_Request_Packet packet;
+    TBlobChunkIds requested_chunks;
+    size_t requested_count = 0;
+    for ( auto& blob_chunks : chunk_ids ) {
+        const CBlob_id& blob_id = blob_chunks.first;
+        CLoadLockBlob blob(result, blob_id);
+        _ASSERT(blob.IsLoadedBlob());
+        
+        CID2S_Request_Get_Chunks::TChunks* chunks_list = 0;
+        for ( auto chunk_id : blob_chunks.second ) {
+            blob.SelectChunk(chunk_id);
+            if ( blob.IsLoadedChunk() ) {
+                continue;
+            }
+            if ( chunk_id == kDelayedMain_ChunkId ) {
+                _ASSERT(!chunks_list);
+                // add blob request
+                CRef<CID2_Request> req(new CID2_Request);
+                CID2_Request_Get_Blob_Info& req_data = req->SetRequest().SetGet_blob_info();
+                x_SetResolve(req_data.SetBlob_id().SetBlob_id(), blob_id);
+                req_data.SetGet_data();
+                packet.Set().push_back(req);
+                requested_chunks.push_back(make_pair(blob_id, TChunkIds()));
+            }
+            else {
+                // need to request chunks
+                if ( !chunks_list ) {
+                    // create chunk request
+                    CRef<CID2_Request> req(new CID2_Request);
+                    CID2S_Request_Get_Chunks& get_chunks = req->SetRequest().SetGet_chunks();
+                    x_SetResolve(get_chunks.SetBlob_id(), blob_id);
+                    if ( blob.GetKnownBlobVersion() > 0 ) {
+                        get_chunks.SetBlob_id().SetVersion(blob.GetKnownBlobVersion());
+                    }
+                    get_chunks.SetSplit_version(blob.GetSplitInfo().GetSplitVersion());
+                    packet.Set().push_back(req);
+                    chunks_list = &get_chunks.SetChunks();
+                    requested_chunks.push_back(make_pair(blob_id, TChunkIds()));
+                }
+                chunks_list->push_back(CID2S_Chunk_Id(chunk_id));
+            }
+            // flush packed if it's too big
+            requested_chunks.back().second.push_back(chunk_id);
+            ++requested_count;
+            if ( LimitChunksRequests(max_request_size) &&
+                 requested_count >= max_request_size ) {
+                // Process collected chunks
+                x_ProcessPacket(result, packet, 0);
+                LoadedChunksPacket(result, packet, requested_chunks);
+                requested_count = 0;
+                chunks_list = 0;
+            }
+        }
+    }
+    // flush final packet
+    if ( requested_count ) {
+        x_ProcessPacket(result, packet, 0);
+        LoadedChunksPacket(result, packet, requested_chunks);
+        requested_count = 0;
+    }
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
+                               const TBlobIds& blob_infos)
+{
+    size_t max_request_size = GetMaxChunksRequestSize();
+    CID2_Request_Packet packet;
+    for ( auto& info : blob_infos ) {
+        const CBlob_id& blob_id = *info.GetBlob_id();
+        CLoadLockBlob blob(result, blob_id);
+        if ( blob.IsLoadedBlob() ) {
+            continue;
+        }
+        
+        if ( info.IsSetAnnotInfo() ) {
+            CProcessor_AnnotInfo::LoadBlob(result, info);
+            _ASSERT(blob.IsLoadedBlob());
+            continue;
+        }
+        
+        if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+            dynamic_cast<const CProcessor_ExtAnnot&>
+                (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
+                .Process(result, blob_id, kMain_ChunkId);
+            _ASSERT(blob.IsLoadedBlob());
+            continue;
+        }
+
+        CRef<CID2_Request> req(new CID2_Request);
+        packet.Set().push_back(req);
+        CID2_Request_Get_Blob_Info& req2 = req->SetRequest().SetGet_blob_info();
+        x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
+        x_SetDetails(req2.SetGet_data(), fBlobHasCore);
+        if ( LimitChunksRequests(max_request_size) &&
+             packet.Get().size() >= max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            packet.Set().clear();
+        }
+    }
+    // flush final packet
+    if ( !packet.Get().empty() ) {
+        x_ProcessPacket(result, packet, 0);
     }
     return true;
 }

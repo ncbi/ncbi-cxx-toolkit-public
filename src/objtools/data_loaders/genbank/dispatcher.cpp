@@ -1221,6 +1221,37 @@ namespace {
         return ret;
     }
 
+    string sx_ErrorSeqIds(CReaderRequestResult& result,
+                          const vector<pair<CBlob_id, vector<int>>>& keys)
+    {
+        string ret = "; seq-ids: { ";
+        if (result.GetRequestedId()) {
+            ret += result.GetRequestedId().AsString();
+        }
+        else {
+            size_t total = 0;
+            for ( auto& key : keys ) {
+                CTSE_LoadLock lock = result.GetTSE_LoadLock(key.first);
+                CTSE_Info::TSeqIds ids;
+                lock->GetBioseqsIds(ids);
+                if (!ids.empty()) {
+                    int cnt = 0;
+                    for (auto& id : ids) {
+                        if (++total > kMaxErrorSeqIds) continue;
+                        if (cnt++ > 0) ret += ", ";
+                        ret += id.AsString();
+                    }
+                }
+            }
+            if (total == 0) return "";
+            if (total > kMaxErrorSeqIds) {
+                ret += ", ... (+" + NStr::NumericToString(total - kMaxErrorSeqIds) + " more)";
+            }
+        }
+        ret += " }";
+        return ret;
+    }
+
     class CCommandLoadBlobState : public CReadDispatcherCommand
     {
     public:
@@ -1301,15 +1332,11 @@ namespace {
     };
 
     bool s_AllBlobsAreLoaded(CReaderRequestResult& result,
-                             const CLoadLockBlobIds& blobs,
-                             CReadDispatcher::TContentsMask mask,
-                             const SAnnotSelector* sel)
+                             const CReader::TBlobIds& infos,
+                             CReadDispatcher::TContentsMask mask = fBlobHasAll,
+                             const SAnnotSelector* sel = 0)
     {
-        _ASSERT(blobs.IsLoaded());
-
-        CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
-        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
-            const CBlob_Info& info = *it;
+        for ( auto& info : infos ) {
             if ( !info.Matches(mask, sel) ) {
                 continue;
             }
@@ -1319,6 +1346,15 @@ namespace {
             }
         }
         return true;
+    }
+    
+    bool s_AllBlobsAreLoaded(CReaderRequestResult& result,
+                             const CLoadLockBlobIds& blobs,
+                             CReadDispatcher::TContentsMask mask,
+                             const SAnnotSelector* sel)
+    {
+        _ASSERT(blobs.IsLoaded());
+        return s_AllBlobsAreLoaded(result, blobs.GetBlob_ids().Get(), mask, sel);
     }
 
     class CCommandLoadBlobs : public CReadDispatcherCommand
@@ -1362,6 +1398,7 @@ namespace {
         TMask m_Mask;
         const SAnnotSelector* m_Selector;
     };
+    
     class CCommandLoadSeq_idBlobs : public CReadDispatcherCommand
     {
     public:
@@ -1409,6 +1446,43 @@ namespace {
         const SAnnotSelector* m_Selector;
     };
 
+    class CCommandLoadBlobList : public CReadDispatcherCommand
+    {
+    public:
+        typedef CReader::TBlobIds TIds;
+        CCommandLoadBlobList(CReaderRequestResult& result,
+                             const TIds& ids)
+            : CReadDispatcherCommand(result),
+              m_Ids(ids)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return s_AllBlobsAreLoaded(GetResult(), m_Ids);
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadBlobs(GetResult(), m_Ids);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadBlobs(CLoadInfoBlob_ids): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_LoadBlob;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blobs(...)";
+            }
+        
+    private:
+        const TIds& m_Ids;
+    };
+    
     class CCommandLoadBlob : public CReadDispatcherCommand
     {
     public:
@@ -1464,7 +1538,6 @@ namespace {
         typedef CBlob_id TKey;
         typedef CLoadLockBlob TLock;
         typedef int TChunkId;
-        typedef CTSE_Chunk_Info TChunkInfo;
         CCommandLoadChunk(CReaderRequestResult& result,
                           const TKey& key,
                           TChunkId chunk_id)
@@ -1512,7 +1585,6 @@ namespace {
         typedef CLoadLockBlob TLock;
         typedef int TChunkId;
         typedef vector<TChunkId> TChunkIds;
-        typedef CTSE_Chunk_Info TChunkInfo;
         CCommandLoadChunks(CReaderRequestResult& result,
                            const TKey& key,
                            const TChunkIds chunk_ids)
@@ -1581,6 +1653,104 @@ namespace {
         TKey m_Key;
         TLock m_Lock;
         TChunkIds m_ChunkIds;
+    };
+
+    class CCommandLoadBlobChunks : public CReadDispatcherCommand
+    {
+    public:
+        typedef int TChunkId;
+        typedef vector<TChunkId> TChunkIds;
+        typedef vector<pair<CBlob_id, TChunkIds>> TKey;
+        typedef vector<CLoadLockBlob> TLock;
+        CCommandLoadBlobChunks(CReaderRequestResult& result,
+                               const TKey& key)
+            : CReadDispatcherCommand(result),
+              m_Key(key)
+            {
+                for ( auto& blob : key ) {
+                    m_Lock.push_back(CLoadLockBlob(result, blob.first));
+                }
+            }
+
+        bool IsDone(void)
+            {
+                for ( size_t i = 0; i < m_Key.size(); ++i ) {
+                    for ( auto chunk : m_Key[i].second ) {
+                        if ( !m_Lock[i].IsLoadedChunk(chunk) ) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadChunks(GetResult(), m_Key);
+            }
+        string GetErrMsg(void) const
+            {
+                CNcbiOstrstream str;
+                str << "LoadChunks(";
+                int blob_cnt = 0;
+                for ( size_t i = 0; i < m_Key.size(); ++i ) {
+                    int chunk_cnt = 0;
+                    for ( auto& chunk : m_Key[i].second ) {
+                        if ( !m_Lock[i].IsLoadedChunk(chunk) ) {
+                            if ( chunk_cnt++ ) {
+                                str << ',';
+                            }
+                            else {
+                                if ( blob_cnt++ ) {
+                                    str << ", ";
+                                }
+                                str << "("<<m_Key[i].first.ToString() << "; chunks: {";
+                            }
+                            str << ' ' << chunk;
+                        }
+                    }
+                    if ( chunk_cnt ) {
+                        str << "})";
+                    }
+                }
+                str << sx_ErrorSeqIds(GetResult(), m_Key) + ": data not found";
+                return CNcbiOstrstreamToString(str);
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_LoadChunk;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                CNcbiOstrstream str;
+                int blob_cnt = 0;
+                for ( auto& blob : m_Key ) {
+                    if ( blob_cnt++ ) {
+                        str << ',';
+                    }
+                    int cnt = 0;
+                    for ( auto id : blob.second ) {
+                        if ( id >= 0 && id < kMax_Int ) {
+                            if ( !cnt ) {
+                                str << "chunk(" << blob.first.ToString() << '.';
+                                cnt = 1;
+                            }
+                            else {
+                                str << ',';
+                            }
+                            str << id;
+                        }
+                    }
+                    if ( !cnt ) {
+                        str << "blob(" << blob.first.ToString();
+                    }
+                    str << ')';
+                }
+                return CNcbiOstrstreamToString(str);
+            }
+        
+    private:
+        TKey m_Key;
+        TLock m_Lock;
     };
 
     class CCommandLoadBlobSet : public CReadDispatcherCommand
@@ -1939,6 +2109,14 @@ void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
 }
 
 
+void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
+                                const TBlobInfos& blob_infos)
+{
+    CCommandLoadBlobList command(result, blob_infos);
+    Process(command);
+}
+
+
 void CReadDispatcher::LoadBlob(CReaderRequestResult& result,
                                const CBlob_id& blob_id)
 {
@@ -1968,6 +2146,14 @@ void CReadDispatcher::LoadChunks(CReaderRequestResult& result,
                                  const TChunkIds& chunk_ids)
 {
     CCommandLoadChunks command(result, blob_id, chunk_ids);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadChunks(CReaderRequestResult& result,
+                                 const TBlobChunkIds& chunk_ids)
+{
+    CCommandLoadBlobChunks command(result, chunk_ids);
     Process(command);
 }
 

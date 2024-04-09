@@ -1414,7 +1414,7 @@ CGBDataLoader_Native::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
 
 void CGBDataLoader_Native::GetChunk(TChunk chunk)
 {
-    CReader::TChunkId id = chunk->GetChunkId();
+    auto id = chunk->GetChunkId();
     if ( id == kMasterWGS_ChunkId ) {
         CWGSMasterSupport::LoadWGSMaster(this, chunk);
     }
@@ -1429,23 +1429,21 @@ void CGBDataLoader_Native::GetChunk(TChunk chunk)
 
 void CGBDataLoader_Native::GetChunks(const TChunkSet& chunks)
 {
-    typedef map<TBlobId, CReader::TChunkIds> TChunkIdMap;
-    TChunkIdMap chunk_ids;
-    ITERATE(TChunkSet, it, chunks) {
-        CReader::TChunkId id = (*it)->GetChunkId();
-        if ( id == kMasterWGS_ChunkId ) {
-            CWGSMasterSupport::LoadWGSMaster(this, *it);
+    // filter out WGS master and sort chunks
+    map<CReadDispatcher::TBlobId, CReadDispatcher::TChunkIds> chunks_to_load;
+    for ( auto& it : chunks ) {
+        auto chunk_id = it->GetChunkId();
+        if ( chunk_id == kMasterWGS_ChunkId ) {
+            CWGSMasterSupport::LoadWGSMaster(this, it);
         }
         else {
-            chunk_ids[(*it)->GetBlobId()].push_back(id);
+            chunks_to_load[GetRealBlobId(it->GetBlobId())].push_back(chunk_id);
         }
     }
-    ITERATE(TChunkIdMap, it, chunk_ids) {
-        CGBReaderRequestResult result(this, CSeq_id_Handle());
-        m_Dispatcher->LoadChunks(result,
-                                 GetRealBlobId(it->first),
-                                 it->second);
-    }
+    CReadDispatcher::TBlobChunkIds chunk_ids(chunks_to_load.begin(),
+                                             chunks_to_load.end());
+    CGBReaderRequestResult result(this, CSeq_id_Handle());
+    m_Dispatcher->LoadChunks(result, chunk_ids);
 }
 
 
@@ -1487,6 +1485,163 @@ void CGBDataLoader_Native::GetBlobs(TTSE_LockSets& tse_sets)
         }
     }
 }
+
+
+static
+bool x_IsCDDBlob(const CBlob_Info& blob_info)
+{
+    // must have external annotations
+    if ( !blob_info.Matches(fBlobHasExtAnnot, 0) ) {
+        return false;
+    }
+    // must have CDD name in annot info
+    if ( !blob_info.IsSetAnnotInfo() ) {
+        return false;
+    }
+    const char* kCDDAnnotName = "CDD";
+    for ( auto name : blob_info.GetAnnotInfo()->GetNamedAnnotNames() ) {
+        if ( NStr::EqualNocase(name, kCDDAnnotName) ) {
+            return true;
+        }
+    }
+    for ( auto annot_info : blob_info.GetAnnotInfo()->GetAnnotInfo() ) {
+        if ( annot_info->IsSetName() &&
+             NStr::EqualNocase(annot_info->GetName(), kCDDAnnotName) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static bool x_IsEmptyCDD(const CTSE_Info& tse)
+{
+    // check if delayed TSE chunk is loaded
+    if ( tse.x_NeedsDelayedMainChunk() ) {
+        // not loaded yet, cannot tell if its empty
+        return false;
+    }
+    // check core Seq-entry content
+    auto core = tse.GetTSECore();
+    if ( !core->IsSet() ) {
+        // wrong entry type
+        return false;
+    }
+    auto& seqset = core->GetSet();
+    return seqset.GetSeq_set().empty() && seqset.GetAnnot().empty();
+}
+
+
+void CGBDataLoader_Native::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
+{
+    //return CDataLoader::GetCDDAnnots(id_sets, loaded, ret);
+    CGBReaderRequestResult result(this, CSeq_id_Handle());
+    vector<CSeq_id_Handle> best_ids;
+    CReadDispatcher::TIds ids;
+    // first select ids that we can process
+    for ( auto& id_set : id_sets) {
+        SBetterId score_func;
+        CSeq_id_Handle best_id;
+        int best_score = -1;
+        for ( auto& id : id_set ) {
+            if ( CReadDispatcher::CannotProcess(id) ) {
+                continue;
+            }
+            int score = score_func.GetScore(id);
+            if ( score > best_score ) {
+                best_score = score;
+                best_id = id;
+            }
+        }
+        best_ids.push_back(best_id);
+        if ( best_id ) {
+            ids.push_back(best_id);
+        }
+    }
+    if ( ids.empty() ) {
+        return;
+    }
+    // load blob_ids
+    m_Dispatcher->LoadBlobSet(result, ids);
+
+    // select CDD blobs and load them
+    CReadDispatcher::TBlobInfos blobs_to_load;
+    for ( auto& id : best_ids ) {
+        if ( !id ) {
+            continue;
+        }
+        CLoadLockBlobIds blob_ids_lock(result, id, 0);
+        CFixedBlob_ids blob_ids = blob_ids_lock.GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+            const CBlob_Info& info = *it;
+            if ( !x_IsCDDBlob(info) ) {
+                continue;
+            }
+            const CBlob_id& blob_id = *info.GetBlob_id();
+            CLoadLockBlob blob(result, blob_id);
+            if ( !blob.IsLoadedBlob() ) {
+                blobs_to_load.push_back(info);
+            }
+        }
+    }
+    if ( !blobs_to_load.empty() ) {
+        m_Dispatcher->LoadBlobs(result, blobs_to_load);
+    }
+    
+    CReadDispatcher::TChunkIds main_chunk;
+    main_chunk.push_back(CTSE_Chunk_Info::kDelayedMain_ChunkId);
+    
+    // select CDD blobs and load their delayed TSE chunks
+    CReadDispatcher::TBlobChunkIds chunks_to_load;
+    for ( auto& id : best_ids ) {
+        if ( !id ) {
+            continue;
+        }
+        CLoadLockBlobIds blob_ids_lock(result, id, 0);
+        CFixedBlob_ids blob_ids = blob_ids_lock.GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+            const CBlob_Info& info = *it;
+            if ( !x_IsCDDBlob(info) ) {
+                continue;
+            }
+            const CBlob_id& blob_id = *info.GetBlob_id();
+            CLoadLockBlob blob(result, blob_id);
+            _ASSERT(blob.IsLoadedBlob());
+            // may be not loaded yet
+            if ( blob.GetTSE_LoadLock()->x_NeedsDelayedMainChunk() ) {
+                chunks_to_load.push_back(make_pair(blob_id, main_chunk));
+            }
+        }
+    }
+    if ( !chunks_to_load.empty() ) {
+        m_Dispatcher->LoadChunks(result, chunks_to_load);
+    }
+
+    // now collect all non-empty CDD blobs
+    for ( size_t i = 0; i < id_sets.size(); ++i ) {
+        auto& id = best_ids[i];
+        if ( !id ) {
+            continue;
+        }
+        CLoadLockBlobIds blob_ids_lock(result, id, 0);
+        CFixedBlob_ids blob_ids = blob_ids_lock.GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+            const CBlob_Info& info = *it;
+            if ( !x_IsCDDBlob(info) ) {
+                continue;
+            }
+            const CBlob_id& blob_id = *info.GetBlob_id();
+            CLoadLockBlob blob(result, blob_id);
+            _ASSERT(blob.IsLoadedBlob());
+            if ( !x_IsEmptyCDD(*blob.GetTSE_LoadLock()) ) {
+                ret[i] = blob.GetTSE_LoadLock();
+            }
+            loaded[i] = true;
+            break;
+        }
+    }
+}
+
 
 #if 0
 class CTimerGuard
