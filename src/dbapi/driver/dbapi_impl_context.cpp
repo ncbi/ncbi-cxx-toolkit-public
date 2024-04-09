@@ -59,6 +59,19 @@ NCBI_PARAM_DEF_EX(bool, dbapi, conn_use_encrypt_data, false, eParam_NoThread, NU
 namespace impl
 {
 
+struct SNoLock
+{
+    void operator() (CDB_UserHandler::TExceptions& /*resource*/) const {}
+};
+
+struct SUnLock
+{
+    void operator() (CDB_UserHandler::TExceptions& resource) const
+    {
+        CDB_UserHandler::ClearExceptions(resource);
+    }
+};
+
 inline
 static bool s_Matches(CConnection* conn, const string& pool_name,
                       const string& server_name)
@@ -1220,6 +1233,8 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetPassword(password);
 
         CDB_UserHandler::TExceptions expts;
+        CGuard<CDB_UserHandler::TExceptions, SNoLock, SUnLock>
+            guard(expts);
         t_con.reset(factory->MakeDBConnection(*this, act_params, expts));
 
         if (t_con.get() == NULL) {

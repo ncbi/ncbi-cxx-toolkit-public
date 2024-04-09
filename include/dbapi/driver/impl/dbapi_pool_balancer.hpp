@@ -76,12 +76,16 @@ protected:
     void          x_Discard(const void* params, IBalanceable* conn) override;
 
 private:
+    typedef map<TSvrRef, unique_ptr<IBalanceable>> TFakeConnections;
+
     static TFlags x_GetFlags(I_DriverContext* driver_ctx, bool is_pooled);
     void x_ReinitFromCounts(void);
     
     CRef<IDBServiceInfo> m_ServiceInfo;
     string               m_PoolName;
     I_DriverContext*     m_DriverCtx;
+    TFakeConnections     m_FakeConnections;
+    CFastMutex           m_FakeConnLock;
     bool                 m_IsPooled;
 };
 
@@ -94,9 +98,6 @@ TSvrRef CDBPoolBalancer::GetServer(CDB_Connection** conn,
     auto svr_ref = x_GetServer(params, &balanceable);
     if (conn != nullptr) {
         *conn = dynamic_cast<CDB_Connection*>(balanceable);
-    }
-    if (conn == nullptr  ||  *conn == nullptr) {
-        delete balanceable;
     }
     return svr_ref;
 }
