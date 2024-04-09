@@ -215,7 +215,7 @@ blk_describe(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt_arg)
 	curcol = blkdesc->bcpinfo.bindinfo->columns[item - 1];
 	/* name is always null terminated */
 	strlcpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), sizeof(datafmt->name));
-	datafmt->namelen = strlen(datafmt->name);
+        datafmt->namelen = (CS_INT) strlen(datafmt->name);
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
 	datatype = _ct_get_client_type(curcol, true);
 	if (datatype == CS_ILLEGAL_TYPE)
@@ -380,7 +380,7 @@ blk_init(CS_BLKDESC * blkdesc, CS_INT direction, CS_CHAR * tablename, CS_INT tna
 		return CS_FAIL;
 	}
 	if (tnamelen == CS_NULLTERM)
-		tnamelen = strlen(tablename);
+                tnamelen = (CS_INT) strlen(tablename);
 
 	/* free allocated storage in blkdesc & initialise flags, etc. */
 	tds_deinit_bcpinfo(&blkdesc->bcpinfo);
