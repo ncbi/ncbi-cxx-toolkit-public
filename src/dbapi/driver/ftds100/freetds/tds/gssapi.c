@@ -174,7 +174,7 @@ tds_gss_get_auth(TDSSOCKET * tds)
 	gss_buffer_desc send_tok;
 	OM_uint32 maj_stat, min_stat;
 #ifdef __APPLE__
-#  define nt_principal GSS_KRB5_NT_PRINCIPAL_NAME
+#  define nt_principal *(gss_OID_desc *) GSS_KRB5_NT_PRINCIPAL_NAME
 #else
 	/* same as GSS_KRB5_NT_PRINCIPAL_NAME but do not require .so library */
 	static gss_OID_desc nt_principal = { 10, (void*) "\x2a\x86\x48\x86\xf7\x12\x01\x02\x02\x01" };
