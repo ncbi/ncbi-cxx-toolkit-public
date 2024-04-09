@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_timeout)
+  NCBI_sources(timeout common)
+  NCBI_add_test(test-odbc14 --no-auto odbc14_timeout)
+NCBI_end_app()
+

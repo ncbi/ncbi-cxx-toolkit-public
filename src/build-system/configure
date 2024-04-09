@@ -839,6 +839,7 @@ NCBIATOMIC_LIB
 THREAD_LIBS
 DBAPI_ODBC
 DBAPI_MYSQL
+DBAPI_FTDS14
 DBAPI_FTDS100
 DBAPI_FTDS
 DBAPI_CTLIB
@@ -1067,6 +1068,12 @@ freetds
 FTDS_LIB
 FTDS_LIBS
 FTDS_INCLUDE
+FTDS14_CTLIB_LIB
+FTDS14_CTLIB_LIBS
+FTDS14_CTLIB_INCLUDE
+FTDS14_LIB
+FTDS14_LIBS
+FTDS14_INCLUDE
 FTDS100_CTLIB_LIB
 FTDS100_CTLIB_LIBS
 FTDS100_CTLIB_INCLUDE
@@ -20906,6 +20913,9 @@ if test "$with_ftds" != "no" ; then
    case "$with_ftds" in
       100 | 1.00 | yes | '' )
          ;;
+      14* | 1.4 | 1.4.* )
+         ftds_ver=14
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -20958,6 +20968,22 @@ if test "$with_ftds" != "no" ; then
       FTDS100_LIB='$(FTDS100_CTLIB_LIB)'
       FTDS100_LIBS='$(FTDS100_CTLIB_LIBS)'
       FTDS100_INCLUDE='$(FTDS100_CTLIB_INCLUDE)'
+
+   d="dbapi/driver/ftds14/freetds"
+      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
+         test "$ftds_ver" = 14  &&  FTDS_PATH="<$d>"
+         FTDS14_CTLIB_LIB="ct_ftds14${STATIC} tds_ftds14${STATIC}"
+         FTDS14_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
+         FTDS14_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
+         freetds=freetds
+      elif test -d "$FTDS_PATH" ; then
+         FTDS14_CTLIB_LIB=
+         FTDS14_CTLIB_LIBS=$FTDS_CTLIBS
+         FTDS14_CTLIB_INCLUDE=$FTDS_INCLUDE
+      fi
+      FTDS14_LIB='$(FTDS14_CTLIB_LIB)'
+      FTDS14_LIBS='$(FTDS14_CTLIB_LIBS)'
+      FTDS14_INCLUDE='$(FTDS14_CTLIB_INCLUDE)'
 
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
@@ -21028,6 +21054,12 @@ if test "$with_ftds" = "no" ; then
    FTDS100_CTLIB_INCLUDE=
    FTDS100_CTLIB_LIBS=
    FTDS100_CTLIB_LIB=
+   FTDS14_INCLUDE=
+   FTDS14_LIBS=
+   FTDS14_LIB=
+   FTDS14_CTLIB_INCLUDE=
+   FTDS14_CTLIB_LIBS=
+   FTDS14_CTLIB_LIB=
    freetds=
 else
 
@@ -21035,6 +21067,12 @@ $as_echo "#define HAVE_LIBFTDS 1" >>confdefs.h
 
              WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
+
+
+
+
+
+
 
 
 
@@ -37415,6 +37453,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 

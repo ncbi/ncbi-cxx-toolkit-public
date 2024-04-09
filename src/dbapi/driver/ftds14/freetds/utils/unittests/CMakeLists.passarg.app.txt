@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(tds14_passarg)
+  NCBI_sources(passarg)
+  NCBI_add_definitions(HAVE_CONFIG_H=1)
+  NCBI_add_include_directories(..)
+  NCBI_uses_toolkit_libraries(tds_ftds14)
+  NCBI_add_test()
+NCBI_end_app()

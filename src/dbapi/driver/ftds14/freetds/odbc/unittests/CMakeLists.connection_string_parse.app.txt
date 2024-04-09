@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(odbc14_connection_string_parse)
+  NCBI_sources(connection_string_parse common)
+  NCBI_uses_toolkit_libraries(tds_ut_common_ftds14)
+  NCBI_add_test()
+NCBI_end_app()
+

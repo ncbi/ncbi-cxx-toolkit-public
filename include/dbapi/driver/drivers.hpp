@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 extern void DBAPI_RegisterDriver_CTLIB      (void);
 extern void DBAPI_RegisterDriver_FTDS       (void);
 extern void DBAPI_RegisterDriver_FTDS100    (void);
+extern void DBAPI_RegisterDriver_FTDS14     (void);
 extern void DBAPI_RegisterDriver_ODBC       (void);
 extern void DBAPI_RegisterDriver_MYSQL      (void);
 // Development ...

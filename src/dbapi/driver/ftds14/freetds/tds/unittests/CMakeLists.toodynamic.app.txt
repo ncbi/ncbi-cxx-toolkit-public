@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds14_toodynamic)
+  NCBI_sources(toodynamic)
+  NCBI_add_test(test-tds14 tds14_toodynamic)
+NCBI_end_app()
+

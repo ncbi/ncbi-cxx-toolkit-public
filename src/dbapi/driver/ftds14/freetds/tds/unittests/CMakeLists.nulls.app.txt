@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds14_nulls)
+  NCBI_sources(nulls)
+  NCBI_add_test(test-tds14 tds14_nulls)
+NCBI_end_app()
+

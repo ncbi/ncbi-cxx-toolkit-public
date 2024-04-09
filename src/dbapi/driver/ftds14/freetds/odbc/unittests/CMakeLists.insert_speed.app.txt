@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_insert_speed)
+  NCBI_sources(insert_speed common)
+  NCBI_add_test(test-odbc14 --no-auto odbc14_insert_speed)
+NCBI_end_app()
+

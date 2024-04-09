@@ -23,3 +23,5 @@ installations.
 2016-06-20: variables for libraries dependent on SRA/VDB.
 
 2017-05-01: new variables for FreeTDS 1.0.
+
+2024-mm-dd: new variables for FreeTDS 1.4.

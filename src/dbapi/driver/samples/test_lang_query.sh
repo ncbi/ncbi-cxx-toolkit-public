@@ -7,7 +7,7 @@ ulimit -n 1536 > /dev/null 2>&1
 # Clear any locale settings that might lead to trouble (observed with ctlib)
 unset LANG LC_ALL LC_CTYPE
 
-driver_list="ctlib ftds100 ftds100-v74 odbc"
+driver_list="ctlib ftds100 ftds100-v74 ftds14 ftds14-v74 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="DBAPI_MS2022_TEST DBAPI_DEV16_2K DBAPI_DEV16_16K"
@@ -245,7 +245,8 @@ EOF
             cmd="dbapi_cursor -lb on -d $driver -S $server $v_flag"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test $driver = "ftds100" -a $server_type != mssql ; then
+            elif test \( $driver = "ftds100" -o $driver = "ftds14" \) \
+                      -a $server_type != mssql ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"

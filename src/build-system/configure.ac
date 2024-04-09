@@ -5470,6 +5470,9 @@ if test "$with_ftds" != "no" ; then
    case "$with_ftds" in
       100 | 1.00 | yes | '' )
          ;;
+      14* | 1.4 | 1.4.* )
+         ftds_ver=14
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -5479,6 +5482,7 @@ if test "$with_ftds" != "no" ; then
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(100)
+   NCBI_LOCAL_FTDS(14)
    if test -n "$freetds" ; then
       FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
       FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
@@ -5524,6 +5528,12 @@ if test "$with_ftds" = "no" ; then
    FTDS100_CTLIB_INCLUDE=
    FTDS100_CTLIB_LIBS=
    FTDS100_CTLIB_LIB=
+   FTDS14_INCLUDE=
+   FTDS14_LIBS=
+   FTDS14_LIB=
+   FTDS14_CTLIB_INCLUDE=
+   FTDS14_CTLIB_LIBS=
+   FTDS14_CTLIB_LIB=
    freetds=
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
@@ -5536,6 +5546,12 @@ AC_SUBST(FTDS100_LIB)
 AC_SUBST(FTDS100_CTLIB_INCLUDE)
 AC_SUBST(FTDS100_CTLIB_LIBS)
 AC_SUBST(FTDS100_CTLIB_LIB)
+AC_SUBST(FTDS14_INCLUDE)
+AC_SUBST(FTDS14_LIBS)
+AC_SUBST(FTDS14_LIB)
+AC_SUBST(FTDS14_CTLIB_INCLUDE)
+AC_SUBST(FTDS14_CTLIB_LIBS)
+AC_SUBST(FTDS14_CTLIB_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
@@ -9932,6 +9948,7 @@ AC_SUBST(DBAPI_DRIVER)
 AC_SUBST(DBAPI_CTLIB)
 AC_SUBST(DBAPI_FTDS)
 AC_SUBST(DBAPI_FTDS100)
+AC_SUBST(DBAPI_FTDS14)
 AC_SUBST(DBAPI_MYSQL)
 AC_SUBST(DBAPI_ODBC)
 

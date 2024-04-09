@@ -295,6 +295,7 @@ endif()
 #############################################################################
 # FreeTDS
 set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
+set(FTDS14_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds14 ${NCBITK_INC_ROOT}/dbapi/driver/ftds14/freetds)
 
 #############################################################################
 # NCBILS2

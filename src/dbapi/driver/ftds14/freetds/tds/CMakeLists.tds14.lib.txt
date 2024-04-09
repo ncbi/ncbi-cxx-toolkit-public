@@ -1,0 +1,22 @@
+# $Id$
+
+NCBI_begin_lib(tds_ftds14 STATIC)
+  NCBI_sources(
+    mem token util login read write convert numeric config query iconv
+    locale vstrbuild getmac data net tls tds_checks log bulk packet stream
+    random sec_negotiate gssapi sspi challenge rp_iconv
+    ../replacements/gettimeofday ../replacements/poll
+    ../replacements/socketpair ../replacements/getaddrinfo rp_asprintf
+    ../replacements/basename rp_getopt ../replacements/readpassphrase
+    rp_strlcat rp_strlcpy rp_strtok_r rp_strsep rp_vasprintf rp_daemon
+    rp_setenv ../utils/md4 ../utils/md5 ../utils/des ../utils/hmac_md5
+    ../utils/dlist ../utils/getpassarg ../utils/sleep ../utils/tds_cond
+    ../utils/win_mutex ../utils/threadsafe ../utils/bjoern-utf8
+    ../utils/tdsstring ut_net ../utils/smp
+  )
+  NCBI_headers(*.h ../*.h ../../*.h)
+  NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
+  NCBI_uses_external_libraries(${KRB5_LIBS} ${ICONV_LIBS} ${ORIG_LIBS})
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+

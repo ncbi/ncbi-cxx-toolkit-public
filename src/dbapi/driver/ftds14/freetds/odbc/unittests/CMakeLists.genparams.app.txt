@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_genparams)
+  NCBI_sources(genparams common c2string)
+  NCBI_add_test(test-odbc14 --no-auto odbc14_genparams)
+NCBI_end_app()
+

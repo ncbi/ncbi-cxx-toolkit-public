@@ -20,7 +20,9 @@
 #ifndef _tds_sysdep_types_h_
 #define _tds_sysdep_types_h_
 
-typedef   signed long  TDS_INTPTR;
-typedef unsigned long TDS_UINTPTR;
+#include <stdint.h>
+
+typedef  intptr_t  TDS_INTPTR;
+typedef uintptr_t TDS_UINTPTR;
 
 #endif /* _tds_sysdep_types_h_ */

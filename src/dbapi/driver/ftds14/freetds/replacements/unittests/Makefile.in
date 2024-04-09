@@ -1,0 +1,7 @@
+# $Id$
+#################################
+
+APP_PROJ = strings strtok_r strsep
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

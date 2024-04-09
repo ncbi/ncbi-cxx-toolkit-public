@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_norowset)
+  NCBI_sources(norowset common)
+  NCBI_add_test(test-odbc14 --no-auto odbc14_norowset)
+NCBI_end_app()
+

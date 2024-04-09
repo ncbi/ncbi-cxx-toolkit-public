@@ -22,6 +22,15 @@ dbapi/driver/ftds100/freetds/tds$
 dbapi/driver/ftds100/freetds/replacements$
 dbapi/driver/ftds100/freetds/ctlib$
 dbapi/driver/ftds100/ctlib$
+dbapi/driver/ftds14$
+dbapi/driver/ftds14/impl$ update-only
+dbapi/driver/ftds14/freetds$
+dbapi/driver/ftds14/freetds/freetds$ update-only
+dbapi/driver/ftds14/freetds/replacements$
+dbapi/driver/ftds14/freetds/utils$
+dbapi/driver/ftds14/freetds/tds$
+dbapi/driver/ftds14/freetds/ctlib$
+dbapi/driver/ftds14/ctlib$
 dbapi/driver/ftds-default$
 dbapi/lang_bind$
 dbapi/lang_bind/python

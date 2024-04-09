@@ -56,11 +56,14 @@ all_dirs ?= $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 # aforementioned hints because some of their projects have files in common.
 
 ftds100_ut = ctlib dblib odbc tds
+ftds14_ut  = ctlib dblib odbc
 
 main_hintees = algo/cobalt/demo app/grid/remote_app cgi connect \
     connect/daemons connect/ext connect/test dbapi/driver/ctlib/samples \
     dbapi/driver/ftds100/ctlib/samples \
     $(ftds100_ut:%=dbapi/driver/ftds100/freetds/%/unittests) \
+    dbapi/driver/ftds14/ctlib/samples \
+    $(ftds14_ut:%=dbapi/driver/ftds14/freetds/%/unittests) \
     dbapi/test dbapi/test/driver objmgr/test \
     sample/app/cgi sample/app/cgi/cgires
 

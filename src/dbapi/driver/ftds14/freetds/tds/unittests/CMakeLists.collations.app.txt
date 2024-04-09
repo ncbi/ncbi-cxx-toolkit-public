@@ -1,0 +1,6 @@
+# $Id$
+
+NCBI_begin_app(tds14_collations)
+  NCBI_sources(collations)
+NCBI_end_app()
+

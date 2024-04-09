@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db14_batch_stmt_ins_sel)
+  NCBI_sources(batch_stmt_ins_sel common)
+  NCBI_set_test_assets(batch_stmt_ins_sel.sql)
+  NCBI_add_test(test-db14 db14_batch_stmt_ins_sel)
+NCBI_end_app()
+

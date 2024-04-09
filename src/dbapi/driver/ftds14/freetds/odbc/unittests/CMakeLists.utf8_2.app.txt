@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(odbc14_utf8_2)
+  NCBI_sources(utf8_2 common)
+  NCBI_set_test_requires(in-house-resources Iconv -MSWin)
+  NCBI_add_test(test-odbc14 odbc14_utf8_2)
+NCBI_end_app()
+

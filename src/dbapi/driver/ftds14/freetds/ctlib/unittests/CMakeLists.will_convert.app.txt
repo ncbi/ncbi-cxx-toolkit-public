@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct14_will_convert)
+  NCBI_sources(will_convert common)
+  NCBI_add_test(test-ct14 ct14_will_convert)
+NCBI_end_app()
+

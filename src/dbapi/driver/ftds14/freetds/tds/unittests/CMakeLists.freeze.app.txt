@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds14_freeze)
+  NCBI_sources(freeze)
+  NCBI_add_test()
+NCBI_end_app()
+
