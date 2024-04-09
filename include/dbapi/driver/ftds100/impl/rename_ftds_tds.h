@@ -302,9 +302,9 @@
 #  define tds_ssl_deinit                  tds_ssl_deinit_ver100
 #  define tds_ssl_init                    tds_ssl_init_ver100
 #endif
+#define tds_start_query                 tds_start_query_ver100
 #define tds_staticin_stream_init        tds_staticin_stream_init_ver100
 #define tds_staticout_stream_init       tds_staticout_stream_init_ver100
-#define tds_start_query                 tds_start_query_ver100
 #define tds_str_empty                   tds_str_empty_ver100
 #define tds_strftime                    tds_strftime_ver100
 #define tds_strndup                     tds_strndup_ver100

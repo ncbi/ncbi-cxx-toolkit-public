@@ -35,7 +35,7 @@
  */
 
 
-#if defined(NCBI_DBAPI_RENAME_CTLIB)
+#if NCBI_DBAPI_RENAME_CTLIB
 
 #  define blk_alloc         blk_alloc_ver100
 #  define blk_bind          blk_bind_ver100
@@ -120,15 +120,15 @@
 #  define _cs_locale_copy           _cs_locale_copy_ver100
 #  define _cs_locale_copy_inplace   _cs_locale_copy_inplace_ver100
 #  define _cs_locale_free           _cs_locale_free_ver100
-
 #  define _csclient_msg             _csclient_msg_ver100
-#  define _ctclient_msg             _ctclient_msg_ver100
+
 #  define _ct_bind_data             _ct_bind_data_ver100
 #  define _ct_diag_clearmsg         _ct_diag_clearmsg_ver100
 #  define _ct_get_client_type       _ct_get_client_type_ver100
 #  define _ct_get_server_type       _ct_get_server_type_ver100
 #  define _ct_handle_client_message _ct_handle_client_message_ver100
 #  define _ct_handle_server_message _ct_handle_server_message_ver100
+#  define _ctclient_msg             _ctclient_msg_ver100
 
 /* Also cover type names that appear as template parameters */
 #  define _cs_datafmt _cs_datafmt_ver100
