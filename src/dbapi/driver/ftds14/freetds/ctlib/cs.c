@@ -585,8 +585,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt,
 		case SYBBINARY:
 		case SYBVARBINARY:
 		case SYBIMAGE:
-			memcpy(dest, srcdata, src_len);
-			*resultlen = src_len;
+                        memcpy(dest, srcdata, minlen);
+                        *resultlen = minlen;
 
 			if (src_len > destlen) {
 				tdsdump_log(TDS_DBG_FUNC, "error: src_len > destlen\n");
@@ -625,10 +625,10 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt,
 
 			if (src_len > destlen) {
 				tdsdump_log(TDS_DBG_FUNC, "error: src_len > destlen\n");
-                                _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26,
+                                _csclient_msg(ctx, "cs_convert", 2, 1, 10, 25,
                                               "");
-				ret = CS_FAIL;
-			} else {
+                                src_len = destlen;
+                        } /* else */ {
 				switch (destfmt->format) {
 				case CS_FMT_NULLTERM:
 					if (src_len == destlen) {
@@ -831,9 +831,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt,
 		ret = CS_SUCCEED;
 		if (len > destlen) {
 			tdsdump_log(TDS_DBG_FUNC, "Data-conversion resulted in overflow\n");
-                        _csclient_msg(ctx, "cs_convert", 2, 1, 16, 26, "");
+                        _csclient_msg(ctx, "cs_convert", 2, 1, 10, 25, "");
 			len = destlen;
-			ret = CS_FAIL;
 		}
 		switch (destfmt->format) {
 
