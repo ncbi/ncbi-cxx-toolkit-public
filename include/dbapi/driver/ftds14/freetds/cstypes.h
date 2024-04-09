@@ -22,6 +22,11 @@
 
 #include "tds_sysdep_public.h"
 
+#ifndef NCBI_DBAPI_RENAME_CTLIB
+#  define NCBI_DBAPI_RENAME_CTLIB 1
+#endif
+#include <../impl/rename_ftds_ctlib.h>
+
 #ifdef __cplusplus
 extern "C"
 {

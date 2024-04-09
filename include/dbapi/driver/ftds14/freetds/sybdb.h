@@ -30,6 +30,11 @@
 
 #include "tds_sysdep_public.h"
 
+#ifndef NCBI_FTDS_RENAME_SYBDB
+#  define NCBI_FTDS_RENAME_SYBDB 1
+#endif
+#include "../impl/rename_ftds_dblib.h"
+
 #undef TDS_STATIC_CAST
 #ifdef __cplusplus
 #define TDS_STATIC_CAST(type, a) static_cast<type>(a)
