@@ -21,8 +21,4 @@ misc/third_party
 -internal/gbench/app/treeview
 -internal/gbench/app/uud
 -internal/gbench/app/data_crawler
--dbapi/driver/ftds100/freetds/ctlib/unittests
--dbapi/driver/ftds100/freetds/dblib/unittests
--dbapi/driver/ftds100/freetds/odbc/unittests
--dbapi/driver/ftds100/freetds/tds/unittests
--dbapi/driver/ftds100/freetds/replacements/unittests
+-dbapi/driver/ftds.*/freetds/.*/unittests
