@@ -142,7 +142,13 @@ IBalanceable* CDBPoolBalancer::x_TryPool(const void* params_in)
         if (server.Empty()) {
             return nullptr;
         } else {
-            return new CDB_FakeConnection(server);
+            CFastMutexGuard guard(m_FakeConnLock);
+            auto it = m_FakeConnections.lower_bound(server);
+            if (it == m_FakeConnections.end()  ||  it->first != server) {
+                it = m_FakeConnections.emplace_hint
+                    (it, server, new CDB_FakeConnection(server));
+            }
+            return it->second.get();
         }
     } else {
         CDBConnParams_DNC dnc_params(*params);
