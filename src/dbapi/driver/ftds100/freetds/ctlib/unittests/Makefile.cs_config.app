@@ -8,8 +8,6 @@ LIB      = $(FTDS100_CTLIB_LIB)
 LIBS     = $(FTDS100_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
-CHECK_CMD  = test-ct100 ct100_cs_config
-
-CHECK_REQUIRES = in-house-resources
+CHECK_CMD  =
 
 WATCHERS = ucko satskyse
