@@ -69,6 +69,7 @@ for f in $files ; do
       /LDFLAGS *=/s% *-dylib_file *[^ ]*%%g;
       /CONF_C[CPX]* *=/s% *-isysroot *[^ ]*%%g;
       /CONF_C[CPX]* *=/s% *-mmacosx-version-min=[^ ]*%%g;
+      /CONF_C[CPX]* *=/s% *--ccache-skip%%g;
       '"$extra_sed"'
    ' "$fff" > "$fff.tmp"
    if test $? -ne 0 ; then

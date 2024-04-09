@@ -723,6 +723,7 @@ if(CMAKE_USE_CCACHE)
                  PATHS /usr/local/ccache/4.4/bin /usr/local/ccache/3.2.5/bin/)
     if(CCACHE_EXECUTABLE)
         message(STATUS "Found CCACHE: ${CCACHE_EXECUTABLE}")
+        set(CCACHE_SKIP "--ccache-skip")
     endif()
 endif()
 
