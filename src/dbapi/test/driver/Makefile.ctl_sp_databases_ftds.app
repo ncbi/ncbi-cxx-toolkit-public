@@ -7,7 +7,7 @@ LIB  = dbapi$(STATIC) ncbi_xdbapi_ftds$(STATIC) $(FTDS_LIB) \
        dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
 LIBS = $(FTDS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 
-CPPFLAGS = -DFTDS_IN_USE $(FTDS_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = $(FTDS_INCLUDE) $(ORIG_CPPFLAGS)
 
 CHECK_REQUIRES = in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_sp_databases_ftds
