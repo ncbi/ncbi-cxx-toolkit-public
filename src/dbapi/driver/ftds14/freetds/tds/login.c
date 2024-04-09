@@ -416,7 +416,9 @@ tds_setup_connection(TDSSOCKET *tds, TDSLOGIN *login, bool set_db, bool set_spid
 		strcat(str, "USE ");
 		tds_quote_id(tds, strchr(str, 0), tds_dstr_cstr(&login->database), -1);
 	}
-	if (IS_TDS50(tds->conn)) {
+        if (IS_TDS50(tds->conn)
+            &&  (tds->conn->product_name == NULL
+                 ||  strcasecmp(tds->conn->product_name, "OpenServer") != 0)) {
 		strcat(str, " SELECT CAST('abc' AS NVARCHAR(3)) AS nvc, CAST('xyz' AS UNIVARCHAR(3)) AS uvc");
 		parse_results = true;
 	}
