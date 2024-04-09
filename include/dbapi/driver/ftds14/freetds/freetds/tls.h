@@ -101,20 +101,20 @@ tds_ssl_deinit(TDSCONNECTION *conn)
 {
 }
 
-static inline int
+static inline size_t
 tds_ssl_pending(TDSCONNECTION *conn)
 {
 	return 0;
 }
 
-static inline int
-tds_ssl_read(TDSCONNECTION *conn, unsigned char *buf, int buflen)
+static inline ssize_t
+tds_ssl_read(TDSCONNECTION *conn, unsigned char *buf, size_t buflen)
 {
 	return -1;
 }
 
-static inline int
-tds_ssl_write(TDSCONNECTION *conn, const unsigned char *buf, int buflen)
+static inline ssize_t
+tds_ssl_write(TDSCONNECTION *conn, const unsigned char *buf, size_t buflen)
 {
 	return -1;
 }

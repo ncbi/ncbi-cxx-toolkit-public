@@ -731,7 +731,7 @@ tds5_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_
 		 * Is this column of "variable" type, i.e. NULLable
 		 * or naturally variable length e.g. VARCHAR
 		 */
-		if (bcpinfo->sybase_count > i) {
+                if (bcpinfo->sybase_count > (TDS_INT) i) {
 			if (bcpinfo->sybase_colinfo[i].offset >= 0)
 				continue;
 		} else {
@@ -906,7 +906,7 @@ tds7_bcp_send_colmetadata(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 		else
 			tds_put_smallint(tds, bcpcol->column_usertype);
 		tds_put_smallint(tds, bcpcol->column_flags);
-		tds_put_byte(tds, bcpcol->on_server.column_type);
+                TDS_PUT_BYTE(tds, bcpcol->on_server.column_type);
 
 		assert(bcpcol->funcs);
 		bcpcol->funcs->put_info(tds, bcpcol);
