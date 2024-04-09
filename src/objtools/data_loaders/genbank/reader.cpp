@@ -1002,12 +1002,61 @@ bool CReader::LoadChunks(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadChunks(CReaderRequestResult& result,
+                         const TBlobChunkIds& chunk_ids)
+{
+    bool ret = false;
+    for ( auto& blob_chunks : chunk_ids ) {
+        ret |= LoadChunks(result, blob_chunks.first, blob_chunks.second);
+    }
+    return ret;
+}
+
+
 bool CReader::LoadBlobSet(CReaderRequestResult& result,
                           const TSeqIds& seq_ids)
 {
     bool ret = false;
     ITERATE(TSeqIds, id, seq_ids) {
         ret |= LoadBlobs(result, *id, fBlobHasCore, 0);
+    }
+    return ret;
+}
+
+
+bool CReader::LoadBlobs(CReaderRequestResult& result,
+                        const TBlobIds& blob_infos)
+{
+    bool ret = false;
+    for ( auto& info : blob_infos ) {
+        const CBlob_id& blob_id = *info.GetBlob_id();
+        CLoadLockBlob blob(result, blob_id);
+        if ( blob.IsLoadedBlob() ) {
+            continue;
+        }
+        
+        if ( info.IsSetAnnotInfo() ) {
+            if ( info.GetAnnotInfo()->GetAnnotInfo().empty() ) {
+                // no actual annot info - only name
+                auto& names = info.GetAnnotInfo()->GetNamedAnnotNames();
+                if ( names.size() == 1 ) {
+                    CLoadLockSetter setter(blob);
+                    setter.GetTSE_LoadLock()->SetName(*names.begin());
+                    setter.AllowIncompleteLoading();
+                }
+            }
+            else {
+                CProcessor_AnnotInfo::LoadBlob(result, info);
+                _ASSERT(blob.IsLoadedBlob());
+                ret = true;
+                continue;
+            }
+        }
+        
+        m_Dispatcher->LoadBlob(result, blob_id);
+        if ( blob.IsLoadedBlob() ) {
+            ret = true;
+        }
     }
     return ret;
 }

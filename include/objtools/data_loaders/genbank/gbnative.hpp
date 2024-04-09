@@ -165,6 +165,8 @@ public:
 
     virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
 
+    virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret) override;
+    
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
     virtual TBlobId GetBlobIdFromString(const string& str) const override;
 

@@ -45,6 +45,7 @@ class CStopWatch;
 BEGIN_SCOPE(objects)
 
 class CBlob_id;
+class CBlob_Info;
 class CSeq_id_Handle;
 class CTSE_Info;
 class CTSE_Chunk_Info;
@@ -113,6 +114,9 @@ public:
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::EMol> TTypes;
     typedef vector<TBlobState> TStates;
+    typedef vector<CBlob_id> TBlobIds;
+    typedef vector<CBlob_Info> TBlobInfos;
+    typedef vector<pair<CBlob_id, TChunkIds>> TBlobChunkIds;
     void LoadBulkIds(CReaderRequestResult& result,
                      const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     void LoadAccVers(CReaderRequestResult& result,
@@ -160,8 +164,12 @@ public:
     void LoadChunks(CReaderRequestResult& result,
                     const TBlobId& blob_id,
                     const TChunkIds& chunk_ids);
+    void LoadChunks(CReaderRequestResult& result,
+                    const TBlobChunkIds& chunk_ids);
     void LoadBlobSet(CReaderRequestResult& result,
                      const TIds& seq_ids);
+    void LoadBlobs(CReaderRequestResult& result,
+                   const TBlobInfos& blob_infos);
 
     void CheckReaders(void) const;
     void Process(CReadDispatcherCommand& command,

@@ -131,6 +131,8 @@ public:
     typedef vector<bool> TKnown;
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::EMol> TTypes;
+    typedef vector<CBlob_id> TPlainBlobIds;
+    typedef vector<pair<TBlobId, TChunkIds>> TBlobChunkIds;
     virtual bool LoadBulkIds(CReaderRequestResult& result,
                              const TIds& ids, TLoaded& loaded, TBulkIds& ret);
     virtual bool LoadAccVers(CReaderRequestResult& result,
@@ -173,8 +175,12 @@ public:
     virtual bool LoadChunks(CReaderRequestResult& result,
                             const TBlobId& blob_id,
                             const TChunkIds& chunk_ids);
+    virtual bool LoadChunks(CReaderRequestResult& result,
+                            const TBlobChunkIds& chunk_ids);
     virtual bool LoadBlobSet(CReaderRequestResult& result,
                              const TSeqIds& seq_ids);
+    virtual bool LoadBlobs(CReaderRequestResult& result,
+                           const TBlobIds& blob_infos);
 
     void SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
