@@ -779,8 +779,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
     CRef<CBioSource> bio_src(new CBioSource);
     bptr += ParFlat_COL_DATA;
 
-    if (GetGenomeInfo(*bio_src, bptr) && bio_src->GetGenome() != 9) /* ! Plasmid */
-    {
+    if (GetGenomeInfo(*bio_src, bptr) && bio_src->GetGenome() != CBioSource::eGenome_plasmid) {
         while (*bptr != ' ' && *bptr != '\0')
             bptr++;
         while (*bptr == ' ')
@@ -1103,15 +1102,16 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (offset) {
         string str = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA);
 
-        size_t i = 0;
-        for (char c : str) {
-            if (c == ' ')
-                ++i;
-            else
-                break;
-        }
-        if (i > 0)
+        if (! str.empty() && str.front() == ' ') {
+            size_t i = 0;
+            for (char c : str) {
+                if (c == ' ')
+                    ++i;
+                else
+                    break;
+            }
             str.erase(0, i);
+        }
 
         title.swap(str);
 

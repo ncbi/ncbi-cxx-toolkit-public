@@ -1589,13 +1589,13 @@ static Int2 EndAdded(CSeq_feat& feat, GeneRefFeats& gene_refs)
             continue;
 
         const CGene_ref& cur_gene_ref = (*gene)->GetData().GetGene();
-        if (NStr::CompareNocase(cur_gene_ref.GetLocus().c_str(), name.c_str()) != 0) {
+        if (NStr::CompareNocase(cur_gene_ref.GetLocus(), name) != 0) {
             if (! cur_gene_ref.IsSetSyn())
                 continue;
 
             bool found = false;
             for (const string& syn : cur_gene_ref.GetSyn()) {
-                if (NStr::CompareNocase(name.c_str(), syn.c_str()) == 0) {
+                if (NStr::CompareNocase(name, syn) == 0) {
                     found = true;
                     break;
                 }

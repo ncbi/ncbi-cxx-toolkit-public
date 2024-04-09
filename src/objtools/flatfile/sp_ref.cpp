@@ -134,7 +134,7 @@ static bool NotName(const char* name)
 {
     ValNodePtr vnp;
     char*      tmp;
-    char*      s;
+    const char* s;
     Int4       i;
 
     if (! name)
@@ -536,7 +536,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
 }
 
 /**********************************************************/
-static CRef<CDate> get_s_date(const Char* str, bool string)
+static CRef<CDate> get_s_date(const Char* str, bool bstring)
 {
     CRef<CDate> ret;
 
@@ -552,8 +552,8 @@ static CRef<CDate> get_s_date(const Char* str, bool string)
         return ret;
 
     ret.Reset(new CDate);
-    if (string)
-        ret->SetStr(std::string(str, s));
+    if (bstring)
+        ret->SetStr(string(str, s));
     else {
         for (cal = 0; cal < 12; cal++) {
             if (StringEquNI(str, months[cal], 3)) {

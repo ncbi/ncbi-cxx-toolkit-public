@@ -735,7 +735,7 @@ string GetBlkDataReplaceNewLine(string_view instr, Int2 indent)
     NStr::Split(instr, "\n", lines);
     string replaced;
     for (auto line : lines) {
-        if (line.empty() || NStr::StartsWith(line, "XX")) {
+        if (line.empty() || NStr::StartsWith(line, "XX") || line.size() <= indent) {
             continue;
         }
         replaced += line.substr(indent);

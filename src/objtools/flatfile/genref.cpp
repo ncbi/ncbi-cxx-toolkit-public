@@ -2831,17 +2831,15 @@ static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& g
             }
 
             CRef<CGene_ref> gene_ref(new CGene_ref);
-            if (gene)
-                gene_ref->SetLocus(*gene);
-            if (locus_tag)
-                gene_ref->SetLocus_tag(*locus_tag);
-
             if (gene) {
+                gene_ref->SetLocus(*gene);
                 TSynSet syns;
                 GetGeneSyns((*feat)->GetQual(), *gene, syns);
                 if (! syns.empty())
                     gene_ref->SetSyn().assign(syns.begin(), syns.end());
             }
+            if (locus_tag)
+                gene_ref->SetLocus_tag(*locus_tag);
 
             CRef<CSeqFeatXref> xref = GetXrpForOverlap(acnum, gene_refs, llocs, *(*feat), *gene_ref);
             if (xref.NotEmpty())
