@@ -1684,7 +1684,7 @@ bcp_readfmt(DBPROCESS * dbproc, const char filename[])
 	BCP_HOSTCOLINFO hostcol[1];
 	FILE *ffile;
 	char buffer[1024];
-	float lf_version = 0.0;
+        /* float lf_version = 0.0; */
 	int li_numcols = 0;
 	int colinfo_count = 0;
 
@@ -1701,7 +1701,7 @@ bcp_readfmt(DBPROCESS * dbproc, const char filename[])
 	}
 
 	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != NULL) {
-		lf_version = (float)atof(buffer);
+                /* lf_version = (float)atof(buffer); */
 	} else if (ferror(ffile)) {
 		dbperror(dbproc, SYBEBRFF, errno);
 		goto Cleanup;
