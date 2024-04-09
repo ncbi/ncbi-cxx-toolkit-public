@@ -120,6 +120,7 @@
 #  define _cs_locale_copy           _cs_locale_copy_ver14
 #  define _cs_locale_copy_inplace   _cs_locale_copy_inplace_ver14
 #  define _cs_locale_free           _cs_locale_free_ver14
+#  define _csclient_msg             _csclient_msg_ver14x
 
 #  define _ct_bind_data                    _ct_bind_data_ver14
 #  define _ct_datafmt_common               _ct_datafmt_common_ver14
