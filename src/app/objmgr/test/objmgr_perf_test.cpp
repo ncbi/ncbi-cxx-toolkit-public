@@ -445,19 +445,47 @@ int CPerfTestApp::Run(void)
     else if (m_Bulk == "cdd") {
         CScope::TIds cdd_ids;
         cdd_ids.insert(cdd_ids.end(), m_Ids.begin(), m_Ids.end());
+        CScope::TBioseqHandles bhs = m_Scope->GetBioseqHandles(cdd_ids);
         CScope::TCDD_Entries cdds = m_Scope->GetCDDAnnots(cdd_ids);
-        size_t bad_count = 0;
-        ITERATE(CScope::TCDD_Entries, cdd, cdds) {
-            if (!(*cdd)) {
-                ++bad_count;
-                continue;
+        LOG_POST("Checking actual CDDs after GetCDDAnnot()");
+        size_t has_cdd_count = 0;
+        size_t no_cdd_count = 0;
+        size_t bad_has_cdd_count = 0;
+        size_t bad_no_cdd_count = 0;
+        SAnnotSelector sel;
+        sel.AddNamedAnnots("CDD");
+        for ( size_t i = 0; i < cdd_ids.size(); ++i ) {
+            if ( !cdds[i] ) {
+                ++no_cdd_count;
+                // reported no CDD annots
+                if ( bhs[i] ) {
+                    // we shouldn't get any
+                    CFeat_CI it(bhs[i], sel);
+                    if ( it ) {
+                        // unexpected CDD
+                        ++bad_no_cdd_count;
+                    }
+                }
+            }
+            else {
+                ++has_cdd_count;
+                // reported to have CDD annots
+                // we should find some
+                CFeat_CI it(bhs[i], sel);
+                if ( !it ) {
+                    // CDDs not found
+                    ++bad_has_cdd_count;
+                }
             }
             if (m_PrintData) {
-                cout << MSerial_AsnText << cdd->GetCompleteTSE() << endl;
+                cout << MSerial_AsnText << cdds[i].GetCompleteTSE() << endl;
             }
         }
-        if ((m_PrintInfo || m_PrintData) && bad_count) {
-            ERR_POST(Warning << "Failed to load " << bad_count << " records");
+        if ( bad_has_cdd_count ) {
+            ERR_POST("GetCDDAnnot() returned annot without CDDs for " << bad_has_cdd_count << " records");
+        }
+        if ( bad_no_cdd_count ) {
+            ERR_POST("GetCDDAnnot() didn't return CDDs for " << bad_no_cdd_count << " records");
         }
     }
     else {
