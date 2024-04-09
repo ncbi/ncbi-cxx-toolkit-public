@@ -438,8 +438,7 @@ const CTSE_Split_Info& CLoadLockBlob::GetSplitInfo(void) const
 
 bool CLoadLockBlob::NeedsDelayedMainChunk(void) const
 {
-    return m_TSE_LoadLock && m_TSE_LoadLock->HasSplitInfo() &&
-        m_TSE_LoadLock->GetSplitInfo().x_NeedsDelayedMainChunk();
+    return m_TSE_LoadLock && m_TSE_LoadLock->x_NeedsDelayedMainChunk();
 }
 
 
@@ -665,6 +664,17 @@ void CLoadLockSetter::SetLoaded(void)
     if ( !m_Chunk ) {
         if ( s_GetLoadTraceLevel() > 0 ) {
             LOG_POST(Info<<"GBLoader:"<<SBlobId(*m_TSE_LoadLock)<<" loaded");
+        }
+        const CBlob_id* blob_id = dynamic_cast<const CBlob_id*>(&*m_TSE_LoadLock->GetBlobId());
+        if ( blob_id ) {
+            auto& tse_name = m_TSE_LoadLock->GetName();
+            if ( tse_name.IsNamed() ) {
+                // save the name into blob_id
+                const_cast<CBlob_id*>(blob_id)->SetTSEName(tse_name.GetName());
+            }
+            else if ( blob_id->HasTSEName() ) {
+                m_TSE_LoadLock->SetName(blob_id->GetTSEName());
+            }
         }
         m_TSE_LoadLock.SetLoaded();
         TParent::SetLoaded(m_TSE_LoadLock, GBL::eExpire_normal);
