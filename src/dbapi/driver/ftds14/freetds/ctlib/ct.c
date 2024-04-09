@@ -4317,6 +4317,15 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
 		pcol->column_prec = p->precision;
 		pcol->column_scale = p->scale;
 		if (pcol->column_varint_size) {
+                        if ((pcol->column_varint_size == 2
+                             &&  *(p->datalen) > 8000)
+                            ||  (pcol->column_varint_size == 1
+                                 &&  *(p->datalen) > 255)) {
+                                _csclient_msg(((CS_CONNECTION*)
+                                               tds_get_parent(tds))->ctx,
+                                              "paraminfoalloc", 2, 1, 10, 25,
+                                              "");
+                        }
 			if (p->maxlen < 0) {
 				tds_free_param_results(params);
 				return NULL;
