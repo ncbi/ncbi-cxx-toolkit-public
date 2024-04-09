@@ -5,8 +5,9 @@
 #endif /* HAVE_STRING_H */
 
 #include <stdio.h>
-#include <assert.h>
 #include <ctpublic.h>
+
+#include <freetds/test_assert.h>
 
 static CS_CONTEXT *ctx;
 static int allSuccess = 1;
