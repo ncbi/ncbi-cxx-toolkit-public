@@ -61,6 +61,8 @@
 
 #ifdef __APPLE__
 #define GSSKRB_APPLE_DEPRECATED(x) /**/
+#undef __API_DEPRECATED
+#define __API_DEPRECATED(x, y) /**/
 #endif
 #include <gssapi/gssapi_krb5.h>
 
