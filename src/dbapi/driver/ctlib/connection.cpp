@@ -51,6 +51,7 @@ inline int close(int fd)
 #endif
 
 #ifdef FTDS_IN_USE
+#  include "config.h"
 #  include <ctlib.h>
 #  ifndef tds_conn
 #    ifdef tds_get_s
@@ -535,18 +536,34 @@ CTL_Connection::GetBLKVersion(void) const
 #endif
 #ifdef CS_VERSION_155
     case CS_VERSION_155:
+#ifdef BLK_VERSION_155
         blk_version = BLK_VERSION_155;
+#else // values match up in practice
+        blk_version = CS_VERSION_155;
+#endif
         break;
 #endif
 #ifdef CS_VERSION_157
     case CS_VERSION_157:
+#ifdef BLK_VERSION_157
         blk_version = BLK_VERSION_157;
+#else
+        blk_version = CS_VERSION_157;
+#endif
+        break;
+#endif
+#ifdef CS_VERSION_160
+    case CS_VERSION_160:
+#ifdef BLK_VERSION_160
+        blk_version = BLK_VERSION_160;
+#else
+        blk_version = CS_VERSION_160;
+#endif
         break;
 #endif
 #ifdef CS_CURRENT_VERSION
     default:
         if (tds_version == CS_CURRENT_VERSION) {
-            // values have historically matched up in practice
             blk_version = tds_version;
         }
 #endif
