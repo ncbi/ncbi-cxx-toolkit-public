@@ -469,7 +469,7 @@ tds_connect(TDSSOCKET * tds, TDSLOGIN * login, int *p_oserr)
 	 * We try them in an order that should work. 
 	 */
 	const static TDS_USMALLINT versions[] =
-		{ 0x704
+                { 0x701
 		, 0x500
 		};
 
