@@ -439,7 +439,7 @@
 #cmakedefine HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP 1
 
 /* Define to 1 if pthread mutexes are available. */
-#define HAVE_PTHREAD_MUTEX 1
+#cmakedefine HAVE_PTHREAD_MUTEX 1
 
 /* Define to 1 if you have the `pthread_setconcurrency' function. */
 #cmakedefine HAVE_PTHREAD_SETCONCURRENCY 1

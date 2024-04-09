@@ -121,6 +121,7 @@ check_function_exists(pthread_atfork HAVE_PTHREAD_ATFORK)
 check_function_exists(pthread_cond_timedwait_relative_np
                       HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP)
 check_function_exists(pthread_condattr_setclock HAVE_PTHREAD_CONDATTR_SETCLOCK)
+check_function_exists(pthread_mutex_init HAVE_PTHREAD_MUTEX)
 check_function_exists(pthread_setconcurrency HAVE_PTHREAD_SETCONCURRENCY)
 check_function_exists(putenv HAVE_PUTENV)
 check_function_exists(readpassphrase HAVE_READPASSPHRASE)
