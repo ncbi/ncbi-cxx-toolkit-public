@@ -9527,6 +9527,7 @@ else
    DBAPI_DRIVER=dbapi_driver
    DBAPI_FTDS=ncbi_xdbapi_ftds
    DBAPI_FTDS100=ncbi_xdbapi_ftds100
+   DBAPI_FTDS14=ncbi_xdbapi_ftds14
    test -n "$SYBASE_LIBS"    &&  DBAPI_CTLIB=ncbi_xdbapi_ctlib
    test -n "$MYSQL_LIBS"     &&  DBAPI_MYSQL=ncbi_xdbapi_mysql
    test -n "$ODBC_LIBS"      &&  DBAPI_ODBC=ncbi_xdbapi_odbc
