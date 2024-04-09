@@ -209,14 +209,29 @@ bool CTSE_Split_Info::x_HasDelayedMainChunk(void) const
 
 bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 {
-    CMutexGuard guard(m_ChunksMutex);
-    TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
-    if ( iter == begin || (--iter)->first != CTSE_Chunk_Info::kDelayedMain_ChunkId ) {
-        // no delayed main chunk
-        return false;
-    }
-    // no other chunks except maybe WGS master chunk
-    return iter == begin || ((--iter)->first == CTSE_Chunk_Info::kMasterWGS_ChunkId && iter == begin);
+    CRef<CTSE_Chunk_Info> delayed_chunk;
+    {{
+        CMutexGuard guard(m_ChunksMutex);
+        TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
+        if ( iter == begin || (--iter)->first != CTSE_Chunk_Info::kDelayedMain_ChunkId ) {
+            // no delayed main chunk
+            return false;
+        }
+        delayed_chunk = iter->second;
+        // check for other chunks except maybe WGS master chunk
+        if ( iter != begin ) {
+            --iter;
+            // skip WGS master chunk if any
+            if ( iter->first == CTSE_Chunk_Info::kMasterWGS_ChunkId && iter != begin ) {
+                --iter;
+            }
+            if ( iter != begin ) {
+                // there are other chunks -> delayed main chunk was loaded already
+                return false;
+            }
+        }
+    }}
+    return delayed_chunk->NotLoaded();
 }
 
 
