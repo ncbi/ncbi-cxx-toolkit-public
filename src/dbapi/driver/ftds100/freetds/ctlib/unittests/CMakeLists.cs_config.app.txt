@@ -2,6 +2,6 @@
 
 NCBI_begin_app(ct100_cs_config)
   NCBI_sources(cs_config common)
-  NCBI_add_test(test-ct100 ct100_cs_config)
+  NCBI_add_test()
 NCBI_end_app()
 
