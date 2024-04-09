@@ -18,5 +18,9 @@ NCBI_begin_lib(tds_ftds14 STATIC)
   NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
   NCBI_uses_external_libraries(${KRB5_LIBS} ${ICONV_LIBS} ${ORIG_LIBS})
   NCBI_project_watchers(ucko satskyse)
-NCBI_end_lib()
+NCBI_end_lib(_result)
 
+if(_result AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "IntelLLVM")
+  set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/util.c
+    PROPERTIES COMPILE_OPTIONS "${CCACHE_SKIP};-fno-rewrite-includes")
+endif()

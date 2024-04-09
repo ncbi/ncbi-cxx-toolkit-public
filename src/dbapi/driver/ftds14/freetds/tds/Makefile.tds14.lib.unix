@@ -15,6 +15,7 @@ ifeq "$(COMPILER)" "icc"
   query.o:      CFLAGS += -fno-builtin-strcat
   threadsafe.o: CFLAGS += -fno-builtin-strcat
  endif
+ util.o: CPPFLAGS := $(filter-out --ccache-skip -frewrite-includes,$(CPPFLAGS))
 endif
 
 # Limit usage of KRB5_INCLUDE to avoid iconv header/library skew that
