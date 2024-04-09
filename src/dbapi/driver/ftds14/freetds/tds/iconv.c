@@ -69,6 +69,7 @@ static void tds_iconv_info_close(TDSICONV * char_conv);
 static const char *iconv_names[TDS_VECTOR_SIZE(canonic_charsets)];
 static bool iconv_initialized = false;
 static const char *ucs2name;
+static tds_mutex iconv_mtx = TDS_MUTEX_INITIALIZER;
 
 enum
 { POS_ISO1, POS_UTF8, POS_UCS2LE, POS_UCS2BE };
@@ -250,6 +251,7 @@ tds_set_iconv_name(int charset)
 	iconv_t cd;
 	const char *name;
 
+        tds_mutex_lock(&iconv_mtx);
 	assert(iconv_initialized);
 
 	/* try using canonic name and UTF-8 and UCS2 */
@@ -277,11 +279,13 @@ tds_set_iconv_name(int charset)
 
 	/* charset not found, pretend it's ISO 8859-1 */
 	iconv_names[charset] = canonic_charsets[POS_ISO1].name;
+        tds_mutex_unlock(&iconv_mtx);
 	return NULL;
 
 found:
 	iconv_names[charset] = name;
 	tds_sys_iconv_close(cd);
+        tds_mutex_unlock(&iconv_mtx);
 	return name;
 }
 
@@ -375,14 +379,17 @@ tds_iconv_open(TDSCONNECTION * conn, const char *charset, int use_utf16)
 		use_utf16 = true;
 
 	/* initialize */
+        tds_mutex_lock(&iconv_mtx);
 	if (!iconv_initialized) {
 		if (!tds_iconv_init()) {
 			tdsdump_log(TDS_DBG_ERROR, "error: tds_iconv_init() failed; "
 						   "try using GNU libiconv library\n");
+                        tds_mutex_unlock(&iconv_mtx);
 			return TDS_FAIL;
 		}
 		iconv_initialized = true;
 	}
+        tds_mutex_unlock(&iconv_mtx);
 
 	/* 
 	 * Client <-> UCS-2 (client2ucs2)
