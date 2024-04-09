@@ -82,6 +82,9 @@
     || defined(_WIN32)
 #  define tds_raw_cond_timedwait tds_raw_cond_timedwait_ver14
 #endif
+#ifdef _WIN32
+#  define tds_raw_mutex_trylock  tds_raw_mutex_trylock_ver14
+#endif
 #define tds_sleep_ms             tds_sleep_ms_ver14
 #define tds_sleep_s              tds_sleep_s_ver14
 #define tds_socket_set_nosigpipe tds_socket_set_nosigpipe_ver14

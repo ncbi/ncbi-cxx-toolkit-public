@@ -67,6 +67,9 @@
     || defined(_WIN32)
 #  define tds_raw_cond_timedwait        tds_raw_cond_timedwait_ver100
 #endif
+#ifdef _WIN32
+#  define tds_raw_mutex_trylock         tds_raw_mutex_trylock_ver100
+#endif
 #ifndef HAVE_READPASSPHRASE
 #  define tds_readpassphrase            tds_readpassphrase_ver100
 #endif
