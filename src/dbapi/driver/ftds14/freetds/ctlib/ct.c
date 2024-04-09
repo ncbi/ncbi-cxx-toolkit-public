@@ -2449,11 +2449,15 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt_arg)
 	datafmt = _ct_datafmt_conv_prepare(cmd->con->ctx, datafmt_arg, &datafmt_buf);
 	tds = cmd->con->tds_socket;
 	resinfo = tds->current_results;;
-
-	if (item < 1 || item > resinfo->num_cols)
-		return CS_FAIL;
-
 	curcol = resinfo->columns[item - 1];
+
+        if (item < 1 || item > resinfo->num_cols) {
+                _csclient_msg(cmd->con->ctx, "ct_describe", 2, 1, 1, 16,
+                              "%s, %s", tds_prtype(curcol->column_type),
+                              "cslib");
+		return CS_FAIL;
+        }
+
 	/* name is always null terminated */
 	strlcpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), sizeof(datafmt->name));
 	datafmt->namelen = strlen(datafmt->name);
