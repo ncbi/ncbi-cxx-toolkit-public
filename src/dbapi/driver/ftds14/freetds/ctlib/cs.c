@@ -786,7 +786,7 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt,
                         *handle = cres.ib;
                         destlen = len;
                 }
-		*resultlen = destlen;
+                *resultlen = len;
 		if (destvc) {
 			destvc->len = len;
 			*resultlen = sizeof(*destvc);
