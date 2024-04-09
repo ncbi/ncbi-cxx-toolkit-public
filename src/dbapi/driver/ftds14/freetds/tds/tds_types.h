@@ -106,10 +106,9 @@ tds_get_varint_size(TDSCONNECTION * conn, int datatype)
 			return 0;
 		case SYBUNITEXT:
 		case SYBXML:
-			return 4;
 		case SYBLONGBINARY:
-		case SYBLONGCHAR:
-			return 5;
+                case SYBLONGCHAR: /* aka XSYBCHAR */
+                        return 4;
 		}
 	}
 	return 1;
