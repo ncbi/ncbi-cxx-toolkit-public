@@ -40,11 +40,11 @@ static const uint8_t type2category[256] = {
 	0, /* 32 */
 	0, /* 33 */
 	2, /* SYBIMAGE */
-	7, /* SYBTEXT */
-	8, /* SYBBLOB */
+	6, /* SYBTEXT */
+	7, /* SYBBLOB */
 	2, /* SYBVARBINARY */
 	0, /* SYBINTN */
-	7, /* SYBVARCHAR */
+	6, /* SYBVARCHAR */
 	4, /* SYBMSDATE */
 	4, /* SYBMSTIME */
 	4, /* SYBMSDATETIME2 */
@@ -52,7 +52,7 @@ static const uint8_t type2category[256] = {
 	0, /* 44 */
 	2, /* SYBBINARY */
 	0, /* SYBINTERVAL */
-	7, /* SYBCHAR */
+	6, /* SYBCHAR */
 	3, /* SYBINT1 */
 	4, /* SYBDATE */
 	1, /* SYBBIT */
@@ -104,7 +104,7 @@ static const uint8_t type2category[256] = {
 	0, /* 96 */
 	0, /* 97 */
 	0, /* SYBVARIANT */
-	0, /* SYBNTEXT */
+	6, /* SYBNTEXT */
 	0, /* 100 */
 	0, /* 101 */
 	0, /* 102 */
@@ -172,7 +172,7 @@ static const uint8_t type2category[256] = {
 	0, /* 164 */
 	2, /* XSYBVARBINARY */
 	0, /* 166 */
-	7, /* XSYBVARCHAR */
+	6, /* XSYBVARCHAR */
 	0, /* 168 */
 	0, /* 169 */
 	0, /* 170 */
@@ -180,7 +180,7 @@ static const uint8_t type2category[256] = {
 	0, /* 172 */
 	2, /* XSYBBINARY */
 	0, /* SYBUNITEXT */
-	7, /* SYBLONGCHAR */
+	6, /* SYBLONGCHAR */
 	0, /* SYBSINT1 */
 	0, /* 177 */
 	0, /* 178 */
@@ -236,7 +236,7 @@ static const uint8_t type2category[256] = {
 	0, /* 228 */
 	0, /* 229 */
 	0, /* 230 */
-	0, /* XSYBNVARCHAR */
+	6, /* XSYBNVARCHAR */
 	0, /* 232 */
 	0, /* 233 */
 	0, /* 234 */
@@ -244,7 +244,7 @@ static const uint8_t type2category[256] = {
 	0, /* 236 */
 	0, /* 237 */
 	0, /* 238 */
-	0, /* XSYBNCHAR */
+	6, /* XSYBNCHAR */
 	0, /* SYBMSUDT */
 	0, /* SYBMSXML */
 	0, /* 242 */
@@ -265,12 +265,11 @@ static const uint8_t type2category[256] = {
 
 static const uint32_t category_conversion[] = {
 	0,
-	142,	/* SYBBIT */
-	140,	/* SYBIMAGE */
-	142,	/* SYBINT1 */
-	148,	/* SYBMSDATE */
+	78,	/* SYBBIT */
+	76,	/* SYBIMAGE */
+	78,	/* SYBINT1 */
+	84,	/* SYBMSDATE */
 	32,	/* SYBMSTABLE */
-	0,	/* SYBSENSITIVITY */
-	414,	/* SYBTEXT */
-	388,	/* SYBUNIQUE */
+	222,	/* SYBTEXT */
+	196,	/* SYBUNIQUE */
 };
