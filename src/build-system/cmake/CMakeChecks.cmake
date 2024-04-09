@@ -106,6 +106,13 @@ include(${NCBI_TREE_CMAKECFG}/CMakeChecks.basic-checks.cmake)
 include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 
 #############################################################################
+# Final tuneups, deferred due to the potential need for --ccache-skip
+if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE
+    AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang|IntelLLVM")
+    add_compile_options("SHELL:${CCACHE_SKIP} -frewrite-includes")
+endif()
+
+#############################################################################
 # Generation of configuration files
 
 include(${NCBI_TREE_CMAKECFG}/CMakeChecks.srcid.cmake)

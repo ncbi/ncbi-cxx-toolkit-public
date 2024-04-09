@@ -9745,6 +9745,18 @@ if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
    CXX="$icc_CXX"
 fi
 
+### Avoid spurious warnings when using Clang (or Clang-based ICC) in
+### conjunction with distcc (and quite possibly also ccache).
+case "$gccdir:$CC_WRAPPER" in
+   /*:*distcc*ccache* )
+      CPPFLAGS="$CPPFLAGS --ccache-skip -frewrite-includes"
+      ;;
+   /*:*distcc* )
+      CPPFLAGS="$CPPFLAGS -frewrite-includes"
+      ;;
+esac
+
+
 ### Adjust paths to wrapper.*.sh
 case "$CC"     in compilers/*)     CC="\$(top_srcdir)/$CC"     ;; esac
 case "$CXX"    in compilers/*)    CXX="\$(top_srcdir)/$CXX"    ;; esac
