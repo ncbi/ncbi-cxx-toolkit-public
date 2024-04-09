@@ -1,0 +1,122 @@
+EXPORTS
+	SQLAllocConnect
+	SQLAllocEnv
+	SQLAllocHandle
+	SQLAllocStmt
+	SQLBindCol
+	SQLBindParam
+	SQLBindParameter
+;	SQLBrowseConnect
+	SQLCancel
+	SQLCloseCursor
+	SQLColAttribute
+	SQLColAttributes
+	SQLColumnPrivileges
+	SQLColumns
+	SQLConnect
+	SQLCopyDesc
+	SQLDescribeCol
+;	SQLDescribeParam
+	SQLDisconnect
+	SQLDriverConnect
+	SQLEndTran
+	SQLError
+	SQLExecDirect
+	SQLExecute
+	SQLExtendedFetch
+	SQLFetch
+	SQLFetchScroll
+	SQLForeignKeys
+	SQLFreeConnect
+	SQLFreeEnv
+	SQLFreeHandle
+	SQLFreeStmt
+	SQLGetConnectAttr
+	SQLGetConnectOption
+	SQLGetCursorName
+	SQLGetData
+	SQLGetDescField
+	SQLGetDescRec
+	SQLGetDiagField
+	SQLGetDiagRec
+	SQLGetEnvAttr
+	SQLGetFunctions
+	SQLGetInfo
+	SQLGetStmtAttr
+	SQLGetStmtOption
+	SQLGetTypeInfo
+	SQLMoreResults
+	SQLNativeSql
+	SQLNumParams
+	SQLNumResultCols
+	SQLParamData
+	SQLParamOptions
+	SQLPrepare
+	SQLPrimaryKeys
+	SQLProcedureColumns
+	SQLProcedures
+	SQLPutData
+	SQLRowCount
+	SQLSetConnectAttr
+	SQLSetConnectOption
+	SQLSetCursorName
+	SQLSetDescField
+	SQLSetDescRec
+	SQLSetEnvAttr
+	SQLSetParam
+	SQLSetPos
+	SQLSetScrollOptions
+	SQLSetStmtAttr
+	SQLSetStmtOption
+	SQLSpecialColumns
+	SQLStatistics
+	SQLTablePrivileges
+	SQLTables
+	SQLTransact
+	ConfigDSN
+	ConfigDriver
+	ConfigTranslator
+	bcp_initA = win_bcp_initA
+	bcp_control = win_bcp_control
+	bcp_colptr = win_bcp_colptr
+	bcp_sendrow = win_bcp_sendrow
+	bcp_batch = win_bcp_batch
+	bcp_done = win_bcp_done
+	bcp_bind = win_bcp_bind
+	DllRegisterServer PRIVATE
+	DllUnregisterServer PRIVATE
+	SQLGetTypeInfoW = SQLGetTypeInfo
+	SQLColAttributeW
+	SQLColumnPrivilegesW
+	SQLColumnsW
+	SQLConnectW
+	SQLDescribeColW
+	SQLDriverConnectW
+	SQLErrorW
+	SQLExecDirectW
+	SQLForeignKeysW
+	SQLGetConnectAttrW
+	SQLGetConnectOptionW
+	SQLGetCursorNameW
+	SQLGetDescFieldW
+	SQLGetDescRecW
+	SQLGetDiagFieldW
+	SQLGetDiagRecW
+	SQLGetInfoW
+	SQLGetStmtAttrW
+	SQLNativeSqlW
+	SQLPrepareW
+	SQLPrimaryKeysW
+	SQLProcedureColumnsW
+	SQLProceduresW
+	SQLSetConnectAttrW
+	SQLSetConnectOptionW
+	SQLSetCursorNameW
+	SQLSetDescFieldW
+	SQLSetStmtAttrW
+	SQLSpecialColumnsW
+	SQLStatisticsW
+	SQLTablePrivilegesW
+	SQLTablesW
+	bcp_initW = win_bcp_initW
+

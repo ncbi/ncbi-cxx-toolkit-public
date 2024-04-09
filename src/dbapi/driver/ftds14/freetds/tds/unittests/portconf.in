@@ -1,0 +1,8 @@
+[global]
+port = 1433
+
+[NotExistingServer1]
+asa database=my_server
+server name=pippo
+host=8.7.6.5
+port=4321

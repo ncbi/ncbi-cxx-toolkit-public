@@ -86,6 +86,7 @@ typedef __int64 ssize_t;
 #  define SIZEOF_VOIDP        8
 #  define NCBI_PLATFORM_BITS  64
 #  define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
+#  define NCBI_SQLPARAMOPTIONS_SQLLEN 1
 #else
 #  define HOST         "i386-pc-win32"
 #  define HOST_OS      "win32"
@@ -124,8 +125,11 @@ typedef   int   ssize_t;
 #define HAVE_STDBOOL_H                  1
 #define HAVE_STDLIB_H                   1
 #define HAVE_STRING_H                   1
+#define HAVE_STRTOK_S                   1
+#define HAVE_WINSOCK2_H                 1
 #define HAVE__FSEEKI64                  1
 #define HAVE__FTELLI64                  1
+#define HAVE__HEAPWALK                  1
 #define HAVE__LOCK_FILE                 1
 #define HAVE__UNLOCK_FILE               1
 #define HAVE__VSCPRINTF                 1
