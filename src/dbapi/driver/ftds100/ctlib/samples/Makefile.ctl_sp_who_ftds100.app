@@ -3,7 +3,7 @@
 APP = ctl_sp_who_ftds100
 SRC = ctl_sp_who_ftds100 dbapi_driver_sample_base_ftds100
 
-LIB  = ncbi_xdbapi_ftds100$(STATIC) $(FTDS100_CTLIB_LIB) \
+LIB  = ncbi_xdbapi_ftds100 $(FTDS100_CTLIB_LIB) \
        dbapi_driver$(STATIC) $(XCONNEXT) xconnect xncbi
 LIBS = $(FTDS100_CTLIB_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(DL_LIBS)
 

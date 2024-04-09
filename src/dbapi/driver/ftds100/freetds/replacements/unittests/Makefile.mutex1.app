@@ -4,7 +4,7 @@ APP = tds100_mutex1
 SRC = mutex1
 
 CPPFLAGS = -DHAVE_CONFIG_H=1 $(FTDS100_INCLUDE) -I$(srcdir)/.. $(ORIG_CPPFLAGS)
-LIB      = tds_ftds100$(STATIC)
+LIB      = tds_ftds100
 LIBS     = $(FTDS100_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
