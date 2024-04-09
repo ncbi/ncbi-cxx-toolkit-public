@@ -682,8 +682,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& biose
     CRef<CBioSource> bio_src(new CBioSource);
 
     p = organism;
-    if (GetGenomeInfo(*bio_src, p) && bio_src->GetGenome() != 9) /* ! Plasmid */
-    {
+    if (GetGenomeInfo(*bio_src, p) && bio_src->GetGenome() != CBioSource::eGenome_plasmid) {
         while (*p != ' ' && *p != '\0')
             p++;
         while (*p == ' ')

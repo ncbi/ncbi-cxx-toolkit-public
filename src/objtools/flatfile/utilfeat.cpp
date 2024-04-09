@@ -119,7 +119,6 @@ bool SeqLocHaveFuzz(const CSeq_loc& loc)
  **********************************************************/
 string CpTheQualValue(const TQualVector& qlist, const Char* qual)
 {
-    string qvalue;
     for (const auto& cur : qlist) {
         if (cur->GetQual() != qual)
             continue;
@@ -130,11 +129,10 @@ string CpTheQualValue(const TQualVector& qlist, const Char* qual)
             break;
         }
 
-        qvalue = NStr::Sanitize(val);
-        break;
+        return NStr::Sanitize(val);
     }
 
-    return qvalue;
+    return {};
 }
 
 /**********************************************************

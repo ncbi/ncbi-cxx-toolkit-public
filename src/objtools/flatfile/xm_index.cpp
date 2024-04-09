@@ -783,7 +783,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDSECONDARY_ACCN);
     if (! xip->subtags) {
-        p = (char*)XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
+        auto p = XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = true;
         return false;
