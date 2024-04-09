@@ -238,24 +238,23 @@ static const string mouse_strain_fixes[] = {
 typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_state_abbrev, map_state_to_abbrev);
 
-static const SStaticPair<const char*, const char*> Canada_map_state_to_abbrev[] =
+MAKE_CONST_MAP(Canada_map_state_to_abbrev, ct::tagStrNocase, ct::tagStrNocase, 
 {
-{ "alberta", "AB"},
-{ "british columbia", "BC"},
-{ "manitoba", "MB"},
-{ "new brunswick", "NB"},
-{ "newfoundland and labrador", "NL"},
-{ "northwest territories", "NT"},
-{ "nova scotia", "NS"},
-{ "nunavut", "NU"},
-{ "ontario", "ON"},
-{ "prince edward island", "PE"},
-{ "quebec", "QC"},
-{ "saskatchewan", "SK"},
-{ "yukon", "YT"}
-};
+    { "alberta", "AB"},
+    { "british columbia", "BC"},
+    { "manitoba", "MB"},
+    { "new brunswick", "NB"},
+    { "newfoundland and labrador", "NL"},
+    { "northwest territories", "NT"},
+    { "nova scotia", "NS"},
+    { "nunavut", "NU"},
+    { "ontario", "ON"},
+    { "prince edward island", "PE"},
+    { "quebec", "QC"},
+    { "saskatchewan", "SK"},
+    { "yukon", "YT"}
+});
 
-DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap, k_Canada_state_abbrev, Canada_map_state_to_abbrev);
 
 static const SStaticPair<const char*, const char*> set_short_words[] =
 {
@@ -802,8 +801,8 @@ void GetCanadaStateAbbreviation(string& state)
 {
     NStr::ReplaceInPlace(state, "  ", " ");
     NStr::TruncateSpacesInPlace(state);
-    TCStringPairsMap::const_iterator found = k_Canada_state_abbrev.find(NStr::ToLower(state).c_str());
-    if (found != k_Canada_state_abbrev.end())
+    auto found = Canada_map_state_to_abbrev.find(state);
+    if (found != Canada_map_state_to_abbrev.end())
         state = found->second;
     else
         NStr::ToUpper(state);
