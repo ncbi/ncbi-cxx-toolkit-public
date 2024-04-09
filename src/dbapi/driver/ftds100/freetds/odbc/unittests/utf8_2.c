@@ -34,7 +34,7 @@ static const char * const strings_hex[] = {
 int
 main(int argc, char *argv[])
 {
-	char tmp[512];
+        char tmp[2100];
 	char out[32];
 	SQLLEN n_len;
 	SQLSMALLINT len;

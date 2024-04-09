@@ -39,7 +39,7 @@ static const char * const strings_hex[] = {
 	NULL, NULL
 };
 
-static char tmp[2048];
+static char tmp[3200];
 
 static void
 TestBinding(int minimum)
