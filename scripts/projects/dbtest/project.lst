@@ -31,6 +31,10 @@ dbapi/driver/ftds100$
 dbapi/driver/ftds100/impl$
 dbapi/driver/ftds100/freetds
 dbapi/driver/ftds100/ctlib$
+dbapi/driver/ftds14$
+dbapi/driver/ftds14/impl$
+dbapi/driver/ftds14/freetds
+dbapi/driver/ftds14/ctlib$
 dbapi/driver/ftds-default
 misc$
 misc/xmlwrapp

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db14_canquery)
+  NCBI_sources(canquery common)
+  NCBI_set_test_assets(canquery.sql)
+  NCBI_add_test(test-db14 db14_canquery)
+NCBI_end_app()
+

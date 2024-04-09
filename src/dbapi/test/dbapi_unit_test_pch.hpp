@@ -274,6 +274,7 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////
 extern const char* ftds100_driver;
+extern const char* ftds14_driver;
 extern const char* ftds_driver;
 
 extern const char* odbc_driver;

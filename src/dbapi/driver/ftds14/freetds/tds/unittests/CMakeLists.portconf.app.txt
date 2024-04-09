@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(tds14_portconf)
+  NCBI_sources(portconf)
+  NCBI_add_definitions(NEED_FREETDS_SRCDIR)
+  NCBI_set_test_assets(portconf.in)
+  NCBI_add_test()
+NCBI_end_app()
+

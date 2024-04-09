@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_raiserror)
+  NCBI_sources(raiserror common)
+  NCBI_add_test(test-odbc14 odbc14_raiserror)
+NCBI_end_app()
+

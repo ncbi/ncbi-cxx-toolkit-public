@@ -1,0 +1,23 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ctl_lang_ftds14)
+  NCBI_sources(ctl_lang_ftds14 dbapi_driver_sample_base_ftds14)
+  NCBI_add_definitions(FTDS_IN_USE)
+  NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds14)
+  NCBI_optional_components(connext)
+  NCBI_project_watchers(ucko satskyse)
+
+  NCBI_set_test_requires(in-house-resources)
+  NCBI_begin_test(ctl_lang_ftds14-MS2022)
+    NCBI_set_test_command(run_sybase_app.sh ctl_lang_ftds14 -S DBAPI_MS2022_TEST_LB)
+  NCBI_end_test()
+  NCBI_begin_test(ctl_lang_ftds14-SYB16-2K)
+    NCBI_set_test_command(run_sybase_app.sh ctl_lang_ftds14 -S DBAPI_DEV16_2K -v 50)
+  NCBI_end_test()
+  NCBI_begin_test(ctl_lang_ftds14-SYB16-16K)
+    NCBI_set_test_command(run_sybase_app.sh ctl_lang_ftds14 -S DBAPI_DEV16_16K -v 50)
+  NCBI_end_test()
+NCBI_end_app()
+

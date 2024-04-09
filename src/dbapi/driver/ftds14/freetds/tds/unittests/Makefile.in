@@ -1,0 +1,16 @@
+# $Id$
+#################################
+
+# TDS unit tests
+#################################
+
+LIB_PROJ = tds_ut_common_ftds14
+
+APP_PROJ = test-tds14 t0001 t0002 t0003 t0004 t0005 t0006 t0007 t0008 \
+           dynamic1 convert dataread utf8_1 utf8_2 utf8_3 numeric iconv_fread \
+           toodynamic readconf charconv nulls corrupt declarations portconf \
+           parsing freeze strftime log_elision convert_bounds collations
+
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta

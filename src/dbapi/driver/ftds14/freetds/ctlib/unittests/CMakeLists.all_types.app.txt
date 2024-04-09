@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(ct14_all_types)
+  NCBI_sources(all_types common)
+  NCBI_uses_toolkit_libraries(tds_ut_common_ftds14)
+  NCBI_add_test()
+NCBI_end_app()
+

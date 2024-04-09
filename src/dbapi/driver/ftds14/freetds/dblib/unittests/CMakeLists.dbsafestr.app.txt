@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(db14_dbsafestr)
+  NCBI_sources(dbsafestr common)
+  NCBI_add_test()
+NCBI_end_app()
+

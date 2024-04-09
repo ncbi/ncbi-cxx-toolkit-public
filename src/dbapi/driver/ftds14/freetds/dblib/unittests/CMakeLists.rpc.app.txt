@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db14_rpc)
+  NCBI_sources(rpc common)
+  NCBI_set_test_assets(rpc.sql)
+  NCBI_add_test(test-db14 --no-auto db14_rpc)
+NCBI_end_app()
+

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_utf8_3)
+  NCBI_sources(utf8_3 common)
+  NCBI_add_test(test-odbc14 odbc14_utf8_3)
+NCBI_end_app()
+

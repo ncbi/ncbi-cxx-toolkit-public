@@ -31,5 +31,7 @@ dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
 dbapi/driver/ftds100
 -dbapi/driver/ftds100/ctlib/samples
+dbapi/driver/ftds14
+-dbapi/driver/ftds14/ctlib/samples
 dbapi/driver/ftds-default
 dbapi/simple$

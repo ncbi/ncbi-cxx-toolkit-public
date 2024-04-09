@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db14_bcp2)
+  NCBI_sources(bcp2 common)
+  NCBI_set_test_assets(bcp2.sql)
+  NCBI_add_test(test-db14 db14_bcp2)
+NCBI_end_app()
+

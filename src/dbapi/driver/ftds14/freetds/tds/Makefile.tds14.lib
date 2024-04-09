@@ -1,0 +1,24 @@
+# $Id$
+
+LIB = tds_ftds14
+SRC = mem token util login read write convert numeric config query iconv \
+      locale vstrbuild getmac data net tls tds_checks log bulk packet stream \
+      random sec_negotiate gssapi sspi challenge rp_iconv \
+      ../replacements/gettimeofday ../replacements/poll \
+      ../replacements/socketpair ../replacements/getaddrinfo rp_asprintf \
+      ../replacements/basename rp_getopt ../replacements/readpassphrase \
+      rp_strlcat rp_strlcpy rp_strtok_r rp_strsep rp_vasprintf rp_daemon \
+      rp_setenv ../utils/md4 ../utils/md5 ../utils/des ../utils/hmac_md5 \
+      ../utils/dlist ../utils/getpassarg ../utils/sleep ../utils/tds_cond \
+      ../utils/win_mutex ../utils/threadsafe ../utils/bjoern-utf8 \
+      ../utils/tdsstring ut_net ../utils/smp
+
+CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS14_INCLUDE) \
+           $(ORIG_CPPFLAGS)
+
+# LIBS    = $(FTDS14_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
+# LINK    = $(C_LINK)
+
+LIB_OR_DLL = lib
+
+WATCHERS = ucko satskyse

@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_moreandcount)
+  NCBI_sources(moreandcount common)
+  NCBI_add_test(test-odbc14 odbc14_moreandcount)
+NCBI_end_app()
+

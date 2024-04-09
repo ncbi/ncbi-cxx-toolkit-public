@@ -915,6 +915,7 @@ public:
         DBLB_INSTALL_DEFAULT();
         DBAPI_RegisterDriver_FTDS();
         DBAPI_RegisterDriver_FTDS100();
+        DBAPI_RegisterDriver_FTDS14();
 
         if (s_DriverName.get() == NULL) {
             s_DriverName.reset(strdup(kDefaultDriverName));
@@ -927,7 +928,8 @@ public:
                     = app->GetConfig().GetString("sdbapi", "use_driver",
                                                  s_DriverName.get());
                 if (driver_name == kDefaultDriverName
-                    ||  driver_name == "ftds100") {
+                    ||  driver_name == "ftds100"
+                    ||  driver_name == "ftds14") {
                     s_DriverName.reset(strdup(driver_name.c_str()));
                 } else {
                     ERR_POST_X(15, "Unsupported driver name " << driver_name
@@ -1368,6 +1370,7 @@ void CSDBAPI::UseDriver(EDriver driver)
     }
     switch (driver) {
     case eDriver_FTDS100: s_DriverName.reset(strdup("ftds100")); break;
+    case eDriver_FTDS14: s_DriverName.reset(strdup("ftds14")); break;
     }
 }
 

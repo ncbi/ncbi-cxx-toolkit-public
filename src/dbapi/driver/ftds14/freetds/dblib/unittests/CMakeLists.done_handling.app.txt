@@ -1,0 +1,8 @@
+#############################################################################
+
+NCBI_begin_app(db14_done_handling)
+  NCBI_sources(done_handling common)
+  NCBI_set_test_assets(done_handling.sql)
+  NCBI_add_test(test-db14 --no-auto db14_done_handling)
+NCBI_end_app()
+

@@ -1,0 +1,8 @@
+# $Id$
+#################################
+
+# LIB_PROJ = tdsutils14 # Folded into tds14
+SUB_PROJ = unittests
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

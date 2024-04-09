@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(tds_ut_common_ftds14 STATIC)
+  NCBI_sources(common utf8 allcolumns)
+  NCBI_headers(common.h)
+  NCBI_project_watchers(ucko satskyse)
+  NCBI_uses_toolkit_libraries(tds_ftds14)
+NCBI_end_lib()
+

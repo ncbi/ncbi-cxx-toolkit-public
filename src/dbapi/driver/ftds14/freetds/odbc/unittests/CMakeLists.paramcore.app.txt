@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(odbc14_paramcore)
+  NCBI_sources(paramcore common)
+  NCBI_add_test(test-odbc14 --no-auto odbc14_paramcore)
+NCBI_end_app()
+

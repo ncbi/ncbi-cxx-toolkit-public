@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(db14_empty_rowsets)
+  NCBI_sources(empty_rowsets common)
+  NCBI_set_test_assets(empty_rowsets.sql)
+  NCBI_add_test(test-db14 db14_empty_rowsets)
+NCBI_end_app()
+

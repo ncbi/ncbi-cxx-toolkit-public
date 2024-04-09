@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(test-tds14)
+  NCBI_sources(test-tds14)
+  NCBI_uses_toolkit_libraries(xncbi)
+NCBI_end_app()
+

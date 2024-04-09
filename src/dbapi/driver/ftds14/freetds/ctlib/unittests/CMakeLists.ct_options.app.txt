@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct14_ct_options)
+  NCBI_sources(ct_options common)
+  NCBI_add_test(test-ct14 ct14_ct_options)
+NCBI_end_app()
+

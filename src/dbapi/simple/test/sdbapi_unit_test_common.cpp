@@ -190,6 +190,8 @@ CTestArguments::CTestArguments(void)
         string driver = args["dr"].AsString();
         if (driver == "ftds100") {
             CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS100);
+        } else if (driver == "ftds14") {
+            CSDBAPI::UseDriver(CSDBAPI::eDriver_FTDS14);
         } else {
             _ASSERT(driver == "ftds");
         }
@@ -237,7 +239,7 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             CArgDescriptions::eString, "ftds");
     arg_desc->SetConstraint
         ("dr", &(*new CArgAllow_Strings,
-                 "ftds", "ftds100"));
+                 "ftds", "ftds100", "ftds14"));
 
     arg_desc->AddOptionalKey("V", "version", "TDS protocol version to use",
                              CArgDescriptions::eString);

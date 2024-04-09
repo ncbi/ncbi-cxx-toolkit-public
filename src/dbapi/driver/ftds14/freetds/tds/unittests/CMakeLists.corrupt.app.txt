@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(tds14_corrupt)
+  NCBI_sources(corrupt)
+  NCBI_add_test(test-tds14 tds14_corrupt)
+NCBI_end_app()
+
