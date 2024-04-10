@@ -665,11 +665,13 @@ static int run_tests(int live, const char *test_nums)
                 const char      *name = x_json_object_get_name(env_obj, 0);
                 const char      *val = x_json_value_get_string(
                                         x_json_object_get_value_at(env_obj, 0));
+                const char      *temp;
 
                 CORE_LOGF(eLOG_Note, ("    Setting common var: %s=%s", name,
                           val));
                 setenv(name, val, 1);
-                if (strcmp(val, getenv(name)) != 0) {
+                temp = getenv(name);
+                if (strcmp(val, temp ? temp : "") != 0) {
                     CORE_LOGF(eLOG_Critical,
                         ("Unable to set common env var %s to '%s'.",
                          name, val));
@@ -718,10 +720,12 @@ static int run_tests(int live, const char *test_nums)
                     const char      *name = x_json_object_get_name(env_obj, 0);
                     const char      *val = x_json_value_get_string(
                                         x_json_object_get_value_at(env_obj, 0));
+                    const char      *temp;
 
                     CORE_LOGF(eLOG_Note, ("        %s=%s", name, val));
                     setenv(name, val, 1);
-                    if (strcmp(val, getenv(name)) != 0) {
+                    temp = getenv(name);
+                    if (strcmp(val, temp ? temp : "") != 0) {
                         CORE_LOGF(eLOG_Critical,
                             ("Unable to set per-test env var %s to '%s'.",
                              name, val));
