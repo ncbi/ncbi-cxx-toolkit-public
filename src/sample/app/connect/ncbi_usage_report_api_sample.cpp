@@ -26,9 +26,9 @@
  * Author:  Vladimir Ivanov
  *
  * File Description:
- *   Sample for logging usage information via CUsageReport.
+ *   CUsageReport API samples for logging usage information.
  *
- * This example is working, but not log anything to the Applog,
+ * This example is working, but don't log anything to the Applog,
  * we set wrong dummy reporting URL, redefining real one for the sample purposes.
  * So, all reports here will fail actually.
  *
@@ -52,8 +52,8 @@ class CUsageReportSampleApp : public CNcbiApplication
 {
 public:
     CUsageReportSampleApp();
-    virtual void Init();
-    virtual int Run();
+    void Init();
+    int  Run();
 
     /// Global API configuration example
     void ConfigureAPI();
@@ -75,7 +75,7 @@ CUsageReportSampleApp::CUsageReportSampleApp()
     // If application have version, it will be automatically reported
     // alongside with host, OS name and application name.
     //
-    SetVersion(CVersionInfo(1,2,3));
+    NCBI_APP_SET_VERSION(1, 2, 3);  // Extended variant of SetVersion(CVersionInfo(1,2,3));
 }
 
 
@@ -111,21 +111,23 @@ void CUsageReportSampleApp::ConfigureAPI()
     // Global API configuration.
     //
     // Each call here is optional. 
-    // Any parameter can be set via configuration file or environment variable as well.
+    // Any parameter can be set via configuration file or environment variable.
 
     // Set application name and version.
-    // New values will NOT redefine CUsageReportSampleApp name and version
-    // if specified (as we did, see constructor and Init()). But can be used
-    // for any non-CNcbiApplication-based applications.
+    // New values will NOT redefine application name and version, if specified,
+    // see CUsageReportSampleApp constructor and Init().
+    // But these calls can be used for any non-CNcbiApplication-based applications.
+    // 
+    // So, all 3 calls above doesn't have any effect in our case.
     //
     CUsageReportAPI::SetAppName("usage_report_sample");
     CUsageReportAPI::SetAppVersion(CVersionInfo(4, 5, 6));
     // or set version as string
     CUsageReportAPI::SetAppVersion("4.5.6");
-    // Note again, all 3 calls above doesn't have any effect in our case.
+
 
     // Set what should be reported by default with any report
-    // (if not changed OS name will be reported by default also)
+    // If default parameters didn't changed, the OS name will be reported by default too.
     CUsageReportAPI::SetDefaultParameters(CUsageReportAPI::fAppName |
                                           CUsageReportAPI::fAppVersion |
                                           CUsageReportAPI::fHost);
@@ -134,10 +136,10 @@ void CUsageReportSampleApp::ConfigureAPI()
     // Think twice why you need to change default URL.
     CUsageReportAPI::SetURL("http://dummy/cgi");
 
-    // Change queue size for storing jobs reported in background.
+    // Change queue size for storing jobs reported in background, if needed.
     CUsageReportAPI::SetMaxQueueSize(20);
 
-    // And finally enable reporting API (global flag).
+    // And finally enable reporting API (global flag). It is disabled by default.
     CUsageReportAPI::SetEnabled();
 }
 
@@ -166,8 +168,7 @@ void CUsageReportSampleApp::Pattern_1_SimpleMacro()
                                    .Add("tool_version", 2)
                                    .Add("one_more_parameter", 123.45));
 
-    // Next 2 call are optional and should be done before 
-    // an application exit.
+    // Next 2 call are optional. Add them to be sure that all was sent befor an application exit.
 
     // Wait until all requests are reported. 
     NCBI_REPORT_USAGE_WAIT;
