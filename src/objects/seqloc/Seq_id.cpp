@@ -1835,7 +1835,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
     E_Choice type = Which();
     switch (type) {
     case e_Pir: case e_Swissprot: case e_Prf: // but *NOT* e_Pdb
-        return (EAccessionInfo)(type | fAcc_prot); // always just protein
+        // always just protein
+        return (EAccessionInfo)((EAccessionInfo)type | fAcc_prot);
 
     case e_Genbank: case e_Embl:  case e_Ddbj:
     case e_Tpg:     case e_Tpe:   case e_Tpd:
