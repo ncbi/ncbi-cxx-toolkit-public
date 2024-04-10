@@ -101,6 +101,7 @@ aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
 aligndb_reader needs $(SDBAPI_LIBS)
+aligndb_reader needs ncbi_xdbapi_ftds14
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
 alndb_asnclient needs alndb_query
@@ -136,6 +137,7 @@ biblio needs general
 biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
 biosample needs $(SDBAPI_LIBS)
+biosample needs ncbi_xdbapi_ftds14
 biosample needs xmlwrapp
 biosample needs xregexp
 biotree needs general
@@ -210,6 +212,7 @@ crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
 crypto needs3party $(Z_LIBS)
 ct_ftds100 needs tds_ftds100
+ct_ftds14 needs tds_ftds14
 ctransition needs xncbi
 ctransition_nlmzip needs $(COMPRESS_LIBS)
 ctransition_nlmzip needs xutil
@@ -383,6 +386,7 @@ gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
 gpinit_access needs $(SDBAPI_LIBS)
+gpinit_access needs ncbi_xdbapi_ftds14
 gpinit_access needs xconnect
 gpinit_obj needs general
 gpinit_register needs gc_organism
@@ -396,6 +400,7 @@ gpipe_attr needs taxon1
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs $(SDBAPI_LIBS)
 gpipe_common needs eutils_client
+gpipe_common needs ncbi_xdbapi_ftds14
 gpipe_common needs vdb_reader
 gpipe_common needs xcgi
 gpipe_common needs xregexp
@@ -431,6 +436,7 @@ gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SDBAPI_LIBS)
 gpipe_sqlite needs $(SEQ_LIBS)
 gpipe_sqlite needs $(SQLITE3_WRAPPER)
+gpipe_sqlite needs ncbi_xdbapi_ftds14
 gpipe_sqlite needs pub
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
@@ -551,6 +557,7 @@ ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
 ideocoord needs $(SDBAPI_LIBS)
 ideocoord needs ideo_gridcli
+ideocoord needs ncbi_xdbapi_ftds14
 idgen needs dbassist
 idload needs3party ctutils
 igblast needs $(BLAST_LIBS)
@@ -715,6 +722,8 @@ ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
 ncbi_xdbapi_ftds100 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds100 needs dbapi_driver
 ncbi_xdbapi_ftds100 needs3party $(FTDS_LIBS)
+ncbi_xdbapi_ftds14 needs ct_ftds14
+ncbi_xdbapi_ftds14 needs dbapi_driver
 ncbi_xdbapi_mysql needs dbapi_driver
 ncbi_xdbapi_mysql needs3party $(MYSQL_LIBS)
 ncbi_xdbapi_mysql needs3party $(NETWORK_LIBS)
@@ -837,6 +846,7 @@ objprt needs xser
 objspdi needs xser
 objtax1 needs3party ncbiobj
 odbc_ftds100 needs tds_ftds100
+odbc_ftds14 needs tds_ftds14
 omssa needs $(SEQ_LIBS)
 omssa needs pub
 opentracing needs3party $(ORIG_LIBS)
@@ -925,6 +935,7 @@ sdbapi needs dbapi
 sdbapi needs dbapi_util_blobstore
 sdbapi needs ncbi_xdbapi_ftds
 sdbapi needs ncbi_xdbapi_ftds100
+sdbapi needs ncbi_xdbapi_ftds14
 sdbapi needs xconnect
 sdncbiauth needs generic_db_core
 sdncbiauth needs muxex_g
@@ -947,6 +958,7 @@ seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan_utils needs $(SDBAPI_LIB)
 seqgapscan_utils needs $(SDBAPI_LIBS)
+seqgapscan_utils needs ncbi_xdbapi_ftds14
 seqgapscan_utils needs xconnect
 seqgapscan_utils needs xobjutil
 seqmasks_io needs $(OBJREAD_LIBS)
@@ -1038,6 +1050,7 @@ sybdb64 includes3party sybintl64
 sybdb64 needs3party $(ORIG_LIBS)
 sybdb64 needs3party sybunic64
 sybdb_ftds100 needs tds_ftds100
+sybdb_ftds14 needs tds_ftds14
 sybintl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party sybcomn64
@@ -1059,6 +1072,10 @@ taxutl needs taxon1
 tds_ftds100 needs3party $(KRB5_LIBS)
 tds_ftds100 needs3party $(NETWORK_LIBS)
 tds_ftds100 needs3party $(ORIG_LIBS)
+tds_ftds14 needs3party $(KRB5_LIBS)
+tds_ftds14 needs3party $(NETWORK_LIBS)
+tds_ftds14 needs3party $(ORIG_LIBS)
+tds_ut_common_ftds14 needs tds_ftds14
 tea_crypt needs generic_db_utils
 test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
