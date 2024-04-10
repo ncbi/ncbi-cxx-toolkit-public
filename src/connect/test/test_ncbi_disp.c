@@ -356,7 +356,7 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Trace, "Resetting service mapper");
         SERV_Reset(iter);
         CORE_LOG(eLOG_Trace, "Service mapper has been reset");
-        if (n_found  &&  !(info = SERV_GetNextInfo(iter)))
+        if (n_found  &&  !SERV_GetNextInfo(iter))
             CORE_LOG(eLOG_Fatal, "Service not found after reset");
         CORE_LOG(eLOG_Trace, "Closing service mapper");
         SERV_Close(iter);
