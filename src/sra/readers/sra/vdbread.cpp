@@ -110,6 +110,10 @@ static int s_GetDebugLevel(void)
 }
 
 
+NCBI_PARAM_DECL(bool, VDB, DISABLE_PAGEMAP_THREAD);
+NCBI_PARAM_DEF(bool, VDB, DISABLE_PAGEMAP_THREAD, false);
+
+
 
 DEFINE_SRA_REF_TRAITS(VDBManager, const);
 DEFINE_SRA_REF_TRAITS(VDatabase, const);
@@ -1002,6 +1006,9 @@ void CVDBMgr::x_Init(void)
     CVFSManager vfs_mgr(*this);
     VFSManagerLogNamesServiceErrors(vfs_mgr, false);
     s_InitLocalKNS(CKNSManager(vfs_mgr));
+    if ( NCBI_PARAM_TYPE(VDB, DISABLE_PAGEMAP_THREAD)().Get() ) {
+        VDBManagerDisablePagemapThread(*this);
+    }
 }
 
 
