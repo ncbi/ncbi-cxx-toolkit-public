@@ -44,6 +44,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/metareg.hpp>
 #include <corelib/version_api.hpp>
+#include <corelib/phone_home_policy.hpp>
 
 /// Avoid preprocessor name clash with the NCBI C Toolkit.
 #if !defined(NCBI_OS_UNIX)  ||  defined(HAVE_NCBI_C)
@@ -297,8 +298,7 @@ public:
     /// Check if the config file has been loaded
     bool HasLoadedConfig(void) const;
 
-    /// Check if the application has finished loading config file
-    /// (successfully or not).
+    /// Check if the application has finished loading config file (successfully or not).
     bool FinishedLoadingConfig(void) const;
 
     /// Get the application's cached configuration parameters (read-only).
@@ -378,7 +378,7 @@ public:
 
     /// Get the program version information.
     const CVersionAPI& GetFullVersion(void) const;
-    
+
     /// Check if it is a test run.
     bool IsDryRun(void) const;
 
@@ -625,6 +625,25 @@ protected:
     /// @sa AddOnExitAction()
     void ExecuteOnExitActions();
 
+    /// Set Phone Home Policy.
+    /// 
+    /// - To activate a new policy this method can be used in the application's Init(),
+    ///   after setting up a command line arguments, or as soon as possible in the Run(). 
+    /// - To deactivate current policy and cleanup, it can be used at the end of Run(), 
+    ///   or in the application's Exit() with the NULL argument.
+    /// @param policy 
+    ///   Pointer to new Phone Home policy.
+    ///   NULL - delete current policy without a setting new one. If you have active policy,
+    ///   it automatically calls Finish() for the previously set policy, if any.
+    /// @param ownership
+    ///   Phone Home policy ownership.
+    /// @sa GetPhoneHomePolicy(), IPhoneHomePolicy
+    void SetPhoneHomePolicy(IPhoneHomePolicy* policy, ENcbiOwnership ownership = eNoOwnership);
+
+    /// Return pointer to current Phone Home Policy or NULL.
+    /// @sa SetPhoneHomePolicy(), IPhoneHomePolicy
+    IPhoneHomePolicy* GetPhoneHomePolicy() const { return m_PhoneHomePolicy; };
+
 private:
     /// Read standard NCBI application configuration settings.
     ///
@@ -661,32 +680,34 @@ private:
                    int*           exit_code,
                    bool*          got_exception);
 
-    static CNcbiApplicationAPI*m_Instance;   ///< Current app. instance
-    CRef<CVersionAPI>          m_Version;    ///< Program version
-    unique_ptr<CNcbiEnvironment> m_Environ;    ///< Cached application env.
-    CRef<CNcbiRegistry>        m_Config;     ///< Guaranteed to be non-NULL
-    unique_ptr<CNcbiOstream>     m_DiagStream; ///< Opt., aux., see eDS_ToMemory
-    unique_ptr<CNcbiArguments>   m_Arguments;  ///< Command-line arguments
-    unique_ptr<CArgDescriptions> m_ArgDesc;    ///< Cmd.-line arg descriptions
-    unique_ptr<CArgs>            m_Args;       ///< Parsed cmd.-line args
-    TDisableArgDesc            m_DisableArgDesc;  ///< Arg desc. disabled
-    THideStdArgs               m_HideArgs;   ///< Std cmd.-line flags to hide
-    TStdioSetupFlags           m_StdioFlags; ///< Std C++ I/O adjustments
-    char*                      m_CinBuffer;  ///< Cin buffer if changed
-    string                     m_ProgramDisplayName;  ///< Display name of app
-    string                     m_ExePath;    ///< Program executable path
-    string                     m_RealExePath; ///< Symlink-free executable path
-    mutable string             m_LogFileName; ///< Log file name
-    string                     m_ConfigPath;  ///< Path to .ini file used
-    int                        m_ExitCode;    ///< Exit code to force
-    EExitMode                  m_ExitCodeCond; ///< When to force it (if ever)
-    bool                       m_DryRun;       ///< Dry run
-    string                     m_DefaultConfig; ///< conf parameter to AppMain
-    bool                       m_ConfigLoaded;  ///< Finished loading config
-    const char*                m_LogFile;     ///< Logfile if set in the command line
-    int                        m_LogOptions; ///<  logging of env, reg, args, path
-    CNcbiActionGuard           m_OnExitActions; ///< Actions executed on app destruction
-    TAppFlags                  m_AppFlags = 0;
+    static CNcbiApplicationAPI*  m_Instance;        ///< Current app. instance
+    CRef<CVersionAPI>            m_Version;         ///< Program version
+    unique_ptr<CNcbiEnvironment> m_Environ;         ///< Cached application env.
+    CRef<CNcbiRegistry>          m_Config;          ///< Guaranteed to be non-NULL
+    unique_ptr<CNcbiOstream>     m_DiagStream;      ///< Opt., aux., see eDS_ToMemory
+    unique_ptr<CNcbiArguments>   m_Arguments;       ///< Command-line arguments
+    unique_ptr<CArgDescriptions> m_ArgDesc;         ///< Cmd.-line arg descriptions
+    unique_ptr<CArgs>            m_Args;            ///< Parsed cmd.-line args
+    TDisableArgDesc              m_DisableArgDesc;  ///< Arg desc. disabled
+    THideStdArgs                 m_HideArgs;        ///< Std cmd.-line flags to hide
+    TStdioSetupFlags             m_StdioFlags;      ///< Std C++ I/O adjustments
+    char*                        m_CinBuffer;       ///< Cin buffer if changed
+    string                       m_ProgramDisplayName;  ///< Display name of app
+    string                       m_ExePath;         ///< Program executable path
+    string                       m_RealExePath;     ///< Symlink-free executable path
+    mutable string               m_LogFileName;     ///< Log file name
+    string                       m_ConfigPath;      ///< Path to .ini file used
+    int                          m_ExitCode;        ///< Exit code to force
+    EExitMode                    m_ExitCodeCond;    ///< When to force it (if ever)
+    bool                         m_DryRun;          ///< Dry run
+    string                       m_DefaultConfig;   ///< conf parameter to AppMain
+    bool                         m_ConfigLoaded;    ///< Finished loading config
+    const char*                  m_LogFile;         ///< Logfile if set in the command line
+    int                          m_LogOptions;      ///<  logging of env, reg, args, path
+    CNcbiActionGuard             m_OnExitActions;   ///< Actions executed on app destruction
+    IPhoneHomePolicy*            m_PhoneHomePolicy; ///< Pointer to active Phone Home Policy, if any
+    ENcbiOwnership               m_PhoneHomePolicy_Ownership; ///< Phone Home Policy ownersheep
+    TAppFlags                    m_AppFlags = 0;
 };
 
 /// Interface for application idler.

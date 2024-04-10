@@ -195,13 +195,33 @@ CNcbiApplicationAPI::CNcbiApplicationAPI(const SBuildInfo& build_info)
     // Create an empty registry
     m_Config.Reset(new CNcbiRegistry);
 
+    // Phone Home Policy
+    m_PhoneHomePolicy = nullptr;
+    m_PhoneHomePolicy_Ownership = eNoOwnership;
+
     m_DryRun = false;
 }
+
 
 void CNcbiApplicationAPI::ExecuteOnExitActions()
 {
     m_OnExitActions.ExecuteActions();
 }
+
+
+void CNcbiApplicationAPI::SetPhoneHomePolicy(IPhoneHomePolicy* policy, ENcbiOwnership ownership)
+{ 
+    if (m_PhoneHomePolicy) {
+        m_PhoneHomePolicy->Finish();
+    }
+    if (m_PhoneHomePolicy  &&  m_PhoneHomePolicy != policy  &&  m_PhoneHomePolicy_Ownership==eTakeOwnership) {
+        delete m_PhoneHomePolicy;
+    }
+    m_PhoneHomePolicy = policy;
+    if (m_PhoneHomePolicy) {
+        m_PhoneHomePolicy->Apply(this);
+    }
+};
 
 
 CNcbiApplicationAPI::~CNcbiApplicationAPI(void)
