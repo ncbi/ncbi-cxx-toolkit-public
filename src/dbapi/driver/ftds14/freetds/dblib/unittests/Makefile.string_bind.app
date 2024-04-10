@@ -11,4 +11,6 @@ LINK     = $(C_LINK)
 
 CHECK_CMD = test-db14 db14_string_bind
 
+CHECK_REQUIRES = in-house-resources
+
 WATCHERS = ucko satskyse
