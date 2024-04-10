@@ -6348,9 +6348,8 @@ QIBX	s	Qinghai Institute of Biology
 QIMR	s	Queensland Institute of Medical Research			
 QK	s	Fowler Herbarium Queen's University			
 QL	s	Qinling National Botanical Garden			
-QM	s	Queensland Museum	QMB		
-QM<USA-MA>	s	U.S. Army Natick Research and Development Center			
-QMB	s	Queensland Museum, Brisbane	QM		
+QM	s	Queensland Museum			
+QMB	s	Queensland Museum, Brisbane			
 QMC	s	Queen Mary College			
 QMEX	s	Universidad Autonoma de Queretaro, Centro Universitario			
 QMOR	s	Collection Entomologique Ouellet-Robert			
