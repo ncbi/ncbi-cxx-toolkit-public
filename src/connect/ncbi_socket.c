@@ -2040,6 +2040,7 @@ static EIO_Status s_Select_(size_t                n,
             if ((fd = sock->sock) == SOCK_INVALID) {
                 polls[i].revent = eIO_Close;
                 ++ready;
+                continue;
             }
 #  if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
             assert(fd < FD_SETSIZE);
@@ -6239,7 +6240,7 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
             if (err) {
                 CORE_LOGF_ERRNO_X(143, eLOG_Warning, err,
                                   ("TRIGGER#%u[?]: [TRIGGER::Create] "
-                                   " Failed to dup(%d) to higher fd(%d+))",
+                                   " Failed to dup(%d) to higher fd(%d+)",
                                    x_id, fd[1], FD_SETSIZE));
                 err = 0;
             }
@@ -6277,12 +6278,13 @@ extern EIO_Status TRIGGER_Create(TRIGGER* trigger, ESwitch log)
         if (!s_SetCloexec(fd[1], 1/*true*/))
             err = errno;
 #    endif /*!FD_SETSIZE*/
+#  endif /*!HAVE_PIPE2*/
+
         if (err  &&  err != -1) {
             CORE_LOGF_ERRNO_X(30, eLOG_Warning, err,
                               ("TRIGGER#%u[?]: [TRIGGER::Create] "
                                " Failed to set close-on-exec", x_id));
         }
-#  endif /*!HAVE_PIPE2*/
 
         if (!(*trigger = (TRIGGER) calloc(1, sizeof(**trigger)))) {
             close(fd[0]);
