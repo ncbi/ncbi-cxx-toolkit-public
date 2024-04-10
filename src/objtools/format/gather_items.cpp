@@ -3058,6 +3058,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
         s_SetGapIdxData (gap_data, gaps);
     }
 
+    CScope::TBioseqHandles cdd_handles;
     CScope::TCDD_Entries cdd_entries;
     bool load_cdd = false;
     if (!ctx.Config().HideCDDFeatures()) {
@@ -3077,16 +3078,16 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
         }
     }
     if (load_cdd) {
-        CScope::TIds prot_ids;
         SAnnotSelector sel;
         sel.SetFeatType(CSeqFeatData::e_Cdregion);
         for (CFeat_CI cds_it(hdl, sel); cds_it; ++cds_it) {
             auto id = cds_it->GetProductId();
             if (id) {
-                prot_ids.push_back(id);
+                CBioseq_Handle bh = hdl.GetScope().GetBioseqHandle(id);
+                cdd_handles.push_back(bh);
             }
         }
-        cdd_entries = hdl.GetScope().GetCDDAnnots(prot_ids);
+        cdd_entries = hdl.GetScope().GetCDDAnnots(cdd_handles);
     }
 
     bsx->IterateFeatures([this, &ctx, &prev_feat, &loc_len, &item, &out, &slice_mapper,
