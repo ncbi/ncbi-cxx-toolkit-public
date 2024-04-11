@@ -4922,31 +4922,9 @@ special  CAXFTM000000000-CAXFTW999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXFZX000000000-CAXFZZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXGAB000000000-CAXGCZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXGHC000000000-CAXGYU999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXGZH000000000-CAXGZI999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXGZK000000000-CAXGZK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXGZN000000000-CAXGZN999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXGZV000000000-CAXGZV999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHAE000000000-CAXHAE999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHBG000000000-CAXHBG999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHBI000000000-CAXHBI999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHBL000000000-CAXHBN999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHBP000000000-CAXHBP999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHBU000000000-CAXHBV999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHBX000000000-CAXHBY999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHCE000000000-CAXHCF999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHDP000000000-CAXHDP999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHDX000000000-CAXHDX999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHDZ000000000-CAXHDZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHEO000000000-CAXHEO999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHER000000000-CAXHER999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHET000000000-CAXHEU999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHEW000000000-CAXHEW999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHEY000000000-CAXHEY999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHFF000000000-CAXHFG999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHFK000000000-CAXHFK999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHFY000000000-CAXHFY999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHGC000000000-CAXHGC999999999  embl_tpa_wgs_nuc # 6+9
-special  CAXHGI000000000-CAXHGI999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXGZH000000000-CAXHBE999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXHBG000000000-CAXHHX999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXHYR000000000-CAXIDP999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HBHG+8 embl_tpa_tsa_nuc
