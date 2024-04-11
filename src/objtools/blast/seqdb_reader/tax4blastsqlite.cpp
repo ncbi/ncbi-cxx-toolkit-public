@@ -28,10 +28,6 @@
 /// @author Christiam Camacho
 /// Implementation for the CTaxonomy4BlastSQLite class
 
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
