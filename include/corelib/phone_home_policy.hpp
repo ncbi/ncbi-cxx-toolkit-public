@@ -65,7 +65,7 @@ public:
     /// Constructor
     IPhoneHomePolicy() : m_IsEnabled(false) {};
     /// Destructor
-    ~IPhoneHomePolicy() { Finish(); };
+    virtual ~IPhoneHomePolicy() { Finish(); };
 
     /// Apply policy for an application.
     ///  
