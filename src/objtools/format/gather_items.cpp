@@ -3082,13 +3082,11 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
     if (load_cdd) {
         SAnnotSelector sel;
         sel.SetFeatType(CSeqFeatData::e_Cdregion);
+        CScope::TIds cdd_ids;
         for (CFeat_CI cds_it(hdl, sel); cds_it; ++cds_it) {
-            auto id = cds_it->GetProductId();
-            if (id) {
-                CBioseq_Handle bh = hdl.GetScope().GetBioseqHandle(id);
-                cdd_handles.push_back(bh);
-            }
+            cdd_ids.push_back(cds_it->GetProductId());
         }
+        cdd_handles = hdl.GetScope().GetBioseqHandles(cdd_ids);
         cdd_entries = hdl.GetScope().GetCDDAnnots(cdd_handles);
     }
 
