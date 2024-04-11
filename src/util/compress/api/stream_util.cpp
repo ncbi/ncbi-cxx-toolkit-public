@@ -35,13 +35,24 @@ BEGIN_NCBI_SCOPE
 
 
 // Algorithm-specific default flags
-const ICompression::TFlags kDefault_BZip2               = 0;
-const ICompression::TFlags kDefault_LZO                 = 0;
-const ICompression::TFlags kDefault_Zip                 = 0;
-const ICompression::TFlags kDefault_ZipCloudflare       = 0;
-const ICompression::TFlags kDefault_GZipFile            = CZipCompression::fGZip;
-const ICompression::TFlags kDefault_GZipCloudflareFile  = CZipCloudflareCompression::fGZip;
-const ICompression::TFlags kDefault_Zstd                = 0;
+
+#if defined(HAVE_LIBBZ2)
+    const ICompression::TFlags kDefault_BZip2               = 0;
+#endif 
+#if defined(HAVE_LIBLZO)
+    const ICompression::TFlags kDefault_LZO                 = 0;
+#endif 
+#if defined(HAVE_LIBZ)
+    const ICompression::TFlags kDefault_Zip                 = 0;
+    const ICompression::TFlags kDefault_GZipFile            = CZipCompression::fGZip;
+#endif 
+#if defined(HAVE_LIBZCF)
+    const ICompression::TFlags kDefault_ZipCloudflare       = 0;
+    const ICompression::TFlags kDefault_GZipCloudflareFile  = CZipCloudflareCompression::fGZip;
+#endif 
+#if defined(HAVE_LIBZSTD)
+    const ICompression::TFlags kDefault_Zstd                = 0;
+#endif 
 
 
 bool CCompressStream::HaveSupport(EMethod method)
