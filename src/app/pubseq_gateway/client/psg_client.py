@@ -614,10 +614,18 @@ class Response(collections.UserList):
 
 class Processor:
     class Run:
-        def __init__(self, name, data):
+        def __init__(self, name, data, parent_data=None):
+            if parent_data is None:
+                parent_data = {}
+
             self._name = name
-            self._data = data
-            self._deadline = Deadline(self._data.get('timeout'))
+            self._deadline = Deadline(data.get('timeout')) | Deadline(parent_data.get('timeout'))
+            self._env = data.get('env', {}) | parent_data.get('env', {})
+            self._user_args = '&'.join(filter(None, [data.get('user_args'), parent_data.get('user_args')]))
+            self._exclude = data.get('exclude', []) + parent_data.get('exclude', [])
+            self._require = data.get('require', []) + parent_data.get('require', [])
+            self._filter = ') and ('.join(filter(None, [data.get('filter', ''), parent_data.get('filter', '')]))
+            self._filter = f'({self._filter})' if self._filter else ''
 
         def adjust(self, deadline):
             self._deadline |= deadline
@@ -627,12 +635,28 @@ class Processor:
             return self._name
 
         @property
-        def data(self):
-            return self._data
-
-        @property
         def deadline(self):
             return self._deadline
+
+        @property
+        def env(self):
+            return self._env
+
+        @property
+        def user_args(self):
+            return self._user_args
+
+        @property
+        def exclude(self):
+            return self._exclude
+
+        @property
+        def require(self):
+            return self._require
+
+        @property
+        def filter(self):
+            return self._filter
 
     class Testcase:
         def __init__(self, run, testcase):
@@ -658,9 +682,9 @@ class Processor:
 
         def adjust(self, run):
             self._deadline |= run.deadline
-            env = run.data.get('env', {}).copy()
+            env = run.env.copy()
 
-            if user_args := run.data.get('user_args'):
+            if user_args := run.user_args:
                 user_args_param = 'NCBI_CONFIG__PSG__REQUEST_USER_ARGS'
 
                 # Do not override NCBI_CONFIG__PSG__REQUEST_USER_ARGS, add to it
@@ -737,38 +761,34 @@ class Processor:
             else:
                 return name == ''
 
-        def _simple_runs(name):
-            run = runs.get(name)
-
-            if run is not None:
-                if sub_runs := run.get('sub-runs'):
-                    for sub_name in sub_runs:
-                        yield from _simple_runs(sub_name)
-                else:
-                    yield name
-            elif name == '':
-                yield name
-            else:
-                sys.exit(f'Cannot find run "{name}"')
-
         runs = self.data.get('runs', {})
 
-        for name in filter(_should_run, set(runs.keys()) | set(('',))):
-            for simple_name in sorted(set(_simple_runs(name))):
-                yield self.Run(simple_name, runs.get(simple_name, {}))
+        for name in sorted(filter(_should_run, set(self.data.get('runs', {}).keys()) | set(('',)))):
+            run_data = runs.get(name)
+
+            if run_data is None:
+                sys.exit(f'Cannot find run "{name}"')
+            elif sub_runs := run_data.get('sub-runs'):
+                for simple_name in sorted(sub_runs):
+                    yield self.Run(simple_name, runs.get(simple_name), parent_data=run_data)
+            else:
+                yield self.Run(name, run_data)
 
     def get_testcases(self, run):
-        exclude = run.data.get('exclude')
-        require = run.data.get('require')
+        exclude = run.exclude
+        require = run.require
+
+        exclude_filter = '!' + ' and !'.join(exclude) if exclude else ''
+        require_filter = ' or '.join(require) if require else ''
 
         if exclude and require:
-            sys.exit(f'Run "{run.name}" has both "exclude" and "require" attributes, which is not allowed')
+            run_filter = f'({exclude_filter}) and ({require_filter})'
         elif exclude:
-            run_filter = '!' + ' and !'.join(exclude)
+            run_filter = exclude_filter
         elif require:
-            run_filter = ' or '.join(require)
+            run_filter = require_filter
         else:
-            run_filter = run.data.get('filter', '')
+            run_filter = run.filter
 
         replaces = (
                 (r'\bnot\s',   r'!'),
