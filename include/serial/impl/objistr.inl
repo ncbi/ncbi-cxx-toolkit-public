@@ -446,7 +446,7 @@ void CObjectIStream::ReadStd(CBitString& data)
 }
 
 inline
-void CObjectIStream::SkipStd(CBitString& )
+void CObjectIStream::SkipStd(const CBitString& )
 {
     SkipBitString();
 }
