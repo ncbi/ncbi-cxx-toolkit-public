@@ -143,7 +143,7 @@ public:
         }
     static void Skip(CObjectIStream& in, TTypeInfo )
         {
-            TObjectType data;
+            static const TObjectType data{};
             in.SkipStd(data);
         }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
