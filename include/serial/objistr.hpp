@@ -696,7 +696,7 @@ public:
     void SkipStd(const char* const& );
 
     void ReadStd(CBitString& data);
-    void SkipStd(CBitString& data);
+    void SkipStd(const CBitString& data);
 
     // primitive readers
     // bool
@@ -788,9 +788,10 @@ public:
         ReadStd(data.Set());
     }
 
-    template<class TKey, class TStorage> void SkipStd(CStrictId<TKey, TStorage>& data)
+    template<class TKey, class TStorage> void SkipStd
+        (const CStrictId<TKey, TStorage>& data)
     {
-        SkipStd(data.Set());
+        SkipStd(data.Get());
     }
 
 #ifdef NCBI_STRICT_GI
