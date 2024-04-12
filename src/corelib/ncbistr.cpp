@@ -2653,7 +2653,7 @@ SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
 
     if (!use_ext_buffer) {
         if (digits_len <= bufsize) {
-            strncpy(buffer,digits,digits_len);
+            memcpy(buffer, digits, digits_len);
         } else {
             NCBI_THROW2(CStringException, eConvert,
                         "Destination buffer too small", 0);
