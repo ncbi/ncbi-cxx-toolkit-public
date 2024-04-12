@@ -174,6 +174,9 @@ public:
     static bool StrainContainsTaxonInfo(const string& organism, const string& strain,
         std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
 
+    static bool StrainContainsTaxonInfo(const string& organism, const string& strain,
+        std::function<CRef<CTaxon3_reply>(const CRef<COrg_ref>&)> taxoncallback);
+
 private:
     string m_Strain;
     string m_Taxname;
