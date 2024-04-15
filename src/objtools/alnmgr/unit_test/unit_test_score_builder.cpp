@@ -78,17 +78,17 @@ bool DumpExpected(void)
 }
 
 
-CScope& GetScope(void)
+CRef<CScope> GetScope(void)
 {
-    static CRef<CScope> s_Scope;
-    if ( !s_Scope ) {
-        CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    static bool s_Initialized = false;
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    if ( !s_Initialized ) {
         CGBDataLoader::RegisterInObjectManager(*objmgr);
-        
-        s_Scope.Reset(new CScope(*objmgr));
-        s_Scope->AddDefaults();
+        s_Initialized = true;
     }
-    return *s_Scope;
+    CRef<CScope> scope(new CScope(*objmgr));
+    scope->AddDefaults();
+    return scope;
 }
 
 
@@ -156,7 +156,8 @@ Seq-align ::= { \
     *istr >> align;
     BOOST_CHECK_NO_THROW(align.Validate(true));
 
-    CScope& scope = GetScope();
+    CRef<CScope> scope_ref = GetScope();
+    CScope& scope = *scope_ref;
     CScoreBuilderBase score_builder;
     int value;
     score_builder.AddScore(scope, align, CSeq_align::eScore_IdentityCount);
