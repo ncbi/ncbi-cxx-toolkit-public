@@ -32,7 +32,7 @@ Linux64-Ubuntu  : plain  : GCC.sh      --without-debug --without-mt --with-stati
 FreeBSD64  : plain  : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
 #IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
-ArmMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
+ArmMAC   : plain  : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
 Win64_19   : static-64 : static 64 ReleaseMT
 
