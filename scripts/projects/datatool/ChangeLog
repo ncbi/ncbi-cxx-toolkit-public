@@ -208,3 +208,7 @@ Added generation of gitignore.
 February 24, 2023, CXX-12875
 version 2.23.1
 Corrected list of generated files, added RPC client ones.
+
+April 15, 2024, CXX-13563
+version 2.24.0
+Dropped generation of empty union.
