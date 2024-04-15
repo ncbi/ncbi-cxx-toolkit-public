@@ -854,7 +854,7 @@ int CNcbiApplicationAPI::AppMain
     if (appname.empty()) {
         if (!exepath.empty()) {
             CDirEntry::SplitPath(exepath, NULL, &appname);
-        } else if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
+        } else if (argc > 0  &&  argv  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
             CDirEntry::SplitPath(argv[0], NULL, &appname);
         } else {
             appname = "ncbi";
