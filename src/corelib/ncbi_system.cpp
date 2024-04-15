@@ -1474,9 +1474,8 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
     s_DoneSuppressSystemMessageBox = true;
 
 #else
-    // dummy, to avoid compilation warning
-    mode = 0;
-
+    // to avoid compilation warning
+    std::ignore = mode;
 #endif
 }
 

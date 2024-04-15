@@ -6257,8 +6257,8 @@ bool NStr::NeedsURLEncoding(const CTempString str, EUrlEncode flag)
         return false;
     default:
         _TROUBLE;
-        // To keep off compiler warning
-        encode_table = 0;
+        // To keep off compiler warning and static analizer
+        encode_table = s_Encode;
     }
     const unsigned char* cstr = (const unsigned char*)str.data();
 

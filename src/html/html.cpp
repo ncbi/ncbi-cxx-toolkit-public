@@ -583,12 +583,12 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
     switch (mode) {
         case ePlainText:
             {{
-            // Add a newline iff no node on the path to the last descendant
+            // Add a newline if no node on the path to the last descendant
             // is also a block element. We only need one break.
             CNCBINode* node = this;
             while (node->HaveChildren()) {
                 node = node->Children().back();
-                if (dynamic_cast<CHTMLBlockElement*>(node)) {
+                if (node  &&  dynamic_cast<CHTMLBlockElement*>(node)) {
                     return out;
                 }
             }

@@ -4051,8 +4051,8 @@ int CFastLocalTime::GetLocalTimezone(void)
     // Otherwise do this at each hours/timezone change.
     if ( !m_IsTuneup ) {
         // Get current timezone
-        TSeconds x_timezone = TimeZone();
-        int x_daylight = Daylight();
+        TSeconds x_timezone;
+        int x_daylight;
         {{
             // MT-Safe protect: use CTime locking mutex
             CMutexGuard LOCK(s_TimeMutex);
