@@ -123,9 +123,7 @@ int CTest::Run(void)
 
     // Initialization of variables and structures
 
-    char* app_c = sys_strdup(app.c_str());
-    assert( app_c != 0 );
-
+    const char* app_c  = app.c_str();
     const char* app_p  = "ls";
     const char* app_pp = "..";
 

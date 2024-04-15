@@ -762,7 +762,7 @@ static void s_TEST_Dir(void)
         assert(CNcbiError::GetLast());
         try {
             // find in the inexistent directory 
-            CDir::TEntries contents = CDir("bad_dir").GetEntries("*", CDir::fThrowOnError);
+            std::ignore = CDir("bad_dir").GetEntries("*", CDir::fThrowOnError);
             _TROUBLE;
         }
         catch (CFileErrnoException&) {}

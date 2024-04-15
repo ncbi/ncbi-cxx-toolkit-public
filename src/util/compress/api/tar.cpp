@@ -3421,7 +3421,7 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                             x_errno  = EEXIST;
                         }
 #endif //__GNUC__
-                        extract = false;
+                        //extract = false;
                         TAR_THROW(this, eWrite,
                                   "Cannot extract '" + dst->GetPath() + '\''
                                   + s_OSReason(x_errno));

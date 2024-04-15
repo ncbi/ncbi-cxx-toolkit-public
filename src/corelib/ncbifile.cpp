@@ -36,7 +36,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbierror.hpp>
-
+#include <atomic>
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -6539,8 +6539,8 @@ void CFileIO::Open(const string& filename,
         default:
             _TROUBLE;
     };
-    // Dummy, ignore 'share_mode' on UNIX
-    share_mode = eShare;
+    // Dummy, ignore 'share_mode' on UNIX, to avoid warnings
+    std::ignore = share_mode;
 
     // Try to open/create file
     m_Handle = NcbiSys_open(_T_XCSTRING(filename), flags, mode);
@@ -6566,7 +6566,7 @@ void CFileIO::CreateTemporary(const string& dir,
        NCBI_THROW(CFileException, eFileIO,
                   "Cannot create temporary: Handle already open");
     }
-    static volatile int s_Count = 0;
+    static atomic<int> s_Count = 0;
     string x_dir = dir;
     if (x_dir.empty()) {
         // Get application specific temporary directory name
@@ -7283,7 +7283,7 @@ void CFileLock::x_Init(const char* filename, EType type, TOffsetType offset, siz
     }
     if (m_Handle == kInvalidHandle) {
         NCBI_THROW(CFileErrnoException, eFileLock,
-                   "Cannot open file '" + string(filename) + "'");
+                   "Cannot open file '" + (filename ? string(filename) : "NULL") + "'");
     }
     if (filename) {
         m_CloseHandle = true;
