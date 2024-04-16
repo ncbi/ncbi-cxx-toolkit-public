@@ -19,7 +19,12 @@ else()
     if (WIN32)
         set(NCBI_DATATOOL_BASE "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc")
     elseif(APPLE)
-        set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/XCode;/Volumes/win-coremake/App/Ncbi/cppcore/datatool/XCode")
+        set(NCBI_DATATOOL_BASE 
+            /Volumes/win-coremake/App/Ncbi/cppcore/datatool/IntelMAC
+            /net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/IntelMAC
+            /Volumes/win-coremake/App/Ncbi/cppcore/datatool/ArmMAC
+            /net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/ArmMAC
+            )
     else()
         set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool")
         if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
