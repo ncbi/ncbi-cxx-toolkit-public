@@ -59,10 +59,6 @@ use constant GCS_URL => "https://storage.googleapis.com";
 use constant GCP_URL => "http://metadata.google.internal/computeMetadata/v1/instance/id";
 use constant GCP_BUCKET => "blast-db";
 
-# TODO: deprecate this in the next release 2.14.x
-#use constant BLASTDB_MANIFEST => "blastdb-manifest.json";
-use constant BLASTDB_MANIFEST_VERSION => "1.0";
-
 use constant BLASTDB_METADATA => "blastdb-metadata-1-1.json";
 use constant BLASTDB_METADATA_VERSION => "1.1";
 
@@ -192,6 +188,9 @@ sub validate_metadata_file
     my $url = shift;
     my $metadata = decode_json($json);
     if (ref($metadata) eq 'HASH') {
+        # This code branch detects the manifest version below
+        # We switched to manifest version 1.1 on 2022-07-28, for the BLAST+ 2.14.0 release
+        use constant BLASTDB_MANIFEST_VERSION => "1.0";
         unless (exists($$metadata{version}) and ($$metadata{version} eq BLASTDB_MANIFEST_VERSION)) {
             print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
             exit(EXIT_FAILURE);
