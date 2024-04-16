@@ -7969,6 +7969,7 @@ ULT	s	Al-Faateh University, Botany Department
 ULV	s	Universidad Central de Las Villas			
 UM	s	Uman National University of Horticulture			
 UMA	s	University of Massachusetts, Museum of Zoology			
+UMACI	s	Universidade da Madeira Colecoes de Insectos			
 UMAN	s	University of Manitoba, Zoological Collection			
 UMB	s	Ubersee-Museums	UMBB		
 UMBB	s	Ubersee-Museum, University of Bremen	UMB		
