@@ -117,7 +117,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "tds_poll_ver100 / poll_p - false positive"
+	name = "tds_poll_ver100 / poll_p - false positive 1" 
 	type = {invalid_memory_access}
 	stacks = {
 		{
@@ -128,6 +128,20 @@ suppression = {
 			mod=WS2_32.dll,func=WSAIoctl;
 			mod=WS2_32.dll,func=WSAPoll;
 			func=tds_poll_ver100,src=poll.c;
+		}
+	}
+}
+suppression = {
+	name = "tds_poll_ver100 / poll_p - false positive 2"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=WS2_32.dll,func=WSAIoctl;
+			mod=WS2_32.dll,func=WSAPoll;
+			func=tds_poll_ver100,src=poll;
 		}
 	}
 }

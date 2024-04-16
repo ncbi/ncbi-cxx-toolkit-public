@@ -9,6 +9,16 @@ suppression = {
 	}
 }
 suppression = {
+	name = "ncbienv.cpp - CNcbiEnvironment::Set() - false positive"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func=Set,src=ncbienv.cpp;
+		}
+	}
+}
+suppression = {
 	name = "ncbimtx.cpp - InitializeCriticalSection - InitializeHandle"
 	type = {kernel_handle_leak}
 	stacks = {

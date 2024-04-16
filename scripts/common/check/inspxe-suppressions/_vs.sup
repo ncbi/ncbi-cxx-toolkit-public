@@ -474,6 +474,21 @@ suppression = {
 	}
 }
 suppression = {
+	name = "Critical sections - invalid memory access 1"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			mod=ntdll.dll,func=RtlDllShutdownInProgress;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			...;
+			mod=mswsock.dll,func=WSPStartup;
+			mod=WS2_32.dll,func=WSAEnumNetworkEvents;
+		}
+	}
+}
+suppression = {
 	name = "_T_XCSTRING / string.c_str() - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
