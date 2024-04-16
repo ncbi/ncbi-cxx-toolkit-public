@@ -37,6 +37,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
+#include <atomic>
 
 
 
@@ -202,7 +203,7 @@ private:
     CFastMutex m_AppMutex;
     set<string> m_Reached;
     unsigned int m_Min, m_Max;
-    volatile unsigned int m_NextGroup;
+    atomic<unsigned int> m_NextGroup;
     vector<unsigned int> m_Delayed;
     vector<SThreadGroup> m_ThreadGroups;
 
