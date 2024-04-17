@@ -2442,9 +2442,7 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
         desc = embl_refs(pp, dbp, col_data, no_auth);
 
     if (desc && desc->IsSetComment()) {
-        char* comment = (char*)desc->GetComment().c_str();
-        ShrinkSpaces(comment);
-        desc->SetComment(comment);
+        ShrinkSpaces(desc->SetComment());
     }
 
     if (no_auth) {

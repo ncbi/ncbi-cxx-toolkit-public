@@ -410,17 +410,10 @@ static void RemoveSourceFeatSpaces(SourceFeatBlkPtr sfbp)
         RemoveStringSpaces(sfbp->location);
         for (auto& cur : sfbp->quals) {
             if (cur->IsSetQual()) {
-                vector<char> buf(cur->GetQual().begin(), cur->GetQual().end());
-                buf.push_back(0);
-                ShrinkSpaces(&buf[0]);
-                cur->SetQual(&buf[0]);
+                ShrinkSpaces(cur->SetQual());
             }
-
             if (cur->IsSetVal()) {
-                vector<char> buf(cur->GetVal().begin(), cur->GetVal().end());
-                buf.push_back(0);
-                ShrinkSpaces(&buf[0]);
-                cur->SetVal(&buf[0]);
+                ShrinkSpaces(cur->SetVal());
             }
         }
     }

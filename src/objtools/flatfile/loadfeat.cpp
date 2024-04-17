@@ -4023,13 +4023,13 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                 continue;
 
             const string& qual_str = cur->GetQual();
-            const string& val_str  = cur->GetVal();
+            string        val_str  = cur->GetVal();
 
+            ShrinkSpaces(val_str);
             vector<Char> val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
 
             p = &val_buf[0];
-            ShrinkSpaces(p);
             if (*p == '\0' && qual_str != "replace") {
                 cur->ResetVal();
                 val_buf[0] = 0;
@@ -4238,13 +4238,13 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
                 continue;
 
             const string& qual_str = cur->GetQual();
-            const string& val_str  = cur->GetVal();
+            string        val_str  = cur->GetVal();
 
+            ShrinkSpaces(val_str);
             vector<Char> val_buf(val_str.begin(), val_str.end());
             val_buf.push_back(0);
 
             p = &val_buf[0];
-            ShrinkSpaces(p);
             if (*p == '\0' && qual_str != "replace") {
                 cur->ResetVal();
                 val_buf[0] = 0;

@@ -116,33 +116,31 @@ static const KwordBlk PubStatus[] = {
 };
 
 /**********************************************************/
-static char* fta_strip_pub_comment(char* comment, const KwordBlk* kbp)
+void fta_strip_pub_comment(string& comment, const KwordBlk* kbp)
 {
-    char* p;
-    char* q;
+    const char* p;
 
     ShrinkSpaces(comment);
     for (; kbp->str; kbp++) {
         for (;;) {
-            p = StringIStr(comment, kbp->str);
+            p = StringIStr(comment.c_str(), kbp->str);
             if (! p)
                 break;
-            for (q = p + kbp->len; *q == ' ' || *q == ';';)
-                q++;
-            fta_StringCpy(p, q);
+            size_t i = p - comment.c_str();
+            size_t j = i + kbp->len;
+            while (j < comment.size() && (comment[j] == ' ' || comment[j] == ';'))
+                j++;
+            comment.erase(i, j);
         }
     }
 
     ShrinkSpaces(comment);
-    p = (*comment == '\0') ? nullptr : StringSave(comment);
-    MemFree(comment);
 
+    p = comment.empty() ? nullptr : comment.c_str();
     if (p && (StringEquNI(p, "Publication Status", 18) ||
               StringEquNI(p, "Publication_Status", 18) ||
               StringEquNI(p, "Publication-Status", 18)))
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"%s\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
-
-    return (p);
 }
 
 /**********************************************************/
@@ -282,9 +280,7 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
         if (authors->IsSetAffil() && authors->CanGetAffil() &&
             authors->GetAffil().Which() == CAffil::e_Str) {
             CAffil& affil = authors->SetAffil();
-            char*   aff   = affil.SetStr().data();
-            ShrinkSpaces(aff);
-            affil.SetStr(aff);
+            ShrinkSpaces(affil.SetStr());
         }
 
         if (authors->IsSetNames() && authors->CanGetNames() &&
@@ -296,9 +292,7 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
                 if ((*it)->IsSetAffil() && (*it)->CanGetAffil() &&
                     (*it)->GetAffil().Which() == CAffil::e_Str) {
                     CAffil& affil = (*it)->SetAffil();
-                    char*   aff   = affil.SetStr().data();
-                    ShrinkSpaces(aff);
-                    affil.SetStr(aff);
+                    ShrinkSpaces(affil.SetStr());
                 }
                 if ((*it)->IsSetName() && (*it)->CanGetName() &&
                     (*it)->GetName().IsName()) {
@@ -362,14 +356,12 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
         if (status == ePubStatus_epublish ||
             status == ePubStatus_ppublish ||
             status == ePubStatus_aheadofprint) {
-            char* comment = StringSave(pub_descr.GetComment());
-            comment       = fta_strip_pub_comment(comment, PubStatus);
-            if (comment && *comment != 0)
+            string comment = pub_descr.GetComment();
+            fta_strip_pub_comment(comment, PubStatus);
+            if (! comment.empty())
                 pub_descr.SetComment(comment);
             else
                 pub_descr.ResetComment();
-
-            MemFree(comment);
         }
     }
 }
