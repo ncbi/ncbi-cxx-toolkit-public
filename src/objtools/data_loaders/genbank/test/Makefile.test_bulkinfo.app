@@ -18,6 +18,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type length -reference ref/0.length.tx
 CHECK_CMD = all_readers.sh test_bulkinfo -type type -reference ref/0.type.txt /CHECK_NAME=test_bulkinfo_type
 CHECK_CMD = all_readers.sh test_bulkinfo -conffile test_bulkinfo_log.ini -type state -reference ref/0.state.txt /CHECK_NAME=test_bulkinfo_state
 CHECK_CMD = all_readers.sh test_bulkinfo -type hash -reference ref/0.hash.txt /CHECK_NAME=test_bulkinfo_hash
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo -type cdd -reference ref/0.cdd.txt /CHECK_NAME=test_bulkinfo_cdd
 
 CHECK_CMD = all_readers.sh test_bulkinfo -type gi -idlist wgs.ids -reference ref/wgs.gi.txt /CHECK_NAME=test_bulkinfo_wgs_gi
 CHECK_CMD = all_readers.sh test_bulkinfo -type acc -idlist wgs.ids -reference ref/wgs.acc.txt /CHECK_NAME=test_bulkinfo_wgs_acc
@@ -28,6 +29,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type type -idlist wgs.ids -reference r
 CHECK_CMD = all_readers.sh -no-vdb-wgs test_bulkinfo -type state -idlist wgs.ids -reference ref/wgs.state.txt /CHECK_NAME=test_bulkinfo_wgs_state
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type state -idlist wgs.ids /CHECK_NAME=test_bulkinfo_wgs_state_id2
 CHECK_CMD = all_readers.sh test_bulkinfo -type hash -idlist wgs.ids -reference ref/wgs.hash.txt /CHECK_NAME=test_bulkinfo_wgs_hash
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo -type cdd -idlist wgs.ids -reference ref/wgs.cdd.txt /CHECK_NAME=test_bulkinfo_wgs_cdd
 
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type gi -idlist wgs_vdb.ids -reference ref/wgs_vdb.gi.txt /CHECK_NAME=test_bulkinfo_wgs_vdb_gi
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type acc -idlist wgs_vdb.ids -reference ref/wgs_vdb.acc.txt /CHECK_NAME=test_bulkinfo_wgs_vdb_acc
@@ -37,6 +39,7 @@ CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type length -idlist wgs_vdb.i
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type type -idlist wgs_vdb.ids -reference ref/wgs_vdb.type.txt /CHECK_NAME=test_bulkinfo_wgs_vdb_type
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type state -idlist wgs_vdb.ids /CHECK_NAME=test_bulkinfo_wgs_vdb_state
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo -type hash -idlist wgs_vdb.ids -reference ref/wgs_vdb.hash.txt /CHECK_NAME=test_bulkinfo_wgs_vdb_hash
+CHECK_CMD = all_readers.sh -vdb-wgs -id2 test_bulkinfo -type cdd -idlist wgs_vdb.ids -reference ref/wgs_vdb.cdd.txt /CHECK_NAME=test_bulkinfo_wgs_vdb_cdd
 
 CHECK_CMD = all_readers.sh test_bulkinfo -type gi -idlist bad_len.ids -reference ref/bad_len.gi.txt /CHECK_NAME=test_bulkinfo_bad_gi
 CHECK_CMD = all_readers.sh test_bulkinfo -type acc -idlist bad_len.ids -reference ref/bad_len.acc.txt /CHECK_NAME=test_bulkinfo_bad_acc
@@ -46,6 +49,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type length -idlist bad_len.ids -refer
 CHECK_CMD = all_readers.sh test_bulkinfo -type type -idlist bad_len.ids -reference ref/bad_len.type.txt /CHECK_NAME=test_bulkinfo_bad_type
 CHECK_CMD = all_readers.sh test_bulkinfo -type state -idlist bad_len.ids -reference ref/bad_len.state.txt /CHECK_NAME=test_bulkinfo_bad_state
 CHECK_CMD = all_readers.sh test_bulkinfo -type hash -idlist bad_len.ids -reference ref/bad_len.hash.txt /CHECK_NAME=test_bulkinfo_bad_hash
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo -type cdd -idlist bad_len.ids -reference ref/bad_len.cdd.txt /CHECK_NAME=test_bulkinfo_bad_cdd
 
 CHECK_TIMEOUT = 400
 
