@@ -879,6 +879,102 @@ public:
 };
 
 
+class CDataTesterCDD : public IBulkTester
+{
+public:
+    typedef int TDataValue;
+    typedef vector<TDataValue> TDataSet;
+    TDataSet data, data_verify;
+
+    const char* GetType(void) const
+        {
+            return "cdd";
+        }
+    TDataValue GetData(const CTSE_Handle& tse) const
+        {
+            TDataValue ret = 0;
+            if ( tse ) {
+                if ( auto se = tse.GetObjectCore() ) {
+                    if ( se->IsSetAnnot() ) {
+                        for ( auto& annot : se->GetAnnot() ) {
+                            if ( annot->GetData().IsFtable() ) {
+                                ret += annot->GetData().GetFtable().size();
+                            }
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+    TDataValue GetData(CScope& scope, const CSeq_id_Handle& id) const
+        {
+            TDataValue ret = 0;
+            CBioseq_Handle bh = scope.GetBioseqHandle(id);
+            SAnnotSelector sel;
+            sel.AddNamedAnnots("CDD");
+            if ( bh ) {
+                ret = CFeat_CI(bh, sel).GetSize();
+                scope.RemoveFromHistory(bh);
+            }
+            return ret;
+        }
+    void LoadBulk(CScope& scope)
+        {
+            auto tmp = scope.GetCDDAnnots(ids);
+            data.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                data[i] = GetData(tmp[i]);
+            }
+        }
+    void LoadSingle(CScope& scope)
+        {
+            data.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                data[i] = GetData(scope, ids[i]);
+            }
+        }
+    void LoadVerify(CScope& scope)
+        {
+            data_verify.resize(ids.size());
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                data_verify[i] = GetData(scope, ids[i]);
+            }
+        }
+    void LoadVerify(const vector<string>& lines)
+        {
+            data_verify.resize(ids.size(), -1);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                const string& line = lines[i];
+                if ( !line.empty() ) {
+                    data_verify[i] = NStr::StringToNumeric<TDataValue>(line);
+                }
+            }
+        }
+    void SaveResults(CNcbiOstream& out) const
+        {
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                out << data[i] << NcbiEndl;
+            }
+        }
+    bool Valid(size_t i) const
+        {
+            return data[i] >= 0;
+        }
+    bool Correct(size_t i) const
+        {
+            return (data[i] == data_verify[i]);
+        }
+    void DisplayData(CNcbiOstream& out, size_t i) const
+        {
+            out << data[i];
+        }
+    void DisplayDataVerify(CNcbiOstream& out, size_t i) const
+        {
+            out << data_verify[i];
+        }
+};
+
+
 IBulkTester* IBulkTester::CreateTester(EBulkType type)
 {
     switch ( type ) {
@@ -892,6 +988,7 @@ IBulkTester* IBulkTester::CreateTester(EBulkType type)
     case eBulk_state:  return new CDataTesterState();
     case eBulk_general:return new CDataTesterGeneral();
     case eBulk_sequence:return new CDataTesterSequence();
+    case eBulk_cdd:    return new CDataTesterCDD();
     default: return 0;
     }
 }

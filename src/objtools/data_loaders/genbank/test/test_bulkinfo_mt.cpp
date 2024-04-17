@@ -115,7 +115,7 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
                          "gi", "acc", "label", "taxid", "hash",
-                         "length", "type", "state"));
+                         "length", "type", "state", "general", "sequence", "cdd"));
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
     args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
@@ -248,6 +248,15 @@ bool CTestApplication::TestApp_Init(void)
     }
     else if ( args["type"].AsString() == "state" ) {
         m_Type = IBulkTester::eBulk_state;
+    }
+    else if ( args["type"].AsString() == "general" ) {
+        m_Type = IBulkTester::eBulk_general;
+    }
+    else if ( args["type"].AsString() == "sequence" ) {
+        m_Type = IBulkTester::eBulk_sequence;
+    }
+    else if ( args["type"].AsString() == "cdd" ) {
+        m_Type = IBulkTester::eBulk_cdd;
     }
     m_GetFlags = 0;
     if ( !args["no-force"] ) {
@@ -396,10 +405,19 @@ bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids,
         else {
             data->LoadBulk(*scope);
         }
-        ITERATE ( TIds, it, ids ) {
-            _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded) ||
-                    (m_Type == IBulkTester::eBulk_hash &&
-                     !(m_GetFlags & CScope::fDoNotRecalculate)));
+        if ( m_Type == IBulkTester::eBulk_sequence ||
+             m_Type == IBulkTester::eBulk_cdd ) {
+            // loaded fully
+        }
+        else if ( m_Type == IBulkTester::eBulk_hash &&
+                  !(m_GetFlags & CScope::fDoNotRecalculate) ) {
+            // may be loaded fully for recalculation
+        }
+        else {
+            // should not be loaded
+            ITERATE ( TIds, it, ids ) {
+                _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
+            }
         }
     }}
     vector<bool> errors;

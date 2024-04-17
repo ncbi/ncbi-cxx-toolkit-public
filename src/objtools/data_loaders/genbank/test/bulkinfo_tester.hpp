@@ -61,7 +61,8 @@ public:
         eBulk_type,
         eBulk_state,
         eBulk_general,
-        eBulk_sequence
+        eBulk_sequence,
+        eBulk_cdd
     };
     static IBulkTester* CreateTester(EBulkType type);
 

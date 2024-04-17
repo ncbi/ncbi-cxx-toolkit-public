@@ -132,7 +132,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
                          "gi", "acc", "label", "taxid", "hash",
-                         "length", "type", "state", "general", "sequence"));
+                         "length", "type", "state", "general", "sequence", "cdd"));
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
     args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
@@ -263,6 +263,9 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     else if ( args["type"].AsString() == "sequence" ) {
         m_Type = IBulkTester::eBulk_sequence;
     }
+    else if ( args["type"].AsString() == "cdd" ) {
+        m_Type = IBulkTester::eBulk_cdd;
+    }
     m_GetFlags = 0;
     if ( !args["no-force"] ) {
         m_GetFlags |= CScope::fForceLoad;
@@ -342,7 +345,8 @@ bool CTestApplication::ProcessBlock(size_t pass,
         else {
             data->LoadBulk(*scope);
         }
-        if ( m_Type == IBulkTester::eBulk_sequence ) {
+        if ( m_Type == IBulkTester::eBulk_sequence ||
+             m_Type == IBulkTester::eBulk_cdd ) {
             // loaded fully
         }
         else if ( m_Type == IBulkTester::eBulk_hash &&
