@@ -526,8 +526,6 @@ static void StripCDSComment(CSeq_feat& feat)
         nullptr
     };
 
-    char* comment;
-
     if (! feat.IsSetComment())
         return;
 
@@ -541,20 +539,13 @@ static void StripCDSComment(CSeq_feat& feat)
         }
         s = tata_save(pchComment);
         MemFree(pchComment);
+        ShrinkSpaces(s);
     }
 
-    comment = nullptr;
-    if (! s.empty()) {
-        comment = StringSave(s);
-        s.clear();
-        ShrinkSpaces(comment);
-    }
-
-    if (comment && *comment != '\0')
-        feat.SetComment(comment);
+    if (! s.empty())
+        feat.SetComment(s);
     else
         feat.ResetComment();
-    MemFree(comment);
 }
 
 static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)

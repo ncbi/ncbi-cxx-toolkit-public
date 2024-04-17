@@ -891,14 +891,13 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
 
     string str_ = GetBlkDataReplaceNewLine(sv, ParFlat_COL_DATA_SP);
     StripECO(str_);
-    str = StringSave(str_);
 
-    ptr = StringStr(str, "(GENE NAME");
-    if (ptr) {
+    if (str_.find("(GENE NAME") != string::npos) {
         ErrPostStr(SEV_WARNING, ERR_GENENAME_DELineGeneName, "Old format, found gene_name in the DE data line");
     }
 
-    ShrinkSpaces(str);
+    ShrinkSpaces(str_);
+    str = StringSave(str_);
 
     /* Delete (EC ...)
      */
@@ -4334,7 +4333,6 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
     string str1;
 
     char* ptr;
-    char* s;
 
     const char* tag;
     Char        symb;
@@ -4357,12 +4355,16 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     string str_ = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP);
     StripECO(str_);
-    str = StringSave(str_);
-    s = str + StringLen(str) - 1;
-    while (s >= str && (*s == '.' || *s == ';' || *s == ','))
-        *s-- = '\0';
+    while (! str_.empty()) {
+        char c = str_.back();
+        if (c == '.' || c == ';' || c == ',')
+            str_.pop_back();
+        else
+            break;
+    }
 
-    ShrinkSpaces(str);
+    ShrinkSpaces(str_);
+    str = StringSave(str_);
 
     ibp = pp->entrylist[pp->curindx];
 
