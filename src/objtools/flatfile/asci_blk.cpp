@@ -163,6 +163,60 @@ void ShrinkSpaces(char* line)
         fta_StringCpy(line, p);
 }
 
+void ShrinkSpaces(string& line)
+{
+    size_t i;
+
+    if (line.empty())
+        return;
+
+    for (i = 0; i < line.size(); ++i) {
+        char& c = line[i];
+        if (c == '\t')
+            c = ' ';
+        if (i + 1 < line.size()) {
+            char& c1 = line[i + 1];
+            if ((c == ',' && c1 == ',') || (c == ';' && c1 == ';'))
+                c1 = ' ';
+            if ((c1 == ',' || c1 == ';') && c == ' ') {
+                c  = c1;
+                c1 = ' ';
+            }
+        }
+    }
+
+    size_t j = 0;
+    for (i = 0; i < line.size();) {
+        char c = line[i++];
+        if (c == ' ' || c == '\n') {
+            for (; i < line.size() && (line[i] == ' ' || line[i] == '\n'); ++i) {
+                if (line[i] == '\n')
+                    c = '\n';
+            }
+        }
+        line[j++] = c;
+    }
+    line.resize(j);
+
+    while (! line.empty()) {
+        char c = line.back();
+        if (c == ' ' || c == ';' || c == '\n')
+            line.pop_back();
+        else
+            break;
+    }
+
+    i = 0;
+    for (char c : line) {
+        if (c == ' ' || c == ';' || c == '\n')
+            ++i;
+        else
+            break;
+    }
+    if (i > 0)
+        line.erase(0, i);
+}
+
 /**********************************************************
  *
  *   static void InsertDatablkVal(dbp, type, offset, len):

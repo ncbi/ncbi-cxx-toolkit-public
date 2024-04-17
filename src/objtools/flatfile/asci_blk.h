@@ -85,6 +85,7 @@ void CheckHTGDivision(const char* div, int tech);
 void fta_sort_biosource(objects::CBioSource& bio);
 bool fta_EntryCheckGBBlock(TEntryList& seq_entries);
 void ShrinkSpaces(char* line);
+void ShrinkSpaces(string& line);
 void fta_sort_descr(TEntryList& seq_entries);
 void fta_sort_seqfeat_cit(TEntryList& seq_entries);
 bool XMLCheckCDS(const char* entry, XmlIndexPtr xip);
