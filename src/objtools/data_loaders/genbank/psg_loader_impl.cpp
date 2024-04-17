@@ -1491,6 +1491,10 @@ struct SCDDIds
 {
     CSeq_id_Handle gi;
     CSeq_id_Handle acc_ver;
+    bool empty() const {
+        return !gi; // TODO: && !acc_ver;
+    }
+    DECLARE_OPERATOR_BOOL(!empty());
 };
 
 static SCDDIds x_GetCDDIds(const CDataLoader::TIds& ids);
@@ -1558,7 +1562,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
             auto bioseq_info = m_BioseqCache->Get(idh);
             if (bioseq_info) {
                 auto cdd_ids = x_GetCDDIds(bioseq_info->ids);
-                if (cdd_ids.gi && cdd_ids.acc_ver && !m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids))) {
+                if (cdd_ids && !m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids))) {
                     m_CDDPrefetchTask->AddRequest(bioseq_info->ids);
                 }
             }
@@ -3075,8 +3079,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
         }
     }
     if ( kCreateLocalCDDEntries ) {
-        SCDDIds cdd_ids = x_GetCDDIds(ids);
-        if ( cdd_ids.gi ) {
+        if ( SCDDIds cdd_ids = x_GetCDDIds(ids) ) {
             if ( auto tse_lock = x_CreateLocalCDDEntry(data_source, cdd_ids) ) {
                 locks.insert(tse_lock);
             }
@@ -3092,12 +3095,20 @@ void CPSGDataLoader_Impl::PrefetchCDD(const TIds& ids)
     _ASSERT(m_CDDPrefetchTask);
 
     SCDDIds cdd_ids = x_GetCDDIds(ids);
-    if (!cdd_ids.gi) return;
+    if (!cdd_ids) {
+        // not a protein or no suitable ids
+        return;
+    }
     string blob_id = x_MakeLocalCDDEntryId(cdd_ids);
 
-    if (m_CDDInfoCache->Find(blob_id)) return;
+    if (m_CDDInfoCache->Find(blob_id)) {
+        // known for no CDDs
+        return;
+    }
     auto cached = m_AnnotCache->Get(kCDDAnnotName, ids.front());
-    if (cached) return;
+    if (cached) {
+        return;
+    }
 
     CPSG_BioIds bio_ids;
     for (auto& id : ids) {
@@ -3216,26 +3227,36 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             continue;
         }
         cdd_ids[i] = x_GetCDDIds(ids);
+        if ( !cdd_ids[i] ) {
+            // not a protein or no suitable ids
+            loaded[i] = true;
+            continue;
+        }
         // Skip if it's known that the bioseq has no CDDs.
-        if (cdd_ids[i].gi && m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
+        if (m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
             // no CDDs for this Seq-id
             loaded[i] = true;
             continue;
         }
         // Check if there's a loaded CDD blob.
+        CTSE_LoadLock cdd_tse;
         for (auto& id : ids) {
             CDataSource::TLoadedBlob_ids blob_ids;
-            data_source->GetLoadedBlob_ids(id, CDataSource::fLoaded_orphan_annots, blob_ids);
-            bool have_cdd = false;
+            data_source->GetLoadedBlob_ids(id, CDataSource::fLoaded_bioseq_annots, blob_ids);
             for (auto& bid : blob_ids) {
                 if (x_IsLocalCDDEntryId(dynamic_cast<const CPsgBlobId&>(*bid))) {
-                    have_cdd = true;
+                    cdd_tse = data_source->GetTSE_LoadLockIfLoaded(bid);
                     break;
                 }
             }
-            if (have_cdd) {
-                continue;
+            if (cdd_tse) {
+                break;
             }
+        }
+        if (cdd_tse) {
+            ret[i] = cdd_tse;
+            loaded[i] = true;
+            continue;
         }
         CDataLoader::TTSE_LockSet locks;
         if ( x_CheckAnnotCache(kCDDAnnotName, ids, data_source, nullptr, locks) ) {
@@ -3286,7 +3307,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
 
             CDataLoader::TBlobId dl_blob_id;
             if ( kCreateLocalCDDEntries ) {
-                if (!cdd_ids[idx].gi) continue;
+                if (!cdd_ids[idx]) {
+                    continue;
+                }
                 dl_blob_id = new CPsgBlobId(x_MakeLocalCDDEntryId(cdd_ids[idx]));
             }
             else {
