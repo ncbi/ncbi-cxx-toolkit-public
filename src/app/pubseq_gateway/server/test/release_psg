@@ -291,16 +291,18 @@ def getArchivedBinaryPath(ver):
         print_error('Another PSG binary version must be provided '
                     'via the --against-binary option')
         return None
+    flavor = detectFlavor()
     candidateDir = f'/am/ncbiapdata/release/pubseq_gateway/builds/{ver}/Linux64/'
     try:
         for item in os.listdir(candidateDir):
             if os.path.isdir(candidateDir + item):
-                if item.endswith('-O2g'):
-                    candidate = candidateDir + item + '/bin/pubseq_gateway'
-                    if os.path.exists(candidate):
-                        return candidate
-                    print_error(f'Another PSG binary is not found. Expected here: {candidate}')
-                    return None
+                if item.startswith(f'Linux64-{flavor}-'):
+                    if item.endswith('-O2g'):
+                        candidate = candidateDir + item + '/bin/pubseq_gateway'
+                        if os.path.exists(candidate):
+                            return candidate
+                        print_error(f'Another PSG binary is not found. Expected here: {candidate}')
+                        return None
     except Exception as exc:
         print_error('Error getting another PSG binary of version ' + ver + '\n'
                     + str(exc))
