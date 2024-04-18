@@ -44,7 +44,8 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-class CNAnnotFilter {
+class NCBI_STD_DEPRECATED("CNAnnotFilter is deprecated and will be removed as soon as CXX-13570 is closed")
+CNAnnotFilter {
  public:
     using TConsume = function<void(int32_t, CNAnnotRecord&&)>;
 
