@@ -469,8 +469,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
     if (! name)
         return;
 
-    size_t i = StringLen(name);
-    size_t j = i;
+    size_t i = 0;
     if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar)
         i += (StringLen(cultivar) + StringLen("cultivar") + 5);
     if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate)
@@ -491,16 +490,17 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         i += (StringLen(variety) + StringLen("variety") + 5);
     if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
         i += (StringLen(ecotype) + StringLen("ecotype") + 5);
-    sfbp->namstr = StringNew(i);
-    StringCpy(sfbp->namstr, name);
-    if (i == j)
+
+    if (i == 0) {
+        sfbp->namstr = StringSave(name);
         return;
+    }
 
     sfbp->orgname     = new COrgName;
     TOrgModList& mods = sfbp->orgname->SetMod();
 
-    string s;
-    s.reserve(i - j);
+    string s = name;
+    s.reserve(s.size() + i);
     if ((use_what & USE_CULTIVAR) == USE_CULTIVAR && cultivar)
         PopulateSubNames(s, "  (cultivar ", cultivar, COrgMod::eSubtype_cultivar, mods);
     if ((use_what & USE_ISOLATE) == USE_ISOLATE && isolate)
@@ -521,7 +521,7 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         PopulateSubNames(s, "  (variety ", variety, COrgMod::eSubtype_variety, mods);
     if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
         PopulateSubNames(s, "  (ecotype ", ecotype, COrgMod::eSubtype_ecotype, mods);
-    StringCat(sfbp->namstr, s.c_str());
+    sfbp->namstr = StringSave(s);
 }
 
 /**********************************************************/
