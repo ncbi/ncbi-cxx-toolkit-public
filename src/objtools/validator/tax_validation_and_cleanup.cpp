@@ -292,6 +292,19 @@ static bool IgnoreStrain(const string& str)
     return true;
 }
 
+static bool OrganismIsUnwanted(const string& str)
+{
+    if (NStr::FindNoCase(str, "virus") != NPOS ||
+        NStr::FindNoCase(str, "viroid") != NPOS ||
+        NStr::FindNoCase(str, "vector") != NPOS ||
+        NStr::FindNoCase(str, "phage") != NPOS) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 static vector<string> GetStrainCandidates(const string& organism, const string& strain)
 {
 
@@ -322,7 +335,7 @@ static vector<string> GetStrainCandidates(const string& organism, const string& 
 bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const string& strain,
     std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
 {
-    if (NStr::IsBlank(organism) || NStr::IsBlank(strain) || IgnoreStrain(strain) || ! taxoncallback) {
+    if (NStr::IsBlank(organism) || OrganismIsUnwanted(organism) || NStr::IsBlank(strain) || IgnoreStrain(strain) || ! taxoncallback) {
         return false;
     }
 
@@ -361,7 +374,7 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
 bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const string& strain,
     std::function<CRef<CTaxon3_reply>(const CRef<COrg_ref>&)> taxoncallback)
 {
-    if (NStr::IsBlank(organism) || NStr::IsBlank(strain) || IgnoreStrain(strain) || ! taxoncallback) {
+    if (NStr::IsBlank(organism) || OrganismIsUnwanted(organism) || NStr::IsBlank(strain) || IgnoreStrain(strain) || ! taxoncallback) {
         return false;
     }
 
@@ -391,6 +404,90 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
     }
 
     return false;
+}
+
+
+static bool StrainCheckCallback(const string& organism, const string& strain)
+
+{
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
+    auto responder = [&taxon3](const vector<CRef<COrg_ref>>& request)->CRef<CTaxon3_reply>
+    {
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(request);
+        return reply;
+    };
+    return CStrainRequest::StrainContainsTaxonInfo(organism, strain, responder);
+}
+
+
+void CStrainRequest::x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const COrg_ref& org)
+{
+    if (!org.IsSetTaxname() || !org.IsSetOrgMod()) {
+        return;
+    }
+    if (org.IsSetLineage() && OrganismIsUnwanted(org.GetLineage())) {
+        return;
+    }
+
+    string organism;
+    string strain;
+
+    organism = org.GetTaxname();
+    if (OrganismIsUnwanted(organism)) {
+        return;
+    }
+    for (const auto& it : org.GetOrgname().GetMod()) {
+        if (it->IsSetSubtype() && it->IsSetSubname() &&
+            it->GetSubtype() == COrgMod::eSubtype_strain) {
+            strain = it->GetSubname();
+        }
+    }
+    if (organism.empty() || strain.empty()) {
+        return;
+    }
+
+    if (IgnoreStrain(strain)) {
+        return;
+    }
+
+    if (StrainCheckCallback(organism, strain)) {
+        imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_StrainContainsTaxInfo,
+            "Strain '" + strain + "' contains taxonomic name information",
+            *(tval.GetTopReportObject()));
+    }
+}
+
+
+void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se)
+{
+    // get source descriptors
+    FOR_EACH_DESCRIPTOR_ON_SEQENTRY(it, se)
+    {
+        if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
+            const COrg_ref& org = (*it)->GetSource().GetOrg();
+            x_CheckOneStrain(tval, imp, org);
+        }
+    }
+    // also get features
+    FOR_EACH_ANNOT_ON_SEQENTRY(annot_it, se)
+    {
+        FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, **annot_it)
+        {
+            if ((*feat_it)->IsSetData() && (*feat_it)->GetData().IsBiosrc()
+                && (*feat_it)->GetData().GetBiosrc().IsSetOrg()) {
+                const COrg_ref& org = (*feat_it)->GetData().GetBiosrc().GetOrg();
+                x_CheckOneStrain(tval, imp, org);
+            }
+        }
+    }
+
+    // if set, recurse
+    if (se.IsSet()) {
+        FOR_EACH_SEQENTRY_ON_SEQSET(it, se.GetSet())
+        {
+            ExploreStrainsForTaxonInfo(tval, imp, **it);
+        }
+    }
 }
 
 
