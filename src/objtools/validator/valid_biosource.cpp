@@ -2977,7 +2977,12 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     ValidateSpecificHost(*pTval);
 
     // Commented out until TM-725 is resolved
-    ValidateStrain(*pTval, pTval->m_descTaxID);
+    bool newtaxval = false;
+    if (newtaxval) {
+        CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se);
+    } else {
+        ValidateStrain(*pTval, pTval->m_descTaxID);
+    }
 
     ValidateTentativeName(se);
 }
