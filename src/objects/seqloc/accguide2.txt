@@ -4925,6 +4925,7 @@ special  CAXGHC000000000-CAXGYU999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXGZH000000000-CAXHBE999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXHBG000000000-CAXHHX999999999  embl_tpa_wgs_nuc # 6+9
 special  CAXHYR000000000-CAXIDP999999999  embl_tpa_wgs_nuc # 6+9
+special  CAXIEU000000000-CAXIEV999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HBHG+8 embl_tpa_tsa_nuc
