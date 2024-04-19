@@ -125,20 +125,23 @@ static const char* ERRemarks[] = {
 /**********************************************************/
 static void normalize_comment(string& comment)
 {
-    string new_comment = comment;
-    char * q, *r;
-
-    for (r = (char*)new_comment.c_str();;) {
-        r = strstr(r, "; ");
-        if (! r)
+    for (size_t pos = 0; pos < comment.size();) {
+        pos = comment.find("; ", pos);
+        if (pos == string::npos)
             break;
-        for (r += 2, q = r; *q == ' ' || *q == ';';)
-            q++;
-        if (q > r)
-            fta_StringCpy(r, q);
-    }
+        pos += 2;
 
-    comment = new_comment;
+        size_t n = 0;
+        for (size_t i = pos; i < comment.size(); ++i) {
+            char c = comment[i];
+            if (c == ' ' || c == ';')
+                ++n;
+            else
+                break;
+        }
+        if (n > 0)
+            comment.erase(pos, n);
+    }
 }
 
 /**********************************************************
@@ -1880,14 +1883,13 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     if (NStr::EqualNocase(p, 0, 18, "Online Publication"))
         is_online = true;
 
-    r = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REMARK);
-    if (r) {
+    if (r = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REMARK)) {
         r = ExtractErratum(r);
-        desc->SetComment(NStr::Sanitize(r));
+        string comm = NStr::Sanitize(r);
         MemFree(r);
-
         if (! is_online)
-            normalize_comment(desc->SetComment());
+            normalize_comment(comm);
+        desc->SetComment(comm);
     }
 
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
@@ -2055,10 +2057,10 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
     if (ind[ParFlat_REMARK]) {
         r = ind[ParFlat_REMARK]->mOffset;
         r = ExtractErratum(r);
-        desc->SetComment(NStr::Sanitize(r));
-
+        string comm = NStr::Sanitize(r);
         if (! is_online)
-            normalize_comment(desc->SetComment());
+            normalize_comment(comm);
+        desc->SetComment(comm);
     }
 
     er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
