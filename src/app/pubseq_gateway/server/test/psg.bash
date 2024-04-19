@@ -76,13 +76,13 @@ fi
 
 TESTS="wrong_no_series_statistics no_end_statistics unsorted_statistics no_division_statistics"
 if echo $TESTS | grep -w $obasename > /dev/null; then
-    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0
 fi
 
 
 if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
-    curl "${curl_https}" -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -I --HEAD -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | grep -v '^Content-Length: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0
 fi
 
@@ -132,7 +132,7 @@ TESTS="pdb_1_5 pdb_1_6 pdb_2_5 pdb_2_6 pdb_3_5 pdb_3_6 pdb_4_5 pdb_4_6
        get_na_two_valid_annot_sep1 get_na_two_valid_annot_sep2 get_na_two_valid_annot_sep3
        get_na_two_valid_annot_dup get_na_two_valid_annot_dup2"
 if echo $TESTS | grep -w $obasename > /dev/null; then
-    curl "${curl_https}" -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Server: ' | grep -v '^Content-Length: ' | sed -e 's/\r$//' | grep . | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed -r 's/&n_chunks=[0-9]+//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort | uniq > $ofile
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | grep -v '^Content-Length: ' | sed -e 's/\r$//' | grep . | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/item_id=[0-9]+&//g' | sed -r 's/&n_chunks=[0-9]+//g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sort | uniq > $ofile
     exit 0
 fi
 
@@ -214,15 +214,15 @@ TESTS="bad_id2info_fallback_slim bad_id2info_fallback_smart bad_id2info_fallback
        bad_id2info_fallback_orig_2 bad_id2info_fallback_none_2"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
-    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sed  -r 's/eInvalidId2Info.*id2info.cpp//g' | sed  -r 's/size=[0-9]+/size=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sed  -r 's/eInvalidId2Info.*id2info.cpp//g' | sed  -r 's/size=[0-9]+/size=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0
 fi
 
 # The most common case
 if [[ "${cookie}" != "" ]]; then
-    curl "${curl_https}" -s --cookie "WebCubbyUser=\"${cookie}\"" -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -s --cookie "WebCubbyUser=\"${cookie}\"" -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
 else
-    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^Date: ' | grep --text -v '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
 fi
 exit 0
 
