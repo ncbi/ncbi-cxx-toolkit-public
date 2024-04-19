@@ -46,6 +46,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 
 class CValidError_imp;
+class CTaxValidationAndCleanup;
 
 
 // For Taxonomy Lookups and Fixups
@@ -171,11 +172,16 @@ public:
     static bool RequireTaxname(const string& taxname);
     static bool Check(const COrg_ref& org);
 
+    static void CheckStrainsTaxonInfo(CTaxValidationAndCleanup& tval, const CSeq_entry& se,
+        std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
+
     static bool StrainContainsTaxonInfo(const string& organism, const string& strain,
         std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
 
     static bool StrainContainsTaxonInfo(const string& organism, const string& strain,
         std::function<CRef<CTaxon3_reply>(const CRef<COrg_ref>&)> taxoncallback);
+
+    static void ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se);
 
 private:
     string m_Strain;
@@ -183,6 +189,7 @@ private:
     bool m_IsInvalid;
     static bool x_IsUnwanted(const string& str);
     static bool x_IgnoreStrain(const string& str);
+    static void x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const COrg_ref& org);
 };
 
 
