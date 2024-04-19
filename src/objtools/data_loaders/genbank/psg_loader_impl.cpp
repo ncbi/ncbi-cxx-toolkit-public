@@ -63,7 +63,7 @@
 
 #if defined(HAVE_PSG_LOADER)
 
-#define LOCK4GET 1
+//#define LOCK4GET 1
 #define GLOBAL_CHUNKS 1
 
 BEGIN_NCBI_SCOPE
