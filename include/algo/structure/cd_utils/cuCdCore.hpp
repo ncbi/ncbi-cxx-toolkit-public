@@ -198,7 +198,7 @@ public:
     int    GetRowsWithConsensus(vector<int>& consensusRows) const;
     bool   FindConsensusInSequenceList(vector<int>* indices = NULL) const;
 
-    int    GetNumPending() const {return(GetPending().size());}
+    size_t    GetNumPending() const {return(GetPending().size());}
 
 	//add aligns or sequences to CD
 
