@@ -163,9 +163,12 @@ public:
     ///   pending output prior to doing any input) and what to buffer
     /// @param ptr
     ///   Specifies data which will be read from the stream prior to extracting
-    ///   from the actual connection
+    ///   from the actual connection (must not be modified while I/O not done)
     /// @param size
     ///   The size of the area pointed to by the "ptr" argument
+    /// @note
+    ///   On MSVC, "size" may not be generally more than 2GB-1 (the signed
+    ///   32-bit int limit)
     /// @sa
     ///   CONN, ncbi_connection.h
     ///
@@ -213,10 +216,13 @@ protected:
     ///   Specifies whether to tie input and output (a tied stream flushes all
     ///   pending output prior to doing any input), and what to buffer
     /// @param ptr
-    ///   Specifies data, which will be read from the stream prior to
-    ///   extracting from the actual connection
+    ///   Specifies data which will be read from the stream prior to extracting
+    ///   from the actual connection (must not be modified while I/O not done)
     /// @param size
     ///   The size of the area pointed to by the "ptr" argument
+    /// @note
+    ///   On MSVC, "size" may not be generally more than 2GB-1 (the signed
+    ///   32-bit int limit)
     CConn_IOStream
     (const TConnector& connector,
      const STimeout*   timeout  = kDefaultTimeout,
@@ -891,6 +897,11 @@ public:
     /// must not be passed to the stream.
     /// Note that the area pointed to by "ptr" should not be changed while it
     /// is still holding the data yet to be read from the stream.
+    /// @note
+    ///   On MSVC, "size" may not be generally more than 2GB-1 (the signed
+    ///   32-bit int limit);  so if a larger area needs to be converted to a
+    ///   stream, then a BUF over the area needs to be built first, and then
+    ///   passed to the first version of the stream constructor.
     CConn_MemoryStream(const void* ptr,
                        size_t      size,
                        EOwnership  owner/**no default for safety*/,
@@ -905,7 +916,8 @@ public:
     /// the stream into a single container (as a string or a vector) so that
     /// all data is kept in sequential memory locations.
     /// Note that the operation is considered an extraction, so it effectively
-    /// empties the stream.
+    /// empties the stream, and both methods actually move the data from the
+    /// stream to the respective containers.
     void    ToString(string*);      ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
 
