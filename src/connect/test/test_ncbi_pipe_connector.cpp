@@ -336,8 +336,8 @@ int main(int argc, const char* argv[])
     // Spawned process for bidirectional standard test
     if (argc == 4) {
 #ifdef NCBI_OS_MSWIN
-        _setmode(_fileno(stdin),  _O_BINARY);
-        _setmode(_fileno(stdout), _O_BINARY);
+        (void) _setmode(_fileno(stdin),  _O_BINARY);
+        (void) _setmode(_fileno(stdout), _O_BINARY);
 #endif // NCBI_OS_MSWIN
         ERR_POST(Info << "--- PIPE CONNECTOR bidirectional standard test ---");
         // NB: NcbiStreamCopy(cout, cin) can't be used because of buffering
