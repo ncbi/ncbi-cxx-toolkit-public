@@ -7640,7 +7640,7 @@ TSMHN	s	Teylers Strichtina Museum
 TSNIGRI	s	Tsentralny Nauchno-Issledovatelskii Geolgo-Razvedochni Muzei(Chernyshev?s Central Museum of Geological Exploration)			
 TSSMC	s	Teton Science School			
 TSTN	s	Troston Hall			
-TSU	s	Miye University			
+TSU	s	Mie University			
 TSY	c	Laboratory of Mycology, Division of Microbiology			
 TTC	s	Texas Tech University, Biological Sciences Department			
 TTCC	s	Texas Tech University			
