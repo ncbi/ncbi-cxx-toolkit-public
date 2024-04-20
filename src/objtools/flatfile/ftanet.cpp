@@ -678,7 +678,7 @@ void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
         if (pDesc->IsPub()) {
             const auto& pubdesc = pDesc->GetPub();
             return (pubdesc.IsSetComment() &&
-                    fta_remark_is_er(pubdesc.GetComment().c_str()));
+                    fta_remark_is_er(pubdesc.GetComment()));
         }
         return false;
     });
