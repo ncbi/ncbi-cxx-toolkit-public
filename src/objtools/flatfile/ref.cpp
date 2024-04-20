@@ -101,12 +101,14 @@ static const char* strip_sub_str[] = {
 };
 
 static const char* ERRemarks[] = {
+    // epublish
     "Publication Status: Online-Only",                      /*  1 */
     "Publication Status : Online-Only",                     /*  2 */
     "Publication_Status: Online-Only",                      /*  3 */
     "Publication_Status : Online-Only",                     /*  4 */
     "Publication-Status: Online-Only",                      /*  5 */
     "Publication-Status : Online-Only",                     /*  6 */
+    // aheadofprint
     "Publication Status: Available-Online",                 /*  7 */
     "Publication Status : Available-Online",                /*  8 */
     "Publication_Status: Available-Online",                 /*  9 */
@@ -1745,24 +1747,24 @@ static void fta_add_article_ids(CPub& pub, const string& doi, const string& agri
 }
 
 /**********************************************************/
-Int4 fta_remark_is_er(const Char* str)
+Int4 fta_remark_is_er(const string& str)
 {
     const char** b;
-    char*        s;
     Int4         i;
 
-    s = StringSave(str);
+    string s = str;
     ShrinkSpaces(s);
-    for (i = 1, b = ERRemarks; *b; b++, i++)
-        if (StringIStr(s, *b))
-            break;
 
-    MemFree(s);
-    if (! *b)
-        return (0);
-    if (i < 7)
-        return (1); /* epublish     */
-    return (2);     /* aheadofprint */
+    for (i = 1, b = ERRemarks; *b; b++, i++) {
+        if (StringIStr(s.c_str(), *b)) {
+            if (i <= 6)
+                return 1; // epublish
+            else
+                return 2; // aheadofprint
+        }
+    }
+
+    return 0;
 }
 
 /**********************************************************/
@@ -1892,7 +1894,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
         desc->SetComment(comm);
     }
 
-    er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
+    er = desc->IsSetComment() ? fta_remark_is_er(desc->GetComment()) : 0;
 
     CRef<CCit_art> cit_art;
     if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringEquN(p, "(er)", 4) || er > 0)) {
@@ -2063,7 +2065,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
         desc->SetComment(comm);
     }
 
-    er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
+    er = desc->IsSetComment() ? fta_remark_is_er(desc->GetComment()) : 0;
 
     CRef<CCit_art> cit_art;
     if (pp->medserver == 1 && pmid > ZERO_ENTREZ_ID && (StringEquN(p, "(er)", 4) || er > 0)) {
@@ -2135,7 +2137,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, boo
     if (ind[ParFlat_RC])
         desc->SetComment(NStr::Sanitize(ind[ParFlat_RC]->mOffset));
 
-    er = fta_remark_is_er(desc->IsSetComment() ? desc->GetComment().c_str() : nullptr);
+    er = desc->IsSetComment() ? fta_remark_is_er(desc->GetComment()) : 0;
 
     if (ind[ParFlat_RX]) {
         p              = ind[ParFlat_RX]->mOffset;
