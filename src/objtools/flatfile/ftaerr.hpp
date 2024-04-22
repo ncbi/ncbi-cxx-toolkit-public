@@ -67,19 +67,17 @@ enum ErrSev {
     SEV_MAX
 };
 
-void FtaErrInit(void);
-void FtaErrFini(void);
+void FtaErrInit();
+void FtaErrFini();
 
-void                 ErrSetOptFlags(int flags);
-NCBI_DEPRECATED void ErrSetFatalLevel(ErrSev sev);
-bool                 ErrSetLog(const char* logfile);
-NCBI_DEPRECATED void ErrClear(void);
-void                 ErrLogPrintStr(const char* str);
-ErrSev               ErrSetLogLevel(ErrSev sev);
-ErrSev               ErrSetMessageLevel(ErrSev sev);
-void                 Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
-void                 Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char* str);
-void                 Nlm_ErrSetContext(const char* module, const char* fname, int line);
+void   ErrSetOptFlags(int flags);
+bool   ErrSetLog(const char* logfile);
+void   ErrLogPrintStr(const char* str);
+ErrSev ErrSetLogLevel(ErrSev sev);
+ErrSev ErrSetMessageLevel(ErrSev sev);
+void   Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
+void   Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char* str);
+void   Nlm_ErrSetContext(const char* module, const char* fname, int line);
 
 void FtaInstallPrefix(int prefix, const char* name, const char* location = nullptr);
 void FtaDeletePrefix(int prefix);

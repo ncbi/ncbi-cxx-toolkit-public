@@ -2137,13 +2137,13 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
             if (tsfbp->name == nullptr || tsfbp->name[0] == '\0')
                 continue;
 
-            size_t      name_len = strlen(tsfbp->name);
+            size_t name_len = strlen(tsfbp->name);
             string orgfeat;
             std::remove_copy_if(tsfbp->name, tsfbp->name + name_len, std::back_inserter(orgfeat), is_a_space_char);
 
             if (NStr::CompareNocase(orgdescr.c_str(), "unknown") == 0) {
-                if (NStr::CompareNocase(orgdescr.c_str(), orgfeat.c_str()) == 0 ||
-                    (! commdescr.empty() && NStr::CompareNocase(commdescr.c_str(), orgfeat.c_str()) == 0)) {
+                if (NStr::CompareNocase(orgdescr, orgfeat) == 0 ||
+                    (! commdescr.empty() && NStr::CompareNocase(commdescr, orgfeat) == 0)) {
                     break;
                 }
             } else {
@@ -2235,7 +2235,7 @@ static void PropogateSuppliedLineage(CBioseq&         bioseq,
             lineage                   = bio_src.GetOrg().GetOrgname().GetLineage();
             const string& cur_taxname = bio_src.GetOrg().GetTaxname();
 
-            if (NStr::CompareNocase(cur_taxname.c_str(), taxname.c_str()) == 0) {
+            if (NStr::CompareNocase(cur_taxname, taxname) == 0) {
                 found = true;
                 break;
             }

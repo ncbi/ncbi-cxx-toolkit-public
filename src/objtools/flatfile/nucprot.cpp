@@ -528,21 +528,20 @@ static void StripCDSComment(CSeq_feat& feat)
     if (! feat.IsSetComment())
         return;
 
-    string s = tata_save(feat.GetComment());
+    string comment = tata_save(feat.GetComment());
 
-    if (! s.empty()) {
-        char* pchComment = StringSave(s);
-        s.clear();
+    if (! comment.empty()) {
+        char* pchComment = StringSave(comment);
         for (const char** b = strA; *b; b++) {
             pchComment = stripStr(pchComment, *b);
         }
-        s = tata_save(pchComment);
+        comment = tata_save(pchComment);
         MemFree(pchComment);
-        ShrinkSpaces(s);
+        ShrinkSpaces(comment);
     }
 
-    if (! s.empty())
-        feat.SetComment(s);
+    if (! comment.empty())
+        feat.SetComment(comment);
     else
         feat.ResetComment();
 }
