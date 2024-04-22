@@ -371,6 +371,66 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
 }
 
 
+bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
+    std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
+{
+    if (!org.IsSetTaxname() || !org.IsSetOrgMod()) {
+        return false;
+    }
+    if (org.IsSetLineage() && OrganismIsUnwanted(org.GetLineage())) {
+        return false;
+    }
+
+    string organism;
+    string strain;
+
+    organism = org.GetTaxname();
+    if (OrganismIsUnwanted(organism)) {
+        return false;
+    }
+    for (const auto& it : org.GetOrgname().GetMod()) {
+        if (it->IsSetSubtype() && it->IsSetSubname() &&
+            it->GetSubtype() == COrgMod::eSubtype_strain) {
+            strain = it->GetSubname();
+        }
+    }
+
+    if (NStr::IsBlank(organism) || OrganismIsUnwanted(organism) || NStr::IsBlank(strain) || IgnoreStrain(strain) || ! taxoncallback) {
+        return false;
+    }
+
+    vector<string> candidates = GetStrainCandidates(organism, strain);
+
+    vector<CRef<COrg_ref>> request;
+
+    for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname(*tax_it);
+        request.push_back(org);
+    }
+
+    CRef<CTaxon3_reply> reply = taxoncallback(request);
+
+    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+    while (reply_it != reply->GetReply().end()) {
+        CRef<COrg_ref> cpy;
+        if ((*reply_it)->IsData() && (*reply_it)->GetData().IsSetOrg()) {
+            cpy.Reset(new COrg_ref());
+            cpy->Assign((*reply_it)->GetData().GetOrg());
+            if (cpy && cpy->IsSetTaxname()) {
+                string taxname = cpy->GetTaxname();
+                if (NStr::EqualNocase(organism, taxname)) {
+                    return true;
+                }
+            }
+        }
+        ++reply_it;
+    }
+
+    return false;
+}
+
+
 bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const string& strain,
     std::function<CRef<CTaxon3_reply>(const CRef<COrg_ref>&)> taxoncallback)
 {
@@ -407,20 +467,65 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
 }
 
 
-static bool StrainCheckCallback(const string& organism, const string& strain)
-
+bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
+    std::function<CRef<CTaxon3_reply>(const CRef<COrg_ref>&)> taxoncallback)
 {
-    CTaxon3 taxon3(CTaxon3::initialize::yes);
-    auto responder = [&taxon3](const vector<CRef<COrg_ref>>& request)->CRef<CTaxon3_reply>
-    {
-        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(request);
-        return reply;
-    };
-    return CStrainRequest::StrainContainsTaxonInfo(organism, strain, responder);
+    if (!org.IsSetTaxname() || !org.IsSetOrgMod()) {
+        return false;
+    }
+    if (org.IsSetLineage() && OrganismIsUnwanted(org.GetLineage())) {
+        return false;
+    }
+
+    string organism;
+    string strain;
+
+    organism = org.GetTaxname();
+    if (OrganismIsUnwanted(organism)) {
+        return false;
+    }
+    for (const auto& it : org.GetOrgname().GetMod()) {
+        if (it->IsSetSubtype() && it->IsSetSubname() &&
+            it->GetSubtype() == COrgMod::eSubtype_strain) {
+            strain = it->GetSubname();
+        }
+    }
+
+    if (NStr::IsBlank(organism) || OrganismIsUnwanted(organism) || NStr::IsBlank(strain) || IgnoreStrain(strain) || ! taxoncallback) {
+        return false;
+    }
+
+    vector<string> candidates = GetStrainCandidates(organism, strain);
+
+    for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname(*tax_it);
+
+        CRef<CTaxon3_reply> reply = taxoncallback(org);
+
+        CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+        while (reply_it != reply->GetReply().end()) {
+            CRef<COrg_ref> cpy;
+            if ((*reply_it)->IsData() && (*reply_it)->GetData().IsSetOrg()) {
+                cpy.Reset(new COrg_ref());
+                cpy->Assign((*reply_it)->GetData().GetOrg());
+                if (cpy && cpy->IsSetTaxname()) {
+                    string taxname = cpy->GetTaxname();
+                    if (NStr::EqualNocase(organism, taxname)) {
+                        return true;
+                    }
+                }
+            }
+            ++reply_it;
+        }
+    }
+
+    return false;
 }
 
 
-void CStrainRequest::x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const COrg_ref& org)
+void CStrainRequest::x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const COrg_ref& org,
+        std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
 {
     if (!org.IsSetTaxname() || !org.IsSetOrgMod()) {
         return;
@@ -450,7 +555,7 @@ void CStrainRequest::x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidErro
         return;
     }
 
-    if (StrainCheckCallback(organism, strain)) {
+    if (StrainContainsTaxonInfo(organism, strain, taxoncallback)) {
         imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_StrainContainsTaxInfo,
             "Strain '" + strain + "' contains taxonomic name information",
             *(tval.GetTopReportObject()));
@@ -458,14 +563,15 @@ void CStrainRequest::x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidErro
 }
 
 
-void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se)
+void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se,
+        std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
 {
     // get source descriptors
     FOR_EACH_DESCRIPTOR_ON_SEQENTRY(it, se)
     {
         if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
             const COrg_ref& org = (*it)->GetSource().GetOrg();
-            x_CheckOneStrain(tval, imp, org);
+            x_CheckOneStrain(tval, imp, org, taxoncallback);
         }
     }
     // also get features
@@ -476,7 +582,7 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
             if ((*feat_it)->IsSetData() && (*feat_it)->GetData().IsBiosrc()
                 && (*feat_it)->GetData().GetBiosrc().IsSetOrg()) {
                 const COrg_ref& org = (*feat_it)->GetData().GetBiosrc().GetOrg();
-                x_CheckOneStrain(tval, imp, org);
+                x_CheckOneStrain(tval, imp, org, taxoncallback);
             }
         }
     }
@@ -485,7 +591,7 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
     if (se.IsSet()) {
         FOR_EACH_SEQENTRY_ON_SEQSET(it, se.GetSet())
         {
-            ExploreStrainsForTaxonInfo(tval, imp, **it);
+            ExploreStrainsForTaxonInfo(tval, imp, **it, taxoncallback);
         }
     }
 }

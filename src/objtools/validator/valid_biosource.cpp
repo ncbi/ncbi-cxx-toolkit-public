@@ -2965,6 +2965,60 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
 }
 
 
+/*
+static bool StrainCheckCallback(const string& organism, const string& strain)
+
+{
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
+    auto responder = [&taxon3](const vector<CRef<COrg_ref>>& request)->CRef<CTaxon3_reply>
+    {
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(request);
+        return reply;
+    };
+    return CStrainRequest::StrainContainsTaxonInfo(organism, strain, responder);
+}
+*/
+
+
+static bool s_init_NewTaxVal(void)
+{
+    if (! CNcbiApplication::Instance()) {
+        return false;
+    }
+
+    const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
+    string fromEnv = env.Get("NCBI_NEW_STRAIN_VALIDATION");
+    NStr::ToLower(fromEnv);
+    if (fromEnv == "true") {
+        return true;
+    } else if (fromEnv == "false") {
+        return false;
+    }
+
+    return false;
+}
+
+
+static bool NCBI_NewTaxVal(void)
+{
+    static bool value = s_init_NewTaxVal();
+    return value;
+}
+
+
+static CRef<CTaxon3_reply> ExploreStrainsCallback (const vector<CRef<COrg_ref>>& request)
+
+{
+    CTaxon3 taxon3(CTaxon3::initialize::yes);
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(request);
+
+    // CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(request);
+    // cerr << "TaxonReply: " << MSerial_AsnText << reply << endl;
+
+    return reply;
+}
+
+
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 {
     auto pTval = x_CreateTaxValidator();
@@ -2977,9 +3031,8 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     ValidateSpecificHost(*pTval);
 
     // Commented out until TM-725 is resolved
-    bool newtaxval = false;
-    if (newtaxval) {
-        CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se);
+    if (NCBI_NewTaxVal()) {
+        CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se, ExploreStrainsCallback);
     } else {
         ValidateStrain(*pTval, pTval->m_descTaxID);
     }
