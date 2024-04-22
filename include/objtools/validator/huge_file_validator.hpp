@@ -104,9 +104,10 @@ public:
             SValidatorContext& context) const;
 
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
-            IValidError& errors) const;
+            CRef<CValidError>& pErrors) const;
 
-    void ReportPostErrors(const SValidatorContext& context, IValidError& errors) const;
+    void ReportPostErrors(const TGlobalInfo& globalInfo,
+            CRef<CValidError>& pErrors, SValidatorContext& context) const;
 
     void PostprocessErrors(const TGlobalInfo& globalInfo,
             const string& genbankSetId,
@@ -115,19 +116,16 @@ public:
     static void RegisterReaderHooks(CObjectIStream& objStream, SGlobalInfo& m_GlobalInfo);
 
 private:
+    void x_ReportMissingPubs(CRef<CValidError>& pErrors) const;
 
-    void x_ReportMissingPubs(IValidError& errors) const;
-
-    void x_ReportMissingCitSubs(bool hasRefSeqAccession, IValidError& errors) const;
+    void x_ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const;
 
     void x_ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
-            IValidError& errors) const;
+            CRef<CValidError>& pErrors) const;
 
-    void x_ReportMissingBioSources(IValidError& errors) const;
+    void x_ReportMissingBioSources(CRef<CValidError>& pErrors) const;
 
-    void x_ReportConflictingBiomols(IValidError& errors) const;
-
-
+    void x_ReportConflictingBiomols(CRef<CValidError>& pErrors) const;
 
     string x_GetIdString() const;
 

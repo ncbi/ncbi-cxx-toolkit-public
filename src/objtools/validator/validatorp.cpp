@@ -168,7 +168,7 @@ const CBioseq_Handle CCacheImpl::kAnyBioseq;
 CValidError_imp::CValidError_imp
 (CObjectManager&    objmgr,
  shared_ptr<SValidatorContext> pContext,
- IValidError*       errs,
+ CValidError*       errs,
  Uint4              options) :
     m_ObjMgr{&objmgr},
     m_ErrRepository{errs},
@@ -190,11 +190,6 @@ CValidError_imp::~CValidError_imp()
 {
 }
 
-
-CValidError_imp::TSuppressed& CValidError_imp::SetSuppressed() 
-{
-    return m_SuppressedErrors;
-}
 
 SValidatorContext& CValidError_imp::SetContext()
 {
@@ -307,7 +302,7 @@ void CValidError_imp::SetOptions(Uint4 options)
 
 //LCOV_EXCL_START
 //not used by asnvalidate
-void CValidError_imp::SetErrorRepository(IValidError* errors)
+void CValidError_imp::SetErrorRepository(CValidError* errors)
 {
     m_ErrRepository = errors;
 }
@@ -356,14 +351,8 @@ void CValidError_imp::Reset()
     m_NumPseudogene = 0;
     m_FarFetchFailure = false;
     m_IsTbl2Asn = false;
-
-    SetSuppressed().clear();
 }
 
-bool CValidError_imp::x_IsSuppressed(CValidErrItem::TErrIndex errType) const
-{
-    return (m_SuppressedErrors.find(errType) != m_SuppressedErrors.end());
-}
 
 // Error post methods
 void CValidError_imp::PostErr
@@ -372,10 +361,6 @@ void CValidError_imp::PostErr
  const string&  msg,
  const CSerialObject& obj)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     const CTypeInfo* type_info = obj.GetThisTypeInfo();
     if (type_info == CSeqdesc::GetTypeInfo()) {
         const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
@@ -645,11 +630,6 @@ void CValidError_imp::PostErr
  const string&  msg,
  TFeat          ft)
 {
-
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     CRef<CValidErrItem> item(new CValidErrItem());
 
     // Adjust severity
@@ -740,10 +720,6 @@ void CValidError_imp::PostErr
  const string&  msg,
  TBioseq        sq)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && sv < eDiag_Error && RaiseGenomeSeverity(et)) {
         sv = eDiag_Error;
@@ -770,10 +746,6 @@ void CValidError_imp::PostErr
  const string& msg,
  TSet          st)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -814,10 +786,6 @@ void CValidError_imp::PostErr
  TEntry         ctx,
  TDesc          ds)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -896,10 +864,6 @@ void CValidError_imp::PostErr
  const string&  msg,
  TAnnot         an)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -927,11 +891,6 @@ void CValidError_imp::PostErr
  const string&  msg,
  TGraph         graph)
 {
-
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -965,11 +924,6 @@ void CValidError_imp::PostErr
  TBioseq        sq,
  TGraph         graph)
 {
-
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1002,11 +956,6 @@ void CValidError_imp::PostErr
  const string& msg,
  TAlign        align)
 {
-
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1055,10 +1004,6 @@ void CValidError_imp::PostErr
  const string& msg,
  TEntry        entry)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-    
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1090,11 +1035,6 @@ void CValidError_imp::PostErr
  const string& msg,
  const CBioSource& src)
 {
-
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1116,11 +1056,6 @@ void CValidError_imp::PostErr
  const string& msg,
  const COrg_ref& org)
 {
-
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1142,10 +1077,6 @@ void CValidError_imp::PostErr
  const string& msg,
  const CPubdesc& pd)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-    
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1167,10 +1098,6 @@ void CValidError_imp::PostErr
  const string& msg,
  const CSeq_submit& ss)
 {
-    if (x_IsSuppressed(et)) {
-        return;
-    }
-
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;

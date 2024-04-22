@@ -117,26 +117,8 @@ CRef<CValidError> CValidator::Validate(
 }
 
 
-
-void CValidator::Validate(
-    const CSeq_entry& se,
-    CScope* scope,
-    Uint4 options,
-    IValidError& errors,
-    const CValidator::TSuppressed* pSuppressed)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    if (pSuppressed) {
-        imp.SetSuppressed() = *pSuppressed;
-    }
-    imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    imp.Validate(se, nullptr, scope);
-    x_SetEntryInfo(imp.GetEntryInfo());
-    m_pContext->NumGenes += imp.GetGeneCount();
-    m_pContext->NumGeneXrefs += imp.GetGeneXrefCount();
-}
-
-
+//LCOV_EXCL_START
+// not used by asnvalidate, used by external programs
 CRef<CValidError> CValidator::Validate(
     const CSeq_entry_Handle& seh,
     Uint4 options)
@@ -156,28 +138,6 @@ CRef<CValidError> CValidator::Validate(
 }
 
 
-void CValidator::Validate(
-    const CSeq_entry_Handle& seh,
-    Uint4 options,
-    IValidError& errors,
-    const CValidator::TSuppressed* pSuppressed)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    if (pSuppressed) {
-        imp.SetSuppressed() = *pSuppressed;
-    }
-    imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    imp.Validate(seh);
-    x_SetEntryInfo(imp.GetEntryInfo());
-    SValidatorContext& ctx = imp.SetContext();
-    ctx.NumGenes += imp.GetGeneCount();
-    ctx.NumGeneXrefs += imp.GetGeneXrefCount();
-}
-
-
-
-//LCOV_EXCL_START
-// not used by asnvalidate, used by external programs
 CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle& se)
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
@@ -275,25 +235,6 @@ CRef<CValidError> CValidator::Validate(
 }
 
 
-void CValidator::Validate(
-    const CSeq_submit& ss,
-    CScope* scope,
-    Uint4 options,
-    IValidError& errors,
-    const CValidator::TSuppressed* pSuppressed)
-{
-    options |= CValidator::eVal_seqsubmit_parent;
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    if (pSuppressed) {
-        imp.SetSuppressed() = *pSuppressed;
-    }
-    imp.Validate(ss, scope);
-    x_SetEntryInfo(imp.GetEntryInfo());
-    m_pContext->NumGenes += imp.GetGeneCount();
-    m_pContext->NumGeneXrefs += imp.GetGeneXrefCount();
-}
-
-
 CConstRef<CValidError> CValidator::Validate(
     const CSeq_annot_Handle& sah,
     Uint4 options)
@@ -314,16 +255,6 @@ void CValidator::Validate(
 }
 
 
-void CValidator::Validate(
-    const CSeq_annot_Handle& sah,
-    Uint4 options,
-    IValidError& errors)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    imp.Validate(sah);
-}
-
-
 CConstRef<CValidError> CValidator::Validate(
     const CSeq_feat& feat,
     CScope* scope,
@@ -334,18 +265,6 @@ CConstRef<CValidError> CValidator::Validate(
     imp.Validate(feat, scope);
     return errors;
 }
-
-
-void CValidator::Validate(
-    const CSeq_feat& feat,
-    CScope* scope,
-    Uint4 options,
-    IValidError& errors)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    imp.Validate(feat, scope);
-}
-
 
 
 CConstRef<CValidError> CValidator::Validate(
@@ -359,20 +278,6 @@ CConstRef<CValidError> CValidator::Validate(
     return errors;
 }
 
-
-void CValidator::Validate(
-    const CBioSource& src,
-    CScope* scope,
-    Uint4 options,
-    IValidError& errors)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    imp.Validate(src, scope);
-}
-
-
-
-
 CConstRef<CValidError> CValidator::Validate(
     const CPubdesc& pubdesc,
     CScope* scope,
@@ -382,16 +287,6 @@ CConstRef<CValidError> CValidator::Validate(
     CValidError_imp imp(*m_ObjMgr, m_pContext, &(*errors), options);
     imp.Validate(pubdesc, scope);
     return errors;
-}
-
-void CValidator::Validate(
-    const CPubdesc& pubdesc,
-    CScope* scope,
-    Uint4 options,
-    IValidError& errors)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    imp.Validate(pubdesc, scope);
 }
 
 CConstRef<CValidError> CValidator::Validate(
@@ -405,15 +300,6 @@ CConstRef<CValidError> CValidator::Validate(
     return errors;
 }
 
-void CValidator::Validate(
-    const CSeqdesc& desc,
-    const CSeq_entry& ctx,
-    Uint4 options,
-    IValidError& errors)
-{
-    CValidError_imp imp(*m_ObjMgr, m_pContext, &errors, options);
-    imp.Validate(desc, ctx);
-}
 
 bool CValidator::IsValidStructuredComment(
     const CSeqdesc& desc) const

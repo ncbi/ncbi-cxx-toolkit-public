@@ -9,7 +9,7 @@ NCBI_begin_lib(xvalidate)
     validator_barcode feature_match tax_validation_and_cleanup gene_cache
     translation_problems splice_problems single_feat_validator cdregion_validator
     gene_validator go_term_validation_and_cleanup dup_feats huge_file_validator
-    entry_info validerror_suppress
+    entry_info
   )
   NCBI_uses_toolkit_libraries(taxon1 valerr xformat xobjedit submit taxon3 valerr xhugeasn)
   NCBI_project_watchers(stakhovv kans foleyjp asztalos gotvyans)

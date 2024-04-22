@@ -227,17 +227,6 @@ void s_PostErr(EDiagSev severity,
 }
 
 
-void s_PostErr(EDiagSev severity,
-               EErrType errorType,
-               const string& message,
-               const string& desc,
-               IValidError& errors)
-{
-    int version = 0;
-    errors.AddValidErrItem(severity, errorType, message, desc, "", version);
-}
-
-
 static bool s_IsNa(CSeq_inst::EMol mol)
 {
     return (mol == CSeq_inst::eMol_dna ||
@@ -290,32 +279,31 @@ bool CHugeFileValidator::IsInBlob(const CSeq_id& id) const
 }
 
 
-
 void CHugeFileValidator::x_ReportCollidingSerialNumbers(const set<int>& collidingNumbers,
-        IValidError& errors) const
+        CRef<CValidError>& pErrors) const
 {
     for (auto val : collidingNumbers) {
         s_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers,
                 "Multiple publications have serial number " + NStr::IntToString(val),
-                x_GetHugeSetLabel(), errors);
+                x_GetHugeSetLabel(), pErrors);
     }
 }
 
 
-void CHugeFileValidator::x_ReportMissingPubs(IValidError& errors) const
+void CHugeFileValidator::x_ReportMissingPubs(CRef<CValidError>& pErrors) const
 {
     if(!(m_Reader.GetSubmitBlock())) {
         if (auto info = m_Reader.GetBioseqs().front(); s_x_ReportMissingPubs(info, m_Reader)) {
             auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
             s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound,
                     "No publications anywhere on this entire record.",
-                    x_GetHugeSetLabel(), errors);
+                    x_GetHugeSetLabel(), pErrors);
         }
     }
 }
 
 
-void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, IValidError& errors) const
+void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, CRef<CValidError>& pErrors) const
 {
     if(!(m_Reader.GetSubmitBlock())) {
         bool isRefSeq = hasRefSeqAccession || (m_Options & CValidator::eVal_refseq_conventions);
@@ -326,48 +314,47 @@ void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, IValidE
                 eDiag_Error : eDiag_Info;
             s_PostErr(severity, eErr_GENERIC_MissingPubRequirement,
                     "No submission citation anywhere on this entire record.",
-                    x_GetHugeSetLabel(), errors);
+                    x_GetHugeSetLabel(), pErrors);
         }
     }
 }
 
 
-void CHugeFileValidator::x_ReportMissingBioSources(IValidError& errors) const
+void CHugeFileValidator::x_ReportMissingBioSources(CRef<CValidError>& pErrors) const
 {
     s_PostErr(eDiag_Error, eErr_SEQ_DESCR_NoSourceDescriptor,
             "No source information included on this record.",
-             x_GetHugeSetLabel(), errors);
+             x_GetHugeSetLabel(), pErrors);
 }
 
 
-void CHugeFileValidator::x_ReportConflictingBiomols(IValidError& errors) const
+void CHugeFileValidator::x_ReportConflictingBiomols(CRef<CValidError>& pErrors) const
 {
     auto severity = (m_Options & CValidator::eVal_genome_submission) ?
         eDiag_Error : eDiag_Warning;
     s_PostErr(severity, eErr_SEQ_PKG_InconsistentMoltypeSet,
             "Pop/phy/mut/eco set contains inconsistent moltype",
-            x_GetHugeSetLabel(), errors);
+            x_GetHugeSetLabel(), pErrors);
 }
 
-
-void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, IValidError& errors) const
+void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, CRef<CValidError>& pErrors) const
 {
     if (globalInfo.NoPubsFound) {
-        x_ReportMissingPubs(errors);
+        x_ReportMissingPubs(pErrors);
     }
 
     if (globalInfo.NoCitSubsFound) {
-        x_ReportMissingCitSubs(globalInfo.IsRefSeq, errors);
+        x_ReportMissingCitSubs(globalInfo.IsRefSeq, pErrors);
     }
 
     if (!globalInfo.conflictingSerialNumbers.empty()) {
-        x_ReportCollidingSerialNumbers(globalInfo.conflictingSerialNumbers, errors);
+        x_ReportCollidingSerialNumbers(globalInfo.conflictingSerialNumbers, pErrors);
     }
 
 
     if (globalInfo.NoBioSource && !globalInfo.IsPatent && !globalInfo.IsPDB)
     {
-        x_ReportMissingBioSources(errors);
+        x_ReportMissingBioSources(pErrors);
     }
 
 
@@ -375,7 +362,7 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, IVali
         if (auto pSetClass = m_Reader.GetTopLevelClass();
             pSetClass &&
             *pSetClass == CBioseq_set::eClass_wgs_set) {
-            x_ReportConflictingBiomols(errors);
+            x_ReportConflictingBiomols(pErrors);
         }
     }
 
@@ -387,29 +374,28 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, IVali
             " TPAs with history and " +
             NStr::SizetToString(globalInfo.JustTpaAssembly) +
             " without history in this record.",
-            x_GetHugeSetLabel(), errors);
+            x_GetHugeSetLabel(), pErrors);
     }
     if (globalInfo.TpaNoHistYesGI > 0) {
         s_PostErr(eDiag_Warning, eErr_SEQ_INST_TpaAssemblyProblem,
             "There are " +
             NStr::SizetToString(globalInfo.TpaNoHistYesGI) +
             " TPAs without history in this record where the record has a gi number assignment.",
-            x_GetHugeSetLabel(), errors);
+            x_GetHugeSetLabel(), pErrors);
     }
 }
 
 
-void CHugeFileValidator::ReportPostErrors(const SValidatorContext& context,
-                                          IValidError& errors) const
+void CHugeFileValidator::ReportPostErrors(const TGlobalInfo& /*globalInfo*/, CRef<CValidError>& pErrors,
+                                          SValidatorContext& context) const
 {
     if (context.NumGenes == 0 && context.NumGeneXrefs > 0) {
         s_PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
             "There are " + NStr::SizetToString(context.NumGeneXrefs) +
             " gene xrefs and no gene features in this record.",
-            x_GetHugeSetLabel(), errors);
+            x_GetHugeSetLabel(), pErrors);
     }
 }
-
 
 
 void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, SValidatorContext& context) const
