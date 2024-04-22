@@ -49,9 +49,7 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/validator/huge_file_validator.hpp>
-#include <util/message_queue.hpp>
-#include "formatters.hpp"
-#include <functional>
+#include "xml_val_stream.hpp"
 
 using namespace ncbi;
 USING_SCOPE(objects);
@@ -71,10 +69,22 @@ struct CThreadExitData
     std::list<CConstRef<CValidError>> mEval;
 };
 
-
-namespace ncbi {
-class IMessageHandler;
-}
+class CAsnvalOutput
+{
+public:
+    CAsnvalOutput(const CAppConfig& config, const string& in_filename);
+    CAsnvalOutput(const CAppConfig& config, std::ostream* file);
+    ~CAsnvalOutput();
+    size_t Write(const std::list<CConstRef<CValidError>>& eval);
+private:
+    void StartXML();
+    void FinishXML();
+    void PrintValidErrItem(const CValidErrItem& item);
+    const CAppConfig& mAppConfig;
+    std::unique_ptr<std::ostream> m_own_file;
+    std::ostream* m_file = nullptr;
+    unique_ptr<CValXMLStream> m_ostr_xml;
+};
 
 class CAsnvalThreadState
 {
@@ -83,56 +93,48 @@ public:
     CAsnvalThreadState(const CAppConfig&, SValidatorContext::taxupdate_func_t taxon);
     CAsnvalThreadState(const CAsnvalThreadState& other) = delete;
     ~CAsnvalThreadState();
-    CThreadExitData ValidateOneFile(const string& infilename, CNcbiOstream& ostr);
-    CThreadExitData ValidateOneFile(const string& infilename, IMessageHandler& msgHandler);
+    CThreadExitData ValidateOneFile(const std::string& filename);
 
 protected:
 
-    void ReadClassMember(CObjectIStream& in, 
-            const CObjectInfo::CMemberIterator& member,
-            IMessageHandler& msgHandler);
+    void ReadClassMember(CObjectIStream& in, const CObjectInfo::CMemberIterator& member);
 
     CRef<CScope> BuildScope() const;
     unique_ptr<CObjectIStream> OpenFile(TTypeInfo& asn_info, const string& filename) const;
 
-    void ReportReadFailure(const CException* p_exception, IMessageHandler& msgHandler);
+    void PrintValidError(CConstRef<CValidError> errors);
+    void PrintValidErrItem(const CValidErrItem& item);
+    CRef<CValidError> ReportReadFailure(const CException* p_exception) const;
 
     // batch mode processing
-    void ProcessSSMReleaseFile(IMessageHandler& msgHandler);
-    void ProcessBSSReleaseFile(IMessageHandler& msgHandler);
+    void ProcessSSMReleaseFile();
+    void ProcessBSSReleaseFile();
 
     // traditional way of processing
-    void ValidateInput(TTypeInfo asninfo, IMessageHandler& msgHandler);
-    void ProcessSeqEntry(CSeq_entry& se, IMessageHandler& msgHandler);
-    void ProcessSeqDesc(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessBioseqset(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessBioseq(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessPubdesc(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessSeqEntry(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessSeqSubmit(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessSeqAnnot(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessSeqFeat(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
-    void ProcessBioSource(CRef<CSerialObject> serial, IMessageHandler& msgHandler);
+    CConstRef<CValidError> ValidateInput(TTypeInfo asninfo);
+    CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
+    CConstRef<CValidError> ProcessSeqDesc(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessBioseqset(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessBioseq(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessPubdesc(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqEntry(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqSubmit(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqAnnot(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessSeqFeat(CRef<CSerialObject> serial);
+    CConstRef<CValidError> ProcessBioSource(CRef<CSerialObject> serial);
 
-    bool ValidateTraditionally(TTypeInfo asninfo, IMessageHandler& msgHandler);
-    bool ValidateBatchMode(TTypeInfo asninfo, IMessageHandler& msgHandler);
-    void ValidateOneHugeFile(edit::CHugeFileProcess& process, IMessageHandler& msgHandler);
-
-    void ValidateOneHugeBlob(edit::CHugeFileProcess& process, IMessageHandler& msgHandler);
-    void ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process, IMessageHandler& msgHandler);
-    void ValidateBlobSequential(const string& loader_name, edit::CHugeFileProcess& process, IMessageHandler& msgHandler);
-
-    void ValidateAsync(
-        const string& loader_name, 
-        CConstRef<CSubmit_block> pSubmitBlock, 
-        CConstRef<CSeq_id> seqid,
-        IMessageHandler& msgHandler 
-        ) const;
+    CConstRef<CValidError> ValidateAsync(
+        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid) const;
 
     static CThreadExitData ValidateWorker(CAsnvalThreadState* _this,
-        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid,
-        IMessageHandler& msgHandler);
+        const string& loader_name, CConstRef<CSubmit_block> pSubmitBlock, CConstRef<CSeq_id> seqid);
 
+    bool ValidateTraditionally(TTypeInfo asninfo);
+    bool ValidateBatchMode(TTypeInfo asninfo);
+    void ValidateOneHugeFile(edit::CHugeFileProcess& process);
+    void ValidateOneHugeBlob(edit::CHugeFileProcess& process);
+    void ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process);
+    void ValidateBlobSequential(const string& loader_name, edit::CHugeFileProcess& process);
 
     const CAppConfig& mAppConfig;
 
@@ -145,7 +147,6 @@ protected:
     string m_CurrentId;
     string m_LongestId;
     size_t m_NumRecords = 0;
-    bool m_ReadFailure{false};
 
     size_t m_Level = 0;
     std::atomic<size_t> m_Reported {0};

@@ -46,7 +46,7 @@
 
 #include <map>
 #include <memory>
-#include <set>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -73,8 +73,6 @@ class CValidatorEntryInfo;
 class NCBI_VALIDATOR_EXPORT CValidator : public CObject
 {
 public:
-
-    using TSuppressed = set<CValidErrItem::TErrIndex>;
 
     enum EValidOptions {
         eVal_non_ascii               = 0x1,
@@ -152,32 +150,17 @@ public:
     // top-level Seq-entry in that scope.
     CRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = nullptr,
         Uint4 options = 0);
-   
-    void Validate(const CSeq_entry& se, CScope* scope, Uint4 options, IValidError& errors,
-            const TSuppressed* pSuppressed=nullptr);
-
     CRef<CValidError> Validate(const CSeq_entry_Handle& se,
         Uint4 options = 0);
-
-
-    void Validate(const CSeq_entry_Handle& seh, Uint4 options, IValidError& errors, 
-            const TSuppressed* pSuppressed=nullptr);
-
     // Validate Seq-submit.
     // Validates each of the Seq-entry contained in the submission.
     CRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = nullptr,
         Uint4 options = 0);
-
-    void Validate(const CSeq_submit& ss, CScope* scope, Uint4 options, IValidError& errors,
-            const TSuppressed* pSuppressed=nullptr);
-
     // Validate Seq-annot
     // Validates stand alone Seq-annot objects. This will supress any
     // check on the context of the annotaions.
     CConstRef<CValidError> Validate(const CSeq_annot_Handle& sa,
         Uint4 options = 0);
-
-    void Validate(const CSeq_annot_Handle& sa, Uint4 options, IValidError& errors);
 
     void Validate(const CSeq_annot_Handle& sa, Uint4 options, CValidError& errors);
 
@@ -186,41 +169,20 @@ public:
         CScope *scope = nullptr,
         Uint4 options = 0);
 
-    void Validate(const CSeq_feat& feat,
-        CScope *scope,
-        Uint4 options, 
-        IValidError& errors);
-
     // Validate BioSource
     CConstRef<CValidError> Validate(const CBioSource& src,
         CScope *scope = nullptr,
         Uint4 options = 0);
-
-    void Validate(const CBioSource& src,
-        CScope *scope,
-        Uint4 options,
-        IValidError& errors);
 
     // Validate Pubdesc
     CConstRef<CValidError> Validate(const CPubdesc& pubdesc,
         CScope *scope = nullptr,
         Uint4 options = 0);
 
-    void Validate(const CPubdesc& desc,
-        CScope* scope,
-        Uint4 options, 
-        IValidError& errors);
-
     // Validate Seqdesc
     CConstRef<CValidError> Validate(const CSeqdesc& desc,
         const CSeq_entry& ctx,
         Uint4 options = 0);
-
-    void Validate(const CSeqdesc& desc,
-        const CSeq_entry& ctx,
-        Uint4 options, 
-        IValidError& errors);
-
 
     bool IsValidStructuredComment(const CSeqdesc& desc) const;
 
