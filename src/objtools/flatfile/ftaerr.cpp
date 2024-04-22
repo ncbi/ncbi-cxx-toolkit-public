@@ -126,11 +126,13 @@ static int FtaStrSevToIntSev(const string& strsevcode)
     if (strsevcode.empty())
         return -1;
 
-    static const map<string, int> sStringToInt = { { "SEV_INFO", 1 },
-                                                   { "SEV_WARNING", 2 },
-                                                   { "SEV_ERROR", 3 },
-                                                   { "SEV_REJECT", 4 },
-                                                   { "SEV_FATAL", 5 } };
+    static const map<string, int> sStringToInt = {
+        { "SEV_INFO", 1 },
+        { "SEV_WARNING", 2 },
+        { "SEV_ERROR", 3 },
+        { "SEV_REJECT", 4 },
+        { "SEV_FATAL", 5 }
+    };
 
     if (auto it = sStringToInt.find(strsevcode);
         it != sStringToInt.end()) {
@@ -393,11 +395,6 @@ bool ErrSetLog(const char* logfile)
 }
 
 /**********************************************************/
-void ErrSetFatalLevel(ErrSev sev)
-{
-}
-
-/**********************************************************/
 void ErrSetOptFlags(int flags)
 {
     if (! bmp)
@@ -411,11 +408,6 @@ void ErrSetOptFlags(int flags)
         bmp->show_msg_codeline = true;
     if ((flags & EO_LOG_FILELINE) == EO_LOG_FILELINE)
         bmp->show_log_codeline = true;
-}
-
-/**********************************************************/
-void ErrClear(void)
-{
 }
 
 /**********************************************************/
@@ -564,12 +556,14 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
     }
     textStream << fpiBuffer;
 
-    static const map<ErrSev, EDiagSev> sSeverityMap = { { SEV_NONE, eDiag_Trace },
-                                                        { SEV_INFO, eDiag_Info },
-                                                        { SEV_WARNING, eDiag_Warning },
-                                                        { SEV_ERROR, eDiag_Error },
-                                                        { SEV_REJECT, eDiag_Critical },
-                                                        { SEV_FATAL, eDiag_Fatal } };
+    static const map<ErrSev, EDiagSev> sSeverityMap = {
+        { SEV_NONE, eDiag_Trace },
+        { SEV_INFO, eDiag_Info },
+        { SEV_WARNING, eDiag_Warning },
+        { SEV_ERROR, eDiag_Error },
+        { SEV_REJECT, eDiag_Critical },
+        { SEV_FATAL, eDiag_Fatal }
+    };
 
     CFlatFileMessageReporter::GetInstance()
         .Report(fpiModule ? fpiModule : "",

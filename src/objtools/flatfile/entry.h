@@ -17,7 +17,7 @@ struct Section
         mType(type_),
         mTextLines(textLines.begin(), textLines.end()),
         mpQscore(nullptr),
-        mDrop(0){};
+        mDrop(false) {}
 
     ~Section()
     {

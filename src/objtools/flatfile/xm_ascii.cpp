@@ -246,8 +246,6 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
     char*       bptr;
     char*       str;
     char        msg[4];
-    char*       kw;
-    char*       kwp;
     Int2        div;
     bool        if_cds;
 
@@ -448,14 +446,12 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
                 RemoveHtgPhase(gbb->SetKeywords());
             }
 
-            kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
+            char* kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
             if (kw) {
-                kwp = StringStr(kw, "EST");
-                if (kwp && est_kwd == false) {
+                if (! est_kwd && StringStr(kw, "EST")) {
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
                 }
-                kwp = StringStr(kw, "STS");
-                if (kwp && sts_kwd == false) {
+                if (! sts_kwd && StringStr(kw, "STS")) {
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
                 }
                 MemFree(kw);

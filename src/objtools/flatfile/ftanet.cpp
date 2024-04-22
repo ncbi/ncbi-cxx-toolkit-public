@@ -285,23 +285,21 @@ static void fta_fix_affil(TPubList& pub_list, Parser::ESource source)
 
         if (authors->IsSetNames() && authors->CanGetNames() &&
             authors->GetNames().Which() == CAuth_list::TNames::e_Std) {
-            CAuth_list::TNames&                names  = authors->SetNames();
-            CAuth_list::TNames::TStd::iterator it     = (names.SetStd()).begin();
-            CAuth_list::TNames::TStd::iterator it_end = (names.SetStd()).end();
-            for (; it != it_end; it++) {
-                if ((*it)->IsSetAffil() && (*it)->CanGetAffil() &&
-                    (*it)->GetAffil().Which() == CAffil::e_Str) {
-                    CAffil& affil = (*it)->SetAffil();
+            CAuth_list::TNames::TStd& names = authors->SetNames().SetStd();
+            for (auto& it : names) {
+                if (it->IsSetAffil() && it->CanGetAffil() &&
+                    it->GetAffil().Which() == CAffil::e_Str) {
+                    CAffil& affil = it->SetAffil();
                     ShrinkSpaces(affil.SetStr());
                 }
-                if ((*it)->IsSetName() && (*it)->CanGetName() &&
-                    (*it)->GetName().IsName()) {
-                    CName_std& namestd = (*it)->SetName().SetName();
-                    if (namestd.IsSetSuffix())
-                        continue;
-                    fta_fix_last_initials(namestd, true);
-                    if (! namestd.IsSetSuffix())
-                        fta_fix_last_initials(namestd, false);
+                if (it->IsSetName() && it->CanGetName() &&
+                    it->GetName().IsName()) {
+                    CName_std& namestd = it->SetName().SetName();
+                    if (! namestd.IsSetSuffix()) {
+                        fta_fix_last_initials(namestd, true);
+                        if (! namestd.IsSetSuffix())
+                            fta_fix_last_initials(namestd, false);
+                    }
                 }
             }
         }
@@ -703,11 +701,12 @@ void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
         for (auto& pFeat : pAnnot->SetData().SetFtable()) {
             if (pFeat->IsSetData() && pFeat->GetData().IsPub()) /* pub feature */
             {
-                fix_pub_equiv(pFeat->SetData().SetPub().SetPub(), er);
+                CPubdesc& pub_descr = pFeat->SetData().SetPub();
+                fix_pub_equiv(pub_descr.SetPub(), er);
                 if (m_pParser->qamode)
-                    fta_fix_imprint_language(pFeat->SetData().SetPub().SetPub().Set());
-                fta_fix_affil(pFeat->SetData().SetPub().SetPub().Set(), m_pParser->source);
-                fta_strip_er_remarks(pFeat->SetData().SetPub());
+                    fta_fix_imprint_language(pub_descr.SetPub().Set());
+                fta_fix_affil(pub_descr.SetPub().Set(), m_pParser->source);
+                fta_strip_er_remarks(pub_descr);
             }
 
             if (! pFeat->IsSetCit()) {

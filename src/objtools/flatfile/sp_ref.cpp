@@ -77,7 +77,7 @@ struct ParRefBlk {
     Int4  refnum; /* REFERENCE for GenBank, RN for Embl
                                            and Swiss-Prot */
     Int4  muid;   /* RM for Swiss-Prot */
-    Int4  pmid;
+    TEntrezId pmid;
     char* doi;
     char* agricola;
 
@@ -104,7 +104,7 @@ struct ParRefBlk {
     ParRefBlk() :
         refnum(0),
         muid(0),
-        pmid(0),
+        pmid(ZERO_ENTREZ_ID),
         doi(nullptr),
         agricola(nullptr),
         title(nullptr),
@@ -385,7 +385,7 @@ static void GetSprotIds(ParRefBlkPtr prbp, char* str)
         return;
 
     prbp->muid     = 0;
-    prbp->pmid     = 0;
+    prbp->pmid     = ZERO_ENTREZ_ID;
     prbp->doi      = nullptr;
     prbp->agricola = nullptr;
     dois           = false;
@@ -406,8 +406,8 @@ static void GetSprotIds(ParRefBlkPtr prbp, char* str)
             else
                 muids = true;
         } else if (StringEquNI(q, "PUBMED=", 7)) {
-            if (prbp->pmid == 0)
-                prbp->pmid = atoi(q + 7);
+            if (prbp->pmid == ZERO_ENTREZ_ID)
+                prbp->pmid = ENTREZ_ID_FROM(int, atoi(q + 7));
             else
                 pmids = true;
         } else if (StringEquNI(q, "DOI=", 4)) {
@@ -1255,9 +1255,9 @@ static CRef<CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
         ret->SetPub().Set().push_back(pub);
     }
 
-    if (prbp->pmid > 0) {
+    if (prbp->pmid > ZERO_ENTREZ_ID) {
         CRef<CPub> pub(new CPub);
-        pub->SetPmid().Set(ENTREZ_ID_FROM(int, prbp->pmid));
+        pub->SetPmid().Set(prbp->pmid);
         ret->SetPub().Set().push_back(pub);
     }
 
