@@ -133,14 +133,14 @@ public:
 
     CValidError_imp(CObjectManager& objmgr,
             shared_ptr<SValidatorContext> pContext,
-            CValidError* errors,
+            IValidError* errors,
             Uint4 options=0);
 
     // Destructor
     virtual ~CValidError_imp();
 
-    void SetOptions (Uint4 options);
-    void SetErrorRepository (CValidError* errors);
+    void SetOptions(Uint4 options);
+    void SetErrorRepository(IValidError* errors);
     void Reset();
 
     // Validation methods
@@ -420,6 +420,9 @@ public:
 
     bool RequireLocalProduct(const CSeq_id* sid) const;
 
+    using TSuppressed = set<CValidErrItem::TErrIndex>;
+    TSuppressed& SetSuppressed();
+
 private:
 
     // Setup common options during consturction;
@@ -527,6 +530,8 @@ private:
 
     bool x_DowngradeForMissingAffil(const CCit_sub& cs);
 
+    bool x_IsSuppressed(CValidErrItem::TErrIndex errType) const;
+
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
@@ -537,7 +542,7 @@ private:
     CGeneCache              m_GeneCache;
 
     // error repoitory
-    CValidError*       m_ErrRepository;
+    IValidError*       m_ErrRepository;
 
     // flags derived from options parameter
     bool m_NonASCII;             // User sets if Non ASCII char found
@@ -628,6 +633,8 @@ private:
 
     shared_ptr<SValidatorContext> m_pContext;
     unique_ptr<CValidatorEntryInfo> m_pEntryInfo = make_unique<CValidatorEntryInfo>();
+
+    TSuppressed m_SuppressedErrors;
 };
 
 
