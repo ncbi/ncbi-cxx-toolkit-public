@@ -91,6 +91,56 @@ suppression = {
 	}
 }
 suppression = {
+	name = "tds_vasprintf_ver14 - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf_ver14,src=vasprintf.c;
+			func=tds_asprintf_ver14,src=asprintf.c;
+		}
+		allocation={
+			...;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver14 - 2"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
+			func=tds_vasprintf_ver14;
+		}
+		allocation={
+			...;
+			func=tds_get_homedir_ver14;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver14 - 3"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf_ver14;
+			func=tds_asprintf_ver14;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver14 - all"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=vasprintf.c,func=tds_vasprintf_ver14;
+		}
+	}
+}
+suppression = {
 	name = "read_login_info/snprintf"
 	type = {invalid_memory_access_partial}
 	stacks = {
@@ -146,17 +196,59 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ct_locate_dynamic / strncmp"
+	name = "tds_poll_ver14 / poll_p - false positive 1" 
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=mswsock.dll,func=WSPStartup;
+			mod=WS2_32.dll,func=WSAIoctl;
+			mod=WS2_32.dll,func=WSAPoll;
+			func=tds_poll_ver14,src=poll.c;
+		}
+	}
+}
+suppression = {
+	name = "tds_poll_ver14 / poll_p - false positive 2"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=WS2_32.dll,func=WSAIoctl;
+			mod=WS2_32.dll,func=WSAPoll;
+			func=tds_poll_ver14,src=poll;
+		}
+	}
+}
+suppression = {
+	name = "ct_locate_dynamic ver100 / strncmp"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
 			!!!;
-			mod=ct100_ct_dynamic.exe,src=ct.c,func=ct_locate_dynamic;
+			src=ct.c,func=ct_locate_dynamic;
 		}
 		allocation={
 			!!!;
-			mod=ct100_ct_dynamic.exe,src=util.c,func=tds_strndup_ver100;
+			src=util.c,func=tds_strndup_ver100;
 		}
 	}
 }
-
+suppression = {
+	name = "ct_locate_dynamic ver14 / strncmp"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=ct.c,func=ct_locate_dynamic;
+		}
+		allocation={
+			!!!;
+			src=util.c,func=tds_strndup_ver14;
+		}
+	}
+}
