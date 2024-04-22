@@ -53,6 +53,7 @@
 #include <objtools/edit/remote_updater.hpp>
 #include "app_config.hpp"
 #include "thread_state.hpp"
+#include "message_handler.hpp"
 #include <util/message_queue.hpp>
 #include <future>
 
@@ -69,37 +70,32 @@ class TThreadPoolLimited
 public:
     using token_type = _T;
     TThreadPoolLimited(unsigned num_slots, unsigned queue_depth = 0):
-        m_tasks_semaphose{num_slots, num_slots},
+        m_tasks_semaphore{num_slots, num_slots},
         m_product_queue{queue_depth == 0 ? num_slots : queue_depth}
     {}
 
     // acquire new slot to run on
     void acquire() {
-        m_running++;
-        m_tasks_semaphose.Wait();
+        m_tasks_semaphore.Wait();
     }
 
     // release a slot and send a product down to the queue
     void release(token_type&& token) {
-        m_tasks_semaphose.Post();
+        m_tasks_semaphore.Post();
         m_product_queue.push_back(std::move(token));
-
-        size_t current = m_running.fetch_sub(1);
-        if (current == 1)
-        { // the last task completed, singal main thread to finish
-            m_product_queue.push_back({});
-        }
     }
 
     auto GetNext() {
         return m_product_queue.pop_front();
     }
 
+    void request_stop() {
+        m_product_queue.push_back({});
+    }
+
 private:
-    std::atomic<size_t>   m_running = 0;      // number of started threads
-    CSemaphore            m_tasks_semaphose;  //
+    CSemaphore            m_tasks_semaphore;  //
     CMessageQueue<token_type> m_product_queue{8}; // the queue of threads products
-    std::future<void>     m_consumer;
 };
 
 class CAsnvalApp : public CNcbiApplication
@@ -116,42 +112,85 @@ private:
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
-    CThreadExitData xValidate(const string& filename, bool save_output);
-    void xValidateThread(const string& filename, bool save_output);
-    CThreadExitData xCombinedWriterTask(std::ostream* ofile);
+    CThreadExitData xValidate(const string& filename, CNcbiOstream& ostr);
+    CThreadExitData xValidateSeparateOutputs(const string& filename);
+
+    void xValidateThreadSeparateOutputs(const string& filename);
+    void xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler);
+    CThreadExitData xCombinedStatsTask();
 
     using TPool = TThreadPoolLimited<std::future<CThreadExitData>>;
 
-    void ValidateOneDirectory(string dir_name, bool recurse);
+    size_t ValidateOneDirectory(string dir_name, 
+                                bool recurse, 
+                                CAsyncMessageHandler* pMessageHandler=nullptr); // returns the number of processed files
     TPool m_queue{8};
 
     unique_ptr<CAppConfig> mAppConfig;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
-    size_t m_NumFiles = 0;
+    atomic<size_t> m_NumFiles{0};
+    string m_InputDir;
+    string m_OutputDir;
 };
 
-CThreadExitData CAsnvalApp::xValidate(const string& filename, bool save_output)
+
+static unique_ptr<CNcbiOstream> s_MakeOstream(const string& in_filename, 
+        const string& inputDir=kEmptyStr, 
+        const string& outputDir=kEmptyStr) 
 {
-    CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
-    auto result = mContext.ValidateOneFile(filename);
-    if (save_output) {
-        CAsnvalOutput out(*mAppConfig, filename);
-        result.mReported += out.Write(result.mEval);
-        result.mEval.clear();
+    string path;
+    if (in_filename.empty()) {
+        path = "stdin.val";
+    } else {
+        size_t pos = NStr::Find(in_filename, ".", NStr::eNocase, NStr::eReverseSearch);
+        if (pos != NPOS)
+            path = in_filename.substr(0, pos);
+        else
+            path = in_filename;
+
+        path.append(".val");
+
+        if (! outputDir.empty()) {
+            _ASSERT(!inputDir.empty());
+            NStr::ReplaceInPlace(path, inputDir, outputDir, 0, 1);
+        }
     }
-    return result;
+
+    return unique_ptr<CNcbiOstream>(new ofstream(path));
 }
 
-void CAsnvalApp::xValidateThread(const string& filename, bool save_output)
+CThreadExitData CAsnvalApp::xValidate(const string& filename, CNcbiOstream& ostr)
 {
-    CThreadExitData result = xValidate(filename, save_output);
+    CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
+    return  mContext.ValidateOneFile(filename, ostr);
+}
 
+CThreadExitData CAsnvalApp::xValidateSeparateOutputs(const string& filename)
+{
+    auto pOstr = s_MakeOstream(filename, m_InputDir, m_OutputDir);
+    return xValidate(filename, *pOstr);
+}
+
+void CAsnvalApp::xValidateThreadSeparateOutputs(const string& filename)
+{
+    CThreadExitData result = xValidateSeparateOutputs(filename);
     std::promise<CThreadExitData> prom;
     prom.set_value(std::move(result));
     auto fut = prom.get_future();
-
     m_queue.release(std::move(fut));
 }
+
+
+void CAsnvalApp::xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler)
+{
+    CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
+    auto exitData =  mContext.ValidateOneFile(filename, msgHandler);
+    std::promise<CThreadExitData> prom;
+    prom.set_value(std::move(exitData));
+    auto fut = prom.get_future();
+    m_queue.release(std::move(fut));
+}
+
 
 string s_GetSeverityLabel(EDiagSev sev, bool is_xml)
 {
@@ -206,12 +245,21 @@ void CAsnvalApp::Init()
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddOptionalKey
-        ("indir", "Directory", "Path to ASN.1 Files",
+        ("indir", "Directory", "Path to ASN.1 Files. '-x' specifies the input-file suffix",
         CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey
         ("i", "InFile", "Single Input File",
         CArgDescriptions::eInputFile);
+
+    arg_desc->SetDependency("indir", CArgDescriptions::eExcludes, "i");
+
+    arg_desc->AddOptionalKey(
+            "outdir", "Directory", "Output directory",
+            CArgDescriptions::eOutputFile);
+
+    arg_desc->SetDependency("outdir", CArgDescriptions::eRequires, "indir");
+
     arg_desc->AddOptionalKey(
         "o", "OutFile", "Single Output File",
         CArgDescriptions::eOutputFile);
@@ -319,10 +367,10 @@ void CAsnvalApp::Init()
 }
 
 
-//LCOV_EXCL_START
-//unable to exercise with our test framework
-void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
+size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMessageHandler* pMsgHandler)
 {
+    size_t num_to_process = 0;
+
     const CArgs& args = GetArgs();
 
     CDir dir(dir_name);
@@ -335,43 +383,66 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 
     CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
 
-    for (CDir::TEntry ii : files) {
-        string fname = ii->GetName();
-        if (ii->IsFile() &&
-            (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
-            string fpath = CDirEntry::MakePath(dir_name, fname);
+    bool separate_outputs = !args["o"];
 
-            bool separate_outputs = !args["o"];
-
-            m_queue.acquire();
-            // start thread detached, it will post results to the queue itself
-            std::thread([this, fpath, separate_outputs]()
-                { xValidateThread(fpath, separate_outputs); })
-                .detach();
+    // Create output directory if it doesn't already exist
+    if (!m_OutputDir.empty()) {
+        string outputDirName = NStr::Replace(dir_name, m_InputDir, m_OutputDir, 0, 1);
+        CDir outputDir(outputDirName);
+        if (! outputDir.Exists()) {
+            outputDir.Create();
         }
     }
+
+    if (separate_outputs) {
+        for (CDir::TEntry ii : files) {
+            string fname = ii->GetName();
+            if (ii->IsFile() &&
+                (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
+                string fpath = CDirEntry::MakePath(dir_name, fname);
+
+                m_queue.acquire();
+                // start thread detached, it will post results to the queue itself
+                std::thread([this, fpath]()
+                    { xValidateThreadSeparateOutputs(fpath); }).detach();
+
+                ++num_to_process;
+            }
+        }
+    } else {
+        for (CDir::TEntry ii : files) {
+            string fname = ii->GetName();
+            if (ii->IsFile() &&
+                (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
+                string fpath = CDirEntry::MakePath(dir_name, fname);
+
+                m_queue.acquire();
+                // start thread detached, it will post results to the queue itself
+                std::thread([this, fpath, separate_outputs, pMsgHandler]()
+                    { xValidateThreadSingleOutput(fpath, *pMsgHandler); }).detach();
+
+                ++num_to_process;
+            }
+        }
+    }
+
     if (recurse) {
         CDir::TEntries subdirs(dir.GetEntries("", CDir::eDir));
         for (CDir::TEntry ii : subdirs) {
             string subdir = ii->GetName();
             if (ii->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
                 string subname = CDirEntry::MakePath(dir_name, subdir);
-                ValidateOneDirectory(subname, recurse);
+                num_to_process += ValidateOneDirectory(subname, recurse, pMsgHandler);
             }
         }
     }
 
+    return num_to_process;
 }
-//LCOV_EXCL_STOP
 
-
-CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* combined_file)
+CThreadExitData CAsnvalApp::xCombinedStatsTask()
 {
     CThreadExitData combined_exit_data;
-
-    std::list<CConstRef<CValidError>> eval;
-
-    CAsnvalOutput out(*mAppConfig, combined_file);
 
     while(true)
     {
@@ -390,19 +461,22 @@ CThreadExitData CAsnvalApp::xCombinedWriterTask(std::ostream* combined_file)
             combined_exit_data.mLongest = exit_data.mLongest;
             combined_exit_data.mLongestId = exit_data.mLongestId;
         }
-
-        if (combined_file && !exit_data.mEval.empty()) {
-            combined_exit_data.mReported += out.Write(exit_data.mEval);
-        }
     }
-
     return combined_exit_data;
 }
+
 
 int CAsnvalApp::Run()
 {
     const CArgs& args = GetArgs();
     Setup(args);
+    if (args["indir"]) {
+        m_InputDir = args["indir"].AsString();
+    }
+
+    if (args["outdir"]) {
+        m_OutputDir = args["outdir"].AsString();
+    }   
 
     mRemoteUpdater.reset(new edit::CRemoteUpdater(nullptr)); //m_logger));
 
@@ -438,22 +512,50 @@ int CAsnvalApp::Run()
     CThreadExitData exit_data;
     bool exception_caught = false;
     try {
-        if (args["indir"]) {
+        if (!m_InputDir.empty()) {
 
-            auto writer_task = std::async([this, ValidErrorStream] { return xCombinedWriterTask(ValidErrorStream); });
+            if (ValidErrorStream) { // '-o' specified
+                CAsyncMessageHandler msgHandler(*mAppConfig, *ValidErrorStream); 
+                msgHandler.SetInvokeWrite(false); // don't invoke write inside ValidateOneDirectory()
 
-            ValidateOneDirectory(args["indir"].AsString(), args["u"]);
+                auto writer_task = std::async([this, &msgHandler] { msgHandler.Write(); });
 
-            exit_data = writer_task.get(); // this will wait writer task completion
+                auto num_to_process = ValidateOneDirectory(m_InputDir, args["u"], &msgHandler);
+                while (m_NumFiles != num_to_process) {
+                    auto fut = m_queue.GetNext();
+                    auto exitData = fut.get(); // this forces a wait
+                    exit_data.mReported += exitData.mReported;
+                    exit_data.mNumRecords += exitData.mNumRecords;
+                    if (exitData.mLongest > exit_data.mLongest) {
+                        exit_data.mLongest = exitData.mLongest;
+                        exit_data.mLongestId = exitData.mLongestId;
+                    }
+                    ++m_NumFiles;
+                }
+                msgHandler.RequestStop();
+                writer_task.wait();
+                exit_data.mReported += msgHandler.GetNumReported();
+            }
+            else { // write to separate files
+                auto writer_task = std::async([this, ValidErrorStream] { return xCombinedStatsTask(); });
+
+                auto num_to_process = ValidateOneDirectory(m_InputDir, args["u"]);
+                while (m_NumFiles != num_to_process) {
+                }
+                m_queue.request_stop();
+                exit_data = writer_task.get(); // this will wait writer task completion
+            }
 
         } else {
             string in_filename = (args["i"]) ? args["i"].AsString() : "";
-            exit_data = xValidate(in_filename, ValidErrorStream==nullptr);
-            m_NumFiles++;
+
             if (ValidErrorStream) {
-                CAsnvalOutput out(*mAppConfig, ValidErrorStream);
-                exit_data.mReported += out.Write({exit_data.mEval});
+                exit_data = xValidate(in_filename, *ValidErrorStream);
+            } else {
+                auto pOstr = s_MakeOstream(in_filename);
+                exit_data = xValidate(in_filename, *pOstr);
             }
+            m_NumFiles++;
         }
     } catch (CException& e) {
         ERR_POST(Error << e);
@@ -470,11 +572,7 @@ int CAsnvalApp::Run()
         LOG_POST_XX(Corelib_App, 1, "Total number of records " << exit_data.mNumRecords);
     }
 
-    if (exit_data.mReported > 0 || exception_caught) {
-        return 1;
-    } else {
-        return 0;
-    }
+    return (exit_data.mReported > 0 || exception_caught);
 }
 
 
@@ -492,42 +590,6 @@ void CAsnvalApp::Setup(const CArgs& args)
     CDataLoadersUtil::SetupObjectManager(args, *CObjectManager::GetInstance(),
                                          CDataLoadersUtil::fDefault |
                                          CDataLoadersUtil::fGenbankOffByDefault);
-}
-
-
-void CValXMLStream::Print(const CValidErrItem& item)
-{
-    m_Output.PutString("  <message severity=\"");
-    m_Output.PutString(s_GetSeverityLabel(item.GetSeverity(), true));
-    if (item.IsSetAccnver()) {
-        m_Output.PutString("\" seq-id=\"");
-        WriteString(item.GetAccnver(), eStringTypeVisible);
-    }
-
-    if (item.IsSetFeatureId()) {
-        m_Output.PutString("\" feat-id=\"");
-        WriteString(item.GetFeatureId(), eStringTypeVisible);
-    }
-
-    if (item.IsSetLocation()) {
-        m_Output.PutString("\" interval=\"");
-        string loc = item.GetLocation();
-        if (NStr::StartsWith(loc, "(") && NStr::EndsWith(loc, ")")) {
-            loc = "[" + loc.substr(1, loc.length() - 2) + "]";
-        }
-        WriteString(loc, eStringTypeVisible);
-    }
-
-    m_Output.PutString("\" code=\"");
-    WriteString(item.GetErrGroup(), eStringTypeVisible);
-    m_Output.PutString("_");
-    WriteString(item.GetErrCode(), eStringTypeVisible);
-    m_Output.PutString("\">");
-
-    WriteString(item.GetMsg(), eStringTypeVisible);
-
-    m_Output.PutString("</message>");
-    m_Output.PutEol();
 }
 
 

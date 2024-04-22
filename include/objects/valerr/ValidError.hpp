@@ -52,8 +52,56 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CSeqdesc;
 class CSeq_entry;
 
+class NCBI_VALERR_EXPORT IValidError
+{
+public:
+    virtual ~IValidError() = default;
+
+    virtual void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg,     // specific error message
+        const string&        desc,    // offending object's description
+        const CSerialObject& obj,     // offending object
+        const string&        acc,     // accession of object.
+        const int            ver,     // version of object.
+        const string&        location = kEmptyStr, // formatted location of object
+        const int            seq_offset = 0) = 0;
+
+    virtual void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg,     // specific error message
+        const string&        desc,    // offending object's description
+        const string&        acc,     // accession of object.
+        const int            ver,     // version of object.
+        const string&        location = kEmptyStr, // formatted location of object
+        const int            seq_offset = 0) = 0;
+
+     virtual void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg,     // specific error message
+        const string&        desc,    // offending object's description
+        const CSeqdesc&      seqdesc, // offending object
+        const CSeq_entry&    ctx,     // place of packaging
+        const string&        acc,     // accession of object or context.
+        const int            ver,     // version of object.
+        const int            seq_offset = 0) = 0;
+
+     virtual void AddValidErrItem(
+        EDiagSev             sev,     // severity
+        unsigned int         ec,      // error code
+        const string&        msg)     // specific error message
+         = 0;
+
+    virtual void AddValidErrItem(CRef<CValidErrItem> item) = 0;
+};
+
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_VALERR_EXPORT CValidError : public CValidError_Base
+class NCBI_VALERR_EXPORT CValidError : 
+    public CValidError_Base,
+    public IValidError
 {
     typedef CValidError_Base Tparent;
 public:
@@ -120,8 +168,8 @@ public:
     void SuppressError(unsigned int ec);
     bool ShouldSuppress(unsigned int ec);
     void ClearSuppressions();
-
-    bool IsCatastrophic() const;
+    
+    NCBI_DEPRECATED bool IsCatastrophic() const;
 
 protected:
     friend class CValidError_CI;

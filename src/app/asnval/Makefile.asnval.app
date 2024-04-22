@@ -7,7 +7,7 @@
 #################################
 
 APP = asnvalidate
-SRC = asnval thread_state app_config
+SRC = asnval thread_state app_config formatters message_handler
 LIB = xvalidate taxon1 xmlwrapp xhugeasn $(OBJEDIT_LIBS) $(XFORMAT_LIBS) \
       xalnmgr xobjutil \
       valerr tables xregexp $(PCRE_LIB) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
@@ -21,4 +21,4 @@ REQUIRES = objects LIBXML LIBXSLT BerkeleyDB SQLITE3
 CXXFLAGS += $(ORIG_CXXFLAGS)
 LDFLAGS  += $(ORIG_LDFLAGS)
 
-WATCHERS = stakhovv gotvyans
+WATCHERS = stakhovv gotvyans foleyjp
