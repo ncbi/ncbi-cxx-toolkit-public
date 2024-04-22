@@ -5,6 +5,7 @@
         },
         "on-deploy": {
             "timeout": 20,
+            "exclude": ["hup-ok"],
             "sub-runs": ["fast", "fast-nocache-noretries", "hup-bad-cookie", "hup-no-cookie"]
         },
         "on-deploy-hup": {
