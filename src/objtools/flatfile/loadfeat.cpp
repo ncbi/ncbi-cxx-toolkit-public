@@ -962,7 +962,6 @@ static char* CheckLocStr(const Char* str)
 {
     const Char* ptr;
     const Char* eptr;
-    char*       location;
 
     ptr = StringChr(str, ';');
     if (ptr)
@@ -979,9 +978,9 @@ static char* CheckLocStr(const Char* str)
 
     while (*eptr == ' ' || *eptr == ')')
         --eptr;
+    ++eptr;
 
-    location = StringSave(string(ptr, eptr + 1));
-    return (location);
+    return StringSave(string_view(ptr, eptr - ptr));
 }
 
 /*****************************************************************************

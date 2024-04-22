@@ -2194,7 +2194,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         return;
 
     for (auto& feat : feats) {
-        const string gene = CpTheQualValue(feat->GetQual(), "gene");
+        const string gene      = CpTheQualValue(feat->GetQual(), "gene");
         const string locus_tag = CpTheQualValue(feat->GetQual(), "locus_tag");
 
         const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;

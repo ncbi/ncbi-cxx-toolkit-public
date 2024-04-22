@@ -2415,8 +2415,6 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
     IndexblkPtr ibp;
     char*       bptr;
-    char*       kw;
-    char*       kwp;
 
     CEMBL_block::EDiv div;
 
@@ -2619,18 +2617,15 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         RemoveHtgPhase(embl->SetKeywords());
     }
 
-    kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
+    char* kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
     if (kw) {
-        kwp = StringStr(kw, "EST");
-        if (kwp && est_kwd == false) {
+        if (! est_kwd && StringStr(kw, "EST")) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
         }
-        kwp = StringStr(kw, "STS");
-        if (kwp && sts_kwd == false) {
+        if (! sts_kwd && StringStr(kw, "STS")) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
         }
-        kwp = StringStr(kw, "GSS");
-        if (kwp && gss_kwd == false) {
+        if (! gss_kwd && StringStr(kw, "GSS")) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw);
         }
         MemFree(kw);

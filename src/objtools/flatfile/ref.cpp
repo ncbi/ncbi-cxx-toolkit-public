@@ -1461,8 +1461,8 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
     char* p;
     char* nearend;
     char* end;
-    bool  all_zeros;
-    int   retval = ParFlat_MISSING_JOURNAL;
+
+    ERefRetType retval = ParFlat_MISSING_JOURNAL;
 
     CRef<CPub> ret(new CPub);
     if (! bptr) {
@@ -1608,6 +1608,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         if (cit_art.NotEmpty())
             ret->SetArticle(*cit_art);
         else {
+            bool all_zeros;
             CRef<CCit_art> new_art = get_art(pp, bptr, auth_list, title, pre, has_muid, &all_zeros, er);
             if (new_art.Empty()) {
                 if (! all_zeros && ! StringEquN(bptr, "(er)", 4) && er == 0)
@@ -1772,7 +1773,6 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
 {
     char*     p;
     char*     q;
-    char*     r;
     bool      is_online;
     TEntrezId pmid;
 
@@ -1830,7 +1830,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
             q++;
         if (*q != '\0') {
             q = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_JOURNAL);
-            r = StringChr(p, ',');
+            char* r = StringChr(p, ',');
             if (r && ! StringChr(r + 1, '.'))
                 *r = '|';
             get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
@@ -1885,9 +1885,8 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     if (NStr::EqualNocase(p, 0, 18, "Online Publication"))
         is_online = true;
 
-    if (r = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REMARK)) {
-        r = ExtractErratum(r);
-        string comm = NStr::Sanitize(r);
+    if (char* r = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REMARK)) {
+        string comm = NStr::Sanitize(ExtractErratum(r));
         MemFree(r);
         if (! is_online)
             normalize_comment(comm);
@@ -2058,8 +2057,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
 
     if (ind[ParFlat_REMARK]) {
         r = ind[ParFlat_REMARK]->mOffset;
-        r = ExtractErratum(r);
-        string comm = NStr::Sanitize(r);
+        string comm = NStr::Sanitize(ExtractErratum(r));
         if (! is_online)
             normalize_comment(comm);
         desc->SetComment(comm);
