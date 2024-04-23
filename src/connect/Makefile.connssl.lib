@@ -2,22 +2,25 @@
 
 CPPFLAGS = $(TLS_INCLUDE) -I$(srcdir)/mbedtls $(ORIG_CPPFLAGS)
 
-SRC_MBED = aes aesni arc4 aria asn1parse asn1write base64 bignum blowfish \
-           camellia ccm certs chacha20 chachapoly cipher cipher_wrap cmac \
-           constant_time ctr_drbg debug des dhm ecdh ecdsa ecjpake ecp \
-           ecp_curves entropy entropy_poll error gcm havege hkdf hmac_drbg \
-           mbedtls_md5 mbedtls_version md md2 md4 memory_buffer_alloc \
-           mps_reader mps_trace net_sockets nist_kw oid padlock pem pk \
-           pk_wrap pkcs11 pkcs12 pkcs5 pkparse pkwrite platform platform_util \
-           poly1305 psa_crypto psa_crypto_aead psa_crypto_cipher \
-           psa_crypto_client psa_crypto_driver_wrappers psa_crypto_ecp \
-           psa_crypto_hash psa_crypto_mac psa_crypto_rsa psa_crypto_se \
-           psa_crypto_slot_management psa_crypto_storage psa_its_file \
-           ripemd160 rsa rsa_internal sha1 sha256 sha512 ssl_cache \
-           ssl_ciphersuites ssl_cli ssl_cookie ssl_msg ssl_srv ssl_ticket \
-           ssl_tls ssl_tls13_keys threading timing version_features x509 \
-           x509_create x509_crl x509_crt x509_csr x509write_crt x509write_csr \
-           xtea
+SRC_MBED = aes aesce aesni aria asn1parse asn1write base64 bignum bignum_core \
+           bignum_mod bignum_mod_raw block_cipher camellia ccm chacha20 \
+           chachapoly cipher cipher_wrap cmac constant_time ctr_drbg debug \
+           des dhm ecdh ecdsa ecjpake ecp ecp_curves ecp_curves_new entropy \
+           entropy_poll error gcm hkdf hmac_drbg lmots lms mbedtls_md5 \
+           mbedtls_version md memory_buffer_alloc mps_reader mps_trace \
+           net_sockets nist_kw oid padlock pem pk pk_ecc pk_wrap pkcs12 pkcs5 \
+           pkcs7 pkparse pkwrite platform platform_util poly1305 psa_crypto \
+           psa_crypto_aead psa_crypto_cipher psa_crypto_client \
+           psa_crypto_driver_wrappers_no_static psa_crypto_ecp \
+           psa_crypto_ffdh psa_crypto_hash psa_crypto_mac psa_crypto_pake \
+           psa_crypto_rsa psa_crypto_se psa_crypto_slot_management \
+           psa_crypto_storage psa_its_file psa_util ripemd160 rsa \
+           rsa_alt_helpers sha1 sha256 sha3 sha512 ssl_cache ssl_ciphersuites \
+           ssl_client ssl_cookie ssl_debug_helpers_generated ssl_msg \
+           ssl_ticket ssl_tls ssl_tls12_client ssl_tls12_server \
+           ssl_tls13_client ssl_tls13_generic ssl_tls13_keys ssl_tls13_server \
+           threading timing version_features x509 x509_create x509_crl \
+           x509_crt x509_csr x509write x509write_crt x509write_csr
 SRC_TLS  = ncbi_gnutls ncbi_mbedtls ncbi_tls $(SRC_MBED:%=mbedtls/%)
 
 SRC      = $(SRC_TLS)
