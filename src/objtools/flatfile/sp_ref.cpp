@@ -172,7 +172,7 @@ static bool NotName(const char* name)
  *                                              10-27-93
  *
  **********************************************************/
-static Int4 GetDataFromRN(DataBlkPtr dbp, Int4 col_data)
+static Int4 GetDataFromRN(DataBlkPtr dbp, Uint2 col_data)
 {
     char* bptr;
     char* eptr;
@@ -447,7 +447,7 @@ static void GetSprotIds(ParRefBlkPtr prbp, char* str)
  *                                              10-27-93
  *
  **********************************************************/
-static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
+static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
 {
     DataBlkPtr subdbp;
     char*      str;
@@ -469,7 +469,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
     for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp; subdbp = subdbp->mpNext) {
         /* process REFERENCE subkeywords
          */
-        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), (Int2)col_data));
+        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), col_data));
         size_t len = StringLen(str);
         while (len > 0 && str[len - 1] == ';') {
             str[len - 1] = '\0';
@@ -1311,7 +1311,7 @@ static CRef<CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
 }
 
 /**********************************************************/
-CRef<CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
+CRef<CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
 {
     ParRefBlkPtr prbp = SprotRefString(pp, dbp, col_data);
 

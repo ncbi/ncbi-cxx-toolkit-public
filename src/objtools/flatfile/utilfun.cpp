@@ -716,7 +716,7 @@ Int2 MatchArrayISubString(const Char** array, const Char* text)
  *   and skip "XX" line data.
  *
  **********************************************************/
-string GetBlkDataReplaceNewLine(string_view instr, Int2 indent)
+string GetBlkDataReplaceNewLine(string_view instr, Uint2 indent)
 {
     vector<string> lines;
     NStr::Split(instr, "\n", lines);

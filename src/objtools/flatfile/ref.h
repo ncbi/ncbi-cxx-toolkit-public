@@ -65,9 +65,8 @@ BEGIN_NCBI_SCOPE
 
 CRef<objects::CPub>     journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title, bool has_muid, CRef<objects::CCit_art>& cit_art, Int4 er);
 Int4                    fta_remark_is_er(const string& str);
-CRef<objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data);
-CRef<objects::CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool bParser, DataBlkPtr** ppInd, bool& no_auth);
-CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data);
+CRef<objects::CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data);
+CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data);
 
 END_NCBI_SCOPE
 #endif
