@@ -82,7 +82,7 @@ fi
 
 
 if [[ $url == ADMIN* ]] && [[ $obasename != admin_ack_alert* ]]; then
-    curl "${curl_https}" -I --HEAD -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | grep -v '^Content-Length: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -I --HEAD -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^content-length:' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | grep -v '^Content-Length: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0
 fi
 
