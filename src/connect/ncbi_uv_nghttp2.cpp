@@ -40,6 +40,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/request_ctx.hpp>
 
+#include <psa/crypto.h>
+
 BEGIN_NCBI_SCOPE
 
 #define NCBI_UV_WRITE_TRACE(message)        _TRACE(message)
@@ -702,6 +704,10 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
     }
 
     mbedtls_ssl_conf_authmode(&m_Conf, MBEDTLS_SSL_VERIFY_NONE);
+#if MBEDTLS_VERSION_MAJOR >= 3
+    /* The above line can otherwise be ineffective. */
+    mbedtls_ssl_conf_max_tls_version(&m_Conf, MBEDTLS_SSL_VERSION_TLS1_2);
+#endif
     mbedtls_entropy_init(&m_Entropy);
     mbedtls_ctr_drbg_init(&m_CtrDrbg);
     mbedtls_x509_crt_init(&m_Cert);
@@ -715,6 +721,14 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
     }
 
     mbedtls_ssl_conf_rng(&m_Conf, mbedtls_ctr_drbg_random, &m_CtrDrbg);
+    auto p_rv = psa_crypto_init();
+
+    if (p_rv != PSA_SUCCESS) {
+        NCBI_UVNGHTTP2_TLS_TRACE(this << " psa_crypto_init: error code"
+                                 << p_rv);
+        return;
+    }
+
     mbedtls_ssl_conf_alpn_protocols(&m_Conf, m_Protocols.data());
     mbedtls_ssl_init(&m_Ssl);
 
@@ -749,7 +763,13 @@ SUvNgHttp2_TlsImpl::SUvNgHttp2_TlsImpl(const TAddrNCred& addr_n_cred, size_t rd_
         return;
     }
 
-    auto pk_rv = mbedtls_pk_parse_key(&m_Pkey, reinterpret_cast<const unsigned char*>(pkey.data()), pkey.size() + 1, nullptr, 0);
+    auto pk_rv = mbedtls_pk_parse_key(
+        &m_Pkey, reinterpret_cast<const unsigned char*>(pkey.data()),
+        pkey.size() + 1, nullptr, 0
+#if MBEDTLS_VERSION_MAJOR >= 3
+        , mbedtls_ctr_drbg_random, &m_CtrDrbg
+#endif
+        );
 
     if (pk_rv) {
         NCBI_UVNGHTTP2_TLS_TRACE(this << " mbedtls_pk_parse_key: " << SUvNgHttp2_Error::MbedTlsStr(pk_rv));

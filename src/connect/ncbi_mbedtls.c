@@ -52,6 +52,7 @@
 #    include <mbedtls/ssl.h>
 #    include <mbedtls/threading.h>
 #    include <mbedtls/version.h>
+#    include <psa/crypto.h>
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
@@ -101,7 +102,11 @@ static int mbtls_user_mutex_lock(MT_LOCK* lock)
     if (lock) {
         switch (MT_LOCK_Do(*lock, eMT_Lock)) {
         case -1:
+#ifdef MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE
             return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
+#else
+            return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+#endif
         case  0:
             return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
         case  1:
@@ -117,7 +122,11 @@ static int mbtls_user_mutex_unlock(MT_LOCK* lock)
     if (lock) {
         switch (MT_LOCK_Do(*lock, eMT_Unlock)) {
         case -1:
+#ifdef MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE
             return MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE;
+#else
+            return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
+#endif
         case  0:
             return MBEDTLS_ERR_THREADING_MUTEX_ERROR;
         case  1:
@@ -214,7 +223,11 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
 
     if (!error)
         return eIO_Success;
+#if MBEDTLS_VERSION_MAJOR >= 3
+    sock = ((SNcbiSSLctx*)(session->MBEDTLS_PRIVATE(p_bio)))->sock;
+#else
     sock = ((SNcbiSSLctx*)(session->p_bio))->sock;
+#endif
     switch (error) {
     case MBEDTLS_ERR_SSL_WANT_READ:
         status = x_RetryStatus(sock, direction);
@@ -225,11 +238,20 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
     case MBEDTLS_ERR_SSL_TIMEOUT:
         status = eIO_Timeout;
         break;
+#ifdef MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE
     case MBEDTLS_ERR_THREADING_FEATURE_UNAVAILABLE:
+#endif
+#ifdef MBEDTLS_ERR_SSL_NO_USABLE_CIPHERSUITE
     case MBEDTLS_ERR_SSL_NO_USABLE_CIPHERSUITE:
+#endif
     case MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE:
+#ifdef MBEDTLS_ERR_SSL_UNKNOWN_CIPHER
     case MBEDTLS_ERR_SSL_UNKNOWN_CIPHER:
+#endif
     case MBEDTLS_ERR_SSL_INTERNAL_ERROR:
+#ifdef MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED
+    case MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED:
+#endif
         status = eIO_NotSupported;
         break;
     case MBEDTLS_ERR_THREADING_BAD_INPUT_DATA:
@@ -574,8 +596,8 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
 static EIO_Status s_MbedTlsWrite(void* session, const void* data,
                                  size_t n_todo, size_t* n_done, int* error)
 {
-    size_t max_size
-        = mbedtls_ssl_get_output_max_frag_len((mbedtls_ssl_context*) session);
+    size_t max_size = mbedtls_ssl_get_max_out_record_payload
+        ((mbedtls_ssl_context*) session);
     EIO_Status status;
 
     *n_done = 0;
@@ -714,6 +736,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     char version[80];
     const char* val;
     char buf[32];
+    psa_status_t psa_status;
 
     mbedtls_version_get_string(version);
     if (strcasecmp(MBEDTLS_VERSION_STRING, version) != 0) {
@@ -734,6 +757,11 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
                                 MBEDTLS_SSL_TRANSPORT_STREAM,
                                 MBEDTLS_SSL_PRESET_DEFAULT);
     mbedtls_ssl_conf_authmode(&s_MbedTlsConf, MBEDTLS_SSL_VERIFY_NONE);
+#if MBEDTLS_VERSION_MAJOR >= 3
+    /* The above line can otherwise be ineffective. */
+    mbedtls_ssl_conf_max_tls_version(&s_MbedTlsConf,
+                                     MBEDTLS_SSL_VERSION_TLS1_2);
+#endif
 
     /* Check CONN_[MBED]TLS_LOGLEVEL or [CONN][MBED]TLS_LOGLEVEL */
     val = ConnNetInfo_GetValueInternal(0, "MBED" REG_CONN_TLS_LOGLEVEL,
@@ -777,6 +805,12 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
     }
     mbedtls_ssl_conf_rng(&s_MbedTlsConf,
                          mbedtls_ctr_drbg_random, &s_MbedTlsCtrDrbg);
+
+    if ((psa_status = psa_crypto_init()) != PSA_SUCCESS) {
+        CORE_LOGF_X(51, eLOG_Error,
+                    ("psa_crypto_init failed with status %d", psa_status));
+        return eIO_NotSupported;
+    }
 
     s_Pull = pull;
     s_Push = push;
@@ -954,7 +988,11 @@ NCBI_CRED NcbiCreateMbedTlsCertCredentials(const void* cert,
 
     err = mbedtls_pk_parse_key(xcred->pkey,
                                (const unsigned char*) pkey, pkeysz ? pkeysz
-                               : strlen((const char*) pkey) + 1, 0, 0);
+                               : strlen((const char*) pkey) + 1, 0, 0
+#if MBEDTLS_VERSION_MAJOR >= 3
+                               , mbedtls_ctr_drbg_random, &s_MbedTlsCtrDrbg
+#endif
+                               );
     if (err) {
         mbedtls_strerror(err, errbuf, sizeof(errbuf) - 1);
         CORE_LOG_ERRNO_EXX(12, eLOG_Error, err, errbuf,
