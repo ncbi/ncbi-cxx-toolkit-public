@@ -23,33 +23,45 @@
  *
  * ===========================================================================
  *
- * Author:  Frank Ludwig
+ * Author:  Justin Foley
  *
  * File Description:
- *   validator
+ *   asnvalidate output formatters
  *
  */
 
-#ifndef XML_VAL_STREAM_HPP
-#define XML_VAL_STREAM_HPP
+#ifndef _ASNVAL_FORMATTERS_HPP_
+#define _ASNVAL_FORMATTERS_HPP_
 
-#include <serial/objectio.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <serial/objostrxml.hpp>
-#include <misc/xmlwrapp/xmlwrapp.hpp>
+#include <corelib/ncbistd.hpp>
 
-using namespace ncbi;
-USING_SCOPE(objects);
-USING_SCOPE(validator);
+class CAppConfig; // Why is this outside NCBI scope?
+BEGIN_NCBI_SCOPE
 
-class CValXMLStream : public CObjectOStreamXml
-{
+namespace objects {
+class CValidErrItem;
+}
+
+class IFormatter {
 public:
-    CValXMLStream(CNcbiOstream& out, EOwnership deleteOut) : CObjectOStreamXml(out, deleteOut) {};
-    void Print(const CValidErrItem& item);
+    IFormatter(CNcbiOstream& ostr) : m_Ostr(ostr) {}
+    virtual ~IFormatter(){}
+
+    virtual void Start(){}
+    virtual void Finish(){}
+
+    virtual void operator()(const objects::CValidErrItem& item) = 0;
+
+protected:
+    CNcbiOstream& m_Ostr;
 };
 
 
+unique_ptr<IFormatter> g_CreateFormatter(const CAppConfig& config, CNcbiOstream& ostr);
+
+
+
+END_NCBI_SCOPE
 
 #endif
 
