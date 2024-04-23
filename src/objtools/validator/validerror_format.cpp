@@ -47,7 +47,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/validator/validerror_format.hpp>
-//#include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_suppress.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <util/static_map.hpp>
 
@@ -1110,9 +1110,9 @@ string CValidErrorFormat::GetObjectLabel(const CObject& obj, const CSeq_entry& c
 //LCOV_EXCL_STOP
 
 
-const string kSuppressFieldLabel = "Suppress";
+static const string kSuppressFieldLabel = "Suppress";
 
-bool s_IsSuppressField (const CUser_field& field)
+static bool s_IsSuppressField (const CUser_field& field)
 {
     if (field.IsSetLabel() &&
         field.GetLabel().IsStr() &&
@@ -1125,98 +1125,27 @@ bool s_IsSuppressField (const CUser_field& field)
 
 
 void CValidErrorFormat::AddSuppression(CUser_object& user, CValidErrItem::TErrIndex error_code)
-{
-    bool found = false;
-    if (user.IsSetData()) {
-        NON_CONST_ITERATE(CUser_object::TData, it, user.SetData()) {
-            if (s_IsSuppressField(**it)) {
-                if ((*it)->IsSetData()) {
-                    if ((*it)->GetData().IsInt()) {
-                        auto old_val = (*it)->GetData().GetInt();
-                        if (old_val == error_code) {
-                            // do nothing, already there
-                        } else {
-                            (*it)->SetData().SetInts().push_back(old_val);
-                            (*it)->SetData().SetInts().push_back(error_code);
-                        }
-                        found = true;
-                        break;
-                    } else if ((*it)->GetData().IsInts()) {
-                        ITERATE(CUser_field::TData::TInts, ii, (*it)->GetData().GetInts()) {
-                            if (*ii == error_code) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            (*it)->SetData().SetInts().push_back(error_code);
-                            found = true;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    if (!found) {
-        CRef<CUser_field> field(new CUser_field());
-        field->SetLabel().SetStr(kSuppressFieldLabel);
-        field->SetData().SetInts().push_back(error_code);
-        user.SetData().push_back(field);
-    }
+{   
+    CValidErrorSuppress::AddSuppression(user, error_code);
 }
 
 
 void CValidErrorFormat::SetSuppressionRules(const CUser_object& user, CValidError& errors)
 {
-    if (!user.IsSetData()) {
-        return;
-    }
-    ITERATE(CUser_object::TData, it, user.GetData()) {
-        if ((*it)->IsSetData() && s_IsSuppressField(**it)) {
-            if ((*it)->GetData().IsInt()) {
-                errors.SuppressError((*it)->GetData().GetInt());
-            } else if ((*it)->GetData().IsInts()) {
-                ITERATE(CUser_field::TData::TInts, ii, (*it)->GetData().GetInts()) {
-                    errors.SuppressError(*ii);
-                }
-            } else if ((*it)->GetData().IsStr()) {
-                unsigned int ec = CValidErrItem::ConvertToErrCode((*it)->GetData().GetStr());
-                if (ec != eErr_MAX) {
-                    errors.SuppressError(ec);
-                }
-            } else if ((*it)->GetData().IsStrs()) {
-                ITERATE(CUser_field::TData::TStrs, si, (*it)->GetData().GetStrs()) {
-                    unsigned int ec = CValidErrItem::ConvertToErrCode(*si);
-                    if (ec != eErr_MAX) {
-                        errors.SuppressError(ec);
-                    }
-                }
-            }
-        }
+    CValidErrorSuppress::TCodes suppressedCodes;
+    CValidErrorSuppress::SetSuppressedCodes(user, suppressedCodes);
+    for (auto code : suppressedCodes) {
+        errors.SuppressError(code);
     }
 }
 
 
 void CValidErrorFormat::SetSuppressionRules(const CSeq_entry& se, CValidError& errors)
 {
-    if (se.IsSeq()) {
-        SetSuppressionRules(se.GetSeq(), errors);
-    } else if (se.IsSet()) {
-        const CBioseq_set& set = se.GetSet();
-        if (set.IsSetDescr()) {
-            ITERATE(CBioseq_set::TDescr::Tdata, it, set.GetDescr().Get()) {
-                if ((*it)->IsUser() &&
-                    (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_ValidationSuppression) {
-                    SetSuppressionRules((*it)->GetUser(), errors);
-                }
-            }
-        }
-        if (set.IsSetSeq_set()) {
-            ITERATE(CBioseq_set::TSeq_set, it, set.GetSeq_set()) {
-                SetSuppressionRules(**it, errors);
-            }
-        }
+    CValidErrorSuppress::TCodes suppressedCodes;
+    CValidErrorSuppress::SetSuppressedCodes(se, suppressedCodes);
+    for (auto code : suppressedCodes) {
+        errors.SuppressError(code);
     }
 }
 
@@ -1229,23 +1158,20 @@ void CValidErrorFormat::SetSuppressionRules(const CSeq_entry_Handle& se, CValidE
 
 void CValidErrorFormat::SetSuppressionRules(const CSeq_submit& ss, CValidError& errors)
 {
-    if (ss.IsEntrys()) {
-        ITERATE(CSeq_submit::TData::TEntrys, it, ss.GetData().GetEntrys()) {
-            SetSuppressionRules(**it, errors);
-        }
+    CValidErrorSuppress::TCodes suppressedCodes;
+    CValidErrorSuppress::SetSuppressedCodes(ss, suppressedCodes);
+    for (auto code : suppressedCodes) {
+        errors.SuppressError(code);
     }
 }
 
 
 void CValidErrorFormat::SetSuppressionRules(const CBioseq& seq, CValidError& errors)
 {
-    if (seq.IsSetDescr()) {
-        ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
-            if ((*it)->IsUser() &&
-                (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_ValidationSuppression) {
-                SetSuppressionRules((*it)->GetUser(), errors);
-            }
-        }
+    CValidErrorSuppress::TCodes suppressedCodes;
+    CValidErrorSuppress::SetSuppressedCodes(seq, suppressedCodes);
+    for (auto code : suppressedCodes) {
+        errors.SuppressError(code);
     }
 }
 
