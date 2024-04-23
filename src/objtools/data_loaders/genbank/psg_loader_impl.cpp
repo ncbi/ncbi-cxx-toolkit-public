@@ -2544,6 +2544,7 @@ static CTSE_Lock x_CreateLocalCDDEntry(CDataSource* data_source, const SCDDIds& 
     if ( auto chunk = x_CreateLocalCDDEntryChunk(cdd_ids) ) {
         CDataLoader::TBlobId dl_blob_id = CDataLoader::TBlobId(blob_id);
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
+        _ASSERT(load_lock);
         if ( load_lock ) {
             if ( !load_lock.IsLoaded() ) {
                 if ( CPSGDataLoader_Impl::GetGetBlobByIdShouldFail() ) {
@@ -3191,11 +3192,6 @@ protected:
 
 static bool x_IsEmptyCDD(const CTSE_Info& tse)
 {
-    // check if delayed TSE chunk is loaded
-    if ( tse.x_NeedsDelayedMainChunk() ) {
-        // not loaded yet, cannot tell if its empty
-        return false;
-    }
     // check core Seq-entry content
     auto core = tse.GetTSECore();
     if ( !core->IsSet() ) {
@@ -3261,11 +3257,18 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         CDataLoader::TTSE_LockSet locks;
         if ( x_CheckAnnotCache(kCDDAnnotName, ids, data_source, nullptr, locks) ) {
             _ASSERT(locks.size() == 1);
-            if ( !x_IsEmptyCDD(**locks.begin()) ) {
-                ret[i] = *locks.begin();
+            const CTSE_Lock& tse = *locks.begin();
+            // check if delayed TSE chunk is loaded
+            if ( tse->x_NeedsDelayedMainChunk() ) {
+                // not loaded yet, need to request CDDs
             }
-            loaded[i] = true;
-            continue;
+            else {
+                if ( !x_IsEmptyCDD(*tse) ) {
+                    ret[i] = tse;
+                }
+                loaded[i] = true;
+                continue;
+            }
         }
  
         CPSG_BioIds bio_ids;
@@ -3319,24 +3322,31 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             }
 
             CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(dl_blob_id);
-            if (!load_lock) continue;
+            _ASSERT(load_lock);
             if (load_lock.IsLoaded()) {
-                if ( !x_IsEmptyCDD(*load_lock) ) {
-                    ret[idx] = load_lock;
+                if ( load_lock->x_NeedsDelayedMainChunk() ) {
+                    // not loaded yet
                 }
-                loaded[idx] = true;
-                continue;
-            }
-            if ( kCreateLocalCDDEntries ) {
-                x_CreateLocalCDDEntry(data_source, cdd_ids[idx]);
+                else {
+                    if ( !x_IsEmptyCDD(*load_lock) ) {
+                        ret[idx] = load_lock;
+                    }
+                    loaded[idx] = true;
+                    continue;
+                }
             }
             else {
-                SPsgAnnotInfo::TInfos infos{annot_info};
-                m_AnnotCache->Add(infos, kCDDAnnotName, id_sets[idx]);
-                dl_blob_id = new CPsgBlobId(annot_info->GetBlobId().GetId());
-                m_BlobMap->Add(annot_info->GetBlobId().GetId(), make_shared<SPsgBlobInfo>(*blob_info));
+                if ( kCreateLocalCDDEntries ) {
+                    x_CreateLocalCDDEntry(data_source, cdd_ids[idx]);
+                }
+                else {
+                    SPsgAnnotInfo::TInfos infos{annot_info};
+                    m_AnnotCache->Add(infos, kCDDAnnotName, id_sets[idx]);
+                    dl_blob_id = new CPsgBlobId(annot_info->GetBlobId().GetId());
+                    m_BlobMap->Add(annot_info->GetBlobId().GetId(), make_shared<SPsgBlobInfo>(*blob_info));
+                }
             }
-
+            
             unique_ptr<CObjectIStream> in(GetBlobDataStream(*blob_info, *blob_data));
             if (!in.get()) {
                 ++failed_count;
@@ -3344,9 +3354,16 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             }
             CRef<CSeq_entry> entry(new CSeq_entry);
             *in >> *entry;
-            if (kCreateLocalCDDEntries) {
-                load_lock->SetSeq_entry(*entry);
-                load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).SetLoaded();
+            if ( load_lock.IsLoaded() ) {
+                // may need to create main chunk
+                if ( load_lock->x_NeedsDelayedMainChunk() ) {
+                    CTSE_Chunk_Info& chunk = load_lock->GetSplitInfo().GetChunk(kDelayedMain_ChunkId);
+                    AutoPtr<CInitGuard> chunk_load_lock = chunk.GetLoadInitGuard();
+                    if ( chunk_load_lock.get() && *chunk_load_lock.get() ) {
+                        load_lock->SetSeq_entry(*entry);
+                        chunk.SetLoaded();
+                    }
+                }
             }
             else {
                 load_lock->SetSeq_entry(*entry);
