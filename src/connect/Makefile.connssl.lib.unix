@@ -1,5 +1,9 @@
 # $Id$
 
+ifneq "" "$(findstring mbedtls,$(NETWORK_LIBS))"
+  SRC_MBED =
+endif
+
 # Adjust ICC flags to avoid problematic references to
 # __intel_sse2_str* functions (as of ICC [20]15)
 
