@@ -432,12 +432,12 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
             break;
         }
 
-        tbp->next = new TokenBlk;
-        tbp       = tbp->next;
-        tbp->str  = StringSave("-");
-        tbp->next = new TokenBlk;
-        tbp       = tbp->next;
-        tbp->str  = StringSave(last);
+        auto* p = new TokenBlk(StringSave("-"));
+        tbp->next = p;
+        tbp       = p;
+        p = new TokenBlk(StringSave(last));
+        tbp->next = p;
+        tbp       = p;
         tsbp->num += 2;
 
         tbp->next = tbpnext;
@@ -451,30 +451,17 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 }
 
 /**********************************************************/
-static TokenBlkPtr TokenNodeNew(TokenBlkPtr tbp)
+static void AppendTokenVal(TokenBlkPtr& tbp, string_view str)
 {
-    TokenBlkPtr newnode = new TokenBlk;
-
+    TokenBlkPtr newnode = new TokenBlk(StringSave(str));
     if (tbp) {
-        while (tbp->next)
-            tbp = tbp->next;
-        tbp->next = newnode;
+        TokenBlkPtr ltbp = tbp;
+        while (ltbp->next)
+            ltbp = ltbp->next;
+        ltbp->next = newnode;
+    } else {
+        tbp = newnode;
     }
-
-    return (newnode);
-}
-
-/**********************************************************/
-static void InsertTokenVal(TokenBlkPtr* tbp, string_view str)
-{
-    TokenBlkPtr ltbp;
-
-    ltbp      = *tbp;
-    ltbp      = TokenNodeNew(ltbp);
-    ltbp->str = StringSave(str);
-
-    if (! *tbp)
-        *tbp = ltbp;
 }
 
 /**********************************************************
@@ -505,7 +492,7 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
                          *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 
-        InsertTokenVal(&token->list, string_view(bptr, ptr - bptr));
+        AppendTokenVal(token->list, string_view(bptr, ptr - bptr));
         num++;
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
