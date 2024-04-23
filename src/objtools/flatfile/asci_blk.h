@@ -60,9 +60,9 @@ void       BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw);
 SectionPtr xBuildSubBlock(Section&, int subtype, const char* subKw);
 void       GetLenSubNode(DataBlkPtr dbp);
 char*      SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len);
-char*      GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat);
+char*      GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat);
 void       GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions);
-void       GetSequenceOfKeywords(const DataBlk& entry, int type, int col_data, TKeywordList& keywords);
+void       GetSequenceOfKeywords(const DataBlk& entry, int type, Uint2 col_data, TKeywordList& keywords);
 
 bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& cpp_bsp, Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type);
 

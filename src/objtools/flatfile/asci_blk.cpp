@@ -1156,7 +1156,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
  *                                              4-28-93
  *
  **********************************************************/
-char* GetDescrComment(char* offset, size_t len, Int2 col_data, bool is_htg, bool is_pat)
+char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat)
 {
     char* p;
     char* q;
@@ -1558,7 +1558,7 @@ void xFixEMBLKeywords(
 void GetSequenceOfKeywords(
     const DataBlk& entry,
     int            type,
-    int            col_data,
+    Uint2          col_data,
     TKeywordList&  keywords)
 //  ----------------------------------------------------------------------------
 {

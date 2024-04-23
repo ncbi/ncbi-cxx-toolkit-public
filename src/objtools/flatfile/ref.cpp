@@ -1945,7 +1945,8 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
 }
 
 /**********************************************************/
-CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool bParser, DataBlkPtr** ppInd, bool& no_auth)
+static
+CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data, bool bParser, DataBlkPtr** ppInd, bool& no_auth)
 {
     static DataBlkPtr ind[MAXKW + 1];
 
@@ -2102,7 +2103,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool 
  *                                              11-14-93
  *
  **********************************************************/
-static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data, bool& no_auth)
+static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data, bool& no_auth)
 {
     static DataBlkPtr ind[MAXKW + 1];
     char*             s;
@@ -2422,7 +2423,7 @@ static void fta_propagate_pmid_muid(CPub_equiv& pub_equiv)
  *                                              4-14-93
  *
  **********************************************************/
-CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Int4 col_data)
+CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
 {
     bool soft_report = false;
 
