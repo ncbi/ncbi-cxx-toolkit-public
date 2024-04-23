@@ -30,11 +30,10 @@
  *
  */
 
-#include "mbedtls/mbedtls/ncbicxx_rename_mbedtls.h"
-#include "mbedtls/mbedtls/error.h"
-#include "mbedtls/mbedtls/ctr_drbg.h"
-#include "mbedtls/mbedtls/entropy.h"
-#include "mbedtls/mbedtls/ssl.h"
+#include <mbedtls/error.h>
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ssl.h>
 
 #include <corelib/ncbimisc.hpp>
 

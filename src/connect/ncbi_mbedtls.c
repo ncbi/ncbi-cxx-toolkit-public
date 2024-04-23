@@ -43,7 +43,6 @@
 
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
-#  ifdef HAVE_LIBMBEDTLS  /* external */
 #    include <mbedtls/ctr_drbg.h>
 #    include <mbedtls/debug.h>
 #    include <mbedtls/entropy.h>
@@ -53,17 +52,6 @@
 #    include <mbedtls/ssl.h>
 #    include <mbedtls/threading.h>
 #    include <mbedtls/version.h>
-#  else                   /* embedded */
-#    include "mbedtls/mbedtls/ctr_drbg.h"
-#    include "mbedtls/mbedtls/debug.h"
-#    include "mbedtls/mbedtls/entropy.h"
-#    include "mbedtls/mbedtls/error.h"
-#    include "mbedtls/mbedtls/pk.h"
-#    include "mbedtls/mbedtls/net_sockets.h"
-#    include "mbedtls/mbedtls/ssl.h"
-#    include "mbedtls/mbedtls/threading.h"
-#    include "mbedtls/mbedtls/version.h"
-#  endif /*HAVE_LIBMBEDTLS*/
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
