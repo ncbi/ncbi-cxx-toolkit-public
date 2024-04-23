@@ -845,8 +845,6 @@ public:
     // use previously populated fields to construct the "standard" description
     void SetFeatureObjDescFromFields();
 
-private:
-    friend class CValidError;
 
     // constructor
     CValidErrItem(
@@ -859,6 +857,9 @@ private:
         const string&        acc,       // accession
         const int            ver,       // version of object.
         const int            seq_offset = 0); // sequence offset
+
+private:
+//    friend class CValidError;
 
     // Prohibit default & copy constructor and assignment operator
     CValidErrItem(const CValidErrItem& value) = delete;
