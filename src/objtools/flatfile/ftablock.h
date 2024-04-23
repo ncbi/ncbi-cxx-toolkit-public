@@ -131,6 +131,8 @@ struct GapFeats {
 using GapFeatsPtr = GapFeats*;
 
 struct TokenBlk {
+    TokenBlk(char* pch) :
+        str(pch) {}
     char*     str  = nullptr; /* the token string */
     TokenBlk* next = nullptr; /* points to next token */
 };
