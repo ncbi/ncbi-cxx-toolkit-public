@@ -2,37 +2,23 @@
 
 CPPFLAGS = $(TLS_INCLUDE) -I$(srcdir)/mbedtls $(ORIG_CPPFLAGS)
 
-SRC_TLS  = ncbi_gnutls ncbi_mbedtls ncbi_tls \
-           mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/aria \
-           mbedtls/asn1parse mbedtls/asn1write mbedtls/base64 mbedtls/bignum \
-           mbedtls/blowfish mbedtls/camellia mbedtls/ccm mbedtls/chacha20 \
-           mbedtls/chachapoly mbedtls/cipher mbedtls/cipher_wrap \
-           mbedtls/cmac mbedtls/constant_time mbedtls/ctr_drbg mbedtls/des \
-           mbedtls/dhm mbedtls/ecdh mbedtls/ecdsa mbedtls/ecjpake mbedtls/ecp \
-           mbedtls/ecp_curves mbedtls/entropy mbedtls/entropy_poll \
-           mbedtls/error mbedtls/gcm mbedtls/havege mbedtls/hkdf \
-           mbedtls/hmac_drbg mbedtls/md mbedtls/md2 mbedtls/md4 \
-           mbedtls/mbedtls_md5 mbedtls/memory_buffer_alloc mbedtls/mps_reader \
-           mbedtls/mps_trace mbedtls/nist_kw mbedtls/oid mbedtls/padlock \
-           mbedtls/pem mbedtls/pk mbedtls/pk_wrap mbedtls/pkcs12 \
-           mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite mbedtls/platform \
-           mbedtls/platform_util mbedtls/poly1305 mbedtls/psa_crypto \
-           mbedtls/psa_crypto_aead mbedtls/psa_crypto_cipher \
-           mbedtls/psa_crypto_client mbedtls/psa_crypto_driver_wrappers \
-           mbedtls/psa_crypto_ecp mbedtls/psa_crypto_hash \
-           mbedtls/psa_crypto_mac mbedtls/psa_crypto_rsa \
-           mbedtls/psa_crypto_se mbedtls/psa_crypto_slot_management \
-           mbedtls/psa_crypto_storage mbedtls/psa_its_file mbedtls/ripemd160 \
-           mbedtls/rsa mbedtls/rsa_internal mbedtls/sha1 mbedtls/sha256 \
-           mbedtls/sha512 mbedtls/threading mbedtls/timing \
-           mbedtls/mbedtls_version mbedtls/version_features mbedtls/xtea \
-           mbedtls/certs mbedtls/pkcs11 mbedtls/x509 mbedtls/x509_create \
-           mbedtls/x509_crl mbedtls/x509_crt mbedtls/x509_csr \
-           mbedtls/x509write_crt mbedtls/x509write_csr \
-           mbedtls/debug mbedtls/net_sockets mbedtls/ssl_cache \
-           mbedtls/ssl_ciphersuites mbedtls/ssl_cli mbedtls/ssl_cookie \
-           mbedtls/ssl_msg mbedtls/ssl_srv mbedtls/ssl_ticket mbedtls/ssl_tls \
-           mbedtls/ssl_tls13_keys
+SRC_MBED = aes aesni arc4 aria asn1parse asn1write base64 bignum blowfish \
+           camellia ccm certs chacha20 chachapoly cipher cipher_wrap cmac \
+           constant_time ctr_drbg debug des dhm ecdh ecdsa ecjpake ecp \
+           ecp_curves entropy entropy_poll error gcm havege hkdf hmac_drbg \
+           mbedtls_md5 mbedtls_version md md2 md4 memory_buffer_alloc \
+           mps_reader mps_trace net_sockets nist_kw oid padlock pem pk \
+           pk_wrap pkcs11 pkcs12 pkcs5 pkparse pkwrite platform platform_util \
+           poly1305 psa_crypto psa_crypto_aead psa_crypto_cipher \
+           psa_crypto_client psa_crypto_driver_wrappers psa_crypto_ecp \
+           psa_crypto_hash psa_crypto_mac psa_crypto_rsa psa_crypto_se \
+           psa_crypto_slot_management psa_crypto_storage psa_its_file \
+           ripemd160 rsa rsa_internal sha1 sha256 sha512 ssl_cache \
+           ssl_ciphersuites ssl_cli ssl_cookie ssl_msg ssl_srv ssl_ticket \
+           ssl_tls ssl_tls13_keys threading timing version_features x509 \
+           x509_create x509_crl x509_crt x509_csr x509write_crt x509write_csr \
+           xtea
+SRC_TLS  = ncbi_gnutls ncbi_mbedtls ncbi_tls $(SRC_MBED:%=mbedtls/%)
 
 SRC      = $(SRC_TLS)
 LIB      = connssl
