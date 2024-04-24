@@ -3459,17 +3459,19 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
 
     descrip.assign(CpTheQualValue(fbp->quals, "note"));
 
-    if (NStr::EqualNocase("VARSPLIC", fbp->key)) {
+    if (NStr::EqualNocase(fbp->key, "VARSPLIC")) {
         ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
-        fbp->key = (char*)"VAR_SEQ";
+        MemFree(fbp->key);
+        fbp->key = StringSave("VAR_SEQ");
     }
 
     if (NStr::EqualNocase(fbp->key, "NON_STD")) {
+        MemFree(fbp->key);
         if (NStr::EqualNocase(descrip, "Selenocysteine.")) {
-            fbp->key = (char*)"SE_CYS";
+            fbp->key = StringSave("SE_CYS");
             descrip.clear();
         } else
-            fbp->key = (char*)"MOD_RES";
+            fbp->key = StringSave("MOD_RES");
     }
 
     CRef<CSeq_feat> feat(new CSeq_feat);
@@ -3504,10 +3506,10 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
         *loc = '\0';
         if (pp->buf)
             MemFree(pp->buf);
-        pp->buf = StringNew(StringLen(fbp->key) + 3 + StringLen(fbp->location));
-        StringCpy(pp->buf, fbp->key);
-        StringCpy(pp->buf, " : ");
-        StringCpy(pp->buf, fbp->location);
+        string s = fbp->key;
+        s += " : ";
+        s += fbp->location;
+        pp->buf = StringSave(s);
         GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key);
         if (pp->buf)
             MemFree(pp->buf);
