@@ -158,7 +158,7 @@ if(UNIX)
         list(APPEND NCBI_ALL_REQUIRES Iconv)
     endif()
 elseif(WIN32)
-    set(ORIG_LIBS ws2_32.lib dbghelp.lib)
+    set(ORIG_LIBS bcrypt.lib ws2_32.lib dbghelp.lib)
 endif()
 
 #############################################################################
