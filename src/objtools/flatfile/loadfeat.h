@@ -48,6 +48,20 @@ struct FeatBlk : public CFlatFileData {
 
     TQualVector quals;
 
+    void        key_set(char* pch) { key = pch; }
+    void        key_assign(const char*);
+    bool        key_isset() const { return key != nullptr; }
+    const char* key_get() const { return key; }
+    bool        key_equ(const char*) const;
+    const char* key_c_str() const { return key; }
+    const char* key_or(const char* pch) const { return key ? key : pch; }
+
+    void        location_set(char* pch) { location = pch; }
+    bool        location_isset() const { return location != nullptr; }
+    const char* location_get() const { return location; }
+    const char* location_c_str() const { return location; }
+    const char* location_or(const char* pch) const { return location ? location : pch; }
+
     ~FeatBlk();
 };
 
