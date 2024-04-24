@@ -3459,19 +3459,17 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
 
     descrip.assign(CpTheQualValue(fbp->quals, "note"));
 
-    if (NStr::EqualNocase(fbp->key, "VARSPLIC")) {
+    if (NStr::EqualNocase(fbp->key_c_str(), "VARSPLIC")) {
         ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
-        MemFree(fbp->key);
-        fbp->key = StringSave("VAR_SEQ");
+        fbp->key_assign("VAR_SEQ");
     }
 
-    if (NStr::EqualNocase(fbp->key, "NON_STD")) {
-        MemFree(fbp->key);
+    if (NStr::EqualNocase(fbp->key_c_str(), "NON_STD")) {
         if (NStr::EqualNocase(descrip, "Selenocysteine.")) {
-            fbp->key = StringSave("SE_CYS");
+            fbp->key_assign("SE_CYS");
             descrip.clear();
         } else
-            fbp->key = StringSave("MOD_RES");
+            fbp->key_assign("MOD_RES");
     }
 
     CRef<CSeq_feat> feat(new CSeq_feat);
@@ -3492,13 +3490,13 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
     } else {
         if (type != ParFlatSPInitMet && type != ParFlatSPNonTer &&
             type != ParFlatSPNonCons) {
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"%s\" with unknown type dropped.", fbp->key);
+            ErrPostEx(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"%s\" with unknown type dropped.", fbp->key_c_str());
         }
         feat->Reset();
         return (null);
     }
 
-    if (fbp->location) {
+    if (fbp->location_isset()) {
         loc = fbp->location;
         for (p = loc; *p; p++)
             if (*p != ' ')
@@ -3506,24 +3504,24 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
         *loc = '\0';
         if (pp->buf)
             MemFree(pp->buf);
-        string s = fbp->key;
+        string s = fbp->key_get();
         s += " : ";
-        s += fbp->location;
+        s += fbp->location_get();
         pp->buf = StringSave(s);
-        GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key);
+        GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key_get());
         if (pp->buf)
             MemFree(pp->buf);
         pp->buf = nullptr;
     }
     if (err) {
         if (! pp->debug) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "%s|%s| range check detects problems", fbp->key, fbp->location);
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "%s|%s| range check detects problems", fbp->key_c_str(), fbp->location_c_str());
             if (! descrip.empty())
                 descrip.clear();
             feat->Reset();
             return (null);
         }
-        ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, "%s|%s| range check detects problems", fbp->key, fbp->location);
+        ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, "%s|%s| range check detects problems", fbp->key_c_str(), fbp->location_c_str());
     }
 
     if (SeqLocHaveFuzz(feat->GetLocation()))
