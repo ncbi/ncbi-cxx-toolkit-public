@@ -3006,6 +3006,7 @@ static bool NCBI_NewTaxVal(void)
 }
 
 
+/*
 static CRef<CTaxon3_reply> ExploreStrainsCallback (const vector<CRef<COrg_ref>>& request)
 
 {
@@ -3017,6 +3018,7 @@ static CRef<CTaxon3_reply> ExploreStrainsCallback (const vector<CRef<COrg_ref>>&
 
     return reply;
 }
+*/
 
 
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
@@ -3032,7 +3034,9 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
     // Commented out until TM-725 is resolved
     if (NCBI_NewTaxVal()) {
-        CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se, ExploreStrainsCallback);
+        CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se,
+            [this] (const vector<CRef<COrg_ref>>& request) -> CRef<CTaxon3_reply>
+            { return m_pContext->m_taxon_update(request);});
     } else {
         ValidateStrain(*pTval, pTval->m_descTaxID);
     }
