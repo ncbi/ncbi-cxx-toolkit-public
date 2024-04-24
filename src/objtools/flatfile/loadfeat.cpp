@@ -2271,7 +2271,6 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
     Int4 exp_bad;
     Int4 inf_good;
     Int4 inf_bad;
-    Char ch;
 
     if (! fbp || fbp->quals.empty())
         return true;
@@ -2318,52 +2317,24 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
         else if (NStr::CompareNocase(val_str.c_str(), "experimental") == 0)
             evi_exp++;
         else {
-            if (fbp->location && StringLen(fbp->location) > 50) {
-                ch                = fbp->location[50];
-                fbp->location[50] = '\0';
-            } else
-                ch = '\0';
             ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence, "Illegal value \"%s\" for /evidence qualifier on the \"%s\" feature at \"%s\". Qualifier dropped.", val_str.empty() ? "Unknown" : val_str.c_str(), fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
-            if (ch != '\0')
-                fbp->location[50] = ch;
         }
 
         qual = fbp->quals.erase(qual);
     }
 
     if (evi_exp + evi_not > 0 && exp_good + exp_bad + inf_good + inf_bad > 0) {
-        if (fbp->location && StringLen(fbp->location) > 50) {
-            ch                = fbp->location[50];
-            fbp->location[50] = '\0';
-        } else
-            ch = '\0';
         ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "Old /evidence and new /experiment or /inference qualifiers both exist on the \"%s\" feature at \"%s\". This is currently unsupported.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
-        if (ch != '\0')
-            fbp->location[50] = ch;
         return false;
     }
 
     if (evi_exp + exp_good > 0 && evi_not + inf_good > 0) {
-        if (fbp->location && StringLen(fbp->location) > 50) {
-            ch                = fbp->location[50];
-            fbp->location[50] = '\0';
-        } else
-            ch = '\0';
         ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "The special \"no additional details recorded\" values for both /experiment and /inference exist on the \"%s\" feature at \"%s\". This is currently unsupported.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
-        if (ch != '\0')
-            fbp->location[50] = ch;
         return false;
     }
 
     if ((exp_good > 0 && exp_bad > 0) || (inf_good > 0 && inf_bad > 0)) {
-        if (fbp->location && StringLen(fbp->location) > 50) {
-            ch                = fbp->location[50];
-            fbp->location[50] = '\0';
-        } else
-            ch = '\0';
         ErrPostEx(SEV_REJECT, ERR_QUALIFIER_Conflict, "The special \"no additional details recorded\" value for /experiment or /inference exists in conjunction with other /experiment or /inference qualifiers on the \"%s\" feature at \"%s\". This is currently unsupported.", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
-        if (ch != '\0')
-            fbp->location[50] = ch;
         return false;
     }
 
@@ -2634,8 +2605,6 @@ static bool fta_check_rpt_unit_span(const char* val, size_t length)
 /**********************************************************/
 static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
 {
-    Char ch;
-
     if (! fbp || fbp->quals.empty())
         return;
 
@@ -2653,14 +2622,12 @@ static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
             continue;
         }
 
-        if (fbp->location && StringLen(fbp->location) > 20) {
-            ch                = fbp->location[20];
-            fbp->location[20] = '\0';
-        } else
-            ch = '\0';
-        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidRptUnitRange, "/rpt_unit_range qualifier \"%s\" on feature \"%s\" at location \"%s%s\" is not a valid basepair range. Qualifier dropped.", val_str.empty() ? "(EMPTY)" : val_str.c_str(), fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown", (ch == '\0') ? "" : "...");
-        if (ch != '\0')
-            fbp->location[20] = ch;
+        string _loc = fbp->location ? fbp->location : "unknown";
+        if (_loc.size() > 20) {
+            _loc.resize(20);
+            _loc += "...";
+        }
+        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidRptUnitRange, "/rpt_unit_range qualifier \"%s\" on feature \"%s\" at location \"%s\" is not a valid basepair range. Qualifier dropped.", val_str.empty() ? "(EMPTY)" : val_str.c_str(), fbp->key ? fbp->key : "Unknown", _loc.c_str());
 
         cur = fbp->quals.erase(cur);
     }
@@ -2674,7 +2641,6 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
     DataBlkPtr tdbpnext;
     const FeatBlk* fbp1;
     FeatBlkPtr fbp2;
-    Char       ch;
 
     if (! dbp || ! dbp->mpNext)
         return;
@@ -2704,12 +2670,12 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
                 continue;
             }
 
-            if (fbp2->location && StringLen(fbp2->location) > 20) {
-                ch                 = fbp2->location[20];
-                fbp2->location[20] = '\0';
-            } else
-                ch = '\0';
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"%s\" at location \"%s%s\" removed.", fbp2->key ? fbp2->key : "???", fbp2->location ? fbp2->location : "???", (ch == '\0') ? "" : "...");
+            string _loc = fbp2->location ? fbp2->location : "???";
+            if (_loc.size() > 20) {
+                _loc.resize(20);
+                _loc += "...";
+            }
+            ErrPostEx(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"%s\" at location \"%s\" removed.", fbp2->key ? fbp2->key : "???", _loc.c_str());
 
             delete fbp2;
             tdbpprev->mpNext = tdbpnext;
@@ -2737,7 +2703,6 @@ private:
 static void fta_check_multiple_locus_tag(DataBlkPtr dbp, bool* drop)
 {
     FeatBlkPtr fbp;
-    Char       ch;
 
     for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
@@ -2748,14 +2713,7 @@ static void fta_check_multiple_locus_tag(DataBlkPtr dbp, bool* drop)
         if (i < 2)
             continue;
 
-        if (fbp->location && StringLen(fbp->location) > 50) {
-            ch                = fbp->location[50];
-            fbp->location[50] = '\0';
-        } else
-            ch = '\0';
         ErrPostEx(SEV_REJECT, ERR_FEATURE_MultipleLocusTags, "Multiple /locus_tag values for \"%s\" feature at \"%s\".", fbp->key ? fbp->key : "Unknown", fbp->location ? fbp->location : "unknown location");
-        if (ch != '\0')
-            fbp->location[50] = ch;
         *drop = true;
         break;
     }
@@ -2894,7 +2852,6 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
 static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
 {
     FeatBlkPtr fbp;
-    Char       ch;
     Int4       com_count;
     Int4       cit_count;
 
@@ -2944,14 +2901,7 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
              ! StringEqu(fbp->key, "conflict")))
             continue;
 
-        ch = '\0';
-        if (StringLen(fbp->location) > 30) {
-            ch                = fbp->location[30];
-            fbp->location[30] = '\0';
-        }
         ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "Feature \"%s\" at \"%s\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key, fbp->location);
-        if (ch != '\0')
-            fbp->location[30] = ch;
         dbp->mDrop = true;
     }
 }
@@ -3136,8 +3086,6 @@ static bool fta_perform_operon_checks(TSeqFeatList& feats, IndexblkPtr ibp)
 /**********************************************************/
 static void fta_remove_dup_quals(FeatBlkPtr fbp)
 {
-    Char ch;
-
     if (! fbp || fbp->quals.empty())
         return;
 
@@ -3155,16 +3103,13 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
                 continue;
             }
 
-            if (fbp->location && StringLen(fbp->location) > 20) {
-                ch                = fbp->location[20];
-                fbp->location[20] = '\0';
-            } else
-                ch = '\0';
+            string _loc = fbp->location ? fbp->location : "???";
+            if (_loc.size() > 20) {
+                _loc.resize(20);
+                _loc += "...";
+            }
 
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved, "Duplicated qualifier \"%s\" in feature \"%s\" at location \"%s%s\" removed.", cur_qual ? cur_qual : "???", fbp->key ? fbp->key : "???", fbp->location ? fbp->location : "???", (ch == '\0') ? "" : "...");
-
-            if (ch != '\0')
-                fbp->location[20] = ch;
+            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved, "Duplicated qualifier \"%s\" in feature \"%s\" at location \"%s\" removed.", cur_qual ? cur_qual : "???", fbp->key ? fbp->key : "???", _loc.c_str());
 
             next = fbp->quals.erase(next);
         }
@@ -4051,7 +3996,6 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
 {
     const char** b;
     char*        p;
-    Char         ch;
 
     if (! fbp || fbp->quals.empty())
         return;
@@ -4079,14 +4023,12 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
                     if (! CheckLegalQual(p, ' ', nullptr))
                         continue;
 
-                    if (val_buf.size() > 30) {
-                        ch          = val_buf[30];
-                        val_buf[30] = '\0';
-                    } else
-                        ch = '\0';
-                    ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual, "/note qualifier value appears to contain other qualifiers : [%s%s].", &val_buf[0], (ch == '\0') ? "" : " ...");
-                    if (ch != '\0')
-                        val_buf[30] = ch;
+                    string _loc(val_buf.begin(), val_buf.end());
+                    if (_loc.size() > 30) {
+                        _loc.resize(30);
+                        _loc += " ...";
+                    }
+                    ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual, "/note qualifier value appears to contain other qualifiers : [%s].", _loc.c_str());
                 }
             }
 
@@ -4460,11 +4402,10 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
 {
     FeatBlkPtr   fbp;
     const char** b;
-    char*        p;
+    const char*  p;
     bool         got_note;
     bool         other_class;
     Int4         count;
-    Char         ch;
 
     for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
@@ -4514,19 +4455,11 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
 
             count++;
             if (! cur->IsSetVal() || cur->GetVal().empty()) {
-                ch = '\0';
                 if (! fbp->location || *fbp->location == '\0')
-                    p = (char*)"(empty)";
-                else {
+                    p = "(empty)";
+                else
                     p = fbp->location;
-                    if (StringLen(p) > 50) {
-                        ch    = p[50];
-                        p[50] = '\0';
-                    }
-                }
                 ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass, "Empty /regulatory_class qualifier value in regulatory feature at location %s.", p);
-                if (ch != '\0')
-                    p[50] = ch;
                 *drop = true;
                 continue;
             }
@@ -4543,68 +4476,36 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
                 continue;
             }
 
-            ch = '\0';
             if (! fbp->location || *fbp->location == '\0')
-                p = (char*)"(empty)";
-            else {
+                p = "(empty)";
+            else
                 p = fbp->location;
-                if (StringLen(p) > 50) {
-                    ch    = p[50];
-                    p[50] = '\0';
-                }
-            }
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass, "Invalid /regulatory_class qualifier value %s provided in regulatory feature at location %s.", val_str.c_str(), p);
-            if (ch != '\0')
-                p[50] = ch;
             *drop = true;
         }
 
         if (count == 0) {
-            ch = '\0';
             if (! fbp->location || *fbp->location == '\0')
-                p = (char*)"(empty)";
-            else {
+                p = "(empty)";
+            else
                 p = fbp->location;
-                if (StringLen(p) > 50) {
-                    ch    = p[50];
-                    p[50] = '\0';
-                }
-            }
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingRegulatoryClass, "The regulatory feature is missing mandatory /regulatory_class qualifier at location %s.", p);
-            if (ch != '\0')
-                p[50] = ch;
             *drop = true;
         } else if (count > 1) {
-            ch = '\0';
             if (! fbp->location || *fbp->location == '\0')
-                p = (char*)"(empty)";
-            else {
+                p = "(empty)";
+            else
                 p = fbp->location;
-                if (StringLen(p) > 50) {
-                    ch    = p[50];
-                    p[50] = '\0';
-                }
-            }
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MultipleRegulatoryClass, "Multiple /regulatory_class qualifiers were encountered in regulatory feature at location %s.", p);
-            if (ch != '\0')
-                p[50] = ch;
             *drop = true;
         }
 
         if (other_class && ! got_note) {
-            ch = '\0';
             if (! fbp->location || *fbp->location == '\0')
-                p = (char*)"(empty)";
-            else {
+                p = "(empty)";
+            else
                 p = fbp->location;
-                if (StringLen(p) > 50) {
-                    ch    = p[50];
-                    p[50] = '\0';
-                }
-            }
             ErrPostEx(SEV_REJECT, ERR_QUALIFIER_NoNoteForOtherRegulatory, "The regulatory feature of class other is lacking required /note qualifier at location %s.", p);
-            if (ch != '\0')
-                p[50] = ch;
             *drop = true;
         }
     }
@@ -4639,7 +4540,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
 {
     TokenBlkPtr tbp;
     char*       prefix;
-    char*       p;
+    const char* p;
     Int4        seqtype;
     Int4        i;
 
@@ -4731,7 +4632,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
                     text_id->GetAccession().empty())
                     break;
 
-                p = (char*)text_id->GetAccession().c_str();
+                p = text_id->GetAccession().c_str();
                 if (! prefix)
                     prefix = StringSave(p);
                 else {
