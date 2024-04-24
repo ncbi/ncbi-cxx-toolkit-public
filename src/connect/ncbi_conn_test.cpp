@@ -89,10 +89,10 @@ CConnTest::CConnTest(const STimeout* timeout,
 }
 
 
-void CConnTest::SetTimeout(const STimeout* timeout)
+void CConnTest::SetTimeout(const STimeout* tmo)
 {
-    if (timeout) {
-        x_Timeout = timeout == kDefaultTimeout ? g_NcbiDefConnTimeout : *timeout;
+    if (tmo) {
+        x_Timeout = tmo == kDefaultTimeout ? g_NcbiDefConnTimeout : *tmo;
         m_Timeout = &x_Timeout;
     } else
         m_Timeout = kInfiniteTimeout/*0*/;
@@ -133,7 +133,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
         }
     } while (EStage(s++) < stage);
 
-    if (stage != eDns  &&  status != eIO_Success  &&  status != eIO_Interrupt)
+    if (stage > eHttp  &&  status != eIO_Success  &&  status != eIO_Interrupt)
         ExtraCheckOnFailure();
     return status;
 }
@@ -309,12 +309,12 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         return eIO_Unknown;
     }
 
+    const STimeout* timeout = m_Timeout > kTimeout ? &kTimeout : m_Timeout;
     net_info->req_method = eReqMethod_Head;
-    net_info->timeout    = &kTimeout;
+    net_info->timeout    = timeout;
     net_info->max_try    = 0;
-    m_Timeout = 0;
 
-    CDeadline deadline(kTimeout.sec, kTimeout.usec * (kNanoSecondsPerSecond /
+    CDeadline deadline(timeout->sec, timeout->usec * (kNanoSecondsPerSecond /
                                                       kMicroSecondsPerSecond));
     time_t           sec;
     unsigned int nanosec;
