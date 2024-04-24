@@ -374,12 +374,12 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
             continue;
         for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext) {
             fbp = static_cast<FeatBlk*>(tdbp->mpData);
-            if (! fbp || ! fbp->key || ! StringEqu(fbp->key, "source"))
+            if (! fbp || ! fbp->key_isset() || ! fbp->key_equ("source"))
                 continue;
             tsfbp->next = SourceFeatBlkNew();
             tsfbp       = tsfbp->next;
-            if (fbp->location)
-                tsfbp->location = StringSave(fbp->location);
+            if (fbp->location_isset())
+                tsfbp->location = StringSave(fbp->location_get());
             tsfbp->quals = fbp->quals;
         }
     }
