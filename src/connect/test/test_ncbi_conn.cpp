@@ -210,7 +210,7 @@ int CTestApp::Run(void)
 
     STimeout tmo;
     tmo.sec  = (unsigned int)  timeout;
-    tmo.usec = (unsigned int)((timeout - tmo.sec) * 1000000.0);
+    tmo.usec = (unsigned int)((timeout - tmo.sec) * kMicroSecondsPerSecond);
 
     CCanceled canceled;
     CConnTest test(&tmo, &m_Tee);
@@ -318,7 +318,7 @@ int main(int argc, const char* argv[])
     if (retval < 0)
         retval = ~retval;
     else if (s_Run) {
-        NcbiCout << "Hit any key or program will bail out in 1 minute..."
+        NcbiCout << "Hit any key or the program will bail out in 1 minute..."
                  << NcbiFlush;
         for (int n = 0;  n < 120;  ++n) {
             if (_kbhit()) {
