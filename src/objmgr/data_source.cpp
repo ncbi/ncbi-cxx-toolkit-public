@@ -2031,9 +2031,20 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
             // bulk chunk loading
             vector<CConstRef<CTSE_Chunk_Info>> chunks;
             for ( auto& tse_set : tse_sets ) {
+                auto& idh = tse_set.first;
+                CSeq_id_Handle::TMatches hset;
+                if ( idh.HaveMatchingHandles() ) {
+                    idh.GetMatchingHandles(hset, eAllowWeakMatch);
+                }
                 for ( auto& tse_lock : tse_set.second ) {
                     if ( tse_lock->HasSplitInfo() ) {
-                        tse_lock->GetSplitInfo().x_AddChunksForGetRecords(chunks, tse_set.first);
+                        auto& split_info = tse_lock->GetSplitInfo();
+                        split_info.x_AddChunksForGetRecords(chunks, idh);
+                        for ( auto& hit : hset ) {
+                            if ( hit == idh ) // already checked
+                                continue;
+                            split_info.x_AddChunksForGetRecords(chunks, hit);
+                        }
                     }
                 }
             }
