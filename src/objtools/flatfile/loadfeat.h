@@ -41,20 +41,19 @@
 
 BEGIN_NCBI_SCOPE
 struct FeatBlk : public CFlatFileData {
-    Int4  num      = 0;
-    char* key      = nullptr;
-    char* location = nullptr;
-    Int2  spindex;
+    Int4   num      = 0;
+    string key;
+    char*  location = nullptr;
+    Int2   spindex;
 
     TQualVector quals;
 
-    void        key_set(char* pch) { key = pch; }
-    void        key_assign(const char*);
-    bool        key_isset() const { return key != nullptr; }
-    const char* key_get() const { return key; }
-    bool        key_equ(const char*) const;
-    const char* key_c_str() const { return key; }
-    const char* key_or(const char* pch) const { return key ? key : pch; }
+    void          key_assign(string_view sv) { key = sv; }
+    bool          key_isset() const { return ! key.empty(); }
+    const string& key_get() const { return key; }
+    bool          key_equ(const char*) const;
+    const char*   key_c_str() const { return key.c_str(); }
+    const char*   key_or(const char* pch) const { return key.empty() ? pch : key.c_str(); }
 
     void        location_set(char* pch) { location = pch; }
     bool        location_isset() const { return location != nullptr; }
@@ -72,7 +71,7 @@ int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, P
 
 void GetFlatBiomol(int& biomol, int tech, char* molstr, ParserPtr pp, const DataBlk& entry, const objects::COrg_ref* org_ref);
 
-bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const char* name);
+bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name);
 
 END_NCBI_SCOPE
 
