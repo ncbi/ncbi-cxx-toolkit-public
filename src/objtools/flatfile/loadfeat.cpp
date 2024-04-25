@@ -563,24 +563,14 @@ StrNum LinkageEvidenceValues[] = {
 };
 // clang-format on
 
-void FeatBlk::key_assign(const char* pch)
-{
-    if (key)
-        MemFree(key);
-    key = StringSave(pch);
-}
-
 bool FeatBlk::key_equ(const char* pch) const
 {
-    return StringEqu(key, pch);
+    return StringEqu(key.c_str(), pch);
 }
 
 FeatBlk::~FeatBlk()
 {
-    if (key) {
-        MemFree(key);
-        key = nullptr;
-    }
+    key.clear();
     if (location) {
         MemFree(location);
         location = nullptr;
@@ -919,7 +909,7 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
         feat.ResetDbxref();
 }
 
-bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const char* name)
+bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name)
 {
     bool locmap = true;
     int  num_errs;
@@ -932,7 +922,7 @@ bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard
     if (loc.NotEmpty()) {
         TSeqLocList locs;
         locs.push_back(loc);
-        fta_fix_seq_loc_id(locs, pp, location, name, false);
+        fta_fix_seq_loc_id(locs, pp, location, name.c_str(), false);
 
         feat.SetLocation(*loc);
     }
@@ -2463,7 +2453,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
 
     /* assume all imp for now
      */
-    if (! StringStr(fbp->key_get(), "source"))
+    if (fbp->key_get().find("source") == string::npos)
         GetImpFeat(*feat, fbp, locmap);
 
     for (const auto& cur : fbp->quals) {
@@ -3533,9 +3523,11 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
         fbp          = new FeatBlk;
         fbp->spindex = -1;
         for (xipfeat = xip->subtags; xipfeat; xipfeat = xipfeat->next) {
-            if (xipfeat->tag == INSDFEATURE_KEY)
-                fbp->key_set(XMLGetTagValue(entry, xipfeat));
-            else if (xipfeat->tag == INSDFEATURE_LOCATION)
+            if (xipfeat->tag == INSDFEATURE_KEY) {
+                auto p = XMLGetTagValue(entry, xipfeat);
+                fbp->key_assign(p);
+                MemFree(p);
+            } else if (xipfeat->tag == INSDFEATURE_LOCATION)
                 fbp->location_set(XMLGetTagValue(entry, xipfeat));
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
@@ -3855,9 +3847,9 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         if (StringEquN(ptr1, "- ", 2)) {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
-            fbp->key_set(StringSave("misc_feature"));
+            fbp->key_assign("misc_feature");
         } else
-            fbp->key_set(StringSave(string_view(ptr1, ptr2 - ptr1)));
+            fbp->key_assign(string_view(ptr1, ptr2 - ptr1));
 
         for (ptr1 = ptr2; *ptr1 == ' ';)
             ptr1++;
@@ -3891,7 +3883,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             fbp->location_set(StringSave(loc));
         }
 
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key_get(), fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key_get().c_str(), fbp->location_get());
         if (fbp->key_equ("allele") ||
             fbp->key_equ("mutation")) {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key_c_str());
@@ -4100,9 +4092,9 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             continue;
         fbp      = static_cast<FeatBlk*>(dbp->mpData);
         fbp->num = num;
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key_get(), fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key_c_str(), fbp->location_get());
 
-        if (fbp->key[0] == '-' && fbp->key[1] == '\0') {
+        if (fbp->key_get() == "-") {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
             fbp->key_assign("misc_feature");
         }
@@ -4128,7 +4120,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
         keyindx = -1;
         if (subtype == CSeqFeatData::eSubtype_bad && ! deb) {
             if (source == Parser::ESource::USPTO)
-                keyindx = SpFeatKeyNameValid(fbp->key_get());
+                keyindx = SpFeatKeyNameValid(fbp->key_c_str());
             if (keyindx < 0 && ! deb) {
                 ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key_c_str(), "Feature dropped");
                 dbp->mDrop = true;
@@ -4253,7 +4245,7 @@ static bool fta_check_ncrna(const CSeq_feat& feat)
 }
 
 /**********************************************************/
-static void fta_check_artificial_location(CSeq_feat& feat, char* key)
+static void fta_check_artificial_location(CSeq_feat& feat, const string& key)
 {
     for (auto qual = feat.SetQual().begin(); qual != feat.SetQual().end(); ++qual) {
         if (! (*qual)->IsSetQual() || (*qual)->GetQual() != "artificial_location")
@@ -4285,9 +4277,9 @@ static void fta_check_artificial_location(CSeq_feat& feat, char* key)
             auto loc_str = location_to_string_or_unknown(feat.GetLocation());
 
             if (val.empty())
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Encountered empty /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", (! key || *key == '\0') ? "unknown" : key, loc_str.empty() ? "unknown" : loc_str.c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Encountered empty /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", key.empty() ? "unknown" : key.c_str(), loc_str.empty() ? "unknown" : loc_str.c_str());
             else
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Value \"%s\" is not legal for the /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", val.c_str(), (! key || *key == '\0') ? "unknown" : key, loc_str.empty() ? "unknown" : loc_str.c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidArtificialLoc, "Value \"%s\" is not legal for the /artificial_location qualifier : Feature \"%s\" : Location \"%s\". Qualifier dropped.", val.c_str(), key.empty() ? "unknown" : key.c_str(), loc_str.empty() ? "unknown" : loc_str.c_str());
         }
 
         feat.SetQual().erase(qual);
@@ -4863,7 +4855,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 continue;
             }
 
-            fta_check_artificial_location(*feat, fbp->key);
+            fta_check_artificial_location(*feat, fbp->key_get());
 
             if (CheckForeignLoc(feat->GetLocation(),
                                 (pp->source == Parser::ESource::USPTO) ? *pat_seq_id : *seq_id)) {
