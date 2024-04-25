@@ -32,13 +32,10 @@
 #include <ncbi_pch.hpp>
 
 #include "wgs_processor.hpp"
-#include "wgs_client.hpp"
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
-#include "osg_getblob_base.hpp"
-#include "osg_resolve_base.hpp"
 #include "id2info.hpp"
 #include "cass_processor_base.hpp"
 #include "psgs_thread_pool.hpp"
@@ -191,6 +188,16 @@ static bool s_SimulateError()
         }
     }
     return false;
+}
+
+
+static const char kSubSatSeparator = '/';
+
+static void s_FormatBlobId(ostream& s, const CID2_Blob_Id& blob_id)
+{
+    s << blob_id.GetSat()
+      << kSubSatSeparator << blob_id.GetSub_sat()
+      << '.' << blob_id.GetSat_key();
 }
 
 
@@ -932,8 +939,8 @@ void CPSGS_WGSProcessor::x_SendSplitInfo(void)
     string blob_id = m_WGSData->m_BlobId;
     auto split_version = m_WGSData->m_SplitVersion;
 
-    string id2_info = osg::CPSGS_OSGGetBlobBase::GetPSGId2Info(id2_blob_id, split_version);
-    
+    string id2_info = GetPSGId2Info(id2_blob_id, split_version);
+
     CBlobRecord main_blob_props;
     s_SetBlobVersion(main_blob_props, id2_blob_id);
     s_SetBlobState(main_blob_props, m_WGSData->GetID2BlobState());
@@ -1014,8 +1021,8 @@ void CPSGS_WGSProcessor::x_SendChunk(void)
     _ASSERT(m_WGSData  &&  m_WGSData->m_Data);
     CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
     auto split_version = m_WGSData->m_SplitVersion;
-    string id2_info = osg::CPSGS_OSGGetBlobBase::GetPSGId2Info(id2_blob_id, split_version);
-    
+    string id2_info = GetPSGId2Info(id2_blob_id, split_version);
+
     CID2_Reply_Data data;
     x_WriteData(data, *m_WGSData->m_Data, m_WGSData->m_Compress);
     x_RegisterTimingFound(m_WGSData->m_Start, eTseChunkRetrieve, data);
@@ -1142,6 +1149,19 @@ void CPSGS_WGSProcessor::x_SendError(shared_ptr<CPSGS_Reply> reply,
 void CPSGS_WGSProcessor::x_SendError(const string& msg, const exception& exc)
 {
     x_SendError(m_Reply, msg+string(exc.what()));
+}
+
+
+string CPSGS_WGSProcessor::GetPSGId2Info(const CID2_Blob_Id& tse_id,
+                                         CWGSClient::TID2SplitVersion split_version)
+{
+    ostringstream s;
+    if ( CWGSClient::IsOSGBlob(tse_id) ) {
+        s_FormatBlobId(s, tse_id);
+        CWGSClient::TID2BlobVersion blob_version = tse_id.IsSetVersion()? tse_id.GetVersion(): 0;
+        s << '.' << blob_version << '.' << split_version;
+    }
+    return s.str();
 }
 
 

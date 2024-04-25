@@ -57,7 +57,6 @@
 #include "alerts.hpp"
 #include "timing.hpp"
 #include "psgs_dispatcher.hpp"
-#include "osg_connection.hpp"
 #include "psgs_uv_loop_binder.hpp"
 #include "settings.hpp"
 
@@ -173,9 +172,6 @@ public:
     unsigned int GetCassandraMaxRetries(void) const
     { return m_Settings.m_MaxRetries; }
 
-    bool GetOSGProcessorsEnabled() const
-    { return m_Settings.m_OSGProcessorsEnabled; }
-
     bool GetCDDProcessorsEnabled() const
     { return m_Settings.m_CDDProcessorsEnabled; }
 
@@ -184,9 +180,6 @@ public:
 
     bool GetSNPProcessorsEnabled() const
     { return m_Settings.m_SNPProcessorsEnabled; }
-
-    const CRef<psg::osg::COSGConnectionPool>& GetOSGConnectionPool() const
-    { return m_OSGConnectionPool; }
 
     bool GetCassandraProcessorsEnabled(void) const
     { return m_Settings.m_CassandraProcessorsEnabled; }
@@ -493,8 +486,6 @@ private:
     // Serialized JSON introspection message
     string                              m_HelpMessageJson;
     string                              m_HelpMessageHtml;
-
-    CRef<psg::osg::COSGConnectionPool>  m_OSGConnectionPool;
 
     // Requests dispatcher
     unique_ptr<CPSGS_Dispatcher>        m_RequestDispatcher;

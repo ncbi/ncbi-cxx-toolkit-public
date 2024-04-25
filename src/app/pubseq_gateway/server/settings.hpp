@@ -118,9 +118,6 @@ struct SPubseqGatewaySettings
     // [CASSANDRA_PROCESSOR]
     bool                                m_CassandraProcessorsEnabled;
 
-    // [OSG_PROCESSOR]
-    bool                                m_OSGProcessorsEnabled;
-
     // [CDD_PROCESSOR]
     bool                                m_CDDProcessorsEnabled;
 
@@ -156,7 +153,6 @@ private:
                             CPSGAlerts &  alerts);
     void x_ReadSSLSection(const CNcbiRegistry &   registry);
     void x_ReadHealthSection(const CNcbiRegistry &   registry);
-    void x_ReadOSGProcessorSection(const CNcbiRegistry &   registry);
     void x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry);
     void x_ReadCDDProcessorSection(const CNcbiRegistry &   registry);
     void x_ReadWGSProcessorSection(const CNcbiRegistry &   registry);

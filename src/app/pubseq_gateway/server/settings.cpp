@@ -48,7 +48,6 @@ const string            kDebugSection = "DEBUG";
 const string            kIPGSection = "IPG";
 const string            kSSLSection = "SSL";
 const string            kHealthSection = "HEALTH";
-const string            kOSGProcessorSection = "OSG_PROCESSOR";
 const string            kCDDProcessorSection = "CDD_PROCESSOR";
 const string            kWGSProcessorSection = "WGS_PROCESSOR";
 const string            kSNPProcessorSection = "SNP_PROCESSOR";
@@ -97,7 +96,6 @@ const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
 const string            kDefaultTestSeqId = "gi|2";
 const bool              kDefaultTestSeqIdIgnoreError = true;
 const bool              kDefaultCassandraProcessorsEnabled = true;
-const bool              kDefaultOSGProcessorsEnabled = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
 const bool              kDefaultWGSProcessorsEnabled = true;
 const bool              kDefaultSNPProcessorsEnabled = true;
@@ -151,7 +149,6 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_TestSeqId(kDefaultTestSeqId),
     m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
-    m_OSGProcessorsEnabled(kDefaultOSGProcessorsEnabled),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
     m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
@@ -187,7 +184,6 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
     x_ReadHealthSection(registry);
     x_ReadAdminSection(registry, alerts);
     x_ReadCassandraProcessorSection(registry);
-    x_ReadOSGProcessorSection(registry);
     x_ReadCDDProcessorSection(registry);
     x_ReadWGSProcessorSection(registry);
     x_ReadSNPProcessorSection(registry);
@@ -348,14 +344,6 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
     m_CassandraProcessorsEnabled =
             registry.GetBool(kCassandraProcessorSection, "enabled",
                              kDefaultCassandraProcessorsEnabled);
-}
-
-
-void SPubseqGatewaySettings::x_ReadOSGProcessorSection(const CNcbiRegistry &   registry)
-{
-    m_OSGProcessorsEnabled = registry.GetBool(kOSGProcessorSection,
-                                              "enabled",
-                                              kDefaultOSGProcessorsEnabled);
 }
 
 

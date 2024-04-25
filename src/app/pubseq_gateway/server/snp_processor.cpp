@@ -37,8 +37,6 @@
 #include "pubseq_gateway_convert_utils.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
-#include "osg_getblob_base.hpp"
-#include "osg_resolve_base.hpp"
 #include "id2info.hpp"
 #include "insdc_utils.hpp"
 #include "psgs_thread_pool.hpp"
