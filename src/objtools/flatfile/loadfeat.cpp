@@ -1178,9 +1178,9 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
         location = nullptr;
         if (pp->format == Parser::EFormat::XML) {
-            location = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_POSITION);
+            location = StringSave(XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_POSITION));
             if (! location) {
-                q = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REFERENCE);
+                q = StringSave(XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REFERENCE));
                 if (q) {
                     for (p = q; *p != '\0' && *p != '(';)
                         p++;
@@ -3483,9 +3483,9 @@ static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
         CRef<CGb_qual> qual(new CGb_qual);
         for (xipqual = xip->subtags; xipqual; xipqual = xipqual->next) {
             if (xipqual->tag == INSDQUALIFIER_NAME)
-                qual->SetQual(XMLGetTagValue(entry, xipqual));
+                qual->SetQual(*XMLGetTagValue(entry, xipqual));
             else if (xipqual->tag == INSDQUALIFIER_VALUE)
-                qual->SetVal(XMLGetTagValue(entry, xipqual));
+                qual->SetVal(*XMLGetTagValue(entry, xipqual));
         }
 
         if (qual->GetQual() == "replace" && ! qual->IsSetVal()) {
@@ -3523,12 +3523,10 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
         fbp          = new FeatBlk;
         fbp->spindex = -1;
         for (xipfeat = xip->subtags; xipfeat; xipfeat = xipfeat->next) {
-            if (xipfeat->tag == INSDFEATURE_KEY) {
-                auto p = XMLGetTagValue(entry, xipfeat);
-                fbp->key_assign(p);
-                MemFree(p);
-            } else if (xipfeat->tag == INSDFEATURE_LOCATION)
-                fbp->location_set(XMLGetTagValue(entry, xipfeat));
+            if (xipfeat->tag == INSDFEATURE_KEY)
+                fbp->key_assign(*XMLGetTagValue(entry, xipfeat));
+            else if (xipfeat->tag == INSDFEATURE_LOCATION)
+                fbp->location_set(StringSave(XMLGetTagValue(entry, xipfeat)));
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }

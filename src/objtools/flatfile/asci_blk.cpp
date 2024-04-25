@@ -1701,7 +1701,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
         return true;
 
     if (pp->format == Parser::EFormat::XML) {
-        str    = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
+        str    = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE));
         seqptr = str;
         if (seqptr) {
             len = StringLen(seqptr);
@@ -2917,7 +2917,7 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
     if (! entry || ! xip)
         return;
 
-    tmp = XMLFindTagValue(entry, xip, INSDSEQ_DEFINITION);
+    tmp = StringSave(XMLFindTagValue(entry, xip, INSDSEQ_DEFINITION));
     if (! tmp)
         p = nullptr;
     else {
@@ -2946,7 +2946,7 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
     if (tech != CMolInfo::eTech_htgs_3)
         return;
 
-    r = XMLFindTagValue(entry, xip, INSDSEQ_SEQUENCE);
+    r = StringSave(XMLFindTagValue(entry, xip, INSDSEQ_SEQUENCE));
     if (! r)
         return;
 

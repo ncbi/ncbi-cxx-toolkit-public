@@ -75,6 +75,12 @@ inline char* StringSave(string_view s)
     p[n] = '\0';
     return p;
 }
+inline char* StringSave(unique_ptr<string> s)
+{
+    if (! s)
+        return nullptr;
+    return StringSave(*s);
+}
 
 
 inline const char* StringStr(const char* s1, const char* s2) { return std::strstr(s1, s2); }
