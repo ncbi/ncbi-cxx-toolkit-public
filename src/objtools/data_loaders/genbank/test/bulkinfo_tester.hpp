@@ -61,9 +61,13 @@ public:
         eBulk_type,
         eBulk_state,
         eBulk_general,
+        eBulk_bioseq,
         eBulk_sequence,
         eBulk_cdd
     };
+    static void AddArgs(CArgDescriptions& args);
+    static EBulkType ParseType(const CArgs& args);
+    static CScope::TGetFlags ParseGetFlags(const CArgs& args);
     static IBulkTester* CreateTester(EBulkType type);
 
     IBulkTester(void);
@@ -81,6 +85,8 @@ public:
     virtual bool Correct(size_t i) const = 0;
     virtual void DisplayData(CNcbiOstream& out, size_t i) const = 0;
     virtual void DisplayDataVerify(CNcbiOstream& out, size_t i) const = 0;
+    virtual void VerifyWhatShouldBeNotLoaded(CScope& scope) const;
+    void VerifyBioseqShouldBeNotLoaded(CScope& scope) const;
 
     void Display(CNcbiOstream& out, bool verify) const;
     void Display(CNcbiOstream& out, size_t i, bool verify) const;

@@ -36,6 +36,7 @@
 #include "bulkinfo_tester.hpp"
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/impl/tse_info.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <util/checksum.hpp>
@@ -96,6 +97,22 @@ vector<bool> IBulkTester::GetErrors(void) const
         errors[i] = !Correct(i);
     }
     return errors;
+}
+
+
+void IBulkTester::VerifyWhatShouldBeNotLoaded(CScope& scope) const
+{
+    // should not load CBioseq_Handle by default
+    VerifyBioseqShouldBeNotLoaded(scope);
+}
+
+
+void IBulkTester::VerifyBioseqShouldBeNotLoaded(CScope& scope) const
+{
+    // should not be loaded
+    ITERATE ( TIds, it, ids ) {
+        _VERIFY(!scope.GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
+    }
 }
 
 
@@ -351,7 +368,7 @@ public:
 };
 
 
-class CDataTesterSequence : public IBulkTester
+class CDataTesterBioseq : public IBulkTester
 {
 public:
     typedef string TDataValue;
@@ -360,23 +377,21 @@ public:
 
     const char* GetType(void) const
         {
-            return "seq";
+            return "bioseq";
         }
-    string GetData(CBioseq_Handle bh) const
+    virtual string GetData(CBioseq_Handle bh) const
         {
             CNcbiOstrstream s;
             if ( bh ) {
-                set<CSeq_id_Handle> ids;
+                set<CSeq_id_Handle, CSeq_id_Handle::PLessOrdered> ids;
                 for ( auto& id : bh.GetId() ) {
                     ids.insert(id);
                 }
                 for ( auto& id : ids ) {
+                    if ( id.Which() == CSeq_id::e_General ) continue;
                     s << id << ' ';
                 }
-                s << bh.GetBioseqLength() << ": ";
-                string seq;
-                bh.GetSeqVector(bh.eCoding_Iupac).GetSeqData(0, 20, seq);
-                s << seq;
+                s << bh.GetBioseqLength();
             }
             return CNcbiOstrstreamToString(s);
         }
@@ -422,7 +437,7 @@ public:
         }
     bool Correct(size_t i) const
         {
-            return (data[i] == data_verify[i]);
+            return NStr::EqualNocase(data[i], data_verify[i]);
         }
     void DisplayData(CNcbiOstream& out, size_t i) const
         {
@@ -431,6 +446,37 @@ public:
     void DisplayDataVerify(CNcbiOstream& out, size_t i) const
         {
             out << data_verify[i];
+        }
+    void VerifyWhatShouldBeNotLoaded(CScope& scope) const
+        {
+            // CBioseq_Handle are loaded
+        }
+};
+
+
+class CDataTesterSequence : public CDataTesterBioseq
+{
+public:
+
+    const char* GetType(void) const
+        {
+            return "sequence";
+        }
+    string GetData(CBioseq_Handle bh) const
+        {
+            string seq;
+            if ( bh ) {
+                bh.GetSeqVector(bh.eCoding_Iupac).GetSeqData(0, 20, seq);
+            }
+            return CDataTesterBioseq::GetData(bh) + ": " + seq;
+        }
+    void LoadBulk(CScope& scope)
+        {
+            data.resize(ids.size());
+            vector<CBioseq_Handle> bhs = scope.GetBioseqHandles(ids);
+            for ( size_t i = 0; i < ids.size(); ++i ) {
+                data[i] = GetData(bhs[i]);
+            }
         }
 };
 
@@ -659,6 +705,13 @@ public:
     void DisplayDataVerify(CNcbiOstream& out, size_t i) const
         {
             out << data_verify[i];
+        }
+    void VerifyWhatShouldBeNotLoaded(CScope& scope) const
+        {
+            // CBioseq_Handle may be loaded for recalculation
+            if ( get_flags & CScope::fDoNotRecalculate ) {
+                VerifyBioseqShouldBeNotLoaded(scope);
+            }
         }
 };
 
@@ -900,8 +953,20 @@ public:
                             if ( annot->GetData().IsFtable() ) {
                                 ret += annot->GetData().GetFtable().size();
                             }
+                            else {
+                                ERR_POST("no ftable: "<<tse.x_GetTSE_Info().GetDescription());
+                            }
+                        }
+                        if ( se->GetAnnot().empty() ) {
+                            ERR_POST("no annot 2: "<<tse.x_GetTSE_Info().GetDescription());
                         }
                     }
+                    else {
+                        ERR_POST("no annot: "<<tse.x_GetTSE_Info().GetDescription());
+                    }
+                }
+                else {
+                    ERR_POST("no core: "<<tse.x_GetTSE_Info().GetDescription());
                 }
             }
             return ret;
@@ -972,7 +1037,89 @@ public:
         {
             out << data_verify[i];
         }
+    void VerifyWhatShouldBeNotLoaded(CScope& scope) const
+        {
+            // CBioseq_Handle are loaded
+        }
 };
+
+
+void IBulkTester::AddArgs(CArgDescriptions& args)
+{
+    args.AddDefaultKey("type", "Type",
+                       "Type of bulk request",
+                       CArgDescriptions::eString, "gi");
+    args.SetConstraint("type",
+                       &(*new CArgAllow_Strings,
+                         "gi", "acc", "label", "taxid", "hash",
+                         "length", "type", "state", "general", "bioseq", "sequence", "cdd"));
+    args.AddFlag("no-force", "Do not force info loading");
+    args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
+    args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
+    args.AddFlag("no-recalc", "Avoid data recalculation");
+}
+
+
+IBulkTester::EBulkType IBulkTester::ParseType(const CArgs& args)
+{
+    string s = args["type"].AsString();
+    if ( s == "gi" ) {
+        return eBulk_gi;
+    }
+    if ( s == "acc" ) {
+        return eBulk_acc;
+    }
+    if ( s == "label" ) {
+        return eBulk_label;
+    }
+    if ( s == "taxid" ) {
+        return eBulk_taxid;
+    }
+    if ( s == "hash" ) {
+        return eBulk_hash;
+    }
+    if ( s == "length" ) {
+        return eBulk_length;
+    }
+    if ( s == "type" ) {
+        return eBulk_type;
+    }
+    if ( s == "state" ) {
+        return eBulk_state;
+    }
+    if ( s == "general" ) {
+        return eBulk_general;
+    }
+    if ( s == "bioseq" ) {
+        return eBulk_bioseq;
+    }
+    if ( s == "sequence" ) {
+        return eBulk_sequence;
+    }
+    if ( s == "cdd" ) {
+        return eBulk_cdd;
+    }
+    return eBulk_gi;
+}
+
+
+CScope::TGetFlags IBulkTester::ParseGetFlags(const CArgs& args)
+{
+    CScope::TGetFlags flags = 0;
+    if ( !args["no-force"] ) {
+        flags |= CScope::fForceLoad;
+    }
+    if ( args["throw-on-missing-seq"] ) {
+        flags |= CScope::fThrowOnMissingSequence;
+    }
+    if ( args["throw-on-missing-data"] ) {
+        flags |= CScope::fThrowOnMissingData;
+    }
+    if ( args["no-recalc"] ) {
+        flags |= CScope::fDoNotRecalculate;
+    }
+    return flags;
+}
 
 
 IBulkTester* IBulkTester::CreateTester(EBulkType type)
@@ -987,6 +1134,7 @@ IBulkTester* IBulkTester::CreateTester(EBulkType type)
     case eBulk_type:   return new CDataTesterType();
     case eBulk_state:  return new CDataTesterState();
     case eBulk_general:return new CDataTesterGeneral();
+    case eBulk_bioseq: return new CDataTesterBioseq();
     case eBulk_sequence:return new CDataTesterSequence();
     case eBulk_cdd:    return new CDataTesterCDD();
     default: return 0;
