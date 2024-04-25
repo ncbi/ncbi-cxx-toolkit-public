@@ -108,18 +108,7 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
         ("idlist", "IdList",
          "File with list of Seq-ids to test",
          CArgDescriptions::eInputFile);
-    args.AddDefaultKey
-        ("type", "Type",
-         "Type of bulk request",
-         CArgDescriptions::eString, "gi");
-    args.SetConstraint("type",
-                       &(*new CArgAllow_Strings,
-                         "gi", "acc", "label", "taxid", "hash",
-                         "length", "type", "state", "general", "sequence", "cdd"));
-    args.AddFlag("no-force", "Do not force info loading");
-    args.AddFlag("throw-on-missing-seq", "Throw exception for missing sequence");
-    args.AddFlag("throw-on-missing-data", "Throw exception for missing data");
-    args.AddFlag("no-recalc", "Avoid data recalculation");
+    IBulkTester::AddArgs(args);
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("sort", "Sort requests");
     args.AddFlag("single", "Use single id queries (non-bulk)");
@@ -225,52 +214,8 @@ bool CTestApplication::TestApp_Init(void)
             "accessions and gi from " <<
             g_gi_from << " to " << g_gi_to << ")..." << NcbiEndl;
     }
-    if ( args["type"].AsString() == "gi" ) {
-        m_Type = IBulkTester::eBulk_gi;
-    }
-    else if ( args["type"].AsString() == "acc" ) {
-        m_Type = IBulkTester::eBulk_acc;
-    }
-    else if ( args["type"].AsString() == "label" ) {
-        m_Type = IBulkTester::eBulk_label;
-    }
-    else if ( args["type"].AsString() == "taxid" ) {
-        m_Type = IBulkTester::eBulk_taxid;
-    }
-    else if ( args["type"].AsString() == "hash" ) {
-        m_Type = IBulkTester::eBulk_hash;
-    }
-    else if ( args["type"].AsString() == "length" ) {
-        m_Type = IBulkTester::eBulk_length;
-    }
-    else if ( args["type"].AsString() == "type" ) {
-        m_Type = IBulkTester::eBulk_type;
-    }
-    else if ( args["type"].AsString() == "state" ) {
-        m_Type = IBulkTester::eBulk_state;
-    }
-    else if ( args["type"].AsString() == "general" ) {
-        m_Type = IBulkTester::eBulk_general;
-    }
-    else if ( args["type"].AsString() == "sequence" ) {
-        m_Type = IBulkTester::eBulk_sequence;
-    }
-    else if ( args["type"].AsString() == "cdd" ) {
-        m_Type = IBulkTester::eBulk_cdd;
-    }
-    m_GetFlags = 0;
-    if ( !args["no-force"] ) {
-        m_GetFlags |= CScope::fForceLoad;
-    }
-    if ( args["throw-on-missing-seq"] ) {
-        m_GetFlags |= CScope::fThrowOnMissingSequence;
-    }
-    if ( args["throw-on-missing-data"] ) {
-        m_GetFlags |= CScope::fThrowOnMissingData;
-    }
-    if ( args["no-recalc"] ) {
-        m_GetFlags |= CScope::fDoNotRecalculate;
-    }
+    m_Type = IBulkTester::ParseType(args);
+    m_GetFlags = IBulkTester::ParseGetFlags(args);
     m_Verbose = args["verbose"];
     m_Sort = args["sort"];
     m_Single = args["single"];
@@ -405,20 +350,7 @@ bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids,
         else {
             data->LoadBulk(*scope);
         }
-        if ( m_Type == IBulkTester::eBulk_sequence ||
-             m_Type == IBulkTester::eBulk_cdd ) {
-            // loaded fully
-        }
-        else if ( m_Type == IBulkTester::eBulk_hash &&
-                  !(m_GetFlags & CScope::fDoNotRecalculate) ) {
-            // may be loaded fully for recalculation
-        }
-        else {
-            // should not be loaded
-            ITERATE ( TIds, it, ids ) {
-                _ASSERT(!scope->GetBioseqHandle(*it, CScope::eGetBioseq_Loaded));
-            }
-        }
+        data->VerifyWhatShouldBeNotLoaded(*scope);
     }}
     vector<bool> errors;
     if ( !reference.empty() ) {
