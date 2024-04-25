@@ -3012,10 +3012,6 @@ static CRef<CTaxon3_reply> ExploreStrainsCallback (const vector<CRef<COrg_ref>>&
 {
     CTaxon3 taxon3(CTaxon3::initialize::yes);
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(request);
-
-    // CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(request);
-    // cerr << "TaxonReply: " << MSerial_AsnText << reply << endl;
-
     return reply;
 }
 */
@@ -3036,7 +3032,12 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     if (NCBI_NewTaxVal()) {
         CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se,
             [this] (const vector<CRef<COrg_ref>>& request) -> CRef<CTaxon3_reply>
-            { return m_pContext->m_taxon_update(request);});
+            {
+                CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(request);
+                // cerr << "TaxonReply: " << MSerial_AsnText << reply << endl;
+                return reply;
+            }
+        );
     } else {
         ValidateStrain(*pTval, pTval->m_descTaxID);
     }

@@ -305,11 +305,8 @@ static bool OrganismIsUnwanted(const string& str)
 }
 
 
-static vector<string> GetStrainCandidates(const string& organism, const string& strain)
+static void GetStrainCandidates(const string& organism, const string& strain, vector<string>& candidates)
 {
-
-    vector<string> candidates;
-
     candidates.push_back(strain);
 
     size_t pos = 0;
@@ -327,8 +324,6 @@ static vector<string> GetStrainCandidates(const string& organism, const string& 
     if (NStr::EndsWith(organism, " sp.")) {
         candidates.push_back(organism.substr(0, organism.length() - 3) + strain);
     }
-
-    return candidates;
 }
 
 
@@ -339,7 +334,9 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
         return false;
     }
 
-    vector<string> candidates = GetStrainCandidates(organism, strain);
+    vector<string> candidates;
+
+    GetStrainCandidates(organism, strain, candidates);
 
     vector<CRef<COrg_ref>> request;
 
@@ -399,7 +396,9 @@ bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
         return false;
     }
 
-    vector<string> candidates = GetStrainCandidates(organism, strain);
+    vector<string> candidates;
+
+    GetStrainCandidates(organism, strain, candidates);
 
     vector<CRef<COrg_ref>> request;
 
@@ -438,7 +437,9 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
         return false;
     }
 
-    vector<string> candidates = GetStrainCandidates(organism, strain);
+    vector<string> candidates;
+
+    GetStrainCandidates(organism, strain, candidates);
 
     for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
         CRef<COrg_ref> org(new COrg_ref());
@@ -495,7 +496,9 @@ bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
         return false;
     }
 
-    vector<string> candidates = GetStrainCandidates(organism, strain);
+    vector<string> candidates;
+
+    GetStrainCandidates(organism, strain, candidates);
 
     for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
         CRef<COrg_ref> org(new COrg_ref());
@@ -521,6 +524,73 @@ bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
     }
 
     return false;
+}
+
+
+void CStrainRequest::x_AddOneStrain(const COrg_ref& org, vector<string>& candidates)
+{
+    if (!org.IsSetTaxname() || !org.IsSetOrgMod()) {
+        return;
+    }
+    if (org.IsSetLineage() && OrganismIsUnwanted(org.GetLineage())) {
+        return;
+    }
+
+    string organism;
+    string strain;
+
+    organism = org.GetTaxname();
+    if (OrganismIsUnwanted(organism)) {
+        return;
+    }
+    for (const auto& it : org.GetOrgname().GetMod()) {
+        if (it->IsSetSubtype() && it->IsSetSubname() &&
+            it->GetSubtype() == COrgMod::eSubtype_strain) {
+            strain = it->GetSubname();
+        }
+    }
+    if (organism.empty() || strain.empty()) {
+        return;
+    }
+
+    if (IgnoreStrain(strain)) {
+        return;
+    }
+
+    GetStrainCandidates(organism, strain, candidates);
+}
+
+
+void CStrainRequest::CollectStrainsForRecord(const CSeq_entry& se, vector<string>& candidates)
+{
+    // get source descriptors
+    FOR_EACH_DESCRIPTOR_ON_SEQENTRY(it, se)
+    {
+        if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
+            const COrg_ref& org = (*it)->GetSource().GetOrg();
+            x_AddOneStrain(org, candidates);
+        }
+    }
+    // also get features
+    FOR_EACH_ANNOT_ON_SEQENTRY(annot_it, se)
+    {
+        FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, **annot_it)
+        {
+            if ((*feat_it)->IsSetData() && (*feat_it)->GetData().IsBiosrc()
+                && (*feat_it)->GetData().GetBiosrc().IsSetOrg()) {
+                const COrg_ref& org = (*feat_it)->GetData().GetBiosrc().GetOrg();
+                x_AddOneStrain(org, candidates);
+            }
+        }
+    }
+
+    // if set, recurse
+    if (se.IsSet()) {
+        FOR_EACH_SEQENTRY_ON_SEQSET(it, se.GetSet())
+        {
+            CollectStrainsForRecord(**it, candidates);
+        }
+    }
 }
 
 
@@ -563,7 +633,7 @@ void CStrainRequest::x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidErro
 }
 
 
-void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se,
+void CStrainRequest::ExploreStrainsByTaxname(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se,
         std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
 {
     // get source descriptors
@@ -591,9 +661,46 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
     if (se.IsSet()) {
         FOR_EACH_SEQENTRY_ON_SEQSET(it, se.GetSet())
         {
-            ExploreStrainsForTaxonInfo(tval, imp, **it, taxoncallback);
+            ExploreStrainsByTaxname(tval, imp, **it, taxoncallback);
         }
     }
+}
+
+
+void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se,
+        std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback)
+{
+    vector<string> candidates;
+
+    CollectStrainsForRecord(se, candidates);
+
+    vector<CRef<COrg_ref>> request;
+
+    for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname(*tax_it);
+        request.push_back(org);
+    }
+
+    // first pass checks all strains at once, looking for any positive taxonomy matches
+    CRef<CTaxon3_reply> reply = taxoncallback(request);
+
+    bool no_data_returns = true;
+
+    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+    while (reply_it != reply->GetReply().end()) {
+        if ((*reply_it)->IsData() && (*reply_it)->GetData().IsSetOrg()) {
+            no_data_returns = false;
+        }
+        ++reply_it;
+    }
+
+    if (no_data_returns) {
+        return;
+    }
+
+    // at least one strain in record returned a hit, check individual records by strain and taxname
+    ExploreStrainsByTaxname(tval, imp, se, taxoncallback);
 }
 
 
