@@ -197,9 +197,9 @@ private:
     static bool x_IsUnwanted(const string& str);
     static bool x_IgnoreStrain(const string& str);
     static void x_AddOneStrain(const COrg_ref& org, vector<string>& candidates);
-    static void CollectStrainsForRecord(const CSeq_entry& se, vector<string>& candidates);
+    static void x_CollectStrainsForRecord(const CSeq_entry& se, vector<string>& candidates);
     static void x_CheckOneStrain(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const COrg_ref& org,
-        std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
+        const CRef<CSeqdesc> sd, const CRef<CSeq_feat> sf, std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
     static void ExploreStrainsByTaxname(CTaxValidationAndCleanup& tval, CValidError_imp& imp, const CSeq_entry& se,
         std::function<CRef<CTaxon3_reply>(const vector<CRef<COrg_ref>>&)> taxoncallback);
 };
