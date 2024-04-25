@@ -55,7 +55,6 @@
 #include "backlog_per_request.hpp"
 #include "active_proc_per_request.hpp"
 #include "cass_processor_dispatch.hpp"
-#include "osg_processor.hpp"
 #include "cdd_processor.hpp"
 #include "wgs_processor.hpp"
 #include "snp_processor.hpp"
@@ -160,12 +159,6 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
-
-    m_OSGConnectionPool = new psg::osg::COSGConnectionPool();
-    m_OSGConnectionPool->AppParseArgs(args);
-    m_OSGConnectionPool->SetLogging(GetDiagPostLevel());
-    m_OSGConnectionPool->LoadConfig(registry);
-
 
     // It throws an exception in case of inability to start
     m_Settings.Validate(m_Alerts);
@@ -958,8 +951,6 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
     //       Earleir added - higher priority
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new CPSGS_CassProcessorDispatcher()));
-    m_RequestDispatcher->AddProcessor(
-        unique_ptr<IPSGS_Processor>(new psg::osg::CPSGS_OSGProcessor()));
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new psg::cdd::CPSGS_CDDProcessor()));
     m_RequestDispatcher->AddProcessor(

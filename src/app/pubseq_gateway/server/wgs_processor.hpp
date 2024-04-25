@@ -36,6 +36,7 @@
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 #include "timing.hpp"
+#include "wgs_client.hpp"
 #include <objects/seq/seq_id_handle.hpp>
 
 
@@ -54,10 +55,6 @@ END_NAMESPACE(objects);
 BEGIN_NAMESPACE(psg);
 BEGIN_NAMESPACE(wgs);
 
-
-class CWGSClient;
-class SWGSProcessor_Config;
-struct SWGSData;
 
 const string    kWGSProcessorEvent = "WGS";
 
@@ -90,6 +87,10 @@ public:
 
     void GetChunk(void);
     void OnGotChunk(void);
+
+public:
+    static string GetPSGId2Info(const CID2_Blob_Id& tse_id,
+                                CWGSClient::TID2SplitVersion split_version);
 
 private:
     CPSGS_WGSProcessor(const shared_ptr<CWGSClient>& client,

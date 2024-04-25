@@ -37,6 +37,7 @@
 #include <util/thread_nonstop.hpp>
 #include <util/limited_size_map.hpp>
 #include <objects/general/general__.hpp>
+#include <objects/id2/ID2_Blob_Id.hpp>
 #include <sra/readers/sra/wgsread.hpp>
 #include <sra/readers/sra/vdbcache.hpp>
 
@@ -75,7 +76,7 @@ struct SWGSProcessor_Config
 struct SWGSData
 {
     typedef SPSGS_ResolveRequest::TPSGS_BioseqIncludeData TBioseqInfoFlags;
-    
+
     enum EPSGBioseqState {
         eDead     =  0,
         eSought   =  1,
@@ -164,6 +165,31 @@ public:
     shared_ptr<SWGSData> GetBlobBySeqId(const objects::CSeq_id& seq_id, const TBlobIds& excluded);
     shared_ptr<SWGSData> GetBlobByBlobId(const string& blob_id);
     shared_ptr<SWGSData> GetChunk(const string& id2info, int64_t chunk_id);
+
+public:
+    enum EEnabledFlags {
+        fEnabledWGS = 1<<0,
+        fEnabledSNP = 1<<1,
+        fEnabledCDD = 1<<2,
+        fEnabledAllAnnot = fEnabledSNP | fEnabledCDD,
+        fEnabledAll = fEnabledWGS | fEnabledSNP | fEnabledCDD
+    };
+    typedef int TEnabledFlags;
+    typedef int TID2SplitVersion;
+    typedef int TID2BlobVersion;
+    struct SParsedId2Info
+    {
+        DECLARE_OPERATOR_BOOL_REF(tse_id);
+
+        CRef<CID2_Blob_Id> tse_id;
+        TID2SplitVersion split_version;
+    };
+    static CRef<CID2_Blob_Id> ParsePSGBlobId(const SPSGS_BlobId& blob_id);
+    static SParsedId2Info ParsePSGId2Info(const string& idsss2_info);
+    static bool CanBeWGS(int seq_id_type, const string& seq_id);
+    static string GetPSGBlobId(const CID2_Blob_Id& blob_id);
+    static void SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id);
+    static bool IsOSGBlob(const CID2_Blob_Id& blob_id);
 
 private:
     enum EAllowSeqType {

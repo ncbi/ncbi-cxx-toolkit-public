@@ -37,8 +37,8 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <sra/readers/sra/wgsresolver.hpp>
-#include "osg_getblob_base.hpp"
-#include "osg_resolve_base.hpp"
+//#include "osg_getblob_base.hpp"
+//#include "osg_resolve_base.hpp"
 #include <objects/id2/ID2_Blob_Id.hpp>
 #include <objects/id2/ID2_Blob_State.hpp>
 
@@ -152,10 +152,125 @@ enum EResolveMaster {
 };
 static const EResolveMaster kResolveMaster = eResolveMaster_never;
 
+static const char kSubSatSeparator = '/';
+static const int kOSG_Sat_WGS_min = 1000;
+static const int kOSG_Sat_WGS_max = 1130;
+static const int kOSG_Sat_SNP_min = 2001;
+static const int kOSG_Sat_SNP_max = 3999;
+static const int kOSG_Sat_CDD_min = 8087;
+static const int kOSG_Sat_CDD_max = 8088;
+
+static inline bool s_IsEnabledOSGSat(CWGSClient::TEnabledFlags enabled_flags, Int4 sat)
+{
+    if ( sat >= kOSG_Sat_WGS_min &&
+         sat <= kOSG_Sat_WGS_max &&
+         (enabled_flags & CWGSClient::fEnabledWGS) ) {
+        return true;
+    }
+    if ( sat >= kOSG_Sat_SNP_min &&
+         sat <= kOSG_Sat_SNP_max &&
+         (enabled_flags & CWGSClient::fEnabledSNP) ) {
+        return true;
+    }
+    if ( sat >= kOSG_Sat_CDD_min &&
+         sat <= kOSG_Sat_CDD_max &&
+         (enabled_flags & CWGSClient::fEnabledCDD) ) {
+        return true;
+    }
+    /*
+    if ( sat >= kOSG_Sat_NAGraph_min &&
+         sat <= kOSG_Sat_NAGraph_max &&
+         (enabled_flags & CWGSClient::fEnabledNAGraph) ) {
+        return true;
+    }
+    */
+    return false;
+}
+
+
+static bool s_IsOSGSat(Int4 sat)
+{
+    return s_IsEnabledOSGSat(CWGSClient::fEnabledAll, sat);
+}
+
+
+static bool s_Skip(CTempString& str, char c)
+{
+    if ( str.empty() || str[0] != c ) {
+        return false;
+    }
+    str = str.substr(1);
+    return true;
+}
+
+
+static inline bool s_IsValidIntChar(char c)
+{
+    return c == '-' || (c >= '0' && c <= '9');
+}
+
+
+template<class Int>
+static bool s_ParseInt(CTempString& str, Int& v)
+{
+    size_t int_size = 0;
+    while ( int_size < str.size() && s_IsValidIntChar(str[int_size]) ) {
+        ++int_size;
+    }
+    if ( !NStr::StringToNumeric(str.substr(0, int_size), &v,
+                                NStr::fConvErr_NoThrow|NStr::fConvErr_NoErrMessage) ) {
+        return false;
+    }
+    str = str.substr(int_size);
+    return true;
+}
+
+
+static bool s_IsOSGBlob(Int4 sat, Int4 /*subsat*/, Int4 /*satkey*/)
+{
+    return s_IsOSGSat(sat);
+}
+
+
+static bool s_ParseOSGBlob(CTempString& s,
+                           Int4& sat, Int4& subsat, Int4& satkey)
+{
+    if ( s.find(kSubSatSeparator) == NPOS ) {
+        return false;
+    }
+    if ( !s_ParseInt(s, sat) ) {
+        return false;
+    }
+    if ( !s_IsOSGSat(sat) ) {
+        return false;
+    }
+    if ( !s_Skip(s, kSubSatSeparator) ) {
+        return false;
+    }
+    if ( !s_ParseInt(s, subsat) ) {
+        return false;
+    }
+    if ( !s_Skip(s, '.') ) {
+        return false;
+    }
+    if ( !s_ParseInt(s, satkey) ) {
+        return false;
+    }
+    return s_IsOSGBlob(sat, subsat, satkey);
+}
+
+static void s_FormatBlobId(ostream& s, const CID2_Blob_Id& blob_id)
+{
+    s << blob_id.GetSat()
+      << kSubSatSeparator << blob_id.GetSub_sat()
+      << '.' << blob_id.GetSat_key();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // WGS seq-ids
 /////////////////////////////////////////////////////////////////////////////
+
 
 // WGS accession parameters
 static const size_t kTypePrefixLen = 4; // "WGS:" or "TSA:"
@@ -171,6 +286,152 @@ static const size_t kMaxRowDigitsV2 = 9;
 
 static const size_t kMinProtAccLen = 8; // 3+5
 static const size_t kMaxProtAccLen = 10; // 3+7
+
+static bool IsWGSGeneral(const CDbtag& dbtag)
+{
+    const string& db = dbtag.GetDb();
+    if ( db.size() != kTypePrefixLen+kNumLettersV1 /* WGS:AAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLenV1  /* WGS:AAAA01 */ &&
+         db.size() != kTypePrefixLen+kNumLettersV2 /* WGS:AAAAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLenV2  /* WGS:AAAAAA01 */ ) {
+        return false;
+    }
+    if ( !NStr::StartsWith(db, "WGS:", NStr::eNocase) &&
+         !NStr::StartsWith(db, "TSA:", NStr::eNocase) ) {
+        return false;
+    }
+    return true;
+}
+
+
+enum EAlligSeqType {
+    fAllow_contig   = 1,
+    fAllow_scaffold = 2,
+    fAllow_protein  = 4
+};
+typedef int TAllowSeqType;
+
+static bool IsWGSAccession(const string& acc,
+                           const CTextseq_id& id,
+                           TAllowSeqType allow_seq_type)
+{
+    if ( acc.size() < kPrefixLenV1 + kMinRowDigitsV1 ||
+         acc.size() > kPrefixLenV2 + kMaxRowDigitsV2 + 1 ) { // one for type letter
+        return false;
+    }
+    size_t num_letters;
+    for ( num_letters = 0; num_letters < kNumLettersV2; ++num_letters ) {
+        if ( !isalpha(acc[num_letters]&0xff) ) {
+            break;
+        }
+    }
+    if ( num_letters != kNumLettersV1 && num_letters != kNumLettersV2 ) {
+        return false;
+    }
+    size_t prefix_len = num_letters + kVersionDigits;
+    for ( size_t i = num_letters; i < prefix_len; ++i ) {
+        if ( !isdigit(acc[i]&0xff) ) {
+            return false;
+        }
+    }
+    SIZE_TYPE row_pos = prefix_len;
+    switch ( acc[row_pos] ) { // optional type letter
+    case 's':
+    case 'S':
+        // scaffold
+        if ( !(allow_seq_type & fAllow_scaffold) ) {
+            return false;
+        }
+        ++row_pos;
+        break;
+    case 'p':
+    case 'P':
+        // protein
+        if ( !(allow_seq_type & fAllow_protein) ) {
+            return false;
+        }
+        ++row_pos;
+        break;
+    default:
+        // contig
+        if ( !(allow_seq_type & fAllow_contig) ) {
+            return false;
+        }
+        break;
+    }
+    size_t row_digits = acc.size() - row_pos;
+    if ( num_letters == kNumLettersV1 ) {
+        if ( row_digits < kMinRowDigitsV1 || row_digits > kMaxRowDigitsV1 ) {
+            return false;
+        }
+    }
+    else {
+        if ( row_digits < kMinRowDigitsV2 || row_digits > kMaxRowDigitsV2 ) {
+            return false;
+        }
+    }
+    Uint8 row = 0;
+    for ( size_t i = row_pos; i < acc.size(); ++i ) {
+        char c = acc[i];
+        if ( c < '0' || c > '9' ) {
+            return false;
+        }
+        row = row*10+(c-'0');
+    }
+    if ( !row ) {
+        return false;
+    }
+    return true;
+}
+
+
+static bool IsWGSProtAccession(const CTextseq_id& id)
+{
+    const string& acc = id.GetAccession();
+    if ( acc.size() < kMinProtAccLen || acc.size() > kMaxProtAccLen ) {
+        return false;
+    }
+    return true;
+}
+
+
+static bool IsWGSAccession(const CTextseq_id& id)
+{
+    if ( id.IsSetName() ) {
+        // first try name reference if it has WGS format like AAAA01P000001
+        // as it directly contains WGS accession
+        return IsWGSAccession(id.GetName(), id, fAllow_protein);
+    }
+    if ( !id.IsSetAccession() ) {
+        return false;
+    }
+    const string& acc = id.GetAccession();
+    CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+    switch ( type & CSeq_id::eAcc_division_mask ) {
+        // accepted accession types
+    case CSeq_id::eAcc_wgs:
+    case CSeq_id::eAcc_wgs_intermed:
+    case CSeq_id::eAcc_tsa:
+    case CSeq_id::eAcc_targeted:
+        if ( type & CSeq_id::fAcc_prot ) {
+            return IsWGSProtAccession(id);
+        }
+        else {
+            return IsWGSAccession(acc, id, fAllow_contig|fAllow_scaffold);
+        }
+    case CSeq_id::eAcc_other:
+        // Some EMBL WGS accession aren't identified as WGS, so we'll try lookup anyway
+        if ( type == CSeq_id::eAcc_embl_prot ||
+             (type == CSeq_id::eAcc_gb_prot && acc.size() == 10) ) { // TODO: remove
+            return IsWGSProtAccession(id);
+        }
+        return false;
+    default:
+        // non-WGS accessions
+        return false;
+    }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -300,13 +561,12 @@ bool CWGSClient::CanProcessRequest(CPSGS_Request& request)
         break;
     }
     case CPSGS_Request::ePSGS_BlobBySatSatKeyRequest:
-        blob_id = osg::CPSGS_OSGGetBlobBase::ParsePSGBlobId(
-            request.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId);
+        blob_id = ParsePSGBlobId(request.GetRequest<SPSGS_BlobBySatSatKeyRequest>().m_BlobId);
         break;
     case CPSGS_Request::ePSGS_TSEChunkRequest:
     {
         auto& chunk_request = request.GetRequest<SPSGS_TSEChunkRequest>();
-        blob_id = osg::CPSGS_OSGGetBlobBase::ParsePSGId2Info(chunk_request.m_Id2Info).tse_id;
+        blob_id = ParsePSGId2Info(chunk_request.m_Id2Info).tse_id;
         break;
     }
     default:
@@ -314,7 +574,7 @@ bool CWGSClient::CanProcessRequest(CPSGS_Request& request)
     }
 
     if ( !seq_id.empty() ) {
-        return osg::CPSGS_OSGResolveBase::CanBeWGS(seq_id_type, seq_id);
+        return CanBeWGS(seq_id_type, seq_id);
     }
     if ( blob_id  ) {
         return ResolveBlobId(*blob_id, true).m_ValidWGS;
@@ -361,7 +621,7 @@ shared_ptr<SWGSData> CWGSClient::GetBlobBySeqId(const CSeq_id& seq_id, const TBl
 shared_ptr<SWGSData> CWGSClient::GetBlobByBlobId(const string& blob_id)
 {
     shared_ptr<SWGSData> ret;
-    CRef<CID2_Blob_Id> id2_blob_id(osg::CPSGS_OSGGetBlobBase::ParsePSGBlobId(blob_id));
+    CRef<CID2_Blob_Id> id2_blob_id(ParsePSGBlobId(blob_id));
     if ( !id2_blob_id ) return ret;
 
     SWGSSeqInfo seq = ResolveBlobId(*id2_blob_id);
@@ -375,8 +635,7 @@ shared_ptr<SWGSData> CWGSClient::GetBlobByBlobId(const string& blob_id)
 shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_id)
 {
     shared_ptr<SWGSData> ret;
-    osg::CPSGS_OSGGetBlobBase::SParsedId2Info parsed_id2info =
-        osg::CPSGS_OSGGetBlobBase::ParsePSGId2Info(id2info);
+    SParsedId2Info parsed_id2info = ParsePSGId2Info(id2info);
     if ( !parsed_id2info.tse_id ) return ret;
 
     SWGSSeqInfo seq0 = ResolveBlobId(*parsed_id2info.tse_id);
@@ -386,7 +645,7 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
     if ( SWGSData::IsForbidden(id2_blob_state) ) {
         ret = make_shared<SWGSData>();
         ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
-        ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
+        ret->m_BlobId = GetPSGBlobId(*ret->m_Id2BlobId);
         ret->m_Id2BlobState = id2_blob_state;
         return ret;
     }
@@ -398,7 +657,7 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
         //CWGSSeqIterator::TFlags flags = it.fDefaultFlags & ~it.fMasterDescr;
         ret = make_shared<SWGSData>();
         ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
-        ret->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*ret->m_Id2BlobId);
+        ret->m_BlobId = GetPSGBlobId(*ret->m_Id2BlobId);
         ret->m_SplitVersion = parsed_id2info.split_version;
         ret->m_Id2BlobState = id2_blob_state;
         ret->m_Data = it.GetChunkDataForVersion(chunk_id, parsed_id2info.split_version);
@@ -1388,6 +1647,18 @@ bool CWGSClient::GetCompress(
 }
 
 
+void CWGSClient::SetSeqId(CSeq_id& id, int seq_id_type, const string& seq_id)
+{
+    if (seq_id_type <= 0) {
+        // no type check
+        id.Set(seq_id);
+    }
+    else {
+        id.Set(CSeq_id::eFasta_AsTypeAndContent, CSeq_id::E_Choice(seq_id_type), seq_id);
+    }
+}
+
+
 void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
 {
     if ( !seq ) return;
@@ -1519,7 +1790,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
     }
 
     data->m_Id2BlobId.Reset(&GetBlobId(seq));
-    data->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*data->m_Id2BlobId);
+    data->m_BlobId = GetPSGBlobId(*data->m_Id2BlobId);
     data->m_BioseqInfoFlags |= SPSGS_ResolveRequest::fPSGS_BlobId;
     if ( data->m_Id2BlobId->IsSetVersion() ) {
         // ID2 version is minutes since UNIX epoch
@@ -1542,7 +1813,7 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
     SWGSSeqInfo& seq = GetRootSeq(seq0);
     
     if ( !data->m_Id2BlobId ) data->m_Id2BlobId.Reset(&GetBlobId(seq0));
-    if ( data->m_BlobId.empty() ) data->m_BlobId = osg::CPSGS_OSGGetBlobBase::GetPSGBlobId(*data->m_Id2BlobId);
+    if ( data->m_BlobId.empty() ) data->m_BlobId = GetPSGBlobId(*data->m_Id2BlobId);
     data->m_Id2BlobState = GetID2BlobState(seq0);
     if ( data->IsForbidden() ) return;
     
@@ -1602,6 +1873,90 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
         data.reset();
     }
 }
+
+
+CRef<CID2_Blob_Id> CWGSClient::ParsePSGBlobId(const SPSGS_BlobId& blob_id)
+{
+    Int4 sat;
+    Int4 subsat;
+    Int4 satkey;
+    auto id_str = blob_id.GetId();
+    CTempString s = id_str;
+    if ( !s_ParseOSGBlob(s, sat, subsat, satkey) || !s.empty() ) {
+        return null;
+    }
+    CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
+    id->SetSat(sat);
+    id->SetSub_sat(subsat);
+    id->SetSat_key(satkey);
+    return id;
+}
+
+
+CWGSClient::SParsedId2Info CWGSClient::ParsePSGId2Info(const string& id2_info)
+{
+    Int4 sat;
+    Int4 subsat;
+    Int4 satkey;
+    TID2BlobVersion tse_version;
+    TID2SplitVersion split_version;
+
+    CTempString s = id2_info;
+    if ( !s_ParseOSGBlob(s, sat, subsat, satkey) ||
+         !s_Skip(s, '.') ||
+         !s_ParseInt(s, tse_version) ||
+         !s_Skip(s, '.') ||
+         !s_ParseInt(s, split_version) ||
+         !s.empty() ) {
+        return SParsedId2Info{};
+    }
+
+    CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
+    id->SetSat(sat);
+    id->SetSub_sat(subsat);
+    id->SetSat_key(satkey);
+    id->SetVersion(tse_version);
+    return SParsedId2Info{id, split_version};
+}
+
+
+bool CWGSClient::CanBeWGS(int seq_id_type, const string& seq_id)
+{
+    try {
+        CSeq_id id;
+        SetSeqId(id, seq_id_type, seq_id);
+        if ( id.IsGi() ) {
+            return true;
+        }
+        else if ( id.IsGeneral() ) {
+            return IsWGSGeneral(id.GetGeneral());
+        }
+        else if ( auto text_id = id.GetTextseq_Id() ) {
+            return IsWGSAccession(*text_id);
+        }
+        return false;
+    }
+    catch ( exception& /*ignored*/ ) {
+        return false;
+    }
+}
+
+
+string CWGSClient::GetPSGBlobId(const CID2_Blob_Id& blob_id)
+{
+    ostringstream s;
+    if ( IsOSGBlob(blob_id) ) {
+        s_FormatBlobId(s, blob_id);
+    }
+    return s.str();
+}
+
+
+bool CWGSClient::IsOSGBlob(const CID2_Blob_Id& blob_id)
+{
+    return s_IsOSGBlob(blob_id.GetSat(), blob_id.GetSub_sat(), blob_id.GetSat_key());
+}
+
 
 
 int SWGSData::GetPSGBioseqState() const
