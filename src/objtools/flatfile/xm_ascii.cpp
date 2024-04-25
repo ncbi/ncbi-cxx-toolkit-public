@@ -133,7 +133,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp, CBioseq& bioseq, P
     Int4  i;
     int   numerr;
 
-    p = XMLFindTagValue(dbp->mOffset, xip, INSDSEQ_CONTIG);
+    p = StringSave(XMLFindTagValue(dbp->mOffset, xip, INSDSEQ_CONTIG));
     if (! p)
         return false;
 
@@ -200,9 +200,9 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
     strandstr = nullptr;
     for (xip = ibp->xip; xip; xip = xip->next) {
         if (xip->tag == INSDSEQ_TOPOLOGY && ! topstr)
-            topstr = XMLGetTagValue(dbp->mOffset, xip);
+            topstr = StringSave(XMLGetTagValue(dbp->mOffset, xip));
         else if (xip->tag == INSDSEQ_STRANDEDNESS && ! strandstr)
-            strandstr = XMLGetTagValue(dbp->mOffset, xip);
+            strandstr = StringSave(XMLGetTagValue(dbp->mOffset, xip));
     }
     if (! topstr)
         topstr = StringSave("   ");
@@ -273,7 +273,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 
     ibp->wgssec[0] = '\0';
 
-    str = XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE);
+    str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE));
     if (str) {
         p = StringRChr(str, '.');
         if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
@@ -314,7 +314,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
         return ret;
     }
 
-    bptr = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION);
+    bptr = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
     if (bptr) {
         if_cds = XMLCheckCDS(entry, ibp->xip);
         div    = CheckDIV(bptr);
@@ -446,7 +446,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
                 RemoveHtgPhase(gbb->SetKeywords());
             }
 
-            char* kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
+            char* kw = StringSave(XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';'));
             if (kw) {
                 if (! est_kwd && StringStr(kw, "EST")) {
                     ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
@@ -514,7 +514,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
     }
 
     if (is_htc_div) {
-        str = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
+        str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (str) {
             p = str;
             if (*str == 'm' || *str == 'r')
@@ -618,8 +618,8 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    molstr = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_MOLTYPE);
-    div    = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DIVISION);
+    molstr = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_MOLTYPE));
+    div    = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DIVISION));
 
     if (StringEquN(div, "EST", 3))
         mol_info->SetTech(CMolInfo::eTech_est);
@@ -663,9 +663,9 @@ static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& biose
 
     for (; xip; xip = xip->next) {
         if (xip->tag == INSDSEQ_ORGANISM && ! organism)
-            organism = XMLGetTagValue(entry, xip);
+            organism = StringSave(XMLGetTagValue(entry, xip));
         else if (xip->tag == INSDSEQ_TAXONOMY && ! taxonomy)
-            taxonomy = XMLGetTagValue(entry, xip);
+            taxonomy = StringSave(XMLGetTagValue(entry, xip));
     }
 
     if (! organism) {
@@ -820,7 +820,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
-    str = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DEFINITION);
+    str = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DEFINITION));
     string title;
 
     if (str) {
@@ -978,7 +978,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    offset = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_PRIMARY);
+    offset = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_PRIMARY));
     if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
@@ -1013,7 +1013,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     /* COMMENT data
      */
-    offset = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_COMMENT);
+    offset = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_COMMENT));
     if (offset) {
         bool           bad = false;
         TUserObjVector user_objs;
@@ -1077,11 +1077,11 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         update = nullptr;
         crdate = nullptr;
     } else {
-        update = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_UPDATE_DATE);
+        update = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_UPDATE_DATE));
         if (update)
             std_upd_date = GetUpdateDate(update, pp->source);
 
-        crdate = XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_CREATE_DATE);
+        crdate = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_CREATE_DATE));
         if (crdate)
             std_cre_date = GetUpdateDate(crdate, pp->source);
     }
@@ -1118,7 +1118,7 @@ static void XMLGetDivision(const char* entry, IndexblkPtr ibp)
     if (! ibp || ! entry)
         return;
 
-    div = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION);
+    div = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
     if (! div)
         return;
     div[3] = '\0';

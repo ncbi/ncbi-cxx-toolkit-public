@@ -427,7 +427,7 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
         col_data = ParFlat_COL_DATA_EMBL;
         xref     = nullptr;
     } else {
-        bptr = XMLFindTagValue(chentry, xip, INSDSEQ_DATABASE_REFERENCE);
+        bptr = StringSave(XMLFindTagValue(chentry, xip, INSDSEQ_DATABASE_REFERENCE));
         if (bptr)
             len = StringLen(bptr);
         col_data = 0;
@@ -2459,7 +2459,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         return ret;
     }
 
-    bptr         = XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION);
+    bptr         = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_DIVISION));
     div          = static_cast<CEMBL_block::TDiv>(fta_StringMatch(ParFlat_Embl_DIV_array, bptr));
     dataclass[0] = '\0';
     if (bptr) {
@@ -2617,7 +2617,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         RemoveHtgPhase(embl->SetKeywords());
     }
 
-    char* kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';');
+    char* kw = StringSave(XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';'));
     if (kw) {
         if (! est_kwd && StringStr(kw, "EST")) {
             ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
@@ -2660,7 +2660,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     if (is_htc_div) {
-        r = XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE);
+        r = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (r) {
             p = r;
             if (*r == 'm' || *r == 'r')
@@ -2730,12 +2730,12 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
 
     CRef<CDate_std> std_creation_date, std_update_date;
-    if (char* p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE)) {
+    if (char* p = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_CREATE_DATE))) {
         std_creation_date = GetUpdateDate(p, pp->source);
         embl->SetCreation_date().SetStd(*std_creation_date);
         MemFree(p);
     }
-    if (char* p = XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE)) {
+    if (char* p = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_UPDATE_DATE))) {
         std_update_date = GetUpdateDate(p, pp->source);
         embl->SetUpdate_date().SetStd(*std_update_date);
         MemFree(p);

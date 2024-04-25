@@ -199,26 +199,26 @@ static string XMLRestoreSpecialCharacters(string_view s)
 }
 
 /**********************************************************/
-char* XMLGetTagValue(const char* entry, const XmlIndex* xip)
+unique_ptr<string> XMLGetTagValue(const char* entry, const XmlIndex* xip)
 {
     if (! entry || ! xip || xip->start == 0 || xip->end == 0 ||
         xip->start >= xip->end)
-        return nullptr;
+        return {};
 
     string_view buf(entry + xip->start, xip->end - xip->start);
 
-    return StringSave(XMLRestoreSpecialCharacters(buf));
+    return make_unique<string>(XMLRestoreSpecialCharacters(buf));
 }
 
 /**********************************************************/
-char* XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag)
+unique_ptr<string> XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag)
 {
     for (; xip; xip = xip->next)
         if (xip->tag == tag)
             break;
     if (! xip)
-        return nullptr;
-    return (XMLGetTagValue(entry, xip));
+        return {};
+    return XMLGetTagValue(entry, xip);
 }
 
 /**********************************************************/
@@ -284,7 +284,7 @@ static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
     if (! xip)
         return;
 
-    buf = XMLGetTagValue(entry, xip);
+    buf = StringSave(XMLGetTagValue(entry, xip));
     if (! buf)
         return;
 
@@ -574,7 +574,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
         for (xip = ibp->xip; xip; xip = xip->next) {
             if (xip->tag != INSDSEQ_ACCESSION_VERSION)
                 continue;
-            buf = XMLGetTagValue(entry, xip);
+            buf = StringSave(XMLGetTagValue(entry, xip));
             XMLParseVersion(ibp, buf);
             if (buf) {
                 FtaInstallPrefix(PREFIX_ACCESSION, buf);
@@ -589,13 +589,13 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
     StringCpy(ibp->division, "???");
     for (xip = ibp->xip; xip; xip = xip->next) {
         if (xip->tag == INSDSEQ_LENGTH && ibp->bases == 0) {
-            buf = XMLGetTagValue(entry, xip);
+            buf = StringSave(XMLGetTagValue(entry, xip));
             if (! buf)
                 continue;
             ibp->bases = (size_t)atoi(buf);
             MemFree(buf);
         } else if (xip->tag == INSDSEQ_UPDATE_DATE && ! ibp->date) {
-            buf = XMLGetTagValue(entry, xip);
+            buf = StringSave(XMLGetTagValue(entry, xip));
             if (! buf)
                 continue;
             ibp->date = GetUpdateDate(buf, source);
@@ -615,7 +615,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
             else if (StringEqu(ibp->division, "HTC"))
                 ibp->HTC = true;
         } else if (xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false) {
-            buf = XMLGetTagValue(entry, xip);
+            buf = StringSave(XMLGetTagValue(entry, xip));
             if (NStr::CompareNocase(buf, "AA") == 0)
                 ibp->is_prot = true;
             MemFree(buf);
@@ -796,7 +796,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     buf.append(XML_FAKE_ACC_TAG);
     buf.append(ibp->acnum);
     for (xipsec = xip->subtags; xipsec; xipsec = xipsec->next) {
-        p = XMLGetTagValue(entry, xipsec);
+        p = StringSave(XMLGetTagValue(entry, xipsec));
         if (p) {
             buf.append(" ");
             buf.append(p);
@@ -841,7 +841,7 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     string buf;
     buf.reserve(len);
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next) {
-        p = XMLGetTagValue(entry, xipkwd);
+        p = StringSave(XMLGetTagValue(entry, xipkwd));
         if (p) {
             if (! buf.empty())
                 buf += "; ";
@@ -1372,13 +1372,13 @@ static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
             if (txip->tag == INSDREFERENCE_REFERENCE) {
                 if (reftagref)
                     MemFree(reftagref);
-                reftagref = XMLGetTagValue(entry, txip);
+                reftagref = StringSave(XMLGetTagValue(entry, txip));
                 continue;
             }
             if (txip->tag == INSDREFERENCE_POSITION) {
                 if (reftagpos)
                     MemFree(reftagpos);
-                reftagpos = XMLGetTagValue(entry, txip);
+                reftagpos = StringSave(XMLGetTagValue(entry, txip));
                 continue;
             }
             if (txip->tag == INSDREFERENCE_AUTHORS) {
@@ -1536,7 +1536,7 @@ void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywor
         return;
 
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next) {
-        p = XMLGetTagValue(entry, xipkwd);
+        p = StringSave(XMLGetTagValue(entry, xipkwd));
         if (! p)
             continue;
 
@@ -1546,18 +1546,18 @@ void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywor
 }
 
 /**********************************************************/
-char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep)
+unique_ptr<string> XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep)
 {
     const XmlIndex* txip;
 
     if (! entry || ! xip)
-        return nullptr;
+        return {};
 
     while (xip && xip->tag != tag)
         xip = xip->next;
 
     if (! xip || ! xip->subtags)
-        return nullptr;
+        return {};
 
     size_t i = 0;
     for (txip = xip->subtags; txip; txip = txip->next)
@@ -1574,7 +1574,7 @@ char* XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char se
         }
         buf.append(entry + txip->start, txip->end - txip->start);
     }
-    return StringSave(XMLRestoreSpecialCharacters(buf));
+    return make_unique<string>(XMLRestoreSpecialCharacters(buf));
 }
 
 END_NCBI_SCOPE
