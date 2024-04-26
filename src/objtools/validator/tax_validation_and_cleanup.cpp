@@ -340,10 +340,17 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
 
     vector<CRef<COrg_ref>> request;
 
+    bool no_data_requests = true;
+
     for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname(*tax_it);
         request.push_back(org);
+        no_data_requests = false;
+    }
+
+    if (no_data_requests) {
+        return false;
     }
 
     CRef<CTaxon3_reply> reply = taxoncallback(request);
@@ -402,10 +409,17 @@ bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
 
     vector<CRef<COrg_ref>> request;
 
+    bool no_data_requests = true;
+
     for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname(*tax_it);
         request.push_back(org);
+        no_data_requests = false;
+    }
+
+    if (no_data_requests) {
+        return false;
     }
 
     CRef<CTaxon3_reply> reply = taxoncallback(request);
@@ -685,10 +699,17 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
 
     vector<CRef<COrg_ref>> request;
 
+    bool no_data_requests = true;
+
     for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
         CRef<COrg_ref> org(new COrg_ref());
         org->SetTaxname(*tax_it);
         request.push_back(org);
+        no_data_requests = false;
+    }
+
+    if (no_data_requests) {
+        return;
     }
 
     // first pass checks all strains at once, looking for any positive taxonomy matches
