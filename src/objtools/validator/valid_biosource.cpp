@@ -3007,6 +3007,7 @@ static bool NCBI_NewTaxVal(void)
 
 
 /*
+// stand-alone lookup code for when initialized CTaxon3 object is not already available
 static CRef<CTaxon3_reply> ExploreStrainsCallback (const vector<CRef<COrg_ref>>& request)
 
 {
@@ -3033,6 +3034,9 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
         CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se,
             [this] (const vector<CRef<COrg_ref>>& request) -> CRef<CTaxon3_reply>
             {
+                if (request.size() < 1) {
+                    return CRef<CTaxon3_reply>();
+                }
                 CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(request);
                 // cerr << "TaxonReply: " << MSerial_AsnText << reply << endl;
                 return reply;
