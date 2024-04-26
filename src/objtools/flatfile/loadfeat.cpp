@@ -563,6 +563,11 @@ StrNum LinkageEvidenceValues[] = {
 };
 // clang-format on
 
+void FeatBlk::location_assign(string_view s)
+{
+    location = StringSave(s);
+}
+
 FeatBlk::~FeatBlk()
 {
     key.clear();
@@ -955,14 +960,14 @@ bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard
  *                                              5-20-93
  *
  **********************************************************/
-static char* CheckLocStr(const Char* str)
+unique_ptr<string> CheckLocStr(const Char* str)
 {
     const Char* ptr;
     const Char* eptr;
 
     ptr = StringChr(str, ';');
     if (ptr)
-        return StringSave(str);
+        return make_unique<string>(str);
 
     for (ptr = str; *ptr != ' ' && *ptr != '\0';)
         ptr++;
@@ -971,13 +976,13 @@ static char* CheckLocStr(const Char* str)
 
     eptr = StringChr(str, ')');
     if (! eptr)
-        return nullptr;
+        return {};
 
     while (*eptr == ' ' || *eptr == ')')
         --eptr;
     ++eptr;
 
-    return StringSave(string_view(ptr, eptr - ptr));
+    return make_unique<string>(ptr, eptr);
 }
 
 /*****************************************************************************
@@ -1144,8 +1149,6 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
     char*      p;
-    char*      q;
-    char*      location = nullptr;
 
     bool  err = false;
     Uint1 i;
@@ -1171,32 +1174,28 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetData().SetPub(*pubdesc);
 
-        location = nullptr;
+        unique_ptr<string> ploc;
         if (pp->format == Parser::EFormat::XML) {
-            location = StringSave(XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_POSITION));
-            if (! location) {
-                q = StringSave(XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REFERENCE));
+            ploc = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_POSITION);
+            if (! ploc) {
+                auto q = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REFERENCE);
                 if (q) {
-                    for (p = q; *p != '\0' && *p != '(';)
-                        p++;
-                    if (*p != '\0')
-                        location = CheckLocStr(p + 1);
-                    MemFree(q);
+                    auto i = q->find('(');
+                    if (i != string::npos)
+                        ploc = CheckLocStr(&q->operator[](i + 1));
                 }
             } else {
-                p = StringChr(location, ';');
-                if (p) {
-                    string s("join(");
-                    s.append(location);
-                    s.append(")");
-                    MemFree(location);
-                    location = StringSave(s);
+                if (ploc->find(';') != string::npos) {
+                    string s = "join(";
+                    s += *ploc;
+                    s += ')';
+                    *ploc = s;
                 }
             }
         } else if (pp->format == Parser::EFormat::GenBank) {
             for (p = dbp->mOffset + col_data; *p != '\0' && *p != '(';)
                 p++;
-            location = CheckLocStr(string(p, dbp->mOffset + dbp->len - p).c_str());
+            ploc = CheckLocStr(string(p, dbp->mOffset + dbp->len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
             subdbp = static_cast<DataBlk*>(dbp->mpData);
             for (; subdbp; subdbp = subdbp->mpNext) {
@@ -1208,21 +1207,20 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 if (StringChr(p, ',')) {
                     string s = "join(";
                     s += p;
-                    s += ")";
-                    location = StringSave(s);
+                    s += ')';
+                    ploc = make_unique<string>(s);
                 } else
-                    location = StringSave(p);
+                    ploc = make_unique<string>(p);
                 break;
             }
         }
-        if (! location || *location == '\0') {
+        if (! ploc || ploc->empty()) {
             ErrPostEx(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "NULL or empty reference location. Entry dropped.");
             err = true;
-            if (location)
-                MemFree(location);
             break;
         }
 
+        char* location = StringSave(*ploc);
         if (ibp->is_prot)
             fta_strip_aa(location);
 
@@ -3520,7 +3518,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
             if (xipfeat->tag == INSDFEATURE_KEY)
                 fbp->key = *XMLGetTagValue(entry, xipfeat);
             else if (xipfeat->tag == INSDFEATURE_LOCATION)
-                fbp->location_set(StringSave(XMLGetTagValue(entry, xipfeat)));
+                fbp->location_assign(*XMLGetTagValue(entry, xipfeat));
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }
@@ -3862,7 +3860,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         for (ptr2 = ptr1; *ptr2 != '/' && ptr2 < eptr;)
             ptr2++;
-        fbp->location_set(StringSave(string_view(ptr1, ptr2 - ptr1)));
+        fbp->location_assign(string_view(ptr1, ptr2 - ptr1));
         if (ibp->is_prot)
             fta_strip_aa(fbp->location);
         for (p = fbp->location, q = p; *p != '\0'; p++)
@@ -3872,7 +3870,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         if (fbp->location[0] == '\0' && ibp->is_mga) {
             MemFree(fbp->location);
-            fbp->location_set(StringSave(loc));
+            fbp->location_assign(loc);
         }
 
         FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
@@ -4143,7 +4141,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             if (fbp->key != "mobile_element") {
                 auto   qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
                 string str      = CSeqFeatData::GetQualifierAsString(qual_idx);
-                if ((fbp->key != "old_sequence" && fbp->key != ("conflict")) ||
+                if ((fbp->key != "old_sequence" && fbp->key != "conflict") ||
                     (str != "citation")) {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str.c_str());
                     if (! deb) {
@@ -4405,7 +4403,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
             fta_convert_to_regulatory(fbp, "enhancer");
         else if (fbp->key == "GC_signal")
             fta_convert_to_regulatory(fbp, "GC_signal");
-        else if (fbp->key == ("-35_signal"))
+        else if (fbp->key == "-35_signal")
             fta_convert_to_regulatory(fbp, "minus_35_signal");
         else if (fbp->key == "-10_signal")
             fta_convert_to_regulatory(fbp, "minus_10_signal");
