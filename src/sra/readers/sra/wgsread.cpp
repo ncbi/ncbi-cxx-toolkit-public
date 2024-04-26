@@ -4833,7 +4833,14 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
         return NCBI_gb_state_eWGSGenBankReplaced;
     }
     CVDBMgr::CRequestContextUpdater ctx_updater;
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): m_Db->GetProjectGBState();
+    NCBI_gb_state state = 0;
+    if ( m_Cur->m_GB_STATE ) {
+        state = *m_Cur->GB_STATE(m_CurrId);
+    }
+    if ( !state ) {
+        state = m_Db->GetProjectGBState();
+    }
+    return state;
 }
 
 
@@ -6507,7 +6514,14 @@ NCBI_gb_state CWGSScaffoldIterator::GetGBState(void) const
     x_CheckValid("CWGSScaffoldIterator::GetGBState");
 
     CVDBMgr::CRequestContextUpdater ctx_updater;
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): m_Db->GetProjectGBState();
+    NCBI_gb_state state = 0;
+    if ( m_Cur->m_GB_STATE ) {
+        state = *m_Cur->GB_STATE(m_CurrId);
+    }
+    if ( !state ) {
+        state = m_Db->GetProjectGBState();
+    }
+    return state;
 }
 
 
@@ -7327,7 +7341,14 @@ NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
     x_CheckValid("CWGSProteinIterator::GetGBState");
     x_Cur();
     CVDBMgr::CRequestContextUpdater ctx_updater;
-    return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): m_Db->GetProjectGBState();
+    NCBI_gb_state state = 0;
+    if ( m_Cur->m_GB_STATE ) {
+        state = *m_Cur->GB_STATE(m_CurrId);
+    }
+    if ( !state ) {
+        state = m_Db->GetProjectGBState();
+    }
+    return state;
 }
 
 
