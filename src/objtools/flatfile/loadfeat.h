@@ -50,7 +50,7 @@ struct FeatBlk : public CFlatFileData {
 
     const char*   key_or(const char* pch) const { return key.empty() ? pch : key.c_str(); }
 
-    void        location_set(char* pch) { location = pch; }
+    void        location_assign(string_view);
     bool        location_isset() const { return location != nullptr; }
     const char* location_get() const { return location; }
     const char* location_c_str() const { return location; }
