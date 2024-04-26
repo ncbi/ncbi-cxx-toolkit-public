@@ -563,11 +563,6 @@ StrNum LinkageEvidenceValues[] = {
 };
 // clang-format on
 
-bool FeatBlk::key_equ(const char* pch) const
-{
-    return StringEqu(key.c_str(), pch);
-}
-
 FeatBlk::~FeatBlk()
 {
     key.clear();
@@ -2099,7 +2094,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 static void GetImpFeat(CSeq_feat& feat, FeatBlkPtr fbp, bool locmap)
 {
     CRef<CImp_feat> imp_feat(new CImp_feat);
-    imp_feat->SetKey(fbp->key_get());
+    imp_feat->SetKey(fbp->key);
 
     if (locmap)
         imp_feat->SetLoc(fbp->location_get());
@@ -2377,13 +2372,13 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         DelCharBtwData(loc);
         if (pp->buf)
             MemFree(pp->buf);
-        string s(fbp->key_get());
+        string s(fbp->key);
         s.append(" : ");
         s.append(loc);
         pp->buf = StringSave(s);
 
         feat.Reset(new CSeq_feat);
-        locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key_get());
+        locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
 
         if (pp->buf)
             MemFree(pp->buf);
@@ -2391,11 +2386,11 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
     }
     if (err) {
         if (pp->debug == false) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "%s|%s| range check detects problems", fbp->key_c_str(), loc);
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "%s|%s| range check detects problems", fbp->key.c_str(), loc);
             feat.Reset();
             return feat;
         }
-        ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, "%s|%s| range check detects problems", fbp->key_c_str(), loc);
+        ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, "%s|%s| range check detects problems", fbp->key.c_str(), loc);
     }
 
     if (! fbp->quals.empty()) {
@@ -2419,7 +2414,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
 
     if (! fbp->quals.empty()) {
         for (b = TransSplicingFeats; *b; b++)
-            if (fbp->key_equ(*b))
+            if (fbp->key == *b)
                 break;
         if (*b && DeleteQual(fbp->quals, "trans_splicing")) {
             feat->SetExcept(true);
@@ -2437,7 +2432,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         return feat;
     }
 
-    if ((! feat->IsSetPartial() || ! feat->GetPartial()) && ! fbp->key_equ("gap")) {
+    if ((! feat->IsSetPartial() || ! feat->GetPartial()) && fbp->key != "gap") {
         if (SeqLocHaveFuzz(feat->GetLocation()))
             feat->SetPartial(true);
     }
@@ -2453,7 +2448,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
 
     /* assume all imp for now
      */
-    if (fbp->key_get().find("source") == string::npos)
+    if (fbp->key.find("source") == string::npos)
         GetImpFeat(*feat, fbp, locmap);
 
     for (const auto& cur : fbp->quals) {
@@ -2565,7 +2560,7 @@ static bool fta_feats_same(const FeatBlk* fbp1, const FeatBlk* fbp2)
     if (! fbp1 && ! fbp2)
         return true;
     if (! fbp1 || ! fbp2 ||
-        ! fta_strings_same(fbp1->key_c_str(), fbp2->key_c_str()) ||
+        ! fta_strings_same(fbp1->key.c_str(), fbp2->key.c_str()) ||
         ! fta_strings_same(fbp1->location_c_str(), fbp2->location_c_str()))
         return false;
 
@@ -2817,7 +2812,7 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
             }
 
             if (got_pseudogene) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_MultiplePseudoGeneQuals, "Dropping a /pseudogene qualifier because multiple /pseudogene qualifiers are present : <%s> : Feature key <%s> : Feature location <%s>.", val_str.empty() ? "[empty]" : val_str.c_str(), fbp->key_c_str(), fbp->location_c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_MultiplePseudoGeneQuals, "Dropping a /pseudogene qualifier because multiple /pseudogene qualifiers are present : <%s> : Feature key <%s> : Feature location <%s>.", val_str.empty() ? "[empty]" : val_str.c_str(), fbp->key.c_str(), fbp->location_c_str());
 
                 cur = fbp->quals.erase(cur);
                 continue;
@@ -2826,7 +2821,7 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
             got_pseudogene = true;
 
             if (val_str.empty()) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue, "Dropping a /pseudogene qualifier because its value is empty : Feature key <%s> : Feature location <%s>.", fbp->key_c_str(), fbp->location_c_str());
+                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue, "Dropping a /pseudogene qualifier because its value is empty : Feature key <%s> : Feature location <%s>.", fbp->key.c_str(), fbp->location_c_str());
 
                 cur = fbp->quals.erase(cur);
                 continue;
@@ -2837,7 +2832,7 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
                 continue;
             }
 
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue, "Dropping a /pseudogene qualifier because its value is invalid : <%s> : Feature key <%s> : Feature location <%s>.", val_str.c_str(), fbp->key_c_str(), fbp->location_c_str());
+            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue, "Dropping a /pseudogene qualifier because its value is invalid : <%s> : Feature key <%s> : Feature location <%s>.", val_str.c_str(), fbp->key.c_str(), fbp->location_c_str());
 
             cur = fbp->quals.erase(cur);
         }
@@ -2845,7 +2840,7 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
         if (! got_pseudogene || ! got_pseudo)
             continue;
 
-        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_OldPseudoWithPseudoGene, "A legacy /pseudo qualifier and a /pseudogene qualifier are present on the same feature : Dropping /pseudo : Feature key <%s> : Feature location <%s>.", fbp->key_c_str(), fbp->location_c_str());
+        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_OldPseudoWithPseudoGene, "A legacy /pseudo qualifier and a /pseudogene qualifier are present on the same feature : Dropping /pseudo : Feature key <%s> : Feature location <%s>.", fbp->key.c_str(), fbp->location_c_str());
         DeleteQual(fbp->quals, "pseudo");
     }
 }
@@ -2886,7 +2881,7 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
                 }
 
                 if (badcom) {
-                    ErrPostEx(SEV_ERROR, ERR_QUALIFIER_IllegalCompareQualifier, "/compare qualifier value is not a legal Accession.Version : feature \"%s\" at \"%s\" : value \"%s\" : qualifier has been dropped.", fbp->key_c_str(), fbp->location_c_str(), val_str.empty() ? "[empty]" : val_str.c_str());
+                    ErrPostEx(SEV_ERROR, ERR_QUALIFIER_IllegalCompareQualifier, "/compare qualifier value is not a legal Accession.Version : feature \"%s\" at \"%s\" : value \"%s\" : qualifier has been dropped.", fbp->key.c_str(), fbp->location_c_str(), val_str.empty() ? "[empty]" : val_str.c_str());
 
                     cur = fbp->quals.erase(cur);
                     continue;
@@ -2899,11 +2894,10 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
         }
 
         if (com_count > 0 || cit_count > 0 ||
-            (! fbp->key_equ("old_sequence") &&
-             ! fbp->key_equ("conflict")))
+            (fbp->key != "old_sequence" && fbp->key != "conflict"))
             continue;
 
-        ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "Feature \"%s\" at \"%s\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key_c_str(), fbp->location_c_str());
+        ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "Feature \"%s\" at \"%s\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key.c_str(), fbp->location_c_str());
         dbp->mDrop = true;
     }
 }
@@ -2986,11 +2980,11 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
         StringCat(location, "...");
     }
     if (ibp->is_tsa)
-        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTSA, "Feature \"%s\" at \"%s\" on a TSA record cannot point to a non-TSA record.", fbp->key_c_str(), location ? location : "empty_location");
+        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTSA, "Feature \"%s\" at \"%s\" on a TSA record cannot point to a non-TSA record.", fbp->key.c_str(), location ? location : "empty_location");
     else if (ibp->is_tls)
-        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTLS, "Feature \"%s\" at \"%s\" on a TLS record cannot point to a non-TLS record.", fbp->key_c_str(), location ? location : "empty_location");
+        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTLS, "Feature \"%s\" at \"%s\" on a TLS record cannot point to a non-TLS record.", fbp->key.c_str(), location ? location : "empty_location");
     else
-        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTPA, "Feature \"%s\" at \"%s\" on a TPA record cannot point to a non-TPA record.", fbp->key_c_str(), location ? location : "empty_location");
+        ErrPostEx(SEV_REJECT, ERR_LOCATION_AccessionNotTPA, "Feature \"%s\" at \"%s\" on a TPA record cannot point to a non-TPA record.", fbp->key.c_str(), location ? location : "empty_location");
     if (location)
         MemFree(location);
 }
@@ -3189,12 +3183,12 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             if (ibp->drop)
                 break;
             fbp = static_cast<FeatBlk*>(tdbp->mpData);
-            if (! fbp || ! fbp->key_isset())
+            if (! fbp || fbp->key.empty())
                 continue;
-            if (fbp->key_equ("gap")) {
+            if (fbp->key == "gap") {
                 prev_gap = curr_gap;
                 curr_gap = 1;
-            } else if (fbp->key_equ("assembly_gap")) {
+            } else if (fbp->key == "assembly_gap") {
                 prev_gap = curr_gap;
                 curr_gap = 2;
             } else
@@ -3524,7 +3518,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
         fbp->spindex = -1;
         for (xipfeat = xip->subtags; xipfeat; xipfeat = xipfeat->next) {
             if (xipfeat->tag == INSDFEATURE_KEY)
-                fbp->key_assign(*XMLGetTagValue(entry, xipfeat));
+                fbp->key = *XMLGetTagValue(entry, xipfeat);
             else if (xipfeat->tag == INSDFEATURE_LOCATION)
                 fbp->location_set(StringSave(XMLGetTagValue(entry, xipfeat)));
             else if (xipfeat->tag == INSDFEATURE_QUALS)
@@ -3734,7 +3728,7 @@ static void ParseQualifiers(
     xSplitLines(bstr, qualLines);
 
     string      qualKey, qualVal;
-    string      featKey(fbp->key_get());
+    string      featKey(fbp->key);
     string      featLocation(fbp->location_get());
     CQualParser qualParser(format, featKey, featLocation, qualLines);
     while (! qualParser.Done()) {
@@ -3845,9 +3839,9 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
 
         if (StringEquN(ptr1, "- ", 2)) {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
-            fbp->key_assign("misc_feature");
+            fbp->key = "misc_feature";
         } else
-            fbp->key_assign(string_view(ptr1, ptr2 - ptr1));
+            fbp->key = string_view(ptr1, ptr2 - ptr1);
 
         for (ptr1 = ptr2; *ptr1 == ' ';)
             ptr1++;
@@ -3881,17 +3875,16 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             fbp->location_set(StringSave(loc));
         }
 
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key_get().c_str(), fbp->location_get());
-        if (fbp->key_equ("allele") ||
-            fbp->key_equ("mutation")) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key_c_str());
-            fbp->key_assign("variation");
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
+        if (fbp->key == "allele" || fbp->key == "mutation") {
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key.c_str());
+            fbp->key = "variation";
         }
 
-        CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key_get());
+        CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key);
 
         if (subtype == CSeqFeatData::eSubtype_bad && ! deb) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key_c_str(), "Feature dropped");
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str(), "Feature dropped");
             dbp->mDrop = true;
             retval     = GB_FEAT_ERR_DROP;
             continue;
@@ -3901,22 +3894,22 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         {
             ParseQualifiers(fbp, ptr2, eptr, format);
 
-            if (! fbp->key_equ("assembly_gap")) {
+            if (fbp->key != "assembly_gap") {
                 for (const auto& cur : fbp->quals) {
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "gap_type" ||
                         cur_qual == "assembly_evidence") {
-                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key_c_str(), fbp->location_or("Unknown"));
+                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key.c_str(), fbp->location_or("Unknown"));
                         ibp->drop = true;
                     }
                 }
             }
 
-            if (! fbp->key_equ("source")) {
+            if (fbp->key != "source") {
                 for (const auto& cur : fbp->quals) {
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "submitter_seqid") {
-                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key_c_str(), fbp->location_or("Unknown"));
+                        ErrPostEx(SEV_REJECT, ERR_FEATURE_InvalidQualifier, "Qualifier /%s is invalid for the feature \"%s\" at \"%s\".", cur_qual.c_str(), fbp->key.c_str(), fbp->location_or("Unknown"));
                         ibp->drop = true;
                     }
                 }
@@ -3926,7 +3919,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                                            notes w/i a key */
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
-                ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key_c_str());
+                ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str());
                 ret = GB_FEAT_ERR_REPAIRABLE;
             } else {
                 /* last argument is perform_corrections if debug
@@ -3937,24 +3930,22 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             if (ret > retval)
                 retval = ret;
 
-            if (ret > GB_FEAT_ERR_REPAIRABLE && ! fbp->key_equ("ncRNA"))
+            if (ret > GB_FEAT_ERR_REPAIRABLE && fbp->key != "ncRNA")
                 dbp->mDrop = true;
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
-            if (! fbp->key_equ("mobile_element")) {
-                auto        qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
-                string      str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
-                const char* str      = str1.c_str();
-                if ((! fbp->key_equ("old_sequence") &&
-                     ! fbp->key_equ("conflict")) ||
-                    ! StringEqu(str, "citation")) {
-                    ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str);
+            if (fbp->key != "mobile_element") {
+                auto   qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
+                string str      = CSeqFeatData::GetQualifierAsString(qual_idx);
+                if ((fbp->key != "old_sequence" && fbp->key != "conflict") ||
+                    (str != "citation")) {
+                    ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str.c_str());
                     if (! deb) {
                         dbp->mDrop = true;
                         retval     = GB_FEAT_ERR_DROP;
                     }
                 }
             }
-        } else if (fbp->key_equ("misc_feature") && fbp->quals.empty()) {
+        } else if (fbp->key == "misc_feature" && fbp->quals.empty()) {
             if (! deb) {
                 dbp->mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
@@ -4090,20 +4081,19 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             continue;
         fbp      = static_cast<FeatBlk*>(dbp->mpData);
         fbp->num = num;
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key_c_str(), fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
 
-        if (fbp->key_get() == "-") {
+        if (fbp->key == "-") {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
-            fbp->key_assign("misc_feature");
+            fbp->key = "misc_feature";
         }
 
-        if (fbp->key_equ("allele") ||
-            fbp->key_equ("mutation")) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key_c_str());
-            fbp->key_assign("variation");
+        if (fbp->key == "allele" || fbp->key == "mutation") {
+            ErrPostEx(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, "Obsolete feature \"%s\" found. Replaced with \"variation\".", fbp->key.c_str());
+            fbp->key = "variation";
         }
 
-        CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key_get());
+        CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key);
 
         /* bsv hack: exclude CONFLICT, REGION, SITE, UNSURE UniProt flatfile
          *           features from valid GenBank ones: for USPTO only
@@ -4118,9 +4108,9 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
         keyindx = -1;
         if (subtype == CSeqFeatData::eSubtype_bad && ! deb) {
             if (source == Parser::ESource::USPTO)
-                keyindx = SpFeatKeyNameValid(fbp->key_c_str());
+                keyindx = SpFeatKeyNameValid(fbp->key.c_str());
             if (keyindx < 0 && ! deb) {
-                ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key_c_str(), "Feature dropped");
+                ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str(), "Feature dropped");
                 dbp->mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 continue;
@@ -4135,7 +4125,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
                 if (keyindx < 0) {
-                    ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key_c_str());
+                    ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str());
                     ret = GB_FEAT_ERR_REPAIRABLE;
                 }
             } else if (fbp->spindex < 0) {
@@ -4147,24 +4137,22 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
             if (ret > retval)
                 retval = ret;
 
-            if (ret > GB_FEAT_ERR_REPAIRABLE && ! fbp->key_equ("ncRNA"))
+            if (ret > GB_FEAT_ERR_REPAIRABLE && fbp->key != "ncRNA")
                 dbp->mDrop = true;
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
-            if (! fbp->key_equ("mobile_element")) {
-                auto        qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
-                string      str1     = CSeqFeatData::GetQualifierAsString(qual_idx);
-                const char* str      = str1.c_str();
-                if ((! fbp->key_equ("old_sequence") &&
-                     ! fbp->key_equ("conflict")) ||
-                    ! StringEqu(str, "citation")) {
-                    ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str);
+            if (fbp->key != "mobile_element") {
+                auto   qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
+                string str      = CSeqFeatData::GetQualifierAsString(qual_idx);
+                if ((fbp->key != "old_sequence" && fbp->key != ("conflict")) ||
+                    (str != "citation")) {
+                    ErrPostEx(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, "lacks required /%s qualifier : feature has been dropped.", str.c_str());
                     if (! deb) {
                         dbp->mDrop = true;
                         retval     = GB_FEAT_ERR_DROP;
                     }
                 }
             }
-        } else if (fbp->key_equ("misc_feature") && fbp->quals.empty()) {
+        } else if (fbp->key == "misc_feature" && fbp->quals.empty()) {
             if (! deb) {
                 dbp->mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
@@ -4333,12 +4321,12 @@ static bool SortFeaturesByLoc(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
             return status < 0;
     }
 
-    if (! fbp1->key_isset() && fbp2->key_isset())
+    if (fbp1->key.empty() && ! fbp2->key.empty())
         return false;
-    if (fbp1->key_isset() && ! fbp2->key_isset())
+    if (! fbp1->key.empty() && fbp2->key.empty())
         return false;
-    if (fbp1->key_isset() && fbp2->key_isset()) {
-        status = StringCmp(fbp1->key_c_str(), fbp2->key_c_str());
+    if (! fbp1->key.empty() && ! fbp2->key.empty()) {
+        status = StringCmp(fbp1->key.c_str(), fbp2->key.c_str());
         if (status != 0)
             return status < 0;
     }
@@ -4383,10 +4371,10 @@ static DataBlkPtr fta_sort_features(DataBlkPtr dbp, bool order)
 /**********************************************************/
 static void fta_convert_to_regulatory(FeatBlkPtr fbp, const char* rclass)
 {
-    if (! fbp || ! fbp->key_isset() || ! rclass)
+    if (! fbp || fbp->key.empty() || ! rclass)
         return;
 
-    fbp->key_assign("regulatory");
+    fbp->key = "regulatory";
 
     CRef<CGb_qual> qual(new CGb_qual);
     qual->SetQual("regulatory_class");
@@ -4406,32 +4394,32 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
 
     for (; dbp; dbp = dbp->mpNext) {
         fbp = static_cast<FeatBlk*>(dbp->mpData);
-        if (! fbp || ! fbp->key_isset())
+        if (! fbp || fbp->key.empty())
             continue;
 
-        if (fbp->key_equ("attenuator"))
+        if (fbp->key == "attenuator")
             fta_convert_to_regulatory(fbp, "attenuator");
-        else if (fbp->key_equ("CAAT_signal"))
+        else if (fbp->key == "CAAT_signal")
             fta_convert_to_regulatory(fbp, "CAAT_signal");
-        else if (fbp->key_equ("enhancer"))
+        else if (fbp->key == "enhancer")
             fta_convert_to_regulatory(fbp, "enhancer");
-        else if (fbp->key_equ("GC_signal"))
+        else if (fbp->key == "GC_signal")
             fta_convert_to_regulatory(fbp, "GC_signal");
-        else if (fbp->key_equ("-35_signal"))
+        else if (fbp->key == ("-35_signal"))
             fta_convert_to_regulatory(fbp, "minus_35_signal");
-        else if (fbp->key_equ("-10_signal"))
+        else if (fbp->key == "-10_signal")
             fta_convert_to_regulatory(fbp, "minus_10_signal");
-        else if (fbp->key_equ("polyA_signal"))
+        else if (fbp->key == "polyA_signal")
             fta_convert_to_regulatory(fbp, "polyA_signal_sequence");
-        else if (fbp->key_equ("promoter"))
+        else if (fbp->key == "promoter")
             fta_convert_to_regulatory(fbp, "promoter");
-        else if (fbp->key_equ("RBS"))
+        else if (fbp->key == "RBS")
             fta_convert_to_regulatory(fbp, "ribosome_binding_site");
-        else if (fbp->key_equ("TATA_signal"))
+        else if (fbp->key == "TATA_signal")
             fta_convert_to_regulatory(fbp, "TATA_box");
-        else if (fbp->key_equ("terminator"))
+        else if (fbp->key == "terminator")
             fta_convert_to_regulatory(fbp, "terminator");
-        else if (! fbp->key_equ("regulatory"))
+        else if (fbp->key != "regulatory")
             continue;
 
         got_note    = false;
@@ -4827,9 +4815,9 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 continue;
 
             fbp = static_cast<FeatBlk*>(dbp->mpData);
-            if (fbp->key_equ("source") ||
-                fbp->key_equ("assembly_gap") ||
-                (fbp->key_equ("gap") &&
+            if (fbp->key == "source" ||
+                fbp->key == "assembly_gap" ||
+                (fbp->key == "gap" &&
                  pp->source != Parser::ESource::DDBJ && pp->source != Parser::ESource::EMBL))
                 continue;
 
@@ -4840,20 +4828,20 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             else
                 feat = SpProcFeatBlk(pp, fbp, ids);
             if (feat.Empty()) {
-                if (fbp->key_equ("CDS")) {
+                if (fbp->key == "CDS") {
                     ErrPostEx(SEV_ERROR, ERR_FEATURE_LocationParsing, "CDS feature has unparsable location. Entry dropped. Location = [%s].", fbp->location_c_str());
                     ibp->drop = true;
                 }
                 continue;
             }
 
-            if (fbp->key_equ("mobile_element") &&
+            if (fbp->key == "mobile_element" &&
                 ! fta_check_mobile_element(*feat)) {
                 ibp->drop = true;
                 continue;
             }
 
-            fta_check_artificial_location(*feat, fbp->key_get());
+            fta_check_artificial_location(*feat, fbp->key);
 
             if (CheckForeignLoc(feat->GetLocation(),
                                 (pp->source == Parser::ESource::USPTO) ? *pat_seq_id : *seq_id)) {
