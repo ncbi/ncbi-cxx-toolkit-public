@@ -1158,15 +1158,8 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs gc_asn_access
-var_unit_test_lib needs variation_lib
 variation needs $(SEQ_LIBS)
 variation needs pub
-variation_lib needs annotationproto
-variation_lib needs intvarutil
-variation_lib needs ncbi_xloader_blastdb
-variation_lib needs objannotation
-variation_lib needs refseq_aln_source
-variation_lib needs variation_utils
 variation_utils needs variation
 variation_utils needs xobjutil
 varrep needs xser
