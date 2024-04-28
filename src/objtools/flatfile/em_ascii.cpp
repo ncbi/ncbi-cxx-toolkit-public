@@ -802,9 +802,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
         return false;
     }
 
-    if (pp->buf)
-        MemFree(pp->buf);
-    pp->buf = nullptr;
+    pp->buf.reset();
 
     CRef<CSeq_loc> loc = xgbparseint_ver(p, locmap, numerr, bioseq.GetId(), pp->accver);
 

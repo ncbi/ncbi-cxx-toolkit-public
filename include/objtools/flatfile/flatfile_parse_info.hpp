@@ -35,6 +35,7 @@
 #define __FLATFILE_PARSE_INFO__
 
 #include <list>
+#include <optional>
 #include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -213,7 +214,7 @@ struct Parser {
 
     FILE*   qsfd          = nullptr;
     bool    qamode        = false;
-    char*   buf           = nullptr;            /* Temporary storage for locations checks */
+    optional<string> buf;                       /* Temporary storage for locations checks */
     EOutput output_format = EOutput::BioseqSet; /* Bioseq-set or Seq-submit */
 
     // buffer based parsing
