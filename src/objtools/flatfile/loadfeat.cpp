@@ -685,16 +685,14 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
                 return (-1);
             }
 
-            if (*pp->buf == '\0')
+            if (pp->buf->empty())
                 return (-1);
 
             if (pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::Refseq)
-                ErrPostEx(SEV_WARNING, ERR_LOCATION_NCBIRefersToExternalRecord, "Feature location references an interval on another record : %s", pp->buf);
+                ErrPostEx(SEV_WARNING, ERR_LOCATION_NCBIRefersToExternalRecord, "Feature location references an interval on another record : %s", pp->buf->c_str());
             else
-                ErrPostEx(SEV_WARNING, ERR_LOCATION_RefersToExternalRecord, "Feature location references an interval on another record : %s", pp->buf);
-            MemFree(pp->buf);
-            pp->buf  = StringNew(0);
-            *pp->buf = '\0';
+                ErrPostEx(SEV_WARNING, ERR_LOCATION_RefersToExternalRecord, "Feature location references an interval on another record : %s", pp->buf->c_str());
+            pp->buf->clear();
             return (-1);
         }
     }
@@ -1224,9 +1222,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         if (ibp->is_prot)
             fta_strip_aa(location);
 
-        if (pp->buf)
-            MemFree(pp->buf);
-        pp->buf = nullptr;
+        pp->buf.reset();
 
         GetSeqLocation(*feat, location, seqids, &err, pp, "pub");
 
@@ -2368,19 +2364,10 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
     if (fbp->location_isset()) {
         loc = fbp->location;
         DelCharBtwData(loc);
-        if (pp->buf)
-            MemFree(pp->buf);
-        string s(fbp->key);
-        s.append(" : ");
-        s.append(loc);
-        pp->buf = StringSave(s);
-
+        pp->buf = fbp->key + " : " + loc;
         feat.Reset(new CSeq_feat);
         locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
-
-        if (pp->buf)
-            MemFree(pp->buf);
-        pp->buf = nullptr;
+        pp->buf.reset();
     }
     if (err) {
         if (pp->debug == false) {
