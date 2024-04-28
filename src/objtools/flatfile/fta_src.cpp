@@ -3348,9 +3348,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
         CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetData().SetBiosrc(*tsfbp->bio_src);
 
-        if (pp->buf)
-            MemFree(pp->buf);
-        pp->buf = nullptr;
+        pp->buf.reset();
 
         GetSeqLocation(*feat, tsfbp->location, seqids, &err, pp, "source");
 

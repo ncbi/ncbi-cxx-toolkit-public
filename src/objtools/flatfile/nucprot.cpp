@@ -2043,9 +2043,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
     Int2  i;
 
     pbp = pp->pbp;
-    if (pp->buf)
-        MemFree(pp->buf);
-    pp->buf = nullptr;
+    pp->buf.reset();
 
     TCodeBreakList code_breaks;
     GetCdRegionCB(pbp->ibp, cds, code_breaks, &dif, pp->accver);

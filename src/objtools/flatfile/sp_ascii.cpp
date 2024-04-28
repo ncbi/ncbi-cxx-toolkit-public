@@ -3502,16 +3502,9 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
             if (*p != ' ')
                 *loc++ = *p;
         *loc = '\0';
-        if (pp->buf)
-            MemFree(pp->buf);
-        string s = fbp->key;
-        s += " : ";
-        s += fbp->location_get();
-        pp->buf = StringSave(s);
+        pp->buf = fbp->key + " : " + fbp->location_get();
         GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key);
-        if (pp->buf)
-            MemFree(pp->buf);
-        pp->buf = nullptr;
+        pp->buf.reset();
     }
     if (err) {
         if (! pp->debug) {
