@@ -190,7 +190,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                         SPGetVerNum(finfo.str, entry);
                     stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
-                        entry->date = GetUpdateDate(stoken->list->next->str,
+                        entry->date = GetUpdateDate(stoken->list->next->c_str(),
                                                     pp->source);
                     }
                     FreeTokenstatblk(stoken);

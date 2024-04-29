@@ -131,10 +131,16 @@ struct GapFeats {
 using GapFeatsPtr = GapFeats*;
 
 struct TokenBlk {
-    TokenBlk(char* pch) :
-        str(pch) {}
+    TokenBlk(string_view);
+    ~TokenBlk();
+private:
     char*     str  = nullptr; /* the token string */
+public:
     TokenBlk* next = nullptr; /* points to next token */
+
+    const char* c_str() const { return str; }
+    char*       data() { return str; }
+    bool        empty() const { return str == nullptr; }
 };
 using TokenBlkPtr = TokenBlk*;
 

@@ -4540,14 +4540,14 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     }
 
     for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
-        if (tbp->str[0] == '-')
+        if (tbp->c_str()[0] == '-')
             continue;
 
         if (! prefix)
-            prefix = StringSave(tbp->str);
+            prefix = StringSave(tbp->c_str());
         else {
             i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
-            if (! StringEquN(prefix, tbp->str, i))
+            if (! StringEquN(prefix, tbp->c_str(), i))
                 break;
         }
     }

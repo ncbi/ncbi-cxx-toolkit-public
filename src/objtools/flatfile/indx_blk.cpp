@@ -242,8 +242,8 @@ static const char* GetResidue(TokenStatBlkPtr stoken)
     sptr = stoken->list->next;
     for (i = 1; i < stoken->num; i++, ptr = ptr->next, sptr = sptr->next) {
         for (b = ParFlat_RESIDUE_STR; *b; b++)
-            if (NStr::CompareNocase(*b, sptr->str) == 0)
-                return (ptr->str);
+            if (NStr::CompareNocase(*b, sptr->c_str()) == 0)
+                return ptr->c_str();
     }
 
     return nullptr;
@@ -833,18 +833,18 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 
         ptr = stoken->list->next;
         if (pp->format == Parser::EFormat::EMBL && ptr->next &&
-            ptr->next->str && StringEqu(ptr->next->str, "SV")) {
+            ! ptr->next->empty() && StringEqu(ptr->next->c_str(), "SV")) {
             for (i = 0, p = finfo.str; *p != '\0'; p++)
                 if (*p == ';' && p[1] == ' ')
                     i++;
 
             entry->embl_new_ID = true;
-            p                  = StringRChr(ptr->str, ';');
+            p                  = StringRChr(ptr->data(), ';');
             if (p && p[1] == '\0')
                 *p = '\0';
 
-            FtaInstallPrefix(PREFIX_LOCUS, ptr->str);
-            FtaInstallPrefix(PREFIX_ACCESSION, ptr->str);
+            FtaInstallPrefix(PREFIX_LOCUS, ptr->c_str());
+            FtaInstallPrefix(PREFIX_ACCESSION, ptr->c_str());
 
             if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
                 ErrPostEx(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
@@ -853,7 +853,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
                 badlocus = true;
         }
 
-        StringCpy(entry->locusname, ptr->str);
+        StringCpy(entry->locusname, ptr->c_str());
         StringCpy(entry->blocusname, entry->locusname);
 
         if (entry->embl_new_ID == false) {
@@ -863,9 +863,9 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
             if (pp->format == Parser::EFormat::SPROT) {
-                if (! ptr->next || ! ptr->next->str ||
-                    (! StringEquNI(ptr->next->str, "preliminary", 11) &&
-                     ! StringEquNI(ptr->next->str, "unreviewed", 10)))
+                if (! ptr->next || ptr->next->empty() ||
+                    (! StringEquNI(ptr->next->c_str(), "preliminary", 11) &&
+                     ! StringEquNI(ptr->next->c_str(), "unreviewed", 10)))
                     badlocus = CheckLocusSP(entry->locusname);
                 else
                     badlocus = false;
@@ -899,7 +899,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
          */
         for (i = 1, ptr = stoken->list; i < stoken->num; i++)
             ptr = ptr->next;
-        entry->date = GetUpdateDate(ptr->str, pp->source);
+        entry->date = GetUpdateDate(ptr->c_str(), pp->source);
     }
 
     if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
@@ -908,23 +908,23 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             ptr = ptr->next;
 
         if (pp->format == Parser::EFormat::EMBL) {
-            if (StringEquNI(ptr->str, "TSA", 3))
+            if (StringEquNI(ptr->c_str(), "TSA", 3))
                 entry->is_tsa = true;
-            else if (StringEquNI(ptr->str, "PAT", 3))
+            else if (StringEquNI(ptr->c_str(), "PAT", 3))
                 entry->is_pat = true;
         }
 
         ptr = ptr->next;
 
-        if (StringEquNI(ptr->str, "EST", 3))
+        if (StringEquNI(ptr->c_str(), "EST", 3))
             entry->EST = true;
-        else if (StringEquNI(ptr->str, "STS", 3))
+        else if (StringEquNI(ptr->c_str(), "STS", 3))
             entry->STS = true;
-        else if (StringEquNI(ptr->str, "GSS", 3))
+        else if (StringEquNI(ptr->c_str(), "GSS", 3))
             entry->GSS = true;
-        else if (StringEquNI(ptr->str, "HTC", 3))
+        else if (StringEquNI(ptr->c_str(), "HTC", 3))
             entry->HTC = true;
-        else if (StringEquNI(ptr->str, "PAT", 3) &&
+        else if (StringEquNI(ptr->c_str(), "PAT", 3) &&
                  pp->source == Parser::ESource::EMBL)
             entry->is_pat = true;
     }
@@ -1539,7 +1539,7 @@ static bool CheckAccession(TokenStatBlkPtr stoken,
 
     count = 0;
     for (; tbp; tbp = tbp->next) {
-        StringCpy(acnum, tbp->str);
+        StringCpy(acnum, tbp->c_str());
         if (acnum[0] == '-' && acnum[1] == '\0')
             continue;
 
@@ -2001,7 +2001,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         return false;
     }
 
-    StringCpy(acc, stoken->list->next->str); /* get first accession */
+    StringCpy(acc, stoken->list->next->c_str()); /* get first accession */
 
     if (pp->mode != Parser::EMode::Relaxed) {
         DelNoneDigitTail(acc);

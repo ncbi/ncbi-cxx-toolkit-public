@@ -166,13 +166,13 @@ static void GetSegment(const char* str, IndexblkPtr entry)
     if (stoken->num > 3) {
         ptr2          = stoken->list->next;
         ptr4          = ptr2->next->next;
-        entry->segnum = (Uint2)atoi(ptr2->str);
+        entry->segnum = (Uint2)atoi(ptr2->c_str());
 
-        if (! DelSegnum(entry, ptr2->str, StringLen(ptr4->str))) {
+        if (! DelSegnum(entry, ptr2->c_str(), StringLen(ptr4->c_str()))) {
             ErrPostEx(SEV_ERROR, ERR_SEGMENT_BadLocusName, "Bad locus name %s in %d", entry->blocusname, entry->linenum);
         }
 
-        entry->segtotal = (Uint2)atoi(ptr4->str);
+        entry->segtotal = (Uint2)atoi(ptr4->c_str());
     } else {
         ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg, "Incomplete Segment information at linenum %d", entry->linenum);
     }
