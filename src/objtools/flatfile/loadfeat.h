@@ -66,7 +66,7 @@ int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, P
 
 void GetFlatBiomol(int& biomol, int tech, char* molstr, ParserPtr pp, const DataBlk& entry, const objects::COrg_ref* org_ref);
 
-bool GetSeqLocation(objects::CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name);
+bool GetSeqLocation(objects::CSeq_feat& feat, const char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name);
 
 END_NCBI_SCOPE
 

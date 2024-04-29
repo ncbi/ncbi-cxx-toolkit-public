@@ -2125,10 +2125,9 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
 }
 
 /**********************************************************/
-static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
+static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     Int4 i;
-    Char ch;
 
     if (! ibp)
         return;
@@ -2146,35 +2145,21 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
     if (! id.IsGenbank() && ! id.IsEmbl() && ! id.IsPir() &&
         ! id.IsSwissprot() && ! id.IsOther() && ! id.IsDdbj() && ! id.IsPrf() &&
         ! id.IsTpg() && ! id.IsTpe() && ! id.IsTpd()) {
-        if (StringLen(location) > 50) {
-            ch           = location[50];
-            location[50] = '\0';
-        } else
-            ch = '\0';
 
         if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in CONTIG/CO line at location: \"%s\". Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
-        if (ch != '\0')
-            location[50] = ch;
         ibp->drop = true;
         return;
     }
 
     const CTextseq_id* text_id = id.GetTextseq_Id();
     if (! text_id || ! text_id->IsSetAccession()) {
-        if (StringLen(location) > 50) {
-            ch           = location[50];
-            location[50] = '\0';
-        } else
-            ch = '\0';
         if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in CONTIG/CO line at location: \"%s\". Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
-        if (ch != '\0')
-            location[50] = ch;
         ibp->drop = true;
         return;
     }
@@ -2209,17 +2194,10 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(accession);
         id.SetPatent(*pat_id);
     } else {
-        if (StringLen(location) > 50) {
-            ch           = location[50];
-            location[50] = '\0';
-        } else
-            ch = '\0';
         if (! name)
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in CONTIG/CO line at location: \"%s\". Entry skipped.", location);
         else
             ErrPostEx(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in feature \"%s\" at location \"%s\". Entry skipped.", name, location);
-        if (ch != '\0')
-            location[50] = ch;
         ibp->drop = true;
         return;
     }
@@ -2280,7 +2258,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, char* lo
 }
 
 /**********************************************************/
-static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
+static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, const char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     for (auto& loc : locs) {
         if (loc->IsEmpty()) {
@@ -2318,13 +2296,12 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, char* loca
 }
 
 /**********************************************************/
-Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const char* name, bool iscon)
+Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, const char* location, const char* name, bool iscon)
 {
     SeqLocIds   sli;
     const Char* p = nullptr;
     ErrSev      sev;
     IndexblkPtr ibp;
-    Char        ch;
     Int4        tpa;
     Int4        non_tpa;
     Int4        i = 0;
@@ -2341,13 +2318,8 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
         sli.wgsscaf && ! StringEquN(sli.wgscont, sli.wgsscaf, 4))
         sli.wgsacc = sli.wgsscaf;
 
-    ch = '\0';
     if ((tpa > 0 && non_tpa > 0) || tpa > 1 || non_tpa > 1 ||
         (iscon && sli.wgscont && sli.wgsscaf)) {
-        if (StringLen(location) > 50) {
-            ch           = location[50];
-            location[50] = '\0';
-        }
     }
 
     if (tpa > 0 && non_tpa > 0) {
@@ -2418,9 +2390,6 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, char* location, const c
             }
         }
     }
-
-    if (ch != '\0')
-        location[50] = ch;
 
     if (sli.wgscont)
         sli.wgscont = nullptr;
