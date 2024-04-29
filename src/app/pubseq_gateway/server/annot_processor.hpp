@@ -35,8 +35,6 @@
 #include "cass_blob_base.hpp"
 #include "resolve_base.hpp"
 
-#include <objtools/pubseq_gateway/impl/cassandra/nannot/filter.hpp>
-
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
@@ -122,13 +120,6 @@ private:
     SPSGS_AnnotRequest *        m_AnnotRequest;
 
     bool                        m_BlobStage;
-
-    // @temp ID-7327 NAnnot storage schema is being changed. Data is in migration progress. During that time
-    // there expected to exist duplicates between NAnnot keyspaces. Keyspace with larger sat_id has priority in that case
-    // First migration NAnnotG2 => NAnnotG3 will cause duplicates between NAnnotG3 and NAnnotG2
-    // Later migration NANnotG => NAnnotG2 will cause duplicates between NAnnotG2 and NAnnotG
-    // This component should be removed when migration is finished
-    unique_ptr<CNAnnotFilter>   m_AnnotFilter;
 
     // The list of names which have been received and (possibly) sent.
     // It is used to calculate not found and error/timeout annotations
