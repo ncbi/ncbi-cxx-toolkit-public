@@ -1,0 +1,13 @@
+# $Id$
+
+NCBI_begin_app(test_load_lock)
+  NCBI_sources(test_load_lock)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank)
+
+  NCBI_begin_test(test_load_lock)
+    NCBI_set_test_command(test_load_lock)
+  NCBI_end_test()
+
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
