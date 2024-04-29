@@ -94,7 +94,7 @@ void CHugeAsnReader::Open(CHugeFile* file, ILineErrorListener * pMessageListener
 {
     x_ResetIndex();
 
-    m_file = file;
+    m_file.Reset(file);
     mp_MessageListener = pMessageListener;
 }
 

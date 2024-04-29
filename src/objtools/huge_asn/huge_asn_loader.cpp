@@ -83,10 +83,12 @@ CHugeAsnDataLoader::CHugeAsnDataLoader(const string& name, CHugeAsnReader* reade
 
 CHugeAsnDataLoader::~CHugeAsnDataLoader()
 {
+    /*
     if (m_owning)
     {
         delete m_reader;
     }
+    */
 }
 
 #ifdef _DEBUG

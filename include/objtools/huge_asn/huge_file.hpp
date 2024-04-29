@@ -52,7 +52,7 @@ class ILineErrorListener;
 
 BEGIN_SCOPE(edit)
 
-class NCBI_XHUGEASN_EXPORT CHugeFile
+class NCBI_XHUGEASN_EXPORT CHugeFile : public CObject
 {
 public:
     CHugeFile();

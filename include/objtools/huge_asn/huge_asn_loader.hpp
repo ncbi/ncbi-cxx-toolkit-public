@@ -76,8 +76,10 @@ public:
         return true;
     }
 
+    CHugeAsnReader& GetReader() { return *m_reader; }
+
 private:
-    CHugeAsnReader* m_reader = nullptr;
+    CRef<CHugeAsnReader> m_reader;
     bool m_owning = false;
 };
 

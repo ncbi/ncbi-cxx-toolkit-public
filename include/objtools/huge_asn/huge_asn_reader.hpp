@@ -58,7 +58,9 @@ class CSeqdesc;
 BEGIN_SCOPE(edit)
 
 
-class NCBI_XHUGEASN_EXPORT CHugeAsnReader: public IHugeAsnSource
+class NCBI_XHUGEASN_EXPORT CHugeAsnReader: 
+    public IHugeAsnSource,
+    public CObject
 {
 public:
     using TFileSize = std::streamoff;
@@ -178,7 +180,7 @@ private:
 
     ILineErrorListener *    mp_MessageListener = nullptr;
     TStreamPos              m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
-    CHugeFile*              m_file             = nullptr;
+    CRef<CHugeFile>         m_file;
     std::list<t_more_hooks> m_more_hooks;
 
 // global lists, readonly after indexing

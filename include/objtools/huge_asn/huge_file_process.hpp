@@ -87,8 +87,8 @@ public:
     static bool IsSupported(TTypeInfo info);
 
 private:
-    unique_ptr<CHugeFile> m_pHugeFile;
-    unique_ptr<CHugeAsnReader> m_pReader;
+    CRef<CHugeFile> m_pHugeFile;
+    CRef<CHugeAsnReader> m_pReader;
 };
 
 END_SCOPE(edit)
