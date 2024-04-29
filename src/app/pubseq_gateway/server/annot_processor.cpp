@@ -44,7 +44,6 @@ USING_NCBI_SCOPE;
 using namespace std::placeholders;
 
 static const string   kAnnotProcessorName = "Cassandra-getna";
-static const bool     kEnableAnnotFilter = false;
 
 
 CPSGS_AnnotProcessor::CPSGS_AnnotProcessor() :
@@ -240,9 +239,6 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
     auto *                          app = CPubseqGatewayApp::GetInstance();
     vector<SSatInfoEntry>           bioseq_na_keyspaces = app->GetBioseqNAKeyspaces();
 
-    if (kEnableAnnotFilter) {
-        m_AnnotFilter = make_unique<CNAnnotFilter>();
-    }
     for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
         unique_ptr<CCassNamedAnnotFetch>   details;
         details.reset(new CCassNamedAnnotFetch(*m_AnnotRequest));
@@ -405,16 +401,6 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
                 }
             }
 
-            if (m_AnnotFilter) {
-                m_AnnotFilter->Consume(
-                    [this]
-                    (int32_t sat, CNAnnotRecord&& annot_record)
-                    {
-                        x_SendAnnotDataToClient(move(annot_record), sat);
-                    }
-                );
-                m_AnnotFilter = nullptr;
-            }
             CPSGS_CassProcessorBase::SignalFinishProcessing();
             return false;
         }
@@ -427,11 +413,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     // Memorize a good annotation
     m_Success.insert(annot_record.GetAnnotName());
 
-    if (m_AnnotFilter) {
-        m_AnnotFilter->Store(sat, move(annot_record));
-    } else {
-        x_SendAnnotDataToClient(move(annot_record), sat);
-    }
+    x_SendAnnotDataToClient(move(annot_record), sat);
     x_Peek(false);
     return true;
 }
