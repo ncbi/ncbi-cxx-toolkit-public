@@ -90,10 +90,12 @@ CHugeFileProcess::CHugeFileProcess():
 {}
 
 
+
 CHugeFileProcess::CHugeFileProcess(CHugeAsnReader* pReader):
     m_pHugeFile { new CHugeFile },
     m_pReader { pReader }
 {}
+
 
 CHugeFileProcess::CHugeFileProcess(const string& file_name, const set<TTypeInfo>* types)
 : CHugeFileProcess()
@@ -124,7 +126,7 @@ void CHugeFileProcess::OpenFile(const string& file_name, const set<TTypeInfo>* t
 
 void CHugeFileProcess::OpenReader()
 {
-    m_pReader->Open(m_pHugeFile.get(), nullptr);
+    m_pReader->Open(m_pHugeFile.GetPointer(), nullptr);
 }
 
 CHugeFileProcess::~CHugeFileProcess()
@@ -178,7 +180,7 @@ bool CHugeFileProcess::Read(THandlerIds handler)
 {
     while (m_pReader->GetNextBlob()) {
         m_pReader->FlattenGenbankSet();
-        bool processed = handler(m_pReader.get(), m_pReader->GetTopIds());
+        bool processed = handler(m_pReader.GetPointer(), m_pReader->GetTopIds());
         if (!processed)
             return false;
     }
@@ -270,6 +272,7 @@ CSeq_entry_Handle CHugeFileProcess::GetTopLevelEntry(CBioseq_Handle beh)
 
     return parent;
 }
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

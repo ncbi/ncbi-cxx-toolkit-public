@@ -916,13 +916,13 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename,
     if (filename.empty())
         mpIstr = OpenFile(asninfo, filename);
     else {
-        auto huge_reader = std::make_unique<edit::CHugeAsnReader>();
+        auto huge_reader = Ref(new edit::CHugeAsnReader());
         huge_reader->ExtendReadHooks([this](CObjectIStream& istream)
         {
             CHugeFileValidator::RegisterReaderHooks(istream, m_GlobalInfo);
         });
 
-        mpHugeFileProcess.reset(new edit::CHugeFileProcess(huge_reader.release()));
+        mpHugeFileProcess.reset(new edit::CHugeFileProcess(huge_reader.GetPointer())); 
         try {
             mpHugeFileProcess->Open(filename, &s_known_types);
             asninfo = mpHugeFileProcess->GetFile().m_content;
