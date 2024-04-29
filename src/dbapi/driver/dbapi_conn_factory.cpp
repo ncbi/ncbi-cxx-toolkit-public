@@ -729,7 +729,10 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
                                            const string& server)
 {
     CRuntimeData& rt_data = GetRuntimeData(validator_name);
-    TSvrRef svr(new CDBServer(server, 0, 0, numeric_limits<unsigned int>::max()));
+    TSvrRef svr;
+    if ( !server.empty() ) {
+        svr.Reset(new CDBServer(server, 0, 0, kMax_UInt));
+    }
     auto& service_info = rt_data.GetServiceInfo(service_name);
     IDBServiceInfo::TGuard guard(service_info);
     service_info.SetDispatchedServer(svr);
