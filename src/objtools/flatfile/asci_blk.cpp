@@ -1274,16 +1274,16 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
     TokenBlkPtr tbp;
     char*       p;
 
-    if (! secs || ! secs->next || ! secs->str ||
-        ! secs->next->str || fta_if_wgs_acc(secs->str) != 0 ||
-        ! StringEqu(secs->next->str, "-"))
+    if (! secs || ! secs->next || secs->empty() ||
+        secs->next->empty() || fta_if_wgs_acc(secs->c_str()) != 0 ||
+        ! StringEqu(secs->next->c_str(), "-"))
         return;
 
-    tbp        = new TokenBlk(StringSave(secs->str));
+    tbp        = new TokenBlk(secs->c_str());
     tbp->next  = secs->next;
     secs->next = tbp;
 
-    for (p = tbp->str; *(p + 1) != '\0';)
+    for (p = tbp->data(); *(p + 1) != '\0';)
         p++;
     *p = '1';
 }
@@ -1362,14 +1362,14 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
 
     unusual_wgs = false;
     for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
-        p = tbp->str;
+        p = tbp->data();
         if (p[0] == '-' && p[1] == '\0') {
             tbp = tbp->next;
             if (! tbp)
                 break;
             if (! accessions.empty()) {
                 accessions.back() += '-';
-                accessions.back() += tbp->str;
+                accessions.back() += tbp->c_str();
             }
             continue;
         }
