@@ -368,13 +368,13 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 
     for (bad = false; tbp; tbp = tbpnext) {
         tbpnext = tbp->next;
-        if (! tbp->str)
+        if (tbp->empty())
             continue;
-        dash = StringChr(tbp->str, '-');
+        dash = StringChr(tbp->data(), '-');
         if (! dash)
             continue;
         *dash = '\0';
-        first = tbp->str;
+        first = tbp->c_str();
         last  = dash + 1;
         if (StringLen(first) != StringLen(last) || *first < 'A' ||
             *first > 'Z' || *last < 'A' || *last > 'Z') {
@@ -400,7 +400,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         size_t preflen = p - first;
         if (preflen != (size_t)(q - last) || ! StringEquN(first, last, preflen)) {
             *dash = '-';
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", tbp->str);
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", tbp->c_str());
             break;
         }
 
@@ -428,16 +428,14 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 
         if (num1 > num2) {
             *dash = '-';
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", tbp->str);
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", tbp->c_str());
             break;
         }
 
-        auto* p = new TokenBlk(StringSave("-"));
-        tbp->next = p;
-        tbp       = p;
-        p = new TokenBlk(StringSave(last));
-        tbp->next = p;
-        tbp       = p;
+        tbp->next = new TokenBlk("-");
+        tbp       = tbp->next;
+        tbp->next = new TokenBlk(last);
+        tbp       = tbp->next;
         tsbp->num += 2;
 
         tbp->next = tbpnext;
@@ -445,15 +443,20 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
     if (! tbp)
         return true;
     if (bad) {
-        ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"%s\".", tbp->str);
+        ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"%s\".", tbp->c_str());
     }
     return false;
 }
 
 /**********************************************************/
+TokenBlk::TokenBlk(string_view s) :
+    str(StringSave(s))
+{
+}
+
 static void AppendTokenVal(TokenBlkPtr& tbp, string_view str)
 {
-    TokenBlkPtr newnode = new TokenBlk(StringSave(str));
+    TokenBlkPtr newnode = new TokenBlk(str);
     if (tbp) {
         TokenBlkPtr ltbp = tbp;
         while (ltbp->next)
@@ -505,6 +508,11 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
 }
 
 /**********************************************************/
+TokenBlk::~TokenBlk()
+{
+    MemFree(str);
+}
+
 void FreeTokenblk(TokenBlkPtr tbp)
 {
     TokenBlkPtr temp;
@@ -512,7 +520,6 @@ void FreeTokenblk(TokenBlkPtr tbp)
     while (tbp) {
         temp = tbp;
         tbp  = tbp->next;
-        MemFree(temp->str);
         delete temp;
     }
 }
