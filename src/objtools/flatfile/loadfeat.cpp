@@ -667,7 +667,7 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
             // entry is not present in this file use remote fetch function
             // use_indx = pp->curindx;
             //
-            size_t len = (! pp->ffdb) ? -1 : CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver);
+            size_t len = pp->ffdb ? CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver) : -1;
             if (len != static_cast<size_t>(-1))
                 return static_cast<Int4>(len);
 
@@ -907,7 +907,7 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
         feat.ResetDbxref();
 }
 
-bool GetSeqLocation(CSeq_feat& feat, char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name)
+bool GetSeqLocation(CSeq_feat& feat, const char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name)
 {
     bool locmap = true;
     int  num_errs;
