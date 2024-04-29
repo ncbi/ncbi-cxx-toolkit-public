@@ -134,18 +134,21 @@ void CProjectItem::SetModifiedDate(const CDate& date)
 
 void CProjectItem::SetObject(CSerialObject& object)
 {
-    if (object.GetThisTypeInfo() == CSeq_id::GetTypeInfo()) {
+    const auto type_info = object.GetThisTypeInfo();
+    if (type_info == CSeq_id::GetTypeInfo()) {
         SetItem().SetId(dynamic_cast<CSeq_id&>(object));
-    } else if (object.GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
+    } else if (type_info == CSeq_entry::GetTypeInfo()) {
         SetItem().SetEntry(dynamic_cast<CSeq_entry&>(object));
-    } else if (object.GetThisTypeInfo() == CSeq_annot::GetTypeInfo()) {
+    } else if (type_info == CSeq_annot::GetTypeInfo()) {
         SetItem().SetAnnot(dynamic_cast<CSeq_annot&>(object));
-    } else if (object.GetThisTypeInfo() == CSeq_submit::GetTypeInfo()) {
+    } else if (type_info == CSeq_submit::GetTypeInfo()) {
         SetItem().SetSubmit(dynamic_cast<CSeq_submit&>(object));
-    } else if (object.GetThisTypeInfo() == CSeq_align::GetTypeInfo()) {
+    } else if (type_info == CSeq_align::GetTypeInfo()) {
         SetItem().SetSeq_align(dynamic_cast<CSeq_align&>(object));
-    } else if (object.GetThisTypeInfo() == CSeq_align_set::GetTypeInfo()) {
+    } else if (type_info == CSeq_align_set::GetTypeInfo()) {
         SetItem().SetSeq_align_set(dynamic_cast<CSeq_align_set&>(object));
+    } else if (type_info == CHugeFileProjectItem::GetTypeInfo()) {
+        SetItem().SetHuge_file(dynamic_cast<CHugeFileProjectItem&>(object));
     } else {
         SetItem().SetOther().Set(object);
     }
@@ -173,6 +176,9 @@ const CSerialObject* CProjectItem::GetObject() const
 
         case TItem::e_Seq_align_set:
             return &GetItem().GetSeq_align_set();
+
+        case TItem::e_Huge_file:
+            return &GetItem().GetHuge_file();
 
         //TODO ePlugin, ePmid and eTaxid are not supported
         case TItem::e_Other:
