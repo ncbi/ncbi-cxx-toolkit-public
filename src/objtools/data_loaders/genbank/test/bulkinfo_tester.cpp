@@ -935,7 +935,7 @@ public:
 class CDataTesterCDD : public IBulkTester
 {
 public:
-    typedef int TDataValue;
+    typedef size_t TDataValue;
     typedef vector<TDataValue> TDataSet;
     TDataSet data, data_verify;
 
@@ -1023,7 +1023,7 @@ public:
         }
     bool Valid(size_t i) const
         {
-            return data[i] >= 0;
+            return data[i] != TDataValue(-1);
         }
     bool Correct(size_t i) const
         {
