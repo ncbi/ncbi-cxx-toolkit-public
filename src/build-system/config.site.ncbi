@@ -176,7 +176,7 @@ esac
 
 : ${BOOST_PATH=$NCBI/boost-1.76.0-ncbi1}
 
-: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.17.1}
+: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.15.1}
 
 : ${CEREAL_PATH=$NCBI/cereal-1.3.0}
 
