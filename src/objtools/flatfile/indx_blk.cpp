@@ -1192,13 +1192,11 @@ static int s_RefineWGSType(const CTempString& accession, int initialType)
  */
 int fta_if_wgs_acc(const CTempString& accession)
 {
-
-    if (accession.empty() ||
-        NStr::IsBlank(accession)) {
+    if (accession.empty() || NStr::IsBlank(accession)) {
         return -1;
     }
 
-    const auto length = accession.length();
+    auto length = accession.length();
 
     if (length == 8 &&
         k_WgsScaffoldPrefix.find(accession.substr(0, 2)) != k_WgsScaffoldPrefix.end() &&
@@ -1216,9 +1214,9 @@ int fta_if_wgs_acc(const CTempString& accession)
     const char* p = accession.data();
     if (StringEquN(p, "NZ_", 3)) {
         p += 3;
+        length -= 3;
     }
-    size_t j = StringLen(p);
-    if (j < 12 || j > 17) {
+    if (length < 12 || length > 17) {
         return -1;
     }
 
