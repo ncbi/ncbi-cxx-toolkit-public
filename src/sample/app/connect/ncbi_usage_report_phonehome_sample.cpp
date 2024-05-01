@@ -108,7 +108,7 @@ void CSamplePhoneHomePolicy::Apply(CNcbiApplicationAPI* app)
     {{
         const CArgs& args = app->GetArgs();
 
-        // Check "-disable-tracking" to enable/disable tracking.
+        // Check "-tracking" to enable/disable tracking.
         // If not specifies, try to restore last saved state.
         if ( args["tracking"] ) {
             SetEnabled( args["tracking"].AsBoolean() );
@@ -258,6 +258,9 @@ void CSamplePhoneHomePolicy::Finish()
 {
     // Wait until all requests are reported and gracefully terminate CUsageReport API.
     NCBI_REPORT_USAGE_WAIT;
+    //NCBI_REPORT_USAGE_WAIT_ALWAYS;
+    //NCBI_REPORT_USAGE_WAIT_IF_SUCCESS;
+    //NCBI_REPORT_USAGE_WAIT_TIMEOUT(CTimeout(sec,msec));
     NCBI_REPORT_USAGE_FINISH;
 }
 

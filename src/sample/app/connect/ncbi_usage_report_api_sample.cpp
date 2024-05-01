@@ -99,6 +99,10 @@ int CUsageReportSampleApp::Run()
     // Global reporter: 
     // Wait until all requests are reported. Optional.
     NCBI_REPORT_USAGE_WAIT;
+    //NCBI_REPORT_USAGE_WAIT_ALWAYS;
+    //NCBI_REPORT_USAGE_WAIT_IF_SUCCESS;
+    //NCBI_REPORT_USAGE_WAIT_TIMEOUT(CTimeout(5,0));
+
     // Gracefully terminate reporting API. Optional.
     NCBI_REPORT_USAGE_FINISH;
 
@@ -132,9 +136,17 @@ void CUsageReportSampleApp::ConfigureAPI()
                                           CUsageReportAPI::fAppVersion |
                                           CUsageReportAPI::fHost);
 
+
     // Set non-standard global URL for reporting
     // Think twice why you need to change default URL.
+    _ASSERT( CUsageReportAPI::CheckConnection() );
     CUsageReportAPI::SetURL("http://dummy/cgi");
+    _ASSERT( !CUsageReportAPI::CheckConnection() );
+
+    // Change timeout and/or number of retries if necessary (optional)
+    // We will use 1 sec timeout in this sample, and no retries on error
+    CUsageReportAPI::SetTimeout(CTimeout(1,0));
+    CUsageReportAPI::SetRetries(0);
 
     // Change queue size for storing jobs reported in background, if needed.
     CUsageReportAPI::SetMaxQueueSize(20);
@@ -171,7 +183,10 @@ void CUsageReportSampleApp::Pattern_1_SimpleMacro()
     // Next 2 call are optional. Add them to be sure that all was sent befor an application exit.
 
     // Wait until all requests are reported. 
-    NCBI_REPORT_USAGE_WAIT;
+    //NCBI_REPORT_USAGE_WAIT;
+    //NCBI_REPORT_USAGE_WAIT_ALWAYS;
+    //NCBI_REPORT_USAGE_WAIT_IF_SUCCESS;
+
     // Gracefully terminate global reporting API.
     // Commented because we will use global reporter again below.
     //NCBI_REPORT_USAGE_FINISH;
@@ -296,7 +311,10 @@ void CUsageReportSampleApp::Pattern_3_StatusControl()
         reporter.Send(job);
     }
     // Waiting and finishing -- not yet, see Run()
-    //reporter.Wait();
+    // Usages:
+    //   reporter.Wait();
+    //   reporter.Wait(CUsageReport::eSkipIfNoConnection);
+    //   reporter.Wait(CUsageReport::eAlways, CTimeout(5,0));
     //reporter.Finish();
 }
 
