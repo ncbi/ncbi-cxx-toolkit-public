@@ -3758,6 +3758,12 @@ bool CTimeout::operator<= (const CTimeout& t) const
 //
 //=============================================================================
 
+CDeadline::CDeadline(EType type)
+    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(type == eInfinite)
+{
+}
+
+
 CDeadline::CDeadline(unsigned int seconds, unsigned int nanoseconds)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
@@ -3785,28 +3791,6 @@ CDeadline::CDeadline(const CTimeout& timeout)
     else if (timeout.IsDefault()) {
         NCBI_THROW(CTimeException, eArgument, "Cannot convert from default CTimeout");
     }
-}
-
-
-CDeadline::CDeadline(double sec)
-    : m_Infinite(false)
-{
-    if (sec < 0) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "Cannot set negative value " + NStr::DoubleToString(sec));
-    }
-    if (sec > numeric_limits<time_t>::max()) {
-        NCBI_THROW(CTimeException, eArgument, 
-                   "Number of seconds " + NStr::DoubleToString(sec) + " too big");
-    }
-    m_Seconds     = static_cast<time_t>(sec);
-    m_Nanoseconds = (unsigned int)((sec - m_Seconds) * kNanoSecondsPerSecond);
-}
-
-
-CDeadline::CDeadline(EType type)
-    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(type == eInfinite)
-{
 }
 
 

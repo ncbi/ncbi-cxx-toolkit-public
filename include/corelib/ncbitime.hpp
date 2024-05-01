@@ -1843,14 +1843,10 @@ public:
     ///   Number of seconds to add to the current time
     /// @param nanoseconds
     ///   Number of nanoseconds to add to the current time
-    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds);
+    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds = 0);
 
     /// Initialize deadline by adding relative timeout to the current time.
     CDeadline(const CTimeout& timeout);
-
-    /// Initialize deadline from number of seconds (fractional value) 
-    /// by adding relative to the current time.
-    explicit CDeadline(double sec);
 
     /// Check if the deadline is infinite.
     bool IsInfinite(void) const { return m_Infinite; }
