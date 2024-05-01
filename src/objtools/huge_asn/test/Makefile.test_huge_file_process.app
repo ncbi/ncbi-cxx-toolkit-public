@@ -12,5 +12,8 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 REQUIRES = Boost.Test.Included
 
+CHECK_CMD =
+CHECK_COPY = huge_asn_test_files
+
 WATCHERS = gotvyans foleyjp
 
