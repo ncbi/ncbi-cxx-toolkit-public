@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(IdentifyWGSAccessions)
     BOOST_CHECK_EQUAL(fta_if_wgs_acc(string_view("GOOD01000000garbage", 12)), 4);
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("NZ_GOOD01000000"), 4);
     BOOST_CHECK_EQUAL(fta_if_wgs_acc(string_view("NZ_GOOD01000000garbage", 15)), 4);
-    BOOST_CHECK_EQUAL(fta_if_wgs_acc("ZZ_GOOD01000000"), -1);
+    BOOST_CHECK_EQUAL(fta_if_wgs_acc("NC_GOOD01000000"), -1);
 
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("BACF01000000"), 0); // WGS project
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("BBXK01007945"), 1); // WGS contig

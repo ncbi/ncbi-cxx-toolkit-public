@@ -2107,7 +2107,7 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
             const CTextseq_id* text_id = id->GetTextseq_Id();
             if (! text_id || ! text_id->IsSetAccession() ||
                 text_id->GetAccession().empty() ||
-                fta_if_wgs_acc(text_id->GetAccession().c_str()) != 1)
+                fta_if_wgs_acc(text_id->GetAccession()) != 1)
                 break;
             good = true;
         }

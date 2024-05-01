@@ -1303,7 +1303,7 @@ static void fta_fix_secondaries(list<string>& secondaries)
 
     if (first.empty()||
         second.empty() ||
-        fta_if_wgs_acc(second.c_str()) != 0 ||
+        fta_if_wgs_acc(second) != 0 ||
         second != "-") {
         return;
     }
