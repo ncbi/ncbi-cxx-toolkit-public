@@ -76,7 +76,7 @@ void throw_exception( std::exception const & e ) {
 
 BOOST_AUTO_TEST_CASE(Test_HugeFileProcess)
 {
-    string filename = "./input_files/rw-1974.asn";
+    string filename = "./huge_asn_test_files/rw-1974.asn";
     CRef<CHugeAsnReader> pReader;
     {
         CHugeFileProcess process;
