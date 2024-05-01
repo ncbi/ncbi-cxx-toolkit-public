@@ -36,6 +36,7 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/error_codes.hpp>
 #include <stdlib.h>
+#include <limits>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <windows.h>
@@ -3784,6 +3785,22 @@ CDeadline::CDeadline(const CTimeout& timeout)
     else if (timeout.IsDefault()) {
         NCBI_THROW(CTimeException, eArgument, "Cannot convert from default CTimeout");
     }
+}
+
+
+CDeadline::CDeadline(double sec)
+    : m_Infinite(false)
+{
+    if (sec < 0) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "Cannot set negative value " + NStr::DoubleToString(sec));
+    }
+    if (sec > numeric_limits<time_t>::max()) {
+        NCBI_THROW(CTimeException, eArgument, 
+                   "Number of seconds " + NStr::DoubleToString(sec) + " too big");
+    }
+    m_Seconds     = static_cast<time_t>(sec);
+    m_Nanoseconds = (unsigned int)((sec - m_Seconds) * kNanoSecondsPerSecond);
 }
 
 
