@@ -49,10 +49,19 @@ BEGIN_NCBI_SCOPE
 const char* kDefault_URL = "https://www.ncbi.nlm.nih.gov/stat";
 
 // Usage logging is disabled by default.
-const bool  kDefault_IsEnabled = false;
+const bool kDefault_IsEnabled = false;
 
 // Maximum number of threads for asynchronous reporting.
 const unsigned kDefault_MaxQueueSize = 100;
+
+// Default connection timeout (negative == use Connect API settings)
+const double kDefault_ConnTimeout = -1;
+
+// Default connection max retry count (negative == use Connect API settings)
+const int kDefault_ConnMaxTry = -1;
+
+// Default Wait() timeout (negative == infinite timeout)
+const double kDefault_WaitTimeout = -1;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -74,6 +83,15 @@ NCBI_PARAM_DEF_EX(string,   USAGE_REPORT, AppVersion, "", eParam_NoThread, NCBI_
 NCBI_PARAM_DECL(unsigned,   USAGE_REPORT, MaxQueueSize);
 NCBI_PARAM_DEF_EX(unsigned, USAGE_REPORT, MaxQueueSize, kDefault_MaxQueueSize, eParam_NoThread, NCBI_USAGE_REPORT_MAXQUEUESIZE);
 
+NCBI_PARAM_DECL(double,     USAGE_REPORT, ConnTimeout);
+NCBI_PARAM_DEF_EX(double,   USAGE_REPORT, ConnTimeout, kDefault_ConnTimeout, eParam_NoThread, NCBI_USAGE_REPORT_CONN_TIMEOUT);
+
+NCBI_PARAM_DECL(int,        USAGE_REPORT, ConnMaxTry);
+NCBI_PARAM_DEF_EX(int,      USAGE_REPORT, ConnMaxTry, kDefault_ConnMaxTry, eParam_NoThread, NCBI_USAGE_REPORT_CONN_MAX_TRY);
+
+NCBI_PARAM_DECL(double,     USAGE_REPORT, WaitTimeout);
+NCBI_PARAM_DEF_EX(double,   USAGE_REPORT, WaitTimeout, kDefault_WaitTimeout, eParam_NoThread, NCBI_USAGE_REPORT_WAIT_TIMEOUT);
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -81,8 +99,14 @@ NCBI_PARAM_DEF_EX(unsigned, USAGE_REPORT, MaxQueueSize, kDefault_MaxQueueSize, e
 /// CUsageReportAPI::
 ///
 
-// Global default parameters to report
+// Globals 
+
+// Default parameters to report
 static atomic<CUsageReport::TWhat> gs_DefaultParams(CUsageReport::fDefault);
+// Timeout and max tries for connection
+static atomic<CTimeout*>    gs_Timeout;
+static atomic<unsigned int> gs_MaxTry(0);
+
 
 void CUsageReportAPI::SetDefaultParameters(TWhat what)
 {
@@ -136,29 +160,14 @@ void CUsageReportAPI::SetURL(const string& url)
     NCBI_PARAM_TYPE(USAGE_REPORT, URL)::SetDefault(url);
 }
 
-void CUsageReportAPI::SetAppName(const string& name)
-{
-    NCBI_PARAM_TYPE(USAGE_REPORT, AppName)::SetDefault(name);
-}
-
-void CUsageReportAPI::SetAppVersion(const string& version)
-{
-    NCBI_PARAM_TYPE(USAGE_REPORT, AppVersion)::SetDefault(version);
-}
-
-void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
-{
-    SetAppVersion(version.Print());
-}
-
-void CUsageReportAPI::SetMaxQueueSize(unsigned int n)
-{
-    NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::SetDefault(n ? n : kDefault_MaxQueueSize);
-}
-
 string CUsageReportAPI::GetURL(void)
 {
     return NCBI_PARAM_TYPE(USAGE_REPORT, URL)::GetDefault();
+}
+
+void CUsageReportAPI::SetAppName(const string& name)
+{
+    NCBI_PARAM_TYPE(USAGE_REPORT, AppName)::SetDefault(name);
 }
 
 string CUsageReportAPI::GetAppName(void)
@@ -187,10 +196,84 @@ string CUsageReportAPI::GetAppVersion(void)
     return version;
 }
 
+void CUsageReportAPI::SetAppVersion(const string& version)
+{
+    NCBI_PARAM_TYPE(USAGE_REPORT, AppVersion)::SetDefault(version);
+}
+
+void CUsageReportAPI::SetAppVersion(const CVersionInfo& version)
+{
+    SetAppVersion(version.Print());
+}
+
 unsigned CUsageReportAPI::GetMaxQueueSize(void)
 {
     return NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::GetDefault();
 }
+
+void CUsageReportAPI::SetMaxQueueSize(unsigned int n)
+{
+    NCBI_PARAM_TYPE(USAGE_REPORT, MaxQueueSize)::SetDefault(n ? n : kDefault_MaxQueueSize);
+}
+
+CTimeout CUsageReportAPI::GetTimeout()
+{
+    double v = NCBI_PARAM_TYPE(USAGE_REPORT, ConnTimeout)::GetDefault();
+    if (v < 0) {
+        return CTimeout(CTimeout::eDefault);
+    }
+    return CTimeout(v);
+}
+
+void CUsageReportAPI::SetTimeout(const CTimeout& timeout)
+{
+    double v;
+    if (timeout.IsFinite()) {
+        v = timeout.GetAsDouble();
+    } 
+    else if (timeout.IsDefault()) {
+        v = kDefault_ConnTimeout;
+    } 
+    else if (timeout.IsZero()) {
+        v = 0;
+    }
+    else {
+        NCBI_THROW(CCoreException, eInvalidArg, "Only default or finite timeouts are supported");
+    }
+    NCBI_PARAM_TYPE(USAGE_REPORT, ConnTimeout)::SetDefault(v);
+}
+
+int CUsageReportAPI::GetRetries()
+{
+    return NCBI_PARAM_TYPE(USAGE_REPORT, ConnMaxTry)::GetDefault();
+}
+
+void CUsageReportAPI::SetRetries(int retries)
+{
+    NCBI_PARAM_TYPE(USAGE_REPORT, ConnMaxTry)::SetDefault(retries);
+}
+
+bool s_CheckConnection(const string& url)
+{
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
+    // Silent mode -- discard all diagnostic messages from CHttpSession during this call.
+    // Affects current thread/function only.
+    CDiagCollectGuard diag_guard;
+    CTimeout timeout = CUsageReportAPI::GetTimeout();
+    int tries = CUsageReportAPI::GetRetries();
+    CHttpSession session;
+    CHttpResponse response = session.Get(url, timeout, tries < 0 ? null : static_cast<unsigned short>(tries));
+    return response.GetStatusCode() == 200;
+#else
+    return false;
+#endif
+}
+
+bool CUsageReportAPI::CheckConnection()
+{
+    return s_CheckConnection(GetURL());
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -330,7 +413,7 @@ static string s_GetHost(void)
 /// CUsageReport::
 ///
 
-// Usage MT-protection for CUsageReport
+// MT-protection guard for CUsageReport
 #define MT_GUARD std::lock_guard<std::mutex> mt_usage_guard(m_Usage_Mutex)
 
 
@@ -377,9 +460,14 @@ CUsageReport::CUsageReport(TWhat what, const string& url, unsigned max_queue_siz
     m_URL          = url.empty() ? CUsageReportAPI::GetURL() : url;
     m_MaxQueueSize = max_queue_size ? max_queue_size : CUsageReportAPI::GetMaxQueueSize();
 
+    // Init statictics counters
+    m_CountTotal = 0;
+    m_CountSent  = 0;
+
     // Enable reporter
-    m_IsEnabled   = true;
     m_IsFinishing = false;
+    m_IsWaiting   = false;
+    m_IsEnabled   = true;
 
 #endif
 }
@@ -404,7 +492,6 @@ bool CUsageReport::IsEnabled(void)
 bool CUsageReport::x_Send(const string& extra_params)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
-
     // Silent mode -- discard all diagnostic messages from CHttpSession during this call.
     // Affects current thread/function only.
     CDiagCollectGuard diag_guard;
@@ -413,8 +500,11 @@ bool CUsageReport::x_Send(const string& extra_params)
     if (!extra_params.empty()) {
         url += '&' + extra_params;
     }
+    CTimeout timeout = CUsageReportAPI::GetTimeout();
+    int tries = CUsageReportAPI::GetRetries();
+
     CHttpSession session;
-    CHttpResponse response = session.Get(url);
+    CHttpResponse response = session.Get(url, timeout, tries < 0 ? null : static_cast<unsigned short>(tries));
     return response.GetStatusCode() == 200;
 #else
     return false;
@@ -454,6 +544,7 @@ void CUsageReport::x_SendAsync(TJobPtr job_ptr)
 #endif
 }
 
+// MT-safe
 void CUsageReport::Send(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
@@ -465,6 +556,7 @@ void CUsageReport::Send(void)
 #endif
 }
 
+// MT-safe
 void CUsageReport::Send(CUsageReportParameters& params)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
@@ -478,6 +570,7 @@ void CUsageReport::Send(CUsageReportParameters& params)
 #endif
 }
 
+// MT-safe
 unsigned CUsageReport::GetQueueSize(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
@@ -487,7 +580,8 @@ unsigned CUsageReport::GetQueueSize(void)
     return 0;
 #endif
 }
-
+ 
+// MT-safe
 void CUsageReport::ClearQueue(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
@@ -508,9 +602,35 @@ void CUsageReport::x_ClearQueue(void)
 #endif
 }
 
-void CUsageReport::Wait(void)
+// MT-safe
+void CUsageReport::Wait(EWait how, CTimeout& timeout)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
+
+    {{
+        MT_GUARD;
+        if (m_IsFinishing) {
+            // Finishing, nothing to wait, queue is empty
+            return;
+        }
+        if (m_IsWaiting) {
+            // Wait() already happening in the another thread, do nothing
+            return;
+        }
+        // Resolve default timeout
+        if (timeout.IsDefault()) {
+            double v = NCBI_PARAM_TYPE(USAGE_REPORT, WaitTimeout)::GetDefault();
+            if (v < 0) {
+                timeout.Set(CTimeout::eInfinite);
+            } else{
+                timeout.Set(v);
+            }
+        }
+        // Set Wait mode
+        m_WaitMode = how;
+        m_WaitDeadline = CDeadline(timeout);
+        m_IsWaiting = true;
+    }}    
 
     while (true) {
         if (m_IsFinishing) {
@@ -542,7 +662,12 @@ void CUsageReport::Wait(void)
 
             // Check queue size
             MT_GUARD;
+            if (!m_IsWaiting) {
+                // Wait has canceled in the thread handler
+                return;
+            }
             if (m_Queue.empty()) {
+                m_IsWaiting = false;
                 return;
             }
         }}
@@ -550,6 +675,7 @@ void CUsageReport::Wait(void)
 #endif
 }
 
+// MT-safe
 void CUsageReport::Finish(void)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
@@ -579,7 +705,8 @@ void CUsageReport::x_ThreadHandler(void)
         // Awaiting for a signal from the main thread to proceed
         m_ThreadSignal.wait(signal_lock);
 
-        // Process all jobs in the queue
+        // Process jobs in the queue
+
         while (true) {
             // Check on finishing flag between processing jobs
             if (m_IsFinishing) {
@@ -588,6 +715,15 @@ void CUsageReport::x_ThreadHandler(void)
             TJobPtr job = nullptr;
             {{
                 MT_GUARD;
+                // Check Wait() conditions, if any, and cancel it if required
+                if (m_IsWaiting) {
+                    if ((m_WaitMode == eSkipIfNoConnection  &&  m_CountTotal > 0  &&  m_CountSent == 0) ||
+                        m_WaitDeadline.IsExpired() ) {
+                        m_IsWaiting = false;
+                        break;
+                    }
+                }
+                // Get next job from the queue
                 if (!m_Queue.empty()) {
                     if (IsEnabled()) {
                         job = m_Queue.front();
@@ -602,6 +738,11 @@ void CUsageReport::x_ThreadHandler(void)
                 // Send report
                 job->x_SetState(CUsageReportJob::eRunning);
                 bool res = x_Send(job->ToString());
+                // Increase counters
+                ++m_CountTotal;
+                if (res) {
+                    ++m_CountSent;
+                }
                 // Set result state
                 job->x_SetState(res ? CUsageReportJob::eCompleted : CUsageReportJob::eFailed);
             } 
@@ -612,6 +753,12 @@ void CUsageReport::x_ThreadHandler(void)
         }
     }
 #endif
+}
+
+// MT-safe
+bool CUsageReport::CheckConnection()
+{
+    return s_CheckConnection(m_URL);
 }
 
 
