@@ -1829,25 +1829,28 @@ public:
 class NCBI_XNCBI_EXPORT CDeadline
 {
 public:
+    /// Type of special deadlines.
+    enum EType : unsigned {
+        eInfinite = numeric_limits<unsigned>::max(), ///< Infinite deadline.
+        eNoWait = 0u,                                ///< No-wait, expires immediately.
+    };
+    /// Initialize deadline of specified type.
+    CDeadline(EType type = eNoWait);
+
     /// Initialize deadline using seconds and nanoseconds
     /// (adding to the current time)
     /// @param seconds
     ///   Number of seconds to add to the current time
     /// @param nanoseconds
     ///   Number of nanoseconds to add to the current time
-    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds = 0);
+    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds);
 
     /// Initialize deadline by adding relative timeout to the current time.
     CDeadline(const CTimeout& timeout);
 
-    /// Type of special deadlines.
-    enum EType : unsigned {
-        eInfinite = numeric_limits<unsigned>::max(), ///< Infinite deadline.
-        eNoWait = 0u,                                ///< No-wait, expires immediately.
-    };
-
-    /// Initialize deadline of specified type.
-    CDeadline(EType type);
+    /// Initialize deadline from number of seconds (fractional value) 
+    /// by adding relative to the current time.
+    explicit CDeadline(double sec);
 
     /// Check if the deadline is infinite.
     bool IsInfinite(void) const { return m_Infinite; }
