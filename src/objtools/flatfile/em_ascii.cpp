@@ -1342,7 +1342,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
              StringEquN(ibp->acnum, "CU", 2))) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {
-                if (fta_if_wgs_acc(acc.c_str()) == 0 &&
+                if (fta_if_wgs_acc(acc) == 0 &&
                     (acc[0] == 'C' || acc[0] == 'U')) {
                     found = true;
                     break;
@@ -2748,7 +2748,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         if (StringLen(ibp->acnum) == 8 && StringEquN(ibp->acnum, "CT", 2)) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {
-                if (fta_if_wgs_acc(acc.c_str()) == 0 &&
+                if (fta_if_wgs_acc(acc) == 0 &&
                     (acc[0] == 'C' || acc[0] == 'U')) {
                     found = true;
                     break;
