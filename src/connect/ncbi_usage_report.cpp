@@ -758,7 +758,11 @@ void CUsageReport::x_ThreadHandler(void)
 // MT-safe
 bool CUsageReport::CheckConnection()
 {
+#if defined(NCBI_USAGE_REPORT_SUPPORTED)
     return s_CheckConnection(m_URL);
+#else
+    return false;
+#endif
 }
 
 
