@@ -43,9 +43,13 @@
  * It have priority over NCBI_USAGE_REPORT_ENABLED. 
  * See Console Do Not Track standard: https://consoledonottrack.com/
  * 
+ * For working usage sample of this API, please see:
+ *    src/sample/app/connect/ncbi_usage_report_api_sample.cpp
+ *    src/sample/app/connect/ncbi_usage_report_phonehome_sample.cpp
  */
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbitime.hpp>
 #include <connect/ncbi_http_session.hpp>
 
 // API is available for MT builds only, 
@@ -110,6 +114,8 @@ public:
 ///   The usage reporting use default connection timeouts and maximum number
 ///   of tries specified by $CONN_TIMEOUT and $CONN_MAX_TRY environment
 ///   variables, or [CONN]TIMEOUT and [CONN]MAX_TRY registry values accordingly.
+///   But CUsageReportAPI have methods to override both for this API only,
+///   if necessary.
 
 class NCBI_XCONNECT_EXPORT CUsageReportAPI : public CUsageReportBase
 {
@@ -141,7 +147,7 @@ public:
     static void SetEnabled(bool enable = true);
 
     /// Indicates whether global application usage statistics collection is enabled.
-    /// @sa SetEnabled()
+    /// @sa SetEnabled(), CheckConnection()
     static bool IsEnabled(void);
 
     /// Set default reporting parameters.
@@ -171,6 +177,8 @@ public:
     ///   Environment variable:
     ///       NCBI_USAGE_REPORT_URL=https://...
     ///
+    /// @sa CheckConnection()
+    ///
     static void   SetURL(const string& url);
     static string GetURL(void);
 
@@ -184,7 +192,7 @@ public:
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
-    ///       USAGE_REPORT]
+    ///       [USAGE_REPORT]
     ///       AppName = ...
     ///   Environment variable:
     ///       NCBI_USAGE_REPORT_APPNAME=...
@@ -241,6 +249,53 @@ public:
     ///
     static void     SetMaxQueueSize(unsigned n);
     static unsigned GetMaxQueueSize();
+
+    /// Set timeout for connection.
+    /// 
+    /// This call overrides timeout specified for the Connect API,
+    /// using by $CONN_TIMEOUT environment variable, or [CONN]TIMEOUT registry value. 
+    /// Allow any timeout value except eInfinite.
+    /// @note
+    ///   Can be specified thought the global parameter:
+    ///   Registry file:
+    ///       [USAGE_REPORT]
+    ///       ConnTimeout = <float-number-in-seconds>
+    ///   Environment variable:
+    ///       NCBI_USAGE_REPORT_CONN_TIMEOUT=<float-number-in-seconds>
+    /// @sa CheckConnection, GetTimeout, SetRetries
+    /// 
+    static void SetTimeout(const CTimeout& timeout);
+
+    /// Return timeout for network connection, if specified.
+    /// @return "default" timeout if not specified and default Connect API settings will be used.
+    /// @sa SetTimeout
+    static CTimeout GetTimeout();
+
+    /// Set muximum number of retries in case of error reporting.
+    /// 
+    /// This call owerrides number of tries specified for the Connect API,
+    /// using $CONN_MAX_TRY environment variable, or [CONN]MAX_TRY registry value.
+    /// Any negative value set default number of tries specified for the Connect API.
+    /// @note
+    ///   Can be specified thought the global parameter:
+    ///   Registry file:
+    ///       [USAGE_REPORT]
+    ///       ConnectionMaxTry = ...
+    ///   Environment variable:
+    ///       NCBI_USAGE_REPORT_CONN_MAX_TRY=...
+    /// @sa CheckConnection, SetTimeout, GetRetries
+    /// 
+    static void SetRetries(int retries);
+
+    /// Return muximum number of retries in case of error reporting, if specified.
+    /// @return Negative number if not specified and default Connect API settings will be used.
+    /// @sa SetRetries
+    static int GetRetries();
+
+    /// Check that connection to reporting URL can be established.
+    /// Ignores enable/disable status.
+    /// @sa IsEnabled, SetURL, SetTimeout, SetRetries
+    static bool CheckConnection();
 };
 
 
@@ -527,30 +582,56 @@ public:
     ///   Finish(), WaitAndFinish()
     void ClearQueue(void);
 
+    /// Wait behavior
+    enum EWait  {
+        eAlways,              ///< Always wait (default);
+        eSkipIfNoConnection   ///< Do not try to send remaining jobs in the queue if all previous attempts failed
+    };
+
     /// Wait until all queued jobs starts to process and queue is empty.
     /// Can be called before Finish() to be sure that all queued requests
     /// are processed and nothing is discarded.
+    /// @param now
+    ///   Specify what to do in the case if no inernet connection detected, and all previos
+    ///   jobs were failed to be reported. By default it will try to send jobs until queue
+    ///   is empty. But you have an option to skip remaining jobs in the queue and just exit
+    ///   from the function. All jobs will remain in the queue, awaiting to be reported until
+    ///   you call Finish() or ClearQueue().
+    /// @param timeout
+    ///   Specifies a timeout to wait. By default, if not redefined, the timeout is infinite.
+    ///   Default value can be redefined using the global parameter:
+    ///   Registry file:
+    ///       [USAGE_REPORT]
+    ///       WaitTimeout = <float-number-in-seconds>
+    ///   Environment variable:
+    ///       NCBI_USAGE_REPORT_WAIT_TIMEOUT=<float-number-in-seconds>
+    ///   Negative value sets infinite timeout.
     /// @note
     ///   It doesn't wait for already started job that is sending at the current moment.
-    ///   You still need to call Finish().
-    /// @sa 
-    ///   Finish(), ClearQueue()
-    void Wait(void);
+    ///   You still need to call Finish() to be sure that it has been finished too.
+    /// @sa
+    ///   EWait, CTimeout, Finish, ClearQueue
+    void Wait(EWait how = eAlways, CTimeout& timeout = CTimeout(CTimeout::eDefault));
 
     /// Finish reporting for the current reporting object.
-    /// All reporting jobs in the queue will be discarded and reporting
-    /// thread destroyed. If you want to wait all queued requests to finish,
-    /// call Wait() just before Finish().
+    /// All jobs in the queue awaiting to be send will be discarded, and reporting
+    /// thread destroyed. If you want to wait all queued requests to finish as well,
+    /// please call Wait() just before Finish().
     /// @note
     ///   Only queued requests will be discarded. It doesn't affect already
     ///   started job, that is sending at the current moment (if any).
     ///   Reporting thread will be destroyed immediately after finishing
-    ///   sending last started job.
+    ///   sending that already started job.
     /// @note
     ///   The reporter become invalid after this call and shouldn't be used anymore.
     /// @sa 
-    ///   ClearQueue(), Wait()
+    ///   Wait, ClearQueue
     void Finish(void);
+
+    /// Check that connection to the reporting URL can be established.
+    /// Ignores enable/disable status.
+    /// @sa IsEnabled, SetTimeout, SetRetries
+    bool CheckConnection();
 
 private:
     /// Prevent copying.
@@ -565,7 +646,7 @@ private:
     bool x_Send(const string& extra_params);
     /// Send job asynchronously
     void x_SendAsync(TJobPtr job_ptr);
-    /// Handler for asynchronous job reporting 
+    /// Thread handler for asynchronous job reporting 
     void x_ThreadHandler(void);
     /// Remove all unprocessed reporting jobs from queue - internal version
     void x_ClearQueue(void);
@@ -575,12 +656,17 @@ private:
 
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
     mutable bool  m_IsFinishing;    ///< TRUE if Finish() has called and reporting thread should terminate
+    mutable bool  m_IsWaiting;      ///< TRUE if Wait() is active
     string        m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded
     string        m_URL;            ///< Reporting URL
     std::thread   m_Thread;         ///< Reporting thread
     list<TJobPtr> m_Queue;          ///< Job queue
     unsigned      m_MaxQueueSize;   ///< Maximum allowed queue size
     std::mutex    m_Usage_Mutex;    ///< MT-protection to access members
+    size_t        m_CountTotal;     ///< Statistics: number of jobs processed
+    size_t        m_CountSent;      ///< Statistics: number of jobs successfully sent
+    EWait         m_WaitMode;       ///< Waiting mode
+    CDeadline     m_WaitDeadline;   ///< Deadline for Wait(), if active
 
     /// Signal conditional variable for reporting thread synchronization
     std::condition_variable m_ThreadSignal;
@@ -626,8 +712,12 @@ private:
 #define NCBI_REPORT_USAGE_START   CUsageReportAPI::SetEnabled()
 
 /// Wait until all reports via NCBI_REPORT_USAGE will be processed.
-///
-#define NCBI_REPORT_USAGE_WAIT    CUsageReport::Instance().Wait()
+/// Wait() method have more arguments, so please use it directly if more functionality is required.
+/// 
+#define NCBI_REPORT_USAGE_WAIT             CUsageReport::Instance().Wait(CUsageReport::eAlways)
+#define NCBI_REPORT_USAGE_WAIT_ALWAYS      CUsageReport::Instance().Wait(CUsageReport::eAlways)
+#define NCBI_REPORT_USAGE_WAIT_TIMEOUT(t)  CUsageReport::Instance().Wait(CUsageReport::eAlways, t)
+#define NCBI_REPORT_USAGE_WAIT_IF_SUCCESS  CUsageReport::Instance().Wait(CUsageReport::eSkipIfNoConnection)
 
 /// Finishing reporting via NCBI_REPORT_USAGE and global usage reporter,
 ///
