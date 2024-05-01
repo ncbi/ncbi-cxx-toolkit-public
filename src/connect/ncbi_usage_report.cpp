@@ -262,7 +262,7 @@ bool s_CheckConnection(const string& url)
     CTimeout timeout = CUsageReportAPI::GetTimeout();
     int tries = CUsageReportAPI::GetRetries();
     CHttpSession session;
-    CHttpResponse response = session.Get(url, timeout, tries < 0 ? null : static_cast<unsigned short>(tries));
+    CHttpResponse response = session.Get(url, timeout, tries < 0 ? THttpRetries(null) : THttpRetries(static_cast<unsigned short>(tries)));
     return response.GetStatusCode() == 200;
 #else
     return false;
@@ -504,7 +504,7 @@ bool CUsageReport::x_Send(const string& extra_params)
     int tries = CUsageReportAPI::GetRetries();
 
     CHttpSession session;
-    CHttpResponse response = session.Get(url, timeout, tries < 0 ? null : static_cast<unsigned short>(tries));
+    CHttpResponse response = session.Get(url, timeout, tries < 0 ? THttpRetries(null) : THttpRetries(static_cast<unsigned short>(tries)));
     return response.GetStatusCode() == 200;
 #else
     return false;
@@ -603,7 +603,7 @@ void CUsageReport::x_ClearQueue(void)
 }
 
 // MT-safe
-void CUsageReport::Wait(EWait how, CTimeout& timeout)
+void CUsageReport::Wait(EWait how, CTimeout timeout)
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
 

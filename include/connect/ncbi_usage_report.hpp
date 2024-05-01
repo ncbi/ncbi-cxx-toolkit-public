@@ -611,7 +611,7 @@ public:
     ///   You still need to call Finish() to be sure that it has been finished too.
     /// @sa
     ///   EWait, CTimeout, Finish, ClearQueue
-    void Wait(EWait how = eAlways, CTimeout& timeout = CTimeout(CTimeout::eDefault));
+    void Wait(EWait how = eAlways, CTimeout timeout = CTimeout(CTimeout::eDefault));
 
     /// Finish reporting for the current reporting object.
     /// All jobs in the queue awaiting to be send will be discarded, and reporting
