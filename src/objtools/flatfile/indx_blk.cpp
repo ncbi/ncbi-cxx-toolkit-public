@@ -457,7 +457,7 @@ static bool CkDateFormat(const char* date)
         isdigit(date[0]) != 0 && isdigit(date[1]) != 0 &&
         isdigit(date[7]) != 0 && isdigit(date[8]) != 0 &&
         isdigit(date[9]) != 0 && isdigit(date[10]) != 0 &&
-        MatchArraySubString(month_name, date) != -1)
+        MatchArraySubString(month_name, date) >= 0)
         return true;
 
     return false;
@@ -564,11 +564,11 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
             ErrPostEx(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"%s\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
             ret = false;
         }
-    } else if (StringMatchIcase(ParFlat_NA_array, p) == -1) {
-        if (StringMatchIcase(ParFlat_AA_array_DDBJ, p) == -1) {
+    } else if (StringMatchIcase(ParFlat_NA_array, p) < 0) {
+        if (StringMatchIcase(ParFlat_AA_array_DDBJ, p) < 0) {
             i = lcp->molecule + 1;
             if (source != Parser::ESource::DDBJ ||
-                StringMatchIcase(ParFlat_NA_array_DDBJ, p) == -1) {
+                StringMatchIcase(ParFlat_NA_array_DDBJ, p) < 0) {
                 ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Molecule unrecognized in column %d-%d: %s", i, i + 5, p);
                 ret = false;
             }
@@ -1686,10 +1686,10 @@ static bool IsTPAAccPrefix(const Parser& parseInfo, const char* acc)
         return (false);
     }
 
-    if (fta_StringMatch(ncbi_tpa_accpref, acc) > -1 &&
+    if (fta_StringMatch(ncbi_tpa_accpref, acc) >= 0 &&
         (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
         return (true);
-    if (fta_StringMatch(ddbj_tpa_accpref, acc) > -1 &&
+    if (fta_StringMatch(ddbj_tpa_accpref, acc) >= 0 &&
         (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
         return (true);
     return (false);
@@ -1701,10 +1701,10 @@ static bool IsWGSAccPrefix(const Parser& parseInfo, const char* acc)
     if (! acc || StringLen(acc) != 2)
         return (false);
 
-    if (fta_StringMatch(ncbi_wgs_accpref, acc) > -1 &&
+    if (fta_StringMatch(ncbi_wgs_accpref, acc) >= 0 &&
         (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
         return (true);
-    if (fta_StringMatch(ddbj_wgs_accpref, acc) > -1 &&
+    if (fta_StringMatch(ddbj_wgs_accpref, acc) >= 0 &&
         (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
         return (true);
     return (false);
@@ -1742,7 +1742,7 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
             ibp->is_tsa      = true;
             ibp->tsa_allowed = true;
         }
-        if (fta_StringMatch(acc_tsa_allowed, acc) > -1)
+        if (fta_StringMatch(acc_tsa_allowed, acc) >= 0)
             ibp->tsa_allowed = true;
     }
 

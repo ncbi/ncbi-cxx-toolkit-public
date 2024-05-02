@@ -764,9 +764,9 @@ static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
 {
     DataBlkPtr subdbp;
     char*      p;
-    Int4       gmod;
+    Int4       gmod = -1;
 
-    for (gmod = -1; dbp; dbp = dbp->mpNext)
+    for (; dbp; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS) {
             subdbp = static_cast<DataBlk*>(dbp->mpData);
             for (; subdbp; subdbp = subdbp->mpNext)
@@ -778,7 +778,7 @@ static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
                     gmod = StringMatchIcase(SP_organelle, p);
                 }
         }
-    if (gmod == -1)
+    if (gmod < 0)
         return CBioSource::eGenome_unknown;
     if (gmod == 0)
         return CBioSource::eGenome_chloroplast;
@@ -3372,11 +3372,11 @@ static bool SPFeatNoExp(ParserPtr pp, SPFeatInputPtr spfip)
     if (!spfip)
         return false;
 
-    if(MatchArrayISubString(ParFlat_SPFeatNoExp, spfip->descrip.c_str()) != -1)
+    if (MatchArrayISubString(ParFlat_SPFeatNoExp, spfip->descrip) != -1)
         return true;
 
-    indx = MatchArrayISubString(ParFlat_SPFeatNoExpW, spfip->descrip.c_str());
-    if(indx == -1)
+    indx = MatchArrayISubString(ParFlat_SPFeatNoExpW, spfip->descrip);
+    if (indx < 0)
         return false;
 
     DelTheStr(spfip->descrip, ParFlat_SPFeatNoExpW[indx]);

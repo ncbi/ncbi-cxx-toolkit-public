@@ -2014,8 +2014,8 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                         break;
                     }
 
-                    string val_str(val_ptr, p);
-                    i = StringMatchIcase(OrganelleFirstToken, val_str.c_str());
+                    string_view val_str(val_ptr, p - val_ptr);
+                    i = StringMatchIcase(OrganelleFirstToken, val_str);
                     if (i < 0) {
                         ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
                         dropped = true;
@@ -2042,7 +2042,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             }
 
             if (oldgen < 0)
-                oldgen = StringMatchIcase(GenomicSourceFeatQual, cq.c_str());
+                oldgen = StringMatchIcase(GenomicSourceFeatQual, cq);
 
             if (cq != "country" ||
                 ! val_ptr || val_ptr[0] == '\0')

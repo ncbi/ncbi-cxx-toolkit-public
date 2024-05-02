@@ -204,7 +204,7 @@ static void CkSPComTopics(ParserPtr pp, const char* str)
     const char* ptr1;
 
     for (ptr1 = str; *ptr1 != '\0';) {
-        if (fta_StringMatch(ParFlat_SPRefRcToken, ptr1) == -1) {
+        if (fta_StringMatch(ParFlat_SPRefRcToken, ptr1) < 0) {
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnkRefRcToken, "Unknown Reference Comment token (swiss-prot) w/ data, %s", ptr1);
         }
 

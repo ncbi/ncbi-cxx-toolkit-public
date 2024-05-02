@@ -540,22 +540,16 @@ void FreeTokenstatblk(TokenStatBlkPtr tsbp)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 fta_StringMatch(const Char** array, const Char* text)
+Int2 fta_StringMatch(const Char** array, string_view text)
 {
     Int2 i;
 
-    if (! text)
-        return (-1);
-
     for (i = 0; *array; i++, array++) {
         if (NStr::EqualCase(text, 0, StringLen(*array), *array))
-            break;
+            return i;
     }
 
-    if (! *array)
-        return (-1);
-
-    return (i);
+    return -1;
 }
 
 /**********************************************************
@@ -567,26 +561,21 @@ Int2 fta_StringMatch(const Char** array, const Char* text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 StringMatchIcase(const Char** array, const Char* text)
+Int2 StringMatchIcase(const Char** array, string_view text)
 {
     Int2 i;
-
-    if (! text)
-        return (-1);
 
     for (i = 0; *array; i++, array++) {
         // If string from an array is empty its length == 0 and would be equval to any other string
         // The next 'if' statement will avoid that behavior
-        if (text[0] != 0 && *array[0] == 0)
+        if (! text.empty() && *array[0] == 0)
             continue;
 
         if (NStr::EqualNocase(text, 0, StringLen(*array), *array))
-            break;
+            return i;
     }
 
-    if (! *array)
-        return (-1);
-    return (i);
+    return -1;
 }
 
 /**********************************************************
@@ -607,12 +596,10 @@ Int2 MatchArrayString(const char** array, const char* text)
 
     for (i = 0; *array; i++, array++) {
         if (NStr::Equal(*array, text))
-            break;
+            return i;
     }
 
-    if (! *array)
-        return (-1);
-    return (i);
+    return -1;
 }
 
 /**********************************************************/
@@ -630,12 +617,10 @@ Int2 MatchArrayIString(const Char** array, const Char* text)
             continue;
 
         if (NStr::EqualNocase(*array, text))
-            break;
+            return i;
     }
 
-    if (! *array)
-        return (-1);
-    return (i);
+    return -1;
 }
 
 /**********************************************************
@@ -647,21 +632,16 @@ Int2 MatchArrayIString(const Char** array, const Char* text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 MatchArraySubString(const Char** array, const Char* text)
+Int2 MatchArraySubString(const Char** array, string_view text)
 {
     Int2 i;
 
-    if (! text)
-        return (-1);
-
     for (i = 0; *array; i++, array++) {
         if (NStr::Find(text, *array) != NPOS)
-            break;
+            return i;
     }
 
-    if (! *array)
-        return (-1);
-    return (i);
+    return -1;
 }
 
 /**********************************************************/
@@ -697,21 +677,16 @@ Char* StringIStr(const Char* where, const Char* what)
 }
 
 /**********************************************************/
-Int2 MatchArrayISubString(const Char** array, const Char* text)
+Int2 MatchArrayISubString(const Char** array, string_view text)
 {
     Int2 i;
 
-    if (! text)
-        return (-1);
-
     for (i = 0; *array; i++, array++) {
         if (NStr::FindNoCase(text, *array) != NPOS)
-            break;
+            return i;
     }
 
-    if (! *array)
-        return (-1);
-    return (i);
+    return -1;
 }
 
 /**********************************************************

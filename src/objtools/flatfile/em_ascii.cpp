@@ -2019,7 +2019,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 
         string& taxname_str = org_ref->SetTaxname();
         size_t  off_pos     = 0;
-        if (GetGenomeInfo(*bio_src, taxname_str.c_str()) && bio_src->GetGenome() != CBioSource::eGenome_plasmid) {
+        if (GetGenomeInfo(*bio_src, taxname_str) && bio_src->GetGenome() != CBioSource::eGenome_plasmid) {
             while (taxname_str[off_pos] != ' ' && off_pos < taxname_str.size())
                 ++off_pos;
             while (taxname_str[off_pos] == ' ' && off_pos < taxname_str.size())
