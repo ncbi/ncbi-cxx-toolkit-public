@@ -8,7 +8,6 @@ ctools
 db
 dbapi
 html
-internal/align_model$
 internal/ID/utils$
 internal/ID/utils/wgs$
 internal/ID/utils/wgs/format$

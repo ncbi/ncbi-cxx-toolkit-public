@@ -14,7 +14,6 @@ internal/algo/align/blockfind
 internal/algo/align/gmap
 internal/algo/align/pipeline-tools
 internal/aligndb
-internal/align_model$
 internal/align_toolbox
 internal/asn_cache
 internal/blast

@@ -13,7 +13,6 @@ gui
 html
 internal/objects/alndb_query$
 internal/grpcapi/ncbi/grpcapi/dbsnp
-internal/align_model$
 internal/contigdb$
 internal/blast
 internal/asn_cache
