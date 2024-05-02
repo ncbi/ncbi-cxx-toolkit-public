@@ -6,6 +6,8 @@
 res_file="/tmp/`basename $0`.$$"
 trap 'rm -f $res_file' 1 2 15 0
 
+set -o pipefail
+
 svn cat --username svnread --password allowed https://svn.ncbi.nlm.nih.gov/repos_htpasswd/toolkit/trunk/internal/c++/src/internal/cppcore/netcache/netcache_check_services.lst | tr $'\r\n' ' ' >$res_file
 test $? -eq 0 || exit 1
 services="`cat $res_file`"
