@@ -11,7 +11,6 @@ dbapi
 gui
 html
 internal/algo/id_mapper
-internal/align_model
 internal/idx
 internal/idxext
 internal/ilink
