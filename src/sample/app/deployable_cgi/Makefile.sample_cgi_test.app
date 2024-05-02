@@ -21,5 +21,5 @@ CHECK_CMD=sample_cgi_test
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 ### END COPIED SETTINGS
 
-WATCHERS=fukanchi
+WATCHERS=sadyrovr
 
