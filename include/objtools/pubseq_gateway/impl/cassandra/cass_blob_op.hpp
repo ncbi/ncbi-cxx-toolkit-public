@@ -237,6 +237,16 @@ public:
         m_DataReadyCb3 = datareadycb3;
     }
 
+    void SetReadConsistency(TCassConsistency value)
+    {
+        m_ReadConsistency = value;
+    }
+
+    void SetWriteConsistency(TCassConsistency value)
+    {
+        m_WriteConsistency = value;
+    }
+
 protected:
     enum EBlobWaiterState {
         eInit = 0,
@@ -346,9 +356,20 @@ protected:
         return rv;
     }
 
-    CassConsistency GetQueryConsistency(void)
+    //@TODO NCBI_STD_DEPRECATED("Use GetReadConsistency()/GetWriteConsistency()")
+    CassConsistency GetQueryConsistency()
     {
         return CASS_CONSISTENCY_LOCAL_QUORUM;
+    }
+
+    TCassConsistency GetReadConsistency() const
+    {
+        return m_ReadConsistency;
+    }
+
+    TCassConsistency GetWriteConsistency() const
+    {
+        return m_WriteConsistency;
     }
 
     bool CheckMaxActive();
@@ -371,6 +392,9 @@ private:
     string                          m_Keyspace;
     int32_t                         m_Key{0};
     int                             m_MaxRetries{-1};
+
+    TCassConsistency                m_ReadConsistency{CCassConsistency::kLocalQuorum};
+    TCassConsistency                m_WriteConsistency{CCassConsistency::kLocalQuorum};
 };
 
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
