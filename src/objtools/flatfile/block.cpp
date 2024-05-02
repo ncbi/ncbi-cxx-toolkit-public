@@ -49,11 +49,11 @@
 BEGIN_NCBI_SCOPE
 
 struct QSStruct {
-    char*     accession = nullptr;
-    Int2      version   = 0;
-    size_t    offset    = 0;
-    size_t    length    = 0;
-    QSStruct* next      = nullptr;
+    string    accession;
+    Int2      version = 0;
+    size_t    offset  = 0;
+    size_t    length  = 0;
+    QSStruct* next    = nullptr;
 };
 using QSStructPtr = QSStruct*;
 
@@ -173,7 +173,7 @@ static bool AccsCmp(const Indexblk* ibp1, const Indexblk* ibp2)
 /**********************************************************/
 static bool QSCmp(const QSStruct* qs1, const QSStruct* qs2)
 {
-    int i = StringCmp(qs1->accession, qs2->accession);
+    int i = StringCmp(qs1->accession.c_str(), qs2->accession.c_str());
     if (i != 0)
         return i < 0;
 
@@ -187,8 +187,6 @@ static void QSStructFree(QSStructPtr qssp)
 
     for (; qssp; qssp = tqssp) {
         tqssp = qssp->next;
-        if (qssp->accession)
-            MemFree(qssp->accession);
         delete qssp;
     }
 }
@@ -197,9 +195,9 @@ static void QSStructFree(QSStructPtr qssp)
 static bool QSNoSequenceRecordErr(bool accver, QSStructPtr qssp)
 {
     if (accver)
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.", qssp->accession, qssp->version);
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.", qssp->accession.c_str(), qssp->version);
     else
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.", qssp->accession);
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.", qssp->accession.c_str());
     return false;
 }
 
@@ -246,7 +244,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         count++;
         tqssp->next      = new QSStruct;
         tqssp            = tqssp->next;
-        tqssp->accession = StringSave(buf + 1);
+        tqssp->accession = string(buf + 1);
         tqssp->version   = q ? atoi(q) : 0;
         tqssp->offset    = (size_t)ftell(pp->qsfd) - i;
         if (tqsspprev)
@@ -275,16 +273,16 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         std::sort(qsspp.begin(), qsspp.end(), QSCmp);
 
         for (j = 0, count--; j < count; j++)
-            if (StringEqu(qsspp[j]->accession, qsspp[j + 1]->accession))
+            if (qsspp[j]->accession == qsspp[j + 1]->accession)
                 if (pp->accver == false ||
                     qsspp[j]->version == qsspp[j + 1]->version)
                     break;
 
         if (j < count) {
             if (pp->accver)
-                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s.%d\".", qsspp[j]->accession, qsspp[j]->version);
+                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s.%d\".", qsspp[j]->accession.c_str(), qsspp[j]->version);
             else
-                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s\".", qsspp[j]->accession);
+                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s\".", qsspp[j]->accession.c_str());
 
             QSStructFree(qssp);
             return false;
@@ -305,7 +303,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
             continue;
         }
         for (; k < pp->indx; k++) {
-            l = StringCmp(qsspp[j]->accession, ibpp[k]->acnum);
+            l = StringCmp(qsspp[j]->accession.c_str(), ibpp[k]->acnum);
             if (l < 0) {
                 ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
                 break;
