@@ -222,10 +222,10 @@ Uint1 GetQualValueAa(const char* qval, bool checkseq)
 }
 
 /**********************************************************/
-bool GetGenomeInfo(CBioSource& bsp, const Char* bptr)
+bool GetGenomeInfo(CBioSource& bsp, string_view bptr)
 {
     Int4 i = StringMatchIcase(ParFlat_GImod, bptr);
-    if (i == -1)
+    if (i < 0)
         return false;
 
     if (i == 0)
@@ -351,7 +351,7 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
         if (q)
             *q = '\0';
 
-        if (StringMatchIcase(valid_organelle, p) > -1) {
+        if (StringMatchIcase(valid_organelle, p) >= 0) {
             if (q) {
                 for (q++; *q == ' ';)
                     q++;
