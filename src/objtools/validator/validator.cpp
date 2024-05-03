@@ -113,6 +113,7 @@ CRef<CValidError> CValidator::Validate(
     SValidatorContext& ctx = imp.SetContext();
     ctx.NumGenes += imp.GetGeneCount();
     ctx.NumGeneXrefs += imp.GetGeneXrefCount();
+    ctx.CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
     return errors;
 }
 
@@ -134,6 +135,7 @@ void CValidator::Validate(
     x_SetEntryInfo(imp.GetEntryInfo());
     m_pContext->NumGenes += imp.GetGeneCount();
     m_pContext->NumGeneXrefs += imp.GetGeneXrefCount();
+    m_pContext->CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
 }
 
 
@@ -152,6 +154,7 @@ CRef<CValidError> CValidator::Validate(
     SValidatorContext& ctx = imp.SetContext();
     ctx.NumGenes += imp.GetGeneCount();
     ctx.NumGeneXrefs += imp.GetGeneXrefCount();
+    ctx.CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
     return errors;
 }
 
@@ -172,6 +175,7 @@ void CValidator::Validate(
     SValidatorContext& ctx = imp.SetContext();
     ctx.NumGenes += imp.GetGeneCount();
     ctx.NumGeneXrefs += imp.GetGeneXrefCount();
+    ctx.CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
 }
 
 
@@ -291,6 +295,7 @@ void CValidator::Validate(
     x_SetEntryInfo(imp.GetEntryInfo());
     m_pContext->NumGenes += imp.GetGeneCount();
     m_pContext->NumGeneXrefs += imp.GetGeneXrefCount();
+    m_pContext->CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
 }
 
 

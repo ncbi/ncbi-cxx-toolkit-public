@@ -141,7 +141,7 @@ public:
 
     void SetOptions(Uint4 options);
     void SetErrorRepository(IValidError* errors);
-    void Reset();
+    void Reset(SIZE_TYPE initialInferenceCount);
 
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = nullptr,
@@ -371,6 +371,12 @@ public:
     inline void AddToGeneXrefCount(SIZE_TYPE num) { m_NumGeneXrefs += num; }
     inline SIZE_TYPE GetGeneXrefCount(void) const { return m_NumGeneXrefs; }
 
+    // counting cumulative number of inference qualifiers with accessions
+    inline void ResetCumulativeInferenceCount() { m_CumulativeInferenceCount = 0; }
+    inline void IncrementCumulativeInferenceCount() { m_CumulativeInferenceCount++; }
+    inline void AddToCumulativeInferenceCount(SIZE_TYPE num) { m_CumulativeInferenceCount += num; }
+    inline SIZE_TYPE GetCumulativeInferenceCount(void) const { return m_CumulativeInferenceCount; }
+
     // counting sequences with and without TPA history
     inline void ResetTpaWithHistoryCount() { m_NumTpaWithHistory = 0; }
     inline void IncrementTpaWithHistoryCount() { m_NumTpaWithHistory++; }
@@ -426,7 +432,7 @@ public:
 private:
 
     // Setup common options during consturction;
-    void x_Init(Uint4 options);
+    void x_Init(Uint4 options, SIZE_TYPE initialInferenceCount);
 
     // This is so we can temporarily set m_Scope in a function
     // and be sure that it will be set to its old value when we're done
@@ -619,6 +625,8 @@ private:
     SIZE_TYPE   m_NumMisplacedGraphs;
     SIZE_TYPE   m_NumGenes;
     SIZE_TYPE   m_NumGeneXrefs;
+    
+    SIZE_TYPE   m_CumulativeInferenceCount;
 
     SIZE_TYPE   m_NumTpaWithHistory;
     SIZE_TYPE   m_NumTpaWithoutHistory;

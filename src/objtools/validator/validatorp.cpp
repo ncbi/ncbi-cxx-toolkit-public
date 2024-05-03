@@ -174,13 +174,13 @@ CValidError_imp::CValidError_imp
     m_ErrRepository{errs},
     m_pContext{pContext}
 {
-    x_Init(options);
+    x_Init(options, pContext->CumulativeInferenceCount);
 }
 
-void CValidError_imp::x_Init(Uint4 options)
+void CValidError_imp::x_Init(Uint4 options, SIZE_TYPE initialInferenceCount)
 {
     SetOptions(options);
-    Reset();
+    Reset(initialInferenceCount);
 
     InitializeSourceQualTags();
 }
@@ -314,7 +314,7 @@ void CValidError_imp::SetErrorRepository(IValidError* errors)
 //LCOV_EXCL_STOP
 
 
-void CValidError_imp::Reset()
+void CValidError_imp::Reset(SIZE_TYPE prevCumulativeInferenceCount)
 {
     m_Scope = nullptr;
     m_TSE = nullptr;
@@ -322,6 +322,8 @@ void CValidError_imp::Reset()
     m_SeqAnnot.Reset();
 
     m_pEntryInfo.reset(new CValidatorEntryInfo());
+
+    m_CumulativeInferenceCount = prevCumulativeInferenceCount;
 
     m_IsNC = false;
     m_IsNG = false;
@@ -1503,6 +1505,7 @@ bool CValidError_imp::Validate
             FOR_EACH_GBQUAL_ON_FEATURE (qual, *feat_inf) {
                 if ((*qual)->IsSetQual() && (*qual)->IsSetVal() && NStr::Equal((*qual)->GetQual(), "inference")) {
                     num_inferences++;
+                    m_CumulativeInferenceCount++;
                     string prefix, remainder;
                     bool same_species;
                     vector<string> accessions = CValidError_feat::GetAccessionsFromInferenceString ((*qual)->GetVal(), prefix, remainder, same_species);
