@@ -457,7 +457,9 @@ public:
 class CDataTesterSequence : public CDataTesterBioseq
 {
 public:
-
+    const bool kPreloadBulkSequence = true;
+    const TSeqPos kRangeFrom = 0;
+    const TSeqPos kRangeTo = 20;
     const char* GetType(void) const
         {
             return "sequence";
@@ -466,7 +468,7 @@ public:
         {
             string seq;
             if ( bh ) {
-                bh.GetSeqVector(bh.eCoding_Iupac).GetSeqData(0, 20, seq);
+                bh.GetSeqVector(bh.eCoding_Iupac).GetSeqData(kRangeFrom, kRangeTo, seq);
             }
             return CDataTesterBioseq::GetData(bh) + ": " + seq;
         }
@@ -474,6 +476,30 @@ public:
         {
             data.resize(ids.size());
             vector<CBioseq_Handle> bhs = scope.GetBioseqHandles(ids);
+            if ( kPreloadBulkSequence ) {
+                CTSE_Handle root_tse;
+                CRef<CSeq_loc> all_loc(new CSeq_loc);
+                auto& intervals = all_loc->SetPacked_int().Set();
+                for ( size_t i = 0; i < ids.size(); ++i ) {
+                    if ( !bhs[i] ) {
+                        continue;
+                    }
+                    TSeqPos len = bhs[i].GetBioseqLength();
+                    if ( len <= kRangeTo ) {
+                        continue;
+                    }
+                    if ( !root_tse ) {
+                        root_tse = bhs[i].GetTSE_Handle();
+                    }
+                    intervals.push_back(Ref(new CSeq_interval(*SerialClone(*ids[i].GetSeqId()), kRangeFrom, kRangeTo)));
+                }
+                if ( root_tse ) { // bulk loading only works if there's a TSE to attach locks to
+                    SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
+                    sel.SetLinkUsedTSE(root_tse);
+                    CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(*all_loc, &scope);
+                    seq_map->CanResolveRange(&scope, sel); // segment pre-loading call
+                }
+            }
             for ( size_t i = 0; i < ids.size(); ++i ) {
                 data[i] = GetData(bhs[i]);
             }
