@@ -1351,8 +1351,6 @@ xalgovmerge needs xncbi
 xalgowinmask needs seqmasks_io
 xaligncleanup needs prosplign
 xaligncleanup needs xalgoalignsplign
-xaligndb needs dbapi
-xaligndb needs xalgoalignsplign
 xalnmgr needs tables
 xalnmgr needs xobjutil
 xalntool needs align_format
