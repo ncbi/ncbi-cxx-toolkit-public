@@ -2145,39 +2145,32 @@ static bool CheckSegDescrChoice(const TEntryList& entries, Uint1 choice)
  *                                              5-18-93
  *
  **********************************************************/
-static char* GetBioseqSetDescrTitle(const CSeq_descr& descr)
+static optional<string> GetBioseqSetDescrTitle(const CSeq_descr& descr)
 {
-    const Char* title;
-    const Char* ptr;
-
-    char* str;
-
-    const CSeq_descr::Tdata& descr_list = descr.Get();
-
-    CSeq_descr::Tdata::const_iterator cur_descr = descr_list.begin();
-    for (; cur_descr != descr_list.end(); ++cur_descr) {
-        if ((*cur_descr)->IsTitle())
+    const string* found = nullptr;
+    for (auto it : descr.Get()) {
+        if (it->IsTitle()) {
+            found = &it->GetTitle();
             break;
+        }
     }
 
-    if (cur_descr == descr_list.end())
-        return nullptr;
+    if (! found)
+        return {};
 
-    title = (*cur_descr)->GetTitle().c_str();
+    string title = *found;
 
-    ptr = StringStr(title, "complete cds");
-    if (! ptr) {
-        ptr = StringStr(title, "exon");
+    auto pos = title.find("complete cds");
+    if (pos == string::npos) {
+        pos = title.find("exon");
     }
 
-    if (ptr) {
-        str = StringSave(string_view(title, ptr - title));
-        CleanTailNoneAlphaChar(str);
-    } else {
-        str = StringSave(title);
+    if (pos != string::npos) {
+        title.resize(pos);
+        CleanTailNoneAlphaCharInString(title);
     }
 
-    return str;
+    return title;
 }
 
 // LCOV_EXCL_START
@@ -2201,10 +2194,9 @@ static void SrchSegDescr(TEntryList& entries, CSeq_descr& descr)
     CRef<CSeq_entry>& entry  = entries.front();
     CBioseq&          bioseq = entry->SetSeq();
 
-    char* title = GetBioseqSetDescrTitle(bioseq.GetDescr());
-    if (title) {
+    if (auto title = GetBioseqSetDescrTitle(bioseq.GetDescr())) {
         CRef<CSeqdesc> desc_new(new CSeqdesc);
-        desc_new->SetTitle(title);
+        desc_new->SetTitle(*title);
         descr.Set().push_back(desc_new);
     }
 
@@ -2445,13 +2437,9 @@ static CRef<CBioseq> GetBioseq(ParserPtr pp, const TEntryList& entries, const CS
     const CSeq_entry& first_entry = *(entries.front());
     const CBioseq&    original    = first_entry.GetSeq();
 
-    char* title = GetBioseqSetDescrTitle(original.GetDescr());
-
-    if (title) {
+    if (auto title = GetBioseqSetDescrTitle(original.GetDescr())) {
         CRef<CSeqdesc> descr(new CSeqdesc);
-        descr->SetTitle(title);
-
-        MemFree(title);
+        descr->SetTitle(*title);
         bioseq->SetDescr().Set().push_back(descr);
     }
 
