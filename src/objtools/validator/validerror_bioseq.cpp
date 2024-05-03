@@ -7479,7 +7479,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts()
         if (! m_GeneIt->empty()) {
             // nothing to validate if there aren't any genes
             // count mRNAs and CDSs for each gene.
-            typedef map<CConstRef<CSeq_feat>, SIZE_TYPE> TFeatCount;
+            typedef map<CConstRef<CSeq_feat>, size_t> TFeatCount;
             TFeatCount cds_count, mrna_count;
 
             // create indices for gene labels and locus tags if needed
@@ -7516,7 +7516,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts()
             }
 
             ITERATE (TFeatCount, it, cds_count) {
-                SIZE_TYPE cds_num = it->second,
+                size_t cds_num = it->second,
                           mrna_num = mrna_count[it->first];
                 if (cds_num > 0 && mrna_num > 1 && cds_num != mrna_num) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAmismatchCount,

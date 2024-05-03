@@ -141,7 +141,7 @@ public:
 
     void SetOptions(Uint4 options);
     void SetErrorRepository(IValidError* errors);
-    void Reset(SIZE_TYPE initialInferenceCount);
+    void Reset(size_t initialInferenceCount);
 
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = nullptr,
@@ -349,49 +349,49 @@ public:
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount() { m_NumMisplacedFeatures = 0; }
     inline void IncrementMisplacedFeatureCount() { m_NumMisplacedFeatures++; }
-    inline void AddToMisplacedFeatureCount(SIZE_TYPE num) { m_NumMisplacedFeatures += num; }
+    inline void AddToMisplacedFeatureCount(size_t num) { m_NumMisplacedFeatures += num; }
 
     // counting number of small genome set misplaced features
     inline void ResetSmallGenomeSetMisplacedCount() { m_NumSmallGenomeSetMisplaced = 0; }
     inline void IncrementSmallGenomeSetMisplacedCount() { m_NumSmallGenomeSetMisplaced++; }
-    inline void AddToSmallGenomeSetMisplacedCount(SIZE_TYPE num) { m_NumSmallGenomeSetMisplaced += num; }
+    inline void AddToSmallGenomeSetMisplacedCount(size_t num) { m_NumSmallGenomeSetMisplaced += num; }
 
     // counting number of misplaced graphs
     inline void ResetMisplacedGraphCount() { m_NumMisplacedGraphs = 0; }
     inline void IncrementMisplacedGraphCount() { m_NumMisplacedGraphs++; }
-    inline void AddToMisplacedGraphCount(SIZE_TYPE num) { m_NumMisplacedGraphs += num; }
+    inline void AddToMisplacedGraphCount(size_t num) { m_NumMisplacedGraphs += num; }
 
     // counting number of genes and gene xrefs
     inline void ResetGeneCount() { m_NumGenes = 0; }
     inline void IncrementGeneCount() { m_NumGenes++; }
-    inline void AddToGeneCount(SIZE_TYPE num) { m_NumGenes += num; }
-    inline SIZE_TYPE GetGeneCount(void) const { return m_NumGenes; }
+    inline void AddToGeneCount(size_t num) { m_NumGenes += num; }
+    inline size_t GetGeneCount(void) const { return m_NumGenes; }
     inline void ResetGeneXrefCount() { m_NumGeneXrefs = 0; }
     inline void IncrementGeneXrefCount() { m_NumGeneXrefs++; }
-    inline void AddToGeneXrefCount(SIZE_TYPE num) { m_NumGeneXrefs += num; }
-    inline SIZE_TYPE GetGeneXrefCount(void) const { return m_NumGeneXrefs; }
+    inline void AddToGeneXrefCount(size_t num) { m_NumGeneXrefs += num; }
+    inline size_t GetGeneXrefCount(void) const { return m_NumGeneXrefs; }
 
     // counting cumulative number of inference qualifiers with accessions
     inline void ResetCumulativeInferenceCount() { m_CumulativeInferenceCount = 0; }
     inline void IncrementCumulativeInferenceCount() { m_CumulativeInferenceCount++; }
-    inline void AddToCumulativeInferenceCount(SIZE_TYPE num) { m_CumulativeInferenceCount += num; }
-    inline SIZE_TYPE GetCumulativeInferenceCount(void) const { return m_CumulativeInferenceCount; }
+    inline void AddToCumulativeInferenceCount(size_t num) { m_CumulativeInferenceCount += num; }
+    inline size_t GetCumulativeInferenceCount(void) const { return m_CumulativeInferenceCount; }
 
     // counting sequences with and without TPA history
     inline void ResetTpaWithHistoryCount() { m_NumTpaWithHistory = 0; }
     inline void IncrementTpaWithHistoryCount() { m_NumTpaWithHistory++; }
-    inline void AddToTpaWithHistoryCount(SIZE_TYPE num) { m_NumTpaWithHistory += num; }
+    inline void AddToTpaWithHistoryCount(size_t num) { m_NumTpaWithHistory += num; }
     inline void ResetTpaWithoutHistoryCount() { m_NumTpaWithoutHistory = 0; }
     inline void IncrementTpaWithoutHistoryCount() { m_NumTpaWithoutHistory++; }
-    inline void AddToTpaWithoutHistoryCount(SIZE_TYPE num) { m_NumTpaWithoutHistory += num; }
+    inline void AddToTpaWithoutHistoryCount(size_t num) { m_NumTpaWithoutHistory += num; }
 
     // counting number of Pseudos and Pseudogenes
     inline void ResetPseudoCount() { m_NumPseudo = 0; }
     inline void IncrementPseudoCount() { m_NumPseudo++; }
-    inline void AddToPseudoCount(SIZE_TYPE num) { m_NumPseudo += num; }
+    inline void AddToPseudoCount(size_t num) { m_NumPseudo += num; }
     inline void ResetPseudogeneCount() { m_NumPseudogene = 0; }
     inline void IncrementPseudogeneCount() { m_NumPseudogene++; }
-    inline void AddToPseudogeneCount(SIZE_TYPE num) { m_NumPseudogene += num; }
+    inline void AddToPseudogeneCount(size_t num) { m_NumPseudogene += num; }
 
     // set flag for farfetchfailure
     inline void SetFarFetchFailure() { m_FarFetchFailure = true; }
@@ -432,7 +432,7 @@ public:
 private:
 
     // Setup common options during consturction;
-    void x_Init(Uint4 options, SIZE_TYPE initialInferenceCount);
+    void x_Init(Uint4 options, size_t initialInferenceCount);
 
     // This is so we can temporarily set m_Scope in a function
     // and be sure that it will be set to its old value when we're done
@@ -611,28 +611,28 @@ private:
 
     CValidator::TProgressCallback m_PrgCallback;
     CValidator::CProgressInfo     m_PrgInfo;
-    SIZE_TYPE   m_NumAlign;
-    SIZE_TYPE   m_NumAnnot;
-    SIZE_TYPE   m_NumBioseq;
-    SIZE_TYPE   m_NumBioseq_set;
-    SIZE_TYPE   m_NumDesc;
-    SIZE_TYPE   m_NumDescr;
-    SIZE_TYPE   m_NumFeat;
-    SIZE_TYPE   m_NumGraph;
+    size_t      m_NumAlign;
+    size_t      m_NumAnnot;
+    size_t      m_NumBioseq;
+    size_t      m_NumBioseq_set;
+    size_t      m_NumDesc;
+    size_t      m_NumDescr;
+    size_t      m_NumFeat;
+    size_t      m_NumGraph;
 
-    SIZE_TYPE   m_NumMisplacedFeatures;
-    SIZE_TYPE   m_NumSmallGenomeSetMisplaced;
-    SIZE_TYPE   m_NumMisplacedGraphs;
-    SIZE_TYPE   m_NumGenes;
-    SIZE_TYPE   m_NumGeneXrefs;
+    size_t      m_NumMisplacedFeatures;
+    size_t      m_NumSmallGenomeSetMisplaced;
+    size_t      m_NumMisplacedGraphs;
+    size_t      m_NumGenes;
+    size_t      m_NumGeneXrefs;
     
-    SIZE_TYPE   m_CumulativeInferenceCount;
+    size_t      m_CumulativeInferenceCount;
 
-    SIZE_TYPE   m_NumTpaWithHistory;
-    SIZE_TYPE   m_NumTpaWithoutHistory;
+    size_t      m_NumTpaWithHistory;
+    size_t      m_NumTpaWithoutHistory;
 
-    SIZE_TYPE   m_NumPseudo;
-    SIZE_TYPE   m_NumPseudogene;
+    size_t      m_NumPseudo;
+    size_t      m_NumPseudogene;
 
     size_t      m_NumTopSetSiblings;
 

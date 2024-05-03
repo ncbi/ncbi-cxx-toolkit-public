@@ -210,8 +210,8 @@ void CValidError_graph::ValidateGraphsOnBioseq(const CBioseq& seq)
     int     last_loc = -1;
     bool    overlaps = false;
     const CSeq_graph* overlap_graph = nullptr;
-    SIZE_TYPE num_graphs = 0;
-    SIZE_TYPE graphs_len = 0;
+    size_t num_graphs = 0;
+    size_t graphs_len = 0;
 
     const CSeq_inst& inst = seq.GetInst();
 
@@ -220,7 +220,7 @@ void CValidError_graph::ValidateGraphsOnBioseq(const CBioseq& seq)
     // now sort, so that we can look for coverage
     sort (graph_list.begin(), graph_list.end(), s_CompareTwoSeqGraphs);
 
-    SIZE_TYPE Ns_with_score = 0,
+    size_t Ns_with_score = 0,
         gaps_with_score = 0,
         ACGTs_without_score = 0,
         vals_below_min = 0,
@@ -305,7 +305,7 @@ void CValidError_graph::ValidateGraphsOnBioseq(const CBioseq& seq)
             "a single base", seq, *overlap_graph);
     }
 
-    SIZE_TYPE seq_len = GetUngappedSeqLen(seq);
+    size_t seq_len = GetUngappedSeqLen(seq);
     if ( (seq_len != graphs_len)  &&  (inst.GetLength() != graphs_len) ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphBioseqLen,
             "SeqGraph (" + NStr::SizetToString(graphs_len) + ") and Bioseq (" +
@@ -458,7 +458,7 @@ void CValidError_graph::x_ValidateGraphOnDeltaBioseq(const CBioseq& seq)
         next = curr,
         end = delta.Get().end();
 
-    SIZE_TYPE   num_delta_seq = 0;
+    size_t   num_delta_seq = 0;
     TSeqPos offset = 0;
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -570,7 +570,7 @@ void CValidError_graph::x_ValidateGraphOnDeltaBioseq(const CBioseq& seq)
         curr = next;
     }
 
-    SIZE_TYPE num_graphs = 0;
+    size_t num_graphs = 0;
     grp.Rewind();
     while (grp) {
         if (IsSupportedGraphType(grp->GetOriginalGraph())) {
@@ -608,9 +608,9 @@ bool CValidError_graph::IsSupportedGraphType(const CSeq_graph& graph)
 
 
 // NOTE - this returns the length of the non-gap portions of the sequence
-SIZE_TYPE CValidError_graph::GetUngappedSeqLen(const CBioseq& seq)
+size_t CValidError_graph::GetUngappedSeqLen(const CBioseq& seq)
 {
-    SIZE_TYPE seq_len = 0;
+    size_t seq_len = 0;
     const CSeq_inst & inst = seq.GetInst();
 
     if ( inst.GetRepr() == CSeq_inst::eRepr_raw ) {

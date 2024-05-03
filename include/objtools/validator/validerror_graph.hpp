@@ -79,7 +79,7 @@ private:
         size_t& ACGTs_without_score, size_t& vals_below_min, size_t& vals_above_max);
     void x_ValidateGraphOnDeltaBioseq(const CBioseq& seq);
 
-    SIZE_TYPE GetUngappedSeqLen(const CBioseq& seq);
+    size_t GetUngappedSeqLen(const CBioseq& seq);
 
     bool x_GetLitLength(const CDelta_seq& delta, TSeqPos& len);
 
