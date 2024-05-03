@@ -924,9 +924,9 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
 
         // drops severity if first mismatch is same up to sp.
         EDiagSev sev = eDiag_Error;
-        SIZE_TYPE pos = NStr::Find(taxname, sp);
+        size_t pos = NStr::Find(taxname, sp);
         if ( pos != NPOS ) {
-            SIZE_TYPE len = pos + sp.length();
+            size_t len = pos + sp.length();
             if ( NStr::strncasecmp(first_taxname.c_str(),
                                    taxname.c_str(),
                                    len) == 0 ) {
@@ -934,7 +934,7 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
             }
         }
         // drops severity if one name is subset of the other
-        SIZE_TYPE comp_len = min (taxname.length(), first_taxname.length());
+        size_t comp_len = min (taxname.length(), first_taxname.length());
         if (NStr::EqualCase(taxname, 0, comp_len, first_taxname)) {
             sev = eDiag_Warning;
         }

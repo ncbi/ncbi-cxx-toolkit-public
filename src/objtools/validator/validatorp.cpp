@@ -177,7 +177,7 @@ CValidError_imp::CValidError_imp
     x_Init(options, pContext->CumulativeInferenceCount);
 }
 
-void CValidError_imp::x_Init(Uint4 options, SIZE_TYPE initialInferenceCount)
+void CValidError_imp::x_Init(Uint4 options, size_t initialInferenceCount)
 {
     SetOptions(options);
     Reset(initialInferenceCount);
@@ -314,7 +314,7 @@ void CValidError_imp::SetErrorRepository(IValidError* errors)
 //LCOV_EXCL_STOP
 
 
-void CValidError_imp::Reset(SIZE_TYPE prevCumulativeInferenceCount)
+void CValidError_imp::Reset(size_t prevCumulativeInferenceCount)
 {
     m_Scope = nullptr;
     m_TSE = nullptr;

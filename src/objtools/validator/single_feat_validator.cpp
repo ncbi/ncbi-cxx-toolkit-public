@@ -1572,7 +1572,7 @@ static bool s_RptUnitIsBaseRange (string str, TSeqPos& from, TSeqPos& to)
     if (str.length() > 25) {
         return false;
     }
-    SIZE_TYPE pos = NStr::Find (str, "..");
+    size_t pos = NStr::Find (str, "..");
     if (pos == string::npos) {
         return false;
     }
@@ -2518,7 +2518,7 @@ void CSingleFeatValidator::x_ValidateLocusTagGeneralMatch(CConstRef <CSeq_feat> 
         }
 
         if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
-            SIZE_TYPE pos = dbt.GetTag().GetStr().find('-');
+            size_t pos = dbt.GetTag().GetStr().find('-');
             string str = dbt.GetTag().GetStr().substr(0, pos);
             if (!NStr::EqualNocase(locus_tag, str)) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProductMismatch,
