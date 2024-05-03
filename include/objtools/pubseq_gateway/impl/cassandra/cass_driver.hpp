@@ -113,6 +113,36 @@ class CCassConsistency final
     static constexpr TCassConsistency kSerial = CASS_CONSISTENCY_SERIAL;
     static constexpr TCassConsistency kLocalSerial = CASS_CONSISTENCY_LOCAL_SERIAL;
     static constexpr TCassConsistency kLocalOne = CASS_CONSISTENCY_LOCAL_ONE;
+
+private:
+    static constexpr array<pair<string_view, TCassConsistency>, 11> sx_ConsistencyNames{
+        {
+            {string_view{"LOCAL_QUORUM"}, kLocalQuorum},
+            {string_view{"LOCAL_ONE"}, kLocalOne},
+            {string_view{"EACH_QUORUM"}, kEachQuorum},
+            {string_view{"ANY"}, kAny},
+            {string_view{"ONE"}, kOne},
+            {string_view{"TWO"}, kTwo},
+            {string_view{"THREE"}, kThree},
+            {string_view{"ALL"}, kAll},
+            {string_view{"QUORUM"}, kQuorum},
+            {string_view{"SERIAL"}, kSerial},
+            {string_view{"LOCAL_SERIAL"}, kLocalSerial},
+        }
+    };
+
+public:
+    static TCassConsistency FromString(string_view value)
+    {
+        const auto itr = find_if(
+            begin(sx_ConsistencyNames), end(sx_ConsistencyNames),
+            [&value](const auto &v) { return v.first == value; }
+        );
+        if (itr != end(sx_ConsistencyNames)) {
+            return itr->second;
+        }
+        return kUnknown;
+    }
 };
 
 /**
