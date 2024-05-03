@@ -65,6 +65,7 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     int         TpaNoHistYesGI{0};
     std::atomic<size_t> NumGenes{0};
     std::atomic<size_t> NumGeneXrefs{0};
+    std::atomic<size_t> CumulativeInferenceCount{0};
     once_flag   DescriptorsOnceFlag;
     once_flag   SubmitBlockOnceFlag;
     once_flag   WgsSetInSeqSubmitOnceFlag;
