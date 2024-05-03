@@ -74,46 +74,33 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 struct ParRefBlk {
-    Int4  refnum; /* REFERENCE for GenBank, RN for Embl
+    Int4      refnum = 0;     /* REFERENCE for GenBank, RN for Embl
                                            and Swiss-Prot */
-    Int4  muid;   /* RM for Swiss-Prot */
-    TEntrezId pmid;
-    char* doi;
-    char* agricola;
+    Int4      muid = 0;       /* RM for Swiss-Prot */
+    TEntrezId pmid = ZERO_ENTREZ_ID;
+    string    doi;
+    string    agricola;
 
     CRef<CAuth_list> authors; /* a linklist of the author's name,
-                                                       AUTHORS for GenBank, RA for Embl
-                                                       and Swiss-Prot */
-    char*            title;   /* TITLE for GenBank */
+                                           AUTHORS for GenBank, RA for Embl
+                                           and Swiss-Prot */
+    optional<string> title;   /* TITLE for GenBank */
     string           journal; /* JOURNAL for GenBank, RL for Embl
                                            and Swiss-Prot */
-    char*            cit;     /* for cit-gen in Swiss-Prot */
+    string           cit;     /* for cit-gen in Swiss-Prot */
     string           vol;
     string           pages;
-    char*            year;
+    string           year;
     string           affil;
-    char*            country;
+    string           country;
     string           comment; /* STANDARD for GenBank, RP for
                                            Swiss-Prot, RC for Embl */
-    Uint1            reftype; /* 0 if ignore the reference,
+    ERefBlockType    reftype = ParFlat_ReftypeIgnore;
+                              /* 0 if ignore the reference,
                                            1 if non-parseable,
                                            2 if thesis,
                                            3 if article,
                                            4 submitted etc. */
-
-    ParRefBlk() :
-        refnum(0),
-        muid(0),
-        pmid(ZERO_ENTREZ_ID),
-        doi(nullptr),
-        agricola(nullptr),
-        title(nullptr),
-        cit(nullptr),
-        year(nullptr),
-        country(nullptr),
-        reftype(ParFlat_ReftypeIgnore)
-    {
-    }
 };
 using ParRefBlkPtr = ParRefBlk*;
 
@@ -225,22 +212,21 @@ static void CkSPComTopics(ParserPtr pp, const char* str)
  *                                              10-28-93
  *
  **********************************************************/
-static char* ParseYear(const char* str)
+static string ParseYear(const char* str)
 {
     Int2  i;
-    char* year;
+    string year;
 
     while (*str != '\0' && isdigit(*str) == 0)
         str++;
 
     if (*str == '\0')
-        return nullptr;
+        return year;
 
-    year = StringNew(4);
     for (i = 0; i < 4 && *str != '\0' && isdigit(*str) != 0; str++, i++)
-        year[i] = *str;
+        year += *str;
 
-    return (year);
+    return year;
 }
 
 /**********************************************************
@@ -343,36 +329,36 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
 
             while (*ptr1 == ',' || *ptr1 == ' ')
                 ptr1++;
-            prbp->country = StringSave(ptr1);
-            if (! StringEqu(prbp->country, "U.S.A."))
-                CleanTailNoneAlphaChar(prbp->country);
+            prbp->country = ptr1;
+            if (prbp->country != "U.S.A.")
+                CleanTailNoneAlphaCharInString(prbp->country);
         } else /* error */
         {
             prbp->reftype = ParFlat_ReftypeIgnore;
             prbp->journal = str;
 
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalFormat, "Could not parse the thesis format (swiss-prot), %s, ref [%d].", str, prbp->refnum);
-            prbp->cit = StringSave(str);
+            prbp->cit = str;
         }
     } else if (ParseJourLine(pp, prbp, str)) {
-        if (prbp->year)
+        if (! prbp->year.empty())
             prbp->reftype = ParFlat_ReftypeArticle;
         else {
             prbp->reftype = ParFlat_ReftypeIgnore;
             prbp->journal = str;
-            prbp->cit     = StringSave(str);
+            prbp->cit     = str;
 
             ErrPostEx(SEV_WARNING, ERR_REFERENCE_YearEquZero, "Article without year (swiss-prot), %s", str);
         }
     } else {
         prbp->reftype = ParFlat_ReftypeIgnore;
         ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalFormat, "Could not parse the article format (swiss-prot), %s, ref [%d].", str, (int)prbp->refnum);
-        prbp->cit = StringSave(str);
+        prbp->cit = str;
     }
 }
 
 /**********************************************************/
-static void GetSprotIds(ParRefBlkPtr prbp, char* str)
+static void GetSprotIds(ParRefBlk* prbp, char* str)
 {
     char* p;
     char* q;
@@ -386,8 +372,8 @@ static void GetSprotIds(ParRefBlkPtr prbp, char* str)
 
     prbp->muid     = 0;
     prbp->pmid     = ZERO_ENTREZ_ID;
-    prbp->doi      = nullptr;
-    prbp->agricola = nullptr;
+    prbp->doi.clear();
+    prbp->agricola.clear();
     dois           = false;
     muids          = false;
     pmids          = false;
@@ -411,13 +397,13 @@ static void GetSprotIds(ParRefBlkPtr prbp, char* str)
             else
                 pmids = true;
         } else if (StringEquNI(q, "DOI=", 4)) {
-            if (! prbp->doi)
-                prbp->doi = StringSave(q + 4);
+            if (prbp->doi.empty())
+                prbp->doi = (q + 4);
             else
                 dois = true;
         } else if (StringEquNI(q, "AGRICOLA=", 9)) {
-            if (! prbp->agricola)
-                prbp->agricola = StringSave(q + 9);
+            if (prbp->agricola.empty())
+                prbp->agricola = (q + 9);
             else
                 agricolas = true;
         }
@@ -519,7 +505,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
                 }
             }
             p[1]        = '\0';
-            prbp->title = StringSave(s);
+            prbp->title = s;
             break;
         case ParFlatSP_RL:
             ParseRLDataSP(pp, prbp, str);
@@ -588,11 +574,8 @@ static CRef<CDate> get_s_date(const Char* str, bool bstring)
 }
 
 /**********************************************************/
-static void SetCitTitle(CTitle& title, const Char* title_str)
+static void SetCitTitle(CTitle& title, const string& title_str)
 {
-    if (! title_str)
-        return;
-
     CRef<CTitle::C_E> new_title(new CTitle::C_E);
     new_title->SetName(title_str);
     title.Set().push_back(new_title);
@@ -607,20 +590,20 @@ static void SetCitTitle(CTitle& title, const Char* title_str)
  **********************************************************/
 static bool GetImprintPtr(ParRefBlkPtr prbp, CImprint& imp)
 {
-    if (! prbp->year)
+    if (prbp->year.empty())
         return false;
 
     imp.SetDate().SetStd().SetYear(NStr::StringToInt(prbp->year, NStr::fAllowTrailingSymbols));
 
     if (! prbp->vol.empty()) {
-        if (prbp->vol[0] == '0')
+        if (prbp->vol.front() == '0')
             imp.SetPrepub(CImprint::ePrepub_in_press);
         else
             imp.SetVolume(prbp->vol);
     }
 
     if (! prbp->pages.empty()) {
-        if (prbp->pages[0] == '0')
+        if (prbp->pages.front() == '0')
             imp.SetPrepub(CImprint::ePrepub_in_press);
         else
             imp.SetPages(prbp->pages);
@@ -751,7 +734,7 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
 
     CCit_book& book = article.SetFrom().SetBook();
 
-    SetCitTitle(book.SetTitle(), title.c_str());
+    SetCitTitle(book.SetTitle(), title);
     book.SetAuthors(*authors);
 
     page = StringIStr(temp2, "PP.");
@@ -818,8 +801,8 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     if (prbp->authors.NotEmpty())
         article.SetAuthors(*prbp->authors);
 
-    if (prbp->title && prbp->title[0] != '\0')
-        SetCitTitle(article.SetTitle(), prbp->title);
+    if (prbp->title && ! prbp->title->empty())
+        SetCitTitle(article.SetTitle(), *prbp->title);
 
     return true;
 }
@@ -837,7 +820,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
 {
     char* publisher;
     char* year;
-    char* title;
+    string title;
     char* pages;
     char* volume;
 
@@ -886,11 +869,10 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     }
 
     ++p;
-    title = StringSave(string_view(ptr, p - ptr));
+    title = string(ptr, p);
     for (q += 3, p = q; *q >= '0' && *q <= '9';)
         q++;
     if (q == p || (*q != ':' && *q != '-')) {
-        MemFree(title);
         return false;
     }
 
@@ -900,7 +882,6 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         for (p = q; *q >= '0' && *q <= '9';)
             q++;
         if (q == p || *q != '-') {
-            MemFree(title);
             MemFree(volume);
             return false;
         }
@@ -913,7 +894,6 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     while (*q >= '0' && *q <= '9')
         q++;
     if (*(q - 1) == '-') {
-        MemFree(title);
         if (volume)
             MemFree(volume);
         return false;
@@ -924,7 +904,6 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         q++;
     if (q == p || *q == '\0') {
         MemFree(pages);
-        MemFree(title);
         if (volume)
             MemFree(volume);
         return false;
@@ -933,7 +912,6 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     p = StringChr(q, '(');
     if (! p || p == q) {
         MemFree(pages);
-        MemFree(title);
         if (volume)
             MemFree(volume);
         return false;
@@ -950,7 +928,6 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     if (p == q && *p == '\0') {
         *p = ch;
         MemFree(pages);
-        MemFree(title);
         if (volume)
             MemFree(volume);
         return false;
@@ -963,7 +940,6 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         p++;
     if (p - q != 4 || *p != ')') {
         MemFree(pages);
-        MemFree(title);
         MemFree(publisher);
         if (volume)
             MemFree(volume);
@@ -987,8 +963,8 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     if (prbp->authors.NotEmpty())
         article.SetAuthors(*prbp->authors);
 
-    if (prbp->title && prbp->title[0] != '\0')
-        SetCitTitle(article.SetTitle(), prbp->title);
+    if (prbp->title && ! prbp->title->empty())
+        SetCitTitle(article.SetTitle(), *prbp->title);
 
     return true;
 }
@@ -1064,7 +1040,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
     pat.SetCountry(country);
 
     if (prbp->title)
-        pat.SetTitle(prbp->title);
+        pat.SetTitle(*prbp->title);
     else
         pat.SetTitle("");
 
@@ -1093,14 +1069,14 @@ static bool GetCitGen(ParRefBlkPtr prbp, CCit_gen& cit_gen)
     if (! prbp->journal.empty()) {
         cit_gen.SetCit(prbp->journal);
         is_set = true;
-    } else if (prbp->cit) {
+    } else if (! prbp->cit.empty()) {
         cit_gen.SetCit(prbp->cit);
-        prbp->cit = nullptr;
-        is_set    = true;
+        prbp->cit.clear();
+        is_set = true;
     }
 
-    if (prbp->title && prbp->title[0] != '\0') {
-        cit_gen.SetTitle(prbp->title);
+    if (prbp->title && ! prbp->title->empty()) {
+        cit_gen.SetTitle(*prbp->title);
         is_set = true;
     }
 
@@ -1126,7 +1102,7 @@ static bool GetCitLetThesis(ParRefBlkPtr prbp, CCit_let& cit_let)
     CCit_book& book = cit_let.SetCit();
 
     if (prbp->title)
-        SetCitTitle(book.SetTitle(), prbp->title);
+        SetCitTitle(book.SetTitle(), *prbp->title);
 
     if (! GetImprintPtr(prbp, book.SetImp()))
         return false;
@@ -1151,8 +1127,8 @@ static bool GetCitLetThesis(ParRefBlkPtr prbp, CCit_let& cit_let)
  **********************************************************/
 static bool GetCitArticle(ParRefBlkPtr prbp, CCit_art& article)
 {
-    if (prbp->title && prbp->title[0] != '\0')
-        SetCitTitle(article.SetTitle(), prbp->title);
+    if (prbp->title && ! prbp->title->empty())
+        SetCitTitle(article.SetTitle(), *prbp->title);
 
     if (prbp->authors.NotEmpty())
         article.SetAuthors(*prbp->authors);
@@ -1167,7 +1143,7 @@ static bool GetCitArticle(ParRefBlkPtr prbp, CCit_art& article)
         journal.SetTitle().Set().push_back(title);
     }
 
-    if (prbp->agricola) {
+    if (! prbp->agricola.empty()) {
         CRef<CArticleId> id(new CArticleId);
 
         id->SetOther().SetDb("AGRICOLA");
@@ -1176,7 +1152,7 @@ static bool GetCitArticle(ParRefBlkPtr prbp, CCit_art& article)
         article.SetIds().Set().push_back(id);
     }
 
-    if (prbp->doi) {
+    if (! prbp->doi.empty()) {
         CRef<CArticleId> id(new CArticleId);
         id->SetDoi().Set(prbp->doi);
 
@@ -1195,17 +1171,6 @@ static bool GetCitArticle(ParRefBlkPtr prbp, CCit_art& article)
  **********************************************************/
 static void FreeParRefBlkPtr(ParRefBlkPtr prbp)
 {
-    if (prbp->doi)
-        MemFree(prbp->doi);
-    if (prbp->agricola)
-        MemFree(prbp->agricola);
-    if (prbp->title)
-        MemFree(prbp->title);
-    if (prbp->year)
-        MemFree(prbp->year);
-    if (prbp->country)
-        MemFree(prbp->country);
-
     delete prbp;
 }
 
@@ -1316,7 +1281,7 @@ CRef<CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
     ParRefBlkPtr prbp = SprotRefString(pp, dbp, col_data);
 
     if (! prbp->title)
-        prbp->title = StringSave("");
+        prbp->title = "";
 
     CRef<CPubdesc> desc = GetPubRef(prbp, pp->source);
     FreeParRefBlkPtr(prbp);
