@@ -4047,6 +4047,7 @@ KUNE	s	Kunming Institute of Ecology, Academia Sinica
 KUO	s	Kuopio Natural History Museum			
 KURS	s	Kursk State University, Department of Botany			
 KUS	s	Korea University, Biology Department			
+KUST	s	Kohat University of Science and Technology			
 KUU	s	University of Science and Technology			
 KUW	s	Kakatiya University			
 KUZ<JPN>	s	Zoological Collection of the Kyoto University			
