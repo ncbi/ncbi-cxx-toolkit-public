@@ -36764,15 +36764,17 @@ if test "$with_opentelemetry" != "no"; then
     OPENTELEMETRY_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       OPENTELEMETRY_LIBS="$OPENTELEMETRY_LIBPATH -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client \
+       OPENTELEMETRY_LIBS="$OPENTELEMETRY_LIBPATH -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
    -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
+   -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common"
     else
        OPENTELEMETRY_INCLUDE=""
-       OPENTELEMETRY_LIBS="-lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client \
+       OPENTELEMETRY_LIBS="-lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
    -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
+   -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common"
        in_path=
     fi
