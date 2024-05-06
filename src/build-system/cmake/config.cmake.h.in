@@ -958,6 +958,9 @@
 /* Define to 1 if libssl is available. */
 #cmakedefine HAVE_LIBOPENSSL 1
 
+/* Define to 1 if libopentelemetry is available. */
+#cmakedefine HAVE_LIBOPENTELEMETRY 1
+
 /* Define to 1 if libopentracing is available. */
 #cmakedefine HAVE_LIBOPENTRACING 1
 
