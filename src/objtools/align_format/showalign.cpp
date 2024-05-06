@@ -4579,7 +4579,8 @@ void CDisplaySeqalign::x_PreProcessSeqAlign(CSeq_align_set &actual_aln_list)
 		  || (m_AlignOption & eHtml && m_AlignOption & eShowBlastInfo)))) {
 			/*need to construct segs for dumpgnl and
 			get sub-sequence for long sequences*/
-
+            
+        string idString, prevIdString,prevIdStringWithVersion,idStringWithVersion;
         for (CSeq_align_set::Tdata::const_iterator
                      iter =  actual_aln_list.Get().begin();
                  iter != actual_aln_list.Get().end()
@@ -4587,10 +4588,16 @@ void CDisplaySeqalign::x_PreProcessSeqAlign(CSeq_align_set &actual_aln_list)
 
 			CConstRef<CSeq_id> subid;
             subid = &((*iter)->GetSeq_id(1));
-            string idString = subid->GetSeqIdString();
-
-			x_CalcUrlLinksParams(**iter,idString,toolUrl);//sets m_AlnLinksParams->segs,hspNum, subjRange
-        }
+                                   
+            idString = subid->GetSeqIdString();            
+            idStringWithVersion = subid->GetSeqIdString(true);
+            if(!prevIdString.empty() && !prevIdStringWithVersion.empty() && prevIdString == idString && prevIdStringWithVersion != idStringWithVersion) {
+                continue;
+            }            
+			x_CalcUrlLinksParams(**iter,idString,toolUrl);//sets m_AlnLinksParams->segs,hspNum, subjRange            
+            prevIdStringWithVersion = idStringWithVersion;
+            prevIdString = idString;
+        }        
     }
 }
 
