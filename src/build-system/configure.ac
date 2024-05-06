@@ -9292,13 +9292,13 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(thrift, THRIFT, [thrift$THRIFT_SFX],
   [AC_LANG_PROGRAM([[@%:@include <thrift/TApplicationException.h>]],
       [[apache::thrift::TApplicationException().read(nullptr);]])],
   [], [$OPENSSL_LIBS], [$BOOST_INCLUDE])
-if test "$with_thrift" != no -a \
-   \( -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a" \
-   -o -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a" \); then
+if test "$with_thrift" != no; then
    if test -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a"; then
       THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift${THRIFT_SFX}_static"
-   else
+   elif test -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a"; then
       THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift_static$THRIFT_SFX"
+   else
+      THRIFT_STATIC_LIBS=$THRIFT_LIBS
    fi
 fi
 
@@ -9345,6 +9345,8 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(yaml_cpp, YAML_CPP, yaml-cpp,
 if test "$with_yaml_cpp" != no -a -f "$YAML_CPP_PATH/lib/libyaml-cpp-static.a"
 then
    YAML_CPP_STATIC_LIBS="-L$YAML_CPP_PATH/lib -lyaml-cpp-static"
+else
+   YAML_CPP_STATIC_LIBS=$YAML_CPP_LIBS
 fi
 
 
@@ -9363,6 +9365,8 @@ NCBI_CHECK_THIRD_PARTY_LIB(opentracing,
 if test "$with_opentracing" != no \
    -a -f "$OPENTRACING_PATH/lib/libopentracing-static.a"; then
    OPENTRACING_STATIC_LIBS="-L$OPENTRACING_PATH/lib -lopentracing-static"
+else
+   OPENTRACING_STATIC_LIBS=$OPENTRACING_LIBS
 fi
 
 
