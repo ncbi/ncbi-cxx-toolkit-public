@@ -104,7 +104,8 @@ case "$with_3psw" in
                      gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, crc32c, hiredis,
-                     librdkafka, cppkafka, thrift, opentracing, jaeger],
+                     librdkafka, cppkafka, thrift,
+                     opentracing, jaeger, opentelemetry],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -674,6 +675,10 @@ AC_ARG_WITH(jaeger,
    [ --with-jaeger=DIR       use Jaeger Tracing installation in DIR])
 AC_ARG_WITH(jaeger,
    [ --without-jaeger        do not use Jaeger tracing])
+AC_ARG_WITH(opentelemetry,
+   [ --with-opentelemetry=DIR use OpenTelemetry installation in DIR])
+AC_ARG_WITH(opentelemetry,
+   [ --without-opentelemetry do not use OpenTelemetry])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -741,7 +746,7 @@ mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
-thrift nlohmann-json yaml-cpp opentracing jaeger \
+thrift nlohmann-json yaml-cpp opentracing jaeger opentelemetry \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -825,7 +830,7 @@ for x_arg in "$@" ; do
       | --with-crc32c=* | --with-google-cloud=* \
       | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* \
       | --with-thrift=* | --with-nlohmann-json=* | --with-yaml-cpp=* \
-      | --with-opentracing=* | --with-jaeger=* )
+      | --with-opentracing=* | --with-jaeger=* | --with-opentelemetry=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -9403,6 +9408,35 @@ else
 fi
 
 
+case "$with_opentelemetry" in
+   yes | no | '' ) ;;
+   *             ) OPENTELEMETRY_PATH=$with_opentelemetry ;;
+esac
+if test -d "$OPENTELEMETRY_PATH"; then
+   NCBI_FIND_ARCH_PATH(OPENTELEMETRY)
+   OPENTELEMETRY_PATH=$OPENTELEMETRY_ARCH_PATH
+   NCBI_FIX_DIR(OPENTELEMETRY_PATH)
+fi
+# Not bothering with pkg-config, whose coverage is too limited.
+NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
+  opentelemetry_exporter_otlp_http,
+  [AC_LANG_PROGRAM([[@%:@include <opentelemetry/exporters/otlp/otlp_http_exporter.h>]],
+      [[opentelemetry::exporter::otlp::OtlpHttpExporter exporter;]])],
+  [-lopentelemetry_exporter_otlp_http_client \
+   -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
+   -lopentelemetry_proto -lopentelemetry_http_client_curl \
+   -lopentelemetry_resources -lopentelemetry_common],
+  [$PROTOBUF_LIBS $CURL_LIBS], [$PROTOBUF_INCLUDE])
+OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
+if test "$with_opentelemetry" != no \
+   -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"; then
+   OPENTELEMETRY_STATIC_LIBS=`echo "$OPENTELEMETRY_LIBS" \
+       | sed -e 's/ -l[[^ ]]*/&-static/g'`
+else
+   OPENTELEMETRY_STATIC_LIBS=$OPENTELEMETRY_LIBS
+fi
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -10132,6 +10166,7 @@ AC_SUBST(NLOHMANN_JSON_INCLUDE)
 AC_SUBST(YAML_CPP_STATIC_LIBS)
 AC_SUBST(OPENTRACING_STATIC_LIBS)
 AC_SUBST(JAEGER_STATIC_LIBS)
+AC_SUBST(OPENTELEMETRY_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)

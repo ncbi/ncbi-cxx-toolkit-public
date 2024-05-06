@@ -492,6 +492,9 @@
 /* Define to 1 if libssl is available. */
 #undef HAVE_LIBOPENSSL
 
+/* Define to 1 if libopentelemetry_exporter_otlp_http is available. */
+#undef HAVE_LIBOPENTELEMETRY
+
 /* Define to 1 if libopentracing is available. */
 #undef HAVE_LIBOPENTRACING
 

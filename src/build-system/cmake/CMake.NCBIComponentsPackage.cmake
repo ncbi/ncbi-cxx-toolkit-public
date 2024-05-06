@@ -271,6 +271,11 @@ endif()
 NCBI_define_Pkgcomponent(NAME JAEGER PACKAGE jaegertracing FIND jaegertracing)
 
 #############################################################################
+# OPENTELEMETRY
+NCBI_define_Pkgcomponent(NAME OPENTELEMETRY PACKAGE opentelemetry-cpp
+  FIND opentelemetry-cpp)
+
+#############################################################################
 # AWS_SDK
 NCBI_define_Pkgcomponent(NAME AWS_SDK PACKAGE AWSSDK FIND AWSSDK)
 
