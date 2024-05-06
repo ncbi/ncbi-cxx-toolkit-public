@@ -91,6 +91,17 @@ suppression = {
 	}
 }
 suppression = {
+	name = "tds_vasprintf"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf,src=vasprintf.c;
+			func=tds_asprintf,src=asprintf.c;
+		}
+	}
+}
+suppression = {
 	name = "tds_vasprintf_ver14 - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
@@ -98,9 +109,6 @@ suppression = {
 			...;
 			func=tds_vasprintf_ver14,src=vasprintf.c;
 			func=tds_asprintf_ver14,src=asprintf.c;
-		}
-		allocation={
-			...;
 		}
 	}
 }
@@ -112,10 +120,6 @@ suppression = {
 			...;
 			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
 			func=tds_vasprintf_ver14;
-		}
-		allocation={
-			...;
-			func=tds_get_homedir_ver14;
 		}
 	}
 }
@@ -131,6 +135,30 @@ suppression = {
 	}
 }
 suppression = {
+	name = "tds_vasprintf_ver14 - 4"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf,src=vasprintf.c;
+			func=tds_asprintf,src=asprintf.c;
+			func=tds_read_conf_file_ver14,src=config.c;
+		}
+	}
+}
+suppression = {
+	name = "tds_vasprintf_ver14 - 5"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=tds_vasprintf,src=vasprintf.c;
+			func=tds_asprintf,src=asprintf.c;
+			func=tds_read_conf_file_ver14,src=config.c;
+		}
+	}
+}
+suppression = {
 	name = "tds_vasprintf_ver14 - all"
 	type = {invalid_memory_access_partial}
 	stacks = {
@@ -140,6 +168,7 @@ suppression = {
 		}
 	}
 }
+
 suppression = {
 	name = "read_login_info/snprintf"
 	type = {invalid_memory_access_partial}
