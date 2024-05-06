@@ -103,9 +103,6 @@ NCBI_PARAM_DEF_EX(double,   USAGE_REPORT, WaitTimeout, kDefault_WaitTimeout, ePa
 
 // Default parameters to report
 static atomic<CUsageReport::TWhat> gs_DefaultParams(CUsageReport::fDefault);
-// Timeout and max tries for connection
-static atomic<CTimeout*>    gs_Timeout;
-static atomic<unsigned int> gs_MaxTry(0);
 
 
 void CUsageReportAPI::SetDefaultParameters(TWhat what)
