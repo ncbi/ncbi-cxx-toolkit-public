@@ -1316,7 +1316,7 @@ public:
                    TReplyComplete reply_complete,
                    TNewItem       new_item = nullptr);
 
-    /// Check whether the queue is empty and all processing is complete
+    /// Check whether the queue was stopped/reset, is now empty and all processing is complete
     bool IsEmpty() const { return CPSG_Queue::IsEmpty() && m_Replies.empty(); }
 
     /// Wait once for events in the queue and process any.
