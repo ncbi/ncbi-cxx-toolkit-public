@@ -9422,9 +9422,10 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
   opentelemetry_exporter_otlp_http,
   [AC_LANG_PROGRAM([[@%:@include <opentelemetry/exporters/otlp/otlp_http_exporter.h>]],
       [[opentelemetry::exporter::otlp::OtlpHttpExporter exporter;]])],
-  [-lopentelemetry_exporter_otlp_http_client \
+  [-lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
    -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
+   -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common],
   [$PROTOBUF_LIBS $CURL_LIBS], [$PROTOBUF_INCLUDE])
 OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
