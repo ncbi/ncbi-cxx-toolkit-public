@@ -77,6 +77,7 @@ class CVDBTable;
 class CVDBColumn;
 class CVDBCursor;
 class CVDBStringValue;
+class CSraMgr;
 
 typedef int64_t TVDBRowId;
 typedef uint64_t TVDBRowCount;
@@ -255,6 +256,9 @@ public:
     CTime GetURLTimestamp(const string& url) const;
 
 protected:
+    friend class CSraMgr;
+    static void s_VDBInit();
+
     void x_Init(void);
 
 private:
