@@ -114,6 +114,7 @@ set(NCBI_ThirdParty_NLohmann_JSON ${NCBI_TOOLS_ROOT}/nlohmann-json-3.9.1 CACHE P
 set(NCBI_ThirdParty_YAML_CPP      ${NCBI_TOOLS_ROOT}/yaml-cpp-0.6.3 CACHE PATH "YAML_CPP root")
 set(NCBI_ThirdParty_OPENTRACING   ${NCBI_TOOLS_ROOT}/opentracing-cpp-1.6.0 CACHE PATH "OPENTRACING root")
 set(NCBI_ThirdParty_JAEGER        ${NCBI_TOOLS_ROOT}/jaeger-client-cpp-0.7.0 CACHE PATH "JAEGER root")
+set(NCBI_ThirdParty_OPENTELEMETRY ${NCBI_TOOLS_ROOT}/opentelemetry-cpp-1.14.2 CACHE PATH "OPENTELEMETRY root")
 set(NCBI_ThirdParty_AWS_SDK       ${NCBI_TOOLS_ROOT}/aws-sdk-cpp-1.8.14 CACHE PATH "AWS_SDK root")
 
 #############################################################################
@@ -852,6 +853,13 @@ NCBIcomponent_report(OPENTRACING)
 # JAEGER
 NCBI_define_Xcomponent(NAME JAEGER LIB jaegertracing ADD_COMPONENT NLohmann_JSON OPENTRACING YAML_CPP THRIFT)
 NCBIcomponent_report(JAEGER)
+
+#############################################################################
+# OPENTELEMETRY
+NCBI_define_Xcomponent(NAME OPENTELEMETRY PACKAGE opentelemetry-cpp
+  LIB opentelemetry-cpp::otlp_http_exporter
+  opentelemetry-cpp::otlp_exporter_ostream_span)
+NCBIcomponent_report(OPENTELEMETRY)
 
 #############################################################################
 # AWSSDK

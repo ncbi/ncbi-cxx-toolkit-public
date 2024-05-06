@@ -668,6 +668,7 @@ PERL_INCLUDE
 UNLESS_PUBSEQOS
 ncbi_xreader_pubseqos2
 ncbi_xreader_pubseqos
+OPENTELEMETRY_STATIC_LIBS
 JAEGER_STATIC_LIBS
 OPENTRACING_STATIC_LIBS
 YAML_CPP_STATIC_LIBS
@@ -925,6 +926,8 @@ srcdir
 top_srcdir
 build_root
 signature
+OPENTELEMETRY_LIBS
+OPENTELEMETRY_INCLUDE
 JAEGER_LIBS
 JAEGER_INCLUDE
 OPENTRACING_LIBS
@@ -1382,6 +1385,7 @@ with_nlohmann_json
 with_yaml_cpp
 with_opentracing
 with_jaeger
+with_opentelemetry
 with_3psw
 with_app
 with_ctools
@@ -1960,7 +1964,7 @@ mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
 libuv libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
-thrift nlohmann-json yaml-cpp opentracing jaeger \
+thrift nlohmann-json yaml-cpp opentracing jaeger opentelemetry \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -2042,7 +2046,7 @@ for x_arg in "$@" ; do
       | --with-crc32c=* | --with-google-cloud=* \
       | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* \
       | --with-thrift=* | --with-nlohmann-json=* | --with-yaml-cpp=* \
-      | --with-opentracing=* | --with-jaeger=* )
+      | --with-opentracing=* | --with-jaeger=* | --with-opentelemetry=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2431,6 +2435,8 @@ Optional Packages:
  --without-opentracing   do not use OpenTracing
  --with-jaeger=DIR       use Jaeger Tracing installation in DIR
  --without-jaeger        do not use Jaeger tracing
+ --with-opentelemetry=DIR use OpenTelemetry installation in DIR
+ --without-opentelemetry do not use OpenTelemetry
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-app           do not build standalone applications like ID1_FETCH
@@ -4126,6 +4132,11 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-jaeger but --without-3psw"
          else
             with_jaeger=no
+         fi
+        if test "${with_opentelemetry-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-opentelemetry but --without-3psw"
+         else
+            with_opentelemetry=no
          fi
 
       { NCBI=; unset NCBI;}
@@ -6061,6 +6072,18 @@ fi
 # Check whether --with-jaeger was given.
 if test "${with_jaeger+set}" = set; then :
   withval=$with_jaeger;
+fi
+
+
+# Check whether --with-opentelemetry was given.
+if test "${with_opentelemetry+set}" = set; then :
+  withval=$with_opentelemetry;
+fi
+
+
+# Check whether --with-opentelemetry was given.
+if test "${with_opentelemetry+set}" = set; then :
+  withval=$with_opentelemetry;
 fi
 
 
@@ -36985,6 +37008,183 @@ else
 fi
 
 
+case "$with_opentelemetry" in
+   yes | no | '' ) ;;
+   *             ) OPENTELEMETRY_PATH=$with_opentelemetry ;;
+esac
+if test -d "$OPENTELEMETRY_PATH"; then
+   OPENTELEMETRY_ARCH_PATH=$OPENTELEMETRY_PATH
+for d in "$OPENTELEMETRY_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$OPENTELEMETRY_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$OPENTELEMETRY_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$OPENTELEMETRY_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      OPENTELEMETRY_ARCH_PATH=$d
+      break
+   fi
+done
+   OPENTELEMETRY_PATH=$OPENTELEMETRY_ARCH_PATH
+   ncbi_fix_dir_tmp=`if cd $OPENTELEMETRY_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $OPENTELEMETRY_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            OPENTELEMETRY_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$OPENTELEMETRY_PATH" in
+               /*) ;;
+               * ) OPENTELEMETRY_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) OPENTELEMETRY_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+fi
+# Not bothering with pkg-config, whose coverage is too limited.
+if test "$with_opentelemetry" != "no"; then
+    case "$OPENTELEMETRY_PATH:$with_opentelemetry" in
+       *:yes | *: | $with_opentelemetry* ) ;;
+       * ) OPENTELEMETRY_PATH=$with_opentelemetry ;;
+    esac
+    if test "$OPENTELEMETRY_PATH" != /usr -a -d "$OPENTELEMETRY_PATH"; then
+       in_path=" in $OPENTELEMETRY_PATH"
+       if test -z "$OPENTELEMETRY_INCLUDE" -a -d "$OPENTELEMETRY_PATH/include"; then
+          OPENTELEMETRY_INCLUDE="-I$OPENTELEMETRY_PATH/include"
+       fi
+       if test -n "$OPENTELEMETRY_LIBPATH"; then
+          :
+       elif test -d "$OPENTELEMETRY_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENTELEMETRY_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENTELEMETRY_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENTELEMETRY_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENTELEMETRY_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$OPENTELEMETRY_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENTELEMETRY_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENTELEMETRY_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENTELEMETRY_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENTELEMETRY_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       OPENTELEMETRY_LIBS="$OPENTELEMETRY_LIBPATH -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client \
+   -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
+   -lopentelemetry_proto -lopentelemetry_http_client_curl \
+   -lopentelemetry_resources -lopentelemetry_common"
+    else
+       OPENTELEMETRY_INCLUDE=""
+       OPENTELEMETRY_LIBS="-lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client \
+   -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
+   -lopentelemetry_proto -lopentelemetry_http_client_curl \
+   -lopentelemetry_resources -lopentelemetry_common"
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libopentelemetry_exporter_otlp_http$in_path" >&5
+$as_echo_n "checking for libopentelemetry_exporter_otlp_http$in_path... " >&6; }
+if ${ncbi_cv_lib_opentelemetry+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS="$PROTOBUF_INCLUDE $OPENTELEMETRY_INCLUDE $orig_CPPFLAGS"
+       LIBS="$OPENTELEMETRY_LIBS $PROTOBUF_LIBS $CURL_LIBS $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <opentelemetry/exporters/otlp/otlp_http_exporter.h>
+int
+main ()
+{
+opentelemetry::exporter::otlp::OtlpHttpExporter exporter;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_opentelemetry=yes
+else
+  ncbi_cv_lib_opentelemetry=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_opentelemetry" >&5
+$as_echo "$ncbi_cv_lib_opentelemetry" >&6; }
+    if test "$ncbi_cv_lib_opentelemetry" = "no"; then
+       if test "${with_opentelemetry:=no}" != no; then
+       as_fn_error $? "--with-opentelemetry explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_opentelemetry" = "no"; then
+    OPENTELEMETRY_PATH="No_OPENTELEMETRY"
+    OPENTELEMETRY_INCLUDE=
+    OPENTELEMETRY_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}OPENTELEMETRY"; WithPackagesSep=" "
+    OPENTELEMETRY_INCLUDE="$PROTOBUF_INCLUDE $OPENTELEMETRY_INCLUDE"
+
+$as_echo "#define HAVE_LIBOPENTELEMETRY 1" >>confdefs.h
+
+ fi
+
+
+
+OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
+if test "$with_opentelemetry" != no \
+   -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"; then
+   OPENTELEMETRY_STATIC_LIBS=`echo "$OPENTELEMETRY_LIBS" \
+       | sed -e 's/ -l[^ ]*/&-static/g'`
+else
+   OPENTELEMETRY_STATIC_LIBS=$OPENTELEMETRY_LIBS
+fi
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -37354,7 +37554,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClan
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -37460,6 +37660,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 

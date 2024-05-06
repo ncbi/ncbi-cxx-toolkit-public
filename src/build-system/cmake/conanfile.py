@@ -20,6 +20,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["libiconv/*"].shared = False
         self.options["pcre/*"].shared = False
         self.options["ncbicrypt/*"].shared = False
+        self.options["googleapis/*"].shared = False
+        self.options["grpc-proto/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""
         self.options["libunwind"+_s].minidebuginfo = False
@@ -66,6 +68,15 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["boost"+_s].without_type_erasure = True
         self.options["boost"+_s].without_wave = True
 
+        self.options["opentelemetry-cpp"+_s].with_abseil = False
+        # Not looking to use Jaeger, but the recipe might not provide
+        # the option and catching e.g. AttributeError won't work.
+        # self.options["opentelemetry-cpp"+_s].with_jaeger = False
+        self.options["opentelemetry-cpp"+_s].with_otlp_grpc = False
+        # otlp-http is already on by default
+        # self.options["opentelemetry-cpp"+_s].with_otlp_http = True
+        self.options["opentelemetry-cpp"+_s].with_zipkin = False
+
     def requirements(self):
         res = subprocess.run(["conan", "remote", "list"], 
             stdout = subprocess.PIPE, universal_newlines = True, encoding="utf-8")
@@ -98,7 +109,9 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.requires("lmdb/[>=0.9.29 <=0.9.31]")
         self.requires("lzo/2.10")
         self.requires("openssl/1.1.1s")
+        # self.requires("opentelemetry-cpp/1.14.2")
         self.requires("pcre/8.45")
+        self.requires("protobuf/3.21.12")
         self.requires("sqlite3/[>=3.40.0 <=3.45.2]")
         self.requires("zlib/[>=1.2.11 <2]")
         self.requires("zstd/[>=1.5.2 <=1.5.5]")

@@ -96,6 +96,7 @@ try_local() {
         test -d "$d/include/ngs-bam"       &&  : ${NGS_PATH=$d}
         test -f "$d/include/nlohmann/json.hpp" && : ${NLOHMANN_JSON_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
+        test -d "$d/include/opentelemetry" &&  : ${OPENTELEMETRY_PATH=$d}
         test -d "$d/include/opentracing"   &&  : ${OPENTRACING_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
@@ -318,6 +319,8 @@ net_ngs_base=/net/snowman/vol/projects/trace_software/ngs/ngs-versions
 : ${NLOHMANN_JSON_PATH=$NCBI/nlohmann-json-3.9.1}
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
+
+: ${OPENTELEMETRY_PATH=$NCBI/opentelemetry-cpp-1.14.2}
 
 : ${OPENTRACING_PATH=$NCBI/opentracing-cpp-1.6.0}
 
