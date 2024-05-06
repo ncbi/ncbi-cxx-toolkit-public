@@ -51,6 +51,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <sra/error_codes.hpp>
+#include <sra/readers/sra/vdbread.hpp>
 
 #include <cstring>
 
@@ -338,6 +339,7 @@ CSraMgr::CSraMgr(ETrim trim)
     : m_Path(null),
       m_Trim(trim == eTrim)
 {
+    CVDBMgr::s_VDBInit();
     x_Init();
 }
 

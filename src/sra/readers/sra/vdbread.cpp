@@ -904,7 +904,7 @@ static void s_InitLocalKNS(KNSManager* kns_mgr)
 }
 
 
-static void s_VDBInit()
+void CVDBMgr::s_VDBInit()
 {
     CFastMutexGuard guard(sx_SDKMutex);
     static bool initialized = false;
