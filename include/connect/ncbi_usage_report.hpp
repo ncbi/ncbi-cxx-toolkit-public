@@ -252,9 +252,10 @@ public:
 
     /// Set timeout for connection.
     /// 
-    /// This call overrides timeout specified for the Connect API,
-    /// using by $CONN_TIMEOUT environment variable, or [CONN]TIMEOUT registry value. 
-    /// Allow any timeout value except eInfinite.
+    /// By default CUsageReport uses connection timeout specified for the Connect API.
+    /// This call allow to override default Connect API values, or specified using 
+    /// $CONN_TIMEOUT environment variable, or [CONN]TIMEOUT registry value. 
+    /// Allow any timeout values except eInfinite.
     /// @note
     ///   Can be specified thought the global parameter:
     ///   Registry file:
@@ -273,8 +274,10 @@ public:
 
     /// Set muximum number of retries in case of error reporting.
     /// 
-    /// This call owerrides number of tries specified for the Connect API,
-    /// using $CONN_MAX_TRY environment variable, or [CONN]MAX_TRY registry value.
+    /// By default CUsageReport uses number of tries specified for the Connect API.
+    /// This call allow ro override default Connect API values, or specified using
+    /// $CONN_MAX_TRY environment variable, or [CONN]MAX_TRY registry value.
+    /// Zero number mean no-retries, so any connection will be tried to establish only once.
     /// Any negative value set default number of tries specified for the Connect API.
     /// @note
     ///   Can be specified thought the global parameter:
@@ -606,11 +609,16 @@ public:
     ///   Environment variable:
     ///       NCBI_USAGE_REPORT_WAIT_TIMEOUT=<float-number-in-seconds>
     ///   Negative value sets infinite timeout.
+    /// 
+    ///   Waiting time depends on a connection timeout, and can be greater than 
+    ///   specified 'timeout'. Real waiting time is a maximum of 'timeout' and 
+    ///   connection timeout,  see CUsageReport::SetTimeout().
     /// @note
-    ///   It doesn't wait for already started job that is sending at the current moment.
-    ///   You still need to call Finish() to be sure that it has been finished too.
+    ///   It doesn't wait for already started job that is sending at the current moment,
+    ///   even if the queue is empty. You still need to call Finish() to be sure that it
+    ///   has been finished too.
     /// @sa
-    ///   EWait, CTimeout, Finish, ClearQueue
+    ///   EWait, CTimeout, Finish, ClearQueue, CUsageReport::SetTimeout()
     void Wait(EWait how = eAlways, CTimeout timeout = CTimeout(CTimeout::eDefault));
 
     /// Finish reporting for the current reporting object.
