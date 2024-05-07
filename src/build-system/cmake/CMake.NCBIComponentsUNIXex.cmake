@@ -856,9 +856,8 @@ NCBIcomponent_report(JAEGER)
 
 #############################################################################
 # OPENTELEMETRY
-NCBI_define_Xcomponent(NAME OPENTELEMETRY PACKAGE opentelemetry-cpp
-  LIB opentelemetry-cpp::otlp_http_exporter
-  opentelemetry-cpp::otlp_exporter_ostream_span opentelemetry-cpp::metrics)
+NCBI_define_Xcomponent(NAME OPENTELEMETRY CMAKE_PACKAGE opentelemetry-cpp
+  CMAKE_LIB otlp_http_exporter  ostream_span_exporter metrics)
 NCBIcomponent_report(OPENTELEMETRY)
 
 #############################################################################
