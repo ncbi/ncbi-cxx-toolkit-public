@@ -26,7 +26,7 @@
  * Author:  Aleksey Grichenko
  *
  * File Description:
- *   Jaeger tracer test application.
+ *   OpenTelemetry tracer test application.
  *
  */
 
