@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_opentelemetry)
+  NCBI_sources(test_opentelemetry)
+  NCBI_uses_toolkit_libraries(opentelemetry_tracer)
+  NCBI_requires(OPENTELEMETRY)
+  NCBI_add_test(test_opentelemetry -trace_file -)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()

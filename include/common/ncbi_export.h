@@ -1538,6 +1538,14 @@
 #  define NCBI_JAEGER_TRACER_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library opentelemetry_tracer
+ */
+#ifdef NCBI_OPENTELEMETRY_TRACER_EXPORTS
+#  define NCBI_OPENTELEMETRY_TRACER_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_OPENTELEMETRY_TRACER_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
 

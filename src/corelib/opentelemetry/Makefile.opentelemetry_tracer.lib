@@ -1,0 +1,14 @@
+# $Id$
+
+SRC = opentelemetry_tracer
+LIB = opentelemetry_tracer
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(OPENTELEMETRY_INCLUDE) $(BOOST_INCLUDE)
+LIBS    = $(OPENTELEMETRY_LIBS) $(OPENSSL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = OPENTELEMETRY
+
+WATCHERS = grichenk
+
+USES_LIBRARIES =  \
+    xncbi

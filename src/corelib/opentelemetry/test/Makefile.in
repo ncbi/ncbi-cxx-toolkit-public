@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = test_opentelemetry
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
