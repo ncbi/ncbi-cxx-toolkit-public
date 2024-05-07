@@ -283,6 +283,7 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 			*outrow = rows_copied;
 		
 		/* free allocated storage in blkdesc & initialise flags, etc. */
+                _blk_clean_desc(blkdesc);
 		break;
 
         case CS_BLK_CANCEL:
