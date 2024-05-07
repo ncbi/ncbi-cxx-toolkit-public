@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile ("XMLWrapp" project)
+#################################
+
+LIB_PROJ = opentelemetry_tracer
+SUB_PROJ = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
