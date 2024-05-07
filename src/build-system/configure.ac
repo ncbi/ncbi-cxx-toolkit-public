@@ -9415,6 +9415,9 @@ esac
 if test -d "$OPENTELEMETRY_PATH"; then
    NCBI_FIND_ARCH_PATH(OPENTELEMETRY)
    OPENTELEMETRY_PATH=$OPENTELEMETRY_ARCH_PATH
+   if test -d "$OPENTELEMETRY_PATH$asan_sfx"; then
+      OPENTELEMETRY_PATH="$OPENTELEMETRY_PATH$asan_sfx"
+   fi
    NCBI_FIX_DIR(OPENTELEMETRY_PATH)
 fi
 # Not bothering with pkg-config, whose coverage is too limited.
