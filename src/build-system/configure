@@ -37024,6 +37024,9 @@ for d in "$OPENTELEMETRY_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    OPENTELEMETRY_PATH=$OPENTELEMETRY_ARCH_PATH
+   if test -d "$OPENTELEMETRY_PATH$asan_sfx"; then
+      OPENTELEMETRY_PATH="$OPENTELEMETRY_PATH$asan_sfx"
+   fi
    ncbi_fix_dir_tmp=`if cd $OPENTELEMETRY_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $OPENTELEMETRY_PATH && $smart_pwd 2>/dev/null`
