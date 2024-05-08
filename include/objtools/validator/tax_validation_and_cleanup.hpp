@@ -35,6 +35,7 @@
 #define VALIDATOR___TAX_VALIDATION_AND_CLEANUP__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/taxon3/T3Reply.hpp>
