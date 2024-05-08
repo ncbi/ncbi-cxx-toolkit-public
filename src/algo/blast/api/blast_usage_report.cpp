@@ -85,6 +85,11 @@ CBlastUsageReport::CBlastUsageReport()
 {
 	x_CheckBlastUsageEnv();
 	AddParam(eApp, kNcbiAppName);
+	if (IsEnabled()) {
+        CUsageReportAPI::SetRetries(kNumRetries);
+        CTimeout t_out(kTimeout, 0);
+        CUsageReportAPI::SetTimeout(t_out);
+	}
 	x_CheckRunEnv();
 }
 
@@ -92,7 +97,7 @@ CBlastUsageReport::~CBlastUsageReport()
 {
 	if (IsEnabled()) {
 		Send(m_Params);
-		Wait();
+		Wait( CUsageReport::eSkipIfNoConnection);
 		Finish();
 	}
 }
