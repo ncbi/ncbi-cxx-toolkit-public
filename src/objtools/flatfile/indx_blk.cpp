@@ -839,7 +839,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
                     i++;
 
             entry->embl_new_ID = true;
-            if (ptr->data().back() == ';')
+            if (! ptr->data().empty() && ptr->data().back() == ';')
                 ptr->data().pop_back();
 
             FtaInstallPrefix(PREFIX_LOCUS, ptr->c_str());
