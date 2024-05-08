@@ -1272,7 +1272,6 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 static void fta_fix_secondaries(TokenBlkPtr secs)
 {
     TokenBlkPtr tbp;
-    char*       p;
 
     if (! secs || ! secs->next || secs->empty() ||
         secs->next->empty() || fta_if_wgs_acc(secs->c_str()) != 0 ||
@@ -1283,9 +1282,8 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
     tbp->next  = secs->next;
     secs->next = tbp;
 
-    for (p = tbp->data(); *(p + 1) != '\0';)
-        p++;
-    *p = '1';
+    if (! tbp->data().empty())
+        tbp->data().back() = '1';
 }
 
 
@@ -1331,7 +1329,6 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     Int4        sec_acc;
     const char* text;
     char*       acc;
-    char*       p;
     size_t      i = 0;
 
     bool unusual_wgs;
@@ -1350,6 +1347,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     pri_acc   = fta_if_wgs_acc(acc);
     pri_owner = GetNucAccOwner(acc);
     if (pri_acc == 1 || pri_acc == 4) {
+        char* p;
         for (p = acc; (*p >= 'A' && *p <= 'Z') || *p == '_';)
             p++;
         *p = '\0';
@@ -1362,8 +1360,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
 
     unusual_wgs = false;
     for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
-        p = tbp->data();
-        if (p[0] == '-' && p[1] == '\0') {
+        if (tbp->data() == "-"s) {
             tbp = tbp->next;
             if (! tbp)
                 break;
@@ -1374,7 +1371,8 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             continue;
         }
 
-        DelNoneDigitTail(p);
+        DelNonDigitTail(tbp->data());
+        const char* p = tbp->c_str();
         sec_acc = fta_if_wgs_acc(p);
 
         unusual_wgs_msg = true;

@@ -419,8 +419,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
             break;
         }
 
-        tbp->data()[hlen] = '\0';
-
+        tbp->data().resize(hlen);
         tbp->next = new TokenBlk("-");
         tbp       = tbp->next;
         tbp->next = new TokenBlk(last);
@@ -499,7 +498,7 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
 /**********************************************************/
 TokenBlk::~TokenBlk()
 {
-    MemFree(str);
+    str.clear();
 }
 
 void FreeTokenblk(TokenBlkPtr tbp)
