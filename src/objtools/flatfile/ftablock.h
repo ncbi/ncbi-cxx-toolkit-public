@@ -131,8 +131,9 @@ struct GapFeats {
 using GapFeatsPtr = GapFeats*;
 
 struct TokenBlk {
-    TokenBlk(string_view);
-    ~TokenBlk();
+    TokenBlk(string_view s) :
+        str(s) {}
+
 private:
     string str; /* the token string */
 public:

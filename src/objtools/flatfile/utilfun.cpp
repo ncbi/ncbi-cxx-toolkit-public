@@ -414,7 +414,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 
         auto num1 = NStr::StringToInt(first_digits, NStr::fConvErr_NoThrow);
         auto num2 = NStr::StringToInt(last_digits, NStr::fConvErr_NoThrow);
-        if (num1 > num2) {
+        if (num2 < num1) {
             ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", tbp->c_str());
             break;
         }
@@ -437,11 +437,6 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 }
 
 /**********************************************************/
-TokenBlk::TokenBlk(string_view s) :
-    str(StringSave(s))
-{
-}
-
 static void AppendTokenVal(TokenBlkPtr& tbp, string_view str)
 {
     TokenBlkPtr newnode = new TokenBlk(str);
@@ -496,11 +491,6 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
 }
 
 /**********************************************************/
-TokenBlk::~TokenBlk()
-{
-    str.clear();
-}
-
 void FreeTokenblk(TokenBlkPtr tbp)
 {
     TokenBlkPtr temp;
