@@ -2451,22 +2451,22 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt_arg)
 	datafmt = _ct_datafmt_conv_prepare(cmd->con->ctx, datafmt_arg, &datafmt_buf);
 	tds = cmd->con->tds_socket;
 	resinfo = tds->current_results;;
-	curcol = resinfo->columns[item - 1];
 
-        if (item < 1 || item > resinfo->num_cols) {
-                _csclient_msg(cmd->con->ctx, "ct_describe", 2, 1, 1, 16,
-                              "%s, %s", tds_prtype(curcol->column_type),
-                              "cslib");
+	if (item < 1 || item > resinfo->num_cols)
 		return CS_FAIL;
-        }
 
+	curcol = resinfo->columns[item - 1];
 	/* name is always null terminated */
 	strlcpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), sizeof(datafmt->name));
         datafmt->namelen = (TDS_INT) strlen(datafmt->name);
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
 	datafmt->datatype = _ct_get_client_type(curcol, true);
-	if (datafmt->datatype == CS_ILLEGAL_TYPE)
+        if (datafmt->datatype == CS_ILLEGAL_TYPE) {
+                _csclient_msg(cmd->con->ctx, "ct_describe", 2, 1, 1, 16,
+                              "%s, %s", tds_prtype(curcol->column_type),
+                              "cslib");
 		return CS_FAIL;
+        }
 	tdsdump_log(TDS_DBG_INFO1, "ct_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
 		    curcol->column_type);
 	if (is_numeric_type(curcol->column_type))
