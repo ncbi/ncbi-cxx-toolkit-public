@@ -336,19 +336,21 @@ bool ParseAccessionRange(list<string>& tokens, unsigned skip)
     return false;
 }
 
+
+inline bool IsLeadPrefixChar(char c)
+{
+    return ('A' <= c && c <= 'Z');
+}
+inline bool IsDigit(char c)
+{
+    return ('0' <= c && c <= '9');
+}
 /**********************************************************/
 bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 {
     TokenBlkPtr tbp;
     TokenBlkPtr tbpnext;
-    char*       dash;
-    const char* first;
-    char*       last;
-    const char* p;
-    const char* q;
     bool        bad;
-    Int4        num1;
-    Int4        num2;
 
     if (! tsbp->list)
         return true;
@@ -370,67 +372,54 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         tbpnext = tbp->next;
         if (tbp->empty())
             continue;
-        dash = StringChr(tbp->data(), '-');
+        const char* dash = StringChr(tbp->c_str(), '-');
         if (! dash)
             continue;
-        *dash = '\0';
-        first = tbp->c_str();
-        last  = dash + 1;
-        if (StringLen(first) != StringLen(last) || *first < 'A' ||
-            *first > 'Z' || *last < 'A' || *last > 'Z') {
-            *dash = '-';
-            bad   = true;
+
+        size_t      hlen = dash - tbp->c_str();
+        string_view first(tbp->c_str(), hlen);
+        string_view last(dash + 1);
+        if (! hlen || last.size() != hlen ||
+            ! IsLeadPrefixChar(first.front()) || ! IsLeadPrefixChar(last.front())) {
+            bad = true;
             break;
         }
 
-        for (p = first; (*p >= 'A' && *p <= 'Z') || *p == '_';)
-            p++;
-        if (*p < '0' || *p > '9') {
-            *dash = '-';
-            bad   = true;
+        auto first_it = find_if_not(first.begin(), first.end(), sIsPrefixChar);
+        if (first_it == first.end() || ! IsDigit(*first_it)) {
+            bad = true;
             break;
         }
-        for (q = last; (*q >= 'A' && *q <= 'Z') || *q == '_';)
-            q++;
-        if (*q < '0' || *q > '9') {
-            *dash = '-';
-            bad   = true;
+        auto last_it = find_if_not(last.begin(), last.end(), sIsPrefixChar);
+        if (last_it == last.end() || ! IsDigit(*last_it)) {
+            bad = true;
             break;
         }
-        size_t preflen = p - first;
-        if (preflen != (size_t)(q - last) || ! StringEquN(first, last, preflen)) {
-            *dash = '-';
+
+        size_t      preflen      = first_it - first.begin();
+        string_view first_prefix = first.substr(0, preflen);
+        string_view last_prefix  = last.substr(0, preflen);
+        if (first_prefix != last_prefix) {
             ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", tbp->c_str());
             break;
         }
 
-        while (*p == '0')
-            p++;
-        for (q = p; *p >= '0' && *p <= '9';)
-            p++;
-        if (*p != '\0') {
-            *dash = '-';
+        string_view first_digits = first.substr(preflen);
+        string_view last_digits  = last.substr(preflen);
+        if (! all_of(first_digits.begin(), first_digits.end(), IsDigit) ||
+            ! all_of(last_digits.begin(), last_digits.end(), IsDigit)) {
             bad   = true;
             break;
         }
-        num1 = atoi(q);
 
-        for (p = last + preflen; *p == '0';)
-            p++;
-        for (q = p; *p >= '0' && *p <= '9';)
-            p++;
-        if (*p != '\0') {
-            *dash = '-';
-            bad   = true;
-            break;
-        }
-        num2 = atoi(q);
-
+        auto num1 = NStr::StringToInt(first_digits, NStr::fConvErr_NoThrow);
+        auto num2 = NStr::StringToInt(last_digits, NStr::fConvErr_NoThrow);
         if (num1 > num2) {
-            *dash = '-';
             ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", tbp->c_str());
             break;
         }
+
+        tbp->data()[hlen] = '\0';
 
         tbp->next = new TokenBlk("-");
         tbp       = tbp->next;
