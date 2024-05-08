@@ -375,7 +375,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
             cass_connection = cass_blob_id.m_Keyspace->GetSecureConnection(
                                                 m_UserName.value());
             if (!cass_connection) {
-                ReportSecureSatUnauthorized();
+                ReportSecureSatUnauthorized(m_UserName.value());
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
                 return;
             }
@@ -487,7 +487,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                                          "for the blob " + fetch_details->GetBlobId().ToString(),
                                          CRequestStatus::e401_Unauthorized,
                                          ePSGS_SecureSatUnauthorized, eDiag_Error);
-                ReportSecureSatUnauthorized();
+                ReportSecureSatUnauthorized(m_UserName.value());
                 return;
             }
         } else {
@@ -682,7 +682,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                                              "for the blob " + fetch_details->GetBlobId().ToString(),
                                              CRequestStatus::e401_Unauthorized,
                                              ePSGS_SecureSatUnauthorized, eDiag_Error);
-                    ReportSecureSatUnauthorized();
+                    ReportSecureSatUnauthorized(m_UserName.value());
                     return;
                 }
             } else {
@@ -1001,7 +1001,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                                              "for the blob " + fetch_details->GetBlobId().ToString(),
                                              CRequestStatus::e401_Unauthorized,
                                              ePSGS_SecureSatUnauthorized, eDiag_Error);
-                    ReportSecureSatUnauthorized();
+                    ReportSecureSatUnauthorized(m_UserName.value());
                     return;
                 }
             } else {
@@ -1503,7 +1503,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                 cass_connection = blob_fetch_details->GetBlobId().m_Keyspace->GetSecureConnection(
                                                     m_UserName.value());
                 if (!cass_connection) {
-                    ReportSecureSatUnauthorized();
+                    ReportSecureSatUnauthorized(m_UserName.value());
                     return;
                 }
             } else {

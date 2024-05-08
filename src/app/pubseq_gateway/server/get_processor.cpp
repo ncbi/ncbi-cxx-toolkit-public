@@ -354,7 +354,7 @@ void CPSGS_GetProcessor::x_GetBlobFinalStage(void)
             cass_connection = m_BlobId.m_Keyspace->GetSecureConnection(
                                                 m_UserName.value());
             if (!cass_connection) {
-                ReportSecureSatUnauthorized();
+                ReportSecureSatUnauthorized(m_UserName.value());
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
 
                 if (IPSGS_Processor::m_Reply->IsOutputReady())

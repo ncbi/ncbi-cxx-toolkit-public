@@ -305,7 +305,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
             cass_connection = m_IdModVerId2Info->GetTSEId().m_Keyspace->GetSecureConnection(
                                                 m_UserName.value());
             if (!cass_connection) {
-                ReportSecureSatUnauthorized();
+                ReportSecureSatUnauthorized(m_UserName.value());
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
 
                 if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -625,7 +625,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
             cass_connection = m_SatInfoChunkVerBlobId.m_Keyspace->GetSecureConnection(
                                                 m_UserName.value());
             if (!cass_connection) {
-                ReportSecureSatUnauthorized();
+                ReportSecureSatUnauthorized(m_UserName.value());
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
 
                 if (IPSGS_Processor::m_Reply->IsOutputReady())
@@ -1046,7 +1046,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
             cass_connection = chunk_blob_id.m_Keyspace->GetSecureConnection(
                                                 m_UserName.value());
             if (!cass_connection) {
-                ReportSecureSatUnauthorized();
+                ReportSecureSatUnauthorized(m_UserName.value());
                 CPSGS_CassProcessorBase::SignalFinishProcessing();
 
                 if (IPSGS_Processor::m_Reply->IsOutputReady())
