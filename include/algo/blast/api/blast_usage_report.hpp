@@ -101,6 +101,9 @@ public:
         eELBVersion
 	};
 
+	static const int kNumRetries=0;
+	static const int kTimeout=10;
+
 	CBlastUsageReport();
 	~CBlastUsageReport();
 	void AddParam(EUsageParams p, int val);
