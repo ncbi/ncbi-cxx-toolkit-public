@@ -103,7 +103,7 @@ protected:
     void ReportExplicitIncludeHUPSetToNo(void);
     void ReportMyNCBIError(const string &  my_ncbi_message);
     void ReportMyNCBINotFound(void);
-    void ReportSecureSatUnauthorized(void);
+    void ReportSecureSatUnauthorized(const string &  user_name);
     void ReportFailureToGetCassConnection(const string &  message);
     void ReportFailureToGetCassConnection(void);
     void CleanupMyNCBICache(void);

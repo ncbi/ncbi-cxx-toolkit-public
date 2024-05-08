@@ -777,13 +777,15 @@ void CPSGS_CassProcessorBase::CleanupMyNCBICache(void)
 }
 
 
-void CPSGS_CassProcessorBase::ReportSecureSatUnauthorized(void)
+void CPSGS_CassProcessorBase::ReportSecureSatUnauthorized(const string &  user_name)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
     app->GetCounters().Increment(this,
                                  CPSGSCounters::ePSGS_SecureSatUnauthorizedCounter);
 
-    string  err_msg = GetName() + " processor Cassandra secure satellite authorization failure.";
+    string  err_msg = GetName() + " processor: user '" + user_name + 
+                      "' is not authorized to access "
+                      "Cassandra secure satellite.";
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(), GetName(),
             err_msg, CRequestStatus::e401_Unauthorized,
