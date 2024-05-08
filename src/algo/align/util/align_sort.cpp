@@ -168,6 +168,20 @@ CAlignSort::SAlignExtractor::operator()(const CSeq_align& align)
                                   sequence::eGetId_Canonical);
             item.first = idh.GetSeqId()->AsFastaString();
         }
+	else if (NStr::EqualNocase(*iter, "qacc")) {
+            CSeq_id_Handle idh =
+                CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
+            idh = sequence::GetId(idh, *scope,
+                                  sequence::eGetId_Best);
+            item.first = idh.GetSeqId()->AsFastaString();
+        }
+        else if (NStr::EqualNocase(*iter, "sacc")) {
+            CSeq_id_Handle idh =
+                CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+            idh = sequence::GetId(idh, *scope,
+                                  sequence::eGetId_Best);
+            item.first = idh.GetSeqId()->AsFastaString();
+        }
 
         else if (NStr::EqualNocase(*iter, "query_start")) {
             item.second = align.GetSeqStart(0);
