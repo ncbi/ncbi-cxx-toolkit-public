@@ -257,6 +257,11 @@ NCBIcomponent_report(UUID)
 ##############################################################################
 # CURL
 NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
+if(pkgcfg_lib_CURL_curl AND NOT TARGET CURL::libcurl)
+    add_library(CURL::libcurl UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(CURL::libcurl PROPERTIES
+      IMPORTED_LOCATION ${pkgcfg_lib_CURL_curl})
+endif()
 NCBIcomponent_report(CURL)
 
 #############################################################################
@@ -836,7 +841,7 @@ NCBIcomponent_report(THRIFT)
 
 #############################################################################
 # NLohmann_JSON
-NCBI_define_Xcomponent(NAME NLohmann_JSON)
+NCBI_define_Xcomponent(NAME NLohmann_JSON CMAKE_PACKAGE nlohmann_json)
 NCBIcomponent_report(NLohmann_JSON)
 
 #############################################################################
