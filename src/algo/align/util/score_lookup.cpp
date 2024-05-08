@@ -1709,19 +1709,22 @@ int CScoreLookup::GetGeneId(const CBioseq_Handle &bsh)
     }
 
     CMappedFeat gene = *gene_it;
-    if (++gene_it) {
-        NCBI_THROW(CException, eUnknown, "Multiple gene features");
-    }
 
     if (gene.GetNamedDbxref("GeneID")) {
         return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
     }
 
     /// Fallback; use LocusID
+    if (gene.GetNamedDbxref("LocusID")) {
+        return gene.GetNamedDbxref("LocusID")->GetTag().GetId();
+    }
+
+    /// Fallback; use LocusID from gene.db rather than dbxref
     if (gene.GetData().GetGene().IsSetDb()) {
         for (const CRef<CDbtag> &db : gene.GetData().GetGene().GetDb()) {
-            if (db->GetDb() == "LocusID" && db->GetTag().IsId()) {
-                return db->GetTag().GetId();
+            if (db->GetDb() == "LocusID") {
+                return db->GetTag().IsId() ? db->GetTag().GetId()
+                             : NStr::StringToInt(db->GetTag().GetStr());
             }
         }
     }
