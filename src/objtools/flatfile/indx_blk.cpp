@@ -839,9 +839,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
                     i++;
 
             entry->embl_new_ID = true;
-            p                  = StringRChr(ptr->data(), ';');
-            if (p && p[1] == '\0')
-                *p = '\0';
+            if (ptr->data().back() == ';')
+                ptr->data().pop_back();
 
             FtaInstallPrefix(PREFIX_LOCUS, ptr->c_str());
             FtaInstallPrefix(PREFIX_ACCESSION, ptr->c_str());
@@ -956,18 +955,17 @@ void DelNoneDigitTail(char* str)
 
     *p = '\0';
 }
-/*
-static void sDelNonDigitTail(string& str)
+
+void DelNonDigitTail(string& str)
 {
     if (str.empty()) {
         return;
     }
-    auto nondigitPos = str.find_first_not_of("0123456789");
-    if (nondigitPos != string::npos) {
-        str = str.substr(0,nondigitPos);
+    auto pos = str.find_last_of("0123456789");
+    if (pos != string::npos) {
+        str.resize(pos + 1);
     }
 }
-*/
 
 /**********************************************************
  *

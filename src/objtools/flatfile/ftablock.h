@@ -134,13 +134,13 @@ struct TokenBlk {
     TokenBlk(string_view);
     ~TokenBlk();
 private:
-    char*     str  = nullptr; /* the token string */
+    string str; /* the token string */
 public:
     TokenBlk* next = nullptr; /* points to next token */
 
-    const char* c_str() const { return str; }
-    char*       data() { return str; }
-    bool        empty() const { return str == nullptr; }
+    const char* c_str() const { return str.c_str(); }
+    string&     data() { return str; }
+    bool        empty() const { return str.empty(); }
 };
 using TokenBlkPtr = TokenBlk*;
 
