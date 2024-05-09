@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/api/blast_usage_report.hpp>
 #include <vector>
 
 #include "ensure_enough_corelib.hpp"
@@ -43,6 +44,7 @@
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
+USING_SCOPE(blast);
 
 BOOST_AUTO_TEST_SUITE(blast)
 BOOST_AUTO_TEST_CASE(SSeqRangeIntersect)
@@ -141,5 +143,28 @@ BOOST_AUTO_TEST_CASE(SSeqRange_RangeSelection)
         BOOST_REQUIRE(SSeqRangeIntersectsWith(&ranges[i], &target));
     }
 }
+
+BOOST_AUTO_TEST_CASE(Blast_usage_report_timeout)
+{
+	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/sleep_15s.cgi");
+	CStopWatch sw(CStopWatch(CStopWatch::eStart));
+	{
+		CBlastUsageReport * report(new CBlastUsageReport());
+		report->AddParam(CBlastUsageReport::eNumThreads, 1);
+		delete report;
+	}
+	double t = sw.Elapsed();
+	BOOST_REQUIRE(t < 15);
+	sw.Restart();
+	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/invalid");
+	{
+		CBlastUsageReport * report(new CBlastUsageReport());
+		report->AddParam(CBlastUsageReport::eNumThreads, 1);
+		delete report;
+	}
+	t = sw.Elapsed();
+	BOOST_REQUIRE(t < 10);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
