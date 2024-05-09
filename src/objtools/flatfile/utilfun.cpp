@@ -370,17 +370,21 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 
     for (bad = false; tbp; tbp = tbpnext) {
         tbpnext = tbp->next;
-        if (tbp->empty())
+        const string& token    = tbp->data();
+        string_view   tok_view = token;
+        if (token.empty())
             continue;
-        const char* dash = StringChr(tbp->c_str(), '-');
-        if (! dash)
+        size_t dash = token.find('-');
+        if (dash == string::npos)
             continue;
+        if (dash == 0 || tok_view.size() != (dash + 1 + dash)) {
+            bad = true;
+            break;
+        }
 
-        size_t      hlen = dash - tbp->c_str();
-        string_view first(tbp->c_str(), hlen);
-        string_view last(dash + 1);
-        if (! hlen || last.size() != hlen ||
-            ! IsLeadPrefixChar(first.front()) || ! IsLeadPrefixChar(last.front())) {
+        string_view first(tok_view.substr(0, dash));
+        string_view last(tok_view.substr(dash + 1));
+        if (! IsLeadPrefixChar(first.front()) || ! IsLeadPrefixChar(last.front())) {
             bad = true;
             break;
         }
@@ -397,10 +401,11 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         }
 
         size_t      preflen      = first_it - first.begin();
+        size_t      preflen2     = last_it - last.begin();
         string_view first_prefix = first.substr(0, preflen);
-        string_view last_prefix  = last.substr(0, preflen);
+        string_view last_prefix  = last.substr(0, preflen2);
         if (first_prefix != last_prefix) {
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", tbp->c_str());
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", token.c_str());
             break;
         }
 
@@ -408,21 +413,23 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         string_view last_digits  = last.substr(preflen);
         if (! all_of(first_digits.begin(), first_digits.end(), IsDigit) ||
             ! all_of(last_digits.begin(), last_digits.end(), IsDigit)) {
-            bad   = true;
+            bad = true;
             break;
         }
 
         auto num1 = NStr::StringToInt(first_digits, NStr::fConvErr_NoThrow);
         auto num2 = NStr::StringToInt(last_digits, NStr::fConvErr_NoThrow);
         if (num2 < num1) {
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", tbp->c_str());
+            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", token.c_str());
             break;
         }
 
-        tbp->data().resize(hlen);
+        // cut in half
+        string tmp(last);
+        tbp->data().resize(dash);
         tbp->next = new TokenBlk("-");
         tbp       = tbp->next;
-        tbp->next = new TokenBlk(last);
+        tbp->next = new TokenBlk(tmp);
         tbp       = tbp->next;
         tsbp->num += 2;
 
