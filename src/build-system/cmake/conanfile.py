@@ -123,11 +123,18 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 
     def _optional_requires(self, package):
         pkg = package[:package.find("/")]
+# local cache first
         res = subprocess.run(["conan", 
-            "list" if conan_version.major > "1" else "search", pkg, "-r",
-            "*"    if conan_version.major > "1" else "all"], 
+            "list" if conan_version.major > "1" else "search", pkg], 
             stdout = subprocess.PIPE, universal_newlines = True, encoding="utf-8")
         pos = res.stdout.find(pkg+"/")
+        if pos <= 0:
+# remotes
+            res = subprocess.run(["conan", 
+                "list" if conan_version.major > "1" else "search", pkg, "-r",
+                "*"    if conan_version.major > "1" else "all"], 
+                stdout = subprocess.PIPE, universal_newlines = True, encoding="utf-8")
+            pos = res.stdout.find(pkg+"/")
         if pos > 0:
             self.requires(package)
         else:
