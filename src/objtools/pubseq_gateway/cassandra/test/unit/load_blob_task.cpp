@@ -156,6 +156,31 @@ TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
     blob->VerifyBlobSize();
 }
 
+TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
+{
+    bool errorCallbackCalled{false};
+    auto error_fn =
+        [&errorCallbackCalled]
+        (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+    {
+        EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+        EXPECT_EQ(CCassandraException::eQueryFailed, code);
+        EXPECT_EQ(eDiag_Error, severity);
+        EXPECT_EQ("NCBI C++ Exception:\n    T0 \"cass_driver.cpp\","
+                  " line 1726: Error: (CCassandraException::eQueryFailed) "
+                  "idblob::CCassQuery::ProcessFutureResult() - "
+                  "CassandraErrorMessage - \"ANY ConsistencyLevel is only supported for writes\";"
+                  " CassandraErrorCode - 2002200; SQL: \"SELECT    last_modified,   class,   date_asn1,   div,"
+                  "   flags,   hup_date,   id2_info,   n_chunks,   owner,   size,   size_unpacked,   username"
+                  " FROM psg_test_sat_4.blob_prop WHERE sat_key = ? LIMIT 1\"; Params - (2155365)\n", message);
+        errorCallbackCalled = true;
+    };
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_fn);
+    fetch.SetReadConsistency(CCassConsistency::kAny);
+    wait_function(fetch);
+    EXPECT_TRUE(errorCallbackCalled) << "Error is expected to happen when reading with ANY consistency";
+}
+
 TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
     CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, false, error_function);
     wait_function(fetch);

@@ -129,7 +129,7 @@ void CCassBlobTaskFindChunk::x_IsID2ChunkPacked_Query()
     qry->SetSQL( sql, 1);
     qry->BindInt32( 0, m_id2_ent);
     SetupQueryCB3( qry);
-    qry->Query( GetQueryConsistency(), m_Async, false);
+    qry->Query(GetReadConsistency(), m_Async, false);
 }
 
 //:::::::
@@ -156,8 +156,9 @@ bool CCassBlobTaskFindChunk::x_IsID2ChunkPacked_Wait()
     CloseAll();
     m_QueryArr.clear();
 
-    if( m_FindID2ChunkIDCallback)
-        m_FindID2ChunkIDCallback( Found, m_id2_ent, Packed);
+    if (m_FindID2ChunkIDCallback) {
+        m_FindID2ChunkIDCallback(Found, m_id2_ent, Packed);
+    }
 
     return true;
 }
