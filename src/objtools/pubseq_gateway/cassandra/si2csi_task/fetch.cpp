@@ -48,7 +48,6 @@
 BEGIN_IDBLOB_SCOPE
 
 BEGIN_SCOPE()
-    const CassConsistency kSi2CsiConsistency = CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM;
     using TField = CSi2CsiFetchRequest::EFields;
 END_SCOPE()
 
@@ -113,7 +112,7 @@ void CCassSI2CSITaskFetch::Wait1()
                     m_QueryArr[0] = {ProduceQuery(), 0};
                     x_InitializeQuery();
                     SetupQueryCB3(m_QueryArr[0].query);
-                    m_QueryArr[0].query->Query(kSi2CsiConsistency, m_Async, true, m_PageSize);
+                    m_QueryArr[0].query->Query(GetReadConsistency(), m_Async, true, m_PageSize);
                     m_State = eFetchStarted;
                     break;
                 }

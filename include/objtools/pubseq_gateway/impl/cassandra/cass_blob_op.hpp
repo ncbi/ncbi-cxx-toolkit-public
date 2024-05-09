@@ -356,12 +356,6 @@ protected:
         return rv;
     }
 
-    //@TODO NCBI_STD_DEPRECATED("Use GetReadConsistency()/GetWriteConsistency()")
-    CassConsistency GetQueryConsistency()
-    {
-        return CASS_CONSISTENCY_LOCAL_QUORUM;
-    }
-
     TCassConsistency GetReadConsistency() const
     {
         return m_ReadConsistency;

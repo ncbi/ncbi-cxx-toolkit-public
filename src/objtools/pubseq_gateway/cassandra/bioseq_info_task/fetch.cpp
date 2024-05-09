@@ -48,8 +48,6 @@
 BEGIN_IDBLOB_SCOPE
 
 BEGIN_SCOPE()
-    const CassConsistency kBioSeqInfoConsistency = CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM;
-
     // Select field numbers; must be in sync with the select statements
     const int fnVersion = 0;
     const int fnSeqIdType = 1;
@@ -154,7 +152,7 @@ void CCassBioseqInfoTaskFetch::x_InitializeAliveRecordQuery()
 void CCassBioseqInfoTaskFetch::x_StartQuery()
 {
     SetupQueryCB3(m_QueryArr[0].query);
-    m_QueryArr[0].query->Query(kBioSeqInfoConsistency, m_Async, true, m_PageSize);
+    m_QueryArr[0].query->Query(GetReadConsistency(), m_Async, true, m_PageSize);
 }
 
 bool CCassBioseqInfoTaskFetch::x_InheritanceRequired()

@@ -94,7 +94,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_Blob(make_unique<CBlobRecord>(sat_key))
     , m_Modified(modified)
     , m_LoadChunks(load_chunks)
-    , m_Mode( eBlobTaskModeDefault)
+    , m_Mode(eBlobTaskModeDefault)
 {
     m_Blob->SetModified(modified);
 }
@@ -112,7 +112,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
     , m_ExplicitBlob(true)
-    , m_Mode( eBlobTaskModeDefault)
+    , m_Mode(eBlobTaskModeDefault)
 {
 }
 
@@ -220,7 +220,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                     }
 
                     SetupQueryCB3(qry);
-                    qry->Query(GetQueryConsistency(), m_Async, m_UsePrepared);
+                    qry->Query(GetReadConsistency(), m_Async, m_UsePrepared);
                     m_State = eWaitingForPropsFetch;
                 }
                 break;
@@ -499,7 +499,7 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
             Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
-    qry.Query(GetQueryConsistency(), true, m_UsePrepared);
+    qry.Query(GetReadConsistency(), true, m_UsePrepared);
 }
 
 //:::::::
@@ -516,7 +516,7 @@ void CCassBlobTaskLoadBlob::x_FindID2ChunkID_Query()
     qry->BindInt32( 1, m_FindChunk.m_Sat_key);
     qry->BindInt32( 2, m_FindChunk.m_Chunk);
     SetupQueryCB3( qry);
-    qry->Query( GetQueryConsistency(), m_Async, m_UsePrepared);
+    qry->Query(GetReadConsistency(), m_Async, m_UsePrepared);
 }
 
 //:::::::
@@ -564,7 +564,7 @@ void CCassBlobTaskLoadBlob::x_IsID2ChunkPacked_Query()
     qry->SetSQL( sql, 1);
     qry->BindInt32( 0, m_FindChunk.m_ID2_chunk_id);
     SetupQueryCB3( qry);
-    qry->Query( GetQueryConsistency(), m_Async, m_UsePrepared);
+    qry->Query(GetReadConsistency(), m_Async, m_UsePrepared);
 }
 
 //:::::::

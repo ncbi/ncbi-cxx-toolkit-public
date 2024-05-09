@@ -91,7 +91,7 @@ void CCassStatusHistoryTaskFetch::Wait1()
                     }
                     query->BindInt32(0, GetKey());
                     SetupQueryCB3(m_QueryArr[0].query);
-                    m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true);
+                    m_QueryArr[0].query->Query(GetReadConsistency(), m_Async, true);
                     m_State = eFetchStarted;
                     break;
                 }

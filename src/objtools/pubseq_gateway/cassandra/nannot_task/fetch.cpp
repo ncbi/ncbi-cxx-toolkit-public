@@ -215,7 +215,7 @@ void CCassNAnnotTaskFetch::Wait1()
                 }
 
                 SetupQueryCB3(m_QueryArr[0].query);
-                m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true, m_PageSize);
+                m_QueryArr[0].query->Query(GetReadConsistency(), m_Async, true, m_PageSize);
                 m_State = eFetchStarted;
                 break;
             }
