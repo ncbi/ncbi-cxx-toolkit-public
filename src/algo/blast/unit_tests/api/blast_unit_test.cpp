@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(SSeqRange_RangeSelection)
 BOOST_AUTO_TEST_CASE(Blast_usage_report_timeout)
 {
 	CUsageReportAPI::SetURL("http://iwebdev/staff/fongah2/blast_test/sleep_15s.cgi");
-	CStopWatch sw(CStopWatch(CStopWatch::eStart));
+	CStopWatch sw(CStopWatch::eStart);
 	{
 		CBlastUsageReport * report(new CBlastUsageReport());
 		report->AddParam(CBlastUsageReport::eNumThreads, 1);
