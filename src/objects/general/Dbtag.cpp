@@ -505,6 +505,17 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
     { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
+
+    { CDbtag::eDbtagType_AmoebaDB, "https://amoebadb.org/amoeba/app/record/gene/" },
+    { CDbtag::eDbtagType_CryptoDB, "https://cryptodb.org/cryptodb/app/record/gene/" },
+    { CDbtag::eDbtagType_FungiDB, "https://fungidb.org/fungidb/app/record/gene/" },
+    { CDbtag::eDbtagType_GiardiaDB, "https://giardiadb.org/giardiadb/app/record/gene/" },
+    { CDbtag::eDbtagType_MicrosporidiaDB, "https://microsporidiadb.org/micro/app/record/gene/" },
+    { CDbtag::eDbtagType_PiroplasmaDB, "https://piroplasmadb.org/piro/app/record/gene/" },
+    { CDbtag::eDbtagType_PlasmoDB, "https://plasmodb.org/plasmo/app/record/gene/" },
+    { CDbtag::eDbtagType_ToxoDB, "https://toxodb.org/toxo/app/record/gene/" },
+    { CDbtag::eDbtagType_TrichDB, "https://trichdb.org/trichdb/app/record/gene/" },
+    { CDbtag::eDbtagType_TriTrypDB, "https://tritrypdb.org/tritrypdb/app/record/gene/" },
 })
 
 string CDbtag::GetUrl(void) const

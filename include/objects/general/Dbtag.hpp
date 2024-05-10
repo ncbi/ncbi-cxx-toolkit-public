@@ -224,7 +224,17 @@ public:
         eDbtagType_dbVar,
         eDbtagType_EnsemblRapid,
         eDbtagType_AllianceGenome,
-        eDbtagType_EchinoBase
+        eDbtagType_EchinoBase,
+        eDbtagType_AmoebaDB,
+        eDbtagType_CryptoDB,
+        eDbtagType_FungiDB,
+        eDbtagType_GiardiaDB,
+        eDbtagType_MicrosporidiaDB,
+        eDbtagType_PiroplasmaDB,
+        eDbtagType_PlasmoDB,
+        eDbtagType_ToxoDB,
+        eDbtagType_TrichDB,
+        eDbtagType_TriTrypDB
     };
 
     enum EDbtagGroup {
