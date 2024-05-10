@@ -139,6 +139,14 @@ private:
 public:
     TokenBlk* next = nullptr; /* points to next token */
 
+    TokenBlk* insert_after(string_view s)
+    {
+        TokenBlk* p = new TokenBlk(s);
+        p->next     = this->next;
+        this->next  = p;
+        return p;
+    }
+
     const char* c_str() const { return str.c_str(); }
     string&     data() { return str; }
     bool        empty() const { return str.empty(); }
