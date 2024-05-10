@@ -341,7 +341,8 @@ tds_bcp_start_insert_stmt(TDSSOCKET * tds, TDSBCPINFO * bcpinfo)
 
 static TDSRET
 tds7_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo,
-                 tds_bcp_get_col_data get_col_data, int offset, int start_col)
+                 tds_bcp_get_col_data get_col_data,
+                 tds_bcp_null_error null_error, int offset, int start_col)
 {
 	int i;
 
@@ -388,6 +389,9 @@ tds7_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo,
                         if ( !bindcol->column_nullable
                             &&  !is_nullable_type(bindcol->on_server
                                                   .column_type) ) {
+                                if (null_error) {
+                                        null_error(bcpinfo, i, offset);
+                                }
                                 return TDS_FAIL;
                         }
 			bindcol->column_cur_size = -1;
@@ -567,8 +571,8 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo,
         }
 
 	if (IS_TDS7_PLUS(tds->conn))
-                rc = tds7_send_record(tds, bcpinfo, get_col_data, offset,
-                                      start_col);
+                rc = tds7_send_record(tds, bcpinfo, get_col_data, null_error,
+                                      offset, start_col);
 	else
                 rc = tds5_send_record(tds, bcpinfo, get_col_data, null_error,
                                       offset, start_col);
