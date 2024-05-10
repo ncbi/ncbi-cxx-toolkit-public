@@ -45,22 +45,24 @@
 #  if __has_feature(thread_sanitizer)
 #      define NCBI_USE_TSAN
 #  endif
-#else
-// Fallback for other compilers
-#  if defined(__SANITIZE_ADDRESS__)
-#      define NCBI_USE_ASAN
-#  endif
-#  if defined(__SANITIZE_LEAK__)
-#      define NCBI_USE_LSAN
-#  endif
-#  if defined(__SANITIZE_MEMORY__)
-#      define NCBI_USE_MSAN
-#  endif
-#  if defined(__SANITIZE_THREAD__)
-#      define NCBI_USE_TSAN
-#  endif
 #endif
 
+// Fallback for other compilers.
+// __has_feature(x) doesn't always work for sanitizers as well,
+//  even if it is supported
+
+#if !defined(NCBI_USE_ASAN)  &&  defined(__SANITIZE_ADDRESS__)
+#    define NCBI_USE_ASAN
+#endif
+#if !defined(NCBI_USE_LSAN)  && defined(__SANITIZE_LEAK__)
+#    define NCBI_USE_LSAN
+#endif
+#if !defined(NCBI_USE_MSAN)  && defined(__SANITIZE_MEMORY__)
+#    define NCBI_USE_MSAN
+#endif
+#if !defined(NCBI_USE_TSAN)  && defined(__SANITIZE_THREAD__)
+#    define NCBI_USE_TSAN
+#endif
 
 #if defined(NCBI_USE_ASAN)  &&  !defined(NCBI_USE_LSAN)
 #  define NCBI_USE_LSAN
