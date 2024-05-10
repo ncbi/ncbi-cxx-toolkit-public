@@ -162,6 +162,17 @@
   { "SRA",                 { CDbtag::fProbe, CDbtag::eDbtagType_SRA } },
   { "Trace",               { CDbtag::fProbe, CDbtag::eDbtagType_Trace } },
 
+  { "AmoebaDB",            { CDbtag::fGenBank, CDbtag::eDbtagType_AmoebaDB } },
+  { "CryptoDB",            { CDbtag::fGenBank, CDbtag::eDbtagType_CryptoDB } },
+  { "FungiDB",             { CDbtag::fGenBank, CDbtag::eDbtagType_FungiDB } },
+  { "GiardiaDB",           { CDbtag::fGenBank, CDbtag::eDbtagType_GiardiaDB } },
+  { "MicrosporidiaDB",     { CDbtag::fGenBank, CDbtag::eDbtagType_MicrosporidiaDB } },
+  { "PiroplasmaDB",        { CDbtag::fGenBank, CDbtag::eDbtagType_PiroplasmaDB } },
+  { "PlasmoDB",            { CDbtag::fGenBank, CDbtag::eDbtagType_PlasmoDB } },
+  { "ToxoDB",              { CDbtag::fGenBank, CDbtag::eDbtagType_ToxoDB } },
+  { "TrichDB",             { CDbtag::fGenBank, CDbtag::eDbtagType_TrichDB } },
+  { "TriTrypDB",           { CDbtag::fGenBank, CDbtag::eDbtagType_TriTrypDB } },
+
 // Note from RW-1843: INSDC documentation contains outdated information
 // It requires ENSEMBL and PseudoCap, but actially Ensembl and PseudoCAP are correct
 // https://www.insdc.org/submitting-standards/dbxref-qualifier-vocabulary/
