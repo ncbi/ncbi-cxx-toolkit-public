@@ -70,14 +70,6 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         _s = "/*" if conan_version.major > "1" else ""
         self.options["libunwind"+_s].minidebuginfo = False
 
-        self.options["grpc"+_s].cpp_plugin = True
-        self.options["grpc"+_s].csharp_plugin = False
-        self.options["grpc"+_s].node_plugin = False
-        self.options["grpc"+_s].objective_c_plugin = False
-        self.options["grpc"+_s].php_plugin = False
-        self.options["grpc"+_s].python_plugin = False
-        self.options["grpc"+_s].ruby_plugin = False
-#
 #boost/*:header_only = True
         self.options["boost"+_s].header_only = False
 #boost/*:without_atomic = True
