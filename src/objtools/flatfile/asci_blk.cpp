@@ -1278,9 +1278,7 @@ static void fta_fix_secondaries(TokenBlkPtr secs)
         ! StringEqu(secs->next->c_str(), "-"))
         return;
 
-    tbp        = new TokenBlk(secs->c_str());
-    tbp->next  = secs->next;
-    secs->next = tbp;
+    tbp = secs->insert_after(secs->data());
 
     if (! tbp->data().empty())
         tbp->data().back() = '1';

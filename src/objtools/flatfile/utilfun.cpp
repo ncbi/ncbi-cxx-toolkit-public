@@ -349,7 +349,6 @@ inline bool IsDigit(char c)
 bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 {
     TokenBlkPtr tbp;
-    TokenBlkPtr tbpnext;
     bool        bad;
 
     if (! tsbp->list)
@@ -368,8 +367,8 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
     if (! tbp)
         return true;
 
-    for (bad = false; tbp; tbp = tbpnext) {
-        tbpnext = tbp->next;
+    bad = false;
+    for (; tbp; tbp = tbp->next) {
         const string& token    = tbp->data();
         string_view   tok_view = token;
         if (token.empty())
@@ -427,13 +426,9 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         // cut in half
         string tmp(last);
         tbp->data().resize(dash);
-        tbp->next = new TokenBlk("-");
-        tbp       = tbp->next;
-        tbp->next = new TokenBlk(tmp);
-        tbp       = tbp->next;
+        tbp = tbp->insert_after("-");
+        tbp = tbp->insert_after(tmp);
         tsbp->num += 2;
-
-        tbp->next = tbpnext;
     }
     if (! tbp)
         return true;
@@ -473,12 +468,11 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
                          *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 
-        TokenBlkPtr newnode = new TokenBlk(string_view(bptr, ptr - bptr));
+        string_view s(bptr, ptr - bptr);
         if (tail)
-            tail->next = newnode;
+            tail = tail->insert_after(s);
         else
-            token->list = newnode;
-        tail = newnode;
+            tail = token->list = new TokenBlk(s);
         num++;
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
