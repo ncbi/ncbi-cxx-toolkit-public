@@ -443,20 +443,6 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
     return false;
 }
 
-/**********************************************************/
-static void AppendTokenVal(TokenBlkPtr& tbp, string_view str)
-{
-    TokenBlkPtr newnode = new TokenBlk(str);
-    if (tbp) {
-        TokenBlkPtr ltbp = tbp;
-        while (ltbp->next)
-            ltbp = ltbp->next;
-        ltbp->next = newnode;
-    } else {
-        tbp = newnode;
-    }
-}
-
 /**********************************************************
  *
  *   TokenStatBlkPtr TokenString(str, delimiter):
@@ -472,8 +458,10 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
     const char*     ptr;
     Int2            num;
     TokenStatBlkPtr token;
+    TokenBlkPtr     tail;
 
     token = new TokenStatBlk;
+    tail  = nullptr;
 
     /* skip first several delimiters if any existed
      */
@@ -485,7 +473,12 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
                          *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 
-        AppendTokenVal(token->list, string_view(bptr, ptr - bptr));
+        TokenBlkPtr newnode = new TokenBlk(string_view(bptr, ptr - bptr));
+        if (tail)
+            tail->next = newnode;
+        else
+            token->list = newnode;
+        tail = newnode;
         num++;
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
