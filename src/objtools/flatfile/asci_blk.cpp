@@ -1269,19 +1269,17 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 }
 
 /**********************************************************/
-static void fta_fix_secondaries(TokenBlkPtr secs)
+static void fta_fix_secondaries(TokenBlkList& secs)
 {
-    TokenBlkPtr tbp;
-
-    if (! secs || ! secs->next || secs->empty() ||
-        secs->next->empty() || fta_if_wgs_acc(secs->c_str()) != 0 ||
-        ! StringEqu(secs->next->c_str(), "-"))
+    auto it1 = secs.begin();
+    if (! it1 || it1->empty())
+        return;
+    auto it2 = it1->next;
+    if (! it2 || it2->data() != "-" || fta_if_wgs_acc(it1->data()) != 0)
         return;
 
-    tbp = secs->insert_after(secs->data());
-
-    if (! tbp->data().empty())
-        tbp->data().back() = '1';
+    auto tbp = it1->insert_after(it1->data());
+    tbp->data().back() = '1';
 }
 
 
@@ -1322,7 +1320,6 @@ static void fta_fix_secondaries(list<string>& secondaries)
  **********************************************************/
 void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions)
 {
-    TokenBlkPtr tbp;
     Int4        pri_acc;
     Int4        sec_acc;
     const char* text;
@@ -1336,7 +1333,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     CSeq_id::E_Choice pri_owner;
     CSeq_id::E_Choice sec_owner;
 
-    if (! ibp->secaccs) {
+    if (ibp->secaccs.empty()) {
         return;
     }
 
@@ -1357,7 +1354,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     }
 
     unusual_wgs = false;
-    for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
+    for (auto tbp = ibp->secaccs.begin(); tbp; tbp = tbp->next) {
         if (tbp->data() == "-"s) {
             tbp = tbp->next;
             if (! tbp)

@@ -353,7 +353,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
                         after_DT    = true;
-                        entry->date = GetUpdateDate(stoken->list->next->c_str(),
+                        entry->date = GetUpdateDate(stoken->list.begin()->next->c_str(),
                                                     pp->source);
                     }
 

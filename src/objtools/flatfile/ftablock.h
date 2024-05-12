@@ -153,9 +153,30 @@ public:
 };
 using TokenBlkPtr = TokenBlk*;
 
+struct TokenBlkList {
+    TokenBlk* head = nullptr;
+    bool      empty() const { return ! this->head; }
+    TokenBlk* begin() { return head; }
+    constexpr
+    TokenBlk* end() { return nullptr; }
+    void      pop_front()
+    {
+        TokenBlk* p = this->head;
+        this->head  = p->next;
+        delete p;
+    }
+    TokenBlk* release()
+    {
+        TokenBlk* p = this->head;
+        this->head  = nullptr;
+        return p;
+    }
+    ~TokenBlkList();
+};
+
 struct TokenStatBlk {
-    TokenBlk* list = nullptr; /* a pointer points to the first token */
-    Int2      num  = 0;       /* total number of token in the chain list */
+    TokenBlkList list;
+    Int2         num = 0; /* total number of token in the chain list */
 };
 using TokenStatBlkPtr = TokenStatBlk*;
 
@@ -233,7 +254,7 @@ struct Indexblk {
     string      moltype; /* the value of /mol_type qual */
     GapFeatsPtr gaps = nullptr;
 
-    TokenBlkPtr  secaccs         = nullptr;
+    TokenBlkList secaccs;
     XmlIndexPtr  xip             = nullptr;
     bool         embl_new_ID     = false;
     bool         env_sample_qual = false; /* TRUE if at least one source

@@ -4508,7 +4508,6 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
                                  IndexblkPtr     ibp,
                                  Parser::ESource source)
 {
-    TokenBlkPtr tbp;
     char*       prefix;
     const char* p;
     Int4        seqtype;
@@ -4539,7 +4538,8 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
         return;
     }
 
-    for (tbp = ibp->secaccs; tbp; tbp = tbp->next) {
+    bool ok = true;
+    for (auto tbp = ibp->secaccs.begin(); tbp; tbp = tbp->next) {
         if (tbp->c_str()[0] == '-')
             continue;
 
@@ -4547,12 +4547,14 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
             prefix = StringSave(tbp->c_str());
         else {
             i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
-            if (! StringEquN(prefix, tbp->c_str(), i))
+            if (! StringEquN(prefix, tbp->c_str(), i)) {
+                ok = false;
                 break;
+            }
         }
     }
 
-    if (! tbp && prefix) {
+    if (ok && prefix) {
         seqtype = fta_if_wgs_acc(prefix);
         if (seqtype == 0 || seqtype == 1 || seqtype == 4 || seqtype == 5 ||
             seqtype == 7 || seqtype == 8 || seqtype == 9 || seqtype == 10 ||

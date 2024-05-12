@@ -148,9 +148,6 @@ void FreeIndexblk(IndexblkPtr ibp)
     if (ibp->gaps)
         GapFeatsFree(ibp->gaps);
 
-    if (ibp->secaccs)
-        FreeTokenblk(ibp->secaccs);
-
     if (ibp->xip)
         XMLIndexFree(ibp->xip);
 
