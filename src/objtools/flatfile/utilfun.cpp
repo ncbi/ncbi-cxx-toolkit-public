@@ -351,18 +351,19 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
     TokenBlkPtr tbp;
     bool        bad;
 
-    if (! tsbp->list)
+    if (tsbp->list.empty())
         return true;
+    auto& tokens = tsbp->list;
 
     tbp = nullptr;
     if (skip == 0)
-        tbp = tsbp->list;
+        tbp = tokens.begin();
     else if (skip == 1) {
-        if (tsbp->list)
-            tbp = tsbp->list->next;
+        if (! tokens.empty())
+            tbp = tokens.begin()->next;
     } else {
-        if (tsbp->list && tsbp->list->next)
-            tbp = tsbp->list->next->next;
+        if (! tokens.empty() && tokens.begin()->next)
+            tbp = tokens.begin()->next->next;
     }
     if (! tbp)
         return true;
@@ -472,7 +473,7 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
         if (tail)
             tail = tail->insert_after(s);
         else
-            tail = token->list = new TokenBlk(s);
+            tail = token->list.head = new TokenBlk(s);
         num++;
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
@@ -485,8 +486,9 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
 }
 
 /**********************************************************/
-void FreeTokenblk(TokenBlkPtr tbp)
+TokenBlkList::~TokenBlkList()
 {
+    TokenBlkPtr tbp = this->head;
     TokenBlkPtr temp;
 
     while (tbp) {
@@ -499,7 +501,6 @@ void FreeTokenblk(TokenBlkPtr tbp)
 /**********************************************************/
 void FreeTokenstatblk(TokenStatBlkPtr tsbp)
 {
-    FreeTokenblk(tsbp->list);
     delete tsbp;
 }
 
