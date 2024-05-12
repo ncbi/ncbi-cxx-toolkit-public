@@ -233,13 +233,11 @@ bool XMLIndex(ParserPtr pp);
  **********************************************************/
 static const char* GetResidue(TokenStatBlkPtr stoken)
 {
-    TokenBlkPtr  sptr;
-    TokenBlkPtr  ptr;
     const char** b;
     Int2         i;
 
-    ptr  = stoken->list;
-    sptr = stoken->list->next;
+    auto ptr  = stoken->list.begin();
+    auto sptr = ptr->next;
     for (i = 1; i < stoken->num; i++, ptr = ptr->next, sptr = sptr->next) {
         for (b = ParFlat_RESIDUE_STR; *b; b++)
             if (NStr::CompareNocase(*b, sptr->c_str()) == 0)
@@ -790,7 +788,6 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
     Int2            i;
     Int2            j;
     TokenStatBlkPtr stoken;
-    TokenBlkPtr     ptr;
     const char*     bases;
     IndexblkPtr     entry;
     char*           p;
@@ -831,7 +828,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             }
         }
 
-        ptr = stoken->list->next;
+        auto ptr = stoken->list.begin()->next;
         if (pp->format == Parser::EFormat::EMBL && ptr->next &&
             ! ptr->next->empty() && StringEqu(ptr->next->c_str(), "SV")) {
             for (i = 0, p = finfo.str; *p != '\0'; p++)
@@ -862,9 +859,10 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
             if (pp->format == Parser::EFormat::SPROT) {
-                if (! ptr->next || ptr->next->empty() ||
-                    (! StringEquNI(ptr->next->c_str(), "preliminary", 11) &&
-                     ! StringEquNI(ptr->next->c_str(), "unreviewed", 10)))
+                auto it = ptr->next;
+                if (! it || it->empty() ||
+                    (! StringEquNI(it->c_str(), "preliminary", 11) &&
+                     ! StringEquNI(it->c_str(), "unreviewed", 10)))
                     badlocus = CheckLocusSP(entry->locusname);
                 else
                     badlocus = false;
@@ -896,34 +894,36 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         entry->lc.date > -1) {
         /* last token in the LOCUS line is date of the update's data
          */
-        for (i = 1, ptr = stoken->list; i < stoken->num; i++)
-            ptr = ptr->next;
-        entry->date = GetUpdateDate(ptr->c_str(), pp->source);
+        auto it = stoken->list.begin();
+        for (i = 1; i < stoken->num; ++i)
+            it = it->next;
+        entry->date = GetUpdateDate(it->c_str(), pp->source);
     }
 
     if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
         j = stoken->num - ((pp->format == Parser::EFormat::GenBank) ? 2 : 3);
-        for (i = 1, ptr = stoken->list; i < j; i++)
-            ptr = ptr->next;
+        auto it = stoken->list.begin();
+        for (i = 1; i < j; i++)
+            it = it->next;
 
         if (pp->format == Parser::EFormat::EMBL) {
-            if (StringEquNI(ptr->c_str(), "TSA", 3))
+            if (StringEquNI(it->c_str(), "TSA", 3))
                 entry->is_tsa = true;
-            else if (StringEquNI(ptr->c_str(), "PAT", 3))
+            else if (StringEquNI(it->c_str(), "PAT", 3))
                 entry->is_pat = true;
         }
 
-        ptr = ptr->next;
+        it = it->next;
 
-        if (StringEquNI(ptr->c_str(), "EST", 3))
+        if (StringEquNI(it->c_str(), "EST", 3))
             entry->EST = true;
-        else if (StringEquNI(ptr->c_str(), "STS", 3))
+        else if (StringEquNI(it->c_str(), "STS", 3))
             entry->STS = true;
-        else if (StringEquNI(ptr->c_str(), "GSS", 3))
+        else if (StringEquNI(it->c_str(), "GSS", 3))
             entry->GSS = true;
-        else if (StringEquNI(ptr->c_str(), "HTC", 3))
+        else if (StringEquNI(it->c_str(), "HTC", 3))
             entry->HTC = true;
-        else if (StringEquNI(ptr->c_str(), "PAT", 3) &&
+        else if (StringEquNI(it->c_str(), "PAT", 3) &&
                  pp->source == Parser::ESource::EMBL)
             entry->is_pat = true;
     }
@@ -1505,25 +1505,27 @@ static bool sNotAllDigits(const char* first, const char* last)
  *                                              7-6-93
  *
  **********************************************************/
-static bool CheckAccession(TokenStatBlkPtr stoken,
-                           Parser::ESource source,
-                           Parser::EMode   mode,
-                           char*           priacc,
-                           unsigned        skip)
+static bool CheckAccession(
+    TokenStatBlkPtr stoken,
+    Parser::ESource source,
+    Parser::EMode   mode,
+    char*           priacc,
+    unsigned        skip)
 {
-    TokenBlkPtr tbp;
-    bool        badac;
-    bool        res = true;
-    bool        iswgs;
-    Char        acnum[200];
-    Int4        accformat;
-    Int4        priformat;
-    Int4        count;
+    bool badac;
+    bool res = true;
+    bool iswgs;
+    Char acnum[200];
+    Int4 accformat;
+    Int4 priformat;
+    Int4 count;
 
     if (! priacc || mode == Parser::EMode::Relaxed)
         return true;
 
-    tbp       = (skip == 0) ? stoken->list : stoken->list->next;
+    auto tbp = stoken->list.begin();
+    if (skip > 0)
+        tbp = tbp->next;
     priformat = IsNewAccessFormat(priacc);
     if ((priformat == 3 || priformat == 4 || priformat == 8) &&
         fta_if_master_wgs_accession(priacc, priformat) == false)
@@ -1818,7 +1820,9 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
             entry->drop = true;
 
         if (tokens.size() > skip && skip < 2) { // Not sure about the logic
-            auto it = skip ? next(tokens.begin(), skip) : tokens.begin();
+            auto it = tokens.begin();
+            if (skip > 0)
+                it = next(it, skip);
             move(it, tokens.end(), entry->secondary_accessions.end());
         }
         return get;
@@ -1941,8 +1945,6 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
     char*           line;
     char*           p;
     TokenStatBlkPtr stoken;
-    TokenBlkPtr     tbp;
-    TokenBlkPtr     ttbp;
     bool            get = true;
     Int4            i;
 
@@ -1963,21 +1965,21 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         if (! get)
             entry->drop = true;
 
+        TokenBlkPtr tbp = nullptr;
         if (skip == 0) {
-            tbp          = stoken->list;
-            stoken->list = nullptr;
-        } else if (skip == 1 && stoken->list) {
-            tbp                = stoken->list->next;
-            stoken->list->next = nullptr;
-        } else
-            tbp = nullptr;
+            tbp = stoken->list.release();
+        } else if (skip == 1 && ! stoken->list.empty()) {
+            stoken->list.pop_front();
+            tbp = stoken->list.release();
+        }
         if (tbp) {
-            if (! entry->secaccs)
-                entry->secaccs = tbp;
+            if (entry->secaccs.empty())
+                entry->secaccs.head = tbp;
             else {
-                for (ttbp = entry->secaccs; ttbp->next;)
-                    ttbp = ttbp->next;
-                ttbp->next = tbp;
+                auto tail = entry->secaccs.begin();
+                for (; tail->next;)
+                    tail = tail->next;
+                tail->next = tbp;
             }
         }
 
@@ -1998,7 +2000,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         return false;
     }
 
-    StringCpy(acc, stoken->list->next->c_str()); /* get first accession */
+    StringCpy(acc, stoken->list.begin()->next->c_str()); /* get first accession */
 
     if (pp->mode != Parser::EMode::Relaxed) {
         DelNoneDigitTail(acc);
@@ -2072,8 +2074,9 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [%s] for this source: %s", acc, sourceName.c_str());
     }
 
-    entry->secaccs           = stoken->list->next->next;
-    stoken->list->next->next = nullptr;
+    stoken->list.pop_front();
+    stoken->list.pop_front();
+    entry->secaccs.head = stoken->list.release();
 
     FreeTokenstatblk(stoken);
 

@@ -158,14 +158,12 @@ static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
 static void GetSegment(const char* str, IndexblkPtr entry)
 {
     TokenStatBlkPtr stoken;
-    TokenBlkPtr     ptr2;
-    TokenBlkPtr     ptr4;
 
     stoken = TokenString(str, ' ');
 
     if (stoken->num > 3) {
-        ptr2          = stoken->list->next;
-        ptr4          = ptr2->next->next;
+        auto ptr2     = stoken->list.begin()->next;
+        auto ptr4     = ptr2->next->next;
         entry->segnum = (Uint2)atoi(ptr2->c_str());
 
         if (! DelSegnum(entry, ptr2->c_str(), StringLen(ptr4->c_str()))) {
