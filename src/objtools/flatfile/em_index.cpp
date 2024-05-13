@@ -344,16 +344,16 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 if (StringEquN(finfo.str, keywordAc.c_str(), keywordAc.size())) {
                     if (after_AC == false) {
                         after_AC = true;
-                        if (GetAccession(pp, finfo.str, entry, 2) == false)
+                        if (! GetAccession(pp, finfo.str, entry, 2))
                             pp->num_drop++;
                     } else if (! entry->drop &&
-                               GetAccession(pp, finfo.str, entry, 1) == false)
+                               ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
                 } else if (StringEquN(finfo.str, keywordDt.c_str(), keywordDt.size())) {
                     stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
                         after_DT    = true;
-                        entry->date = GetUpdateDate(stoken->list.begin()->next->c_str(),
+                        entry->date = GetUpdateDate(next(stoken->list.begin())->c_str(),
                                                     pp->source);
                     }
 

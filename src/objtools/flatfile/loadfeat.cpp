@@ -4539,12 +4539,12 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     }
 
     bool ok = true;
-    for (auto tbp = ibp->secaccs.begin(); tbp; tbp = tbp->next) {
-        if (tbp->c_str()[0] == '-')
+    for (auto tbp = ibp->secaccs.begin(); tbp != ibp->secaccs.end(); ++tbp) {
+        if ((*tbp)[0] == '-')
             continue;
 
         if (! prefix)
-            prefix = StringSave(tbp->c_str());
+            prefix = StringSave(*tbp);
         else {
             i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
             if (! StringEquN(prefix, tbp->c_str(), i)) {

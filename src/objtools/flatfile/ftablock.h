@@ -48,6 +48,7 @@
 #include <objects/seq/Delta_seq.hpp>
 
 #include <objtools/flatfile/flatfile_parse_info.hpp>
+#include <forward_list>
 #include "valnode.h"
 
 BEGIN_NCBI_SCOPE
@@ -130,49 +131,7 @@ struct GapFeats {
 };
 using GapFeatsPtr = GapFeats*;
 
-struct TokenBlk {
-    TokenBlk(string_view s) :
-        str(s) {}
-
-private:
-    string str; /* the token string */
-public:
-    TokenBlk* next = nullptr; /* points to next token */
-
-    TokenBlk* insert_after(string_view s)
-    {
-        TokenBlk* p = new TokenBlk(s);
-        p->next     = this->next;
-        this->next  = p;
-        return p;
-    }
-
-    const char* c_str() const { return str.c_str(); }
-    string&     data() { return str; }
-    bool        empty() const { return str.empty(); }
-};
-using TokenBlkPtr = TokenBlk*;
-
-struct TokenBlkList {
-    TokenBlk* head = nullptr;
-    bool      empty() const { return ! this->head; }
-    TokenBlk* begin() { return head; }
-    constexpr
-    TokenBlk* end() { return nullptr; }
-    void      pop_front()
-    {
-        TokenBlk* p = this->head;
-        this->head  = p->next;
-        delete p;
-    }
-    TokenBlk* release()
-    {
-        TokenBlk* p = this->head;
-        this->head  = nullptr;
-        return p;
-    }
-    ~TokenBlkList();
-};
+using TokenBlkList = forward_list<string>;
 
 struct TokenStatBlk {
     TokenBlkList list;
