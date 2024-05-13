@@ -348,29 +348,19 @@ inline bool IsDigit(char c)
 /**********************************************************/
 bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
 {
-    TokenBlkPtr tbp;
-    bool        bad;
-
-    if (tsbp->list.empty())
-        return true;
     auto& tokens = tsbp->list;
-
-    tbp = nullptr;
-    if (skip == 0)
-        tbp = tokens.begin();
-    else if (skip == 1) {
-        if (! tokens.empty())
-            tbp = tokens.begin()->next;
-    } else {
-        if (! tokens.empty() && tokens.begin()->next)
-            tbp = tokens.begin()->next->next;
-    }
-    if (! tbp)
+    if (tokens.empty())
+        return true;
+    if ((int)skip >= tsbp->num)
         return true;
 
-    bad = false;
-    for (; tbp; tbp = tbp->next) {
-        const string& token    = tbp->data();
+    auto tbp = tokens.begin();
+    if (skip > 0)
+        advance(tbp, skip);
+
+    bool bad = false, msg_issued = false;
+    for (; tbp != tokens.end(); ++tbp) {
+        const string& token    = *tbp;
         string_view   tok_view = token;
         if (token.empty())
             continue;
@@ -405,7 +395,9 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         string_view first_prefix = first.substr(0, preflen);
         string_view last_prefix  = last.substr(0, preflen2);
         if (first_prefix != last_prefix) {
+            msg_issued = true;
             ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", token.c_str());
+            bad = true;
             break;
         }
 
@@ -420,20 +412,22 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
         auto num1 = NStr::StringToInt(first_digits, NStr::fConvErr_NoThrow);
         auto num2 = NStr::StringToInt(last_digits, NStr::fConvErr_NoThrow);
         if (num2 < num1) {
+            msg_issued = true;
             ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", token.c_str());
+            bad = true;
             break;
         }
 
         // cut in half
         string tmp(last);
-        tbp->data().resize(dash);
-        tbp = tbp->insert_after("-");
-        tbp = tbp->insert_after(tmp);
+        tbp->resize(dash);
+        tbp = tokens.insert_after(tbp, "-");
+        tbp = tokens.insert_after(tbp, tmp);
         tsbp->num += 2;
     }
-    if (! tbp)
+    if (! bad)
         return true;
-    if (bad) {
+    if (! msg_issued) {
         ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"%s\".", tbp->c_str());
     }
     return false;
@@ -454,10 +448,9 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
     const char*     ptr;
     Int2            num;
     TokenStatBlkPtr token;
-    TokenBlkPtr     tail;
 
-    token = new TokenStatBlk;
-    tail  = nullptr;
+    token     = new TokenStatBlk;
+    auto tail = token->list.before_begin();
 
     /* skip first several delimiters if any existed
      */
@@ -469,11 +462,7 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
                          *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
             ptr++;
 
-        string_view s(bptr, ptr - bptr);
-        if (tail)
-            tail = tail->insert_after(s);
-        else
-            tail = token->list.head = new TokenBlk(s);
+        tail = token->list.insert_after(tail, string(bptr, ptr));
         num++;
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
@@ -483,19 +472,6 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
     token->num = num;
 
     return (token);
-}
-
-/**********************************************************/
-TokenBlkList::~TokenBlkList()
-{
-    TokenBlkPtr tbp = this->head;
-    TokenBlkPtr temp;
-
-    while (tbp) {
-        temp = tbp;
-        tbp  = tbp->next;
-        delete temp;
-    }
 }
 
 /**********************************************************/

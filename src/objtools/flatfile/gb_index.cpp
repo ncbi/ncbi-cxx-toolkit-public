@@ -161,9 +161,9 @@ static void GetSegment(const char* str, IndexblkPtr entry)
 
     stoken = TokenString(str, ' ');
 
-    if (stoken->num > 3) {
-        auto ptr2     = stoken->list.begin()->next;
-        auto ptr4     = ptr2->next->next;
+    if (stoken->num >= 4) {
+        auto ptr2     = next(stoken->list.begin());
+        auto ptr4     = next(ptr2, 2);
         entry->segnum = (Uint2)atoi(ptr2->c_str());
 
         if (! DelSegnum(entry, ptr2->c_str(), StringLen(ptr4->c_str()))) {

@@ -1272,14 +1272,14 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 static void fta_fix_secondaries(TokenBlkList& secs)
 {
     auto it1 = secs.begin();
-    if (! it1 || it1->empty())
+    if (it1 == secs.end() || it1->empty())
         return;
-    auto it2 = it1->next;
-    if (! it2 || it2->data() != "-" || fta_if_wgs_acc(it1->data()) != 0)
+    auto it2 = next(it1);
+    if (it2 == secs.end() || *it2 != "-" || fta_if_wgs_acc(*it1) != 0)
         return;
 
-    auto tbp = it1->insert_after(it1->data());
-    tbp->data().back() = '1';
+    auto tbp = secs.insert_after(it1, *it1);
+    tbp->back() = '1';
 }
 
 
@@ -1354,21 +1354,21 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     }
 
     unusual_wgs = false;
-    for (auto tbp = ibp->secaccs.begin(); tbp; tbp = tbp->next) {
-        if (tbp->data() == "-"s) {
-            tbp = tbp->next;
-            if (! tbp)
+    for (auto tbp = ibp->secaccs.begin(); tbp != ibp->secaccs.end(); ++tbp) {
+        if (*tbp == "-"s) {
+            ++tbp;
+            if (tbp == ibp->secaccs.end())
                 break;
             if (! accessions.empty()) {
                 accessions.back() += '-';
-                accessions.back() += tbp->c_str();
+                accessions.back() += *tbp;
             }
             continue;
         }
 
-        DelNonDigitTail(tbp->data());
-        const char* p = tbp->c_str();
-        sec_acc = fta_if_wgs_acc(p);
+        DelNonDigitTail(*tbp);
+        const string& a = *tbp;
+        sec_acc = fta_if_wgs_acc(a);
 
         unusual_wgs_msg = true;
         if (sec_acc == 0 || sec_acc == 3 ||
@@ -1381,25 +1381,25 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                                                    12 = KAAA00000000 */
         {
             if (ibp->is_contig &&
-                (ibp->wgssec.empty() || NStr::CommonSuffixSize(ibp->wgssec, p) >= 4))
+                (ibp->wgssec.empty() || NStr::CommonSuffixSize(ibp->wgssec, a) >= 4))
                 unusual_wgs_msg = false;
             if (ibp->wgssec.empty())
-                ibp->wgssec = p;
+                ibp->wgssec = a;
         }
 
-        sec_owner = GetNucAccOwner(p);
+        sec_owner = GetNucAccOwner(a);
 
         if (sec_acc < 0 || sec_acc == 2) {
             if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
                 if (! allow_uwsec) {
-                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.", p);
+                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.", a.c_str());
                     ibp->drop = true;
                 } else {
-                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". This is being allowed via the use of a special parser flag.", p);
+                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". This is being allowed via the use of a special parser flag.", a.c_str());
                 }
             }
 
-            accessions.push_back(p);
+            accessions.push_back(a);
             continue;
         }
 
@@ -1411,7 +1411,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                 continue;
             if (source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ &&
                 source != Parser::ESource::Refseq) {
-                ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary, "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.", p);
+                ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary, "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.", a.c_str());
                 ibp->drop = true;
             }
             continue;
@@ -1420,8 +1420,8 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) /* WGS/TSA/TLS
                                                                    contig */
         {
-            i = (StringEquN(p, "NZ_", 3)) ? 7 : 4;
-            if (! StringEquN(p, ibp->acnum, i)) {
+            i = (StringEquN(a.c_str(), "NZ_", 3)) ? 7 : 4;
+            if (! StringEquN(a.c_str(), ibp->acnum, i)) {
                 if (! allow_uwsec) {
                     ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
                     ibp->drop = true;
@@ -1461,17 +1461,17 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         }
 
         if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
-            if (StringEquN(acc, p, i) && p[i] >= '0' && p[i] <= '9') {
+            if (StringEquN(acc, a.c_str(), i) && a[i] >= '0' && a[i] <= '9') {
                 if (sec_acc == 1 || sec_acc == 5 || pri_acc == 11)
-                    accessions.push_back(p);
+                    accessions.push_back(a);
             } else if (allow_uwsec) {
-                accessions.push_back(p);
+                accessions.push_back(a);
             }
         } else if (pri_acc == 2) {
             if (sec_acc == 0 || sec_acc == 4) /* like AAAA10000000 */
-                accessions.push_back(p);
+                accessions.push_back(a);
         } else if (allow_uwsec || (! unusual_wgs_msg && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL))) {
-            accessions.push_back(p);
+            accessions.push_back(a);
         }
     }
 

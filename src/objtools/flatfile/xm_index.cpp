@@ -292,8 +292,9 @@ static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
 
     if (stoken->num >= 3) {
         auto it1    = stoken->list.begin();
+        auto it3    = next(it1, 2);
         segnum      = it1->c_str();
-        segtotal    = it1->next->next->c_str();
+        segtotal    = it3->c_str();
         ibp->segnum = (Uint2)atoi(segnum);
 
         if (! XMLDelSegnum(ibp, segnum, StringLen(segtotal))) {

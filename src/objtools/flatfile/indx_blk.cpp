@@ -237,10 +237,10 @@ static const char* GetResidue(TokenStatBlkPtr stoken)
     Int2         i;
 
     auto ptr  = stoken->list.begin();
-    auto sptr = ptr->next;
-    for (i = 1; i < stoken->num; i++, ptr = ptr->next, sptr = sptr->next) {
+    auto sptr = next(ptr);
+    for (i = 1; i < stoken->num; i++, ptr = sptr, sptr = next(ptr)) {
         for (b = ParFlat_RESIDUE_STR; *b; b++)
-            if (NStr::CompareNocase(*b, sptr->c_str()) == 0)
+            if (NStr::CompareNocase(*b, *sptr) == 0)
                 return ptr->c_str();
     }
 
@@ -828,16 +828,17 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             }
         }
 
-        auto ptr = stoken->list.begin()->next;
-        if (pp->format == Parser::EFormat::EMBL && ptr->next &&
-            ! ptr->next->empty() && StringEqu(ptr->next->c_str(), "SV")) {
+        auto ptr = stoken->list.begin();
+        ++ptr;
+        if (pp->format == Parser::EFormat::EMBL &&
+            next(ptr) != stoken->list.end() && *next(ptr) == "SV"s) {
             for (i = 0, p = finfo.str; *p != '\0'; p++)
                 if (*p == ';' && p[1] == ' ')
                     i++;
 
             entry->embl_new_ID = true;
-            if (! ptr->data().empty() && ptr->data().back() == ';')
-                ptr->data().pop_back();
+            if (! ptr->empty() && ptr->back() == ';')
+                ptr->pop_back();
 
             FtaInstallPrefix(PREFIX_LOCUS, ptr->c_str());
             FtaInstallPrefix(PREFIX_ACCESSION, ptr->c_str());
@@ -859,8 +860,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
             if (pp->format == Parser::EFormat::SPROT) {
-                auto it = ptr->next;
-                if (! it || it->empty() ||
+                auto it = next(ptr);
+                if (it == stoken->list.end() || it->empty() ||
                     (! StringEquNI(it->c_str(), "preliminary", 11) &&
                      ! StringEquNI(it->c_str(), "unreviewed", 10)))
                     badlocus = CheckLocusSP(entry->locusname);
@@ -896,15 +897,15 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
          */
         auto it = stoken->list.begin();
         for (i = 1; i < stoken->num; ++i)
-            it = it->next;
+            ++it;
         entry->date = GetUpdateDate(it->c_str(), pp->source);
     }
 
     if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
         j = stoken->num - ((pp->format == Parser::EFormat::GenBank) ? 2 : 3);
         auto it = stoken->list.begin();
-        for (i = 1; i < j; i++)
-            it = it->next;
+        for (i = 1; i < j; ++i)
+            ++it;
 
         if (pp->format == Parser::EFormat::EMBL) {
             if (StringEquNI(it->c_str(), "TSA", 3))
@@ -913,7 +914,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
                 entry->is_pat = true;
         }
 
-        it = it->next;
+        ++it;
 
         if (StringEquNI(it->c_str(), "EST", 3))
             entry->EST = true;
@@ -1525,7 +1526,7 @@ static bool CheckAccession(
 
     auto tbp = stoken->list.begin();
     if (skip > 0)
-        tbp = tbp->next;
+        ++tbp;
     priformat = IsNewAccessFormat(priacc);
     if ((priformat == 3 || priformat == 4 || priformat == 8) &&
         fta_if_master_wgs_accession(priacc, priformat) == false)
@@ -1534,7 +1535,7 @@ static bool CheckAccession(
         iswgs = false;
 
     count = 0;
-    for (; tbp; tbp = tbp->next) {
+    for (; tbp != stoken->list.end(); ++tbp) {
         StringCpy(acnum, tbp->c_str());
         if (acnum[0] == '-' && acnum[1] == '\0')
             continue;
@@ -1959,22 +1960,15 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         if (! get)
             entry->drop = true;
 
-        TokenBlkPtr tbp = nullptr;
-        if (skip == 0) {
-            tbp = stoken->list.release();
-        } else if (skip == 1 && ! stoken->list.empty()) {
+        if (skip == 1 && ! stoken->list.empty()) {
             stoken->list.pop_front();
-            tbp = stoken->list.release();
+            skip = 0;
         }
-        if (tbp) {
-            if (entry->secaccs.empty())
-                entry->secaccs.head = tbp;
-            else {
-                auto tail = entry->secaccs.begin();
-                for (; tail->next;)
-                    tail = tail->next;
-                tail->next = tbp;
-            }
+        if (skip == 0 && ! stoken->list.empty()) {
+            auto tail = entry->secaccs.before_begin();
+            for (; next(tail) != entry->secaccs.end();)
+                ++tail;
+            entry->secaccs.splice_after(tail, stoken->list);
         }
 
         FreeTokenstatblk(stoken);
@@ -1994,7 +1988,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         return false;
     }
 
-    StringCpy(acc, stoken->list.begin()->next->c_str()); /* get first accession */
+    StringCpy(acc, next(stoken->list.begin())->c_str()); /* get first accession */
 
     if (pp->mode != Parser::EMode::Relaxed) {
         DelNoneDigitTail(acc);
@@ -2070,8 +2064,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
 
     stoken->list.pop_front();
     stoken->list.pop_front();
-    entry->secaccs.head = stoken->list.release();
-
+    entry->secaccs = std::move(stoken->list);
     FreeTokenstatblk(stoken);
 
     if (! entry->is_pat)
