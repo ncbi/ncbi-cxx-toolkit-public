@@ -1496,41 +1496,54 @@ bool CValidError_imp::Validate
             *m_TSE);
     }
 
-    // count inference accessions - if there are too many, temporarily disable inference checking
+    // count inference accessions - if there are too many, WAS temporarily disable inference checking
+    // now disable inference checking for rest of this validator run
     bool old_inference_acc_check = m_ValidateInferenceAccessions;
-    if (m_ValidateInferenceAccessions && ! m_IgnoreInferences) {
-        size_t num_inferences = 0, num_accessions = 0;
+    if (! m_IgnoreInferences) {
         CFeat_CI feat_inf(seh);
-        while (feat_inf) {
+        while (feat_inf && ! m_IgnoreInferences) {
             FOR_EACH_GBQUAL_ON_FEATURE (qual, *feat_inf) {
-                if ((*qual)->IsSetQual() && (*qual)->IsSetVal() && NStr::Equal((*qual)->GetQual(), "inference")) {
-                    num_inferences++;
+                if (! m_IgnoreInferences && (*qual)->IsSetQual() && (*qual)->IsSetVal() && NStr::Equal((*qual)->GetQual(), "inference")) {
                     m_CumulativeInferenceCount++;
-                    string prefix, remainder;
-                    bool same_species;
-                    vector<string> accessions = CValidError_feat::GetAccessionsFromInferenceString ((*qual)->GetVal(), prefix, remainder, same_species);
-                    for (size_t i = 0; i < accessions.size(); i++) {
-                        NStr::TruncateSpacesInPlace (accessions[i]);
-                        string acc_prefix, accession;
-                        if (CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (accessions[i], acc_prefix, accession)) {
-                            if (NStr::EqualNocase (acc_prefix, "INSD") || NStr::EqualNocase (acc_prefix, "RefSeq")) {
+                    if (m_CumulativeInferenceCount >= 1000) {
+                        // disable inference checking for remainder of run
+                        m_IgnoreInferences = true;
+                        
+                        // warn about too many inferences
+                        PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
+                                 "Skipping validation of remaining /inference qualifiers",
+                                 *m_TSE);
+                    }
+
+                    if (m_ValidateInferenceAccessions && ! m_IgnoreInferences) {
+                        string prefix, remainder;
+                        bool same_species;
+                        size_t num_accessions = 0;
+                        vector<string> accessions = CValidError_feat::GetAccessionsFromInferenceString ((*qual)->GetVal(), prefix, remainder, same_species);
+                        for (size_t i = 0; i < accessions.size(); i++) {
+                            NStr::TruncateSpacesInPlace (accessions[i]);
+                            string acc_prefix, accession;
+                            if (CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (accessions[i], acc_prefix, accession)) {
                                 num_accessions++;
+                                m_CumulativeInferenceCount++;
+                            }
+                        }
+                        if (num_accessions > 0) {
+                            m_CumulativeInferenceCount += num_accessions;
+                            if (m_CumulativeInferenceCount >= 1000) {
+                                // disable inference checking for remainder of run
+                                m_IgnoreInferences = true;
+                                
+                                // warn about too many inferences
+                                PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
+                                         "Skipping validation of remaining /inference qualifiers",
+                                         *m_TSE);
                             }
                         }
                     }
                 }
             }
             ++feat_inf;
-        }
-        if (/* num_inferences > 1000 || */ num_accessions > 1000) {
-            // warn about too many inferences
-            PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
-                     "Skipping validation of " + NStr::SizetToString (num_inferences) + " /inference qualifiers with "
-                     + NStr::SizetToString (num_accessions) + " accessions",
-                     *m_TSE);
-
-            // disable inference checking
-            m_ValidateInferenceAccessions = false;
         }
     }
 
