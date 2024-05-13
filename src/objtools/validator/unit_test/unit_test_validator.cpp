@@ -19548,8 +19548,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TooManyInferenceAccessions)
     }
     STANDARD_SETUP
 
+    /*
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "TooManyInferenceAccessions",
                               "Skipping validation of 500 /inference qualifiers with 5000 accessions"));
+    */
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "TooManyInferenceAccessions",
+                              "Skipping validation of remaining /inference qualifiers"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options | CValidator::eVal_inference_accns);
     CheckErrors(*eval, expected_errors);
