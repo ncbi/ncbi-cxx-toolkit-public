@@ -191,8 +191,7 @@ static char* EmblGetNewIDVersion(char* locus, char* str)
  **********************************************************/
 bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
-    TokenStatBlkPtr stoken;
-    FinfoBlk        finfo;
+    FinfoBlk finfo;
 
     bool after_AC;
     bool after_NI;
@@ -350,14 +349,12 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                                ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
                 } else if (StringEquN(finfo.str, keywordDt.c_str(), keywordDt.size())) {
-                    stoken = TokenString(finfo.str, ' ');
+                    auto stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
                         after_DT    = true;
                         entry->date = GetUpdateDate(next(stoken->list.begin())->c_str(),
                                                     pp->source);
                     }
-
-                    FreeTokenstatblk(stoken);
                 }
 
                 end_of_file = XReadFileBuf(pp->ffbuf, finfo);

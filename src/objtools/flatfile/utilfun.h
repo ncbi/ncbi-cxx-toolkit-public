@@ -59,8 +59,7 @@ CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESour
 
 /* relative routines for tokenize string
  */
-TokenStatBlk* TokenString(const char* str, Char delimiter);
-void          FreeTokenstatblk(TokenStatBlk* tsbp);
+unique_ptr<TokenStatBlk> TokenString(const char* str, Char delimiter);
 bool          ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip);
 bool          ParseAccessionRange(list<string>& tokens, unsigned skip);
 void          UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& extra_accs, objects::CGB_block::TExtra_accessions& hist);
