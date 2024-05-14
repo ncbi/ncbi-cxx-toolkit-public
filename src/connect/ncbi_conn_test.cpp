@@ -880,7 +880,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             break;
         default:
             temp += "Internal program error, please report!\n";
-            _ASSERT(0);
+            _TROUBLE;
             break;
         }
     } else {

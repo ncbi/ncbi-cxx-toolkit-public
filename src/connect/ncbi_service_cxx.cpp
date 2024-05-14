@@ -57,7 +57,7 @@ static string x_HostOfInfo(const SSERV_Info*     info,
         return xx_host;
     }
 
-    _ASSERT(0);
+    _TROUBLE;
     return kEmptyStr;
 }
 
