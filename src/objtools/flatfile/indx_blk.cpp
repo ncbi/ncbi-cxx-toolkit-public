@@ -785,12 +785,11 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
  **********************************************************/
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 {
-    Int2            i;
-    Int2            j;
-    TokenStatBlkPtr stoken;
-    const char*     bases;
-    IndexblkPtr     entry;
-    char*           p;
+    Int2        i;
+    Int2        j;
+    const char* bases;
+    IndexblkPtr entry;
+    char*       p;
 
     entry = new Indexblk;
 
@@ -801,7 +800,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
     entry->is_tls  = false;
     entry->is_pat  = false;
 
-    stoken = TokenString(finfo.str, ' ');
+    auto stoken = TokenString(finfo.str, ' ');
 
     bool badlocus = false;
     if (stoken->num > 2) {
@@ -883,11 +882,10 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         if (p)
             *p = '\n';
         delete entry;
-        FreeTokenstatblk(stoken);
         return nullptr;
     }
 
-    bases = GetResidue(stoken);
+    bases = GetResidue(stoken.get());
     if (bases)
         entry->bases = (size_t)atoi(bases);
 
@@ -928,7 +926,6 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
                  pp->source == Parser::ESource::EMBL)
             entry->is_pat = true;
     }
-    FreeTokenstatblk(stoken);
 
     return (entry);
 }
@@ -1935,28 +1932,27 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 
 bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned skip)
 {
-    Char            acc[200];
-    string          temp;
-    char*           line;
-    char*           p;
-    TokenStatBlkPtr stoken;
-    bool            get = true;
-    Int4            i;
+    Char   acc[200];
+    string temp;
+    char*  p;
+    bool   get = true;
+    Int4   i;
 
     if ((skip != 2 && pp->source == Parser::ESource::Flybase) ||
         pp->source == Parser::ESource::USPTO)
         return true;
 
-    line = StringSave(str);
-    for (p = line; *p != '\0'; p++)
-        if (*p == ';')
-            *p = ' ';
-    stoken = TokenString(line, ' ');
+    string line = str;
+    for (char& c : line)
+        if (c == ';')
+            c = ' ';
+
+    auto stoken = TokenString(line.c_str(), ' ');
 
     if (skip != 2) {
-        get = ParseAccessionRange(stoken, skip);
+        get = ParseAccessionRange(stoken.get(), skip);
         if (get)
-            get = CheckAccession(stoken, pp->source, pp->mode, entry->acnum, skip);
+            get = CheckAccession(stoken.get(), pp->source, pp->mode, entry->acnum, skip);
         if (! get)
             entry->drop = true;
 
@@ -1971,8 +1967,6 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
             entry->secaccs.splice_after(tail, stoken->list);
         }
 
-        FreeTokenstatblk(stoken);
-        MemFree(line);
         return (get);
     }
 
@@ -1983,8 +1977,6 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
             entry->drop = true;
         }
-        FreeTokenstatblk(stoken);
-        MemFree(line);
         return false;
     }
 
@@ -2013,17 +2005,13 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
     }
 
     if (pp->source == Parser::ESource::Flybase) {
-        FreeTokenstatblk(stoken);
-        MemFree(line);
         return true;
     }
 
     if ((StringLen(acc) < 2) &&
         pp->mode != Parser::EMode::Relaxed) {
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [%s] for this entry.", acc);
-        FreeTokenstatblk(stoken);
         entry->drop = true;
-        MemFree(line);
         return false;
     }
 
@@ -2053,9 +2041,9 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
 
     if (get) {
         if (stoken->num > 2)
-            get = ParseAccessionRange(stoken, 2);
+            get = ParseAccessionRange(stoken.get(), 2);
         if (get) {
-            get = CheckAccession(stoken, pp->source, pp->mode, entry->acnum, 2);
+            get = CheckAccession(stoken.get(), pp->source, pp->mode, entry->acnum, 2);
         }
     } else {
         string sourceName = sourceNames.at(pp->source);
@@ -2065,7 +2053,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
     stoken->list.pop_front();
     stoken->list.pop_front();
     entry->secaccs = std::move(stoken->list);
-    FreeTokenstatblk(stoken);
+    stoken.reset();
 
     if (! entry->is_pat)
         entry->is_pat = IsPatentedAccPrefix(*pp, acc);
@@ -2088,8 +2076,6 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
         }
         entry->is_mga = true;
     }
-
-    MemFree(line);
 
     if (! get)
         entry->drop = true;

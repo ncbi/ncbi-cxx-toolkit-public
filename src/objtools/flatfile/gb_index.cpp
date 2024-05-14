@@ -157,9 +157,7 @@ static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
 /**********************************************************/
 static void GetSegment(const char* str, IndexblkPtr entry)
 {
-    TokenStatBlkPtr stoken;
-
-    stoken = TokenString(str, ' ');
+    auto stoken = TokenString(str, ' ');
 
     if (stoken->num >= 4) {
         auto ptr2     = next(stoken->list.begin());
@@ -174,8 +172,6 @@ static void GetSegment(const char* str, IndexblkPtr entry)
     } else {
         ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg, "Incomplete Segment information at linenum %d", entry->linenum);
     }
-
-    FreeTokenstatblk(stoken);
 }
 // LCOV_EXCL_STOP
 
