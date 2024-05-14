@@ -352,7 +352,7 @@ void CTest::Server(void)
                 case 2:
                     // No activity is expected on an unnamed datagram socket
                     _ASSERT(polls[i].m_Pollable == &dsock);
-                    _ASSERT(0);
+                    _TROUBLE;
                     /*FALLTRHU*/
                 default:
                     break;
