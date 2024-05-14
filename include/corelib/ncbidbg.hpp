@@ -78,8 +78,8 @@ BEGIN_NCBI_SCOPE
 #define _ALWAYS_TRACE_X(err_subcode, message)               \
     _ALWAYS_TRACE_XX(NCBI_USE_ERRCODE_X, err_subcode, message)
 
-#define _ALWAYS_TRACE_XX(error_name, err_subcode, message)                 \
-    do { (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode));            \
+#define _ALWAYS_TRACE_XX(error_name, err_subcode, message)              \
+    do { (NCBI_CHECK_ERR_SUBCODE_X_NAME(error_name, err_subcode));      \
       _ALWAYS_TRACE_EX(NCBI_ERRCODE_X_NAME(error_name), err_subcode, message); } while (0)
 
 #define NCBI_ALWAYS_TROUBLE(mess) \
@@ -90,8 +90,8 @@ BEGIN_NCBI_SCOPE
 #  define NCBI_ALWAYS_ASSERT(expr, mess) \
       do { \
           bool x_expr = ((expr)? true : false); \
-          const char* x_mess = (mess); \
           if ( !x_expr ) { \
+              const char* x_mess = (mess); \
               NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, \
                                       NCBI_NS_NCBI::eDiag_Error, \
                                       NCBI_NS_NCBI::eDPF_Trace) << \
@@ -100,17 +100,17 @@ BEGIN_NCBI_SCOPE
                   (x_mess ? x_mess : "") << NCBI_NS_NCBI::Endm; \
               _ASSERT_BASE(x_expr, NULL); \
               NCBI_NS_NCBI::CNcbiDiag::DiagAssertIfSuppressedSystemMessageBox( \
-                  DIAG_COMPILE_INFO, #expr, mess); \
+                  DIAG_COMPILE_INFO, #expr, x_mess); \
           } \
       } while ( 0 )
-#  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess)                           \
+#  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess) \
     ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
 #else  /* NCBI_COMPILER_MSVC */
 #  define NCBI_ALWAYS_ASSERT(expr, mess) \
       do { if ( !(expr) ) \
           NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess); \
       } while ( 0 )
-#  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess)                           \
+#  define NCBI_ALWAYS_ASSERT_EXPR(expr, mess) \
     ((expr)?(void)0:NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr, mess))
 #endif
 
@@ -328,8 +328,8 @@ END_NCBI_SCOPE
 
 #ifdef HAVE_NCBI_SKEW_GUARD
 #include <common/ncbi_source_ver.cmake_nodep>
-#define     NAME_NCBI_LIBRARY_VERSION_MISMATCH(a)           Ncbi_library_version_mismatch__Full_rebuild_to_fix_##a
-#define MAKENAME_NCBI_LIBRARY_VERSION_MISMATCH(a)      NAME_NCBI_LIBRARY_VERSION_MISMATCH(a)
+#define     NAME_NCBI_LIBRARY_VERSION_MISMATCH(a)  Ncbi_library_version_mismatch__Full_rebuild_to_fix_##a
+#define MAKENAME_NCBI_LIBRARY_VERSION_MISMATCH(a)  NAME_NCBI_LIBRARY_VERSION_MISMATCH(a)
 #define    CHECK_NCBI_LIBRARY_VERSION_MISMATCH     MAKENAME_NCBI_LIBRARY_VERSION_MISMATCH(NCBI_DEVELOPMENT_VER)
 
 NCBI_XNCBI_EXPORT int CHECK_NCBI_LIBRARY_VERSION_MISMATCH(void);
