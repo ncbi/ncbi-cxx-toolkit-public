@@ -123,10 +123,13 @@ enum ENAMERD_Subcodes {
 #define REG_NAMERD_PROXY_HOST        REG_CONN_HTTP_PROXY_HOST
 /* NAMERD_TODO - "temporarily" support plain "linkerd" on Unix only */
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
-#define DEF_NAMERD_PROXY_HOST        "linkerd"
-#else
-#define DEF_NAMERD_PROXY_HOST        \
+#  define DEF_NAMERD_PROXY_HOST      "linkerd"
+#elif defined(_DEBUG)  &&  !defined(NDEBUG)
+#  define DEF_NAMERD_PROXY_HOST                                         \
     "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
+#else
+#  define DEF_NAMERD_PROXY_HOST                                         \
+    "pool.linkerd-proxy.service.bethesda-prod.consul.ncbi.nlm.nih.gov"
 #endif
 
 #define REG_NAMERD_PROXY_PORT        REG_CONN_HTTP_PROXY_PORT
