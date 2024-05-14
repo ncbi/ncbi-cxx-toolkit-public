@@ -76,7 +76,8 @@ public:
     /// Set WebEnv
     void SetWebEnv(const string& webenv) { m_WebEnv = webenv; }
 
-    /// Get query_key
+    /// Get query_key.
+    /// @sa SetSendQueryKey()
     const string& GetQueryKey(void) const { return m_QueryKey; }
     /// Set query_key
     void SetQueryKey(const string& query_key) { m_QueryKey = query_key; }
@@ -90,12 +91,20 @@ public:
     const string& GetEmail(void) const { return m_Email; }
     void SetEmail(const string& email) { m_Email = email; }
 
+    /// Set SendQueryKey flag. By default query-key is automatically sent with each request.
+    /// This tells the server to append new search terms to the previous query. Setting
+    /// SendQueryKey flag to false disables sending query-key (without resetting the actual
+    /// query-key value received in replies).
+    void SetSendQueryKey(bool value) { m_SendQueryKey = value; }
+    bool GetSendQueryKey(void) const { return m_SendQueryKey; }
+
 private:
     CTimeout m_Timeout;
     string   m_WebEnv;
     string   m_QueryKey;
     string   m_Tool;
     string   m_Email;
+    bool     m_SendQueryKey = true;
 };
 
 

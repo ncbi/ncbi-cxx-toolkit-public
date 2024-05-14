@@ -287,7 +287,11 @@ void CEUtils_Request::SetDatabase(const string& database)
 
 const string& CEUtils_Request::GetQueryKey(void) const
 {
-    return m_QueryKey.empty() ? GetConnContext()->GetQueryKey() : m_QueryKey;
+    if (m_QueryKey.empty()) {
+        auto& ctx = *GetConnContext();
+        if (ctx.GetSendQueryKey()) return ctx.GetQueryKey();
+    }
+    return m_QueryKey;
 }
 
 

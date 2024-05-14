@@ -141,6 +141,8 @@ void CEUtilsApp::Init(void)
         CArgDescriptions::eString);
     arg_desc->AddOptionalKey("query_key", "query_key", "Query key",
         CArgDescriptions::eString);
+    // Just for testing, ask not to send the qurey_key.
+    arg_desc->AddFlag("skip_query_key", "Do not send query_key", true);
     arg_desc->AddOptionalKey("tool", "tool", "Client tool",
         CArgDescriptions::eString);
     arg_desc->AddOptionalKey("email", "email", "Client e-mail",
@@ -797,6 +799,9 @@ int CEUtilsApp::Run(void)
     }
     if (args["query_key"]) {
         x_GetCtx()->SetQueryKey(args["query_key"].AsString());
+    }
+    if (args["skip_query_key"]) {
+        x_GetCtx()->SetSendQueryKey(false);
     }
     if (args["tool"]) {
         x_GetCtx()->SetTool(args["tool"].AsString());
