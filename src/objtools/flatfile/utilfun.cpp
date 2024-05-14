@@ -442,7 +442,7 @@ bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
  *      Return a statistics of link list token.
  *
  **********************************************************/
-TokenStatBlkPtr TokenString(const char* str, Char delimiter)
+unique_ptr<TokenStatBlk> TokenString(const char* str, Char delimiter)
 {
     const char*     bptr;
     const char*     ptr;
@@ -471,13 +471,7 @@ TokenStatBlkPtr TokenString(const char* str, Char delimiter)
 
     token->num = num;
 
-    return (token);
-}
-
-/**********************************************************/
-void FreeTokenstatblk(TokenStatBlkPtr tsbp)
-{
-    delete tsbp;
+    return unique_ptr<TokenStatBlk>(token);
 }
 
 /**********************************************************

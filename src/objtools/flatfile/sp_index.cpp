@@ -108,8 +108,6 @@ static void SPGetVerNum(char* str, IndexblkPtr ibp)
  **********************************************************/
 bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
-    TokenStatBlkPtr stoken;
-
     bool after_AC;
     bool after_OS;
     bool after_OC;
@@ -188,12 +186,11 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                 } else if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(), swissProtKeywords[ParFlatSP_DT].size())) {
                     if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
                         SPGetVerNum(finfo.str, entry);
-                    stoken = TokenString(finfo.str, ' ');
+                    auto stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
                         entry->date = GetUpdateDate(next(stoken->list.begin())->c_str(),
                                                     pp->source);
                     }
-                    FreeTokenstatblk(stoken);
                 }
 
                 end_of_file = XReadFileBuf(pp->ffbuf, finfo);

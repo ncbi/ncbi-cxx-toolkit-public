@@ -269,11 +269,9 @@ static bool XMLDelSegnum(IndexblkPtr ibp, const char* segnum, size_t len2)
 /**********************************************************/
 static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
 {
-    TokenStatBlkPtr stoken;
-    XmlIndexPtr     xip;
-    char*           buf;
-    const char*     segnum;
-    const char*     segtotal;
+    XmlIndexPtr xip;
+    const char* segnum;
+    const char* segtotal;
 
     if (! entry || ! ibp || ! ibp->xip)
         return;
@@ -284,11 +282,11 @@ static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
     if (! xip)
         return;
 
-    buf = StringSave(XMLGetTagValue(entry, xip));
+    auto buf = XMLGetTagValue(entry, xip);
     if (! buf)
         return;
 
-    stoken = TokenString(buf, ' ');
+    auto stoken = TokenString(buf->c_str(), ' ');
 
     if (stoken->num >= 3) {
         auto it1    = stoken->list.begin();
@@ -305,9 +303,6 @@ static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
     } else {
         ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg, "Incomplete Segment information at line %d.", xip->start_line);
     }
-
-    FreeTokenstatblk(stoken);
-    MemFree(buf);
 }
 
 
