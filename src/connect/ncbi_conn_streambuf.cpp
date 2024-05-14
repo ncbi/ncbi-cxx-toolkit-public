@@ -756,7 +756,7 @@ streamsize CConn_Streambuf::showmanyc(void)
         case eIO_Closed:
             return -1L;  // EOF
         case eIO_Success:
-            _ASSERT(0);
+            _TROUBLE;
             /*FALLTHRU*/
         default:
             if (x_IsThrowable(m_Status))
