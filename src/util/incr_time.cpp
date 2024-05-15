@@ -28,12 +28,11 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/impl/incr_time.hpp>
+#include <util/incr_time.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <cmath>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
 // CIncreasingTime
@@ -88,5 +87,4 @@ double CIncreasingTime::GetTime(int step) const
 }
 
 
-END_SCOPE(objects)
 END_NCBI_SCOPE

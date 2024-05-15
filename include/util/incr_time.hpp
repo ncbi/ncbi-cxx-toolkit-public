@@ -1,3 +1,6 @@
+#ifndef INCR_TIME__HPP_INCLUDED
+#define INCR_TIME__HPP_INCLUDED
+
 /*  $Id$
 * ===========================================================================
 *                            PUBLIC DOMAIN NOTICE
@@ -27,4 +30,53 @@
 *
 */
 
-#include <util/incr_time.hpp>
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CConfig;
+
+class NCBI_XUTIL_EXPORT CIncreasingTime
+{
+public:
+    struct SParam
+    {
+        const char* m_ParamName;  // primary param name
+        const char* m_ParamName2; // optional secondary param name
+        double m_DefaultValue;    // default param value
+    };
+    struct SAllParams
+    {
+        SParam m_Initial;
+        SParam m_Maximal;
+        SParam m_Multiplier;
+        SParam m_Increment;
+    };
+
+    CIncreasingTime(const SAllParams& params)
+        : m_InitTime(params.m_Initial.m_DefaultValue),
+          m_MaxTime(params.m_Maximal.m_DefaultValue),
+          m_Multiplier(params.m_Multiplier.m_DefaultValue),
+          m_Increment(params.m_Increment.m_DefaultValue)
+        {
+        }
+
+    void Init(CConfig& conf,
+              const string& driver_name,
+              const SAllParams& params);
+
+    double GetTime(int step) const;
+
+protected:
+    static double x_GetDoubleParam(CConfig& conf,
+                                   const string& driver_name,
+                                   const SParam& param);
+    
+private:
+    double m_InitTime, m_MaxTime, m_Multiplier, m_Increment;
+};
+
+
+END_NCBI_SCOPE
+
+#endif // INCR_TIME__HPP_INCLUDED

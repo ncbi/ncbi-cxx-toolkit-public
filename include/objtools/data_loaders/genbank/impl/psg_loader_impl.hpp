@@ -37,7 +37,7 @@
 #include <objtools/data_loaders/genbank/psg_loader.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
-#include <objtools/data_loaders/genbank/impl/incr_time.hpp>
+#include <util/incr_time.hpp>
 #include <memory>
 #include <vector>
 
