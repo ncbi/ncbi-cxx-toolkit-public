@@ -6481,6 +6481,7 @@ RIB	c	National Research Institute of Brewing, Tax Administration Agency
 RIBM	c	Research Institute for Brewing and Malting			
 RICK	s	Brigham Young University - Idaho			
 RICP<CZE>	c	Crop Research Institute			
+RIEAFO	s	Research Institute of Environment, Agriculture and Fisheries, Osaka Prefecture			
 RIFAV	b	Research Institute for Fruits and Vegetables			
 RIFFL	s	Research Institute of Freshwater Fisheries			
 RIFY	c	Institute of Enology and Viticulture, Yamanashi University			
