@@ -234,7 +234,8 @@ public:
         eDbtagType_PlasmoDB,
         eDbtagType_ToxoDB,
         eDbtagType_TrichDB,
-        eDbtagType_TriTrypDB
+        eDbtagType_TriTrypDB,
+        eDbtagType_VEuPathDB
     };
 
     enum EDbtagGroup {
