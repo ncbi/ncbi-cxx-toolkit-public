@@ -34,7 +34,7 @@
 #include <corelib/ncbitime.hpp>
 #include <util/cache/icache.hpp>
 #include <objtools/data_loaders/genbank/impl/request_result.hpp>
-#include <objtools/data_loaders/genbank/impl/incr_time.hpp>
+#include <util/incr_time.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
