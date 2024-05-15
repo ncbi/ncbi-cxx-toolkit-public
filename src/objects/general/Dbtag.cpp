@@ -516,6 +516,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_ToxoDB, "https://toxodb.org/toxo/app/record/gene/" },
     { CDbtag::eDbtagType_TrichDB, "https://trichdb.org/trichdb/app/record/gene/" },
     { CDbtag::eDbtagType_TriTrypDB, "https://tritrypdb.org/tritrypdb/app/record/gene/" },
+    { CDbtag::eDbtagType_VEuPathDB, "https://veupathdb.org/gene/" },
 })
 
 string CDbtag::GetUrl(void) const

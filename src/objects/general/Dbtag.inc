@@ -172,6 +172,7 @@
   { "ToxoDB",              { CDbtag::fGenBank, CDbtag::eDbtagType_ToxoDB } },
   { "TrichDB",             { CDbtag::fGenBank, CDbtag::eDbtagType_TrichDB } },
   { "TriTrypDB",           { CDbtag::fGenBank, CDbtag::eDbtagType_TriTrypDB } },
+  { "VEuPathDB",           { CDbtag::fGenBank, CDbtag::eDbtagType_VEuPathDB } },
 
 // Note from RW-1843: INSDC documentation contains outdated information
 // It requires ENSEMBL and PseudoCap, but actially Ensembl and PseudoCAP are correct
