@@ -5255,6 +5255,7 @@ MZGZ	s	Museum Zoologia del Giardino Zoologico
 MZH	s	Zoolgical Museum, Finnish Museum of Natural History			
 MZKI	c	Microbial Culture Collection of National Institute of Chemistry			
 MZL	s	Musee cantonal de zoologie	MZLS		
+MZLL	s	Museo di Zoologia "Lidia Liaci"			
 MZLU	s	Lund University Museum			
 MZMU	s	Departmental Museum of Zoology, Mizoram University			
 MZN	s	Musee Zoologie			
