@@ -75,7 +75,7 @@ enum ELINKERD_Subcodes {
 /* LINKERD_TODO - "temporarily" support plain "linkerd" on Unix only */
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
 #  define DEF_LINKERD_HOST       "linkerd"
-#elif defined(_DEBUG)  &&  !defined(NDEBUG)
+#elif 1/*defined(_DEBUG)  &&  !defined(NDEBUG)*/
 #  define DEF_LINKERD_HOST                                              \
     "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
 #else
