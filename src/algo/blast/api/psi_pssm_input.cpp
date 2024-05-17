@@ -306,14 +306,13 @@ CPsiBlastInputData::x_ExtractAlignmentData()
         double evalue = GetLowestEvalue((*itr)->GetScore(), &bit_score);
         CSeq_id* current_sid = const_cast<CSeq_id*> (&(*itr)->GetSeq_id(1));
 
-        // Increment msa_index (if appropriate) after all CDense_seg for a given target 
-        // sequence have been processed.
-        if (last_sid && !current_sid->Match(*last_sid)) {
-            msa_index++;
-        }
-
         // ... below the e-value inclusion threshold
         if (evalue < m_Opts.inclusion_ethresh) {
+            // Increment msa_index (if appropriate) after all CDense_seg for a
+            // given target sequence have been processed.
+            if (last_sid && !current_sid->Match(*last_sid)) {
+                msa_index++;
+            }
             _ASSERT(msa_index < GetNumAlignedSequences() + 1);
             const CDense_seg& seg = (*itr)->GetSegs().GetDenseg();
             x_ProcessDenseg(seg, msa_index, evalue, bit_score);
