@@ -461,6 +461,7 @@ gpipe_xlsx needs xncbi
 gpipe_xlsx needs3party $(LIBXLSXWRITER_LIBS)
 gpipe_xlsx needs3party $(Z_LIBS)
 gpipe_xml needs gpipe_attr
+gpipe_xml needs gpipe_curl
 gpr needs3party $(ORIG_LIBS)
 gpxapi needs general
 gpxapi needs xconnect
