@@ -141,4 +141,22 @@ private:
     static const Int8 TBL2ASN_MAX_ALLOWED_FASTA_SIZE = INT8_C(0x7FFFFFFF);
 };
 
+
+class CTable2AsnLogger : public CMessageListenerLenient, public CDiagHandler
+{
+public:
+    CTable2AsnLogger() : m_enable_log(false) {}
+    bool m_enable_log;
+
+    void PutProgress(
+        const string& sMessage,
+        const Uint8   iNumDone = 0,
+        const Uint8   iNumTotal = 0) override;
+
+    bool PutMessage(const IObjtoolsMessage& message) override;
+
+    void Post(const SDiagMessage& mess) override;
+};
+
+
 END_NCBI_SCOPE

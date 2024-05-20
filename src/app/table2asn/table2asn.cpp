@@ -150,40 +150,36 @@ private:
     EDiagSev m_sev;
 };
 
-class CTable2AsnLogger : public CMessageListenerLenient, public CDiagHandler
-{
-public:
-    CTable2AsnLogger() : m_enable_log(false) {}
-    bool m_enable_log;
 
-    void PutProgress(
+void CTable2AsnLogger::PutProgress(
         const string& sMessage,
-        const Uint8   iNumDone = 0,
-        const Uint8   iNumTotal = 0) override
-    {
-        if (m_enable_log)
-            CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
+        const Uint8   iNumDone,
+        const Uint8   iNumTotal)
+{
+    if (m_enable_log) {
+        CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
     }
+}
 
-    bool PutMessage(const IObjtoolsMessage& message) override
-    {
-        auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
-        if (edit) {
-            if (edit->m_error != edit::EPubmedError::citation_not_found)
-                return false;
-        }
-        return CMessageListenerLenient::PutMessage(message);
-    }
 
-    void Post(const SDiagMessage& mess) override
-    {
-        stringstream ss;
-        mess.Write(ss, SDiagMessage::fNoEndl);
-        string str = ss.str();
-        EDiagSev sev = (mess.m_Flags & eDPF_IsNote) ? eDiag_Info : mess.m_Severity;
-        this->PutMessage(CObjtoolsDiagMessage(str, sev));
+bool CTable2AsnLogger::PutMessage(const IObjtoolsMessage& message)
+{
+    auto edit = dynamic_cast<const edit::CRemoteUpdaterMessage*>(&message);
+    if (edit && (edit->m_error != edit::EPubmedError::citation_not_found)) {
+        return false;
     }
-};
+    return CMessageListenerLenient::PutMessage(message);
+}
+
+
+void CTable2AsnLogger::Post(const SDiagMessage& mess) 
+{
+    stringstream ss;
+    mess.Write(ss, SDiagMessage::fNoEndl);
+    string str = ss.str();
+    EDiagSev sev = (mess.m_Flags & eDPF_IsNote) ? eDiag_Info : mess.m_Severity;
+    this->PutMessage(CObjtoolsDiagMessage(str, sev));
+}
 
 void g_LogDiagMessage(ILineErrorListener* logger, EDiagSev sev, const string& msg)
 {
@@ -1103,120 +1099,6 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
     }
 }
 
-void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncToken& token)
-{
-    auto& submit = token.submit;
-    auto& entry  = token.top_entry;
-    auto& scope  = token.scope;
-    auto& seh    = token.seh;
-
-    scope = Ref(new CScope(*m_context.m_ObjMgr));
-    scope->AddDefaults();
-
-    /*
-        for FASTA inputs 'entry' argument is:
-            - always a single seq object
-        for ASN1. inputs:
-            - either single seq object or seq-set if it's a nuc-prot-set
-        'submit' is already processed clean and may contain single entry that points to 'entry' argument,
-        'submit' object is not neccessary the one going to the output
-    */
-
-    CRef<CSerialObject> obj;
-    if (submit)
-        obj = submit;
-    else
-        obj = entry;
-
-    if (m_context.m_SetIDFromFile) {
-        m_context.SetSeqId(*entry);
-    }
-
-    m_context.ApplyAccession(*entry);
-    m_context.ApplyFileTracks(*entry);
-
-    const bool readModsFromTitle =
-        inputFormat == CFormatGuess::eFasta ||
-        inputFormat == CFormatGuess::eAlignment;
-    ProcessSecretFiles1Phase(readModsFromTitle, token);
-
-    if (m_context.m_RemoteTaxonomyLookup) {
-        m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
-    } else {
-        VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
-    }
-
-    m_secret_files->m_feature_table_reader->m_replacement_protein = m_secret_files->m_replacement_proteins;
-    m_secret_files->m_feature_table_reader->MergeCDSFeatures(*entry, token);
-    entry->Parentize();
-
-    m_secret_files->m_feature_table_reader->MoveProteinSpecificFeats(*entry);
-
-    if (m_secret_files->m_possible_proteins.NotEmpty())
-        m_secret_files->m_feature_table_reader->AddProteins(*m_secret_files->m_possible_proteins, *entry);
-
-    m_context.CorrectCollectionDates(*entry);
-
-    if (m_context.m_HandleAsSet) {
-        //m_secret_files->m_feature_table_reader->ConvertNucSetToSet(entry);
-    }
-
-    if ((inputFormat == CFormatGuess::eTextASN) ||
-        (inputFormat == CFormatGuess::eBinaryASN)) {
-        // if create-date exists apply update date
-        m_context.ApplyCreateUpdateDates(*entry);
-    }
-
-    m_context.ApplyComments(*entry);
-
-    ProcessSecretFiles2Phase(*entry);
-
-    m_secret_files->m_feature_table_reader->MakeGapsFromFeatures(*entry);
-
-    if (m_context.m_delay_genprodset) {
-        VisitAllFeatures(*entry, [this](CSeq_feat& feature) { m_context.RenameProteinIdsQuals(feature); });
-    } else {
-        VisitAllFeatures(*entry, [this](CSeq_feat& feature) { m_context.RemoveProteinIdsQuals(feature); });
-    }
-
-    seh = scope->AddTopLevelSeqEntry(*entry);
-    CCleanup::ConvertPubFeatsToPubDescs(seh);
-
-    // Do not repeat expensive processing of the top-level entry; RW-2107
-    if ((inputFormat != CFormatGuess::eFasta) || ! *token.pPubLookupDone) {
-        if (m_context.m_RemotePubLookup) {
-            m_context.m_remote_updater->UpdatePubReferences(*obj);
-            *token.pPubLookupDone = true;
-        }
-        if (m_context.m_postprocess_pubs) {
-            m_context.m_remote_updater->PostProcessPubs(*entry);
-        }
-    }
-
-    if (m_context.m_cleanup.find('-') == string::npos) {
-        if (token.cleanup_mutex) {
-            std::lock_guard<std::mutex> g{ *token.cleanup_mutex };
-            m_validator->Cleanup(submit, seh, m_context.m_cleanup);
-        } else {
-            m_validator->Cleanup(submit, seh, m_context.m_cleanup);
-        }
-    }
-
-    // make asn.1 look nicier
-    edit::SortSeqDescr(*entry);
-
-    m_secret_files->m_feature_table_reader->ChangeDeltaProteinToRawProtein(*entry);
-
-    m_validator->UpdateECNumbers(*entry);
-
-    if (! m_context.m_validate.empty()) {
-        m_validator->ValCollect(submit, entry, m_context.m_validate);
-    }
-
-    m_validator->CollectDiscrepancies(submit, seh);
-
-    // ff generator is invoked in other places
-}
 
 void CTbl2AsnApp::MakeFlatFile(CSeq_entry_Handle seh, CRef<CSeq_submit> submit, std::ostream& ostream)
 {
@@ -1557,36 +1439,6 @@ void CTbl2AsnApp::xProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& 
         AddAnnots(result);
     }
 }
-
-void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, TAsyncToken& token)
-{
-    auto modMergePolicy =
-        m_context.m_accumulate_mods ?
-        CModHandler::eAppendPreserve :
-        CModHandler::ePreserve;
-
-    g_ApplyMods(
-        m_global_files.mp_src_qual_map.get(),
-        m_secret_files->mp_src_qual_map.get(),
-        m_context.mCommandLineMods,
-        readModsFromTitle,
-        m_context.m_verbose,
-        modMergePolicy,
-        m_logger,
-        *token.top_entry);
-
-    if (! m_context.m_huge_files_mode) {
-        if (m_global_files.m_descriptors)
-            m_reader->ApplyDescriptors(*token.top_entry, *m_global_files.m_descriptors);
-        if (m_secret_files->m_descriptors)
-            m_reader->ApplyDescriptors(*token.top_entry, *m_secret_files->m_descriptors);
-    }
-
-    if (! m_global_files.m_AnnotMap.empty() || ! m_secret_files->m_AnnotMap.empty()) {
-        AddAnnots(*token.top_entry);
-    }
-}
-
 
 void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result) const
 {
