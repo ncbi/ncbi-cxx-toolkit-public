@@ -8,6 +8,7 @@
 #include <optional>
 
 #include "fileset.hpp"
+#include "table2asn_validator.hpp"  // RW-2262 - Must fix this
 
 BEGIN_NCBI_SCOPE
 
@@ -81,6 +82,8 @@ using CDiagnosticFileSet = TMultiFileSet<eFiles,
 using CDataFileSet = TMultiFileSet<eFiles,
     eFiles::asn
 >;
+
+class CValidMessageHandler;
 
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
@@ -172,6 +175,7 @@ public:
 
     unique_ptr<objects::CFixSuspectProductName> m_suspect_rules;
 
+
 /////////////
     CTable2AsnContext();
     ~CTable2AsnContext();
@@ -224,6 +228,7 @@ public:
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;
     objects::ILineErrorListener* m_logger{ nullptr };
+    unique_ptr<CValidMessageHandler> pValMsgHandler;
 
     CRef<objects::CObjectManager> m_ObjMgr;
     string mCommandLineMods;
