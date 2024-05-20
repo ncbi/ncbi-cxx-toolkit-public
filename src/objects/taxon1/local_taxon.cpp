@@ -315,7 +315,11 @@ CLocalTaxon::TTaxid CLocalTaxon::Join(TTaxid taxid1, TTaxid taxid2)
         TLineage::const_iterator it1 = lineage1.begin(),
                                  it2 = lineage2.begin();
         for (; it1 != lineage1.end() && it2 != lineage2.end() && *it1 == *it2;
-               ++it1, ++it2);
+               ++it1, ++it2) {
+        }
+        if (it1 == lineage1.end()) {
+            return 0;
+        }
         return *--it1;
     } else {
         return m_TaxonConn->Join(taxid1, taxid2);
