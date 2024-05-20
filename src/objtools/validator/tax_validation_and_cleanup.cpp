@@ -327,45 +327,11 @@ static void GetStrainCandidates(const string& organism, const string& strain, ve
 }
 
 
-/*
-static string FirstTwoWords(const string& str)
-{
-    if (NStr::IsBlank(str)) {
-        return str;
-    }
-
-    vector<string> words;
-    NStr::Split(str, " ", words, 0);
-    if (words.size() > 2) {
-        return words[0] + " " + words[1];
-    }
-
-    return str;
-}
-*/
-
-static string FirstWord(const string& str)
-{
-    if (NStr::IsBlank(str)) {
-        return str;
-    }
-
-    vector<string> words;
-    NStr::Split(str, " ", words, 0);
-    if (words.size() > 0) {
-        return words[0];
-    }
-
-    return str;
-}
-
 static bool CheckStrainReply(const string& organism, CRef<CTaxon3_reply> reply)
 {
     if (NStr::IsBlank(organism) || ! reply) {
         return false;
     }
-
-    const string& genus = FirstWord(organism);
 
     CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
     while (reply_it != reply->GetReply().end()) {
@@ -375,8 +341,7 @@ static bool CheckStrainReply(const string& organism, CRef<CTaxon3_reply> reply)
             cpy->Assign((*reply_it)->GetData().GetOrg());
             if (cpy && cpy->IsSetTaxname()) {
                 string taxname = cpy->GetTaxname();
-                taxname = FirstWord(taxname);
-                if (NStr::EqualNocase(genus, taxname)) {
+                if (NStr::EqualNocase(organism, taxname)) {
                     return true;
                 }
             }
