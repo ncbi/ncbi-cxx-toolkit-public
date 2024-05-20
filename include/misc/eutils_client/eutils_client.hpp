@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbitime.hpp>
+#include <util/incr_time.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <sstream>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
@@ -404,6 +406,11 @@ public:
     const list<string> GetUrl(void) const;
     const list<CTime> GetTime(void) const;
 
+    // Provide custom parameters for time to wait between retries.
+    void SetWaitTime(const CIncreasingTime& wait_time) { m_WaitTime = wait_time; }
+    void SetMaxRetries(unsigned int max_retries) { m_MaxRetries = max_retries; }
+    void SetConnTimeout(const CTimeout& timeout) { m_Timeout = timeout; }
+
 protected:
 #ifdef NCBI_INT8_GI
     Uint8 ParseSearchResults(CNcbiIstream& istr,
@@ -502,6 +509,39 @@ protected:
 
     template<class T> Uint8 x_ParseSearchResults(CNcbiIstream& istr,
                                                  vector<T>& uids);
+
+    template<class Call>
+    typename std::invoke_result<Call>::type CallWithRetry(Call&& call, const char* name);
+
+private:
+    void x_InitParams(void);
+
+    Uint8 x_CountOnce(const string& params);
+
+    template<class T> Uint8 x_SearchOnce(const string& params,
+                                         vector<T>& uids,
+                                         const string& xml_path);
+
+    void x_GetOnce(string const& path, string const& extra_params, CNcbiOstream& ostr);
+
+    template<class T> void x_LinkOnceT(const string& db_from,
+                                       const string& db_to,
+                                       vector<T>& uids_to,
+                                       const string& xml_path,
+                                       const string& params);
+
+    void x_LinkOnce(CNcbiOstream& ostr, const string& params);
+
+    void x_LinkOutOnce(xml::document& doc, const string& params);
+
+    void x_SummaryOnce(xml::document& docsums, const string& params);
+
+    void x_FetchOnce(CNcbiOstream& ostr, const string& params);
+
+    unsigned int m_MaxRetries;
+    CIncreasingTime m_WaitTime;
+    unsigned int m_Attempt = 0;
+    CTimeout m_Timeout;
 };
 
 
