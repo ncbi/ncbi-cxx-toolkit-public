@@ -36,6 +36,10 @@ BEGIN_NCBI_SCOPE
 
 class CConfig;
 
+// Helper class for calculating delay (usually increasing) between steps
+// (e.g. for retrying failed network requests).
+// Delay for every new step is calculated as <last-step-delay> * <multiplier> + <increment>.
+// The initiai delay is provided via parameters, as well as the maximum.
 class NCBI_XUTIL_EXPORT CIncreasingTime
 {
 public:
@@ -47,23 +51,18 @@ public:
     };
     struct SAllParams
     {
-        SParam m_Initial;
-        SParam m_Maximal;
-        SParam m_Multiplier;
+        SParam m_Initial;    // value >= 0
+        SParam m_Maximal;    // value >= 0
+        SParam m_Multiplier; // value > 1.0
         SParam m_Increment;
     };
 
-    CIncreasingTime(const SAllParams& params)
-        : m_InitTime(params.m_Initial.m_DefaultValue),
-          m_MaxTime(params.m_Maximal.m_DefaultValue),
-          m_Multiplier(params.m_Multiplier.m_DefaultValue),
-          m_Increment(params.m_Increment.m_DefaultValue)
-        {
-        }
+    CIncreasingTime(const SAllParams& params);
 
-    void Init(CConfig& conf,
-              const string& driver_name,
-              const SAllParams& params);
+    // Read values from the config or use the default ones.
+    void Init(CConfig& conf, const string& driver_name, const SAllParams& params);
+    // Read values from the registry section or use the default ones.
+    void Init(const CNcbiRegistry& reg, const string& section, const SAllParams& params);
 
     double GetTime(int step) const;
 
@@ -73,6 +72,8 @@ protected:
                                    const SParam& param);
     
 private:
+    void x_VerifyParams(void);
+
     double m_InitTime, m_MaxTime, m_Multiplier, m_Increment;
 };
 
