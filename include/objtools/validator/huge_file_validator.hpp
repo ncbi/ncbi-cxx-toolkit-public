@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CValidError;
+class IValidError;
 
 BEGIN_SCOPE(validator)
 
@@ -145,6 +146,10 @@ void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobal
         const string& genbankSetId,
         CRef<CValidError>& pErrors);
 
+void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
+        const string& genbankSetId,
+        list<CRef<CValidErrItem>>& errors);
+        
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

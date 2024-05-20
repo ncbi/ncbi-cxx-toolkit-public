@@ -41,6 +41,7 @@ class CSerialObject;
 namespace objects::feature {
     class CFeatTree;
 }
+class CValidMessageHandler;
 
 struct TAsyncToken
 {
@@ -58,6 +59,7 @@ struct TAsyncToken
     TFeatMap map_locus_to_gene;
     atomic_bool* pPubLookupDone = nullptr;
     std::mutex* cleanup_mutex = nullptr;
+    CValidMessageHandler* pMsgHandler = nullptr;
 
     operator CConstRef<CSeq_entry>() const;
     void Clear();
