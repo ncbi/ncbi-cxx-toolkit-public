@@ -124,6 +124,23 @@ void CTestEUtilsClientApp::Init(void)
             "Output stream, default to stdin.",
             CArgDescriptions::eOutputFile, "-", CArgDescriptions::fFileFlags);
 
+    arg_desc->AddOptionalKey("conn_timeout", "conn_timeout", "Connection timeout", CArgDescriptions::eDouble);
+    arg_desc->SetConstraint("conn_timeout", new CArgAllow_Doubles(0.000001, 999));
+
+    arg_desc->AddOptionalKey("max_retries", "max_retries", "Retries limit", CArgDescriptions::eInteger);
+    arg_desc->SetConstraint("max_retries", new CArgAllow_Integers(0, 9999999));
+
+    arg_desc->AddOptionalKey("wait_init", "wait_init", "Initial delay between retries", CArgDescriptions::eDouble);
+    arg_desc->SetConstraint("wait_init", new CArgAllow_Doubles(0.000001, 9999999));
+
+    arg_desc->AddOptionalKey("wait_max", "wait_max", "Maximum delay between retries", CArgDescriptions::eDouble);
+    arg_desc->SetConstraint("wait_max", new CArgAllow_Doubles(0.000001, 9999999));
+
+    arg_desc->AddOptionalKey("wait_mult", "wait_mult", "Retry delay multiplier", CArgDescriptions::eDouble);
+    arg_desc->SetConstraint("wait_mult", new CArgAllow_Doubles(1, 9999999));
+
+    arg_desc->AddOptionalKey("wait_inc", "wait_inc", "Retry delay increment", CArgDescriptions::eDouble);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -151,6 +168,18 @@ int CTestEUtilsClientApp::Run(void)
     const CArgs& args = GetArgs();
 
     CEutilsClient ecli(args["host"] ? args["host"].AsString() : kEmptyStr);
+
+    if (args["conn_timeout"]) ecli.SetConnTimeout(CTimeout(args["conn_timeout"].AsDouble()));
+    if (args["max_retries"]) ecli.SetMaxRetries(args["max_retries"].AsInteger());
+    if (args["wait_init"] || args["wait_max"] || args["wait_mult"] || args["wait_inc"]) {
+        CIncreasingTime::SAllParams params{
+            { "init", "", args["wait_init"] ? args["wait_init"].AsDouble() : 0 },
+            { "max", "", args["wait_max"] ? args["wait_max"].AsDouble() : 3 },
+            { "mult", "", args["wait_mult"] ? args["wait_mult"].AsDouble() : 1 },
+            { "inc", "", args["wait_inc"] ? args["wait_inc"].AsDouble() : 0.5 }
+        };
+        ecli.SetWaitTime(CIncreasingTime(params));
+    }
 
     CNcbiOstream& ostr = args["o"].AsOutputFile();
 

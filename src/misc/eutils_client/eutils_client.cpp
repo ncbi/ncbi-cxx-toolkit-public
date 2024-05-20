@@ -33,6 +33,8 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <misc/eutils_client/eutils_client.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
@@ -489,24 +491,61 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 
 
+#define EUTILS_CLIENT_SECTION "eutils_client"
+// The default values approximate the old "sqrt(retry)" wait times.
+#define DEFAULT_MAX_RETRIES 9
+#define DEFAULT_WAIT_TIME 0
+#define DEFAULT_WAIT_TIME_MULTIPLIER 1
+#define DEFAULT_WAIT_TIME_INCREMENT 0.5
+#define DEFAULT_WAIT_TIME_MAX 3
+
+
+static CIncreasingTime::SAllParams s_WaitTimeParams = {
+    {
+        "wait_time",
+        0,
+        DEFAULT_WAIT_TIME
+    },
+    {
+        "wait_time_max",
+        0,
+        DEFAULT_WAIT_TIME_MAX
+    },
+    {
+        "wait_time_multiplier",
+        0,
+        DEFAULT_WAIT_TIME_MULTIPLIER
+    },
+    {
+        "wait_time_increment",
+        0,
+        DEFAULT_WAIT_TIME_INCREMENT
+    }
+};
+
+
 CEutilsClient::CEutilsClient()
-    : m_CachedHostNameCount(0), m_RetMax(kMax_Int)
+    : m_CachedHostNameCount(0), m_RetMax(kMax_Int), m_MaxRetries(DEFAULT_MAX_RETRIES), m_WaitTime(s_WaitTimeParams)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
     } conn_initer;  /*NCBI_FAKE_WARNING*/
     SetMessageHandlerDefault();
+    x_InitParams();
 }
 
 CEutilsClient::CEutilsClient(const string& host)
     : m_CachedHostNameCount(0),
       m_HostName(host),
-      m_RetMax(kMax_Int)
+      m_RetMax(kMax_Int),
+      m_MaxRetries(DEFAULT_MAX_RETRIES),
+      m_WaitTime(s_WaitTimeParams)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
     } conn_initer;  /*NCBI_FAKE_WARNING*/
     SetMessageHandlerDefault();
+    x_InitParams();
 }
 
 void CEutilsClient::SetMessageHandlerDefault(void)
@@ -557,6 +596,60 @@ void CEutilsClient::SetMaxReturn(int ret_max)
 
 //////////////////////////////////////////////////////////////////////////////
 
+void CEutilsClient::x_InitParams(void)
+{
+    m_MaxRetries = DEFAULT_MAX_RETRIES;
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+    if (app) {
+        const CNcbiRegistry& reg = app->GetConfig();
+        string max_retries = reg.GetString(EUTILS_CLIENT_SECTION, "max_retries", "");
+        if (!max_retries.empty()) {
+            try {
+                m_MaxRetries = NStr::StringToNumeric<unsigned int>(max_retries);
+            }
+            catch (...) {
+                ERR_POST("Invalid max_retries value: " << max_retries);
+                m_MaxRetries = DEFAULT_MAX_RETRIES;
+            }
+        }
+        string timeout = reg.GetString(EUTILS_CLIENT_SECTION, "conn_timeout", "");
+        if (!timeout.empty()) {
+            try {
+                m_Timeout.Set(NStr::StringToDouble(timeout, NStr::fDecimalPosixOrLocal));
+            }
+            catch (...) {
+                ERR_POST("Invalid conn_timeout value: " << timeout);
+                m_Timeout.Set(CTimeout::eDefault);
+            }
+        }
+        m_WaitTime.Init(reg, EUTILS_CLIENT_SECTION, s_WaitTimeParams);
+    }
+}
+
+
+template<class Call>
+typename std::invoke_result<Call>::type CEutilsClient::CallWithRetry(Call&& call, const char* name)
+{
+    for ( m_Attempt = 1; m_Attempt < m_MaxRetries; ++m_Attempt ) {
+        try {
+            return call();
+        }
+        catch ( CException& exc ) {
+            LOG_POST(Warning<<"CEutilsClient::" << name << "() try " << m_Attempt << " exception: " << exc);
+        }
+        catch ( exception& exc ) {
+            LOG_POST(Warning<<"CEutilsClient::" << name << "() try " << m_Attempt << " exception: " << exc.what());
+        }
+        catch ( ... ) {
+            LOG_POST(Warning<<"CEutilsClient::" << name << "() try " << m_Attempt << " exception");
+        }
+        double wait_sec = m_WaitTime.GetTime(m_Attempt - 1);
+        LOG_POST(Warning<<"CEutilsClient: waiting " << wait_sec << "s before retry");
+        SleepMilliSec(Uint4(wait_sec*1000));
+    }
+    return call();
+}
+
 
 Uint8 CEutilsClient::Count(const string& db,
                            const string& term)
@@ -570,54 +663,47 @@ Uint8 CEutilsClient::Count(const string& db,
     }
     x_AddAdditionalParameters(params);
 
-    Uint8 count = 0;
     LOG_POST(Trace << "Executing: db=" << db << " query=" << term);
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/esearch.fcgi";
-            string hostname = x_GetHostName();
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            vector<Int8> uids;
-            CESearchParser<Int8> parser(uids, *m_MessageHandler);
-
-            xml::error_messages msgs;
-            parser.parse_stream(istr, &msgs);
-
-            if (msgs.has_errors()  ||  msgs.has_fatal_errors()) {
-                NCBI_THROW(CException, eUnknown,
-                           "error parsing xml: " + msgs.print());
-            }
-
-            parser.ProcessMessages();
-            count = parser.GetCount();
-
-            success = true;
-            break;
-        }
-        catch (CException& e) {
-            ERR_POST_X(1, Warning << "failed on attempt " << retries + 1
-                       << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        return CallWithRetry(bind(&CEutilsClient::x_CountOnce, this, cref(params)), "Count");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute query: " + term);
     }
 
-    return count;
+    return 0;
 }
+
+
+Uint8 CEutilsClient::x_CountOnce(const string& params)
+{
+    string path = "/entrez/eutils/esearch.fcgi";
+    string hostname = x_GetHostName();
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(x_BuildUrl(hostname, path, params));
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    vector<Int8> uids;
+    CESearchParser<Int8> parser(uids, *m_MessageHandler);
+
+    xml::error_messages msgs;
+    parser.parse_stream(istr, &msgs);
+
+    if (msgs.has_errors()  ||  msgs.has_fatal_errors()) {
+        NCBI_THROW(CException, eUnknown,
+                    "error parsing xml: " + msgs.print());
+    }
+
+    parser.ProcessMessages();
+    return parser.GetCount();
+}
+
+
 
 #ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
@@ -767,67 +853,66 @@ Uint8 CEutilsClient::x_Search(const string& db,
     }
     x_AddAdditionalParameters(params);
     
-    Uint8 count = 0;
-
     LOG_POST(Trace << "Executing: db=" << db << " query=" << term);
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/esearch.fcgi";
-            string hostname = x_GetHostName();
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
 
-            if(!xml_path.empty()) {
-                string xml_file
-                    = xml_path + '.' + NStr::NumericToString(retries + 1);
-                CNcbiOfstream ostr(xml_file.c_str());
-                if (ostr.good()) {
-                    NcbiStreamCopy(ostr, istr);
-                    ostr.close();
-                    
-                    if(!ostr  ||  200 != istr.GetStatusCode()) {
-                        NCBI_THROW(CException, eUnknown,
-                                   "Failure while writing entrez xml response"
-                                   " to file: " + xml_file);
-                    }
-
-                    count = ParseSearchResults(xml_file, uids);
-                }
-                else {
-                    ERR_POST(Error << "Unable to open file for writing: "
-                             + xml_file);
-                    count = ParseSearchResults(istr, uids);
-                }
-            }
-            else {
-                count = ParseSearchResults(istr, uids);
-            }
-
-            success = true;
-            break;
-        }
-        catch (CException& e) {
-            ERR_POST_X(2, Warning << "failed on attempt " << retries + 1
-                       << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        return CallWithRetry(bind(&CEutilsClient::x_SearchOnce<T>, this, cref(params), ref(uids), cref(xml_path)), "Search");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute query: " + term);
     }
+
+    return 0;
+}
+
+
+template<class T>
+Uint8 CEutilsClient::x_SearchOnce(const string& params,
+                                  vector<T>& uids,
+                                  const string& xml_path)
+{
+    Uint8 count = 0;
+
+    string path = "/entrez/eutils/esearch.fcgi";
+    string hostname = x_GetHostName();
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(x_BuildUrl(hostname, path, params));
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+
+    if(!xml_path.empty()) {
+        string xml_file = xml_path + '.' + NStr::NumericToString(m_Attempt);
+        CNcbiOfstream ostr(xml_file.c_str());
+        if (ostr.good()) {
+            NcbiStreamCopy(ostr, istr);
+            ostr.close();
+                    
+            if(!ostr  ||  200 != istr.GetStatusCode()) {
+                NCBI_THROW(CException, eUnknown,
+                           "Failure while writing entrez xml response"
+                           " to file: " + xml_file);
+            }
+
+            count = ParseSearchResults(xml_file, uids);
+        }
+        else {
+            ERR_POST(Error << "Unable to open file for writing: "
+                        + xml_file);
+            count = ParseSearchResults(istr, uids);
+        }
+    }
+    else {
+        count = ParseSearchResults(istr, uids);
+    }
+
     return count;
 }
+
 
 void CEutilsClient::Search(const string& db,
                            const string& term,
@@ -971,45 +1056,14 @@ void CEutilsClient::x_Get(string const& path,
                           string const& params, 
                           CNcbiOstream& ostr)
 {
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
     string extra_params{ params };
     x_AddAdditionalParameters(extra_params);
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string hostname = x_GetHostName();
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, extra_params));
-            istr << extra_params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            ostringstream reply;
-            if (NcbiStreamCopy(reply, istr)  &&  200 == istr.GetStatusCode()) {
-                string reply_str = reply.str();
-                istringstream reply_istr(reply.str());
-                vector<TEntrezId> uids;
-                /// We don't actually need the uids, but parse the reply anyway
-                /// in order to catch errors
-                ParseSearchResults(reply_istr, uids);
-
-                /// No errors found in reply; copy to output stream
-                ostr << reply_str;
-                success = true;
-                break;
-            }
-        }
-        catch (CException& e) {
-            ERR_POST_X(3, Warning << "failed on attempt " << retries + 1
-                       << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        CallWithRetry(bind(&CEutilsClient::x_GetOnce, this, cref(path), cref(extra_params), ref(ostr)), "Get");
     }
-    
-    if ( !success ) {
+    catch (...) {
         ostringstream msg;
         msg << "Failed to execute request: "
             << path
@@ -1017,6 +1071,31 @@ void CEutilsClient::x_Get(string const& path,
             << params;
         NCBI_THROW(CException, eUnknown, msg.str());
     }
+}
+
+
+void CEutilsClient::x_GetOnce(string const& path, string const& extra_params, CNcbiOstream& ostr)
+{
+    string hostname = x_GetHostName();
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(x_BuildUrl(hostname, path, extra_params));
+    istr << extra_params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    ostringstream reply;
+    if (!NcbiStreamCopy(reply, istr)  ||  200 != istr.GetStatusCode()) {
+        NCBI_THROW(CException, eUnknown, "Failure while reading response");
+    }
+    string reply_str = reply.str();
+    istringstream reply_istr(reply.str());
+    vector<TEntrezId> uids;
+    /// We don't actually need the uids, but parse the reply anyway
+    /// in order to catch errors
+    ParseSearchResults(reply_istr, uids);
+
+    /// No errors found in reply; copy to output stream
+    ostr << reply_str;
 }
 
 
@@ -1125,70 +1204,71 @@ void CEutilsClient::x_Link(const string& db_from,
     string params = oss.str();
     x_AddAdditionalParameters(params);
 
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/elink.fcgi";
-            string hostname = x_GetHostName();
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            CELinkParser<T2> parser(db_from, db_to, uids_to);
-            if ( !m_LinkName.empty() ) {
-                parser.SetLinkName(m_LinkName);
-            }
-            xml::error_messages msgs;
-            if(!xml_path.empty()) {
-                string xml_file
-                    = xml_path + '.' + NStr::NumericToString(retries + 1);
-               
-                CNcbiOfstream ostr(xml_file.c_str());
-                if(ostr.good()) {
-                    NcbiStreamCopy(ostr, istr);
-                    ostr.close();
-                    parser.parse_file(xml_file.c_str(), &msgs);
-                    if(!ostr || 200 != istr.GetStatusCode()) {
-                        NCBI_THROW(CException, eUnknown,
-                                   "Failure while writing entrez xml response"
-                                   " to file: " + xml_file);
-                    }
-                }
-                else {
-                    ERR_POST(Error << "Unable to open file for writing: "
-                             + xml_file);
-                    parser.parse_stream(istr, &msgs);
-                }
-            }
-            else {
-                parser.parse_stream(istr, &msgs);
-            }
 
-            if (msgs.has_errors()  ||  msgs.has_fatal_errors()) {
-                NCBI_THROW(CException, eUnknown,
-                           "error parsing xml: " + msgs.print());
-            }
-            success = true;
-            break;
-        }
-        catch (CException& e) {
-            ERR_POST_X(4, Warning << "failed on attempt " << retries + 1
-                       << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        CallWithRetry(bind(&CEutilsClient::x_LinkOnceT<T2>, this,
+            cref(db_from), cref(db_to), ref(uids_to), cref(xml_path), cref(params)), "Link");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute elink request: " + params);
     }
 }
+
+
+template<class T>
+void CEutilsClient::x_LinkOnceT(const string& db_from,
+                                const string& db_to,
+                                vector<T>& uids_to,
+                                const string& xml_path,
+                                const string& params)
+{
+    string path = "/entrez/eutils/elink.fcgi";
+    string hostname = x_GetHostName();
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(x_BuildUrl(hostname, path, params));
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    CELinkParser<T> parser(db_from, db_to, uids_to);
+    if ( !m_LinkName.empty() ) {
+        parser.SetLinkName(m_LinkName);
+    }
+    xml::error_messages msgs;
+    if(!xml_path.empty()) {
+        string xml_file
+            = xml_path + '.' + NStr::NumericToString(m_Attempt);
+
+        CNcbiOfstream ostr(xml_file.c_str());
+        if(ostr.good()) {
+            NcbiStreamCopy(ostr, istr);
+            ostr.close();
+            parser.parse_file(xml_file.c_str(), &msgs);
+            if(!ostr || 200 != istr.GetStatusCode()) {
+                NCBI_THROW(CException, eUnknown,
+                            "Failure while writing entrez xml response"
+                            " to file: " + xml_file);
+            }
+        }
+        else {
+            ERR_POST(Error << "Unable to open file for writing: "
+                        + xml_file);
+            parser.parse_stream(istr, &msgs);
+        }
+    }
+    else {
+        parser.parse_stream(istr, &msgs);
+    }
+
+    if (msgs.has_errors()  ||  msgs.has_fatal_errors()) {
+        NCBI_THROW(CException, eUnknown,
+                    "error parsing xml: " + msgs.print());
+    }
+}
+
 
 #ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
@@ -1245,38 +1325,33 @@ void CEutilsClient::x_Link(const string& db_from,
     string params = oss.str();
     x_AddAdditionalParameters(params);
 
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/elink.fcgi";
-            string hostname = x_GetHostName();
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
-                success = true;
-                break;
-            }
-        }
-        catch (CException& e) {
-            ERR_POST_X(5, Warning << "failed on attempt " << retries + 1
-                       << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        CallWithRetry(bind(&CEutilsClient::x_LinkOnce, this, ref(ostr), cref(params)), "Link");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute elink request: " + params);
     }
 }
+
+
+void CEutilsClient::x_LinkOnce(CNcbiOstream& ostr, const string& params)
+{
+    string path = "/entrez/eutils/elink.fcgi";
+    string hostname = x_GetHostName();
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(x_BuildUrl(hostname, path, params));
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    if (!NcbiStreamCopy(ostr, istr)  ||  200 != istr.GetStatusCode()) {
+        NCBI_THROW(CException, eUnknown, "Failure while reading response");
+    }
+}
+
 
 void CEutilsClient::LinkHistory(const string& db_from,
                                 const string& db_to,
@@ -1379,55 +1454,41 @@ template<class T> void CEutilsClient::x_LinkOut(const string& db,
     string params = oss.str();
     x_AddAdditionalParameters(params);
 
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/elink.fcgi?";
-            string hostname = x_GetHostName();
-            string url = x_BuildUrl(hostname, path, params);
-            LOG_POST(Trace << "query: " << url);
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(url);
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            // slurp up all the output.
-            stringbuf sb;
-            istr >> &sb;
-            if (200 == istr.GetStatusCode()) {
-                string docstr(sb.str());
-
-                // LOG_POST(Info << "Raw results: " << docstr );
-
-                // turn it into an xml::document
-                xml::error_messages msgs;
-                xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
-
-                doc.swap(xmldoc);
-                success = true;
-                break;
-            }
-        }
-        catch (const xml::parser_exception& e) {
-            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
-                     << ": error parsing xml: " << e.what());
-        }
-        catch (CException& e) {
-            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        CallWithRetry(bind(&CEutilsClient::x_LinkOutOnce, this, ref(doc), cref(params)), "LinkOut");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute esummary request: " + params);
     }
+}
+
+
+void CEutilsClient::x_LinkOutOnce(xml::document& doc, const string& params)
+{
+    string path = "/entrez/eutils/elink.fcgi?";
+    string hostname = x_GetHostName();
+    string url = x_BuildUrl(hostname, path, params);
+    LOG_POST(Trace << "query: " << url);
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(url);
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    // slurp up all the output.
+    stringbuf sb;
+    istr >> &sb;
+    if (200 != istr.GetStatusCode()) {
+        NCBI_THROW(CException, eUnknown, "Failure while reading response");
+    }
+    string docstr(sb.str());
+    // turn it into an xml::document
+    xml::error_messages msgs;
+    xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
+    doc.swap(xmldoc);
 }
 
 
@@ -1482,56 +1543,43 @@ void CEutilsClient::x_Summary(const string& db,
     string params = oss.str();
     x_AddAdditionalParameters(params);
 
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/esummary.fcgi?";
-            string hostname = x_GetHostName();
-            string url = x_BuildUrl(hostname, path, params);
-            LOG_POST(Trace << "query: " << url);
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(url);
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            // slurp up all the output.
-            stringbuf sb;
-            istr >> &sb;
-            if (200 == istr.GetStatusCode()) {
-                string docstr(sb.str());
-
-                // LOG_POST(Info << "Raw results: " << docstr );
-
-                // turn it into an xml::document
-                xml::error_messages msgs;
-                xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
-
-                docsums.swap(xmldoc);
-                success = true;
-                break;
-            }
-        }
-        catch (const xml::parser_exception& e) {
-            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
-                     << ": error parsing xml: " << e.what());
-        }
-        catch (CException& e) {
-            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        CallWithRetry(bind(&CEutilsClient::x_SummaryOnce, this, ref(docsums), cref(params)), "Summary");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute esummary request: " + params);
     }
 }
+
+
+void CEutilsClient::x_SummaryOnce(xml::document& docsums, const string& params)
+{
+    string path = "/entrez/eutils/esummary.fcgi?";
+    string hostname = x_GetHostName();
+    string url = x_BuildUrl(hostname, path, params);
+    LOG_POST(Trace << "query: " << url);
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(url);
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    // slurp up all the output.
+    stringbuf sb;
+    istr >> &sb;
+    if (200 != istr.GetStatusCode()) {
+        NCBI_THROW(CException, eUnknown, "Failure while reading response");
+    }
+    string docstr(sb.str());
+    // turn it into an xml::document
+    xml::error_messages msgs;
+    xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
+    docsums.swap(xmldoc);
+}
+
 
 static inline void s_SummaryHistoryQuery(ostream& oss,
                                          const string& db,
@@ -1647,38 +1695,33 @@ void CEutilsClient::x_Fetch(const string& db,
     string params = oss.str();
     x_AddAdditionalParameters(params);
 
-    bool success = false;
     m_Url.clear();
     m_Time.clear();
-    for (int retries = 0;  retries < 10;  ++retries) {
-        try {
-            string path = "/entrez/eutils/efetch.fcgi";
-            string hostname = x_GetHostName();
-            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
-            istr << params;
-            m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
-                success = true;
-                break;
-            }
-        }
-        catch (CException& e) {
-            ERR_POST(Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
-        }
-
-        int sleep_secs = ::sqrt(retries);
-        if (sleep_secs) {
-            SleepSec(sleep_secs);
-        }
+    try {
+        CallWithRetry(bind(&CEutilsClient::x_FetchOnce, this, ref(ostr), cref(params)), "Fetch");
     }
-
-    if ( !success ) {
+    catch (...) {
         NCBI_THROW(CException, eUnknown,
                    "failed to execute efetch request: " + params);
     }
 }
+
+
+void CEutilsClient::x_FetchOnce(CNcbiOstream& ostr, const string& params)
+{
+    string path = "/entrez/eutils/efetch.fcgi";
+    string hostname = x_GetHostName();
+    STimeout timeout_value;
+    const STimeout* timeout = g_CTimeoutToSTimeout(m_Timeout, timeout_value);
+    CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr), fHTTP_AutoReconnect, timeout);
+    m_Url.push_back(x_BuildUrl(hostname, path, params));
+    istr << params;
+    m_Time.push_back(CTime(CTime::eCurrent));
+    if (!NcbiStreamCopy(ostr, istr)  ||  200 != istr.GetStatusCode()) {
+        NCBI_THROW(CException, eUnknown, "Failure while reading response");
+    }
+}
+
 
 static inline string s_GetContentType(CEutilsClient::EContentType content_type)
 {
