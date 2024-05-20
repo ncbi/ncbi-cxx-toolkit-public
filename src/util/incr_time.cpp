@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <util/incr_time.hpp>
 #include <corelib/ncbi_config.hpp>
+#include <corelib/ncbireg.hpp>
 #include <cmath>
 
 BEGIN_NCBI_SCOPE
@@ -37,6 +38,24 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 // CIncreasingTime
 /////////////////////////////////////////////////////////////////////////////
+
+
+CIncreasingTime::CIncreasingTime(const SAllParams& params)
+    : m_InitTime(params.m_Initial.m_DefaultValue),
+        m_MaxTime(params.m_Maximal.m_DefaultValue),
+        m_Multiplier(params.m_Multiplier.m_DefaultValue),
+        m_Increment(params.m_Increment.m_DefaultValue)
+{
+    x_VerifyParams();
+}
+
+
+void CIncreasingTime::x_VerifyParams(void)
+{
+    if (m_InitTime < 0) m_InitTime = 0;
+    if (m_MaxTime < 0) m_MaxTime = 0;
+    if (m_Multiplier < 1) m_Multiplier = 1;
+}
 
 
 void CIncreasingTime::Init(CConfig& conf,
@@ -47,6 +66,30 @@ void CIncreasingTime::Init(CConfig& conf,
     m_MaxTime = x_GetDoubleParam(conf, driver_name, params.m_Maximal);
     m_Multiplier = x_GetDoubleParam(conf, driver_name, params.m_Multiplier);
     m_Increment = x_GetDoubleParam(conf, driver_name, params.m_Increment);
+    x_VerifyParams();
+}
+
+
+void CIncreasingTime::Init(const CNcbiRegistry& reg,
+                           const string& section,
+                           const SAllParams& params)
+{
+    unique_ptr<CConfig::TParamTree> app_params(CConfig::ConvertRegToTree(reg));
+    const CConfig::TParamTree* param_tree = app_params->FindSubNode(section);
+    if ( !param_tree ) {
+        m_InitTime = params.m_Initial.m_DefaultValue;
+        m_MaxTime = params.m_Maximal.m_DefaultValue;
+        m_Multiplier = params.m_Multiplier.m_DefaultValue;
+        m_Increment = params.m_Increment.m_DefaultValue;
+    }
+    else {
+        CConfig conf(param_tree);
+        m_InitTime = x_GetDoubleParam(conf, section, params.m_Initial);
+        m_MaxTime = x_GetDoubleParam(conf, section, params.m_Maximal);
+        m_Multiplier = x_GetDoubleParam(conf, section, params.m_Multiplier);
+        m_Increment = x_GetDoubleParam(conf, section, params.m_Increment);
+    }
+    x_VerifyParams();
 }
 
 
@@ -75,7 +118,7 @@ double CIncreasingTime::GetTime(int step) const
 {
     double time = m_InitTime;
     if ( step > 0 ) {
-        if ( m_Multiplier <= 0 ) {
+        if ( abs(m_Multiplier - 1) <= 1e-6 ) {
             time += step * m_Increment;
         }
         else {
@@ -83,7 +126,7 @@ double CIncreasingTime::GetTime(int step) const
             time = time * p + m_Increment * (p - 1) / (m_Multiplier - 1);
         }
     }
-    return min(time, m_MaxTime);
+    return max(0.0, min(time, m_MaxTime));
 }
 
 
