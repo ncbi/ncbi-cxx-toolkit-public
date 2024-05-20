@@ -88,8 +88,8 @@ inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
 CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScope& scope);
 string NCBI_VALIDATOR_EXPORT GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope, int* version);
-string GetAccessionFromBioseq(const CBioseq& bioseq, int* version);
-string GetAccessionFromBioseqSet(const CBioseq_set& bsst, int* version);
+string NCBI_VALIDATOR_EXPORT GetAccessionFromBioseq(const CBioseq& bioseq, int* version);
+string NCBI_VALIDATOR_EXPORT GetAccessionFromBioseqSet(const CBioseq_set& bsst, int* version);
 
 
 
