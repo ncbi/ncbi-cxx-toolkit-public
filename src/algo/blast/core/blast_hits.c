@@ -2017,6 +2017,7 @@ Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
    BlastHSP** hsp_array;
    Int4 hsp_cnt = 0;
    Int4 index;
+   Boolean removed = FALSE;
 
    if ((hsp_list == NULL) || (hsp_list->hspcnt == 0) || (hit_options->query_cov_hsp_perc == 0))
       return 0;
@@ -2028,6 +2029,7 @@ Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
       if ( Blast_HSPQueryCoverageTest(hsp, hit_options->query_cov_hsp_perc,
 			                          query_info->contexts[hsp->context].query_length)) {
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+         removed = TRUE;
       } else {
          if (index > hsp_cnt)
             hsp_array[hsp_cnt] = hsp_array[index];
@@ -2036,6 +2038,10 @@ Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
    }
 
    hsp_list->hspcnt = hsp_cnt;
+
+   if (removed) {
+       hsp_list->best_evalue = s_BlastGetBestEvalue(hsp_list);
+   }
 
    return 0;
 }
