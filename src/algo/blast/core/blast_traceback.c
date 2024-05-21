@@ -1760,16 +1760,17 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
     }
     // -RMH-: end of change
 
+    if(hit_params->options->query_cov_hsp_perc > 0 || hit_params->options->max_hsps_per_subject > 0 ||
+       (hit_params->options->hsp_filt_opt != NULL && hit_params->options->hsp_filt_opt->subject_besthit_opts != NULL)) {
+    	s_FilterBlastResults(results, hit_params->options, query_info, program_number);
+    }
+
     /* Re-sort the hit lists according to their best e-values, because they
        could have changed. Only do this for a database search. */
     if (BlastSeqSrcGetTotLen(seq_src) > 0) {
         Blast_HSPResultsSortByEvalue(results);
     }
 
-    if(hit_params->options->query_cov_hsp_perc > 0 || hit_params->options->max_hsps_per_subject > 0 ||
-       (hit_params->options->hsp_filt_opt != NULL && hit_params->options->hsp_filt_opt->subject_besthit_opts != NULL)) {
-    	s_FilterBlastResults(results, hit_params->options, query_info, program_number);
-    }
 
     /* Eliminate extra hits from results, if preliminary hit list size is
        larger than the final hit list size */
