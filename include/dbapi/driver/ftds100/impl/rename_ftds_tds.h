@@ -35,6 +35,8 @@
  */
 
 #define STD_DATETIME_FMT                STD_DATETIME_FMT_ver100
+#define UTIL_TcharToUtf8                UTIL_TcharToUtf8_ftds100
+#define UTIL_ReleaseBufferOnHeap        UTIL_ReleaseBufferOnHeap_ftds100
 #define determine_adjusted_size         determine_adjusted_size_ver100
 #define dlist_ring_check                dlist_ring_check_ver100
 #define hmac_md5                        hmac_md5_ver100

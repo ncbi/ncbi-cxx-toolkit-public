@@ -38,6 +38,8 @@
  */
 
 #define STD_DATETIME_FMT                STD_DATETIME_FMT_ver14
+#define UTIL_TcharToUtf8                UTIL_TcharToUtf8_ftds14
+#define UTIL_ReleaseBufferOnHeap        UTIL_ReleaseBufferOnHeap_ftds14
 #ifdef ENABLE_KRB5
 #  define tds5_gss_send                 tds5_gss_send_ver14
 #endif
