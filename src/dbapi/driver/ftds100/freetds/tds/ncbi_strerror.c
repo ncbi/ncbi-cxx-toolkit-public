@@ -34,13 +34,7 @@
 
 
 #  ifdef _FREETDS_LIBRARY_SOURCE
-
-#    include "../impl/ncbi_ftds_ver.h"
 #    define s_StrError        s_StrErrorInternal
-#    define UTIL_TcharToUtf8  NCBI_FTDS_VERSION_NAME(UTIL_TcharToUtf8_ftds)
-#    define UTIL_ReleaseBufferOnHeap  \
-                      NCBI_FTDS_VERSION_NAME(UTIL_ReleaseBufferOnHeap_ftds)
-
 #  endif /*_FREETDS_LIBRARY_SOURCE*/
 
 
