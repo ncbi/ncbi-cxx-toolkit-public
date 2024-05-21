@@ -1643,29 +1643,62 @@ COperationTiming::Serialize(int  most_ancient_time,
             m_IdGetStat.GetLoopAndIndex(loop, current_index);
 
             ret.SetByKey("ID_get_time_series",
-                         m_IdGetStat.Serialize(time_series, loop, current_index));
+                         m_IdGetStat.Serialize(time_series,
+                                               most_ancient_time,
+                                               most_recent_time,
+                                               loop, current_index));
             ret.SetByKey("ID_getblob_time_series",
-                         m_IdGetblobStat.Serialize(time_series, loop, current_index));
+                         m_IdGetblobStat.Serialize(time_series,
+                                                   most_ancient_time,
+                                                   most_recent_time,
+                                                   loop, current_index));
             ret.SetByKey("ID_resolve_time_series",
-                         m_IdResolveStat.Serialize(time_series, loop, current_index));
+                         m_IdResolveStat.Serialize(time_series,
+                                                   most_ancient_time,
+                                                   most_recent_time,
+                                                   loop, current_index));
             ret.SetByKey("ID_acc_ver_hist_time_series",
-                         m_IdAccVerHistStat.Serialize(time_series, loop, current_index));
+                         m_IdAccVerHistStat.Serialize(time_series,
+                                                      most_ancient_time,
+                                                      most_recent_time,
+                                                      loop, current_index));
             ret.SetByKey("ID_get_tse_chunk_time_series",
-                         m_IdGetTSEChunkStat.Serialize(time_series, loop, current_index));
+                         m_IdGetTSEChunkStat.Serialize(time_series,
+                                                       most_ancient_time,
+                                                       most_recent_time,
+                                                       loop, current_index));
             ret.SetByKey("ID_get_na_time_series",
-                         m_IdGetNAStat.Serialize(time_series, loop, current_index));
+                         m_IdGetNAStat.Serialize(time_series,
+                                                 most_ancient_time,
+                                                 most_recent_time,
+                                                 loop, current_index));
             ret.SetByKey("IPG_resolve_time_series",
-                         m_IpgResolveStat.Serialize(time_series, loop, current_index));
+                         m_IpgResolveStat.Serialize(time_series,
+                                                    most_ancient_time,
+                                                    most_recent_time,
+                                                    loop, current_index));
 
             bool        momentous_cnt_loop;
             size_t      momentous_cnt_current_index;
             m_TCPConnectionsStat.GetLoopAndIndex(momentous_cnt_loop, momentous_cnt_current_index);
             ret.SetByKey("TCP_connections_time_series",
-                         m_TCPConnectionsStat.Serialize(time_series, momentous_cnt_loop, momentous_cnt_current_index));
+                         m_TCPConnectionsStat.Serialize(time_series,
+                                                        most_ancient_time,
+                                                        most_recent_time,
+                                                        momentous_cnt_loop,
+                                                        momentous_cnt_current_index));
             ret.SetByKey("active_requests_time_series",
-                         m_ActiveRequestsStat.Serialize(time_series, momentous_cnt_loop, momentous_cnt_current_index));
+                         m_ActiveRequestsStat.Serialize(time_series,
+                                                        most_ancient_time,
+                                                        most_recent_time,
+                                                        momentous_cnt_loop,
+                                                        momentous_cnt_current_index));
             ret.SetByKey("backlog_time_series",
-                         m_BacklogStat.Serialize(time_series, momentous_cnt_loop, momentous_cnt_current_index));
+                         m_BacklogStat.Serialize(time_series,
+                                                 most_ancient_time,
+                                                 most_recent_time,
+                                                 momentous_cnt_loop,
+                                                 momentous_cnt_current_index));
 
             // Here: need to calculate the max of requests separately for each
             // kind of response: ok, error, warning, not found
@@ -1712,22 +1745,35 @@ COperationTiming::Serialize(int  most_ancient_time,
             for (auto & item : m_ProcGroupToIndex) {
                 ret.SetByKey(item.first + "_ID_get_time_series",
                              m_IdGetDoneByProc[item.second]->Serialize(time_series,
+                                                                       most_ancient_time,
+                                                                       most_recent_time,
                                                                        loop, current_index));
                 ret.SetByKey(item.first + "_ID_getblob_time_series",
                              m_IdGetblobDoneByProc[item.second]->Serialize(time_series,
+                                                                           most_ancient_time,
+                                                                           most_recent_time,
                                                                            loop, current_index));
                 ret.SetByKey(item.first + "_ID_resolve_time_series",
                              m_IdResolveDoneByProc[item.second]->Serialize(time_series,
+                                                                           most_ancient_time,
+                                                                           most_recent_time,
                                                                            loop, current_index));
                 ret.SetByKey(item.first + "_ID_get_tse_chunk_time_series",
                              m_IdGetTSEChunkDoneByProc[item.second]->Serialize(time_series,
+                                                                               most_ancient_time,
+                                                                               most_recent_time,
                                                                                loop, current_index));
                 ret.SetByKey(item.first + "_ID_get_na_time_series",
                              m_IdGetNADoneByProc[item.second]->Serialize(time_series,
+                                                                         most_ancient_time,
+                                                                         most_recent_time,
                                                                          loop, current_index));
             }
             ret.SetByKey("error_time_series",
-                         m_ErrorTimeSeries.Serialize(time_series, loop, current_index));
+                         m_ErrorTimeSeries.Serialize(time_series,
+                                                     most_ancient_time,
+                                                     most_recent_time,
+                                                     loop, current_index));
         }
     } else {
         lock_guard<mutex>       guard(m_Lock);
