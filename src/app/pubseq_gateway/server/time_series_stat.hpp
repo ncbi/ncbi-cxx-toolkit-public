@@ -66,6 +66,17 @@ class CTimeSeriesBase
         }
 
     protected:
+        enum EPSGS_SkipCheckResult {
+            ePSGS_SkipBegin,
+            ePSGS_SkipEnd,
+            ePSGS_DontSkip
+        };
+        EPSGS_SkipCheckResult  CheckToSkip(int  most_ancient_time,
+                                           int  most_recent_time,
+                                           ssize_t  current_values_start_sec,
+                                           ssize_t  current_values_end_sec) const;
+
+    protected:
         // Includes the current minute
         atomic_uint_fast64_t    m_TotalMinutesCollected;
 
@@ -99,10 +110,14 @@ class CMomentousCounterSeries : public CTimeSeriesBase
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             int  most_ancient_time,
+                             int  most_recent_time,
                              bool  loop, size_t  current_index) const;
 
     protected:
         CJsonNode x_SerializeOneSeries(const vector<pair<int, int>> &  time_series,
+                                       int  most_ancient_time,
+                                       int  most_recent_time,
                                        bool  loop,
                                        size_t  current_index) const;
 
@@ -128,18 +143,23 @@ class CMonotonicCounterSeries : public CTimeSeriesBase
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             int  most_ancient_time,
+                             int  most_recent_time,
                              bool  loop, size_t  current_index) const;
 
     protected:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,
                                        uint64_t  grand_total,
                                        const vector<pair<int, int>> &  time_series,
+                                       int  most_ancient_time,
+                                       int  most_recent_time,
                                        bool  loop,
                                        size_t  current_index) const;
 
     protected:
         uint64_t    m_Values[kSeriesIntervals];
         uint64_t    m_TotalValues;
+        uint64_t    m_MaxValue;
 };
 
 
@@ -153,18 +173,23 @@ class CProcessorRequestTimeSeries : public CTimeSeriesBase
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             int  most_ancient_time, int  most_recent_time,
                              bool  loop, size_t  current_index) const;
 
     protected:
         CJsonNode x_SerializeOneSeries(const uint64_t *  values,
                                        uint64_t  grand_total,
+                                       uint64_t  grand_max,
                                        const vector<pair<int, int>> &  time_series,
+                                       int  most_ancient_time, int  most_recent_time,
                                        bool  loop,
                                        size_t  current_index) const;
 
     protected:
         uint64_t    m_Requests[kSeriesIntervals];
         uint64_t    m_TotalRequests;
+
+        uint64_t    m_MaxValue;
 };
 
 
@@ -187,6 +212,7 @@ class CRequestTimeSeries : public CProcessorRequestTimeSeries
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             int  most_ancient_time, int  most_recent_time,
                              bool  loop, size_t  current_index) const;
         static EPSGSCounter RequestStatusToCounter(CRequestStatus::ECode  status);
 
@@ -206,10 +232,13 @@ class CRequestTimeSeries : public CProcessorRequestTimeSeries
     private:
         uint64_t    m_Errors[kSeriesIntervals];
         uint64_t    m_TotalErrors;
+        uint64_t    m_MaxErrors;
         uint64_t    m_Warnings[kSeriesIntervals];
         uint64_t    m_TotalWarnings;
+        uint64_t    m_MaxWarnings;
         uint64_t    m_NotFound[kSeriesIntervals];
         uint64_t    m_TotalNotFound;
+        uint64_t    m_MaxNotFound;
 };
 
 
