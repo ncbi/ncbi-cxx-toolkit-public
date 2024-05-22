@@ -101,7 +101,8 @@ protected:
                                                 TMyNCBIErrorCB  error_cb);
     void ReportNoWebCubbyUser(void);
     void ReportExplicitIncludeHUPSetToNo(void);
-    void ReportMyNCBIError(const string &  my_ncbi_message);
+    void ReportMyNCBIError(CRequestStatus::ECode  status,
+                           const string &  my_ncbi_message);
     void ReportMyNCBINotFound(void);
     void ReportSecureSatUnauthorized(const string &  user_name);
     void ReportFailureToGetCassConnection(const string &  message);

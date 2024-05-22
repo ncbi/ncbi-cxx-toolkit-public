@@ -960,6 +960,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     m_TooLongIDs[eLookupCassBioseqInfo] = "lookup_cass_bioseq_info_too_long";
     m_TooLongIDs[eLookupCassBlobProp] = "lookup_cass_blob_prop_too_long";
     m_TooLongIDs[eMyNCBIRetrieve] = "retrieve_my_ncbi_too_long";
+    m_TooLongIDs[eMyNCBIRetrieveError] = "error_retrieve_my_ncbi_too_long";
     m_TooLongIDs[eResolutionLmdb] = "resolution_lmdb_too_long";
     m_TooLongIDs[eResolutionCass] = "resolution_cass_too_long";
     m_TooLongIDs[eResolutionError] = "resolution_error_too_long";
