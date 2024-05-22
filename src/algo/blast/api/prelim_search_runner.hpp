@@ -136,8 +136,18 @@ protected:
     }
 
     virtual void* Main(void) {
+    	try {
         return (void*)
             ((intptr_t) CPrelimSearchRunner(m_InternalData, m_OptsMemento)());
+    	}
+    	catch (CSeqDBException & e) {
+    		if (e.GetErrCode() == CSeqDBException::eOpenFileErr) {
+    			return (void*) BLASTERR_DB_OPEN_FILES;
+    		}
+    		else {
+    			return (void*) BLASTERR_DB_MEMORY_MAP;
+    		}
+    	}
     }
 
 private:

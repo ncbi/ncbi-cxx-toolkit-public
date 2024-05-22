@@ -229,14 +229,26 @@ CLocalBlast::Run()
 	try {
 	    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
 	    m_InternalData = m_PrelimSearch->Run();
-	} catch( CIndexedDbException & ) {
+	} catch( CIndexedDbException & e) {
 	    throw;
 	} catch (CBlastException & e) {
 		if(e.GetErrCode() == CBlastException::eCoreBlastError) {
 			throw;
 		}
-	}catch (...) {
 	}
+	catch (CSeqDBException & e) {
+		if (e.GetErrCode() == CSeqDBException::eOpenFileErr) {
+			string err_msg = BlastErrorCode2String(BLASTERR_DB_OPEN_FILES);
+			NCBI_THROW(CBlastException, eCoreBlastError, err_msg);
+		}
+		else {
+			string err_msg = BlastErrorCode2String(BLASTERR_DB_MEMORY_MAP);
+			NCBI_THROW(CBlastException, eCoreBlastError, err_msg);
+		}
+	}
+    catch (std::exception & e) {
+    	NCBI_THROW(CBlastException, eSystem, e.what());
+    }
 
     //_ASSERT(m_InternalData);
     BLAST_PROF_MARK2( m_batch_num_str + string("_BLAST.PRE.STOP") );    

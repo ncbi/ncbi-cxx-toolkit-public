@@ -143,6 +143,8 @@ InitializeQueryDataLoaderConfiguration(bool query_is_protein,
 /// object)
 string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 
+
+
 /// Command line binary exit code: success
 #define BLAST_EXIT_SUCCESS          0
 /// Command line binary exit code: error in input query/options
@@ -181,8 +183,21 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const CSeqDBException& e) {                                      \
-        LOG_POST(Error << "BLAST Database error: " << e.GetMsg());          \
-        exit_code = BLAST_DATABASE_ERROR;                                   \
+		if (e.GetErrCode() == CSeqDBException::eOpenFileErr) {              \
+			string err_msg =                                                \
+                "Too many open files, please check open file limit";        \
+        	LOG_POST(Error << "BLAST Database error: " << err_msg);         \
+            exit_code = BLAST_ENGINE_ERROR;                                 \
+		}                                                                   \
+		else if (e.GetErrCode() == CSeqDBException::eFileErr){              \
+			string err_msg = "Database memory map file error";              \
+        	LOG_POST(Error << "BLAST Database error: " << err_msg);         \
+            exit_code = BLAST_ENGINE_ERROR;                                 \
+		}                                                                   \
+        else {                                                              \
+        	LOG_POST(Error << "BLAST Database error: " << e.GetMsg());      \
+        	exit_code = BLAST_DATABASE_ERROR;                               \
+        }                                                                   \
     }                                                                       \
     catch (const blastdbindex::CDbIndex_Exception& e) {                     \
         LOG_POST(Error << "Indexed BLAST database error: " << e.GetMsg());  \

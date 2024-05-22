@@ -173,6 +173,10 @@ void Blast_PerrorEx(Blast_Message* *msg,
 /** Blast seqsrc returns  BLAST_SEQSRC_ERROR */
 #define BLASTERR_SEQSRC								300
 
+/** Database file error */
+#define BLASTERR_DB_MEMORY_MAP				        400
+#define BLASTERR_DB_OPEN_FILES      				401
+
 
 #ifdef __cplusplus
 }
