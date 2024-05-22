@@ -87,7 +87,10 @@ public:
         eVersionErr,
 
         /// No Tax Id Found
-        eTaxidErr
+        eTaxidErr,
+
+		/// Too many open files
+		eOpenFileErr
     };
 
     /// Get a message describing the situation leading to the throw.
@@ -96,7 +99,10 @@ public:
         switch ( GetErrCode() ) {
         case eArgErr:  return "eArgErr";
         case eFileErr: return "eFileErr";
+        case eMemErr: return "eMemErr";
         case eVersionErr: return "eVersionErr";
+        case eTaxidErr: return "eTaxidErr";
+        case eOpenFileErr: return "eOpenFileErr";
         default:       return CException::GetErrCodeString();
         }
     }

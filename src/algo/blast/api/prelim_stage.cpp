@@ -188,8 +188,16 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 0);
 
     if (retv) {
-          NCBI_THROW(CBlastException, eCoreBlastError,
-                                   BlastErrorCode2String((Int2)retv));
+    	  Int2 err_code = (Int2) retv;
+    	  if (err_code == BLASTERR_DB_MEMORY_MAP) {
+    		  NCBI_THROW(CSeqDBException, eFileErr, BlastErrorCode2String(err_code));
+    	  }
+    	  else if (err_code == BLASTERR_DB_OPEN_FILES) {
+    		  NCBI_THROW(CSeqDBException, eOpenFileErr, BlastErrorCode2String(err_code));
+    	  }
+    	  else {
+    		  NCBI_THROW(CBlastException, eCoreBlastError, BlastErrorCode2String(err_code));
+    	  }
     }
     return 0;
 }

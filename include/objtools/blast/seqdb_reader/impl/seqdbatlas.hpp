@@ -50,7 +50,6 @@
 #include <corelib/ncbiapp_api.hpp>
 
 #include <objtools/blast/seqdb_reader/impl/seqdbgeneral.hpp>
-
 #include <vector>
 #include <map>
 #include <set>
@@ -719,10 +718,14 @@ public:
             m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
             m_Mapped = true;
         }
-        catch (const std::exception&) {
-            NCBI_THROW(CSeqDBException,
-                eFileErr,
-                "Cannot memory map " + m_Filename + ". Number of files opened: " + NStr::IntToString(m_Atlas.GetOpenedFilseCount()));
+        catch (const std::exception& e) {
+        	string err_msg = e.what();
+        	if (err_msg.find("Too many open files") == std::string::npos ) {
+        		NCBI_THROW(CSeqDBException, eFileErr, e.what());
+        	}
+        	else {
+        		NCBI_THROW(CSeqDBException, eOpenFileErr, e.what());
+        	}
         }
 
         m_DataPtr = (char *)(m_MappedFile->GetPtr());

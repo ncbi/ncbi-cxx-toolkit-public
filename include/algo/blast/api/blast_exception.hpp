@@ -83,7 +83,8 @@ public:
         eSeqSrcInit,        ///< Initialization error in BlastSeqSrc 
                             /// implementation
         eRpsInit,           ///< Error while initializing RPS-BLAST
-        eSetup              ///< Error while setting up BLAST
+        eSetup,             ///< Error while setting up BLAST
+        eSystem             ///< System exception
     };
 
     /// Translate from the error code value to its string representation
@@ -96,6 +97,7 @@ public:
         case eInvalidCharacter:     return "eInvalidCharacter";
         case eSeqSrcInit:           return "eSeqSrcInit";
         case eRpsInit:              return "eRpsInit";
+        case eSystem:               return "eSystem";
         default:                    return CException::GetErrCodeString();
         }
     }
