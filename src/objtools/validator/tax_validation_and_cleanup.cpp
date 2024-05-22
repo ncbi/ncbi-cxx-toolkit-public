@@ -327,10 +327,15 @@ static void GetStrainCandidates(const string& organism, const string& strain, ve
 }
 
 
-static bool CheckStrainReply(const string& organism, CRef<CTaxon3_reply> reply)
+static bool CheckStrainReply(const string& organism, const string&strain, CRef<CTaxon3_reply> reply)
 {
     if (NStr::IsBlank(organism) || ! reply) {
         return false;
+    }
+
+    string alternative = "";
+    if (NStr::EndsWith(organism, " sp.")) {
+        alternative = organism.substr(0, organism.length() - 3) + strain;
     }
 
     CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
@@ -342,6 +347,9 @@ static bool CheckStrainReply(const string& organism, CRef<CTaxon3_reply> reply)
             if (cpy && cpy->IsSetTaxname()) {
                 string taxname = cpy->GetTaxname();
                 if (NStr::EqualNocase(organism, taxname)) {
+                    return true;
+                }
+                if (alternative.length() > 0 && NStr::EqualNocase(alternative, taxname)) {
                     return true;
                 }
             }
@@ -381,7 +389,7 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
 
     CRef<CTaxon3_reply> reply = taxoncallback(request);
 
-    if (CheckStrainReply(organism, reply)) {
+    if (CheckStrainReply(organism, strain, reply)) {
         return true;
     }
 
@@ -438,7 +446,7 @@ bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
 
     CRef<CTaxon3_reply> reply = taxoncallback(request);
 
-    if (CheckStrainReply(organism, reply)) {
+    if (CheckStrainReply(organism, strain, reply)) {
         return true;
     }
 
@@ -463,7 +471,7 @@ bool CStrainRequest::StrainContainsTaxonInfo(const string& organism, const strin
 
         CRef<CTaxon3_reply> reply = taxoncallback(org);
 
-        if (CheckStrainReply(organism, reply)) {
+        if (CheckStrainReply(organism, strain, reply)) {
             return true;
         }
     }
@@ -510,7 +518,7 @@ bool CStrainRequest::StrainContainsTaxonInfo(const COrg_ref& org,
 
         CRef<CTaxon3_reply> reply = taxoncallback(org);
 
-        if (CheckStrainReply(organism, reply)) {
+        if (CheckStrainReply(organism, strain, reply)) {
             return true;
         }
     }
