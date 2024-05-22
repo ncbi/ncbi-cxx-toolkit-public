@@ -668,7 +668,7 @@ void CPSGS_GetProcessor::x_OnMyNCBIError(const string &  cookie,
     if (status == CRequestStatus::e404_NotFound) {
         ReportMyNCBINotFound();
     } else {
-        ReportMyNCBIError(message);
+        ReportMyNCBIError(status, message);
     }
 
     CPSGS_CassProcessorBase::SignalFinishProcessing();

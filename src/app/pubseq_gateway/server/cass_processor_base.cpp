@@ -682,7 +682,8 @@ void CPSGS_CassProcessorBase::ReportExplicitIncludeHUPSetToNo(void)
 }
 
 
-void CPSGS_CassProcessorBase::ReportMyNCBIError(const string &  my_ncbi_message)
+void CPSGS_CassProcessorBase::ReportMyNCBIError(CRequestStatus::ECode  status,
+                                                const string &  my_ncbi_message)
 {
     auto    app = CPubseqGatewayApp::GetInstance();
     app->GetCounters().Increment(this,
@@ -693,9 +694,9 @@ void CPSGS_CassProcessorBase::ReportMyNCBIError(const string &  my_ncbi_message)
                       my_ncbi_message;
     IPSGS_Processor::m_Reply->PrepareProcessorMessage(
             IPSGS_Processor::m_Reply->GetItemId(), GetName(),
-            err_msg, CRequestStatus::e500_InternalServerError,
+            err_msg, status,
             ePSGS_MyNCBIError, eDiag_Error);
-    UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+    UpdateOverallStatus(status);
     PSG_ERROR(err_msg);
 }
 

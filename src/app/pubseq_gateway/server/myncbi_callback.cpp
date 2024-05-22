@@ -73,19 +73,27 @@ void CMyNCBIErrorCallback::operator()(CRequestStatus::ECode  status,
         app->GetMyNCBIOKCache()->OnError(m_Cookie, status, code, severity, message);
     }
 
+    CRequestStatus::ECode  adjusted_status = status;
+    if (adjusted_status < CRequestStatus::e300_MultipleChoices) {
+        // Strange: error callback but status is less than 300.
+        // Adjusted it to 500
+        adjusted_status = CRequestStatus::e500_InternalServerError;
+    }
+
     // Trace
     auto    request = m_Processor->GetRequest();
     if (request->NeedTrace()) {
         m_Processor->GetReply()->SendTrace(
             "MyNCBI error callback. Cookie: " + m_Cookie +
             " Status: " + to_string(status) +
+            " Adjusted status: " + to_string(adjusted_status) +
             " Code: " + to_string(code) +
             " Severity: " + to_string(severity) +
             " Message: " + message,
             request->GetStartTimestamp());
     }
 
-    m_MyNCBIErrorCB(m_Cookie, status, code, severity, message);
+    m_MyNCBIErrorCB(m_Cookie, adjusted_status, code, severity, message);
 }
 
 
