@@ -2584,11 +2584,6 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
             m_CachedSeqs.push_back(new SSeqResBuffer());
         }
 
-        for(int vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
-            m_VolSet.GetVol(vol_idx)->OpenSeqFile(locked);
-        }
-        //m_Atlas.SetSliceSize();
-
     } else if (num_threads < m_NumThreads) {
 
         for (int thread = num_threads; thread < m_NumThreads; ++thread) {

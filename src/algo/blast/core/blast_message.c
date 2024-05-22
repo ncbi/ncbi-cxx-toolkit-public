@@ -224,6 +224,16 @@ Blast_PerrorEx(Blast_Message* *msg,
         new_msg->severity = eBlastSevFatal;
         new_msg->context = context;
         break;
+    case BLASTERR_DB_MEMORY_MAP :
+    	new_msg->message = strdup("Database memory map file error");
+        new_msg->severity = eBlastSevFatal;
+        new_msg->context = context;
+        break;
+    case BLASTERR_DB_OPEN_FILES :
+    	new_msg->message = strdup("Too many open files, please check open file limit");
+        new_msg->severity = eBlastSevFatal;
+        new_msg->context = context;
+        break;
     /* No error, just free the structure */
     case 0:
         new_msg = Blast_MessageFree(new_msg);
