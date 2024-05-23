@@ -230,7 +230,7 @@ Blast_PerrorEx(Blast_Message* *msg,
         new_msg->context = context;
         break;
     case BLASTERR_DB_OPEN_FILES :
-    	new_msg->message = strdup("Too many open files, please check open file limit");
+    	new_msg->message = strdup("Too many open files, please raise the open file limit");
         new_msg->severity = eBlastSevFatal;
         new_msg->context = context;
         break;

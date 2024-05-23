@@ -185,7 +185,7 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
     catch (const CSeqDBException& e) {                                      \
 		if (e.GetErrCode() == CSeqDBException::eOpenFileErr) {              \
 			string err_msg =                                                \
-                "Too many open files, please check open file limit";        \
+                "Too many open files, please raise the open file limit";    \
         	LOG_POST(Error << "BLAST Database error: " << err_msg);         \
             exit_code = BLAST_ENGINE_ERROR;                                 \
 		}                                                                   \
