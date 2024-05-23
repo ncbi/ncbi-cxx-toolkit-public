@@ -771,7 +771,7 @@ void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet& results,
        _TRACE("Prefetching " << ids.size() << " sequence lengths");
        LoadSequencesToScope(ids, ranges, scope);
 	}
-    catch(CSeqDBException & e) {
+    catch(CSeqDBException & ) {
     	throw;
     }
     catch (CException& e) {
