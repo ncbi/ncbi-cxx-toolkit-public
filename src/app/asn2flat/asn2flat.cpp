@@ -458,14 +458,14 @@ int CAsn2FlatApp::Run()
     m_writers.SetDepth(20);
 
     // open the output streams
-    bool has_o_args =
-        SetFlatfileOstream(eFlatFileCodes::all, "o") ||
-        SetFlatfileOstream(eFlatFileCodes::nuc, "on") ||
-        SetFlatfileOstream(eFlatFileCodes::gen, "og") ||
-        SetFlatfileOstream(eFlatFileCodes::rna, "or") ||
-        SetFlatfileOstream(eFlatFileCodes::prot, "op") ||
-        SetFlatfileOstream(eFlatFileCodes::unk, "ou");
+    bool has_o_arg  = SetFlatfileOstream(eFlatFileCodes::all, "o");
+    bool has_on_arg = SetFlatfileOstream(eFlatFileCodes::nuc, "on");
+    bool has_og_arg = SetFlatfileOstream(eFlatFileCodes::gen, "og");
+    bool has_or_arg = SetFlatfileOstream(eFlatFileCodes::rna, "or");
+    bool has_op_arg = SetFlatfileOstream(eFlatFileCodes::prot, "op");
+    bool has_ou_arg = SetFlatfileOstream(eFlatFileCodes::unk, "ou");
 
+    bool has_o_args = has_o_arg || has_on_arg || has_og_arg || has_or_arg || has_op_arg || has_ou_arg;
     if (! has_o_args) {
         // No output (-o*) argument given - default to stdout
         m_writers.Open(eFlatFileCodes::all, std::cout);
