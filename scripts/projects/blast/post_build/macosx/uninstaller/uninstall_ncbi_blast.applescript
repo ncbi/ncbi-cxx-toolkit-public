@@ -27,7 +27,7 @@
 --
 --  This is AppleScript file to uninstall BLAST+ package.
 -- 
-property svn_date : "$Revision"
+property svn_date : "$Revision$"
 
 on run
 	set blast_folder to POSIX file "/usr/local/ncbi/blast" -- DEFAULT. Not used.
