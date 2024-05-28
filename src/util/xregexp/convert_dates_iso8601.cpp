@@ -285,8 +285,8 @@ vector<TParse_rule> const& get_date_rule_collection()
     rules_table[] = 
     {
         {kTransform_code_iso8601, 
-            "^((?:19\\d{2}|2\\d{3}))$", 
-            transform_identity}, // YYYY - 19xx, 2xxx
+            "^((?:1\\d{3}|2\\d{3}))$", 
+            transform_identity}, // YYYY - 1xxx, 2xxx
 
         {kTransform_code_cast_na, 
             "(?i)^([a-z]+(?:\\s[a-z]+)*)$", 
