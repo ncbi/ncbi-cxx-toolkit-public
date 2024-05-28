@@ -40,6 +40,7 @@
 #include <mutex>
 #include <map>
 #include <vector>
+#include <optional>
 #include <corelib/ncbistr.hpp>
 using namespace std;
 
