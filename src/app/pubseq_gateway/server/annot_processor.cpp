@@ -604,7 +604,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                                              // annotation processor
         if (app->GetExcludeBlobCache()->IsInCache(
                     m_AnnotRequest->m_ClientId,
-                    blob_id.m_Sat, blob_id.m_SatKey,
+                    SExcludeBlobId(blob_id.m_Sat, blob_id.m_SatKey),
                     completed, completed_time)) {
 
             bool    finish_processing = true;
@@ -631,7 +631,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                     // class will add this blob to the cache again as new
                     app->GetExcludeBlobCache()->Remove(
                                             m_AnnotRequest->m_ClientId,
-                                            blob_id.m_Sat, blob_id.m_SatKey);
+                                            SExcludeBlobId(blob_id.m_Sat, blob_id.m_SatKey));
                     finish_processing = false;
                 }
             } else {

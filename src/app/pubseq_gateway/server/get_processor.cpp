@@ -267,7 +267,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
         psg_time_point_t    completed_time;
         if (app->GetExcludeBlobCache()->IsInCache(
                     m_BlobRequest->m_ClientId,
-                    m_BlobId.m_Sat, m_BlobId.m_SatKey,
+                    SExcludeBlobId(m_BlobId.m_Sat, m_BlobId.m_SatKey),
                     completed, completed_time)) {
 
             bool    finish_processing = true;
@@ -294,7 +294,7 @@ void CPSGS_GetProcessor::x_GetBlob(void)
                     // class will add this blob to the cache again as new
                     app->GetExcludeBlobCache()->Remove(
                                             m_BlobRequest->m_ClientId,
-                                            m_BlobId.m_Sat, m_BlobId.m_SatKey);
+                                            SExcludeBlobId(m_BlobId.m_Sat, m_BlobId.m_SatKey));
                     finish_processing = false;
                 }
             } else {
