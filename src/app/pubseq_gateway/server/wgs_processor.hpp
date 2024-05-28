@@ -135,7 +135,6 @@ private:
                              const objects::CID2_Reply_Data& data);
     void x_SendSplitInfo(void);
     void x_SendMainEntry(void);
-    void x_SendExcluded(void);
     void x_SendForbidden(void);
     void x_SendBlob(void);
     void x_SendChunk(void);
@@ -160,6 +159,10 @@ private:
     bool x_IsCanceled();
     bool x_SignalStartProcessing();
 
+    bool x_CheckExcludedCache(void);
+    void x_RemoveFromExcludedCache(void);
+    void x_SetExcludedCacheCompleted(void);
+
     CFastMutex m_Mutex;
     shared_ptr<SWGSProcessor_Config> m_Config;
     mutable shared_ptr<CWGSClient> m_Client;
@@ -171,6 +174,10 @@ private:
     string m_Id2Info; // requested id2-info
     int64_t m_ChunkId; // requested chunk-id
     TBlobIds m_ExcludedBlobs;
+    string m_ClientId;
+    unsigned long m_ResendTimeoutMks = 0;
+    unsigned long m_SentMksAgo = 0;
+    bool m_AddedToExcludedCache = false;
     shared_ptr<SWGSData> m_WGSData;
     string m_WGSDataError;
     EOutputFormat m_OutputFormat;
