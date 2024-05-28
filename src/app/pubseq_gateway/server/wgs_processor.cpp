@@ -447,7 +447,7 @@ void CPSGS_WGSProcessor::OnResolvedSeqId(void)
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
-    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
+    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo  ||  m_WGSData->m_GetResult == SWGSData::eResult_NotFound ) {
         if ( m_WGSDataError.empty() ) {
             if ( GetRequest()->NeedTrace() ) {
                 GetReply()->SendTrace(
@@ -493,6 +493,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
 {
     SPSGS_BlobBySeqIdRequest& get_request = GetRequest()->GetRequest<SPSGS_BlobBySeqIdRequest>();
     m_SeqId.Reset(new CSeq_id());
+    m_ClientId = get_request.m_ClientId;
     string err;
     if (ParseInputSeqId(*m_SeqId, get_request.m_SeqId, get_request.m_SeqIdType, &err) != ePSGS_ParsedOK) {
         PSG_ERROR("Error parsing seq-id: " << (err.empty() ? get_request.m_SeqId : err));
@@ -515,6 +516,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySeqIdRequest(void)
                 GetRequest()->GetStartTimestamp());
         }
         m_ExcludedBlobs = get_request.m_ExcludeBlobs;
+        m_ResendTimeoutMks = get_request.m_ResendTimeoutMks;
         m_ThreadPool->AddTask(new CWGSThreadPoolTask_GetBlobBySeqId(*this));
     }
 }
@@ -525,7 +527,14 @@ void CPSGS_WGSProcessor::GetBlobBySeqId(void)
     CRequestContextResetter context_resetter;
     GetRequest()->SetRequestContext();
     try {
-        m_WGSData = m_Client->GetBlobBySeqId(*m_SeqId, m_ExcludedBlobs);
+        CWGSClient::SWGSSeqInfo seq;
+        m_WGSData = m_Client->GetSeqInfoBySeqId(*m_SeqId, seq, m_ExcludedBlobs);
+        if ( m_WGSData ) {
+            if (x_CheckExcludedCache()  &&  m_WGSData->m_GetResult == SWGSData::eResult_Found) {
+                m_Client->GetWGSData(m_WGSData, seq);
+            }
+        }
+
         if ( GetRequest()->NeedTrace() ) {
             GetReply()->SendTrace(
                 kWGSProcessorName + " processor finished getting blob for seq-id " + m_SeqId->AsFastaString() + ", waiting for other processors",
@@ -552,8 +561,8 @@ void CPSGS_WGSProcessor::OnGotBlobBySeqId(void)
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
-    // NOTE: m_Data may be null if the blob was excluded.
-    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo ) {
+    // NOTE: m_Data may be null if the blob was excluded/skipped.
+    if ( !m_WGSData  ||  !m_WGSData->m_BioseqInfo  ||  m_WGSData->m_GetResult == SWGSData::eResult_NotFound ) {
         if ( m_WGSDataError.empty() ) {
             if ( GetRequest()->NeedTrace() ) {
                 GetReply()->SendTrace(
@@ -600,6 +609,7 @@ void CPSGS_WGSProcessor::x_ProcessBlobBySatSatKeyRequest(void)
 {
     SPSGS_BlobBySatSatKeyRequest& blob_request = GetRequest()->GetRequest<SPSGS_BlobBySatSatKeyRequest>();
     m_PSGBlobId = blob_request.m_BlobId.GetId();
+    m_ClientId = blob_request.m_ClientId;
     if ( GetRequest()->NeedTrace() ) {
         GetReply()->SendTrace(
             kWGSProcessorName + " processor is fetching blob " + m_PSGBlobId,
@@ -640,7 +650,7 @@ void CPSGS_WGSProcessor::OnGotBlobByBlobId(void)
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
-    if ( !m_WGSData ) {
+    if ( !m_WGSData  ||  m_WGSData->m_GetResult == SWGSData::eResult_NotFound ) {
         if ( m_WGSDataError.empty() ) {
             if ( GetRequest()->NeedTrace() ) {
                 GetReply()->SendTrace(
@@ -727,7 +737,7 @@ void CPSGS_WGSProcessor::OnGotChunk(void)
         m_WGSDataError = "simulated WGS processor error";
         m_WGSData.reset();
     }
-    if ( !m_WGSData ) {
+    if ( !m_WGSData  ||  m_WGSData->m_GetResult == SWGSData::eResult_NotFound ) {
         if ( m_WGSDataError.empty() ) {
             if ( GetRequest()->NeedTrace() ) {
                 GetReply()->SendTrace(
@@ -976,13 +986,6 @@ void CPSGS_WGSProcessor::x_SendMainEntry(void)
 }
 
 
-void CPSGS_WGSProcessor::x_SendExcluded(void)
-{
-    size_t item_id = GetReply()->GetItemId();
-    GetReply()->PrepareBlobExcluded(item_id, GetName(), m_WGSData->m_BlobId, ePSGS_BlobExcluded);
-}
-
-
 void CPSGS_WGSProcessor::x_SendForbidden(void)
 {
     CID2_Blob_Id& id2_blob_id = *m_WGSData->m_Id2BlobId;
@@ -1002,9 +1005,19 @@ void CPSGS_WGSProcessor::x_SendBlob(void)
         x_SendForbidden();
         return;
     }
-    if ( m_WGSData->m_Excluded ) {
-        x_SendExcluded();
+    switch (m_WGSData->m_GetResult) {
+    case SWGSData::eResult_Excluded:
+        GetReply()->PrepareBlobExcluded(m_WGSData->m_BlobId, GetName(), ePSGS_BlobExcluded);
         return;
+    case SWGSData::eResult_InProgress:
+        GetReply()->PrepareBlobExcluded(m_WGSData->m_BlobId, GetName(), ePSGS_BlobInProgress);
+        return;
+    case SWGSData::eResult_Sent:
+        GetReply()->PrepareBlobExcluded(m_WGSData->m_BlobId, GetName(),
+            m_SentMksAgo, m_ResendTimeoutMks - m_SentMksAgo);
+        return;
+    default:
+        break;
     }
     if ( m_WGSData->m_Data->GetMainObject().GetThisTypeInfo() == CID2S_Split_Info::GetTypeInfo() ) {
         // split info
@@ -1013,6 +1026,7 @@ void CPSGS_WGSProcessor::x_SendBlob(void)
     else {
         x_SendMainEntry();
     }
+    x_SetExcludedCacheCompleted();
 }
 
 
@@ -1117,6 +1131,10 @@ bool CPSGS_WGSProcessor::x_SignalStartProcessing()
 void CPSGS_WGSProcessor::x_Finish(EPSGS_Status status)
 {
     _ASSERT(status != ePSGS_InProgress);
+    if (m_AddedToExcludedCache) {
+        // The blob was added to the cache but never completed and needs to be removed.
+        x_RemoveFromExcludedCache();
+    }
     m_Status = status;
     x_UnlockRequest();
     SignalFinishProcessing();
@@ -1162,6 +1180,58 @@ string CPSGS_WGSProcessor::GetPSGId2Info(const CID2_Blob_Id& tse_id,
         s << '.' << blob_version << '.' << split_version;
     }
     return s.str();
+}
+
+
+bool CPSGS_WGSProcessor::x_CheckExcludedCache(void)
+{
+    if (m_ClientId.empty()  ||  m_ResendTimeoutMks == 0 ||
+        !m_WGSData  ||  m_WGSData->m_BlobId.empty()) 
+        return true; // proceed sending data if any
+
+    bool completed;
+    psg_time_point_t completed_time;
+    auto* app = CPubseqGatewayApp::GetInstance();
+    auto  cache_result = app->GetExcludeBlobCache()->AddBlobId(
+        m_ClientId, SExcludeBlobId(m_WGSData->m_BlobId),
+        completed, completed_time);
+    if (cache_result == ePSGS_Added) {
+        m_AddedToExcludedCache = true;
+        return true; // blob-id was not in the cache, ok to send data
+    }
+    // Blob is already in the cache - check the progress and resend timeout.
+    if (!completed) {
+        m_WGSData->m_GetResult = SWGSData::eResult_InProgress;
+        return false;
+    }
+    m_SentMksAgo = GetTimespanToNowMks(completed_time);
+    if (m_SentMksAgo < m_ResendTimeoutMks) {
+        m_WGSData->m_GetResult = SWGSData::eResult_Sent;
+        return false;
+    }
+    return true;
+}
+
+
+void CPSGS_WGSProcessor::x_RemoveFromExcludedCache(void)
+{
+    if (!m_AddedToExcludedCache  ||  m_ClientId.empty()  ||
+        !m_WGSData  ||  m_WGSData->m_BlobId.empty())
+        return;
+    auto* app = CPubseqGatewayApp::GetInstance();
+    app->GetExcludeBlobCache()->Remove(m_ClientId, SExcludeBlobId(m_WGSData->m_BlobId));
+    m_AddedToExcludedCache = false;
+}
+
+
+void CPSGS_WGSProcessor::x_SetExcludedCacheCompleted(void)
+{
+    if (!m_AddedToExcludedCache  ||  m_ClientId.empty()  ||
+        !m_WGSData  ||  m_WGSData->m_BlobId.empty())
+        return;
+    auto* app = CPubseqGatewayApp::GetInstance();
+    app->GetExcludeBlobCache()->SetCompleted(m_ClientId, SExcludeBlobId(m_WGSData->m_BlobId), true);
+    m_AddedToExcludedCache = false;
 }
 
 

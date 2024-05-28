@@ -593,27 +593,28 @@ shared_ptr<SWGSData> CWGSClient::ResolveSeqId(const CSeq_id& seq_id)
     if ( !seq ) return ret;
 
     GetBioseqInfo(ret, seq);
+    _ASSERT(ret);
     return ret;
 }
 
 
-shared_ptr<SWGSData> CWGSClient::GetBlobBySeqId(const CSeq_id& seq_id, const TBlobIds& excluded)
+shared_ptr<SWGSData> CWGSClient::GetSeqInfoBySeqId(const CSeq_id& seq_id,
+    SWGSSeqInfo& seq,
+    const TBlobIds& excluded)
 {
     shared_ptr<SWGSData> ret;
-    SWGSSeqInfo seq = Resolve(seq_id);
+    seq = Resolve(seq_id);
     if (seq  &&  HasMigrated(seq)  &&  !s_KeepMigrated() ) {
         seq = SWGSSeqInfo();
     }
     if ( !seq ) return ret;
 
     GetBioseqInfo(ret, seq);
-
+    _ASSERT(ret);
     if ( find(excluded.begin(), excluded.end(), ret->m_BlobId) != excluded.end() ) {
-        ret->m_Excluded = true;
-        return ret;
+        ret->m_GetResult = SWGSData::eResult_Excluded;
     }
 
-    GetWGSData(ret, seq);
     return ret;
 }
 
@@ -644,6 +645,7 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
     auto id2_blob_state = GetID2BlobState(seq0);
     if ( SWGSData::IsForbidden(id2_blob_state) ) {
         ret = make_shared<SWGSData>();
+        ret->m_GetResult = SWGSData::eResult_Found;
         ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
         ret->m_BlobId = GetPSGBlobId(*ret->m_Id2BlobId);
         ret->m_Id2BlobState = id2_blob_state;
@@ -656,13 +658,14 @@ shared_ptr<SWGSData> CWGSClient::GetChunk(const string& id2info, int64_t chunk_i
         // master descr shouldn't be added to proteins in chunks
         //CWGSSeqIterator::TFlags flags = it.fDefaultFlags & ~it.fMasterDescr;
         ret = make_shared<SWGSData>();
+        ret->m_GetResult = SWGSData::eResult_Found;
         ret->m_Id2BlobId.Reset(&GetBlobId(seq0));
         ret->m_BlobId = GetPSGBlobId(*ret->m_Id2BlobId);
         ret->m_SplitVersion = parsed_id2info.split_version;
         ret->m_Id2BlobState = id2_blob_state;
         ret->m_Data = it.GetChunkDataForVersion(chunk_id, parsed_id2info.split_version);
         if ( !ret->m_Data ) {
-            ret->m_Data = new CAsnBinData(*it.GetChunkDataForVersion(chunk_id, parsed_id2info.split_version));
+            ret->m_Data = new CAsnBinData(*it.GetChunkForVersion(chunk_id, parsed_id2info.split_version));
         }
         ret->m_Compress = GetCompress(m_Config.m_CompressData, seq, *ret->m_Data);
     }
@@ -1664,6 +1667,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
     if ( !seq ) return;
 
     data = make_shared<SWGSData>();
+    data->m_GetResult = SWGSData::eResult_Found;
     data->m_BioseqInfo = make_shared<CBioseqInfoRecord>();
     CBioseqInfoRecord& info = *data->m_BioseqInfo;
 
@@ -1809,6 +1813,7 @@ void CWGSClient::GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0)
 {
     if (!data) {
         data = make_shared<SWGSData>();
+        data->m_GetResult = SWGSData::eResult_Found;
     }
     SWGSSeqInfo& seq = GetRootSeq(seq0);
     

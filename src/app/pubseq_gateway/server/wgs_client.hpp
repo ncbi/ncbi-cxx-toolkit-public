@@ -85,6 +85,14 @@ struct SWGSData
         eLive     = 10
     };
     
+    enum EGetResult {
+        eResult_Found,
+        eResult_NotFound,
+        eResult_Excluded,
+        eResult_InProgress,
+        eResult_Sent
+    };
+
     int GetID2BlobState(void) const { return m_Id2BlobState; }
     int GetPSGBioseqState() const;
     static bool IsForbidden(int id2_blob_state);
@@ -97,7 +105,7 @@ struct SWGSData
     shared_ptr<CBioseqInfoRecord>   m_BioseqInfo;
     CRef<objects::CAsnBinData>      m_Data;
     int                             m_SplitVersion;
-    bool                            m_Excluded = false;
+    EGetResult                      m_GetResult = eResult_NotFound;
     bool                            m_Compress = false;
     psg_time_point_t                m_Start = psg_clock_t::now();
 };
@@ -162,9 +170,15 @@ public:
 
     bool CanProcessRequest(CPSGS_Request& request);
     shared_ptr<SWGSData> ResolveSeqId(const objects::CSeq_id& seq_id);
-    shared_ptr<SWGSData> GetBlobBySeqId(const objects::CSeq_id& seq_id, const TBlobIds& excluded);
     shared_ptr<SWGSData> GetBlobByBlobId(const string& blob_id);
     shared_ptr<SWGSData> GetChunk(const string& id2info, int64_t chunk_id);
+
+    // Resolve seq-id and return seq-info for futher processing.
+    shared_ptr<SWGSData> GetSeqInfoBySeqId(const objects::CSeq_id& seq_id,
+                                           SWGSSeqInfo& seq,
+                                           const TBlobIds& excluded);
+    // Get WGS blob data for an already resolved blob-id and seq-info.
+    void GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0);
 
 public:
     enum EEnabledFlags {
@@ -240,7 +254,6 @@ private:
     void GetSeqIds(SWGSSeqInfo& seq, list<CRef<objects::CSeq_id> >& ids);
 
     void GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq);
-    void GetWGSData(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq0);
 
     bool GetCompress(SWGSProcessor_Config::ECompressData comp,
                      const SWGSSeqInfo& seq,
