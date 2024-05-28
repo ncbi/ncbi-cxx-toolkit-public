@@ -99,7 +99,7 @@ set(NCBI_ThirdParty_GL2PS         ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2
 set(NCBI_ThirdParty_GMOCK         ${NCBI_TOOLS_ROOT}/googletest-1.8.1 CACHE PATH "GMOCK root")
 set(NCBI_ThirdParty_GTEST         ${NCBI_TOOLS_ROOT}/googletest-1.8.1 CACHE PATH "GTEST root")
 set(NCBI_ThirdParty_CASSANDRA     ${NCBI_TOOLS_ROOT}/datastax-cpp-driver-2.15.1 CACHE PATH "CASSANDRA root")
-set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.6 CACHE PATH "H2O root")
+set(NCBI_ThirdParty_H2O           ${NCBI_TOOLS_ROOT}/h2o-2.2.6-ncbi3 CACHE PATH "H2O root")
 if(APPLE)
   set(NCBI_ThirdParty_GMP           ${NCBI_TOOLS_ROOT}/gmp-6.3.0 CACHE PATH "GMP root")
 else()
