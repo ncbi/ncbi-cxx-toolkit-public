@@ -35,13 +35,13 @@
 #include "exclude_blob_cache.hpp"
 
 
-bool CUserExcludeBlobs::IsInCache(int  sat, int  sat_key,
+bool CUserExcludeBlobs::IsInCache(const SExcludeBlobId& blob_id,
                                   bool &  completed,
                                   psg_time_point_t &  completed_time)
 {
     m_LastTouch = psg_clock_t::now();
 
-    auto it = m_ExcludeBlobs.find(SExcludeBlobId(sat, sat_key));
+    auto it = m_ExcludeBlobs.find(blob_id);
     if (it == m_ExcludeBlobs.cend())
         return false;
 
@@ -51,16 +51,16 @@ bool CUserExcludeBlobs::IsInCache(int  sat, int  sat_key,
 }
 
 
-EPSGS_CacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
+EPSGS_CacheAddResult CUserExcludeBlobs::AddBlobId(const SExcludeBlobId& blob_id,
                                                   bool &  completed,
                                                   psg_time_point_t &  completed_time)
 {
     m_LastTouch = psg_clock_t::now();
 
-    const auto  ret = m_ExcludeBlobs.emplace(sat, sat_key);
+    const auto  ret = m_ExcludeBlobs.emplace(blob_id);
     if (ret.second) {
         // There was an insertion of a new item
-        m_LRU.emplace_front(sat, sat_key);
+        m_LRU.emplace_front(blob_id);
         return ePSGS_Added;
     }
 
@@ -70,7 +70,6 @@ EPSGS_CacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
 
     // Note: not really effective; search + destroy + create instead of
     //       search + move to top
-    SExcludeBlobId  blob_id(sat, sat_key);
     auto it = find(m_LRU.begin(), m_LRU.end(), blob_id);
     if (it != m_LRU.begin()) {
         m_LRU.erase(it);
@@ -81,11 +80,11 @@ EPSGS_CacheAddResult CUserExcludeBlobs::AddBlobId(int  sat, int  sat_key,
 }
 
 
-bool  CUserExcludeBlobs::SetCompleted(int  sat, int  sat_key, bool  new_val)
+bool  CUserExcludeBlobs::SetCompleted(const SExcludeBlobId& blob_id, bool  new_val)
 {
     m_LastTouch = psg_clock_t::now();
 
-    auto it = m_ExcludeBlobs.find(SExcludeBlobId(sat, sat_key));
+    auto it = m_ExcludeBlobs.find(blob_id);
     if (it == m_ExcludeBlobs.end())
         return false;
 
@@ -100,18 +99,17 @@ bool  CUserExcludeBlobs::SetCompleted(int  sat, int  sat_key, bool  new_val)
 }
 
 
-bool CUserExcludeBlobs::Remove(int  sat, int  sat_key)
+bool CUserExcludeBlobs::Remove(const SExcludeBlobId& blob_id)
 {
     m_LastTouch = psg_clock_t::now();
 
-    SExcludeBlobId      pattern(sat, sat_key);
-    auto it = m_ExcludeBlobs.find(pattern);
+    auto it = m_ExcludeBlobs.find(blob_id);
     if (it == m_ExcludeBlobs.end())
         return false;   // not found
 
     m_ExcludeBlobs.erase(it);
 
-    auto lru_it = find(m_LRU.begin(), m_LRU.end(), pattern);
+    auto lru_it = find(m_LRU.begin(), m_LRU.end(), blob_id);
     if (lru_it != m_LRU.end())      // paranoid check: if the blob id is found
         m_LRU.erase(lru_it);        // in the set then it must be in LRU
     return true;
@@ -136,7 +134,7 @@ void CUserExcludeBlobs::Clear(void)
 
 
 EPSGS_CacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
-                                                  int  sat, int  sat_key,
+                                                  const SExcludeBlobId& blob_id,
                                                   bool &  completed,
                                                   psg_time_point_t &  completed_time)
 {
@@ -161,14 +159,14 @@ EPSGS_CacheAddResult CExcludeBlobCache::AddBlobId(const string &  user,
     user_blobs->m_Lock.lock();                      // acquire the user data lock
     m_Lock.unlock();                                // release top level lock
 
-    auto ret = user_blobs->AddBlobId(sat, sat_key, completed, completed_time);
+    auto ret = user_blobs->AddBlobId(blob_id, completed, completed_time);
     user_blobs->m_Lock.unlock();                    // release user data lock
     return ret;
 }
 
 
 bool CExcludeBlobCache::IsInCache(const string &  user,
-                                  int  sat, int  sat_key,
+                                  const SExcludeBlobId& blob_id,
                                   bool &  completed,
                                   psg_time_point_t &  completed_time)
 {
@@ -193,14 +191,14 @@ bool CExcludeBlobCache::IsInCache(const string &  user,
     user_blobs->m_Lock.lock();          // acquire the user data lock
     m_Lock.unlock();                    // release top level lock
 
-    auto ret = user_blobs->IsInCache(sat, sat_key, completed, completed_time);
+    auto ret = user_blobs->IsInCache(blob_id, completed, completed_time);
     user_blobs->m_Lock.unlock();        // release user data lock
     return ret;
 }
 
 
 bool CExcludeBlobCache::SetCompleted(const string &  user,
-                                     int  sat, int  sat_key, bool  new_val)
+                                     const SExcludeBlobId& blob_id, bool  new_val)
 {
     if (m_MaxCacheSize == 0)
         return true;
@@ -223,14 +221,14 @@ bool CExcludeBlobCache::SetCompleted(const string &  user,
     user_blobs->m_Lock.lock();          // acquire the user data lock
     m_Lock.unlock();                    // release top level lock
 
-    auto ret = user_blobs->SetCompleted(sat, sat_key, new_val);
+    auto ret = user_blobs->SetCompleted(blob_id, new_val);
     user_blobs->m_Lock.unlock();        // release user data lock
     return ret;
 }
 
 
 bool CExcludeBlobCache::Remove(const string &  user,
-                               int  sat, int  sat_key)
+                               const SExcludeBlobId& blob_id)
 {
     if (m_MaxCacheSize == 0)
         return true;
@@ -253,7 +251,7 @@ bool CExcludeBlobCache::Remove(const string &  user,
     user_blobs->m_Lock.lock();          // acquire the user data lock
     m_Lock.unlock();                    // release top level lock
 
-    auto ret = user_blobs->Remove(sat, sat_key);
+    auto ret = user_blobs->Remove(blob_id);
     user_blobs->m_Lock.unlock();        // release user data lock
     return ret;
 }

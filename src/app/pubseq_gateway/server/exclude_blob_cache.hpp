@@ -40,6 +40,7 @@
 #include <mutex>
 #include <map>
 #include <vector>
+#include <corelib/ncbistr.hpp>
 using namespace std;
 
 #include "pubseq_gateway_types.hpp"
@@ -55,6 +56,7 @@ struct SExcludeBlobId
 {
     int                 m_Sat;
     int                 m_SatKey;
+    optional<string>    m_BlobId;
     bool                m_Completed;
     psg_time_point_t    m_CompletedTime;
 
@@ -62,8 +64,18 @@ struct SExcludeBlobId
         m_Sat(sat), m_SatKey(sat_key), m_Completed(false)
     {}
 
+    SExcludeBlobId(const string& blob_id, int chunk_id = 0) :
+        m_Sat(0), m_SatKey(chunk_id), m_BlobId(blob_id), m_Completed(false)
+    {}
+
     bool operator < (const SExcludeBlobId &  other) const
     {
+        if (m_BlobId) {
+            if (!other.m_BlobId) return true;
+            auto cmp = m_BlobId->compare(*other.m_BlobId);
+            return cmp ? cmp < 0 : m_SatKey < other.m_SatKey;
+        }
+        if (other.m_BlobId) return false;
         if (m_Sat == other.m_Sat)
             return m_SatKey < other.m_SatKey;
         return m_Sat < other.m_Sat;
@@ -71,6 +83,11 @@ struct SExcludeBlobId
 
     bool operator == (const SExcludeBlobId &  other) const
     {
+        if (m_BlobId) {
+            if (!other.m_BlobId) return false;
+            return m_SatKey == other.m_SatKey && *m_BlobId == *other.m_BlobId;
+        }
+        if (other.m_BlobId) return false;
         return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
     }
 };
@@ -90,16 +107,16 @@ class CUserExcludeBlobs
     public:
         // The 'completed' and 'completed_time' values are filled
         // only if the blob is in the cache
-        bool IsInCache(int  sat, int  sat_key,
+        bool IsInCache(const SExcludeBlobId& blob_id,
                        bool &  completed,
                        psg_time_point_t &  completed_time);
-        EPSGS_CacheAddResult AddBlobId(int  sat, int  sat_key,
+        EPSGS_CacheAddResult AddBlobId(const SExcludeBlobId& blob_id,
                                        bool &  completed,
                                        psg_time_point_t &  completed_time);
 
         // Return true if the required blob id was found
-        bool SetCompleted(int  sat, int  sat_key, bool  new_val);
-        bool Remove(int  sat, int  sat_key);
+        bool SetCompleted(const SExcludeBlobId& blob_id, bool  new_val);
+        bool Remove(const SExcludeBlobId& blob_id);
 
         void Purge(size_t  purged_size);
         void Clear(void);
@@ -207,19 +224,19 @@ class CExcludeBlobCache
         // The 'completed' and 'completed_time' values are filled only
         // if the blob is in the cache
         EPSGS_CacheAddResult AddBlobId(const string &  user,
-                                       int  sat, int  sat_key,
+                                       const SExcludeBlobId& blob_id,
                                        bool &  completed,
                                        psg_time_point_t &  completed_time);
         bool IsInCache(const string &  user,
-                       int  sat, int  sat_key,
+                       const SExcludeBlobId& blob_id,
                        bool &  completed,
                        psg_time_point_t &  completed_time);
 
         // Return true if the required blob id was found
         bool SetCompleted(const string &  user,
-                          int  sat, int  sat_key, bool  new_val);
+                          const SExcludeBlobId& blob_id, bool  new_val);
         bool Remove(const string &  user,
-                    int  sat, int  sat_key);
+                    const SExcludeBlobId& blob_id);
 
         void Purge(void);
 

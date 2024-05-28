@@ -51,8 +51,7 @@ void CCassFetch::RemoveFromExcludeBlobCache(void)
     if (m_ExcludeBlobCacheUpdated) {
         auto *  app = CPubseqGatewayApp::GetInstance();
         app->GetExcludeBlobCache()->Remove(m_ClientId,
-                                           m_BlobId.m_Sat,
-                                           m_BlobId.m_SatKey);
+                                           SExcludeBlobId(m_BlobId.m_Sat, m_BlobId.m_SatKey));
         // To prevent any updates
         m_ExcludeBlobCacheUpdated = false;
     }
@@ -70,7 +69,7 @@ EPSGS_CacheAddResult CCassFetch::AddToExcludeBlobCache(bool &  completed,
 
     auto *      app = CPubseqGatewayApp::GetInstance();
     auto        cache_result = app->GetExcludeBlobCache()->AddBlobId(
-                    m_ClientId, m_BlobId.m_Sat, m_BlobId.m_SatKey,
+                    m_ClientId, SExcludeBlobId(m_BlobId.m_Sat, m_BlobId.m_SatKey),
                     completed, completed_time);
     if (cache_result == ePSGS_Added)
         m_ExcludeBlobCacheUpdated = true;
@@ -89,8 +88,8 @@ void CCassFetch::SetExcludeBlobCacheCompleted(void)
     if (m_ExcludeBlobCacheUpdated) {
         auto *  app = CPubseqGatewayApp::GetInstance();
         app->GetExcludeBlobCache()->SetCompleted(m_ClientId,
-                                                 m_BlobId.m_Sat,
-                                                 m_BlobId.m_SatKey, true);
+                                                 SExcludeBlobId(m_BlobId.m_Sat, m_BlobId.m_SatKey),
+                                                 true);
         // To prevent any updates
         m_ExcludeBlobCacheUpdated = false;
     }

@@ -1184,8 +1184,8 @@ CPSGS_CassBlobBase::x_CheckExcludeBlobCache(CCassBlobFetch *  fetch_details,
     // 'false' means not-completed, i.e. in-progress
     app->GetExcludeBlobCache()->SetCompleted(
                                     fetch_details->GetClientId(),
-                                    fetch_details->GetBlobId().m_Sat,
-                                    fetch_details->GetBlobId().m_SatKey,
+                                    SExcludeBlobId(fetch_details->GetBlobId().m_Sat,
+                                        fetch_details->GetBlobId().m_SatKey),
                                     false);
     fetch_details->SetExcludeBlobCacheUpdated(true);
     return ePSGS_ProceedRetrieving;
