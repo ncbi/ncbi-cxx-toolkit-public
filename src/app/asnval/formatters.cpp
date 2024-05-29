@@ -194,7 +194,8 @@ void CXmlFormat::operator()(const CValidErrItem& item)
 
 void CXmlFormat::Finish() 
 {
-    m_Ostr << "</asnvalidate>" << "\n";
+    FlushBuffer(); // Needed to enure that the body of the XML is written before the closing tag
+    m_Ostr << "</asnvalidate>" << endl; // flush output stream
 }
 
 
