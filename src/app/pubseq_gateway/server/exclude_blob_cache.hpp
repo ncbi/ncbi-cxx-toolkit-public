@@ -71,12 +71,12 @@ struct SExcludeBlobId
 
     bool operator < (const SExcludeBlobId &  other) const
     {
-        if (m_BlobId) {
-            if (!other.m_BlobId) return true;
-            auto cmp = m_BlobId->compare(*other.m_BlobId);
+        if (m_BlobId.has_value()) {
+            if (!other.m_BlobId.has_value()) return true;
+            auto cmp = m_BlobId.value().compare(other.m_BlobId.value());
             return cmp ? cmp < 0 : m_SatKey < other.m_SatKey;
         }
-        if (other.m_BlobId) return false;
+        if (other.m_BlobId.has_value()) return false;
         if (m_Sat == other.m_Sat)
             return m_SatKey < other.m_SatKey;
         return m_Sat < other.m_Sat;
@@ -84,11 +84,11 @@ struct SExcludeBlobId
 
     bool operator == (const SExcludeBlobId &  other) const
     {
-        if (m_BlobId) {
-            if (!other.m_BlobId) return false;
-            return m_SatKey == other.m_SatKey && *m_BlobId == *other.m_BlobId;
+        if (m_BlobId.has_value()) {
+            if (!other.m_BlobId.has_value()) return false;
+            return m_SatKey == other.m_SatKey && m_BlobId.value() == other.m_BlobId.value();
         }
-        if (other.m_BlobId) return false;
+        if (other.m_BlobId.has_value()) return false;
         return m_Sat == other.m_Sat && m_SatKey == other.m_SatKey;
     }
 };
