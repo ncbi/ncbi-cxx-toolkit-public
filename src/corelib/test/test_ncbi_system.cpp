@@ -47,6 +47,10 @@
 
 USING_NCBI_SCOPE;
 
+// Marco to use in places that should not be reached.
+// Exit with fake code to distinguish from set-limits related failures.
+#define FATAL_ERROR exit(77)
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -149,14 +153,15 @@ static void Test_MemLimit(void)
     LOG_POST("\nMemory limit test\n");
 
     const size_t kMemLimit = 500*1024;
-    assert( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
+    _VERIFY( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
     
     for (size_t i = 0;  i <= kMemLimit/1024;  i++) {
         s_PrintParameter++;
         int* pi = new int[1024];
         assert(pi);
     }
-    _ASSERT(0);
+    // Should not be reached
+    FATAL_ERROR;
 #endif
 }
 
@@ -172,13 +177,14 @@ static void Test_CpuLimit(void)
 
     // Use our own handler
     // To use default handler, use NULL instead of PrintHandler
-    assert( SetCpuTimeLimit(1, 5, PrintHandler, NULL) );
+    _VERIFY( SetCpuTimeLimit(1, 5, PrintHandler, NULL) );
 
     double a = 0.0;
     while (a <= get_limits(a).max()) {
         a = sin(rand() + a);
     }
-    _ASSERT(0);
+    // Should not be reached
+    FATAL_ERROR;
 }
 
 
@@ -234,7 +240,7 @@ int CTestApplication::Run(void)
         Test_CpuLimit();
     }
     else {
-        _TROUBLE;
+        FATAL_ERROR;
     }
 
     return 0;
