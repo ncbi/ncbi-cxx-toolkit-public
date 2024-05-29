@@ -22771,26 +22771,98 @@ void TestOneStrain(const string& taxname, const string& strain, const string& li
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
+void AddStrainDescriptorNew(CSeq_entry& entry, const string& taxname, const string& strain, const string& lineage, TTaxId taxID)
+{
+    CRef<CSeqdesc> src_desc(new CSeqdesc());
+    // should look up
+    src_desc->SetSource().SetOrg().SetTaxname(taxname);
+    AddOrgmod(src_desc->SetSource().SetOrg(), strain, COrgMod::eSubtype_strain);
+    if (! lineage.empty()) {
+        src_desc->SetSource().SetOrg().SetOrgname().SetLineage(lineage);
+    }
+    if (taxID != ZERO_TAX_ID) {
+        unit_test_util::SetTaxon(src_desc->SetSource(), taxID);
+    }
+    entry.SetDescr().Set().push_back(src_desc);
+}
+
+
+void TestOneStrainNew(const string& taxname, const string& strain, const string& lineage, TTaxId taxID, TTaxId newTaxID, bool expect_err)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CBioseq::TDescr::Tdata& cont = entry->SetSeq().SetDescr().Set();
+    cont.remove_if(
+        [](CSeqdesc* it) { return (it->IsSource()); });
+    AddStrainDescriptorNew(*entry, taxname, strain, lineage, taxID); // expect no report
+    STANDARD_SETUP
 
+    if (lineage.empty()) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingLineage",
+            "No lineage for this BioSource."));
+    }
+    if (taxID == 0) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
+            "BioSource is missing taxon ID"));
+    }
+    if (taxID != 0 && newTaxID != 0 && taxID != newTaxID) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "TaxonomyLookupProblem",
+            "Organism name is '" + taxname + "', taxonomy ID should be '" + NStr::IntToString(newTaxID) + \
+            "' but is '" +  NStr::IntToString(taxID) + "'"));
+    }
+    if (expect_err) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StrainContainsTaxInfo",
+            "Strain '" + strain + "' contains taxonomic name information"));
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
+{
+    bool is_new_strain_validation = false;
+    
+    if (CNcbiApplication::Instance()) {
+        const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
+        string fromEnv = env.Get("NCBI_NEW_STRAIN_VALIDATION");
+        NStr::ToLower(fromEnv);
+        if (fromEnv == "true") {
+            is_new_strain_validation = true;
+        } else if (fromEnv == "false") {
+            is_new_strain_validation = false;
+        }
+    }
+
+    if (is_new_strain_validation) {
+        TestOneStrainNew("Methylocaldum sp.", "gracile", "", TAX_ID_CONST(0), TAX_ID_CONST(0), true);
+        TestOneStrainNew("Methylocaldum sp.", "gracile",
+        "cellular organisms; Bacteria; Pseudomonadota; Gammaproteobacteria; Methylococcales; Methylococcaceae; Methylocaldum",
+        TAX_ID_CONST(73779), TAX_ID_CONST(1969727), true);
+
+        return;
+    }
+
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    
     AddStrainDescriptor(*entry, "Gorilla gorilla", "abc", "xyz", TAX_ID_CONST(9593)); // expect no report
     AddStrainDescriptor(*entry, "Gorilla gorilla", "Aeromonas punctata", "xyz", TAX_ID_CONST(9593)); // expect a report
     AddStrainDescriptor(*entry, "Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", TAX_ID_CONST(9593)); // expect a report
     AddStrainDescriptor(*entry, "Bacillus sp.", "cereus", "xyz", TAX_ID_CONST(1409));
     AddStrainDescriptor(*entry, "Hippopotamus amphibius", "giraffe cow", "xyz", TAX_ID_CONST(9833)); // no error - giraffe looks up but is not in taxname
-
+    
     string error_message;
-
+    
     CTaxValidationAndCleanup tval;
     tval.Init(*entry);
-
+    
     vector<CRef<COrg_ref>> strain_rq = tval.GetStrainLookupRequest();
     BOOST_CHECK_EQUAL(strain_rq.size(), (size_t)9);
-
+    
     CTaxon3 taxon3(CTaxon3::initialize::yes);
-
+    
     size_t chunk_size = 3;
     size_t i = 0;
     while (i < strain_rq.size()) {
@@ -22800,19 +22872,19 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
         BOOST_CHECK_EQUAL(tval.IncrementalStrainMapUpdate(tmp_rq, *tmp_strain_reply), kEmptyStr);
         i += chunk_size;
     }
-
+    
     BOOST_CHECK_EQUAL(tval.IsStrainMapUpdateComplete(), true);
-
+    
     // commented out until TM-725 is resolved
     TestOneStrain("Hippopotamus amphibius", "giraffe cow", "xyz", TAX_ID_CONST(9833), false); // no error - giraffe looks up but is not in taxname
     TestOneStrain("Gorilla gorilla", "abc", "xyz", TAX_ID_CONST(9593), false);
     TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "xyz", TAX_ID_CONST(9593), true);
-
+     
     TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", TAX_ID_CONST(9593), false);
     TestOneStrain("Gorilla gorilla", "Klebsiella_quasipneumoniae", "xyz", ZERO_TAX_ID, true);
-
+    
     TestOneStrain("Bacillus sp.", "cereus", "xyz", TAX_ID_CONST(1409), true);
-
+    
     TestOneStrain("Ralstonia phage phiRSL1", "Aeromonas punctata", "xyz", TAX_ID_CONST(1980924), false);
     TestOneStrain("Gorilla gorilla", "Aeromonas punctata", "viroid", TAX_ID_CONST(9593), false);
     TestOneStrain("Acetobacter sp.", "DsW_063", "Bacteria", TAX_ID_CONST(440), false);
