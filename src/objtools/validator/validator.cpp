@@ -714,20 +714,27 @@ EErrType CValidator::ConvertCode(CSubSource::ELatLonCountryErr errcode)
 {
     EErrType rval = eErr_UNKNOWN;
     switch (errcode) {
-    case CSubSource::eLatLonCountryErr_Country:
-        rval = eErr_SEQ_DESCR_LatLonCountry;
-        break;
-    case CSubSource::eLatLonCountryErr_State:
-        rval = eErr_SEQ_DESCR_LatLonState;
-        break;
-    case CSubSource::eLatLonCountryErr_Water:
-        rval = eErr_SEQ_DESCR_LatLonWater;
-        break;
-    case CSubSource::eLatLonCountryErr_Value:
-        rval = eErr_SEQ_DESCR_LatLonValue;
-        break;
-    default:
-        break;
+        case CSubSource::eLatLonCountryErr_Country:
+            {
+                bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+                if (use_geo_loc_name) {
+                    rval = eErr_SEQ_DESCR_LatLonGeoLocName;
+                } else {
+                    rval = eErr_SEQ_DESCR_LatLonCountry;
+                }
+            }
+            break;
+        case CSubSource::eLatLonCountryErr_State:
+            rval = eErr_SEQ_DESCR_LatLonState;
+            break;
+        case CSubSource::eLatLonCountryErr_Water:
+            rval = eErr_SEQ_DESCR_LatLonWater;
+            break;
+        case CSubSource::eLatLonCountryErr_Value:
+            rval = eErr_SEQ_DESCR_LatLonValue;
+            break;
+        default:
+            break;
     }
     return rval;
 }
