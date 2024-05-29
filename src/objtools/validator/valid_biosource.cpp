@@ -930,7 +930,15 @@ const CSeq_entry *ctx)
         case CSubSource::eSubtype_segment:
             qual = "segment"; break;
         case CSubSource::eSubtype_country:
-            qual = "country"; break;
+            {
+                bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+                if (use_geo_loc_name) {
+                    qual = "geo_loc_name";
+                } else {
+                    qual = "country";
+                }
+            }
+            break;
         case CSubSource::eSubtype_transgenic:
             qual = "transgenic"; break;
         case CSubSource::eSubtype_environmental_sample:
