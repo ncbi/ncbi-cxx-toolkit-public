@@ -77,48 +77,11 @@ typedef void* TLimitsPrintParameter;
 /// @attention
 ///   The exit print handler can be registered only once at first call to
 ///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
-///   directly and passed it as NULL! Be aware. All subsequent attempts to set
+///   directly and passed it as NULL. Be aware. All subsequent attempts to set
 ///   new handler will be ignored, but limits will be changed anyway.
 /// @sa 
 ///   SetCpuTimeLimit, SetMemoryLimit
 typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrintParameter);
-
-
-/// [UNIX only]  Set memory limit.
-///
-/// Set the limit for the size of dynamic memory (heap) allocated
-/// by the process. 
-///
-/// @note 
-///   The implementation of malloc() can be different. Some systems use 
-///   sbrk()-based implementation, other use mmap() system call to allocate
-///   memory, ignoring data segment. In the second case SetHeapLimit() 
-///   don't work at all. Usually don't know about how exactly malloc()
-///   is implemented. We added another function - SetMemoryLimit(), that
-///   supports mmap()-based memory allocation, please use it instead.
-/// @param max_heap_size
-///   The maximal amount of dynamic memory can be allocated by the process.
-///   (including heap)
-///   The 0 value lift off the heap restrictions.
-/// @param handler
-///   Pointer to a print handler used for dump output.
-///   Use default handler if passed as NULL.
-/// @param parameter
-///   Parameter carried into the print handler. Can be passed as NULL.
-/// @return 
-///   Completion status.
-/// @attention
-///   The exit print handler can be registered only once at first call to
-///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
-///   directly and passed it as NULL! Be aware. All subsequent attempts to set
-///   new handler will be ignored, but limits will be changed anyway.
-/// @sa SetMemoryLimit
-/// @deprecated
-NCBI_DEPRECATED
-NCBI_XNCBI_EXPORT
-extern bool SetHeapLimit(size_t max_size, 
-                         TLimitsPrintHandler   handler   = NULL, 
-                         TLimitsPrintParameter parameter = NULL);
 
 
 /// [UNIX only]  Set memory limit.
@@ -156,8 +119,11 @@ extern bool SetHeapLimit(size_t max_size,
 /// @attention
 ///   The exit print handler can be registered only once at first call to
 ///   SetCpuTimeLimit() or SetMemoryLimit(), even if you don't specify handler
-///   directly and passed it as NULL! Be aware. All subsequent attempts to set
+///   directly and passed it as NULL. Be aware. All subsequent attempts to set
 ///   new handler will be ignored, but limits will be changed anyway.
+/// @attention
+///   if you use std::set_new_handler(), it should be called after SetMemoryLimit().
+///   It override any memory related print handler set previously.
 /// @sa
 ///   SetCpuTimeLimit, TLimitsPrintHandler, SetMemoryLimitSoft, SetMemoryLimitHard
 NCBI_XNCBI_EXPORT
@@ -191,7 +157,9 @@ extern bool SetMemoryLimitHard(size_t max_size,
                            TLimitsPrintParameter parameter = NULL);
 
 
-/// [UNIX only]  Get "soft" memory limit of the virtual memory (address space) in bytes for a current process.
+/// [UNIX only]  Get "soft" memory limit of the virtual memory (address space) 
+/// in bytes for a current process.
+///
 /// @return
 ///   Returns "soft" value set by setrlimit(), SetMemoryLimit() or ulimit command
 ///   line utility for virtual memory address space.
@@ -210,7 +178,9 @@ extern bool SetMemoryLimitHard(size_t max_size,
 NCBI_XNCBI_EXPORT
 extern size_t GetVirtualMemoryLimitSoft(void);
 
-/// [UNIX only]  Get "hard" memory limit of the virtual memory (address space) in bytes for a current process.
+/// [UNIX only]  Get "hard" memory limit of the virtual memory (address space)
+/// in bytes for a current process.
+///
 /// @return
 ///   Returns "hard" value set by setrlimit(), SetMemoryLimit() or ulimit command
 ///   line utility for virtual memory address space.
@@ -237,6 +207,8 @@ extern size_t GetVirtualMemoryLimitHard(void);
 /// @param max_cpu_time
 ///   The maximal amount of seconds of CPU time can be consumed by the process.
 ///   The 0 value lifts off the CPU time restrictions if allowed to do so.
+///   For multi-threaded applications this can be a sum of time for all threads
+///   (OS dependent).
 /// @param terminate_delay_time
 ///   The time in seconds that the process will have to terminate itself after
 ///   receiving a signal about exceeding CPU usage limit. After that it can
@@ -270,18 +242,12 @@ extern size_t GetVirtualMemoryLimitHard(void);
 NCBI_XNCBI_EXPORT
 extern bool SetCpuTimeLimit(unsigned int          max_cpu_time,
                             unsigned int          terminate_delay_time,
-                            TLimitsPrintHandler   handler, 
-                            TLimitsPrintParameter parameter);
-
-NCBI_DEPRECATED
-NCBI_XNCBI_EXPORT
-extern bool SetCpuTimeLimit(size_t                max_cpu_time,
                             TLimitsPrintHandler   handler = NULL, 
-                            TLimitsPrintParameter parameter = NULL,
-                            size_t                terminate_delay_time = 5);
+                            TLimitsPrintParameter parameter = NULL);
 
 /// Verify that the CPU, where an application run, is compatible with flags it compiled for.
 /// Right now it checks on SSE 4.2 only.
+///
 /// @param message
 ///   Optional pointer to a string that will receive a description
 ///   of the problem if function returns FALSE.

@@ -112,7 +112,8 @@ BEGIN_NCBI_SCOPE
 #  define set_new_handler std::set_new_handler
 #else
 extern "C" {
-                 static void s_ExitHandler(void);
+                 static void s_DefaultPrintHandler(void);
+                 static void s_HandlerGuard(void);
     [[noreturn]] static void s_SignalHandler(int sig);
 }
 #endif //NCBI_COMPILER_MIPSPRO
@@ -120,16 +121,19 @@ extern "C" {
 
 #ifdef NCBI_OS_UNIX
 
-DEFINE_STATIC_FAST_MUTEX(s_ExitHandler_Mutex);
-static bool                  s_ExitHandlerIsSet  = false;
-static ELimitsExitCode       s_ExitCode          = eLEC_None;
+DEFINE_STATIC_FAST_MUTEX(s_Limits_Handler_Mutex);
+
+std::atomic<bool>            s_IsHandlerSet    { false };
+std::atomic<bool>            s_IsHandlerActive { false };
+std::atomic<ELimitsExitCode> s_Reason { eLEC_None };
+
 static CSafeStatic<CTime>    s_TimeSet;
 static size_t                s_MemoryLimitSoft   = 0;
 static size_t                s_MemoryLimitHard   = 0;
 static size_t                s_CpuTimeLimit      = 0;
-static char*                 s_ReserveMemory     = 0;
-static TLimitsPrintHandler   s_PrintHandler      = 0;
-static TLimitsPrintParameter s_PrintHandlerParam = 0;
+static char*                 s_ReservedMemory    = nullptr;
+static TLimitsPrintHandler   s_PrintHandler      = nullptr;
+static TLimitsPrintParameter s_PrintHandlerParam = nullptr;
 
 
 #if !defined(CLK_TCK)  &&  defined(CLOCKS_PER_SEC)
@@ -137,44 +141,14 @@ static TLimitsPrintParameter s_PrintHandlerParam = 0;
 #endif
 
 
-// Routine to be called at the exit from application
-// It is not async-safe, so using it with SetCpuLimits() can lead to coredump
-// and program crash. Be aware.
-//
-static void s_ExitHandler(void)
+// Default routine to be called on CPU/memory limits to print information.
+// It can be overridem via parameters for SetCpuTimeLimit() / SetCpuMemoryLimit*().
+// It is not async-safe, so using it with SetCpuLimits() can lead to 
+// possible coredump and program crash. Be aware.
+
+static void s_DefaultPrintHandler(void)
 {
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
-
-    // Free reserved memory
-    if ( s_ReserveMemory ) {
-        delete[] s_ReserveMemory;
-        s_ReserveMemory = 0;
-    }
-
-    // User defined dump
-    if ( s_PrintHandler ) {
-        size_t limit_size; 
-
-        switch ( s_ExitCode ) {
-        case eLEC_Memory: {
-            limit_size = s_MemoryLimitSoft;
-            break;
-        }
-        case eLEC_Cpu: {
-            limit_size = s_CpuTimeLimit;
-            break;
-        }
-        default:
-            return;
-        }
-        // Call user's print handler
-        (*s_PrintHandler)(s_ExitCode, limit_size, s_TimeSet.Get(), 
-                          s_PrintHandlerParam);
-        return;
-    }
-
-    // Standard dump
-    switch ( s_ExitCode ) {
+    switch ( s_Reason ) {
         
     case eLEC_Memory:
         {
@@ -192,67 +166,88 @@ static void s_ExitHandler(void)
                 break;
             }
             clock_t tick = sysconf(_SC_CLK_TCK);
-#if defined(CLK_TCK)
-            if (!tick  ||  tick == (clock_t)(-1))
-                tick = CLK_TCK;
-#elif defined(CLOCKS_PER_SEC)
-            if (!tick  ||  tick == (clock_t)(-1))
-                tick = CLOCKS_PER_SEC;
-#endif
+            #if defined(CLK_TCK)
+                if (!tick  ||  tick == (clock_t)(-1))
+                    tick = CLK_TCK;
+            #elif defined(CLOCKS_PER_SEC)
+                if (!tick  ||  tick == (clock_t)(-1))
+                    tick = CLOCKS_PER_SEC;
+            #endif
             if (tick == (clock_t)(-1))
                 tick = 0;
             ERR_POST_X(4, Note << "\tuser CPU time   : " << 
-                          buffer.tms_utime/(tick ? tick : 1) <<
-                          (tick ? " sec" : " tick"));
+                          buffer.tms_utime/(tick ? tick : 1) << (tick ? " sec" : " tick"));
             ERR_POST_X(5, Note << "\tsystem CPU time : " << 
-                          buffer.tms_stime/(tick ? tick : 1) <<
-                          (tick ? " sec" : " tick"));
+                          buffer.tms_stime/(tick ? tick : 1) <<  (tick ? " sec" : " tick"));
             ERR_POST_X(6, Note << "\ttotal CPU time  : " <<
-                          (buffer.tms_stime + buffer.tms_utime)/(tick ? tick : 1) <<
-                          (tick ? " sec" : " tick"));
+                          (buffer.tms_stime + buffer.tms_utime)/(tick ? tick : 1) << (tick ? " sec" : " tick"));
             break;
         }
 
     default:
         return;
     }
-    
-    // Write program's time
-    CTime ct(CTime::eCurrent);
-    CTime et(2000, 1, 1);
-    et.AddSecond((int) (ct.GetTimeT() - s_TimeSet->GetTimeT()));
-    ERR_POST_X(7, Note << "Program's time: " << Endm <<
-                  "\tstart limit - " << s_TimeSet->AsString() << Endm <<
-                  "\ttermination - " << ct.AsString() << Endm);
-    et.SetFormat("h:m:s");
-    ERR_POST_X(8, Note << "\texecution   - " << et.AsString());
 }
 
 
-// Set routine to be called at the exit from application
-//
-static bool s_SetExitHandler(TLimitsPrintHandler handler, 
-                             TLimitsPrintParameter parameter)
+// Default routine to be called on CPU/memory limits.
+// It allow to call it only once and call registered/default print handler.
 
+static void s_HandlerGuard(void)
+{
+    if ( s_IsHandlerActive.exchange(true) ) {
+        // Allow to call handler only once
+        return;
+    }
+    // Free previously reserved memory
+    if ( s_ReservedMemory ) {
+        delete[] s_ReservedMemory;
+        s_ReservedMemory = nullptr;
+    }
+
+    // User defined dump
+
+    if ( s_PrintHandler ) {
+        size_t limit_size; 
+
+        switch ( s_Reason ) {
+            case eLEC_Memory:
+                limit_size = s_MemoryLimitSoft;
+                break;
+            case eLEC_Cpu:
+                limit_size = s_CpuTimeLimit;
+                break;
+            default:
+                return;
+        }
+        // Call user's print handler
+        (*s_PrintHandler)(s_Reason, limit_size, s_TimeSet.Get(), s_PrintHandlerParam);
+        return;
+    }
+
+    // Standard dump (not async safe)
+    s_DefaultPrintHandler();
+}
+
+
+// Set routine to be called on a reaching memory/cpu limits 
+//
+static void s_SetPrintHandler(TLimitsPrintHandler handler, 
+                              TLimitsPrintParameter parameter)
 {
     // Set exit routine if it not set yet
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
-    if ( !s_ExitHandlerIsSet ) {
-        if (atexit(s_ExitHandler) != 0) {
-            return false;
-        }
-        s_ExitHandlerIsSet = true;
-        s_TimeSet->SetCurrent();
-        
+    if ( !s_IsHandlerSet ) {
         // Store new print handler and its parameter
         s_PrintHandler = handler;
         s_PrintHandlerParam = parameter;
         
         // Reserve some memory (10Kb) to allow the diagnostic API
-        // print messages on exit if memory limit is set.
-        s_ReserveMemory = new char[10*1024];
+        // print messages on terminating if memory limit is set.
+        s_ReservedMemory = new char[10*1024];
+
+        s_TimeSet->SetCurrent();
+        s_IsHandlerSet = true;
     }
-    return true;
 }
     
 #endif //NCBI_OS_UNIX
@@ -269,11 +264,11 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
 // Handler for operator new
 [[noreturn]] static void s_NewHandler(void)
 {
-    s_ExitCode = eLEC_Memory;
     // _exit() does not go over atexit() chain, so just call registered
     // handler directly.
-    if (s_ExitHandlerIsSet) {
-        s_ExitHandler();
+    if (s_IsHandlerSet) {
+        s_Reason = eLEC_Memory;
+        s_HandlerGuard();
     }
     _exit(-1);
 }
@@ -286,17 +281,15 @@ bool SetMemoryLimit(size_t max_size,
     if (s_MemoryLimitSoft == max_size) {
         return true;
     }
-    if (!s_SetExitHandler(handler, parameter)) {
-        return false;
-    }
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
-    
+    CFastMutexGuard LOCK(s_Limits_Handler_Mutex);
+    s_SetPrintHandler(handler, parameter);
+
     rlimit rl;
     if ( max_size ) {
-        set_new_handler(s_NewHandler);
+        std::set_new_handler(s_NewHandler);
         rl.rlim_cur = rl.rlim_max = max_size;
     } else {
-        set_new_handler(0);
+        std::set_new_handler(nullptr);
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
     if (setrlimit(RLIMIT_DATA, &rl) != 0) {
@@ -313,11 +306,11 @@ bool SetMemoryLimit(size_t max_size,
     s_MemoryLimitSoft = max_size;
     s_MemoryLimitHard = max_size;
     if ( max_size ) {
-        set_new_handler(s_NewHandler);
+        std::set_new_handler(s_NewHandler);
     } else {
-        set_new_handler(0);
+        std::set_new_handler(nullptr);
     }
-    return true;
+     return true;
 }
 
 
@@ -328,10 +321,8 @@ bool SetMemoryLimitSoft(size_t max_size,
     if (s_MemoryLimitSoft == max_size) {
         return true;
     }
-    if (!s_SetExitHandler(handler, parameter)) {
-        return false;
-    }
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+    CFastMutexGuard LOCK(s_Limits_Handler_Mutex);
+    s_SetPrintHandler(handler, parameter);
 
     rlimit rl;
     if (getrlimit(RLIMIT_DATA, &rl) != 0) {
@@ -362,9 +353,9 @@ bool SetMemoryLimitSoft(size_t max_size,
 
     s_MemoryLimitSoft = max_size;
     if ( max_size ) {
-        set_new_handler(s_NewHandler);
+        std::set_new_handler(s_NewHandler);
     } else {
-        set_new_handler(0);
+        std::set_new_handler(nullptr);
     }
     return true;
 }
@@ -377,10 +368,8 @@ bool SetMemoryLimitHard(size_t max_size,
     if (s_MemoryLimitHard == max_size) {
         return true;
     }
-    if (!s_SetExitHandler(handler, parameter)) {
-        return false;
-    }
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+    CFastMutexGuard LOCK(s_Limits_Handler_Mutex);
+    s_SetPrintHandler(handler, parameter);
 
     size_t cur_soft_limit = 0;
     rlimit rl;
@@ -429,42 +418,9 @@ bool SetMemoryLimitHard(size_t max_size,
     s_MemoryLimitSoft = cur_soft_limit;
     s_MemoryLimitHard = max_size;
     if ( max_size ) {
-        set_new_handler(s_NewHandler);
+        std::set_new_handler(s_NewHandler);
     } else {
-        set_new_handler(0);
-    }
-    return true;
-}
-
-
-// @deprecated
-bool SetHeapLimit(size_t max_size,
-                  TLimitsPrintHandler handler, 
-                  TLimitsPrintParameter parameter)
-{
-    if (s_MemoryLimitSoft == max_size) { 
-        return true;
-    }
-    if (!s_SetExitHandler(handler, parameter)) {
-        return false;
-    }
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
-    
-    rlimit rl;
-    if ( max_size ) {
-        rl.rlim_cur = rl.rlim_max = max_size;
-    } else {
-        rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
-    }
-    if (setrlimit(RLIMIT_DATA, &rl) != 0) {
-        CNcbiError::SetFromErrno();
-        return false;
-    }
-    s_MemoryLimitSoft = max_size;
-    if ( max_size ) {
-        set_new_handler(s_NewHandler);
-    } else {
-        set_new_handler(0);
+        std::set_new_handler(nullptr);
     }
     return true;
 }
@@ -534,14 +490,6 @@ bool SetMemoryLimitHard(size_t max_size,
     return false;
 }
 
-bool SetHeapLimit(size_t max_size, 
-                  TLimitsPrintHandler handler, 
-                  TLimitsPrintParameter parameter)
-{
-    CNcbiError::Set(CNcbiError::eNotSupported);
-    return false;
-}
-
 size_t GetVirtualMemoryLimitSoft(void)
 {
     CNcbiError::Set(CNcbiError::eNotSupported);
@@ -569,11 +517,11 @@ size_t GetVirtualMemoryLimitHard(void)
 {
     _ASSERT(sig == SIGXCPU);
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
-    s_ExitCode = eLEC_Cpu;
     // _exit() does not go over atexit() chain, so just call registered
-    // handler directly. Be aware that it should be async-safe!
-    if (s_ExitHandlerIsSet) {
-        s_ExitHandler();
+    // handler directly via handler guard. Be aware that it should be async-safe!
+    if (s_IsHandlerSet) {
+        s_Reason = eLEC_Cpu;
+        s_HandlerGuard();
     }
     _exit(-1);
 }
@@ -586,10 +534,8 @@ bool SetCpuTimeLimit(unsigned int          max_cpu_time,
     if (s_CpuTimeLimit == max_cpu_time) {
         return true;
     }
-    if (!s_SetExitHandler(handler, parameter)) {
-        return false;
-    }
-    CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+    CFastMutexGuard LOCK(s_Limits_Handler_Mutex);
+    s_SetPrintHandler(handler, parameter);
 
     rlimit rl;
     if ( max_cpu_time ) {
@@ -607,7 +553,6 @@ bool SetCpuTimeLimit(unsigned int          max_cpu_time,
     if (signal(SIGXCPU, s_SignalHandler) == SIG_ERR) {
         return false;
     }
-
     return true;
 }
 
@@ -623,17 +568,6 @@ bool SetCpuTimeLimit(unsigned int          max_cpu_time,
 
 #endif //USE_SETCPULIMIT
 
-
-// @deprecated
-bool SetCpuTimeLimit(size_t                max_cpu_time,
-                     TLimitsPrintHandler   handler, 
-                     TLimitsPrintParameter parameter,
-                     size_t                terminate_delay_time)
-{
-    return SetCpuTimeLimit((unsigned int)max_cpu_time,
-                           (unsigned int)terminate_delay_time,
-                           handler, parameter);
-}
 
 
 
@@ -1728,7 +1662,6 @@ void CCpuFeatures::Print(void)
     }
     cout << endl;
 }
-
 
 
 END_NCBI_SCOPE
