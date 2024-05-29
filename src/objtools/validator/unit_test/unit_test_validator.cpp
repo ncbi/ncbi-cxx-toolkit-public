@@ -22842,6 +22842,14 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
         "cellular organisms; Bacteria; Pseudomonadota; Gammaproteobacteria; Methylococcales; Methylococcaceae; Methylocaldum",
         TAX_ID_CONST(73779), TAX_ID_CONST(1969727), true);
 
+        TestOneStrainNew("Salmonella enterica subsp. enterica serovar Infantis", "salmonella", "", TAX_ID_CONST(0), TAX_ID_CONST(0), false);
+        TestOneStrainNew("Homo sapiens", "human", "", TAX_ID_CONST(0), TAX_ID_CONST(0), true);
+        TestOneStrainNew("Homo sapiens", "man", "", TAX_ID_CONST(0), TAX_ID_CONST(0), true);
+        TestOneStrainNew("Escherichia coli O157", "theta2-26 B59-H1", "", TAX_ID_CONST(0), TAX_ID_CONST(0), false);
+        TestOneStrainNew("bacterium", "Aeromonas punctata", "", TAX_ID_CONST(0), TAX_ID_CONST(0), false);
+        TestOneStrainNew("bacterium", "Klebsiella quasipneumoniae", "", TAX_ID_CONST(0), TAX_ID_CONST(0), false);
+        TestOneStrainNew("Bacillus sp.", "cereus", "", TAX_ID_CONST(0), TAX_ID_CONST(0), true);
+
         return;
     }
 
