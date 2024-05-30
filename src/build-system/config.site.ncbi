@@ -315,7 +315,7 @@ esac
 : ${NGHTTP2_PATH=$NCBI/nghttp2-1.40.0}
 
 net_ngs_base=/net/snowman/vol/projects/trace_software/ngs/ngs-versions
-: ${NGS_PATH=$net_ngs_base/3.1.0}
+: ${NGS_PATH=$net_ngs_base/3.1.1}
 
 : ${NLOHMANN_JSON_PATH=$NCBI/nlohmann-json-3.9.1}
 
@@ -376,7 +376,7 @@ case "$ncbi_platform" in
             # with_vdb=$local_vdb_base/cxx_toolkit/3
             with_vdb=$net_vdb_base/cxx_toolkit/3-rc
         else
-            : ${VDB_PATH=$local_vdb_base/3.1.0}
+            : ${VDB_PATH=$local_vdb_base/3.1.1}
         fi
         : ${with_downloaded_vdb=no}
         ;;
@@ -384,7 +384,7 @@ case "$ncbi_platform" in
         if [ "x$with_vdb" = 'xrc' ]; then
             with_vdb=$net_vdb_base/cxx_toolkit/3-rc
         else
-            : ${VDB_PATH=$net_vdb_base/3.1.0}
+            : ${VDB_PATH=$net_vdb_base/3.1.1}
         fi
         : ${with_downloaded_vdb=no}
         ;;
