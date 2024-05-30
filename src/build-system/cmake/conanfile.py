@@ -53,7 +53,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._optional_requires("ncbicrypt/20230516")
         if self.settings.os == "Linux":
             self._optional_requires("ncbi-fastcgi/2.4.2")
-        self._optional_requires("ncbi-vdb/[>=3.0.1 <=3.1.0]")
+        self._optional_requires("ncbi-vdb/[>=3.0.1 <=3.1.1]")
 
     def configure(self):
         self.options["abseil/*"].shared = False
