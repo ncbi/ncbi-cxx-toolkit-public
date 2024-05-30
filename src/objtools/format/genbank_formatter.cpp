@@ -1988,7 +1988,7 @@ void CGenbankFormatter::FormatSequence
         // normal case: print entire sequence, including all the N's in any gap.
         try {
             s_FormatRegularSequencePiece( seq, text_os, iter, total, base_count );
-        } catch (CSeqVectorException& e) {
+        } catch (CSeqVectorException&) {
         }
     } else {
         // special case: instead of showing the N's in a gap right away, we have the
@@ -2029,7 +2029,7 @@ void CGenbankFormatter::FormatSequence
                 TSeqPos fake_total = distance_until_next_significant_gap;
                 try {
                     s_FormatRegularSequencePiece( seq, text_os, iter, fake_total, base_count);
-                } catch (CSeqVectorException& e) {
+                } catch (CSeqVectorException&) {
                 }
                 const TSeqPos amount_to_subtract_from_total =
                     ( distance_until_next_significant_gap - fake_total );
