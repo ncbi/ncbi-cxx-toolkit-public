@@ -388,7 +388,7 @@ protected:
 
         query += "db=" + NStr::URLEncode(db);
         query += "&retmax=200&version=2.0&id=";
-        for (int i = 0; i < uids.size(); i++) {
+        for (size_t i = 0; i < uids.size(); i++) {
             if (i > 0) {
                 query += ",";
             }
@@ -428,7 +428,7 @@ public:
     bool DoJournalSearch (string journal, vector<int>& uids)
 
     {
-        for (int i = 0; i < journal.size(); i++) {
+        for (size_t i = 0; i < journal.size(); i++) {
             journal [i] = _ToKey [(int) (unsigned char) journal [i]];
         }
 

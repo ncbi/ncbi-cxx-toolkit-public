@@ -1708,7 +1708,7 @@ void CDeflineGenerator::x_SetTitleFromNM (
 )
 
 {
-    unsigned int         genes = 0, cdregions = 0, prots = 0;
+    unsigned int         genes = 0, cdregions = 0;
     CConstRef<CSeq_feat> gene(0);
     CConstRef<CSeq_feat> cdregion(0);
 
@@ -1720,7 +1720,6 @@ void CDeflineGenerator::x_SetTitleFromNM (
     SAnnotSelector sel;
     sel.SetFeatType(CSeqFeatData::e_Gene);
     sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
-    sel.IncludeFeatType(CSeqFeatData::e_Prot);
     sel.SetResolveTSE();
 
     FOR_SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE (feat_it, bsh, sel) {
@@ -1733,9 +1732,6 @@ void CDeflineGenerator::x_SetTitleFromNM (
             case CSeqFeatData::e_Cdregion:
                 ++cdregions;
                 cdregion.Reset(&sft);
-                break;
-            case CSeqFeatData::e_Prot:
-                ++prots;
                 break;
             default:
                 break;
