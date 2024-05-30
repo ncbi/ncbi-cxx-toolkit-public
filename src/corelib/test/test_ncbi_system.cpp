@@ -159,12 +159,20 @@ static void Test_MemLimit(void)
     _VERIFY( !SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
 #else
     _VERIFY( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
+
+    // Use vector for allocated memory chunks instead of re-assignment
+    // to the same variable, to avoid never compilers optimization, 
+    // where it can show that memory is allocated, but it will be 
+    // immediately deallocated.
+    vector<char*> mem;
+    
     for (size_t i = 0;  i <= kMemLimit/1024;  i++) {
         s_PrintParameter++;
-        int* pi = new int[1024];
-        if (!pi) {
+        char* p = new char[1024];
+        if (!p) {
             FATAL_ERROR_ALLOC;
         }
+        mem.push_back(p);
     }
     // Should not be reached
     FATAL_ERROR_LIMIT;
