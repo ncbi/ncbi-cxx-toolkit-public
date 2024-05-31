@@ -52,6 +52,7 @@ USING_NCBI_SCOPE;
 #define FATAL_ERROR_ARG    exit(71)
 #define FATAL_ERROR_LIMIT  exit(72)
 #define FATAL_ERROR_ALLOC  exit(73)
+#define NOT_SUPPORTED      exit(88)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -151,15 +152,19 @@ static void Test_MemLimit(void)
 {
 #ifdef NCBI_USE_TSAN
     LOG_POST("\nSkipping memory limit test under ThreadSanitizer\n");
+    NOT_SUPPORTED;
 #else
     LOG_POST("\nMemory limit test\n");
 
     const size_t kMemLimit = 500*1024;
-#if defined(NCBI_OS_MSWIN)
-    _VERIFY( !SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
-#else
-    _VERIFY( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
-
+    bool res = SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter);
+    if (!res) {
+        if (CNcbiError::GetLast() == CNcbiError::eNotSupported  ||
+            CNcbiError::GetLast() == CNcbiError::eInvalidArgument ) 
+        {
+            NOT_SUPPORTED;
+        }
+    }
     // Use vector for allocated memory chunks instead of re-assignment
     // to the same variable, to avoid never compilers optimization, 
     // where it can show that memory is allocated, but it will be 
@@ -177,8 +182,6 @@ static void Test_MemLimit(void)
     // Should not be reached
     FATAL_ERROR_LIMIT;
 #endif
-    
-#endif
 }
 
 
@@ -193,17 +196,20 @@ static void Test_CpuLimit(void)
 
     // Use our own handler
     // To use default handler, use NULL instead of PrintHandler
-#if defined(NCBI_OS_MSWIN)
-    _VERIFY( !SetCpuTimeLimit(1, 5, PrintHandler, NULL) );
-#else
-    _VERIFY( SetCpuTimeLimit(1, 5, PrintHandler, NULL) );
+    bool res = SetCpuTimeLimit(1, 5, PrintHandler, NULL);
+    if (!res) {
+        if (CNcbiError::GetLast() == CNcbiError::eNotSupported  ||
+            CNcbiError::GetLast() == CNcbiError::eInvalidArgument ) 
+        {
+            NOT_SUPPORTED;
+        }
+    }
     double a = 0.0;
     while (a <= get_limits(a).max()) {
         a = sin(rand() + a);
     }
     // Should not be reached
     FATAL_ERROR_LIMIT;
-#endif
 }
 
 
