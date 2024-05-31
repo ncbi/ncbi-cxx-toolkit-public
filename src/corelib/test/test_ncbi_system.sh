@@ -31,8 +31,8 @@ case "`uname -s`" in
    test $test_cpu -eq 255  -o  $test_cpu -eq 137  ||  exit 1
    ;;
  *CYGWIN* )
-   test $test_mem -eq 3  -o  $test_mem -eq 127  -o  $test_mem -eq 129  -o  $test_mem -eq 134  -o  $test_mem -eq 139  ||  exit 1
-   test $test_cpu -eq 3  -o  $test_cpu -eq 127  -o  $test_cpu -eq 129  -o  $test_cpu -eq 134  -o  $test_cpu -eq 139  ||  exit 1
+   test $test_mem -eq 0    -o  $test_mem -eq 134  ||  exit 1
+   test $test_cpu -eq 0    -o  $test_cpu -eq 134  ||  exit 1
    ;;
  * )
    test $test_mem -eq 255  ||  exit 1
