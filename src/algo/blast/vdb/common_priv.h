@@ -91,6 +91,9 @@
 #include <algo/blast/core/blast_util.h>
 #include <corelib/ncbi_limits.h>
 
+// System include, explicitly needed on FreeBSD as of VDB 3.1.1.
+#include <time.h>
+
 // VDB includes
 #include <ncbi/vdb-blast.h>
 #include <ncbi/vdb-blast-priv.h>
