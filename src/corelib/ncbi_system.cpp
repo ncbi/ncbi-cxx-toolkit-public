@@ -563,6 +563,7 @@ bool SetCpuTimeLimit(unsigned int          max_cpu_time,
                      TLimitsPrintHandler   handler, 
                      TLimitsPrintParameter parameter)
 {
+    CNcbiError::Set(CNcbiError::eNotSupported);
     return false;
 }
 
