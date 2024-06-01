@@ -1008,7 +1008,8 @@ void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
 
 string CRemoteAppLauncher::GetAppVersion(const string& v) const
 {
-    CTimedProcessWatcher::SParams params("Version", CTimeout(1.0), m_Reaper->GetScheduler());
+    CTimeout run_timeout(1.0);
+    CTimedProcessWatcher::SParams params("Version", run_timeout, m_Reaper->GetScheduler());
     return m_Version->Get(params, v);
 }
 
