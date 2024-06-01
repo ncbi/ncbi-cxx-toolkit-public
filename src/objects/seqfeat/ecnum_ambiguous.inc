@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Apr  3 12:30:09 EDT 2024; formally
+/* time_t value corresponding to Sat Jun  1 12:48:23 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_ambiguous_Timestamp = 1712161809UL;
+static const unsigned long kECNum_ambiguous_Timestamp = 1717260503UL;
 static const char* const kECNum_ambiguous[] = {
     "1.-.-.-\tOxidoreductases",
     "1.n.n.n\tOxidoreductases",
