@@ -150,18 +150,18 @@ typedef struct TNcbiLog_MTLock_tag*  TNcbiLog_MTLock;
 /** The action passed to user defined MT lock handler.
  */
 typedef enum {
-    eNcbiLog_MT_Init,          /**< Init the locker (call first)    */
-    eNcbiLog_MT_Lock,          /**< Lock                            */
-    eNcbiLog_MT_Unlock,        /**< Unlock                          */
-    eNcbiLog_MT_Destroy        /**< Unlock and cleanup (call last)  */
+    eNcbiLog_MT_Init    = 0,   /**< Init the locker (call first)    */
+    eNcbiLog_MT_Lock    = 1,   /**< Lock                            */
+    eNcbiLog_MT_Unlock  = 2,   /**< Unlock                          */
+    eNcbiLog_MT_Destroy = 3    /**< Unlock and cleanup (call last)  */
 } ENcbiLog_MTLock_Action;
 
 
 /** Type of ownership for MT lock handle.
  */
 typedef enum {
-    eNcbiLog_MT_NoOwnership,   /**< No ownership relationship */
-    eNcbiLog_MT_TakeOwnership  /**< NcbiLog API takes ownership of MT lock */
+    eNcbiLog_MT_NoOwnership   = 0,  /**< No ownership relationship */
+    eNcbiLog_MT_TakeOwnership = 1   /**< NcbiLog API takes ownership of MT lock */
 } ENcbiLog_MTLock_Ownership;
 
 
@@ -244,27 +244,26 @@ extern int/*bool*/ NcbiLog_Default_MTLock_Handler
  *  @sa NcbiLog_SetDestination
  */
 typedef enum {
-    eNcbiLog_Default,         /**< Try /log/<*>/<appname>.log; fallback
-                                   to STDERR */
-    eNcbiLog_Stdlog,          /**< Try /log/<*>/<appname>.log;  fallback
-                                   to ./<appname>.log, then to STDERR */
-    eNcbiLog_Cwd,             /**< Try ./<appname>.log, fallback to STDERR */
-    eNcbiLog_File,            /**< To specific file, see NcbiLog_SetDestinationFile() */
-    eNcbiLog_Stdout,          /**< To standard output stream */
-    eNcbiLog_Stderr,          /**< To standard error stream  */
-    eNcbiLog_Disable          /**< Don't write it anywhere   */
+    eNcbiLog_Default = 0,   /**< Try /log/<*>/<appname>.log; fallback to STDERR */
+    eNcbiLog_Stdlog  = 1,   /**< Try /log/<*>/<appname>.log;  fallback
+                                 to ./<appname>.log, then to STDERR */
+    eNcbiLog_Cwd     = 2,   /**< Try ./<appname>.log, fallback to STDERR */
+    eNcbiLog_File    = 3,   /**< To specific file, see NcbiLog_SetDestinationFile() */
+    eNcbiLog_Stdout  = 4,   /**< To standard output stream */
+    eNcbiLog_Stderr  = 5,   /**< To standard error stream  */
+    eNcbiLog_Disable = 6    /**< Don't write it anywhere   */
 } ENcbiLog_Destination;
 
 
 /** Severity level for the posted diagnostics
  */
 typedef enum {
-    eNcbiLog_Trace = 0,       /**< Trace message          */
-    eNcbiLog_Info,            /**< Informational message  */
-    eNcbiLog_Warning,         /**< Warning message        */
-    eNcbiLog_Error,           /**< Error message          */
-    eNcbiLog_Critical,        /**< Critical error message */
-    eNcbiLog_Fatal            /**< Fatal error -- guarantees exit (or abort) */
+    eNcbiLog_Trace    = 0,  /**< Trace message          */
+    eNcbiLog_Info     = 1,  /**< Informational message  */
+    eNcbiLog_Warning  = 2,  /**< Warning message        */
+    eNcbiLog_Error    = 3,  /**< Error message          */
+    eNcbiLog_Critical = 4,  /**< Critical error message */
+    eNcbiLog_Fatal    = 5   /**< Fatal error -- guarantees exit (or abort) */
 } ENcbiLog_Severity;
 
 
@@ -993,13 +992,13 @@ extern void NcbiLog_Context_Destroy(TNcbiLog_Context ctx);
  *  @sa NcbiLog_GetState
  */
 typedef enum {
-    eNcbiLog_NotSet = 0,     /**< Reserved value, never used in messages */
-    eNcbiLog_AppBegin,       /**< PB  */
-    eNcbiLog_AppRun,         /**< P   */
-    eNcbiLog_AppEnd,         /**< PE  */
-    eNcbiLog_RequestBegin,   /**< RB  */
-    eNcbiLog_Request,        /**< R   */
-    eNcbiLog_RequestEnd      /**< RE  */
+    eNcbiLog_NotSet       = 0,   /**< Reserved value, never used in messages */
+    eNcbiLog_AppBegin     = 1,   /**< PB  */
+    eNcbiLog_AppRun       = 2,   /**< P   */
+    eNcbiLog_AppEnd       = 3,   /**< PE  */
+    eNcbiLog_RequestBegin = 4,   /**< RB  */
+    eNcbiLog_Request      = 5,   /**< R   */
+    eNcbiLog_RequestEnd   = 6    /**< RE  */
 } ENcbiLog_AppState;
 
 
