@@ -330,13 +330,19 @@ function(NCBI_internal_install_root _variable _access)
     if (NOT "$ENV{NCBIPTB_INSTALL_BARE}")
         get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
         list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
+        list(APPEND _all_subdirs misc/jsonwrapp)
+        list(APPEND _all_subdirs internal/util/solr)
         foreach(_dir IN LISTS _all_subdirs)
             if (EXISTS ${NCBI_INC_ROOT}/${_dir})
+                get_filename_component(_path ${_dir} DIRECTORY)
+                if(NOT "${_path}" STREQUAL "")
+                    set(_path "/${_path}")
+                endif()
                 if(NCBI_PTBCFG_PACKAGING)
-                    install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                    install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}${_path}
                         REGEX "/[.]svn$" EXCLUDE)
                 else()
-                    install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                    install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}${_path}
                         REGEX "/[.].*$" EXCLUDE)
                 endif()
             endif()
