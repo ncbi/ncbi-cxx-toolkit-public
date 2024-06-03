@@ -70,3 +70,7 @@ done
 
 cd $UNIVERSAL_PATH
 tar czf ${RELEASE_TAG}-universal-macosx.tar.gz $RELEASE_TAG 
+
+rm -rf $RELEASE_TAG
+rm $arm_package 
+
