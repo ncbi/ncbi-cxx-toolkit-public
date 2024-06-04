@@ -70,15 +70,6 @@ public:
     CFormatGuess::EFormat           m_format = CFormatGuess::eUnknown;
     TTypeInfo                       m_content = nullptr;
 
-    class CMemoryStreamBuf: public std::streambuf
-    {
-    public:
-        CMemoryStreamBuf(const char* ptr, size_t size)
-        {
-            setg((char*)ptr, (char*)ptr, (char*)ptr+size);
-        }
-    };
-
     void Reset();
     void Open(const std::string& filename, const set<TTypeInfo>* supported_types);
     bool IsOpen() const { return m_filesize != 0; }
@@ -88,7 +79,7 @@ public:
 
 private:
     bool x_TryOpenStreamFile(const string& filename, std::streampos filesize);
-    bool x_TryOpenMemoryFile(const string& filename, std::streampos filesize);
+    bool x_TryOpenMemoryFile(const string& filename);
 };
 
 class NCBI_XHUGEASN_EXPORT CHugeFileException : public CException
