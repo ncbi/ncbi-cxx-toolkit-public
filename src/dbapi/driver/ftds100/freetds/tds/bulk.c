@@ -362,6 +362,12 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo,
                         = MIN((TDS_INT) bindcol->column_bindlen
                               - bcpinfo->text_sent,
                               *bindcol->column_lenbind);
+                if (IS_TDS7_PLUS(tds->conn)
+                    &&  bindcol->column_varint_size == 8
+                    &&  *bindcol->column_lenbind > 0) {
+                        /* Put PLP chunk length. */
+                        tds_put_int(tds, *bindcol->column_lenbind);
+                }
                 tds_put_n(tds, bindcol->column_varaddr,
                           *bindcol->column_lenbind);
                 bcpinfo->text_sent += *bindcol->column_lenbind;
@@ -369,6 +375,8 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo,
                         return TDS_SUCCESS; /* That's all for now. */
                 } else if (!IS_TDS7_PLUS(tds->conn)) {
                         bcpinfo->blob_cols++;
+                } else if (bindcol->column_varint_size == 8) {
+                        tds_put_int(tds, 0); /* Put PLP terminator. */
                 }
                 bcpinfo->next_col  = 0;
                 bcpinfo->text_sent = 0;
