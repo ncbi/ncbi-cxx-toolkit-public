@@ -70,6 +70,9 @@ protected:
     static double x_GetDoubleParam(CConfig& conf,
                                    const string& driver_name,
                                    const SParam& param);
+    static double x_GetDoubleParam(const CNcbiRegistry& reg,
+                                   const string& driver_name,
+                                   const SParam& param);
     
 private:
     void x_VerifyParams(void);

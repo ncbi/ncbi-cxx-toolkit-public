@@ -84,10 +84,10 @@ void CIncreasingTime::Init(const CNcbiRegistry& reg,
     }
     else {
         CConfig conf(param_tree);
-        m_InitTime = x_GetDoubleParam(conf, section, params.m_Initial);
-        m_MaxTime = x_GetDoubleParam(conf, section, params.m_Maximal);
-        m_Multiplier = x_GetDoubleParam(conf, section, params.m_Multiplier);
-        m_Increment = x_GetDoubleParam(conf, section, params.m_Increment);
+        m_InitTime = x_GetDoubleParam(reg, section, params.m_Initial);
+        m_MaxTime = x_GetDoubleParam(reg, section, params.m_Maximal);
+        m_Multiplier = x_GetDoubleParam(reg, section, params.m_Multiplier);
+        m_Increment = x_GetDoubleParam(reg, section, params.m_Increment);
     }
     x_VerifyParams();
 }
@@ -106,6 +106,25 @@ double CIncreasingTime::x_GetDoubleParam(CConfig& conf,
                                param.m_ParamName2,
                                CConfig::eErr_NoThrow,
                                   "");
+    }
+    if ( value.empty() ) {
+        return param.m_DefaultValue;
+    }
+    return NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
+}
+
+
+double CIncreasingTime::x_GetDoubleParam(const CNcbiRegistry& reg,
+                                         const string& driver_name,
+                                         const SParam& param)
+{
+    string value = reg.GetString(driver_name,
+                                 param.m_ParamName,
+                                 "");
+    if ( value.empty() && param.m_ParamName2 ) {
+        value = reg.GetString(driver_name,
+                              param.m_ParamName2,
+                              "");
     }
     if ( value.empty() ) {
         return param.m_DefaultValue;
