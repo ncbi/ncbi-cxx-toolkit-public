@@ -711,16 +711,24 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
 
     bool no_individual_checks_needed = true;
 
+    // populate map for faster access to list of all positive match values
+    map<string, bool> taxHitMap;
+    map<string, bool>::iterator it;
+
+    for (auto str: positives) {
+        taxHitMap[str] = true;
+    }
+
+    // look for any hit that matches an original taxname or, for genus sp., matches genus strain
     CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
     while (reply_it != reply->GetReply().end() && no_individual_checks_needed) {
         if ((*reply_it)->IsData() && (*reply_it)->GetData().IsSetOrg()) {
             const COrg_ref& org = (*reply_it)->GetData().GetOrg();
             if ( org.CanGetTaxname()  &&  !org.GetTaxname().empty()) {
                 string organism = org.GetTaxname();
-                for (auto str: positives) {
-                    if (NStr::EqualNocase(organism, str)) {
-                        no_individual_checks_needed = false;
-                    }
+                it = taxHitMap.find(organism);
+                if (it != taxHitMap.end()) {
+                    no_individual_checks_needed = false;
                 }
             }
         }
