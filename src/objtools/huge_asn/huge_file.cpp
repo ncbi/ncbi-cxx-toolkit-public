@@ -122,12 +122,6 @@ protected:
     {
         return pos_type(off_type(-1));
     }
-    streamsize showmanyc() override
-    {
-        auto avail = egptr() - gptr();
-        return avail;
-    }
-
 
 private:
     char* m_real_begin{};
