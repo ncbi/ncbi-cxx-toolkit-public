@@ -367,6 +367,11 @@ class COperationTiming
 
         vector<vector<unique_ptr<CNARetrieveTiming>>>       m_NARetrieveTiming;
         vector<vector<unique_ptr<CTSEChunkRetrieveTiming>>> m_TSEChunkRetrieveTiming;
+
+        // It makes sense only for SNP and CDD processors
+        // The space will be reserved for all the processors however:
+        // - only SNP and CDD processor actually make calls for that
+        // - at the time of serializing only SNP and CDD will be sent
         vector<vector<unique_ptr<CNAResolveTiming>>>        m_NAResolveTiming;
 
         vector<unique_ptr<CSplitHistoryRetrieveTiming>>     m_SplitHistoryRetrieveTiming;
