@@ -857,20 +857,31 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                 new CNAResolveTiming(min_stat_value, max_stat_value,
                                      n_bins, scale_type, reset_to_default)));
         id = proc_group + "NAResolveFound";
-        m_NamesMap[id] = SInfo(m_NAResolveTiming.back().back().get(),
-                               proc_group + " NA resolution found",
-                               "The timing of the NA resolution (by " + proc_group + ")");
+
+        // NA resolve timing is only for CDD and SNP processors
+        if (proc_group == "CDD" || proc_group == "SNP") {
+            m_NamesMap[id] = SInfo(m_NAResolveTiming.back().back().get(),
+                                   proc_group + " NA resolution found",
+                                   "The timing of the NA resolution (by " + proc_group + ")");
+        } else {
+            m_NamesMap[id] = SInfo(nullptr, "uninitialized", "uninitialized");
+        }
 
         m_NAResolveTiming.back().push_back(
             unique_ptr<CNAResolveTiming>(
                 new CNAResolveTiming(min_stat_value, max_stat_value,
                                      n_bins, scale_type, reset_to_default)));
         id = proc_group + "NAResolveNotFound";
-        m_NamesMap[id] = SInfo(m_NAResolveTiming.back().back().get(),
-                               proc_group + " NA resolution not found",
-                               "The timing of the NA resolution "
-                               "when nothing was found (by " + proc_group + ")");
 
+        // NA resolve timing is only for CDD and SNP processors
+        if (proc_group == "CDD" || proc_group == "SNP") {
+            m_NamesMap[id] = SInfo(m_NAResolveTiming.back().back().get(),
+                                   proc_group + " NA resolution not found",
+                                   "The timing of the NA resolution "
+                                   "when nothing was found (by " + proc_group + ")");
+        } else {
+            m_NamesMap[id] = SInfo(nullptr, "uninitialized", "uninitialized");
+        }
 
         m_HugeBlobRetrievalTiming.push_back(
             unique_ptr<CHugeBlobRetrieveTiming>(
@@ -1181,11 +1192,18 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
                           to_string(eTseChunkRetrieve) + "). Ignore and continue.");
             break;
         case eNAResolve:
-            if (processor)
-                m_NAResolveTiming[m_ProcGroupToIndex[processor->GetGroupName()]][index]->Add(mks);
-            else
+            if (processor) {
+                string      group_name = processor->GetGroupName();
+                if (group_name == "CDD" || group_name == "SNP") {
+                    m_NAResolveTiming[m_ProcGroupToIndex[group_name]][index]->Add(mks);
+                } else {
+                    PSG_ERROR("NA resolve timing is supported for "
+                              "CDD and SNP only. Received from: " + group_name);
+                }
+            } else {
                 PSG_ERROR("No processor for per processor timing (" +
                           to_string(eNAResolve) + "). Ignore and continue.");
+            }
             break;
         case eVDBOpen:
             m_VDBOpenTiming[index]->Add(mks);
@@ -1611,6 +1629,11 @@ COperationTiming::Serialize(int  most_ancient_time,
             lock_guard<mutex>       guard(m_Lock);
 
             for (const auto &  name_to_histogram : m_NamesMap) {
+                if (name_to_histogram.second.m_Timing == nullptr) {
+                    // Some items need to skip, e.g. NA resolve is collected
+                    // only for CDD and SNP processors
+                    continue;
+                }
                 ret.SetByKey(name_to_histogram.first,
                              name_to_histogram.second.m_Timing->SerializeCombined(
                                  most_ancient_time,
@@ -1783,6 +1806,11 @@ COperationTiming::Serialize(int  most_ancient_time,
             string      histogram_name(name.data(), name.size());
             const auto  iter = m_NamesMap.find(histogram_name);
             if (iter != m_NamesMap.end()) {
+                if (iter->second.m_Timing == nullptr) {
+                    // Some items need to be skipped, e.g. NA resolve is
+                    // collected only for CDD and SNP processors
+                    continue;
+                }
                 ret.SetByKey(
                     histogram_name,
                     iter->second.m_Timing->SerializeSeries(most_ancient_time,
