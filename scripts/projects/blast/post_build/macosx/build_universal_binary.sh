@@ -57,7 +57,6 @@ blast_programs=("blast_formatter"
 "tblastx"
 "windowmasker")
 
-echo "Initialized"
 for program in "${blast_programs[@]}"
 do
 rm $UNIVERSAL_PATH/${RELEASE_TAG}/bin/$program
@@ -68,9 +67,18 @@ do
 lipo -create $ARM_PATH/${RELEASE_TAG}/bin/$program $x86_PATH/${RELEASE_TAG}/bin/$program -output $UNIVERSAL_PATH/${RELEASE_TAG}/bin/$program
 done
 
+rm -rf $ARM_PATH
+rm -rf $x86_PATH
+POST_BUILD_DIR="blast/post_build/macosx"
+$POST_BUILD_DIR/ncbi-blast.sh universal/${RELEASE_TAG} $POST_BUILD_DIR 2.15.0
 cd $UNIVERSAL_PATH
+mv ${RELEASE_TAG}/installer/${RELEASE_TAG}.dmg ./${RELEASE_TAG}-universal.dmg
+rm -rf ${RELEASE_TAG}/install
 tar czf ${RELEASE_TAG}-universal-macosx.tar.gz $RELEASE_TAG 
 
 rm -rf $RELEASE_TAG
 rm $arm_package 
+/sbin/md5 -r ${RELEASE_TAG}-universal-macosx.tar.gz > ${RELEASE_TAG}-universal-macosx.tar.gz.md5
+/sbin/md5 -r ${RELEASE_TAG}-universal.dmg > ${RELEASE_TAG}-universal.dmg.md5
+ 
 
