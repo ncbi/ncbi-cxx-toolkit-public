@@ -104,10 +104,27 @@ NCBI_PARAM_DECL(int, VDB, DEBUG);
 NCBI_PARAM_DEF_EX(int, VDB, DEBUG, 0, eParam_NoThread, VDB_DEBUG);
 
 
-static int s_GetDebugLevel(void)
+static int& s_GetDebugLevelVar(void)
 {
     static int value = NCBI_PARAM_TYPE(VDB, DEBUG)::GetDefault();
     return value;
+}
+
+
+inline
+static int s_GetDebugLevel()
+{
+    return s_GetDebugLevelVar();
+}
+
+
+inline
+static int s_SetDebugLevel(int new_level)
+{
+    auto& var = s_GetDebugLevelVar();
+    auto old_level = var;
+    var = new_level;
+    return old_level;
 }
 
 
@@ -515,6 +532,18 @@ CVDBMgr::CVDBMgr(void)
 }
 
 
+int CVDBMgr::GetDebugLevel()
+{
+    return s_GetDebugLevel();
+}
+
+
+int CVDBMgr::SetDebugLevel(int new_level)
+{
+    return s_SetDebugLevel(new_level);
+}
+
+
 string CVDBMgr::FindAccPath(const string& acc) const
 {
     if ( !m_Resolver ) {
@@ -529,9 +558,12 @@ string CVDBMgr::FindDereferencedAccPath(const string& acc_or_path) const
     string path;
     if ( CVPath::IsPlainAccession(acc_or_path) ) {
         // resolve VDB accessions
+        if ( s_GetDebugLevel() >= CVDBMgr::eDebugResolve ) {
+            LOG_POST_X(6, "CVDBMgr: resolving VDB accession: " << acc_or_path);
+        }
         path = FindAccPath(acc_or_path);
-        if ( s_GetDebugLevel() >= 2 ) {
-            LOG_POST_X(4, "CVDBMgr: resolved accession: " << acc_or_path << " -> " << path);
+        if ( s_GetDebugLevel() >= CVDBMgr::eDebugResolve ) {
+            LOG_POST_X(4, "CVDBMgr: resolved VDB accession: " << acc_or_path << " -> " << path);
         }
     }
     else {
@@ -540,13 +572,16 @@ string CVDBMgr::FindDereferencedAccPath(const string& acc_or_path) const
     }
 
     // resolve symbolic links for correct timestamp and longer-living reference
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugResolve ) {
+        LOG_POST_X(7, "CVDBMgr: checking file symbolic link: " << acc_or_path << " -> " << path);
+    }
     CDirEntry de(path);
     if ( de.Exists() ) {
         de.DereferencePath();
         if ( de.GetPath() != path ) {
             path = de.GetPath();
-            if ( s_GetDebugLevel() >= 2 ) {
-                LOG_POST_X(5, "CVDBMgr: resolved file link: " << acc_or_path << " -> " << path);
+            if ( s_GetDebugLevel() >= CVDBMgr::eDebugResolve ) {
+                LOG_POST_X(5, "CVDBMgr: resolved file symbolic link: " << acc_or_path << " -> " << path);
             }
         }
     }
@@ -573,7 +608,7 @@ CTime CVDBMgr::GetTimestamp(const string& path) const
     }
     _ASSERT(!timestamp.IsEmpty());
     _ASSERT(timestamp.IsUniversalTime());
-    if ( s_GetDebugLevel() >= 2 ) {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugResolve ) {
         LOG_POST_X(3, "CVDBMgr: timestamp of " << path << ": " << CTime(timestamp).ToLocalTime());
     }
     return timestamp;
@@ -923,7 +958,7 @@ void CVDBMgr::s_VDBInit()
             KLogLevelSet(ask_level);
             KLogHandlerSet(VDBLogWriter, 0);
             KLogLibHandlerSet(VDBLogWriter, 0);
-            if ( s_GetDebugLevel() >= 2 ) {
+            if ( s_GetDebugLevel() >= CVDBMgr::eDebugInitialize ) {
                 const char* msg = "info: VDB initialized";
                 size_t written;
                 VDBLogWriter(0, msg, strlen(msg), &written);
@@ -1064,6 +1099,9 @@ void CVDBMgr::CommitConfig() const
 CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
     : m_Name(acc_or_path)
 {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugOpen ) {
+        LOG_POST_X(8, "CVDBMgr: opening VDB: " << acc_or_path);
+    }
     DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
@@ -1100,6 +1138,9 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
             // other errors
             NCBI_THROW2(CSraException, eOtherError, msg, rc);
         }
+    }
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugOpen ) {
+        LOG_POST_X(9, "CVDBMgr: opened VDB: " << acc_or_path << " (" << path << ")");
     }
     if ( 0 ) {
         const KDatabase* kdb = 0;
@@ -1447,7 +1488,7 @@ void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
                        '['<<row<<"]["<<start<<".."<<(start+count-1)<<
                        "] only "<<read_count<<" elements are read");
     }
-    if ( s_GetDebugLevel() >= 9 ) {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugData ) {
         LOG_POST(Info<<"VDB "<<*this<<column<<'['<<row<<"]: @"<<start<<" #"<<count);
     }
 }
@@ -1664,7 +1705,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
                         <<cursor<<column<<": "<<bit_offset,
                         RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported));
     }
-    if ( s_GetDebugLevel() >= 9 ) {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugData ) {
         CNcbiOstrstream s;
         if ( bit_length == 8 ) {
             s << '"' << NStr::PrintableString(CTempString((const char*)m_Data, m_ElemCount)) << '"';
@@ -1728,7 +1769,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
                         cursor<<column<<'['<<row<<"]: "<<bit_offset,
                         RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported));
     }
-    if ( s_GetDebugLevel() >= 9 ) {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugData ) {
         CNcbiOstrstream s;
         if ( bit_length == 8 ) {
             s << '"' << NStr::PrintableString(CTempString((const char*)m_Data, m_ElemCount)) << '"';
@@ -1844,7 +1885,7 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
     m_RawData = static_cast<const char*>(data);
     m_ElemOffset = bit_offset >> 2;
     m_ElemCount = elem_count;
-    if ( s_GetDebugLevel() >= 9 ) {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugData ) {
         CNcbiOstrstream s;
         if ( bit_length == 4 ) {
             for ( uint32_t i = 0; i < elem_count; ++i ) {
@@ -1942,7 +1983,7 @@ void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
     m_RawData = static_cast<const char*>(data);
     m_ElemOffset = bit_offset >> 1;
     m_ElemCount = elem_count;
-    if ( s_GetDebugLevel() >= 9 ) {
+    if ( s_GetDebugLevel() >= CVDBMgr::eDebugData ) {
         CNcbiOstrstream s;
         if ( bit_length == 2 ) {
             for ( uint32_t i = 0; i < elem_count; ++i ) {
