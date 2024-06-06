@@ -218,6 +218,19 @@ class NCBI_SRAREAD_EXPORT CVDBMgr
 {
 public:
     CVDBMgr(void);
+    
+    enum EDebugLevel {
+        eNoDebug = 0,
+        eDebugError = 1,
+        eDebugOpen = 2,
+        eDebugInitialize = 3,
+        eDebugResolve = 4,
+        eDebugData = 9
+    };
+    // returns value of debug level
+    static int GetDebugLevel();
+    // returns preivous value of debug level
+    static int SetDebugLevel(int new_level);
 
     // resolve possible VDB accession
     string FindAccPath(const string& acc) const;
