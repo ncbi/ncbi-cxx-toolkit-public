@@ -14,7 +14,7 @@ set -e
 script="$0"
 builddir="$1"
 target="$2"
-compiler="${3:-vs2019}"
+compiler="${3:-vs2022}"
 
 # Real number of argument is 2.
 # The 4th argument do not used here (32|64-bit architecture),

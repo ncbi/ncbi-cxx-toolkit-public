@@ -153,7 +153,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">set DATATOOL_PATH=$(ProjectDir)..\..\..\..\..\static\bin\ReleaseDLL
 set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\..
 set PTB_PLATFORM=$(PlatformName)
-set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\vs2019
+set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\vs2022
 call "%BUILD_TREE_ROOT%\datatool.bat" -oex "" -pch ncbi_pch.hpp -m "%(FullPath)" -oA -oc "%(Filename)" -od "%(RootDir)%(Directory)%(Filename).def" -odi -ocvs -or build-system\project_tree_builder\msbuild\ -oR ..\..\..\..\..\..\..\
 if errorlevel 1 exit 1</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">%(RootDir)%(Directory)%(Filename).def;</AdditionalInputs>
@@ -162,7 +162,7 @@ if errorlevel 1 exit 1</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">set DATATOOL_PATH=$(ProjectDir)..\..\..\..\..\static\bin\ReleaseDLL
 set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\..
 set PTB_PLATFORM=$(PlatformName)
-set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\vs2019
+set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\vs2022
 call "%BUILD_TREE_ROOT%\datatool.bat" -oex "" -pch ncbi_pch.hpp -m "%(FullPath)" -oA -oc "%(Filename)" -od "%(RootDir)%(Directory)%(Filename).def" -odi -ocvs -or build-system\project_tree_builder\msbuild\ -oR ..\..\..\..\..\..\..\
 if errorlevel 1 exit 1</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">%(RootDir)%(Directory)%(Filename).def;</AdditionalInputs>

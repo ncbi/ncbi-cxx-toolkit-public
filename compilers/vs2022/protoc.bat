@@ -37,7 +37,7 @@ set GRPC_APP=grpc_cpp_plugin.exe
 
 REM remove the following after the transition period!
 if "%GENERATOR_PATH%"=="" (
-  set GENERATOR_PATH=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2019.64\1.36.4-ncbi1\bin
+  set GENERATOR_PATH=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2022.64\1.36.4-ncbi2\bin
 )
 
 for %%v in ("%GENERATOR_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (

@@ -45,7 +45,7 @@ REM ===========================================================================
 
 rem --- Configuration
 
-set compiler=vs2019
+set compiler=vs2022
 set default_cfgs=ReleaseDLL DebugDLL
 
 rem Always configure with additional Unicode configurations
