@@ -3003,7 +3003,8 @@ static bool s_init_NewTaxVal(void)
         return false;
     }
 
-    return false;
+	// RW-2240 default is now true, no need for environment variable in future
+    return true;
 }
 
 
