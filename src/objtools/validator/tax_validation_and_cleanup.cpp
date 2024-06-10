@@ -691,13 +691,20 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
 
     x_CollectStrainsForRecord(se, candidates, positives);
 
+    // populate map to unique list of all candidates
+    map<string, bool> taxReqMap;
+
+    for (auto str: candidates) {
+        taxReqMap[str] = true;
+    }
+
     vector<CRef<COrg_ref>> request;
 
     bool no_data_requests = true;
 
-    for (vector<string>::iterator tax_it = candidates.begin(); tax_it != candidates.end(); ++tax_it) {
+    for (auto const& tx : taxReqMap) {
         CRef<COrg_ref> org(new COrg_ref());
-        org->SetTaxname(*tax_it);
+        org->SetTaxname(tx.first);
         request.push_back(org);
         no_data_requests = false;
     }
@@ -713,7 +720,7 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
 
     // populate map for faster access to list of all positive match values
     map<string, bool> taxHitMap;
-    map<string, bool>::iterator it;
+    map<string, bool>::iterator th_it;
 
     for (auto str: positives) {
         taxHitMap[str] = true;
@@ -726,8 +733,8 @@ void CStrainRequest::ExploreStrainsForTaxonInfo(CTaxValidationAndCleanup& tval, 
             const COrg_ref& org = (*reply_it)->GetData().GetOrg();
             if ( org.CanGetTaxname()  &&  !org.GetTaxname().empty()) {
                 string organism = org.GetTaxname();
-                it = taxHitMap.find(organism);
-                if (it != taxHitMap.end()) {
+                th_it = taxHitMap.find(organism);
+                if (th_it != taxHitMap.end()) {
                     no_individual_checks_needed = false;
                 }
             }
