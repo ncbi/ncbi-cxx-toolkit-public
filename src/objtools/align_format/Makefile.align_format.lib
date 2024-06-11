@@ -1,7 +1,7 @@
 # $Id$
 
 ASN_DEP = blastdb xnetblast
-DLL_LIB = blast_services gene_info seqdb $(OBJREAD_LIBS) xalnmgr xobjutil \
+DLL_LIB = blast_services seqdb $(OBJREAD_LIBS) xalnmgr xobjutil \
           blastdb xnetblastcli xnetblast scoremat taxon1 xhtml xcgi tables \
           $(OBJMGR_LIBS)
 
@@ -25,5 +25,5 @@ WATCHERS = zaretska jianye camacho fongah2
 
 
 USES_LIBRARIES =  \
-    $(OBJMGR_LIBS) $(OBJREAD_LIBS) blast_services gene_info seqdb \
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) blast_services seqdb \
     xalnmgr xcgi xhtml
