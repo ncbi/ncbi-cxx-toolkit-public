@@ -12,7 +12,6 @@ NCBI_begin_lib(ncbi_seqext SHARED)
     objtools/manip/xobjmanip
     objtools/format/xformat
     objtools/blast/seqdb_reader/seqdb
-    objtools/blast/gene_info_reader/gene_info
     objtools/blast/seqdb_writer/writedb
     objects/id1/id1
     objects/id1/id1cli
