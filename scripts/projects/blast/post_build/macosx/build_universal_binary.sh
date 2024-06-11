@@ -70,7 +70,7 @@ done
 rm -rf $ARM_PATH
 rm -rf $x86_PATH
 POST_BUILD_DIR="blast/post_build/macosx"
-$POST_BUILD_DIR/ncbi-blast.sh universal/${RELEASE_TAG} $POST_BUILD_DIR 2.15.0
+$POST_BUILD_DIR/ncbi-blast.sh universal/${RELEASE_TAG} $POST_BUILD_DIR $RELEASE 
 cd $UNIVERSAL_PATH
 mv ${RELEASE_TAG}/installer/${RELEASE_TAG}.dmg ./${RELEASE_TAG}-universal.dmg
 rm -rf ${RELEASE_TAG}/install
