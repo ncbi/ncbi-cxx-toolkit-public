@@ -45,7 +45,6 @@
 
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/readers/getfeature.hpp>
-#include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 #include <objtools/align_format/align_format_util.hpp>
 
 #include <objmgr/object_manager.hpp>
@@ -652,7 +651,6 @@ protected:
     CCgiContext* m_Ctx;
     SAlignTemplates *m_AlignTemplates;    
     /// Gene info reader object, reads Gene info entries from files.
-    unique_ptr<CGeneInfoFileReader> m_GeneInfoReader;
 
     /// Current alignment index (added to the linkout and entrez URL's)
     mutable int m_cur_align;

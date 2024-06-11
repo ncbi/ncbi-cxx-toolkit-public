@@ -40,7 +40,6 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objtools/align_format/format_flags.hpp>
 #include <util/math/matrix.hpp>
-#include <objtools/blast/gene_info_reader/gene_info_reader.hpp>
 #include <algo/blast/core/blast_stat.h>
 #include <objtools/align_format/ilinkoutdb.hpp>
 
