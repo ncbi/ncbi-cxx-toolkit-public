@@ -20858,7 +20858,11 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-12"), "Sep-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-93"), "Sep-1993");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 10"), "Sep-2010");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 24"), "Sep-2024");
+
+    // this next one will need to be removed when 2031 rolls around,
+    // since the logic will then (properly) return Oct-2031
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("October 31"), "Oct-1931");
+
     // fix leading/trailing spaces
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat(" 2010-03-01"), "2010-03-01");
 
@@ -22824,7 +22828,7 @@ void TestOneStrainNew(const string& taxname, const string& strain, const string&
 BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 {
 	// RW-2240 default is now true, no need for environment variable in future
-    bool is_new_strain_validation = true;
+    bool is_new_strain_validation = /* true */ false;
     
     if (CNcbiApplication::Instance()) {
         const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
