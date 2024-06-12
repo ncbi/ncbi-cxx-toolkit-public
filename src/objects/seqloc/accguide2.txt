@@ -1383,6 +1383,9 @@ version  2 # of file format
 2+6  PP  gb_dirsub
 2+8  PP  gb_other_nuc
 2+10 PP  gb_other_nuc
+2+6  PQ  gb_dirsub
+2+8  PQ  gb_other_nuc
+2+10 PQ  gb_other_nuc
 2+6  PR  gb_patent
 2+8  PR  gb_other_nuc
 2+10 PR  gb_other_nuc
