@@ -1,0 +1,10 @@
+#Format: tax_id GeneID PubMed_ID (tab is used as a separator, pound sign - start of a comment)
+1	1	1
+9031	2	1
+9031	2	5
+9031	5	5
+9606	3	4
+9606	3	1
+9606	6	5
+9606	6	8
+9606	4	5

@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(gene_info_writer)
+  NCBI_sources(gene_info_writer_app)
+  NCBI_uses_toolkit_libraries(gene_info_writer)
+  NCBI_project_watchers(madden camacho)
+NCBI_end_app()
+
