@@ -22828,7 +22828,7 @@ void TestOneStrainNew(const string& taxname, const string& strain, const string&
 BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
 {
 	// RW-2240 default is now true, no need for environment variable in future
-    bool is_new_strain_validation = /* true */ false;
+    bool is_new_strain_validation = true;
     
     if (CNcbiApplication::Instance()) {
         const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
