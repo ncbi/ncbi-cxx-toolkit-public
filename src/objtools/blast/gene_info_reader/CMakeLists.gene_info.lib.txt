@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_lib(gene_info)
+  NCBI_sources(gene_info gene_info_reader file_utils)
+  NCBI_add_definitions(NCBI_MODULE=GENEINFO)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_project_watchers(camacho)
+NCBI_end_lib()
+
