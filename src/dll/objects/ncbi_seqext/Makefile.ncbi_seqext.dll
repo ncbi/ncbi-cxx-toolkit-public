@@ -13,6 +13,7 @@ HOSTED_LIBS    = xalnmgr   \
                  xobjmanip \
                  xformat   \
                  seqdb     \
+                 gene_info \
                  writedb   \
                  id1       \
                  id1cli    \
