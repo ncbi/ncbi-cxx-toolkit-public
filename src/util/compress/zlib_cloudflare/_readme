@@ -8,7 +8,7 @@ Porting notes:
 
 -  !!! ALL Cloudflare zlib .[ch] files should be changed to include renamed files only.
 
-- 'inlude/util/compress/zlib-cloudflare/zconf_cf.h' have an extra lines added:
+- 'include/util/compress/zlib-cloudflare/zconf_cf.h' have an extra lines added:
 
   first:
 	#include <ncbiconf.h>
@@ -22,5 +22,5 @@ Porting notes:
   See "_patch" file. It should be checked/applied after upgrading Cloudflare zlib in the current directory.
 
 
-- 'inlude/util/compress/zlib-cloudflare/zutil_cf.h' also have 'z_errmsg' symbol that conflicts with zlib, 
+- 'include/util/compress/zlib-cloudflare/zutil_cf.h' also have 'z_errmsg' symbol that conflicts with zlib, 
   so need to be renamed to something else, like 'zcf_errmsg', in the .h/.c files.
