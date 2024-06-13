@@ -38,10 +38,13 @@
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include "ncbi_socketp.h"
+#include <connect/error_codes.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_file_connector.h>
 #include <stdlib.h>
+
+#define NCBI_USE_ERRCODE_X   Connect_Stream
 
 
 BEGIN_NCBI_SCOPE
@@ -1558,8 +1561,12 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                                         fHTTP_AutoReconnect,
                                         kDefaultTimeout, buf_size);
         case eURL_File:
-            if (*net_info->host  ||  net_info->port)
+            if (*net_info->host  ||  net_info->port) {
+                ERR_POST_X(18, Error << "The limited implementation of the file:// scheme does not"
+                           " support non-empty authority portion of the URL (local files only!)");
                 break; // not supported
+            }
+            _ASSERT(!*net_info->user  &&  !*net_info->pass);
             if (net_info->debug_printout) {
                 // manual cleanup of most fields req'd
                 net_info->req_method = eReqMethod_Any;
@@ -1572,8 +1579,6 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
                 net_info->http_proxy_leak = 0;
                 net_info->http_proxy_skip = 0;
                 net_info->http_proxy_mask = 0;
-                net_info->user[0] = '\0';
-                net_info->pass[0] = '\0';
                 net_info->http_proxy_host[0] = '\0';
                 net_info->http_proxy_port    =   0;
                 net_info->http_proxy_user[0] = '\0';
