@@ -101,6 +101,18 @@ static void s_Interrupt(int /*signo*/)
 }
 #  endif // NCBI_OS
 
+
+static void s_SetupInterruptHandler(void)
+{
+#  if   defined(NCBI_OS_MSWIN)
+    SetConsoleCtrlHandler(s_Interrupt, TRUE);
+#  elif defined(NCBI_OS_UNIX)
+    signal(SIGINT,  s_Interrupt);
+    signal(SIGQUIT, s_Interrupt);
+#  endif // NCBI_OS
+    SOCK_SetInterruptOnSignalAPI(eOn);
+}
+
 #endif // TEST_CONN_TAR
 
 
@@ -172,13 +184,6 @@ void CTarTest::Init(void)
         {
         } conn_initer;
     }
-#  if   defined(NCBI_OS_MSWIN)
-    SetConsoleCtrlHandler(s_Interrupt, TRUE);
-#  elif defined(NCBI_OS_UNIX)
-    signal(SIGINT,  s_Interrupt);
-    signal(SIGQUIT, s_Interrupt);
-#  endif // NCBI_OS
-    SOCK_SetInterruptOnSignalAPI(eOn);
 #endif // TEST_CONN_TAR
 
     unique_ptr<CArgDescriptions> args(new CArgDescriptions);
@@ -493,6 +498,7 @@ int CTarTest::Run(void)
             in = &ifs;
             in->clear(NcbiBadbit);
         } else {
+            s_SetupInterruptHandler();
             conn->SetCanceledCallback(&canceled);
         }
     } else
