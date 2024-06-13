@@ -1465,7 +1465,7 @@ bool VerifyCpuCompatibility(string* message)
         #else
             asm volatile("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "a" (1));
         #endif
-        if ( !(ecx>>20 & 1) ) // SSE 4.2
+        if ( !(ecx & (1<<20)) ) // SSE 4.2
         {
             if (message) {
                 message->assign("Application requires a CPU with SSE 4.2 support");
