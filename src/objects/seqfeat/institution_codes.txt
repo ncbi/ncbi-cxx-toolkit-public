@@ -4052,6 +4052,7 @@ KUS	s	Korea University, Biology Department
 KUST	s	Kohat University of Science and Technology			
 KUU	s	University of Science and Technology			
 KUW	s	Kakatiya University			
+KUZ	s	Kuzbas Botanical Garden			
 KUZ<JPN>	s	Zoological Collection of the Kyoto University			
 KUZC	s	Kyushu University, Zoological Collection			
 KVCH	s	Kivach Nature Reserve			
