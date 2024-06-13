@@ -34,8 +34,8 @@
 #include "ncbi_conn_streambuf.hpp"
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <connect/ncbi_conn_exception.hpp>
 #include <connect/error_codes.hpp>
+#include <connect/ncbi_conn_exception.hpp>
 #include <stdlib.h>  // free()
 
 #define NCBI_USE_ERRCODE_X   Connect_Stream
