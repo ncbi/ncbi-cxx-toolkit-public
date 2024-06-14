@@ -1866,8 +1866,12 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     const auto io_timer_period = SecondsToMs(params.io_timer_period);
 
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
-        // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-        m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_StartBarrier, m_StopBarrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back(m_Queues)));
+        try {
+            // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
+            m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_StartBarrier, m_StopBarrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back(m_Queues)));
+        } catch (const std::system_error& e) {
+            ERR_POST(Fatal << "Failed to create I/O threads: " << e.what());
+        }
     }
 
     m_StartBarrier.Wait();
