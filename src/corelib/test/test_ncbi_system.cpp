@@ -156,7 +156,10 @@ static void Test_MemLimit(void)
 #else
     LOG_POST("\nMemory limit test\n");
 
-    const size_t kMemLimit = 500*1024;
+    const size_t kCount    = 100;
+    const size_t kMB       = 1024 * 1024;
+    const size_t kMemLimit = kCount * kMB;
+
     bool res = SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter);
     if (!res) {
         if (CNcbiError::GetLast() == CNcbiError::eNotSupported  ||
@@ -171,9 +174,9 @@ static void Test_MemLimit(void)
     // immediately deallocated.
     vector<char*> mem;
     
-    for (size_t i = 0;  i <= kMemLimit/1024;  i++) {
+    for (size_t i = 0;  i <= kCount;  i++) {
         s_PrintParameter++;
-        char* p = new char[1024];
+        char* p = new char[kMB];
         if (!p) {
             FATAL_ERROR_ALLOC;
         }
