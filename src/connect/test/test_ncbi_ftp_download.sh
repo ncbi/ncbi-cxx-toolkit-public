@@ -33,7 +33,8 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     url=
     ;;
   1)
-    url='ftp://ftp.ubuntu.com/'
+    # url='ftp://ftp.ubuntu.com/'
+    url='ftp://mirrors.rit.edu/ubuntu-releases/'
     ;;
   2)
     url='ftp://ftp.freebsd.org/'
