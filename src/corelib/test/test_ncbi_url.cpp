@@ -373,6 +373,78 @@ BOOST_AUTO_TEST_CASE(s_UrlTestComposed)
 }
 
 
+BOOST_AUTO_TEST_CASE(s_UrlTestSchemelessWithDoubleSlashes)
+{
+    CUrl url;
+    url.SetUrl("psg22.be-md.ncbi.nlm.nih.gov:10010"
+               "/ID/get?"
+               "seq_id_type=11&"
+               "seq_id=gnl|O1318|G1XDD-134-MONOMER+Putative+NADH+dehydrogenase//Transferred+entry:+1.6.5.9+73737..75335+Thiomonas+sp.+CB2+9462&"
+               "tse=none&resend_timeout=0&"
+               "include_hup=no&"
+               "client_id=EB920B6C64B65361&"
+               "disable_processor=CDD&"
+               "disable_processor=OSG&"
+               "disable_processor=SNP&"
+               "disable_processor=WGS&"
+               "hops=1");
+
+    BOOST_CHECK_EQUAL(url.GetScheme(), "");
+    BOOST_CHECK_EQUAL(url.IsService(), false);
+    BOOST_CHECK_EQUAL(url.GetPort(), "10010");
+    BOOST_CHECK_EQUAL(url.GetHost(), "psg22.be-md.ncbi.nlm.nih.gov");
+    BOOST_CHECK_EQUAL(url.GetPath(), "/ID/get");
+    BOOST_CHECK_EQUAL(url.HaveArgs(), true);
+
+    auto &  args = url.GetArgs().GetArgs();
+    BOOST_CHECK_EQUAL(args.size(), 11U);
+
+    auto    it = args.begin();
+    BOOST_CHECK_EQUAL(it->name, "seq_id_type");
+    BOOST_CHECK_EQUAL(it->value, "11");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "seq_id");
+    BOOST_CHECK_EQUAL(it->value, "gnl|O1318|G1XDD-134-MONOMER Putative NADH dehydrogenase//Transferred entry: 1.6.5.9 73737..75335 Thiomonas sp. CB2 9462");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "tse");
+    BOOST_CHECK_EQUAL(it->value, "none");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "resend_timeout");
+    BOOST_CHECK_EQUAL(it->value, "0");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "include_hup");
+    BOOST_CHECK_EQUAL(it->value, "no");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "client_id");
+    BOOST_CHECK_EQUAL(it->value, "EB920B6C64B65361");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "disable_processor");
+    BOOST_CHECK_EQUAL(it->value, "CDD");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "disable_processor");
+    BOOST_CHECK_EQUAL(it->value, "OSG");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "disable_processor");
+    BOOST_CHECK_EQUAL(it->value, "SNP");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "disable_processor");
+    BOOST_CHECK_EQUAL(it->value, "WGS");
+
+    ++it;
+    BOOST_CHECK_EQUAL(it->name, "hops");
+    BOOST_CHECK_EQUAL(it->value, "1");
+}
+
+
 BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
 {
     cout << "*** Testing special cases" << endl;

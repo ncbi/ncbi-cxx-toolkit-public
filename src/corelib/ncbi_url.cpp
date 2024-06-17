@@ -435,9 +435,21 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
 
     // Parse scheme and authority (user info, host, port).
     SIZE_TYPE pos = orig_url.find("//");
+
+    // The // can be in parameters part, so check that it is before the ?
+    bool    slashes_are_in_args = false;
+    if (pos != NPOS) {
+        SIZE_TYPE   question_mark_pos = orig_url.find("?");
+        if (question_mark_pos != NPOS) {
+            if (question_mark_pos < pos) {
+                slashes_are_in_args = true;
+            }
+        }
+    }
+
     SIZE_TYPE offset = 0;
     string authority;
-    if (pos != NPOS) {
+    if (pos != NPOS && slashes_are_in_args == false) {
         m_IsGeneric = true;
         // Host is present, split into scheme/host/path.
         if (pos > 0 && orig_url[pos - 1] == ':') {
