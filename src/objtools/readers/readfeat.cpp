@@ -341,6 +341,8 @@ public:
 
 private:
 
+    unsigned int x_GetLineNumber() const;
+
     // Prohibit copy constructor and assignment operator
     CFeatureTableReader_Imp(const CFeatureTableReader_Imp& value);
     CFeatureTableReader_Imp& operator=(const CFeatureTableReader_Imp& value);
@@ -494,6 +496,7 @@ private:
     void x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const;
     void x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const;
 
+    CRef<CSeq_feat> m_pCurrentFeat;
     bool m_need_check_strand;
     string m_real_seqid;
     CRef<CSeq_id> m_seq_id;
@@ -502,6 +505,7 @@ private:
     ILineErrorListener* m_pMessageListener;
     unordered_set<string> m_ProcessedTranscriptIds;
     unordered_set<string> m_ProcessedProteinIds;
+    TFlags m_Flags{0};
 };
 
 
@@ -1037,139 +1041,6 @@ bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
     return true;
 }
 
-/*
-bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
-    const CTempString& line,
-    Int4* startP,
-    Int4* stopP,
-    bool* partial5P,
-    bool* partial3P,
-    bool* ispointP,
-    bool* isminusP,
-    string& featP,
-    string& qualP,
-    string& valP,
-    Int4 offset
-)
-
-{
-    SIZE_TYPE      numtkns;
-    bool           isminus = false;
-    bool           ispoint = false;
-    size_t         len;
-    bool           partial5 = false;
-    bool           partial3 = false;
-    Int4           startv = -1;
-    Int4           stopv = -1;
-    Int4           swp;
-    string         start, stop, feat, qual, val, stnd;
-    vector<string> tkns;
-
-
-    if (line.empty ()) return false;
-
-    if (NStr::StartsWith (line, '[')) return false;
-
-    tkns.clear ();
-    x_TokenizeLenient(line, tkns);
-    numtkns = tkns.size ();
-
-    if (numtkns > 0) {
-        start = NStr::TruncateSpaces(tkns[0]);
-    }
-    if (numtkns > 1) {
-        stop = NStr::TruncateSpaces(tkns[1]);
-    }
-    if (numtkns > 2) {
-        feat = NStr::TruncateSpaces(tkns[2]);
-    }
-    if (numtkns > 3) {
-        qual = NStr::TruncateSpaces(tkns[3]);
-    }
-    if (numtkns > 4) {
-        val = NStr::TruncateSpaces(tkns[4]);
-        // trim enclosing double-quotes
-        if( val.length() >= 2 && val[0] == '"' && val[val.length()-1] == '"' ) {
-            val = val.substr(1, val.length() - 2);
-        }
-    }
-    if (numtkns > 5) {
-        stnd = NStr::TruncateSpaces(tkns[5]);
-    }
-
-    bool has_start = false;
-    if (! start.empty ()) {
-        if (start [0] == '<') {
-            partial5 = true;
-            start.erase (0, 1);
-        }
-        len = start.length ();
-        if (len > 1 && start [len - 1] == '^') {
-          ispoint = true;
-          start [len - 1] = '\0';
-        }
-        startv = x_StringToLongNoThrow(start, feat, qual,
-            ILineError::eProblem_BadFeatureInterval);
-        has_start = true;
-    }
-
-    bool has_stop = false;
-    if (! stop.empty ()) {
-        if (stop [0] == '>') {
-            partial3 = true;
-            stop.erase (0, 1);
-        }
-        stopv = x_StringToLongNoThrow (stop, feat, qual,
-            ILineError::eProblem_BadFeatureInterval);
-        has_stop = true;
-    }
-
-    if ( startv <= 0 || stopv <= 0 ) {
-        startv = -1;
-        stopv = -1;
-    } else {
-        startv--;
-        stopv--;
-        if (! stnd.empty ()) {
-            if (stnd == "minus" || stnd == "-" || stnd == "complement") {
-                if (start < stop) {
-                    swp = startv;
-                    startv = stopv;
-                    stopv = swp;
-                }
-                isminus = true;
-            }
-        }
-    }
-
-    if (startv >= 0) {
-        startv += offset;
-    }
-    if (stopv >= 0) {
-        stopv += offset;
-    }
-
-    if ((has_start && startv < 0) || (has_stop && stopv < 0)) {
-        x_ProcessMsg(
-            ILineError::eProblem_FeatureBadStartAndOrStop,
-            eDiag_Error,
-            feat);
-    }
-
-    *startP = ( startv < 0 ? -1 : startv);
-    *stopP = ( stopv < 0 ? -1 : stopv);
-
-    *partial5P = partial5;
-    *partial3P = partial3;
-    *ispointP = ispoint;
-    *isminusP = isminus;
-    featP = feat;
-    qualP = qual;
-    valP = val;
-
-    return true;
-}
-*/
 
 void CFeatureTableReader_Imp::x_TokenizeStrict(
     const CTempString &line,
@@ -3049,7 +2920,7 @@ void CFeatureTableReader_Imp::x_ProcessMsg(
     const string& strErrorMessage,
     const ILineError::TVecOfLines & vecOfOtherLines)
 {
-    x_ProcessMsg(m_reader ? static_cast<unsigned>(m_reader->GetLineNumber()) : m_LineNumber,
+    x_ProcessMsg(m_reader ? x_GetLineNumber() : m_LineNumber,
         eProblem,
         eSeverity,
         strFeatureName,
@@ -3075,12 +2946,17 @@ void CFeatureTableReader_Imp::x_ProcessMsg(
         return;
     }
 
-    AutoPtr<CObjReaderLineException> pErr (
+    unique_ptr<CObjReaderLineException> pErr (
         CObjReaderLineException::Create(
         eSeverity, line_num, strErrorMessage, eProblem, m_real_seqid, strFeatureName,
         strQualifierName, strQualifierValue));
-    ITERATE( ILineError::TVecOfLines, line_it, vecOfOtherLines ) {
-        pErr->AddOtherLine(*line_it);
+
+    if (m_pCurrentFeat && (m_Flags & CFeature_table_reader::fIncludeObjectInMsg)) {
+        pErr->SetObject(m_pCurrentFeat);
+    }
+
+    for (auto line : vecOfOtherLines) {
+        pErr->AddOtherLine(line);
     }
 
     if (!m_pMessageListener->PutError(*pErr)) {
@@ -3109,8 +2985,7 @@ void CFeatureTableReader_Imp::PutProgress(
 void CFeatureTableReader_Imp::x_ResetFeat(CRef<CSeq_feat> & sfp, bool & curr_feat_intervals_done)
 {
     m_need_check_strand = false;
-    sfp.Reset(new CSeq_feat);
-    //sfp->ResetLocation();
+    sfp.Reset(new CSeq_feat());
     curr_feat_intervals_done = false;
 }
 
@@ -3161,7 +3036,6 @@ void CFeatureTableReader_Imp::x_FinishFeature(CRef<CSeq_feat>& feat,
                                               TFtable& ftable)
 {
     if ( !feat ||
-         feat.Empty() ||
          !feat->IsSetData() ||
          (feat->GetData().Which() == CSeqFeatData::e_not_set) )
     {
@@ -3169,12 +3043,15 @@ void CFeatureTableReader_Imp::x_FinishFeature(CRef<CSeq_feat>& feat,
     }
 
     // Check for missing publication - RW-626
-    if (feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_pub &&
-        (!feat->SetData().SetPub().IsSetPub() ||
-          feat->SetData().SetPub().GetPub().Get().empty())) {
+    const auto& featData = feat->GetData();
+    if (featData.GetSubtype() == CSeqFeatData::eSubtype_pub &&
+        (!featData.GetPub().IsSetPub() ||
+         !featData.GetPub().GetPub().IsSet() ||
+          featData.GetPub().GetPub().Get().empty())) {
+
         const int line_number = m_reader->AtEOF() ?
-                                static_cast<unsigned>(m_reader->GetLineNumber()) :
-                                static_cast<unsigned>(m_reader->GetLineNumber())-1;
+                                x_GetLineNumber() :
+                                x_GetLineNumber()-1;
 
         string msg = "Reference feature is empty. Skipping feature.";
 
@@ -3257,6 +3134,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     ITableFilter *filter
 )
 {
+    m_Flags = flags;
     string feat, qual, qual_value;
     string curr_feat_name;
    // Int4 start, stop;
@@ -3282,7 +3160,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     // map feature types to features
     TChoiceToFeatMap choiceToFeatMap;
 
-    CRef<CSeq_feat> sfp;
+    m_pCurrentFeat.Reset();
     // This is true once this feature should not
     // have any more intervals.
     // This allows us to catch errors like the following:
@@ -3309,7 +3187,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
         if( m_reader->GetLineNumber() % 10000 == 0 &&
             m_reader->GetLineNumber() > 0 )
         {
-            PutProgress(m_real_seqid, static_cast<unsigned>(m_reader->GetLineNumber()), m_pMessageListener);
+            PutProgress(m_real_seqid, x_GetLineNumber(), m_pMessageListener);
         }
 
         // skip empty lines.
@@ -3339,11 +3217,13 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
         } else if ( s_LineIndicatesOrder(line) ) {
 
+            _ASSERT(m_pCurrentFeat);
+
             // put nulls between feature intervals
-            CRef<CSeq_loc> loc_with_nulls = s_LocationJoinToOrder( sfp->GetLocation() );
+            CRef<CSeq_loc> loc_with_nulls = s_LocationJoinToOrder( m_pCurrentFeat->GetLocation() );
             // loc_with_nulls is unset if no change was needed
             if( loc_with_nulls ) {
-                sfp->SetLocation( *loc_with_nulls );
+                m_pCurrentFeat->SetLocation( *loc_with_nulls );
             }
 
         } else if (x_ParseFeatureTableLine (line, loc_info, feat, qual, qual_value, offset)) {
@@ -3355,28 +3235,28 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
                 // process start - stop - feature line
 
-                x_FinishFeature(sfp, ftable);
-                x_ResetFeat( sfp, curr_feat_intervals_done );
+                x_FinishFeature(m_pCurrentFeat, ftable);
+                x_ResetFeat(m_pCurrentFeat, curr_feat_intervals_done );
 
-                if (x_SetupSeqFeat (sfp, feat, flags, filter)) {
+                if (x_SetupSeqFeat (m_pCurrentFeat, feat, flags, filter)) {
 
                     // figure out type of feat, and store in map for later use
                     CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
-                    if( sfp->CanGetData() ) {
-                        eChoice = sfp->GetData().Which();
+                    if( m_pCurrentFeat->CanGetData() ) {
+                        eChoice = m_pCurrentFeat->GetData().Which();
                     }
                     choiceToFeatMap.insert(
                         TChoiceToFeatMap::value_type(
                         eChoice,
-                        SFeatAndLineNum(sfp, static_cast<unsigned>(m_reader->GetLineNumber()))));
+                        SFeatAndLineNum(m_pCurrentFeat, x_GetLineNumber())));
 
                     // if new feature is a CDS, remember it for later lookups
                     if( eChoice == CSeqFeatData::e_Cdregion ) {
-                        best_CDS_finder.AddFeat( *sfp );
+                        best_CDS_finder.AddFeat( *m_pCurrentFeat );
                     }
 
                     // and add first interval
-                    x_AddIntervalToFeature (curr_feat_name, sfp, loc_info);
+                    x_AddIntervalToFeature (curr_feat_name, m_pCurrentFeat, loc_info);
 
                     ignore_until_next_feature_key = false;
 
@@ -3407,10 +3287,10 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
                     x_ProcessMsg(ILineError::eProblem_NoFeatureProvidedOnIntervals, eDiag_Error);
                     // this feature is in bad shape, so we ignore the rest of it
                     ignore_until_next_feature_key = true;
-                    x_ResetFeat(sfp, curr_feat_intervals_done);
-                } else if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
+                    x_ResetFeat(m_pCurrentFeat, curr_feat_intervals_done);
+                } else if (m_pCurrentFeat  &&  m_pCurrentFeat->IsSetLocation()  &&  m_pCurrentFeat->GetLocation().IsMix()) {
                     // process start - stop multiple interval line
-                    x_AddIntervalToFeature (curr_feat_name, sfp, loc_info);
+                    x_AddIntervalToFeature (curr_feat_name, m_pCurrentFeat, loc_info);
                                            // start, stop, partial5, partial3, ispoint, isminus);
                 } else {
                     if (!(flags & CFeature_table_reader::fSuppressBadKeyWarning)) {
@@ -3421,7 +3301,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
             } else if (!NStr::IsBlank(qual)) {
               curr_feat_intervals_done = true;
-              x_ProcessQualifier(qual, qual_value, curr_feat_name, sfp, flags);
+              x_ProcessQualifier(qual, qual_value, curr_feat_name, m_pCurrentFeat, flags);
             }
             else if (!feat.empty()) {
 
@@ -3441,8 +3321,8 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     }
 
     // make sure last feature is finished
-    x_FinishFeature(sfp, ftable);
-    x_ResetFeat( sfp, curr_feat_intervals_done );
+    x_FinishFeature(m_pCurrentFeat, ftable);
+    x_ResetFeat(m_pCurrentFeat, curr_feat_intervals_done );
 
     if ((flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 ||
         (flags & CFeature_table_reader::fCDSsMustBeInTheirGenes) != 0 )
@@ -3574,6 +3454,14 @@ bool CFeatureTableReader_Imp::ParseInitialFeatureLine (
     NStr::SplitInTwo(line, " \t", out_seqid, out_annotname, NStr::fSplit_Tokenize);
 
     return true;
+}
+
+
+unsigned int CFeatureTableReader_Imp::x_GetLineNumber() const
+{
+    return m_reader ? 
+        static_cast<unsigned int>(m_reader->GetLineNumber()) : 
+        0;
 }
 
 
@@ -3785,7 +3673,6 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     CFeatureTableReader_Imp ftable_reader(&reader, 0, pMessageListener);
     while ( !reader.AtEOF() ) {
         auto annot =  x_ReadFeatureTable(ftable_reader, flags, filter);
-        //CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags, pMessageListener, filter);
         if (entry.IsSeq()) { // only one place to go
             entry.SetSeq().SetAnnot().push_back(annot);
             continue;

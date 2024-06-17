@@ -1,0 +1,14 @@
+>Feature gb|KU761507|
+19	1719	gene		
+			gene	HA
+19	1719	CDS		
+			bad_qual	invalid_qual
+			product
+			function	receptor binding and fusion protein
+			gene	HA
+19	69	sig_peptide
+70	1050	mat_peptide
+			product HA1
+1051	1920	mat_peptide
+			product HA2
+            gene
