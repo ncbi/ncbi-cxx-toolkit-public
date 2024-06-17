@@ -3,8 +3,10 @@
 # Meta-makefile
 #################################
 
-APP_PROJ = agp_count pacc test_source_mod_parser agp_val_test \
-           test_fasta_round_trip
+APP_PROJ = agp_count agp_val_test pacc \
+           test_fasta_round_trip test_feature_table_reader \
+		   test_source_mod_parser 
+
 PROJ_TAG = test
 
 srcdir = @srcdir@

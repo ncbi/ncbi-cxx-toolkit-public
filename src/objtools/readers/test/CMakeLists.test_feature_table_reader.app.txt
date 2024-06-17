@@ -1,0 +1,9 @@
+# $Id$
+
+NCBI_begin_app(test_feature_table_reader)
+  NCBI_sources(test_feature_table_reader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjread xobjutil)
+  NCBI_add_test()
+  NCBI_project_watchers(gotvyans foleyjp)
+NCBI_end_app()
