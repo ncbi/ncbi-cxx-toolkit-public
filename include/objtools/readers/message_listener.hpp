@@ -192,9 +192,9 @@ private:
     // private so later we can change the structure if
     // necessary (e.g. to have indexing and such to speed up
     // level-counting)
-    // typedef std::vector< AutoPtr<ILineError> > TLineErrVec;
+    // typedef std::vector< unique_ptr<ILineError> > TLineErrVec;
 
-    using TLineErrVec = vector<AutoPtr<IObjtoolsMessage>>;
+    using TLineErrVec = vector<unique_ptr<IObjtoolsMessage>>;
     TLineErrVec m_Errors;
 
 
@@ -204,7 +204,7 @@ private:
 
     // do not read this pointer.  It's just used to make
     // sure m_pProgressOstrm is destroyed if we own it.
-    AutoPtr<CNcbiOstream> m_progressOstrmDestroyer;
+    unique_ptr<CNcbiOstream> m_progressOstrmDestroyer;
 
 protected:
     // Child classes should use this to store errors
@@ -216,7 +216,7 @@ protected:
 
     void StoreMessage(const IObjtoolsMessage& message)
     {
-        m_Errors.emplace_back(dynamic_cast<IObjtoolsMessage*>(message.Clone()));
+        m_Errors.emplace_back(message.Clone());
     }
 };
 

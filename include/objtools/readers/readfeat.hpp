@@ -74,7 +74,8 @@ public:
         fLeaveProteinIds        = (1<<7),  ///< = 0x80 (Leave all protein_id as a qualifiers)
         fAllIdsAsLocal          = (1<<8),  ///< = 0x100 (Do not attempt to parse accessions)
         fPreferGenbankId        = (1<<9),  ///< = 0x200 (Prefer Genbank accession ids)
-        fSuppressBadKeyWarning  = (1<<10), ///<=  0x400 (Suppress 'bad key' errors; Not recommended.)
+        fSuppressBadKeyWarning  = (1<<10), ///< = 0x400 (Suppress 'bad key' errors; Not recommended.)
+        fIncludeObjectInMsg     = (1<<11), ///< = 0x800 (Include reference to feature object in message). 
     };
     using TFlags = long; ///< binary OR of EFlags
     static void AddStringFlags(
