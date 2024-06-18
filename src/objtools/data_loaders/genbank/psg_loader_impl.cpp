@@ -625,34 +625,47 @@ public:
 // CPSG_Task
 /////////////////////////////////////////////////////////////////////////////
 
+
+string s_ReplyStatusToString(EPSG_Status status)
+{
+    switch (status) {
+    case EPSG_Status::eSuccess: return "Success";
+    case EPSG_Status::eCanceled: return "Canceled";
+    case EPSG_Status::eError: return "Error";
+    case EPSG_Status::eInProgress: return "In progress";
+    case EPSG_Status::eNotFound: return "Not found";
+    case EPSG_Status::eForbidden: return "Forbidden";
+    }
+    return to_string((int)status);
+}
+
+
+const char* s_GetSkippedType(const CPSG_SkippedBlob& skipped)
+{
+    switch ( skipped.GetReason() ) {
+    case CPSG_SkippedBlob::eInProgress:
+        return "in progress";
+    case CPSG_SkippedBlob::eSent:
+        return "sent";
+    case CPSG_SkippedBlob::eExcluded:
+        return "excluded";
+    default:
+        return "unknown";
+    }
+}
+
+
 template<class TReply> void ReportStatus(TReply reply, EPSG_Status status)
 {
     if (status == EPSG_Status::eSuccess) return;
-    string sstatus;
-    switch (status) {
-    case EPSG_Status::eCanceled:
-        sstatus = "Canceled";
-        break;
-    case EPSG_Status::eError:
-        sstatus = "Error";
-        break;
-    case EPSG_Status::eInProgress:
-        sstatus = "In progress";
-        break;
-    case EPSG_Status::eNotFound:
-        sstatus = "Not found";
-        break;
-    case EPSG_Status::eForbidden:
-        sstatus = "Forbidden";
-        break;
-    default:
-        sstatus = to_string((int)status);
-        break;
-    }
+    string sstatus = s_ReplyStatusToString(status);
     while (true) {
         string msg = reply->GetNextMessage();
         if (msg.empty()) break;
         _TRACE("Request failed: " << sstatus << " - " << msg << " @ "<<CStackTrace());
+        if ( s_GetDebugLevel() >= 4 ) {
+            LOG_POST("Request failed: " << sstatus << " - " << msg);
+        }
     }
 }
 
@@ -700,11 +713,13 @@ protected:
     bool CheckReplyStatus(void);
     void ReadReply(void);
     virtual void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) = 0;
+    void LogReplyItem(shared_ptr<CPSG_ReplyItem> item) const;
 
     TReply m_Reply;
     EStatus m_Status;
     bool m_GotNotFound;
     bool m_GotForbidden;
+
 private:
     CPSG_TaskGroup& m_Group;
 };
@@ -871,6 +886,8 @@ void CPSG_Task::ReadReply(void)
         if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
         if (IsCancelled()) return;
 
+        LogReplyItem(reply_item);
+
         EPSG_Status status = reply_item->GetStatus(CDeadline::eInfinite);
         if (IsCancelled()) return;
         if (status != EPSG_Status::eSuccess) {
@@ -899,6 +916,50 @@ void CPSG_Task::ReadReply(void)
         ReportStatus(m_Reply, status);
         m_Status = eFailed;
     }
+}
+
+
+void CPSG_Task::LogReplyItem(shared_ptr<CPSG_ReplyItem> item) const
+{
+    if (s_GetDebugLevel() < 7) return;
+    auto status = item->GetStatus(CDeadline::eInfinite);
+    if (status == EPSG_Status::eSuccess) return;
+    string info;
+    switch (item->GetType()) {
+    case CPSG_ReplyItem::eBlobData:
+        info = "BlobData";
+        break;
+    case CPSG_ReplyItem::eBlobInfo:
+        info = "BlobInfo";
+        break;
+    case CPSG_ReplyItem::eSkippedBlob:
+        info = "SkippedBlob";
+        break;
+    case CPSG_ReplyItem::eBioseqInfo:
+        info = "BioseqInfo";
+        break;
+    case CPSG_ReplyItem::eNamedAnnotInfo:
+        info = "NamedAnnotInfo";
+        break;
+    case CPSG_ReplyItem::ePublicComment:
+        info = "PublicComment";
+        break;
+    case CPSG_ReplyItem::eProcessor:
+        info = "Processor";
+        break;
+    case CPSG_ReplyItem::eIpgInfo:
+        info = "IpgInfo";
+        break;
+    case CPSG_ReplyItem::eNamedAnnotStatus:
+        info = "NamedAnnotStatus";
+        break;
+    case CPSG_ReplyItem::eEndOfReply:
+        info = "EndOfReply";
+        break;
+    default: info = "unknown";
+    }
+    info += ", status: " + s_ReplyStatusToString(status);
+    LOG_POST(Info << "PSG loader - processing reply item: " << info);
 }
 
 
@@ -1738,7 +1799,6 @@ public:
     bool GotBlobData(const string& psg_blob_id) const;
     CPSGDataLoader_Impl::SReplyResult WaitForSkipped(void);
     unique_ptr<CDeadline> GetWaitDeadline(const CPSG_SkippedBlob& skipped) const;
-    static const char* GetSkippedType(const CPSG_SkippedBlob& skipped);
     void x_TraceChunkBlobMap(const char* msg) const;
 
     void Finish(void) override
@@ -2172,21 +2232,6 @@ unique_ptr<CDeadline> CPSG_Blob_Task::GetWaitDeadline(const CPSG_SkippedBlob& sk
 }
 
 
-const char* CPSG_Blob_Task::GetSkippedType(const CPSG_SkippedBlob& skipped)
-{
-    switch ( skipped.GetReason() ) {
-    case CPSG_SkippedBlob::eInProgress:
-        return "in progress";
-    case CPSG_SkippedBlob::eSent:
-        return "sent";
-    case CPSG_SkippedBlob::eExcluded:
-        return "excluded";
-    default:
-        return "unknown";
-    }
-}
-
-
 void CPSG_Blob_Task::ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item)
 {
     switch (item->GetType()) {
@@ -2260,7 +2305,7 @@ CPSGDataLoader_Impl::SReplyResult CPSG_Blob_Task::WaitForSkipped(void)
     }
     else {
         if ( s_GetDebugLevel() >= 6 ) {
-            LOG_POST("CPSGDataLoader: '"<<GetSkippedType(*m_Skipped)<<"' blob is not loaded: "<<dl_blob_id.ToString());
+            LOG_POST("CPSGDataLoader: '"<<s_GetSkippedType(*m_Skipped)<<"' blob is not loaded: "<<dl_blob_id.ToString());
         }
     }
     return ret;
