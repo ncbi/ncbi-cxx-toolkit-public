@@ -20906,6 +20906,8 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jul=2010"), "Jul-2010");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("30.12.1998"), "30-Dec-1998");
 
+    // zero-padding of single-digit day or month, skips leading and trailing delimiters
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("--2021-1_2022-01--"), "2021-01/2022-01");
 }
 
 

@@ -954,11 +954,56 @@ bool s_ChooseMonthAndDay(const string& token1, const string& token2, bool month_
 }
 
 
+// RW-2286
+static string RepairSingleDigitMonth (const string& orig_date)
+{
+    if (orig_date.find_first_not_of(" ,-/=_.0123456789") != NPOS) {
+        return orig_date;
+    }
+
+    // multi-delimiter extraction logic adapted from example in:
+    //   https://stackoverflow.com/questions/7621727/split-a-string-into-words-by-multiple-delimiters
+
+    string delims = " ,-/=_.";
+    size_t prev = 0;
+    size_t next = orig_date.find_first_of(delims, prev);
+    vector<string> tokens;
+
+    while (next != string::npos) {
+        if (next > prev) {
+            string str = orig_date.substr(prev, next - prev);
+            if (str.length() == 1) {
+                // pad single digit with leading zero
+                str = "0" + str;
+            }
+            tokens.push_back(str);
+        }
+        prev = next + 1;
+        next = orig_date.find_first_of(delims, prev);
+    }
+
+    if (prev < orig_date.length()) {
+        string str = orig_date.substr(prev, string::npos);
+        if (str.length() == 1) {
+            // pad last component single digit with leading zero
+            str = "0" + str;
+        }
+        tokens.push_back(str);
+    }
+
+    string result = NStr::Join(tokens, "-");
+
+    return result;
+}
+
+
 string CSubSource::FixDateFormat (const string& test, bool month_first, bool& month_ambiguous)
 {
     string orig_date = test;
     NStr::TruncateSpacesInPlace(orig_date);
 
+    orig_date = RepairSingleDigitMonth(orig_date);
+    
     if (IsISOFormatDate(orig_date)) {
         return orig_date;
     } else if (x_IsFixableIsoDate(orig_date)) {
