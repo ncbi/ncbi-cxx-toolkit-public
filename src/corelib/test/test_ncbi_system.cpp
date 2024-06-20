@@ -156,6 +156,11 @@ static void Test_MemLimit(void)
 #else
     LOG_POST("\nMemory limit test\n");
 
+    if (getenv("NCBI_RUN_UNDER_VALGRIND")) {
+        LOG_POST("Skipping memory limit test under Valgrind\n");
+        NOT_SUPPORTED;
+    }
+
     const size_t kCount    = 100;
     const size_t kMB       = 1024 * 1024;
     const size_t kMemLimit = kCount * kMB;
@@ -197,6 +202,10 @@ static void Test_CpuLimit(void)
 {
     LOG_POST("\nCPU time limit test\n");
 
+    if (getenv("NCBI_RUN_UNDER_VALGRIND")) {
+        LOG_POST("Skipping CPU limit test under Valgrind\n");
+        NOT_SUPPORTED;
+    }
     // Use our own handler
     // To use default handler, use NULL instead of PrintHandler
     bool res = SetCpuTimeLimit(1, 5, PrintHandler, NULL);
