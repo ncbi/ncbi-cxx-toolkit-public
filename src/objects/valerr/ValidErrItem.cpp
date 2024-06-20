@@ -995,6 +995,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadInstitutionGeoLocName,
     { "BadInstitutionGeoLocName",
     "The institution (or institution: collection) code should not have a <geo_loc_name> modifier." } },
+    { eErr_SEQ_DESCR_MultipleIsolates,
+    { "MultipleIsolates",
+      "A Biosource should only have one isolate value" } } ,
 
 
     /* SEQ_GENERIC */

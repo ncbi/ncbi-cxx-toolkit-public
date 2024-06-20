@@ -359,6 +359,7 @@ enum EErrType {
     eErr_SEQ_DESCR_ReplacedGeoLocNameCode,
     eErr_SEQ_DESCR_BadGeoLocNameCapitalization,
     eErr_SEQ_DESCR_BadInstitutionGeoLocName,
+    eErr_SEQ_DESCR_MultipleIsolates,
     ERR_CODE_END(SEQ_DESCR),
 
 
