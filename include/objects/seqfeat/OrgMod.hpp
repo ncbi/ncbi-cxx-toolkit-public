@@ -129,7 +129,11 @@ public:
     static bool IsINSDCValidTypeMaterial(const string& type_material);
 
     typedef map<string, string, PNocase> TInstitutionCodeMap;
-    private:
+
+    // Allows instant transition when quarantine period ends.
+    static bool NCBI_ValidateForMultipleIsolates(void);
+
+private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);
     COrgMod& operator=(const COrgMod& value);
