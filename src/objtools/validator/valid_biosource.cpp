@@ -1884,10 +1884,13 @@ const CSeq_entry *ctx)
     bool is_viral = false;
     string lineage;
     string genus;
+    string isolate;
     string species;
     string strain;
     string sub_species;
     string serovar;
+
+    bool check_multiple_isolates = COrgMod::NCBI_ValidateForMultipleIsolates();
 
     if (orgname.IsSetLineage()) {
         lineage = orgname.GetLineage();
@@ -1909,6 +1912,7 @@ const CSeq_entry *ctx)
     }
     if (orgname.IsSetMod()) {
         bool has_strain = false;
+        bool has_isolate = false;
         vector<string> vouchers;
         FOR_EACH_ORGMOD_ON_ORGNAME(omd_itr, orgname)
         {
@@ -1953,6 +1957,17 @@ const CSeq_entry *ctx)
                         "Multiple strain qualifiers on the same BioSource", obj, ctx);
                 }
                 has_strain = true;
+                break;
+            case COrgMod::eSubtype_isolate:
+                if (omd.IsSetSubname()) {
+                    string str = omd.GetSubname();
+                    isolate = str;
+                }
+                if (has_isolate && check_multiple_isolates) {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleIsolates,
+                        "Multiple isolate qualifiers on the same BioSource", obj, ctx);
+                }
+                has_isolate = true;
                 break;
             case COrgMod::eSubtype_serovar:
                 if (omd.IsSetSubname()) {

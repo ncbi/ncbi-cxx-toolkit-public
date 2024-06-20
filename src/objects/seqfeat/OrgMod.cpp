@@ -1230,6 +1230,40 @@ bool COrgMod::IsINSDCValidTypeMaterial(const string& type_material)
 }
 
 
+static bool s_init_LookForMultipleIsolates(void)
+{
+    if (! CNcbiApplication::Instance()) {
+        return false;
+    }
+
+    const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
+    string fromEnv = env.Get("NCBI_VALIDATE_FOR_MULTIPLE_ISOLATES");
+    NStr::ToLower(fromEnv);
+    if (fromEnv == "true") {
+        return true;
+    } else if (fromEnv == "false") {
+        return false;
+    }
+
+    const CNcbiRegistry& reg = CNcbiApplication::Instance()->GetConfig();
+    string fromConfig = reg.GetString("OrgMod", "ValidateForMultipleIsolates", "off");
+    NStr::ToLower(fromConfig);
+    if (fromConfig == "1" || fromConfig == "on" || fromConfig == "true" || fromConfig == "yes") {
+        return true;
+    }
+
+    // RW-2259 enable by default
+    return true;
+}
+
+
+bool COrgMod::NCBI_ValidateForMultipleIsolates(void)
+{
+    static bool value = s_init_LookForMultipleIsolates();
+    return value;
+}
+
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
