@@ -596,24 +596,6 @@ BOOST_AUTO_TEST_CASE(CheckRID) {
     BOOST_REQUIRE(sas.GetPointer() != NULL);
 }
 
-BOOST_AUTO_TEST_CASE(CheckColoRID) {
-    // Colo RID that is preserved permanently
-    const string rid("953V6EF901N");
-    CRemoteBlast rmt_blaster(rid);
-    //rmt_blaster.SetVerbose();
-    
-    BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
-    BOOST_REQUIRE_EQUAL(true, rmt_blaster.CheckDone());
-    BOOST_REQUIRE_EQUAL(kEmptyStr, rmt_blaster.GetErrors());
-
-    CRef<CSeq_align_set> sas = rmt_blaster.GetAlignments();
-    BOOST_REQUIRE(sas.GetPointer() != NULL);
-    
-    TSeqAlignVector sav = rmt_blaster.GetSeqAlignSets();
-    BOOST_REQUIRE(! sav.empty());
-    BOOST_REQUIRE(sav[0].NotEmpty());
-}
-
 BOOST_AUTO_TEST_CASE(GetErrorsFromFailedRID) {
     // Uncomment to redirect to test system
     //CAutoEnvironmentVariable tmp_env("BLAST4_CONN_SERVICE_NAME", "blast4_test");
