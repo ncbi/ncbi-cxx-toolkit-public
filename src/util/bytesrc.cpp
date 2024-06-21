@@ -256,7 +256,10 @@ CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
                                            IFStreamFlags(binary)))
 {
     if ( !*m_Stream ) {
-        NCBI_THROW(CUtilException,eNoInput,"file not found: " + fileName);
+        CNcbiError::SetFromErrno();
+        NCBI_THROW(CUtilException,eNoInput, string("No input data: ")
+            + NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER())
+            + string(": ") + fileName);
     }
 }
 
@@ -433,8 +436,10 @@ CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
     if ( !m_FStream ) {
 //        THROW1_TRACE(runtime_error, "file not found: " +
 //                     source->GetFileName());
-        NCBI_THROW(CUtilException,eNoInput,
-                   "file not found: " +source->GetFileName());
+        CNcbiError::SetFromErrno();
+        NCBI_THROW(CUtilException,eNoInput,  string("No input data: ")
+            + NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER())
+            + string(": ") + source->GetFileName());
     }
     m_Stream = &m_FStream;
 }
