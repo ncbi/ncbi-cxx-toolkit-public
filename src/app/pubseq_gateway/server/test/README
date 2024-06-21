@@ -73,3 +73,9 @@ export NCBI_PSG_AUTH_TOKEN='"...;...;...;..."'
 echo '{ "jsonrpc": "2.0", "method": "biodata", "params": { "bio_id": [ "gb|WMV97217|", 5 ], "user_args": "disable_processor=WGS" }, "id": "biodata_1" }' | psg_client interactive -server-mode -data-limit 1KB -preview-size 16 -service psg11:12000
 
 
+vtune
+-----
+
+On tonka1 it is located here:
+/usr/local/intel/2018/vtune_amplifier_2018.3.0.558279/bin64/
+

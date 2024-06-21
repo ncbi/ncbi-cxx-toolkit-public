@@ -44,39 +44,28 @@ SActiveProcPerRequest   g_ActiveProcPerRequest;
 atomic<bool>            g_ActiveProcPerRequestLock;
 
 
-void RegisterProcessorGroupName(const string &  group_name)
+void RegisterProcessorGroupName(const string &  group_name,
+                                TProcessorPriority  priority)
 {
     // There is no need to take a lock because populating the list happens once
     // when there is only one thread
+    g_ActiveProcPerRequest.m_ProcPriorityToIndex[priority] =
+        g_ActiveProcPerRequest.m_RegisteredProcessorGroups.size();
     g_ActiveProcPerRequest.m_RegisteredProcessorGroups.push_back(group_name);
-}
-
-
-ssize_t  SActiveProcPerRequest::GetProcessorIndex(const string &  group_name)
-{
-    size_t  index = 0;
-    for (const auto &  item: g_ActiveProcPerRequest.m_RegisteredProcessorGroups) {
-        if (item == group_name) {
-            return index;
-        }
-        ++index;
-    }
-    // Cannot happened
-    return 0;
 }
 
 
 void RegisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,
                              SProcessorGroup *  proc_group)
 {
+    size_t                      index = 0;
+    auto *                      item = & g_ActiveProcPerRequest.m_ProcPerRequest[request_type];
     CSpinlockGuard              guard(&g_ActiveProcPerRequestLock);
 
-    ++g_ActiveProcPerRequest.m_ProcPerRequest[request_type].m_RequestCounter;
+    ++item->m_RequestCounter;
     for (const auto & proc: proc_group->m_Processors) {
-        ssize_t     index = g_ActiveProcPerRequest.GetProcessorIndex(proc.m_Processor->GetGroupName());
-        if (index >= 0) {
-            ++g_ActiveProcPerRequest.m_ProcPerRequest[request_type].m_ProcessorCounter[index];
-        }
+        index = g_ActiveProcPerRequest.GetProcessorIndex(proc.m_Processor->GetPriority());
+        ++item->m_ProcessorCounter[index];
     }
 }
 
@@ -84,16 +73,16 @@ void RegisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,
 void UnregisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,
                                SProcessorGroup *  proc_group)
 {
+    size_t                      index = 0;
+    auto *                      item = & g_ActiveProcPerRequest.m_ProcPerRequest[request_type];
     CSpinlockGuard              guard(&g_ActiveProcPerRequestLock);
 
     for (const auto & proc: proc_group->m_Processors) {
-        ssize_t     index = g_ActiveProcPerRequest.GetProcessorIndex(proc.m_Processor->GetGroupName());
-        if (index >= 0) {
-            --g_ActiveProcPerRequest.m_ProcPerRequest[request_type].m_ProcessorCounter[index];
-        }
+        index = g_ActiveProcPerRequest.GetProcessorIndex(proc.m_Processor->GetPriority());
+        --item->m_ProcessorCounter[index];
     }
 
-    --g_ActiveProcPerRequest.m_ProcPerRequest[request_type].m_RequestCounter;
+    --item->m_RequestCounter;
 }
 
 
@@ -122,7 +111,7 @@ SActiveProcPerRequest  GetActiveProcGroupSnapshot(void)
 
 void PopulatePerRequestMomentousDictionary(CJsonNode &  dict)
 {
-    // Populates per request cmomentous counters including backlog ones
+    // Populates per request momentous counters including backlog ones
     SActiveProcPerRequest   active_proc_snapshot = GetActiveProcGroupSnapshot();
     SBacklogPerRequest      backlog_snapshot = GetBacklogPerRequestSnapshot();
     CJsonNode               per_request(CJsonNode::NewObjectNode());
