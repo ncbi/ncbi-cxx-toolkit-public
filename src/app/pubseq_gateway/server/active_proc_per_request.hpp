@@ -65,6 +65,7 @@ struct SActiveProcPerRequest
 {
     SProcPerRequest     m_ProcPerRequest[CPSGS_Request::ePSGS_UnknownRequest];
     vector<string>      m_RegisteredProcessorGroups;
+    size_t              m_ProcPriorityToIndex[MAX_PROCESSOR_KINDS];
 
     SActiveProcPerRequest()
     {
@@ -72,10 +73,14 @@ struct SActiveProcPerRequest
             m_ProcPerRequest[k].Reset();
     }
 
-    ssize_t  GetProcessorIndex(const string &  group_name);
+    size_t  GetProcessorIndex(TProcessorPriority  priority) const
+    {
+        return m_ProcPriorityToIndex[priority];
+    }
 };
 
-void RegisterProcessorGroupName(const string &  group_name);
+void RegisterProcessorGroupName(const string &  group_name,
+                                TProcessorPriority  priority);
 void RegisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,
                              SProcessorGroup *  proc_group);
 void UnregisterActiveProcGroup(CPSGS_Request::EPSGS_Type  request_type,

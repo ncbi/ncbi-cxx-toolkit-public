@@ -364,8 +364,16 @@ private:
 class CSpinlockGuard
 {
 public:
-    CSpinlockGuard(atomic<bool> *  spinlock);
-    ~CSpinlockGuard();
+    CSpinlockGuard(atomic<bool> *  spinlock) :
+        m_Spinlock(spinlock)
+    {
+        while (m_Spinlock->exchange(true)) {}
+    }
+
+    ~CSpinlockGuard()
+    {
+        *m_Spinlock = false;
+    }
 
 private:
     atomic<bool> *  m_Spinlock;
