@@ -458,8 +458,6 @@ void CMakeProfileDBApp::x_SetupArgDescriptions(void)
     arg_desc->SetConstraint(kArgMatrixName, &(*new CArgAllow_Strings,kMatrixBLOSUM62, kMatrixBLOSUM80,
     						kMatrixBLOSUM50, kMatrixBLOSUM45, kMatrixBLOSUM90, kMatrixPAM250, kMatrixPAM30, kMatrixPAM70));
 
-    arg_desc->AddFlag("without_freq_ratios", "Build rps db without freq ratios",true);
-
     //Delta Blast Options
     arg_desc->SetCurrentGroup("Delta Blast Options");
     arg_desc->AddDefaultKey(kObsrThreshold, "observations_threshold", "Exclude domains with "
@@ -555,16 +553,6 @@ void CMakeProfileDBApp::x_InitProgramParameters(void)
 	else
 		m_GapExtPenalty = default_gap_extend;
 
-	if(args.Exist("without_freq_ratios")) {
-		if (m_op_mode == op_rps) {
-		m_UpdateFreqRatios = !args["without_freq_ratios"].AsBoolean();
-		}
-		else {
-			if (args["without_freq_ratios"].AsBoolean()) {
-				NCBI_THROW(CInputException, eInvalidInput,  "without_freq_ratios can only be used for rps db");
-			}
-		}
-	}
 	//pssm scale factor
 	m_PssmScaleFactor = args[kPssmScaleFactor].AsDouble();
 
@@ -656,10 +644,8 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 
 		if(m_UpdateFreqRatios && (!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios()))
 		{
-			string err = filename + " contains no frequence ratios.\n" +
-					     "You can use the -without_freq_ratios option to build the database without frequency ratios.\n" +
-					     "However composition based statistics will have to be disabled for RPSBLAST searches against\n" +
-					     "this database (not recommended).";
+			string err = filename + " contains no frequency ratios.\n" +
+					     "Please use a recent version of psiblast to regenerate PSSM files\n" ;
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
 
