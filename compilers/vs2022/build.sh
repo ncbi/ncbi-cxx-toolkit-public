@@ -163,6 +163,7 @@ for tree in $build_trees ; do
             continue
         fi
         alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
+        sol_name=`echo $sol | sed -e 's|^.*/||g' -e 's|.sln||g'`
         start=`eval $timer`
         echo
         echo Start time: $start
@@ -179,7 +180,7 @@ for tree in $build_trees ; do
         fi
         if $is_ppb; then
             generate_simple_log $out $tree "$sol" $cfg_configure > $out.simple
-            mv $out $cfg.configure.log
+            mv $out configure.${tree}.${sol_name}.${cfg_configure}.log
             mv $out.simple $out
         fi 
         cat $out
@@ -218,6 +219,7 @@ for tree in $build_trees ; do
                 continue
             fi
             alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
+            sol_name=`echo $sol | sed -e 's|^.*/||g' -e 's|.sln||g'`
             start=`eval $timer`
             echo
             echo Start time: $start
@@ -231,7 +233,7 @@ for tree in $build_trees ; do
             sleep 20
             if $is_ppb; then
                 generate_simple_log $out $tree "$sol" $cfg > $out.simple
-                mv $out $cfg.build.log
+                mv $out build.${tree}.${sol_name}.${cfg}.log
                 mv $out.simple $out
             fi 
             cat $out
