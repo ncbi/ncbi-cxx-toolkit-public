@@ -81,6 +81,7 @@ string CRequestStatus::GetStdStatusMessage(ECode code)
     case e416_RangeNotSatisfiable: return "Requested Range Not Satisfiable";
     case e417_ExpectationFailed: return "Expectation Failed";
     case e422_UnprocessableEntity: return "Unprocessable Entity";
+    case e429_Too_Many_Requests: return "Too Many Requests";
     case e451_Unavailable_For_Legal_Reasons: return "Unavailable For Legal Reasons";
     case e499_BrokenConnection: return "Broken Connection";
     case e500_InternalServerError: return "Internal Server Error";
