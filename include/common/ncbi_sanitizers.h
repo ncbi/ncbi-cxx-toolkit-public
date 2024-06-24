@@ -69,6 +69,12 @@
 #endif
 
 
+// Define NCBI_USE_SANITIZER if running under ANY sanitizer
+#if defined(NCBI_USE_ASAN) || defined(NCBI_USE_LSAN) || defined(NCBI_USE_MSAN) || defined(NCBI_USE_TSAN)
+#   define NCBI_USE_SANITIZER
+#endif
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// LeakSanitazer
