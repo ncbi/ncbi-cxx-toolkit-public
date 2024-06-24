@@ -37118,34 +37118,38 @@ if test "$with_opentelemetry" != "no"; then
     OPENTELEMETRY_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       OPENTELEMETRY_LIBS="$OPENTELEMETRY_LIBPATH -lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
+       OPENTELEMETRY_LIBS="$OPENTELEMETRY_LIBPATH -lopentelemetry_exporter_otlp_grpc -lopentelemetry_exporter_otlp_grpc_client -lopentelemetry_proto_grpc \
+   -lopentelemetry_exporter_otlp_http \
+   -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
    -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
    -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common"
     else
        OPENTELEMETRY_INCLUDE=""
-       OPENTELEMETRY_LIBS="-lopentelemetry_exporter_otlp_http -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
+       OPENTELEMETRY_LIBS="-lopentelemetry_exporter_otlp_grpc -lopentelemetry_exporter_otlp_grpc_client -lopentelemetry_proto_grpc \
+   -lopentelemetry_exporter_otlp_http \
+   -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
    -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
    -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common"
        in_path=
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libopentelemetry_exporter_otlp_http$in_path" >&5
-$as_echo_n "checking for libopentelemetry_exporter_otlp_http$in_path... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libopentelemetry_exporter_otlp_grpc$in_path" >&5
+$as_echo_n "checking for libopentelemetry_exporter_otlp_grpc$in_path... " >&6; }
 if ${ncbi_cv_lib_opentelemetry+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  CPPFLAGS="$PROTOBUF_INCLUDE $OPENTELEMETRY_INCLUDE $orig_CPPFLAGS"
-       LIBS="$OPENTELEMETRY_LIBS $PROTOBUF_LIBS $CURL_LIBS $orig_LIBS"
+  CPPFLAGS="$GRPC_INCLUDE $OPENTELEMETRY_INCLUDE $orig_CPPFLAGS"
+       LIBS="$OPENTELEMETRY_LIBS $GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <opentelemetry/exporters/otlp/otlp_http_exporter.h>
+#include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>
 int
 main ()
 {
-opentelemetry::exporter::otlp::OtlpHttpExporter exporter;
+opentelemetry::exporter::otlp::OtlpGrpcExporter exporter;
   ;
   return 0;
 }
@@ -37172,7 +37176,7 @@ $as_echo "$ncbi_cv_lib_opentelemetry" >&6; }
     OPENTELEMETRY_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}OPENTELEMETRY"; WithPackagesSep=" "
-    OPENTELEMETRY_INCLUDE="$PROTOBUF_INCLUDE $OPENTELEMETRY_INCLUDE"
+    OPENTELEMETRY_INCLUDE="$GRPC_INCLUDE $OPENTELEMETRY_INCLUDE"
 
 $as_echo "#define HAVE_LIBOPENTELEMETRY 1" >>confdefs.h
 

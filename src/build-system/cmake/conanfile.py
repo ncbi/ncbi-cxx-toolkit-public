@@ -108,7 +108,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         # Not looking to use Jaeger, but the recipe might not provide
         # the option and catching e.g. AttributeError won't work.
         # self.options["opentelemetry-cpp"+_s].with_jaeger = False
-        self.options["opentelemetry-cpp"+_s].with_otlp_grpc = False
+        self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
         # otlp-http is already on by default
         # self.options["opentelemetry-cpp"+_s].with_otlp_http = True
         self.options["opentelemetry-cpp"+_s].with_zipkin = False

@@ -9422,15 +9422,17 @@ if test -d "$OPENTELEMETRY_PATH"; then
 fi
 # Not bothering with pkg-config, whose coverage is too limited.
 NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
-  opentelemetry_exporter_otlp_http,
-  [AC_LANG_PROGRAM([[@%:@include <opentelemetry/exporters/otlp/otlp_http_exporter.h>]],
-      [[opentelemetry::exporter::otlp::OtlpHttpExporter exporter;]])],
-  [-lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
+  opentelemetry_exporter_otlp_grpc,
+  [AC_LANG_PROGRAM([[@%:@include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>]],
+      [[opentelemetry::exporter::otlp::OtlpGrpcExporter exporter;]])],
+  [-lopentelemetry_exporter_otlp_grpc_client -lopentelemetry_proto_grpc \
+   -lopentelemetry_exporter_otlp_http \
+   -lopentelemetry_exporter_otlp_http_client -lopentelemetry_otlp_recordable \
    -lopentelemetry_exporter_ostream_span -lopentelemetry_trace \
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
    -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common],
-  [$PROTOBUF_LIBS $CURL_LIBS], [$PROTOBUF_INCLUDE])
+  [$GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS], [$GRPC_INCLUDE])
 OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
 if test "$with_opentelemetry" != no \
    -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"; then
