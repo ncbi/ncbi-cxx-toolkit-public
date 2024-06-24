@@ -55,6 +55,7 @@ USING_NCBI_SCOPE;
 #define NOT_SUPPORTED      exit(88)
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // General testsSystem information
@@ -150,12 +151,12 @@ static void PrintHandler(ELimitsExitCode code, size_t limit,
 
 static void Test_MemLimit(void)
 {
-#ifdef NCBI_USE_TSAN
-    LOG_POST("\nSkipping memory limit test under ThreadSanitizer\n");
-    NOT_SUPPORTED;
-#else
     LOG_POST("\nMemory limit test\n");
 
+#ifdef NCBI_USE_SANITIZER
+    LOG_POST("Skipping memory limit test under GCC Sanitizer\n");
+    NOT_SUPPORTED;
+#endif
     if (getenv("NCBI_RUN_UNDER_VALGRIND")) {
         LOG_POST("Skipping memory limit test under Valgrind\n");
         NOT_SUPPORTED;
@@ -189,7 +190,6 @@ static void Test_MemLimit(void)
     }
     // Should not be reached
     FATAL_ERROR_LIMIT;
-#endif
 }
 
 
