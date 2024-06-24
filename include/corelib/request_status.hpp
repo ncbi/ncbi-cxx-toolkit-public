@@ -97,6 +97,7 @@ public:
         e416_RangeNotSatisfiable    = 416,
         e417_ExpectationFailed      = 417,
         e422_UnprocessableEntity    = 422,
+        e429_Too_Many_Requests      = 429,
         e451_Unavailable_For_Legal_Reasons = 451,
 
         /// Non-standard status code - used to indicate broken connection
