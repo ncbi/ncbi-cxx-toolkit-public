@@ -87,7 +87,8 @@ static bool s_init_UseGeoLocNameForCountry(void)
         return true;
     }
 
-    return false;
+    // RW-2167 default to true now that the country to geo_loc_name transition has occurred
+    return true;
 }
 
 
