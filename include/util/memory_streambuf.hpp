@@ -50,8 +50,6 @@ public:
     CMemory_Streambuf(char*       area, size_t size);
 
 protected:
-    static constexpr streamsize bmax = std::numeric_limits<int>::max();
-
     CNcbiStreambuf* setbuf(CT_CHAR_TYPE*, streamsize) override { return 0; }
 
     CT_INT_TYPE underflow(void) override;
