@@ -691,6 +691,10 @@ public:
         return m_GotForbidden;
     }
 
+    EPSG_Status GetPSGStatus(void) const {
+        return m_PSGStatus;
+    }
+
 protected:
     void OnStatusChange(EStatus old) override;
 
@@ -715,6 +719,11 @@ protected:
     virtual void ProcessReplyItem(shared_ptr<CPSG_ReplyItem> item) = 0;
     void LogReplyItem(shared_ptr<CPSG_ReplyItem> item) const;
 
+    void SetPSGStatus(EPSG_Status status) {
+        // Save the first non-successful status.
+        if (m_PSGStatus == EPSG_Status::eSuccess) m_PSGStatus = status;
+    }
+
     TReply m_Reply;
     EStatus m_Status;
     bool m_GotNotFound;
@@ -722,6 +731,7 @@ protected:
 
 private:
     CPSG_TaskGroup& m_Group;
+    EPSG_Status m_PSGStatus = EPSG_Status::eSuccess;
 };
 
 
@@ -858,6 +868,7 @@ bool CPSG_Task::CheckReplyStatus(void)
 {
     EPSG_Status status = m_Reply->GetStatus(CDeadline::eInfinite);
     if (status != EPSG_Status::eSuccess) {
+        SetPSGStatus(status);
         ReportStatus(m_Reply, status);
         if ( status == EPSG_Status::eNotFound ) {
             m_GotNotFound = true;
@@ -891,6 +902,7 @@ void CPSG_Task::ReadReply(void)
         EPSG_Status status = reply_item->GetStatus(CDeadline::eInfinite);
         if (IsCancelled()) return;
         if (status != EPSG_Status::eSuccess) {
+            SetPSGStatus(status);
             ReportStatus(reply_item, status);
             if ( status == EPSG_Status::eNotFound ) {
                 m_GotNotFound = true;
@@ -913,6 +925,7 @@ void CPSG_Task::ReadReply(void)
         return;
     }
     if (status != EPSG_Status::eSuccess) {
+        SetPSGStatus(status);
         ReportStatus(m_Reply, status);
         m_Status = eFailed;
     }
@@ -2351,6 +2364,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& 
         group.AddTask(task);
     }
     size_t failed_count = 0;
+    EPSG_Status psg_status = EPSG_Status::eSuccess;
     // Waiting for skipped blobs can block all pool threads. To prevent this postpone
     // waiting until all other tasks are completed.
     typedef list<CRef<CPSG_Blob_Task>> TTasks;
@@ -2361,6 +2375,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& 
         _ASSERT(task);
         guards.push_back(make_shared<CPSG_Task_Guard>(*task));
         if (task->GetStatus() == CThreadPool_Task::eFailed) {
+            if (psg_status == EPSG_Status::eSuccess) psg_status = task->GetPSGStatus();
             ++failed_count;
             continue;
         }
@@ -2394,7 +2409,7 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& 
     }
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" blobs");
+                       "failed to load "<<failed_count<<" blobs, status=" << s_ReplyStatusToString(psg_status));
     }
 }
 
@@ -2746,12 +2761,14 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
         shared_ptr<CPSG_BioseqInfo> bioseq_info;
         shared_ptr<CPSG_BlobInfo> blob_info;
         shared_ptr<CPSG_BlobData> blob_data;
+        EPSG_Status psg_status = EPSG_Status::eSuccess;
         for (;;) {
             auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
             if (!reply_item) continue;
             if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
             EPSG_Status status = reply_item->GetStatus(CDeadline::eInfinite);
             if (status != EPSG_Status::eSuccess) {
+                if (psg_status == EPSG_Status::eSuccess) psg_status = status;
                 ReportStatus(reply_item, status);
                 if ( status == EPSG_Status::eNotFound ) {
                     continue;
@@ -2782,7 +2799,8 @@ CPSGDataLoader_Impl::x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
             }
         }
         if ( failed ) {
-            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to get CDD blob-id for "+bio_id.Repr());
+            NCBI_THROW(CLoaderException, eLoaderFailed, "failed to get CDD blob-id for " + bio_id.Repr()
+                + ", status=" + s_ReplyStatusToString(psg_status));
         }
         if ( !cdd_info ) {
             x_CreateEmptyLocalCDDEntry(data_source, chunk);
@@ -3156,7 +3174,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
             else {
                 _TRACE("Failed to load annotations for " << ids.begin()->AsString());
                 NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "CPSGDataLoader::GetAnnotRecordsNA() failed");
+                           "CPSGDataLoader::GetAnnotRecordsNA() failed, status=" + s_ReplyStatusToString(task->GetPSGStatus()));
             }
         }
     }
