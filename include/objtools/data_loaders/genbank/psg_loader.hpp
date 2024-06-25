@@ -133,7 +133,7 @@ public:
     TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) override;
     TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
         const string& named_acc) override;
-    bool HaveCache(TCacheType cache_type = fCache_Any) override
+    bool HaveCache(TCacheType) override
     {
         return false;
     }
