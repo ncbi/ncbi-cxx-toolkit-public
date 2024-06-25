@@ -52,7 +52,8 @@ APP_PROJ = example_value_convert \
            test_row_reader_ncbi_tsv \
            test_row_reader_excel_csv \
            test_compile_time \
-           test_ctre
+           test_ctre \
+           test_memory_streambuf
 
 
 EXPENDABLE_APP_PROJ = \
