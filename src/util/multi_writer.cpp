@@ -29,9 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistr.hpp>
 #include <corelib/ncbimisc.hpp>
-#include <util/util_exception.hpp>
 #include <util/multi_writer.hpp>
 
 BEGIN_NCBI_SCOPE

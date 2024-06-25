@@ -32,13 +32,10 @@
  *
  */
 
-/// @file transmissionrw.hpp
-/// Reader writer with transmission checking
-/// @sa IReader, IWriter
+/// @file multi_writer.hpp
+/// @sa IWriter
 
-#include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
-#include <corelib/ncbidbg.hpp> // for _ASSERT
 
 
 BEGIN_NCBI_SCOPE
