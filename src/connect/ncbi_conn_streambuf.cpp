@@ -445,7 +445,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
                 _ASSERT(m_Status != eIO_Success);
                 break;
             }
-            // update buffer content (get rid of the data just sent)
+            // update buffer contents (get rid of the data just sent)
             memmove(pbase(), pbase() + n_written, n_towrite - n_written);
             x_PPos += (CT_OFF_TYPE) n_written;
             pbump(-int(n_written));
