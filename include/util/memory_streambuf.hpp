@@ -63,6 +63,9 @@ protected:
     CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                         IOS_BASE::openmode which =
                         IOS_BASE::in | IOS_BASE::out) override;
+    CT_POS_TYPE seekpos(CT_POS_TYPE pos,
+                        IOS_BASE::openmode which =
+                        IOS_BASE::in | IOS_BASE::out) override;
 
     int         sync(void) override { return 0; }
 
