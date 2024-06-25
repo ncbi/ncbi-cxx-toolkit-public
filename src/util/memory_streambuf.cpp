@@ -32,12 +32,16 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <corelib/ncbistre.hpp>
 #include <util/memory_streambuf.hpp>
 #include <cstring>
 
 
 BEGIN_NCBI_SCOPE
+
+
+static constexpr streamsize bmax = std::numeric_limits<int>::max();
 
 
 CMemory_Streambuf::CMemory_Streambuf(const char* area, size_t size)
@@ -64,6 +68,7 @@ CMemory_Streambuf::CMemory_Streambuf(char* area, size_t size)
 
 CT_INT_TYPE CMemory_Streambuf::underflow(void)
 {
+    _ASSERT(egptr() >= gptr());
 #ifdef NCBI_OS_MSWIN
     auto pos = gptr();
 
@@ -85,6 +90,7 @@ CT_INT_TYPE CMemory_Streambuf::underflow(void)
 
 streamsize CMemory_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
 {
+    _ASSERT(egptr() >= gptr());
 #ifdef NCBI_OS_MSWIN
     auto pos = gptr();
 
@@ -114,7 +120,7 @@ streamsize CMemory_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
 CT_INT_TYPE CMemory_Streambuf::overflow(CT_INT_TYPE c)
 {
     if (CT_EQ_INT_TYPE(c, CT_EOF))
-        return pbase() ? CT_NOT_EOF(CT_EOF) : CT_EOF;
+        return CT_NOT_EOF(CT_EOF);
 
 #ifdef NCBI_OS_MSWIN
     auto pos = pptr();
@@ -165,9 +171,9 @@ CT_POS_TYPE CMemory_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence
     static const CT_POS_TYPE err = (CT_POS_TYPE)((CT_OFF_TYPE)(-1L));
     char* pos;
 
-    if (!(which & (IOS_BASE::in | IOS_BASE::out)))
+    if (!(which &= (IOS_BASE::in | IOS_BASE::out)))
         return err;
-    if ((which & IOS_BASE::out)  &&  !pbase())
+    if (which == IOS_BASE::out  &&  !pbase())
         return err;
     switch (whence) {
     case IOS_BASE::beg:
@@ -175,7 +181,7 @@ CT_POS_TYPE CMemory_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence
         break;
     case IOS_BASE::cur:
         if ((which & (IOS_BASE::in | IOS_BASE::out)) == (IOS_BASE::in | IOS_BASE::out))
-            pos = gptr() == pptr() ? gptr() : 0;
+            pos = !pbase()  ||  gptr() == pptr() ? gptr() : 0;
         else
             pos = which & IOS_BASE::in ? gptr() : pptr();
         break;
@@ -189,8 +195,9 @@ CT_POS_TYPE CMemory_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence
         return err;
 
     if (off  ||  whence != IOS_BASE::cur) {
+        _ASSERT(m_begin <= pos  &&  pos <= m_end);
         pos += off;
-        if (pos < m_begin  ||  pos > m_end)
+        if (pos < m_begin  ||  m_end < pos)
             return err;
 
         streamsize size = pos - m_end;
@@ -202,12 +209,18 @@ CT_POS_TYPE CMemory_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence
         if (which & IOS_BASE::in)
             setg(pos, pos, pos + size);
 
-        if (which & IOS_BASE::out)
+        if ((which & IOS_BASE::out)  &&  pbase())
             setp(pos, pos + size);
     }
 
     off = (CT_OFF_TYPE)(pos - m_begin);
     return (CT_POS_TYPE) off;
+}
+
+
+CT_POS_TYPE CMemory_Streambuf::seekpos(CT_POS_TYPE pos, IOS_BASE::openmode which)
+{
+    return seekoff(pos - (CT_POS_TYPE)((CT_OFF_TYPE) 0), IOS_BASE::beg, which);
 }
 
 
