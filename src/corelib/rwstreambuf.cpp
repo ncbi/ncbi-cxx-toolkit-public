@@ -308,7 +308,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
                 _ASSERT(result != eRW_Success);
                 break;
             }
-            // Update buffer content (get rid of the data just sent)
+            // Update buffer contents (get rid of the data just sent)
             memmove(pbase(), pbase() + n_written, n_towrite - n_written);
             x_PPos += (CT_OFF_TYPE) n_written;
             pbump(-int(n_written));
