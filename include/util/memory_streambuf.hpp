@@ -37,7 +37,6 @@
 /// @file memory_streambuf.hpp
 
 #include <corelib/ncbistre.hpp>
-#include <limits>
 
 
 BEGIN_NCBI_SCOPE
