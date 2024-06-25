@@ -29,7 +29,7 @@
  * Authors:  Anton Lavrentiev
  *
  * File Description:
- *   Once time setter CORE_Once
+ *   One time setter CORE_Once
  *
  */
 
