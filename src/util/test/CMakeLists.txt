@@ -55,4 +55,5 @@ NCBI_add_app(
     test_limited_map
     test_compile_time
     test_ctre
+    test_memory_streambuf
 )
