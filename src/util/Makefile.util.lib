@@ -10,7 +10,7 @@ SRC = random_gen utf8 checksum checksum_cityhash checksum_farmhash \
       thread_pool_ctrl scheduler distribution rangelist util_misc \
       histogram_binning table_printer retry_ctx stream_source \
       file_manifest cache_async multipattern_search \
-      crc32_sse incr_time
+      crc32_sse incr_time memory_streambuf
 
 LIB = xutil
 PROJ_TAG = core
