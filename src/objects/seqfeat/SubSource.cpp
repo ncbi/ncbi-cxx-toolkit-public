@@ -87,8 +87,10 @@ static bool s_init_UseGeoLocNameForCountry(void)
         return true;
     }
 
-    // RW-2167 default to true now that the country to geo_loc_name transition has occurred
-    return true;
+    // RW-2167 will need to default to true now that the country to geo_loc_name transition has occurred
+    // but for now it or the environment variable being set gives strange unit_test_validator errors, so
+    // it is still false for now
+    return false;
 }
 
 
