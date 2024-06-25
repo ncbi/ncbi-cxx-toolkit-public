@@ -98,18 +98,21 @@ int COpenteleTestApp::Run(void)
             << (endpoint.empty() ? "<default-endpoint>" : endpoint) << "'" << endl;
         tracer = make_shared<COpentelemetryTracer>(endpoint);
     }
-    else {
-        string fname;
-        if ( args["file"] ) fname = args["file"].AsString();
+    else if ( args["file"] ) {
+        string fname = args["file"].AsString();
         if ( fname.empty() || fname == "-" ) {
-            cout << "Using STD_ERR output" << endl;
-            tracer = make_shared<COpentelemetryTracer>(cerr);
+            cout << "Using console output" << endl;
+            tracer = make_shared<COpentelemetryTracer>(cout);
         }
         else {
             cout << "Using output file '" << fname << "'" << endl;
             ostr.reset(new ofstream(fname, ios_base::app));
             tracer = make_shared<COpentelemetryTracer>(*ostr);
         }
+    }
+    else {
+        tracer = make_shared<COpentelemetryTracer>();
+        cout << "Using default opentelemetry configuration" << endl;
     }
     _ASSERT(tracer);
     CDiagContext::GetRequestContext().SetRequestTracer(tracer);

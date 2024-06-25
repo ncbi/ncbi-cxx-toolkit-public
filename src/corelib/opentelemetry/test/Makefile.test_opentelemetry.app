@@ -12,6 +12,6 @@ LIBS = $(OPENTELEMETRY_LIBS) $(ORIG_LIBS)
 
 REQUIRES = OPENTELEMETRY
 
-CHECK_CMD = test_opentelemetry
+CHECK_CMD = test_opentelemetry -file -
 
 WATCHERS = grichenk

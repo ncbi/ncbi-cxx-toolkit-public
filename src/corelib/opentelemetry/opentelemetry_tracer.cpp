@@ -35,6 +35,7 @@
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/opentelemetry/opentelemetry_tracer.hpp>
 #include <opentelemetry/sdk/trace/id_generator.h>
 #include <opentelemetry/sdk/trace/exporter.h>
@@ -45,6 +46,7 @@
 #include <opentelemetry/sdk/trace/tracer_provider_factory.h>
 #include <opentelemetry/trace/provider.h>
 #include <opentelemetry/exporters/otlp/otlp_http_exporter_factory.h>
+#include <opentelemetry/exporters/otlp/otlp_http_exporter_options.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_options.h>
 #include <opentelemetry/exporters/ostream/span_exporter_factory.h>
@@ -214,13 +216,13 @@ void COpentelemetryTracer::CleanupTracer(void)
 
 COpentelemetryTracer::COpentelemetryTracer(ostream& ostr)
 {
-    m_Tracer = s_InitTracer(exporter::trace::OStreamSpanExporterFactory::Create(ostr));
+    x_InitStream(ostr);
 }
 
 
 COpentelemetryTracer::COpentelemetryTracer(void)
 {
-    x_InitOtlp("");
+    x_Init();
 }
 
 
@@ -235,11 +237,96 @@ COpentelemetryTracer::~COpentelemetryTracer(void)
 }
 
 
+enum class EOTEL_Exporter {
+    e_None,
+    e_Otlp,
+    e_Console
+};
+
+NCBI_PARAM_ENUM_DECL(EOTEL_Exporter, OTEL, TRACES_EXPORTER);
+NCBI_PARAM_ENUM_ARRAY(EOTEL_Exporter, OTEL, TRACES_EXPORTER)
+{
+    {"none", EOTEL_Exporter::e_None},
+    {"otlp", EOTEL_Exporter::e_Otlp},
+    {"console", EOTEL_Exporter::e_Console}
+};
+NCBI_PARAM_ENUM_DEF_EX(EOTEL_Exporter, OTEL, TRACES_EXPORTER,
+                       EOTEL_Exporter::e_Otlp,
+                       eParam_NoThread, OTEL_TRACES_EXPORTER);
+typedef NCBI_PARAM_TYPE(OTEL, TRACES_EXPORTER) TParam_Exporter;
+
+
+enum class EOtlp_Protocol {
+    e_HTTP_Protobuf,
+    e_HTTP_Json,
+    e_gRPC
+};
+
+NCBI_PARAM_ENUM_DECL(EOtlp_Protocol, OTEL, EXPORTER_OTLP_PROTOCOL);
+NCBI_PARAM_ENUM_ARRAY(EOtlp_Protocol, OTEL, EXPORTER_OTLP_PROTOCOL)
+{
+    {"http/protobuf", EOtlp_Protocol::e_HTTP_Protobuf},
+    {"http/json", EOtlp_Protocol::e_HTTP_Json},
+    {"grpc", EOtlp_Protocol::e_gRPC}
+};
+NCBI_PARAM_ENUM_DEF_EX(EOtlp_Protocol, OTEL, EXPORTER_OTLP_PROTOCOL,
+                       EOtlp_Protocol::e_HTTP_Protobuf,
+                       eParam_NoThread, OTEL_EXPORTER_OTLP_PROTOCOL);
+typedef NCBI_PARAM_TYPE(OTEL, EXPORTER_OTLP_PROTOCOL) TParam_OtlpProtocol;
+
+
+NCBI_PARAM_DECL(string, OTEL, EXPORTER_OTLP_ENDPOINT);
+NCBI_PARAM_DEF_EX(string, OTEL, EXPORTER_OTLP_ENDPOINT, "", eParam_NoThread, OTEL_EXPORTER_OTLP_ENDPOINT);
+typedef NCBI_PARAM_TYPE(OTEL, EXPORTER_OTLP_ENDPOINT) TParam_OtlpEndpoint;
+
+
+void COpentelemetryTracer::x_Init(void)
+{
+    EOTEL_Exporter exporter = TParam_Exporter::GetDefault();
+    switch (exporter) {
+    case EOTEL_Exporter::e_None:
+        return;
+    case EOTEL_Exporter::e_Otlp:
+        x_InitOtlp(TParam_OtlpEndpoint::GetDefault());
+        break;
+    case EOTEL_Exporter::e_Console:
+        x_InitStream(cout);
+        break;
+    default:
+        ERR_POST("Unknown OTEL exporter");
+        return;
+    }
+}
+
+
 void COpentelemetryTracer::x_InitOtlp(const string& endpoint)
 {
-    exporter::otlp::OtlpHttpExporterOptions http_opt;
-    http_opt.url = !endpoint.empty() ? endpoint : "http://localhost:4318/v1/traces";
-    m_Tracer = s_InitTracer(exporter::otlp::OtlpHttpExporterFactory::Create(http_opt));
+    EOtlp_Protocol protocol = TParam_OtlpProtocol::GetDefault();
+    if (protocol == EOtlp_Protocol::e_HTTP_Protobuf || protocol == EOtlp_Protocol::e_HTTP_Json) {
+        exporter::otlp::OtlpHttpExporterOptions http_opt;
+        if (protocol == EOtlp_Protocol::e_HTTP_Protobuf) {
+            http_opt.content_type = exporter::otlp::HttpRequestContentType::kBinary;
+        }
+        else {
+            http_opt.content_type = exporter::otlp::HttpRequestContentType::kJson;
+        }
+        http_opt.url = !endpoint.empty() ? endpoint : "http://localhost:4318/v1/traces";
+        m_Tracer = s_InitTracer(exporter::otlp::OtlpHttpExporterFactory::Create(http_opt));
+    }
+    else if (protocol == EOtlp_Protocol::e_gRPC) {
+        exporter::otlp::OtlpGrpcExporterOptions grpc_opt;
+        grpc_opt.endpoint = !endpoint.empty() ? endpoint : "http://localhost:4317/v1/traces";
+        m_Tracer = s_InitTracer(exporter::otlp::OtlpGrpcExporterFactory::Create(grpc_opt));
+    }
+    else {
+        ERR_POST("Unknown OTLP protocol");
+    }
+}
+
+
+void COpentelemetryTracer::x_InitStream(ostream& ostr)
+{
+    m_Tracer = s_InitTracer(exporter::trace::OStreamSpanExporterFactory::Create(ostr));
 }
 
 
@@ -268,7 +355,7 @@ void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
     trace::StartSpanOptions options;
     options.parent = parent_ctx;
 
-    auto span = tracer->StartSpan("test-app", {}, options);
+    auto span = tracer->StartSpan("request-start", {}, options);
 
     span->SetAttribute("ncbi_phid", context.GetHitID());
     span->SetAttribute("session_id", context.GetSessionID());
