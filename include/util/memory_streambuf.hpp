@@ -1,7 +1,7 @@
 #ifndef UTIL___MEMORY_STREAMBUF__HPP
 #define UTIL___MEMORY_STREAMBUF__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE

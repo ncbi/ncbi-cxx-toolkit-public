@@ -1,4 +1,4 @@
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -201,7 +201,7 @@ CT_POS_TYPE CMemory_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence
         if (pos < m_begin  ||  m_end < pos)
             return err;
 
-        streamsize size = pos - m_end;
+        streamsize size = m_end - pos;
 #ifdef NCBI_OS_MSWIN
         if (size > bmax)
             size = bmax;
