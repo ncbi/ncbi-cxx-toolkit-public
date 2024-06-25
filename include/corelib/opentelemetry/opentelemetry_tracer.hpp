@@ -78,7 +78,13 @@ public:
     /// Export to the output stream. The stream must exist at least until the tracer is deleted.
     COpentelemetryTracer(ostream& ostr);
 
-    /// Export to OTLP/HTTP collector using default endpoint "http://localhost:4318/v1/traces".
+    /// Export using exporter settings from the environment/INI file. The default is to use
+    /// OTLP/HTTP collector at "http://localhost:4318/v1/traces".
+    /// The available variables (INI file uses OTEL section, e.g. [OTEL]TRACES_EXPORTER=)
+    /// and supported values are:
+    /// OTEL_TRACES_EXPORTER = { otlp, console }, default = otlp
+    /// OTEL_EXPORTER_OTLP_PROTOCOL = { http/protobuf, http/json, grpc }, default = http/protobuf
+    /// OTEL_EXPORTER_OTLP_ENDPOINT = URL string, default = http://localhost:4318 for http/*, http://localhost:4317 for grpc
     COpentelemetryTracer(void);
 
     /// Export to OTLP/HTTP collector using the selected endpoint.
@@ -95,7 +101,9 @@ public:
     static void CleanupTracer(void);
 
 private:
+    void x_Init(void);
     void x_InitOtlp(const string& endpoint);
+    void x_InitStream(ostream& ostr);
 
     using TTracer = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>;
 
