@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CMemory_Streambuf : public std::streambuf
+class NCBI_XUTIL_EXPORT CMemory_Streambuf : public std::streambuf
 {
 public:
     CMemory_Streambuf(const char* area, size_t size);
