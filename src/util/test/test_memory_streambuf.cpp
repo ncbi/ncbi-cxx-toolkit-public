@@ -71,8 +71,9 @@ int CMemory_StreambufTest::Run(void)
     char test[sizeof(kTest)];
 
     memcpy(test, kTest, sizeof(test));
-    CMemory_Streambuf rosb(kTest, sizeof(kTest) - 1);
-    CMemory_Streambuf rwsb(test, sizeof(test) - 1);
+    CMemory_Streambuf rosb(kTest, sizeof(kTest) - 1);  // read-only
+    CMemory_Streambuf rwsb(test, sizeof(test) - 1);  // read-write
+
     iostream ios(&rosb);
     string s;
     char c = '\0';
@@ -97,9 +98,12 @@ int CMemory_StreambufTest::Run(void)
     rosb.pubseekoff(-4, IOS_BASE::end, IOS_BASE::in);
     ios >> s;
     assert(s == "dog.");
+    assert(!ios.fail()  &&  ios.eof());
+    ios.clear();
     ios >> c;
     assert(ios.fail()  &&  ios.eof());
     ios.clear();
+
     ios.rdbuf(&rwsb);
     ios >> s;
     assert(s == "The");
@@ -113,8 +117,12 @@ int CMemory_StreambufTest::Run(void)
     assert(ios.fail());
     assert(memcmp(&(test + sizeof(test))[-11], " tyrannosa\0", 11) == 0);
     ios.clear();
-    assert(strlen(test) == ios.tellp() - (CT_POS_TYPE)((CT_OFF_TYPE) 0));
+
+    size_t size = (size_t)(ios.tellp() - (CT_POS_TYPE)((CT_OFF_TYPE) 0));
+    assert(sizeof(test) - 1 == size);
+    assert(strlen(test) == size);
     cout << test;
+
     return 0;
 }
 
