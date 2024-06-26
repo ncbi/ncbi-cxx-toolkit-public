@@ -568,8 +568,14 @@ void TestOneLatLonCountry(const string& country, const string& lat_lon, const st
         options |= CValidator::eVal_latlon_check_state;
     }
 
+    string err_cd = err_code;
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+    if (use_geo_loc_name && err_code == "LatLonCountry") {
+        err_cd = "LatLonGeoLocName";
+    }
+
     if (!error.empty()) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, err_code, error));
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, err_cd, error));
     }
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -577,7 +583,11 @@ void TestOneLatLonCountry(const string& country, const string& lat_lon, const st
     if (!error.empty()) {
         CValidErrorFormat format(*objmgr);
         vector<string> expected;
-        expected.push_back("LatLonCountry Errors");
+        if (use_geo_loc_name) {
+            expected.push_back("LatLonGeoLocName Errors");
+        } else {
+            expected.push_back("LatLonCountry Errors");
+        }
         expected.push_back("lcl|good:" + error);
         expected.push_back("");
 
@@ -8199,7 +8209,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
     old_countries.push_back("Zaire");
     old_countries.push_back("Macedonia");
 
-    if (CSubSource::NCBI_UseGeoLocNameForCountry()) {
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+    if (use_geo_loc_name) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ReplacedGeoLocNameCode", ""));
     } else {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ReplacedCountryCode", ""));
@@ -8208,7 +8219,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
 
     for (const string& it : old_countries) {
         unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, it);
-        if (CSubSource::NCBI_UseGeoLocNameForCountry()) {
+        if (use_geo_loc_name) {
             expected_errors[0]->SetErrMsg("Replaced geo_loc_name [" + it + "]");
         } else {
             expected_errors[0]->SetErrMsg("Replaced country name [" + it + "]");
@@ -8715,8 +8726,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MultipleSourceQualifiers)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MultipleSourceQualifiers",
-                              "Multiple country qualifiers present"));
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+    if (use_geo_loc_name) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MultipleSourceQualifiers",
+                                  "Multiple geo_loc_name qualifiers present"));
+    } else {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MultipleSourceQualifiers",
+                                  "Multiple country qualifiers present"));
+    }
     // AddChromosomeNoLocation(expected_errors, entry);
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "USA");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Zimbabwe");
@@ -8964,7 +8981,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCountryCapitalization)
 
     STANDARD_SETUP
 
-    if (CSubSource::NCBI_UseGeoLocNameForCountry()) {
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+    if (use_geo_loc_name) {
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadGeoLocNameCapitalization",
             "Bad geo_loc_name capitalization [saint pierre and miquelon]"));
     } else {

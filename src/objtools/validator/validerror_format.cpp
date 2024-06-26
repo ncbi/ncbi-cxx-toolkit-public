@@ -109,6 +109,7 @@ ESubmitterFormatErrorGroup CValidErrorFormat::GetSubmitterFormatErrorGroup(CVali
         break;
     case eErr_SEQ_DESCR_LatLonCountry:
     case eErr_SEQ_DESCR_LatLonWater:
+    case eErr_SEQ_DESCR_LatLonGeoLocName:
         rval = eSubmitterFormatErrorGroup_LatLonCountry;
         break;
     default:
@@ -147,8 +148,20 @@ string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrI
         rval = "Bad Institution Codes";
         break;
     case eErr_SEQ_DESCR_LatLonCountry:
-    case eErr_SEQ_DESCR_LatLonWater:
         rval = "LatLonCountry Errors";
+        break;
+    case eErr_SEQ_DESCR_LatLonGeoLocName:
+        rval = "LatLonGeoLocName Errors";
+        break;
+    case eErr_SEQ_DESCR_LatLonWater:
+        {
+            bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
+            if (use_geo_loc_name) {
+                rval = "LatLonGeoLocName Errors";
+            } else {
+                rval = "LatLonCountry Errors";
+            }
+        }
         break;
     default:
         rval = CValidErrItem::ConvertErrCode(err_code);
@@ -188,6 +201,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
         break;
     case eErr_SEQ_DESCR_LatLonCountry:
     case eErr_SEQ_DESCR_LatLonWater:
+    case eErr_SEQ_DESCR_LatLonGeoLocName:
         rval = x_FormatLatLonCountryForSubmitterReport(error);
         break;
     default:
