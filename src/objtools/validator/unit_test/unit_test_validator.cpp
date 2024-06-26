@@ -634,6 +634,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
 
 BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 {
+    bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
 
     // Create consensus splice problems
@@ -713,7 +714,11 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.push_back("BadEcNumberFormat");
     expected.push_back("BadEcNumberValue");
     expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("LatLonCountry");
+    if (use_geo_loc_name) {
+        expected.push_back("LatLonGeoLocName");
+    } else {
+        expected.push_back("LatLonCountry");
+    }
     expected.push_back("BadInstitutionCode");
     expected.push_back("BadInstitutionCode");
     expected.push_back("BadInstitutionCode");
@@ -726,8 +731,13 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
         string val = CValidErrItem::ConvertErrCode(it);
         seen.push_back(val);
     }
-    expected.push_back("LatLonCountry");
-    expected.push_back("BadInstitutionCode");
+    if (use_geo_loc_name) {
+        expected.push_back("BadInstitutionCode");
+        expected.push_back("LatLonGeoLocName");
+    } else {
+        expected.push_back("LatLonCountry");
+        expected.push_back("BadInstitutionCode");
+    }
     expected.push_back("BadEcNumberFormat");
     expected.push_back("BadEcNumberValue");
     expected.push_back("NotSpliceConsensusDonor");
@@ -789,7 +799,11 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
     expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
     expected.push_back("");
-    expected.push_back("LatLonCountry Errors");
+    if (use_geo_loc_name) {
+        expected.push_back("LatLonGeoLocName Errors");
+    } else {
+        expected.push_back("LatLonCountry Errors");
+    }
     expected.push_back("lcl|nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
     expected.push_back("");
     CheckStrings(seen, expected);
