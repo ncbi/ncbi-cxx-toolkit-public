@@ -219,7 +219,7 @@ void CTarTest::Init(void)
                          "Set base directory", CArgDescriptions::eString);
     args->AddFlag("h", "Follow links");
     args->AddFlag("i", "Ignore zero blocks");
-    args->AddFlag("k", "Don't overwrite[keep] existing files when extracting");
+    args->AddFlag("k", "Don't overwrite[Keep!] existing files when extracting");
     args->AddFlag("m", "Don't extract modification times");
     args->AddFlag("M", "Don't extract permission masks");
     args->AddFlag("o", "Don't extract file ownerships");
@@ -239,6 +239,10 @@ void CTarTest::Init(void)
                   " [non-standard]");
     args->AddFlag("s", "Use stream operations with archive"
                   " [non-standard]");
+    args->AddFlag("N", "Allow case-blind entry names while extracting"
+                  " [non-stdandard]");
+    args->AddFlag("R", "Allow overwrite[Replace!] conflict entries while extracting"
+                  " [non-stdandard]");
     args->AddFlag("G", "Always supplement long names with addt'l GNU header(s)"
                   " [non-stdandard]");
     args->AddFlag("F", "Pipe the archive through"
@@ -468,8 +472,8 @@ int CTarTest::Run(void)
     }
 
 #ifdef NCBI_OS_MSWIN
-    _setmode(_fileno(stdin),  _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
+    (void) _setmode(_fileno(stdin),  _O_BINARY);
+    (void) _setmode(_fileno(stdout), _O_BINARY);
 #endif // NCBI_OS_MSWIN
 
 #ifdef TEST_CONN_TAR
@@ -650,6 +654,12 @@ int CTarTest::Run(void)
     }
     if (pipethru) {
         m_Flags |=  CTar::fStreamPipeThrough;
+    }
+    if (args["N"].HasValue()) {
+        m_Flags |= CTar::fIgnoreNameCase;
+    }
+    if (args["R"].HasValue()) {
+        m_Flags |= CTar::fConflictOverwrite;
     }
     if (args["G"].HasValue()) {
         m_Flags |=  CTar::fLongNameSupplement;

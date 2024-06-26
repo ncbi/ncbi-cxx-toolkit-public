@@ -83,7 +83,7 @@
 typedef unsigned int mode_t;
 typedef unsigned int uid_t;
 typedef unsigned int gid_t;
-#endif //NCBI_OS...
+#endif //NCBI_OS
 
 
 #define NCBI_USE_ERRCODE_X  Util_Compress
@@ -648,6 +648,7 @@ static string s_OSReason(int x_errno)
     static const char kUnknownError[] = "Unknown error";
     const char* strerr;
     char errbuf[80];
+    CNcbiError::SetErrno(x_errno);
     if (!x_errno)
         return kEmptyStr;
     strerr = ::strerror(x_errno);
@@ -1414,7 +1415,7 @@ bool CTar::x_Flush(bool no_throw)
         size_t pad = m_BufferSize - m_BufferPos;
         memset(m_Buffer + m_BufferPos, 0, pad);
         x_WriteArchive(pad, no_throw ? (const char*)(-1L) : 0);
-        _ASSERT(!(m_BufferPos % m_BufferSize) // m_BufferSize if write error
+        _ASSERT(!(m_BufferPos % m_BufferSize)  // m_BufferSize if write error
                 &&  !m_Bad == !m_BufferPos);
         if (!m_Bad  &&  (zbc += BLOCK_OF(pad)) < 2) {
             // Write EOT (two zero blocks), if have not padded enough already
@@ -1780,7 +1781,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
         if (m_BufferPos == m_BufferSize) {
             size_t nwritten = 0;
             do {
-                int x_errno;
+                int x_errno = 0;
                 streamsize xwritten;
                 IOS_BASE::iostate iostate = m_Stream.rdstate();
                 if (!(iostate & ~NcbiEofbit)) {  // NB: good() OR eof()
@@ -1791,17 +1792,13 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
                     } catch (IOS_BASE::failure&) {
                         xwritten = -1;
                     }
-                    if (xwritten > 0) {
-                        if (iostate) {
-                            m_Stream.clear();
-                        }
-                        x_errno = 0;
-                    } else {
+                    if (xwritten <= 0) {
                         x_errno = errno;
+                    } else if (iostate) {
+                        m_Stream.clear();
                     }
                 } else {
                     xwritten = -1;
-                    x_errno = 0;
                 }
                 if (xwritten <= 0) {
                     m_Bad = true;
@@ -1979,7 +1976,7 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
         errno = 0;
         if (!isdigit((unsigned char)(*s))  ||  !(len = strtoul(s, &k, 10))
             ||  errno  ||  s + len - 1 != e  ||  (*k != ' '  &&  *k != '\t')
-            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k))) // NB: k < e
+            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))  // NB: k < e
             ||  !(klen = (size_t)(v++ - ++k))
             ||  memchr(k, ' ', klen)  ||  memchr(k, '\t', klen)
             ||  !(vlen = (size_t)(e - v))) {
@@ -2374,10 +2371,10 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 // Mandatory to ignore
                 m_Current.m_Stat.orig.st_size = 0;
             } else if (fmt != eTar_Posix) {
-                TAR_POST(77, Warning,
-                         "Non-zero hard-link size ("
+                TAR_POST(77, Trace,
+                         "Ignoring hard link size ("
                          + NStr::NumericToString(m_Current.GetSize())
-                         + ") is ignored (non-PAX)");
+                         + ')');
                 m_Current.m_Stat.orig.st_size = 0;
             } // else POSIX (re-)allowed hard links to be followed by file data
         }
@@ -3228,13 +3225,15 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     // NB: Path assumed to have been normalized
     string retval = CDirEntry::AddTrailingPathSeparator(path);
 
-#ifdef NCBI_OS_MSWIN
+#if   defined(NCBI_OS_MSWIN)
     // Convert to Unix format with forward slashes
     NStr::ReplaceInPlace(retval, "\\", "/");
     const NStr::ECase how = NStr::eNocase;
+#elif defined(NCBI_OS_CYGWIN)
+    const NStr::ECase how = NStr::eNocase;
 #else
     const NStr::ECase how = NStr::eCase;
-#endif //NCBI_OS_MSWIN
+#endif //NCBI_OS
 
     SIZE_TYPE pos = 0;
 
@@ -3290,28 +3289,26 @@ public:
         : CDirEntry(GetTmpNameEx(entry.GetDir(), "xNCBItArX")),
           m_Entry(entry), m_Pending(false), m_Activated(false)
     {
-        _ASSERT(!Exists()  &&  m_Entry.GetType() != eDir);
+        _ASSERT(!Exists());
         if (CDirEntry(m_Entry.GetPath()).Rename(GetPath())) {
             m_Activated = m_Pending = true;
-            errno = 0;
+            CNcbiError::SetErrno(errno = 0);
         }
     }
 
     virtual ~CTarTempDirEntry()
     {
         if (m_Activated) {
-            (void)(m_Pending ? Restore() : RemoveEntry());
+            (void)(m_Pending ? Restore() : Remove());
         }
     }
 
     bool Restore(void)
     {
+        m_Activated = false;
         m_Entry.Remove();
-        errno = 0;
-        bool renamed = Rename(m_Entry.GetPath());
-        m_Activated = !renamed;
-        m_Pending = false;
-        return renamed;
+        CNcbiError::SetErrno(errno = 0);
+        return Rename(m_Entry.GetPath());
     }
 
     void Release(void)
@@ -3326,6 +3323,17 @@ private:
 };
 
 
+static inline CTempString x_DropTrailingSlashes(const string& s)
+{
+    size_t len = s.size();
+    while (len > 1) {
+        if (s[--len] != '/')
+            break;
+    }
+    return CTempString(s, 0, len);
+}
+
+
 bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                           const CTar::TEntries* entries)
 {
@@ -3335,8 +3343,11 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
     if (extract) {
         // Destination for extraction
         unique_ptr<CDirEntry> dst
-            (CDirEntry::CreateObject(type == CTarEntryInfo::eSparseFile ?
-                                     CDirEntry::eFile : CDirEntry::EType(type),
+            (CDirEntry::CreateObject(type == CTarEntryInfo::eSparseFile
+                                     ? CDirEntry::eFile
+                                     : type > CTarEntryInfo::eUnknown
+                                     ? CDirEntry::eUnknown
+                                     : CDirEntry::EType(type),
                                      s_ToFilesystemPath
                                      (m_BaseDir, m_Current.GetName(),
                                       !(m_Flags & fKeepAbsolutePath))));
@@ -3354,16 +3365,51 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
         // Actual type in file system (if exists)
         CDirEntry::EType dst_type = dst->GetType();
 
-        // Look if extraction is allowed (when the destination exists)
+        // Check if extraction is allowed (when the destination exists)
         if (dst_type != CDirEntry::eUnknown) {
-            bool extracted = false; // check if ours (prev. revision extracted)
+            enum {
+                eNotExtracted = 0,
+                eExtracted = 1,
+                eConflict = 2,
+                eMisCase = 3
+            } extracted = eNotExtracted;  // Check if ours (e.g. a prev. revision extracted)
+            CTempString dstname = x_DropTrailingSlashes(dst->GetPath());
             if (entries) {
+                CDirEntry::SStat dst_stat;
+                bool do_stat = dst->Stat(&dst_stat, eIgnoreLinks);
                 ITERATE(TEntries, e, *entries) {
-                    if (e->GetName() == m_Current.GetName()  &&
-                        e->GetType() == m_Current.GetType()) {
-                        extracted = true;
-                        break;
+                    CTempString tstname = x_DropTrailingSlashes(e->GetPath());
+                    if (!do_stat) {
+                        if (NStr::CompareCase(dstname, tstname) != 0) {
+                            continue;
+                        }
+                        if (e->GetType() != m_Current.GetType()) {
+                            extracted = eConflict;
+                            break;
+                        }
+                    } else {
+                        if (NStr::CompareNocase(dstname, tstname) != 0) {
+                            continue;
+                        }
+                        // Case-blind filesystems (e.g. NTFS) present a challenge
+                        CDirEntry tst(e->GetPath());
+                        CDirEntry::SStat tst_stat;
+                        if (!tst.Stat(&tst_stat, m_Flags & fFollowLinks ? eFollowLinks : eIgnoreLinks)
+                            ||  memcmp(&dst_stat.orig.st_dev, &tst_stat.orig.st_dev, sizeof(dst_stat.orig.st_dev)) != 0
+                            ||  memcmp(&dst_stat.orig.st_ino, &tst_stat.orig.st_ino, sizeof(dst_stat.orig.st_ino)) != 0) {
+                            continue;
+                        }
+                        if (e->GetType() != m_Current.GetType()) {
+                            extracted = eConflict;
+                            break;
+                        }
+                        if (NStr::CompareCase(dstname, tstname) != 0) {
+                            extracted = eMisCase;
+                            break;
+                        }
                     }
+                    extracted = eExtracted;
+                    break;
                 }
             }
             if (!extracted) {
@@ -3391,7 +3437,7 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                         if (dst_type != src->GetType()) {
                             extract = false;
                         }
-                    } else if (dst_type != CDirEntry::EType(type)) {
+                    } else if (CTarEntryInfo::EType(dst_type) != type) {
                         extract = false;
                     }
                 }
@@ -3409,24 +3455,41 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                     }
                 } else {
                     // Do removal safely until extraction is confirmed
-                    pending.reset(new CTarTempDirEntry(*dst));
+                    int x_errno;
+                    bool link = false;
+                    if (!(extracted & eConflict)
+                        ||  (!(link = (type == CTarEntryInfo::eSymLink  ||
+                                       type == CTarEntryInfo::eHardLink))
+                             &&  ((extracted == eMisCase   &&  (m_Flags & fIgnoreNameCase))  ||
+                                  (extracted == eConflict  &&  (m_Flags & fConflictOverwrite))))) {
+                        pending.reset(new CTarTempDirEntry(*dst));
+                        x_errno = CNcbiError::GetLast().Code();
+                    } else {
+                        x_errno = 0;
+                    }
                     if (/*!pending->Exists()  ||*/  dst->Exists()) {
                         // Security concern:  do not attempt data extraction
                         // into special files etc, which can harm the system.
-#ifdef __GNUC__
-                        int x_errno = errno ?: EEXIST;
-#else
-                        int x_errno  = errno;
                         if (x_errno == 0) {
                             x_errno  = EEXIST;
                         }
-#endif //__GNUC__
-                        //extract = false;
-                        TAR_THROW(this, eWrite,
-                                  "Cannot extract '" + dst->GetPath() + '\''
-                                  + s_OSReason(x_errno));
+                        if (x_errno != EEXIST  ||  !link) {
+                            TAR_THROW(this, eWrite,
+                                      "Cannot extract '" + dst->GetPath() + '\''
+                                      + s_OSReason(x_errno));
+                        }
+                        string whatlink(type == CTarEntryInfo::eSymLink ? "symlink" : "hard link");
+                        TAR_POST(122, Error,
+                                 "Cannot create " + whatlink + " '" + dst->GetPath() + "' -> '"
+                                 + m_Current.GetLinkName() + '\''
+                                 + s_OSReason(x_errno));
+                        extract = false;
                     }
                 }
+            } else if (extract  &&  extracted == eMisCase  &&  !(m_Flags & fIgnoreNameCase)) {
+                TAR_THROW(this, eWrite,
+                          "Cannot extract '" + dst->GetPath() + '\''
+                          + s_OSReason(EISDIR));
             }
         }
         if (extract) {
@@ -3444,15 +3507,16 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
             }
             umask(u);
 #endif //NCBI_OS_UNIX
-            if (pending) {
-                if (extract) {
+            if (extract) {
+                m_Current.m_Path = dst->GetPath();
+                if (pending) {
                     pending->Release();
-                } else if (!pending->Restore()) {  // Undo delete
-                    int x_errno = errno;
-                    TAR_THROW(this, eWrite,
-                              "Cannot restore '" + dst->GetPath()
-                              + "' back in place" + s_OSReason(x_errno));
                 }
+            } else if (pending  &&  !pending->Restore()) {  // Undo delete
+                int x_errno = CNcbiError::GetLast().Code();
+                TAR_THROW(this, eWrite,
+                            "Cannot restore '" + dst->GetPath()
+                            + "' back in place" + s_OSReason(x_errno));
             }
         }
     } else if (m_Current.GetType() == CTarEntryInfo::eSparseFile  &&  size
@@ -3524,18 +3588,18 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
 
     if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
         // Conform to POSIX-mandated behavior to extract as files
-        type = CTarEntryInfo::eFile;
+        type  = CTarEntryInfo::eFile;
     }
     switch (type) {
     case CTarEntryInfo::eSparseFile:  // NB: only PAX GNU/1.0 sparse file here
     case CTarEntryInfo::eHardLink:
     case CTarEntryInfo::eFile:
+        _ASSERT(!dst->Exists());
         {{
-            _ASSERT(!dst->Exists());
             // Create base directory
             CDir dir(dst->GetDir());
             if (/*dir.GetPath() != "."  &&  */!dir.CreatePath()) {
-                int x_errno = errno;
+                int x_errno = CNcbiError::GetLast().Code();
                 TAR_THROW(this, eCreate,
                           "Cannot create directory '" + dir.GetPath() + '\''
                           + s_OSReason(x_errno));
@@ -3565,18 +3629,27 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
                     }
                     break;
                 }
-                int x_errno = errno;
-                TAR_POST(10, Warning,
-                         "Cannot hard-link '" + src->GetPath()
-                         + "' and '" + dst->GetPath() + '\''
-                         + s_OSReason(x_errno) + ", trying to copy");
+                int x_errno  = errno;
+                if (x_errno == ENOENT  ||  x_errno == EEXIST  ||  x_errno == ENOTDIR) {
+                    extracted = false;
+                }
+                TAR_POST(10, extracted ? Warning : Error,
+                         "Cannot hard link '" + dst->GetPath()
+                         + "' -> '" + src->GetPath() + '\''
+                         + s_OSReason(x_errno)
+                         + (extracted ? ", trying to copy" : ""));
+                if (!extracted) {
+                    break;
+                }
 #endif //NCBI_OS_UNIX
                 if (!src->Copy(dst->GetPath(),
                                CDirEntry::fCF_Overwrite |
                                CDirEntry::fCF_PreserveAll)) {
+                    int xx_errno = CNcbiError::GetLast().Code();
                     TAR_POST(11, Error,
-                             "Cannot hard-link '" + src->GetPath()
-                             + "' and '" + dst->GetPath() + "' via copy");
+                             "Cannot hard link '" + dst->GetPath()
+                             + "' -> '" + src->GetPath() + "' via copy"
+                             + s_OSReason(xx_errno));
                     extracted = false;
                     break;
                 }
@@ -3595,6 +3668,7 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
         break;
 
     case CTarEntryInfo::eDir:
+        _ASSERT(size == 0);
         {{
             const CDir* dir = dynamic_cast<const CDir*>(dst);
             if (!dir  ||  !dir->CreatePath()) {
@@ -3607,11 +3681,11 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
             }
             // NB: Attributes for a directory must be set only after all of its
             // entries have been already extracted.
-            _ASSERT(size == 0);
         }}
         break;
 
     case CTarEntryInfo::eSymLink:
+        _ASSERT(size == 0);
         {{
             const CSymLink* symlink = dynamic_cast<const CSymLink*>(dst);
             if (!symlink  ||  !symlink->Create(m_Current.GetLinkName())) {
@@ -3628,29 +3702,25 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
                 TAR_POST(12, Error, error);
                 extracted = false;
             }
-            _ASSERT(size == 0);
         }}
         break;
 
     case CTarEntryInfo::ePipe:
+        _ASSERT(size == 0);
         {{
-            _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             umask(0);
-            int x_errno = 0;
-            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode())/*!= 0*/) {
-                x_errno = errno;
-                extracted = false;
-            }
-            if (extracted) {
+            if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode()) == 0) {
                 break;
             }
+            int x_errno = errno;
             string reason = s_OSReason(x_errno);
 #else
             int x_errno = ENOTSUP;
+            CNcbiError::SetErrno(x_errno);
             string reason = ": Feature not supported by host OS";
-            extracted = false;
 #endif //NCBI_OS_UNIX
+            extracted = false;
             string error
                 = "Cannot create FIFO '" + dst->GetPath() + '\'' + reason;
             if (x_errno != ENOTSUP  ||  !(m_Flags & fSkipUnsupported)) {
@@ -3662,26 +3732,23 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
 
     case CTarEntryInfo::eCharDev:
     case CTarEntryInfo::eBlockDev:
+        _ASSERT(size == 0);
         {{
-            _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             umask(0);
-            int x_errno = 0;
             mode_t m = (m_Current.GetMode() |
                         (type == CTarEntryInfo::eCharDev ? S_IFCHR : S_IFBLK));
-            if (mknod(dst->GetPath().c_str(),m,m_Current.m_Stat.orig.st_rdev)){
-                x_errno = errno;
-                extracted = false;
-            }
-            if (extracted) {
+            if (mknod(dst->GetPath().c_str(), m, m_Current.m_Stat.orig.st_rdev) == 0) {
                 break;
             }
+            int x_errno = errno;
             string reason = s_OSReason(x_errno);
 #else
             int x_errno = ENOTSUP;
+            CNcbiError::SetErrno(x_errno);
             string reason = ": Feature not supported by host OS";
-            extracted = false;
 #endif //NCBI_OS_UNIX
+            extracted = false;
             string error
                 = "Cannot create " + string(type == CTarEntryInfo::eCharDev
                                             ? "character" : "block")
@@ -3817,7 +3884,7 @@ struct Deleter<FILE>
 #  define NCBI_FILE_WO  "wb"
 #else
 #  define NCBI_FILE_WO  "w"
-#endif /*NCBI_OS_MSWIN*/
+#endif //NCBI_OS_MSWIN
 
 bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
 {
@@ -3905,7 +3972,8 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
         }
         // non-empty region
         if (::fseek(fp.get(), (long) bmap[i].first, SEEK_SET) != 0) {
-            x_error = errno;
+            if (!(x_error = errno))
+                x_error = EIO;  // Make sure non-zero
             break;
         }
         Uint8 done = 0;
@@ -3914,6 +3982,8 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
                 nread = size < m_BufferSize ? (size_t) size : m_BufferSize;
                 if (!nread  ||  !(data = x_ReadArchive(nread))) {
                     x_error = errno;
+                    if (!nread)
+                        CNcbiError::SetErrno(x_error);
                     TAR_POST(99, Error,
                              "Cannot read archive data for sparse file '"
                              + dst->GetPath() + "', region #"
@@ -3935,7 +4005,7 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
             }
             if (::fwrite(data, 1, xread, fp.get()) != xread) {
                 if (!(x_error = errno)) {
-                    x_error = -1;  // Make sure non-zero
+                    x_error = EIO;  // Make sure non-zero
                 }
                 break;
             }
@@ -3951,10 +4021,11 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
     // Finalize the file
     bool closed = ::fclose(fp.release()) == 0 ? true : false;
     if (!x_error  &&  !closed) {
-        x_error = errno;
+        if (!(x_error = errno))
+            x_error = EIO;  // Make sure non-zero
     }
     string reason;
-    if (x_error) {
+    if (x_error > 0) {
         reason = s_OSReason(x_error);
     } else if (eof) {
         x_error = s_TruncateFile(dst->GetPath(), eof);
@@ -3978,15 +4049,19 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
             if (reason.empty()) {
                 reason = ": Error 0x" + NStr::UIntToString(x_error, 0, 16);
             }
+            x_error = EIO;  // NB: Make sure no accidental sign bit in x_error
+            CNcbiError::SetErrno(x_error);
 #else
             reason = s_OSReason(x_error);
 #endif //NCBI_OS_MSWIN
         }
     }
     if (x_error) {
-        _ASSERT(!reason.empty());
-        TAR_POST(100, Error,
-                 "Cannot write sparse file '" + dst->GetPath() + '\''+ reason);
+        if (x_error > 0) {
+            _ASSERT(!reason.empty());
+            TAR_POST(100, Error,
+                     "Cannot write sparse file '" + dst->GetPath() + '\''+ reason);
+        }
         dst->Remove();
         return false;
     }
@@ -4002,11 +4077,10 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 {
     unique_ptr<CDirEntry> path_ptr;  // deleter
     if (!path) {
-        path_ptr.reset(new CDirEntry(s_ToFilesystemPath
-                                     (m_BaseDir, info.GetName(),
-                                      !(m_Flags & fKeepAbsolutePath))));
+        path_ptr.reset(new CDirEntry(info.GetPath()));
         path = path_ptr.get();
     }
+    _ASSERT(!path->GetPath().empty());
 
     // Date/time.
     // Set the time before permissions because on some platforms this setting
@@ -4063,7 +4137,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         &&  info.GetType() != CTarEntryInfo::eBlockDev) {
         bool failed = false;
 #ifdef NCBI_OS_UNIX
-        // We won't change permissions for sym.links because lchmod() is not
+        // We won't change permissions for symlinks because lchmod() is not
         // portable, and also is not implemented on majority of platforms.
         if (info.GetType() != CTarEntryInfo::eSymLink) {
             // Use raw mode here to restore most of the bits
@@ -4123,6 +4197,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                                        eFollowLinks : eIgnoreLinks);
     unsigned int uid = 0, gid = 0;
     bool update = true;
+    bool added = false;
 
     // Create the entry info
     m_Current = CTarEntryInfo(m_StreamPos);
@@ -4248,9 +4323,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     switch (type) {
     case CDirEntry::eFile:
         _ASSERT(update);
-        if (x_AppendFile(path)) {
-            entries->push_back(m_Current);
-        }
+        added = x_AppendFile(path);
         break;
 
     case CDirEntry::eBlockSpecial:
@@ -4260,7 +4333,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
         _ASSERT(update);
         m_Current.m_Stat.orig.st_size = 0;
         x_WriteEntryInfo(path);
-        entries->push_back(m_Current);
+        added = true;
         break;
 
     case CDirEntry::eDir:
@@ -4276,8 +4349,10 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             TAR_THROW(this, eRead, error);
         }
         if (update) {
+            // NB: Can't use "added" here -- it'd be out of order
             m_Current.m_Stat.orig.st_size = 0;
             x_WriteEntryInfo(path);
+            m_Current.m_Path.swap(path);
             entries->push_back(m_Current);
         }
         // Append/update all files from that directory
@@ -4289,7 +4364,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
     case CDirEntry::eDoor:
     case CDirEntry::eSocket:
-        // Tar does not have any provisions to store this kind of entries
+        // Tar does not have any provisions to store these kinds of entries
         if (!(m_Flags & fSkipUnsupported)) {
             TAR_POST(3, Warning,
                      "Skipping non-archiveable "
@@ -4314,6 +4389,10 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                  + "' of type #" + NStr::IntToString(int(type)));
         break;
     }
+    if (added) {
+        m_Current.m_Path.swap(path);
+        entries->push_back(m_Current);
+    }
 
  out:
     return entries;
@@ -4330,7 +4409,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
 
     string temp = s_ToArchiveName(kEmptyStr, entry.GetName());
 
-    while (NStr::EndsWith(temp, '/')) { // NB: directories are not allowed here
+    while (NStr::EndsWith(temp, '/')) {  // NB: directories are not allowed here
         temp.resize(temp.size() - 1);
     }
     if (temp.empty()) {
@@ -4624,10 +4703,11 @@ ERW_Result CTarReader::Read(void* buf, size_t count, size_t* bytes_read)
             _ASSERT(!OFFSET_OF(m_Tar->m_StreamPos));
         } else {
             m_Bad = true;
+            int x_errno = errno;
             _ASSERT(!m_Tar->m_Stream.good());
             // If we don't throw here, it may look like an ordinary EOF
             TAR_THROW(m_Tar, eRead,
-                      "Read error while streaming");
+                      "Read error while streaming" + s_OSReason(x_errno));
         }
     }
 
