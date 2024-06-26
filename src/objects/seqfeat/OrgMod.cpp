@@ -138,6 +138,7 @@ bool COrgMod::IsMultipleValuesAllowed(TSubtype subtype)
     case eSubtype_chemovar: // (12) ,
     case eSubtype_biovar: // (13) ,
     case eSubtype_biotype: // (14) ,
+    case eSubtype_isolate: // (17) ,
     case eSubtype_nat_host: // (21) ,        -- natural host of this specimen
     case eSubtype_sub_species: // (22) ,
     case eSubtype_forma: // (25) ,
