@@ -7807,6 +7807,7 @@ UCBMG	c	University of California Berkeley Mycogarden
 UCC	s	University of Cincinnati			
 UCC<IRL>	s	University College Cork			
 UCCC	s	Universidad de Concepcion, Museo de Zoologia			
+UCCCB	c	The University of Coimbra Bacteria Culture Collection			
 UCCM	c	University of Calabar Collection of Microorganisms			
 UCD	scb	University of California, Davis			
 UCDBA	s	University of Chicago			

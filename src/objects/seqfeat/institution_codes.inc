@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Jun 13 05:33:04 EDT 2024; formally
+/* time_t value corresponding to Wed Jun 26 05:33:04 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1718271184UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1719394384UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -7843,6 +7843,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UCC\ts\tUniversity of Cincinnati\t\t\t",
 "UCC<IRL>\ts\tUniversity College Cork\t\t\t",
 "UCCC\ts\tUniversidad de Concepcion, Museo de Zoologia\t\t\t",
+"UCCCB\tc\tThe University of Coimbra Bacteria Culture Collection\t\t\t",
 "UCCM\tc\tUniversity of Calabar Collection of Microorganisms\t\t\t",
 "UCD\tscb\tUniversity of California, Davis\t\t\t",
 "UCDBA\ts\tUniversity of Chicago\t\t\t",
