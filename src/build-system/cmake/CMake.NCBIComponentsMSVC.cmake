@@ -52,8 +52,6 @@ set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
 
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_BerkeleyDB ${NCBI_ThirdPartyBasePath}/berkeleydb/${NCBI_ThirdPartyCompiler}/5.3.28-ncbi1 CACHE PATH "BerkeleyDB root")
-    # Boost 1.85 doen't have separate boost_thread.lib and boost_iostreams.lib. 
-    set(NCBI_ThirdParty_Boost_185 1)
     set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.85.0 CACHE PATH "Boost root")
     set(NCBI_ThirdParty_BZ2        ${NCBI_ThirdPartyBasePath}/bzip2/${NCBI_ThirdPartyCompiler}/1.0.8 CACHE PATH "BZ2 root")
     set(NCBI_ThirdParty_FASTCGI    ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.1 CACHE PATH "FASTCGI root")
@@ -351,11 +349,7 @@ endif()
 #############################################################################
 # Boost.Spirit
 if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
-    if(NCBI_ThirdParty_Boost_185)
-        NCBI_define_Wcomponent(Boost.Spirit boost_system.lib boost_date_time.lib boost_chrono.lib)
-    else()
-        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
-    endif()
+    NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
     if(NCBI_COMPONENT_Boost.Spirit_FOUND)
         set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
     endif()
@@ -364,11 +358,7 @@ endif()
 #############################################################################
 # Boost.Thread
 if(NOT NCBI_COMPONENT_Boost.Thread_FOUND)
-    if(NCBI_ThirdParty_Boost_185)
-        NCBI_define_Wcomponent(Boost.Thread boost_system.lib boost_date_time.lib boost_chrono.lib)
-    else()
-        NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
-    endif()
+    NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
     if(NCBI_COMPONENT_Boost.Thread_FOUND)
         set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_NOMANGLE)
     endif()
@@ -377,11 +367,7 @@ endif()
 #############################################################################
 # Boost
 if(NOT NCBI_COMPONENT_Boost_FOUND)
-    if(NCBI_ThirdParty_Boost_185)
-        NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_date_time.lib boost_regex.lib boost_system.lib)
-    else()
-        NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib boost_system.lib)
-    endif()
+    NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib boost_system.lib)
 endif()
 
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
