@@ -224,6 +224,9 @@ public:
     Uint8         GetPosition(EPos which)    const
     { return which == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
+    // Non-empty only if appended/extracted/updated
+    const string& GetPath(void)              const { return m_Path; }
+
     // Comparison operator.
     bool operator == (const CTarEntryInfo& info) const
     { return (m_Type       == info.m_Type                        &&
@@ -249,6 +252,8 @@ protected:
     streamsize       m_HeaderSize; ///< Total size of all headers for the entry
     CDirEntry::SStat m_Stat;       ///< Direntry-compatible info
     Uint8            m_Pos;        ///< Entry (not data!) position in archive
+
+    string           m_Path;       ///< In the filesystem if processed
 
     friend class CTar;             // Setter
 };
@@ -344,12 +349,18 @@ public:
         fSlowSkipWithRead   = (1<<21),
 
         // --- Miscellaneous ---
+        /// Ignore case difference in names
+        fIgnoreNameCase     = (1<<24),
+        /// Conflict overwrite allowed for entries
+        fConflictOverwrite  = (1<<25),
+
         /// Stream tar data through
-        fStreamPipeThrough  = (1<<24),
+        fStreamPipeThrough  = (1<<28),
         /// Do not trim tar file size after append/update
-        fTarfileNoTruncate  = (1<<26),
+        fTarfileNoTruncate  = (1<<29),
+
         /// Suppress NCBI signatures in entry headers
-        fStandardHeaderOnly = (1<<28),
+        fStandardHeaderOnly = (1<<30),
 
         /// Default flags
         fDefault            = fOverwrite | fPreserveAll
@@ -480,8 +491,8 @@ public:
     /// If the same-named files exist, they will be replaced (subject to
     /// fOverwrite) or backed up (fBackup), unless fUpdate is set, which would
     /// cause the replacement / backup only if the files are older than the
-    /// archive entries.  Note that if fOverwrite is stripped, no matching
-    /// files will be updated / backed up / overwritten, but skipped.
+    /// archive entries.  Note that if the fOverwrite bit is stripped, then no
+    /// matching files will be updated / backed up / overwritten, but skipped.
     ///
     /// Extract all archive entries, whose names match the pre-set mask.
     /// @note
