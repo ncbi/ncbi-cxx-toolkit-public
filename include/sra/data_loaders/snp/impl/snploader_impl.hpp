@@ -72,8 +72,10 @@ public:
     void FromString(CTempString str);
     bool FromSatString(CTempString str);
 
-    bool operator<(const CBlobId& id) const;
-    bool operator==(const CBlobId& id) const;
+    bool operator<(const CSNPBlobId& id) const;
+    bool operator==(const CSNPBlobId& id) const;
+    bool operator<(const CBlobId& id) const  { return *this < dynamic_cast<const CSNPBlobId&>(id); };
+    bool operator==(const CBlobId& id) const { return *this == dynamic_cast<const CSNPBlobId&>(id); };
 
     bool IsSatId(void) const;
 

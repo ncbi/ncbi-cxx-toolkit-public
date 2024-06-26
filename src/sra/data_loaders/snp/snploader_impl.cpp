@@ -553,9 +553,8 @@ void CSNPBlobId::FromString(CTempString str)
 }
 
 
-bool CSNPBlobId::operator<(const CBlobId& id) const
+bool CSNPBlobId::operator<(const CSNPBlobId& id2) const
 {
-    const CSNPBlobId& id2 = dynamic_cast<const CSNPBlobId&>(id);
     if ( m_NAIndex != id2.m_NAIndex ) {
         return m_NAIndex < id2.m_NAIndex;
     }
@@ -581,17 +580,16 @@ bool CSNPBlobId::operator<(const CBlobId& id) const
 }
 
 
-bool CSNPBlobId::operator==(const CBlobId& id) const
+bool CSNPBlobId::operator==(const CSNPBlobId& id2) const
 {
-    const CSNPBlobId& id2 = dynamic_cast<const CSNPBlobId&>(id);
     return m_NAIndex == id2.m_NAIndex &&
-        m_NAVersion == id2.m_NAVersion &&
-        m_SeqIndex == id2.m_SeqIndex &&
-        m_FilterIndex == id2.m_FilterIndex &&
-        m_IsPrimaryTrack == id2.m_IsPrimaryTrack &&
-        m_IsPrimaryTrackGraph == id2.m_IsPrimaryTrackGraph &&
-        m_Accession == id2.m_Accession &&
-        m_SeqId == id2.m_SeqId;
+           m_NAVersion == id2.m_NAVersion &&
+           m_SeqIndex == id2.m_SeqIndex &&
+           m_FilterIndex == id2.m_FilterIndex &&
+           m_IsPrimaryTrack == id2.m_IsPrimaryTrack &&
+           m_IsPrimaryTrackGraph == id2.m_IsPrimaryTrackGraph &&
+           m_Accession == id2.m_Accession &&
+           m_SeqId == id2.m_SeqId;
 }
 
 
