@@ -585,7 +585,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         },
         { "ResolutionCassFound",
           SInfo(m_ResolutionCassTiming[0].get(),
-                "Cassandra resolution succeeded",
+                "CassandraDB resolution succeeded",
                 "The timing of a seq id successful resolution "
                 "in Cassandra regardless how many queries were "
                 "made to Cassandra (start: first Cassandra query)"
@@ -593,7 +593,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         },
         { "ResolutionCassNotFound",
           SInfo(m_ResolutionCassTiming[1].get(),
-                "Cassandra resolution not found",
+                "CassandraDB resolution not found",
                 "The timing of a seq id unsuccessful resolution "
                 "when all the tries in Cassandra led to nothing "
                 "start: first Cassandra query)"
