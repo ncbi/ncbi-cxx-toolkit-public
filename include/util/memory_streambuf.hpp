@@ -42,15 +42,13 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XUTIL_EXPORT CMemory_Streambuf : public std::streambuf
+class NCBI_XUTIL_EXPORT CMemory_Streambuf : public CNcbiStreambuf
 {
 public:
     CMemory_Streambuf(const char* area, size_t size);
     CMemory_Streambuf(char*       area, size_t size);
 
 protected:
-    CNcbiStreambuf* setbuf(CT_CHAR_TYPE*, streamsize) override { return 0; }
-
     CT_INT_TYPE underflow(void) override;
     streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n) override;
 
@@ -63,8 +61,6 @@ protected:
     CT_POS_TYPE seekpos(CT_POS_TYPE pos,
                         IOS_BASE::openmode which =
                         IOS_BASE::in | IOS_BASE::out) override;
-
-    int         sync(void) override { return 0; }
 
 private:
     const char* m_begin;
