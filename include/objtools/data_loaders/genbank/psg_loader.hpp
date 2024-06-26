@@ -137,8 +137,8 @@ public:
     {
         return false;
     }
-    void PurgeCache(TCacheType            cache_type,
-        time_t                access_timeout = 0) override {}
+    void PurgeCache(TCacheType /*cache_type*/,
+                    time_t     /*access_timeout*/ = 0) override {}
     void CloseCache(void) override {}
 
     void GetBulkIds(const TIds& ids, TLoaded& loaded, TBulkIds& ret) override;
