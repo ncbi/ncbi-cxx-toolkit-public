@@ -1696,3 +1696,39 @@
    fun:_ZNK4ncbi20CObjectCounterLocker6UnlockEPKNS_7CObjectE
    fun:_ZN4ncbi4CRefINS_14CBlockingQueueINS0_INS_11CStdRequestENS_20CObjectCounterLockerEEEE10CQueueItemES3_E5ResetEv
 }
+{
+   std::atomic::load(memory_order) - false positive - grichenk OMDM-27
+   Helgrind:Race
+   ...
+   fun:*atomic*load*memory_order
+}
+{
+   std::atomic::store(memory_order) - false positive - grichenk OMDM-27
+   Helgrind:Race
+   ...
+   fun:*atomic*store*memory_order
+}
+{
+   std::atomic::load by SSystemMutex - false positive - grichenk OMDM-27
+   Helgrind:Race
+   fun:load
+   fun:*ncbi_namespace_mutex_mt12SSystemMutex*
+}
+{
+   std::atomic::store by SSystemMutex - false positive - grichenk OMDM-27
+   Helgrind:Race
+   fun:store
+   fun:*ncbi_namespace_mutex_mt12SSystemMutex*
+}
+{
+   std::atomic::load by atomic_base - false positive - grichenk OMDM-27
+   Helgrind:Race
+   fun:load
+   fun:*__atomic_base*
+}
+{
+   std::atomic::store by atomic_base - false positive - grichenk OMDM-27
+   Helgrind:Race
+   fun:store
+   fun:*__atomic_base*
+}
