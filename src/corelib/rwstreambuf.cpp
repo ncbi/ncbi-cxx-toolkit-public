@@ -285,6 +285,7 @@ CNcbiStreambuf* CRWStreambuf::setbuf(CT_CHAR_TYPE* s, streamsize m)
 
 CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
 {
+    _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF)  ||  pptr() >= epptr());
     _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
 
     if ( !x_CheckRW(m_Writer.get()) )
@@ -601,7 +602,7 @@ streamsize CRWStreambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    _ASSERT(egptr() >= gptr());
+    _ASSERT(gptr() <= egptr());
 
     return x_CheckRW(m_Reader.get()) ? x_Read(buf, m) : 0;
 }

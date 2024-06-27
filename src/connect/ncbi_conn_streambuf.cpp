@@ -429,6 +429,9 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* buf, streamsize buf_size)
 
 CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 {
+    _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF)  ||  pptr() >= epptr());
+    _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
+
     if (!x_CheckConn(m_Conn))
         return CT_EOF;
 
@@ -500,6 +503,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 
 streamsize CConn_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize m)
 {
+    _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
+
     if (!x_CheckConn(m_Conn)  ||  m < 0)
         return 0;
 
@@ -711,7 +716,7 @@ streamsize CConn_Streambuf::x_Read(CT_CHAR_TYPE* buf, streamsize m)
 
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    _ASSERT(egptr() >= gptr());
+    _ASSERT(gptr() <= gptr());
 
     return x_CheckConn(m_Conn) ? x_Read(buf, m) : 0;
 }
