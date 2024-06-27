@@ -67,59 +67,11 @@ CMemory_Streambuf::CMemory_Streambuf(char* area, size_t size)
 }
 
 
-CT_INT_TYPE CMemory_Streambuf::underflow(void)
-{
-    _ASSERT(egptr() >= gptr());
-#ifdef NCBI_OS_MSWIN
-    auto pos = gptr();
-
-    if (pos >= m_end)
-        return CT_EOF;
-
-    streamsize size = m_end - pos;
-    if (size > bmax)
-        size = bmax;
-
-    setg(pos, pos, pos + size);
-
-    return CT_TO_INT_TYPE(*pos);
-#else
-    return CT_EOF;
-#endif // NCBI_OS_MSWIN
-}
-
-
-streamsize CMemory_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
-{
-    _ASSERT(egptr() >= gptr());
-#ifdef NCBI_OS_MSWIN
-    auto pos = gptr();
-
-    if (pos >= m_end)
-        return 0;
-
-    streamsize size = m_end - pos;
-    if (n > size)
-        n = size;
-
-    memcpy(buf, pos, n);
-    size -= n;
-    pos  += n;
-
-    if (size > bmax)
-        size = bmax;
-
-    setg(pos, pos, pos + size);
-
-    return n;
-#else
-    return 0;
-#endif // NCBI_OS_MSWIN
-}
-
-
 CT_INT_TYPE CMemory_Streambuf::overflow(CT_INT_TYPE c)
 {
+    _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF)  ||  pptr() >= epptr());
+    _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
+
     if (CT_EQ_INT_TYPE(c, CT_EOF))
         return CT_NOT_EOF(CT_EOF);
 
@@ -146,6 +98,8 @@ CT_INT_TYPE CMemory_Streambuf::overflow(CT_INT_TYPE c)
 
 streamsize CMemory_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize n)
 {
+    _ASSERT(pbase() <= pptr()  &&  pptr() <= epptr());
+
     auto pos = pptr();
     if (!pos  ||  pos >= m_end)
         return 0;
@@ -164,6 +118,83 @@ streamsize CMemory_Streambuf::xsputn(const CT_CHAR_TYPE* buf, streamsize n)
     setp(pos, pos + size);
 
     return m;
+}
+
+
+CT_INT_TYPE CMemory_Streambuf::underflow(void)
+{
+    _ASSERT(gptr() >= egptr());
+
+#ifdef NCBI_OS_MSWIN
+    auto pos = gptr();
+
+    if (pos >= m_end)
+        return CT_EOF;
+
+    streamsize size = m_end - pos;
+    if (size > bmax)
+        size = bmax;
+
+    setg(pos, pos, pos + size);
+
+    return CT_TO_INT_TYPE(*pos);
+#else
+    return CT_EOF;
+#endif // NCBI_OS_MSWIN
+}
+
+
+streamsize CMemory_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
+{
+    _ASSERT(gptr() <= egptr());
+
+    auto pos = gptr();
+
+    if (pos >= m_end)
+        return 0;
+
+    streamsize size = m_end - pos;
+    if (n > size)
+        n = size;
+#ifdef NCBI_OS_MSWIN
+    if (n > bmax)
+        n = bmax;
+#endif // NCBI_OS_MSWIN
+
+    memcpy(buf, pos, n);
+    size -= n;
+    pos  += n;
+
+#ifdef NCBI_OS_MSWIN
+    if (size > bmax)
+        size = bmax;
+    setg(pos, pos, pos + size);
+#else
+    gbump(n);
+#endif // NCBI_OS_MSWIN
+
+    return n;
+}
+
+
+streamsize CMemory_Streambuf::showmanyc(void)
+{
+    _ASSERT(gptr() >= egptr());
+
+#ifdef NCBI_OS_MSWIN
+    auto pos = gptr();
+
+    if (pos >= m_end)
+        return -1L;
+
+    streamsize size = m_end - pos;
+    if (size > bmax)
+        size = bmax;
+
+    return size;
+#else
+    return -1L;
+#endif // NCBI_OS_MSWIN
 }
 
 
