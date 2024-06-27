@@ -258,14 +258,18 @@ _DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false
 
 #define PSG_PARAM_VALUE_TYPE(section, name) SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>
 
-#define PSG_PARAM_VALUE_DEF_ADJUST(type, section, name, default_value)                                                          \
-    NCBI_PARAM_DEF(type, section, name, default_value);                                                                         \
+#define PSG_PARAM_VALUE_ADJUST(section, name)                                                                                   \
     template <>                                                                                                                 \
     typename SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue                                                            \
     SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::sm_Adjust(SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue value)
 
+#define PSG_PARAM_VALUE_DECL_MIN(type, section, name)                                                                           \
+    NCBI_PARAM_DECL(type, section, name);                                                                                       \
+    PSG_PARAM_VALUE_ADJUST(section, name)
+
 #define PSG_PARAM_VALUE_DEF_MIN(type, section, name, default_value, min_value)                                                  \
-    PSG_PARAM_VALUE_DEF_ADJUST(type, section, name, default_value)                                                              \
+    NCBI_PARAM_DEF(type, section, name, default_value);                                                                         \
+    PSG_PARAM_VALUE_ADJUST(section, name)                                                                                       \
     {                                                                                                                           \
         if (value >= min_value) return value;                                                                                   \
                                                                                                                                 \
@@ -274,34 +278,34 @@ _DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false
         return min_value;                                                                                                       \
     }
 
-NCBI_PARAM_DECL(unsigned, PSG, rd_buf_size);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, rd_buf_size);
 typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
 
-NCBI_PARAM_DECL(size_t, PSG, wr_buf_size);
+PSG_PARAM_VALUE_DECL_MIN(size_t, PSG, wr_buf_size);
 typedef NCBI_PARAM_TYPE(PSG, wr_buf_size) TPSG_WrBufSize;
 
-NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_streams);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_streams);
 typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 
-NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_submits);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_submits);
 using TPSG_MaxConcurrentSubmits = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_submits);
 
-NCBI_PARAM_DECL(unsigned, PSG, max_sessions);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_sessions);
 typedef NCBI_PARAM_TYPE(PSG, max_sessions) TPSG_MaxSessions;
 
-NCBI_PARAM_DECL(unsigned, PSG, max_concurrent_requests_per_server);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_requests_per_server);
 using TPSG_MaxConcurrentRequestsPerServer = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_requests_per_server);
 
-NCBI_PARAM_DECL(unsigned, PSG, num_io);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, num_io);
 typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
 
-NCBI_PARAM_DECL(unsigned, PSG, reader_timeout);
+PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, reader_timeout);
 typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 
-NCBI_PARAM_DECL(double, PSG, rebalance_time);
+PSG_PARAM_VALUE_DECL_MIN(double, PSG, rebalance_time);
 typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
 
-NCBI_PARAM_DECL(double, PSG, io_timer_period);
+PSG_PARAM_VALUE_DECL_MIN(double, PSG, io_timer_period);
 using TPSG_IoTimerPeriod = PSG_PARAM_VALUE_TYPE(PSG, io_timer_period);
 
 NCBI_PARAM_DECL(double, PSG, request_timeout);
@@ -310,7 +314,7 @@ typedef NCBI_PARAM_TYPE(PSG, request_timeout) TPSG_RequestTimeout;
 NCBI_PARAM_DECL(double, PSG, competitive_after);
 typedef NCBI_PARAM_TYPE(PSG, competitive_after) TPSG_CompetitiveAfter;
 
-NCBI_PARAM_DECL(size_t, PSG, requests_per_io);
+PSG_PARAM_VALUE_DECL_MIN(size_t, PSG, requests_per_io);
 using TPSG_RequestsPerIo = PSG_PARAM_VALUE_TYPE(PSG, requests_per_io);
 
 NCBI_PARAM_DECL(unsigned, PSG, request_retries);
