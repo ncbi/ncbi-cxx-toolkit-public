@@ -121,8 +121,22 @@ int CMemory_StreambufTest::Run(void)
     size_t size = (size_t)(ios.tellp() - (CT_POS_TYPE)((CT_OFF_TYPE) 0));
     assert(sizeof(test) - 1 == size);
     assert(strlen(test) == size);
-    cout << test;
+    ios.clear();
 
+    assert(ios.seekg(0, IOS_BASE::beg));
+    char buf[4096];
+    streamsize n = ios.readsome(buf, sizeof(buf));
+    assert(ios.good());
+    assert(n == sizeof(test)- 1);
+    buf[n] = '\0';
+    assert(memcmp(buf, test, sizeof(test)) == 0);
+
+    assert(ios.seekg(0, IOS_BASE::beg));
+    assert(ios.read(buf, sizeof(test) / 2));
+    assert(ios.gcount() == sizeof(test) / 2);
+    assert(memcmp(buf, test, sizeof(test) / 2) == 0);
+
+    NcbiCout << test << NcbiEndl;
     return 0;
 }
 

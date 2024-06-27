@@ -49,11 +49,12 @@ public:
     CMemory_Streambuf(char*       area, size_t size);
 
 protected:
-    CT_INT_TYPE underflow(void) override;
-    streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n) override;
-
     CT_INT_TYPE overflow(CT_INT_TYPE c) override;
     streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n) override;
+
+    CT_INT_TYPE underflow(void) override;
+    streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n) override;
+    streamsize  showmanyc(void) override;
 
     CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                         IOS_BASE::openmode which =
