@@ -309,48 +309,49 @@ void ParseVersionString(const string&  vstr,
 
     // all other normal formats
 
-    const char* version_pattern = "version";
-
-    pos = lo_vstr.find(version_pattern);
-    if (pos == string::npos) {
-        version_pattern = "v.";
-        pos = lo_vstr.find(version_pattern);
-
-        if (pos == string::npos) {
-            version_pattern = "ver";
-            pos = lo_vstr.find(version_pattern);
-
-            if (pos == string::npos) {
-                version_pattern = "";
-                // find the first space-digit and assume it's version
-                const char* ch = vstr_str;
-                for (; *ch; ++ch) {
-                    if (isdigit((unsigned char)(*ch))) {
-                        if (ch == vstr_str) {
-                            // check if it's version
-                            const char* ch2 = ch + 1;
-                            for (;*ch2; ++ch2) {
-                                if (!isdigit((unsigned char)(*ch2))) {
-                                    break;
-                                }
-                            } // for
-                            if (*ch2 == '.') {
-                                pos = ch - vstr_str;
-                                break;
-                            } else {
-                                continue;
-                            }
-                        } else {
-                            if (isspace((unsigned char) ch[-1])) {
-                                pos = ch - vstr_str;
-                                break;
-                            }
-                        }
-                    } // if digit
-                    
-                } // for
-            }
+    static const char* version_patterns[] = {
+        "version",
+        "v.",
+        nullptr
+    };
+    const char* version_pattern = kEmptyCStr;
+    for (const char** ppattern = version_patterns;  *ppattern != nullptr;
+         ++ppattern) {
+        pos = lo_vstr.find(*ppattern);
+        if (pos != NPOS) {
+            version_pattern = *ppattern;
+            break;
         }
+    }
+
+    if (pos == string::npos) {
+        // find the first space-digit and assume it's version
+        const char* ch = vstr_str;
+        for (; *ch; ++ch) {
+            if (isdigit((unsigned char)(*ch))) {
+                if (ch == vstr_str) {
+                    // check if it's version
+                    const char* ch2 = ch + 1;
+                    for (;*ch2; ++ch2) {
+                        if (!isdigit((unsigned char)(*ch2))) {
+                            break;
+                        }
+                    } // for
+                    if (*ch2 == '.') {
+                        pos = ch - vstr_str;
+                        break;
+                    } else {
+                        continue;
+                    }
+                } else {
+                    if (isspace((unsigned char) ch[-1])) {
+                        pos = ch - vstr_str;
+                        break;
+                    }
+                }
+            } // if digit
+                    
+        } // for
     }
 
 
