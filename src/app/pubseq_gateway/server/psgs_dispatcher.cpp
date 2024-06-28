@@ -82,7 +82,6 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 
     auto *              app = CPubseqGatewayApp::GetInstance();
     string              processor_group_name = processor->GetGroupName();
-    TProcessorPriority  processor_priority = processor->GetPriority();
 
     auto        it = find(m_RegisteredProcessorGroups.begin(),
                           m_RegisteredProcessorGroups.end(),
@@ -103,10 +102,19 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 
     m_RegisteredProcessorGroups.push_back(processor_group_name);
     m_RegisteredProcessors.push_back(move(processor));
+}
 
-    // This is needed to collect momentous counters of the processors per
-    // request
-    RegisterProcessorGroupName(processor_group_name, processor_priority);
+
+void CPSGS_Dispatcher::RegisterProcessorsForMomentousCounters(void)
+{
+    TProcessorPriority                  priority = m_RegisteredProcessors.size();
+
+    for (auto const &  proc : m_RegisteredProcessors) {
+        // This is needed to collect momentous counters of the processors per
+        // request
+        RegisterProcessorGroupName(proc->GetGroupName(), priority);
+        --priority;
+    }
 }
 
 

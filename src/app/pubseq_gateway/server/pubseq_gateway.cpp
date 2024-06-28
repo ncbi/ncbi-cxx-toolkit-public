@@ -964,6 +964,8 @@ void CPubseqGatewayApp::x_RegisterProcessors(void)
     m_RequestDispatcher->AddProcessor(
         unique_ptr<IPSGS_Processor>(new CPSGS_DummyProcessor()));
     #endif
+
+    m_RequestDispatcher->RegisterProcessorsForMomentousCounters();
 }
 
 
