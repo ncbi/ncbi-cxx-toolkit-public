@@ -259,16 +259,20 @@ _DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false
 #define PSG_PARAM_VALUE_TYPE(section, name) SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>
 
 #define PSG_PARAM_VALUE_ADJUST(section, name)                                                                                   \
-    template <>                                                                                                                 \
     typename SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue                                                            \
     SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::sm_Adjust(SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue value)
 
 #define PSG_PARAM_VALUE_DECL_MIN(type, section, name)                                                                           \
     NCBI_PARAM_DECL(type, section, name);                                                                                       \
+    template <>                                                                                                                 \
+    PSG_PARAM_VALUE_ADJUST(section, name);                                                                                      \
+    extern template                                                                                                             \
     PSG_PARAM_VALUE_ADJUST(section, name)
 
 #define PSG_PARAM_VALUE_DEF_MIN(type, section, name, default_value, min_value)                                                  \
     NCBI_PARAM_DEF(type, section, name, default_value);                                                                         \
+    template <>                                                                                                                 \
+    NCBI_DLL_EXPORT                                                                                                             \
     PSG_PARAM_VALUE_ADJUST(section, name)                                                                                       \
     {                                                                                                                           \
         if (value >= min_value) return value;                                                                                   \
