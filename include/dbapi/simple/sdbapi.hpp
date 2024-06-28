@@ -1132,6 +1132,93 @@ private:
 };
 
 
+class CSDBAPI
+{
+public:
+    /// Initialize SDBAPI.
+    /// Creates minimum number of connections required for each pool configured
+    /// in application's configuration file. If openning of some of those
+    /// connections failed then method will return FALSE, otherwise TRUE.
+    static bool Init(void);
+
+    /// Report the specified application name to servers.
+    ///
+    /// By default, this will be the same name reported to AppLog
+    /// (typically autodetected).  Any changes will take effect for
+    /// subsequent connections, but won't affect preexisting ones.
+    ///
+    /// @sa GetApplicationName()
+    static void SetApplicationName(const CTempString& name);
+
+    /// Check SDBAPI's application name setting.
+    ///
+    /// @sa SetApplicationName()
+    static string GetApplicationName(void);
+
+    enum EDriver {
+        eDriver_FTDS100,
+        eDriver_FTDS14
+    };
+    /// Use the specified driver for all connections.
+    ///
+    /// Any call to this method must be the application's very first
+    /// use of SDBAPI; calling it later is an error, and will result
+    /// in throwing an exception.
+    static void UseDriver(EDriver driver);
+
+    /// @sa UpdateMirror
+    enum EMirrorStatus {
+        eMirror_Steady,      ///< Mirror is working on the same server as before
+        eMirror_NewMaster,   ///< Switched to a new master
+        eMirror_Unavailable  ///< All databases in the mirror are unavailable
+    };
+
+    /// Check for master/mirror switch. If switch is detected or if all databases
+    /// in the mirror become unavailable, then all connections
+    /// to the "old" master server will be immediately invalidated, so that any
+    /// subsequent database operation on them (via objects CQuery and
+    /// CBulkInsert) would cause an error. The affected CDatabase objects will
+    /// be automatically invalidated too. User code will have to explicitly re-connect
+    /// (which will open connection to the new master, if any).
+    /// @note
+    ///   If the database resource is in any way misconfigured, then an exception
+    ///   will be thrown.
+    /// @param dbservice
+    ///   Database resource name 
+    /// @param servers
+    ///   List of database servers, with the master one first.
+    /// @param error_message
+    ///   Detailed error message (if any).
+    /// @return
+    ///   Result code
+    static EMirrorStatus UpdateMirror(const string& dbservice,
+                                      list<string>* servers = NULL,
+                                      string*       error_message = NULL);
+
+    /// Get new CBlobStoreDynamic object (to be owned by caller).
+    ///
+    /// @param param
+    ///   Connection parameters; only Service, Username, and Password apply
+    ///   here, though.
+    /// @param table_name
+    ///   Name of the table holding the blobs (structure to be deduced
+    ///   by inspection).
+    /// @param flags
+    ///   Flags governing compression and transaction logging.
+    /// @param image_limit
+    ///   Maximum size of a single blob (to be split across columns as
+    ///   needed).
+    static CBlobStoreDynamic* NewBlobStore(const CSDB_ConnectionParam& param,
+                                           const string& table_name,
+                                           TNewBlobStoreFlags flags
+                                           = TNewBlobStoreFlags(0),
+                                           size_t image_limit = 1 << 24);
+
+private:
+    CSDBAPI(void);
+};
+
+
 /// Database connection object.
 class CDatabase
 {
@@ -1282,94 +1369,6 @@ private:
     CSDB_ConnectionParam m_Params;
     /// Database implementation object
     CRef<CDatabaseImpl>  m_Impl;
-};
-
-
-class CSDBAPI
-{
-public:
-    /// Initialize SDBAPI.
-    /// Creates minimum number of connections required for each pool configured
-    /// in application's configuration file. If openning of some of those
-    /// connections failed then method will return FALSE, otherwise TRUE.
-    static bool Init(void);
-
-    /// Report the specified application name to servers.
-    ///
-    /// By default, this will be the same name reported to AppLog
-    /// (typically autodetected).  Any changes will take effect for
-    /// subsequent connections, but won't affect preexisting ones.
-    ///
-    /// @sa GetApplicationName()
-    static void SetApplicationName(const CTempString& name);
-
-    /// Check SDBAPI's application name setting.
-    ///
-    /// @sa SetApplicationName()
-    static string GetApplicationName(void);
-
-    /// @sa UseDriver
-    enum EDriver {
-        eDriver_FTDS100,
-        eDriver_FTDS14
-    };
-    /// Use the specified driver for all connections.
-    ///
-    /// Any call to this method must be the application's very first
-    /// use of SDBAPI; calling it later is an error, and will result
-    /// in throwing an exception.
-    static void UseDriver(EDriver driver);
-
-    /// @sa UpdateMirror
-    enum EMirrorStatus {
-        eMirror_Steady,      ///< Mirror is working on the same server as before
-        eMirror_NewMaster,   ///< Switched to a new master
-        eMirror_Unavailable  ///< All databases in the mirror are unavailable
-    };
-
-    /// Check for master/mirror switch. If switch is detected or if all databases
-    /// in the mirror become unavailable, then all connections
-    /// to the "old" master server will be immediately invalidated, so that any
-    /// subsequent database operation on them (via objects CQuery and
-    /// CBulkInsert) would cause an error. The affected CDatabase objects will
-    /// be automatically invalidated too. User code will have to explicitly re-connect
-    /// (which will open connection to the new master, if any).
-    /// @note
-    ///   If the database resource is in any way misconfigured, then an exception
-    ///   will be thrown.
-    /// @param dbservice
-    ///   Database resource name 
-    /// @param servers
-    ///   List of database servers, with the master one first.
-    /// @param error_message
-    ///   Detailed error message (if any).
-    /// @return
-    ///   Result code
-    static EMirrorStatus UpdateMirror(const string& dbservice,
-                                      list<string>* servers = NULL,
-                                      string*       error_message = NULL);
-
-    /// Get new CBlobStoreDynamic object (to be owned by caller).
-    ///
-    /// @param param
-    ///   Connection parameters; only Service, Username, and Password apply
-    ///   here, though.
-    /// @param table_name
-    ///   Name of the table holding the blobs (structure to be deduced
-    ///   by inspection).
-    /// @param flags
-    ///   Flags governing compression and transaction logging.
-    /// @param image_limit
-    ///   Maximum size of a single blob (to be split across columns as
-    ///   needed).
-    static CBlobStoreDynamic* NewBlobStore(const CSDB_ConnectionParam& param,
-                                           const string& table_name,
-                                           TNewBlobStoreFlags flags
-                                           = TNewBlobStoreFlags(0),
-                                           size_t image_limit = 1 << 24);
-
-private:
-    CSDBAPI(void);
 };
 
 
