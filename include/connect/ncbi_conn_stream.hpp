@@ -166,9 +166,6 @@ public:
     ///   from the actual connection (must not be modified while I/O not done)
     /// @param size
     ///   The size of the area pointed to by the "ptr" argument
-    /// @note
-    ///   On MSVC, "size" may not be generally more than 2GB-1 (the signed
-    ///   32-bit int limit)
     /// @sa
     ///   CONN, ncbi_connection.h
     ///
@@ -220,9 +217,6 @@ protected:
     ///   from the actual connection (must not be modified while I/O not done)
     /// @param size
     ///   The size of the area pointed to by the "ptr" argument
-    /// @note
-    ///   On MSVC, "size" may not be generally more than 2GB-1 (the signed
-    ///   32-bit int limit)
     CConn_IOStream
     (const TConnector& connector,
      const STimeout*   timeout  = kDefaultTimeout,
@@ -897,11 +891,6 @@ public:
     /// must not be passed to the stream.
     /// Note that the area pointed to by "ptr" should not be changed while it
     /// is still holding the data yet to be read from the stream.
-    /// @note
-    ///   On MSVC, "size" may not be generally more than 2GB-1 (the signed
-    ///   32-bit int limit);  so if a larger area needs to be converted to a
-    ///   stream, then a BUF over the area needs to be built first, and then
-    ///   passed to the first version of the stream constructor.
     CConn_MemoryStream(const void* ptr,
                        size_t      size,
                        EOwnership  owner/**no default for safety*/,
