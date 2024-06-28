@@ -135,6 +135,15 @@ _ct_get_user_api_layer_error(int error)
 	tdsdump_log(TDS_DBG_FUNC, "_ct_get_user_api_layer_error(%d)\n", error);
 
 	switch (error) {
+        case 25:
+                return "Failed in conversion routine - condition overflow."
+                        "  col = %1! row = %2!.";
+        case 26:
+                return "Failed in conversion routine - syntax error."
+                        "  col = %1! row = %2!.";
+        case 42:
+                return "Data truncated while doing local character set"
+                        " conversion.  col = %1! row = %2!.";
 	case 137:
 		return  "A bind count of %1! is not consistent with the count supplied for existing binds. "
 			"The current bind count is %2!.";
@@ -1905,7 +1914,7 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
 
 		/* if convert return FAIL mark error but process other columns */
                 if ((ret = _cs_convert(ctx, &srcfmt, src, &destfmt, dest,
-                                       pdatalen, TDS_INVALID_TYPE, NULL)
+                                       pdatalen, TDS_INVALID_TYPE, NULL, NULL)
                      != CS_SUCCEED)) {
 			tdsdump_log(TDS_DBG_FUNC, "cs_convert-result = %d\n", ret);
 			result = 1;

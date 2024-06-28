@@ -1340,7 +1340,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             } else {
                 return CS_FAIL;
             }
-        } else if ((msg->msgnumber & 0xFF) == 25) {
+        } else if ((msg->msgnumber & 0xFF) == 25
+                   ||  (msg->msgnumber & 0xFF) == 42) {
             unique_ptr<CDB_Exception>  ex(new CDB_TruncateEx(
                                                     DIAG_COMPILE_INFO,
                                                     0,
