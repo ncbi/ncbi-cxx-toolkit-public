@@ -312,13 +312,22 @@ void ParseVersionString(const string&  vstr,
     static const char* version_patterns[] = {
         "version",
         "v.",
+        "ver",
+        "v",
         nullptr
     };
     const char* version_pattern = kEmptyCStr;
     for (const char** ppattern = version_patterns;  *ppattern != nullptr;
          ++ppattern) {
-        pos = lo_vstr.find(*ppattern);
+        pos = lo_vstr.rfind(*ppattern);
         if (pos != NPOS) {
+            // sanity check
+            auto pos2
+                = lo_vstr.find_first_not_of(" .", pos + strlen(*ppattern));
+            if ( !isdigit(lo_vstr[pos2]) ) {
+                pos = NPOS;
+                continue;
+            }
             version_pattern = *ppattern;
             break;
         }
