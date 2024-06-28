@@ -233,6 +233,7 @@ public:
     virtual TSockHandle GetLowLevelHandle(void) const;
 
     virtual string GetDriverName(void) const;
+    virtual string GetVersionString(void) const;
 
     virtual unsigned int GetRowsInCurrentBatch(void) const { return 0; }
 

@@ -101,6 +101,7 @@ public:
     void Close();
 
     IConnection* GetConnection(void);
+    const IConnection* GetConnection(void) const;
     void SetTimeout(const CTimeout& timeout);
     void ResetTimeout(void);
     const list<string>& GetPrintOutput(void) const;

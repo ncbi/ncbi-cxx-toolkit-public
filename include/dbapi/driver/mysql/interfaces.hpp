@@ -132,6 +132,7 @@ protected:
     virtual void SetCancelTimeout(size_t nof_secs);
 
     const TDbgInfo& GetDbgInfo(void) const;
+    virtual string GetVersionString(void) const;
 
 private:
     friend class CMySQL_LangCmd;

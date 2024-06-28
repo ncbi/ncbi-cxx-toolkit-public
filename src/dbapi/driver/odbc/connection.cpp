@@ -548,6 +548,21 @@ string CODBC_Connection::GetDriverName(void) const
     return name;
 }
 
+string CODBC_Connection::GetVersionString(void) const
+{
+    string version = "0.0";
+#ifdef SQL_DRIVER_VER
+    TSqlChar    buffer[256];
+    SQLSMALLINT length = sizeof(buffer);
+    if (SQL_SUCCEEDED(SQLGetInfo(m_Link, SQL_DRIVER_VER, buffer, length,
+                                 &length))
+        &&  length > 0  &&  buffer[0] != _T_NCBI_ODBC('\0')) {
+        version = CUtf8::AsUTF8(TSqlString(buffer, length));
+    }
+#endif
+    return version;
+}
+
 static
 bool
 ODBC_xCheckSIE(int rc, CStatementBase& stmt)

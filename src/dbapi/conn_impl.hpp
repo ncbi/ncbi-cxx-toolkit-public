@@ -130,6 +130,8 @@ public:
     // Returns all error messages as a single string
     virtual string GetErrorInfo();
 
+    virtual const CVersionInfo& GetVersionInfo() const;
+
 protected:
     CConnection(class CDB_Connection *conn,
                 CDataSource* ds);
@@ -151,6 +153,7 @@ private:
     bool m_forceSingle;
     CRef<CToMultiExHandler> m_multiExH;
     bool m_msgToEx;
+    mutable unique_ptr<CVersionInfo> m_versionInfo;
 
     EOwnership m_ownership;
 

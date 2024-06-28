@@ -313,6 +313,7 @@ protected:
     }
 
     virtual string GetDriverName(void) const;
+    virtual string GetVersionString(void) const;
 
 protected:
     // for NCBI_DATABASE_THROW_ANNOTATED

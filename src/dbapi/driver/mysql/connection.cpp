@@ -184,6 +184,11 @@ bool CMySQL_Connection::Close(void)
     return false;
 }
 
+string CMySQL_Connection::GetVersionString(void) const
+{
+    return mysql_get_client_info();
+}
+
 END_NCBI_SCOPE
 
 

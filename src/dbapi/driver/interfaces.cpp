@@ -354,6 +354,11 @@ I_Connection::~I_Connection(void)
     return;
 }
 
+string I_Connection::GetVersionString(void) const
+{
+    return "0.0";
+}
+
 
 END_NCBI_SCOPE
 

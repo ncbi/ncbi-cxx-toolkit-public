@@ -38,6 +38,8 @@
 #include <dbapi/error_codes.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
+#include <corelib/version_api.hpp>
+
 #include "conn_impl.hpp"
 #include "ds_impl.hpp"
 #include "stmt_impl.hpp"
@@ -558,6 +560,18 @@ string CConnection::GetErrorInfo()
     GetCDB_Connection()->PushMsgHandler(GetHandler());
 */
     return CNcbiOstrstreamToString(out);
+}
+
+const CVersionInfo& CConnection::GetVersionInfo() const
+{
+    if (m_versionInfo.get() == nullptr) {
+        string name;
+        unique_ptr<CVersionInfo> info(new CVersionInfo);
+        ParseVersionString(m_connection->GetVersionString(),
+                           &name, info.get());
+        m_versionInfo = move(info);
+    }
+    return *m_versionInfo;
 }
 
 /*

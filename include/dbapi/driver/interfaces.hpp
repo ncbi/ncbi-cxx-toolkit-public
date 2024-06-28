@@ -1405,6 +1405,10 @@ protected:
     /// Get interface for extra features that could be implemented in the driver.
     virtual I_ConnectionExtra& GetExtraFeatures(void) = 0;
 
+    /// Driver version, supplied here rather than by the context for
+    /// ODBC's sake.
+    virtual string GetVersionString(void) const;
+
 public:
     // Deprecated legacy methods.
 

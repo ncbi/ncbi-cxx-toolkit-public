@@ -435,6 +435,11 @@ string CConnection::GetDriverName(void) const
     return GetCDriverContext().GetDriverName();
 }
 
+string CConnection::GetVersionString(void) const
+{
+    return "0.0";
+}
+
 void CConnection::x_RecordServer(const CDBServer& server)
 {
     CWriteLockGuard guard(eEmptyGuard);

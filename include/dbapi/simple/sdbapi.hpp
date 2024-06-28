@@ -1360,6 +1360,10 @@ public:
                                    = TNewBlobStoreFlags(0),
                                    size_t               image_limit = 1 << 24);
 
+    /// Get the driver version.
+    /// Supported only after connection for technical reasons.
+    CSDBAPI::EDriver GetDriverVersion(void) const;
+
 private:
     friend CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db);
 
