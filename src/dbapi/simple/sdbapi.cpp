@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/version_api.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ext/ncbi_crypt.h>
 #ifdef HAVE_LIBNCBICRYPT
@@ -1945,6 +1946,12 @@ CDatabaseImpl::GetConnection(void)
     return m_Conn->GetConn();
 }
 
+inline const IConnection*
+CDatabaseImpl::GetConnection(void) const
+{
+    return m_Conn->GetConn();
+}
+
 inline void
 CDatabaseImpl::SetTimeout(const CTimeout& timeout)
 {
@@ -2169,6 +2176,23 @@ void CDatabase::x_ConnectAsNeeded(const char* operation)
                    string("Cannot call ") + operation
                    + " when not connected.");
     }
+}
+
+
+CSDBAPI::EDriver CDatabase::GetDriverVersion(void) const
+{
+    if ( !m_Impl->EverConnected() ) {
+        NCBI_THROW(CSDB_Exception, eClosed | Retriable(eRetriable_No),
+                   "Cannot obtain driver version before connecting");
+    }
+    const CVersionInfo& ver = m_Impl->GetConnection()->GetVersionInfo();
+    _ASSERT(ver.GetMajor() == 1);
+    switch (ver.GetMinor()) {
+    case 0: return CSDBAPI::eDriver_FTDS100;
+    case 4: return CSDBAPI::eDriver_FTDS14;
+    default: _TROUBLE;
+    }
+    return CSDBAPI::eDriver_FTDS100;
 }
 
 

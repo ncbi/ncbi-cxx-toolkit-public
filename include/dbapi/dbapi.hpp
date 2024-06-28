@@ -41,6 +41,12 @@
 #include <dbapi/variant.hpp>
 
 
+// Forward declaration.
+BEGIN_NCBI_SCOPE
+class CVersionInfo;
+END_NCBI_SCOPE
+
+
 /** @addtogroup DbAPI
  *
  * @{
@@ -947,6 +953,8 @@ public:
 
     /// Returns all error messages as a single string
     virtual string GetErrorInfo() = 0;
+
+    virtual const CVersionInfo& GetVersionInfo() const = 0;
 
     /// Returns the internal driver connection object
     virtual CDB_Connection* GetCDB_Connection() = 0;

@@ -646,6 +646,20 @@ CTL_Connection::GetLowLevelHandle(void) const
 }
 
 
+string CTL_Connection::GetVersionString(void) const
+{
+    string result = "0.0";
+    char buffer[256];
+    CS_INT len = sizeof(buffer);
+    CS_RETCODE rc = ct_config(GetCTLibContext().CTLIB_GetContext(), CS_GET,
+                              CS_VERSION, buffer, len, &len);
+    if (/*Check*/(rc) != CS_FAIL) {
+        result.assign(buffer, len);
+    }
+    return result;
+}
+
+
 void CTL_Connection::x_LoadTextPtrProcs(void)
 {
     if (m_TextPtrProcsLoaded) {

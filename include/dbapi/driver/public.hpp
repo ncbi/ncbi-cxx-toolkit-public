@@ -335,6 +335,8 @@ public:
 
     virtual string GetDriverName(void) const;
 
+    virtual string GetVersionString(void) const;
+
     bool HasTransaction(void) const
     {
         return m_HasTransaction;

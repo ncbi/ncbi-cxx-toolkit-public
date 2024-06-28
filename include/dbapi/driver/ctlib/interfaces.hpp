@@ -501,6 +501,7 @@ protected:
     bool IsCancelInProgress(void) const { return m_CancelInProgress; }
 
     virtual TSockHandle GetLowLevelHandle(void) const;
+    virtual string GetVersionString(void) const;
 
     void CompleteBlobDescriptor(I_BlobDescriptor& desc,
                                 const string& cursor_name,

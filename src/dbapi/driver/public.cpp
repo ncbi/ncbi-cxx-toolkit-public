@@ -577,6 +577,12 @@ string CDB_Connection::GetDriverName(void) const
     return m_ConnImpl->GetDriverName();
 }
 
+string CDB_Connection::GetVersionString(void) const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->GetVersionString();
+}
+
 void CDB_Connection::FinishOpening(void)
 {
     CHECK_CONNECTION(m_ConnImpl);
