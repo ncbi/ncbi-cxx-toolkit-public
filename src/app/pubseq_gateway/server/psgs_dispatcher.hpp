@@ -277,6 +277,7 @@ public:
     map<string, size_t>  GetConcurrentCounters(void);
     bool IsGroupAlive(size_t  request_id);
     void PopulateStatus(CJsonNode &  status);
+    void RegisterProcessorsForMomentousCounters(void);
 
 private:
     void x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
