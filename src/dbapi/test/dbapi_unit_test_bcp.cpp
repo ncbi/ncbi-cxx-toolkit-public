@@ -1429,7 +1429,10 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
                 exception_catched = true;
             }
 
-            if (GetArgs().GetDriverName() == ctlib_driver) {
+            if (GetArgs().GetDriverName() == ctlib_driver
+                ||  (GetArgs().IsFreeTDS()
+                     &&  !(GetConnection().GetVersionInfo()
+                           < CVersionInfo(1, 4)))) {
                 GetArgs().PutMsgDisabled("Exception when overflow of varbinary in bulk-insert");
 
                 if ( exception_catched ) {

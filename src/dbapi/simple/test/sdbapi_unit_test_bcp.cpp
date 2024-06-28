@@ -440,11 +440,18 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
             bi << str_data;
 
-            // Here either AddRow() or Complete() should throw an exception.
-            BOOST_CHECK_THROW(
-                bi << EndRow;
-                bi.Complete();
-                              , CSDB_Exception);
+            if (GetDatabase().GetDriverVersion() >= CSDBAPI::eDriver_FTDS14) {
+                BOOST_CHECK_NO_THROW(
+                    bi << EndRow;
+                    bi.Complete());
+            } else {
+                // Here either AddRow() or Complete() should throw an
+                // exception.
+                BOOST_CHECK_THROW(
+                    bi << EndRow;
+                    bi.Complete();
+                    , CSDB_Exception);
+            }
         }
     }
     catch(const CException& ex) {
