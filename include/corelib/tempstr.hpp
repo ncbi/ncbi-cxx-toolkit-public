@@ -69,7 +69,7 @@ public:
     typedef char            value_type;
     typedef size_t          size_type;
     typedef const char*     const_iterator;
-    static const size_type  npos = static_cast<size_type>(-1);
+    static const size_type  npos = static_cast<size_type>(-1L);
     /// @}
 
     CTempString(void);
@@ -180,7 +180,7 @@ public:
 
     /// Index into the current string and provide its character in a read-
     /// only fashion.  If the index is beyond the length of the string,
-    /// a NULL character is returned.
+    /// a '\0' character is returned.
     char operator[](size_type pos) const;
 
     /// Compare the current string with a given string.
