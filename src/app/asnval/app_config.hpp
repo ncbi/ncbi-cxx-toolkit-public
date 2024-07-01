@@ -65,6 +65,7 @@ public:
     bool mOnlyAnnots;
     bool mHugeFile = false;
     unsigned int m_Options = 0;
+    int mNumInstances;
 };
 
 #endif
