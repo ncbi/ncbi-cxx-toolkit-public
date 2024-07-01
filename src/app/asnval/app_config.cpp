@@ -44,6 +44,7 @@ CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
     mLowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     mHighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
     mReportLevel = static_cast<EDiagSev>(args["R"].AsInteger() - 1);
+    mNumInstances = reg.GetInt("asnvalidate", "NumInstances", 10);
 
     mBatch = args["batch"];
     string objectType = args["a"].AsString();
