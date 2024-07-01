@@ -137,6 +137,8 @@ protected:
 
     CTar::TFlags m_Flags;
 
+    string       m_BaseDir;
+
 private:
     class CTestTar : public CTar
     {
@@ -367,27 +369,34 @@ static string x_OSReason(int x_errno)
 unique_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name,
                                               bool ioexcpts)
 {
-    CDirEntry entry(name);
+    CDirEntry entry(CDirEntry::ConcatPathEx(m_BaseDir, name));
     CDirEntry::EType type = entry.GetType(eFollowLinks);
     if (type == CDirEntry::eDir) {
         unique_ptr<CTar::TEntries> entries(new CTar::TEntries);
-        CDir::TEntries dir = CDir(name).GetEntries("*",CDir::eIgnoreRecursive);
+        CDir::TEntries dir = CDir(entry.GetPath()).GetEntries("*", CDir::eIgnoreRecursive);
+        size_t pos = m_BaseDir.size();
+        if (pos > 0  &&  !(NStr::EndsWith(m_BaseDir, '/')
+#ifdef NCBI_OS_MSWIN
+            ||  NStr::EndsWith(m_BaseDir, '\\')
+#endif // NCBI_OS_MSWIN
+            )) {
+            ++pos;
+        }
         ITERATE(CDir::TEntries, e, dir) {
-            unique_ptr<CTar::TEntries> add = x_Append(tar, (*e)->GetPath(),
-                                                      ioexcpts);
+            CTempString path((*e)->GetPath(), pos, CTempString::npos);
+            unique_ptr<CTar::TEntries> add = x_Append(tar, path, ioexcpts);
             entries->splice(entries->end(), *add);
         }
         return entries;
     }
     if (type == CDirEntry::eFile) {
-        Uint8 size = CFile(name).GetLength();
-        CNcbiIfstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        const string& path = entry.GetPath();
+        Uint8 size = CFile(path).GetLength();
+        CNcbiIfstream ifs(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
         if (ioexcpts) {
             ifs.exceptions(~NcbiGoodbit);
         }
-        return
-            tar.Append(CTarUserEntryInfo(CDirEntry::NormalizePath(name), size),
-                       ifs);
+        return tar.Append(CTarUserEntryInfo(name, size), ifs);
     }
     return tar.Append(name);
 }
@@ -725,7 +734,8 @@ int CTarTest::Run(void)
     } else {
         tar->SetFlags(m_Flags);
         if (args["C"].HasValue()) {
-            tar->SetBaseDir(args["C"].AsString());
+            m_BaseDir = args["C"].AsString();
+            tar->SetBaseDir(m_BaseDir);
         }
         tar->SetMask(exclude.get(), eNoOwnership, CTar::eExcludeMask);
         if (action == eAppend  ||  action == eUpdate  ||  action == eCreate) {
