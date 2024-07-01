@@ -4000,22 +4000,21 @@ void CMRNAValidator::x_ValidateCommonMRNAProduct()
 }
 
 
-static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
+static string s_GetGeneRefFields(const CGene_ref& gene, int field)
 {
-    bool locus = (!genomic.CanGetLocus()  &&  !mrna.CanGetLocus())  ||
-        (genomic.CanGetLocus()  &&  mrna.CanGetLocus()  &&
-        genomic.GetLocus() == mrna.GetLocus());
-    bool allele = (!genomic.CanGetAllele()  &&  !mrna.CanGetAllele())  ||
-        (genomic.CanGetAllele()  &&  mrna.CanGetAllele()  &&
-        genomic.GetAllele() == mrna.GetAllele());
-    bool desc = (!genomic.CanGetDesc()  &&  !mrna.CanGetDesc())  ||
-        (genomic.CanGetDesc()  &&  mrna.CanGetDesc()  &&
-        genomic.GetDesc() == mrna.GetDesc());
-    bool locus_tag = (!genomic.CanGetLocus_tag()  &&  !mrna.CanGetLocus_tag())  ||
-        (genomic.CanGetLocus_tag()  &&  mrna.CanGetLocus_tag()  &&
-        genomic.GetLocus_tag() == mrna.GetLocus_tag());
-
-    return locus  &&  allele  &&  desc  && locus_tag;
+    if (field == 1 && gene.CanGetLocus()) {
+        return gene.GetLocus();
+    }
+    if (field == 2 && gene.CanGetAllele()) {
+        return gene.GetAllele();
+    }
+    if (field == 3 && gene.CanGetDesc()) {
+        return gene.GetLocus();
+    }
+    if (field == 4 && gene.CanGetLocus_tag()) {
+        return gene.GetLocus_tag();
+    }
+    return "";
 }
 
 
@@ -4038,13 +4037,31 @@ void CMRNAValidator::x_ValidateMrnaGene()
     CFeat_CI mrna_gene(m_ProductBioseq, CSeqFeatData::e_Gene);
     if ( mrna_gene ) {
         const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
-        if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
+        bool found_match = false;
+        bool found_mismatch = false;
+        for (int i = 1; i <= 4; i++) {
+           string gen = s_GetGeneRefFields(*genomicgrp, i);
+           string rna = s_GetGeneRefFields(mrnagrp, i);
+            if (gen != "" && rna != "") {
+                if (gen == rna) {
+                    found_match = true;
+                } else {
+                    found_mismatch = true;
+                }
+            }
+        }
+        if (found_match) {
+            if (found_mismatch) {
+                m_Imp.PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
+                    "Found match and mismatch between gene on mRNA bioseq and gene on genomic bioseq",
+                    mrna_gene->GetOriginalFeature());
+            }
+        } else if (found_mismatch) {
             m_Imp.PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
                 "Gene on mRNA bioseq does not match gene on genomic bioseq",
                 mrna_gene->GetOriginalFeature());
         }
     }
-
 }
 
 
