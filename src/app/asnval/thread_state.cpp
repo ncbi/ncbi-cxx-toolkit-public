@@ -785,7 +785,7 @@ void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHug
     auto& reader = process.GetReader();
     auto writer_task = std::async([this, &msgHandler] { if(msgHandler.InvokeWrite()){ msgHandler.Write(); } });
 
-    CMessageQueue<std::future<CThreadExitData>> val_queue{ 10 };
+    CMessageQueue<std::future<CThreadExitData>> val_queue{ mAppConfig.mNumInstances };
     // start a loop in a separate thread
     auto topids_task = std::async(std::launch::async, [this, &val_queue, &loader_name, &reader, &msgHandler]()
         {
