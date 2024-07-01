@@ -265,12 +265,14 @@ CLocalTaxon::TTaxid CLocalTaxon::GetAncestorByRank(TTaxid taxid, const string &r
             }
         }
         return ZERO_TAX_ID;
-    } else if (m_fallback) {
-            if (!m_TaxonConn.get()) {
-                m_TaxonConn.reset(new CTaxon1);
-                m_TaxonConn->Init();
-            }
+    } else {
+        if (m_fallback && !m_TaxonConn.get()) {
+            m_TaxonConn.reset(new CTaxon1);
+            m_TaxonConn->Init();
+        }
+        if (m_TaxonConn.get()) {
             return m_TaxonConn->GetAncestorByRank(taxid, rank.c_str());
+        }
     }
 NCBI_THROW(CException, eUnknown, "CLocalTaxon: neither local nor remote connections available");
 }
