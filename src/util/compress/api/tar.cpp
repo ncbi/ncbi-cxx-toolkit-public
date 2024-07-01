@@ -4282,10 +4282,10 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             REVERSE_ITERATE(TEntries, e, *toc) {
                 if (!temp.empty()) {
                     if (e->GetType() == CTarEntryInfo::eHardLink  ||
-                        temp != s_ToFilesystemPath(m_BaseDir, e->GetName())) {
+                        temp != e->GetPath()) {
                         continue;
                     }
-                } else if (path == s_ToFilesystemPath(m_BaseDir,e->GetName())){
+                } else if (path == e->GetPath()) {
                     found = true;
                     if (e->GetType() == CTarEntryInfo::eHardLink) {
                         temp = s_ToFilesystemPath(m_BaseDir, e->GetLinkName());

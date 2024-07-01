@@ -224,7 +224,7 @@ public:
     Uint8         GetPosition(EPos which)    const
     { return which == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
-    // Non-empty only if appended/extracted/updated
+    // Non-empty only if filesystem was involed (append/extract/update)
     const string& GetPath(void)              const { return m_Path; }
 
     // Comparison operator.
@@ -253,7 +253,7 @@ protected:
     CDirEntry::SStat m_Stat;       ///< Direntry-compatible info
     Uint8            m_Pos;        ///< Entry (not data!) position in archive
 
-    string           m_Path;       ///< In the filesystem if processed
+    string           m_Path;       ///< Iff filesystem involved in processing
 
     friend class CTar;             // Setter
 };
@@ -443,8 +443,8 @@ public:
     /// MS-Windows, stripped).  All entries will be added at the logical end
     /// (not always EOF) of the archive, when appending to a non-empty one.
     ///
-    /// @note Adding to a stream archive does not seek to the logical end of
-    /// the archive but begins at the current position right away.
+    /// @warning Adding to a stream archive does not seek to the logical end
+    /// of the archive but begins at the current position right away.
     ///
     /// @return
     ///   A list of entries appended.
@@ -454,7 +454,8 @@ public:
 
     /// Append an entry from a stream (exactly entry.GetSize() bytes).
     /// @note
-    ///   Name masks (if any set with SetMask()) are all ignored.
+    ///   The base directory and name masks (if any set with SetBaseDir() or
+    ///   SetMask(), respectively) are all ignored.
     /// @return
     ///   A list (containing this one entry) with full archive info filled in
     /// @sa
