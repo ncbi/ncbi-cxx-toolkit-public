@@ -759,7 +759,8 @@ _cs_convert(CS_CONTEXT * ctx, const CS_DATAFMT_COMMON * srcfmt,
 
 	tdsdump_log(TDS_DBG_FUNC, "cs_convert() tds_convert returned %d\n", len);
 
-        if (len == TDS_CONVERT_SYNTAX  &&  blk_status != NULL) {
+        if (len == TDS_CONVERT_SYNTAX  &&  blk_status != NULL
+            &&  is_binary_type(desttype)) {
                 char * s = (char *) srcdata;
                 int src_len2 = destlen * 2;
                 if (src_len > 1 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X'))
