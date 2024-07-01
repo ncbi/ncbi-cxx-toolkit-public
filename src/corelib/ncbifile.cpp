@@ -791,29 +791,29 @@ string CDirEntry::ConcatPath(const string& first, const string& second)
 string CDirEntry::ConcatPathEx(const string& first, const string& second)
 {
     // Prepare first part of path
-    string path = NStr::TruncateSpaces(first);
+    CTempString path = NStr::TruncateSpaces_Unsafe(first);
 
     // Add trailing path separator to first part (OS independence)
-
-    size_t pos = path.length();
-    if ( pos  &&  string(ALL_OS_SEPARATORS).find(path.at(pos-1)) == NPOS ) {
+    char sep;
+    size_t pos = path.size();
+    if ( pos  &&  CTempString(ALL_OS_SEPARATORS,
+                             sizeof(ALL_OS_SEPARATORS) - 1).find(path[pos - 1]) == NPOS ) {
         // Find used path separator
-        char sep = GetPathSeparator();
         size_t sep_pos = path.find_last_of(ALL_OS_SEPARATORS);
-        if ( sep_pos != NPOS ) {
-            sep = path.at(sep_pos);
-        }
-        path += sep;
-    }
+        sep = sep_pos != NPOS ? path[sep_pos] : GetPathSeparator();
+    } else
+        sep = '\0';
+
     // Remove leading separator in "second" part
-    string part = NStr::TruncateSpaces(second);
-    if ( part.length() > 0  &&
-         string(ALL_OS_SEPARATORS).find(part[0]) != NPOS ) {
-        part.erase(0,1);
+    CTempString part = NStr::TruncateSpaces_Unsafe(second);
+    if ( part.size() > 0  &&
+         CTempString(ALL_OS_SEPARATORS,
+                     sizeof(ALL_OS_SEPARATORS) - 1).find(part[0]) != NPOS ) {
+        part = part.substr(1);
     }
-    // Add second part
-    path += part;
-    return path;
+
+    // Add it all together
+    return string(path) + (sep ? string(1, sep) : kEmptyStr) + string(part);
 }
 
 
