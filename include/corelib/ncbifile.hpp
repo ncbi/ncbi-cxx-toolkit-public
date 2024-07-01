@@ -490,6 +490,7 @@ public:
     ///   The concatenated path.
     static string ConcatPathEx(const string& first, const string& second);
 
+
     /// Normalize a path.
     ///
     /// Remove from an input "path" all redundancy, and if possible,
