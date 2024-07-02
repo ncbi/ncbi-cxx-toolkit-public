@@ -82,7 +82,7 @@ if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_ZSTD       ${NCBI_ThirdPartyBasePath}/zstd/${NCBI_ThirdPartyCompiler}/1.5.2 CACHE PATH "ZSTD root")
     set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/3.1.1 CACHE PATH "VDB root")
     set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
-    set(NCBI_ThirdParty_VDB_ARCH x86_64/v142)
+    set(NCBI_ThirdParty_VDB_ARCH x86_64/v143)
 
     if(NOT noUNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES AND NOT -UNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
         set(NCBI_ThirdParty_wxWidgets  ${NCBI_ThirdPartyBasePath}/wxwidgets/${NCBI_ThirdPartyCompiler}/3.2.1-ncbi1u CACHE PATH "wxWidgets root")
