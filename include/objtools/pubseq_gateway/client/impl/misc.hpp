@@ -195,19 +195,40 @@ private:
 };
 
 template <class TParam>
-struct SPSG_ParamValue
+struct SPSG_ParamMin
 {
     using TValue = typename TParam::TValueType;
 
-    // Getting default incurs some performance penalty, so this ctor is explicit
-    enum EGetDefault { eGetDefault };
-    explicit SPSG_ParamValue(EGetDefault)                     : SPSG_ParamValue(sm_Adjust(TParam::GetDefault())) {}
-    explicit SPSG_ParamValue(function<TValue(TValue)> adjust) : SPSG_ParamValue(   adjust(TParam::GetDefault())) {}
+    template <class TDescription>
+    static TValue Do(TValue value, const TDescription& desc)
+    {
+        if (value >= sm_MinValue) return value;
 
-    operator TValue() const { return m_Value; }
-    TValue Get() const { return m_Value; }
+        if (!sm_Warned) {
+            ERR_POST(Warning << "[" << desc.section << "] " << desc.name << " ('" << value << "')"
+                    " was increased to the minimum allowed value ('" << sm_MinValue << "')");
+            sm_Warned = true;
+        }
 
-    static TValue GetDefault() { return TParam::GetDefault(); }
+        return sm_MinValue;
+    }
+
+    static TValue sm_MinValue;
+    inline static bool sm_Warned = false;
+};
+
+template <class TParam>
+struct SPSG_Param
+{
+    using TValue = typename TParam::TValueType;
+
+    struct SAdjust
+    {
+        template <class TDescription>
+        static TValue Do(TValue value, const TDescription&) { return value; }
+    };
+
+    static TValue GetDefault() { return SAdjust::Do(TParam::GetDefault(), GetParamDescription()); }
 
     template <typename T>
     static void SetDefault(const T& value)
@@ -237,75 +258,74 @@ struct SPSG_ParamValue
         }
     }
 
-private:
-    SPSG_ParamValue(TValue value) : m_Value(value) { _DEBUG_ARG(sm_Used = true); }
+protected:
+    _DEBUG_ARG(inline static bool sm_Used = false);
 
+private:
     // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
     // This templated method circumvents that shortcoming.
     template <class TDescription>
     static const auto& GetParamDescription(const CParam<TDescription>*) { return TDescription::sm_ParamDescription; }
     static const auto& GetParamDescription() { return GetParamDescription((TParam*)nullptr); }
-
-    static TValue sm_Adjust(TValue value) { return value; }
-
-    TValue m_Value;
-    _DEBUG_ARG(static bool sm_Used);
 };
 
-_DEBUG_ARG(template <class TParam> bool SPSG_ParamValue<TParam>::sm_Used = false);
+template <class TParam>
+struct SPSG_ParamValue : SPSG_Param<TParam>
+{
+    using TValue = typename TParam::TValueType;
 
+    // Getting default incurs some performance penalty, so this ctor is explicit
+    enum EGetDefault { eGetDefault };
+    explicit SPSG_ParamValue(EGetDefault)                     : SPSG_ParamValue(          SPSG_Param<TParam>::GetDefault())  {}
+    explicit SPSG_ParamValue(function<TValue(TValue)> adjust) : SPSG_ParamValue(   adjust(SPSG_Param<TParam>::GetDefault())) {}
+
+    operator TValue() const { return m_Value; }
+    TValue Get() const { return m_Value; }
+
+private:
+    SPSG_ParamValue(TValue value) : m_Value(value) { _DEBUG_ARG(SPSG_Param<TParam>::sm_Used = true); }
+
+    TValue m_Value;
+};
+
+#define       PSG_PARAM_TYPE(section, name)      SPSG_Param<NCBI_PARAM_TYPE(section, name)>
 #define PSG_PARAM_VALUE_TYPE(section, name) SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>
-
-#define PSG_PARAM_VALUE_ADJUST(section, name)                                                                                   \
-    typename SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue                                                            \
-    SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::sm_Adjust(SPSG_ParamValue<NCBI_PARAM_TYPE(section, name)>::TValue value)
 
 #define PSG_PARAM_VALUE_DECL_MIN(type, section, name)                                                                           \
     NCBI_PARAM_DECL(type, section, name);                                                                                       \
     template <>                                                                                                                 \
-    PSG_PARAM_VALUE_ADJUST(section, name);                                                                                      \
-    extern template                                                                                                             \
-    PSG_PARAM_VALUE_ADJUST(section, name)
+    struct PSG_PARAM_TYPE(section, name)::SAdjust : SPSG_ParamMin<NCBI_PARAM_TYPE(section, name)> {}
 
 #define PSG_PARAM_VALUE_DEF_MIN(type, section, name, default_value, min_value)                                                  \
     NCBI_PARAM_DEF(type, section, name, default_value);                                                                         \
-    template <>                                                                                                                 \
-    NCBI_DLL_EXPORT                                                                                                             \
-    PSG_PARAM_VALUE_ADJUST(section, name)                                                                                       \
-    {                                                                                                                           \
-        if (value >= min_value) return value;                                                                                   \
-                                                                                                                                \
-        ERR_POST(Warning << "[" #section "] " #name " ('" << value << "')"                                                      \
-                " was increased to the minimum allowed value ('" #min_value "')");                                              \
-        return min_value;                                                                                                       \
-    }
+    template <> PSG_PARAM_TYPE(section, name)::TValue SPSG_ParamMin<NCBI_PARAM_TYPE(section, name)>::sm_MinValue = min_value
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, rd_buf_size);
-typedef NCBI_PARAM_TYPE(PSG, rd_buf_size) TPSG_RdBufSize;
+using TPSG_RdBufSize = PSG_PARAM_TYPE(PSG, rd_buf_size);
 
 PSG_PARAM_VALUE_DECL_MIN(size_t, PSG, wr_buf_size);
-typedef NCBI_PARAM_TYPE(PSG, wr_buf_size) TPSG_WrBufSize;
+using TPSG_WrBufSize = PSG_PARAM_TYPE(PSG, wr_buf_size);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_streams);
-typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
+using TPSG_MaxConcurrentStreams = PSG_PARAM_TYPE(PSG, max_concurrent_streams);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_submits);
 using TPSG_MaxConcurrentSubmits = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_submits);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_sessions);
-typedef NCBI_PARAM_TYPE(PSG, max_sessions) TPSG_MaxSessions;
+using TPSG_MaxSessions = PSG_PARAM_TYPE(PSG, max_sessions);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_requests_per_server);
 using TPSG_MaxConcurrentRequestsPerServer = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_requests_per_server);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, num_io);
-typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
+using TPSG_NumIo = PSG_PARAM_TYPE(PSG, num_io);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, reader_timeout);
-typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
+using TPSG_ReaderTimeout = PSG_PARAM_TYPE(PSG, reader_timeout);
 
 PSG_PARAM_VALUE_DECL_MIN(double, PSG, rebalance_time);
-typedef NCBI_PARAM_TYPE(PSG, rebalance_time) TPSG_RebalanceTime;
+using TPSG_RebalanceTime = PSG_PARAM_TYPE(PSG, rebalance_time);
 
 PSG_PARAM_VALUE_DECL_MIN(double, PSG, io_timer_period);
 using TPSG_IoTimerPeriod = PSG_PARAM_VALUE_TYPE(PSG, io_timer_period);
