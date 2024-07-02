@@ -220,7 +220,7 @@ struct SPSG_ParamValue
 
     static void SetDefault(const string& value)
     {
-        SetDefaultImpl(TParam(), value);
+        SetDefault(TParam::TParamParser::StringToValue(value, GetParamDescription()));
     }
 
     // Overriding default but only if it's not configured explicitly
@@ -243,10 +243,8 @@ private:
     // TDescription is not publicly available in CParam, but it's needed for string to enum conversion.
     // This templated method circumvents that shortcoming.
     template <class TDescription>
-    static void SetDefaultImpl(const CParam<TDescription>&, const string& value)
-    {
-        SetDefault(CParam<TDescription>::TParamParser::StringToValue(value, TDescription::sm_ParamDescription));
-    }
+    static const auto& GetParamDescription(const CParam<TDescription>*) { return TDescription::sm_ParamDescription; }
+    static const auto& GetParamDescription() { return GetParamDescription((TParam*)nullptr); }
 
     static TValue sm_Adjust(TValue value) { return value; }
 
