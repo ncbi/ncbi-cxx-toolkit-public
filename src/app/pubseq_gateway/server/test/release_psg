@@ -903,8 +903,11 @@ def stability_test(commands, options, args):
         stopServer(SRV1)
 
 
-    testCases = [('ID/get_tse_chunk?id2_chunk=2041&id2_info=1000/69892021.2.0.0&disable_processor=cassandra&enable_processor=OSG', 'ConcurrentProcCount_OSG'),
-                 ('ID/get?seq_id=164040&seq_id_type=3&trace=no&enable_processor=cassandra&disable_processor=OSG', 'ConcurrentProcCount_CASSANDRA')]
+    testCases = [('ID/get?seq_id=164040&seq_id_type=3&trace=no&enable_processor=cassandra&disable_processor=OSG', 'ConcurrentProcCount_CASSANDRA'),
+                 ('ID/get?seq_id=JRAS01000001&disable_processor=osg&disable_processor=cassandra', 'ConcurrentProcCount_WGS'),
+                 ('ID/get?seq_id=JRAS01000001&disable_processor=osg&disable_processor=wgs', 'ConcurrentProcCount_CASSANDRA'),
+                 ('ID/get_na?fmt=json&all_info=yes&seq_id=NG_011231.1&names=SNP', 'ConcurrentProcCount_SNP'),
+                 ('ID/get_na?fmt=json&all_info=yes&seq_id=CAA42669.1&names=CDD', 'ConcurrentProcCount_CDD')]
 
     cnt = 0
     for testCase in testCases:
