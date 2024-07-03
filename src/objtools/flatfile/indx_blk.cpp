@@ -291,7 +291,7 @@ static Int2 FileGetsBuf(char* res, Int4 size, FileBuf& fbuf)
     Int4        l;
     Int4        i;
 
-    if (*fbuf.current == '\0')
+    if (fbuf.current == nullptr || *fbuf.current == '\0')
         return (0);
 
     l = size - 1;
