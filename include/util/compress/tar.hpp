@@ -759,7 +759,7 @@ private:
     const char* x_ReadArchive (size_t& n);
     void        x_WriteArchive(size_t  n, const char* buffer = 0);
 
-    // Append an entry from the file system to the archive.
+    // Append an entry from the file system to the archive ("toc" when update).
     unique_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
 
     // Append an entry from an istream to the archive.

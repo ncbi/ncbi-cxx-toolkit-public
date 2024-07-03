@@ -1634,7 +1634,7 @@ unique_ptr<CTar::TEntries> CTar::Extract(void)
     x_Open(eExtract);
     unique_ptr<TEntries> entries = x_ReadAndProcess(eExtract);
 
-    // Restore attributes of "postponed" directory entries
+    // Restore attributes of "postponed" directories
     if (m_Flags & fPreserveAll) {
         ITERATE(TEntries, e, *entries) {
             if (e->GetType() == CTarEntryInfo::eDir) {
@@ -4095,7 +4095,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         if (!path->SetTime(&modification, &last_access, &creation)) {
             int x_errno = CNcbiError::GetLast().Code();
             TAR_THROW(this, eRestoreAttrs,
-                      "Cannot restore date/time of '" + path->GetPath() + '\''
+                      "Cannot restore date/time for '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
     }
@@ -4167,7 +4167,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
             int x_errno = CNcbiError::GetLast().Code();
             TAR_THROW(this, eRestoreAttrs,
                       "Cannot " + string(perm ? "change" : "restore")
-                      + " mode bits of '" + path->GetPath() + '\''
+                      + " permissions for '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
     }
@@ -4268,7 +4268,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 #endif //NCBI_OS_MSWIN
 
     m_Current.m_Stat = st;
-    // Fixup for mode bits
+    // Fixup for permissions
     m_Current.m_Stat.orig.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
 
     // Check if we need to update this entry in the archive
@@ -4280,15 +4280,23 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             // the most recent entry (if any) first
             _ASSERT(temp.empty());
             REVERSE_ITERATE(TEntries, e, *toc) {
+                string entry_path;
+                const string* entry_path_ptr;
+                if (e->GetPath().empty()) {
+                    s_ToFilesystemPath(m_BaseDir, e->GetName()).swap(entry_path);
+                    entry_path_ptr = &entry_path;
+                } else {
+                    entry_path_ptr = &e->GetPath();
+                }
                 if (!temp.empty()) {
                     if (e->GetType() == CTarEntryInfo::eHardLink  ||
-                        temp != e->GetPath()) {
+                        temp != *entry_path_ptr) {
                         continue;
                     }
-                } else if (path == e->GetPath()) {
+                } else if (path == *entry_path_ptr) {
                     found = true;
                     if (e->GetType() == CTarEntryInfo::eHardLink) {
-                        temp = s_ToFilesystemPath(m_BaseDir, e->GetLinkName());
+                        s_ToFilesystemPath(m_BaseDir, e->GetLinkName()).swap(temp);
                         continue;
                     }
                 } else {
