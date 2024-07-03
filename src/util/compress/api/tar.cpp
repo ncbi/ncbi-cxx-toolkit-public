@@ -3226,7 +3226,7 @@ static string s_ToArchiveName(const string& base_dir, const string& path)
     string retval = CDirEntry::AddTrailingPathSeparator(path);
 
 #if   defined(NCBI_OS_MSWIN)
-    // Convert to Unix format with forward slashes
+    // Convert to Unix format with all forward slashes
     NStr::ReplaceInPlace(retval, "\\", "/");
     const NStr::ECase how = NStr::eNocase;
 #elif defined(NCBI_OS_CYGWIN)
@@ -4412,7 +4412,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
 {
     unique_ptr<TEntries> entries(new TEntries);
 
-    // Create a temp entry info first
+    // Create a temp entry info first (for logging, if any)
     m_Current = CTarEntryInfo(m_StreamPos);
 
     string temp = s_ToArchiveName(kEmptyStr, entry.GetName());
