@@ -39,6 +39,9 @@
 
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <algo/align/util/align_sort.hpp>
@@ -104,6 +107,96 @@ public:
 private:
     TList& m_output;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+
+static string s_GetCIGARForSort(CScope& /*scope*/,
+                                const CSeq_align& align)
+{
+    if ( !align.GetSegs().IsSpliced() ) {
+        NCBI_THROW(CException, eUnknown,
+                   "CIGAR extraction only supported or Spliced-seg alignments");
+    }
+
+    string cigar;
+
+    bool is_neg = false;
+    if (align.GetSegs().GetSpliced().IsSetGenomic_strand()) {
+        is_neg = IsReverse(align.GetSegs().GetSpliced().GetGenomic_strand());
+    }
+
+    auto prev_it = align.GetSegs().GetSpliced().GetExons().end();
+    for ( auto it = align.GetSegs().GetSpliced().GetExons().begin();
+          it != align.GetSegs().GetSpliced().GetExons().end();  ++it) {
+        if (prev_it != align.GetSegs().GetSpliced().GetExons().end()) {
+            TSeqPos intron = 0;
+            if (is_neg) {
+                intron =
+                    (*prev_it)->GetGenomic_start() -
+                    (*it)->GetGenomic_end() - 1;
+            }
+            else {
+                intron =
+                    (*it)->GetGenomic_start() -
+                    (*prev_it)->GetGenomic_end() - 1;
+            }
+
+            if (intron) {
+                /**
+                cerr << "prev = ["
+                    << (*prev_it)->GetGenomic_start() 
+                    << ".."
+                    << (*prev_it)->GetGenomic_end() 
+                    << "]" << endl;
+                cerr << "curr = ["
+                    << (*it)->GetGenomic_start() 
+                    << ".."
+                    << (*it)->GetGenomic_end() 
+                    << "]" << endl;
+                cerr << "intron = " << intron << endl;
+                **/
+                cigar += NStr::NumericToString(intron);
+                cigar += 'N';
+            }
+        }
+
+        for (const auto& chunk : (*it)->GetParts()) {
+            switch (chunk->Which()) {
+            case CSpliced_exon_chunk::e_Match:
+                cigar += NStr::NumericToString(chunk->GetMatch());
+                cigar += 'M';
+                break;
+            case CSpliced_exon_chunk::e_Mismatch:
+                cigar += NStr::NumericToString(chunk->GetMismatch());
+                cigar += 'M';
+                break;
+            case CSpliced_exon_chunk::e_Diag:
+                cigar += NStr::NumericToString(chunk->GetDiag());
+                cigar += 'M';
+                break;
+            case CSpliced_exon_chunk::e_Product_ins:
+                cigar += NStr::NumericToString(chunk->GetProduct_ins());
+                cigar += 'D';
+                break;
+            case CSpliced_exon_chunk::e_Genomic_ins:
+                cigar += NStr::NumericToString(chunk->GetGenomic_ins());
+                cigar += 'I';
+                break;
+
+            default:
+                NCBI_THROW(CException, eUnknown, "unhandled chunk type");
+            }
+        }
+
+        prev_it = it;
+    }
+    //cerr << cigar << endl;
+    //cerr << MSerial_AsnText << align.GetSegs().GetSpliced();
+
+    return cigar;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -217,6 +310,9 @@ CAlignSort::SAlignExtractor::operator()(const CSeq_align& align)
         else if (NStr::EqualNocase(*iter, "subject_traceback")) {
             CScoreBuilder builder;
             item.first = builder.GetTraceback(*scope, align, 1);
+        }
+        else if (NStr::EqualNocase(*iter, "cigar")) {
+            item.first = s_GetCIGARForSort(*scope, align);
         }
 
         else {
