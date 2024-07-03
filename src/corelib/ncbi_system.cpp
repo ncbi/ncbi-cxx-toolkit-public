@@ -73,8 +73,11 @@ extern "C" {
 #    include <sys/sysmp.h>
 #  endif //NCBI_OS_IRIX
 #  include "ncbi_os_unix_p.hpp"
-#  define USE_SETMEMLIMIT
-#  define USE_SETCPULIMIT
+#  if !defined(NCBI_OS_CYGWIN)
+#    define USE_SETLIMITS
+#    define USE_SETMEMLIMIT
+#    define USE_SETCPULIMIT
+#  endif
 #  define HAVE_MADVISE 1
 #endif //NCBI_OS_UNIX
 
@@ -111,15 +114,17 @@ BEGIN_NCBI_SCOPE
 #if defined(NCBI_COMPILER_MIPSPRO)
 #  define set_new_handler std::set_new_handler
 #else
+#  ifdef USE_SETLIMITS
 extern "C" {
                  static void s_DefaultPrintHandler(void);
                  static void s_HandlerGuard(void);
     [[noreturn]] static void s_SignalHandler(int sig);
 }
+#  endif
 #endif //NCBI_COMPILER_MIPSPRO
 
 
-#ifdef NCBI_OS_UNIX
+#ifdef USE_LIMITS
 
 DEFINE_STATIC_FAST_MUTEX(s_Limits_Handler_Mutex);
 
