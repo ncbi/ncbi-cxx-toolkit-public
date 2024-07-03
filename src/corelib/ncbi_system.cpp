@@ -124,7 +124,7 @@ extern "C" {
 #endif //NCBI_COMPILER_MIPSPRO
 
 
-#ifdef USE_LIMITS
+#ifdef USE_SETLIMITS
 
 DEFINE_STATIC_FAST_MUTEX(s_Limits_Handler_Mutex);
 
