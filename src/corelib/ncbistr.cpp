@@ -717,7 +717,7 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
 enum ESkipMode {
     eSkipAll,           // all symbols
     eSkipAllAllowed,    // all symbols, except digit/+/-/.
-    eSkipSpacesOnly     // whitespaces only 
+    eSkipSpacesOnly     // whitespace characters only 
 };
 
 static inline
@@ -989,7 +989,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
     const char* start = ptr;
     char c = *ptr++;
 
-    // skip leading whitespaces
+    // skip leading whitespace
     while ( isspace((unsigned char)c) ) {
         c = *ptr++;
     }
@@ -5528,11 +5528,11 @@ string NStr::Dedent(const CTempString str, TDedentFlags flags)
             }
         }
         if (!pos) {
-            // No whitespaces on the current line, no common empty prefix
+            // No whitespace on the current line, no common empty prefix
             break;
         }
         if (pos == len  &&  (flags & fDedent_NormalizeEmptyLines)) {
-            // Line have whitespaces only -- exclude this line from a common prefix computing 
+            // Line have whitespace only -- exclude this line from a common prefix computing 
             continue;
         }
         // Update length of the common prefix

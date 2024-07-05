@@ -291,7 +291,7 @@ public:
         fConvErr_NoErrMessage = (1 <<  2),  ///< Set errno, but do not set CNcbiError message on error
         fMandatorySign           = (1 << 17),     ///< Check on mandatory sign. See 'ENumToStringFlags::fWithSign'.
         fAllowCommas             = (1 << 18),     ///< Allow commas. See 'ENumToStringFlags::fWithCommas'.
-        fAllowLeadingSpaces      = (1 << 19),     ///< Ignore leading whitespaces in converted string.
+        fAllowLeadingSpaces      = (1 << 19),     ///< Ignore leading whitespace characters in converted string.
         fAllowLeadingSymbols     = (1 << 20) | fAllowLeadingSpaces,
                                                   ///< Ignore leading non-numeric characters.
         fAllowTrailingSpaces     = (1 << 21),     ///< Ignore trailing whitespace characters.
@@ -2237,31 +2237,31 @@ public:
 
     /// Which end to truncate a string.
     enum ETrunc {
-        eTrunc_Begin,  ///< Truncate leading whitespaces only
-        eTrunc_End,    ///< Truncate trailing whitespaces only
-        eTrunc_Both    ///< Truncate whitespaces at both begin and end of string
+        eTrunc_Begin,  ///< Truncate leading whitespace only
+        eTrunc_End,    ///< Truncate trailing whitespace only
+        eTrunc_Both    ///< Truncate whitespace at both begin and end of string
     };
 
-    /// Truncate whitespaces in a string.
+    /// Truncate whitespace in a string.
     ///
     /// @param str
     ///   String to truncate white-spaces from.
     /// @param where
     ///   Which end of the string to truncate whitespace from.
-    ///   Default is to truncate whitespaces from both ends (eTrunc_Both).
+    ///   Default is to truncate whitespace from both ends (eTrunc_Both).
     /// @sa
     ///   TruncateSpaces_Unsafe
     static string TruncateSpaces(const string& str,
                                  ETrunc        where = eTrunc_Both);
 
-    /// Truncate whitespaces in a string.
+    /// Truncate whitespace in a string.
     /// It can be faster but it is also more dangerous than TruncateSpaces()
     ///
     /// @param str
-    ///   String to truncate whitespaces from.
+    ///   String to truncate whitespace from.
     /// @param where
     ///   Which end of the string to truncate whitespace from.
-    ///   Default is to truncate whitespaces from both ends (eTrunc_Both).
+    ///   Default is to truncate whitespace from both ends (eTrunc_Both).
     /// @attention
     ///   The lifespan of the result string is the same as one of the source.
     ///   So, for example, if the source is temporary string, or it changes somehow,
@@ -2290,13 +2290,13 @@ public:
         return TruncateSpaces_Unsafe(str, where);
     }
 
-    /// Truncate whitespaces in a string (in-place)
+    /// Truncate whitespace in a string (in-place)
     ///
     /// @param str
-    ///   String to truncate whitespaces from.
+    ///   String to truncate whitespace from.
     /// @param where
     ///   Which end of the string to truncate whitespace from.
-    ///   Default is to truncate whitespaces from both ends (eTrunc_Both).
+    ///   Default is to truncate whitespace from both ends (eTrunc_Both).
     ///
     static void TruncateSpacesInPlace(string& str,  ETrunc where = eTrunc_Both);
     static void TruncateSpacesInPlace(CTempString&, ETrunc where = eTrunc_Both);
@@ -3407,7 +3407,7 @@ public:
 
     /// Flags for Dedent() method 
     enum EDedentFlags {
-        fDedent_NormalizeEmptyLines  = 1 << 0,  ///< Each line containing only whitespaces will be normalized
+        fDedent_NormalizeEmptyLines  = 1 << 0,  ///< Each line containing only whitespace will be normalized
                                                 ///< to a single newline character in the output. Such lines 
                                                 ///< are excluded from detecting common whitespace prefix.
         // Next flags can be useful for processing RAW multi-line literals "R(...)"
@@ -3425,13 +3425,13 @@ public:
     /// @return 
     ///   String with removed common whitespace indentation. 
     /// @note
-    ///    Empty lines, and lines containing whitespaces only with fDedent_NormalizeEmptyLines flag,
-    ///    are not used in computing common whitespaces prefix.
+    ///    Empty lines, and lines containing whitespace only with fDedent_NormalizeEmptyLines flag,
+    ///    are not used in computing common whitespace prefix.
     /// @note
     ///   Assumes that whitespace prefixes are the same on each line, in other words, 
     ///   if a common prefix have a mix of spaces and tabulation characters, it should
     ///   be the same for each line. Or this method can works incorrectly.
-    ///   Also, you can use Replace() first to replace tabulations and make whitespaces
+    ///   Also, you can use Replace() first to replace tabulations and make whitespace
     ///   consistent across lines.
     /// @sa
     ///   Replace, DedentR
@@ -4264,13 +4264,13 @@ public:
     ///   TruncateSpacesInPlace, TruncateSpaces_Unsafe, TruncateSpaces
     static bool IsWhiteSpace(TUnicodeSymbol sym);
 
-    /// Truncate whitespaces in the string (in-place)
+    /// Truncate whitespace in the string (in-place)
     ///
     /// @param src
     ///   UTF8 string
     /// @param side
-    ///   Which end of the string to truncate whitespaces from.
-    ///   Default is to truncate whitespaces from both ends.
+    ///   Which end of the string to truncate whitespace from.
+    ///   Default is to truncate whitespace from both ends.
     /// @return
     ///   Reference to src
     /// @sa
@@ -4278,25 +4278,25 @@ public:
     static CStringUTF8& TruncateSpacesInPlace
     (CStringUTF8& str, NStr::ETrunc side = NStr::eTrunc_Both);
 
-    /// Truncate whitespaces in the string
+    /// Truncate whitespace in the string
     ///
     /// @param str
     ///   Source string, in UTF8 encoding
     /// @param side
-    ///   Which end of the string to truncate whitespaces from.
-    ///   Default is to truncate whitespaces from both ends.
+    ///   Which end of the string to truncate whitespace from.
+    ///   Default is to truncate whitespace from both ends.
     /// @sa
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
     static CStringUTF8 TruncateSpaces
         (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
 
-    /// Truncate whitespaces in the string
+    /// Truncate whitespace in the string
     ///
     /// @param str
     ///   Source string, in UTF8 encoding
     /// @param side
-    ///   Which end of the string to truncate whitespaces from.
-    ///   Default is to truncate whitespaces from both ends.
+    ///   Which end of the string to truncate whitespace from.
+    ///   Default is to truncate whitespace from both ends.
     /// @attention
     ///   The lifespan of the result string is the same as one of the source.
     ///   So, for example, if the source is temporary string, then the result
