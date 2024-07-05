@@ -291,10 +291,10 @@ public:
         fConvErr_NoErrMessage = (1 <<  2),  ///< Set errno, but do not set CNcbiError message on error
         fMandatorySign           = (1 << 17),     ///< Check on mandatory sign. See 'ENumToStringFlags::fWithSign'.
         fAllowCommas             = (1 << 18),     ///< Allow commas. See 'ENumToStringFlags::fWithCommas'.
-        fAllowLeadingSpaces      = (1 << 19),     ///< Ignore leading spaces in converted string.
+        fAllowLeadingSpaces      = (1 << 19),     ///< Ignore leading whitespaces in converted string.
         fAllowLeadingSymbols     = (1 << 20) | fAllowLeadingSpaces,
                                                   ///< Ignore leading non-numeric characters.
-        fAllowTrailingSpaces     = (1 << 21),     ///< Ignore trailing space characters.
+        fAllowTrailingSpaces     = (1 << 21),     ///< Ignore trailing whitespace characters.
         fAllowTrailingSymbols    = (1 << 22) | fAllowTrailingSpaces,
                                                   ///< Ignore trailing non-numerics characters.
         fDecimalPosix            = (1 << 23),     ///< StringToDouble*(): For decimal point, use C locale.
@@ -2237,31 +2237,31 @@ public:
 
     /// Which end to truncate a string.
     enum ETrunc {
-        eTrunc_Begin,  ///< Truncate leading spaces only
-        eTrunc_End,    ///< Truncate trailing spaces only
-        eTrunc_Both    ///< Truncate spaces at both begin and end of string
+        eTrunc_Begin,  ///< Truncate leading whitespaces only
+        eTrunc_End,    ///< Truncate trailing whitespaces only
+        eTrunc_Both    ///< Truncate whitespaces at both begin and end of string
     };
 
-    /// Truncate spaces in a string.
+    /// Truncate whitespaces in a string.
     ///
     /// @param str
-    ///   String to truncate spaces from.
+    ///   String to truncate white-spaces from.
     /// @param where
-    ///   Which end of the string to truncate space from. Default is to
-    ///   truncate space from both ends (eTrunc_Both).
+    ///   Which end of the string to truncate whitespace from.
+    ///   Default is to truncate whitespaces from both ends (eTrunc_Both).
     /// @sa
     ///   TruncateSpaces_Unsafe
     static string TruncateSpaces(const string& str,
                                  ETrunc        where = eTrunc_Both);
 
-    /// Truncate spaces in a string.
+    /// Truncate whitespaces in a string.
     /// It can be faster but it is also more dangerous than TruncateSpaces()
     ///
     /// @param str
-    ///   String to truncate spaces from.
+    ///   String to truncate whitespaces from.
     /// @param where
-    ///   Which end of the string to truncate space from. Default is to
-    ///   truncate space from both ends (eTrunc_Both).
+    ///   Which end of the string to truncate whitespace from.
+    ///   Default is to truncate whitespaces from both ends (eTrunc_Both).
     /// @attention
     ///   The lifespan of the result string is the same as one of the source.
     ///   So, for example, if the source is temporary string, or it changes somehow,
@@ -2290,13 +2290,14 @@ public:
         return TruncateSpaces_Unsafe(str, where);
     }
 
-    /// Truncate spaces in a string (in-place)
+    /// Truncate whitespaces in a string (in-place)
     ///
     /// @param str
-    ///   String to truncate spaces from.
+    ///   String to truncate whitespaces from.
     /// @param where
-    ///   Which end of the string to truncate space from. Default is to
-    ///   truncate space from both ends (eTrunc_Both).
+    ///   Which end of the string to truncate whitespace from.
+    ///   Default is to truncate whitespaces from both ends (eTrunc_Both).
+    ///
     static void TruncateSpacesInPlace(string& str,  ETrunc where = eTrunc_Both);
     static void TruncateSpacesInPlace(CTempString&, ETrunc where = eTrunc_Both);
     
@@ -2311,6 +2312,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking for a prefix.
+    ///
     static void TrimPrefixInPlace(string& str, const CTempString prefix,
                                   ECase use_case = eCase);
     static void TrimPrefixInPlace(CTempString& str, const CTempString prefix,
@@ -4262,13 +4264,13 @@ public:
     ///   TruncateSpacesInPlace, TruncateSpaces_Unsafe, TruncateSpaces
     static bool IsWhiteSpace(TUnicodeSymbol sym);
 
-    /// Truncate spaces in the string (in-place)
+    /// Truncate whitespaces in the string (in-place)
     ///
     /// @param src
     ///   UTF8 string
     /// @param side
-    ///   Which end of the string to truncate spaces from. Default is to
-    ///   truncate spaces from both ends.
+    ///   Which end of the string to truncate whitespaces from.
+    ///   Default is to truncate whitespaces from both ends.
     /// @return
     ///   Reference to src
     /// @sa
@@ -4276,25 +4278,25 @@ public:
     static CStringUTF8& TruncateSpacesInPlace
     (CStringUTF8& str, NStr::ETrunc side = NStr::eTrunc_Both);
 
-    /// Truncate spaces in the string
+    /// Truncate whitespaces in the string
     ///
     /// @param str
     ///   Source string, in UTF8 encoding
     /// @param side
-    ///   Which end of the string to truncate spaces from. Default is to
-    ///   truncate spaces from both ends.
+    ///   Which end of the string to truncate whitespaces from.
+    ///   Default is to truncate whitespaces from both ends.
     /// @sa
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
     static CStringUTF8 TruncateSpaces
         (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
 
-    /// Truncate spaces in the string
+    /// Truncate whitespaces in the string
     ///
     /// @param str
     ///   Source string, in UTF8 encoding
     /// @param side
-    ///   Which end of the string to truncate spaces from. Default is to
-    ///   truncate spaces from both ends.
+    ///   Which end of the string to truncate whitespaces from.
+    ///   Default is to truncate whitespaces from both ends.
     /// @attention
     ///   The lifespan of the result string is the same as one of the source.
     ///   So, for example, if the source is temporary string, then the result
