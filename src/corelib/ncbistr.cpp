@@ -717,7 +717,7 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
 enum ESkipMode {
     eSkipAll,           // all symbols
     eSkipAllAllowed,    // all symbols, except digit/+/-/.
-    eSkipSpacesOnly     // spaces only 
+    eSkipSpacesOnly     // whitespaces only 
 };
 
 static inline
@@ -805,8 +805,7 @@ Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags, int base
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
         bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
-        s_SkipAllowedSymbols(str, pos,
-                             spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
     }
     // Determine sign
     bool sign = false;
@@ -863,8 +862,7 @@ Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags, int base
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
-        bool spaces = ((flags & fAllowTrailingSymbols) ==
-                       fAllowTrailingSpaces);
+        bool spaces = ((flags & fAllowTrailingSymbols) == fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     // Assign sign before the end pointer check
@@ -925,8 +923,7 @@ Uint8 NStr::StringToUInt8(const CTempString str,
     // Skip allowed leading symbols
     if (flags & fAllowLeadingSymbols) {
         bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
-        s_SkipAllowedSymbols(str, pos,
-                             spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
     }
     // Determine sign
     if (str[pos] == '+') {
@@ -977,8 +974,7 @@ Uint8 NStr::StringToUInt8(const CTempString str,
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
-        bool spaces = ((flags & fAllowTrailingSymbols) ==
-                       fAllowTrailingSpaces);
+        bool spaces = ((flags & fAllowTrailingSymbols) == fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR_SIZE(Uint8);
@@ -993,7 +989,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
     const char* start = ptr;
     char c = *ptr++;
 
-    // skip leading blanks
+    // skip leading whitespaces
     while ( isspace((unsigned char)c) ) {
         c = *ptr++;
     }
@@ -1299,8 +1295,7 @@ static double s_StringToDouble(const char* str, size_t size,
 
     // Skip allowed leading symbols
     if (flags & NStr::fAllowLeadingSymbols) {
-        bool spaces = ((flags & NStr::fAllowLeadingSymbols) == 
-                       NStr::fAllowLeadingSpaces);
+        bool spaces = ((flags & NStr::fAllowLeadingSymbols) == NStr::fAllowLeadingSpaces);
         s_SkipAllowedSymbols(CTempString(str, size), pos,
                              spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
     }
@@ -1373,8 +1368,7 @@ static double s_StringToDouble(const char* str, size_t size,
 
     // Skip allowed trailing symbols
     if (flags & NStr::fAllowTrailingSymbols) {
-        bool spaces = ((flags & NStr::fAllowTrailingSymbols) ==
-                       NStr::fAllowTrailingSpaces);
+        bool spaces = ((flags & NStr::fAllowTrailingSymbols) == NStr::fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR(double);
@@ -1481,10 +1475,8 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
     {{
         // Skip allowed leading symbols
         if (flags & fAllowLeadingSymbols) {
-            bool spaces = ((flags & fAllowLeadingSymbols) ==
-                           fAllowLeadingSpaces);
-            s_SkipAllowedSymbols(str, pos,
-                           spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
+            bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
+            s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAllAllowed, flags);
         }
         // Determine sign
         if (str[pos] == '+') {
@@ -1532,8 +1524,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
     }
     // Skip allowed trailing symbols
     if (flags & fAllowTrailingSymbols) {
-        bool spaces = ((flags & fAllowTrailingSymbols) ==
-                       fAllowTrailingSpaces);
+        bool spaces = ((flags & fAllowTrailingSymbols) == fAllowTrailingSpaces);
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll, flags);
     }
     CHECK_ENDPTR(Uint8);
