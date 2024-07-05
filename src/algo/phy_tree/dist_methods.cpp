@@ -31,11 +31,10 @@
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_limits.hpp>
-#include <algo/phy_tree/dist_methods.hpp>
-
 #include <math.h>
 #include <corelib/ncbifloat.h>
+#include <corelib/ncbi_limits.hpp>
+#include <algo/phy_tree/dist_methods.hpp>
 
 #include "fastme/graph.h"
 
