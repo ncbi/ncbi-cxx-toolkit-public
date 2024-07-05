@@ -28,8 +28,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistl.hpp>
+#include <math.h>
 #include <corelib/ncbifloat.h>    
+#include <corelib/ncbistl.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -41,7 +42,6 @@
 
 #include <algo/phy_tree/phytree_calc.hpp>
 
-#include <math.h>
 
 #ifdef NCBI_COMPILER_MSVC
 #  define isfinite _finite
