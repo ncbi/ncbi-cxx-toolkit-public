@@ -2144,8 +2144,8 @@ static TRange s_GetRetainedRange(const TCuts& sorted_merged_cuts, TSeqPos seqLen
 
 /// Implementation detail: first trim all associated annotation, then
 /// trim sequence data
-void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
-                               const TCuts& cuts,
+void TrimSequenceAndAnnotation(CBioseq_Handle    bsh,
+                               const TCuts&      cuts,
                                EInternalTrimType internal_cut_conversion)
 {
     // Check the input data for anomalies
@@ -2166,10 +2166,10 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 
     // Trim Seq-feat annotation
     SAnnotSelector feat_sel(CSeq_annot::C_Data::e_Ftable);
-    CFeat_CI feat_ci(bsh, feat_sel);
+    CFeat_CI       feat_ci(bsh, feat_sel);
     for (; feat_ci; ++feat_ci) {
         // Make a copy of the feature
-        const auto& original_feat = feat_ci->GetOriginalFeature();
+        const auto&     original_feat = feat_ci->GetOriginalFeature();
         CRef<CSeq_feat> copy_feat(new CSeq_feat());
         copy_feat->Assign(feat_ci->GetOriginalFeature());
 
@@ -2181,7 +2181,7 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 
         // Modify the copy of the feature
         bool isPartialStart = false;
-        bool isPartialStop = false;
+        bool isPartialStop  = false;
         TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed, isPartialStart, isPartialStop);
 
         if (bFeatureDeleted) {
@@ -2189,17 +2189,14 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
             // If the feature was a cdregion, delete the protein and
             // renormalize the nuc-prot set
             DeleteProteinAndRenormalizeNucProtSet(*feat_ci);
-        }
-        else
-        if (bFeatureTrimmed) {
+        } else if (bFeatureTrimmed) {
             // Further modify the copy of the feature
 
             // If this feat is a Cdregion, then RETRANSLATE the protein
             // sequence AND adjust any protein feature
-            if ( copy_feat->IsSetData() &&
-                 copy_feat->GetData().Which() == CSeqFeatData::e_Cdregion &&
-                 copy_feat->IsSetProduct() )
-            {
+            if (copy_feat->IsSetData() &&
+                copy_feat->GetData().Which() == CSeqFeatData::e_Cdregion &&
+                copy_feat->IsSetProduct()) {
                 // Get length of nuc sequence before trimming
                 TSeqPos original_nuc_len = 0;
                 if (bsh.GetInst().CanGetLength()) {
@@ -2207,8 +2204,10 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
                 }
 
                 const auto retainedRange = s_GetRetainedRange(sorted_cuts, original_nuc_len);
-                auto new_frame = sequence::CFeatTrim::GetCdsFrame(original_feat, retainedRange);
-                copy_feat->SetData().SetCdregion().SetFrame(new_frame);
+                auto       new_frame     = sequence::CFeatTrim::GetCdsFrame(original_feat, retainedRange);
+                if (new_frame != CCdregion::eFrame_not_set) {
+                    copy_feat->SetData().SetCdregion().SetFrame(new_frame);
+                }
                 // Retranslate the coding region using the new nuc sequence
                 RetranslateCdregion(bsh, isPartialStart, isPartialStop, copy_inst, copy_feat, sorted_cuts);
             }
@@ -2221,19 +2220,17 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 
     // Trim Seq-align annotation
     SAnnotSelector align_sel(CSeq_annot::C_Data::e_Align);
-    CAlign_CI align_ci(bsh, align_sel);
+    CAlign_CI      align_ci(bsh, align_sel);
     for (; align_ci; ++align_ci) {
         // Only DENSEG type is supported
         const CSeq_align& align = *align_ci;
-        if ( align.CanGetSegs() &&
-             align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
-        {
+        if (align.CanGetSegs() &&
+            align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg) {
             // Make sure mandatory fields are present in the denseg
             const CDense_seg& denseg = align.GetSegs().GetDenseg();
             if (! (denseg.CanGetDim() && denseg.CanGetNumseg() &&
                    denseg.CanGetIds() && denseg.CanGetStarts() &&
-                   denseg.CanGetLens()) )
-            {
+                   denseg.CanGetLens())) {
                 continue;
             }
 
@@ -2251,16 +2248,15 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
 
     // Trim Seq-graph annotation
     SAnnotSelector graph_sel(CSeq_annot::C_Data::e_Graph);
-    CGraph_CI graph_ci(bsh, graph_sel);
+    CGraph_CI      graph_ci(bsh, graph_sel);
     for (; graph_ci; ++graph_ci) {
         // Only certain types of graphs are supported.
         // See C Toolkit function GetGraphsProc in api/sqnutil2.c
         const CMappedGraph& graph = *graph_ci;
-        if ( graph.IsSetTitle() &&
-             (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
-              NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
-              NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
-        {
+        if (graph.IsSetTitle() &&
+            (NStr::CompareNocase(graph.GetTitle(), "Phrap Quality") == 0 ||
+             NStr::CompareNocase(graph.GetTitle(), "Phred Quality") == 0 ||
+             NStr::CompareNocase(graph.GetTitle(), "Gap4") == 0)) {
             // Make a copy of the graph
             CRef<CSeq_graph> copy_graph(new CSeq_graph());
             copy_graph->Assign(graph.GetOriginalGraph());
@@ -2691,6 +2687,7 @@ static void s_SeqIntervalDelete(CRef<CSeq_interval> interval,
 }
 
 
+
 static void s_SeqLocDelete(CRef<CSeq_loc> loc,
                            TSeqPos from,
                            TSeqPos to,
@@ -2698,6 +2695,8 @@ static void s_SeqLocDelete(CRef<CSeq_loc> loc,
                            bool& bTrimmed)
 {
     // Given a seqloc and a range, cut the seqloc
+    bCompleteCut = false;
+    bTrimmed = false;
 
     switch(loc->Which())
     {
@@ -2717,30 +2716,28 @@ static void s_SeqLocDelete(CRef<CSeq_loc> loc,
             CRef<CSeq_loc::TPacked_int> intervals(new CSeq_loc::TPacked_int);
             intervals->Assign(loc->GetPacked_int());
             if (intervals->CanGet()) {
-                // Process each interval in the list
-                CPacked_seqint::Tdata::iterator it;
-                for (it = intervals->Set().begin();
+                for (auto it = intervals->Set().begin();
                      it != intervals->Set().end(); )
                 {
-                    // Initial value: assume that all intervals
-                    // will be deleted resulting in bCompleteCut = true.
-                    // Later on if any interval is not deleted, then set
-                    // bCompleteCut = false
-                    if (it == intervals->Set().begin()) {
-                        bCompleteCut = true;
-                    }
-
                     bool bDeleted = false;
-                    s_SeqIntervalDelete(*it, from, to, bDeleted, bTrimmed);
+                    bool bCurrentTrimmed = false;
+                    s_SeqIntervalDelete(*it, from, to, bDeleted, bCurrentTrimmed);
 
                     // Should interval be deleted from list?
                     if (bDeleted) {
+                        bTrimmed = true;
                         it = intervals->Set().erase(it);
                     }
                     else {
+                        if (bCurrentTrimmed) {
+                            bTrimmed = true;
+                        }
                         ++it;
-                        bCompleteCut = false;
                     }
+                }
+                if (intervals->Get().empty()) {
+                    bCompleteCut = true;
+                    bTrimmed = false;
                 }
 
                 // Update the original list
@@ -2755,30 +2752,28 @@ static void s_SeqLocDelete(CRef<CSeq_loc> loc,
             CRef<CSeq_loc_mix> mix(new CSeq_loc_mix);
             mix->Assign(loc->GetMix());
             if (mix->CanGet()) {
-                // Process each seqloc in the list
-                CSeq_loc_mix::Tdata::iterator it;
-                for (it = mix->Set().begin();
+                for (auto it = mix->Set().begin();
                      it != mix->Set().end(); )
                 {
-                    // Initial value: assume that all seqlocs
-                    // will be deleted resulting in bCompleteCut = true.
-                    // Later on if any seqloc is not deleted, then set
-                    // bCompleteCut = false
-                    if (it == mix->Set().begin()) {
-                        bCompleteCut = true;
-                    }
-
                     bool bDeleted = false;
-                    s_SeqLocDelete(*it, from, to, bDeleted, bTrimmed);
+                    bool bCurrentTrimmed = false;
+                    s_SeqLocDelete(*it, from, to, bDeleted, bCurrentTrimmed);
 
                     // Should seqloc be deleted from list?
                     if (bDeleted) {
+                        bTrimmed = true;
                         it = mix->Set().erase(it);
                     }
                     else {
+                        if (bCurrentTrimmed) {
+                            bTrimmed = true;
+                        }
                         ++it;
-                        bCompleteCut = false;
                     }
+                }
+                if (mix->Get().empty()) {
+                    bCompleteCut = true;
+                    bTrimmed = false;
                 }
 
                 // Update the original list
@@ -3118,8 +3113,7 @@ void SetPartial(CSeq_loc& loc, CRef<CSeq_feat> feat, CSeq_loc::TStrand strand, b
 /// Trim Seq-feat annotation
 void TrimSeqFeat(CRef<CSeq_feat> feat, const TCuts& sorted_cuts, bool& bFeatureDeleted, bool& bFeatureTrimmed, bool& partial_start, bool& partial_stop)
 {
-    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
-        const TRange& cut = sorted_cuts[ii];
+    for (const auto& cut : sorted_cuts) {
         TSeqPos from = cut.GetFrom();
         TSeqPos to = cut.GetTo();
 
