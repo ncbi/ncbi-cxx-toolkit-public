@@ -970,6 +970,42 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
 }
 
 
+BOOST_AUTO_TEST_CASE(TrimSeqFeat_RW2086)
+{
+    auto pCds = Ref(new CSeq_feat());
+    pCds->SetData().SetCdregion();
+    {
+        auto& loc = pCds->SetLocation();
+        auto  pId = Ref(new CSeq_id());
+        pId->SetLocal().SetStr("scaffold_id");
+        const ENa_strand strand{ eNa_strand_minus };
+        loc.SetMix().AddInterval(*pId, 8964, 9089, strand);
+        loc.SetMix().AddInterval(*pId, 8520, 8760, strand);
+        loc.SetMix().AddInterval(*pId, 7605, 7633, strand);
+    }
+
+    edit::TCuts cuts; // intervals to be removed
+    cuts.push_back(edit::TRange(7870, 10291));
+    bool isDeleted      = false;
+    bool isTrimmed      = false;
+    bool isPartialStart = false;
+    bool isPartialStop  = false;
+
+    edit::TrimSeqFeat(pCds, cuts, isDeleted, isTrimmed, isPartialStart, isPartialStop);
+
+    BOOST_CHECK(! isPartialStart);
+    BOOST_CHECK(isPartialStop);
+    BOOST_CHECK(! isDeleted);
+    BOOST_CHECK(isTrimmed);
+
+    const auto& loc = pCds->GetLocation();
+    BOOST_CHECK_EQUAL(loc.GetStart(eExtreme_Positional), 7605);
+    BOOST_CHECK_EQUAL(loc.GetStop(eExtreme_Positional), 7633);
+    BOOST_CHECK(loc.IsPartialStart(eExtreme_Biological));
+    BOOST_CHECK(! loc.IsPartialStop(eExtreme_Biological));
+}
+
+
 BOOST_AUTO_TEST_CASE(TrimSeqFeat_Featured_Deleted)
 {
     cout << "Testing FUNCTION: TrimSeqFeat - cdregion feature was completely deleted" << endl;
