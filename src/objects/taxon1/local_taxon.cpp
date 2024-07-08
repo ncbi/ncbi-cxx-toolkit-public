@@ -317,17 +317,17 @@ CLocalTaxon::TLineage CLocalTaxon::GetLineage(TTaxid taxid)
 CLocalTaxon::TTaxid CLocalTaxon::Join(TTaxid taxid1, TTaxid taxid2)
 {
     if (m_SqliteConn.get()) {
-        TLineage lineage1 = GetLineage(taxid1),
-                 lineage2 = GetLineage(taxid2);
-        TLineage::const_iterator it1 = lineage1.begin(),
-                                 it2 = lineage2.begin();
-        for (; it1 != lineage1.end() && it2 != lineage2.end() && *it1 == *it2;
+        TLineage lineage1 = GetLineage(taxid1);
+        TLineage lineage2 = GetLineage(taxid2);
+        TLineage::const_iterator it1 = lineage1.begin();
+        TLineage::const_iterator it2 = lineage2.begin();
+        CLocalTaxon::TTaxid join_taxid = 0;
+        for ( ;  it1 != lineage1.end()  &&  it2 != lineage2.end()  &&
+              *it1 == *it2;
                ++it1, ++it2) {
+            join_taxid = *it1;
         }
-        if (it1 == lineage1.end()) {
-            return 0;
-        }
-        return *--it1;
+        return join_taxid;
     } else {
         return m_TaxonConn->Join(taxid1, taxid2);
     }
