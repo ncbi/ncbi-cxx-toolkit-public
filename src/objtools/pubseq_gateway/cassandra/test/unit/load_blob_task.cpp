@@ -167,7 +167,7 @@ TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
         EXPECT_EQ(CCassandraException::eQueryFailed, code);
         EXPECT_EQ(eDiag_Error, severity);
         EXPECT_EQ("NCBI C++ Exception:\n    T0 \"cass_driver.cpp\","
-                  " line 1726: Error: (CCassandraException::eQueryFailed) "
+                  " line 1736: Error: (CCassandraException::eQueryFailed) "
                   "idblob::CCassQuery::ProcessFutureResult() - "
                   "CassandraErrorMessage - \"ANY ConsistencyLevel is only supported for writes\";"
                   " CassandraErrorCode - 2002200; SQL: \"SELECT    last_modified,   class,   date_asn1,   div,"

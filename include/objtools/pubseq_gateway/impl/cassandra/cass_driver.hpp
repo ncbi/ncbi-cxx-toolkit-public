@@ -92,7 +92,8 @@ typedef enum {
     dtBlob,
     dtNetwork,
     dtCollection,
-    dtCustom
+    dtCustom,
+    dtDate
 } CCassDataType;
 
 using TCassConsistency = CassConsistency;
@@ -421,6 +422,13 @@ class CCassPrm
         m_assigned = true;
     }
 
+    void AssignDate(int64_t v)
+    {
+        m_type = CASS_VALUE_TYPE_DATE;
+        m_simpleval.i64 = v;
+        m_assigned = true;
+    }
+
     void Assign(int64_t  v)
     {
         m_type = CASS_VALUE_TYPE_BIGINT;
@@ -579,6 +587,7 @@ class CCassPrm
             case CASS_VALUE_TYPE_INT:
                 return m_simpleval.i32;
             case CASS_VALUE_TYPE_BIGINT:
+            case CASS_VALUE_TYPE_DATE:
                 return m_simpleval.i64;
             case CASS_VALUE_TYPE_VARCHAR: {
                 int32_t     i32;
@@ -603,6 +612,7 @@ class CCassPrm
             case CASS_VALUE_TYPE_INT:
                 return m_simpleval.i32;
             case CASS_VALUE_TYPE_BIGINT:
+            case CASS_VALUE_TYPE_DATE:
                 return m_simpleval.i64;
             case CASS_VALUE_TYPE_VARCHAR: {
                 int64_t     i64;
@@ -630,6 +640,7 @@ class CCassPrm
                 value = NStr::NumericToString(m_simpleval.i32);
                 break;
             case CASS_VALUE_TYPE_BIGINT:
+            case CASS_VALUE_TYPE_DATE:
                 value = NStr::NumericToString(m_simpleval.i64);
                 break;
             case CASS_VALUE_TYPE_VARCHAR:
@@ -655,6 +666,7 @@ class CCassPrm
             case CASS_VALUE_TYPE_SMALL_INT:
             case CASS_VALUE_TYPE_INT:
             case CASS_VALUE_TYPE_BIGINT:
+            case CASS_VALUE_TYPE_DATE:
                 return AsString();
             case CASS_VALUE_TYPE_SET:
                 return "set(...)";
@@ -927,6 +939,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     void BindStr(int iprm, const string& value);
     void BindStr(int iprm, const char* value);
     void BindBytes(int iprm, const unsigned char* buf, size_t len);
+    void BindDate(int iprm, int64_t value);
 
     template<typename K, typename V>
     void BindMap(int iprm, const map<K, V>& value)
@@ -1027,6 +1040,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                 return dtCollection;
             case CASS_VALUE_TYPE_INET:
                 return dtNetwork;
+            case CASS_VALUE_TYPE_DATE:
+                return dtDate;
             case CASS_VALUE_TYPE_UNKNOWN:
             default:
                 return dtUnknown;

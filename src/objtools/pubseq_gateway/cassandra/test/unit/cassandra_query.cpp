@@ -139,6 +139,9 @@ TEST_F(CCassQueryTest, ParamAsStrForDebug) {
 
     query->BindNull(0);
     EXPECT_EQ("Null", query->ParamAsStrForDebug(0));
+
+    query->BindDate(0, 1720396800);
+    EXPECT_EQ("1720396800", query->ParamAsStrForDebug(0));
 }
 
 TEST_F(CCassQueryTest, CassandraExceptionFormat)
@@ -205,6 +208,54 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
                     " CassandraErrorCode - 100000A", ex.GetMsg());
         }
     }
+}
+
+TEST_F(CCassQueryTest, FieldGetDateValue) {
+    auto query = m_Connection->NewQuery();
+    query->SetSQL("SELECT date_field FROM test_cassandra_driver.test_retrieval "
+        " WHERE id = 'row_with_null_date_column'", 0);
+    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
+    ASSERT_EQ(query->NextRow(), ar_dataready) << "Failed to find row for null date value test";
+    EXPECT_TRUE(query->FieldIsNull(0)) << "Null cell is reported as non null";
+    const int64_t default_val = 1720396800;
+    EXPECT_EQ(query->FieldGetInt64Value(0, default_val), default_val);
+    EXPECT_EQ(query->FieldGetInt32Value(0, default_val), default_val);
+    query = m_Connection->NewQuery();
+    query->SetSQL("SELECT date_field FROM test_cassandra_driver.test_retrieval WHERE id = 'row_with_date_value'", 0);
+    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
+    ASSERT_EQ(query->NextRow(), ar_dataready) << "Failed to find row for date value test";
+    EXPECT_FALSE(query->FieldIsNull(0)) << "Not null cell is reported as null";
+    EXPECT_EQ(dtDate, query->FieldType(0)) << "FieldType failed to return correct type";
+    const int64_t expected = 1720137600;
+    EXPECT_EQ(expected, query->FieldGetInt32Value(0)) << "FieldGetInt32Value failed to return valid date value";
+    EXPECT_EQ(expected, query->FieldGetInt64Value(0)) << "FieldGetInt64Value failed to return valid date value";
+    EXPECT_EQ("2024-07-05", query->FieldGetStrValue(0)) << "FieldGetStrValue failed to return valid date value";
+}
+
+TEST_F(CCassQueryTest, DateValueRoundTrip) {
+    const int32_t int_val = getpid();
+    const string id = "rewrite_date_value_row_" + NStr::NumericToString(int_val);
+    const string date_str = "2024-07-03";
+    const CTime t(date_str, "Y-M-D", CTime::ETimeZone::eUTC);
+    const int64_t date_val = t.GetTimeT();
+    auto query = m_Connection->NewQuery();
+    query->SetSQL("INSERT INTO test_cassandra_driver.test_retrieval (id, int_field, date_field) VALUES (?,?,?) USING TTL 3600", 3);
+    query->BindStr(0, id);
+    query->BindInt32(1, int_val);
+    query->BindDate(2, date_val);
+    EXPECT_EQ(query->ParamAsInt32(2), date_val);
+    EXPECT_EQ(query->ParamAsInt64(2), date_val);
+    query->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, true);
+    query = m_Connection->NewQuery();
+    query->SetSQL("SELECT date_field FROM test_cassandra_driver.test_retrieval WHERE id = ?", 1);
+    query->BindStr(0, id);
+    query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, true);
+    ASSERT_EQ(query->NextRow(), ar_dataready) << "Failed to find row for null date value test";
+    EXPECT_FALSE(query->FieldIsNull(0)) << "Not null cell is reported as null";
+    EXPECT_EQ(query->FieldType(0), dtDate) << "FieldType failed to return correct type";
+    EXPECT_EQ(query->FieldGetInt32Value(0), date_val) << "FieldGetInt32Value failed to return valid date value";
+    EXPECT_EQ(query->FieldGetInt64Value(0), date_val) << "FieldGetInt64Value failed to return valid date value";
+    EXPECT_EQ(query->FieldGetStrValue(0), date_str) << "FieldGetStrValue failed to return valid date value";
 }
 
 }  // namespace
