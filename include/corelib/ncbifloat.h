@@ -86,7 +86,7 @@ namespace boost {
         using std::bool_isnan;
     }
 }
-#  define isnan bool_isnan
+#  define isnan std::bool_isnan
 #elif defined(NCBI_OS_DARWIN)
 #  include <cmath>
 #endif
