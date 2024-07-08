@@ -47,7 +47,9 @@
 #include <ncbiconf.h>
 
 #if defined(NCBI_OS_MSWIN)
-#   include <float.h>
+#   include <cfloat>
+#   include <cmath>
+
 #elif defined(HAVE_IEEEFP_H)
 #   if defined(NCBI_OS_CYGWIN) && defined(__cplusplus)
 /* At least some versions of Cygwin's ieeefp.h fail to use extern "C",
@@ -61,6 +63,7 @@ extern "C" {
 #endif
 
 #if defined(NCBI_HAVE_CXX11)  && \
+    !defined(NCBI_COMPILER_MSVC)  &&  \
     (!defined(__GLIBCXX__)  ||  defined(_GLIBCXX_USE_C99_MATH))
 // Kludge to avoid formal ambiguity in C++ '11 between ::isnan, which
 // returns int, and std::isnan, which returns bool.
@@ -89,15 +92,6 @@ namespace boost {
 #  define isnan bool_isnan
 #elif defined(NCBI_OS_DARWIN)
 #  include <cmath>
-#endif
-
-#if defined(NCBI_OS_MSWIN)  &&  !defined(isnan)
-/**
- * Define value of isnan (Is Not A Number).
- *
- * Checks double-precision value for not a number (NaN).
- */
-#   define isnan _isnan
 #endif
 
 #if defined(NCBI_OS_MSWIN)
