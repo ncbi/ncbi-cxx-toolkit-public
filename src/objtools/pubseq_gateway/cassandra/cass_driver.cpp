@@ -1102,6 +1102,11 @@ void CCassPrm::Bind(CassStatement * statement, unsigned int idx)
                 rc = cass_statement_bind_null(statement, idx);
             }
             break;
+        case CASS_VALUE_TYPE_DATE: {
+                uint32_t u32 = cass_date_from_epoch(m_simpleval.i64);
+                rc = cass_statement_bind_uint32(statement, idx, u32);
+            }
+            break;
         default:
             RAISE_DB_ERROR(eBindFailed, string("Bind for (") + to_string(static_cast<int>(m_type)) + ") type is not implemented");
     }
@@ -1274,6 +1279,11 @@ void CCassQuery::BindBytes(int  iprm, const unsigned char *  buf, size_t  len)
     m_params[iprm].Assign(buf, len);
 }
 
+void CCassQuery::BindDate(int iprm, int64_t value)
+{
+    CheckParamExists(iprm);
+    m_params[iprm].AssignDate(value);
+}
 
 int32_t CCassQuery::ParamAsInt32(int  iprm)
 {

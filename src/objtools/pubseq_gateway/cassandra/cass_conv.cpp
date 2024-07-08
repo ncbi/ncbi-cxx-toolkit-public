@@ -167,6 +167,16 @@ void CassValueConvert<int32_t>(const CassValue *  Val, int32_t& v)
             if ((err = cass_value_get_int32(Val, &v)) != CASS_OK)
                 RAISE_CASS_ERROR(err, eConvFailed, "Failed to convert Cass value to int32_t:");
             break;
+        case CASS_VALUE_TYPE_DATE: {
+            uint32_t rv32 = 0;
+            if ((err = cass_value_get_uint32(Val, &rv32)) != CASS_OK)
+                RAISE_CASS_ERROR(err, eConvFailed, "Failed to convert Cass value to int32_t:");
+            int64_t rv64 = cass_date_time_to_epoch(rv32, 0);
+            if (rv64 < INT_MIN || rv64 > INT_MAX)
+                RAISE_DB_ERROR(eConvFailed, "Failed to convert Cass value to int32_t: Fetched value overflow");
+            v = rv64;
+            break;
+        }
         default:
             if (type == CASS_VALUE_TYPE_UNKNOWN && cass_value_is_null(Val))
                 return;
@@ -209,6 +219,13 @@ void CassValueConvert<int64_t>(const CassValue *  Val, int64_t& v)
             if ((err = cass_value_get_int16(Val, &rv16)) != CASS_OK)
                 RAISE_CASS_ERROR(err, eConvFailed, "Failed to convert Cass value to int64_t:");
             v = rv16;
+            break;
+        }
+        case CASS_VALUE_TYPE_DATE: {
+            uint32_t rv32 = 0;
+            if ((err = cass_value_get_uint32(Val, &rv32)) != CASS_OK)
+                RAISE_CASS_ERROR(err, eConvFailed, "Failed to convert Cass value to int64_t:");
+            v = cass_date_time_to_epoch(rv32, 0);
             break;
         }
         default:
@@ -260,6 +277,13 @@ void CassValueConvert<string>(const CassValue *  Val, string& v)
             CTime c;
             TimeTmsToCTime(rv, &c);
             v = c;
+            break;
+        }
+        case CASS_VALUE_TYPE_DATE: {
+            int64_t rv = 0;
+            CassValueConvert<int64_t>(Val, rv);
+            CTime c(rv, CTime::ETimeZonePrecision::eTZPrecisionDefault);
+            v = c.AsString("Y-M-D");
             break;
         }
         case CASS_VALUE_TYPE_TIMEUUID:
