@@ -904,7 +904,7 @@ static string s_DumpHeader(const STarHeader* h, ETar_Format fmt,
         if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/')
-                tname = "legacy regular entry (dir)";
+                tname = "legacy regular entry (directory)";
         }
         if (!tname)
             tname = "legacy regular entry (file)";
@@ -953,7 +953,7 @@ static string s_DumpHeader(const STarHeader* h, ETar_Format fmt,
         tname = "FIFO";
         break;
     case '7':
-        tname = "contiguous";
+        tname = "contiguous file";
         break;
     case 'g':
         tname = "global extended header";
