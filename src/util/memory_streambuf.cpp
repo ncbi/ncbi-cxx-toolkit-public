@@ -42,7 +42,9 @@
 BEGIN_NCBI_SCOPE
 
 
+#ifdef NCBI_OS_MSWIN
 static constexpr streamsize bmax = std::numeric_limits<int>::max();
+#endif // NCBI_OS_MSWIN
 
 
 CMemory_Streambuf::CMemory_Streambuf(const char* area, size_t size)
