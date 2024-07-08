@@ -416,6 +416,7 @@ bool CSubSource::IsCollectionDateAfterTime(const string& collection_date, time_t
 {
     bad_format = false;
     bool in_future = false;
+
     vector<string> pieces;
     NStr::Split(collection_date, "/", pieces);
     if (pieces.size() > 2) {
@@ -919,6 +920,8 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
 
 bool s_ChooseMonthAndDay(const string& token1, const string& token2, bool month_first, string& month, int& day, bool& month_ambiguous)
 {
+    month_ambiguous = false;
+
     try {
         int val1 = NStr::StringToInt (token1);
         int val2 = NStr::StringToInt (token2);
@@ -1000,6 +1003,8 @@ static string RepairSingleDigitMonth (const string& orig_date)
 
 string CSubSource::FixDateFormat (const string& test, bool month_first, bool& month_ambiguous)
 {
+    month_ambiguous = false;
+
     string orig_date = test;
     NStr::TruncateSpacesInPlace(orig_date);
 
@@ -1017,7 +1022,6 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     //string token_delimiters = " ,-/=_.";
     size_t num_original_tokens = 0;
 
-    month_ambiguous = false;
     vector<string> tokens = x_GetDateTokens(orig_date);
 
     num_original_tokens = tokens.size();
@@ -1223,6 +1227,7 @@ void CSubSource::DetectDateFormat(const string& orig_date, bool& ambiguous, bool
 {
     ambiguous = false;
     day_first = false;
+
     vector<string> tokens = x_GetDateTokens(orig_date);
     if (tokens.size() != 3) {
         // can't do detection if there are more or less than three tokens
@@ -3374,6 +3379,8 @@ bool CCountries::IsValid(const string& country)
 
 bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
 {
+    is_miscapitalized = false;
+
     string name = country;
     size_t pos = country.find(':');
 
@@ -3384,7 +3391,6 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
         }
     }
 
-    is_miscapitalized = false;
     // try current countries
     // fast check for properly capitalized
     if ( s_CountriesSet.find(name.c_str()) != s_CountriesSet.end() ) {
@@ -3436,6 +3442,8 @@ bool CCountries::WasValid(const string& country)
 
 bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
 {
+    is_miscapitalized = false;
+
     string name = country;
     size_t pos = country.find(':');
 
@@ -3443,7 +3451,6 @@ bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
         name = country.substr(0, pos);
     }
 
-    is_miscapitalized = false;
     // try formerly-valid countries
     // fast check for properly capitalized
     if ( s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end() ) {
@@ -4457,6 +4464,8 @@ typedef CStaticPairArrayMap<const char *, const char *, PNocase_CStr> TStateMap;
 DEFINE_STATIC_ARRAY_MAP(TStateMap, stateAbbrevMap, state_abbrev_array);
 
 bool s_IsState ( string& state, bool& modified ) {
+
+    modified = false;
 
     if ( state.empty() ) {
         return false;
