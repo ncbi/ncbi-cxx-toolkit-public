@@ -1094,9 +1094,31 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             processor.SetHTTPStatus(200);
             processor.SetErrorStatus(false);
 
+            auto& req_ctx = CDiagContext::GetRequestContext();
             // This will log ncbi_phid as a separate 'extra' message
             // if not yet logged.
-            CDiagContext::GetRequestContext().GetHitID();
+            req_ctx.GetHitID();
+
+            // Post request properties to the current tracer span, if any.
+            auto span = req_ctx.GetTracerSpan();
+            if ( span ) {
+                string s = req.GetProperty(eCgi_ServerName);
+                if (!s.empty()) {
+                    span->SetAttribute(ITracerSpan::eServerAddress, s);
+                    s = req.GetProperty(eCgi_ServerPort);
+                    if (!s.empty()) span->SetAttribute(ITracerSpan::eServerPort, s);
+                }
+                s = processor.GetContext().GetSelfURL();
+                if (!s.empty()) span->SetAttribute(ITracerSpan::eUrl, s);
+                s = req.GetProperty(eCgi_RequestMethod);
+                if (!s.empty()) span->SetAttribute(ITracerSpan::eRequestMethod, s);
+                s = req.GetProperty(eCgi_ContentType);
+                if (!s.empty()) span->SetHttpHeader(ITracerSpan::eRequest, "CONTENT_TYPE", s);
+                s = req.GetProperty(eCgi_ContentLength);
+                if (!s.empty()) span->SetHttpHeader(ITracerSpan::eRequest, "CONTENT_LENGTH", s);
+                s = req.GetProperty(eCgi_HttpUserAgent);
+                if (!s.empty()) span->SetHttpHeader(ITracerSpan::eRequest, "HTTP_USER_AGENT", s);
+            }
 
             // Check if ncbi_st cookie is set
             const CCgiCookie* st = req.GetCookies().Find(g_GetNcbiString(eNcbiStrings_Stat));
@@ -1142,6 +1164,11 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             }
             catch (const exception&) {
             }
+
+            auto span = CDiagContext::GetRequestContext().GetTracerSpan();
+            if ( span ) {
+                span->SetSpanStatus(event == eSuccess ? ITracerSpan::eSuccess : ITracerSpan::eError);
+            }
             break;
         }
     case eEndRequest:
@@ -1151,6 +1178,7 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             CCgiContext& cgi_ctx = processor.GetContext();
             CDiagContext& diag_ctx = GetDiagContext();
             CRequestContext& rctx = CDiagContext::GetRequestContext();
+
             // If an error status has been set by ProcessRequest, don't try
             // to check the output stream and change the status to 299/499.
             if ( !processor.GetErrorStatus() ) {
@@ -2569,6 +2597,12 @@ void CCgiRequestProcessor::SetHTTPStatus(unsigned int status, const string& reas
     }
     else {
         CDiagContext::GetRequestContext().SetRequestStatus(status);
+    }
+
+    auto span = CDiagContext::GetRequestContext().GetTracerSpan();
+    if ( span ) {
+        span->SetAttribute(ITracerSpan::eStatusCode, NStr::NumericToString(status));
+        span->SetAttribute(ITracerSpan::eStatusString, reason);
     }
 }
 
