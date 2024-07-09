@@ -4137,6 +4137,9 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
                     CDiagBuffer::sm_Handler->Post(phid_msg);
                 }
                 CDiagBuffer::sm_Handler->Post(mess);
+                if (auto span = rctx.GetTracerSpan()) {
+                    span->PostEvent(mess);
+                }
             }
             else if ( show_warning ) {
                 // Substitute the original message with the error.
