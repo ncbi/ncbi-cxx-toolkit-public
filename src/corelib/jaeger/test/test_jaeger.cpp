@@ -104,7 +104,7 @@ int CJaegerTestApp::Run(void)
         phid = GetDiagContext().GetDefaultHitID();
     }
 
-    CDiagContext::GetRequestContext().SetRequestTracer(tracer);
+    CRequestContext::SetRequestTracer(tracer);
     GetDiagContext().PrintRequestStart();
     if (depth < max_depth) {
         for (int i = 0; i < spawn; ++i) {

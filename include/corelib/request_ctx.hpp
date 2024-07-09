@@ -151,6 +151,37 @@ class ITracerSpan
 {
 public:
     virtual ~ITracerSpan(void) {}
+
+    enum ESpanAttribute {
+        eSessionId,
+        eClientAddress,
+        eClientPort,
+        eServerAddress,
+        eServerPort,
+        eUrl,
+        eRequestMethod,
+        eStatusCode,
+        eStatusString
+    };
+
+    enum EHttpHeaderType {
+        eRequest,
+        eResponse
+    };
+
+    enum ESpanStatus {
+        eSuccess,
+        eError
+    };
+
+    virtual void SetAttribute(ESpanAttribute attr, const string& value) = 0;
+    virtual void SetCustomAttribute(const string& attr, const string& value) = 0;
+    virtual void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) = 0;
+    virtual void SetSpanStatus(ESpanStatus status) = 0;
+
+    virtual void PostEvent(const SDiagMessage& message) = 0;
+
+    virtual void EndSpan(void) = 0;
 };
 
 
@@ -381,10 +412,10 @@ public:
 
     /// Set request tracer to be called on context events (start/stop etc.).
     /// @sa IRequestTracer
-    void SetRequestTracer(const shared_ptr<IRequestTracer>& tracer) { m_Tracer = tracer; }
+    static void SetRequestTracer(const shared_ptr<IRequestTracer>& tracer);
 
     void SetTracerSpan(const shared_ptr<ITracerSpan>& span) { m_TracerSpan = span; }
-    shared_ptr<ITracerSpan> GetTracerSpan(void) { return m_TracerSpan; }
+    shared_ptr<ITracerSpan> GetTracerSpan(void) const { return m_TracerSpan; }
 
 private:
     // Prohibit copying
@@ -495,6 +526,9 @@ private:
     friend class CRequestContext_PassThrough;
     mutable TPassThroughProperties m_PassThroughProperties;
 
+    static shared_ptr<IRequestTracer> sm_Tracer;
+
+    // Make sure the same tracer is used through the whole request.
     shared_ptr<IRequestTracer> m_Tracer;
     shared_ptr<ITracerSpan> m_TracerSpan;
 

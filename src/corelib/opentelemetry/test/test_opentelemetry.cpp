@@ -115,7 +115,8 @@ int COpenteleTestApp::Run(void)
         cout << "Using default opentelemetry configuration" << endl;
     }
     _ASSERT(tracer);
-    CDiagContext::GetRequestContext().SetRequestTracer(tracer);
+    tracer->SetDefaultSpanKind(opentelemetry::trace::SpanKind::kClient);
+    CRequestContext::SetRequestTracer(tracer);
     
     string phid;
     if (args["phid"]) {
@@ -127,6 +128,7 @@ int COpenteleTestApp::Run(void)
     }
 
     GetDiagContext().PrintRequestStart();
+    ERR_POST(Warning << "Starting OpenTelemetry test at depth " << depth);
     if (depth < max_depth) {
         for (int i = 0; i < spawn; ++i) {
             string cmd = GetProgramExecutablePath();
@@ -148,6 +150,7 @@ int COpenteleTestApp::Run(void)
             catch (...) {}
         }
     }
+    ERR_POST(Error << "Finished OpenTelemetry test at depth " << depth);
     GetDiagContext().PrintRequestStop();
 
     return 0;

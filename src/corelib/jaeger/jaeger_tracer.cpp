@@ -203,4 +203,71 @@ void CJaegerTracer::OnRequestStop(CRequestContext& context)
 }
 
 
+void CJaegerTracerSpan::SetAttribute(ESpanAttribute attr, const string& value)
+{
+    if ( !m_Span ) return;
+    switch (attr) {
+    case eSessionId:
+        m_Span->SetTag("session_id", value);
+        break;
+    case eClientAddress:
+        m_Span->SetTag("client_ip", value);
+        break;
+    case eClientPort:
+        m_Span->SetTag("client_port", value);
+        break;
+    case eServerAddress:
+        m_Span->SetTag("server_ip", value);
+        break;
+    case eServerPort:
+        m_Span->SetTag("server_port", value);
+        break;
+    case eUrl:
+        m_Span->SetTag("url", value);
+        break;
+    case eRequestMethod:
+        m_Span->SetTag("request_method", value);
+        break;
+    case eStatusCode:
+        m_Span->SetTag("status_code", value);
+        break;
+    case eStatusString:
+        m_Span->SetTag("status_string", value);
+        break;
+    default:
+        return;
+    }
+}
+
+
+void CJaegerTracerSpan::SetCustomAttribute(const string& attr, const string& value)
+{
+    if ( !m_Span ) return;
+    m_Span->SetTag(attr, value);
+}
+
+
+void CJaegerTracerSpan::SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value)
+{
+    if ( !m_Span ) return;
+    switch (header_type) {
+    case eRequest:
+        SetCustomAttribute("http_request_header__" + name, value);
+        break;
+    case eResponse:
+        SetCustomAttribute("http_response_header__" + name, value);
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CJaegerTracerSpan::SetSpanStatus(ESpanStatus status)
+{
+    if ( !m_Span ) return;
+    SetCustomAttribute("status", status == eSuccess ? "success" : "error");
+}
+
+
 END_NCBI_SCOPE

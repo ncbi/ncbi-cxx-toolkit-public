@@ -45,6 +45,7 @@
 #include <opentelemetry/sdk/trace/simple_processor_factory.h>
 #include <opentelemetry/sdk/trace/tracer_provider_factory.h>
 #include <opentelemetry/trace/provider.h>
+#include <opentelemetry/trace/semantic_conventions.h>
 #include <opentelemetry/exporters/otlp/otlp_http_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_http_exporter_options.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h>
@@ -354,20 +355,25 @@ void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
         trace::TraceFlags(0), false);
     trace::StartSpanOptions options;
     options.parent = parent_ctx;
+    options.kind = m_SpanKind;
 
     auto span = tracer->StartSpan("request-start", {}, options);
 
-    span->SetAttribute("ncbi_phid", context.GetHitID());
-    span->SetAttribute("session_id", context.GetSessionID());
-    span->SetAttribute("request_id", context.GetRequestID());
-    span->SetAttribute("client_ip", context.GetClientIP());
     CDiagContext& diag_context = GetDiagContext();
     char buf[17];
     diag_context.GetStringUID(diag_context.GetUID(), buf, 17);
-    span->SetAttribute("guid", buf);
-    span->SetAttribute("pid", diag_context.GetPID());
-    span->SetAttribute("tid", (Uint8)GetCurrentThreadSystemID());
-    span->SetAttribute("host", diag_context.GetHost());
+
+    span->SetStatus(trace_api::StatusCode::kOk);
+    span->SetAttribute("ncbi.phid", context.GetHitID());
+    span->SetAttribute("ncbi.request_id", context.GetRequestID());
+    span->SetAttribute("ncbi.guid", buf);
+    span->SetAttribute("ncbi.pid", diag_context.GetPID());
+    span->SetAttribute("ncbi.tid", (Uint8)GetCurrentThreadSystemID());
+    span->SetAttribute("ncbi.host", diag_context.GetHost());
+    string s = context.GetSessionID();
+    if ( !s.empty() ) span->SetAttribute(trace::SemanticConventions::kSessionId, s);
+    s = context.GetClientIP();
+    if ( !s.empty() ) span->SetAttribute(trace::SemanticConventions::kClientAddress, s);
 
     char trace_id[2*trace::TraceId::kSize + 1];
     trace_id[2*trace::TraceId::kSize] = 0;
@@ -394,8 +400,112 @@ void COpentelemetryTracer::OnRequestStop(CRequestContext& context)
     if (!ctx_span) return;
     auto ot_span = dynamic_pointer_cast<COpentelemetryTracerSpan>(ctx_span);
     if (!ot_span) return;
-    ot_span->GetSpan()->SetStatus(trace_api::StatusCode::kOk);
     ot_span->GetSpan()->End();
+}
+
+
+COpentelemetryTracerSpan::~COpentelemetryTracerSpan(void)
+{
+    // NOTE: multiple calls to End() should be ignored by OT, so it's safe
+    // to always call it here.
+    EndSpan();
+}
+
+
+void COpentelemetryTracerSpan::SetAttribute(ESpanAttribute attr, const string& value)
+{
+    if ( !m_Span ) return;
+    switch (attr) {
+    case eSessionId:
+        m_Span->SetAttribute(trace::SemanticConventions::kSessionId, value);
+        break;
+    case eClientAddress:
+        m_Span->SetAttribute(trace::SemanticConventions::kClientAddress, value);
+        break;
+    case eClientPort:
+        m_Span->SetAttribute(trace::SemanticConventions::kClientPort, value);
+        break;
+    case eServerAddress:
+        m_Span->SetAttribute(trace::SemanticConventions::kServerAddress, value);
+        break;
+    case eServerPort:
+        m_Span->SetAttribute(trace::SemanticConventions::kServerPort, value);
+        break;
+    case eUrl:
+        m_Span->SetAttribute(trace::SemanticConventions::kUrlFull, value);
+        break;
+    case eRequestMethod:
+        m_Span->SetAttribute(trace::SemanticConventions::kHttpRequestMethod, value);
+        break;
+    case eStatusCode:
+        m_Span->SetAttribute(trace::SemanticConventions::kHttpResponseStatusCode, value);
+        break;
+    case eStatusString:
+        m_Span->SetAttribute(trace::SemanticConventions::kErrorType, value);
+        break;
+    default:
+        break;
+    }
+}
+
+
+void COpentelemetryTracerSpan::SetCustomAttribute(const string& attr, const string& value)
+{
+    if ( !m_Span ) return;
+    m_Span->SetAttribute(attr, value);
+}
+
+
+void COpentelemetryTracerSpan::SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value)
+{
+    if ( !m_Span ) return;
+    switch (header_type) {
+    case eRequest:
+        SetCustomAttribute("http.request.header." + name, value);
+        break;
+    case eResponse:
+        SetCustomAttribute("http.response.header." + name, value);
+        break;
+    default:
+        break;
+    }
+}
+
+
+void COpentelemetryTracerSpan::SetSpanStatus(ESpanStatus status)
+{
+    if ( !m_Span ) return;
+    m_Span->SetStatus(status == eSuccess ? trace::StatusCode::kOk : trace::StatusCode::kError);
+}
+
+
+void COpentelemetryTracerSpan::PostEvent(const SDiagMessage& message)
+{
+    if ( !m_Span ) return;
+    // Ignore applog events.
+    if (message.m_Flags & eDPF_AppLog) return;
+    string msg = message.m_BufferLen ? string(message.m_Buffer, message.m_BufferLen) : "<no message>";
+    map<string, string> attr;
+    attr["severity"] = CNcbiDiag::SeverityName(message.m_Severity);
+    if (message.m_File && *message.m_File) attr["file"] = message.m_File;
+    if (message.m_Module && *message.m_Module) attr["module"] = message.m_Module;
+    if (message.m_Class && *message.m_Class) attr["class"] = message.m_Class;
+    if (message.m_Function && *message.m_Function) attr["function"] = message.m_Function;
+    if (message.m_Line) attr["line"] = NStr::NumericToString(message.m_Line);
+    if (message.m_ErrCode) attr["err_code"] = NStr::NumericToString(message.m_ErrCode);
+    if (message.m_ErrSubCode) attr["err_sub_code"] = NStr::NumericToString(message.m_ErrSubCode);
+    if (message.m_ErrText && *message.m_ErrText) attr["err_text"] = message.m_ErrText;
+    if (message.m_Prefix && *message.m_Prefix) attr["prefix"] = message.m_Prefix;
+    attr["tid"] = NStr::NumericToString(message.m_TID);
+    attr["proc_post"] = NStr::NumericToString(message.m_ProcPost);
+    attr["thread_post"] = NStr::NumericToString(message.m_ThrPost);
+    m_Span->AddEvent(msg, attr);
+}
+
+
+void COpentelemetryTracerSpan::EndSpan(void)
+{
+    if ( m_Span ) m_Span->End();
 }
 
 
