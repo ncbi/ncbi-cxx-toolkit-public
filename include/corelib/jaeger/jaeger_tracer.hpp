@@ -56,6 +56,16 @@ class NCBI_JAEGER_TRACER_EXPORT CJaegerTracerSpan : public ITracerSpan
 public:
     CJaegerTracerSpan(shared_ptr<jaegertracing::Span> span) : m_Span(move(span)) {}
     jaegertracing::Span& GetSpan(void) { return *m_Span; }
+
+    void SetAttribute(ESpanAttribute attr, const string& value) override;
+    void SetCustomAttribute(const string& attr, const string& value) override;
+    void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) override;
+    void SetSpanStatus(ESpanStatus status) override;
+
+    void PostEvent(const SDiagMessage& message) override {}
+
+    void EndSpan(void) override {}
+
 private:
     shared_ptr<jaegertracing::Span> m_Span;
 };

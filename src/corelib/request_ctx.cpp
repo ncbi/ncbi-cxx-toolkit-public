@@ -346,6 +346,8 @@ void CRequestContext::StartRequest(void)
     GetRequestTimer().Restart();
     m_IsRunning = true;
     x_LogHitID();
+    // Save the tracer to make sure the same one is used to stop request.
+    m_Tracer = sm_Tracer;
     if (m_Tracer) {
         m_Tracer->OnRequestStart(*this);
     }
@@ -357,6 +359,7 @@ void CRequestContext::StopRequest(void)
     if (!x_CanModify()) return;
     if (m_Tracer) {
         m_Tracer->OnRequestStop(*this);
+        m_Tracer.reset();
     }
     if ((m_HitIDLoggedFlag & fLoggedOnRequest) == 0) {
         // Hit id has not been set or logged yet. Try to log the default one.
@@ -760,6 +763,15 @@ void CRequestContext::x_UpdateStdContextProp(CTempString name) const
         // Explicit name provided - skip other checks.
         if ( match ) return;
     }
+}
+
+
+
+shared_ptr<IRequestTracer> CRequestContext::sm_Tracer;
+
+void CRequestContext::SetRequestTracer(const shared_ptr<IRequestTracer>& tracer)
+{
+    sm_Tracer = tracer;
 }
 
 

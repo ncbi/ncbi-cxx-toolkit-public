@@ -47,6 +47,7 @@
 #include <corelib/request_ctx.hpp>
 #include <opentelemetry/trace/span.h>
 #include <opentelemetry/trace/tracer.h>
+#include <opentelemetry/trace/span_metadata.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -60,8 +61,18 @@ public:
     using TSpan = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span>;
 
     COpentelemetryTracerSpan(TSpan& span) : m_Span(span) {}
+    ~COpentelemetryTracerSpan(void);
 
     TSpan& GetSpan(void) { return m_Span; }
+
+    void SetAttribute(ESpanAttribute attr, const string& value) override;
+    void SetCustomAttribute(const string& attr, const string& value) override;
+    void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) override;
+    void SetSpanStatus(ESpanStatus status) override;
+
+    void PostEvent(const SDiagMessage& message) override;
+
+    void EndSpan(void) override;
 
 private:
     TSpan m_Span;
@@ -100,6 +111,9 @@ public:
     /// uses is destroyed.
     static void CleanupTracer(void);
 
+    /// Set the span kind for all new spans (default is 'internal').
+    void SetDefaultSpanKind(opentelemetry::trace::SpanKind span_kind) { m_SpanKind = span_kind; }
+
 private:
     void x_Init(void);
     void x_InitOtlp(const string& endpoint);
@@ -108,6 +122,7 @@ private:
     using TTracer = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>;
 
     TTracer m_Tracer;
+    opentelemetry::trace::SpanKind m_SpanKind = opentelemetry::trace::SpanKind::kInternal;
 };
 
 END_NCBI_SCOPE
