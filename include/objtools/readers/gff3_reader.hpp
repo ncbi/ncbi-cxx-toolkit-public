@@ -33,6 +33,7 @@
 #ifndef OBJTOOLS_READERS___GFF3_READER__HPP
 #define OBJTOOLS_READERS___GFF3_READER__HPP
 
+#include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -70,9 +70,6 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 
-#include <objtools/readers/track_data.hpp>
-#include <objects/seqalign/Spliced_exon.hpp>
-
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -1481,7 +1478,7 @@ bool CGff2Reader::xIsFastaMarker(
 void
 CGff2Reader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot)
+    CSeq_annot& annot) 
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineData: readerData) {

@@ -33,9 +33,15 @@
 #ifndef OBJTOOLS_READERS___READERBASE__HPP
 #define OBJTOOLS_READERS___READERBASE__HPP
 
-#include <objtools/readers/read_util.hpp>
+#include <corelib/ncbistd.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <util/format_guess.hpp>
+#include <util/line_reader.hpp>
 #include <util/icanceled.hpp>
+#include <objtools/readers/track_data.hpp>
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/reader_message.hpp>
+#include <objtools/readers/read_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -46,10 +52,6 @@ class CObjReaderLineException;
 class CTrackData;
 class CReaderListener;
 class CReaderMessageHandler;
-class CReaderMessage;
-class ILineError;
-class CLineError;
-
 
 //  ----------------------------------------------------------------------------
 /// Defines and provides stubs for a general interface to a variety of file
@@ -358,8 +360,8 @@ protected:
         const list<string>& stringFlags,
         const  map<string, TReaderFlags> flagMap,
         TReaderFlags& baseFlags);
-
-
+        
+        
     //
     //  Data:
     //
