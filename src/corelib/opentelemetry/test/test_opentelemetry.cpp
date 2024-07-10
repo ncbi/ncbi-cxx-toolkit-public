@@ -150,6 +150,9 @@ int COpenteleTestApp::Run(void)
             catch (...) {}
         }
     }
+    if (depth == 1) {
+        NCBI_THROW(CException, eUnknown, "Simulated error");
+    }
     ERR_POST(Error << "Finished OpenTelemetry test at depth " << depth);
     GetDiagContext().PrintRequestStop();
 
