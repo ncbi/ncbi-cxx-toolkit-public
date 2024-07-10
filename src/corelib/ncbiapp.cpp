@@ -709,12 +709,18 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
                 NCBI_RETHROW_SAME(e, "Application's execution failed");
             }
             catch (const CException& e) {
-                CRef<CRequestContext> cur_ctx(&GetDiagContext().GetRequestContext());
-                if (cur_ctx != &e.GetRequestContext()) {
-                    GetDiagContext().SetRequestContext(&e.GetRequestContext());
+                CRef<CRequestContext> cur_ctx(&CDiagContext::GetRequestContext());
+                CRef<CRequestContext> e_ctx(&e.GetRequestContext());
+                if (cur_ctx != e_ctx) {
+                    CDiagContext::SetRequestContext(e_ctx);
                     NCBI_REPORT_EXCEPTION_X(16,
                                             "CException thrown", e);
-                    GetDiagContext().SetRequestContext(cur_ctx);
+                    auto e_span = e_ctx->GetTracerSpan();
+                    if ( e_span ) {
+                        e_span->SetSpanStatus(ITracerSpan::eError);
+                        e_span->EndSpan();
+                    }
+                    CDiagContext::SetRequestContext(cur_ctx);
                 }
                 NCBI_REPORT_EXCEPTION_X(16,
                                         "Application's execution failed", e);
@@ -730,6 +736,13 @@ void CNcbiApplicationAPI::x_TryMain(EAppDiagStream diag,
         else {
             *exit_code = m_DryRun ? DryRun() : Run();
         }
+    }
+    auto span = CDiagContext::GetRequestContext().GetTracerSpan();
+    if ( span ) {
+        if (*exit_code != 0 || *got_exception) {
+            span->SetSpanStatus(ITracerSpan::eError);
+        }
+        span->EndSpan();
     }
     x_LogOptions(eStopEvent);
     GetDiagContext().SetGlobalAppState(eDiagAppState_AppEnd);
