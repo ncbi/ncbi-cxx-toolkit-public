@@ -44,6 +44,7 @@
 
 #include <objtools/readers/wiggle_reader.hpp>
 #include "reader_message_handler.hpp"
+#include <objtools/readers/track_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE

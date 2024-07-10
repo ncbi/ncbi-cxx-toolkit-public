@@ -33,20 +33,17 @@
 #ifndef OBJTOOLS_READERS___GFF2_READER__HPP
 #define OBJTOOLS_READERS___GFF2_READER__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqalign/Spliced_exon.hpp>
-#include <objects/seqalign/Score.hpp>
-
-#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objtools/readers/gff2_data.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objects/seq/Annotdesc.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-class CGff2Record;
+class CSpliced_exon;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff2Reader
