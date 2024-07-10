@@ -71,7 +71,7 @@ CValidError_bioseqset::~CValidError_bioseqset()
 CConstRef<CUser_object> s_AutoDefUserObjectFromBioseq (const CBioseq& seq)
 {
     if (seq.IsNa() && seq.IsSetDescr()) {
-        for (auto desc : seq.GetDescr().Get()) {
+        for (const auto& desc : seq.GetDescr().Get()) {
             if (desc->IsUser()) {
                 const CUser_object& uo = desc->GetUser();
                 if (uo.GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
@@ -140,9 +140,8 @@ void CValidError_bioseqset::ValidateBioseqSet(
     // Validate Set Contents
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         const CSeq_entry& se = **se_list_it;
-        if ( se.IsSet() ) {
+        if (se.IsSet()) {
             const CBioseq_set& set = se.GetSet();
-
             // validate member set
             ValidateBioseqSet (set);
         } else if (se.IsSeq()) {
@@ -445,30 +444,34 @@ void CValidError_bioseqset::ValidateNucProtSet(
     sequence::CDeflineGenerator defline_generator;
 
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        if ( (*se_list_it)->IsSeq() ) {
-            const CBioseq& seq = (*se_list_it)->GetSeq();
-
+        const CSeq_entry& se = **se_list_it;
+        if (se.IsSeq()) {
+            const CBioseq& seq = se.GetSeq();
 
             bool hasMetaGenomeSource = false;
-            CConstRef<CSeqdesc> closest_biosource = seq.GetClosestDescriptor(CSeqdesc::e_Source);
+            auto closest_biosource = seq.GetClosestDescriptor(CSeqdesc::e_Source);
             if (closest_biosource) {
                 const CBioSource& src = closest_biosource->GetSource();
-                FOR_EACH_ORGMOD_ON_BIOSOURCE (omd_itr, src) {
-                    const COrgMod& omd = **omd_itr;
-                    if (omd.IsSetSubname() && omd.IsSetSubtype() && omd.GetSubtype() == COrgMod::eSubtype_metagenome_source) {
-                        hasMetaGenomeSource = true;
-                        break;
+                if (src.IsSetOrgMod()) {
+                    for (const auto& omd_itr : src.GetOrgname().GetMod()) {
+                        const COrgMod& omd = *omd_itr;
+                        if (omd.IsSetSubname() && omd.IsSetSubtype() && omd.GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                            hasMetaGenomeSource = true;
+                            break;
+                        }
                     }
                 }
             }
 
-            FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
-                const CSeqdesc& desc = **it;
-                if (desc.Which() == CSeqdesc::e_User && desc.GetUser().IsSetType()) {
-                    const CUser_object& usr = desc.GetUser();
-                    const CObject_id& oi = usr.GetType();
-                    if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
-                        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem, "DBLink user object should not be on a Bioseq", seq);
+            if (seq.IsSetDescr()) {
+                for (const auto& it : seq.GetDescr().Get()) {
+                    const CSeqdesc& desc = *it;
+                    if (desc.Which() == CSeqdesc::e_User && desc.GetUser().IsSetType()) {
+                        const CUser_object& usr = desc.GetUser();
+                        const CObject_id& oi = usr.GetType();
+                        if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
+                            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem, "DBLink user object should not be on a Bioseq", seq);
+                        }
                     }
                 }
             }
@@ -483,11 +486,14 @@ void CValidError_bioseqset::ValidateNucProtSet(
                         "feature on contig, but is not",
                         seq);
                 }
-                FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-                    if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
-                        const string& acc = (*id_it)->GetOther().GetAccession();
-                        if (NStr::StartsWith(acc, "NM_")) {
-                            is_nm = true;
+                if (seq.IsSetId()) {
+                    for (const auto& id_it : seq.GetId()) {
+                        const CSeq_id& id = *id_it;
+                        if (id.IsOther() && id.GetOther().IsSetAccession()) {
+                            const string& acc = id.GetOther().GetAccession();
+                            if (NStr::StartsWith(acc, "NM_")) {
+                                is_nm = true;
+                            }
                         }
                     }
                 }
@@ -500,12 +506,14 @@ void CValidError_bioseqset::ValidateNucProtSet(
                         seq);
                 }
                 string instantiated;
-                FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
-                    if ((*it)->IsSource()) {
-                        prot_biosource++;
-                    }
-                    if ((*it)->IsTitle()) {
-                        instantiated = (*it)->GetTitle();
+                if (seq.IsSetDescr()) {
+                    for(const auto& desc : seq.GetDescr().Get()) {
+                        if (desc->IsSource()) {
+                            prot_biosource++;
+                        }
+                        if (desc->IsTitle()) {
+                            instantiated = desc->GetTitle();
+                        }
                     }
                 }
                 // look for instantiated protein titles that don't match
@@ -552,10 +560,10 @@ void CValidError_bioseqset::ValidateNucProtSet(
             }
         }
 
-        if ( !(*se_list_it)->IsSet() )
+        if (! se.IsSet())
             continue;
 
-        const CBioseq_set& set = (*se_list_it)->GetSet();
+        const CBioseq_set& set = se.GetSet();
         if ( set.GetClass() != CBioseq_set::eClass_segset ) {
 
             const CEnumeratedTypeValues* tv =
@@ -668,8 +676,9 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
     CSeq_inst::EMol     seq_inst_mol;
 
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        if ( (*se_list_it)->IsSeq() ) {
-            const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
+        const CSeq_entry& se = **se_list_it;
+        if (se.IsSeq()) {
+            const CSeq_inst& seq_inst = se.GetSeq().GetInst();
 
             if ( mol == CSeq_inst::eMol_not_set ||
                  mol == CSeq_inst::eMol_other ) {
@@ -682,8 +691,8 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
                     break;
                 }
             }
-        } else if ( (*se_list_it)->IsSet() ) {
-            const CBioseq_set& set = (*se_list_it)->GetSet();
+        } else if (se.IsSet()) {
+            const CBioseq_set& set = se.GetSet();
 
             if ( set.IsSetClass()  &&
                  set.GetClass() != CBioseq_set::eClass_parts ) {
@@ -710,8 +719,9 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
     CSeq_inst::EMol     seq_inst_mol;
 
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        if ( (*se_list_it)->IsSeq() ) {
-            const CSeq_inst& seq_inst = (*se_list_it)->GetSeq().GetInst();
+        const CSeq_entry& se = **se_list_it;
+        if (se.IsSeq()) {
+            const CSeq_inst& seq_inst = se.GetSeq().GetInst();
 
             if ( mol == CSeq_inst::eMol_not_set  ||
                  mol == CSeq_inst::eMol_other ) {
@@ -726,8 +736,8 @@ void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
                     }
                 }
             }
-        } else if ( (*se_list_it)->IsSet() ) {
-            const CBioseq_set& set = (*se_list_it)->GetSet();
+        } else if (se.IsSet()) {
+            const CBioseq_set& set = se.GetSet();
             const CEnumeratedTypeValues* tv =
                 CBioseq_set::ENUM_METHOD_NAME(EClass)();
             const string& set_class_str =
@@ -751,14 +761,14 @@ void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset, bool sup
     bool has_title = false;
     bool needs_title = seqset.NeedsDocsumTitle();
     if (seqset.IsSetDescr()) {
-        for (auto it : seqset.GetDescr().Get()) {
-            if (it->IsTitle()) {
+        for (const auto& desc : seqset.GetDescr().Get()) {
+            if (desc->IsTitle()) {
                 if (!needs_title) {
                     CSeq_entry* parent = seqset.GetParentEntry();
                     if (parent) {
                         PostErr(eDiag_Error, eErr_SEQ_DESCR_TitleNotAppropriateForSet,
                             "Only Pop/Phy/Mut/Eco sets should have titles",
-                            *parent, *it);
+                            *parent, *desc);
                     } else {
                         PostErr(eDiag_Error, eErr_SEQ_DESCR_TitleNotAppropriateForSet,
                             "Only Pop/Phy/Mut/Eco sets should have titles",
@@ -1039,7 +1049,7 @@ void CValidError_bioseqset::CheckForImproperlyNestedSets (const CBioseq_set& seq
 void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
 {
     if (!seqset.IsSetDescr()) return;
-    for (auto it : seqset.GetDescr().Get()) {
+    for (const auto& it : seqset.GetDescr().Get()) {
         const CSeqdesc& desc = *it;
         if (desc.IsUser() && desc.GetUser().GetObjectType() == CUser_object::eObjectType_DBLink) {
             PostErr(eDiag_Error,
