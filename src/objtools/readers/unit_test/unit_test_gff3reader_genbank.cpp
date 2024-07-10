@@ -34,15 +34,10 @@
 
 #include <ncbi_pch.hpp>
 
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
-#include <objtools/edit/feattable_edit.hpp>
+#include <corelib/ncbifile.hpp>
 #include "error_logger.hpp"
-
-#include <cstdio>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>

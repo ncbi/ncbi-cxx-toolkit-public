@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include "bed_column_data.hpp"
+#include <objtools/readers/reader_message.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
