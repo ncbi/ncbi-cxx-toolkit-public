@@ -48,9 +48,6 @@
 #include "reader_message_handler.hpp"
 #include "bed_column_data.hpp"
 
-#include <util/line_reader.hpp>
-#include <objtools/readers/track_data.hpp>
-
 #include <algorithm>
 #include <deque>
 
