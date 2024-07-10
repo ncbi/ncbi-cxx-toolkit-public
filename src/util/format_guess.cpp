@@ -35,15 +35,16 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/stream_utils.hpp>
+#include <util/static_map.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-// Must list all *supported* EFormats except eUnknown and eFormat_max. 
+// Must list all *supported* EFormats except eUnknown and eFormat_max.
 // Will cause assertion if violated!
 
-static const CFormatGuess::EFormat sm_CheckOrder[] = 
+static const CFormatGuess::EFormat sm_CheckOrder[] =
 {
     CFormatGuess::eBam, // must precede eGZip!
     CFormatGuess::eZip,
@@ -77,7 +78,7 @@ static const CFormatGuess::EFormat sm_CheckOrder[] =
     CFormatGuess::eSnpMarkers,
     CFormatGuess::eFasta,
     CFormatGuess::eTextASN,
-    CFormatGuess::eAlignment,    
+    CFormatGuess::eAlignment,
     CFormatGuess::eTaxplot,
     CFormatGuess::eTable,
     CFormatGuess::eBinaryASN,
@@ -88,8 +89,8 @@ static const CFormatGuess::EFormat sm_CheckOrder[] =
 constexpr size_t sm_CheckOrder_Size = sizeof(sm_CheckOrder) / sizeof(sm_CheckOrder[0]);
 
 
-// This array must stay in sync with enum CFormatGuess::EFormat, 
-// but that's not supposed to change in the middle anyway, 
+// This array must stay in sync with enum CFormatGuess::EFormat,
+// but that's not supposed to change in the middle anyway,
 // so the explicit size should suffice to avoid accidental skew.
 
 typedef SStaticPair<CFormatGuess::EFormat, const char*> TFormatNamesItem;
@@ -170,7 +171,7 @@ static const TFormatNamesItem s_format_to_name_table [] =
 DEFINE_STATIC_ARRAY_MAP(TFormatNamesMap, sm_FormatNames, s_format_to_name_table);
 
 
-    
+
 enum ESymbolType {
     fDNA_Main_Alphabet  = 1<<0, ///< Just ACGTUN-.
     fDNA_Ambig_Alphabet = 1<<1, ///< Anything else representable in ncbi4na.
@@ -430,8 +431,8 @@ CFormatGuess::~CFormatGuess()
 }
 
 //  ----------------------------------------------------------------------------
-bool 
-CFormatGuess::IsSupportedFormat(EFormat format) 
+bool
+CFormatGuess::IsSupportedFormat(EFormat format)
 {
     for (size_t i = 0; i < sm_CheckOrder_Size; ++i) {
         if (sm_CheckOrder[i] == format) {
@@ -638,10 +639,10 @@ CFormatGuess::EnsureTestBuffer()
     // Test it for being all comment
     // If its all comment, read a twice as long buffer
     // Stop when its no longer all comment, end of the stream,
-    //   or Multiplier hits 1024 
+    //   or Multiplier hits 1024
 
     const streamsize k_TestBufferGranularity = 8096;
-    
+
     int Multiplier = 1;
 
     while(true) {
@@ -654,16 +655,16 @@ CFormatGuess::EnsureTestBuffer()
             m_pTestBuffer = 0;
             m_iTestBufferSize = 0;
             return false; //empty file
-        } 
+        }
         m_Stream.clear();  // in case we reached eof
         CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
-        
+
         if (IsAllComment()) {
             if (Multiplier >= 1024)  {
                 // this is how far we will go and no further.
-                // if it's indeed all comments then none of the format specific 
+                // if it's indeed all comments then none of the format specific
                 //  tests will assert.
-                // if something was misidentified as a comment then the relevant 
+                // if something was misidentified as a comment then the relevant
                 //  format specific test may still have a good sample to work with.
                 // so it does not hurt to at least try.
                 return true;
@@ -1022,8 +1023,8 @@ CFormatGuess::TestFormatGlimmer3(
     if (it->empty()  ||  (*it)[0] != '>') {
         return false;
     }
-    
-    /// there should be additional data lines, and they should be easily parseable, 
+
+    /// there should be additional data lines, and they should be easily parseable,
     ///  with five columns
     ++it;
     if (it == m_TestLines.end()) {
@@ -1091,11 +1092,11 @@ CFormatGuess::TestFormatNewick(
         }
     }
 
-    // Trees can be anywhere in a nexus file.  If nexus is true, 
+    // Trees can be anywhere in a nexus file.  If nexus is true,
     // try to read the whole file to see if there is a tree.
     if (is_nexus) {
         // Read in file one chunk at a time.  Readline would be better
-        // but is not avialable for this stream.  Since the text we 
+        // but is not avialable for this stream.  Since the text we
         // are looking for "begin trees;" may span two chunks, we
         // copy the last 12 characters of the previous chunk to
         // the front of the new one.
@@ -1386,13 +1387,13 @@ bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, si
     }
 
     // Check sequence data
-    ESequenceType seqtype = 
+    ESequenceType seqtype =
         SequenceType(seqdata.c_str(), static_cast<unsigned int>(seqdata.size()), eST_Strict);
 
     if (seqtype == eUndefined) {
         return false;
     }
-    
+
     if (num_toks == 3) {
         size_t num_gaps = count(seqdata.begin(), seqdata.end(), '-');
         if (((seqdata.size() - num_gaps) > cumulated_res)) {
@@ -1405,7 +1406,7 @@ bool CFormatGuess::x_TryProcessCLUSTALSeqData(const string& line, string& id, si
     seg_length = seqdata.size();
 
     return true;
-} 
+}
 
 
 //  -----------------------------------------------------------------------------
@@ -1431,7 +1432,7 @@ struct SClustalBlockInfo
 }
 
 //  -----------------------------------------------------------------------------
-bool 
+bool
 CFormatGuess::TestFormatCLUSTAL()
 {
 
@@ -1455,8 +1456,8 @@ CFormatGuess::TestFormatCLUSTAL()
     while ( !TestBuffer.eof() ) {
         NcbiGetline(TestBuffer, strLine, "\r\n");
 
-        if (buffer_full && 
-            TestBuffer.eof()) { // Skip last line if buffer is full 
+        if (buffer_full &&
+            TestBuffer.eof()) { // Skip last line if buffer is full
             break;              // to avoid misidentification due to line truncation
         }
 
@@ -1465,7 +1466,7 @@ CFormatGuess::TestFormatCLUSTAL()
         }
 
         if (NStr::StartsWith(strLine, "CLUSTAL")) {
-            continue;    
+            continue;
         }
 
         if (NStr::IsBlank(strLine)) {
@@ -1516,17 +1517,17 @@ CFormatGuess::TestFormatCLUSTAL()
 
 
 //  -----------------------------------------------------------------------------
- bool 
+ bool
  CFormatGuess::x_TestTableDelimiter(const string& delims)
  {
     list<string>::const_iterator iter = m_TestLines.begin();
     list<string> toks;
 
     // Skip initial lines since not all headers start with comments like # or ;:
-    // Don't skip though if file is very short - add up to 3, 1 for each line 
+    // Don't skip though if file is very short - add up to 3, 1 for each line
     // over 5:
     for (size_t i=5; i<7; ++i)
-        if (m_TestLines.size() > i) 
+        if (m_TestLines.size() > i)
             ++iter;
 
     /// determine the number of observed columns
@@ -1551,7 +1552,7 @@ CFormatGuess::TestFormatCLUSTAL()
     for ( ;  iter != m_TestLines.end();  ++iter) {
         if (iter->empty()  ||  (*iter)[0] == '#'  ||  (*iter)[0] == ';') {
             continue;
-        } 
+        }
 
         toks.clear();
         NStr::Split(*iter, delims, toks, NStr::fSplit_Tokenize);
@@ -1566,7 +1567,7 @@ CFormatGuess::TestFormatCLUSTAL()
         }
         // Tokens should only contain printable characters
         for (const auto& token : toks) {
-            auto it = find_if(token.begin(), token.end(), 
+            auto it = find_if(token.begin(), token.end(),
                     [](unsigned char c){ return !isprint(c); });
             if (it != token.end()) {
                 return false;
@@ -1739,7 +1740,7 @@ CFormatGuess::TestFormatSnpMarkers(
             return true;
         }
     }
-    return false;  
+    return false;
 }
 
 
@@ -1752,7 +1753,7 @@ CFormatGuess::TestFormatBed(
         return false;
     }
 
-    bool bTrackLineFound( false );    
+    bool bTrackLineFound( false );
     bool bHasStartAndStop ( false );
     size_t columncount = 0;
     ITERATE( list<string>, it, m_TestLines ) {
@@ -1760,10 +1761,10 @@ CFormatGuess::TestFormatBed(
         if ( str.empty() ) {
             continue;
         }
-        
+
         // 'chr 8' fixup, the bedreader does this too
-        if (str.find("chr ") == 0 || 
-            str.find("Chr ") == 0 || 
+        if (str.find("chr ") == 0 ||
+            str.find("Chr ") == 0 ||
             str.find("CHR ") == 0)
             str.erase(3, 1);
 
@@ -1847,7 +1848,7 @@ CFormatGuess::TestFormatBed15(
                 !s_IsTokenPosInt(columns[7]))     //thick draw end
                     return false;
             string strand = NStr::TruncateSpaces(columns[5]);
-            
+
             if (strand != "+" && strand != "-")
                 return false;
 
@@ -1877,7 +1878,7 @@ CFormatGuess::TestFormatWiggle(
         if ( NStr::StartsWith(*it, "fixedStep") ) { /* MSS-140 */
             if ( NStr::Find(*it, "chrom=")  &&  NStr::Find(*it, "start=") ) {
                 return true;
-            } 
+            }
         }
         if ( NStr::StartsWith(*it, "variableStep") ) { /* MSS-140 */
             if ( NStr::Find(*it, "chrom=") ) {
@@ -1980,7 +1981,7 @@ CFormatGuess::TestFormatZstd(
     if ( m_iTestDataSize < 4) {
         return false;
     }
-    if (m_pTestBuffer[0] == (char)0x28  &&  
+    if (m_pTestBuffer[0] == (char)0x28  &&
         m_pTestBuffer[1] == (char)0xB5  &&
         m_pTestBuffer[2] == (char)0x2F  &&
         m_pTestBuffer[3] == (char)0xFD  ) {
@@ -2086,8 +2087,8 @@ bool CFormatGuess::TestFormatPsl(EMode mode)
 {
     // for the most part, following https://genome.ucsc.edu/FAQ/FAQformat.html#format2.
     // note that UCSC downloads often include one extra column, right at the start
-    // of each line. If that's the case then all records have that extra column. Since 
-    // UCSC downloads are common we will also accept as PSL anything that follows the 
+    // of each line. If that's the case then all records have that extra column. Since
+    // UCSC downloads are common we will also accept as PSL anything that follows the
     // spec after the first column of every line has been tossed.
     // Note that I have also seen "#" columns but only at the very beginning of a file.
     //
@@ -2140,7 +2141,7 @@ GenbankGetKeywordLine(
     vector<int> validIndents = {0, 2, 3, 5, 12, 21};
     auto firstNotBlank = lineIt->find_first_not_of(" ");
     while (firstNotBlank != 0) {
-        if (std::find(validIndents.begin(), validIndents.end(), firstNotBlank) == 
+        if (std::find(validIndents.begin(), validIndents.end(), firstNotBlank) ==
                 validIndents.end()) {
             auto firstNotBlankOrDigit = lineIt->find_first_not_of(" 1234567890");
             if (firstNotBlankOrDigit != 10) {
@@ -2177,10 +2178,10 @@ bool CFormatGuess::TestFormatFlatFileGenbank(
     // smell test:
     // note: sample size at least 8000 characters, line length soft limited to
     //  80 characters
-    if (m_TestLines.size() < 9) { // number of required records 
+    if (m_TestLines.size() < 9) { // number of required records
         return false;
     }
-    
+
     string keyword, data, lookingFor;
     auto recordIt = m_TestLines.begin();
     auto endIt = m_TestLines.end();
@@ -2248,7 +2249,7 @@ bool CFormatGuess::TestFormatFlatFileGenbank(
             return false;
         }
     }
-    
+
     lookingFor = "DBLINK"; // zero or more
     while (keyword == lookingFor) {
         if (!GenbankGetKeywordLine(recordIt, endIt, keyword, data)) {
@@ -2261,7 +2262,7 @@ bool CFormatGuess::TestFormatFlatFileGenbank(
         return false;
     }
 
-    // I am convinced now. There may be flaws farther down but this input 
+    // I am convinced now. There may be flaws farther down but this input
     //  definitely wants to be a Genbank flat file.
     return true;
 }
@@ -2292,7 +2293,7 @@ EnaGetLineData(
     lineIt++;
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::TestFormatFlatFileEna(
     EMode /*unused*/)
@@ -2306,10 +2307,10 @@ bool CFormatGuess::TestFormatFlatFileEna(
     // smell test:
     // note: sample size at least 8000 characters, line length soft limited to
     //  78 characters
-    if (m_TestLines.size() < 19) { // number of required records 
+    if (m_TestLines.size() < 19) { // number of required records
         return false;
     }
-    
+
     string lineCode, lineData, lookingFor;
     auto recordIt = m_TestLines.begin();
     auto endIt = m_TestLines.end();
@@ -2419,7 +2420,7 @@ UniProtGetLineData(
     lineIt++;
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::TestFormatFlatFileUniProt(
     EMode /*unused*/)
@@ -2433,13 +2434,13 @@ bool CFormatGuess::TestFormatFlatFileUniProt(
     // smell test:
     // note: sample size at least 8000 characters, line length soft limited to
     //  75 characters
-    if (m_TestLines.size() < 15) { // number of required records 
+    if (m_TestLines.size() < 15) { // number of required records
         return false;
     }
 
     // note:
-    // we are only trying to assert that the input is *meant* to be uniprot. 
-    // we should not be in the business of validation - this should happen 
+    // we are only trying to assert that the input is *meant* to be uniprot.
+    // we should not be in the business of validation - this should happen
     // downstream, with better error messages than we could possibly provide here.
     string lineCode, lineData, lookingFor;
     auto recordIt = m_TestLines.begin();
@@ -2491,7 +2492,7 @@ bool CFormatGuess::TestFormatFlatFileUniProt(
     if (lineCode != "GN"  &&  lineCode != "OS") {
         return false;
     }
-    
+
     //  once here it's UniProt or someone is messing with me
     return true;
 }
@@ -2528,11 +2529,11 @@ void CFormatGuess::x_StripJsonStrings(string& testString) const
         return;
     }
 
-    if (limits.size()%2 == 1) { 
-        // Perhaps testString ends on an open string 
+    if (limits.size()%2 == 1) {
+        // Perhaps testString ends on an open string
         // Tack on an additional set of quotes at the end
         testString += "\"";
-        limits.push_back(testString.size()-1);       
+        limits.push_back(testString.size()-1);
     }
     // The length of the limits container is now even
 
@@ -2590,12 +2591,12 @@ size_t s_GetPrecedingFslashCount(const string& input, const size_t pos)
 {
     if (pos == 0 ||
         pos >= input.size() ||
-        NStr::IsBlank(input) ) 
+        NStr::IsBlank(input) )
     {
         return 0;
     }
 
-    int current_pos = static_cast<int>(pos)-1; 
+    int current_pos = static_cast<int>(pos)-1;
     size_t num_fslash = 0;
     while  ( current_pos >= 0 && input[current_pos] == '\\' ) {
         ++num_fslash;
@@ -2612,7 +2613,7 @@ size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t 
     const string& double_quotes = R"(")";
     size_t pos = NStr::Find(input, double_quotes, from_pos);
 
-    // Double quotes immediately preceded by an odd number of forward 
+    // Double quotes immediately preceded by an odd number of forward
     // slashes, for example, /", ///", are escaped
     while (pos != NPOS) {
         const size_t num_fslash = s_GetPrecedingFslashCount(input, pos);
@@ -2622,7 +2623,7 @@ size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t 
             break;
         }
         pos = NStr::Find(input, double_quotes, pos+1);
-    }   
+    }
     return pos;
 }
 //  ----------------------------------------------------------------------------
@@ -2670,7 +2671,7 @@ bool CFormatGuess::x_IsTruncatedJsonNumber(const string& testString) const
     // NStr::StringToDouble cannot handle such truncations, but we can "fix"
     // the truncation by appending zero ("0") to the truncated string
 
-    const string extendedString = testString + "0"; 
+    const string extendedString = testString + "0";
 
     return x_IsNumber(extendedString);
 }
@@ -2678,11 +2679,11 @@ bool CFormatGuess::x_IsTruncatedJsonNumber(const string& testString) const
 
 
 // -----------------------------------------------------------------------------
-bool CFormatGuess::x_IsNumber(const string& testString) const 
+bool CFormatGuess::x_IsNumber(const string& testString) const
 {
     try {
         NStr::StringToDouble(testString);
-    } 
+    }
     catch (...) {
         return false;
     }
@@ -2716,7 +2717,7 @@ bool CFormatGuess::x_IsTruncatedJsonKeyword(const string& testString) const
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const 
+bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const
 {
     if (NStr::IsBlank(testString)) {
         return true;
@@ -2738,7 +2739,7 @@ bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::x_CheckStripJsonPunctuation(string& testString) const 
+bool CFormatGuess::x_CheckStripJsonPunctuation(string& testString) const
 {
     // Parentheses are prohibited
     if (testString.find_first_of("()") != string::npos) {
@@ -2759,7 +2760,7 @@ bool CFormatGuess::x_CheckStripJsonPunctuation(string& testString) const
 
 
 //  ----------------------------------------------------------------------------
-size_t CFormatGuess::x_StripJsonPunctuation(string& testString) const 
+size_t CFormatGuess::x_StripJsonPunctuation(string& testString) const
 {
     size_t initial_len = testString.size();
 
@@ -2776,7 +2777,7 @@ size_t CFormatGuess::x_StripJsonPunctuation(string& testString) const
 
 
 //  ----------------------------------------------------------------------------
-void CFormatGuess::x_StripJsonKeywords(string& testString) const 
+void CFormatGuess::x_StripJsonKeywords(string& testString) const
 {
     NStr::ReplaceInPlace(testString, "true", "");
     NStr::ReplaceInPlace(testString, "false", "");
@@ -2786,15 +2787,15 @@ void CFormatGuess::x_StripJsonKeywords(string& testString) const
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::x_CheckJsonStart(const string& testString) const 
+bool CFormatGuess::x_CheckJsonStart(const string& testString) const
 {
     if (NStr::StartsWith(testString, "{")) {
         // Next character must begin a string
-        const auto next_pos = testString.find_first_not_of("( \t\r\n",1); 
+        const auto next_pos = testString.find_first_not_of("( \t\r\n",1);
         if (next_pos != NPOS && testString[next_pos] == '\"') {
             return true;
         }
-    } 
+    }
     else
     if (NStr::StartsWith(testString, "[")) {
         return true;
@@ -2841,7 +2842,7 @@ bool CFormatGuess::TestFormatJson(
 
     // What remains is either a truncated number
     // or a truncated keyword
-    return x_IsTruncatedJsonNumber(testString) | 
+    return x_IsTruncatedJsonNumber(testString) |
            x_IsTruncatedJsonKeyword(testString);
 }
 //  ----------------------------------------------------------------------------
@@ -2956,8 +2957,8 @@ CFormatGuess::IsSampleNewick(
     //
 
     //  NOTE:
-    //  MSS-112 introduced the concept of multitree files is which after the ";" 
-    //  another tree may start. The new logic accepts files as Newick if they 
+    //  MSS-112 introduced the concept of multitree files is which after the ";"
+    //  another tree may start. The new logic accepts files as Newick if they
     //  are Newick up to and including the first semicolon. It does not look
     //  beyond.
 
@@ -3042,7 +3043,7 @@ CFormatGuess::IsSampleNewick(
         size_t paren_count = 1;
         for ( size_t ii=1; line.c_str()[ii] != 0; ++ii ) {
             switch ( line.c_str()[ii] ) {
-                default: 
+                default:
                     break;
                 case '(':
                     ++paren_count;
@@ -3066,7 +3067,7 @@ CFormatGuess::IsSampleNewick(
             }
         }
     }}
-    return true; 
+    return true;
 }
 
 
@@ -3126,7 +3127,7 @@ bool CFormatGuess::IsLabelNewick(
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::IsLineAgp( 
+bool CFormatGuess::IsLineAgp(
     const string& strLine )
 {
     //
@@ -3184,7 +3185,7 @@ bool CFormatGuess::IsLineAgp(
         }
         if ( -1 == NStr::StringToNonNegativeInt( tokens[7] ) ) {
             return false;
-        }            
+        }
         if ( tokens.size() != 9 ) {
             return false;
         }
@@ -3261,7 +3262,7 @@ bool CFormatGuess::IsLineGtf(
     if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
         return false;
     }
-    if ( tokens.size() < 9 || 
+    if ( tokens.size() < 9 ||
          (NPOS == tokens[8].find( "gene_id" ) && NPOS == tokens[8].find( "transcript_id" ) ) ) {
         return false;
     }
@@ -3435,7 +3436,7 @@ bool CFormatGuess::IsLineAugustus(
 
     //column 6: strand, one in "+-.?"
     const string legalStrands{"+-.?"};
-    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  head.size() != 1  ||  
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  head.size() != 1  ||
             string::npos == legalStrands.find(head)) {
         return false;
     }
@@ -3443,7 +3444,7 @@ bool CFormatGuess::IsLineAugustus(
 
     //column 7: phase, one in ".0123"
     const string legalPhases{".0123"};
-    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  head.size() != 1  ||  
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  head.size() != 1  ||
             string::npos == legalPhases.find(head)) {
         return false;
     }
@@ -3604,7 +3605,7 @@ bool CFormatGuess::IsLineRmo(
         return false;
     }
 
-    //  and that's enough for now. But there are at least two more fields 
+    //  and that's enough for now. But there are at least two more fields
     //  with values that look testable.
 
     return true;
@@ -3650,7 +3651,7 @@ CFormatGuess::IsLinePsl(
             return false;
         }
     }
-    
+
     // the following is disabled because we want to allow incorrect but recognizable
     //  PSL to pass as PSL.
     //  This will hopefully give the user a better error message as to what is wrong
@@ -3787,7 +3788,7 @@ CFormatGuess::IsAllComment()
         }
         return false;
     }
-    
+
     return true;
 }
 
@@ -3805,7 +3806,7 @@ bool CFormatGuess::IsLineHgvs(
         ++NextI;
         if(NextI != line.end())
             Next = *NextI;
-        
+
         if(State == 0) {
             if( isalnum(Char) )
                 State++;
@@ -3827,7 +3828,7 @@ bool CFormatGuess::IsLineHgvs(
                 return false;
             }
         } else if(State == 3) {
-            if(Char == '.') 
+            if(Char == '.')
                 State++;
             else
                 return false;
@@ -3836,8 +3837,8 @@ bool CFormatGuess::IsLineHgvs(
                 State++;
         }
     }
-    
-    return (State == 5);    
+
+    return (State == 5);
 }
 
 
