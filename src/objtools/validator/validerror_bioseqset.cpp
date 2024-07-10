@@ -138,16 +138,18 @@ void CValidError_bioseqset::ValidateBioseqSet(
     int segcnt  = 0;
 
     // Validate Set Contents
-    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        const CSeq_entry& se = **se_list_it;
-        if (se.IsSet()) {
-            const CBioseq_set& set = se.GetSet();
-            // validate member set
-            ValidateBioseqSet (set);
-        } else if (se.IsSeq()) {
-            const CBioseq& seq = se.GetSeq();
-            // Validate Member Seq
-            m_BioseqValidator.ValidateBioseq(seq);
+    if (seqset.IsSetSeq_set()) {
+        for (const auto& se_list_it : seqset.GetSeq_set()) {
+            const CSeq_entry& se = *se_list_it;
+            if (se.IsSet()) {
+                const CBioseq_set& set = se.GetSet();
+                // validate member set
+                ValidateBioseqSet(set);
+            } else if (se.IsSeq()) {
+                const CBioseq& seq = se.GetSeq();
+                // Validate Member Seq
+                m_BioseqValidator.ValidateBioseq(seq);
+            }
         }
     }
     // note - need to do this with an iterator, so that we count sequences in subsets
@@ -335,9 +337,11 @@ void CValidError_bioseqset::ValidateBioseqSet(
 
 
     // validate annots
-    FOR_EACH_SEQANNOT_ON_SEQSET (annot_it, seqset) {
-        m_AnnotValidator.ValidateSeqAnnot (**annot_it);
-        m_AnnotValidator.ValidateSeqAnnotContext (**annot_it, seqset);
+    if (seqset.IsSetAnnot()) {
+        for (const auto& annot_it : seqset.GetAnnot()) {
+            m_AnnotValidator.ValidateSeqAnnot(*annot_it);
+            m_AnnotValidator.ValidateSeqAnnotContext(*annot_it, seqset);
+        }
     }
 
     if ((m_Imp.IsHugeFileMode()) && m_Imp.IsHugeSet(seqset)) {
@@ -443,137 +447,139 @@ void CValidError_bioseqset::ValidateNucProtSet(
 
     sequence::CDeflineGenerator defline_generator;
 
-    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        const CSeq_entry& se = **se_list_it;
-        if (se.IsSeq()) {
-            const CBioseq& seq = se.GetSeq();
+    if (seqset.IsSetSeq_set()) {
+        for (const auto& se_list_it : seqset.GetSeq_set()) {
+            const CSeq_entry& se = *se_list_it;
+            if (se.IsSeq()) {
+                const CBioseq& seq = se.GetSeq();
 
-            bool hasMetaGenomeSource = false;
-            auto closest_biosource = seq.GetClosestDescriptor(CSeqdesc::e_Source);
-            if (closest_biosource) {
-                const CBioSource& src = closest_biosource->GetSource();
-                if (src.IsSetOrgMod()) {
-                    for (const auto& omd_itr : src.GetOrgname().GetMod()) {
-                        const COrgMod& omd = *omd_itr;
-                        if (omd.IsSetSubname() && omd.IsSetSubtype() && omd.GetSubtype() == COrgMod::eSubtype_metagenome_source) {
-                            hasMetaGenomeSource = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (seq.IsSetDescr()) {
-                for (const auto& it : seq.GetDescr().Get()) {
-                    const CSeqdesc& desc = *it;
-                    if (desc.Which() == CSeqdesc::e_User && desc.GetUser().IsSetType()) {
-                        const CUser_object& usr = desc.GetUser();
-                        const CObject_id& oi = usr.GetType();
-                        if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
-                            PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem, "DBLink user object should not be on a Bioseq", seq);
-                        }
-                    }
-                }
-            }
-
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-            CBioseq_set_Handle gps = GetGenProdSetParent(bsh);
-            if (seq.IsNa()) {
-                if (gps  &&  !IsMrnaProductInGPS(seq) ) {
-                    PostErr(eDiag_Warning,
-                        eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                        "Nucleotide bioseq should be product of mRNA "
-                        "feature on contig, but is not",
-                        seq);
-                }
-                if (seq.IsSetId()) {
-                    for (const auto& id_it : seq.GetId()) {
-                        const CSeq_id& id = *id_it;
-                        if (id.IsOther() && id.GetOther().IsSetAccession()) {
-                            const string& acc = id.GetOther().GetAccession();
-                            if (NStr::StartsWith(acc, "NM_")) {
-                                is_nm = true;
+                bool hasMetaGenomeSource = false;
+                auto closest_biosource = seq.GetClosestDescriptor(CSeqdesc::e_Source);
+                if (closest_biosource) {
+                    const CBioSource& src = closest_biosource->GetSource();
+                    if (src.IsSetOrgMod()) {
+                        for (const auto& omd_itr : src.GetOrgname().GetMod()) {
+                            const COrgMod& omd = *omd_itr;
+                            if (omd.IsSetSubname() && omd.IsSetSubtype() && omd.GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                                hasMetaGenomeSource = true;
+                                break;
                             }
                         }
                     }
                 }
-            } else if ( seq.IsAa() ) {
-                if (gps && !IsCDSProductInGPS(seq, *(gps.GetCompleteBioseq_set())) ) {
-                    PostErr(eDiag_Warning,
-                        eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                        "Protein bioseq should be product of CDS "
-                        "feature on contig, but is not",
-                        seq);
-                }
-                string instantiated;
+
                 if (seq.IsSetDescr()) {
-                    for(const auto& desc : seq.GetDescr().Get()) {
-                        if (desc->IsSource()) {
-                            prot_biosource++;
-                        }
-                        if (desc->IsTitle()) {
-                            instantiated = desc->GetTitle();
+                    for (const auto& it : seq.GetDescr().Get()) {
+                        const CSeqdesc& desc = *it;
+                        if (desc.Which() == CSeqdesc::e_User && desc.GetUser().IsSetType()) {
+                            const CUser_object& usr = desc.GetUser();
+                            const CObject_id& oi = usr.GetType();
+                            if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
+                                PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem, "DBLink user object should not be on a Bioseq", seq);
+                            }
                         }
                     }
                 }
-                // look for instantiated protein titles that don't match
 
-                if (!NStr::IsBlank(instantiated)) {
-                    string generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
-                    if (!NStr::EqualNocase(instantiated, generated)) {
-                        generated = defline_generator.GenerateDefline(seq, *m_Scope,
-                            sequence::CDeflineGenerator::fIgnoreExisting | sequence::CDeflineGenerator::fAllProteinNames);
-                        if (NStr::StartsWith (instantiated, "PREDICTED: ", NStr::eNocase)) {
-                            instantiated.erase (0, 11);
-                        } else if (NStr::StartsWith (instantiated, "UNVERIFIED: ", NStr::eNocase)) {
-                            instantiated.erase (0, 12);
-                        } else if (NStr::StartsWith (instantiated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
-                            instantiated.erase (0, 21);
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+                CBioseq_set_Handle gps = GetGenProdSetParent(bsh);
+                if (seq.IsNa()) {
+                    if (gps  &&  !IsMrnaProductInGPS(seq) ) {
+                        PostErr(eDiag_Warning,
+                            eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                            "Nucleotide bioseq should be product of mRNA "
+                            "feature on contig, but is not",
+                            seq);
+                    }
+                    if (seq.IsSetId()) {
+                        for (const auto& id_it : seq.GetId()) {
+                            const CSeq_id& id = *id_it;
+                            if (id.IsOther() && id.GetOther().IsSetAccession()) {
+                                const string& acc = id.GetOther().GetAccession();
+                                if (NStr::StartsWith(acc, "NM_")) {
+                                    is_nm = true;
+                                }
+                            }
                         }
-                        if (NStr::StartsWith (generated, "PREDICTED: ", NStr::eNocase)) {
-                            generated.erase (0, 11);
-                        } else if (NStr::StartsWith (generated, "UNVERIFIED: ", NStr::eNocase)) {
-                            generated.erase (0, 12);
-                         } else if (NStr::StartsWith (generated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
-                            generated.erase (0, 21);
-                         } else if (NStr::StartsWith (generated, "LOW QUALITY PROTEIN: ", NStr::eNocase)) {
-                            generated.erase (0, 21);
-                       }
-                        //okay if instantiated title has single trailing period
-                        if (instantiated.length() == generated.length() + 1 && NStr::EndsWith(instantiated, ".")
-                            && !NStr::EndsWith(instantiated, "..")) {
-                            generated += ".";
+                    }
+                } else if ( seq.IsAa() ) {
+                    if (gps && !IsCDSProductInGPS(seq, *(gps.GetCompleteBioseq_set())) ) {
+                        PostErr(eDiag_Warning,
+                            eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                            "Protein bioseq should be product of CDS "
+                            "feature on contig, but is not",
+                            seq);
+                    }
+                    string instantiated;
+                    if (seq.IsSetDescr()) {
+                        for(const auto& desc : seq.GetDescr().Get()) {
+                            if (desc->IsSource()) {
+                                prot_biosource++;
+                            }
+                            if (desc->IsTitle()) {
+                                instantiated = desc->GetTitle();
+                            }
                         }
-                        if (!NStr::EqualNocase(instantiated, generated) && !NStr::EqualNocase("MAG " + instantiated, generated)) {
-                            if (hasMetaGenomeSource && NStr::EqualNocase("MAG: " + instantiated, generated)) {
-                                // allow missing MAG with no other prefix
-                            } else if (hasMetaGenomeSource && NStr::EqualNocase("MAG " + instantiated, generated)) {
-                                // allow missing MAG followed by another prefix
-                            } else {
-                                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
-                                        "Instantiated protein title does not match automatically "
-                                        "generated title", seq);
+                    }
+                    // look for instantiated protein titles that don't match
+
+                    if (!NStr::IsBlank(instantiated)) {
+                        string generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
+                        if (!NStr::EqualNocase(instantiated, generated)) {
+                            generated = defline_generator.GenerateDefline(seq, *m_Scope,
+                                sequence::CDeflineGenerator::fIgnoreExisting | sequence::CDeflineGenerator::fAllProteinNames);
+                            if (NStr::StartsWith (instantiated, "PREDICTED: ", NStr::eNocase)) {
+                                instantiated.erase (0, 11);
+                            } else if (NStr::StartsWith (instantiated, "UNVERIFIED: ", NStr::eNocase)) {
+                                instantiated.erase (0, 12);
+                            } else if (NStr::StartsWith (instantiated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
+                                instantiated.erase (0, 21);
+                            }
+                            if (NStr::StartsWith (generated, "PREDICTED: ", NStr::eNocase)) {
+                                generated.erase (0, 11);
+                            } else if (NStr::StartsWith (generated, "UNVERIFIED: ", NStr::eNocase)) {
+                                generated.erase (0, 12);
+                             } else if (NStr::StartsWith (generated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
+                                generated.erase (0, 21);
+                             } else if (NStr::StartsWith (generated, "LOW QUALITY PROTEIN: ", NStr::eNocase)) {
+                                generated.erase (0, 21);
+                           }
+                            //okay if instantiated title has single trailing period
+                            if (instantiated.length() == generated.length() + 1 && NStr::EndsWith(instantiated, ".")
+                                && !NStr::EndsWith(instantiated, "..")) {
+                                generated += ".";
+                            }
+                            if (!NStr::EqualNocase(instantiated, generated) && !NStr::EqualNocase("MAG " + instantiated, generated)) {
+                                if (hasMetaGenomeSource && NStr::EqualNocase("MAG: " + instantiated, generated)) {
+                                    // allow missing MAG with no other prefix
+                                } else if (hasMetaGenomeSource && NStr::EqualNocase("MAG " + instantiated, generated)) {
+                                    // allow missing MAG followed by another prefix
+                                } else {
+                                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
+                                            "Instantiated protein title does not match automatically "
+                                            "generated title", seq);
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        if (! se.IsSet())
-            continue;
+            if (! se.IsSet())
+                continue;
 
-        const CBioseq_set& set = se.GetSet();
-        if ( set.GetClass() != CBioseq_set::eClass_segset ) {
+            const CBioseq_set& set = se.GetSet();
+            if ( set.GetClass() != CBioseq_set::eClass_segset ) {
 
-            const CEnumeratedTypeValues* tv =
-                CBioseq_set::ENUM_METHOD_NAME(EClass)();
-            const string& set_class = tv->FindName(set.GetClass(), true);
+                const CEnumeratedTypeValues* tv =
+                    CBioseq_set::ENUM_METHOD_NAME(EClass)();
+                const string& set_class = tv->FindName(set.GetClass(), true);
 
-            PostErr(eDiag_Critical, eErr_SEQ_PKG_NucProtNotSegSet,
-                     "Nuc-prot Bioseq-set contains wrong Bioseq-set, "
-                     "its class is \"" + set_class + "\".", set);
-            break;
+                PostErr(eDiag_Critical, eErr_SEQ_PKG_NucProtNotSegSet,
+                         "Nuc-prot Bioseq-set contains wrong Bioseq-set, "
+                         "its class is \"" + set_class + "\".", set);
+                break;
+            }
         }
     }
     if (prot_biosource > 1) {
@@ -588,23 +594,24 @@ void CValidError_bioseqset::ValidateNucProtSet(
     bool has_source = false;
     bool has_title = false;
     bool has_refgenetracking = false;
-    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
-        if ((*it)->IsSource()
-            && (*it)->GetSource().IsSetOrg()
-            && (*it)->GetSource().GetOrg().IsSetTaxname()
-            && !NStr::IsBlank ((*it)->GetSource().GetOrg().GetTaxname())) {
-            has_source = true;
-        } else if ((*it)->IsTitle()) {
-            has_title = true;
-        } else if ((*it)->IsUser()
-            && (*it)->GetUser().IsRefGeneTracking()) {
-            has_refgenetracking = true;
+    if (seqset.IsSetDescr()) {
+        for (const auto& desc : seqset.GetDescr().Get()) {
+            if (desc->IsSource()
+                && desc->GetSource().IsSetOrg()
+                && desc->GetSource().GetOrg().IsSetTaxname()
+                && !NStr::IsBlank (desc->GetSource().GetOrg().GetTaxname())) {
+                has_source = true;
+            } else if (desc->IsTitle()) {
+                has_title = true;
+            } else if (desc->IsUser() && desc->GetUser().IsRefGeneTracking()) {
+                has_refgenetracking = true;
+            }
+            /*
+            if (has_title && has_source) {
+                break;
+            }
+            */
         }
-        /*
-        if (has_title && has_source) {
-            break;
-        }
-        */
     }
 
     if (!has_source) {
@@ -672,42 +679,44 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
             "No segmented Bioseq in segset", seqset);
     }
 
-    CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
-    CSeq_inst::EMol     seq_inst_mol;
+    CSeq_inst::EMol mol = CSeq_inst::eMol_not_set;
+    CSeq_inst::EMol seq_inst_mol;
 
-    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        const CSeq_entry& se = **se_list_it;
-        if (se.IsSeq()) {
-            const CSeq_inst& seq_inst = se.GetSeq().GetInst();
+    if (seqset.IsSetSeq_set()) {
+        for (const auto& se_list_it : seqset.GetSeq_set()) {
+            const CSeq_entry& se = *se_list_it;
+            if (se.IsSeq()) {
+                const CSeq_inst& seq_inst = se.GetSeq().GetInst();
 
-            if ( mol == CSeq_inst::eMol_not_set ||
-                 mol == CSeq_inst::eMol_other ) {
-                mol = seq_inst.GetMol();
-            } else if ( (seq_inst_mol = seq_inst.GetMol()) != CSeq_inst::eMol_other) {
-                if ( seq_inst.IsNa() != CSeq_inst::IsNa(mol) ) {
-                    PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetMixedBioseqs,
-                        "Segmented set contains mixture of nucleotides"
-                        " and proteins", seqset);
+                if ( mol == CSeq_inst::eMol_not_set ||
+                     mol == CSeq_inst::eMol_other ) {
+                    mol = seq_inst.GetMol();
+                } else if ( (seq_inst_mol = seq_inst.GetMol()) != CSeq_inst::eMol_other) {
+                    if ( seq_inst.IsNa() != CSeq_inst::IsNa(mol) ) {
+                        PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetMixedBioseqs,
+                            "Segmented set contains mixture of nucleotides"
+                            " and proteins", seqset);
+                        break;
+                    }
+                }
+            } else if (se.IsSet()) {
+                const CBioseq_set& set = se.GetSet();
+
+                if ( set.IsSetClass()  &&
+                     set.GetClass() != CBioseq_set::eClass_parts ) {
+                    const CEnumeratedTypeValues* tv =
+                        CBioseq_set::ENUM_METHOD_NAME(EClass)();
+                    const string& set_class_str =
+                        tv->FindName(set.GetClass(), true);
+
+                    PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetNotParts,
+                        "Segmented set contains wrong Bioseq-set, "
+                        "its class is \"" + set_class_str + "\".", set);
                     break;
                 }
             }
-        } else if (se.IsSet()) {
-            const CBioseq_set& set = se.GetSet();
-
-            if ( set.IsSetClass()  &&
-                 set.GetClass() != CBioseq_set::eClass_parts ) {
-                const CEnumeratedTypeValues* tv =
-                    CBioseq_set::ENUM_METHOD_NAME(EClass)();
-                const string& set_class_str =
-                    tv->FindName(set.GetClass(), true);
-
-                PostErr(eDiag_Critical, eErr_SEQ_PKG_SegSetNotParts,
-                    "Segmented set contains wrong Bioseq-set, "
-                    "its class is \"" + set_class_str + "\".", set);
-                break;
-            }
-        } // else if
-    } // iterate
+        }
+    }
 
     CheckForInconsistentBiomols (seqset);
 }
@@ -715,39 +724,39 @@ void CValidError_bioseqset::ValidateSegSet(const CBioseq_set& seqset, int segcnt
 
 void CValidError_bioseqset::ValidatePartsSet(const CBioseq_set& seqset)
 {
-    CSeq_inst::EMol     mol = CSeq_inst::eMol_not_set;
-    CSeq_inst::EMol     seq_inst_mol;
+    CSeq_inst::EMol mol = CSeq_inst::eMol_not_set;
+    CSeq_inst::EMol seq_inst_mol;
 
-    FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
-        const CSeq_entry& se = **se_list_it;
-        if (se.IsSeq()) {
-            const CSeq_inst& seq_inst = se.GetSeq().GetInst();
-
-            if ( mol == CSeq_inst::eMol_not_set  ||
-                 mol == CSeq_inst::eMol_other ) {
-                mol = seq_inst.GetMol();
-            } else  {
-                seq_inst_mol = seq_inst.GetMol();
-                if ( seq_inst_mol != CSeq_inst::eMol_other) {
-                    if ( seq_inst.IsNa() != CSeq_inst::IsNa(mol) ) {
-                        PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetMixedBioseqs,
-                                 "Parts set contains mixture of nucleotides "
-                                 "and proteins", seqset);
+    if (seqset.IsSetSeq_set()) {
+        for (const auto& se_list_it : seqset.GetSeq_set()) {
+            const CSeq_entry& se = *se_list_it;
+            if (se.IsSeq()) {
+                const CSeq_inst& seq_inst = se.GetSeq().GetInst();
+                if (mol == CSeq_inst::eMol_not_set || mol == CSeq_inst::eMol_other) {
+                    mol = seq_inst.GetMol();
+                } else {
+                    seq_inst_mol = seq_inst.GetMol();
+                    if (seq_inst_mol != CSeq_inst::eMol_other) {
+                        if (seq_inst.IsNa() != CSeq_inst::IsNa(mol)) {
+                            PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetMixedBioseqs,
+                                     "Parts set contains mixture of nucleotides "
+                                     "and proteins", seqset);
+                        }
                     }
                 }
-            }
-        } else if (se.IsSet()) {
-            const CBioseq_set& set = se.GetSet();
-            const CEnumeratedTypeValues* tv =
-                CBioseq_set::ENUM_METHOD_NAME(EClass)();
-            const string& set_class_str =
-                tv->FindName(set.GetClass(), true);
+            } else if (se.IsSet()) {
+                const CBioseq_set& set = se.GetSet();
+                const CEnumeratedTypeValues* tv =
+                    CBioseq_set::ENUM_METHOD_NAME(EClass)();
+                const string& set_class_str =
+                    tv->FindName(set.GetClass(), true);
 
-            PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetHasSets,
-                    "Parts set contains unwanted Bioseq-set, "
-                    "its class is \"" + set_class_str + "\".", set);
-        } // else if
-    } // for
+                PostErr(eDiag_Critical, eErr_SEQ_PKG_PartsSetHasSets,
+                        "Parts set contains unwanted Bioseq-set, "
+                        "its class is \"" + set_class_str + "\".", set);
+            }
+        }
+    }
 }
 
 
@@ -831,10 +840,12 @@ void CValidError_bioseqset::ValidateSetElements(const CBioseq_set& seqset, bool 
                 if (b_i->IsNa()) {
                     const CBioseq& seq = *(b_i->GetCompleteBioseq());
                     bool has_title = false;
-                    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (d_i, seq) {
-                        if ((*d_i)->IsTitle()) {
-                            has_title = true;
-                            break;
+                    if (seq.IsSetDescr()) {
+                        for (const auto& desc : seq.GetDescr().Get()) {
+                            if (desc->IsTitle()) {
+                                has_title = true;
+                                break;
+                            }
                         }
                     }
                     if (!has_title && (m_Imp.IsRefSeq() || m_Imp.IsEmbl() || m_Imp.IsDdbj() || m_Imp.IsGenbank())) {
@@ -882,11 +893,13 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
         break;
     }
 
-    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
-        if ((*it)->IsMolinfo()) {
-            PostErr(eDiag_Warning, eErr_SEQ_PKG_MisplacedMolInfo,
-                    class_name + " has MolInfo on set", seqset);
-            return;
+    if (seqset.IsSetDescr()) {
+        for (const auto& desc : seqset.GetDescr().Get()) {
+            if (desc->IsMolinfo()) {
+                PostErr(eDiag_Warning, eErr_SEQ_PKG_MisplacedMolInfo,
+                        class_name + " has MolInfo on set", seqset);
+                return;
+            }
         }
     }
 }
@@ -1031,24 +1044,27 @@ void CValidError_bioseqset::ValidateGenProdSet(
 
 void CValidError_bioseqset::CheckForImproperlyNestedSets (const CBioseq_set& seqset)
 {
-    FOR_EACH_SEQENTRY_ON_SEQSET (it, seqset) {
-        if ((*it)->IsSet()) {
-            if (!(*it)->GetSet().IsSetClass()
-                || ((*it)->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot
-                    && (*it)->GetSet().GetClass() != CBioseq_set::eClass_segset
-                    && (*it)->GetSet().GetClass() != CBioseq_set::eClass_parts)) {
+    if (! seqset.IsSetSeq_set())
+        return;
+    for (const auto& se : seqset.GetSeq_set()) {
+        if (se->IsSet()) {
+            if (!se->GetSet().IsSetClass()
+                || (se->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot
+                    && se->GetSet().GetClass() != CBioseq_set::eClass_segset
+                    && se->GetSet().GetClass() != CBioseq_set::eClass_parts)) {
                 PostErr(eDiag_Warning,
                     eErr_SEQ_PKG_ImproperlyNestedSets,
-                    "Nested sets within Pop/Phy/Mut/Eco/Wgs set", (*it)->GetSet());
+                    "Nested sets within Pop/Phy/Mut/Eco/Wgs set", se->GetSet());
             }
-            CheckForImproperlyNestedSets((*it)->GetSet());
+            CheckForImproperlyNestedSets(se->GetSet());
         }
     }
 }
 
 void CValidError_bioseqset::ShouldHaveNoDblink (const CBioseq_set& seqset)
 {
-    if (!seqset.IsSetDescr()) return;
+    if (! seqset.IsSetDescr())
+        return;
     for (const auto& it : seqset.GetDescr().Get()) {
         const CSeqdesc& desc = *it;
         if (desc.IsUser() && desc.GetUser().GetObjectType() == CUser_object::eObjectType_DBLink) {
