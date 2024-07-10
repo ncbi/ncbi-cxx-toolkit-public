@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/static_map.hpp>
 #include <bitset>
 
 BEGIN_NCBI_SCOPE
@@ -89,16 +90,16 @@ public:
         eVcf                 = 32, ///< VCF, CVcfReader
         eUCSCRegion          = 33, ///< USCS Region file format
         eGffAugustus         = 34, ///< GFFish output of Augustus Gene Prediction
-        eJSON                = 35, ///< JSON
+        eJSON                = 35, ///< JSON 
         ePsl                 = 36, ///< PSL alignment format
         // The following formats are not yet recognized by CFormatGuess - CXX-10039
-        eAltGraphX           = 37,
+        eAltGraphX           = 37, 
         eBed5FloatScore      = 38,
-        eBedGraph            = 39,
+        eBedGraph            = 39,      
         eBedRnaElements      = 40,
         eBigBarChart         = 41,
         eBigBed              = 42,
-        eBigPsl              = 43,
+        eBigPsl              = 43,    
         eBigChain            = 44,
         eBigMaf              = 45,
         eBigWig              = 46,
@@ -129,11 +130,11 @@ public:
         eZstd                = 68, ///< Zstandard (zstd) compressed data
 
         // ***  Adding new format codes?  ***
-        //  (1) A sanity check in the  implementation depends on the format codes being
+        //  (1) A sanity check in the  implementation depends on the format codes being 
         //      consecutive. Hence no gaps allowed!
         //  (2) Heed the warning above about never changing an already existing format code!
         //  (3) You must provide a display name for the new format. Do that in sm_FormatNames (see .cpp).
-        //  (4) You must add your new format to sm_CheckOrder (see .cpp)
+        //  (4) You must add your new format to sm_CheckOrder (see .cpp) 
         //      (unless you don't want your format actually being checked and recognized).
 
         /// Max value of EFormat
@@ -332,7 +333,7 @@ protected:
     static bool IsAsnComment(const vector<string>&);
     static bool IsLineHgvs(const std::string&);
     static bool IsLinePsl(const std::string&, bool ignoreFirstColumn);
-
+    
 private:
     static bool x_TestInput( CNcbiIstream& input, EOnError onerror );
 
@@ -348,7 +349,7 @@ private:
     // In-place deletion of JSON strings
     void x_StripJsonStrings(string& testString) const;
 
-    // Starting at from_pos, find the next set of double quotes
+    // Starting at from_pos, find the next set of double quotes 
     // indicating the end of a JSON string
     size_t x_FindNextJsonStringStop(const string& input, const size_t from_pos) const;
 
