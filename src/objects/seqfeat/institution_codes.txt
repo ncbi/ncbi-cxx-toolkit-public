@@ -3893,6 +3893,7 @@ KGU	s	Geology and Mineralogy Museum
 KGY	s	Cliffe Castle Art Gallery and Museum			
 KH	s	Korea National Arboretum			
 KHA	s	Institute for Water and Ecology Problems, Far East Branch, Russian Academy of Sciences, Laboratory of Plant Ecology			
+KHAS	s	Herbarium of Kunming Institute of Botany			
 KHAU	s	Khuzestan Agricultural Sciences and Natural Resources University			
 KHD	s	Kathryn Kalmbach Herbarium of Vascular Plants, Denver Botanic Gardens			
 KHER	s	Kherson Pedagogical University, Botany Department			
