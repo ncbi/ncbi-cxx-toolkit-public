@@ -1,4 +1,4 @@
-organism	localid	isolate	collected-by	collection-date	country	definition	genome	isolation-source	nat-host	segment	subsource-note	
+organism	localid	isolate	collected-by	collection-date	geo_loc_name	definition	genome	isolation-source	nat-host	segment	subsource-note	
 Infectious bursal disease virus (Gumboro)	PLATEAU19/NG/2009	PLATEAU19/NG/2009	Ijeoma Nwagbo	2009	Nigeria	Infectious bursal disease virus (Gumboro) isolate PLATEAU19/NG/2009	genomic	Bursa of Fabricius	Chicken	Segment B	[virus wizard]	
 Infectious bursal disease virus (Gumboro)	PLATEAU19/NG/2009_1	PLATEAU19/NG/2009	Ijeoma Nwagbo	2009	Nigeria	Viral Protein, partial [Infectious bursal disease virus (Gumboro)]	genomic	Bursa of Fabricius	Chicken	Segment B	[virus wizard]	
 Infectious bursal disease virus (Gumboro)	KADUNA61/NG/2012	KADUNA61/NG/2012	Ijeoma Nwagbo	2012	Nigeria	Infectious bursal disease virus (Gumboro) isolate KADUNA61/NG/2012	genomic	Bursa of Fabricius	Chicken	Segment B	[virus wizard]	
