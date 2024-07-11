@@ -3,6 +3,7 @@
 NCBI_begin_app(test_ncbimtx)
   NCBI_sources(test_ncbimtx)
   NCBI_requires(Boost.Test.Included MT)
+  NCBI_set_test_resources(SERIAL)
   NCBI_add_test()
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
