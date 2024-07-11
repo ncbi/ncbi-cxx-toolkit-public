@@ -23,30 +23,30 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 
         if self.settings.os == "Linux":
             self.requires("backward-cpp/1.6")
-        self.requires("boost/[>=1.82.0 <=1.84.0]")
+        self.requires("boost/[>=1.82.0 <=1.85.0]")
         self.requires("bzip2/1.0.8")
         if self.settings.os == "Linux":
             self.requires("cassandra-cpp-driver/[>=2.15.3 <=2.17.1]")
-        self.requires("giflib/5.2.1")
+        self.requires("giflib/[>=5.2.1 <=5.2.2]")
         self.requires("grpc/1.50.1")
         if self.settings.os == "Linux" or NCBIfound:
             self.requires("libdb/5.3.28")
         self.requires("libjpeg/9e")
-        self.requires("libnghttp2/[>=1.51.0 <=1.59.0]")
+        self.requires("libnghttp2/[>=1.51.0 <=1.61.0]")
         self.requires("libpng/[>=1.6.37 <=1.6.43]")
-        self.requires("libtiff/[>=4.3.0 <=4.5.0]")
+        self.requires("libtiff/[>=4.3.0 <=4.6.0]")
         if self.settings.os == "Linux":
-            self.requires("libunwind/[>=1.6.2 <=1.8.0]")
+            self.requires("libunwind/[>=1.6.2 <=1.8.1]")
         self.requires("libuv/[>=1.45.0 <=1.48.0]")
         self.requires("libxml2/[>=2.11.4 <=2.11.6]")
         self.requires("libxslt/[>1.1.34 <=1.1.37]")
-        self.requires("lmdb/[>=0.9.29 <=0.9.31]")
+        self.requires("lmdb/[>=0.9.29 <=0.9.32]")
         self.requires("lzo/2.10")
         self.requires("openssl/1.1.1s")
         # self.requires("opentelemetry-cpp/1.14.2")
         self.requires("pcre/8.45")
-        self.requires("protobuf/3.21.12")
-        self.requires("sqlite3/[>=3.40.0 <=3.45.2]")
+        self.requires("protobuf/[>=3.21.12 <=5.27.0]")
+        self.requires("sqlite3/[>=3.40.0 <=3.46.0]")
         self.requires("zlib/[>=1.2.11 <2]")
         self.requires("zstd/[>=1.5.2 <=1.5.5]")
 
