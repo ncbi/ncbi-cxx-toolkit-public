@@ -38,96 +38,11 @@
 #include <objtools/readers/reader_exception.hpp>
 
 #include <serial/objistr.hpp>
+#include <util/memory_streambuf.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
-
-class CMemoryStreamBuf : public std::streambuf
-{
-public:
-#ifndef NCBI_OS_MSWIN
-    CMemoryStreamBuf(const char* ptr, size_t size)
-    {
-        setg((char*)ptr, (char*)ptr, (char*)ptr + size);
-    }
-#else
-    CMemoryStreamBuf(const char* ptr, size_t size)
-    {
-        m_real_begin = const_cast<char*>(ptr);
-        m_real_end   = m_real_begin + size;
-        // see RW-2258 and https://github.com/microsoft/STL/blob/main/stl/inc/streambuf
-        // MS implementation of std::streambuf has _Gcount of type int
-        size         = std::min<size_t>(size, bmax);
-        setg((char*)ptr, (char*)ptr, (char*)ptr + size);
-    }
-
-protected:
-    using _MyBase = std::streambuf;
-    using _Traits = _MyBase::traits_type;
-
-    static constexpr streamsize bmax = std::numeric_limits<int>::max();
-
-    int_type underflow(void) override
-    {
-        auto pos = gptr();
-
-        if (pos >= m_real_end)
-            return _Traits::eof();
-
-        streamsize size = m_real_end - pos;
-        if (size > bmax)
-            size = bmax;
-
-        setg(pos, pos, pos + size);
-
-        return *pos;
-    }
-
-
-    streamsize xsgetn(CT_CHAR_TYPE* buf, streamsize m) override
-    {
-        auto pos = gptr();
-
-        if (pos >= m_real_end)
-            return 0;
-
-        streamsize size = m_real_end - pos;
-        if (m > size)
-            m = size;
-
-        memcpy(buf, pos, m);
-        size -= m;
-        pos += m;
-
-        if (size > bmax)
-            size = bmax;
-
-        setg(pos, pos, pos + size);
-
-        return m;
-    }
-
-    int_type pbackfail(int_type = _Traits::eof()) override
-    {
-        // put a character back to stream (always fail)
-        return _Traits::eof();
-    }
-    pos_type seekoff(off_type, ios_base::seekdir, ios_base::openmode /*__mode*/) override
-    {
-        return pos_type(off_type(-1));
-    }
-
-    pos_type seekpos(pos_type, ios_base::openmode /*__mode*/) override
-    {
-        return pos_type(off_type(-1));
-    }
-
-private:
-    char* m_real_begin{};
-    char* m_real_end{};
-#endif // NCBI_OS_MSWIN
-};
 
 CHugeFile::CHugeFile(){}
 CHugeFile::~CHugeFile(){}
@@ -163,7 +78,7 @@ bool CHugeFile::x_TryOpenMemoryFile(const string& filename)
 
         m_memfile = std::move(memfile);
 
-        m_streambuf.reset(new CMemoryStreamBuf(m_memory, m_filesize));
+        m_streambuf.reset(new CMemory_Streambuf(m_memory, m_filesize));
         m_stream.reset(new std::istream(m_streambuf.get()));
 
         return true;
@@ -201,7 +116,7 @@ TTypeInfo CHugeFile::RecognizeContent(std::streampos pos)
         return nullptr;
     }
     if (m_memory) {
-        CMemoryStreamBuf strbuf(m_memory + pos, m_filesize - pos);
+        CMemory_Streambuf strbuf(m_memory + pos, m_filesize - pos);
         std::istream istr(&strbuf);
         return RecognizeContent(istr);
     }
