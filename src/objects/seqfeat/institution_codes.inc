@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jul 10 05:33:05 EDT 2024; formally
+/* time_t value corresponding to Fri Jul 12 05:33:04 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1720603985UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1720776784UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -316,7 +316,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ANWC\ts\tAustralian National Wildlife Collection\t\t\t",
 "AO\ts\tMuseo Regionale di Scienze Naturali della Valle d'Aosta\t\t\t",
 "AORI\ts\tAtmosphere and Ocean Research Institute\t\t\t",
-"AP\ts\tThe Firefly Museum of Toyota Town\t\t\t",
 "APCC\tc\tAntarctic Protistan Culture Collection (Woods Hole Oceanographic Institution)\t\t\t",
 "APCR\ts\tArkansas Tech University, Biological Sciences Department\t\t\t",
 "APEI\ts\tAgriculture Canada Research Station\t\t\t",
@@ -7553,6 +7552,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "THIM\ts\tNational Biodiversity Centre\t\t\t",
 "THL\ts\tGrierson Museum\t\t\t",
 "THM\ts\tToyota Hotaru Museum\t\t\t",
+"THM:AP\ts\tThe Firefly Museum of Toyota Town\t\t\t",
 "THO\ts\tRobert Dick Museum Library\t\t\t",
 "THRI\ts\tSequoia and Kings Canyon National Parks\t\t\t",
 "THS\ts\tTsumura Laboratory\t\t\t",

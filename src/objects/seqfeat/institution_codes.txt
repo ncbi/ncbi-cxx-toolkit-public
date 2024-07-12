@@ -280,7 +280,6 @@ ANVL	s	Association des Naturalistes de la Vallee du Loing et du Massif de Fontai
 ANWC	s	Australian National Wildlife Collection			
 AO	s	Museo Regionale di Scienze Naturali della Valle d'Aosta			
 AORI	s	Atmosphere and Ocean Research Institute			
-AP	s	The Firefly Museum of Toyota Town			
 APCC	c	Antarctic Protistan Culture Collection (Woods Hole Oceanographic Institution)			
 APCR	s	Arkansas Tech University, Biological Sciences Department			
 APEI	s	Agriculture Canada Research Station			
@@ -7517,6 +7516,7 @@ THIB	s	Nicholls State University, Department of Biological Sciences
 THIM	s	National Biodiversity Centre			
 THL	s	Grierson Museum			
 THM	s	Toyota Hotaru Museum			
+THM:AP	s	The Firefly Museum of Toyota Town			
 THO	s	Robert Dick Museum Library			
 THRI	s	Sequoia and Kings Canyon National Parks			
 THS	s	Tsumura Laboratory			
