@@ -38,6 +38,9 @@
 #include <numeric>
 #include <random>
 #include <thread>
+#if defined(NCBI_OS_DARWIN)
+#include <signal.h>
+#endif
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -101,6 +104,9 @@ BOOST_AUTO_TEST_CASE(MutexRace)
         CMutex mutex;
         size_t counter;
     };
+#if defined(NCBI_OS_DARWIN)
+    signal(SIGXCPU, SIG_IGN);
+#endif
     vector<unique_ptr<SObject>> objs;
     for ( size_t i = 0; i < kObjectCount; ++i ) {
         objs.push_back(make_unique<SObject>());
