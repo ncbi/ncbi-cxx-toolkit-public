@@ -87,7 +87,7 @@ public:
     static TSubtype GetSubtypeValue(const string& str,
                                     EVocabulary vocabulary = eVocabulary_raw);
 
-	// get name for subsource
+    // get name for subsource
     static string GetSubtypeName(CSubSource::TSubtype stype,
                                  EVocabulary vocabulary = eVocabulary_raw);
 
@@ -103,7 +103,7 @@ public:
     // some subsources are discouraged and should not be offered to the user as an option
     static bool IsDiscouraged (const TSubtype subtype);
 
-	// read collection date from string
+    // read collection date from string
     static CRef<CDate> DateFromCollectionDate (const string& str) THROWS((CException));
 
     static void IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future);
@@ -194,6 +194,15 @@ public:
         eLatLonCountryErr_Value
     };
 
+    /*
+      ValidateLatLonCountry needs access to the high-resolution lat_lon_country.txt and lat_lon_water.txt data files.
+      The easiest solution is by setting the DataPath item in the .ncbirc configuration file:
+
+      [NCBI]
+      DataPath={path_to_data_files}
+
+      Note that the paths visible to production servers may differ from those available to development machines.
+    */
     static string ValidateLatLonCountry (const string& countryname, string& lat_lon, bool check_state, ELatLonCountryErr& errcode);
 
     static bool IsValidSexQualifierValue (const string& value);
