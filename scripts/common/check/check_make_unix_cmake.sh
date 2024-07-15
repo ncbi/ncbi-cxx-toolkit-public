@@ -646,8 +646,12 @@ RunTest()
     if test -n "\$x_files"; then
         for i in \$x_files ; do
             x_copy="\$root_dir/src/\$x_work_dir_tail/\$i"
+            x_copy_alt="\$root_dir/\$x_work_dir_tail/\$i"
             if test -f "\$x_copy"  -o  -d "\$x_copy"; then
                 cp -rf "\$x_copy" "\$x_work_dir"
+                test -d "\$x_work_dir/\$i" &&  find "\$x_work_dir/\$i" -name .svn -print | xargs rm -rf
+            elif test -f "\$x_copy_alt"  -o  -d "\$x_copy_alt"; then
+                cp -rf "\$x_copy_alt" "\$x_work_dir"
                 test -d "\$x_work_dir/\$i" &&  find "\$x_work_dir/\$i" -name .svn -print | xargs rm -rf
             else
                 echo "[\$x_work_dir_tail] \$x_name: Warning:  The copied object \"\$x_copy\" should be a file or directory!"
