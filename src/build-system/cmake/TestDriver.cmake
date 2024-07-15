@@ -90,8 +90,8 @@ endif()
 # Working source and output directories for this particular test.
 # ${NCBITEST_XOUTDIR} -- is a relative path like "corelib/test"
 set(_outdir ${NCBITEST_OUTDIR}/${NCBITEST_XOUTDIR})
-set(_srcdir ${NCBITEST_SOURCEDIR}/${NCBITEST_XOUTDIR})
-
+# ${NCBITEST_XSRCDIR} is an absolute path
+set(_srcdir ${NCBITEST_XSRCDIR})
 
 # ---------------------------------------------------------------------------
 # Check and copy assets
