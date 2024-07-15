@@ -11,7 +11,7 @@
 ##############################################################################
 # Testing
 
-set(NCBITEST_DRIVER "${NCBI_DIRNAME_CMAKECFG}/TestDriver.cmake")
+set(NCBITEST_DRIVER "${CMAKE_CURRENT_LIST_DIR}/TestDriver.cmake")
 
 NCBI_define_test_resource(ServiceMapper 8)
 enable_testing()
@@ -148,12 +148,7 @@ function(NCBI_internal_add_cmake_test _test)
     string(REPLACE ";" " " _assets  "${_assets}")
     string(REPLACE ";" " " _watcher "${_watcher}")
 
-    file(RELATIVE_PATH _xoutdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
-    if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
-        set(_root ${NCBI_EXTERNAL_TREE_ROOT})
-    else()
-        set(_root ${NCBI_TREE_ROOT})
-    endif()
+    file(RELATIVE_PATH _xoutdir "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
 
     NCBI_internal_process_cmake_test_requires(${_test})
     # Run tests that does not met requires for automated builds only, to report them to database.
@@ -176,11 +171,12 @@ function(NCBI_internal_add_cmake_test _test)
         -DNCBITEST_TIMEOUT=${_timeout}
         -DNCBITEST_ASSETS=${_assets}
         -DNCBITEST_XOUTDIR=${_xoutdir}
+        -DNCBITEST_XSRCDIR=${NCBI_CURRENT_SOURCE_DIR}
         -DNCBITEST_WATCHER=${_watcher}
         -DNCBITEST_PARAMS=${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/TestParams.cmake
         -DNCBITEST_REQUIRE_NOTFOUND=${NCBITEST_REQUIRE_NOTFOUND}
         ${_extra}
-        -P ${_root}/${NCBITEST_DRIVER}
+        -P ${NCBITEST_DRIVER}
         WORKING_DIRECTORY .
     )
 
@@ -207,12 +203,6 @@ function(NCBI_internal_FinalizeCMakeTest)
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})
     file(MAKE_DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/Testing/Temporary)
 
-    if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
-        set(_root ${NCBI_EXTERNAL_TREE_ROOT})
-    else()
-        set(_root ${NCBI_TREE_ROOT})
-    endif()
-
     # Generate a file with some common test parameters
     # ------------------------------------------------
     
@@ -231,13 +221,13 @@ function(NCBI_internal_FinalizeCMakeTest)
 
     # Directories
     
-    string(APPEND _info "set(NCBITEST_TREE_ROOT  ${NCBI_TREE_ROOT})\n")
+    string(APPEND _info "set(NCBITEST_TREE_ROOT  ${NCBI_THIS_TREE_ROOT})\n")
     string(APPEND _info "set(NCBITEST_BUILD_ROOT ${NCBI_BUILD_ROOT})\n")
     string(APPEND _info "set(NCBITEST_BINDIR     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})\n")
     string(APPEND _info "set(NCBITEST_LIBDIR     ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})\n")
     string(APPEND _info "set(NCBITEST_OUTDIR     ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING})\n")
-    string(APPEND _info "set(NCBITEST_SOURCEDIR  ${NCBI_SRC_ROOT})\n")
-    string(APPEND _info "set(NCBITEST_SCRIPTDIR  ${_root}/${NCBI_DIRNAME_SCRIPTS})\n")
+    string(APPEND _info "set(NCBITEST_SOURCEDIR  ${NCBI_THIS_SRC_ROOT})\n")
+    string(APPEND _info "set(NCBITEST_SCRIPTDIR  ${NCBITK_TREE_ROOT}/${NCBI_DIRNAME_SCRIPTS})\n")
     string(APPEND _info "\n")
     
     # Project features: Int8GI, Symbols, CfgProps and etc
