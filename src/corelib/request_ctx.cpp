@@ -320,9 +320,24 @@ void CRequestContext::SetClientIP(const string& client)
     if (!x_CanModify()) return;
     x_SetProp(eProp_ClientIP);
 
-    // Verify IP
-    string ip = NStr::TruncateSpaces(client);
-    if ( !NStr::IsIPAddress(ip) ) {
+    // Verify IP (tolerating optional enclosing square brackets, [...])
+    CTempStringEx ip = NStr::TruncateSpaces_Unsafe(client);
+    size_t len = ip.size();
+    bool bad;
+    if (!len) {
+        bad = true;
+    } else if (ip[0] != '[') {
+        bad = false;
+    } else if (len < 3  ||  ip[len - 1] != ']') {
+        bad = true;
+    } else {
+        ip = ip.substr(1, len - 2);
+        bad = false;
+    }
+    if (!bad  &&  !NStr::IsIPAddress(ip)) {
+        bad = true;
+    }
+    if ( bad ) {
         m_ClientIP = kBadIP;
         x_Modify();
         ERR_POST_X(25, "Bad client IP value: " << ip);
