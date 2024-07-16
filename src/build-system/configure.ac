@@ -6080,6 +6080,8 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
          if test "$with_max_debug" = yes; then
             BOOST_D="-gd -d"
+            BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_USE_ASAN"
+            BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_USE_UCONTEXT"
          elif test "$with_debug" = no; then
             BOOST_D=
          else
