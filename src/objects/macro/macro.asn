@@ -659,7 +659,8 @@ Publication-field ::=  ENUMERATED {
     affil-zipcode (19), 
     authors-initials (20), 
     pmid (21), 
-    pub-class (22)
+    pub-class (22),
+    doi (23)
     }
 
 -- structured comment fields --
