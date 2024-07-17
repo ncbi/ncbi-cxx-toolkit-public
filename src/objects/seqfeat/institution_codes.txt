@@ -3031,7 +3031,7 @@ HSUCV	s	Hardin-Simmons University, Collection of Vertebrates
 HSUD	s	Station of Nature Research and Environmental Education			
 HSUE	s	Natural History Museum, Addis Ababa			
 HSUMZ	s	Henderson State University, Museum of Zoology			
-HSUVM	s	Humboldt State University Vertebrate Museum			
+HSUVM	s	Cal Poly Humboldt Vertebrate Museum			
 HSUVM:Bird	s	Humboldt State University Vertebrate Museum, Bird Collection			
 HSUVM:Herp	s	Humboldt State University Vertebrate Museum, Herpetology Collection			
 HSUVM:Mamm	s	Humboldt State University Vertebrate Museum, Mammal collection			
