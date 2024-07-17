@@ -56,7 +56,7 @@ USING_SCOPE(ncbi::objects);
 
 const char GAP_CHAR='-'; // used in dna and protein text
 const char INTRON_CHAR='.'; // protein
-_DEBUG_ARG(const char SPACE_CHAR=' '); // translation and protein; to be used only in _ASSERT and other _DEBUG-dependent constructs.
+_DEBUG_ARG(const char SPACE_CHAR=' ';) // translation and protein; to be used only in _ASSERT and other _DEBUG-dependent constructs.
 const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
 
 // used in match text
@@ -1024,25 +1024,25 @@ void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list
     
     CSpliced_seg::TExons::iterator prev_exon_iter = sps.SetExons().end();
 
-    NON_CONST_ITERATE(TAliChunkCollection, chunk_iter, chunks) {
-        while(chunk_iter != chunks.end() && !chunk_iter->m_bad) {
-            prev_exon_iter = chunk_iter->m_exon_iter;
-            ++chunk_iter;
+    NON_CONST_ITERATE(TAliChunkCollection, chunk_it, chunks) {
+        while(chunk_it != chunks.end() && !chunk_it->m_bad) {
+            prev_exon_iter = chunk_it->m_exon_iter;
+            ++chunk_it;
         }
-        if (chunk_iter == chunks.end())
+        if (chunk_it == chunks.end())
             break;
-        if (prev_exon_iter != chunk_iter->m_exon_iter) {
-            if ((*chunk_iter->m_exon_iter)->IsSetAcceptor_before_exon())
-                (*chunk_iter->m_exon_iter)->ResetAcceptor_before_exon();
+        if (prev_exon_iter != chunk_it->m_exon_iter) {
+            if ((*chunk_it->m_exon_iter)->IsSetAcceptor_before_exon())
+                (*chunk_it->m_exon_iter)->ResetAcceptor_before_exon();
         } else {
-            SplitExon(sps.SetExons(),chunk_iter, genomic_plus);
+            SplitExon(sps.SetExons(),chunk_it, genomic_plus);
         }
 
-        prev_exon_iter = chunk_iter->m_exon_iter;
-        TAliChunkIterator next_chunk_iter = chunk_iter;
+        prev_exon_iter = chunk_it->m_exon_iter;
+        TAliChunkIterator next_chunk_iter = chunk_it;
         ++next_chunk_iter;
         while (next_chunk_iter != chunks.end() && next_chunk_iter->m_bad && next_chunk_iter->m_exon_iter==prev_exon_iter) {
-            chunk_iter = next_chunk_iter++;
+            chunk_it = next_chunk_iter++;
         }
 
         if (next_chunk_iter == chunks.end() || next_chunk_iter->m_exon_iter!=prev_exon_iter) {
