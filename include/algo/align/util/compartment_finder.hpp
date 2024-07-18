@@ -280,7 +280,9 @@ public:
         
         /// Create an empty compartment
 
-        CCompartment(void) {
+        CCompartment(void)
+        : m_iter(0)
+        {
             m_box[0] = m_box[2] = numeric_limits<TCoord>::max();
             m_box[1] = m_box[3] = 0;
         }

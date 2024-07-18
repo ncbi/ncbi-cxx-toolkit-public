@@ -396,7 +396,6 @@ string CSplignFormatter::AsAlignmentText(
                     trans.append(extra_chars, '#');
                 }
 
-                size_t lines = 0;
                 for(size_t t = 0, td = trans.size(), iq = 0, is = 0; t < td; ++t) {
                     
                     char c = trans[t], c1, c2, c3, c0, c4;
@@ -467,7 +466,6 @@ string CSplignFormatter::AsAlignmentText(
                                 << l2 << endl << l3 << endl << endl;
                         }
 
-                        ++lines;
                         l0 = l1 = l2 = l3 = kTenner;
                         size_t q0, s0;
                         if(qstrand) {

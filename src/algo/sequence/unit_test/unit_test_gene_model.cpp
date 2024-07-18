@@ -915,27 +915,6 @@ BOOST_AUTO_TEST_CASE(TestCaseStitchProtein)
     BOOST_CHECK_EQUAL((*i)->GetGenomic_start(), TSeqPos(20) );
     BOOST_CHECK_EQUAL((*i)->GetGenomic_end(), TSeqPos(237) );
 
-    TSeqPos product_pos = 0;
-    ITERATE(CSpliced_exon::TParts, p, (*i)->GetParts()) {
-        const CSpliced_exon_chunk& chunk = **p;
-        switch (chunk.Which()) {
-        case CSpliced_exon_chunk::e_Match:
-            product_pos += chunk.GetMatch();
-            break;
-        case CSpliced_exon_chunk::e_Mismatch:
-            product_pos += chunk.GetMismatch();
-            break;
-        case CSpliced_exon_chunk::e_Product_ins:
-            product_pos += chunk.GetProduct_ins();
-            break;
-        case CSpliced_exon_chunk::e_Genomic_ins:
-            break;
-        default:
-            break;
-        }
-    }
-
-
 // CObjectOStream* ostr = CObjectOStream::Open(eSerial_AsnText,
 //                                             cerr);
 // *ostr << *trimmed_align;

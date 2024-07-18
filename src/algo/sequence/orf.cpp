@@ -158,8 +158,8 @@ inline void FindForwardOrfs(const TSeq& seq, TRangeVec& ranges,
     // for each reading frame, calculate the orfs
     for (int frame = 0;  frame < 3;  frame++) {
 
-        stops[frame].push_back(seq.size());
-        stops[frame].push_back(seq.size());
+        stops[frame].push_back(static_cast<TSeqPos>(seq.size()));
+        stops[frame].push_back(static_cast<TSeqPos>(seq.size()));
 
         from = frame;
         for (unsigned int i = 0; i < stops[frame].size() -1;  i++) {
