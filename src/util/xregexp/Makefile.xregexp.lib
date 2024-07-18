@@ -3,12 +3,12 @@
 SRC = regexp arg_regexp mask_regexp convert_dates_iso8601
 LIB = xregexp
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE) $(PCRE2_INCLUDE)
 
 DLL_LIB = $(PCRE_LIB) xutil
-LIBS    = $(PCRE_LIBS)
+LIBS    = $(PCRE_LIBS) $(PCRE2_LIBS)
 
 USES_LIBRARIES =  \
-    $(PCRE_LIB) $(PCRE_LIBS) xncbi
+    $(PCRE_LIB) $(PCRE_LIBS) $(PCRE2_LIBS) xncbi
 
 WATCHERS = ivanov

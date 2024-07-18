@@ -70,7 +70,11 @@ class NCBI_XREGEXP_EXPORT CRegexp
 {
 public:
     /// Element type for GetResults().
+#ifdef HAVE_LIBPCRE2
+    typedef size_t TOffset;
+#else
     typedef int TOffset;
+#endif
 
     /// Type definitions used for code clarity.
     typedef unsigned int TCompile;     ///< Compilation options.
@@ -287,13 +291,20 @@ private:
     void x_Match(CTempString str, size_t offset, TMatch flags);
 
     void*  m_PReg;   /// Pointer to compiled PCRE pattern.
-    void*  m_Extra;  /// Pointer to extra structure used for pattern study.
 
+#ifdef HAVE_LIBPCRE2
+    void*    m_MatchData;
+    TOffset* m_Results;
+    int      m_JITStatus;
+#else
+    void*  m_Extra;  /// Pointer to extra structure used for pattern study.
 
     /// Array of locations of patterns/subpatterns resulting from
     /// the last call to GetMatch(). Also contains 1/3 extra space used
     /// internally by the PCRE C library.
     int m_Results[(kRegexpMaxSubPatterns +1) * 3];
+#endif
+
 
     /// The total number of pattern + subpatterns resulting from
     /// the last call to GetMatch.
