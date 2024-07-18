@@ -358,7 +358,7 @@ CParse::CParse(const CSeqScores& ss,
             }
         }
     }
-    catch(bad_alloc)
+    catch(bad_alloc&)
     {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CParse");
     }

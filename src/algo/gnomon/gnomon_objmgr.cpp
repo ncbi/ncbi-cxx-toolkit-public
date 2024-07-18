@@ -232,7 +232,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         _ASSERT(transcript_exons.back().NotEmpty());
 
         int pos = 0;
-        int prod_pos = prod_cur_start;
 
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
@@ -258,7 +257,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                     indels.push_back(fs);
                 else
                     indels.insert(indels.begin(), fs);
-                prod_pos += chunk.GetProduct_ins();
             } else if (chunk.IsGenomic_ins()) {
                 const int genomic_ins = chunk.GetGenomic_ins();
                 if (Strand()==ePlus)
@@ -268,7 +266,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                 pos += genomic_ins;
             } else if (chunk.IsMatch()) {
                 pos += chunk.GetMatch();
-                prod_pos += chunk.GetMatch();
             } else if (chunk.IsMismatch()) {
                 int mismatch_len = chunk.GetMismatch();
                 string v(mismatch_len,'N');
@@ -284,10 +281,8 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                     indels.insert(indels.begin(), CInDelInfo(nuc_cur_end-pos-mismatch_len+1, mismatch_len, CInDelInfo::eMism, v));
                 }
                 pos += mismatch_len;
-                prod_pos += mismatch_len;
             } else { // if (chunk.IsDiag())
                 pos += chunk.GetDiag();
-                prod_pos += chunk.GetDiag();
             }
             if(indelstatus != CInDelInfo::eUnknown) {
                 if(Strand() == ePlus)
@@ -652,7 +647,7 @@ CRef<CSeq_annot> CGnomonEngine::GetAnnot(const CSeq_id& id)
         CRef<CSeq_feat> feat_gene(new CSeq_feat());
 
         char buf[32];
-        sprintf(buf, "%04u", ++counter);
+        snprintf(buf, 32, "%04u", ++counter);
         string name(locus_tag_base);
         name += buf;
         feat_gene->SetData().SetGene().SetLocus_tag(name);
