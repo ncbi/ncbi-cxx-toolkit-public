@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(Test_CBlastTabular_constructor)
                 CRef<CBlastTabular> hitref
                     (new CBlastTabular(**align));
                 actual_hit_length += hitref->GetLength();
-            } catch (CException e) {
+            } catch (CException &e) {
                 ERR_POST("error converting alignment: " << e);
                 CNcbiOstrstream o;
                 o << MSerial_AsnText << **align;

@@ -110,7 +110,7 @@ size_t LoadAligns(CNcbiIstream& in,
             num_aligns++;
             if (limit > 0  &&  num_aligns >= limit) break;
         }
-        catch (CIOException e) {
+        catch (CIOException&) {
             break;
         }
     }

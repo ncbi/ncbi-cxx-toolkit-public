@@ -62,7 +62,7 @@ CRef<CSeq_id> CAliToSeq_align::StringToSeq_id(const string& id)
         ps = FindBestChoice(ids, CSeq_id::Score); 
         //if(!ps) ps = new CSeq_id(id);
         if(!ps) ps = new CSeq_id(CSeq_id::e_Local, id);
-    } catch(CException) {
+    } catch(CException&) {
         ps.Reset (new CSeq_id(CSeq_id::e_Local, id)); 
     }
     return ps;
@@ -146,7 +146,6 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(const CPSeq& cpseq, const CNSeq&
         CRef<CSpliced_exon_chunk> chunk;
 
         int nulpos = 0, nultripos = 0;
-        int alipos = 0;
         char s[] = "GT"; 
         
 
@@ -225,7 +224,6 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(const CPSeq& cpseq, const CNSeq&
                     break;
                 }
             }
-            alipos += pit->m_len;
         }
 
         _ASSERT (exon.NotNull());

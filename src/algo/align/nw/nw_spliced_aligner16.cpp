@@ -561,7 +561,8 @@ void CSplicedAligner16::x_DoBackTrace (
             size_t intron_length (1);
             const Uint2 donor ((Key & 0x0F00) >> 4);
             while(intron_length < m_IntronMinSize || (Key & donor) == 0) {
-                Key = backtrace_matrix[--i2, --k];
+                --i2;
+                Key = backtrace_matrix[--k];
                 ++intron_length;
                 data->m_transcript.push_back(eTS_Intron);
             }
